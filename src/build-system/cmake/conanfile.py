@@ -45,6 +45,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.requires("openssl/1.1.1s")
         # self.requires("opentelemetry-cpp/1.14.2")
         self.requires("pcre/8.45")
+        self.requires("pcre2/10.44")
         self.requires("protobuf/[>=3.21.12 <=5.27.0]")
         self.requires("sqlite3/[>=3.40.0 <=3.46.0]")
         self.requires("zlib/[>=1.2.11 <2]")
@@ -63,6 +64,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["libxml2/*"].shared = False
         self.options["libiconv/*"].shared = False
         self.options["pcre/*"].shared = False
+        self.options["pcre2/*"].shared = False
         self.options["ncbicrypt/*"].shared = False
         self.options["googleapis/*"].shared = False
         self.options["grpc-proto/*"].shared = False

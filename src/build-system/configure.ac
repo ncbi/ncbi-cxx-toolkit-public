@@ -90,7 +90,7 @@ case "$with_3psw" in
          with_yaml_cpp=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, ngs, ncbicrypt, libunwind,
-                     z, bz2, lzo, zstd, pcre, mbedtls,
+                     z, bz2, lzo, zstd, pcre, pcre2, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
                      sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
                      wxwidgets, freetype, ftgl, fastcgi, fastcgipp,
@@ -325,6 +325,10 @@ AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre,
    [ --without-pcre          use internal copy of PCRE])
+AC_ARG_WITH(pcre2,
+   [ --with-pcre2=DIR        use PCRE2 installation in DIR])
+AC_ARG_WITH(pcre,
+   [ --without-pcre2         do not use PCRE2])
 AC_ARG_WITH(mbedtls,
    [ --with-mbedtls(=DIR)    use external mbedTLS installation (in DIR)])
 AC_ARG_WITH(gmp,
@@ -733,7 +737,7 @@ ncbi-c wxwidgets wxwidgets-ucs fastcgi fastcgipp \
 sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs ncbicrypt libunwind libdw \
 backward-cpp backward-cpp-sig \
-z bz2 lzo zstd pcre mbedtls \
+z bz2 lzo zstd pcre pcre2 mbedtls \
 gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
@@ -803,7 +807,7 @@ for x_arg in "$@" ; do
       | --with-ncbicrypt=* \
       | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* | --with-zstd=* \
-      | --with-pcre=* | --with-mbedtls=* \
+      | --with-pcre=* | --with-pcre2=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
@@ -897,6 +901,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
    : ${with_pcre=no} # Too much variation across distributions.
+   : ${with_pcre2=no}
    : ${with_sse42=no}
    AC_DEFINE(NCBI_BIN_RELEASE, 1,
              [Define to 1 when building binaries for public release.])
@@ -4869,7 +4874,18 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB(pcre,
  [AC_LANG_PROGRAM([@%:@include <pcre.h>],
    [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])])
-if test -z "$PCRE_LIBS"; then
+
+: ${with_pcre2=no}
+NCBI_CHECK_THIRD_PARTY_LIB_EX(pcre2, PCRE2, pcre2-8,
+ [AC_LANG_PROGRAM([@%:@define PCRE2_CODE_UNIT_WIDTH 8
+                   @%:@include <pcre2.h>],
+   [[pcre2_config(123, NULL);]])])
+PCRE_LEGACY_LIBS=$PCRE_LIBS
+if test "x$with_pcre2" != xno; then
+   PCRE_LIBS=$PCRE2_LIBS
+fi
+
+if test -z "$PCRE_LIBS" -a -z "$PCRE2_LIBS"; then
    pcrelocal=util/regexp
    AC_MSG_NOTICE([using local PCRE copy in $pcrelocal])
    PCRE_PATH="<$pcrelocal>"
@@ -4878,8 +4894,15 @@ if test -z "$PCRE_LIBS"; then
    # PCREPOSIX_LIBS="-lregexp"
    PCRE_LIB="regexp"
    AC_DEFINE(USE_LOCAL_PCRE, 1, [Define to 1 if using a local copy of PCRE.])
-   NCBI_PACKAGE(PCRE)
+   if test -f $srcdir/include/$pcrelocal/pcre2.h; then
+      AC_DEFINE(HAVE_LIBPCRE2, 1, [Define to 1 if libpcre2 is available.])
+      NCBI_PACKAGE(PCRE2)
+   else
+      NCBI_PACKAGE(PCRE)
+   fi
    NCBI_PACKAGE(LocalPCRE)
+elif test -n "$PCRE2_LIBS"; then
+   PCREPOSIX_LIBS=`echo "$PCRE2_LIBS" | sed -e 's/-lpcre2-8/-lpcre2posix &/'`
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
@@ -10025,6 +10048,7 @@ AC_SUBST(BZ2_LIB)
 AC_SUBST(ZSTD_STATIC_LIBS)
 AC_SUBST(PCREPOSIX_LIBS)
 AC_SUBST(PCRE_LIB)
+AC_SUBST(PCRE_LEGACY_LIBS)
 AC_SUBST(OPENSSL_STATIC_LIBS)
 AC_SUBST(CURL_STATIC_LIBS)
 AC_SUBST(SYBASE_PATH)

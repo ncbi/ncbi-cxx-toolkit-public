@@ -85,11 +85,19 @@ endif()
 #############################################################################
 # PCRE
 NCBI_define_Pkgcomponent(NAME PCRE PACKAGE pcre REQUIRES bzip2;zlib FIND PCRE)
-if(NOT NCBI_COMPONENT_PCRE_FOUND)
+NCBI_define_Pkgcomponent(NAME PCRE2 PACKAGE pcre2 REQUIRES bzip2;zlib FIND PCRE2)
+if(NOT NCBI_COMPONENT_PCRE_FOUND AND NOT NCBI_COMPONENT_PCRE2_FOUND)
+  if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
     set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
     set(NCBI_COMPONENT_PCRE_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
     set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
+  else()
+    set(NCBI_COMPONENT_PCRE2_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
+    set(NCBI_COMPONENT_PCRE2_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
+    set(NCBI_COMPONENT_PCRE2_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
+    set(HAVE_LIBPCRE2 ${NCBI_COMPONENT_PCRE2_FOUND})
+  endif()
 endif()
 
 #############################################################################

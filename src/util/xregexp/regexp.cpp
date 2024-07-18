@@ -34,8 +34,14 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistl.hpp>
 #include <util/xregexp/regexp.hpp>
-#include <pcre.h>
-#define PCRE_FLAG(x) PCRE_##x
+#ifdef HAVE_LIBPCRE2
+#  define PCRE2_CODE_UNIT_WIDTH 8
+#  include <pcre2.h>
+#  define PCRE_FLAG(x) PCRE2_##x
+#else
+#  include <pcre.h>
+#  define PCRE_FLAG(x) PCRE_##x
+#endif
 
 #include <memory>
 #include <stdlib.h>
@@ -103,7 +109,15 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
 
 
 CRegexp::CRegexp(CTempStringEx pattern, TCompile flags)
-    : m_PReg(NULL), m_Extra(NULL), m_NumFound(0)
+    : m_PReg(NULL),
+#ifdef HAVE_LIBPCRE2
+      m_MatchData(NULL),
+      m_Results(NULL),
+      m_JITStatus(PCRE2_ERROR_UNSET),
+#else
+      m_Extra(NULL),
+#endif
+      m_NumFound(0)
 {
     Set(pattern, flags);
 }
@@ -111,33 +125,63 @@ CRegexp::CRegexp(CTempStringEx pattern, TCompile flags)
 
 CRegexp::~CRegexp()
 {
+#ifdef HAVE_LIBPCRE2
+    pcre2_code_free((pcre2_code*)m_PReg);
+    pcre2_match_data_free((pcre2_match_data*)m_MatchData);
+#else
     (*pcre_free)(m_PReg);
     (*pcre_free)(m_Extra);
+#endif
 }
 
 
 void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 {
     if ( m_PReg ) {
+#ifdef HAVE_LIBPCRE2
+        pcre2_code_free((pcre2_code*)m_PReg);
+#else
         (*pcre_free)(m_PReg);
+#endif
     }
+#ifdef HAVE_LIBPCRE2
+    int err_num;
+#else
     const char *err;
+#endif
     TOffset err_offset;
     int x_flags = s_GetRealCompileFlags(flags);
 
+#ifdef HAVE_LIBPCRE2
+    m_PReg = pcre2_compile((PCRE2_SPTR) pattern.data(), pattern.size(),
+                           x_flags, &err_num, &err_offset, NULL);
+#else
     if ( pattern.HasZeroAtEnd() ) {
         m_PReg = pcre_compile(pattern.data(), x_flags, &err, &err_offset, NULL);
     } else {
         m_PReg = pcre_compile(string(pattern).c_str(), x_flags, &err, &err_offset, NULL);
     }
+#endif
     if ( !m_PReg ) {
+#ifdef HAVE_LIBPCRE2
+        char err[120];
+        pcre2_get_error_message(err_num, (PCRE2_UCHAR*) err, ArraySize(err));
+#endif
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    string(pattern) + "' failed: " + err);
     }
+#ifdef HAVE_LIBPCRE2
+    pcre2_match_data_free((pcre2_match_data*)m_MatchData);
+    m_MatchData = pcre2_match_data_create_from_pattern((pcre2_code*)m_PReg,
+                                                       NULL);
+    // Too heavyweight to use by default; a flag may be in order.
+    // m_JITStatus = pcre2_jit_compile((pcre2_code*)m_PReg, PCRE2_JIT_COMPLETE);
+#else
     if ( m_Extra ) {
         (*pcre_free)(m_Extra);
     }
     m_Extra = pcre_study((pcre*)m_PReg, 0, &err);
+#endif
 }
 
 
@@ -158,8 +202,12 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
     if ( (int)idx >= m_NumFound ) {
         return CTempString();
     }
+#ifdef HAVE_LIBPCRE2
+    static const PCRE2_SIZE kNotFound = PCRE2_UNSET;
+#else
     static const int kNotFound = -1;
-    const int * offsets = m_Results;
+#endif
+    const auto * offsets = m_Results;
     auto start = offsets[2 * idx];
     auto end   = offsets[2 * idx + 1];
     if (start == kNotFound  ||  end == kNotFound) {
@@ -172,10 +220,23 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
 void CRegexp::x_Match(CTempString str, size_t offset, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
+#ifdef HAVE_LIBPCRE2
+    auto f = (m_JITStatus == 0) ? &pcre2_jit_match : &pcre2_match;
+    auto *match_data = (pcre2_match_data*) m_MatchData;
+    int rc = (*f)((pcre2_code*) m_PReg, (PCRE2_UCHAR*)str.data(), str.length(),
+                  offset, x_flags, match_data, NULL);
+    m_Results = pcre2_get_ovector_pointer(match_data);
+    if (rc >= 0) {
+        m_NumFound = pcre2_get_ovector_count(match_data);
+    } else {
+        m_NumFound = -1;
+    }
+#else
     m_NumFound = pcre_exec((pcre*)m_PReg, (pcre_extra*)m_Extra, str.data(),
                            (int)str.length(), (int)offset,
                            x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
+#endif
 }
 
 

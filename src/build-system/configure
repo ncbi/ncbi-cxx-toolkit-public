@@ -814,6 +814,7 @@ SYBASE_LCL_PATH
 SYBASE_PATH
 CURL_STATIC_LIBS
 OPENSSL_STATIC_LIBS
+PCRE_LEGACY_LIBS
 PCRE_LIB
 PCREPOSIX_LIBS
 ZSTD_STATIC_LIBS
@@ -1103,6 +1104,8 @@ GMP_LIBS
 GMP_INCLUDE
 MBEDTLS_LIBS
 MBEDTLS_INCLUDE
+PCRE2_LIBS
+PCRE2_INCLUDE
 PCRE_LIBS
 PCRE_INCLUDE
 ZSTD_LIBS
@@ -1293,6 +1296,7 @@ with_bz2
 with_lzo
 with_zstd
 with_pcre
+with_pcre2
 with_mbedtls
 with_gmp
 with_gcrypt
@@ -1951,7 +1955,7 @@ ncbi-c wxwidgets wxwidgets-ucs fastcgi fastcgipp \
 sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb static-vdb ngs ncbicrypt libunwind libdw \
 backward-cpp backward-cpp-sig \
-z bz2 lzo zstd pcre mbedtls \
+z bz2 lzo zstd pcre pcre2 mbedtls \
 gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
 orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
@@ -2019,7 +2023,7 @@ for x_arg in "$@" ; do
       | --with-ncbicrypt=* \
       | --with-libunwind=* | --with-libdw=* | --with-backward-cpp=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* | --with-zstd=* \
-      | --with-pcre=* | --with-mbedtls=* \
+      | --with-pcre=* | --with-pcre2=* | --with-mbedtls=* \
       | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
@@ -2260,6 +2264,8 @@ Optional Packages:
  --without-zstd          do not use Zstandard
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
+ --with-pcre2=DIR        use PCRE2 installation in DIR
+ --without-pcre2         do not use PCRE2
  --with-mbedtls(=DIR)    use external mbedTLS installation (in DIR)
  --with-gmp=DIR          use GMP installation in DIR
  --without-gmp           do not use GMP
@@ -3733,6 +3739,11 @@ case "$with_3psw" in
          else
             with_pcre=no
          fi
+        if test "${with_pcre2-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-pcre2 but --without-3psw"
+         else
+            with_pcre2=no
+         fi
         if test "${with_mbedtls-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-mbedtls but --without-3psw"
          else
@@ -5025,6 +5036,18 @@ if test "${with_pcre+set}" = set; then :
 fi
 
 
+# Check whether --with-pcre2 was given.
+if test "${with_pcre2+set}" = set; then :
+  withval=$with_pcre2;
+fi
+
+
+# Check whether --with-pcre was given.
+if test "${with_pcre+set}" = set; then :
+  withval=$with_pcre;
+fi
+
+
 # Check whether --with-mbedtls was given.
 if test "${with_mbedtls+set}" = set; then :
   withval=$with_mbedtls;
@@ -6249,6 +6272,7 @@ if test "$with_bin_release" = "yes" ; then
    : ${with_libdw=no}
    : ${with_ncbicrypt=no}
    : ${with_pcre=no} # Too much variation across distributions.
+   : ${with_pcre2=no}
    : ${with_sse42=no}
 
 $as_echo "#define NCBI_BIN_RELEASE 1" >>confdefs.h
@@ -18641,7 +18665,144 @@ $as_echo "#define HAVE_LIBPCRE 1" >>confdefs.h
 
 
 
-if test -z "$PCRE_LIBS"; then
+
+: ${with_pcre2=no}
+if test "$with_pcre2" != "no"; then
+    case "$PCRE2_PATH:$with_pcre2" in
+       *:yes | *: | $with_pcre2* ) ;;
+       * ) PCRE2_PATH=$with_pcre2 ;;
+    esac
+    if test "$PCRE2_PATH" != /usr -a -d "$PCRE2_PATH"; then
+       in_path=" in $PCRE2_PATH"
+       if test -z "$PCRE2_INCLUDE" -a -d "$PCRE2_PATH/include"; then
+          PCRE2_INCLUDE="-I$PCRE2_PATH/include"
+       fi
+       if test -n "$PCRE2_LIBPATH"; then
+          :
+       elif test -d "$PCRE2_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PCRE2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PCRE2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PCRE2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PCRE2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$PCRE2_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PCRE2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PCRE2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PCRE2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PCRE2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       PCRE2_LIBS="$PCRE2_LIBPATH -lpcre2-8 "
+    else
+       PCRE2_INCLUDE=""
+       PCRE2_LIBS="-lpcre2-8 "
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libpcre2-8$in_path" >&5
+$as_echo_n "checking for libpcre2-8$in_path... " >&6; }
+if ${ncbi_cv_lib_pcre2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $PCRE2_INCLUDE $orig_CPPFLAGS"
+       LIBS="$PCRE2_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#define PCRE2_CODE_UNIT_WIDTH 8
+                   #include <pcre2.h>
+int
+main ()
+{
+pcre2_config(123, NULL);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_pcre2=yes
+else
+  ncbi_cv_lib_pcre2=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_pcre2" >&5
+$as_echo "$ncbi_cv_lib_pcre2" >&6; }
+    if test "$ncbi_cv_lib_pcre2" = "no"; then
+       if test "${with_pcre2:=no}" != no; then
+       as_fn_error $? "--with-pcre2 explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_pcre2" = "no"; then
+    PCRE2_PATH="No_PCRE2"
+    PCRE2_INCLUDE=
+    PCRE2_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}PCRE2"; WithPackagesSep=" "
+    PCRE2_INCLUDE=" $PCRE2_INCLUDE"
+
+$as_echo "#define HAVE_LIBPCRE2 1" >>confdefs.h
+
+ fi
+
+
+
+PCRE_LEGACY_LIBS=$PCRE_LIBS
+if test "x$with_pcre2" != xno; then
+   PCRE_LIBS=$PCRE2_LIBS
+fi
+
+if test -z "$PCRE_LIBS" -a -z "$PCRE2_LIBS"; then
    pcrelocal=util/regexp
    { $as_echo "$as_me:${as_lineno-$LINENO}: using local PCRE copy in $pcrelocal" >&5
 $as_echo "$as_me: using local PCRE copy in $pcrelocal" >&6;}
@@ -18653,8 +18814,17 @@ $as_echo "$as_me: using local PCRE copy in $pcrelocal" >&6;}
 
 $as_echo "#define USE_LOCAL_PCRE 1" >>confdefs.h
 
-             WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
+   if test -f $srcdir/include/$pcrelocal/pcre2.h; then
+
+$as_echo "#define HAVE_LIBPCRE2 1" >>confdefs.h
+
+                WithPackages="$WithPackages${WithPackagesSep}PCRE2"; WithPackagesSep=" "
+   else
+                WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
+   fi
              WithPackages="$WithPackages${WithPackagesSep}LocalPCRE"; WithPackagesSep=" "
+elif test -n "$PCRE2_LIBS"; then
+   PCREPOSIX_LIBS=`echo "$PCRE2_LIBS" | sed -e 's/-lpcre2-8/-lpcre2posix &/'`
 else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
@@ -37565,7 +37735,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI BM64 GCC KCC ICC AppleClang LLVMClan
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -37671,6 +37841,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
