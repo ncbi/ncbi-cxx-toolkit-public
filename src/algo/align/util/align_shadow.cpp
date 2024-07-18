@@ -142,7 +142,8 @@ CAlignShadow::CAlignShadow(const objects::CSeq_align& seq_align, bool save_xcrip
                 for (size_t j: {0,1}) {
                     if (starts[i+j] != -1) {
                         if (strands[i+j] == eNa_strand_minus) {
-                            if (next[j] != starts[i+j]+lens[ii_lens]) {
+                            TSignedSeqPos end = starts[i+j]+lens[ii_lens];
+                            if (next[j] != end) {
                                 m_Transcript.push_back(indel[j]);
                                 m_Transcript.append(NStr::NumericToString(next[j]-starts[i+j]-lens[ii_lens]));
                             }
