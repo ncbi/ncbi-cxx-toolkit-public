@@ -489,6 +489,9 @@
 /* Define to 1 if libpcre is available. */
 #undef HAVE_LIBPCRE
 
+/* Define to 1 if libpcre2 is available. */
+#undef HAVE_LIBPCRE2
+
 /* Define to 1 if libpng is available. */
 #undef HAVE_LIBPNG
 

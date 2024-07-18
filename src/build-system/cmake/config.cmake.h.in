@@ -970,6 +970,9 @@
 /* Define to 1 if libpcre is available. */
 #cmakedefine HAVE_LIBPCRE 1
 
+/* Define to 1 if libpcre2 is available. */
+#cmakedefine HAVE_LIBPCRE2 1
+
 /* Define to 1 if libpng is available. */
 #cmakedefine HAVE_LIBPNG 1
 
