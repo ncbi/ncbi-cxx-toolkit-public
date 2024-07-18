@@ -491,7 +491,7 @@ void CLorentz::Init(const CLength_distribution_params& from)
         m_score.resize(num,0);
         m_clscore.resize(num,0);
     }
-    catch(bad_alloc)
+    catch(bad_alloc&)
     {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory for CLorentz");
     }

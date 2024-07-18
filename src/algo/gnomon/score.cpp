@@ -301,7 +301,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_dsplit[strand][ph].resize(len,0);
             }
         }
-    } catch(bad_alloc) {
+    } catch(bad_alloc&) {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CSeqScores");
     }
 
