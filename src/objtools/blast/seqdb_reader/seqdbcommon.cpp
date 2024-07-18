@@ -2638,6 +2638,7 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn, EBlastDbV
     }
     extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
     extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
+    extn.push_back(kExtnMol + "js");   // BLASTDB metadata
     if (dbver == eBDB_Version5) {
     	vector<string> lmdbs;
     	SeqDB_GetLMDBFileExtensions(db_is_protein, lmdbs);
