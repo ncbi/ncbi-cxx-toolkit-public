@@ -207,9 +207,8 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
 #else
     static const int kNotFound = -1;
 #endif
-    const auto * offsets = m_Results;
-    auto start = offsets[2 * idx];
-    auto end   = offsets[2 * idx + 1];
+    auto start = m_Results[2 * idx];
+    auto end   = m_Results[2 * idx + 1];
     if (start == kNotFound  ||  end == kNotFound) {
         return CTempString();
     }
