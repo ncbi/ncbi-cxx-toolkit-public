@@ -719,7 +719,6 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                      // will wait on
                      unsigned int              timeout, // If timeout != 0 =>
                                                         // WGET
-                     const CNSPreciseTime &    curr,
                      const list<string> *      aff_list,
                      bool                      wnode_affinity,
                      bool                      any_affinity,
@@ -734,6 +733,9 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     // We need exactly 1 parameter - m_RunTimeout, so we can access it without
     // CQueueParamAccessor
 
+    CFastMutexGuard     guard(m_OperationLock);
+    CNSPreciseTime      curr = CNSPreciseTime::Current();
+
     // This is a worker node command, so mark the node type as a worker
     // node
     m_ClientsRegistry.AppendType(client, CNSClient::eWorkerNode);
@@ -744,7 +746,6 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     bool                    has_groups = false;
 
     {{
-        CFastMutexGuard     guard(m_OperationLock);
 
         if (wnode_affinity) {
             // Check that the preferred affinities were not reset
@@ -771,8 +772,13 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     }}
 
     for (;;) {
+        // Old comment:
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
+        // Current state:
+        // The lock is taken at the beginning. Now there is not much of a
+        // concurrency so a bit of performance is not needed anymore.
+        // The rest is left untouched to simplify the changes
         x_SJobPick  job_pick = x_FindVacantJob(client,
                                                aff_ids_vector, aff_ids,
                                                wnode_affinity,
@@ -783,7 +789,6 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                eGet);
         {{
             bool                outdated_job = false;
-            CFastMutexGuard     guard(m_OperationLock);
 
             if (job_pick.job_id == 0) {
                 if (exclusive_new_affinity)
@@ -1362,8 +1367,8 @@ TJobStatus  CQueue::ReturnJob(const CNSClientId &     client,
                               string &                warning,
                               TJobReturnOption        how)
 {
-    CNSPreciseTime      current_time = CNSPreciseTime::Current();
     CFastMutexGuard     guard(m_OperationLock);
+    CNSPreciseTime      current_time = CNSPreciseTime::Current();
     TJobStatus          old_status = GetJobStatus(job_id);
 
     if (old_status != CNetScheduleAPI::eRunning)
@@ -2019,6 +2024,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                CNSRollbackInterface * &  rollback_action,
                                string &                  added_pref_aff)
 {
+    CFastMutexGuard         guard(m_OperationLock);
     CNSPreciseTime          curr = CNSPreciseTime::Current();
     TNSBitVector            group_ids_vector;
     bool                    has_groups = false;
@@ -2031,7 +2037,6 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
     *no_more_jobs = false;
 
     {{
-        CFastMutexGuard     guard(m_OperationLock);
 
         if (reader_affinity) {
             // Check that the preferred affinities were not reset
@@ -2058,8 +2063,13 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
     }}
 
     for (;;) {
+        // Old comment:
         // No lock here to make it possible to pick a job
         // simultaneously from many threads
+        // Current state:
+        // The lock is taken at the beginning. Now there is not much of a
+        // concurrency so a bit of performance is not needed anymore.
+        // The rest is left untouched to simplify the changes
         x_SJobPick  job_pick = x_FindVacantJob(client,
                                                aff_ids_vector, aff_ids,
                                                reader_affinity,
@@ -2072,7 +2082,6 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         {{
             bool                outdated_job = false;
             TJobStatus          old_status;
-            CFastMutexGuard     guard(m_OperationLock);
 
             if (job_pick.job_id == 0) {
                 if (exclusive_new_affinity)

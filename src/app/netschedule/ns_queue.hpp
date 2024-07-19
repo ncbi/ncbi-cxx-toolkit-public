@@ -183,7 +183,6 @@ public:
                       unsigned short            port, // Port the client
                                                       // will wait on
                       unsigned int              timeout,
-                      const CNSPreciseTime &    curr,
                       const list<string> *      aff_list,
                       bool                      wnode_affinity,
                       bool                      any_affinity,
