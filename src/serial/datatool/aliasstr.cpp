@@ -246,7 +246,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             "Invalid aliased type: " + ref_name);
     }
 
-    if (m_Nested && type_alias && !mem_alias && !DataType()->HasTag() &&
+    if (m_Nested && type_alias && !mem_alias && DataType() && !DataType()->HasTag() &&
         !DataType()->IsInUniSeq() &&
         DataType()->GetTagType() == CAsnBinaryDefs::eAutomatic)
     {
@@ -529,7 +529,7 @@ void CAliasTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
     case eKindClass:
     case eKindObject:
         is_class = true;
-        if (DataType()->IsReference()) {
+        if (DataType() && DataType()->IsReference()) {
             const CReferenceDataType* reftype = dynamic_cast<const CReferenceDataType*>(DataType());
             const CDataType* resolved = reftype->Resolve();
             if (resolved && resolved != reftype) {
@@ -620,7 +620,7 @@ void CAliasTypeStrings::GenerateUserCPPCode(CNcbiOstream& /* out */) const
 
 void CAliasTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
-    if (DataType()->IsTypeAlias()) {
+    if (DataType() && DataType()->IsTypeAlias()) {
         m_Nested = true;
         GenerateCode(ctx);
         m_Nested = false;
@@ -631,7 +631,7 @@ void CAliasTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
 void CAliasTypeStrings::GeneratePointerTypeCode(CClassContext& ctx) const
 {
-    if (DataType()->IsTypeAlias()) {
+    if (DataType() && DataType()->IsTypeAlias()) {
         m_Nested = true;
         GenerateCode(ctx);
         m_Nested = false;
