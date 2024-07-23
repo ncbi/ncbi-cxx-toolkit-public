@@ -624,7 +624,7 @@ BIHM	s	Bihoro Museum
 BIL	s	Forest Research Institute, Natural Forest Department			
 BILAS	s	Institute of Botany			
 BIM	s	Birmingham Natural History and Microscopical Society			
-BIM<BLR>	c	Belarus National Academy of Sciences, Institute of microbiology			
+BIM<BLR>	c	Belarusian Collection of Non-pathogenis Microorganisms			
 BING	s	State University of New York, Biological Sciences Department			
 BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologia (Botanica)			
 BioCC	c	BioCC BioCen Culture Collection			
