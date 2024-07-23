@@ -37,10 +37,14 @@ trap "rm -f $timestamp_file" 0 1 2 15
 # Save current pid (need for RunID)
 echo $$ > check_exec.pid
 
-# Reinforce timeout
-# Note, we cannot set it to $timeout for MT-test, because
-# CPU time count for each thread and sum.
-ulimit -t `expr $timeout \* 25` > /dev/null 2>&1
+# Reinforce timeout.
+# Note, we cannot set it just to $timeout for MT-test, because  CPU time
+# count for each thread and sum, so using multiplier.
+# CPU limits seems broken on ARM Darwin, so set it very high to allow MT tests to works.
+case `uname -a` in
+   Darwin*arm64*) ulimit -t `expr $timeout \* 50` > /dev/null 2>&1 ;;
+   *)             ulimit -t `expr $timeout \* 3`  > /dev/null 2>&1 ;;
+esac
 
 # Use different kill on Unix and Cygwin
 case `uname -s` in
