@@ -48,7 +48,7 @@ trap "rm -f $tmp $timestamp_file" 0 1 2 15
 # count for each thread and sum, so using multiplier.
 # CPU limits seems broken on ARM Darwin, so set it very high to allow MT tests to works.
 case `uname -a` in
-   Darwin*arm64*) ulimit -t `expr $timeout \* 50` > /dev/null 2>&1 ;;
+   Darwin*arm64*) ulimit -t `expr $timeout \* 60` > /dev/null 2>&1 ;;
    *)             ulimit -t `expr $timeout \* 3`  > /dev/null 2>&1 ;;
 esac
 
