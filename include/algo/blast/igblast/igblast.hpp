@@ -438,10 +438,11 @@ public:
         x->GetNamedScore(CSeq_align::eScore_Score, sx);
         y->GetNamedScore(CSeq_align::eScore_Score, sy);
         
-        int reliable_J_match = reliable_J_match_factor*
+        int reliable_J_match = static_cast<int> (
+            reliable_J_match_factor *
             (scope->GetBioseqHandle(x->GetSeq_id(1)).GetBioseqLength() +
-             scope->GetBioseqHandle(y->GetSeq_id(1)).GetBioseqLength())/2;
-
+             scope->GetBioseqHandle(y->GetSeq_id(1)).GetBioseqLength())/2
+        );
         
         //if there are additional J genes, consider using the 5' one if conditions met.
         //this reflect the case where rearrangement is followed by downstream J's
