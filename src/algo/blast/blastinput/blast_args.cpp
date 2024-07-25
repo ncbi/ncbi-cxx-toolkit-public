@@ -682,10 +682,12 @@ CNuclArgs::ExtractAlgorithmOptions(const CArgs& cmd_line_args,
     }
 }
 
-const string CDiscontiguousMegablastArgs::kTemplType_Coding("coding");
-const string CDiscontiguousMegablastArgs::kTemplType_Optimal("optimal");
-const string
-CDiscontiguousMegablastArgs::kTemplType_CodingAndOptimal("coding_and_optimal");
+/// Value to specify coding template type
+const char* kTemplType_Coding  = "coding";
+/// Value to specify optimal template type
+const char* kTemplType_Optimal = "optimal";
+/// Value to specify coding+optimal template type
+const char* kTemplType_CodingAndOptimal = "coding_and_optimal";
 
 void
 CDiscontiguousMegablastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
@@ -1528,7 +1530,7 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
                     coeffs.push_back(NStr::StringToDouble(*it));
                 }
             }
-            catch (CException& e) {
+            catch (CException&) {
                 NCBI_THROW(CInputException, eInvalidInput,
                            (string)"Incorrectly formatted score function: " +
                            s + ". It should be of the form 'L,b,a' for ax + b,"
