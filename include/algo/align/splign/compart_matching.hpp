@@ -41,7 +41,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
-
+#include <corelib/ncbi_safe_static.hpp>
 
 
 BEGIN_SCOPE(objects)
@@ -108,7 +108,7 @@ protected:
 class NCBI_XALGOALIGN_EXPORT CBlastSequenceSource : public ISequenceSource
 {
 private:
-    virtual const vector<CSeq_id_Handle>& GetIds(void) const { return s_ids; } //never called
+    virtual const vector<CSeq_id_Handle>& GetIds(void) const { return s_ids.Get(); } //never called
     virtual CBioseq_Handle GetSequence(const CSeq_id_Handle&) { return CBioseq_Handle(); } // never called
 public:
 
@@ -133,7 +133,7 @@ public:
 
 protected:
     CRef<CSeqDB> m_seqdb;
-    static vector<CSeq_id_Handle> s_ids;
+    static CSafeStatic< vector<CSeq_id_Handle> > s_ids;
 };
 
 
