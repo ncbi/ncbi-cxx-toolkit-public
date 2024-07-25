@@ -383,13 +383,6 @@ public:
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
     virtual void ExtractAlgorithmOptions(const CArgs& cmd_line_args,
                                          CBlastOptions& options);
-
-    /// Value to specify coding template type
-    static const string kTemplType_Coding;
-    /// Value to specify optimal template type
-    static const string kTemplType_Optimal;
-    /// Value to specify coding+optimal template type
-    static const string kTemplType_CodingAndOptimal;
 };
 
 /** Argument class for collecting composition based statistics options */
