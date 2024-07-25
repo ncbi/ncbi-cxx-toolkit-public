@@ -44,7 +44,7 @@
 
 BEGIN_NCBI_SCOPE
 
-vector<CSeq_id_Handle> CBlastSequenceSource::s_ids;
+CSafeStatic< vector<CSeq_id_Handle> > CBlastSequenceSource::s_ids;
 
 
 namespace {
