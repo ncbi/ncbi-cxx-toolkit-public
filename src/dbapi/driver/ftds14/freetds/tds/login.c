@@ -326,7 +326,7 @@ tds_set_spid(TDSSOCKET * tds, TDSCOLUMN *curcol)
 }
 
 /**
- * Set ncharsize and unicharsize based on column data.
+ * Set ncharsize based on column data.
  * \tds
  * @param res_info  resultset to get data from.
  */
@@ -336,11 +336,26 @@ tds_set_nvc(TDSSOCKET * tds, TDSRESULTINFO *res_info)
 	int charsize;
 
 	/* Compute the ratios, put some acceptance in order to avoid issues. */
-	/* The "3" constant came from the query issued (NVARCHAR(3) and UNIVARCHAR(3)) */
+	/* The "3" constant came from the query issued (NVARCHAR(3)) */
 	charsize = res_info->columns[0]->on_server.column_size / 3;
 	if (charsize >= 1 && charsize <= 4)
 		tds->conn->ncharsize = (uint8_t) charsize;
-	charsize = res_info->columns[1]->on_server.column_size / 3;
+	return TDS_SUCCESS;
+}
+
+/**
+ * Set unicharsize based on column data.
+ * \tds
+ * @param res_info  resultset to get data from.
+ */
+static TDSRET
+tds_set_uvc(TDSSOCKET * tds, TDSRESULTINFO *res_info)
+{
+	int charsize;
+
+	/* Compute the ratios, put some acceptance in order to avoid issues. */
+	/* The "3" constant came from the query issued (UNIVARCHAR(3)) */
+	charsize = res_info->columns[0]->on_server.column_size / 3;
 	if (charsize >= 1 && charsize <= 4)
 		tds->conn->unicharsize = (uint8_t) charsize;
 	return TDS_SUCCESS;
@@ -357,6 +372,8 @@ tds_parse_login_results(TDSSOCKET * tds)
 	TDS_INT done_flags;
 	TDSRET rc;
 	TDSCOLUMN *curcol;
+	bool ignore_errors = false;
+	bool last_required = false;
 
 	CHECK_TDS_EXTRA(tds);
 
@@ -369,8 +386,12 @@ tds_parse_login_results(TDSSOCKET * tds)
 			curcol = tds->res_info->columns[0];
 			if (tds->res_info->num_cols == 1 && strcmp(tds_dstr_cstr(&curcol->column_name), "spid") == 0)
 				rc = tds_set_spid(tds, curcol);
-			if (tds->res_info->num_cols == 2 && strcmp(tds_dstr_cstr(&curcol->column_name), "nvc") == 0)
+			if (tds->res_info->num_cols == 1 && strcmp(tds_dstr_cstr(&curcol->column_name), "nvc") == 0) {
 				rc = tds_set_nvc(tds, tds->res_info);
+				last_required = true;
+			}
+			if (tds->res_info->num_cols == 1 && strcmp(tds_dstr_cstr(&curcol->column_name), "uvc") == 0)
+				rc = tds_set_uvc(tds, tds->res_info);
 			if (TDS_FAILED(rc))
 				return rc;
 			break;
@@ -378,8 +399,10 @@ tds_parse_login_results(TDSSOCKET * tds)
 		case TDS_DONE_RESULT:
 		case TDS_DONEPROC_RESULT:
 		case TDS_DONEINPROC_RESULT:
-			if ((done_flags & TDS_DONE_ERROR) != 0)
+			if ((done_flags & TDS_DONE_ERROR) != 0 && !ignore_errors)
 				return TDS_FAIL;
+			if (last_required)
+				ignore_errors = true;
 			break;
 		}
 	}
@@ -403,10 +426,10 @@ tds_setup_connection(TDSSOCKET *tds, TDSLOGIN *login, bool set_db, bool set_spid
 
 	str[0] = 0;
 	if (login->text_size) {
-		sprintf(str, "SET TEXTSIZE %d ", login->text_size);
+		sprintf(str, "SET TEXTSIZE %d\n", login->text_size);
 	}
 	if (set_spid && tds->conn->spid == -1) {
-		strcat(str, "SELECT @@spid AS spid ");
+		strcat(str, "SELECT @@spid spid\n");
 		parse_results = true;
 	}
 	/* Select proper database if specified.
@@ -416,12 +439,15 @@ tds_setup_connection(TDSSOCKET *tds, TDSLOGIN *login, bool set_db, bool set_spid
 	    (tds->conn->product_name == NULL || strcasecmp(tds->conn->product_name, "SQL Anywhere") != 0)) {
 		strcat(str, "USE ");
 		tds_quote_id(tds, strchr(str, 0), tds_dstr_cstr(&login->database), -1);
+		strcat(str, "\n");
 	}
         if (IS_TDS50(tds->conn)
             &&  (tds->conn->product_name == NULL
                  ||  strcasecmp(tds->conn->product_name, "OpenServer") != 0)) {
-		strcat(str, " SELECT CAST('abc' AS NVARCHAR(3)) AS nvc, CAST('xyz' AS UNIVARCHAR(3)) AS uvc");
+		strcat(str, "SELECT CONVERT(NVARCHAR(3), 'abc') nvc\n");
 		parse_results = true;
+		if (tds->conn->product_version >= TDS_SYB_VER(12, 0, 0))
+			strcat(str, "EXECUTE ('SELECT CONVERT(UNIVARCHAR(3), ''xyz'') uvc')\n");
 	}
 
 	/* nothing to set, just return */

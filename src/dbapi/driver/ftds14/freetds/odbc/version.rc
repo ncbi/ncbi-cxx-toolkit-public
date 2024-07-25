@@ -6,8 +6,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,4,12,458
- PRODUCTVERSION 1,4,12,458
+ FILEVERSION 1,4,22,572
+ PRODUCTVERSION 1,4,22,572
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -25,14 +25,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "FreeTDS.org\0"
             VALUE "FileDescription", "FreeTDS\0"
-            VALUE "FileVersion", "1, 4, 12, 458\0"
+            VALUE "FileVersion", "1, 4, 22, 572\0"
             VALUE "InternalName", "FreeTDS\0"
             VALUE "LegalCopyright", "Copyright © 2004-2015 under terms of GNU LGPL\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "FreeTDS.dll\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "FreeTDS ODBC Driver\0"
-            VALUE "ProductVersion", "1, 4, 12, 458\0"
+            VALUE "ProductVersion", "1, 4, 22, 572\0"
             VALUE "SpecialBuild", "\0"
         END
     END
