@@ -42,6 +42,7 @@ echo $$ > check_exec.pid
 # count for each thread and sum, so using multiplier.
 # CPU limits seems broken on ARM Darwin, so set it very high to allow MT tests to works.
 case `uname -a` in
+   CYGWIN* )      ;;
    Darwin*arm64*) ulimit -t `expr $timeout \* 60` > /dev/null 2>&1 ;;
    *)             ulimit -t `expr $timeout \* 3`  > /dev/null 2>&1 ;;
 esac
