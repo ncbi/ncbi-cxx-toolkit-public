@@ -294,9 +294,9 @@ void TestCds(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, loc_partial5, loc_partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -338,9 +338,9 @@ void TestCdsWithCodeBreak(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, false, false);
     CRef<CSeq_loc> subloc = CreateLoc(3, 5, id1, subloc_partial5, subloc_partial3);
@@ -380,9 +380,9 @@ void TestCdsFromLastBioseq(bool loc_partial5, bool loc_partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, loc_partial5, loc_partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -422,9 +422,7 @@ void TestCdsFromLastBioseqWithCodeBreak()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, false, false);
     CRef<CSeq_loc> subloc = CreateLoc(3, 5, id3, false, false);
@@ -464,9 +462,9 @@ void TestTrnaAnticodon(bool subloc_partial5, bool subloc_partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id1, false, false);
     CRef<CSeq_loc> subloc = CreateLoc(3, 5, id1, subloc_partial5, subloc_partial3);
@@ -506,9 +504,7 @@ void TestTrnaAnticodonFromLastBioseq()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 15, id3, false, false);
     CRef<CSeq_loc> subloc = CreateLoc(3, 5, id3, false, false);
@@ -548,9 +544,7 @@ void TestCdsFromLastBioseqOutsideAlign()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(0, 5, id3, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -576,9 +570,8 @@ void TestTwoIntCdsFromLastBioseqOutsideAlign()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(0, 5, 20, 30, eNa_strand_plus, id3, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -609,9 +602,8 @@ void TestTwoIntCdsOnMinusStrand()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(20, 30, 5, 15, eNa_strand_minus, id3, true, true);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -638,9 +630,8 @@ void TestPartialWhenCutStop(bool partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 40, eNa_strand_plus, id1, false, partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -686,9 +677,8 @@ void TestPartialWhenCutLastInterval(bool partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 40, 50, eNa_strand_plus, id1, false, partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -734,9 +724,8 @@ void TestPartialWhenCutStart(bool partial5)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 25, eNa_strand_plus, id1, partial5, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -771,9 +760,8 @@ void TestFuseAbuttingIntervals()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 12, 17, 25, eNa_strand_plus, id1, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -817,9 +805,8 @@ void TestDoNotFuseAbuttingIntervals()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 12, 17, 25, eNa_strand_plus, id1, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -862,9 +849,8 @@ void TestExtendOverGap()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(5, 25, id1, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -907,9 +893,8 @@ void TestDoNotExtendOverGap()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateLoc(5, 25, id2, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq2);
@@ -953,9 +938,8 @@ void TestOrderedLoc()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateOrderedLoc(5, 15, 20, 30, eNa_strand_plus, id3, true, true);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -985,9 +969,8 @@ void TestCircularTopology()
     seq2->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     seq3->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(50, 59, 0, 5, eNa_strand_plus, id1, false, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -1033,9 +1016,8 @@ void TestPointLocInside()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreatePointLoc(15, id3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -1063,9 +1045,7 @@ void TestPointLocOutside()
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id3 = *seq3->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreatePointLoc(5, id3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq3);
@@ -1091,9 +1071,8 @@ void TestPartialWhenCutStopDoNotExtend(bool partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 40, eNa_strand_plus, id1, false, partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -1128,9 +1107,8 @@ void TestPartialWhenCutLastIntervalDoNotExtend(bool partial3)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 40, 50, eNa_strand_plus, id1, false, partial3);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
@@ -1166,9 +1144,8 @@ void TestPartialWhenCutStartDoNotExtend(bool partial5)
     CRef<CSeq_entry> entry, seq1, seq2, seq3;
     tie(entry, align, seq1, seq2, seq3) = CreateBioseqsAndAlign(front_insert);
 
-    const CSeq_id &id1 = *seq1->GetSeq().GetId().front();
-    const CSeq_id &id2 = *seq2->GetSeq().GetId().front();
-    const CSeq_id &id3 = *seq3->GetSeq().GetId().front();
+    const CSeq_id& id1 = *seq1->GetSeq().GetId().front();
+    const CSeq_id& id2 = *seq2->GetSeq().GetId().front();
 
     CRef<CSeq_loc> main_loc = CreateTwoIntLoc(5, 15, 20, 25, eNa_strand_plus, id1, partial5, false);
     CRef<CSeq_feat> cds = CreateCds(main_loc, seq1);
