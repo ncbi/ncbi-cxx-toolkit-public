@@ -43,6 +43,7 @@ Contents: Interface for k-mer counting
 #include <algo/cobalt/base.hpp>
 #include <algo/cobalt/links.hpp>
 #include <algo/blast/core/blast_encoding.h>
+#include <corelib/ncbi_safe_static.hpp>
 #include <vector>
 #include <stack>
 
@@ -151,7 +152,7 @@ public:
     /// Set default compressed alphabet letter translation table
     /// @return Reference to translation table [in|out]
     ///
-    static vector<Uint1>& SetTransTable(void) {return sm_TransTable;}
+    static vector<Uint1>& SetTransTable(void) {return sm_TransTable.Get();}
 
     /// Set default option for using compressed alphabet
     /// @param use_comp Will compressed alphabet be used [in]
@@ -214,8 +215,8 @@ private:
 
     static Uint4 GetAALetter(Uint1 letter)
     {
-        _ASSERT(!sm_UseCompressed || letter < sm_TransTable.size());
-        return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);
+        _ASSERT(!sm_UseCompressed || letter < sm_TransTable->size());
+        return (Uint4)(sm_UseCompressed ? (sm_TransTable.Get())[(int)letter] : letter);
     }
 
     /// Initializes element index as bit vector for first k letters, 
@@ -240,7 +241,7 @@ protected:
     unsigned int m_NumCounts;
     static unsigned int sm_KmerLength;
     static unsigned int sm_AlphabetSize;
-    static vector<Uint1> sm_TransTable;
+    static CSafeStatic< vector<Uint1> > sm_TransTable;
     static bool sm_UseCompressed;
     static TCount* sm_Buffer;
     static bool sm_ForceSmallerMem;
@@ -308,7 +309,7 @@ public:
     /// Set default compressed alphabet letter translation table
     /// @return Reference to translation table [in|out]
     ///
-    static vector<Uint1>& SetTransTable(void) {return sm_TransTable;}
+    static vector<Uint1>& SetTransTable(void) {return sm_TransTable.Get();}
 
     /// Set default option for using compressed alphabet
     /// @param use_comp Will compressed alphabet be used [in]
@@ -368,8 +369,8 @@ public:
 protected:
     static Uint4 GetAALetter(Uint1 letter)
     {
-        _ASSERT(!sm_UseCompressed || letter < sm_TransTable.size());
-        return (Uint4)(sm_UseCompressed ? sm_TransTable[(int)letter] : letter);
+        _ASSERT(!sm_UseCompressed || letter < sm_TransTable->size());
+        return (Uint4)(sm_UseCompressed ? (sm_TransTable.Get())[(int)letter] : letter);
     }
 
     /// Get number of set bits (adapted
@@ -395,7 +396,7 @@ protected:
     Uint4 m_NumCounts;
     static unsigned int sm_KmerLength;
     static unsigned int sm_AlphabetSize;
-    static vector<Uint1> sm_TransTable;
+    static CSafeStatic< vector<Uint1> > sm_TransTable;
     static bool sm_UseCompressed;
 };
 
