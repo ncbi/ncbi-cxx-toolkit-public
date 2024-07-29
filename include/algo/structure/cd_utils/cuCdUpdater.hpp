@@ -46,6 +46,7 @@
 #include "objects/entrez2/entrez2_client.hpp"
 #include <algo/structure/cd_utils/cuBlock.hpp>
 #include <algo/structure/cd_utils/cuSequenceTable.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -111,7 +112,7 @@ public:
 	static void removeUpdaters(const vector<UpdaterInterface*>& updaters);
 
 private:
-	static list<UpdaterInterface*> m_updaterList;
+	static CSafeStatic< list<UpdaterInterface*> > m_updaterList;
 };
 
 class GroupUpdater;

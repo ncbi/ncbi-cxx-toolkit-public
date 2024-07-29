@@ -150,29 +150,29 @@ string CDUpdateStats::toString(vector<OldNewGiPair>& giPairs, string type)
 /*                     UpdaterInterface                                                   */
 /*---------------------------------------------------------------------------------*/
 
-list<UpdaterInterface*> UpdaterInterface::m_updaterList;
+CSafeStatic< list<UpdaterInterface*> > UpdaterInterface::m_updaterList;
 
 void UpdaterInterface::addUpdater(UpdaterInterface* updater)
 {
-	m_updaterList.push_back(updater);
+	m_updaterList->push_back(updater);
 }
 
 bool UpdaterInterface::IsEmpty()
 {
-	return m_updaterList.empty();
+	return m_updaterList->empty();
 }
 
 void UpdaterInterface::removeUpdaters(const vector<CCdCore*>& cds)
 {
 	for (unsigned int i = 0; i < cds.size(); i++)
 	{
-		for (list<UpdaterInterface*>::iterator lit = m_updaterList.begin();
-			lit != m_updaterList.end(); lit++)
+		for (list<UpdaterInterface*>::iterator lit = m_updaterList->begin();
+			lit != m_updaterList->end(); lit++)
 		{
 			if ((*lit)->hasCd(cds[i]))
 			{
 				UpdaterInterface* cup = *lit;
-				m_updaterList.erase(lit);
+				m_updaterList->erase(lit);
 				if (cup)
 				{
 					//cup->getCd()->ClearUpdateInfo();
@@ -188,13 +188,13 @@ void UpdaterInterface::removeUpdaters(const vector<UpdaterInterface*>& updaters)
 {
 	for (unsigned int i = 0; i < updaters.size(); i++)
 	{
-		for (list<UpdaterInterface*>::iterator lit = m_updaterList.begin();
-			lit != m_updaterList.end(); lit++)
+		for (list<UpdaterInterface*>::iterator lit = m_updaterList->begin();
+			lit != m_updaterList->end(); lit++)
 		{
 			if ((*lit) == updaters[i])
 			{
 				UpdaterInterface* cup = *lit;
-				m_updaterList.erase(lit);
+				m_updaterList->erase(lit);
 				if (cup)
 				{
 					//cup->getCd()->ClearUpdateInfo();
@@ -208,8 +208,8 @@ void UpdaterInterface::removeUpdaters(const vector<UpdaterInterface*>& updaters)
 
 int UpdaterInterface::checkAllBlasts(vector<UpdaterInterface*>& blasted)
 {
-	list<UpdaterInterface*>::iterator lit = m_updaterList.begin();
-	while(lit != m_updaterList.end())
+	list<UpdaterInterface*>::iterator lit = m_updaterList->begin();
+	while(lit != m_updaterList->end())
 	{
 		UpdaterInterface* updater = *lit;
 		if(updater->getBlastHits())
