@@ -717,15 +717,15 @@ protected:
 
 public:
     /// Node feature "node-info" value for query nodes
-    static const string kNodeInfoQuery;
+    static const char* kNodeInfoQuery;
 
     /// Node feature "node-info" value for sequences from type
-    static const string kNodeInfoSeqFromType;
+    static const char* kNodeInfoSeqFromType;
 
-    static const string kNodeInfoSeqFromVerifiedMat;                        
+    static const char* kNodeInfoSeqFromVerifiedMat;
 
-    static const string kNodeInfoSeqReferenceDB;
-    static const string kNodeInfoSeqKmerBlast;
+    static const char* kNodeInfoSeqReferenceDB;
+    static const char* kNodeInfoSeqKmerBlast;
 };
 
 

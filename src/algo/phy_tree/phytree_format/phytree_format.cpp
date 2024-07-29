@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/blastdb/defline_extra.hpp>
@@ -46,38 +47,37 @@ USING_SCOPE(objects);
 
 
 // query node colors
-static const string s_kQueryNodeColor = "255 0 0";
-static const string s_kQueryNodeBgColor = "255 255 0";
-static const string s_kSeqOfTypeNodeBgColor = "204 255 204";
-static const string s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
+static const char* s_kQueryNodeColor = "255 0 0";
+static const char* s_kQueryNodeBgColor = "255 255 0";
+static const char* s_kSeqOfTypeNodeBgColor = "204 255 204";
+static const char* s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
 
-static const string s_kSeqQueryNodeBgColor = " 255 200 87";
-static const string s_kSeqReferenceDBNodeBgColor = "114 168 101";
-static const string s_kSeqKmerBlastNodeBgColor = "83 149 208";
-static const string s_kBranchColor = "0 0 0 ";
+static const char* s_kSeqQueryNodeBgColor = " 255 200 87";
+static const char* s_kSeqReferenceDBNodeBgColor = "114 168 101";
+static const char* s_kSeqKmerBlastNodeBgColor = "83 149 208";
+static const char* s_kBranchColor = "0 0 0 ";
 
-
-map<int,string> linkotTypeToBGColor;
-map<int,string> seqTypeToBGColor;
+static CSafeStatic< map<int,string> > linkotTypeToBGColor;
+static CSafeStatic< map<int,string> > seqTypeToBGColor;
 
 // tree leaf label for unknown taxonomy
-static const string s_kUnknown = "unknown";
+static const char* s_kUnknown = "unknown";
 
 // initial value for collapsed subtree feature
-static const string s_kSubtreeDisplayed = "0";
-static const string s_kNodeSize = "0";
+static const char* s_kSubtreeDisplayed = "0";
+static const char* s_kNodeSize = "0";
 
 // feature value for query nodes
-const string CPhyTreeFormatter::kNodeInfoQuery = "query";
+const char* CPhyTreeFormatter::kNodeInfoQuery = "query";
 
 // feature value for sequences from type
-const string CPhyTreeFormatter::kNodeInfoSeqFromType = "sequence_from_type";
+const char* CPhyTreeFormatter::kNodeInfoSeqFromType = "sequence_from_type";
 
-const string CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat = "sequence_from_verified_material";
+const char* CPhyTreeFormatter::kNodeInfoSeqFromVerifiedMat = "sequence_from_verified_material";
 
-const string CPhyTreeFormatter::kNodeInfoSeqReferenceDB = "sequence_reference_db";
+const char* CPhyTreeFormatter::kNodeInfoSeqReferenceDB = "sequence_reference_db";
 
-const string CPhyTreeFormatter::kNodeInfoSeqKmerBlast = "sequence_KmerBlast";
+const char* CPhyTreeFormatter::kNodeInfoSeqKmerBlast = "sequence_KmerBlast";
 
 
 
@@ -532,10 +532,10 @@ bool CPhyTreeFormatter::IsSingleBlastName(void)
 
 void CPhyTreeFormatter::x_Init(void)
 {
-    linkotTypeToBGColor[eFromType] = s_kSeqOfTypeNodeBgColor;    
-    linkotTypeToBGColor[eFromVerifiedMaterial] = s_kSeqFromVerifiedMatNodeBgColor;    
-    seqTypeToBGColor[eSeqTypeReferenceDB] = s_kSeqReferenceDBNodeBgColor;    
-    seqTypeToBGColor[eSeqTypeKmerBlast] = s_kSeqKmerBlastNodeBgColor;    
+    (linkotTypeToBGColor.Get())[eFromType] = s_kSeqOfTypeNodeBgColor;    
+    (linkotTypeToBGColor.Get())[eFromVerifiedMaterial] = s_kSeqFromVerifiedMatNodeBgColor;    
+    (seqTypeToBGColor.Get())[eSeqTypeReferenceDB] = s_kSeqReferenceDBNodeBgColor;    
+    (seqTypeToBGColor.Get())[eSeqTypeKmerBlast] = s_kSeqKmerBlastNodeBgColor;    
 
     m_SimplifyMode = eNone;
     m_LinkoutDB = NULL;
@@ -1152,11 +1152,11 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         int seqLinkout = linkoutDB->GetLinkout(*seqids[seq_number],"");
                         string nodeInfo,bgColor;
                         if(seqLinkout & eFromType) {
-                            bgColor = linkotTypeToBGColor[eFromType];
+                            bgColor = (linkotTypeToBGColor.Get())[eFromType];
                             nodeInfo = kNodeInfoSeqFromType;
                         }
                         else if(seqLinkout & eFromVerifiedMaterial) {                            
-                            bgColor = linkotTypeToBGColor[eFromVerifiedMaterial];
+                            bgColor = (linkotTypeToBGColor.Get())[eFromVerifiedMaterial];
                             nodeInfo = kNodeInfoSeqFromVerifiedMat;
                         }
                         // color for "linkout" node                        
@@ -1169,11 +1169,11 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         int seqType = x_FindSeqType(seqTypeMap,id_string);
                         string nodeInfo,bgColor;
                         if(seqType == eSeqTypeReferenceDB) {
-                            bgColor = seqTypeToBGColor[eSeqTypeReferenceDB];
+                            bgColor = (seqTypeToBGColor.Get())[eSeqTypeReferenceDB];
                             nodeInfo = kNodeInfoSeqReferenceDB;
                         }
                         else if(seqType == eSeqTypeKmerBlast) {
-                            bgColor = seqTypeToBGColor[eSeqTypeKmerBlast];
+                            bgColor = (seqTypeToBGColor.Get())[eSeqTypeKmerBlast];
                             nodeInfo = kNodeInfoSeqKmerBlast;
                         }                        
                         //color for ReferenceDB KmerBlast
