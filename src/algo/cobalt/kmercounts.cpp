@@ -53,14 +53,14 @@ USING_SCOPE(cobalt);
 // Default values for default params
 unsigned int CSparseKmerCounts::sm_KmerLength = 4;
 unsigned int CSparseKmerCounts::sm_AlphabetSize = kAlphabetSize;
-vector<Uint1> CSparseKmerCounts::sm_TransTable;
+CSafeStatic< vector<Uint1> > CSparseKmerCounts::sm_TransTable;
 bool CSparseKmerCounts::sm_UseCompressed = false;
 CSparseKmerCounts::TCount* CSparseKmerCounts::sm_Buffer = NULL;
 bool CSparseKmerCounts::sm_ForceSmallerMem = false;
 
 unsigned int CBinaryKmerCounts::sm_KmerLength = 3;
 unsigned int CBinaryKmerCounts::sm_AlphabetSize = kAlphabetSize;
-vector<Uint1> CBinaryKmerCounts::sm_TransTable;
+CSafeStatic< vector<Uint1> > CBinaryKmerCounts::sm_TransTable;
 bool CBinaryKmerCounts::sm_UseCompressed = false;
 
 static const Uint1 kXaa = 21;
@@ -162,7 +162,7 @@ void CSparseKmerCounts::Reset(const objects::CSeq_loc& seq,
 
     _ASSERT(kmer_len > 0 && alphabet_size > 0);
 
-    if (sm_UseCompressed && sm_TransTable.empty()) {
+    if (sm_UseCompressed && sm_TransTable->empty()) {
         NCBI_THROW(CKmerCountsException, eInvalidOptions,
                    "Compressed alphabet selected, but translation table not"
                    " specified");
@@ -505,7 +505,7 @@ void CBinaryKmerCounts::Reset(const objects::CSeq_loc& seq,
 
     _ASSERT(kmer_len > 0 && alphabet_size > 0);
 
-    if (sm_UseCompressed && sm_TransTable.empty()) {
+    if (sm_UseCompressed && sm_TransTable->empty()) {
         NCBI_THROW(CKmerCountsException, eInvalidOptions,
                    "Compressed alphabet selected, but translation table not"
                    " specified");
