@@ -229,12 +229,12 @@ NCBIcomponent_report(PubSeqOS)
 #############################################################################
 # FreeTDS
 if(NOT NCBI_COMPONENT_FreeTDS_DISABLED
-        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds100
-        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
+        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds14
+        AND EXISTS ${NCBITK_INC_ROOT}/dbapi/driver/ftds14/freetds)
     set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
     set(HAVE_LIBFTDS 1)
-    set(FTDS100_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds100 ${NCBITK_INC_ROOT}/dbapi/driver/ftds100/freetds)
-    set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS100_INCLUDE})
+    set(FTDS14_INCLUDE ${NCBITK_INC_ROOT}/dbapi/driver/ftds14 ${NCBITK_INC_ROOT}/dbapi/driver/ftds14/freetds)
+    set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS14_INCLUDE})
 endif()
 NCBIcomponent_report(FreeTDS)
 
