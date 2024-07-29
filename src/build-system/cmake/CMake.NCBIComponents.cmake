@@ -243,7 +243,7 @@ set(NCBI_COMPONENT_Boost.Test.Included_NCBILIB test_boost)
 set(NCBI_COMPONENT_SQLITE3_NCBILIB sqlitewrapp)
 set(NCBI_COMPONENT_Sybase_NCBILIB  ncbi_xdbapi_ctlib)
 set(NCBI_COMPONENT_ODBC_NCBILIB    ncbi_xdbapi_odbc)
-set(NCBI_COMPONENT_FreeTDS_NCBILIB ct_ftds100 ncbi_xdbapi_ftds)
+set(NCBI_COMPONENT_FreeTDS_NCBILIB ct_ftds14 ncbi_xdbapi_ftds)
 set(NCBI_COMPONENT_connext_NCBILIB xconnext)
 
 #############################################################################
