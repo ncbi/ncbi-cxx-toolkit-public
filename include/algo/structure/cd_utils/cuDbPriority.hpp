@@ -40,6 +40,7 @@
 #include <map>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
@@ -147,14 +148,13 @@ public:
 
 private:
 
-    static TSourcePriorityMap m_sourcePriorityMap;
-    static TSourceNameMap  m_sourceNameMap;
-    static TNameSourceMap  m_nameSourceMap;
+    static CSafeStatic<TSourcePriorityMap> m_sourcePriorityMap;
+    static CSafeStatic<TSourceNameMap>     m_sourceNameMap;
+    static CSafeStatic<TNameSourceMap>     m_nameSourceMap;
 
     static void Initialize();
     static EDbSource GetSourceCode(string dbSource);
     static EDbSource SeqIdTypeToSourceCode(unsigned int seqIdType, string accession = kEmptyStr);
-
 };
 
 
