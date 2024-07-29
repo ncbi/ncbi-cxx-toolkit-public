@@ -41,102 +41,106 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-CCdDbPriority::TSourcePriorityMap CCdDbPriority::m_sourcePriorityMap;
-CCdDbPriority::TSourceNameMap  CCdDbPriority::m_sourceNameMap;
-CCdDbPriority::TNameSourceMap  CCdDbPriority::m_nameSourceMap;
+CSafeStatic<CCdDbPriority::TSourcePriorityMap> CCdDbPriority::m_sourcePriorityMap;
+CSafeStatic< CCdDbPriority::TSourceNameMap>    CCdDbPriority::m_sourceNameMap;
+CSafeStatic< CCdDbPriority::TNameSourceMap>    CCdDbPriority::m_nameSourceMap;
 
 void CCdDbPriority::Initialize() 
 {
 
     //  Priority assignments
-    if (m_sourcePriorityMap.size() == 0) {
+    if (m_sourcePriorityMap->size() == 0) {
+
+        auto& m_ = m_sourcePriorityMap.Get();
 
         //  Top Tier
-        m_sourcePriorityMap[eDPPdb] = eTopTier;
+        m_[eDPPdb] = eTopTier;
 
         //  Tier 1
-        m_sourcePriorityMap[eDPSwissprot] = eTier1;
+        m_[eDPSwissprot] = eTier1;
 
         //  Tier 2
-        m_sourcePriorityMap[eDPGenbank] = eTier2;
-        m_sourcePriorityMap[eDPEmbl] = eTier2;
-        m_sourcePriorityMap[eDPDdbj] = eTier2;
-        m_sourcePriorityMap[eDPPrf] = eTier2;
-        m_sourcePriorityMap[eDPPir] = eTier2;
-        m_sourcePriorityMap[eDPRefSeqCurated] = eTier2;
-        m_sourcePriorityMap[eDPRefSeqNP] = eTier2;
-        m_sourcePriorityMap[eDPRefSeqAP] = eTier2;
+        m_[eDPGenbank] = eTier2;
+        m_[eDPEmbl] = eTier2;
+        m_[eDPDdbj] = eTier2;
+        m_[eDPPrf] = eTier2;
+        m_[eDPPir] = eTier2;
+        m_[eDPRefSeqCurated] = eTier2;
+        m_[eDPRefSeqNP] = eTier2;
+        m_[eDPRefSeqAP] = eTier2;
 
         //  Tier 3
-        m_sourcePriorityMap[eDPRefSeqAny] = eTier3;   // undifferentiated Refseq considered to be curated
-        m_sourcePriorityMap[eDPRefSeqAutomated] = eTier3;
-        m_sourcePriorityMap[eDPRefSeqXP] = eTier3;
-        m_sourcePriorityMap[eDPRefSeqYP] = eTier3;
-        m_sourcePriorityMap[eDPRefSeqWP] = eTier3;
-        m_sourcePriorityMap[eDPLocal] = eTier3;
-        m_sourcePriorityMap[eDPGibbsq] = eTier3;
-        m_sourcePriorityMap[eDPGibbmt] = eTier3;
-        m_sourcePriorityMap[eDPGiim] = eTier3;
-        m_sourcePriorityMap[eDPPatent] = eTier3;
-        m_sourcePriorityMap[eDPTPGenbank] = eTier3;
-        m_sourcePriorityMap[eDPTPEmbl] = eTier3;
-        m_sourcePriorityMap[eDPTPDdbj] = eTier3;
-        m_sourcePriorityMap[eDPGpipe] = eTier3;
-        m_sourcePriorityMap[eDPGeneral] = eTier3;
-        m_sourcePriorityMap[eDPUnsupported] = eTier3;   //  not unknown, but may not know what to do w/ it
+        m_[eDPRefSeqAny] = eTier3;   // undifferentiated Refseq considered to be curated
+        m_[eDPRefSeqAutomated] = eTier3;
+        m_[eDPRefSeqXP] = eTier3;
+        m_[eDPRefSeqYP] = eTier3;
+        m_[eDPRefSeqWP] = eTier3;
+        m_[eDPLocal] = eTier3;
+        m_[eDPGibbsq] = eTier3;
+        m_[eDPGibbmt] = eTier3;
+        m_[eDPGiim] = eTier3;
+        m_[eDPPatent] = eTier3;
+        m_[eDPTPGenbank] = eTier3;
+        m_[eDPTPEmbl] = eTier3;
+        m_[eDPTPDdbj] = eTier3;
+        m_[eDPGpipe] = eTier3;
+        m_[eDPGeneral] = eTier3;
+        m_[eDPUnsupported] = eTier3;   //  not unknown, but may not know what to do w/ it
 
         //  Tier 4 
-        m_sourcePriorityMap[eDPRefSeqZP] = eTier4;   //  ZP sequences obsoleted as of May 2013
+        m_[eDPRefSeqZP] = eTier4;   //  ZP sequences obsoleted as of May 2013
 
         //  Bottom Tier
-        m_sourcePriorityMap[eDPGi] = eBottomTier;   //  this is here since this doesn't specify a database source
-        m_sourcePriorityMap[eDPUnknown] = eBottomTier;
+        m_[eDPGi] = eBottomTier;   //  this is here since this doesn't specify a database source
+        m_[eDPUnknown] = eBottomTier;
     }
 
 
-    if (m_nameSourceMap.size() == 0) {
+    if (m_nameSourceMap->size() == 0) {
 
-        m_nameSourceMap["gi"] = eDPGi;
-        m_nameSourceMap["pdb"] = eDPPdb;
-        m_nameSourceMap["swissprot"] = eDPSwissprot;
-        m_nameSourceMap["genbank"] = eDPGenbank;
-        m_nameSourceMap["embl"] = eDPEmbl;
-        m_nameSourceMap["ddbj"] = eDPDdbj;
-        m_nameSourceMap["prf"] = eDPPrf;
-        m_nameSourceMap["pir"] = eDPPir;
-        m_nameSourceMap["refseq"] = eDPRefSeqAny;
-        m_nameSourceMap["curated refseq"] = eDPRefSeqCurated;
-        m_nameSourceMap["refseq: curated"] = eDPRefSeqNP;
-        m_nameSourceMap["refseq: alternate"] = eDPRefSeqAP;
-        m_nameSourceMap["automated refseq"] = eDPRefSeqAutomated;
-        m_nameSourceMap["refseq: automated"] = eDPRefSeqXP;
-        m_nameSourceMap["refseq: automated/no transcript"] = eDPRefSeqYP;
-        m_nameSourceMap["refseq: automated/shotgun"] = eDPRefSeqWP;
-        m_nameSourceMap["refseq: automated/shotgun [obsolete]"] = eDPRefSeqZP;
-        m_nameSourceMap["local"] = eDPLocal;
-        m_nameSourceMap["gibbsq"] = eDPGibbsq;
-        m_nameSourceMap["gibbmt"] = eDPGibbmt;
-        m_nameSourceMap["giim"] = eDPGiim;
-        m_nameSourceMap["patent"] = eDPPatent;
-        m_nameSourceMap["thirdpartyGenbank"] = eDPTPGenbank;
-        m_nameSourceMap["thirdpartyEmbl"] = eDPTPEmbl;
-        m_nameSourceMap["thirdpartyDdbj"] = eDPTPDdbj;
-        m_nameSourceMap["gpipe"] = eDPGpipe;
+        auto& m_ = m_nameSourceMap.Get();
+
+        m_["gi"] = eDPGi;
+        m_["pdb"] = eDPPdb;
+        m_["swissprot"] = eDPSwissprot;
+        m_["genbank"] = eDPGenbank;
+        m_["embl"] = eDPEmbl;
+        m_["ddbj"] = eDPDdbj;
+        m_["prf"] = eDPPrf;
+        m_["pir"] = eDPPir;
+        m_["refseq"] = eDPRefSeqAny;
+        m_["curated refseq"] = eDPRefSeqCurated;
+        m_["refseq: curated"] = eDPRefSeqNP;
+        m_["refseq: alternate"] = eDPRefSeqAP;
+        m_["automated refseq"] = eDPRefSeqAutomated;
+        m_["refseq: automated"] = eDPRefSeqXP;
+        m_["refseq: automated/no transcript"] = eDPRefSeqYP;
+        m_["refseq: automated/shotgun"] = eDPRefSeqWP;
+        m_["refseq: automated/shotgun [obsolete]"] = eDPRefSeqZP;
+        m_["local"] = eDPLocal;
+        m_["gibbsq"] = eDPGibbsq;
+        m_["gibbmt"] = eDPGibbmt;
+        m_["giim"] = eDPGiim;
+        m_["patent"] = eDPPatent;
+        m_["thirdpartyGenbank"] = eDPTPGenbank;
+        m_["thirdpartyEmbl"] = eDPTPEmbl;
+        m_["thirdpartyDdbj"] = eDPTPDdbj;
+        m_["gpipe"] = eDPGpipe;
 
         //  Not sure what these will be a priori; will have to supplement this....
-        m_nameSourceMap["general"] = eDPGeneral;
+        m_["general"] = eDPGeneral;
 
         //  May want to move some of the above here vs. giving them their own 'source'.
-        m_nameSourceMap["unsupported"]         = eDPUnsupported;
+        m_["unsupported"]         = eDPUnsupported;
 
         //  Flags unexpected conditions...
-        m_nameSourceMap["unknown"] = eDPUnknown;
+        m_["unknown"] = eDPUnknown;
     }
 
     //  Use the above values to fill in the multi-map.
-    if (m_sourceNameMap.size() == 0) {
-        for (TNameSourceMap::iterator it = m_nameSourceMap.begin(); it != m_nameSourceMap.end(); ++it) {
-            m_sourceNameMap.insert(TSourceNameVT(it->second, it->first));
+    if (m_sourceNameMap->size() == 0) {
+        for (TNameSourceMap::iterator it = m_nameSourceMap->begin(); it != m_nameSourceMap->end(); ++it) {
+            m_sourceNameMap->insert(TSourceNameVT(it->second, it->first));
         }
     }
 }
@@ -263,8 +267,8 @@ string CCdDbPriority::SeqIdTypeToSource(unsigned int seqIdType, string accession
 CCdDbPriority::TDbPriority CCdDbPriority::SeqIdTypeToPriority(unsigned int seqIdType, string accession)
 {
     EDbSource s = SeqIdTypeToSourceCode(seqIdType, accession);
-    TSourcePriorityIt pit = m_sourcePriorityMap.find(s);    
-    return (pit != m_sourcePriorityMap.end() ? pit->second : eBottomTier);
+    TSourcePriorityIt pit = m_sourcePriorityMap->find(s);    
+    return (pit != m_sourcePriorityMap->end() ? pit->second : eBottomTier);
 }
 
 string CCdDbPriority::GetSourceName(EDbSource priority)
@@ -272,13 +276,13 @@ string CCdDbPriority::GetSourceName(EDbSource priority)
     Initialize();
 
     string name = "unknown";
-    TSourceNameMap::iterator it = m_sourceNameMap.find(priority);
+    TSourceNameMap::iterator it = m_sourceNameMap->find(priority);
 
-    if (it != m_sourceNameMap.end()) {
+    if (it != m_sourceNameMap->end()) {
         name = it->second;
     } else {
-        it = m_sourceNameMap.find(eDPUnknown);
-        if (it != m_sourceNameMap.end()) name = it->second;
+        it = m_sourceNameMap->find(eDPUnknown);
+        if (it != m_sourceNameMap->end()) name = it->second;
     }
     return name;  
 }
@@ -290,18 +294,18 @@ unsigned int CCdDbPriority::GetSourceNames(EDbSource priority, vector<string>& n
 
     TSourceNameMap::iterator it;
     typedef pair<TSourceNameMap::iterator, TSourceNameMap::iterator> TPair;
-    TPair p = m_sourceNameMap.equal_range(priority);
+    TPair p = m_sourceNameMap->equal_range(priority);
 
     for (it = p.first; it != p.second; ++it) {
         names.push_back(it->second);
     }
-    return names.size();
+    return static_cast<unsigned int>(names.size());
 }
 
 bool CCdDbPriority::IsKnownDbSource(string dbSource)
 {
     Initialize();
-    return (m_nameSourceMap.count(dbSource) > 0);
+    return m_nameSourceMap->count(dbSource) > 0;
 }
 
 
@@ -310,14 +314,14 @@ CCdDbPriority::TDbPriority CCdDbPriority::GetPriority(string dbSource)
     Initialize();
 
     EDbSource sourceCode = GetSourceCode(dbSource);
-    TSourcePriorityIt pit = m_sourcePriorityMap.find(sourceCode); 
-    return (pit != m_sourcePriorityMap.end()) ? pit->second : eBottomTier;
+    TSourcePriorityIt pit = m_sourcePriorityMap->find(sourceCode);
+    return (pit != m_sourcePriorityMap->end()) ? pit->second : eBottomTier;
 }
 
 CCdDbPriority::EDbSource CCdDbPriority::GetSourceCode(string dbSource)
 {
-    TNameSourceMap::iterator it = m_nameSourceMap.find(dbSource);
-    return (it != m_nameSourceMap.end()) ? it->second : eDPUnknown;
+    TNameSourceMap::iterator it = m_nameSourceMap->find(dbSource);
+    return (it != m_nameSourceMap->end()) ? it->second : eDPUnknown;
 }
 
 int CCdDbPriority::CompareSources(const string& source1, const string& source2) 
