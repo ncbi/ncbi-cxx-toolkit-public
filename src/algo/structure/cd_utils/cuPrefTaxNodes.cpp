@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(cd_utils)
 
-const string CPriorityTaxNodes::PREF_TAXNODE_FILE  = "data/txnodes.asn";
+const char* CPriorityTaxNodes::PREF_TAXNODE_FILE = "data/txnodes.asn";
    
 CPriorityTaxNodes::CPriorityTaxNodes(TaxNodeInputType inputType) : m_inputType(inputType)
 {
@@ -106,9 +106,9 @@ bool CPriorityTaxNodes::LoadFromFile(const string& prefTaxnodeFileName, bool doR
 
 unsigned int CPriorityTaxNodes::Load(const CCdd_pref_nodes& prefNodes, bool reset) 
 {
-    unsigned int nInit = (reset) ? 0 : m_selectedTaxNodesMap.size();
+    auto nInit = (reset) ? 0 : m_selectedTaxNodesMap.size();
     BuildMap(prefNodes, reset);
-    return m_selectedTaxNodesMap.size() - nInit;
+    return static_cast<unsigned int>(m_selectedTaxNodesMap.size() - nInit);
 }
    
 bool CPriorityTaxNodes::ReadPreferredTaxnodes(const string& filename, bool reset) 
@@ -140,7 +140,7 @@ void CPriorityTaxNodes::putIntoMap(const CCdd_org_ref_set& orgRefs)
 {
 	const list< CRef< CCdd_org_ref > >& orgList = orgRefs.Get();
 	list< CRef< CCdd_org_ref > >::const_iterator cit = orgList.begin();
-	int i = m_selectedTaxNodesMap.size();
+	int i = static_cast<int>(m_selectedTaxNodesMap.size());
 	for (; cit != orgList.end(); cit++)
 	{
 		m_selectedTaxNodesMap.insert(TaxidToOrgMap::value_type(getTaxId(*cit), OrgNode(i,*cit)));
@@ -180,7 +180,7 @@ bool CPriorityTaxNodes::isActive(const CRef< CCdd_org_ref >& orgRef)
 unsigned int CPriorityTaxNodes::TaxIdsToCddOrgRefSet(const vector< TTaxId >& taxids, CCdd_org_ref_set& cddOrgRefSet, TaxClient& taxClient, vector<TTaxId>* notAddedTaxids) 
 {
 
-    unsigned int nAdded = 0, nTaxa = taxids.size();
+    unsigned int nAdded = 0, nTaxa = static_cast<unsigned int>(taxids.size());
     CCdd_org_ref_set::Tdata& cddOrgRefList = cddOrgRefSet.Set();
 
     if (notAddedTaxids) notAddedTaxids->clear();
