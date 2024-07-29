@@ -55,7 +55,7 @@ typedef map<TTaxId, OrgNode > TaxidToOrgMap;
 
 class NCBI_CDUTILS_EXPORT CPriorityTaxNodes 
 {
-    static const string PREF_TAXNODE_FILE;
+    static const char* PREF_TAXNODE_FILE;
 public: 
 
     enum TaxNodeInputType {
