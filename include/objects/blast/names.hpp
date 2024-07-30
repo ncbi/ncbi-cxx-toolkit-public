@@ -42,6 +42,8 @@
 #include <utility>
 #include <string>
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+
 #include <objects/blast/NCBI_Blast4_module.hpp>
 #include <objects/blast/Blast4_value.hpp>
 #include <objects/blast/Blast4_parameter.hpp>
@@ -224,7 +226,7 @@ private:
     typedef map<EBlastOptIdx, CBlast4Field> TFieldMap;
     
     /// Map of all blast4 field objects.
-    static TFieldMap m_Fields;
+    static CSafeStatic<TFieldMap> m_Fields;
 };
 
 /*****************************************************************************/
