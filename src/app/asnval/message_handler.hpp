@@ -92,7 +92,7 @@ public:
         unsigned int         ec,      // error code
         const string&        msg) override;
 
-    virtual void AddValidErrItem(CRef<objects::CValidErrItem> item) = 0;
+    virtual void AddValidErrItem(CRef<objects::CValidErrItem> item) override = 0;
 
     virtual void Write(bool ignoreInferences = true) = 0;
     virtual void RequestStop() = 0;
