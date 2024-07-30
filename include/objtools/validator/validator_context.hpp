@@ -44,6 +44,7 @@ class COrg_ref;
 
 BEGIN_SCOPE(validator)
 
+const int InferenceAccessionCutoff = 1000;
 
 struct NCBI_VALIDATOR_EXPORT SValidatorContext
 {
