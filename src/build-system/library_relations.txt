@@ -134,7 +134,7 @@ bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
 biocollect needs $(DBAPI_FTDS)
-biocollect needs $(FTDS14_LIB)
+biocollect needs $(FTDS_LIB)
 biocollect needs dbapi_driver
 biocollect needs3party $(FTDS_LIBS)
 biosample needs $(SDBAPI_LIB)
@@ -225,7 +225,7 @@ ctutils needs3party $(VDB_LIBS)
 ctutils needs3party ncbiobj
 curl needs3party $(ORIG_LIBS)
 data_loaders_util needs $(DBAPI_FTDS)
-data_loaders_util needs $(FTDS14_LIB)
+data_loaders_util needs $(FTDS_LIB)
 data_loaders_util needs $(OBJMGR_LIBS)
 data_loaders_util needs $(ncbi_xreader_pubseqos2)
 data_loaders_util needs ncbi_xloader_asn_cache
@@ -244,7 +244,7 @@ dbapi_sample_base needs $(DBAPI_FTDS)
 dbapi_sample_base needs $(DBAPI_FTDS100)
 dbapi_sample_base needs $(DBAPI_FTDS14)
 dbapi_sample_base needs $(DBAPI_ODBC)
-dbapi_sample_base needs $(FTDS14_LIB)
+dbapi_sample_base needs $(FTDS100_LIB)
 dbapi_sample_base needs $(FTDS_LIB)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs dbapi_driver
@@ -257,7 +257,7 @@ dbapi_util_blobstore needs $(COMPRESS_LIBS)
 dbapi_util_blobstore needs dbapi_driver
 dbapi_util_blobstore needs xutil
 dbassist needs $(DBAPI_FTDS)
-dbassist needs $(FTDS14_LIB)
+dbassist needs $(FTDS_LIB)
 dbassist needs dbapi
 dbassist needs dbloadb
 dbassist needs3party $(FTDS_LIBS)
@@ -269,10 +269,9 @@ dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
 dbpool needs $(DBAPI_FTDS100)
-dbpool needs $(FTDS_LIB)
+dbpool needs $(FTDS100_LIB)
 dbpool needs dbapi_driver
 dbpool needs ssssys
-dbpool needs3party $(FTDS_LIBS)
 dbsnp_ptis needs $(SEQ_LIBS)
 dbsnp_ptis needs grpc_integration
 dbsnp_ptis needs pub
@@ -735,13 +734,12 @@ ncbi_xdbapi_ctlib needs dbapi_driver
 ncbi_xdbapi_ctlib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_LIBS)
-ncbi_xdbapi_ftds needs $(FTDS14_LIB)
+ncbi_xdbapi_ftds needs $(FTDS_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
 ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds100 needs $(FTDS_LIB)
+ncbi_xdbapi_ftds100 needs $(FTDS100_LIB)
 ncbi_xdbapi_ftds100 needs dbapi_driver
-ncbi_xdbapi_ftds100 needs3party $(FTDS_LIBS)
-ncbi_xdbapi_ftds14 needs $(FTDS14_LIB)
+ncbi_xdbapi_ftds14 needs $(FTDS_LIB)
 ncbi_xdbapi_ftds14 needs dbapi_driver
 ncbi_xdbapi_ftds14 needs3party $(FTDS_LIBS)
 ncbi_xdbapi_mysql needs dbapi_driver
@@ -971,7 +969,7 @@ rcobaltasn_g needs xser
 re2 needs3party $(ORIG_LIBS)
 refseq_aln_source needs $(COMPRESS_LIBS)
 refseq_aln_source needs $(DBAPI_FTDS)
-refseq_aln_source needs $(FTDS14_LIB)
+refseq_aln_source needs $(FTDS_LIB)
 refseq_aln_source needs dbapi
 refseq_aln_source needs xalgoalignsplign
 refseq_aln_source needs3party $(FTDS_LIBS)
@@ -987,7 +985,7 @@ scoremat needs seqset
 sdbapi needs $(DBAPI_FTDS)
 sdbapi needs $(DBAPI_FTDS100)
 sdbapi needs $(DBAPI_FTDS14)
-sdbapi needs $(FTDS14_LIB)
+sdbapi needs $(FTDS100_LIB)
 sdbapi needs $(FTDS_LIB)
 sdbapi needs $(XCONNEXT)
 sdbapi needs dbapi
@@ -1139,7 +1137,7 @@ test_dll needs3party $(ORIG_LIBS)
 test_mt needs xncbi
 test_stat_ext needs $(COMPRESS_LIBS)
 test_stat_ext needs $(DBAPI_FTDS)
-test_stat_ext needs $(FTDS14_LIB)
+test_stat_ext needs $(FTDS_LIB)
 test_stat_ext needs $(XCONNEXT)
 test_stat_ext needs dbapi
 test_stat_ext needs xconnect
