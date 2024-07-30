@@ -415,7 +415,7 @@ protected:
         static CSafeStatic<TRuleNames> s_rule_names;
         static TRuleNames& s_GetRuleNames()
         {
-            auto m_ = s_rule_names.Get();
+            TRuleNames& m_ = s_rule_names.Get();
             if(s_rule_names->size() == 0) {
                 m_[eID_NONE]              = "NONE";
                 m_[eID_root]              = "root";
