@@ -81,8 +81,8 @@ namespace variation_ref {
     {HGVS_THROW(eGrammatic, "Unexpected rule " + CHgvsParser::SGrammar::s_GetRuleName(i->value.id()) ); }
 
 
-CHgvsParser::SGrammar::TRuleNames CHgvsParser::SGrammar::s_rule_names;
-CHgvsParser::SGrammar CHgvsParser::s_grammar;
+CSafeStatic<CHgvsParser::SGrammar::TRuleNames> CHgvsParser::SGrammar::s_rule_names;
+CSafeStatic<CHgvsParser::SGrammar> CHgvsParser::s_grammar;
 
 
 //attach asserted sequence to the variation-ref in a user-object. This is for
