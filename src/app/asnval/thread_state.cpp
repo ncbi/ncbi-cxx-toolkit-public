@@ -300,11 +300,11 @@ unique_ptr<CObjectIStream> CAsnvalThreadState::OpenFile(TTypeInfo& asn_info, con
 }
 
 
-static void s_StartWrite(IMessageHandler& msgHandler) // Commence write if necessary
+static void s_StartWrite(IMessageHandler& msgHandler, bool ignoreInferences = false) // Commence write if necessary
 { // does nothing if msgHandler.InvokeWrite() returns false
     if (msgHandler.InvokeWrite()) {
         msgHandler.RequestStop();
-        msgHandler.Write();
+        msgHandler.Write(ignoreInferences);
     }
 }
 
@@ -836,7 +836,8 @@ void CAsnvalThreadState::ValidateBlobSequential(
         auto pSubmitBlock = reader.GetSubmitBlock();
         ValidateAsync(loader_name, pSubmitBlock, seqid, msgHandler);
     }
-    s_StartWrite(msgHandler);
+    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
+    s_StartWrite(msgHandler, ignoreInferences);
 }
 
 

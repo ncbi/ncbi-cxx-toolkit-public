@@ -120,7 +120,9 @@ void CSingleFeatValidator::Validate()
     if (m_Feat.IsSetExp_ev() && m_Feat.GetExp_ev() > 0 &&
         !x_HasNamedQual("inference") &&
         !x_HasNamedQual("experiment") &&
-        !m_Imp.DoesAnyFeatLocHaveGI()) {
+        !m_Imp.DoesAnyFeatLocHaveGI() &&
+        !m_Imp.IgnoreInferences() &&
+        (m_Imp.GetCumulativeInferenceCount() < InferenceAccessionCutoff)) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
             "Inference or experiment qualifier missing but obsolete experimental evidence qualifier set");
     }
@@ -438,8 +440,10 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
             }
         }
         if (NStr::EqualNocase(qual.GetQual(), "inference")) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
-                "Inference qualifier problem - empty inference string ()");
+            if (! m_Imp.IgnoreInferences() && m_Imp.GetCumulativeInferenceCount() < InferenceAccessionCutoff) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                    "Inference qualifier problem - empty inference string ()");
+            }
         } else if (NStr::EqualNocase(qual.GetQual(), "pseudogene")) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidPseudoQualifier, "/pseudogene value should not be empty");
         }
@@ -479,7 +483,7 @@ void CSingleFeatValidator::x_ValidateGbQual(const CGb_qual& qual)
         }
     } else if (NStr::EqualNocase(qual.GetQual(), "inference")) {
         /* TODO: Validate inference */
-        if (! m_Imp.IgnoreInferences()) {
+        if (! m_Imp.IgnoreInferences() && m_Imp.GetCumulativeInferenceCount() < InferenceAccessionCutoff) {
             string val;
             if (qual.IsSetVal()) {
                 val = qual.GetVal();
