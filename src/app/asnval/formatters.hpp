@@ -50,7 +50,7 @@ public:
     virtual void Start(){}
     virtual void Finish(){}
 
-    virtual void operator()(const objects::CValidErrItem& item, bool ignoreInferences = false) = 0;
+    virtual void operator()(const objects::CValidErrItem& item) = 0;
 
 protected:
     CNcbiOstream& m_Ostr;
