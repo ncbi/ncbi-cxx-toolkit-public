@@ -1668,7 +1668,7 @@ CRef<CVariation_ref>  CHgvsParser::x_unwrap_iff_singleton(CVariation_ref& v)
 
 CRef<CSeq_feat> CHgvsParser::AsVariationFeat(const string& hgvs_expression, TOpFlags flags)
 {
-    tree_parse_info<> info = pt_parse(hgvs_expression.c_str(), s_grammar, +space_p);
+    tree_parse_info<> info = pt_parse(hgvs_expression.c_str(), *s_grammar, +space_p);
     CRef<CSeq_feat> feat;
 
     try {

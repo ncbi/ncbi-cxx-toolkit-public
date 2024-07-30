@@ -412,54 +412,55 @@ protected:
 
 
         typedef std::map<parser_id, std::string> TRuleNames;
-        static TRuleNames s_rule_names;
+        static CSafeStatic<TRuleNames> s_rule_names;
         static TRuleNames& s_GetRuleNames()
         {
-            if(s_rule_names.size() == 0) {
-                s_rule_names[eID_NONE]              = "NONE";
-                s_rule_names[eID_root]              = "root";
-                s_rule_names[eID_list1a]            = "list1a";
-                s_rule_names[eID_list2a]            = "list2a";
-                s_rule_names[eID_list3a]            = "list3a";
-                s_rule_names[eID_list1b]            = "list1b";
-                s_rule_names[eID_list2b]            = "list2b";
-                s_rule_names[eID_list3b]            = "list3b";
-                s_rule_names[eID_expr1]             = "expr1";
-                s_rule_names[eID_expr2]             = "expr2";
-                s_rule_names[eID_expr3]             = "expr3";
-                s_rule_names[eID_translocation]     = "translocation";
-                s_rule_names[eID_header]            = "header";
-                s_rule_names[eID_location]          = "location";
-                s_rule_names[eID_mol]               = "mol";
-                s_rule_names[eID_seq_id]            = "seq_id";
-                s_rule_names[eID_mut_list]          = "mut_list";
-                s_rule_names[eID_mut_ref]           = "mut_ref";
-                s_rule_names[eID_nuc_range]         = "nuc_range";
-                s_rule_names[eID_prot_range]        = "prot_range";
-                s_rule_names[eID_mut_inst]          = "mut_inst";
-                s_rule_names[eID_int_fuzz]          = "int_fuzz";
-                s_rule_names[eID_abs_pos]           = "abs_pos";
-                s_rule_names[eID_general_pos]       = "general_pos";
-                s_rule_names[eID_fuzzy_pos]         = "fuzzy_pos";
-                s_rule_names[eID_pos_spec]          = "pos_spec";
-                s_rule_names[eID_raw_seq]           = "raw_seq";
-                s_rule_names[eID_aminoacid]         = "aminoacid";
-                s_rule_names[eID_nuc_subst]         = "nuc_subst";
-                s_rule_names[eID_deletion]          = "deletion";
-                s_rule_names[eID_insertion]         = "insertion";
-                s_rule_names[eID_delins]            = "delins";
-                s_rule_names[eID_duplication]       = "duplication";
-                s_rule_names[eID_nuc_inv]           = "nuc_inv";
-                s_rule_names[eID_ssr]               = "ssr";
-                s_rule_names[eID_conversion]        = "conversion";
-                s_rule_names[eID_seq_loc]           = "seq_loc";
-                s_rule_names[eID_seq_ref]           = "seq_ref";
-                s_rule_names[eID_prot_pos]          = "prot_pos";
-                s_rule_names[eID_prot_fs]           = "prot_fs";
-                s_rule_names[eID_prot_missense]     = "prot_missense";
-                s_rule_names[eID_prot_ext]          = "prot_ext";
+            auto m_ = s_rule_names.Get();
+            if(s_rule_names->size() == 0) {
+                m_[eID_NONE]              = "NONE";
+                m_[eID_root]              = "root";
+                m_[eID_list1a]            = "list1a";
+                m_[eID_list2a]            = "list2a";
+                m_[eID_list3a]            = "list3a";
+                m_[eID_list1b]            = "list1b";
+                m_[eID_list2b]            = "list2b";
+                m_[eID_list3b]            = "list3b";
+                m_[eID_expr1]             = "expr1";
+                m_[eID_expr2]             = "expr2";
+                m_[eID_expr3]             = "expr3";
+                m_[eID_translocation]     = "translocation";
+                m_[eID_header]            = "header";
+                m_[eID_location]          = "location";
+                m_[eID_mol]               = "mol";
+                m_[eID_seq_id]            = "seq_id";
+                m_[eID_mut_list]          = "mut_list";
+                m_[eID_mut_ref]           = "mut_ref";
+                m_[eID_nuc_range]         = "nuc_range";
+                m_[eID_prot_range]        = "prot_range";
+                m_[eID_mut_inst]          = "mut_inst";
+                m_[eID_int_fuzz]          = "int_fuzz";
+                m_[eID_abs_pos]           = "abs_pos";
+                m_[eID_general_pos]       = "general_pos";
+                m_[eID_fuzzy_pos]         = "fuzzy_pos";
+                m_[eID_pos_spec]          = "pos_spec";
+                m_[eID_raw_seq]           = "raw_seq";
+                m_[eID_aminoacid]         = "aminoacid";
+                m_[eID_nuc_subst]         = "nuc_subst";
+                m_[eID_deletion]          = "deletion";
+                m_[eID_insertion]         = "insertion";
+                m_[eID_delins]            = "delins";
+                m_[eID_duplication]       = "duplication";
+                m_[eID_nuc_inv]           = "nuc_inv";
+                m_[eID_ssr]               = "ssr";
+                m_[eID_conversion]        = "conversion";
+                m_[eID_seq_loc]           = "seq_loc";
+                m_[eID_seq_ref]           = "seq_ref";
+                m_[eID_prot_pos]          = "prot_pos";
+                m_[eID_prot_fs]           = "prot_fs";
+                m_[eID_prot_missense]     = "prot_missense";
+                m_[eID_prot_ext]          = "prot_ext";
             }
-            return s_rule_names;
+            return s_rule_names.Get();
         }
 
         static const string& s_GetRuleName(parser_id id);
@@ -743,7 +744,7 @@ protected:
                 || id == SGrammar::eID_root;
         }
     };
-    static SGrammar s_grammar;
+    static CSafeStatic<SGrammar> s_grammar;
 
 
 private:
