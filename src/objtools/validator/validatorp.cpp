@@ -44,6 +44,7 @@
 #include <objtools/validator/validerror_bioseqset.hpp>
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validator_barcode.hpp>
+#include <objtools/validator/validator_context.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 #include <serial/iterator.hpp>
@@ -1499,13 +1500,16 @@ bool CValidError_imp::Validate
     // count inference accessions - if there are too many, WAS temporarily disable inference checking
     // now disable inference checking for rest of this validator run
     bool old_inference_acc_check = m_ValidateInferenceAccessions;
+    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
+        m_IgnoreInferences = true;
+    }
     if (! m_IgnoreInferences) {
         CFeat_CI feat_inf(seh);
         while (feat_inf && ! m_IgnoreInferences) {
             FOR_EACH_GBQUAL_ON_FEATURE (qual, *feat_inf) {
                 if (! m_IgnoreInferences && (*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
                     m_CumulativeInferenceCount++;
-                    if (m_CumulativeInferenceCount >= 1000) {
+                    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                         // disable inference checking for remainder of run
                         m_IgnoreInferences = true;
                         
@@ -1530,7 +1534,7 @@ bool CValidError_imp::Validate
                         }
                         if (num_accessions > 0) {
                             m_CumulativeInferenceCount += num_accessions;
-                            if (m_CumulativeInferenceCount >= 1000) {
+                            if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                                 // disable inference checking for remainder of run
                                 m_IgnoreInferences = true;
                                 

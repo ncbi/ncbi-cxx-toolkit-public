@@ -45,7 +45,7 @@ public:
     CStandardFormat(CNcbiOstream& ostr) : IFormatter(ostr) {}
     virtual ~CStandardFormat(){}
 
-    void operator()(const objects::CValidErrItem& item) override;
+    void operator()(const objects::CValidErrItem& item, bool ignoreInferences) override;
 };
 
 
@@ -55,7 +55,7 @@ public:
     CSpacedFormat(CNcbiOstream& ostr) : IFormatter(ostr) {}
     virtual ~CSpacedFormat(){}
 
-    void operator()(const objects::CValidErrItem& item) override;
+    void operator()(const objects::CValidErrItem& item, bool ignoreInferences) override;
 };
 
 
@@ -65,7 +65,7 @@ public:
     CTabbedFormat(CNcbiOstream& ostr) : IFormatter(ostr) {}
     virtual ~CTabbedFormat(){}
 
-    void operator()(const objects::CValidErrItem& item) override;
+    void operator()(const objects::CValidErrItem& item, bool ignoreInferences) override;
 };
 
 
@@ -77,7 +77,7 @@ public:
 
     void Start() override;
 
-    void operator()(const objects::CValidErrItem& item) override;
+    void operator()(const objects::CValidErrItem& item, bool ignoreInferences) override;
     
     void Finish() override;
 
@@ -102,10 +102,15 @@ static string s_GetSeverityLabel(EDiagSev sev, bool is_xml=false)
 }
 
 
-void CStandardFormat::operator()(const CValidErrItem& item) 
+void CStandardFormat::operator()(const CValidErrItem& item, bool ignoreInferences)
 {
+    string group = item.GetErrGroup();
+    string code = item.GetErrCode();
+    if (ignoreInferences && group == "SEQ_FEAT" && code == "InvalidInferenceValue") {
+        return;
+    }
     m_Ostr << s_GetSeverityLabel(item.GetSeverity())
-           << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() << "] "
+           << ": valid [" << group << "." << code << "] "
            << item.GetMsg();
     if (item.IsSetObjDesc()) {
         m_Ostr << " " << item.GetObjDesc();
@@ -114,7 +119,7 @@ void CStandardFormat::operator()(const CValidErrItem& item)
 }
 
 
-void CSpacedFormat::operator()(const CValidErrItem& item) 
+void CSpacedFormat::operator()(const CValidErrItem& item, bool ignoreInferences) 
 {
     string spacer = "                    ";
     string msg = item.GetAccnver() + spacer;
@@ -127,7 +132,7 @@ void CSpacedFormat::operator()(const CValidErrItem& item)
 }
 
 
-void CTabbedFormat::operator()(const CValidErrItem& item) 
+void CTabbedFormat::operator()(const CValidErrItem& item, bool ignoreInferences) 
 {
     m_Ostr << item.GetAccnver() << "\t"
         << s_GetSeverityLabel(item.GetSeverity()) << "\t"
@@ -156,7 +161,7 @@ void CXmlFormat::Start()
 }
 
 
-void CXmlFormat::operator()(const CValidErrItem& item)
+void CXmlFormat::operator()(const CValidErrItem& item, bool ignoreInferences)
 {
     m_Output.PutString("  <message severity=\"");
     m_Output.PutString(s_GetSeverityLabel(item.GetSeverity(), true));

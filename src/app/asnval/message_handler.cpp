@@ -204,7 +204,7 @@ void CAsyncMessageHandler::AddValidErrItem(CRef<CValidErrItem> pItem) {
 }
 
 
-void CAsyncMessageHandler::Write() {
+void CAsyncMessageHandler::Write(bool ignoreInferences) {
     while (true) {
         unique_lock<mutex> lock(m_Mutex);
         m_Cv.wait(lock, [this]()->bool
@@ -216,7 +216,7 @@ void CAsyncMessageHandler::Write() {
         if (!pItem) {
             break;
         }
-        (*m_pFormat)(*pItem);
+        (*m_pFormat)(*pItem, ignoreInferences);
     }
 }
 
