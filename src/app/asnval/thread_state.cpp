@@ -782,8 +782,9 @@ CThreadExitData CAsnvalThreadState::ValidateWorker(
 void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process, 
         IMessageHandler& msgHandler)
 {
+    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     auto& reader = process.GetReader();
-    auto writer_task = std::async([this, &msgHandler] { if(msgHandler.InvokeWrite()){ msgHandler.Write(); } });
+    auto writer_task = std::async([this, &ignoreInferences, &msgHandler] { if(msgHandler.InvokeWrite()){ msgHandler.Write(ignoreInferences); } });
 
     CMessageQueue<std::future<CThreadExitData>> val_queue{ mAppConfig.mNumInstances };
     // start a loop in a separate thread
