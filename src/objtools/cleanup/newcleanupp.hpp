@@ -139,7 +139,7 @@ public:
 
     /// Main methods
 
-    void SetScope(CScope& scope) { m_Scope.Reset(&scope); }
+    void SetScope(CScope& scope);
 
     /// Basic Cleanup methods
 
@@ -223,15 +223,9 @@ public:
 
     static void AddNcbiCleanupObject(CSeq_descr& descr);
 
-private:
 
     // many more methods and variables ...
-
-    // We do not include the usual "x_" prefix for private functions
-    // because we want to be able to distinguish between higher-level
-    // functions like those just below, and the lower-level
-    // functions like those farther below.
-
+    // Note that these are not private. This is to facilitate testing
     void ChangeMade (CCleanupChange::EChanges e);
 
     void EnteringEntry(CSeq_entry& se);
@@ -270,7 +264,6 @@ private:
 
     void SeqLocBC( CSeq_loc &loc );
     void ConvertSeqLocWholeToInt( CSeq_loc &loc );
-    void SeqLocMixBC( CSeq_loc_mix & loc_mix );
 
     void SeqfeatBC (CSeq_feat& sf);
 
@@ -405,6 +398,7 @@ private:
 
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
 
+    void x_SeqPointBC(CSeq_point & seq_point);
     void x_SeqIntervalBC( CSeq_interval & seq_interval );
     void x_BothStrandBC( CSeq_loc &loc );
     void x_BothStrandBC( CSeq_interval & seq_interval );

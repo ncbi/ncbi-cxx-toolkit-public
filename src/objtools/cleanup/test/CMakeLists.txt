@@ -8,4 +8,5 @@ NCBI_add_app(
   unit_test_capitalization_string 
   unit_test_cleanup_message
   unit_test_extended_cleanup 
+  unit_test_cleanup
 )
