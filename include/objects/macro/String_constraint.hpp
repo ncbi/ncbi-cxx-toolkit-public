@@ -55,7 +55,7 @@ public:
         m_original(v)
     {
     }
-    CAutoLowerCase(CAutoLowerCase&& v): 
+    CAutoLowerCase(CAutoLowerCase&& v):
         m_original(std::move(v.m_original)),
         m_lowercase(std::move(v.m_lowercase)),
         m_uppercase(std::move(v.m_uppercase))
@@ -111,7 +111,7 @@ public:
     }
 
 private:
-    CAutoLowerCase(const CAutoLowerCase&); 
+    CAutoLowerCase(const CAutoLowerCase&);
     CAutoLowerCase& operator=(const CAutoLowerCase&);
 
     string m_original;
@@ -207,14 +207,12 @@ public:
         return CString_constraint_Base::SetMatch_text();
     }
 
-    static const vector<string> s_WeaselWords;
-
 private:
     // Prohibit copy constructor and assignment operator
     CString_constraint(const CString_constraint& value) = delete;
     CString_constraint& operator=(const CString_constraint& value) = delete;
 
-    typedef enum 
+    typedef enum
     {
         e_original,
         e_lowercase,
@@ -235,11 +233,11 @@ private:
     bool x_IsFirstCap(const CMatchString& str) const;
     // Checks whether the first letter of each word is capitalized
     bool x_IsFirstEachCap(const CMatchString& str) const;
-        
+
     bool x_PartialCompare(const string& str, const string& pattern, char prev_char, size_t & match_len) const;
-    bool x_AdvancedStringCompare(const string& str, 
-                                const string& str_match, 
-                                const char prev_char, 
+    bool x_AdvancedStringCompare(const string& str,
+                                const string& str_match,
+                                const char prev_char,
                                 size_t * ini_target_match_len = 0) const;
     bool x_AdvancedStringMatch(const string& str,const string& tmp_match) const;
     bool x_IsWholeWordMatch(const CTempString& start,
