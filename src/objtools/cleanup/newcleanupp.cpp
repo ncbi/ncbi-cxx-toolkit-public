@@ -200,6 +200,8 @@ CNewCleanup_imp::~CNewCleanup_imp (void)
 {
 }
 
+void CNewCleanup_imp::SetScope(CScope& scope) { m_Scope.Reset(&scope); }
+
 // Main methods
 
 void CNewCleanup_imp::BasicCleanupSeqEntry (
@@ -2619,16 +2621,96 @@ void CNewCleanup_imp::SiteFeatBC( const CSeqFeatData::ESite &site, CSeq_feat& fe
     }
 }
 
-void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
+
+static bool s_FlattenSeqLocMix(CSeq_loc_mix& mix)
+{ // returns true if flattening occurred
+    bool  result = false;
+    auto& locs   = mix.Set();
+    auto  it     = locs.begin();
+    while (it != locs.end()) {
+        auto pLoc = *it;
+        if (pLoc->IsMix()) {
+            s_FlattenSeqLocMix(pLoc->SetMix());
+            it = locs.erase(it);
+            locs.insert(it, pLoc->SetMix().Set().begin(), pLoc->SetMix().Set().end());
+            result = true;
+        } else {
+            ++it;
+        }
+    }
+    return result;
+}
+
+static bool s_TrimNullsFromEnds(CSeq_loc_mix::Tdata& sl_list)
+{
+    bool result = false;
+    // delete Null type Seq-locs from beginning and end of Mix list.
+
+    // deleting from beginning:
+    auto it = find_if(sl_list.begin(), sl_list.end(), [](CRef<CSeq_loc>& pLoc) { return ! pLoc->IsNull(); });
+    if (it != sl_list.begin()) {
+        sl_list.erase(sl_list.begin(), it);
+        result = true;
+    }
+
+    // delete from end
+    if (! sl_list.empty()) {
+        auto rit = find_if(sl_list.rbegin(), sl_list.rend(), [](CRef<CSeq_loc>& pLoc) { return ! pLoc->IsNull(); });
+        if (rit != sl_list.rbegin()) {
+            sl_list.erase(rit.base(), sl_list.end()); // note rit.base() - list::erase() requires forward iterators
+            result = true;
+        }
+    }
+
+    return result;
+}
+
+
+static bool s_NormalizeNulls(CSeq_loc_mix::Tdata& sl_list)
+{
+    bool result = s_TrimNullsFromEnds(sl_list);
+
+    if (find_if(sl_list.begin(), sl_list.end(), [](CRef<CSeq_loc>& pLoc) { return pLoc->IsNull(); }) == sl_list.end()) {
+        return result; // No Nulls
+    }
+
+    bool previousIsNull = false;
+    auto it             = next(sl_list.begin());
+    while (it != sl_list.end()) {
+        if ((*it)->IsNull()) { // The '*' is crucial here. We're checking for null locations, not empty CRefs.
+            if (previousIsNull) {
+                it = sl_list.erase(it);
+            } else {
+                ++it;
+                previousIsNull = true;
+            }
+        } else { // Not null
+            if (previousIsNull) {
+                ++it;
+                previousIsNull = false;
+            } else {
+                auto pNullLoc = Ref(new CSeq_loc());
+                pNullLoc->SetNull();
+                sl_list.insert(it, pNullLoc); // insert places NULL before current iterator
+                ++it;                         // increment iterator; previousIsNull is still false
+            }
+        }
+    }
+
+    return result;
+}
+
+
+void CNewCleanup_imp::SeqLocBC(CSeq_loc& loc)
 {
     switch (loc.Which()) {
-    case CSeq_loc::e_Int :
-        x_SeqIntervalBC( GET_MUTABLE(loc, Int) );
+    case CSeq_loc::e_Int:
+        x_SeqIntervalBC(loc.SetInt());
         break;
     case CSeq_loc::e_Packed_int: {
-        CSeq_loc::TPacked_int::Tdata& ints = loc.SetPacked_int().Set();
-        NON_CONST_ITERATE(CSeq_loc::TPacked_int::Tdata, interval_it, ints) {
-            x_SeqIntervalBC(**interval_it);
+        auto& ints = loc.SetPacked_int().Set();
+        for (auto pInt : ints) {
+            x_SeqIntervalBC(*pInt);
         }
         if (ints.size() == 1) {
             CRef<CSeq_interval> int_ref = ints.front();
@@ -2636,64 +2718,21 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             ChangeMade(CCleanupChange::eChangeSeqloc);
         }
     } break;
-    case CSeq_loc::e_Pnt: {
-        CSeq_loc::TPnt& pnt = loc.SetPnt();
-
-        if (pnt.IsSetStrand()) {
-            if (pnt.GetStrand() == eNa_strand_unknown) {
-                pnt.SetStrand(eNa_strand_plus);
-                ChangeMade(CCleanupChange::eChangeStrand);
-            }
-        }
-        else {
-            pnt.SetStrand(eNa_strand_plus);
-            ChangeMade(CCleanupChange::eChangeStrand);
-        }
-
-        // normalize Seq-point fuzz tl to tr and decrement position
-        if (pnt.IsSetFuzz() && pnt.GetFuzz().IsLim() &&
-            pnt.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
-            TSeqPos pos = pnt.GetPoint();
-            if (pos > 0) {
-                pnt.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
-                pnt.SetPoint(pos - 1);
-                ChangeMade(CCleanupChange::eChangeSeqloc);
-            }
-        }
-    } break;
+    case CSeq_loc::e_Pnt:
+        x_SeqPointBC(loc.SetPnt());
+        break;
     case CSeq_loc::e_Mix: {
-        typedef CSeq_loc::TMix::Tdata TMixList;
-        // delete Null type Seq-locs from beginning and end of Mix list.
-
-        // deleting from beginning:
-        TMixList& sl_list = loc.SetMix().Set();
-        TMixList::iterator sl_it = sl_list.begin();
-        while (sl_it != sl_list.end()) {
-            if ((*sl_it)->IsNull()) {
-                sl_it = sl_list.erase(sl_it);
-                ChangeMade(CCleanupChange::eChangeSeqloc);
-            } else {
-                break;
-            }
+        if (s_FlattenSeqLocMix(loc.SetMix())) {
+            ChangeMade(CCleanupChange::eChangeSeqloc);
         }
 
-        // deleting from end:
-        if( sl_list.size() > 0 ) {
-            sl_it = sl_list.end();
-            while (sl_it != sl_list.begin()) {
-                --sl_it;
-                if ( ! (*sl_it)->IsNull()) {
-                    break;
-                }
-            }
-            ++sl_it;
-            if (sl_it != sl_list.end()) {
-                sl_list.erase(sl_it, sl_list.end());
-                ChangeMade(CCleanupChange::eChangeSeqloc);
-            }
+        auto& sl_list = loc.SetMix().Set();
+
+        if (s_NormalizeNulls(sl_list)) {
+            ChangeMade(CCleanupChange::eChangeSeqloc);
         }
 
-        if (sl_list.size() == 0) {
+        if (sl_list.empty()) {
             loc.SetNull();
             ChangeMade(CCleanupChange::eChangeSeqloc);
         } else if (sl_list.size() == 1) {
@@ -2702,24 +2741,25 @@ void CNewCleanup_imp::SeqLocBC( CSeq_loc &loc )
             ChangeMade(CCleanupChange::eChangeSeqloc);
         }
     } break;
+
     default:
         break;
     }
 
     // don't allow strandedness on protein sequences
     {
-        CBioseq_Handle bsh;
+        //  CBioseq_Handle bsh;
         if (m_Scope) {
-            ITERATE( CSeq_loc, loc_ci, loc ) {
-                bsh = m_Scope->GetBioseqHandle(loc_ci.GetSeq_id());
-                if( bsh ) {
+            for (CSeq_loc_CI loc_ci(loc); loc_ci; ++loc_ci) {
+                auto bsh = m_Scope->GetBioseqHandle(loc_ci.GetSeq_id());
+                if (bsh) {
+                    if (bsh.IsProtein() && loc.IsSetStrand()) {
+                        loc.ResetStrand();
+                        ChangeMade(CCleanupChange::eChangeStrand);
+                    }
                     break;
                 }
             }
-        }
-        if ( bsh && bsh.IsProtein() && FIELD_IS_SET(loc, Strand) ) {
-            RESET_FIELD(loc, Strand);
-            ChangeMade(CCleanupChange::eChangeStrand);
         }
     }
 }
@@ -2747,101 +2787,6 @@ void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
     }
 }
 
-static void
-s_AddSeqLocMix( CSeq_loc_mix::Tdata & new_mix_pieces,
-               CSeq_loc_mix::Tdata & mix_pieces,
-               bool any_nulls_seen )
-{
-    NON_CONST_ITERATE( CSeq_loc_mix::Tdata, old_mix_iter, mix_pieces ) {
-        CRef<CSeq_loc> old_piece( *old_mix_iter );
-        if( old_piece->IsNull() ) {
-            // ignore
-        } else if( old_piece->IsMix() ) {
-            s_AddSeqLocMix( new_mix_pieces, old_piece->SetMix(),
-                any_nulls_seen );
-        } else {
-            if( any_nulls_seen && ! new_mix_pieces.empty() ) {
-                CRef<CSeq_loc> null_piece( new CSeq_loc );
-                null_piece->SetNull();
-                new_mix_pieces.push_back( null_piece );
-            }
-            new_mix_pieces.push_back( old_piece );
-        }
-    }
-}
-
-void CNewCleanup_imp::SeqLocMixBC( CSeq_loc_mix & loc_mix )
-{
-    if( ! loc_mix.IsSet() || loc_mix.Set().empty() ) {
-        return;
-    }
-
-    // This function does two things simultaneously:
-    // It checks for mix-inside-mix and also checks if
-    // we need to do "NULL-normalization"
-    bool have_seen_inner_mix = false;
-    bool any_nulls_seen = false;
-    bool alternates_not_null_then_null = true;
-
-    CSeq_loc_mix::Tdata & mix_pieces = loc_mix.Set();
-    if( (mix_pieces.size() % 2) == 0 ) {
-        // can't do notnull-null-notnull-null-notnull-....-null-notnull
-        // if we have an even number of items
-        alternates_not_null_then_null = false;
-    }
-
-    bool last_piece_was_null = true;
-    ITERATE( CSeq_loc_mix::Tdata, outer_mix_iter, mix_pieces ) {
-        const CSeq_loc &this_piece = **outer_mix_iter;
-        const bool this_piece_is_null = this_piece.IsNull();
-
-        // see if we've found any NULLs in this loc
-        if( this_piece_is_null ) {
-            any_nulls_seen = true;
-        }
-
-        // see if we break alternation of notnull and null
-        if( alternates_not_null_then_null ) {
-            if( this_piece_is_null == last_piece_was_null ) {
-                // two of the same kind in a row: does not alternate
-                alternates_not_null_then_null = false;
-            }
-        }
-
-        // see if there's a nested mix in here
-        if( this_piece.IsMix() ) {
-            have_seen_inner_mix = true;
-            alternates_not_null_then_null = false; // mix breaks alternation
-            // We have to check if the inner-mix contains any NULLs
-            if( ! any_nulls_seen ) {
-                CSeq_loc_CI inner_ci( this_piece, CSeq_loc_CI::eEmpty_Allow );
-                for( ; inner_ci; ++inner_ci ) {
-                    if( inner_ci.IsEmpty() ) {
-                        any_nulls_seen = true;
-                    }
-                }
-            }
-        }
-
-        // for next iteration
-        last_piece_was_null = this_piece_is_null;
-    }
-
-    // we've examined the location, so if there are any problems, we have
-    // to rebuild it.
-    if( have_seen_inner_mix ||
-        (any_nulls_seen && ! alternates_not_null_then_null) )
-    {
-        CSeq_loc_mix new_mix;
-        CSeq_loc_mix::Tdata & new_mix_pieces = new_mix.Set();
-
-        // has to be in a separate function because it's recursive
-        s_AddSeqLocMix( new_mix_pieces, mix_pieces, any_nulls_seen );
-
-        // swap is faster than assignment
-        loc_mix.Set().swap( new_mix_pieces );
-    }
-}
 
 static bool s_IsJustQuotes (const string& str)
 
@@ -4677,6 +4622,43 @@ void CNewCleanup_imp::x_AddReplaceQual(CSeq_feat& feat, const string& str)
         }
     }
 }
+
+
+void CNewCleanup_imp::x_SeqPointBC(CSeq_point& seq_point)
+{
+    if (m_Scope && seq_point.IsSetId()) {
+        auto seq_type = m_Scope->GetSequenceType(seq_point.GetId(), CScope::fDoNotRecalculate);
+        if (seq_type != CSeq_inst::eMol_not_set) {
+            if (CSeq_inst::IsAa(seq_type)) {
+                if (seq_point.IsSetStrand()) {
+                    seq_point.ResetStrand();
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
+            } else if (seq_point.IsSetStrand()) {
+                if (seq_point.GetStrand() == eNa_strand_unknown) {
+                    seq_point.SetStrand(eNa_strand_plus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
+            } else {
+                seq_point.SetStrand(eNa_strand_plus);
+                ChangeMade(CCleanupChange::eChangeStrand);
+            }
+        }
+    }
+
+
+    // normalize Seq-point fuzz tl to tr and decrement position
+    if (seq_point.IsSetFuzz() && seq_point.GetFuzz().IsLim() &&
+            seq_point.GetFuzz().GetLim() == CInt_fuzz::eLim_tl) {
+        TSeqPos pos = seq_point.GetPoint();
+        if (pos > 0) {
+            seq_point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
+            seq_point.SetPoint(pos - 1);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+        }
+    }
+}
+
 
 void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
 {
