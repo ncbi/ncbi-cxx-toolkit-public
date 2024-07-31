@@ -39,12 +39,13 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <util/impl/generated_fsm.hpp>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-const vector<string> CString_constraint::s_WeaselWords = {
+static constexpr auto s_WeaselWords = ct::make_array<std::string_view>(
     "candidate",
     "hypothetical",
     "novel",
@@ -55,7 +56,7 @@ const vector<string> CString_constraint::s_WeaselWords = {
     "putative",
     "uncharacterized",
     "unique"
-};
+);
 
 
 namespace
@@ -168,8 +169,8 @@ void CMatchString::x_PopWeasel() const
 {
     m_noweasel_start = 0;
     const auto& callback = [&](size_t n, size_t p) {
-        if (n < CString_constraint::s_WeaselWords.size()) {
-            if (p - m_noweasel_start == CString_constraint::s_WeaselWords[n].length()) {
+        if (n < s_WeaselWords.size()) {
+            if (p - m_noweasel_start == s_WeaselWords[n].length()) {
                 m_noweasel_start = p;
                 m_weaselmask |= (1 << n);
             }
@@ -603,12 +604,12 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             vector<bool> skip(v.size(), false);
             vector<size_t> test;
             for (size_t i = 0; i < v.size(); i++) {
-                for (size_t k = 0; k < CString_constraint::s_WeaselWords.size(); k++) {
+                for (size_t k = 0; k < s_WeaselWords.size(); k++) {
                     unsigned m = (1 << k);
                     if (m & str_mask) {
                         string lower = v[i];
                         NStr::ToLower(lower);
-                        if (lower == CString_constraint::s_WeaselWords[k]) {
+                        if (s_WeaselWords[k].compare(lower) == 0) {
                             if (m & mask) {
                                 test.push_back(i);
                             }
