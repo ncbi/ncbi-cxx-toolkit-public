@@ -117,7 +117,7 @@ class CSeq_feat_Handle;
 class CObjectManager;
 class CScope;
 
-class CNewCleanup_imp
+class NCBI_CLEANUP_EXPORT CNewCleanup_imp
 {
 public:
 
