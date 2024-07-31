@@ -5308,6 +5308,7 @@ NAC	s	Nagano Nature Conservation Research Institute
 NAFUPYR	s	Northwest A & F University			
 NAI	s	University of Nairobi, Botany Department			
 NAIC	s	National Agricultural Insect Collection			
+NAIMCC	c 	National Agriculturally Important Microbial Culture Collection, India			
 NAKU	s	Namik Kemal University			
 NAM	s	Facultes Universitaires Notre-Dame de la Paix			
 NAN	s	Nantong Teachers College, Biology Department			
