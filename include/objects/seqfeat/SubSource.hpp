@@ -59,6 +59,7 @@ class CDate;
 class CDate_std;
 class CLatLonCountryId;
 class CLatLonCountryMap;
+class CLatLonWaterMap;
 
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_SEQFEAT_EXPORT CSubSource : public CSubSource_Base
@@ -253,9 +254,8 @@ private:
     static bool x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const string& value, const string& taxname);
 
     // validation data read from external files
-    static unique_ptr<CLatLonCountryMap> m_LatLonCountryMap;
-    static unique_ptr<CLatLonCountryMap> m_LatLonWaterMap;
-
+    static CLatLonCountryMap& x_GetLatLonCountryMap(void);
+    static CLatLonWaterMap&   x_GetLatLonWaterMap(void);
 };
 
 /////////////////// CSubSource inline methods
@@ -323,8 +323,6 @@ public:
     static string USAStateCleanup (const string& country );
     static string USAStateCleanup (const string& country, EStateCleanup& type );
 private:
-    static const string sm_Countries[];
-    static const string sm_Former_Countries[];
     static void x_RemoveDelimitersFromEnds(string& val, bool except_paren = false);
     static vector<string> x_Tokenize(const string& val);
     static void x_FindCountryName(const TCStringPairsMap& fix_map, const vector<string>& countries, string& valid_country, string& orig_valid_country, bool& too_many_countries, bool& bad_cap);
@@ -470,11 +468,11 @@ private:
   int    m_ClaimedDistance;
 };
 
-class NCBI_SEQFEAT_EXPORT CLatLonCountryMap
+class NCBI_SEQFEAT_EXPORT CLatLonMap_Base
 {
 public:
-    CLatLonCountryMap(bool is_water);
-    ~CLatLonCountryMap(void);
+    CLatLonMap_Base(bool is_water);
+    ~CLatLonMap_Base(void);
     bool IsCountryInLatLon(const string& country, double lat, double lon) const;
     const CCountryExtreme * GuessRegionForLatLon(double lat, double lon,
                                             const string& country = kEmptyStr,
@@ -501,7 +499,6 @@ public:
     };
     typedef int TLatLonAdjustFlags;    ///< Bitwise OR of "ELatLonAdjustFlags"
 
-
 private:
     void x_InitFromDefaultList(const char * const *list, int num);
     bool x_InitFromFile(const string& filename);
@@ -526,10 +523,20 @@ private:
     typedef vector <CCountryExtreme *> TCountryExtremeList;
     typedef TCountryExtremeList::const_iterator TCountryExtremeList_iter;
     TCountryExtremeList m_CountryExtremes;
-
-
-    static const string sm_BodiesOfWater[];
 };
+
+class NCBI_SEQFEAT_EXPORT CLatLonCountryMap : public CLatLonMap_Base
+{
+public:
+    CLatLonCountryMap() : CLatLonMap_Base(false) {};
+};
+
+class NCBI_SEQFEAT_EXPORT CLatLonWaterMap : public CLatLonMap_Base
+{
+public:
+    CLatLonWaterMap() : CLatLonMap_Base(true) {};
+};
+
 
 NCBI_SEQFEAT_EXPORT double ErrorDistance (
   double latA,

@@ -43,11 +43,10 @@
 
 #include <math.h>
 #include <objects/misc/sequence_util_macros.hpp>
-#include <corelib/ncbitime.hpp>
-
 #include <util/row_reader_ncbi_tsv.hpp>
-#include <mutex>
+#include <corelib/ncbi_safe_static.hpp>
 #include <util/compile_time.hpp>
+
 
 // generated classes
 
@@ -55,8 +54,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-unique_ptr<CLatLonCountryMap> CSubSource::m_LatLonCountryMap;
-unique_ptr<CLatLonCountryMap> CSubSource::m_LatLonWaterMap;
 
 
 // destructor
@@ -1967,7 +1964,7 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
     bool goodmatch = false;
 
     // lookup region by coordinates, or find nearest region and calculate distance
-    const CCountryExtreme * guess = m_LatLonCountryMap->GuessRegionForLatLon(lat_value, lon_value, country, province);
+    const CCountryExtreme * guess = x_GetLatLonCountryMap().GuessRegionForLatLon(lat_value, lon_value, country, province);
     if (guess) {
         id->SetFullGuess(guess->GetCountry());
         id->SetGuessCountry(guess->GetLevel0());
@@ -1978,7 +1975,7 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
         }
     } else {
         // not inside a country, check water
-        guess = m_LatLonWaterMap->GuessRegionForLatLon(lat_value, lon_value, country);
+        guess = x_GetLatLonWaterMap().GuessRegionForLatLon(lat_value, lon_value, country);
         if (guess) {
             // found inside water
             id->SetGuessWater(guess->GetCountry());
@@ -1989,12 +1986,12 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
             // also see if close to land for coastal warning (if country is land)
             // or proximity message (if country is water)
             double landdistance = 0.0;
-            guess = m_LatLonCountryMap->FindClosestToLatLon (lat_value, lon_value, 5.0, landdistance);
+            guess = x_GetLatLonCountryMap().FindClosestToLatLon(lat_value, lon_value, 5.0, landdistance);
             if (guess) {
                 id->SetClosestFull(guess->GetCountry());
                 id->SetClosestCountry(guess->GetLevel0());
                 id->SetClosestProvince(guess->GetLevel1());
-                id->SetLandDistance(m_LatLonCountryMap->AdjustAndRoundDistance (landdistance));
+                id->SetLandDistance(x_GetLatLonCountryMap().AdjustAndRoundDistance (landdistance));
                 if (NStr::EqualNocase(country, id->GetClosestCountry())
                     && (NStr::IsBlank(province) || NStr::EqualNocase(province, guess->GetLevel1()))) {
                     goodmatch = true;
@@ -2003,12 +2000,12 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
         } else {
             // may be coastal inlet, area of data insufficiency
             double landdistance = 0.0;
-            guess = m_LatLonCountryMap->FindClosestToLatLon (lat_value, lon_value, 5.0, landdistance);
+            guess = x_GetLatLonCountryMap().FindClosestToLatLon (lat_value, lon_value, 5.0, landdistance);
             if (guess) {
                 id->SetClosestFull(guess->GetCountry());
                 id->SetClosestCountry(guess->GetLevel0());
                 id->SetClosestProvince(guess->GetLevel1());
-                id->SetLandDistance(m_LatLonCountryMap->AdjustAndRoundDistance (landdistance));
+                id->SetLandDistance(x_GetLatLonCountryMap().AdjustAndRoundDistance (landdistance));
                 if (NStr::EqualNocase(country, id->GetClosestCountry())
                      && (NStr::IsBlank(province) || NStr::EqualNocase(province, guess->GetLevel1()))) {
                     goodmatch = true;
@@ -2016,10 +2013,10 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
             }
 
             double waterdistance = 0.0;
-            guess = m_LatLonWaterMap->FindClosestToLatLon (lat_value, lon_value, 5.0, waterdistance);
+            guess = x_GetLatLonWaterMap().FindClosestToLatLon (lat_value, lon_value, 5.0, waterdistance);
             if (guess) {
                 id->SetClosestWater(guess->GetLevel0());
-                id->SetWaterDistance(m_LatLonWaterMap->AdjustAndRoundDistance (waterdistance));
+                id->SetWaterDistance(x_GetLatLonWaterMap().AdjustAndRoundDistance (waterdistance));
                 if (NStr::EqualNocase(country, id->GetClosestWater())) {
                     goodmatch = true;
                 }
@@ -2030,22 +2027,22 @@ CLatLonCountryId *CSubSource::x_CalculateLatLonId(float lat_value, float lon_val
     // if guess is not the provided country or province, calculate distance to claimed country
     if (!goodmatch) {
         double distance = 0.0;
-        guess = m_LatLonCountryMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
+        guess = x_GetLatLonCountryMap().IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
         if (guess) {
-            if (distance < ErrorDistance(lat_value, lon_value, m_LatLonCountryMap->GetScale())) {
+            if (distance < ErrorDistance(lat_value, lon_value, x_GetLatLonCountryMap().GetScale())) {
                 // close enough
                 id->SetGuessCountry(country);
                 id->SetGuessProvince(province);
                 id->SetFullGuess(guess->GetCountry());
             } else {
                 id->SetClaimedFull(guess->GetCountry());
-                id->SetClaimedDistance(m_LatLonCountryMap->AdjustAndRoundDistance (distance));
+                id->SetClaimedDistance(x_GetLatLonCountryMap().AdjustAndRoundDistance (distance));
             }
         } else if (NStr::IsBlank(province)) {
-            guess = m_LatLonWaterMap->IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
+            guess = x_GetLatLonWaterMap().IsNearLatLon (lat_value, lon_value, 5.0, distance, country, province);
             if (guess) {
                 id->SetClaimedFull(guess->GetCountry());
-                id->SetClaimedDistance(m_LatLonWaterMap->AdjustAndRoundDistance (distance));
+                id->SetClaimedDistance(x_GetLatLonWaterMap().AdjustAndRoundDistance (distance));
             }
         }
     }
@@ -2156,20 +2153,6 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     if (NStr::IsBlank(countryname) || NStr::IsBlank(lat_lon)) {
         return kEmptyStr;
     }
-
-    {
-        static std::mutex m;
-
-        std::lock_guard g(m);
-
-        if ( m_LatLonCountryMap.get() == 0 ) {
-            m_LatLonCountryMap.reset (new CLatLonCountryMap(false));
-        }
-        if ( m_LatLonWaterMap.get() == 0 ) {
-            m_LatLonWaterMap.reset (new CLatLonCountryMap(true));
-        }
-    }
-
     // only do these checks if the latlon format is good
     bool format_correct, lat_in_range, lon_in_range, precision_correct;
     double lat_value = 0.0, lon_value = 0.0;
@@ -2215,7 +2198,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     pos = NStr::Find(country, ":");
     if (pos != NPOS) {
         // is the full string in the list?
-        if (m_LatLonCountryMap->HaveLatLonForRegion(countryname)) {
+        if (x_GetLatLonCountryMap().HaveLatLonForRegion(countryname)) {
             province = country.substr(pos + 1);
             NStr::TruncateSpacesInPlace(province, NStr::eTrunc_Both);
         }
@@ -2233,12 +2216,12 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
 
     if (! NStr::IsBlank(province)) {
         // do not attempt quick exit
-    } else if (m_LatLonCountryMap->HaveLatLonForRegion(country)) {
-        if (m_LatLonCountryMap->IsCountryInLatLon(country, lat_value, lon_value)) {
+    } else if (x_GetLatLonCountryMap().HaveLatLonForRegion(country)) {
+        if (x_GetLatLonCountryMap().IsCountryInLatLon(country, lat_value, lon_value)) {
             return kEmptyStr;
         }
-    } else if (m_LatLonWaterMap->HaveLatLonForRegion(country)) {
-        if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
+    } else if (x_GetLatLonWaterMap().HaveLatLonForRegion(country)) {
+        if (x_GetLatLonWaterMap().IsCountryInLatLon(country, lat_value, lon_value)) {
             return kEmptyStr;
         }
     } else if (NStr::EqualNocase (country, "State of Palestine")) {
@@ -2279,14 +2262,14 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     CLatLonCountryMap::TLatLonAdjustFlags adjustment = CLatLonCountryMap::fNone;
     CLatLonCountryId::TClassificationFlags adjusted_flags = 0;
 
-    if (!flags && m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 2.0, neardist, country) && neardist < 5.0) {
+    if (!flags && x_GetLatLonCountryMap().IsNearLatLon(lat_value, lon_value, 2.0, neardist, country) && neardist < 5.0) {
         id->SetGuessCountry (country);
         id->SetGuessProvince (kEmptyStr);
         flags = id->Classify(country, province);
     }
 
-    if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
-        && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)) {
+    if (!flags && !x_GetLatLonCountryMap().IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
+        && !x_GetLatLonWaterMap().IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)) {
         /* do not flip from water */
         CLatLonCountryId *adjust_id = x_CalculateLatLonId(lon_value, lat_value, country, province);
         adjusted_flags = adjust_id == NULL ? 0 : adjust_id->Classify(country, province);
@@ -2439,7 +2422,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         } else if (neardist > 0.0) {
             errcode = eLatLonCountryErr_Water;
             error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "', '"
-                        + countryname + "' is " + NStr::IntToString(m_LatLonCountryMap->AdjustAndRoundDistance(neardist)) + " km away";
+                        + countryname + "' is " + NStr::IntToString(x_GetLatLonCountryMap().AdjustAndRoundDistance(neardist)) + " km away";
         } else {
             errcode = eLatLonCountryErr_Water;
             error = "Lat_lon '" + lat_lon + "' is in water '" + id->GetGuessWater() + "'";
@@ -2873,7 +2856,7 @@ bool CSubSource::x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(const strin
         return false;
     }
 
-    static string s_ForbiddenPhrases[] = {
+    static const char* s_ForbiddenPhrases[] = {
         "\t",  // B.6.
         "plasmid", // B.8
         "chromosome", // B.9
@@ -2935,7 +2918,7 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
     }
 
     if (NStr::FindNoCase(value,"plasmid") != NPOS) {
-        static const set<string, PNocase_Conditional> s_PlasmidNameExceptions =
+        MAKE_CONST_SET(s_PlasmidNameExceptions, ct::tagStrNocase,
         { // This list comes from RW-1436/RW-1430
             "Plasmid F",
             "Plasmid R",
@@ -2947,14 +2930,12 @@ bool CSubSource::IsPlasmidNameValid(const string& value, const string& taxname)
             "Plasmid pAM77",
             "Plasmid pAZ1",
             "Plasmid RP4"
-        };
-
+        })
         if (s_PlasmidNameExceptions.find(value) != end(s_PlasmidNameExceptions)) {
             return true;
         }
         return false;
     }
-
     return x_MeetsCommonChromosomeLinkageGroupPlasmidNameRules(value, taxname);
 }
 
@@ -4626,7 +4607,7 @@ CCountries::EStateCleanup s_DoUSAStateCleanup ( string& country ) {
 
 typedef CRowReader<CRowReaderStream_NCBI_TSV> TNCBITSVStream;
 
-static CCountries::TUsaExceptionMap exception_map;
+static CSafeStatic<CCountries::TUsaExceptionMap> exception_map;
 static bool exceptions_initialized = false;
 
 void CCountries::ReadUSAExceptionMap (CCountries::TUsaExceptionMap& exceptions, const string& exception_file ) {
@@ -4647,7 +4628,7 @@ void CCountries::ReadUSAExceptionMap (CCountries::TUsaExceptionMap& exceptions, 
 void CCountries::LoadUSAExceptionMap (const TUsaExceptionMap& exceptions) {
 
     // clear previous map
-    exception_map.clear();
+    exception_map->clear();
 
     // initialize internal exception map
     for ( const auto & itm : exceptions ) {
@@ -4663,7 +4644,7 @@ void CCountries::LoadUSAExceptionMap (const TUsaExceptionMap& exceptions) {
             fr = f1 + ": " + f2;
         }
 
-        exception_map [fr] = to;
+        (*exception_map)[fr] = to;
     }
 
     exceptions_initialized = true;
@@ -4687,7 +4668,7 @@ string CCountries::USAStateCleanup ( const string& country, CCountries::EStateCl
 
     // apply exceptions from preloaded data file
     if ( exceptions_initialized ) {
-        string corrected = exception_map [working];
+        string corrected = (*exception_map) [working];
         if ( ! corrected.empty()) {
             // presence in map here will disambiguate otherwise ambiguous name pair,
             // thus self-entries need to be added to the ambiguous state exception list
@@ -4903,7 +4884,6 @@ static const TStaticQualFixPair kDevStagePairs[] = {
     { "juvenile", "juvenile" },
     { "larva", "larva" }
 };
-
 DEFINE_STATIC_ARRAY_MAP(TStaticQualFixMap, sc_DevStagePairs, kDevStagePairs);
 
 
@@ -4925,7 +4905,6 @@ static const TStaticQualFixPair kCellTypePairs[] = {
     { "lymphocyte", "lymphocyte" },
     { "neuroblast", "neuroblast" }
 };
-
 DEFINE_STATIC_ARRAY_MAP(TStaticQualFixMap, sc_CellTypePairs, kCellTypePairs);
 
 string CSubSource::FixCellTypeCapitalization(const string& value)
@@ -4943,7 +4922,7 @@ string CSubSource::FixCellTypeCapitalization(const string& value)
 DEFINE_STATIC_FAST_MUTEX(s_QualFixMutex);
 typedef map<string, string, PNocase> TQualFixMap;
 
-static TQualFixMap s_IsolationSourceMap;
+static CSafeStatic<TQualFixMap> s_IsolationSourceMap;
 static bool s_QualFixupMapsInitialized = false;
 
 static void s_ProcessQualMapLine(const CTempString& line, TQualFixMap& qual_map)
@@ -5000,7 +4979,7 @@ static void s_InitializeQualMaps(void)
     }
 
     // tissue types
-    s_AddOneDataFile("isolation_sources.txt", "isolation sources", (const char **)k_isolation_sources, sizeof(k_isolation_sources) / sizeof(char *), s_IsolationSourceMap);
+    s_AddOneDataFile("isolation_sources.txt", "isolation sources", (const char **)k_isolation_sources, sizeof(k_isolation_sources) / sizeof(char *), s_IsolationSourceMap.Get());
     s_QualFixupMapsInitialized = true;
 }
 
@@ -5014,8 +4993,8 @@ string CSubSource::FixIsolationSourceCapitalization(const string& value)
 
     s_InitializeQualMaps();
 
-    TQualFixMap::iterator it = s_IsolationSourceMap.find(value);
-    if (it != s_IsolationSourceMap.end()) {
+    TQualFixMap::iterator it = s_IsolationSourceMap->find(value);
+    if (it != s_IsolationSourceMap->end()) {
         return it->second;
     }
 
@@ -5040,8 +5019,8 @@ string CSubSource::FixTissueTypeCapitalization(const string& value)
     string fix = value;
 
     s_InitializeQualMaps();
-    TQualFixMap::iterator it = s_IsolationSourceMap.find(value);
-    if (it != s_IsolationSourceMap.end()) {
+    TQualFixMap::iterator it = s_IsolationSourceMap->find(value);
+    if (it != s_IsolationSourceMap->end()) {
         return it->second;
     }
 
@@ -5583,7 +5562,7 @@ static const size_t k_NumLatLonCountryText = ArraySize(s_DefaultLatLonCountryTex
 #include "lat_lon_water.inc"
 static const size_t k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
 
-void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
+void CLatLonMap_Base::x_InitFromDefaultList(const char * const *list, int num)
 {
     if (getenv("NCBI_DEBUG")) {
         ERR_POST(Note << "Falling back on built-in data for latlon / water data.");
@@ -5617,7 +5596,7 @@ void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 
 
 
-bool CLatLonCountryMap::x_InitFromFile(const string& filename)
+bool CLatLonMap_Base::x_InitFromFile(const string& filename)
 {
     string fname = g_FindDataFile (filename);
     if (NStr::IsBlank (fname)) {
@@ -5690,7 +5669,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
 }
 
 bool
-CLatLonCountryMap::s_CompareTwoLinesByLatLonOnly(
+CLatLonMap_Base::s_CompareTwoLinesByLatLonOnly(
     const CCountryLine* line1,
     const CCountryLine* line2)
 {
@@ -5707,9 +5686,9 @@ CLatLonCountryMap::s_CompareTwoLinesByLatLonOnly(
     }
 }
 
-bool CLatLonCountryMap::
+bool CLatLonMap_Base::
         s_CompareTwoLinesByCountry(const CCountryLine* line1,
-                                    const CCountryLine* line2)
+                                   const CCountryLine* line2)
 {
     int cmp = NStr::CompareNocase(line1->GetCountry(), line2->GetCountry());
     if (cmp == 0) {
@@ -5722,9 +5701,9 @@ bool CLatLonCountryMap::
 }
 
 
-bool CLatLonCountryMap::
+bool CLatLonMap_Base::
         s_CompareTwoLinesByLatLonThenCountry(const CCountryLine* line1,
-                                    const CCountryLine* line2)
+                                             const CCountryLine* line2)
 {
     if (line1->GetY() < line2->GetY()) {
         return true;
@@ -5749,7 +5728,7 @@ bool CLatLonCountryMap::
 }
 
 
-CLatLonCountryMap::CLatLonCountryMap (bool is_water)
+CLatLonMap_Base::CLatLonMap_Base(bool is_water)
 {
     // initialize list of country lines
     m_CountryLineList.clear();
@@ -5829,7 +5808,7 @@ CLatLonCountryMap::CLatLonCountryMap (bool is_water)
 }
 
 
-CLatLonCountryMap::~CLatLonCountryMap (void)
+CLatLonMap_Base::~CLatLonMap_Base(void)
 {
       size_t i;
 
@@ -5847,8 +5826,8 @@ CLatLonCountryMap::~CLatLonCountryMap (void)
 }
 
 
-bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
-                                          double lon) const
+bool CLatLonMap_Base::IsCountryInLatLon(const string& country, double lat,
+                                        double lon) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
@@ -5902,7 +5881,7 @@ bool CLatLonCountryMap::IsCountryInLatLon(const string& country, double lat,
 
 
 const CCountryExtreme *
-CLatLonCountryMap::x_FindCountryExtreme(const string& country) const
+CLatLonMap_Base::x_FindCountryExtreme(const string& country) const
 {
     size_t L, R, mid;
 
@@ -5927,7 +5906,7 @@ CLatLonCountryMap::x_FindCountryExtreme(const string& country) const
 }
 
 
-bool CLatLonCountryMap::HaveLatLonForRegion(const string& region) const
+bool CLatLonMap_Base::HaveLatLonForRegion(const string& region) const
 {
     if (x_FindCountryExtreme(region) == NULL) {
         return false;
@@ -5937,7 +5916,7 @@ bool CLatLonCountryMap::HaveLatLonForRegion(const string& region) const
 }
 
 
-size_t CLatLonCountryMap::x_GetLatStartIndex (int y) const
+size_t CLatLonMap_Base::x_GetLatStartIndex (int y) const
 {
     size_t L, R, mid;
 
@@ -5964,9 +5943,9 @@ size_t CLatLonCountryMap::x_GetLatStartIndex (int y) const
 
 
 const CCountryExtreme *
-CLatLonCountryMap::GuessRegionForLatLon(double lat, double lon,
-                                        const string& country,
-                                        const string& province) const
+CLatLonMap_Base::GuessRegionForLatLon(double lat, double lon,
+                                      const string& country,
+                                      const string& province) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -6058,10 +6037,10 @@ double ErrorDistance (
 }
 
 
-const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
-                                                               double lon,
-                                                               double range,
-                                                               double &distance)
+const CCountryExtreme * CLatLonMap_Base::FindClosestToLatLon(double lat,
+                                                             double lon,
+                                                             double range,
+                                                             double &distance)
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -6108,9 +6087,9 @@ const CCountryExtreme * CLatLonCountryMap::FindClosestToLatLon(double lat,
 }
 
 
-bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
-                                          double lat, double lon,
-                                          double range, double &distance) const
+bool CLatLonMap_Base::IsClosestToLatLon(const string& comp_country,
+                                        double lat, double lon,
+                                        double range, double &distance) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLon(lat, m_Scale);
@@ -6168,11 +6147,11 @@ bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
 }
 
 
-const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
-                                                        double range,
-                                                        double &distance,
-                                                        const string& country,
-                                                        const string& province) const
+const CCountryExtreme * CLatLonMap_Base::IsNearLatLon(double lat, double lon,
+                                                      double range,
+                                                      double &distance,
+                                                      const string& country,
+                                                      const string& province) const
 {
     int x = CCountryLine::ConvertLon(lon, m_Scale);
     int y = CCountryLine::ConvertLat(lat, m_Scale);
@@ -6217,10 +6196,8 @@ const CCountryExtreme * CLatLonCountryMap::IsNearLatLon(double lat, double lon,
 
 
 
-
-
-bool CLatLonCountryMap::DoCountryBoxesOverlap(const string& country1,
-                                              const string& country2) const
+bool CLatLonMap_Base::DoCountryBoxesOverlap(const string& country1,
+                                            const string& country2) const
 {
     if (NStr::IsBlank (country1) || NStr::IsBlank(country2)) return false;
 
@@ -6238,7 +6215,7 @@ bool CLatLonCountryMap::DoCountryBoxesOverlap(const string& country1,
 }
 
 
-int CLatLonCountryMap::AdjustAndRoundDistance (double distance, double scale)
+int CLatLonMap_Base::AdjustAndRoundDistance (double distance, double scale)
 
 {
   if (scale < 1.1) {
@@ -6253,12 +6230,23 @@ int CLatLonCountryMap::AdjustAndRoundDistance (double distance, double scale)
 }
 
 
-int CLatLonCountryMap::AdjustAndRoundDistance (double distance) const
-
+int CLatLonMap_Base::AdjustAndRoundDistance (double distance) const
 {
   return AdjustAndRoundDistance (distance, m_Scale);
 }
 
+
+CLatLonCountryMap& CSubSource::x_GetLatLonCountryMap(void)
+{
+    static CSafeStatic<CLatLonCountryMap> s_map;
+    return s_map.Get();
+}
+
+CLatLonWaterMap& CSubSource::x_GetLatLonWaterMap(void)
+{
+    static CSafeStatic<CLatLonWaterMap> s_map;
+    return s_map.Get();
+}
 
 
 
