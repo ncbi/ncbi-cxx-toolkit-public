@@ -692,7 +692,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
     const double kMinusInf (-1e12);
 
     m_compartments.clear();
-    const int dimhits = m_hitrefs.size();
+    const size_type dimhits = m_hitrefs.size();
     if(dimhits == 0) {
         return 0;
     }
@@ -962,7 +962,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
             size_t nullified (0);
-            for(int in (hitrefs.size()), i (in - 1); i > 0; --i) {
+            for(size_type in (hitrefs.size()), i (in - 1); i > 0; --i) {
 
                 int j1 (i);
                 while(j1 < in && hitrefs[j1].IsNull()) ++j1;
@@ -1093,7 +1093,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
         stable_sort(ihr_b, ihr_e, THitComparator(THitComparator::eSubjMinSubjMax));
 
         // complete x-filtering using the full set of hits
-        for(int icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
+        for(size_type icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
 
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
@@ -1144,7 +1144,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             }
         }
 
-        for(int icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
+        for(size_type icn (m_compartments.size()), ic (icn - 1); ic >= 0; --ic) {
 
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
@@ -1187,7 +1187,7 @@ size_t CCompartmentFinder<THit>::sx_XFilter(
     size_t min_compartment_hit_len)
 {
     size_t nullified (0);
-    for(int in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
+    for(size_type in (hitrefs.size()), i (in - 2); i > 0 && ihr != ihr_e; --i) {
 
         THitRef& h1 (hitrefs[i]);
         if(h1.IsNull()) continue;
