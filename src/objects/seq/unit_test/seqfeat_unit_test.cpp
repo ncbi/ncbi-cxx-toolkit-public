@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
 {
     CAutoInitRef<CSeq_feat> seq_feat;
 
-    const static string exts_names[] = {
+    const string exts_names[] = {
         "ext1",
         "ext2",
         "ext3",
@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
     }
 
     // test remove
-    const static size_t idx_of_name_to_remove = 1;
+    const size_t idx_of_name_to_remove = 1;
     seq_feat->RemoveExt(exts_names[idx_of_name_to_remove]);
     BOOST_CHECK_EQUAL(seq_feat->GetExts().size(),
                       (ArraySize(exts_names) - 1));
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
     }
 
     // test plain Ext instead of Exts
-    static const string plain_ext_name = "foo";
+    const string plain_ext_name = "foo";
     seq_feat->SetExt().SetType().SetStr(plain_ext_name);
     BOOST_CHECK( !! seq_feat->IsSetExt() );
     BOOST_CHECK_EQUAL(
@@ -129,8 +129,8 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
 
     // check "CombinedFeatureUserObjects", which allows packing multiple
     // exts into the plain TExt object
-    static const string combo_ext_name = "CombinedFeatureUserObjects";
-    static const string combo_test_ext_names[] = {
+    const string combo_ext_name = "CombinedFeatureUserObjects";
+    const string combo_test_ext_names[] = {
         "combo1",
         "combo2",
         "combo3",
@@ -147,7 +147,7 @@ BOOST_AUTO_TEST_CASE(Test_FindAddRemoveExts)
         seq_feat->GetExt().GetData().size(), ArraySize(combo_test_ext_names));
 
     // check CombinedFeatureUserObjects removal:
-    static const size_t combo_idx_to_remove = 2;
+    const size_t combo_idx_to_remove = 2;
     seq_feat->RemoveExt(combo_test_ext_names[combo_idx_to_remove]);
     BOOST_CHECK_EQUAL(
         seq_feat->GetExt().GetData().size(),
@@ -167,7 +167,7 @@ BOOST_AUTO_TEST_CASE(Test_AddExtWithAndWithoutReplace)
 {
     CAutoInitRef<CSeq_feat> seq_feat;
 
-    const static string ext_type("foo");
+    const string ext_type("foo");
 
     // load a few foo's
     seq_feat->AddExt(s_CreateSimpleUserObj(ext_type));
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE(Test_AddExtWithAndWithoutReplace)
     BOOST_CHECK_EQUAL(counting_map_1[ext_type], 4u);
 
     // add another
-    const static string ext_type_2("baz");
+    const string ext_type_2("baz");
     seq_feat->AddExt(s_CreateSimpleUserObj(ext_type_2));
     TExtsTypeToCount counting_map_2 = s_CalcExtsTypesCounts(*seq_feat);
     BOOST_CHECK_EQUAL(counting_map_2.size(), 2u);
