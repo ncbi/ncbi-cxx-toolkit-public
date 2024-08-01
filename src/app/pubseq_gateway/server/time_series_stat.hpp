@@ -105,8 +105,20 @@ class CTimeSeriesBase
 class CMomentousCounterSeries : public CTimeSeriesBase
 {
     public:
-        CMomentousCounterSeries();
-        void Add(uint64_t   value);
+        CMomentousCounterSeries() :
+            m_Accumulated(0), m_AccumulatedCount(0),
+            m_TotalValues(0.0),
+            m_MaxValue(0.0)
+        {
+            Reset();
+        }
+
+        void Add(uint64_t   value)
+        {
+            m_Accumulated += value;
+            ++m_AccumulatedCount;
+        }
+
         void Rotate(void);
         void Reset(void);
         CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
@@ -127,10 +139,64 @@ class CMomentousCounterSeries : public CTimeSeriesBase
         size_t      m_AccumulatedCount;
 
         // Average per minute
-        double      m_Values[kSeriesIntervals];
+        uint64_t    m_Values[kSeriesIntervals];
         double      m_TotalValues;
         double      m_MaxValue;
+};
 
+
+// The class collects average performance per minute intervals
+class CAvgPerformanceSeries : public CTimeSeriesBase
+{
+    public:
+        CAvgPerformanceSeries() :
+            m_Accumulated(0), m_AccumulatedCount(0),
+            m_AllTimeAbsoluteMinMks(0),
+            m_AllTimeAbsoluteMaxMks(0)
+        {
+            Reset();
+        }
+
+        void Add(uint64_t   value)
+        {
+            m_Accumulated += value;
+            ++m_AccumulatedCount;
+
+            if (value > m_AllTimeAbsoluteMaxMks) {
+                m_AllTimeAbsoluteMaxMks = value;
+            }
+            if (value > 0) {
+                if (value < m_AllTimeAbsoluteMinMks || m_AllTimeAbsoluteMinMks == 0) {
+                    m_AllTimeAbsoluteMinMks = value;
+                }
+            }
+        }
+
+        void Rotate(void);
+        void Reset(void);
+        CJsonNode  Serialize(const vector<pair<int, int>> &  time_series,
+                             int  most_ancient_time,
+                             int  most_recent_time,
+                             bool  loop, size_t  current_index) const;
+
+    protected:
+        CJsonNode x_SerializeOneSeries(const vector<pair<int, int>> &  time_series,
+                                       int  most_ancient_time,
+                                       int  most_recent_time,
+                                       bool  loop,
+                                       size_t  current_index) const;
+
+    protected:
+        // Accumulated within a minute
+        uint64_t    m_Accumulated;
+        size_t      m_AccumulatedCount;
+
+        // Average per minute
+        uint64_t    m_IntervalSum[kSeriesIntervals];
+        size_t      m_IntervalCOunt[kSeriesIntervals];
+
+        uint64_t    m_AllTimeAbsoluteMinMks;
+        uint64_t    m_AllTimeAbsoluteMaxMks;
 };
 
 
@@ -138,7 +204,12 @@ class CMomentousCounterSeries : public CTimeSeriesBase
 class CMonotonicCounterSeries : public CTimeSeriesBase
 {
     public:
-        CMonotonicCounterSeries();
+        CMonotonicCounterSeries() :
+            m_TotalValues(0), m_MaxValue(0)
+        {
+            Reset();
+        }
+
         void Add(void);
         void Rotate(void);
         void Reset(void);

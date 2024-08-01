@@ -577,6 +577,7 @@ int CPubseqGatewayApp::Run(void)
                     if (++s_TickNoFor1Min % 60 == 0) {
                         s_TickNoFor1Min = 0;
                         this->m_Timing->RotateRequestStat();
+                        this->m_Timing->RotateAvgPerfTimeSeries();
                     }
                 });
     } catch (const CException &  exc) {

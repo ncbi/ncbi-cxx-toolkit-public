@@ -31,6 +31,7 @@
  */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <cmath>
 
 #include "time_series_stat.hpp"
 
@@ -70,23 +71,6 @@ CTimeSeriesBase::CheckToSkip(int  most_ancient_time,
 }
 
 
-CMomentousCounterSeries::CMomentousCounterSeries() :
-    m_Accumulated(0), m_AccumulatedCount(0),
-    m_TotalValues(0.0),
-    m_MaxValue(0.0)
-{
-    Reset();
-}
-
-
-void CMomentousCounterSeries::Add(uint64_t   value)
-{
-    // Adding happens every 5 seconds and goes to the accumulated values
-    m_Accumulated += value;
-    ++m_AccumulatedCount;
-}
-
-
 void CMomentousCounterSeries::Rotate(void)
 {
     // Rotate should:
@@ -95,7 +79,12 @@ void CMomentousCounterSeries::Rotate(void)
     // - rotate the current index
 
     size_t      current_index = m_CurrentIndex.load();
-    m_Values[current_index] = double(m_Accumulated) / double(m_AccumulatedCount);
+
+    if (m_AccumulatedCount == 0) {
+        m_Values[current_index] = 0.0;
+    } else {
+        m_Values[current_index] = double(m_Accumulated) / double(m_AccumulatedCount);
+    }
     m_TotalValues += m_Values[current_index];
     if (m_Values[current_index] > m_MaxValue) {
         m_MaxValue = m_Values[current_index];
@@ -111,7 +100,7 @@ void CMomentousCounterSeries::Rotate(void)
         ++new_current_index;
     }
 
-    m_Values[new_current_index] = 0;
+    m_Values[new_current_index] = 0.0;
 
     m_CurrentIndex.store(new_current_index);
     ++m_TotalMinutesCollected;
@@ -341,10 +330,307 @@ CMomentousCounterSeries::x_SerializeOneSeries(const vector<pair<int, int>> &  ti
 }
 
 
-CMonotonicCounterSeries::CMonotonicCounterSeries()
+void CAvgPerformanceSeries::Rotate(void)
 {
-    Reset();
+    // Rotate should:
+    // - store it in the current index cell
+    // - rotate the current index
+
+    size_t      current_index = m_CurrentIndex.load();
+
+    m_IntervalSum[current_index] = m_Accumulated;
+    m_IntervalCOunt[current_index] = m_AccumulatedCount;
+
+    m_Accumulated = 0;
+    m_AccumulatedCount = 0;
+
+    size_t      new_current_index = m_CurrentIndex.load();
+    if (new_current_index == kSeriesIntervals - 1) {
+        new_current_index = 0;
+    } else {
+        ++new_current_index;
+    }
+
+    m_IntervalSum[new_current_index] = 0;
+    m_IntervalCOunt[new_current_index] = 0;
+
+    m_CurrentIndex.store(new_current_index);
+    ++m_TotalMinutesCollected;
+    if (new_current_index == 0) {
+        m_Loop = true;
+    }
 }
+
+
+void CAvgPerformanceSeries::Reset(void)
+{
+    for (size_t  k = 0; k < kSeriesIntervals; ++k) {
+        m_IntervalSum[k] = 0;
+        m_IntervalCOunt[k] = 0;
+    }
+
+    m_Accumulated = 0;
+    m_AccumulatedCount = 0;
+
+    m_AllTimeAbsoluteMinMks = 0;
+    m_AllTimeAbsoluteMaxMks = 0;
+
+    m_CurrentIndex.store(0);
+    m_TotalMinutesCollected.store(1);
+    m_Loop = false;
+}
+
+
+CJsonNode
+CAvgPerformanceSeries::Serialize(const vector<pair<int, int>> &  time_series,
+                                 int  most_ancient_time,
+                                 int  most_recent_time,
+                                 bool  loop, size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    ret.SetByKey("AverageValues",
+                 x_SerializeOneSeries(time_series,
+                                      most_ancient_time, most_recent_time,
+                                      loop, current_index));
+    return ret;
+}
+
+
+CJsonNode
+CAvgPerformanceSeries::x_SerializeOneSeries(const vector<pair<int, int>> &  time_series,
+                                            int  most_ancient_time,
+                                            int  most_recent_time,
+                                            bool  loop,
+                                            size_t  current_index) const
+{
+    CJsonNode   ret(CJsonNode::NewObjectNode());
+
+    if (current_index == 0 && loop == false) {
+        // There is no data collected yet
+        return ret;
+    }
+
+    CJsonNode   output_series(CJsonNode::NewArrayNode());
+
+    // Index in the array where the data are collected
+    size_t      raw_index;
+    if (current_index == 0) {
+        raw_index = kSeriesIntervals - 1;
+        loop = false;   // to avoid going the second time over
+    } else {
+        raw_index = current_index - 1;
+    }
+
+    size_t      current_accumulated_mins = 0;
+
+    uint64_t    current_accumulated_sums = 0;
+    size_t      current_accumulated_count = 0;
+
+    double      total_max_avg = 0.0;
+    double      total_min_avg = 0.0;
+    double      observed_max_avg = 0.0;
+    double      observed_min_avg = 0.0;
+
+    size_t      output_data_index = 0;
+
+    // The current index in the 'time_series', i.e. a pair of
+    // <mins to accumulate>:<last sequential data index>
+    // It is guaranteed they are both > 0.
+    size_t      range_index = 0;
+    size_t      current_mins_to_accumulate = time_series[range_index].first;
+    size_t      current_last_seq_index = time_series[range_index].second;
+
+    ssize_t     actual_range_start_sec = -1;
+    ssize_t     actual_range_end_sec = -1;
+    ssize_t     past_minute = -1;
+
+    for ( ;; ) {
+        double  current_avg = 0.0;
+        if (m_IntervalCOunt[raw_index] > 0) {
+            current_avg = (double)(m_IntervalSum[raw_index]) / (double)(m_IntervalCOunt[raw_index]);
+        }
+        if (current_avg > total_max_avg) {
+            total_max_avg = current_avg;
+        }
+        if (current_avg > 0.0) {
+            if (current_avg < total_min_avg || total_min_avg == 0.0) {
+                total_min_avg = current_avg;
+            }
+        }
+
+        ++past_minute;
+        ssize_t     current_values_start_sec = past_minute * 60;
+        ssize_t     current_values_end_sec = current_values_start_sec + 59;
+
+        auto        skip_check = CheckToSkip(most_ancient_time, most_recent_time,
+                                             current_values_start_sec,
+                                             current_values_end_sec);
+        if (skip_check != EPSGS_SkipCheckResult::ePSGS_DontSkip) {
+            // Regardless how it was skipped (at the beginning or at the end)
+            // it needs to continue due to a necessity to calculate
+            // total_[min/max]_avg
+            if (raw_index == 0)
+                break;
+            --raw_index;
+            continue;
+        }
+
+        // Update the actual covered time frame
+        if (actual_range_start_sec < 0) {
+            actual_range_start_sec = current_values_start_sec;
+        }
+        actual_range_end_sec = current_values_end_sec;
+
+
+        uint64_t    val_sum = m_IntervalSum[raw_index];
+        size_t      val_cnt = m_IntervalCOunt[raw_index];
+
+        if (current_avg > observed_max_avg) {
+            observed_max_avg = current_avg;
+        }
+        if (current_avg > 0.0) {
+            if (current_avg < observed_min_avg || observed_min_avg == 0.0) {
+                observed_min_avg = current_avg;
+            }
+        }
+
+        ++current_accumulated_mins;
+        current_accumulated_sums += val_sum;
+        current_accumulated_count += val_cnt;
+
+        if (current_accumulated_mins >= current_mins_to_accumulate) {
+            if (current_accumulated_count > 0) {
+                output_series.AppendInteger(
+                        lround(double(current_accumulated_sums) /
+                               double(current_accumulated_count)));
+            } else {
+                output_series.AppendInteger(0);
+            }
+            current_accumulated_sums = 0;
+            current_accumulated_count = 0;
+            current_accumulated_mins = 0;
+        }
+
+        ++output_data_index;
+        if (output_data_index > current_last_seq_index) {
+            ++range_index;
+            current_mins_to_accumulate = time_series[range_index].first;
+            current_last_seq_index = time_series[range_index].second;
+        }
+
+        if (raw_index == 0)
+            break;
+        --raw_index;
+    }
+
+    if (loop) {
+        raw_index = kSeriesIntervals - 1;
+        while (raw_index > current_index + 1) {
+            double  current_avg = 0.0;
+            if (m_IntervalCOunt[raw_index] > 0) {
+                current_avg = (double)(m_IntervalSum[raw_index]) / (double)(m_IntervalCOunt[raw_index]);
+            }
+            if (current_avg > total_max_avg) {
+                total_max_avg = current_avg;
+            }
+            if (current_avg > 0.0) {
+                if (current_avg < total_min_avg || total_min_avg == 0.0) {
+                    total_min_avg = current_avg;
+                }
+            }
+
+            ++past_minute;
+            ssize_t     current_values_start_sec = past_minute * 60;
+            ssize_t     current_values_end_sec = current_values_start_sec + 59;
+            auto        skip_check = CheckToSkip(most_ancient_time, most_recent_time,
+                                                 current_values_start_sec,
+                                                 current_values_end_sec);
+            if (skip_check != EPSGS_SkipCheckResult::ePSGS_DontSkip) {
+                // Regardless how it was skipped (at the beginning or at the end)
+                // it needs to continue due to a necessity to calculate
+                // total_processed_vals
+                --raw_index;
+                continue;
+            }
+
+            // Update the actual covered time frame
+            if (actual_range_start_sec < 0) {
+                actual_range_start_sec = current_values_start_sec;
+            }
+            actual_range_end_sec = current_values_end_sec;
+
+            uint64_t    val_sum = m_IntervalSum[raw_index];
+            size_t      val_cnt = m_IntervalCOunt[raw_index];
+
+            if (current_avg > observed_max_avg) {
+                observed_max_avg = current_avg;
+            }
+            if (current_avg > 0.0) {
+                if (current_avg < observed_min_avg || observed_min_avg == 0.0) {
+                    observed_min_avg = current_avg;
+                }
+            }
+
+            --raw_index;
+
+            ++current_accumulated_mins;
+            current_accumulated_sums += val_sum;
+            current_accumulated_count += val_cnt;
+
+            if (current_accumulated_mins >= current_mins_to_accumulate) {
+                if (current_accumulated_count > 0) {
+                    output_series.AppendInteger(
+                            lround(double(current_accumulated_sums) /
+                                   double(current_accumulated_count)));
+                } else {
+                    output_series.AppendInteger(0);
+                }
+                current_accumulated_sums = 0;
+                current_accumulated_count = 0;
+                current_accumulated_mins = 0;
+            }
+
+            ++output_data_index;
+            if (output_data_index > current_last_seq_index) {
+                ++range_index;
+                current_mins_to_accumulate = time_series[range_index].first;
+                current_last_seq_index = time_series[range_index].second;
+            }
+        }
+    }
+
+    if (actual_range_start_sec == -1 && actual_range_end_sec == -1) {
+        // No data points were picked
+        return ret;
+    }
+
+    ret.SetInteger(kActualTimeRangeStart, actual_range_start_sec);
+    ret.SetInteger(kActualTimeRangeEnd, actual_range_end_sec);
+
+    if (current_accumulated_mins > 0) {
+        if (current_accumulated_count > 0) {
+            output_series.AppendInteger(
+                    lround(double(current_accumulated_sums) /
+                           double(current_accumulated_count)));
+        } else {
+            output_series.AppendInteger(0);
+        }
+    }
+
+    ret.SetString("Description", "The time_series array contains "
+                                 "average mks required to complete an operation");
+    ret.SetInteger("AllTimeMaxAvg", lround(total_max_avg));
+    ret.SetInteger("AllTimeMinAvg", lround(total_min_avg));
+    ret.SetInteger("ObservedMaxAvg", lround(observed_max_avg));
+    ret.SetInteger("ObservedMinAvg", lround(observed_min_avg));
+    ret.SetInteger("AllTimeAbsoluteMax", m_AllTimeAbsoluteMaxMks);
+    ret.SetInteger("AllTimeAbsoluteMin", m_AllTimeAbsoluteMinMks);
+
+    ret.SetByKey("time_series", output_series);
+    return ret;
+}
+
 
 void CMonotonicCounterSeries::Add(void)
 {
