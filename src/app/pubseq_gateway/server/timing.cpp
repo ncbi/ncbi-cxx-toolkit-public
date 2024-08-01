@@ -1480,6 +1480,87 @@ void COperationTiming::RotateRequestStat(void)
 }
 
 
+void COperationTiming::RotateAvgPerfTimeSeries(void)
+{
+    lock_guard<mutex>   guard(m_Lock);
+
+    for (size_t  k = 0; k <= 1; ++k) {
+        m_LookupLmdbSi2csiTiming[k]->RotateAvgTimeSeries();
+        m_LookupLmdbBioseqInfoTiming[k]->RotateAvgTimeSeries();
+        m_LookupLmdbBlobPropTiming[k]->RotateAvgTimeSeries();
+        m_LookupCassSi2csiTiming[k]->RotateAvgTimeSeries();
+        m_LookupCassBioseqInfoTiming[k]->RotateAvgTimeSeries();
+        m_LookupCassBlobPropTiming[k]->RotateAvgTimeSeries();
+        m_RetrieveMyNCBITiming[k]->RotateAvgTimeSeries();
+        m_ResolutionLmdbTiming[k]->RotateAvgTimeSeries();
+        m_ResolutionCassTiming[k]->RotateAvgTimeSeries();
+        m_SplitHistoryRetrieveTiming[k]->RotateAvgTimeSeries();
+        m_PublicCommentRetrieveTiming[k]->RotateAvgTimeSeries();
+        m_AccVerHistoryRetrieveTiming[k]->RotateAvgTimeSeries();
+        m_IPGResolveRetrieveTiming[k]->RotateAvgTimeSeries();
+        m_VDBOpenTiming[k]->RotateAvgTimeSeries();
+        m_SNPPTISLookupTiming[k]->RotateAvgTimeSeries();
+        m_WGSVDBLookupTiming[k]->RotateAvgTimeSeries();
+    }
+
+    for (size_t  k = 0; k < m_NARetrieveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_NARetrieveTiming[k].size(); ++m) {
+            m_NARetrieveTiming[k][m]->RotateAvgTimeSeries();
+        }
+    }
+
+    for (size_t  k = 0; k < m_TSEChunkRetrieveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_TSEChunkRetrieveTiming[k].size(); ++m) {
+            m_TSEChunkRetrieveTiming[k][m]->RotateAvgTimeSeries();
+        }
+    }
+
+    for (size_t  k = 0; k < m_NAResolveTiming.size(); ++k) {
+        for (size_t  m = 0; m < m_NAResolveTiming[k].size(); ++m) {
+            m_NAResolveTiming[k][m]->RotateAvgTimeSeries();
+        }
+    }
+
+    for (auto &  item : m_HugeBlobRetrievalTiming)
+        item->RotateAvgTimeSeries();
+
+    for (auto &  item : m_NotFoundBlobRetrievalTiming)
+        item->RotateAvgTimeSeries();
+
+    for (auto &  item : m_ResolutionErrorTiming)
+        item->RotateAvgTimeSeries();
+
+    for (auto &  item : m_ResolutionNotFoundTiming)
+        item->RotateAvgTimeSeries();
+
+    for (auto &  item : m_ResolutionFoundTiming)
+        item->RotateAvgTimeSeries();
+
+    m_BacklogTiming->RotateAvgTimeSeries();
+    m_RetrieveMyNCBIErrorTiming->RotateAvgTimeSeries();
+
+    for (auto &  item : m_ResolutionFoundCassandraTiming)
+        item->RotateAvgTimeSeries();
+
+    for (size_t  k=0; k < m_BlobRetrieveTiming.size(); ++k) {
+        for (auto &  item : m_BlobRetrieveTiming[k]) {
+            item->RotateAvgTimeSeries();
+        }
+    }
+
+    for (size_t  req_index = 0;
+         req_index < static_cast<size_t>(CPSGS_Request::ePSGS_UnknownRequest);
+         ++req_index) {
+        for (size_t  proc_index = 0; proc_index < m_ProcGroupToIndex.size(); ++proc_index) {
+            m_DoneProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
+            m_NotFoundProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
+            m_TimeoutProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
+            m_ErrorProcPerformance[req_index][proc_index]->RotateAvgTimeSeries();
+        }
+    }
+}
+
+
 void COperationTiming::CollectMomentousStat(size_t  tcp_conn_count,
                                             size_t  active_request_count,
                                             size_t  backlog_count)
@@ -1619,6 +1700,13 @@ COperationTiming::Serialize(int  most_ancient_time,
 {
     CJsonNode       ret(CJsonNode::NewObjectNode());
 
+    // The collection of data switches to the next slot almost
+    // synchronously so it is possible to get the current index and
+    // loop from one of them
+    bool        loop;
+    size_t      current_index;
+    m_IdGetStat.GetLoopAndIndex(loop, current_index);
+
     // All the histograms have the same number of covered ticks
     ret.SetInteger(kSecondsCovered,
                    tick_span * m_BacklogTiming->GetNumberOfCoveredTicks());
@@ -1652,20 +1740,22 @@ COperationTiming::Serialize(int  most_ancient_time,
                     ret.SetByKey(name_to_histogram.second.m_CounterId,
                                  bytes_counter);
                 }
+
+                if (!time_series.empty()) {
+                    ret.SetByKey(
+                        name_to_histogram.first + "_AvgTimeSeries",
+                        name_to_histogram.second.m_Timing->SerializeAvgPerfSeries(
+                                time_series,
+                                most_ancient_time,
+                                most_recent_time,
+                                loop, current_index));
+                }
             }
         }
 
         // The time series needs to be serialized only if the container is not
         // empty.
         if (!time_series.empty()) {
-
-            // The collection of data switches to the next slot almost
-            // synchronously so it is possible to get the current index and
-            // loop from one of them
-            bool        loop;
-            size_t      current_index;
-            m_IdGetStat.GetLoopAndIndex(loop, current_index);
-
             ret.SetByKey("ID_get_time_series",
                          m_IdGetStat.Serialize(time_series,
                                                most_ancient_time,

@@ -137,18 +137,28 @@ class CPSGTimingBase
         {
             if (m_PSGTiming)
                 m_PSGTiming->Add(mks);
+            m_AvgTimeSeries.Add(mks);
         }
 
         void Reset(void)
         {
             if (m_PSGTiming)
                 m_PSGTiming->Reset();
+            m_AvgTimeSeries.Reset();
         }
 
         void Rotate(void)
         {
             if (m_PSGTiming)
                 m_PSGTiming->Rotate();
+        }
+
+        // The Average time series rotate is done once per minute while the
+        // usual rotate is configurable. So there is a separate method to do
+        // that properly.
+        void RotateAvgTimeSeries(void)
+        {
+            m_AvgTimeSeries.Rotate();
         }
 
         TPSGTiming::TTicks  GetNumberOfCoveredTicks(void) const
@@ -173,9 +183,24 @@ class CPSGTimingBase
                                           unsigned long  tick_span,
                                           const string &  name,
                                           const string &  description) const;
+        CJsonNode SerializeAvgPerfSeries(const vector<pair<int, int>> &  time_series,
+                                         int  most_ancient_time,
+                                         int  most_recent_time,
+                                         bool  loop,
+                                         size_t  current_index)
+        {
+            return m_AvgTimeSeries.Serialize(time_series,
+                                             most_ancient_time,
+                                             most_recent_time,
+                                             loop, current_index);
+        }
 
     protected:
         unique_ptr<TPSGTiming>      m_PSGTiming;
+
+        // Lets to collect average mks required by an operation within 1 min
+        // intervals for a total of 1 month
+        CAvgPerformanceSeries   m_AvgTimeSeries;
 };
 
 // At the moment almost all the timing classes are the same
@@ -324,6 +349,7 @@ class COperationTiming
     public:
         void Rotate(void);
         void RotateRequestStat(void);
+        void RotateAvgPerfTimeSeries(void);
         void CollectMomentousStat(size_t  tcp_conn_count,
                                   size_t  active_request_count,
                                   size_t  backlog_count);
