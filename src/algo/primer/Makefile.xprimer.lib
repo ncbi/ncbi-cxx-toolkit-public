@@ -17,4 +17,4 @@ SRC = primercheck
 WATCHERS = jianye
 
 USES_LIBRARIES =  \
-    $(OBJMGR_LIBS) gene_info xalgoalignnw xalnmgr
+    $(OBJMGR_LIBS) xalgoalignnw xalnmgr
