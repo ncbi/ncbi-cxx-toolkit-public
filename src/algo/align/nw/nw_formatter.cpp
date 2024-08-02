@@ -929,7 +929,7 @@ void CNWFormatter::MakeSegments(vector<SSegment>* psegments) const
 
     vector<char> trans_ex (tr_idx_hi - tr_idx_lo + 1);
 
-    for(int tr_idx (tr_idx_hi); tr_idx >= tr_idx_lo; ) {
+    for(int tr_idx (static_cast<int>(tr_idx_hi)); tr_idx >= tr_idx_lo; ) {
 
         const char * p1_beg (p1), * p1_x (0);
         const char * p2_beg (p2);
