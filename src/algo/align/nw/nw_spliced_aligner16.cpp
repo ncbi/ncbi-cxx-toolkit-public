@@ -399,8 +399,8 @@ NWSPL_DETECTDONOR(2)
                 const size_t jt (jTail[st_idx]); \
                 const size_t jh (jHead[st_idx]); \
                 if (jt > jh && j - jAllDonors[st_idx][jh] >= m_IntronMinSize) { \
-                    const TScore x ((jAllDonors[st_idx][jh] - \
-                                      jBestDonor[st_idx]) >> ibs); \
+                    const TScore x (static_cast<TScore>((jAllDonors[st_idx][jh] - \
+                                      jBestDonor[st_idx]) >> ibs)); \
                     if (vAllDonors[st_idx][jh] + x > vBestDonor[st_idx]) {  \
                         vBestDonor[st_idx] = vAllDonors[st_idx][jh];  \
                         jBestDonor[st_idx] = jAllDonors[st_idx][jh]; \
