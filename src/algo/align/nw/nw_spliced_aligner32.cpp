@@ -389,7 +389,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (SAlignInOut* data)
                 type = kTypeIntron | dnr_pos;
             }
 
-            backtrace_matrix[k] = type;
+            backtrace_matrix[k] = static_cast<unsigned int>(type);
 
             // detect donor candidates
             if(j < N2 - 2) {
