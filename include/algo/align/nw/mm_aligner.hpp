@@ -128,7 +128,7 @@ struct NCBI_XALGOALIGN_EXPORT SCoordRect {
     SCoordRect(size_t l, size_t t, size_t r, size_t b):
         i1(l), j1(t), i2(r), j2(b) {}
     unsigned int GetArea() {
-        return (i2 - i1 + 1)*(j2 - j1 + 1);
+        return static_cast<unsigned int> ((i2 - i1 + 1)*(j2 - j1 + 1));
     }
 };
 
