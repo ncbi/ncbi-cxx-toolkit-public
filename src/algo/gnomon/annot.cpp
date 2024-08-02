@@ -197,7 +197,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
     Int8 prev_bad_right = rlimit+1;
     bool do_it_again = false;
         
-    m_gnomon->ResetRange(left, right);
+    m_gnomon->ResetRange(static_cast<TSignedSeqPos>(left), static_cast<TSignedSeqPos>(right));
 
     RemoveShortHolesAndRescore(aligns);
 
@@ -232,7 +232,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
         if (right < prev_bad_right) {
             suspect_aligns.clear();
 
-            m_gnomon->ResetRange(left,right);
+            m_gnomon->ResetRange(static_cast<TSignedSeqPos>(left),static_cast<TSignedSeqPos>(right));
 
             cerr << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
@@ -243,7 +243,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
                 score = TryWithoutObviouslyBadAlignments(aligns, suspect_aligns, bad_aligns,
                                                          leftwall, rightwall, leftanchor, rightanchor,
-                                                         left, right, tested_range);
+                                                         static_cast<TSignedSeqPos>(left), static_cast<TSignedSeqPos>(right), tested_range);
             }
 
             if(score == BadScore()) {
@@ -273,10 +273,10 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
         
         list<CGeneModel> genes = m_gnomon->GetGenes();
         
-        TSignedSeqPos partial_start = right;
+        TSignedSeqPos partial_start = static_cast<TSignedSeqPos>(right);
  
         if (right < rlimit && !genes.empty() && !genes.back().RightComplete() && !do_it_again) {
-            partial_start = genes.back().LeftComplete() ? genes.back().RealCdsLimits().GetFrom() : left;
+            partial_start = genes.back().LeftComplete() ? genes.back().RealCdsLimits().GetFrom() : static_cast<TSignedSeqPos>(left);
             _ASSERT ( partial_start < right );
             genes.pop_back();
         }
