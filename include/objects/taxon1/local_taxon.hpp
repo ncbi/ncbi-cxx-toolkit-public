@@ -108,10 +108,8 @@ private: // data types
         STaxidNode();
         ~STaxidNode();
     };
-private: // static 
-    static TNodes s_DummyNodes;
-    static TNodeRef s_InvalidNode;
-    
+    static TNodeRef GetInvalidNode();
+
 private: // data model
     bool m_db_supports_synonym;
     bool m_fallback;

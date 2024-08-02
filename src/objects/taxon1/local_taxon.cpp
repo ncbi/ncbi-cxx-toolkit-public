@@ -33,21 +33,18 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/taxon1/local_taxon.hpp>
-
 #include <objects/seqfeat/Org_ref.hpp>
-
 #include <objects/taxon1/taxon1.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 
 #include <db/sqlite/sqlitewrapp.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CLocalTaxon::TNodes CLocalTaxon::s_DummyNodes;
-CLocalTaxon::TNodeRef CLocalTaxon::s_InvalidNode = CLocalTaxon::s_DummyNodes.end();
 
 void CLocalTaxon::AddArguments(CArgDescriptions& arg_desc)
 {
@@ -91,10 +88,17 @@ CLocalTaxon::~CLocalTaxon()
 {
 }
 
+CLocalTaxon::TNodeRef CLocalTaxon::GetInvalidNode()
+{
+    static CSafeStatic<CLocalTaxon::TNodes> s_DummyNodes;
+    static CLocalTaxon::TNodeRef s_InvalidNode = s_DummyNodes->end();
+    return s_InvalidNode;
+}
+
 CLocalTaxon::STaxidNode::STaxidNode()
     : taxid(INVALID_TAX_ID)
     , is_valid(false)
-    , parent(s_InvalidNode)
+    , parent(GetInvalidNode())
     , genetic_code(-1)
 {
 }
@@ -118,7 +122,7 @@ CLocalTaxon::TTaxid CLocalTaxon::GetParent(TTaxid taxid)
     if (m_SqliteConn.get()) {
         x_Cache(taxid);
         TNodeRef parent = m_Nodes.find(taxid)->second.parent;
-        return parent == s_InvalidNode ? ZERO_TAX_ID : parent->first;
+        return parent == GetInvalidNode() ? ZERO_TAX_ID : parent->first;
     } else {
         return m_TaxonConn->GetParent(taxid);
     }
@@ -516,7 +520,7 @@ void CLocalTaxon::x_GetLineage(TTaxid taxid, TInternalLineage &lineage)
         return;
     }
     lineage.push_front(it);
-    while(lineage.front()->second.parent != s_InvalidNode) {
+    while(lineage.front()->second.parent != GetInvalidNode()) {
         lineage.push_front(lineage.front()->second.parent);
     }
 }
