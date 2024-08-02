@@ -242,9 +242,9 @@ void CSplicedAligner::CheckPreferences(void)
             break;
             
         case eTS_Intron: {
-            int ti (t - 1);
+            int ti (static_cast<int>(t - 1));
             for(; ti >= 0 && m_Transcript[ti] == eTS_Intron; --ti);
-            const int ilen (t - ti);
+            const int ilen (static_cast<int>(t - ti));
             const char * p2e (p2 + ilen);
             if(CNWFormatter::SSegment::s_IsConsensusSplice(p2, p2e - 2, true)) {
                 p2 += ilen;
