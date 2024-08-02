@@ -6,7 +6,7 @@ ASN_DEP = seq
 LIB_ = xngalign xmergetree ncbi_xloader_asn_cache asn_cache \
       bdb xalgoalignnw xalgoalignutil xalgoseq blastinput \
       $(BLAST_DB_DATA_LOADER_LIBS) align_format $(BLAST_LIBS) \
-      gene_info taxon1 xcgi xhtml xregexp $(PCRE_LIB) xqueryparse \
+      taxon1 xcgi xhtml xregexp $(PCRE_LIB) xqueryparse \
       $(GENBANK_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC)) $(FTDS_LIB)
