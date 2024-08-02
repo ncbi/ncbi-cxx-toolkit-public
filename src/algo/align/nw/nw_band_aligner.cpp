@@ -147,7 +147,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
     const TScore wsleft2 (data->m_esf_L2? 0: m_Ws);
 
     TScore wg1 (m_Wg), ws1 (m_Ws);
-    TScore V1 (wgleft2 + wsleft2 * ibeg);
+    TScore V1 (static_cast<TScore> (wgleft2 + wsleft2 * ibeg));
 
     const long d1 (N2 + m_band + m_Shift);
     const size_t iend (d1 <= 0? 0: (d1 < long(N1)? d1: N1));
@@ -168,7 +168,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
         const Uint1 ci (seq1[i]);
         
         if(i == 0) {
-            V2 = wgleft1 + wsleft1 * jbeg;
+            V2 = static_cast<TScore>  ( wgleft1 + wsleft1 * jbeg);
             TScore s (wgleft1);
             for(size_t j (0); j < N2; ++j) {
                 s += wsleft1;
