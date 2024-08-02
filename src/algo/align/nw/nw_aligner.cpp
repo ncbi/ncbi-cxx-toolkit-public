@@ -609,7 +609,7 @@ CNWAligner::TScore CNWAligner::x_Run()
                     SAlignInOut& data = **ii;
 
                     if(static_cast<unsigned int>(data.GetSpace()) >= 10000000 &&
-                       NW_RequestNewThread(sm_maxthreads)) {
+                       NW_RequestNewThread(m_maxthreads)) {
                         
                         CNWAlignerThread_Align* thread = 
                             new CNWAlignerThread_Align(this, &data);
