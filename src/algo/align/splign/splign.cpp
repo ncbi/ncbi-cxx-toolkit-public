@@ -1595,10 +1595,10 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
     
         // make sure to obey the genomic range specified
         if(smin < range_left) {
-            smin = range_left;
+            smin = static_cast<THit::TCoord>(range_left);
         }
         if(smax > range_right) {
-            smax = range_right;
+            smax = static_cast<THit::TCoord>(range_right);
         }
 
         //prohibit extension to go over over non-bridgeable gaps    
@@ -2984,10 +2984,10 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
                 a = s.m_box[1];
             }
             if(a < box[0]) {
-                box[0] = a;
+                box[0] = static_cast<unsigned int>(a);
             }
             if(b > box[1]) {
-                box[1] = b;
+                box[1] = static_cast<unsigned int>(b);
             }
 
             if(s.m_box[2] <= s.m_box[3]) {
@@ -2999,10 +2999,10 @@ void CSplign::SAlignedCompartment::GetBox(Uint4* box) const
                 a = s.m_box[3];
             }
             if(a < box[2]) {
-                box[2] = a;
+                box[2] = static_cast<unsigned int>(a);
             }
             if(b > box[3]) {
-                box[3] = b;
+                box[3] = static_cast<unsigned int>(b);
             }
         }
     }
