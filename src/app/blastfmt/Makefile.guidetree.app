@@ -3,7 +3,7 @@ WATCHERS = camacho boratyng
 APP = guidetree
 SRC = guide_tree_app
 
-LIB_ = phytree_format xalgoalignnw xalgophytree fastme align_format gene_info \
+LIB_ = phytree_format xalgoalignnw xalgophytree fastme align_format \
        xalgoalignutil xhtml xcgi $(BLAST_LIBS) biotree taxon1 $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
