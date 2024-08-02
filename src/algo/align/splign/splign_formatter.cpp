@@ -605,10 +605,10 @@ CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
 {
     CRef<CSpliced_exon_chunk> chunk (new CSpliced_exon_chunk);
     switch(cur) {
-    case 'M': chunk->SetMatch()       = count; break;
-    case 'R': chunk->SetMismatch()    = count; break;
-    case 'I': chunk->SetGenomic_ins() = count; break;
-    case 'D': chunk->SetProduct_ins() = count; break;
+    case 'M': chunk->SetMatch()       = static_cast<CSpliced_exon_chunk_Base::TMatch>(count); break;
+    case 'R': chunk->SetMismatch()    = static_cast<CSpliced_exon_chunk_Base::TMismatch>(count); break;
+    case 'I': chunk->SetGenomic_ins() = static_cast<CSpliced_exon_chunk_Base::TGenomic_ins>(count); break;
+    case 'D': chunk->SetProduct_ins() = static_cast<CSpliced_exon_chunk_Base::TProduct_ins>(count); break;
     default:
         NCBI_THROW(CAlgoAlignException,
                    eInternal,
