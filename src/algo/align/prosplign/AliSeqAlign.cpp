@@ -232,7 +232,8 @@ CRef<CSeq_align> CAliToSeq_align::MakeSeq_align(const CPSeq& cpseq, const CNSeq&
         sps.SetExons().push_back(exon);
     }
     sps.SetProduct_type(CSpliced_seg::eProduct_type_protein);
-    sps.SetProduct_length(cpseq.seq.size());
+    sps.SetProduct_length(static_cast<CSpliced_seg_Base::TProduct_length>(cpseq.seq.size()));
+
 
     return topl;
 }
