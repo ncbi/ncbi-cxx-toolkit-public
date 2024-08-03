@@ -883,7 +883,7 @@ int CReadBlastApp::CollectRNAFeatures(TProblem_locs& problem_locs)
         << (added ? "added" : "skipped")  << NcbiEndl;
       }
     }
-  return problem_locs.size();
+  return static_cast<int>(problem_locs.size());
 
 }
 
