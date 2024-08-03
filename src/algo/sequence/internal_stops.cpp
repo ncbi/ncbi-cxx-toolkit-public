@@ -144,7 +144,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
     string codon = "NNN";
 
     ITERATE(string, s, seq) {
-        state = tbl.NextCodonState(state, *s);
+        state = tbl.NextCodonState(static_cast<int>(state), *s);
         codon[k%3] = *s;
 
         if (++k%3)
@@ -153,7 +153,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
         if (state == kUnknownState)
             continue;
 
-        if (tbl.IsOrfStart(state) || tbl.IsOrfStop(state)) {
+        if (tbl.IsOrfStart(static_cast<int>(state)) || tbl.IsOrfStop(static_cast<int>(state))) {
             if (is_protein) {
                 query_loc->SetInt().SetFrom((k-3)/3);
                 query_loc->SetInt().SetTo((k-3)/3);
@@ -167,10 +167,10 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 continue;
             TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
 
-            if (tbl.IsOrfStart(state)) {
+            if (tbl.IsOrfStart(static_cast<int>(state))) {
                 starts[TSeqRange(mapped_pos, mapped_pos2)] = codon;
             }
-            if (tbl.IsOrfStop(state)) {
+            if (tbl.IsOrfStop(static_cast<int>(state))) {
                 stops.insert(TSeqRange(mapped_pos, mapped_pos2));
             }
         }
