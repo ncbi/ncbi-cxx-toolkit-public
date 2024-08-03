@@ -274,7 +274,7 @@ int CCompartApp::Run()
         matcher->SetPenalty(m_penalty);
         matcher->SetMinIdty(m_min_idty);
         matcher->SetMinSingletonIdty(m_min_singleton_idty);
-        matcher->SetMaxIntron(m_max_intron);
+        matcher->SetMaxIntron(static_cast<TSeqPos>(m_max_intron));
 
         matcher->SetHitsOnly(args["ho"]);
         matcher->SetMinHitLength(args["min_hit_len"].AsInteger());
@@ -414,11 +414,11 @@ int CCompartApp::x_ProcessPair(const string& query0, THitRefs& hitrefs)
     const TCoord penalty_bps (TCoord(m_penalty * qlen + 0.5));
     const TCoord min_matches (TCoord(m_min_idty * qlen + 0.5));
     const TCoord msm1        (TCoord(m_min_singleton_idty * qlen + 0.5));
-    const TCoord msm2        (m_min_singleton_idty_bps);
+    const TCoord msm2        (static_cast<TCoord>(m_min_singleton_idty_bps));
     const TCoord min_singleton_matches (min(msm1, msm2));
 
     TAccessor ca (penalty_bps, min_matches, min_singleton_matches, !m_NoXF);
-    ca.SetMaxIntron(m_max_intron);
+    ca.SetMaxIntron(static_cast<TCoord>(m_max_intron));
     ca.Run(hitrefs.begin(), hitrefs.end());
 
     THitRefs comp;
