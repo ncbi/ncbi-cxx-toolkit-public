@@ -209,13 +209,9 @@ int main(int argc, char** argv)
     if (n != optind  ||  optind >= argc)
         s_Usage(argv[0]);
 
-    s = DBLB_GetServer
-        (argv[optind], standby
-         ? fDBLB_AllowFallbackToStandby
-         : fDBLB_None, p,
-         optind + 1 < argc ? &argv[optind + 1] : 0,  /*NCBI_FAKE_WARNING*/
-         &cp, server, sizeof(server),
-         &result);
+    s = DBLB_GetServer(argv[optind], standby ? fDBLB_AllowFallbackToStandby : fDBLB_None, p,
+         optind + 1 < argc ? (const char* const*)&argv[optind + 1] : (const char* const*)0, 
+         &cp, server, sizeof(server), &result);
 
     if (!(e = DBLB_StatusStr(result))) {
         sprintf(errmsg, "Unknown error %u", (unsigned int) result);

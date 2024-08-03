@@ -93,22 +93,22 @@ typedef struct {
     TNCBI_Time     time;                /* this CP expiration time (time_t)  */
 } SDBLB_ConnPoint;
 
-
-/* Returns its server_name_buf argument filled with a server name
+/**
+ * Returns its server_name_buf argument filled with a server name
  * corresponding to the given LB name.  Both local (LBSM-based) and
  * network (DISPD.CGI-based) service locators (dispatchers) will be
  * consulted unless corresponding mappers are disabled (via registry
  * environment).
  */
-extern const char* DBLB_GetServer
-(const char*             lb_name,           /* [in]  LB name to look up      */
- TDBLB_Flags             flags,             /* [in]  search flags            */
- const SDBLB_Preference* preference,        /* [in]  NULL if no preference   */
- const char* const       skip_servers[],    /* [in]  servers to exclude      */
- SDBLB_ConnPoint*        conn_point,        /* [out] CP if known (NULL skips)*/
- char*                   server_name_buf,   /* [out] buffer to store result  */
- size_t                  server_name_buflen,/* [in]  buffer size             */
- EDBLB_Status*           result             /* [out] status result code      */
+extern const char* DBLB_GetServer (
+   const char*             lb_name,           /* [in]  LB name to look up      */
+   TDBLB_Flags             flags,             /* [in]  search flags            */
+   const SDBLB_Preference* preference,        /* [in]  NULL if no preference   */
+   const char* const       skip_servers[],    /* [in]  servers to exclude      */
+   SDBLB_ConnPoint*        conn_point,        /* [out] CP if known (NULL skips)*/
+   char*                   server_name_buf,   /* [out] buffer to store result  */
+   size_t                  server_name_buflen,/* [in]  buffer size             */
+   EDBLB_Status*           result             /* [out] status result code      */
  );
 
 /* Return text representation of a given status; 0 if out of range.
