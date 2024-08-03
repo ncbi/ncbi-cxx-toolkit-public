@@ -72,6 +72,7 @@ public:
 
     void Reset();
     void Open(const std::string& filename, const set<TTypeInfo>* supported_types);
+    void OpenPlain(const std::string& filename);
     bool IsOpen() const { return m_filesize != 0; }
     TTypeInfo RecognizeContent(std::streampos pos);
     TTypeInfo RecognizeContent(std::istream& istr);
