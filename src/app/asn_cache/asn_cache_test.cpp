@@ -436,7 +436,7 @@ int CAsnCacheTestApplication::Run(void)
                  << count / e << " seqs/sec ("
                  << count_failed << " failed to retrieve)");
     }
-    if(args["dump-proteins"]) { return count_failed; }
+    if(args["dump-proteins"]) { return static_cast<int>(count_failed); }
     if(serialize) {
         if(getIdOnly){
             ITERATE(vector< CDataLoader::TIds >, it, id_sets){
