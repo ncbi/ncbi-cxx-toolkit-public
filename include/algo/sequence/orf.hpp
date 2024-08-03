@@ -199,7 +199,7 @@ public:
         static const char* alphabet = "ACGT";
         double log_odds(0);
         for(size_t i = 0; i < 15; i++) {
-            TSignedSeqPos seq_pos = start_codon_pos - 6 + i; 
+            TSignedSeqPos seq_pos = static_cast<TSignedSeqPos> (start_codon_pos - 6 + i); 
             char nuc = (seq_pos >= 0 && seq_pos < static_cast<long>(seq_len)) 
                      ? iupacna_seq[seq_pos] : 'N'; 
             size_t nuc_ord = find(alphabet, alphabet + 4, nuc) - alphabet;
