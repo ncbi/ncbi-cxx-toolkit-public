@@ -1200,7 +1200,7 @@ void AddLiteral(CSeq_inst& inst, const string& seq, CSeq_inst::EMol mol_class)
                 }
                 iupacna += seq;
                 delta_seq.SetLiteral().SetSeq_data().SetIupacna().Set(iupacna);
-                delta_seq.SetLiteral().SetLength(iupacna.size());
+                delta_seq.SetLiteral().SetLength(static_cast<CSeq_literal_Base::TLength>(iupacna.size()));
                 CSeqportUtil::Pack(&delta_seq.SetLiteral().SetSeq_data());
                 return;
             }
@@ -1601,12 +1601,12 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                         b += 1;
                     }
                     if (b < e) {
-                        seq_inst.SetExt().SetDelta().AddLiteral(e-b);
+                        seq_inst.SetExt().SetDelta().AddLiteral(static_cast<TSeqPos>(e-b));
                     }
                 }
             } else {
                 if (stop_codon_included && final_code_break) {
-                    TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + (e-b)*3;
+                    TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + static_cast<TSeqPos>((e-b)*3);
                     CRef<CSeq_loc> stop_codon_on_mrna = codon_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                     stop_codon_on_mrna->SetInt().SetFrom(pos_on_mrna);
                     stop_codon_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
@@ -1632,7 +1632,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                     while ((stop_aa_pos = strprot.find('*', stop_aa_pos+1)) < e) {
                         strprot[stop_aa_pos] = 'X';
 
-                        TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + (stop_aa_pos-b)*3;
+                        TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional) + static_cast<TSeqPos>((stop_aa_pos-b)*3);
                         CRef<CSeq_loc> internal_stop_on_mrna = codon_on_mrna->Merge(CSeq_loc::fMerge_SingleRange, NULL);
                         internal_stop_on_mrna->SetInt().SetFrom(pos_on_mrna);
                         internal_stop_on_mrna->SetInt().SetTo(pos_on_mrna + 2);
@@ -1682,15 +1682,15 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
         CRef<CSeq_loc> prot_loc = to_prot.Map(*protloc_on_mrna)->Merge(CSeq_loc::fMerge_SingleRange, NULL);
 
-        prot_loc->SetInt().SetFrom(skip_5_prime);
-        prot_loc->SetInt().SetTo(b-skip_3_prime-1+(skip_3_prime?0:1));
+        prot_loc->SetInt().SetFrom(static_cast<CSeq_interval_Base::TFrom>(skip_5_prime));
+        prot_loc->SetInt().SetTo(static_cast<CSeq_interval_Base::TTo>(b-skip_3_prime-1+(skip_3_prime?0:1)));
         prot_loc->SetPartialStart(skip_5_prime, eExtreme_Biological);
         prot_loc->SetPartialStop(skip_3_prime, eExtreme_Biological);
 
         cds_feat_on_transcribed_mrna->SetLocation(*to_mrna.Map(*prot_loc));
     }
 
-    seq_inst.SetLength(b-skip_5_prime-skip_3_prime);
+    seq_inst.SetLength(static_cast<CSeq_inst_Base::TLength>(b-skip_5_prime-skip_3_prime));
 
     if (seq_inst.SetExt().SetDelta().Set().size() == 1 && seq_inst.SetExt().SetDelta().Set().back()->GetLiteral().IsSetSeq_data()) {
         seq_inst.SetRepr(CSeq_inst::eRepr_raw);
@@ -2034,8 +2034,8 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                             stop_5prime_feature->SetData().SetImp().SetKey("misc_feature");
                             stop_5prime_feature->SetComment("upstream in-frame stop codon");
                             CRef<CSeq_loc> stop_5prime_location(new CSeq_loc());
-                            stop_5prime_location->SetInt().SetFrom(stop_5prime);
-                            stop_5prime_location->SetInt().SetTo(stop_5prime+2);
+                            stop_5prime_location->SetInt().SetFrom(static_cast<CSeq_interval_Base::TFrom>(stop_5prime));
+                            stop_5prime_location->SetInt().SetTo(static_cast<CSeq_interval_Base::TTo>(stop_5prime+2));
                             stop_5prime_location->SetInt().SetStrand(eNa_strand_plus);
                             stop_5prime_location->SetId(*rna_handle.GetSeqId());
                             stop_5prime_feature->SetLocation(*stop_5prime_location);
