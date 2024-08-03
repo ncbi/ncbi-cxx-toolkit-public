@@ -571,7 +571,7 @@ void CAppHitFilter::x_DoPairwise(THitRefs* pall)
             CHitFilter<THit>::s_RunGreedy(
                 hits.begin(), hits.end(),
                 &hits_new, min_len, 
-                min_idty, margin,
+                min_idty, static_cast<TCoord>(margin),
                 retain_overlap,
                 unique_type
                 );
@@ -651,7 +651,7 @@ void CAppHitFilter::x_DoMultiple(THitRefs* pall)
             CHitFilter<THit>::s_RunGreedy(
                 ii_beg, ii_hi, 
                 &hits_new, min_len, 
-                min_idty, margin,
+                min_idty, static_type<TCoord>(margin),
                 retain_overlap,
                 unique_type
             );
