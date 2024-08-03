@@ -284,8 +284,8 @@ static void s_FindOrfs(const TSeq& seq, COrf::TLocVec& results,
         CRef<objects::CSeq_loc> orf(new objects::CSeq_loc);
 
         // convert from the complement to the original sequence
-        unsigned int from = comp.size() - interval->GetTo() - 1;
-        unsigned int to = comp.size() - interval->GetFrom() - 1;
+        unsigned int from = static_cast<unsigned int>(comp.size()) - interval->GetTo() - 1;
+        unsigned int to = static_cast<unsigned int>(comp.size()) - interval->GetFrom() - 1;
         orf->SetInt().SetFrom(from);
         orf->SetInt().SetTo(to);
         orf->SetInt().SetStrand(objects::eNa_strand_minus);
