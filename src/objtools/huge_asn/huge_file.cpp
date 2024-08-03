@@ -47,6 +47,19 @@ BEGIN_SCOPE(edit)
 CHugeFile::CHugeFile(){}
 CHugeFile::~CHugeFile(){}
 
+void CHugeFile::OpenPlain(const std::string& filename)
+{
+    auto filesize = CFile(filename).GetLength();
+    if (filesize > 0) {
+        if (x_TryOpenMemoryFile(filename) ||
+            x_TryOpenStreamFile(filename, filesize)) {
+        }
+    }
+    if (m_filesize <= 0)
+        NCBI_THROW(CFileException, eNotExists, "Cannot open " + filename);
+}
+
+
 void CHugeFile::Open(const std::string& filename, const set<TTypeInfo>* supported_types)
 {
     auto filesize = CFile(filename).GetLength();
