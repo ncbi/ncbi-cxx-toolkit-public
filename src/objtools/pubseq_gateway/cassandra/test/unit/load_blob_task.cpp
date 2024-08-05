@@ -39,12 +39,9 @@
 
 #include <algorithm>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
-#include <set>
+#include <regex>
 #include <string>
-#include <thread>
-#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -166,13 +163,14 @@ TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
         EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
         EXPECT_EQ(CCassandraException::eQueryFailed, code);
         EXPECT_EQ(eDiag_Error, severity);
+        string message_x = regex_replace(message, regex(" line \\d+: Error"), " line N: Error");
         EXPECT_EQ("NCBI C++ Exception:\n    T0 \"cass_driver.cpp\","
-                  " line 1736: Error: (CCassandraException::eQueryFailed) "
+                  " line N: Error: (CCassandraException::eQueryFailed) "
                   "idblob::CCassQuery::ProcessFutureResult() - "
                   "CassandraErrorMessage - \"ANY ConsistencyLevel is only supported for writes\";"
                   " CassandraErrorCode - 2002200; SQL: \"SELECT    last_modified,   class,   date_asn1,   div,"
                   "   flags,   hup_date,   id2_info,   n_chunks,   owner,   size,   size_unpacked,   username"
-                  " FROM psg_test_sat_4.blob_prop WHERE sat_key = ? LIMIT 1\"; Params - (2155365)\n", message);
+                  " FROM psg_test_sat_4.blob_prop WHERE sat_key = ? LIMIT 1\"; Params - (2155365)\n", message_x);
         errorCallbackCalled = true;
     };
     CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_fn);

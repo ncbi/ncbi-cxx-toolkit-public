@@ -268,12 +268,10 @@ CCassConnection::CCassConnection()
     , m_active_statements(0)
 {}
 
-
 CCassConnection::~CCassConnection()
 {
     Close();
 }
-
 
 void CCassConnection::SetLogging(EDiagSev  severity)
 {
@@ -284,14 +282,12 @@ void CCassConnection::SetLogging(EDiagSev  severity)
     m_LoggingInitialized = true;
 }
 
-
 void CCassConnection::DisableLogging()
 {
     cass_log_set_level(CASS_LOG_DISABLED);
     m_LoggingEnabled = false;
     m_LoggingInitialized = true;
 }
-
 
 void CCassConnection::UpdateLogging()
 {
@@ -750,26 +746,39 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
         " WHERE keyspace_name = ? AND table_name = ?"};
     auto peers = GetLocalPeersAddressList(datacenter);
     vector<SCassSizeEstimate> estimates;
+    size_t failed_peers_count{0};
     for (auto const& peer : peers) {
-        auto query = NewQuery();
-        query->SetHost(peer);
-        query->SetSQL(estimates_sql, 2);
-        query->BindStr(0, keyspace);
-        query->BindStr(1, table);
-        query->Query(CCassConsistency::kLocalOne, false, false);
-        while (query->NextRow() == ar_dataready) {
-            SCassSizeEstimate estimate;
-            string value = query->FieldGetStrValue(0);
-            estimate.range_start = NStr::StringToNumeric<int64_t>(value);
-            value = query->FieldGetStrValue(1);
-            estimate.range_end = NStr::StringToNumeric<int64_t>(value);
-            estimate.mean_partition_size = query->FieldGetInt64Value(2);
-            estimate.partitions_count = query->FieldGetInt64Value(3);
-            // One off to preserve assumption range_start < range_end;
-            if (estimate.range_end == numeric_limits<int64_t>::min()) {
-                estimate.range_end = numeric_limits<int64_t>::max();
+        try {
+            auto query = NewQuery();
+            query->SetHost(peer);
+            query->SetSQL(estimates_sql, 2);
+            query->BindStr(0, keyspace);
+            query->BindStr(1, table);
+            query->Query(CCassConsistency::kLocalOne, false, false);
+            while (query->NextRow() == ar_dataready) {
+                SCassSizeEstimate estimate;
+                string value = query->FieldGetStrValue(0);
+                estimate.range_start = NStr::StringToNumeric<int64_t>(value);
+                value = query->FieldGetStrValue(1);
+                estimate.range_end = NStr::StringToNumeric<int64_t>(value);
+                estimate.mean_partition_size = query->FieldGetInt64Value(2);
+                estimate.partitions_count = query->FieldGetInt64Value(3);
+                // One off to preserve assumption range_start < range_end;
+                if (estimate.range_end == numeric_limits<int64_t>::min()) {
+                    estimate.range_end = numeric_limits<int64_t>::max();
+                }
+                estimates.push_back(estimate);
             }
-            estimates.push_back(estimate);
+        }
+        catch(CCassandraException const& ex) {
+            /// We need to be able to tolerate one host down situation here
+            if (failed_peers_count > 0 || ex.GetErrCode() != CCassandraException::eQueryFailedRestartable) {
+                throw;
+            }
+            else {
+                ERR_POST(Info << "GetSizeEstimates got an exception from Cassandra: '" << ex.GetMsg() << "'");
+            }
+            ++failed_peers_count;
         }
     }
     sort(estimates.begin(), estimates.end(),
@@ -777,6 +786,47 @@ vector<SCassSizeEstimate> CCassConnection::GetSizeEstimates(string const& datace
             return a.range_start < b.range_start;
         }
     );
+    // Need to patch size estimates if one node down is detected
+    if (failed_peers_count > 0 && !estimates.empty()) {
+        TTokenRanges local_ranges;
+        GetTokenRanges(local_ranges);
+        int64_t avg_mean_partition_size{0}, avg_partitions_count{0};
+        for (auto const& estimate : estimates) {
+            avg_mean_partition_size += estimate.mean_partition_size;
+            avg_partitions_count += estimate.partitions_count;
+        }
+        avg_mean_partition_size /= estimates.size();
+        avg_partitions_count /= estimates.size();
+        auto estimate_itr = begin(estimates);
+        vector<SCassSizeEstimate> appended_estimates;
+        for (auto const& local_range : local_ranges) {
+            if (estimate_itr != end(estimates) && estimate_itr->range_end == local_range.second) {
+                ++estimate_itr; // skip matched range
+            }
+            else if (
+                estimate_itr->range_end > local_range.second || estimate_itr == end(estimates)
+            ) {
+                SCassSizeEstimate estimate;
+                estimate.range_start = local_range.first;
+                estimate.range_end = local_range.second;
+                estimate.mean_partition_size = avg_mean_partition_size;
+                estimate.partitions_count = avg_partitions_count;
+                appended_estimates.push_back(estimate);
+            }
+            else {
+                NCBI_THROW(CCassandraException, eFatal,
+                    "Logic error in GetSizeEstimates() for one node down (estimate ranges and local ranges do not match)");
+            }
+        }
+        for (auto const& estimate : appended_estimates) {
+            estimates.push_back(estimate);
+        }
+        sort(estimates.begin(), estimates.end(),
+             [](const SCassSizeEstimate& a, const SCassSizeEstimate& b) -> bool {
+                 return a.range_start < b.range_start;
+             }
+        );
+    }
     return estimates;
 }
 
