@@ -113,7 +113,13 @@ void CRemoteBlast::x_SearchErrors(CRef<objects::CBlast4_reply> reply)
         
         switch((*i)->GetCode()) {
         case eBlast4_error_code_conversion_warning:
-            m_Warn.push_back(string("conversion_warning") + msg);
+	    // if message contains core_nt skip adding conversion_warning WB-6333
+	    if( NStr::MatchesMask(msg,"*core_nt*",NStr::eNocase)  == TRUE ) {
+		m_Warn.push_back(msg.substr (2)); // skip previously added ': '
+	    }
+	    else {
+		m_Warn.push_back(string("conversion_warning") + msg);
+	    }
             break;
             
         case eBlast4_error_code_internal_error:
@@ -654,7 +660,7 @@ void CRemoteBlast::x_SubmitSearch(void)
     }
     
     x_SearchErrors(reply);
-    
+
     if (m_Errs.empty()) {
         m_Pending = true;
     }
