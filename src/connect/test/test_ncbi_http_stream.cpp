@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+
 #ifdef NCBI_OS_MSWIN
 #  include <conio.h>
 #endif // NCBI_OS_MSWIN
@@ -86,12 +87,12 @@ static void s_Interrupt(int /*signo*/)
 NCBI_PARAM_DECL  (string, CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT);
 NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT, "",
                   eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_CERT);
-static NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT) s_CertFile;
+using TCertFile = NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_CERT);
 
 NCBI_PARAM_DECL  (string, CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY);
 NCBI_PARAM_DEF_EX(string, CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY, "",
                   eParam_Default, CONN_TEST_NCBI_HTTP_GET_CLIENT_PKEY);
-static NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY) s_PkeyFile;
+using TPkeyFile = NCBI_PARAM_TYPE(CONN, TEST_NCBI_HTTP_GET_CLIENT_PKEY);
 
 
 class CNCBITestHttpStreamApp : public CNcbiApplication
@@ -155,8 +156,8 @@ void CNCBITestHttpStreamApp::Init(void)
                           "Test NCBI HTTP stream");
     SetupArgDescriptions(args.release());
 
-    const string certfile = s_CertFile.Get();
-    const string pkeyfile = s_PkeyFile.Get();
+    const string certfile = TCertFile::GetDefault();
+    const string pkeyfile = TPkeyFile::GetDefault();
     if (certfile.empty()  ||  pkeyfile.empty())
         return;
 
