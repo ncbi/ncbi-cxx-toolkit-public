@@ -3366,11 +3366,6 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
         typedef TSpliced::TExons TExons;
         const TExons & exons (spliced.GetExons());
     
-        size_t matches (0),
-            aligned_query_bases (0),  // matches, mismatches and indels
-            aln_length_exons (0),
-            aln_length_gaps (0);
-    
         const TSeqPos  qlen (spliced.GetProduct_length());
         const TSeqPos polya (spliced.CanGetPoly_a()?
                              spliced.GetPoly_a(): (qstrand? qlen: TSeqPos(-1)));
@@ -3387,7 +3382,6 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
             const TSeqPos qgap (qstrand? qmin - qprev - 1: qprev - qmax - 1);
     
             if(qgap > 0) {
-                aln_length_gaps += qgap;
                 if(cds_stats) xcript.append(qgap, 'X');
             }
     
@@ -3401,18 +3395,14 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
                 switch(choice) {
                 case CSpliced_exon_chunk::e_Match:
                     len = part.GetMatch();
-                    matches += len;
-                    aligned_query_bases += len;
                     if(cds_stats) xcript.append(len, 'M');
                     break;
                 case CSpliced_exon_chunk::e_Mismatch:
                     len = part.GetMismatch();
-                    aligned_query_bases += len;
                     if(cds_stats) xcript.append(len, 'R');
                     break;
                 case CSpliced_exon_chunk::e_Product_ins:
                     len = part.GetProduct_ins();
-                    aligned_query_bases += len;
                     if(cds_stats) xcript.append(len, 'D');
                     break;
                 case CSpliced_exon_chunk::e_Genomic_ins:
@@ -3424,14 +3414,12 @@ CRef<objects::CScore_set> CSplign::s_ComputeStats(CRef<objects::CSeq_align> sa,
                         + part.SelectionName(choice);
                     NCBI_THROW(CAlgoAlignException, eBadParameter, errmsg);
                 }
-                aln_length_exons += len;
             }
     
             qprev = qstrand? qmax: qmin;
         } // TExons
     
         const TSeqPos qgap (qstrand? polya - qprev - 1: qprev - polya - 1);
-        aln_length_gaps += qgap;
         if(cds_stats) xcript.append(qgap, 'X');
 
         if(!qstrand && qlen <= 0) {
