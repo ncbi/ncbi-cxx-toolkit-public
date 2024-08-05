@@ -1020,16 +1020,36 @@ void epimpl::event_entity_reference (const xmlChar *name) {
 void epimpl::event_warning (const std::string &message) {
     if (!parser_status_) return;
 
-    long    line = xmlLastError.line;
+    #if LIBXML_VERSION >= 21200
+        const xmlError *    last_err = xmlGetLastError();
+        long    line = 0;
+        if (last_err)
+            line = last_err->line;
+    #else
+        long    line = xmlLastError.line;
+    #endif
     if (line < 0)
         line = 0;
+
     std::string     filename;
-    if (xmlLastError.file != NULL)
-        filename = xmlLastError.file;
+    #if LIBXML_VERSION >= 21200
+        if (last_err) {
+            if (last_err->file != NULL) {
+                filename = last_err->file;
+            }
+        }
+    #else
+        if (xmlLastError.file != NULL)
+            filename = xmlLastError.file;
+    #endif
     errors_->get_messages().push_back(
                                 error_message(message,
                                               error_message::type_warning,
                                               line, filename));
+    #if LIBXML_VERSION >= 21200
+        xmlResetLastError();
+    #endif
+
     try {
         parser_status_ = parent_.warning(message);
     } catch (const std::exception &ex) {
@@ -1045,16 +1065,37 @@ void epimpl::event_warning (const std::string &message) {
 void epimpl::event_error (const std::string &message) {
     if (!parser_status_) return;
 
-    long    line = xmlLastError.line;
+    #if LIBXML_VERSION >= 21200
+        const xmlError *    last_err = xmlGetLastError();
+        long    line = 0;
+        if (last_err)
+            line = last_err->line;
+    #else
+        long    line = xmlLastError.line;
+    #endif
     if (line < 0)
         line = 0;
+
     std::string     filename;
-    if (xmlLastError.file != NULL)
-        filename = xmlLastError.file;
+    #if LIBXML_VERSION >= 21200
+        if (last_err) {
+            if (last_err->file != NULL) {
+                filename = last_err->file;
+            }
+        }
+    #else
+        if (xmlLastError.file != NULL)
+            filename = xmlLastError.file;
+    #endif
     errors_->get_messages().push_back(
                                 error_message(message,
                                               error_message::type_error,
                                               line, filename));
+
+    #if LIBXML_VERSION >= 21200
+        xmlResetLastError();
+    #endif
+
     try {
         parser_status_ = parent_.error(message);
     } catch (const std::exception &ex) {
@@ -1071,16 +1112,37 @@ void epimpl::event_error (const std::string &message) {
 void epimpl::event_fatal_error (const std::string &message) {
     if (!parser_status_) return;
 
-    long    line = xmlLastError.line;
+    #if LIBXML_VERSION >= 21200
+        const xmlError *    last_err = xmlGetLastError();
+        long    line = 0;
+        if (last_err)
+            line = last_err->line;
+    #else
+        long    line = xmlLastError.line;
+    #endif
     if (line < 0)
         line = 0;
+
     std::string     filename;
-    if (xmlLastError.file != NULL)
-        filename = xmlLastError.file;
+    #if LIBXML_VERSION >= 21200
+        if (last_err) {
+            if (last_err->file != NULL) {
+                filename = last_err->file;
+            }
+        }
+    #else
+        if (xmlLastError.file != NULL)
+            filename = xmlLastError.file;
+    #endif
     errors_->get_messages().push_back(
                                 error_message(message,
                                               error_message::type_fatal_error,
                                               line, filename));
+
+    #if LIBXML_VERSION >= 21200
+        xmlResetLastError();
+    #endif
+
     parser_status_ = false;
     xmlStopParser(parser_context_);
 }

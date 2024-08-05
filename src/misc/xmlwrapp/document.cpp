@@ -1060,14 +1060,34 @@ namespace {
         try {
             error_messages *p = static_cast<error_messages*>(v);
             if (p) {
-                long    line = xmlLastError.line;
+                #if LIBXML_VERSION >= 21200
+                    const xmlError *    last_err = xmlGetLastError();
+                    long    line = 0;
+                    if (last_err)
+                        line = last_err->line;
+                #else
+                    long    line = xmlLastError.line;
+                #endif
                 if (line < 0)
                     line = 0;
+
                 std::string     filename;
-                if (xmlLastError.file != NULL)
-                    filename = xmlLastError.file;
+                #if LIBXML_VERSION >= 21200
+                    if (last_err) {
+                        if (last_err->file != NULL) {
+                            filename = last_err->file;
+                        }
+                    }
+                #else
+                    if (xmlLastError.file != NULL)
+                        filename = xmlLastError.file;
+                #endif
                 p->get_messages().push_back(error_message(message, mt,
                                                           line, filename));
+
+                #if LIBXML_VERSION >= 21200
+                    xmlResetLastError();
+                #endif
             }
         } catch (...) {}
     }
@@ -1104,14 +1124,34 @@ namespace {
 
             // handle bug in older versions of libxml2
             if (p) {
-                long    line = xmlLastError.line;
+                #if LIBXML_VERSION >= 21200
+                    const xmlError *    last_err = xmlGetLastError();
+                    long    line = 0;
+                    if (last_err)
+                        line = last_err->line;
+                #else
+                    long    line = xmlLastError.line;
+                #endif
                 if (line < 0)
                     line = 0;
+
                 std::string     filename;
-                if (xmlLastError.file != NULL)
-                    filename = xmlLastError.file;
+                #if LIBXML_VERSION >= 21200
+                    if (last_err) {
+                        if (last_err->file != NULL) {
+                            filename = last_err->file;
+                        }
+                    }
+                #else
+                    if (xmlLastError.file != NULL)
+                        filename = xmlLastError.file;
+                #endif
                 p->get_messages().push_back(error_message(message, mt,
                                                           line, filename));
+
+                #if LIBXML_VERSION >= 21200
+                    xmlResetLastError();
+                #endif
             }
         } catch (...) {}
     }
