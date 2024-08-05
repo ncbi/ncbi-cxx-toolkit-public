@@ -46,7 +46,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 struct SCompartmentData {
-    unsigned num_alignments;
+    size_t num_alignments;
     TSeqRange query_range;
     TSeqRange subject_range;
 

@@ -692,7 +692,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
     const double kMinusInf (-1e12);
 
     m_compartments.clear();
-    const auto dimhits = m_hitrefs.size();
+    const size_t dimhits = m_hitrefs.size();
     if(dimhits == 0) {
         return 0;
     }
@@ -962,7 +962,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
             size_t nullified (0);
-            for(auto in (hitrefs.size()), i (in - 1); i > 0; --i) {
+            for(size_t in (hitrefs.size()), i (in - 1); i > 0; --i) {
 
                 int j1 (i);
                 while(j1 < in && hitrefs[j1].IsNull()) ++j1;

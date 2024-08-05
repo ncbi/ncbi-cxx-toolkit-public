@@ -718,9 +718,13 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
 #endif
 
         // pack into seq-align-sets
+#ifdef DEBUG_VERBOSE_OUTPUT
         size_t compart_count = 0;
+#endif
         ITERATE (list<TAlignRangeMultiSet>, it, compartments) {
+#ifdef DEBUG_VERBOSE_OUTPUT
             ++compart_count;
+#endif
             CRef<CSeq_align_set> sas(new CSeq_align_set);
             SCompartScore score;
             set<TAlignRangeMultiSet::const_iterator, SRangeIteratorsByAddress> break_positions;

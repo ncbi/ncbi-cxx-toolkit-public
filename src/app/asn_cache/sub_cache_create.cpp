@@ -434,9 +434,9 @@ struct SBlobCopier
                 small_blob.SetTimestamp( m_LastBlobTimestamp );
                 small_blob.Pack(*trimmed_entry);
                 m_OutputChunk.Write(small_blob);
-                sub_cache_locator.m_BlobSize = m_OutputChunk.GetOffset()
-                                             - sub_cache_locator.m_Offset;
-         
+                sub_cache_locator.m_BlobSize = static_cast<CAsnIndex::TSize>
+                                              (m_OutputChunk.GetOffset()
+                                             - sub_cache_locator.m_Offset);
               } else {
                 sub_cache_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
                 sub_cache_locator.m_Offset = m_LastBlobOffset;
@@ -479,8 +479,9 @@ struct SBlobCopier
                 small_blob.SetTimestamp( m_LastBlobTimestamp );
                 small_blob.Pack(*trimmed_entry);
                 m_OutputChunk.Write(small_blob);
-                sub_cache_locator.m_BlobSize = m_OutputChunk.GetOffset()
-                                             - sub_cache_locator.m_Offset;
+                sub_cache_locator.m_BlobSize = static_cast<CAsnIndex::TSize>
+                                              (m_OutputChunk.GetOffset()
+                                             - sub_cache_locator.m_Offset);
               } else {
                   m_CurrentNucprotSeqEntry.Reset();
                   m_OutputChunk.RawWrite( &m_Buffer[0], m_Buffer.size());
@@ -506,8 +507,9 @@ struct SBlobCopier
             m_SeqIdChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
             sub_cache_locator.m_SeqIdOffset = m_SeqIdChunk.GetOffset();
             m_SeqIdChunk.Write(bsh.GetId());
-            sub_cache_locator.m_SeqIdSize = m_SeqIdChunk.GetOffset()
-                - sub_cache_locator.m_SeqIdOffset;
+            sub_cache_locator.m_SeqIdSize = static_cast<CAsnIndex::TSize>
+                                              (m_SeqIdChunk.GetOffset()
+                                             - sub_cache_locator.m_SeqIdOffset);
 
             ExtractExtraIds(bsh, extra_ids,
                             m_ExtractDelta, m_ExtractProducts);
@@ -573,15 +575,16 @@ struct SBlobInserter
         SSubcacheIndexData blob_locator;
         {{
              CCache_blob blob;
-             blob.SetTimestamp( m_Timestamp );
+             blob.SetTimestamp(static_cast<CAsnIndex::TTimestamp>(m_Timestamp ));
              blob.Pack(*entry);
              m_OutputChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
              blob_locator.m_Timestamp = m_Timestamp;
              blob_locator.m_ChunkId = m_OutputChunk.GetChunkSerialNum();
              blob_locator.m_Offset = m_OutputChunk.GetOffset();
              m_OutputChunk.Write(blob);
-             blob_locator.m_BlobSize = m_OutputChunk.GetOffset()
-                                     - blob_locator.m_Offset;
+             blob_locator.m_BlobSize = static_cast<CAsnIndex::TSize>
+                                              (m_OutputChunk.GetOffset()
+                                             - blob_locator.m_Offset);
         }}
         ++m_BlobCount;
 
@@ -608,8 +611,9 @@ struct SBlobInserter
             m_SeqIdChunk.OpenForWrite( m_SubcacheRoot.GetPath() );
             blob_locator.m_SeqIdOffset = m_SeqIdChunk.GetOffset();
             m_SeqIdChunk.Write(seq_it->GetId());
-            blob_locator.m_SeqIdSize = m_SeqIdChunk.GetOffset()
-                                     - blob_locator.m_SeqIdOffset;
+            blob_locator.m_SeqIdSize = static_cast<CAsnIndex::TSize>
+                                              (m_SeqIdChunk.GetOffset()
+                                             - blob_locator.m_SeqIdOffset);
             sub_cache_locator.push_back(blob_locator);
 
             ExtractExtraIds(*seq_it, extra_ids,
@@ -1184,7 +1188,7 @@ size_t CAsnSubCacheCreateApplication::WriteBlobsInSubCache(const vector<CDir>& m
         /// genbank is more up-to-date and needs to be fetched; give it the
         /// most up-to-date timestamp, so blobs not found in the main cache
         /// will not be eliminated
-        blob_locations.begin()->m_Timestamp = timestamp;
+        blob_locations.begin()->m_Timestamp = static_cast<CAsnIndex::TTimestamp>(timestamp);
         x_EliminateIdsAlreadyInCache(index_map, subcache_main_index);
     }
     LOG_POST(Error << index_map.size() << " new records in "
