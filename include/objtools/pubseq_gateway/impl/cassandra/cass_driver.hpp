@@ -207,11 +207,11 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 
     void CloseSession();
 
- protected:
+protected:
     CCassConnection();
     const CassPrepared * Prepare(const string & sql);
 
- public:
+public:
 
     static constexpr int16_t kCassDefaultPort = 9042;
 
@@ -299,6 +299,11 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     void SetKeyspace(const string & keyspace);
     string Keyspace() const;
 
+    /// Add the list of hosts denied to be used. Empty list means cleanup blacklist.
+    /// Should be used only before Connect() call or it will be noop after host connection established
+    ///
+    /// @param hosts
+    ///   Comma separated list of host addresses
     void SetBlackList(const string & blacklist);
 
     shared_ptr<CCassQuery> NewQuery();
@@ -359,7 +364,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
 class CCassPrm
 {
     static constexpr size_t kMaxVarcharDebugBytes = 10;
- protected:
+protected:
     CassValueType   m_type;
     bool            m_assigned;
 
@@ -379,7 +384,7 @@ class CCassPrm
 
     void Bind(CassStatement *  statement, unsigned int  idx);
 
- public:
+public:
     CCassPrm() :
         m_simpleval(), m_collection(nullptr, nullptr)
     {
@@ -717,7 +722,7 @@ public:
 
 class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 {
- public:
+public:
     explicit CCassQueryCbRef(shared_ptr<CCassQuery> query)
         : m_query(query)
     {}
@@ -769,14 +774,14 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
 class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 {
- private:
+private:
     CCassQuery(const CCassQuery&) = delete;
     CCassQuery& operator=(const CCassQuery&) = delete;
 
     friend class CCassConnection;
     friend class CCassQueryCbRef;
 
- private:
+private:
     void CheckParamAssigned(int iprm) const
     {
         if (iprm < 0 || iprm >= static_cast<int64_t>(m_params.size())) {
@@ -851,7 +856,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     class CNotImplemented
     {};
 
- protected:
+protected:
     explicit CCassQuery(const shared_ptr<CCassConnection>& connection) :
         m_connection(connection),
         m_qtimeoutms(0),
@@ -878,7 +883,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         }
     }
 
- public:
+public:
     virtual ~CCassQuery();
     virtual void Close(void);
 

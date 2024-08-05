@@ -143,6 +143,67 @@ TEST_F(CCassConnectionTest, GetSizeEstimates) {
     EXPECT_TRUE(connection->GetSizeEstimates("DC1", "idmain2", "").empty());
 }
 
+TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
+    CCassConnection::TTokenRanges true_estimates_ranges;
+    int64_t min_size{numeric_limits<int64_t>::max()}, max_size{numeric_limits<int64_t>::min()};
+    int64_t min_count{numeric_limits<int64_t>::max()}, max_count{numeric_limits<int64_t>::min()};
+    vector<string> peers;
+    {
+        // Need a separate connection or black list policy will not work otherwise
+        auto connection = m_Factory->CreateInstance();
+        connection->Connect();
+        peers = connection->GetLocalPeersAddressList("");
+        auto true_estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
+        for (auto const& range : true_estimates) {
+            true_estimates_ranges.push_back(make_pair(range.range_start, range.range_end));
+            min_size = min(range.mean_partition_size, min_size);
+            max_size = max(range.mean_partition_size, max_size);
+            min_count = min(range.partitions_count, min_count);
+            max_count = max(range.partitions_count, max_count);
+        }
+    }
+    ASSERT_FALSE(peers.empty());
+    for (auto peer : peers) {
+        auto connection = m_Factory->CreateInstance();
+        connection->SetBlackList(peer);
+        connection->Connect();
+        auto estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
+        ASSERT_EQ(estimates.size(), true_estimates_ranges.size());
+        auto current_start = estimates.begin()->range_start;
+        for (auto const &estimate: estimates) {
+            EXPECT_GE(estimate.range_start, current_start);
+            EXPECT_GT(estimate.range_end, estimate.range_start);
+            EXPECT_GE(estimate.partitions_count, 0);
+            EXPECT_GE(estimate.mean_partition_size, 0);
+            current_start = estimate.range_end;
+        }
+        CCassConnection::TTokenRanges estimates_ranges;
+        for (auto const& range : estimates) {
+            estimates_ranges.push_back(make_pair(range.range_start, range.range_end));
+            EXPECT_GE(range.partitions_count, min_count);
+            EXPECT_GE(range.mean_partition_size, min_size);
+            EXPECT_LE(range.partitions_count, max_count);
+            EXPECT_LE(range.mean_partition_size, max_count);
+        }
+        EXPECT_EQ(estimates_ranges, true_estimates_ranges);
+    }
+}
+
+TEST_F(CCassConnectionTest, GetSizeEstimatesTwoNodesDown) {
+    vector<string> peers;
+    {
+        // Need a separate connection or black list policy will not work otherwise
+        auto connection = m_Factory->CreateInstance();
+        connection->Connect();
+        peers = connection->GetLocalPeersAddressList("");
+    }
+    ASSERT_GE(peers.size(), 2UL);
+    auto connection = m_Factory->CreateInstance();
+    connection->SetBlackList(peers[0] + "," + peers[1]);
+    connection->Connect();
+    EXPECT_THROW(connection->GetSizeEstimates("DC1", "idmain2", "si2csi"), CCassandraException);
+}
+
 TEST_F(CCassConnectionTest, QueryRetryTimeout) {
     const string config_section = "TEST";
     auto factory = CCassConnectionFactory::s_Create();
