@@ -39,6 +39,7 @@
 
 #include <corelib/ncbi_base64.h>
 #include <corelib/ncbiargs.hpp>
+#include <util/compile_time.hpp> // for MAKE_CONST_MAP
 
 #include <time.h>
 #include <string.h>
@@ -453,7 +454,7 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
 
 CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::ParseFileTrackSite(const string& ft_site_name)
 {
-    static map<string, EFileTrackSite, PNocase> p =
+    MAKE_CONST_MAP(p, ct::tagStrNocase, EFileTrackSite,
     {
         { "production",  eFileTrack_ProdSite },
         { "prod",        eFileTrack_ProdSite },
@@ -463,14 +464,11 @@ CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::ParseFileTrackSite(co
         { "dsubmit",     eFileTrack_DevSite  },
         { "qa",          eFileTrack_QASite   },
         { "qsubmit",     eFileTrack_QASite   },
-    };
-
+    })
     auto i = p.find(ft_site_name);
-
     if (i == p.end()) {
         NCBI_THROW_FMT(CArgException, eInvalidArg, "unrecognized FileTrack site '" << ft_site_name << '\'');
     }
-
     return i->second;
 }
 
