@@ -66,26 +66,25 @@ enum { eHttpGet, eHttpPost, eHttpStreamGet, eHttpStreamPost, eNewRequestGet, eNe
 enum { eDispd, eLbsmd, eLinkerd, eLocal, eNamerd };
 
 // POST request data
-static const string s_kPostData_Def     = "hi there\n";
-static const string s_kPostData_Fcgi    = "Message=hi%20there%0A";
+static const char* s_kPostData_Def     = "hi there\n";
+static const char* s_kPostData_Fcgi    = "Message=hi%20there%0A";
 
 // POST expected response data
-static const string s_kExpData_GetTest      = R"(^.*?<title>NCBI Dispatcher Test Page</title>.*$)";
-static const string s_kExpData_GetFcgi      = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +\n.*$)";
-static const string s_kExpData_PostBounce   = R"(^hi there\n$)";
-static const string s_kExpData_PostFcgi     = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'hi there\n'.*$)";
+static const char* s_kExpData_GetTest    = R"(^.*?<title>NCBI Dispatcher Test Page</title>.*$)";
+static const char* s_kExpData_GetFcgi    = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +\n.*$)";
+static const char* s_kExpData_PostBounce = R"(^hi there\n$)";
+static const char* s_kExpData_PostFcgi   = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'hi there\n'.*$)";
 
 // Test data structure
 struct STest {
-    STest(int f, int m, const string& u, const string& e, const string& p = s_kPostData_Def)
+    STest(int f, int m, const char* u, const char* e, const char* p = s_kPostData_Def)
         : func(f), mapper(m), url(u), expected(e), post(p)
-    {
-    }
-    int     func;
-    int     mapper;
-    string  url;
-    string  expected;
-    string  post;
+    {}
+    int         func;
+    int         mapper;
+    const char* url;
+    const char* expected;
+    const char* post;
 };
 
 
@@ -100,35 +99,35 @@ struct STest {
 
 // Simple service name URLs
 #define NAMERD_SERVICENAME "cxx-monitor-fcgi"
-static const string s_UrlServiceGet_test("test");
-static const string s_UrlServiceGet_fcgi(NAMERD_SERVICENAME);
-static const string s_UrlServicePost_bounce("bouncehttp");
-static const string s_UrlServicePost_fcgi(NAMERD_SERVICENAME);
+static const char* s_UrlServiceGet_test("test");
+static const char* s_UrlServiceGet_fcgi(NAMERD_SERVICENAME);
+static const char* s_UrlServicePost_bounce("bouncehttp");
+static const char* s_UrlServicePost_fcgi(NAMERD_SERVICENAME);
 
 // Host-based URLs - i.e. not load-balanced, therefore not using a service mapper,
 // but they should still be accessible via the service mappers (except Linkerd).
-static const string s_UrlHostGetHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
-static const string s_UrlHostGetHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
-static const string s_UrlHostPostHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
-static const string s_UrlHostPostHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const char* s_UrlHostGetHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
+static const char* s_UrlHostGetHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/test.cgi");
+static const char* s_UrlHostPostHttp("http://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const char* s_UrlHostPostHttps("https://intrawebdev8.ncbi.nlm.nih.gov/Service/bounce.cgi");
 
 // Special case: host-based URL that goes to frontend and gets load-balanced to backend
-static const string s_UrlFrontendGet("https://test.ncbi.nlm.nih.gov/Service/test.cgi");
-static const string s_UrlFrontendPost("https://test.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const char* s_UrlFrontendGet("https://test.ncbi.nlm.nih.gov/Service/test.cgi");
+static const char* s_UrlFrontendPost("https://test.ncbi.nlm.nih.gov/Service/bounce.cgi");
 
 // Full service-based URLs (as indicated by ncbilb in scheme)
-static const string s_UrlNcbilbGetTest("ncbilb://test");
-static const string s_UrlNcbilbGetTestFull("ncbilb://test/Service/test.cgi");
-static const string s_UrlNcbilbGetFcgi("ncbilb://" NAMERD_SERVICENAME);
-static const string s_UrlNcbilbPostBounce("ncbilb://bouncehttp");
-static const string s_UrlNcbilbPostBounceFull("ncbilb://bouncehttp/Service/bounce.cgi");
-static const string s_UrlNcbilbPostFcgi("ncbilb://" NAMERD_SERVICENAME);
-static const string s_UrlNcbilbHttpGetTest("http+ncbilb://test");
-static const string s_UrlNcbilbHttpGetTestFull("http+ncbilb://test/Service/test.cgi");
-static const string s_UrlNcbilbHttpGetFcgi("http+ncbilb://" NAMERD_SERVICENAME);
-static const string s_UrlNcbilbHttpPostBounce("http+ncbilb://bouncehttp");
-static const string s_UrlNcbilbHttpPostBounceFull("http+ncbilb://bouncehttp/Service/bounce.cgi");
-static const string s_UrlNcbilbHttpPostFcgi("http+ncbilb://" NAMERD_SERVICENAME);
+static const char* s_UrlNcbilbGetTest("ncbilb://test");
+static const char* s_UrlNcbilbGetTestFull("ncbilb://test/Service/test.cgi");
+static const char* s_UrlNcbilbGetFcgi("ncbilb://" NAMERD_SERVICENAME);
+static const char* s_UrlNcbilbPostBounce("ncbilb://bouncehttp");
+static const char* s_UrlNcbilbPostBounceFull("ncbilb://bouncehttp/Service/bounce.cgi");
+static const char* s_UrlNcbilbPostFcgi("ncbilb://" NAMERD_SERVICENAME);
+static const char* s_UrlNcbilbHttpGetTest("http+ncbilb://test");
+static const char* s_UrlNcbilbHttpGetTestFull("http+ncbilb://test/Service/test.cgi");
+static const char* s_UrlNcbilbHttpGetFcgi("http+ncbilb://" NAMERD_SERVICENAME);
+static const char* s_UrlNcbilbHttpPostBounce("http+ncbilb://bouncehttp");
+static const char* s_UrlNcbilbHttpPostBounceFull("http+ncbilb://bouncehttp/Service/bounce.cgi");
+static const char* s_UrlNcbilbHttpPostFcgi("http+ncbilb://" NAMERD_SERVICENAME);
 
 
 // Notes on why some combinations of test factors aren't run:
