@@ -35,6 +35,7 @@
 
 
 #include <corelib/ncbistr.hpp>
+#include <corelib/impl/std_backport.hpp>
 
 
 #endif  /* CORELIB___NCBISTD__HPP */

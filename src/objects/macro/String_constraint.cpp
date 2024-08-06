@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
-static constexpr auto s_WeaselWords = ct::make_array<std::string_view>(
+static constexpr auto s_WeaselWords = std::to_array<std::string_view>({
     "candidate",
     "hypothetical",
     "novel",
@@ -56,7 +56,7 @@ static constexpr auto s_WeaselWords = ct::make_array<std::string_view>(
     "putative",
     "uncharacterized",
     "unique"
-);
+});
 
 
 namespace

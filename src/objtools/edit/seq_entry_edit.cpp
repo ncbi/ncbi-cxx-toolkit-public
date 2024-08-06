@@ -134,7 +134,7 @@ namespace {
 
     constexpr auto ConstructSortMap()
     {
-        auto init_seqdesc_sortmap = ct::make_array({
+        auto init_seqdesc_sortmap = std::to_array({
             CSeqdesc::e_Title,
             CSeqdesc::e_Source,
             CSeqdesc::e_Molinfo,

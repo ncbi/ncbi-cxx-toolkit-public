@@ -37,13 +37,7 @@
 
 #include "impl/compile_time_bits.hpp"
 
-#ifdef NCBI_HAVE_CXX17
-#   include "impl/ct_bitset_cxx17.hpp"
-#else
-#   include "impl/ct_bitset_cxx14.hpp"
-#endif
-
-
+#include "impl/ct_bitset_cxx17.hpp"
 
 namespace ct
 {
@@ -82,7 +76,7 @@ namespace ct
         template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
         static constexpr auto construct(typename _Enabled::type const (&init)[N])
         {
-            return construct(make_array(init));
+            return construct(std::to_array(init));
         }
         template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
         static constexpr auto construct(const const_array<typename _Enabled::type, N>& init)
@@ -128,7 +122,7 @@ namespace ct
         template<size_t N>
         static constexpr auto construct(init_type const (&init)[N])
         {
-            return construct(make_array(init));
+            return construct(std::to_array(init));
         }
         template<size_t N>
         static constexpr auto construct(const const_array<init_type, N>& init)
@@ -154,7 +148,7 @@ namespace ct
         template<size_t N>
         static constexpr auto construct(init_type const (&init)[N])
         {
-            return construct(make_array(init));
+            return construct(std::to_array(init));
         }
         template<size_t N>
         static constexpr auto construct(const const_array<init_type, N>& init)
