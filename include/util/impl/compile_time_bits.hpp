@@ -41,35 +41,14 @@
 #include <stdexcept>
 #include <array>
 #include <algorithm>
+#include <corelib/ncbistd.hpp>
+
 
 // forward declarations to avoid unnecessary includes
 namespace ncbi
 {
     class CTempString;
     class CTempStringEx;
-}
-
-namespace std
-{ // backported C++20,23 defs
-
-#ifndef __cpp_lib_remove_cvref
-    template< class T >
-    struct remove_cvref {
-        typedef std::remove_cv_t<std::remove_reference_t<T>> type;
-    };
-    template< class T >
-    using remove_cvref_t = typename remove_cvref<T>::type;
-#endif
-
-// backported C++23
-#ifndef __cpp_lib_to_underlying
-    template< class Enum >
-    constexpr std::underlying_type_t<Enum> to_underlying( Enum e ) noexcept
-    {
-        return static_cast<std::underlying_type_t<Enum>>(e);
-    }
-#endif
-
 }
 
 // on some compilers tuple are undeveloped for constexpr
@@ -86,92 +65,6 @@ namespace std
 
 #include "ct_string_cxx17.hpp"
 
-
-#ifndef __cpp_lib_hardware_interference_size
-namespace std
-{// these are backported implementations of C++17 methods
-    constexpr size_t hardware_destructive_interference_size = 64;
-    constexpr size_t hardware_constructive_interference_size = 64;
-}
-#endif
-
-namespace compile_time_bits
-{
-    template <typename T>
-    struct array_size {};
-
-    template <typename T>
-    struct array_size<T&>: array_size<std::remove_cv_t<T>> {};
-
-    template <typename T, std::size_t N>
-    struct array_size<const_array<T, N>>: std::integral_constant<size_t, N> {};
-
-    template <typename T, std::size_t N>
-    struct array_size<T[N]>: std::integral_constant<size_t, N> {};
-
-    template<typename T>
-    constexpr size_t get_array_size(T&&)
-    {
-        return array_size<T>::value;
-    }
-
-    template<typename T>
-    struct array_elem{};
-
-    template<typename T>
-    struct array_elem<T&>: array_elem<std::remove_cv_t<T>> {};
-
-    template<typename T>
-    struct array_elem<T&&>: array_elem<std::remove_cv_t<T>> {};
-
-    template<typename T, size_t N>
-    struct array_elem<T[N]>
-    {
-        using type = T;
-    };
-    template<typename T, size_t N>
-    struct array_elem<const_array<T,N>>
-    {
-        using type = T;
-    };
-    template<typename T>
-    using array_elem_t = typename array_elem<T>::type;
-
-    template <typename T,
-              size_t N = array_size<T>::value,
-              typename _Elem = array_elem_t<T>,
-              std::size_t... I>
-    constexpr auto to_array_impl(T&& a, std::index_sequence<I...>)
-        -> const_array<_Elem, N>
-    {
-        return {a[I]...};
-    }
-
-    template <typename T, size_t N = array_size<T>::value>
-    constexpr auto make_array(T&& a)
-    {
-        return to_array_impl(std::forward<T>(a), std::make_index_sequence<N>{});
-    }
-    template <typename T, size_t N>
-    constexpr auto make_array(T const (&a)[N])
-    {
-        return to_array_impl(a, std::make_index_sequence<N>{});
-    }
-
-    template <
-        typename...TArgs,
-        size_t N=sizeof...(TArgs),
-        typename _Tuple=typename std::enable_if<(N>1),
-             std::tuple<TArgs...>>::type,
-        typename T = std::tuple_element_t<0, _Tuple>
-        >
-    constexpr auto make_array(TArgs&&...args)
-    {
-        T _array[] = { std::forward<TArgs>(args)... };
-        return make_array(_array);
-    }
-
-}
 
 namespace compile_time_bits
 {
