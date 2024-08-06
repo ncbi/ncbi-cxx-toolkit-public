@@ -83,18 +83,17 @@ BEGIN_SCOPE(align_format)
 
 static const char k_IdentityChar = '.';
 static const int k_NumFrame = 6;
-static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1",
-                                                     "-2", "-3"};
+static const char* k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
 static const int k_GetSubseqThreshhold = 10000;
 
 ///threshhold to color mismatch. 98 means 98%
 static const int k_ColorMismatchIdentity = 0;
 static const int k_GetDynamicFeatureSeqLength = 200000;
-static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
+static const char* k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
-const string color[]={"#000000", "#808080", "#FF0000"};
-const string k_ColorRed = "#FF0000";
-const string k_ColorPink = "#F805F5";
+static const char* color[]={"#000000", "#808080", "#FF0000"};
+static const char* k_ColorRed = "#FF0000";
+static const char* k_ColorPink = "#F805F5";
 
 static const char k_IntronChar = '~';
 static const int k_IdStartMargin = 2;
@@ -103,20 +102,20 @@ static const int k_StartSequenceMargin = 2;
 static const int k_AlignStatsMargin = 2;
 static const int k_SequencePropertyLabelMargin = 2;
 
-const string k_DefaultAnchorTempl = "<a name=<@id_lbl@>></a>";
-const string k_DefaultAnchorWithPosTempl = "<a name=#_<@resultPositionIndex@>_<@id_lbl@>></a>";
-static const string k_DefaultSpaceMaintainerTempl = "<span class=\"smn\"><@chkbox@></span>";
-static const string k_DefaultCheckboxTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment<@queryNumber@>', 'getSeqGi', this.checked)\">";
-static const string k_DefaultCheckboxExTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" checked=\"checked\" onClick=\"synchAl(this);\">";
+static const char* k_DefaultAnchorTempl = "<a name=<@id_lbl@>></a>";
+static const char* k_DefaultAnchorWithPosTempl = "<a name=#_<@resultPositionIndex@>_<@id_lbl@>></a>";
+static const char* k_DefaultSpaceMaintainerTempl = "<span class=\"smn\"><@chkbox@></span>";
+static const char* k_DefaultCheckboxTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" onClick=\"synchronizeCheck(this.value, 'getSeqAlignment<@queryNumber@>', 'getSeqGi', this.checked)\">";
+static const char* k_DefaultCheckboxExTempl = "<input type=\"checkbox\" name=\"getSeqGi\" value=\"<@id_lbl@>\" checked=\"checked\" onClick=\"synchAl(this);\">";
 
 //highlight the seqid for pairwise-with-identity format
-const string k_DefaultPairwiseWithIdntTempl = "<font color=\"#FF0000\"><b><@alndata@></b></font>";//k_ColorRed
-const string k_DefaultFeaturesTempl = "<font color=\"#F805F5\"><b><@alndata@></b></font>";//k_ColorPink
-const string k_DefaultMaskSeqLocTempl = "<font color=\"<@color@>\"><@alndata@></font>";
+static const char* k_DefaultPairwiseWithIdntTempl = "<font color=\"#FF0000\"><b><@alndata@></b></font>";//k_ColorRed
+static const char* k_DefaultFeaturesTempl = "<font color=\"#F805F5\"><b><@alndata@></b></font>";//k_ColorPink
+static const char* k_DefaultMaskSeqLocTempl = "<font color=\"<@color@>\"><@alndata@></font>";
 
 
 #ifdef USE_ORG_IMPL
-static string k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
+static const char* k_GetSeqSubmitForm[] = {"<FORM  method=\"post\" \
 action=\"//www.ncbi.nlm.nih.gov:80/entrez/query.fcgi?SUBMIT=y\" \
 name=\"%s%d\"><input type=button value=\"Get selected sequences\" \
 onClick=\"finalSubmit(%d, 'getSeqAlignment%d', 'getSeqGi', '%s%d', %d)\"><input \
@@ -132,14 +131,13 @@ type=\"hidden\" name=\"val\" value=\"\"><input \
 type=\"hidden\" name=\"cmd\" value=\"retrieve\"></form>"
 };
 
-static string k_GetSeqSelectForm = "<FORM><input \
+static const char* k_GetSeqSelectForm = "<FORM><input \
 type=\"button\" value=\"Select all\" onClick=\"handleCheckAll('select', \
 'getSeqAlignment%d', 'getSeqGi')\"></form></td><td><FORM><input \
 type=\"button\" value=\"Deselect all\" onClick=\"handleCheckAll('deselect', \
 'getSeqAlignment%d', 'getSeqGi')\"></form>";
 
-
-static string k_GetTreeViewForm =  "<FORM  method=\"post\" \
+static const char* k_GetTreeViewForm =  "<FORM  method=\"post\" \
 action=\"//www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi?request=page&rid=%s&queryID=%s&distmode=on\" \
 name=\"tree%s%d\" target=\"trv%s\"> \
 <input type=button value=\"Distance tree of results\" onClick=\"extractCheckedSeq('getSeqAlignment%d', 'getSeqGi', 'tree%s%d')\"> \

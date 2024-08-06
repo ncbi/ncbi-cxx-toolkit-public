@@ -824,11 +824,14 @@ bool CTaxFormat::isTaxidInAlign(TTaxId taxid)
 
 void CTaxFormat::x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo)
 {
-    m_MaxAccLength = max(max(m_MaxAccLength,(unsigned int)seqInfo->label.size()),(unsigned int)kOrgAccTxtTableHeader.size());    
-    m_MaxDescrLength = max(max(m_MaxDescrLength,(unsigned int)seqInfo->title.size()),(unsigned int)kOrgDescrTxtTableHeader.size());        
-    m_MaxScoreLength = max(max(m_MaxScoreLength,(unsigned int)seqInfo->bit_score.size()),(unsigned int)kOrgScoreTxtTableHeader.size());    
-    m_MaxEvalLength = max(max(m_MaxEvalLength,(unsigned int)seqInfo->evalue.size()),(unsigned int)kOrgEValueTxtTableHeader.size());    
-    m_MaxDescrLength =  m_LineLength - m_MaxAccLength - m_MaxScoreLength - m_MaxEvalLength - 4;//4 for spaces in between            
+    // std::string_view().size() is a constexpr and should be calculated on a compilation time for string constants
+    #define CSTR_SIZE(x) (unsigned int)std::string_view(x).size()
+    
+    m_MaxAccLength   = max( max(m_MaxAccLength,(unsigned int)seqInfo->label.size()),       CSTR_SIZE(kOrgAccTxtTableHeader));
+    m_MaxDescrLength = max( max(m_MaxDescrLength,(unsigned int)seqInfo->title.size()),     CSTR_SIZE(kOrgDescrTxtTableHeader));
+    m_MaxScoreLength = max( max(m_MaxScoreLength,(unsigned int)seqInfo->bit_score.size()), CSTR_SIZE(kOrgScoreTxtTableHeader));
+    m_MaxEvalLength  = max( max(m_MaxEvalLength,(unsigned int)seqInfo->evalue.size()),     CSTR_SIZE(kOrgEValueTxtTableHeader));
+    m_MaxDescrLength = m_LineLength - m_MaxAccLength - m_MaxScoreLength - m_MaxEvalLength - 4;//4 for spaces in between
  }
 
 CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CBioseq_Handle& bsp_handle,

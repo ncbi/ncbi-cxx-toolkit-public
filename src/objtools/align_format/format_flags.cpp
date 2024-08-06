@@ -33,12 +33,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(align_format)
 
-const string kArgOutputFormat("outfmt");
-const int kDfltArgOutputFormat = 0;
-string kDfltArgTabularOutputFmt =
+const char* kArgOutputFormat("outfmt");
+const int   kDfltArgOutputFormat = 0;
+const char* kDfltArgTabularOutputFmt =
     "qaccver saccver pident length mismatch gapopen qstart qend sstart send "
     "evalue bitscore";
-const string kDfltArgTabularOutputFmtTag("std");
+const char* kDfltArgTabularOutputFmtTag("std");
 
 const size_t kNumTabularOutputFormatSpecifiers = 50;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
@@ -213,20 +213,20 @@ string DescribeTabularOutputFormatSpecifiers(bool is_igblast)
     return os.str();
 }
 
-const string kArgShowGIs("show_gis");
+const char* kArgShowGIs("show_gis");
 const bool kDfltArgShowGIs = false;
-const string kArgNumDescriptions("num_descriptions");
+const char* kArgNumDescriptions("num_descriptions");
 const size_t kDfltArgNumDescriptions = 500;
-const string kArgNumAlignments("num_alignments");
+const char* kArgNumAlignments("num_alignments");
 const size_t kDfltArgNumAlignments = 250;
-const string kArgProduceHtml("html");
+const char* kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
-const string kArgAlignSeqList("alignseqlist");
-const string kArgMetadata("searchmetadata");
-const string kArgQueryIndex("queryindex");
-const string kArgSortHits("sorthits");
-const string kArgSortHSPs("sorthsps");
+const char* kArgAlignSeqList("alignseqlist");
+const char* kArgMetadata("searchmetadata");
+const char* kArgQueryIndex("queryindex");
+const char* kArgSortHits("sorthits");
+const char* kArgSortHSPs("sorthsps");
 
 const size_t kNumSAMOutputFormatSpecifiers = 2;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {
@@ -245,7 +245,6 @@ string DescribeSAMOutputFormatSpecifiers()
         os << "\t" << setw(10) << sc_SAMFormatSpecifiers[i].name << " means ";
         os << sc_SAMFormatSpecifiers[i].description << "\n";
     }
-
     return os.str();
 }
 

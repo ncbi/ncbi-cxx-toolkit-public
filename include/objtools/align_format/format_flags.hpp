@@ -44,43 +44,43 @@ BEGIN_SCOPE(align_format)
 /* Formatting options */
 
 /// Argument to select formatted output type
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgOutputFormat;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgOutputFormat;
 /// Default value for formatted output type
 NCBI_ALIGN_FORMAT_EXPORT extern const int kDfltArgOutputFormat;
 /// Argument to specify whether the GIs should be shown in the deflines in the
 /// traditional BLAST report
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgShowGIs;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgShowGIs;
 /// Default value for the "show GIs" formatter option
 NCBI_ALIGN_FORMAT_EXPORT extern const bool kDfltArgShowGIs;
 /// Argument to specify the number of one-line descriptions to show in the
 /// traditional BLAST report
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgNumDescriptions;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgNumDescriptions;
 /// Default number of one-line descriptions to display in the traditional
 /// BLAST report
 NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltArgNumDescriptions;
 /// Argument to specify the number of alignments to show in the traditional 
 /// BLAST report
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgNumAlignments;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgNumAlignments;
 /// Default number of alignments to display in the traditional BLAST report
 NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltArgNumAlignments;
 /// Argument to specify whether to create output as HTML or not
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgProduceHtml;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgProduceHtml;
 /// Default value which specifies whether to create output as HTML or not
 NCBI_ALIGN_FORMAT_EXPORT extern const bool kDfltArgProduceHtml;
 
 /* Formatting options: tabular/comma-separated value output formats */
 
 /// Default value for tabular and comma-separated value output formats
-NCBI_ALIGN_FORMAT_EXPORT extern string kDfltArgTabularOutputFmt;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kDfltArgTabularOutputFmt;
 /// Tag/keyword which is equivalent to using kDfltArgTabularOutputFmt
-NCBI_ALIGN_FORMAT_EXPORT extern const string kDfltArgTabularOutputFmtTag;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kDfltArgTabularOutputFmtTag;
 
 NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltLineLength;
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgAlignSeqList;
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgMetadata;
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgQueryIndex;
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgSortHits;
-NCBI_ALIGN_FORMAT_EXPORT extern const string kArgSortHSPs;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgAlignSeqList;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgMetadata;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgQueryIndex;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgSortHits;
+NCBI_ALIGN_FORMAT_EXPORT extern const char* kArgSortHSPs;
 
 
 
@@ -145,9 +145,9 @@ enum ETabularField {
 /// their corresponding enumeration
 struct SFormatSpec {
     /// Format specification name
-    string name;
+    const char* name;
     /// A description of what the above name represents
-    string description;
+    const char* description;
     /// Enumeration that corresponds to this field
     ETabularField field;
 
@@ -155,7 +155,7 @@ struct SFormatSpec {
     /// @param n format specification name [in]
     /// @param d format specification description [in]
     /// @param f enumeration value [in]
-    SFormatSpec(string n, string d, ETabularField f)
+    SFormatSpec(const char* n, const char* d, ETabularField f)
         : name(n), description(d), field(f) {}
 };
 
@@ -174,9 +174,9 @@ enum ESAMField {
 
 struct SSAMFormatSpec {
     /// Format specification name
-    string name;
+    const char* name;
     /// A description of what the above name represents
-    string description;
+    const char* description;
     /// Enumeration that corresponds to this field
     ESAMField field;
 
@@ -184,7 +184,7 @@ struct SSAMFormatSpec {
     /// @param n format specification name [in]
     /// @param d format specification description [in]
     /// @param f enumeration value [in]
-    SSAMFormatSpec(string n, string d, ESAMField f)
+    SSAMFormatSpec(const char* n, const char* d, ESAMField f)
         : name(n), description(d), field(f) {}
 };
 

@@ -66,80 +66,88 @@ USING_SCOPE(sequence);
 BEGIN_SCOPE(align_format)
 
 //margins constant
-
-static string kOneSpaceMargin = " ";
-static string kTwoSpaceMargin = "  ";
+static const char*  kOneSpaceMargin = " ";
+static const size_t kOneSpaceMargin_size = strlen(kOneSpaceMargin);
+static const char*  kTwoSpaceMargin = "  ";
+static const size_t kTwoSpaceMargin_size = strlen(kTwoSpaceMargin);
 
 //const strings
-static const string kHeader = "Sequences producing significant alignments:";
-static const string kScore = "Score";
-static const string kE = "E";
-static const string kBits =
-    (getenv("CTOOLKIT_COMPATIBLE") ? "(bits)" : "(Bits)");
-static const string kEvalue = "E value";
-static const string kValue = "Value";
-static const string kN = "N";
-static const string kRepeatHeader = "Sequences used in model and found again:";
-static const string kNewSeqHeader = "Sequences not found previously or not pr\
-eviously below threshold:";
-static const string kMaxScore = "Max score";
-static const string kTotalScore = "Total score";
-static const string kTotal = "Total";
-static const string kIdentity = "Max ident";
-static const string kPercent = "Percent";
-static const string kHighest = "Highest";
-static const string kQuery = "Query";
-static const string kCoverage = "Query coverage";
-static const string kEllipsis = "...";
+static const char*  kHeader = "Sequences producing significant alignments:";
+static const size_t kHeader_size = strlen(kHeader);
+static const char*  kScore = "Score";
+static const size_t kScore_size = strlen(kScore);
+static const char*  kE = "E";
+static const char*  kBits = (getenv("CTOOLKIT_COMPATIBLE") ? "(bits)" : "(Bits)");
+static const size_t kBits_size = strlen(kBits);
+static const char*  kEvalue = "E value";
+static const char*  kValue = "Value";
+static const size_t kValue_size = strlen(kValue);
+static const char*  kN = "N";
+static const char*  kRepeatHeader = "Sequences used in model and found again:";
+static const char*  kNewSeqHeader = "Sequences not found previously or not previously below threshold:";
+static const char*  kMaxScore = "Max score";
+static const char*  kTotalScore = "Total score";
+static const char*  kTotal = "Total";
+static const size_t kTotal_size = strlen(kTotal);
 
-static const string kMax = "Max";
-static const string kIdentLine2  = "Ident";
-static const string kScoreLine2 = "Score";
-static const string kQueryCov = "Query";
-static const string kQueryCovLine2 = "cover";
-static const string kPerc = "Per.";
-static const string kAccession = "Accession";
-static const string kDescription = "Description";
-static const string kScientific = "Scientific";
-static const string kCommon = "Common";
-static const string kName = "Name";
-static const string kAccAbbr = "Acc.";
-static const string kLenAbbr = "Len";
-static const string kTaxid = "Taxid";
-static const string kClusterTitle = "Cluster Rep.";
-static const string kCluster = "Cluster";
-static const string kAncestor = "Ancestor";
-static const string kMember = "Mem.";
-static const string kTaxa = "Taxa";
-static const string kNumOf = "#";
-     
+static const char*  kIdentity = "Max ident";
+static const size_t kIdentity_size = strlen(kIdentity);
+static const char*  kPercent = "Percent";
+static const char*  kHighest = "Highest";
+static const char*  kQuery = "Query";
+static const char*  kCoverage = "Query coverage";
+static const size_t kCoverage_size = strlen(kCoverage);
+static const char*  kEllipsis = "...";
+
+static const char*  kMax = "Max";
+static const char*  kIdentLine2 = "Ident";
+static const char*  kScoreLine2 = "Score";
+static const char*  kQueryCov = "Query";
+static const size_t kQueryCov_size = strlen(kQueryCov);
+static const char*  kQueryCovLine2 = "cover";
+static const char*  kPerc = "Per.";
+static const char*  kAccession = "Accession";
+static const char*  kDescription = "Description";
+static const char*  kScientific = "Scientific";
+static const char*  kCommon = "Common";
+static const char*  kName = "Name";
+static const char*  kAccAbbr = "Acc.";
+static const char*  kLenAbbr = "Len";
+static const char*  kTaxid = "Taxid";
+static const char*  kClusterTitle = "Cluster Rep.";
+static const char*  kCluster = "Cluster";
+static const char*  kAncestor = "Ancestor";
+static const char*  kMember = "Mem.";
+static const char*  kTaxa = "Taxa";
+static const char*  kNumOf = "#";
+
 
 //psiblast related
-static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
+static const char* kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
 WIDTH=30 HEIGHT=15 ALT=\"New sequence mark\">";
 
-static const string kPsiblastNewSeqBackgroundGif = "<IMG SRC=\"images/\
+static const char* kPsiblastNewSeqBackgroundGif = "<IMG SRC=\"images/\
 bg.gif\" WIDTH=30 HEIGHT=15 ALT=\" \">";
 
-static const string kPsiblastCheckedBackgroundGif = "<IMG SRC=\"images\
+static const char* kPsiblastCheckedBackgroundGif = "<IMG SRC=\"images\
 /bg.gif\" WIDTH=15 HEIGHT=15 ALT=\" \">";
 
-static const string kPsiblastCheckedGif = "<IMG SRC=\"images/checked.g\
+static const char* kPsiblastCheckedGif = "<IMG SRC=\"images/checked.g\
 if\" WIDTH=15 HEIGHT=15 ALT=\"Checked mark\">";
 
-static const string kPsiblastEvalueLink = "<a name = Evalue></a>";
+static const char* kPsiblastEvalueLink = "<a name = Evalue></a>";
 
-static const string  kPsiblastCheckboxChecked = "<INPUT TYPE=\"checkbox\" NAME\
+static const char* kPsiblastCheckboxChecked = "<INPUT TYPE=\"checkbox\" NAME\
 =\"checked_GI\" VALUE=\"%" NCBI_INT8_FORMAT_SPEC "\" CHECKED>  <INPUT TYPE=\"hidden\" NAME =\"good_G\
 I\" VALUE = \"%" NCBI_INT8_FORMAT_SPEC "\">";
 
-static const string  kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
+static const char* kPsiblastCheckbox =  "<INPUT TYPE=\"checkbox\" NAME=\"ch\
 ecked_GI\" VALUE=\"%" NCBI_INT8_FORMAT_SPEC "\">  ";
 
 //Max length of title string for the the link
 static const int kMaxDescrLength = 4096;
 
-static const int kMaxPercentIdentityLen = kIdentLine2.size() + 1;
+static const int kMaxPercentIdentityLen = (int)strlen(kIdentLine2) + 1;
 static const int kMaxAccLength = 16;
 static const int kMaxTaxonomyNameLength = 15;
 static const int kMaxTaxonomyNameLengthExt = 30;
@@ -659,13 +667,13 @@ void CShowBlastDefline::x_InitDefline(void)
     size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
 
-    m_MaxScoreLen = kBits.size();
-    m_MaxEvalueLen = kValue.size();
+    m_MaxScoreLen = kBits_size;
+    m_MaxEvalueLen = kValue_size;
     m_MaxSumNLen =1;
 
-    m_MaxPercentIdentityLen = kIdentity.size();    
-    m_MaxQueryCoverLen = kCoverage.size();
-    m_MaxTotalScoreLen = kTotal.size();
+    m_MaxPercentIdentityLen = kIdentity_size;
+    m_MaxQueryCoverLen = kCoverage_size;
+    m_MaxTotalScoreLen = kTotal_size;
     
 
 
@@ -729,7 +737,7 @@ void CShowBlastDefline::x_InitDefline(void)
 static void s_DisplayCheckboxChecked(CNcbiOstream& out, TGi gi)
 {
     char buf[256];
-    snprintf(buf, sizeof(buf), kPsiblastCheckboxChecked.c_str(), GI_TO(Int8, gi), GI_TO(Int8, gi));
+    snprintf(buf, sizeof(buf), kPsiblastCheckboxChecked, GI_TO(Int8, gi), GI_TO(Int8, gi));
     buf[sizeof(buf)-1] = '\0';
     out << buf;
 }
@@ -738,7 +746,7 @@ static void s_DisplayCheckboxChecked(CNcbiOstream& out, TGi gi)
 static void s_DisplayCheckbox(CNcbiOstream& out, TGi gi)
 {
     char buf[256];
-    snprintf(buf, sizeof(buf), kPsiblastCheckbox.c_str(), GI_TO(Int8, gi));
+    snprintf(buf, sizeof(buf), kPsiblastCheckbox, GI_TO(Int8, gi));
     buf[sizeof(buf)-1] = '\0';
     out << buf;
 }
@@ -751,7 +759,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
     if(!(m_Option & eNoShowHeader)) {
         if((m_PsiblastStatus == eFirstPass) ||
            (m_PsiblastStatus == eRepeatPass)){
-            CAlignFormatUtil::AddSpace(out, m_LineLen + kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_LineLen + kTwoSpaceMargin_size);
             if(m_Option & eHtml){
                 if((m_Option & eShowNewSeqGif)){
                     out << kPsiblastNewSeqBackgroundGif;
@@ -763,28 +771,28 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                 }
             }
             out << kScore;
-            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
-            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore_size);
+            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
             
             
             if (m_Option & eShowTotalScore) {
                 out << kTotal;
-                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal.size());
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal_size);
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
             }
             if (m_Option & eShowQueryCoverage) {
                 out << kQueryCov;                
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
             }
 
             CAlignFormatUtil::AddSpace(out, 2); //E align to l of value
             out << kE;         
 
             if (m_Option & eShowPercentIdent) {                
-                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue_size); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin_size);
                 out << kMax;//"Max" - "ident" -second line                
             }
 
@@ -800,30 +808,30 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                     out << kPsiblastCheckedBackgroundGif;
                 }
             }
-            CAlignFormatUtil::AddSpace(out, m_LineLen - kHeader.size());
-            CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_LineLen - kHeader_size);
+            CAlignFormatUtil::AddSpace(out, kOneSpaceMargin_size);
             out << kBits;
             //in case m_MaxScoreLen > kBits.size()
-            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kBits.size());
-            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kBits_size);
+            CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
 
             
             if (m_Option & eShowTotalScore) {
-                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin_size);
                 out << kScoreLine2;//"score"
-                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal.size()); 
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal_size); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
             }
             if (m_Option & eShowQueryCoverage) {
                 out << kQueryCovLine2;//"cov"                
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin_size);
             }
 
             out << kValue;
             if((m_Option & eShowSumN) || (m_Option & eShowPercentIdent)){
-                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
-                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());                
+                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue_size); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);                
             }
             if(m_Option & eShowSumN){
                 out << kN;
@@ -944,7 +952,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             
             out << kTwoSpaceMargin << percent_coverage << "%";        
             //minus one due to % sign
-            CAlignFormatUtil::AddSpace(out, kQueryCov.size() - 
+            CAlignFormatUtil::AddSpace(out, kQueryCov_size - 
                                        NStr::IntToString(percent_coverage).size() - 1);
         }
 
@@ -1036,7 +1044,7 @@ static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
     }
     else {
         CAlignFormatUtil::AddSpace(out, max_data_len - columnText.size());
-        CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+        CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin_size);
     }
 
 }
@@ -1049,13 +1057,13 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     bool is_first_aln = true;
     size_t num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
-    m_MaxScoreLen = kBits.size();
-    m_MaxEvalueLen = kValue.size();
+    m_MaxScoreLen = kBits_size;
+    m_MaxEvalueLen = kValue_size;
     m_MaxSumNLen =1;
-    m_MaxTotalScoreLen = kTotal.size();    
-    m_MaxPercentIdentityLen = kIdentity.size();
+    m_MaxTotalScoreLen = kTotal_size;    
+    m_MaxPercentIdentityLen = kIdentity_size;
     int percent_identity = 0;
-    m_MaxQueryCoverLen = kQueryCov.size();    
+    m_MaxQueryCoverLen = kQueryCov_size;    
     
     
     if(m_Option & eHtml){
@@ -1881,7 +1889,7 @@ string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1","  " + kE + "  ",m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",string("  ") + kE + "  ",m_MaxEvalueLen);    
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,kMaxPercentIdentityLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,kMaxDispNumberLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",kMaxAccLength);        

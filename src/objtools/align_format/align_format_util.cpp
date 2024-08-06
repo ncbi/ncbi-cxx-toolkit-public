@@ -79,13 +79,12 @@ USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
-const char CAlignFormatUtil::kNoHitsFound[] = "No hits found";
+const char* CAlignFormatUtil::kNoHitsFound = "No hits found";
 
-bool kTranslation;
-CRef<CScope> kScope;
+static bool kTranslation;
+static CRef<CScope> kScope;
 
-const char k_PSymbol[ePMatrixSize+1] =
-"ARNDCQEGHILKMFPSTWYVBZX";
+const char k_PSymbol[ePMatrixSize + 1] = "ARNDCQEGHILKMFPSTWYVBZX";
 
 unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
