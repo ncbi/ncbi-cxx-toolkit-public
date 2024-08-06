@@ -285,13 +285,8 @@ bool CGtfWriter::xAssignFeaturesGene(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    const auto& mfLoc = mf.GetLocation();
-    auto mfStrand = (mfLoc.IsSetStrand() && mfLoc.GetStrand() == eNa_strand_minus) ?
-        eNa_strand_minus :
-        eNa_strand_plus;
-
     CSeq_loc mfLocAsPackedInt;
-    mfLocAsPackedInt.Assign(mfLoc);
+    mfLocAsPackedInt.Assign(mf.GetLocation());
     mfLocAsPackedInt.ChangeToPackedInt();
 
     const auto& sublocs = mfLocAsPackedInt.GetPacked_int().Get();
@@ -299,12 +294,13 @@ bool CGtfWriter::xAssignFeaturesGene(
     unsigned int partNum = 1;
     for ( auto it = sublocs.begin(); it != sublocs.end(); it++ ) {
         const CSeq_interval& intv = **it;
+        const auto strand = intv.IsSetStrand() ? intv.GetStrand() : eNa_strand_plus;
         CRef<CGtfRecord> pRecord(
             new CGtfRecord(context, (m_uFlags & fNoExonNumbers)));
         if (!xAssignFeature(*pRecord, context, mf)) {
             return false;
         }
-        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), mfStrand);
+        pRecord->SetEndpoints(intv.GetFrom(), intv.GetTo(), strand);
         if (needsPartNumbers) {
             pRecord->SetPartNumber(partNum++);
         }
