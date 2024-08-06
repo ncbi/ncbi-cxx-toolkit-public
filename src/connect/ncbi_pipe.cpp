@@ -939,6 +939,8 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 NCBI_PARAM_DECL  (bool, CONN, PIPE_USE_POLL);
 NCBI_PARAM_DEF_EX(bool, CONN, PIPE_USE_POLL,
                   true, eParam_Default, CONN_PIPE_USE_POLL);
+using TUsePollParam = NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL);
+
 
 class CPipeHandle
 {
@@ -1001,9 +1003,7 @@ CPipeHandle::CPipeHandle(void)
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
       m_Pid((TPid)(-1)), m_Flags(0), m_SelfHandles(false)
 {
-    static NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL) use_poll_param;
-
-    m_UsePoll = use_poll_param.Get();
+    m_UsePoll = TUsePollPparam::GetDefault();
     ERR_POST_ONCE(Trace << "CPipeHandle using poll(): "
                   + NStr::BoolToString(m_UsePoll));
 }
