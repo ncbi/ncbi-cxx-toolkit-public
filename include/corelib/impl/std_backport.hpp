@@ -121,7 +121,7 @@ namespace compile_time_bits
         return {a[I]...};
     }
 
-#if 0
+    #if 0
     template <typename T, size_t N = array_size<T>::value>
     constexpr auto make_array(T&& a)
     {
@@ -132,6 +132,7 @@ namespace compile_time_bits
     {
         return to_array_impl(a, std::make_index_sequence<N>{});
     }
+    #endif
 
     template <
         typename...TArgs,
@@ -143,9 +144,8 @@ namespace compile_time_bits
     constexpr auto make_array(TArgs&&...args)
     {
         T _array[] = { std::forward<TArgs>(args)... };
-        return make_array(_array);
+        return to_array_impl(_array, std::make_index_sequence<N>{});
     }
-#endif
 
 }
 
@@ -153,16 +153,15 @@ namespace compile_time_bits
 #ifndef __cpp_lib_to_array
 namespace std
 {
-    template< class T, std::size_t N >
-    constexpr array<std::remove_cv_t<T>, N> to_array( T (&a)[N] )
+    template <typename T, size_t N = compile_time_bits::array_size<T>::value>
+    constexpr auto to_array(T&& a)
     {
-        return compile_time_bits::to_array_impl(std::forward<T>(a), make_index_sequence<N>{});
+        return compile_time_bits::to_array_impl(std::forward<T>(a), std::make_index_sequence<N>{});
     }
-
-    template< class T, std::size_t N >
-    constexpr std::array<std::remove_cv_t<T>, N> to_array( T (&&a)[N] )
+    template <typename T, size_t N>
+    constexpr auto to_array(T const (&a)[N])
     {
-        return compile_time_bits::to_array_impl(std::forward<T>(a), make_index_sequence<N>{});
+        return compile_time_bits::to_array_impl(a, std::make_index_sequence<N>{});
     }
 }
 #endif

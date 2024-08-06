@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(TestSorting)
     constexpr auto res6 = ct::sort("A1B2C3D4"); // it can sort this too, because char[] is array
 
     // little help to deduce array element type
-    constexpr auto init7 = std::to_array<std::string_view>({"1", "2", "3"});
+    constexpr auto init7 = ct::make_array(ct::ct_string{"1"}, "2", "3");
     constexpr auto res7 = ct::sort(init7);
 
     BOOST_CHECK(res1.size() == 3);
