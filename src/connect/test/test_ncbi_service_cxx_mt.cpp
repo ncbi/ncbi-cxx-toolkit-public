@@ -55,21 +55,13 @@ protected:
 private:
     bool x_ParseTypes(void);
 
-    static string         sm_Service;
-    static TSERV_TypeOnly sm_Types;
+    string         m_Service;
+    TSERV_TypeOnly m_Types;
 
-    static string   sm_ThreadsPassed;
-    static string   sm_ThreadsFailed;
-    static int      sm_CompleteThreads;
+    string m_ThreadsPassed;
+    string m_ThreadsFailed;
+    int    m_CompleteThreads;
 };
-
-
-string         CTestApp::sm_Service;
-TSERV_TypeOnly CTestApp::sm_Types = fSERV_Any;
-
-string  CTestApp::sm_ThreadsPassed;
-string  CTestApp::sm_ThreadsFailed;
-int     CTestApp::sm_CompleteThreads;
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
@@ -94,8 +86,8 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 bool CTestApp::TestApp_Init(void)
 {
     // Get args as passed in.
-    sm_Service = GetArgs()["service"].AsString();
-    if (sm_Service.empty()) {
+    m_Service = GetArgs()["service"].AsString();
+    if (m_Service.empty()) {
         ERR_POST(Critical << "Missing service.");
         return false;
     }
@@ -103,10 +95,10 @@ bool CTestApp::TestApp_Init(void)
         return false;
     }
 
-    ERR_POST(Info << "Service:  '" << sm_Service << "'");
-    ERR_POST(Info << "Types:    0x" << hex << sm_Types);
+    ERR_POST(Info << "Service:  '" << m_Service << "'");
+    ERR_POST(Info << "Types:    0x" << hex << m_Types);
 
-    sm_CompleteThreads = 0;
+    m_CompleteThreads = 0;
 
     return true;
 }
@@ -119,10 +111,10 @@ bool CTestApp::Thread_Run(int idx)
 
     PushDiagPostPrefix(("@" + id).c_str());
 
-    vector<CSERV_Info> servers = SERV_GetServers(sm_Service, sm_Types);
+    vector<CSERV_Info> servers = SERV_GetServers(m_Service, m_Types);
 
     if (servers.size() > 0) {
-        ERR_POST(Info << "Server(s) for service '" << sm_Service << "':");
+        ERR_POST(Info << "Server(s) for service '" << m_Service << "':");
         for (const auto& s : servers) {
             ERR_POST(Info << "    " << s.GetHost() << ':' << s.GetPort()
                      << "  (type = " << SERV_TypeStr(s.GetType())
@@ -130,29 +122,29 @@ bool CTestApp::Thread_Run(int idx)
         }
         retval = true;
     } else {
-        ERR_POST(Error << "Service '" << sm_Service
+        ERR_POST(Error << "Service '" << m_Service
                  << "' appears to have no servers.");
     }
 
     PopDiagPostPrefix();
 
     if (retval) {
-        if ( ! sm_ThreadsPassed.empty()) {
-            sm_ThreadsPassed += ",";
+        if ( ! m_ThreadsPassed.empty()) {
+            m_ThreadsPassed += ",";
         }
-        sm_ThreadsPassed += id;
+        m_ThreadsPassed += id;
     } else {
-        if ( ! sm_ThreadsFailed.empty()) {
-            sm_ThreadsFailed += ",";
+        if ( ! m_ThreadsFailed.empty()) {
+            m_ThreadsFailed += ",";
         }
-        sm_ThreadsFailed += id;
+        m_ThreadsFailed += id;
     }
-    ERR_POST(Info << "Progress:          " << ++sm_CompleteThreads
+    ERR_POST(Info << "Progress:          " << ++m_CompleteThreads
                   << " out of " << s_NumThreads << " threads complete.");
     ERR_POST(Info << "Passed thread IDs: "
-                  << (sm_ThreadsPassed.empty() ? "(none)" : sm_ThreadsPassed));
+                  << (m_ThreadsPassed.empty() ? "(none)" : m_ThreadsPassed));
     ERR_POST(Info << "Failed thread IDs: "
-                  << (sm_ThreadsFailed.empty() ? "(none)" : sm_ThreadsFailed));
+                  << (m_ThreadsFailed.empty() ? "(none)" : m_ThreadsFailed));
 
     return retval;
 }
@@ -162,9 +154,9 @@ bool CTestApp::x_ParseTypes(void)
 {
     string types_str = GetArgs()["types"].AsString();
     if (NStr::EqualNocase(types_str, "ALL")) {
-        sm_Types = fSERV_All;
+        m_Types = fSERV_All;
     } else if (NStr::EqualNocase(types_str, "ANY")) {
-        sm_Types = fSERV_Any;
+        m_Types = fSERV_Any;
     } else {
         list<string> types_list;
         NStr::Split(types_str, " \t|+,;", types_list, NStr::fSplit_Tokenize);
@@ -175,7 +167,7 @@ bool CTestApp::x_ParseTypes(void)
                 ERR_POST(Critical << "Invalid server type '" << typ << "'.");
                 return false;
             }
-            sm_Types |= etyp;
+            m_Types |= etyp;
         }
     }
     return true;
