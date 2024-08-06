@@ -57,11 +57,11 @@ static const int kNumSeqalignMatchTypes = 3;
 static const int kTerminalMatchScore[kNumSeqalignMatchTypes] = {24, 19, 16}; 
 static const int kInternalMatchScore[kNumSeqalignMatchTypes] = {30, 25, 23};
 // + 1 for suspected match
-static const string kGif[kNumSeqalignMatchTypes + 2] =
+static const char* kGif[kNumSeqalignMatchTypes + 2] =
     {"red.gif", "purple.gif", "green.gif", "yellow.gif", "white.gif"};
-static const string kGifLegend[] =
+static const char* kGifLegend[] =
     {"Strong", "Moderate", "Weak", "Suspect"};
-static const string kMatchUrlLegend[] =
+static const char* kMatchUrlLegend[] =
     {"Strong match", "Moderate match", "Weak match", "Suspect origin"};
 
 static const TSeqPos kSupectLength = 50;
@@ -72,15 +72,13 @@ static const TSeqPos kNumScales = 5;
 
 
 ///Returns a string concerning the strength of the match for a given enum value
-const string&
+string
 CVecscreen::GetStrengthString(CVecscreen::MatchType match_type)
 {
     if (match_type == CVecscreen::eNoMatch)
-      return NcbiEmptyString;
-
-    return kGifLegend[match_type];
+        return NcbiEmptyString;
+    return string(kGifLegend[match_type]);
 }
-
 
 
 ///group hsp with same id togather
@@ -523,7 +521,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
         image->SetAttribute("border", "1");
         image->Print(out, CNCBINode::eXHTML);
         b = new CHTML_b;
-        b->AppendPlainText(" " + kGifLegend[i] + "  ");
+        b->AppendPlainText(string(" ") + kGifLegend[i] + "  ");
         b->Print(out, CNCBINode::eXHTML);
     }
     out << "\n";
@@ -551,7 +549,7 @@ void CVecscreen::x_BuildHtmlBar(CNcbiOstream& out){
                     a = new CHTML_a(m_HelpDocsUrl + "#" + 
                                     kGifLegend[(*iter)->type]);
                     a->SetAttribute("TARGET", "VecScreenInfo");
-                    a->AppendPlainText(kMatchUrlLegend[(*iter)->type] + ":");
+                    a->AppendPlainText(string(kMatchUrlLegend[(*iter)->type]) + ":");
                     a->Print(out, CNCBINode::eXHTML);
                     is_first = false;
                 } else {

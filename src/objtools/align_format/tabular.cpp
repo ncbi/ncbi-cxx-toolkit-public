@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(align_format)
 
-static const string NA = "N/A";
+static const char* NA = "N/A";
 
 void 
 CBlastTabularInfo::x_AddDefaultFieldsToShow()
