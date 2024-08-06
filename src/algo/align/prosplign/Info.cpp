@@ -623,8 +623,8 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
 
     int npos1 = is_plus_strand?nuc_from:nuc_to;
 
-    auto prot_beg_pos = protein.find_first_not_of(GAP_CHAR);
-    auto prot_end_pos = protein.find_last_not_of(GAP_CHAR);
+    int prot_beg_pos = protein.find_first_not_of(GAP_CHAR);
+    int prot_end_pos = protein.find_last_not_of(GAP_CHAR);
 
     for(int i=0;i<prot_end_pos; i+=width) {
         int apos = i+width-1;
@@ -636,12 +636,12 @@ void CProSplignText::Output(const CSeq_align& seqalign, CScope& scope, ostream& 
 #ifdef NCBI_COMPILER_WORKSHOP
         int gaps = 0;
         count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR, gaps);
-        auto real_bases = width-gaps;
+        int real_bases = width-gaps;
 #else
-        auto real_bases = width-count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR);
+        int real_bases = width-count(dna.begin()+i, dna.begin()+(i+width), GAP_CHAR);
 #endif
 
-        auto npos2 = is_plus_strand?npos1+real_bases-1:npos1-(real_bases-1);
+        int npos2 = is_plus_strand?npos1+real_bases-1:npos1-(real_bases-1);
 
         //throw out head and tail lines with a complete row gap
         if (apos > prot_beg_pos) {
