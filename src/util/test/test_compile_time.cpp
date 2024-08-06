@@ -806,22 +806,22 @@ BOOST_AUTO_TEST_CASE(TestSorting)
     constexpr int init1[] = { 3, 5, 1 };
     constexpr auto res1 = ct::sort(init1);
 
-    constexpr auto init2 = ct::make_array({ 1, 2, 3});
+    constexpr auto init2 = std::to_array({ 1, 2, 3});
     constexpr auto res2 = ct::sort(init2);
 
     static constexpr int init3[] = { 1, 2, 3};
     constexpr auto res3 = ct::sort(init3);
 
-    static constexpr auto init4 = ct::make_array({ 1, 2, 3});
+    static constexpr auto init4 = std::to_array({ 1, 2, 3});
     constexpr auto res4 = ct::sort(init4);
 
-    constexpr auto init5 = ct::make_array(1, 2, 3);
+    constexpr auto init5 = std::to_array({1, 2, 3});
     constexpr auto res5 = ct::sort(init5);
 
     constexpr auto res6 = ct::sort("A1B2C3D4"); // it can sort this too, because char[] is array
 
     // little help to deduce array element type
-    constexpr auto init7 = ct::make_array(ct::ct_string{"1"}, "2", "3");
+    constexpr auto init7 = std::to_array<std::string_view>({"1", "2", "3"});
     constexpr auto res7 = ct::sort(init7);
 
     BOOST_CHECK(res1.size() == 3);
@@ -1238,7 +1238,7 @@ BOOST_AUTO_TEST_CASE(TestMSVCTupleBug)
         { 3, 3, 3},
     };
 
-    //static constexpr A1 a2 = ct::make_array( a1 );
+    //static constexpr A1 a2 = std::to_array( a1 );
     static constexpr
     //A1 a2 = MakeArray(a1, std::make_index_sequence<3>{});
     A1 a2 = experimental::to_array(a1);

@@ -246,7 +246,7 @@ namespace compile_time_bits
 
         template<size_t N>
         explicit constexpr const_bitset(char const (&_init)[N])
-            :const_bitset(make_array(_init))
+            :const_bitset(std::to_array(_init))
         {}
 
         template<size_t N>
