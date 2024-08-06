@@ -399,6 +399,13 @@ void CHugeFileValidator::ReportPostErrors(const SValidatorContext& context,
                   x_GetHugeSetLabel(),
                   errors);
     }
+    if (context.CumulativeInferenceCount >= InferenceAccessionCutoff) {
+        s_PostErr(eDiag_Info,
+                  eErr_SEQ_FEAT_TooManyInferenceAccessions,
+                  "Skipping validation of remaining /inference qualifiers",
+                  x_GetHugeSetLabel(),
+                  errors);
+    }
 }
 
 
