@@ -57,37 +57,21 @@ protected:
     virtual bool TestApp_Init(void);
 
 private:
-    static CUrl             sm_Url;
-    static string           sm_Service;
-    static string           sm_Scheme;
-    static string           sm_User;
-    static string           sm_Password;
-    static string           sm_Path;
-    static string           sm_Args;
-    static string           sm_ToPost;
-    static string           sm_Expected;
-    static string           sm_ThreadsPassed;
-    static string           sm_ThreadsFailed;
-    static CTimeout         sm_Timeout;
-    static unsigned short   sm_Retries;
-    static int              sm_CompleteThreads;
+    CUrl           m_Url;
+    string         m_Service;
+    string         m_Scheme;
+    string         m_User;
+    string         m_Password;
+    string         m_Path;
+    string         m_Args;
+    string         m_ToPost;
+    string         m_Expected;
+    string         m_ThreadsPassed;
+    string         m_ThreadsFailed;
+    CTimeout       m_Timeout;
+    unsigned short m_Retries;
+    int            m_CompleteThreads;
 };
-
-
-CUrl            CTestApp::sm_Url;
-string          CTestApp::sm_Service;
-string          CTestApp::sm_Scheme;
-string          CTestApp::sm_User;
-string          CTestApp::sm_Password;
-string          CTestApp::sm_Path;
-string          CTestApp::sm_Args;
-string          CTestApp::sm_ToPost;
-string          CTestApp::sm_Expected;
-string          CTestApp::sm_ThreadsPassed;
-string          CTestApp::sm_ThreadsFailed;
-CTimeout        CTestApp::sm_Timeout;
-unsigned short  CTestApp::sm_Retries;
-int             CTestApp::sm_CompleteThreads;
 
 
 int CTestApp::CompareResponse(const string& expected, const string& got)
@@ -161,74 +145,74 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 bool CTestApp::TestApp_Init(void)
 {
     // Get args as passed in.
-    sm_Service = GetArgs()["service"].AsString();
-    if (sm_Service.empty()) {
+    m_Service = GetArgs()["service"].AsString();
+    if (m_Service.empty()) {
         ERR_POST(Critical << "Missing service.");
         return false;
     }
-    sm_ToPost = GetArgs()["post"].AsString();
-    if (sm_ToPost.empty()) {
+    m_ToPost = GetArgs()["post"].AsString();
+    if (m_ToPost.empty()) {
         ERR_POST(Critical << "Missing value to post.");
         return false;
     }
-    sm_Scheme   = GetArgs()["scheme"].AsString();
-    sm_User     = GetArgs()["user"].AsString();
-    sm_Password = GetArgs()["password"].AsString();
-    sm_Path     = GetArgs()["path"].AsString();
-    sm_Args     = GetArgs()["args"].AsString();
-    sm_Expected = GetArgs()["expected"].AsString();
-    sm_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
-    sm_Timeout.Set(GetArgs()["timeout"].AsDouble());
+    m_Scheme   = GetArgs()["scheme"].AsString();
+    m_User     = GetArgs()["user"].AsString();
+    m_Password = GetArgs()["password"].AsString();
+    m_Path     = GetArgs()["path"].AsString();
+    m_Args     = GetArgs()["args"].AsString();
+    m_Expected = GetArgs()["expected"].AsString();
+    m_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
+    m_Timeout.Set(GetArgs()["timeout"].AsDouble());
 
     // Set expected=posted if not given in args.
-    if (sm_Expected.empty()) {
-        sm_Expected = sm_ToPost;
+    if (m_Expected.empty()) {
+        m_Expected = m_ToPost;
     }
 
     // Construct a URL based on supplied fields.
-    string  url(sm_Scheme);
+    string  url(m_Scheme);
     url += "+ncbilb://";
-    if ( ! sm_User.empty()  ||  ! sm_Password.empty()) {
-        if ( ! sm_User.empty()) url += sm_User;
+    if ( ! m_User.empty()  ||  ! m_Password.empty()) {
+        if ( ! m_User.empty()) url += m_User;
         url += ":";
-        if ( ! sm_Password.empty()) url += sm_Password;
+        if ( ! m_Password.empty()) url += m_Password;
         url += "@";
     }
-    url += sm_Service;
-    if ( ! sm_Path.empty()) {
-        if (sm_Path[0] != '/') url += '/';
-        url += sm_Path;
+    url += m_Service;
+    if ( ! m_Path.empty()) {
+        if (m_Path[0] != '/') url += '/';
+        url += m_Path;
     }
-    if ( ! sm_Args.empty()) {
-        if (sm_Args[0] != '?') url += '?';
-        url += sm_Args;
+    if ( ! m_Args.empty()) {
+        if (m_Args[0] != '?') url += '?';
+        url += m_Args;
     }
 
-    sm_Url.SetUrl(url);
-    if ( ! sm_Url.IsService()) {
-        ERR_POST(Critical << "URL '" << sm_Url.ComposeUrl(CUrlArgs::eAmp_Char)
+    m_Url.SetUrl(url);
+    if ( ! m_Url.IsService()) {
+        ERR_POST(Critical << "URL '" << m_Url.ComposeUrl(CUrlArgs::eAmp_Char)
             << "' is not a service URL.");
         return false;
     }
-    ERR_POST(Info << "Service:  '" << sm_Service << "'");
-    ERR_POST(Info << "Scheme:   '" << sm_Scheme << "'");
-    ERR_POST(Info << "User:     '" << sm_User << "'");
-    ERR_POST(Info << "Password: '" << sm_Password << "'");
-    ERR_POST(Info << "Path:     '" << sm_Path << "'");
-    ERR_POST(Info << "Args:     '" << sm_Args << "'");
-    ERR_POST(Info << "ToPost:   '" << sm_ToPost << "'");
-    ERR_POST(Info << "Expected: '" << sm_Expected << "'");
-    ERR_POST(Info << "Timeout:  "  << sm_Timeout.GetAsDouble());
-    ERR_POST(Info << "Retries:  "  << sm_Retries);
+    ERR_POST(Info << "Service:  '" << m_Service << "'");
+    ERR_POST(Info << "Scheme:   '" << m_Scheme << "'");
+    ERR_POST(Info << "User:     '" << m_User << "'");
+    ERR_POST(Info << "Password: '" << m_Password << "'");
+    ERR_POST(Info << "Path:     '" << m_Path << "'");
+    ERR_POST(Info << "Args:     '" << m_Args << "'");
+    ERR_POST(Info << "ToPost:   '" << m_ToPost << "'");
+    ERR_POST(Info << "Expected: '" << m_Expected << "'");
+    ERR_POST(Info << "Timeout:  "  << m_Timeout.GetAsDouble());
+    ERR_POST(Info << "Retries:  "  << m_Retries);
 
     ERR_POST(Info << "Calculated values:");
     ERR_POST(Info << "URL in    " << url);
-    ERR_POST(Info << "URL:      " << sm_Url.ComposeUrl(CUrlArgs::eAmp_Char));
-    ERR_POST(Info << "Service:  " << sm_Url.GetService());
-    ERR_POST(Info << "Scheme:   " << sm_Url.GetScheme());
-    ERR_POST(Info << "Host:     " << sm_Url.GetHost());
+    ERR_POST(Info << "URL:      " << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
+    ERR_POST(Info << "Service:  " << m_Url.GetService());
+    ERR_POST(Info << "Scheme:   " << m_Url.GetScheme());
+    ERR_POST(Info << "Host:     " << m_Url.GetHost());
 
-    sm_CompleteThreads = 0;
+    m_CompleteThreads = 0;
 
     return true;
 }
@@ -242,8 +226,8 @@ bool CTestApp::Thread_Run(int idx)
     PushDiagPostPrefix(("@" + id).c_str());
 
     // Send / Receive
-    ERR_POST(Info << "Posting: '" << sm_ToPost << "'");
-    CHttpResponse   response = g_HttpPost(sm_Url, sm_ToPost, "", sm_Timeout, sm_Retries);
+    ERR_POST(Info << "Posting: '" << m_ToPost << "'");
+    CHttpResponse   response = g_HttpPost(m_Url, m_ToPost, "", m_Timeout, m_Retries);
 
     // Check status
     if (response.GetStatusCode() != 200) {
@@ -260,7 +244,7 @@ bool CTestApp::Thread_Run(int idx)
                 CNcbiOstrstream out;
                 NcbiStreamCopy(out, in);
                 got = CNcbiOstrstreamToString(out);
-                retval = (CompareResponse(sm_Expected, got) == 0);
+                retval = (CompareResponse(m_Expected, got) == 0);
             } else {
                 ERR_POST(Error << "FAIL: Bad content stream.");
             }
@@ -272,22 +256,22 @@ bool CTestApp::Thread_Run(int idx)
     PopDiagPostPrefix();
 
     if (retval) {
-        if ( ! sm_ThreadsPassed.empty()) {
-            sm_ThreadsPassed += ",";
+        if ( ! m_ThreadsPassed.empty()) {
+            m_ThreadsPassed += ",";
         }
-        sm_ThreadsPassed += id;
+        m_ThreadsPassed += id;
     } else {
-        if ( ! sm_ThreadsFailed.empty()) {
-            sm_ThreadsFailed += ",";
+        if ( ! m_ThreadsFailed.empty()) {
+            m_ThreadsFailed += ",";
         }
-        sm_ThreadsFailed += id;
+        m_ThreadsFailed += id;
     }
-    ERR_POST(Info << "Progress:           " << ++sm_CompleteThreads
+    ERR_POST(Info << "Progress:           " << ++m_CompleteThreads
                   << " out of " << s_NumThreads << " threads complete.");
     ERR_POST(Info << "Passed threads IDs: "
-                  << (sm_ThreadsPassed.empty() ? "(none)" : sm_ThreadsPassed));
+                  << (m_ThreadsPassed.empty() ? "(none)" : m_ThreadsPassed));
     ERR_POST(Info << "Failed threads IDs: "
-                  << (sm_ThreadsFailed.empty() ? "(none)" : sm_ThreadsFailed));
+                  << (m_ThreadsFailed.empty() ? "(none)" : m_ThreadsFailed));
 
     return retval;
 }

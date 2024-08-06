@@ -54,25 +54,15 @@ protected:
     virtual bool TestApp_Init(void);
 
 private:
-    static string           sm_Service;
-    static string           sm_ToPost;
-    static string           sm_Expected;
-    static string           sm_ThreadsPassed;
-    static string           sm_ThreadsFailed;
-    static CTimeout         sm_Timeout;
-    static unsigned short   sm_Retries;
-    static int              sm_CompleteThreads;
+    string         m_Service;
+    string         m_ToPost;
+    string         m_Expected;
+    string         m_ThreadsPassed;
+    string         m_ThreadsFailed;
+    CTimeout       m_Timeout;
+    unsigned short m_Retries;
+    int            m_CompleteThreads;
 };
-
-
-string          CTestApp::sm_Service;
-string          CTestApp::sm_ToPost;
-string          CTestApp::sm_Expected;
-string          CTestApp::sm_ThreadsPassed;
-string          CTestApp::sm_ThreadsFailed;
-CTimeout        CTestApp::sm_Timeout;
-unsigned short  CTestApp::sm_Retries;
-int             CTestApp::sm_CompleteThreads;
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
@@ -101,23 +91,23 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 bool CTestApp::TestApp_Init(void)
 {
     /* Get args as passed in. */
-    sm_Service = GetArgs()["service"].AsString();
-    if (sm_Service.empty()) {
+    m_Service = GetArgs()["service"].AsString();
+    if (m_Service.empty()) {
         ERR_POST(Critical << "Missing service.");
         return false;
     }
-    sm_ToPost   = GetArgs()["post"].AsString();
-    sm_Expected = GetArgs()["expected"].AsString();
-    sm_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
-    sm_Timeout.Set(GetArgs()["timeout"].AsDouble());
+    m_ToPost   = GetArgs()["post"].AsString();
+    m_Expected = GetArgs()["expected"].AsString();
+    m_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
+    m_Timeout.Set(GetArgs()["timeout"].AsDouble());
 
-    ERR_POST(Info << "Service:  '" << sm_Service << "'");
-    ERR_POST(Info << "ToPost:   '" << sm_ToPost << "'");
-    ERR_POST(Info << "Expected: '" << sm_Expected << "'");
-    ERR_POST(Info << "Timeout:  " << sm_Timeout.GetAsDouble());
-    ERR_POST(Info << "Retries:  " << sm_Retries);
+    ERR_POST(Info << "Service:  '" << m_Service << "'");
+    ERR_POST(Info << "ToPost:   '" << m_ToPost << "'");
+    ERR_POST(Info << "Expected: '" << m_Expected << "'");
+    ERR_POST(Info << "Timeout:  "  << m_Timeout.GetAsDouble());
+    ERR_POST(Info << "Retries:  "  << m_Retries);
 
-    sm_CompleteThreads = 0;
+    m_CompleteThreads = 0;
 
     return true;
 }
@@ -132,15 +122,14 @@ bool CTestApp::Thread_Run(int idx)
 
     // Setup
     CHttpSession    session;
-    CHttpRequest    request(session.NewRequest(CUrl(sm_Service),
-                                               CHttpSession::ePost));
-    request.SetTimeout(sm_Timeout);
-    request.SetRetries(sm_Retries);
+    CHttpRequest    request(session.NewRequest(CUrl(m_Service), CHttpSession::ePost));
+    request.SetTimeout(m_Timeout);
+    request.SetRetries(m_Retries);
 
     // Send
-    if ( ! sm_ToPost.empty()) {
-        ERR_POST(Info << "Posting: '" << sm_ToPost << "'");
-        request.ContentStream() << sm_ToPost;
+    if ( ! m_ToPost.empty()) {
+        ERR_POST(Info << "Posting: '" << m_ToPost << "'");
+        request.ContentStream() << m_ToPost;
     }
 
     // Receive
@@ -156,23 +145,23 @@ bool CTestApp::Thread_Run(int idx)
 
         // Process result
         if (data_out.empty()) {
-            if (sm_Expected.empty()) {
+            if (m_Expected.empty()) {
                 ERR_POST(Info << "SUCCESS: No data expected or received.");
                 retval = true;
             } else {
                 ERR_POST(Error << "FAIL: Expected data not received.");
             }
         } else {
-            if (sm_Expected.empty()) {
+            if (m_Expected.empty()) {
                 ERR_POST(Error << "FAIL: Received data unexpectedly.");
             } else {
-                if (data_out == sm_Expected) {
+                if (data_out == m_Expected) {
                     ERR_POST(Info << "SUCCESS: Expected data received.");
                     retval = true;
                 } else {
                     ERR_POST(Error << "FAIL: Received data '" << data_out
                                    << "' didn't match expected data '"
-                                   << sm_Expected << "'.");
+                                   << m_Expected << "'.");
                 }
             }
         }
@@ -181,22 +170,22 @@ bool CTestApp::Thread_Run(int idx)
     PopDiagPostPrefix();
 
     if (retval) {
-        if ( ! sm_ThreadsPassed.empty()) {
-            sm_ThreadsPassed += ",";
+        if ( ! m_ThreadsPassed.empty()) {
+            m_ThreadsPassed += ",";
         }
-        sm_ThreadsPassed += id;
+        m_ThreadsPassed += id;
     } else {
-        if ( ! sm_ThreadsFailed.empty()) {
-            sm_ThreadsFailed += ",";
+        if ( ! m_ThreadsFailed.empty()) {
+            m_ThreadsFailed += ",";
         }
-        sm_ThreadsFailed += id;
+        m_ThreadsFailed += id;
     }
-    ERR_POST(Info << "Progress:          " << ++sm_CompleteThreads
+    ERR_POST(Info << "Progress:          " << ++m_CompleteThreads
                   << " out of " << s_NumThreads << " threads complete.");
     ERR_POST(Info << "Passed thread IDs: "
-                  << (sm_ThreadsPassed.empty() ? "(none)" : sm_ThreadsPassed));
+                  << (m_ThreadsPassed.empty() ? "(none)" : m_ThreadsPassed));
     ERR_POST(Info << "Failed thread IDs: "
-                  << (sm_ThreadsFailed.empty() ? "(none)" : sm_ThreadsFailed));
+                  << (m_ThreadsFailed.empty() ? "(none)" : m_ThreadsFailed));
 
     return retval;
 }
