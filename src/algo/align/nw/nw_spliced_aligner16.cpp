@@ -422,7 +422,7 @@ NW_NDON_EVAL(3)
 #define NW_SIG_EVAL(st_idx) \
             if(splices[j] & eAcc##st_idx) { \
                 const size_t ilen (j - jBestDonor[st_idx]); \
-                vAcc = vBestDonor[st_idx] + m_Wi[st_idx] - (ilen >> ibs); \
+                vAcc = vBestDonor[st_idx] + m_Wi[st_idx] - static_cast<TScore>(ilen >> ibs); \
                 if (vAcc > V) { \
                     V = vAcc; \
                     acceptor = kMaskAcc##st_idx;        \
