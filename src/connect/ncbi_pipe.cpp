@@ -1003,7 +1003,7 @@ CPipeHandle::CPipeHandle(void)
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
       m_Pid((TPid)(-1)), m_Flags(0), m_SelfHandles(false)
 {
-    m_UsePoll = TUsePollPparam::GetDefault();
+    m_UsePoll = TUsePollParam::GetDefault();
     ERR_POST_ONCE(Trace << "CPipeHandle using poll(): "
                   + NStr::BoolToString(m_UsePoll));
 }
