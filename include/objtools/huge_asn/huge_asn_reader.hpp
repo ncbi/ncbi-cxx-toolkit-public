@@ -110,6 +110,7 @@ public:
     auto& GetBiosets() const { return m_bioseq_set_list; };
     auto GetFormat() const { return m_file->m_format; };
     auto GetMaxLocalId() const { return m_max_local_id; };
+    auto GetInferenceTotal() const { return m_inference_total; };
 
     // These metods are for CDataLoader, each top object is a 'blob'
     const TBioseqSetInfo* FindTopObject(CConstRef<CSeq_id> seqid) const;
@@ -177,7 +178,6 @@ private:
     CRef<CSeq_descr> x_GetTopLevelDescriptors() const;
     bool x_HasNestedGenbankSets() const;
 
-
     ILineErrorListener *    mp_MessageListener = nullptr;
     TStreamPos              m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
     CRef<CHugeFile>         m_file;
@@ -188,6 +188,7 @@ protected:
     TBioseqList                     m_bioseq_list;
     TStreamPos                      m_next_pos         = 0; // points to next unprocessed blob in concatenated ASN.1 file
     int                             m_max_local_id     = 0;
+    int                             m_inference_total  = 0;
     TBioseqSetList                  m_bioseq_set_list;
     CRef<CSeq_entry>                m_top_entry;
     std::list<CConstRef<CSeq_id>>   m_top_ids;

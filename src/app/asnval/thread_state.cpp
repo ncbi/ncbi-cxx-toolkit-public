@@ -696,6 +696,9 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     CHugeFileValidator hugeFileValidator(reader, m_Options);
     hugeFileValidator.UpdateValidatorContext(m_GlobalInfo, *m_pContext);
 
+    auto cumulative = reader.GetInferenceTotal();
+    m_pContext->CumulativeInferenceCount = cumulative;
+
     if (!mAppConfig.mQuiet) {
         if (const auto& topIds = reader.GetTopIds(); !topIds.empty()) {
             m_CurrentId.clear();
