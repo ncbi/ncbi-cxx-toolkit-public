@@ -367,9 +367,6 @@ gencoll_load needs xser
 gencoll_stats needs genome_collection
 gendefasn_g needs3party $(NCBI_C_ncbi)
 gendefasn_g needs3party $(NETWORK_LIBS)
-gene_info needs xncbi
-gene_info_writer needs gene_info
-gene_info_writer needs seqdb
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
