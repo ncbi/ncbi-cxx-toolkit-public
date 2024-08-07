@@ -8902,6 +8902,7 @@ if test -n "$PROTOBUF_PATH"; then
       fi
    done
 fi
+xpb_pc=$pb_pc
 if $pb_pc protobuf --modversion 2>/dev/null; then
    # Avoid a hang observed with pkg-config 0.27.1 (as on CentOS 7)
    # and post-2022 Abseil versions.
@@ -8970,8 +8971,8 @@ grpc_pc=pkg-config
 if test -n "$GRPC_PATH"; then
    for d in "$GRPC_PATH/lib$bit64_sfx" "$GRPC_PATH/lib"; do
       if test -d "$d/pkgconfig"; then
-         if test -n "$pb_pc" -a "$GRPC_PATH" != "$PROTOBUF_PATH"; then
-            grpc_pc="`echo $pb_pc | sed -e \"s,=,=$d/pkgconfig:,\"`"
+         if test -n "$xpb_pc" -a "$GRPC_PATH" != "$PROTOBUF_PATH"; then
+            grpc_pc="`echo $xpb_pc | sed -e \"s,=,=$d/pkgconfig:,\"`"
          else
             grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
          fi
@@ -8979,6 +8980,7 @@ if test -n "$GRPC_PATH"; then
       fi
    done
 fi
+xgrpc_pc=$grpc_pc
 if test -n "$pb_pc"  &&  $grpc_pc grpc++ --exists 2>/dev/null; then
    grpc_b_flags=`$grpc_pc grpc++ --libs-only-L | sed -e 's/^/ /; s/ -L/ -B/'`
    if test \! -f "`$CXX $grpc_b_flags -print-file-name=libgrpc++.so \
@@ -9445,7 +9447,27 @@ if test -d "$OPENTELEMETRY_PATH"; then
    fi
    NCBI_FIX_DIR(OPENTELEMETRY_PATH)
 fi
-# Not bothering with pkg-config, whose coverage is too limited.
+# pkg-config covers only a few of these libraries, but still helps
+# supply proper compilation flags; in particular, the presence or
+# absence of HAVE_ABSEIL needs to agree with how OT was built.
+# However, the tool might have been unusable for gRPC or Protobuf due
+# to a bug that thankfully doesn't come into play here (since OT's API
+# depends on a much smaller subset of Abseil).
+if test -n "$OPENTELEMETRY_PATH"; then
+   for d in "$OPENTELEMETRY_PATH/lib$bit64_sfx" "$OPENTELEMETRY_PATH/lib"; do
+      if test -d "$d/pkgconfig"; then
+         if test -n "$xgrpc_pc" \
+            -a \( "$OPENTELEMETRY_PATH" != "$PROTOBUF_PATH" \
+               -o "$OPENTELEMETRY_PATH" != "$GRPC_PATH" \); then
+            otel_pc="`echo $xgrpc_pc | sed -e \"s,=,=$d/pkgconfig:,\"`"
+         else
+            otel_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
+         fi
+         break
+      fi
+   done
+fi
+OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
 NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
   opentelemetry_exporter_otlp_grpc,
   [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>]],
@@ -9457,7 +9479,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
    -lopentelemetry_proto -lopentelemetry_http_client_curl \
    -lopentelemetry_logs -lopentelemetry_metrics \
    -lopentelemetry_resources -lopentelemetry_common],
-  [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS], [$GRPC_INCLUDE])
+  [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS], [$GRPC_INCLUDE $OPENTELEMETRY_CFLAGS])
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
    -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
