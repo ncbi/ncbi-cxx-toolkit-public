@@ -936,10 +936,12 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 // CPipeHandle -- Unix version
 //
 
+
+// Use poll(2) (now default) instead of select(2) (formerly)
 NCBI_PARAM_DECL  (bool, CONN, PIPE_USE_POLL);
 NCBI_PARAM_DEF_EX(bool, CONN, PIPE_USE_POLL,
                   true, eParam_Default, CONN_PIPE_USE_POLL);
-using TUsePollParam = NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL);
+static bool gs_UsePoll = NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL)::GetDefault();
 
 
 class CPipeHandle
@@ -993,9 +995,6 @@ private:
     // member variables contain the relevant handles of the
     // current process, in which case they won't be closed.
     bool m_SelfHandles;
-
-    // Use poll(2) (now default) instead of select(2) (formerly)
-    bool m_UsePoll;
 };
 
 
@@ -1003,9 +1002,8 @@ CPipeHandle::CPipeHandle(void)
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
       m_Pid((TPid)(-1)), m_Flags(0), m_SelfHandles(false)
 {
-    m_UsePoll = TUsePollParam::GetDefault();
     ERR_POST_ONCE(Trace << "CPipeHandle using poll(): "
-                  + NStr::BoolToString(m_UsePoll));
+                  + NStr::BoolToString(gs_UsePoll));
 }
 
 
@@ -1717,7 +1715,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 {
     CPipe::TChildPollMask poll = 0;
 
-    if (m_UsePoll) {
+    if (gs_UsePoll) {
         struct pollfd poll_fds[3] = {
             { m_ChildStdIn,  POLLOUT },
             { m_ChildStdOut, POLLIN  },
