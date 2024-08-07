@@ -40,6 +40,7 @@
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_monkey.hpp>
@@ -57,19 +58,19 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_PARAM_DECL  (bool, CONN, TRACE_REG);
-NCBI_PARAM_DEF_EX(bool, CONN, TRACE_REG,
-                  false, eParam_Default, CONN_TRACE_REG);
+NCBI_PARAM_DEF_EX(bool, CONN, TRACE_REG, false, eParam_Default, CONN_TRACE_REG);
 using TTraceReg = NCBI_PARAM_TYPE(CONN, TRACE_REG);
+static CSafeStatic<TTraceReg> s_TraceReg;
 
 NCBI_PARAM_DECL  (bool, CONN, TRACE_LOG);
-NCBI_PARAM_DEF_EX(bool, CONN, TRACE_LOG,
-                  false, eParam_Default, CONN_TRACE_LOG);
+NCBI_PARAM_DEF_EX(bool, CONN, TRACE_LOG, false, eParam_Default, CONN_TRACE_LOG);
 using TTraceLog = NCBI_PARAM_TYPE (CONN, TRACE_LOG);
+static CSafeStatic<TTraceLog> s_TraceLog;
 
 NCBI_PARAM_DECL  (bool, CONN, TRACE_LOCK);
-NCBI_PARAM_DEF_EX(bool, CONN, TRACE_LOCK,
-                  false, eParam_Default, CONN_TRACE_LOCK);
+NCBI_PARAM_DEF_EX(bool, CONN, TRACE_LOCK, false, eParam_Default, CONN_TRACE_LOCK);
 using TTraceLock = NCBI_PARAM_TYPE (CONN, TRACE_LOCK);
+static CSafeStatic<TTraceLock> s_TraceLock;
 
 
 static TCORE_Set s_CORE_Set = 0;
@@ -120,7 +121,7 @@ static int s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size) THROWS_NONE
 {
-    if (TTraceReg::GetDefault()) {
+    if (s_TraceReg->Get()) {
         _TRACE("s_REG_Get(" + NStr::PtrToString(user_data) + ", "
                + x_Reg(section, name) + ')');
     }
@@ -136,7 +137,7 @@ static int s_REG_Get(void* user_data,
                 result = 1/*success*/;
             strncpy0(value, item.data(), len);
 
-            if (TTraceReg::GetDefault()) {
+            if (s_TraceReg->Get()) {
                 _TRACE("s_REG_Get(" + NStr::PtrToString(user_data) + ", "
                        + x_Reg(section, name) + ") = \"" + string(value)
                        + (result ? "\"" : "\" <Truncated>"));
@@ -156,7 +157,7 @@ static int s_REG_Set(void* user_data,
                      const char* section, const char* name,
                      const char* value, EREG_Storage storage) THROWS_NONE
 {
-    if (TTraceReg::GetDefault()) {
+    if (s_TraceReg->Get()) {
         _TRACE("s_REG_" + string(value ? "Set" : "Unset") + '('
                + NStr::PtrToString(user_data) + ", "
                + x_Reg(section, name, value ? value : "", storage) + ')');
@@ -188,7 +189,7 @@ extern "C" {
 static void s_REG_Cleanup(void* user_data) THROWS_NONE
 {
 
-    if (TTraceReg::GetDefault())
+    if (s_TraceReg->Get())
         _TRACE("s_REG_Cleanup(" + NStr::PtrToString(user_data) + ')');
     try {
         static_cast<const IRegistry*> (user_data)->RemoveReference();
@@ -201,7 +202,7 @@ static void s_REG_Cleanup(void* user_data) THROWS_NONE
 
 extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 {
-    if (TTraceReg::GetDefault())
+    if (s_TraceReg->Get())
         _TRACE("REG_cxx2c(" + NStr::PtrToString(reg) + ')');
     if (!reg)
         return 0;
@@ -215,7 +216,7 @@ extern REG REG_cxx2c(IRWRegistry* reg, bool pass_ownership)
 
 extern REG REG_cxx2c(const IRWRegistry* reg, bool pass_ownership)
 {
-    if (TTraceReg::GetDefault())
+    if (s_TraceReg->Get())
         _TRACE("REG_cxx2c(const " + NStr::PtrToString(reg) + ')');
     if (!reg)
         return 0;
@@ -266,7 +267,7 @@ extern "C" {
 static void s_LOG_Handler(void*             /*data*/,
                           const SLOG_Message* mess) THROWS_NONE
 {
-    if (TTraceLog::GetDefault())
+    if (s_TraceLog->Get())
         _TRACE("s_LOG_Handler(" + x_Log(mess->level) + ')');
     try {
         EDiagSev level;
@@ -335,7 +336,7 @@ static void s_LOG_Handler(void*             /*data*/,
 
 extern LOG LOG_cxx2c(void)
 {
-    if (TTraceLog::GetDefault())
+    if (s_TraceLog->Get())
         _TRACE("LOG_cxx2c()");
     return LOG_Create(0, s_LOG_Handler, 0, 0);
 }
@@ -376,7 +377,7 @@ static string x_Lock(EMT_Lock how)
 extern "C" {
 static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
 {
-    if (TTraceLock::GetDefault()) {
+    if (s_TraceLock->Get()) {
         _TRACE("s_LOCK_Handler(" + NStr::PtrToString(user_data) + ", "
                + x_Lock(how) + ')');
     }
@@ -415,7 +416,7 @@ static int/*bool*/ s_LOCK_Handler(void* user_data, EMT_Lock how) THROWS_NONE
 extern "C" {
 static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
 {
-    if (TTraceLock::GetDefault())
+    if (s_TraceLock->Get())
         _TRACE("s_LOCK_Cleanup(" + NStr::PtrToString(user_data) + ')');
     try {
         delete static_cast<CRWLock*> (user_data);
@@ -428,7 +429,7 @@ static void s_LOCK_Cleanup(void* user_data) THROWS_NONE
 
 extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
 {
-    if (TTraceLock::GetDefault())
+    if (s_TraceLock->Get())
         _TRACE("MT_LOCK_cxx2c(" + NStr::PtrToString(lock) + ')');
     return MT_LOCK_Create(static_cast<void*> (lock ? lock : new CRWLock),
                           s_LOCK_Handler,
