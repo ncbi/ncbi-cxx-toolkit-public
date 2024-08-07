@@ -34872,7 +34872,7 @@ if test -n "$GRPC_PATH"; then
    for d in "$GRPC_PATH/lib$bit64_sfx" "$GRPC_PATH/lib"; do
       if test -d "$d/pkgconfig"; then
          if test -n "$pb_pc" -a "$GRPC_PATH" != "$PROTOBUF_PATH"; then
-            grpc_pc="`echo $pb_pc | sed -e \"s,=,=$d:,\"`"
+            grpc_pc="`echo $pb_pc | sed -e \"s,=,=$d/pkgconfig:,\"`"
          else
             grpc_pc="env PKG_CONFIG_PATH=$d/pkgconfig pkg-config"
          fi
