@@ -1,0 +1,14 @@
+# $Id$
+
+NCBI_begin_app(unit_test_hugeannot)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_sources(
+    unit_test_hugeannot
+    annot_match_5col annot_match
+  )
+  NCBI_uses_toolkit_libraries(
+    xhugeasn
+  )
+  NCBI_add_test()
+  NCBI_project_watchers(stakhovv gotvyans foleyjp)
+NCBI_end_app()
