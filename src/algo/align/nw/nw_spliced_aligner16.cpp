@@ -463,7 +463,7 @@ NW_SIG_EVAL(2)
 #define NW_DON_EVAL(st_idx) \
             if(splices[j] & eDnr##st_idx ) { \
                 const size_t ilen (j - jBestDonor[st_idx]); \
-                const TScore x (ilen >> ibs); \
+                const TScore x (static_cast<TScore>(ilen >> ibs)); \
                 if(V + x > vBestDonor[st_idx]) {  \
                     const size_t tl_ (jTail[st_idx]++); \
                     jAllDonors[st_idx][tl_] = j; \
