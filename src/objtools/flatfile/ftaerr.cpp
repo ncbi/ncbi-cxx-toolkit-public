@@ -31,7 +31,7 @@ struct FtaErrCode {
 struct FtaMsgModTagCtx {
     string           strsubtag;
     int              intsubtag   = -1;
-    int              intseverity = -1;
+    ErrSev           intseverity = ErrSev(-1);
     FtaMsgModTagCtx* next        = nullptr;
 
     ~FtaMsgModTagCtx() { delete next; };
@@ -121,17 +121,17 @@ thread_local unique_ptr<FtaMsgPost> bmp;
 FtaErrCode                          fec;
 
 /**********************************************************/
-static int FtaStrSevToIntSev(const string& strsevcode)
+static ErrSev FtaStrSevToIntSev(const string& strsevcode)
 {
     if (strsevcode.empty())
-        return -1;
+        return ErrSev(-1);
 
-    static const map<string, int> sStringToInt = {
-        { "SEV_INFO", 1 },
-        { "SEV_WARNING", 2 },
-        { "SEV_ERROR", 3 },
-        { "SEV_REJECT", 4 },
-        { "SEV_FATAL", 5 }
+    static const map<string, ErrSev> sStringToInt = {
+        { "SEV_INFO", SEV_INFO },
+        { "SEV_WARNING", SEV_WARNING },
+        { "SEV_ERROR", SEV_ERROR },
+        { "SEV_REJECT", SEV_REJECT },
+        { "SEV_FATAL", SEV_FATAL }
     };
 
     if (auto it = sStringToInt.find(strsevcode);
@@ -139,12 +139,12 @@ static int FtaStrSevToIntSev(const string& strsevcode)
         return it->second;
     }
 
-    return -1;
+    return ErrSev(-1);
 }
 
 /**********************************************************/
-void FtaErrGetMsgCodes(
-    const char* module, int code, int subcode, string& strcode, string& strsubcode, int& sevcode)
+static void FtaErrGetMsgCodes(
+    const char* module, int code, int subcode, string& strcode, string& strsubcode, ErrSev& sevcode)
 {
     FtaMsgModTagCtx* bmctxp;
     FtaMsgModFiles*  bmmfp;
@@ -489,27 +489,22 @@ EDiagSev ErrCToCxxSeverity(int c_severity)
 }
 
 /**********************************************************/
-void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
+string ErrFormat(const char* fmt, ...)
 {
-    if (! bmp)
-        FtaErrInit();
-
-    if (! fec.fname || fec.line < 0) {
-        fec.module = nullptr;
-        fec.fname  = nullptr;
-        fec.line   = -1;
-        return;
-    }
-
     va_list args;
     char    fpiBuffer[1024];
     va_start(args, fmt);
     vsnprintf(fpiBuffer, 1024, fmt, args);
     va_end(args);
+    return fpiBuffer;
+}
 
-    int fpiSevcode    = -1;
-    int fpiIntcode    = lev1;
-    int fpiIntsubcode = lev2;
+/**********************************************************/
+static void s_ReportError(ErrSev sev, int lev1, int lev2, string_view msg)
+{
+    ErrSev fpiSevcode    = ErrSev(-1);
+    int    fpiIntcode    = lev1;
+    int    fpiIntsubcode = lev2;
 
     string fpiStrcode;
     string fpiStrsubcode;
@@ -527,8 +522,8 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     else
         fpiModule = nullptr;
 
-    if (fpiSevcode < 0)
-        fpiSevcode = (int)sev;
+    if (fpiSevcode < SEV_NONE)
+        fpiSevcode = sev;
 
     if (bmp->appname.empty())
         bmp->appname = CNcbiApplication::GetAppName();
@@ -554,7 +549,7 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
     if (! bmp->prefix_feature.empty()) {
         textStream << bmp->prefix_feature << " ";
     }
-    textStream << fpiBuffer;
+    textStream << msg;
 
     static const map<ErrSev, EDiagSev> sSeverityMap = {
         { SEV_NONE, eDiag_Trace },
@@ -567,16 +562,50 @@ void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
 
     CFlatFileMessageReporter::GetInstance()
         .Report(fpiModule ? fpiModule : "",
-                sSeverityMap.at(static_cast<ErrSev>(fpiSevcode)),
+                sSeverityMap.at(fpiSevcode),
                 lev1,
                 lev2,
                 textStream.str());
 }
 
 /**********************************************************/
-void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, const char* str)
+void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
 {
-    Nlm_ErrPostEx(sev, lev1, lev2, str);
+    if (! bmp)
+        FtaErrInit();
+
+    if (! fec.fname || fec.line < 0) {
+        fec.module = nullptr;
+        fec.fname  = nullptr;
+        fec.line   = -1;
+        return;
+    }
+
+    va_list args;
+    char    fpiBuffer[1024];
+    va_start(args, fmt);
+    vsnprintf(fpiBuffer, 1024, fmt, args);
+    va_end(args);
+
+    s_ReportError(sev, lev1, lev2, fpiBuffer);
+}
+
+/**********************************************************/
+void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str)
+{
+    if (! bmp)
+        FtaErrInit();
+
+    if (! fec.fname || fec.line < 0) {
+        fec.module = nullptr;
+        fec.fname  = nullptr;
+        fec.line   = -1;
+        return;
+    }
+
+    if (str.size() > 1024)
+        str = str.substr(0, 1024);
+    s_ReportError(sev, lev1, lev2, str);
 }
 
 /**********************************************************/
