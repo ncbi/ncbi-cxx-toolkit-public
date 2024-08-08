@@ -2,5 +2,9 @@
 
 NCBI_begin_app(seqannot_splicer)
   NCBI_sources(seqannot_splicer seqannot_splicer_stats seqannot_splicer_util)
-  NCBI_uses_toolkit_libraries(seqset)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::objects)
+  else()
+    NCBI_uses_toolkit_libraries(seqset)
+  endif()
 NCBI_end_app()

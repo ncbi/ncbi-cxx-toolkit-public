@@ -2,6 +2,10 @@
 
 NCBI_begin_app(netschedule_node_sample)
   NCBI_sources(netschedule_node_sample)
-  NCBI_uses_toolkit_libraries(xconnserv)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::core)
+  else()
+    NCBI_uses_toolkit_libraries(xconnserv)
+  endif()
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()

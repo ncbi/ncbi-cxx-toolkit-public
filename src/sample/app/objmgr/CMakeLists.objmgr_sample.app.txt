@@ -3,7 +3,11 @@
 NCBI_begin_app(objmgr_sample)
 
   NCBI_sources(objmgr_sample)
-  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::loader-genbank)
+  else()
+    NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjutil)
+  endif()
 
   NCBI_add_test(objmgr_sample -gi 178614)
   NCBI_add_test(objmgr_sample -gi 18565551)

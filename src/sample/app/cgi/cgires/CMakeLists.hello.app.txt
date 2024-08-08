@@ -2,6 +2,10 @@
 
 NCBI_begin_app(hello.cgi)
   NCBI_sources(helloapp hellores hellocmd)
-  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::web)
+  else()
+    NCBI_uses_toolkit_libraries(xcgi xhtml)
+  endif()
   NCBI_add_test()
 NCBI_end_app()

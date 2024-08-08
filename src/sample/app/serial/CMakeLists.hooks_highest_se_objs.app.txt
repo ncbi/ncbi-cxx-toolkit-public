@@ -2,5 +2,9 @@
 
 NCBI_begin_app(hooks_highest_se_objs)
   NCBI_sources(hooks_highest_se_objs)
-  NCBI_uses_toolkit_libraries(submit pub)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::objects)
+  else()
+    NCBI_uses_toolkit_libraries(submit pub)
+  endif()
 NCBI_end_app()

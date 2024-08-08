@@ -2,6 +2,10 @@
 
 NCBI_begin_app(ncbi_usage_report_phonehome_sample)
   NCBI_sources(ncbi_usage_report_phonehome_sample)
-  NCBI_uses_toolkit_libraries(xconnect xncbi)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::core)
+  else()
+    NCBI_uses_toolkit_libraries(xconnect xncbi)
+  endif()
   NCBI_project_watchers(ivanov)
 NCBI_end_app()

@@ -2,5 +2,9 @@
 
 NCBI_begin_app(bss_info)
   NCBI_sources(bss_info)
-  NCBI_uses_toolkit_libraries(seqset)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::objects)
+  else()
+    NCBI_uses_toolkit_libraries(seqset)
+  endif()
 NCBI_end_app()

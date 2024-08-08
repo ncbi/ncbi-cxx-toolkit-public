@@ -2,6 +2,10 @@
 
 NCBI_begin_app(deployable_cgi.cgi)
   NCBI_sources(sample process)
-  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::web)
+  else()
+    NCBI_uses_toolkit_libraries(xcgi xhtml)
+  endif()
   NCBI_project_watchers(fukanchi)
 NCBI_end_app()
