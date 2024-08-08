@@ -2,5 +2,9 @@
 
 NCBI_begin_app(hooks_write_object)
   NCBI_sources(hooks_write_object)
-  NCBI_uses_toolkit_libraries(seqset)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::objects)
+  else()
+    NCBI_uses_toolkit_libraries(seqset)
+  endif()
 NCBI_end_app()

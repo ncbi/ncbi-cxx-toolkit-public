@@ -2,6 +2,10 @@
 
 NCBI_begin_app(lds2_sample)
   NCBI_sources(lds2_sample)
-  NCBI_uses_toolkit_libraries(ncbi_xloader_lds2)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::loader-lds2)
+  else()
+    NCBI_uses_toolkit_libraries(ncbi_xloader_lds2)
+  endif()
   NCBI_project_watchers(grichenk)
 NCBI_end_app()

@@ -2,6 +2,10 @@
 
 NCBI_begin_app(basic_sample)
   NCBI_sources(basic_sample)
-  NCBI_uses_toolkit_libraries(xncbi)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::core)
+  else()
+    NCBI_uses_toolkit_libraries(xncbi)
+  endif()
   NCBI_project_watchers(vakatov)
 NCBI_end_app()

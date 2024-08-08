@@ -2,7 +2,11 @@
 
 NCBI_begin_app(sample_cgi_test)
   NCBI_sources(sample_cgi_test)
-  NCBI_uses_toolkit_libraries(xcgi xhtml)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::web)
+  else()
+    NCBI_uses_toolkit_libraries(xcgi xhtml)
+  endif()
   NCBI_requires(Boost.Test.Included)
   NCBI_add_test()
   NCBI_project_watchers(fukanchi)

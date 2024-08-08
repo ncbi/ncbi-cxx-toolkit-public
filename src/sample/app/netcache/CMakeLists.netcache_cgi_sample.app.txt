@@ -2,6 +2,10 @@
 
 NCBI_begin_app(netcache_cgi_sample.cgi)
   NCBI_sources(netcache_cgi_sample)
-  NCBI_uses_toolkit_libraries(xconnserv xcgi xhtml xcompress)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::web)
+  else()
+    NCBI_uses_toolkit_libraries(xconnserv xcgi xhtml xcompress)
+  endif()
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()

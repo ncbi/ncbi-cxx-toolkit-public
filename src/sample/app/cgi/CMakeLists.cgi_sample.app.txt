@@ -2,7 +2,11 @@
 
 NCBI_begin_app(cgi_sample.cgi)
   NCBI_sources(cgi_sample)
-  NCBI_uses_toolkit_libraries(xcgi xhtml xconnect)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::web)
+  else()
+    NCBI_uses_toolkit_libraries(xcgi xhtml xconnect)
+  endif()
   NCBI_set_test_assets(cgi_sample.html)
   NCBI_add_test(cgi_sample.cgi)
   NCBI_project_watchers(vakatov)

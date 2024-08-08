@@ -2,6 +2,10 @@
 
 NCBI_begin_app(sdbapi_simple)
   NCBI_sources(sdbapi_simple)
-  NCBI_uses_toolkit_libraries(sdbapi xconnect)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::dbapi)
+  else()
+    NCBI_uses_toolkit_libraries(sdbapi xconnect)
+  endif()
   NCBI_project_watchers(ucko mcelhany)
 NCBI_end_app()

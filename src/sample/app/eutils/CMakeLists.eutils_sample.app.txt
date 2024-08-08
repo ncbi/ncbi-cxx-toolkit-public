@@ -2,6 +2,10 @@
 
 NCBI_begin_app(eutils_sample)
   NCBI_sources(eutils_sample)
-  NCBI_uses_toolkit_libraries(eutils seqset)
+  if(NCBI_PTBCFG_PACKAGED)
+    NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::eutils)
+  else()
+    NCBI_uses_toolkit_libraries(eutils seqset)
+  endif()
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
