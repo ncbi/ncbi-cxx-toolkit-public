@@ -433,6 +433,7 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.JustTpaAssembly += globalInfo.JustTpaAssembly;
     context.TpaAssemblyHist += globalInfo.TpaAssemblyHist;
     context.TpaNoHistYesGI += globalInfo.TpaNoHistYesGI;
+    context.CumulativeInferenceCount += globalInfo.CumulativeInferenceCount;
 
     if (! context.IsIdInBlob) {
         context.IsIdInBlob = [this](const CSeq_id& id) {
@@ -579,6 +580,22 @@ void CHugeFileValidator::RegisterReaderHooks(CObjectIStream& objStream, CHugeFil
         m_GlobalInfo.CurrTpaAssembly = false;
         m_GlobalInfo.CurrIsGI        = false;
     });
+
+    CObjectTypeInfo gbqual_info = CType<CGb_qual>();
+
+    auto gbqual_qual_mi = gbqual_info.FindMember("qual");
+
+    // Set Gb-qual.qual skip hook
+    SetLocalSkipHook(gbqual_qual_mi, objStream,
+                     [&m_GlobalInfo](CObjectIStream& in, const CObjectTypeInfo& type)
+    {
+        string str;
+        type.GetTypeInfo()->DefaultReadData(in, &str);
+        if (str == "inference") {
+            m_GlobalInfo.CumulativeInferenceCount++;
+        }
+    });
+
 }
 
 
