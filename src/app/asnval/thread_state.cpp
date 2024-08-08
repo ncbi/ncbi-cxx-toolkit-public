@@ -336,6 +336,7 @@ void CAsnvalThreadState::ReportReadFailure(const CException* p_exception, IMessa
     errstr = NStr::Replace(errstr, " *   ", " * ");
 
     msgHandler.AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, errstr);
+
     bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     s_StartWrite(msgHandler, ignoreInferences);
 }
@@ -696,9 +697,6 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     CHugeFileValidator hugeFileValidator(reader, m_Options);
     hugeFileValidator.UpdateValidatorContext(m_GlobalInfo, *m_pContext);
 
-    auto cumulative = reader.GetInferenceTotal();
-    m_pContext->CumulativeInferenceCount = cumulative;
-
     if (!mAppConfig.mQuiet) {
         if (const auto& topIds = reader.GetTopIds(); !topIds.empty()) {
             m_CurrentId.clear();
@@ -709,7 +707,9 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
 
     if (m_pContext->PreprocessHugeFile) {
         hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, msgHandler);
-        bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
+        bool ignoreInferences = (m_GlobalInfo.CumulativeInferenceCount >= InferenceAccessionCutoff);
+        if (ignoreInferences) {
+        }
         s_StartWrite(msgHandler, ignoreInferences);
     }
 
@@ -721,6 +721,7 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     }
 
     hugeFileValidator.ReportPostErrors(*m_pContext, msgHandler);
+
     bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     s_StartWrite(msgHandler, ignoreInferences);
 }

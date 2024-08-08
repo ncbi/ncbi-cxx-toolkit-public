@@ -69,7 +69,6 @@ CHugeAsnReader::CHugeAsnReader(CHugeFile* file, ILineErrorListener * pMessageLis
 void CHugeAsnReader::x_ResetIndex()
 {
     m_max_local_id = 0;
-    m_inference_total = 0;
     m_bioseq_list.clear();
     m_bioseq_set_list.clear();
     m_submit_block.Reset();
@@ -249,7 +248,6 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     CObjectTypeInfo bioseq_info = CType<CBioseq>();
     CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
     CObjectTypeInfo seqinst_info = CType<CSeq_inst>();
-    CObjectTypeInfo gbqual_info = CType<CGb_qual>();
 
     auto bioseq_id_mi = bioseq_info.FindMember("id");
     //auto bioseqset_class_mi = bioseq_set_info.FindMember("class");
@@ -260,7 +258,6 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     auto seqinst_mol_mi = seqinst_info.FindMember("mol");
     auto seqinst_repr_mi = seqinst_info.FindMember("repr");
     auto bioseq_descr_mi = bioseq_info.FindMember("descr");
-    auto gbqual_qual_mi = gbqual_info.FindMember("qual");
 
 
     SetLocalSkipHook(bioseq_id_mi, objStream,
@@ -298,16 +295,6 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
 
     x_SetFeatIdHooks(objStream, context);
-
-    SetLocalSkipHook(gbqual_qual_mi, objStream,
-                     [this, &context](CObjectIStream& in, const CObjectTypeInfoMI& member)
-    {
-        string str;
-        in.ReadObject(&str, (*member).GetTypeInfo());
-        if (str == "inference") {
-            m_inference_total++;
-        }
-    });
 
     SetLocalReadHook(bioseqset_seqset_mi, objStream,
             [](CObjectIStream& in, const CObjectInfoMI& member)

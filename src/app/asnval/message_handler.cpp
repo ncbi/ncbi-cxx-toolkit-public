@@ -217,6 +217,7 @@ void CAsyncMessageHandler::Write(bool ignoreInferences) {
             break;
         }
         if (ignoreInferences && pItem->GetErrGroup() == "SEQ_FEAT" && pItem->GetErrCode() == "InvalidInferenceValue") {
+            cerr << "CAsyncMessageHandler::Write skip InvalidInferenceValue" << endl;
             continue;
         }
         (*m_pFormat)(*pItem);

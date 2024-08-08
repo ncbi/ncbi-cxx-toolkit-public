@@ -68,7 +68,8 @@ CValidator::CValidator(CObjectManager& objmgr,
         shared_ptr<SValidatorContext> pContext):
     m_ObjMgr{&objmgr},
     m_pContext{pContext}
-{}
+{
+}
 
 
 void CValidator::SetTaxon3(shared_ptr<ITaxon3> pTaxon)
@@ -295,7 +296,7 @@ void CValidator::Validate(
     x_SetEntryInfo(imp.GetEntryInfo());
     m_pContext->NumGenes += imp.GetGeneCount();
     m_pContext->NumGeneXrefs += imp.GetGeneXrefCount();
-    m_pContext->CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
+   m_pContext->CumulativeInferenceCount = imp.GetCumulativeInferenceCount();
 }
 
 
