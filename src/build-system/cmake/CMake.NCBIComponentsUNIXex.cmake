@@ -73,6 +73,7 @@ else()
 endif()
 set(NCBI_ThirdParty_XERCES        ${NCBI_TOOLS_ROOT}/xerces-3.1.2 CACHE PATH "XERCES root")
 set(NCBI_ThirdParty_GRPC          ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "GRPC root")
+set(NCBI_ThirdParty_Abseil        ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_Boring        ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_PROTOBUF      ${NCBI_TOOLS_ROOT}/grpc-1.36.4-ncbi1 CACHE PATH "PROTOBUF root")
 set(NCBI_ThirdParty_XALAN         ${NCBI_TOOLS_ROOT}/xalan-1.11 CACHE PATH "XALAN root")
@@ -673,6 +674,10 @@ endif()
 if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_GRPC_PLUGIN = ${NCBI_GRPC_PLUGIN}")
 endif()
+
+# Explicitly cover a subset of Abseil, for the potential sake of OpenTelemetry
+NCBI_define_Xcomponent(NAME Abseil CMAKE_PACKAGE absl
+  CMAKE_LIB strings bad_variant_access any base bits city)
 
 #############################################################################
 # XALAN
