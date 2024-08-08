@@ -232,7 +232,7 @@ esac
 
 : ${GOOGLE_CLOUD_PATH=$NCBI/google-cloud-cpp-1.31.1-ncbi1}
 
-: ${GRPC_PATH=$NCBI/grpc-1.36.4-ncbi1}
+: ${GRPC_PATH=$NCBI/grpc-1.50.2-ncbi1}
 
 case "$ncbi_platform" in
     Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.129} ;;
@@ -320,7 +320,7 @@ net_ngs_base=/net/snowman/vol/projects/trace_software/ngs/ngs-versions
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
 
-: ${OPENTELEMETRY_PATH=$NCBI/opentelemetry-cpp-1.14.2}
+: ${OPENTELEMETRY_PATH=$NCBI/opentelemetry-cpp-1.14.2+grpc150}
 
 : ${OPENTRACING_PATH=$NCBI/opentracing-cpp-1.6.0}
 
