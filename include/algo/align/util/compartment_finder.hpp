@@ -717,7 +717,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
     const TCoord subj_min_global (m_hitrefs.front()->GetSubjMin());
 
     int i_bestsofar (0);
-    for(int i (0); i < dimhits; ++i) {
+    for(int i (0); i < static_cast<int>(dimhits); ++i) {
         
         const THitRef& h (m_hitrefs[i]);
         const double identity (h->GetIdentity());
@@ -962,7 +962,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
             CCompartment & comp (m_compartments[ic]);
             THitRefs& hitrefs (comp.SetMembers());
             size_t nullified (0);
-            for(size_t in (hitrefs.size()), i (in - 1); i > 0; --i) {
+            for(int in  (static_cast<int>(hitrefs.size())), i (in - 1); i > 0; --i) {
 
                 int j1 (i);
                 while(j1 < in && hitrefs[j1].IsNull()) ++j1;
