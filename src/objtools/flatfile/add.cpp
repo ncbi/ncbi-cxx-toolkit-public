@@ -631,7 +631,6 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     acc1   = ppacc1.data();
     acc2   = ppacc2.data();
 
-
     if (! acc1 && ! acc2)
         return false;
     if (! acc1 || ! acc2)
@@ -686,7 +685,7 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     ch2 = *q;
     *q  = '\0';
 
-    bool ret = (master != range);
+    bool ret = (master == range);
     *p       = ch1;
     *q       = ch2;
 
