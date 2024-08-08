@@ -1081,23 +1081,38 @@ bool CGff3Writer::WriteHeader()
     return true;
 }
 
+
+static string s_GetSequenceRegionId(CBioseq_Handle& bsh)
+{
+    string id;
+    auto   pId = bsh.GetNonLocalIdOrNull();
+    if (pId) {
+        if (! CGenbankIdResolve::Get().GetBestId(
+                CSeq_id_Handle::GetHandle(*pId),
+                bsh.GetScope(),
+                id)) {
+            id = "<unknown>";
+        }
+        return id;
+    }
+    // Resort to local id
+    if (pId = bsh.GetLocalIdOrNull(); pId) {
+        pId->GetLabel(&id, CSeq_id::eContent);
+        if (! NStr::IsBlank(id)) {
+            return id;
+        }
+    }
+    return "<unknown>";
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::xWriteSequenceHeader(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
     //sequence-region
-    string id;
-    CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
-    if ( pId ) {
-        if (!CGenbankIdResolve::Get().GetBestId(
-                CSeq_id_Handle::GetHandle(*pId),
-                bsh.GetScope(),
-                id)) {
-            id = "<unknown>";
-        }
-    }
-
+    string id = s_GetSequenceRegionId(bsh);
     TSeqPos start = 1;
     TSeqPos stop = bsh.GetBioseqLength();
     if (!m_Range.IsWhole()) {
