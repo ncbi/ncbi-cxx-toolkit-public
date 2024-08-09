@@ -3443,6 +3443,7 @@ INHS	s	Illinois Natural History Survey
 INIA	s	Instituto Nacional de Investigaciones Forestales y Agropecurias			
 INIA<CHL>	sb	El Instituto de Investigaciones Agropecuarias			
 INIA<ESP>	b	Instituto Nacional de Investigacion y Tecnologia Agraria y Alimentaria			
+INIAV	sc	National Reference Laboratories of the National Institute of Agricultural and Veterinary Research			
 INIBP	s	Instituto Nacional de Investigaciones Biologico Pesqueras			
 INIDA	s	Instituto Nacional de Investigacao e Desenvolvimento Agrario - Cape Verde			
 INIDEP	s	Instituto Nacional de Investigacion y Desarrollo Pesquero			
