@@ -216,7 +216,9 @@ BOOST_AUTO_TEST_CASE(TestLinkOut)
     string body;
 
     {
-        vector<TEntrezId> uids = { 124000572, 124000574 };
+        vector<TEntrezId> uids;
+        uids.push_back(ENTREZ_ID_FROM(int, 124000572));
+        uids.push_back(ENTREZ_ID_FROM(int, 124000574));
 
         cli.SetMaxReturn(101); 
         BOOST_REQUIRE_NO_THROW(cli.LinkOut("nucleotide", uids, doc, "llinks"));
