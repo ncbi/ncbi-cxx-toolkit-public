@@ -34,31 +34,63 @@ Please cite the authors in any work or product based on this material.
 EXCEPTIONS (in all cases excluding NCBI-written makefiles):
 
 
-Location: configure
-Authors:  Free Software Foundation, Inc.
-License:  Unrestricted; at top of file
+Location: src/algo/blast/core/ncbi_erf.c, src/util/ncbi_erf.c
+Authors:  Sun Microsystems, Inc.
+License:  Permissive [at top of file]
 
-Location: config.guess, config.sub
+Location: include/algo/gnomon/debruijn (excepting DBGraph.hpp)
+Authors:  INRIA
+License:  GNU Affero GPL [agpl.txt]
+
+Location: src/algo/phy_tree/newick.tab.*, src/db/bdb/bdb_query_bison.tab.c,
+          src/util/qparse/query_parser_bison.tab.c
+Authors:  Free Software Foundation, Inc.
+License:  Unrestricted [at top of file]
+
+Location: much of src/build-system/cmake/unused/FindSqlite3.cmake
+Author:   Martin Dobias
+License:  BSD [as in HunterGate.cmake]
+
+Location: src/build-system/cmake/unused/HunterGate.cmake
+Author:   Ruslan Baratov
+License:  BSD [at top of file]
+
+Location: src/build-system/configure
+Authors:  Free Software Foundation, Inc.
+License:  Unrestricted [at top of file]
+
+Location: src/build-system/config.{guess,sub}
 Authors:  FSF
 License:  Unrestricted when distributed with the Toolkit;
           standalone, GNU General Public License [gpl.txt]
 
-Location: {include,src}/connect/mbedtls
+Location: src/build-system/m4/ax_check_gnu_make.m4
+Authors:  John Darrington and Enrico M. Crisostomo
+License:  Permissive [at top of file]
+
+Location: src/build-system/m4/ax_jni_include_dir.m4
+Author:   Don Anderson
+License:  Permissive [at top of file]
+
+Location: src/build-system/m4/ax_prog_cc_for_build.m4
+Author:   Paolo Bonzini
+License:  Permissive [at top of file]
+
+Location: src/connect/mbedtls
 Authors:  ARM Ltd.
-Licnse:   Apache 2.0 [src/connect/mbedtls/apache-2.0.txt]
+License:  Apache 2.0 or GNU GPL 2.0 [src/connect/mbedtls/*-2.0.txt]
 
 Location: src/connect/parson.{c,h}
 Author:   Krzysztof Gabis
-License:  MIT [https://opensource.org/licenses/MIT]
+License:  MIT [at top of files]
 
 Location: include/corelib/hash_impl
 Authors:  HP, SGI, Moscow Center for SPARC Technology, and Boris Fomitchev
-License:  MITish [as in include/corlib/hash_impl/_hashtable.h]
+License:  MITish [as in include/corelib/hash_impl/_hashtable.h]
 
-Location: src/corelib/ncbiexec.cpp
+Location: part of src/corelib/ncbiexec.cpp
 Authors:  Daniel Colascione, Microsoft Corporation
-License:  Microsoft Limited Public License
-          [https://msdn.microsoft.com/en-US/cc300389]
+License:  Microsoft Limited Public License [ms-lpl.txt]
 
 Location: {include,src}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
@@ -67,19 +99,35 @@ License:  GNU Library/Lesser General Public License
 
 Location: include/dbapi/driver/odbc/unix_odbc
 Authors:  Peter Harvey and Nick Gorham
-License:  GNU LGPL
+License:  GNU LGPL [src/dbapi/driver/ftds*/freetds/COPYING.LIB]
+
+Location: src/gui/opengl/MTL*
+Authors:  Sam Hocevar, Henry Maddocks, and Sean Morrison
+License:  MIT [at top of files]
+
+Location: src/gui/opengl/glutbitmap.h
+Author:   Mark J. Kilgard
+License:  Permissive [at top of file]
 
 Location: {include,src}/gui/utils/muparser
 Author:   Ingo Berg
 License:  BSDish [include/gui/utils/muparser/muParser.h]
 
-Location: include/misc/jsonwrapp/rapidjson
+Location: {include,src}/gui/utils/splines
+Author:   Enrico Bertolazzi
+License:  BSD [at top of files]
+
+Location: include/html/ncbi_menu*.js
+Authors:  Netscape Communications Corp.
+License:  Permissive [at top of files]
+
+Location: include/misc/jsonwrapp/rapidjson11
 Author:   Milo Yip
 License:  MIT [include/misc/jsonwrapp/rapidjson/license.txt]
 
-Location: include/misc/jsonwrapp/rapidjson/msinttypes
+Location: include/misc/jsonwrapp/rapidjson11/msinttypes
 Author:   Alexander Chemeris
-License:  BSD [include/misc/jsonwrapp/rapidjson/msinttypes/inttypes.h]
+License:  BSD [include/misc/jsonwrapp/rapidjson11/msinttypes/inttypes.h]
 
 Location: {include,src}/misc/xmlwrapp
 Author:   Peter J Jones at al. [src/misc/xmlwrapp/AUTHORS]
@@ -102,9 +150,9 @@ Author:   Austin Appleby
 License:  Unrestricted; at top of file
 
 Location: src/util/compress/api/miniz
-Authors:  RAD Game Tools and Valve Software, Rich Geldreich and Tenacious Software LLC
+Authors:  RAD Game Tools and Valve Software, Rich Geldreich and
+          Tenacious Software LLC
 License:  MIT [src/util/compress/api/miniz/LICENSE]
-          https://github.com/richgel999/miniz/blob/master/LICENSE
 
 Location: {include,src}/util/compress/bzip2
 Author:   Julian R Seward
@@ -116,8 +164,7 @@ License:  BSDish [include/util/compress/zlib/zlib.h]
 
 Location: {include,src}/util/compress/zlib_cloudflare
 Authors:  Jean-loup Gailly and Mark Adler
-License:  BSDish [include/util/compress/zlib_cloudflare/zlib.h]
-          https://github.com/cloudflare/zlib/blob/gcc.amd64/LICENSE
+License:  BSDish [src/util/compress/zlib_cloudflare/LICENSE]
 
 Location: src/util/diff/diff_match_patch
 Authors:  Neil Fraser
@@ -131,7 +178,8 @@ Location: {include,src}/util/lmdb
 Author:   Howard Chu, Symas Corp. [src/util/lmdb/COPYRIGHT]
 License:  BSDish (OpenLDAP Public License) [src/util/lmdb/LICENSE]
 
-Location: {include,src}/util/lmdbxx
+Location: {include,src}/util/lmdbxx,
+          include/objtools/blast/seqdb_reader/impl/lmdb++.h
 Author:   Arto Bendiken [src/util/lmdbxx/AUTHORS]
 License:  Unrestricted [src/util/lmdbxx/UNLICENSE]
 
@@ -142,7 +190,6 @@ License:  BSDish [src/util/regexp/LICENCE]
 Location: include/util/regexp/ctre/
 Authors:  Hana Dusikovaá
 Licnse:   Apache 2.0 [include/util/regexp/ctre/LICENSE]
-          https://github.com/hanickadot/compile-time-regular-expressions/blob/main/LICENSE
 
 
 ==============================================================
