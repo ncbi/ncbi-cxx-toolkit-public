@@ -43,6 +43,14 @@ Authors:  FSF
 License:  Unrestricted when distributed with the Toolkit;
           standalone, GNU General Public License [gpl.txt]
 
+Location: {include,src}/connect/mbedtls
+Authors:  ARM Ltd.
+Licnse:   Apache 2.0 [src/connect/mbedtls/apache-2.0.txt]
+
+Location: src/connect/parson.{c,h}
+Author:   Krzysztof Gabis
+License:  MIT [https://opensource.org/licenses/MIT]
+
 Location: include/corelib/hash_impl
 Authors:  HP, SGI, Moscow Center for SPARC Technology, and Boris Fomitchev
 License:  MITish [as in include/corlib/hash_impl/_hashtable.h]
@@ -52,11 +60,7 @@ Authors:  Daniel Colascione, Microsoft Corporation
 License:  Microsoft Limited Public License
           [https://msdn.microsoft.com/en-US/cc300389]
 
-Location: {src,include}/connect/mbedtls
-Authors:  ARM Ltd.
-Licnse:   Apache 2.0 [src/connect/mbedtls/apache-2.0.txt]
-
-Location: {src,include}/dbapi/driver/ftds*/freetds
+Location: {include,src}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
           [src/dbapi/driver/ftds*/freetds/COPYING.LIB]
@@ -64,6 +68,22 @@ License:  GNU Library/Lesser General Public License
 Location: include/dbapi/driver/odbc/unix_odbc
 Authors:  Peter Harvey and Nick Gorham
 License:  GNU LGPL
+
+Location: {include,src}/gui/utils/muparser
+Author:   Ingo Berg
+License:  BSDish [include/gui/utils/muparser/muParser.h]
+
+Location: include/misc/jsonwrapp/rapidjson
+Author:   Milo Yip
+License:  MIT [include/misc/jsonwrapp/rapidjson/license.txt]
+
+Location: include/misc/jsonwrapp/rapidjson/msinttypes
+Author:   Alexander Chemeris
+License:  BSD [include/misc/jsonwrapp/rapidjson/msinttypes/inttypes.h]
+
+Location: {include,src}/misc/xmlwrapp
+Author:   Peter J Jones at al. [src/misc/xmlwrapp/AUTHORS]
+License:  BSDish [src/misc/xmlwrapp/LICENSE]
 
 Location: {include,src}/util/bitset
 Author:   Anatoliy Kuznetsov
@@ -81,23 +101,23 @@ Location: src/util/checksum/murmurhash
 Author:   Austin Appleby
 License:  Unrestricted; at top of file
 
-Location: {src,include}/util/compress/bzip2
-Author:   Julian R Seward
-License:  BSDish [src/util/compress/bzip2/LICENSE]
-
-Location: {src,include}/util/compress/zlib
-Authors:  Jean-loup Gailly and Mark Adler
-License:  BSDish [include/util/compress/zlib/zlib.h]
-
-Location: {src,include}/util/compress/zlib_cloudflare
-Authors:  Jean-loup Gailly and Mark Adler
-License:  BSDish [include/util/compress/zlib_cloudflare/zlib.h]
-          https://github.com/cloudflare/zlib/blob/gcc.amd64/LICENSE
-
 Location: src/util/compress/api/miniz
 Authors:  RAD Game Tools and Valve Software, Rich Geldreich and Tenacious Software LLC
 License:  MIT [src/util/compress/api/miniz/LICENSE]
           https://github.com/richgel999/miniz/blob/master/LICENSE
+
+Location: {include,src}/util/compress/bzip2
+Author:   Julian R Seward
+License:  BSDish [src/util/compress/bzip2/LICENSE]
+
+Location: {include,src}/util/compress/zlib
+Authors:  Jean-loup Gailly and Mark Adler
+License:  BSDish [include/util/compress/zlib/zlib.h]
+
+Location: {include,src}/util/compress/zlib_cloudflare
+Authors:  Jean-loup Gailly and Mark Adler
+License:  BSDish [include/util/compress/zlib_cloudflare/zlib.h]
+          https://github.com/cloudflare/zlib/blob/gcc.amd64/LICENSE
 
 Location: src/util/diff/diff_match_patch
 Authors:  Neil Fraser
@@ -107,7 +127,15 @@ Location: src/util/diff/dtl
 Authors:  Tatsuhiko Kubo at al. [src/util/diff/dtl/CONTRIBUTORS]
 License:  BSDish [src/util/diff/dtl/COPYING]
 
-Location: {src,include}/util/regexp
+Location: {include,src}/util/lmdb
+Author:   Howard Chu, Symas Corp. [src/util/lmdb/COPYRIGHT]
+License:  BSDish (OpenLDAP Public License) [src/util/lmdb/LICENSE]
+
+Location: {include,src}/util/lmdbxx
+Author:   Arto Bendiken [src/util/lmdbxx/AUTHORS]
+License:  Unrestricted [src/util/lmdbxx/UNLICENSE]
+
+Location: {include,src}/util/regexp
 Author:   Philip Hazel
 License:  BSDish [src/util/regexp/LICENCE]
 
@@ -115,34 +143,6 @@ Location: include/util/regexp/ctre/
 Authors:  Hana Dusikovaá
 Licnse:   Apache 2.0 [include/util/regexp/ctre/LICENSE]
           https://github.com/hanickadot/compile-time-regular-expressions/blob/main/LICENSE
-
-Location: {src,include}/util/lmdb
-Author:   Howard Chu, Symas Corp. [src/util/lmdb/COPYRIGHT]
-License:  BSDish (OpenLDAP Public License) [src/util/lmdb/LICENSE]
-
-Location: {src,include}/util/lmdbxx
-Author:   Arto Bendiken [src/util/lmdbxx/AUTHORS]
-License:  Unrestricted [src/util/lmdbxx/UNLICENSE]
-
-Location: {src,include}/misc/xmlwrapp
-Author:   Peter J Jones at al. [src/misc/xmlwrapp/AUTHORS]
-License:  BSDish [src/misc/xmlwrapp/LICENSE]
-
-Location: {src,include}/gui/utils/muparser
-Author:   Ingo Berg
-License:  BSDish [include/gui/utils/muparser/muParser.h]
-
-Location: src/connect/parson.{c,h}
-Author:   Krzysztof Gabis
-License:  MIT [https://opensource.org/licenses/MIT]
-
-Location: include/misc/jsonwrapp/rapidjson
-Author:   Milo Yip
-License:  MIT [include/misc/jsonwrapp/rapidjson/license.txt]
-
-Location: include/misc/jsonwrapp/rapidjson/msinttypes
-Author:   Alexander Chemeris
-License:  BSD [include/misc/jsonwrapp/rapidjson/msinttypes/inttypes.h]
 
 
 ==============================================================
