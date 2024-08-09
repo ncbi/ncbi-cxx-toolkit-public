@@ -89,11 +89,8 @@ static const int k_GetSubseqThreshhold = 10000;
 ///threshhold to color mismatch. 98 means 98%
 static const int k_ColorMismatchIdentity = 0;
 static const int k_GetDynamicFeatureSeqLength = 200000;
-static const char* k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
 static const char* color[]={"#000000", "#808080", "#FF0000"};
-static const char* k_ColorRed = "#FF0000";
-static const char* k_ColorPink = "#F805F5";
 
 static const char k_IntronChar = '~';
 static const int k_IdStartMargin = 2;

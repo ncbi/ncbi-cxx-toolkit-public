@@ -92,9 +92,6 @@ static const size_t kTotal_size = strlen(kTotal);
 
 static const char*  kIdentity = "Max ident";
 static const size_t kIdentity_size = strlen(kIdentity);
-static const char*  kPercent = "Percent";
-static const char*  kHighest = "Highest";
-static const char*  kQuery = "Query";
 static const char*  kCoverage = "Query coverage";
 static const size_t kCoverage_size = strlen(kCoverage);
 static const char*  kEllipsis = "...";
