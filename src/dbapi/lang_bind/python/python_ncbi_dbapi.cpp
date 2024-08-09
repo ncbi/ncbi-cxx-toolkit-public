@@ -4660,10 +4660,24 @@ int s_OnClear(PyObject*)
     return 0;
 }
 
+class CFakeApplication : public CNcbiApplication
+{
+public:
+    CFakeApplication(void)
+        {
+            string name("python_ncbi_dbapi.ini");
+            LoadConfig(GetRWConfig(), &name);
+        }
+    int Run(void) override { return 0; }
+};
+
 static
 PyObject* init_common(const string& module_name)
 {
     if (CNcbiApplication::Instance() == NULL) {
+        static CSafeStaticPtr<CFakeApplication> s_app;
+        s_app->Init();
+        
         s_OrigDiagHandler = GetDiagHandler(true);
         SetDiagHandler(new CPythonDiagHandler);
         // We use some of the C++ Toolkit's formatting code, and regardless
