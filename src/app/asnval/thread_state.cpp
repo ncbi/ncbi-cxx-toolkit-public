@@ -673,6 +673,13 @@ void CAsnvalThreadState::ValidateAsync(
             validator.Validate(*pSubmit, scope, m_Options, msgHandler, &suppressed);
         }
         else {
+            if (mAppConfig.mOnlyAnnots) {
+                for (CSeq_annot_CI ni(top_h); ni; ++ni) {
+                    const CSeq_annot_Handle& sah = *ni;
+                    validator.Validate(sah, m_Options, msgHandler);
+                }
+                return;
+            }
             CValidErrorSuppress::SetSuppressedCodes(*pEntry, suppressed);
             validator.Validate(*pEntry, scope, m_Options, msgHandler, &suppressed);
         }
@@ -706,10 +713,10 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     }
 
     if (m_pContext->PreprocessHugeFile) {
-        hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, msgHandler);
-        bool ignoreInferences = (m_GlobalInfo.CumulativeInferenceCount >= InferenceAccessionCutoff);
-        if (ignoreInferences) {
+        if (! mAppConfig.mOnlyAnnots) {
+            hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, msgHandler);
         }
+        bool ignoreInferences = (m_GlobalInfo.CumulativeInferenceCount >= InferenceAccessionCutoff);
         s_StartWrite(msgHandler, ignoreInferences);
     }
 
