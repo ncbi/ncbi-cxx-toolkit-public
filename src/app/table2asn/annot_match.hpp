@@ -36,6 +36,7 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <shared_mutex>
+#include <unordered_map>
 #include "atomic_bitset.hpp"
 
 BEGIN_NCBI_SCOPE
