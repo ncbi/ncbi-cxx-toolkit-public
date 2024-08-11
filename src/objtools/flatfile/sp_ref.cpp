@@ -413,16 +413,16 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
     }
 
     if (muids) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
+        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
     }
     if (pmids) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PubMed identifiers. Ignoring all but the first.");
+        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PubMed identifiers. Ignoring all but the first.");
     }
     if (dois) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple DOI identifiers. Ignoring all but the first.");
+        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple DOI identifiers. Ignoring all but the first.");
     }
     if (agricolas) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple AGRICOLA identifiers. Ignoring all but the first.");
+        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple AGRICOLA identifiers. Ignoring all but the first.");
     }
 }
 
@@ -632,7 +632,7 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 
     CRef<CDate> date;
     if (NStr::Equal(s + 1, 0, 3, "XXX")) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "%s", s);
+        ErrPostStr(SEV_WARNING, ERR_REFERENCE_IllegalDate, s);
         date = get_s_date(s + 1, true);
     } else
         date = get_s_date(s + 1, false);

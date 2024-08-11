@@ -378,7 +378,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
         if (delta == deltas.end())
             return;
 
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the CONTIG/CO line gaps exceeds the number of assembly_gap features.");
+        ErrPostStr(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the CONTIG/CO line gaps exceeds the number of assembly_gap features.");
         *drop = true;
     }
 }
@@ -583,23 +583,23 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
     }
 
     if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta && tech == 1) {
-        ErrPostEx(SEV_WARNING, ERR_SEQUENCE_HTGWithoutGaps, "This Phase 1 HTG sequence has no runs of 100 "
-                                                            "or more N's to indicate gaps between component contigs. "
-                                                            "This could be an error, or perhaps sequencing is finished "
-                                                            "and this record should not be Phase 1.");
+        ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGWithoutGaps, "This Phase 1 HTG sequence has no runs of 100 "
+                                                             "or more N's to indicate gaps between component contigs. "
+                                                             "This could be an error, or perhaps sequencing is finished "
+                                                             "and this record should not be Phase 1.");
     }
 
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
         if (tech == 4) /* Phase 0 */
-            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_HTGPhaseZeroHasGap, "A Phase 0 HTG record usually consists of several reads "
-                                                                    "for one contig, and hence gaps are not expected. But "
-                                                                    "this record does have one (ore more) gaps, hence it "
-                                                                    "may require review.");
+            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGPhaseZeroHasGap, "A Phase 0 HTG record usually consists of several reads "
+                                                                     "for one contig, and hence gaps are not expected. But "
+                                                                     "this record does have one (ore more) gaps, hence it "
+                                                                     "may require review.");
         if (gotcha == 1)
-            ErrPostEx(SEV_WARNING, ERR_SEQUENCE_HTGPossibleShortGap, "This sequence has one or more runs "
-                                                                     "of at least 20 N's. They could indicate gaps, "
-                                                                     "but have not been treated that way because "
-                                                                     "they are below the minimum of 100 N's.");
+            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGPossibleShortGap, "This sequence has one or more runs "
+                                                                      "of at least 20 N's. They could indicate gaps, "
+                                                                      "but have not been treated that way because "
+                                                                      "they are below the minimum of 100 N's.");
     }
 }
 
@@ -949,7 +949,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, CMolInfo& mol_info)
         }
 
         if (errpost) {
-            ErrPostEx(SEV_ERROR, ERR_KEYWORD_MultipleHTGPhases, "This entry has multiple HTG-related keywords, for differing HTG phases. Ignoring all but the first.");
+            ErrPostStr(SEV_ERROR, ERR_KEYWORD_MultipleHTGPhases, "This entry has multiple HTG-related keywords, for differing HTG phases. Ignoring all but the first.");
         }
 
         if (delnode)
@@ -1289,9 +1289,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     if (bad_line || bad_interval || bad_accession) {
         if (bad_interval) {
             if (tpa)
-                ErrPostEx(SEV_REJECT, ERR_TPA_InvalidPrimarySpan, "Intervals from primary records on which a TPA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
+                ErrPostStr(SEV_REJECT, ERR_TPA_InvalidPrimarySpan, "Intervals from primary records on which a TPA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
             else
-                ErrPostEx(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
+                ErrPostStr(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
         } else if (bad_accession) {
             if (tpa)
                 ErrPostEx(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, "\"%s\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
@@ -1299,9 +1299,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 ErrPostEx(SEV_REJECT, ERR_TSA_InvalidPrimarySeqId, "\"%s\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
         } else {
             if (tpa)
-                ErrPostEx(SEV_REJECT, ERR_TPA_InvalidPrimaryBlock, "Supplied PRIMARY block for TPA record is incorrect. Cannot parse. Entry dropped.");
+                ErrPostStr(SEV_REJECT, ERR_TPA_InvalidPrimaryBlock, "Supplied PRIMARY block for TPA record is incorrect. Cannot parse. Entry dropped.");
             else
-                ErrPostEx(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
+                ErrPostStr(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
         }
 
         if (ftbp)
@@ -1527,7 +1527,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     Char       ch;
 
     if (! str || *str == '\0') {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -1538,7 +1538,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     for (p = str; *p == ' ';)
         p++;
     if (*p == '\0') {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -1782,7 +1782,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     Char  ch;
 
     if (! str || *str == '\0') {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -2613,7 +2613,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         *q = '\0';
         if (! StringStr(p + 8, "::")) {
-            ErrPostEx(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
+            ErrPostStr(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             MemFree(tag);
             p += 8;
             *q = '#';
@@ -2733,14 +2733,14 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 
     if (! is_tsa) {
         if (! got_comment)
-            ErrPostEx(SEV_WARNING, ERR_ENTRY_TLSLacksStructuredComment, "This TLS record lacks an expected structured comment.");
+            ErrPostStr(SEV_WARNING, ERR_ENTRY_TLSLacksStructuredComment, "This TLS record lacks an expected structured comment.");
         if (! got_dblink)
-            ErrPostEx(SEV_WARNING, ERR_ENTRY_TLSLacksBioProjectLink, "This TLS record lacks an expected BioProject or Project link.");
+            ErrPostStr(SEV_WARNING, ERR_ENTRY_TLSLacksBioProjectLink, "This TLS record lacks an expected BioProject or Project link.");
     } else {
         if (! got_comment)
-            ErrPostEx(SEV_WARNING, ERR_ENTRY_TSALacksStructuredComment, "This TSA record lacks an expected structured comment.");
+            ErrPostStr(SEV_WARNING, ERR_ENTRY_TSALacksStructuredComment, "This TSA record lacks an expected structured comment.");
         if (! got_dblink)
-            ErrPostEx(SEV_WARNING, ERR_ENTRY_TSALacksBioProjectLink, "This TSA record lacks an expected BioProject or Project link.");
+            ErrPostStr(SEV_WARNING, ERR_ENTRY_TSALacksBioProjectLink, "This TSA record lacks an expected BioProject or Project link.");
     }
 }
 

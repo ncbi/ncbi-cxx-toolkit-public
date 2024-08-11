@@ -723,7 +723,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         return tag;
 
     if (! qual.IsSetVal() || qual.GetVal().empty()) {
-        ErrPostEx(SEV_WARNING, ERR_QUALIFIER_EmptyQual, "Found empty /db_xref qualifier. Qualifier dropped.");
+        ErrPostStr(SEV_WARNING, ERR_QUALIFIER_EmptyQual, "Found empty /db_xref qualifier. Qualifier dropped.");
         return tag;
     }
 
@@ -1213,7 +1213,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             }
         }
         if (! ploc || ploc->empty()) {
-            ErrPostEx(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "NULL or empty reference location. Entry dropped.");
+            ErrPostStr(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "NULL or empty reference location. Entry dropped.");
             err = true;
             break;
         }
@@ -1227,7 +1227,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         GetSeqLocation(*feat, location, seqids, &err, pp, "pub");
 
         if (err) {
-            ErrPostEx(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "Unparsable reference location. Entry dropped.");
+            ErrPostStr(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "Unparsable reference location. Entry dropped.");
             MemFree(location);
             break;
         }
@@ -1235,7 +1235,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         i = FTASeqLocCheck(feat->GetLocation(), ibp->acnum);
 
         if (i == 0) {
-            ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, location);
+            ErrPostStr(SEV_WARNING, ERR_LOCATION_FailedCheck, location);
             if (pp->debug) {
                 feats.push_back(feat);
             }
@@ -2181,7 +2181,7 @@ static void ConvertQualifierValue(CRef<CGb_qual>& qual)
     }
 
     if (has_comma)
-        ErrPostEx(SEV_WARNING, ERR_QUALIFIER_MultRptUnitComma, "Converting commas to semi-colons due to format conventions for multiple /rpt_unit qualifiers.");
+        ErrPostStr(SEV_WARNING, ERR_QUALIFIER_MultRptUnitComma, "Converting commas to semi-colons due to format conventions for multiple /rpt_unit qualifiers.");
 }
 
 /**********************************************************/
@@ -3832,7 +3832,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
             ptr1++;
         if (*ptr1 == '\n') {
             if (ibp->is_mga == false) {
-                ErrPostEx(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location missing");
+                ErrPostStr(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location missing");
                 dbp->mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 continue;
@@ -3840,9 +3840,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         } else {
             i = ptr1 - bptr;
             if (i < ParFlat_COL_FEATDAT)
-                ErrPostEx(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the left");
+                ErrPostStr(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the left");
             else if (i > ParFlat_COL_FEATDAT)
-                ErrPostEx(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the right");
+                ErrPostStr(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the right");
         }
 
         for (ptr2 = ptr1; *ptr2 != '/' && ptr2 < eptr;)
@@ -3904,7 +3904,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
                                            notes w/i a key */
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
-                ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str());
+                ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
                 ret = GB_FEAT_ERR_REPAIRABLE;
             } else {
                 /* last argument is perform_corrections if debug
@@ -4110,7 +4110,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
                 if (keyindx < 0) {
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str());
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
                     ret = GB_FEAT_ERR_REPAIRABLE;
                 }
             } else if (fbp->spindex < 0) {
@@ -4521,7 +4521,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     seqtype = fta_if_wgs_acc(ibp->acnum);
     if (seqtype == 0 || seqtype == 3 || seqtype == 4 || seqtype == 6 ||
         seqtype == 10 || seqtype == 12) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_SubmitterSeqidNotAllowed, "WGS/TLS/TSA master records are not allowed to have /submitter_seqid qualifiers, only contigs and scaffolds. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_SOURCE_SubmitterSeqidNotAllowed, "WGS/TLS/TSA master records are not allowed to have /submitter_seqid qualifiers, only contigs and scaffolds. Entry dropped.");
         ibp->drop = true;
         return;
     }
@@ -4637,7 +4637,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
             prefix = nullptr;
         }
 
-        ErrPostEx(SEV_ERROR, ERR_SOURCE_SubmitterSeqidDropped, "Could not determine project code for what appears to be a WGS/TLS/TSA scaffold record. /submitter_seqid dropped.");
+        ErrPostStr(SEV_ERROR, ERR_SOURCE_SubmitterSeqidDropped, "Could not determine project code for what appears to be a WGS/TLS/TSA scaffold record. /submitter_seqid dropped.");
         return;
     }
 
@@ -4745,7 +4745,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (i > 1 && ibp->is_mga) {
-        ErrPostEx(SEV_REJECT, ERR_FEATURE_MoreThanOneCAGEFeat, "CAGE records are allowed to have only one feature, and it must be the \"source\" one. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_FEATURE_MoreThanOneCAGEFeat, "CAGE records are allowed to have only one feature, and it must be the \"source\" one. Entry dropped.");
         ibp->drop = true;
     }
 
@@ -4850,7 +4850,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
             i = FTASeqLocCheck(feat->GetLocation(), ibp->acnum);
             if (i == 0) {
-                ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, fbp->location_c_str());
+                ErrPostStr(SEV_WARNING, ERR_LOCATION_FailedCheck, fbp->location_get());
 
                 if (pp->debug)
                     seq_feats.push_back(feat);
@@ -5392,7 +5392,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     if (pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL) {
         biomol = Seq_descr_GIBB_mol_genomic;
         if (! div || ! StringEquN(div, "VRL", 3)) {
-            ErrPostEx(SEV_ERROR, ERR_LOCUS_NonViralRNAMoltype, "Genomic RNA implied by presence of RNA moltype, but sequence is non-viral.");
+            ErrPostStr(SEV_ERROR, ERR_LOCUS_NonViralRNAMoltype, "Genomic RNA implied by presence of RNA moltype, but sequence is non-viral.");
         }
         return;
     }
@@ -5431,7 +5431,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         biomol = Seq_descr_GIBB_mol_mRNA;
 
         if (count > 1) {
-            ErrPostEx(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
+            ErrPostStr(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
         }
 
         if (tRNA) {
@@ -5473,7 +5473,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     if (i > 1) {
         biomol = Seq_descr_GIBB_mol_genomic;
         if (! stage) {
-            ErrPostEx(SEV_WARNING, ERR_SOURCE_GenomicViralRnaAssumed, "This sequence is assumed to be genomic due to multiple coding region but lack of a DNA stage is not indicated in taxonomic lineage.");
+            ErrPostStr(SEV_WARNING, ERR_SOURCE_GenomicViralRnaAssumed, "This sequence is assumed to be genomic due to multiple coding region but lack of a DNA stage is not indicated in taxonomic lineage.");
         }
         return;
     }
@@ -5481,15 +5481,15 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     if (count == 0) {
         biomol = Seq_descr_GIBB_mol_genomic;
         if (! stage) {
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_UnclassifiedViralRna, "Cannot determine viral molecule type (genomic vs a specific type of RNA) based on definition line, CDS content, or taxonomic lineage. So this sequence has been classified as genomic by default (perhaps in error).");
+            ErrPostStr(SEV_ERROR, ERR_SOURCE_UnclassifiedViralRna, "Cannot determine viral molecule type (genomic vs a specific type of RNA) based on definition line, CDS content, or taxonomic lineage. So this sequence has been classified as genomic by default (perhaps in error).");
         } else {
-            ErrPostEx(SEV_WARNING, ERR_SOURCE_LineageImpliesGenomicViralRna, "This sequence lacks indication of specific RNA type in the definition line, but the taxonomic lineage mentions lack of a DNA stage, so it is classified as genomic.");
+            ErrPostStr(SEV_WARNING, ERR_SOURCE_LineageImpliesGenomicViralRna, "This sequence lacks indication of specific RNA type in the definition line, but the taxonomic lineage mentions lack of a DNA stage, so it is classified as genomic.");
         }
         return;
     }
 
     if (count > 1) {
-        ErrPostEx(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
+        ErrPostStr(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
     }
 
     biomol = GetBiomolFromToks(mRNA, tRNA, rRNA, snRNA, scRNA, uRNA, snoRNA);

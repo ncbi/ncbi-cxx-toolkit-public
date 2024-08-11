@@ -230,7 +230,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
 
     if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
+        ErrPostStr(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
         return nullptr;
@@ -279,7 +279,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
             if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
+                ErrPostStr(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
         if (was) {
@@ -315,7 +315,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
+        ErrPostStr(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
         return nullptr;
@@ -380,7 +380,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
             if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
+                ErrPostStr(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
         if (was) {

@@ -388,19 +388,19 @@ void fta_init_servers(ParserPtr pp)
     if (pp->taxserver != 0) {
         pp->taxserver = fta_init_tax_server();
         if (pp->taxserver == 2) {
-            ErrPostEx(SEV_WARNING, ERR_SERVER_Failed, "TaxArchInit call failed.");
+            ErrPostStr(SEV_WARNING, ERR_SERVER_Failed, "TaxArchInit call failed.");
         }
     } else {
-        ErrPostEx(SEV_WARNING, ERR_SERVER_NoTaxLookup, "No taxonomy lookup will be performed.");
+        ErrPostStr(SEV_WARNING, ERR_SERVER_NoTaxLookup, "No taxonomy lookup will be performed.");
     }
 
     if (pp->medserver != 0) {
         pp->medserver = fta_init_med_server(pp->normalize);
         if (pp->medserver == 2) {
-            ErrPostEx(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
+            ErrPostStr(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
         }
     } else {
-        ErrPostEx(SEV_WARNING, ERR_SERVER_NoPubMedLookup, "No medline lookup will be performed.");
+        ErrPostStr(SEV_WARNING, ERR_SERVER_NoPubMedLookup, "No medline lookup will be performed.");
     }
 }
 
@@ -456,13 +456,13 @@ void fta_entrez_fetch_enable(ParserPtr pp)
         pp->entrez_fetch = fta_init_pubseq();
         if(pp->entrez_fetch == 2)
         {
-            ErrPostEx(SEV_WARNING, ERR_SERVER_Failed,
+            ErrPostStr(SEV_WARNING, ERR_SERVER_Failed,
                       "Failed to connect to PUBSEQ OS.");
         }
     }
     else
     {
-        ErrPostEx(SEV_WARNING, ERR_SERVER_NotUsed,
+        ErrPostStr(SEV_WARNING, ERR_SERVER_NotUsed,
                   "No PUBSEQ Bioseq fetch will be performed.");
     }
 }
@@ -611,7 +611,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
             }
 
             if (pmid == ZERO_ENTREZ_ID) {
-                ErrPostEx(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
+                ErrPostStr(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
                 ibp->drop = true;
             } else if (pmid != oldpmid) {
                 ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);

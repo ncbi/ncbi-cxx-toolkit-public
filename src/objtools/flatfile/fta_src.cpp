@@ -1111,7 +1111,7 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
     }
 
     if (syntgndiv == 2 && ! got)
-        ErrPostEx(SEV_ERROR, ERR_DIVISION_TGNnotTransgenic, "This record uses the TGN division code, but there is no full-length /transgenic source feature.");
+        ErrPostStr(SEV_ERROR, ERR_DIVISION_TGNnotTransgenic, "This record uses the TGN division code, but there is no full-length /transgenic source feature.");
     return (ret);
 }
 
@@ -1623,7 +1623,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
 
     if (! sfbp->next) {
         if (! sfbp->full) {
-            ErrPostEx(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
+            ErrPostStr(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
         }
         return (sfbp);
     }
@@ -1709,7 +1709,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
     }
 
     SourceFeatBlkSetFree(sfbp);
-    ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
+    ErrPostStr(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
     return nullptr;
 }
 
@@ -2375,9 +2375,9 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
         }
     } else if (NStr::CompareNocase(ibp->division, "ENV") == 0) {
         if (source == Parser::ESource::EMBL)
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier. It will not be placed in the ENV division until the qualifier is added.");
+            ErrPostStr(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier. It will not be placed in the ENV division until the qualifier is added.");
         else {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier.");
+            ErrPostStr(SEV_REJECT, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier.");
             return false;
         }
     }
@@ -3118,7 +3118,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
     if (count_feat == count_qual)
         return (true);
 
-    ErrPostEx(SEV_REJECT, ERR_SOURCE_LackingSubmitterSeqids, "One ore more source features are lacking /submitter_seqid qualifiers provided in others. Entry dropped.");
+    ErrPostStr(SEV_REJECT, ERR_SOURCE_LackingSubmitterSeqids, "One ore more source features are lacking /submitter_seqid qualifiers provided in others. Entry dropped.");
     return (false);
 }
 
@@ -3148,7 +3148,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
 
     sfbp = CollectSourceFeats(dbp, type);
     if (! sfbp) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
         return;
     }
 
@@ -3168,7 +3168,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     }
 
     if (! SourceFeatStructFillIn(ibp, sfbp, use_what)) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_MultipleMolTypes, "Multiple /mol_type qualifiers were encountered within source feature. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_SOURCE_MultipleMolTypes, "Multiple /mol_type qualifiers were encountered within source feature. Entry dropped.");
         SourceFeatBlkSetFree(sfbp);
         return;
     }
@@ -3180,7 +3180,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     }
 
     if (! CheckMoltypeConsistency(sfbp, ibp->moltype)) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_InconsistentMolType, "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_SOURCE_InconsistentMolType, "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
         SourceFeatBlkSetFree(sfbp);
         return;
     }
@@ -3218,9 +3218,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     i   = CheckSourceFeatCoverage(sfbp, mmp, len);
     if (i != 0) {
         if (i == 1) {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
+            ErrPostStr(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
         } else {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
+            ErrPostStr(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
         }
         SourceFeatBlkSetFree(sfbp);
         MinMaxFree(mmp);
@@ -3251,15 +3251,15 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
             sev = SEV_WARNING;
         else
             sev = SEV_ERROR;
-        ErrPostEx(sev, ERR_SOURCE_TransSingleOrgName, "Use of /transgenic requires at least two source features with differences among /organism, /strain, /organelle, and /isolate, between the host and foreign organisms.");
+        ErrPostStr(sev, ERR_SOURCE_TransSingleOrgName, "Use of /transgenic requires at least two source features with differences among /organism, /strain, /organelle, and /isolate, between the host and foreign organisms.");
     } else if (i > 0) {
         sev = SEV_REJECT;
         if (i == 1) {
-            ErrPostEx(sev, ERR_SOURCE_TransgenicTooShort, "Source feature with /transgenic qualifier does not span the entire sequence. Entry dropped.");
+            ErrPostStr(sev, ERR_SOURCE_TransgenicTooShort, "Source feature with /transgenic qualifier does not span the entire sequence. Entry dropped.");
         } else if (i == 2) {
-            ErrPostEx(sev, ERR_SOURCE_FocusAndTransgenicQuals, "Both /focus and /transgenic qualifiers exist; these quals are mutually exclusive. Entry dropped.");
+            ErrPostStr(sev, ERR_SOURCE_FocusAndTransgenicQuals, "Both /focus and /transgenic qualifiers exist; these quals are mutually exclusive. Entry dropped.");
         } else if (i == 3) {
-            ErrPostEx(sev, ERR_SOURCE_MultipleTransgenicQuals, "Multiple source features have /transgenic qualifiers. Entry dropped.");
+            ErrPostStr(sev, ERR_SOURCE_MultipleTransgenicQuals, "Multiple source features have /transgenic qualifiers. Entry dropped.");
         } else {
             already = true;
             if (! need_focus)
@@ -3287,9 +3287,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     if (i > 0) {
         sev = SEV_REJECT;
         if (i == 1) {
-            ErrPostEx(sev, ERR_SOURCE_FocusQualNotNeeded, "/focus qualifier present, but only one organism name exists. Entry dropped.");
+            ErrPostStr(sev, ERR_SOURCE_FocusQualNotNeeded, "/focus qualifier present, but only one organism name exists. Entry dropped.");
         } else if (i == 2) {
-            ErrPostEx(sev, ERR_SOURCE_MultipleOrganismWithFocus, "/focus qualifiers exist on source features with differing organism names. Entry dropped.");
+            ErrPostStr(sev, ERR_SOURCE_MultipleOrganismWithFocus, "/focus qualifiers exist on source features with differing organism names. Entry dropped.");
         } else {
             if (! need_focus)
                 sev = SEV_ERROR;

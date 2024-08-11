@@ -586,7 +586,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     MemCpy(date, offset + lcp->date, 11);
     date[11] = '\0';
     if (StringEquN(date, "NODATE", 6)) {
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
+        ErrPostStr(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
     } else if (! CkDateFormat(date)) {
         i = lcp->date + 1;
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Date should be in column %d-%d, and format dd-mmm-yyyy: %s", i, i + 10, date);
@@ -843,7 +843,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             FtaInstallPrefix(PREFIX_ACCESSION, ptr->c_str());
 
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
-                ErrPostEx(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
+                ErrPostStr(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
                 badlocus = true;
             } else if (fta_check_embl_moltype(finfo.str) == false)
                 badlocus = true;
@@ -1474,7 +1474,7 @@ static bool sCheckAccession(const list<string>& tokens,
         if(skip == 2 && count == 0 && !iswgs &&
            (accformat == 3 || accformat == 4 || accformat == 8))
         {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri,
+            ErrPostStr(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri,
                       "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
             res = false;
         }
@@ -1593,7 +1593,7 @@ static bool CheckAccession(
 
         if (skip == 2 && count == 0 && ! iswgs &&
             (accformat == 3 || accformat == 4 || accformat == 8)) {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri, "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
+            ErrPostStr(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri, "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
             res = false;
         }
         count++;
