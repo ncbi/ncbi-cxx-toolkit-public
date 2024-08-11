@@ -140,7 +140,7 @@ void get_auth_from_toks(ValNodePtr token, ERefFormat format, CRef<CAuth_list>& a
         CRef<CAuthor> author = get_std_auth(p, format);
 
         if (author.Empty()) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, "%s", p);
+            ErrPostStr(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, p);
             continue;
         }
         if (author->GetName().GetName().IsSetLast() &&
@@ -505,7 +505,7 @@ CRef<CDate> get_date(const Char* year)
     CRef<CDate> ret;
 
     if (! year || *year == '\0') {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_IllegalDate, "No year in reference.");
+        ErrPostStr(SEV_ERROR, ERR_REFERENCE_IllegalDate, "No year in reference.");
         return ret;
     }
 

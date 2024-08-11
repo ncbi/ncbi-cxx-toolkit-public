@@ -1072,18 +1072,18 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
     }
 
     if (kwd_tpa && ! kwd_party) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"Third Party Annotation\" or \"Third Party Data\" in addition to \"TPA\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"Third Party Annotation\" or \"Third Party Data\" in addition to \"TPA\".");
         ret = false;
     } else if (! kwd_tpa && kwd_party) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to \"Third Party Annotation\" or \"Third Party Data\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to \"Third Party Annotation\" or \"Third Party Data\".");
         ret = false;
     }
     if (! kwd_tpa && (kwd_inf || kwd_exp)) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to its TPA-tier keyword.");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to its TPA-tier keyword.");
         ret = false;
     } else if (kwd_tpa && kwd_inf == false && kwd_exp == false &&
                kwd_asm == false && kwd_spedb == false) {
-        ErrPostEx(SEV_ERROR, ERR_KEYWORD_MissingTPATier, "This TPA record lacks a keyword to indicate which tier it belongs to: experimental, inferential, reassembly or specialist_db.");
+        ErrPostStr(SEV_ERROR, ERR_KEYWORD_MissingTPATier, "This TPA record lacks a keyword to indicate which tier it belongs to: experimental, inferential, reassembly or specialist_db.");
     }
     if (j > 1) {
         string buf;
@@ -1124,10 +1124,10 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     }
 
     if (kwd_tsa && ! kwd_assembly) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"Transcriptome Shotgun Assembly\" in addition to \"TSA\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"Transcriptome Shotgun Assembly\" in addition to \"TSA\".");
         ret = false;
     } else if (! kwd_tsa && kwd_assembly) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"TSA\" in addition to \"Transcriptome Shotgun Assembly\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"TSA\" in addition to \"Transcriptome Shotgun Assembly\".");
         ret = false;
     }
     return (ret);
@@ -1158,10 +1158,10 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     }
 
     if (kwd_tls && ! kwd_study) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"Targeted Locus Study\" in addition to \"TLS\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"Targeted Locus Study\" in addition to \"TLS\".");
         ret = false;
     } else if (! kwd_tls && kwd_study) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"TLS\" in addition to \"Targeted Locus Study\".");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"TLS\" in addition to \"Targeted Locus Study\".");
         ret = false;
     }
     return (ret);
@@ -1465,7 +1465,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
     }
 
     if (! got) {
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_MissingMGAKeywords, "This is apparently a CAGE record, but it lacks the required keywords. Entry dropped.");
+        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingMGAKeywords, "This is apparently a CAGE record, but it lacks the required keywords. Entry dropped.");
         return false;
     }
 
@@ -1484,7 +1484,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
 
     if (is_sage) {
         if (is_cage) {
-            ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingMGAKeywords, "This MGA record contains more than one of the special keywords indicating different techniques.");
+            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ConflictingMGAKeywords, "This MGA record contains more than one of the special keywords indicating different techniques.");
             return false;
         }
         mol_info.SetTechexp("5'-sage");

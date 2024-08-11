@@ -420,7 +420,7 @@ bool GenBankIndex(ParserPtr pp)
                 switch (currentKeyword) {
                 case ParFlat_LOCUS:
                     if (after_LOCUS) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines LOCUS in one entry");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines LOCUS in one entry");
                         entry->drop = true;
                     } else {
                         after_LOCUS = true;
@@ -429,7 +429,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_COMMENT:
                     if (after_COMMENT) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple COMMENT lines in one entry");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple COMMENT lines in one entry");
                         entry->drop = true;
                     } else
                         after_COMMENT = true;
@@ -442,7 +442,7 @@ bool GenBankIndex(ParserPtr pp)
                     if (pp->accver == false)
                         break;
                     if (after_VERSION) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple VERSION lines in one entry");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple VERSION lines in one entry");
                         entry->drop = true;
                         break;
                     }
@@ -480,10 +480,10 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_DEFINITION:
                     if (after_DEFNTN) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'DEFINITION'");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'DEFINITION'");
                         entry->drop = true;
                     } else if (after_LOCUS == false) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "DEFINITION field out of order");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "DEFINITION field out of order");
                         entry->drop = true;
                     } else
                         after_DEFNTN = true;
@@ -491,10 +491,10 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_SOURCE:
                     if (after_SOURCE) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'SOURCE'");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'SOURCE'");
                         entry->drop = true;
                     } else if (after_LOCUS == false || after_DEFNTN == false) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "SOURCE field out of order");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "SOURCE field out of order");
                         entry->drop = true;
                     } else
                         after_SOURCE = true;
@@ -505,31 +505,31 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_CONTIG:
                     if (entry->is_contig) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than one line CONTIG in one entry");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than one line CONTIG in one entry");
                         entry->drop = true;
                     } else
                         entry->is_contig = true;
                     break;
                 case ParFlat_MGA:
                     if (entry->is_mga == false) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
+                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
                         entry->drop = true;
                     }
                     if (fta_check_mga_line(finfo.str + ParFlat_COL_DATA, entry) == false) {
-                        ErrPostEx(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
+                        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
                         entry->drop = true;
                     }
                     after_MGA = true;
                     break;
                 case ParFlat_FEATURES:
                     if (after_FEAT) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'FEATURES'");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'FEATURES'");
                         entry->drop = true;
                     } else if (pp->mode != Parser::EMode::Relaxed &&
                                (after_LOCUS == false ||
                                 after_DEFNTN == false ||
                                 after_SOURCE == false)) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "FEATURES field out of order");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "FEATURES field out of order");
                         entry->drop = true;
                     } else
                         after_FEAT = true;
@@ -537,7 +537,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_ORIGIN:
                     if (after_ORIGIN) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'ORIGIN'");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'ORIGIN'");
                         entry->drop = true;
                     } else if (
                         pp->mode != Parser::EMode::Relaxed &&
@@ -545,7 +545,7 @@ bool GenBankIndex(ParserPtr pp)
                          after_DEFNTN == false ||
                          after_SOURCE == false ||
                          after_FEAT == false)) {
-                        ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "ORIGIN field out of order");
+                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "ORIGIN field out of order");
                         entry->drop = true;
                     } else {
                         after_ORIGIN  = true;
@@ -571,7 +571,7 @@ bool GenBankIndex(ParserPtr pp)
                     break;
                 case ParFlat_USER:
                     if (pp->source != Parser::ESource::Flybase) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
+                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
                         entry->drop = true;
                     }
                     break;
@@ -579,7 +579,7 @@ bool GenBankIndex(ParserPtr pp)
                     if (entry->is_tpa == false &&
                         entry->tsa_allowed == false &&
                         pp->source != Parser::ESource::Refseq) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"PRIMARY\" is allowed for TPA or TSA records only. Continue anyway.");
+                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"PRIMARY\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                     break;
                 case ParFlat_KEYWORDS:
@@ -681,7 +681,7 @@ bool GenBankIndex(ParserPtr pp)
                 } // !Parser::EMode::Relaxed
 
                 if (entry->is_contig && entry->segnum != 0) {
-                    ErrPostEx(SEV_ERROR, ERR_FORMAT_ContigInSegset, "CONTIG data are not allowed for members of segmented sets, entry dropped.");
+                    ErrPostStr(SEV_ERROR, ERR_FORMAT_ContigInSegset, "CONTIG data are not allowed for members of segmented sets, entry dropped.");
                     entry->drop = true;
                 }
             }

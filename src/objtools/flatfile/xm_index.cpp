@@ -476,7 +476,7 @@ static void XMLParseVersion(IndexblkPtr ibp, char* line)
     char* q;
 
     if (! line) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
+        ErrPostStr(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
         ibp->drop = true;
         return;
     }
@@ -927,7 +927,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     if (got_definition == false)
         ret = XMLErrField(INSDSEQ_DEFINITION);
     if (got_accession == false) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession number for this record. Entry dropped.");
+        ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession number for this record. Entry dropped.");
         ret = false;
     }
     if (got_version == false) {
@@ -1445,7 +1445,7 @@ bool XMLIndex(ParserPtr pp)
             continue;
         }
         if (XMLTagCheck(ibp->xip, xmkwl) == false) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
+            ErrPostStr(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
             ibp->drop = true;
             MemFree(entry);
             continue;

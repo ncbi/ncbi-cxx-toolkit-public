@@ -648,14 +648,14 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
 
     CSeq_graph& big_graph = *(*graphs.begin());
     if (! big_graph.GetGraph().IsByte()) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_NonByteGraph, "Seq-graph to be split does not contain byte qscore values : cannot be processed.");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_NonByteGraph, "Seq-graph to be split does not contain byte qscore values : cannot be processed.");
         return;
     }
 
     CByte_graph::TValues scores_str(big_graph.GetGraph().GetByte().GetValues().begin(),
                                     big_graph.GetGraph().GetByte().GetValues().end());
     if (scores_str.empty()) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_MissingByteStore, "Seq-graph to be split has a NULL ByteStore for the qscore values : cannot be processed.");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_MissingByteStore, "Seq-graph to be split has a NULL ByteStore for the qscore values : cannot be processed.");
         return;
     }
 
@@ -674,13 +674,13 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         min_score = QS_MAX_VALID_SCORE;
 
         if (delta->IsLoc()) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_NonLiteralDelta, "Cannot process Delta-seq bioseqs with Seq-loc components.");
+            ErrPostStr(SEV_ERROR, ERR_QSCORE_NonLiteralDelta, "Cannot process Delta-seq bioseqs with Seq-loc components.");
             problem = true;
             break;
         }
 
         if (! delta->IsLiteral()) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_UnknownDelta, "Encountered Delta-seq component of unknown type.");
+            ErrPostStr(SEV_ERROR, ERR_QSCORE_UnknownDelta, "Encountered Delta-seq component of unknown type.");
             problem = true;
             break;
         }
@@ -688,7 +688,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         const CSeq_literal& literal = delta->GetLiteral();
 
         if (! literal.IsSetLength() || literal.GetLength() < 1) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_ZeroLengthLiteral, "Encountered Delta-seq Seq-literal component with length of zero (or less) : cannot be processed.");
+            ErrPostStr(SEV_ERROR, ERR_QSCORE_ZeroLengthLiteral, "Encountered Delta-seq Seq-literal component with length of zero (or less) : cannot be processed.");
             problem = true;
             break;
         }
@@ -728,7 +728,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
                     ErrPostEx(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Encountered non-zero score value %i within Delta-seq gap at position %ld of bioseq", byte, curr_pos);
                     nonzero_gap++;
                 } else if (nonzero_gap == 10) {
-                    ErrPostEx(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Exceeded reporting threshold (10) for non-zero score values in Delta-seq gaps : no further messages will be generated");
+                    ErrPostStr(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Exceeded reporting threshold (10) for non-zero score values in Delta-seq gaps : no further messages will be generated");
                     nonzero_gap++;
                 }
             }
@@ -901,7 +901,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                                            Seq-graph and return NULL */
 
     if (! qs_buf || *qs_buf == '\0' || ! def_acc || ! def_ver) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_InvalidArgs, "Missing arguments for QSbuf_To_Single_SeqGraph call.");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_InvalidArgs, "Missing arguments for QSbuf_To_Single_SeqGraph call.");
         return;
     }
 
@@ -911,7 +911,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     }
 
     if (! bioseq.IsSetId()) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_BadBioseqId, "Invalid Bioseq : no Seq-ids found.");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_BadBioseqId, "Invalid Bioseq : no Seq-ids found.");
         return;
     }
 
@@ -920,7 +920,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     vector<char> mybuf(QSBUF_MAXLINE);
     my_buf = mybuf.data();
     if (! my_buf) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
         return;
     }
 
@@ -929,7 +929,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     vector<char> deftitle(QSBUF_MAXTITLE);
     def_title = deftitle.data();
     if (! def_title) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
+        ErrPostStr(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
         return;
     }
 
@@ -961,7 +961,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
              * score data
              */
             if (*my_buf != '>') {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_BadDefline, "qscore buffer does not start with required > character.");
+                ErrPostStr(SEV_ERROR, ERR_QSCORE_BadDefline, "qscore buffer does not start with required > character.");
                 return;
             }
 
