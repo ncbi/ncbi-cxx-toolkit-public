@@ -171,7 +171,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
                     retval = GB_FEAT_ERR_REPAIRABLE;
                 }
                 if (error_msgs) {
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qs.c_str());
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qs);
                 }
                 if (perform_corrections) {
                     cur = quals.erase(cur);
@@ -198,7 +198,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
             if (! fqual) {
                 if (error_msgs) {
                     string str = CSeqFeatData::GetQualifierAsString(cur_type);
-                    ErrPostEx(SEV_ERROR, ERR_FEATURE_MissManQual, str.c_str());
+                    ErrPostStr(SEV_ERROR, ERR_FEATURE_MissManQual, str);
                 }
 
                 if (perform_corrections)
@@ -497,7 +497,7 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
                 retval = GB_FEAT_ERR_REPAIRABLE;
             }
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qs.c_str());
+                ErrPostStr(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qs);
             }
             if (perform_corrections) {
                 cur = quals.erase(cur);
@@ -843,7 +843,7 @@ static int CkQualText(CGb_qual& cur,
     if (! cur.IsSetVal()) {
         if (from_note) {
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_EmptyNote, "/note with no text ");
+                ErrPostStr(SEV_ERROR, ERR_QUALIFIER_EmptyNote, "/note with no text ");
             }
             return GB_FEAT_ERR_DROP;
         } else {

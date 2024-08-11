@@ -1410,7 +1410,7 @@ static bool Translate(CSeq_feat& feat, string& prot)
     try {
         CSeqTranslator::Translate(feat, GetScope(), prot);
     } catch (CSeqMapException& e) {
-        ErrPostEx(SEV_REJECT, 0, 0, "%s", e.GetMsg().c_str());
+        ErrPostStr(SEV_REJECT, 0, 0, e.GetMsg());
         ret = false;
     }
 

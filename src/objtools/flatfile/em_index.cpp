@@ -126,7 +126,7 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
 
     p = StringRChr(line, '.');
     if (! p) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
+        ErrPostStr(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
         entry->drop = true;
         return;
     }
@@ -279,7 +279,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                                       finfo.str);
                 } else if (StringEquN(finfo.str, keywordAh.c_str(), keywordAh.size())) {
                     if (entry->is_tpa == false && entry->tsa_allowed == false) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
+                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
@@ -306,7 +306,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                 if (pp->accver &&
                     StringEquN(finfo.str, keywordSv.c_str(), keywordSv.size())) {
                     if (entry->embl_new_ID) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
+                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
                         entry->drop = true;
                     } else {
                         if (after_SV) {
