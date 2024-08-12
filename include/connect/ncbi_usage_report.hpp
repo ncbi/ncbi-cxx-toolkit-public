@@ -106,10 +106,11 @@ public:
 /// Global settings affects all newly created usage statistics reporters.
 /// If you need to call some Set*() methods, this should be called before
 /// creating CUsageReport objects or any CUsageReport::Instance() usage.
-/// Of course you can adjust any settings later for each reporter separately.
 ///
 /// @note
-///    All methods are MT safe.
+///    MT-safety: all Get() methods are MT-safe, Set() methods are not.
+///    It is recommended to call Set() methods on initialization, before 
+///    creating threads, or use an additional MT-protection if necessary.
 /// @note
 ///   The usage reporting use default connection timeouts and maximum number
 ///   of tries specified by $CONN_TIMEOUT and $CONN_MAX_TRY environment
