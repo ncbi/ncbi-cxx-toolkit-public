@@ -271,30 +271,30 @@ void CAsnvalApp::Init()
     arg_desc->AddFlag("u", "Recurse");
     arg_desc->AddDefaultKey(
         "R", "SevCount", "Severity for Error in Return Code\n\
-\tinfo(0)\n\
-\twarning(1)\n\
-\terror(2)\n\
-\tcritical(3)\n\
-\tfatal(4)\n\
-\ttrace(5)",
+\tinfo(1)\n\
+\twarning(2)\n\
+\terror(3)\n\
+\tcritical(4)\n\
+\tfatal(5)\n\
+\ttrace(6)",
         CArgDescriptions::eInteger, "4");
     arg_desc->AddDefaultKey(
         "Q", "SevLevel", "Lowest Severity for Error to Show\n\
-\tinfo(0)\n\
-\twarning(1)\n\
-\terror(2)\n\
-\tcritical(3)\n\
-\tfatal(4)\n\
-\ttrace(5)",
+\tinfo(1)\n\
+\twarning(2)\n\
+\terror(3)\n\
+\tcritical(4)\n\
+\tfatal(5)\n\
+\ttrace(6)",
         CArgDescriptions::eInteger, "3");
     arg_desc->AddDefaultKey(
         "P", "SevLevel", "Highest Severity for Error to Show\n\
-\tinfo(0)\n\
-\twarning(1)\n\
-\terror(2)\n\
-\tcritical(3)\n\
-\tfatal(4)\n\
-\ttrace(5)",
+\tinfo(1)\n\
+\twarning(2)\n\
+\terror(3)\n\
+\tcritical(4)\n\
+\tfatal(5)\n\
+\ttrace(6)",
         CArgDescriptions::eInteger, "5");
     CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
     arg_desc->SetConstraint("Q", constraint);
