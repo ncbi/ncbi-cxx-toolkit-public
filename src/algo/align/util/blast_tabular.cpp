@@ -235,7 +235,7 @@ CBlastTabular::CBlastTabular(const TId& idquery, TCoord qstart, bool qstrand,
                              const string& xcript):
     TParent(idquery, qstart, qstrand, idsubj, sstart, sstrand, xcript)
 {
-    m_Length = xcript.size();    
+    m_Length = static_cast<TCoord>(xcript.size());
     m_Mismatches = m_Gaps = 0;
     bool diag (true);
     size_t matches (0);
@@ -578,9 +578,9 @@ void CBlastTabular::Modify(Uint1 where, TCoord new_pos)
         SetRawScore( ( GetRawScore() * matches ) / matches_old);
 #endif
 
-        const TCoord trlen_old = s_RunLengthDecode(GetTranscript()).size();
+        const TCoord trlen_old = static_cast<TCoord>(s_RunLengthDecode(GetTranscript()).size());
         TParent::Modify(where, new_pos);
-        const TCoord trlen_new = s_RunLengthDecode(GetTranscript()).size();
+        const TCoord trlen_new = static_cast<TCoord>(s_RunLengthDecode(GetTranscript()).size());
         const double kq = double(trlen_new) / trlen_old;
         SetMismatches(TCoord(kq*GetMismatches()));
         SetGaps(TCoord(kq*GetGaps()));
