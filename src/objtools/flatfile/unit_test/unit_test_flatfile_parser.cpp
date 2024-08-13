@@ -162,25 +162,25 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
 
     CSeq_id::ParseIDs(seqIds, "X98106.1");
     string intervals{"join(41880..42259,1..121)"};
-    pLoc = xgbparseint_ver(intervals.c_str(), keepRawPt, numErrsPt, seqIds, accver);
-    
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+
     BOOST_CHECK(pLoc->IsMix());
     {
         const auto& locMix = pLoc->GetMix();
         BOOST_CHECK_EQUAL(locMix.Get().size(), 2);
         const auto* pFirstLoc = locMix.GetFirstLoc();
         const auto* pLastLoc = locMix.GetLastLoc();
-    
+
         BOOST_CHECK_EQUAL(pFirstLoc->GetStart(eExtreme_Positional), 41879);
         BOOST_CHECK_EQUAL(pFirstLoc->GetStop(eExtreme_Positional), 42258);
-    
+
         BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 0);
         BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 120);
     }
 
 
     intervals = "complement(join(42253..42259,1..170))";
-    pLoc = xgbparseint_ver(intervals.c_str(), keepRawPt, numErrsPt, seqIds, accver);
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
 
     BOOST_CHECK(pLoc->IsMix());
     BOOST_CHECK(pLoc->IsReverseStrand());
@@ -192,13 +192,13 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
 
         BOOST_CHECK_EQUAL(pFirstLoc->GetStart(eExtreme_Positional), 0);
         BOOST_CHECK_EQUAL(pFirstLoc->GetStop(eExtreme_Positional), 169);
-    
+
         BOOST_CHECK_EQUAL(pLastLoc->GetStart(eExtreme_Positional), 42252);
         BOOST_CHECK_EQUAL(pLastLoc->GetStop(eExtreme_Positional), 42258);
     }
 
     intervals = "complement(<11977..>12670)";
-    pLoc = xgbparseint_ver(intervals.c_str(), keepRawPt, numErrsPt, seqIds, accver);
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
     BOOST_CHECK(pLoc->IsInt());
     BOOST_CHECK(pLoc->IsReverseStrand());
     {
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
     }
 
     intervals = "122890^1";
-    pLoc = xgbparseint_ver(intervals.c_str(), keepRawPt, numErrsPt, seqIds, accver);
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
 
     BOOST_CHECK(pLoc->IsPnt());
     {
@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
 
     seqIds.clear();
     intervals = "join(AAGH01005985.1:105..1873,AASW01000572.1:2064..2612,AAGH01005986.1:7..8527,gap(338),AAGH01005987.1:1..1908)";
-    pLoc = xgbparseint_ver(intervals.c_str(), keepRawPt, numErrsPt, seqIds, accver);
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
     BOOST_CHECK(pLoc->IsMix());
     BOOST_CHECK(!pLoc->IsReverseStrand());
     {
@@ -246,6 +246,4 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 1907);
     }
 }
-
-
 

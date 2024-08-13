@@ -1326,7 +1326,7 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 }
 
 /**********************************************************/
-static void fta_fake_gbparse_err_handler(const Char*, const Char*)
+static void fta_fake_gbparse_err_handler(string_view, string_view)
 {
 }
 
@@ -1343,7 +1343,6 @@ string location_to_string_or_unknown(const CSeq_loc& loc)
 /**********************************************************/
 static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const TSeqIdList& seqids, bool accver)
 {
-    char* loc_str;
     char* p;
     char* q;
     bool  fake1;
@@ -1377,10 +1376,11 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
         }
     }
 
-    loc_str = StringSave(string_view(q, p - q));
+    string loc_(q, p);
+    const char* loc_str = loc_.c_str();
 
     xinstall_gbparse_error_handler(fta_fake_gbparse_err_handler);
-    ret = xgbparseint_ver(loc_str, fake1, fake3, seqids, accver);
+    ret = xgbparseint_ver(loc_, fake1, fake3, seqids, accver);
     xinstall_gbparse_error_handler(nullptr);
 
     if (ret.Empty()) {
@@ -1388,7 +1388,6 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
 
         auto msg = ErrFormat("Invalid position element for an /anticodon qualifier : \"%s\" : qualifier dropped : feature location \"%s\".", loc_str, (loc.empty()) ? "unknown" : loc.c_str());
         ErrPostStr(SEV_ERROR, ERR_FEATURE_InvalidAnticodonPos, msg);
-        MemFree(loc_str);
         return ret;
     }
 
@@ -1414,13 +1413,10 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
 
         auto msg = ErrFormat("Anticodon location \"%s\" does not fall within tRNA feature at \"%s\".", loc_str, loc.empty() ? "unknown" : loc.c_str());
         ErrPostStr(SEV_ERROR, ERR_FEATURE_BadAnticodonLoc, msg);
-
-        MemFree(loc_str);
         ret.Reset();
         return ret;
     }
 
-    MemFree(loc_str);
     return ret;
 }
 
