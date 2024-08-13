@@ -94,11 +94,11 @@ using TTokenConstIt = TTokens::const_iterator;
 
 #define ERR_FEATURE_LocationParsing_validatr 1, 5
 
-static void do_xgbparse_error(const char* msg, const char* details)
+static void do_xgbparse_error(string_view msg, string_view details)
 {
     string errmsg = string(msg) + " at " + string(details);
     Nlm_ErrSetContext("validatr", __FILE__, __LINE__);
-    Nlm_ErrPostEx(SEV_ERROR, ERR_FEATURE_LocationParsing_validatr, errmsg.c_str());
+    Nlm_ErrPostStr(SEV_ERROR, ERR_FEATURE_LocationParsing_validatr, errmsg);
 }
 
 static X_gbparse_errfunc   Err_func            = do_xgbparse_error;
@@ -188,14 +188,14 @@ static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
 }
 
 
-static void xgbparse_error(const char* front, TTokenConstIt head, TTokenConstIt current)
+static void xgbparse_error(string_view front, TTokenConstIt head, TTokenConstIt current)
 {
     string details = xgbparse_point(head, current);
-    Err_func(front, details.c_str());
+    Err_func(front, details);
 }
 
 
-static void xgbparse_error(const char* front, const TTokens& tokens, TTokenConstIt current)
+static void xgbparse_error(string_view front, const TTokens& tokens, TTokenConstIt current)
 {
     xgbparse_error(front, begin(tokens), current);
 }
@@ -291,12 +291,13 @@ static void xfind_one_of_num(list<STokenInfo>& tokens)
 }
 
 
-static void xlex_error_func(const char*   msg,
-                            const string& line,
-                            const int     current_col)
+static void xlex_error_func(
+    string_view   msg,
+    const string& line,
+    unsigned int  current_col)
 {
     string temp_string = line.substr(0, current_col + 1) + " ";
-    Err_func(msg, temp_string.c_str());
+    Err_func(msg, temp_string);
 }
 
 
@@ -313,7 +314,7 @@ static unsigned advance_to(const char c, unsigned current_pos, const string& lin
 }
 
 
-static size_t sParseAccessionPrefix(const CTempString& accession)
+static size_t sParseAccessionPrefix(string_view accession)
 {
     if (accession.empty()) {
         return 0;
@@ -366,20 +367,20 @@ static size_t sParseAccessionPrefix(const CTempString& accession)
 static int sGetAccession(string& accession, unsigned int& current_col, const string& line, bool accver)
 {
     const auto  length = line.size();
-    CTempString tempString(line.c_str() + current_col, length - current_col);
+    string_view tempString(line.c_str() + current_col, length - current_col);
     auto        prefixLength    = sParseAccessionPrefix(tempString);
     size_t      accessionLength = prefixLength;
 
     tempString       = tempString.substr(prefixLength);
     auto notDigitPos = tempString.find_first_not_of("0123456789");
-    if (notDigitPos != NPOS) {
+    if (notDigitPos != string_view::npos) {
         accessionLength += notDigitPos;
         if (accver && tempString[notDigitPos] == '.') {
             ++accessionLength;
             if (tempString.size() > notDigitPos) {
                 tempString  = tempString.substr(notDigitPos + 1);
                 notDigitPos = tempString.find_first_not_of("0123456789");
-                if (notDigitPos != NPOS) {
+                if (notDigitPos != string_view::npos) {
                     accessionLength += notDigitPos;
                 }
             }
@@ -389,7 +390,7 @@ static int sGetAccession(string& accession, unsigned int& current_col, const str
     }
 
     int retval = 0;
-    if (notDigitPos == NPOS || tempString[notDigitPos] != ':') {
+    if (notDigitPos == string_view::npos || tempString[notDigitPos] != ':') {
         xlex_error_func("ACCESSION missing \":\"", line, current_col);
         ++retval;
         --current_col;
@@ -403,11 +404,11 @@ static int sGetAccession(string& accession, unsigned int& current_col, const str
 
 /*------------- xgbparselex_ver() -----------------------*/
 
-static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
+static int xgbparselex_ver(string_view linein, TTokens& tokens, bool accver)
 {
     tokens.clear();
     int retval = 0;
-    if (*linein) {
+    if (! linein.empty()) {
         string line{ linein };
         NStr::TruncateSpacesInPlace(line);
         auto     length      = line.size();
@@ -425,7 +426,7 @@ static int xgbparselex_ver(const char* linein, TTokens& tokens, bool accver)
                 current_token.choice = ETokenType::eNumber;
                 CTempString tempString(line.c_str() + current_col, size_t(length - current_col));
                 auto        not_digit_pos = tempString.find_first_not_of("0123456789");
-                auto        num_digits    = (not_digit_pos == NPOS) ? size_t(length - current_col) : not_digit_pos;
+                auto        num_digits    = (not_digit_pos == string_view::npos) ? size_t(length - current_col) : not_digit_pos;
                 current_token.data        = string(line.c_str() + current_col, num_digits);
                 tokens.push_back(current_token);
                 current_col += num_digits;
@@ -690,9 +691,7 @@ static void xgbparse_better_be_done(int& numErrors, TTokenIt current_token, cons
             if (current_token == end(tokens)) {
                 if (paren_count) {
                     const string par_msg = "mismatched parentheses (" + to_string(paren_count) + ")";
-                    xgbparse_error(par_msg.c_str(),
-                                   tokens,
-                                   current_token);
+                    xgbparse_error(par_msg, tokens, current_token);
                     keep_rawPt = true;
                     ++numErrors;
                 }
@@ -1463,7 +1462,7 @@ static CRef<CSeq_loc> xgbreplace_ver(bool& keep_rawPt, int& parenPt, TTokenIt& c
 
 /*---------- xgbparseint_ver()-----*/
 
-CRef<CSeq_loc> xgbparseint_ver(const char* raw_intervals, bool& keep_rawPt, int& numErrors, const TSeqIdList& seq_ids, bool accver)
+CRef<CSeq_loc> xgbparseint_ver(string_view raw_intervals, bool& keep_rawPt, int& numErrors, const TSeqIdList& seq_ids, bool accver)
 {
     keep_rawPt = false;
 
