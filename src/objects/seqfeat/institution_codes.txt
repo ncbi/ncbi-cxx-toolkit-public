@@ -1396,6 +1396,7 @@ CN<CHN>	c	China Collection of Anaerobic Microorganisms
 CN<FR>	s	Universite de Caen			
 CN<UK>	c	Wellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories			
 CNARP	s	Centre National d' Application de Recherches Pharmaceutiques			
+CNBG	c	Chinese Academy of Sciences, Nanjing Botanical Garden			
 CNC	s	Canadian National Collection of Insects, Arachnids, and Nematodes	CNCI		
 CNC:Arachnida	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Arachnida (Mites, Ticks, Spiders)			
 CNC:Coleoptera	s	Canadian National Collection of Insects, Arachnids, and Nematodes, Coleoptera (Beetles)			
