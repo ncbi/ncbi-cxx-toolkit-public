@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Aug  9 05:33:05 EDT 2024; formally
+/* time_t value corresponding to Tue Aug 13 05:33:09 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1723195985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1723541589UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1432,6 +1432,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CN<FR>\ts\tUniversite de Caen\t\t\t",
 "CN<UK>\tc\tWellcome Collection of Bacteria, Burroughs Wellcome Research Laboratories\t\t\t",
 "CNARP\ts\tCentre National d' Application de Recherches Pharmaceutiques\t\t\t",
+"CNBG\tc\tChinese Academy of Sciences, Nanjing Botanical Garden\t\t\t",
 "CNC\ts\tCanadian National Collection of Insects, Arachnids, and Nematodes\tCNCI\t\t",
 "CNC:Arachnida\ts\tCanadian National Collection of Insects, Arachnids, and Nematodes, Arachnida (Mites, Ticks, Spiders)\t\t\t",
 "CNC:Coleoptera\ts\tCanadian National Collection of Insects, Arachnids, and Nematodes, Coleoptera (Beetles)\t\t\t",
