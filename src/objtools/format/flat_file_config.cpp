@@ -689,10 +689,6 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          // repetition
          arg_desc->AddDefaultKey("count", "Count", "Number of runs",
                                  CArgDescriptions::eInteger, "1");
-
-         // test faster looping
-         arg_desc->AddFlag("faster", "Use faster internal looping");
-         arg_desc->AddFlag("slower", "Disable faster internal looping");
      }}
 }
 
