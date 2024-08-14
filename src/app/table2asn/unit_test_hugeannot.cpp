@@ -83,15 +83,21 @@ R"annot(>Feature lcl|scaffold1
 static constexpr CTestData test_cases [] =
 {
     {"lcl|SeqID1", "lcl|SeqID1"},
-    {"gnl|xyz|SeqID2", "lcl|SeqID2;gnl|xyz|SeqID2"},
+    {"gnl|xyz|SeqID2", "gnl|xyz|SeqID2;lcl|SeqID2"},
     {"gb|SeqID2", "gb|SeqID2|"},
     {"gb|GL758201.2", "gb|GL758201.2|"},
     {"gb|GL758201.1", "gb|GL758201.1|"},
-    {"gb|GL758201.3", "gb|GL758201|;gb|GL758201.2|;gb|GL758201.1|"},
+    {"gb|GL758201.3", "gb|GL758201.1|;gb|GL758201.2|;gb|GL758201|"},
     //{"lcl|SeqID4", ""},
     {"gb|GL758204", "gb|GL758204.1|"},
     {"gb|GL758205.1", "gb|GL758205|"},
 };
+
+
+bool IdRefLess(const CRef<CSeq_id>& id1, const CRef<CSeq_id>& id2)
+{
+    return (id1 != id2) && (id1->AsFastaString() < id2->AsFastaString());
+}
 
 
 BOOST_AUTO_TEST_CASE(RunTests)
@@ -107,8 +113,10 @@ BOOST_AUTO_TEST_CASE(RunTests)
     {
         CBioseq::TId ids;
         CSeq_id::ParseIDs(ids, test.fasta_search, CSeq_id::fParse_RawText | CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
+        ids.sort(IdRefLess);
         for (auto& id: ids) {
             auto found = reader.FindAnnots(id);
+            found.sort(IdRefLess);
             string fasta;
             for (auto& found_id: found) {
                 auto f = found_id->AsFastaString();
