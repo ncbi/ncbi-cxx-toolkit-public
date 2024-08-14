@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(CheckRemoteRPSBlastOptionsHandle) {
 
 // Search of GIs 555 and 3090 against ecoli
 BOOST_AUTO_TEST_CASE(CheckBlastnMasks) {
-    const string rid("BW3U058R01R");
+    const string rid("BTUAFHUA013"); 
     CRemoteBlast rmt_blaster(rid);
 
     BOOST_REQUIRE_EQUAL(rid, rmt_blaster.GetRID());
