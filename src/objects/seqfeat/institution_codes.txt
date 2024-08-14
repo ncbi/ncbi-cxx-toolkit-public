@@ -2918,6 +2918,12 @@ HM<USA-NE>	s	Hastings Museum
 HMAR	s	Universidade Federal do Ceara			
 HMAS	sc	Institute of Microbiology, Academia Sinica			
 HMC	s	Jardin Botanico de Las Tunas			
+HMCM	s	Huron Mountain Club Museum			
+HMCM:Arthro	s	Arthopods Collection			
+HMCM:Bird	s	Bird Collection			
+HMCM:Herb	s	Herbarium collection			
+HMCM:Herp	s	Herpetology Collection			
+HMCM:Mamm	s	Mammal Collection			
 HME	s	Haslemere Educational Museum			
 HMGBH	s	Giardini Botanici Hanbury / Hanbury Botanic Gardens			
 HMH	s	Hoebarth Museum Horn			
