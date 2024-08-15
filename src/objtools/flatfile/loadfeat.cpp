@@ -5472,15 +5472,13 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     size_t len = 0;
     offset     = xSrchNodeType(entry, ParFlat_DE, &len);
     if (offset) {
-        c           = offset[len];
-        offset[len] = '\0';
-        mRNA        = StringStr(offset, "mRNA");
-        tRNA        = StringStr(offset, "tRNA");
-        rRNA        = StringStr(offset, "rRNA");
-        snRNA       = StringStr(offset, "snRNA");
-        scRNA       = StringStr(offset, "scRNA");
-        uRNA        = StringStr(offset, "uRNA");
-        snoRNA      = StringStr(offset, "snoRNA");
+        mRNA   = SrchTheStr(offset, offset + len, "mRNA");
+        tRNA   = SrchTheStr(offset, offset + len, "tRNA");
+        rRNA   = SrchTheStr(offset, offset + len, "rRNA");
+        snRNA  = SrchTheStr(offset, offset + len, "snRNA");
+        scRNA  = SrchTheStr(offset, offset + len, "scRNA");
+        uRNA   = SrchTheStr(offset, offset + len, "uRNA");
+        snoRNA = SrchTheStr(offset, offset + len, "snoRNA");
         if (mRNA)
             count++;
         if (tRNA)
@@ -5493,7 +5491,6 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             count++;
         if (snoRNA)
             count++;
-        offset[len] = c;
     }
 
     /* Non-viral division
