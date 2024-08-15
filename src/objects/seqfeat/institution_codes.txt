@@ -8173,7 +8173,7 @@ UPRG	s	Universidad Nacional "Pedro Ruiz Gallo"
 UPRM	c	University of Puerto Rico at Mayagueez, Rhizobium Culture Collection			
 UPRP	s	University of Puerto Rico at Rio Piedras			
 UPRRP	s	University of Puerto Rico, Biology Department			
-UPS	s	Uppsala University, Museum of Evolution, Botany Section (Fytoteket)			
+UPS	s	Uppsala University, Museum of Evolution			
 UPSA	s	University of Pretoria			
 UPSC	c	Fungal Culture Collection at the Botanical Museum			
 UPSU	s	Ulyanovsk State Pedagogical University, Department of Botany			
