@@ -260,8 +260,6 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
     DataBlkPtr  temp;
     DataBlkPtr  dbp;
     const char* str;
-    char*       p;
-    Char        ch;
     Int2        type;
 
     if (format == Parser::EFormat::EMBL) {
@@ -283,11 +281,8 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         if (len == 0)
             continue;
 
-        dbp               = static_cast<DataBlk*>(temp->mpData);
-        ch                = dbp->mOffset[len];
-        dbp->mOffset[len] = '\0';
-        p                 = StringStr(dbp->mOffset, str);
-        dbp->mOffset[len] = ch;
+        dbp     = static_cast<DataBlk*>(temp->mpData);
+        char* p = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
 
         if (p)
             break;

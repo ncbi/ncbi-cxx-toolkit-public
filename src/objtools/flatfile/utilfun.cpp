@@ -758,13 +758,13 @@ char* GetTheCurrentToken(char** ptr)
  **********************************************************/
 char* SrchTheChar(char* bptr, char* eptr, Char letter)
 {
-    while (bptr < eptr && *bptr != letter)
-        bptr++;
+    string_view sv(bptr, eptr - bptr);
 
-    if (bptr < eptr)
-        return (bptr);
-
-    return nullptr;
+    auto i = sv.find(letter);
+    if (i != string_view::npos)
+        return bptr + i;
+    else
+        return nullptr;
 }
 
 /**********************************************************
@@ -778,14 +778,13 @@ char* SrchTheChar(char* bptr, char* eptr, Char letter)
  **********************************************************/
 char* SrchTheStr(char* bptr, char* eptr, const char* leadstr)
 {
-    char* p;
-    Char  c;
+    string_view sv(bptr, eptr - bptr);
 
-    c     = *eptr;
-    *eptr = '\0';
-    p     = StringStr(bptr, leadstr);
-    *eptr = c;
-    return (p);
+    auto i = sv.find(leadstr);
+    if (i != string_view::npos)
+        return bptr + i;
+    else
+        return nullptr;
 }
 
 /**********************************************************/
