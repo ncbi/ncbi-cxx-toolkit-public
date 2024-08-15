@@ -1177,9 +1177,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             continue;
 
         if (! within) {
-            *p = '\0';
-            r  = StringStr(bptr, "-START##");
-            *p = '\n';
+            r  = SrchTheStr(bptr, p, "-START##");
             if (r)
                 within = true;
         }
@@ -1218,9 +1216,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             *str++ = ' ';
 
         if (within) {
-            *p = '\0';
-            r  = StringStr(bptr, "-END##");
-            *p = '\n';
+            r  = SrchTheStr(bptr, p, "-END##");
             if (r)
                 within = false;
         }
