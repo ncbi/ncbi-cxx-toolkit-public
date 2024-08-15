@@ -499,38 +499,48 @@ static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_r
     }
 }
 
-static void s_SetProtRef(const CSeq_feat& cds,
+static void s_SetProtRef(const CSeq_feat&     cds,
                          CConstRef<CSeq_feat> pMrna,
-                         CProt_ref& prot_ref)
+                         CProt_ref&           prot_ref)
 {
-   const CProt_ref* pProtXref = cds.GetProtXref();
-   if (pProtXref) {
+    const CProt_ref* pProtXref = cds.GetProtXref();
+    if (pProtXref) {
         s_AppendProtRefInfo(prot_ref, *pProtXref);
-   }
+    }
 
-
-   if (!prot_ref.IsSetName()) {
-        const string& product_name = cds.GetNamedQual("product");
-        if (product_name != kEmptyStr) {
+    bool nameFromRNAProduct{ false };
+    if (! prot_ref.IsSetName()) {
+        string product_name = cds.GetNamedQual("product");
+        if (NStr::IsBlank(product_name) && pMrna) {
+            product_name       = pMrna->GetNamedQual("product");
+            nameFromRNAProduct = true;
+        }
+        if (! NStr::IsBlank(product_name)) {
             prot_ref.SetName().push_back(product_name);
         }
-   }
+    }
 
-   if (pMrna.Empty()) { // Nothing more we can do here
+    if (pMrna.Empty() || nameFromRNAProduct) { // Nothing more we can do here
         return;
-   }
+    }
 
-   if (prot_ref.IsSetName()) {
-        for (auto& prot_name : prot_ref.SetName()) {
-            if (NStr::CompareNocase(prot_name, "hypothetical protein")==0) {
-                if (pMrna->GetData().GetRna().IsSetExt() &&
-                    pMrna->GetData().GetRna().GetExt().IsName()){
-                    prot_name = pMrna->GetData().GetRna().GetExt().GetName();
-                    break;
+    if (pMrna->GetData().GetRna().IsSetExt() &&
+        pMrna->GetData().GetRna().GetExt().IsName()) {
+        const auto& extName = pMrna->GetData().GetRna().GetExt().GetName();
+        if (extName.empty()) {
+            return;
+        }
+        // else
+        if (prot_ref.IsSetName()) {
+            for (auto& protName : prot_ref.SetName()) {
+                if (NStr::EqualNocase(protName, "hypothetical protein")) {
+                    protName = extName;
                 }
             }
+        } else {
+            prot_ref.SetName().push_back(extName);
         }
-   } // prot_ref.IsSetName()
+    }
 }
 
 
@@ -648,6 +658,7 @@ CRef<CSeq_entry> CFeatureTableReader::xTranslateProtein(const CBioseq& bioseq, C
     prot_feat->SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat->SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
     feature::CopyFeaturePartials(*prot_feat, cd_feature);
+
 
     if (!cd_feature.IsSetProduct())
         cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
