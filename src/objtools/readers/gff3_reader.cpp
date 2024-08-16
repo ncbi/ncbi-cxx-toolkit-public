@@ -112,6 +112,13 @@ bool CGff3ReadRecord::AssignFromGff(
     string id, parent;
     GetAttribute("ID", id);
     GetAttribute("Parent", parent);
+
+    if (m_strType == "protein_coding_gene" || 
+        m_strType == "ncRNA_gene") {
+        SetType("gene");
+        return true;
+    }
+
     if (m_strType == "pseudogene") {
         SetType("gene");
         m_Attributes["pseudo"] = "true";
