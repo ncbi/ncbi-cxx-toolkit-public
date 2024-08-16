@@ -4826,7 +4826,28 @@ void CWGSSeqIterator::x_GetQualityAnnot(TAnnotSet& annot_set,
 
 NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
 {
+    return GetGBState((m_IncludeFlags & fExcludeProjectGBState)? eGBStateRaw: eGBStateAll);
+}
+
+
+NCBI_gb_state CWGSSeqIterator::GetGBState(EGBStateType type) const
+{
     x_CheckValid("CWGSSeqIterator::GetGBState");
+
+    NCBI_gb_state state = 0;
+    if ( type & eGBStateRaw ) {
+        state = GetRawGBState();
+    }
+    if ( !state && (type & eGBStateProject) ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
+}
+
+
+NCBI_gb_state CWGSSeqIterator::GetRawGBState(void) const
+{
+    x_CheckValid("CWGSSeqIterator::GetRawGBState");
 
     if ( m_AccVersion.m_Offset != 0 ) {
         // not the last version of sequence
@@ -4836,9 +4857,6 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
     NCBI_gb_state state = 0;
     if ( m_Cur->m_GB_STATE ) {
         state = *m_Cur->GB_STATE(m_CurrId);
-    }
-    if ( !state ) {
-        state = m_Db->GetProjectGBState();
     }
     return state;
 }
@@ -6511,15 +6529,33 @@ int CWGSScaffoldIterator::GetAccVersion(void) const
 
 NCBI_gb_state CWGSScaffoldIterator::GetGBState(void) const
 {
+    return GetGBState(eGBStateAll);
+}
+
+
+NCBI_gb_state CWGSScaffoldIterator::GetGBState(EGBStateType type) const
+{
     x_CheckValid("CWGSScaffoldIterator::GetGBState");
+
+    NCBI_gb_state state = 0;
+    if ( type & eGBStateRaw ) {
+        state = GetRawGBState();
+    }
+    if ( !state && (type & eGBStateProject) ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
+}
+
+
+NCBI_gb_state CWGSScaffoldIterator::GetRawGBState(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::GetRawGBState");
 
     CVDBMgr::CRequestContextUpdater ctx_updater;
     NCBI_gb_state state = 0;
     if ( m_Cur->m_GB_STATE ) {
         state = *m_Cur->GB_STATE(m_CurrId);
-    }
-    if ( !state ) {
-        state = m_Db->GetProjectGBState();
     }
     return state;
 }
@@ -7338,15 +7374,33 @@ CTempString CWGSProteinIterator::GetRefAcc(void) const
 
 NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
 {
+    return GetGBState(eGBStateAll);
+}
+
+
+NCBI_gb_state CWGSProteinIterator::GetGBState(EGBStateType type) const
+{
     x_CheckValid("CWGSProteinIterator::GetGBState");
+
+    NCBI_gb_state state = 0;
+    if ( type & eGBStateRaw ) {
+        state = GetRawGBState();
+    }
+    if ( !state && (type & eGBStateProject) ) {
+        state = m_Db->GetProjectGBState();
+    }
+    return state;
+}
+
+
+NCBI_gb_state CWGSProteinIterator::GetRawGBState(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetRawGBState");
     x_Cur();
     CVDBMgr::CRequestContextUpdater ctx_updater;
     NCBI_gb_state state = 0;
     if ( m_Cur->m_GB_STATE ) {
         state = *m_Cur->GB_STATE(m_CurrId);
-    }
-    if ( !state ) {
-        state = m_Db->GetProjectGBState();
     }
     return state;
 }
