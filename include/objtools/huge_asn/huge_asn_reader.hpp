@@ -73,6 +73,7 @@ public:
     bool GetNextBlob() override;
     CRef<CSeq_entry> GetNextSeqEntry() override;
     CConstRef<CSubmit_block> GetSubmitBlock() const override;
+    bool IsNotJustLocalOrGeneral() const;
     CRef<CSerialObject> ReadAny();
 
     struct TBioseqInfo;
@@ -193,6 +194,7 @@ protected:
     bool m_HasHugeSetAnnot{ false };
 private:
     CConstRef<CSubmit_block>  m_submit_block;
+    bool                      m_NotJustLocalOrGeneral;
 
 // flattenization structures, readonly after flattenization, accept m_Current
     TBioseqIndex              m_bioseq_index;

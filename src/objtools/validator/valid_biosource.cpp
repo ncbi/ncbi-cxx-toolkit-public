@@ -1710,7 +1710,7 @@ const bool is_single_cell_amplification)
     }
 
     EDiagSev sev = eDiag_Warning;
-    if (! IsLocalGeneralOnly()) {
+    if (! IsLocalGeneralOnly() || m_NotJustLocalOrGeneral) {
         sev = eDiag_Error;
     }
     if (IsRequireTaxonID() && /* IsIndexerVersion() && */ !has_taxon) {
