@@ -65,6 +65,7 @@ public:
         int TpaAssemblyHist = 0;
         int TpaNoHistYesGI = 0;
         int CumulativeInferenceCount = 0;
+        bool NotJustLocalOrGeneral = false;
         set<int> pubSerialNumbers;
         set<int> conflictingSerialNumbers;
         set<CMolInfo::TBiomol> biomols;
@@ -84,6 +85,7 @@ public:
             TpaAssemblyHist = 0;
             TpaNoHistYesGI = 0;
             CumulativeInferenceCount = 0;
+            NotJustLocalOrGeneral = false;
             pubSerialNumbers.clear();
             conflictingSerialNumbers.clear();
             biomols.clear();

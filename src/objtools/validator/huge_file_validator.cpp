@@ -435,6 +435,10 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.TpaNoHistYesGI += globalInfo.TpaNoHistYesGI;
     context.CumulativeInferenceCount += globalInfo.CumulativeInferenceCount;
 
+    if (m_Reader.IsNotJustLocalOrGeneral()) {
+        context.NotJustLocalOrGeneral = true;
+    }
+
     if (! context.IsIdInBlob) {
         context.IsIdInBlob = [this](const CSeq_id& id) {
             return this->IsInBlob(id);

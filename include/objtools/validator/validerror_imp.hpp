@@ -141,7 +141,7 @@ public:
 
     void SetOptions(Uint4 options);
     void SetErrorRepository(IValidError* errors);
-    void Reset(size_t initialInferenceCount);
+    void Reset(size_t initialInferenceCount, bool notJustLocalOrGeneral);
 
     // Validation methods
     bool Validate(const CSeq_entry& se, const CCit_sub* cs = nullptr,
@@ -432,7 +432,7 @@ public:
 private:
 
     // Setup common options during consturction;
-    void x_Init(Uint4 options, size_t initialInferenceCount);
+    void x_Init(Uint4 options, size_t initialInferenceCount, bool notJustLocalOrGeneral);
 
     // This is so we can temporarily set m_Scope in a function
     // and be sure that it will be set to its old value when we're done
@@ -627,6 +627,7 @@ private:
     size_t      m_NumGeneXrefs;
     
     size_t      m_CumulativeInferenceCount;
+    bool        m_NotJustLocalOrGeneral;
 
     size_t      m_NumTpaWithHistory;
     size_t      m_NumTpaWithoutHistory;
