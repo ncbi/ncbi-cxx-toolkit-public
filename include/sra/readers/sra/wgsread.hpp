@@ -183,6 +183,13 @@ struct SWGSDb_Defs
         eFeatLocIdAccNoVer
     };
     
+    enum EGBStateType {
+        eGBStateZero    = 0,
+        eGBStateRaw     = 1,
+        eGBStateProject = 2,
+        eGBStateAll     = 3
+    };
+    
     typedef int TSplitVersion;
     static const TSplitVersion kDefaultSplitVersion = 0;
 
@@ -808,6 +815,7 @@ public:
         fIncludeWithdrawn  = 1 << NCBI_gb_state_eWGSGenBankWithdrawn,
         fIncludeUnverified = 1 << NCBI_gb_state_eWGSGenBankUnverified,
         fIncludeAll        = 0xff,
+        fExcludeProjectGBState = 1 << 8, // do not take into account project GB state
         fIncludeDefault    = fIncludeLive | fIncludeUnverified
     };
     DECLARE_SAFE_FLAGS_TYPE(EIncludeFlags, TIncludeFlags);
@@ -1061,6 +1069,8 @@ public:
     string GetQualityAnnotName(void) const;
 
     NCBI_gb_state GetGBState(void) const;
+    NCBI_gb_state GetRawGBState(void) const;
+    NCBI_gb_state GetGBState(EGBStateType type) const;
 
     bool HasPublicComment(void) const;
     CTempString GetPublicComment(void) const;
@@ -1291,6 +1301,8 @@ public:
     TVDBRowIdRange GetLocFeatRowIdRange(void) const;
 
     NCBI_gb_state GetGBState(void) const;
+    NCBI_gb_state GetRawGBState(void) const;
+    NCBI_gb_state GetGBState(EGBStateType type) const;
     
     CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
@@ -1472,6 +1484,8 @@ public:
     CTempString GetRefAcc(void) const;
 
     NCBI_gb_state GetGBState(void) const;
+    NCBI_gb_state GetRawGBState(void) const;
+    NCBI_gb_state GetGBState(EGBStateType type) const;
 
     bool HasPublicComment(void) const;
     CTempString GetPublicComment(void) const;
