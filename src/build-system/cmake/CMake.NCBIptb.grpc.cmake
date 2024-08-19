@@ -17,6 +17,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
     cmake_parse_arguments(DT "GENERATE" "DATASPEC;RETURN" "REQUIRES" ${_value})
 
     get_filename_component(_path     ${DT_DATASPEC} DIRECTORY)
+    get_filename_component(_specname ${DT_DATASPEC} NAME)
     get_filename_component(_basename ${DT_DATASPEC} NAME_WE)
     get_filename_component(_ext      ${DT_DATASPEC} EXT)
     file(RELATIVE_PATH     _relpath  ${NCBI_SRC_ROOT} ${_path})
@@ -43,39 +44,51 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         return()
     endif()
 
+    if(WIN32)
+        set(_conanrun conanrun.bat)
+        set(_source "call")
+    else()
+        set(_conanrun conanrun.sh)
+        set(_source "source")
+    endif()
+    set(_app \"${NCBI_PROTOC_APP}\")
+    set(_plg \"${NCBI_GRPC_PLUGIN}\")
+    set(_cmk \"${CMAKE_COMMAND}\")
+
     if (EXISTS "${NCBI_PROTOC_APP}")
-        set(_cmd ${NCBI_PROTOC_APP} --cpp_out=. -I. ${_relpath}/${_basename}${_ext})
-        if("${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
-            add_custom_command(
-                OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
-                COMMAND ${_cmd} VERBATIM
-                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-                COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
-                DEPENDS ${DT_DATASPEC}
-                VERBATIM
-            )
+        if(WIN32)
+            set(_cmdname ${_specname}.pb.bat)
+            set(_script)
         else()
-            add_custom_command(
-                OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
-                COMMAND ${_cmd} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
-                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-                COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
-                DEPENDS ${DT_DATASPEC}
-                VERBATIM
-            )
+            set(_cmdname ${_specname}.pb.sh)
+            set(_script "#!/bin/sh\n")
+        endif()
+        if(EXISTS "${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}")
+            string(APPEND _script "$(_source} ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}\n")
+        endif()
+        string(APPEND _script "${_app} --cpp_out=. -I. ${_relpath}/${_specname}\n")
+        if(EXISTS "${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}")
+            string(APPEND _script "$(_source} ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/deactivate_${_conanrun}\n")
+        endif()
+        if(NOT "${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+            string(APPEND _script "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
+            string(APPEND _script "${_cmk} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+            string(APPEND _script "${_cmk} -E remove -f ${_path}/${_basename}.pb.h\n")
         endif()
 
+        file(WRITE ${CMAKE_BINARY_DIR}/${_cmdname} ${_script})
+        file(COPY ${CMAKE_BINARY_DIR}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+        file(REMOVE ${CMAKE_BINARY_DIR}/${_cmdname})
+        add_custom_command(
+            OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
+            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${_cmdname}"
+            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+            COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
+            DEPENDS ${DT_DATASPEC}
+            VERBATIM
+        )
+
         if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
-            if(WIN32)
-                set(_app \"${NCBI_PROTOC_APP}\")
-                set(_cmk \"${CMAKE_COMMAND}\")
-            else()
-                set(_app ${NCBI_PROTOC_APP})
-                set(_cmk ${CMAKE_COMMAND})
-            endif()
             file(APPEND ${NCBI_GENERATESRC_GRPC} "echo ${NCBI_SRC_ROOT}/${_relpath}/${_basename}${_ext}\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "cd ${NCBI_SRC_ROOT}\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "${_app} --cpp_out=. -I. ${_relpath}/${_basename}${_ext}\n")
@@ -92,42 +105,41 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         endif()
     endif()
     if (EXISTS "${NCBI_PROTOC_APP}" AND EXISTS "${NCBI_GRPC_PLUGIN}" AND "GRPC" IN_LIST DT_REQUIRES)
-        set(_cmd ${NCBI_PROTOC_APP} --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN} -I. ${_relpath}/${_basename}${_ext})
-        if("${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
-            add_custom_command(
-                OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
-                COMMAND ${_cmd} VERBATIM
-                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-                COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
-                DEPENDS ${DT_DATASPEC}
-                VERBATIM
-            )
+        if(WIN32)
+            set(_cmdname ${_specname}.grpc.bat)
+            set(_script)
         else()
-            add_custom_command(
-                OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
-                COMMAND ${_cmd} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E make_directory ${NCBI_INC_ROOT}/${_relpath}
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
-                COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h VERBATIM
-                WORKING_DIRECTORY ${NCBI_SRC_ROOT}
-                COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
-                DEPENDS ${DT_DATASPEC}
-                VERBATIM
-            )
+            set(_cmdname ${_specname}.grpc.sh)
+            set(_script "#!/bin/sh\n")
+        endif()
+        if(EXISTS "${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}")
+            string(APPEND _script "$(_source} ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}\n")
+        endif()
+        string(APPEND _script "${_app} --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=${_plg} -I. ${_relpath}/${_specname}\n")
+        if(EXISTS "${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/${_conanrun}")
+            string(APPEND _script "$(_source} ${CMAKE_BINARY_DIR}/${NCBI_DIRNAME_CONANGEN}/deactivate_${_conanrun}\n")
+        endif()
+        if(NOT "${NCBI_SRC_ROOT}" STREQUAL "${NCBI_INC_ROOT}")
+            string(APPEND _script "${_cmk} -E make_directory ${NCBI_INC_ROOT}/${_relpath}\n")
+            string(APPEND _script "${_cmk} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+            string(APPEND _script "${_cmk} -E copy_if_different ${_path}/${_basename}_mock.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath}\n")
+            string(APPEND _script "${_cmk} -E remove -f ${_path}/${_basename}.grpc.pb.h\n")
+            string(APPEND _script "${_cmk} -E remove -f ${_path}/${_basename}_mock.grpc.pb.h\n")
         endif()
 
+        file(WRITE ${CMAKE_BINARY_DIR}/${_cmdname} ${_script})
+        file(COPY ${CMAKE_BINARY_DIR}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
+        file(REMOVE ${CMAKE_BINARY_DIR}/${_cmdname})
+        add_custom_command(
+            OUTPUT ${_gr_srcfiles} ${_gr_incfiles}
+            COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${_cmdname}"
+            WORKING_DIRECTORY ${NCBI_SRC_ROOT}
+            COMMENT "Generate GRPC C++ classes from ${DT_DATASPEC}"
+            DEPENDS ${DT_DATASPEC}
+            VERBATIM
+        )
+
         if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
-            if(WIN32)
-                set(_app \"${NCBI_PROTOC_APP}\")
-                set(_plg \"${NCBI_GRPC_PLUGIN}\")
-                set(_cmk \"${CMAKE_COMMAND}\")
-            else()
-                set(_app ${NCBI_PROTOC_APP})
-                set(_plg ${NCBI_GRPC_PLUGIN})
-                set(_cmk ${CMAKE_COMMAND})
-            endif()
             file(APPEND ${NCBI_GENERATESRC_GRPC} "echo ${NCBI_SRC_ROOT}/${_relpath}/${_basename}${_ext}\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "cd ${NCBI_SRC_ROOT}\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "${_app} --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=${_plg} -I. ${_relpath}/${_basename}${_ext}\n")
