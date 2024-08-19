@@ -406,9 +406,9 @@ static HEAP s_GetHeapCopy(TNCBI_Time now)
         return g_LBSM_Heap;
 
     for (;;) {
-        const volatile SLBSM_Version *v;
+        const volatile SLBSM_Version* v;
         unsigned int count, cksum;
-        const SLBSM_Version *c;
+        const SLBSM_Version* c;
         void* base;
         int serial;
 
