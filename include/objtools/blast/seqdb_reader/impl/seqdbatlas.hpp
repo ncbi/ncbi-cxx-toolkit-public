@@ -671,7 +671,7 @@ public:
     ///
     /// @param filename
     ///   file to memory map    
-    CSeqDBFileMemMap(class CSeqDBAtlas & atlas, const string filename)
+    CSeqDBFileMemMap(class CSeqDBAtlas & atlas, const string & filename)
         : m_Atlas(atlas),
           m_DataPtr (NULL),
           m_MappedFile( NULL),
@@ -699,21 +699,19 @@ public:
     ///
     /// @param filename
     ///   file to memory map    
-    void Init(const string filename) {                
-    	 CSeqDBLockHold locked(m_Atlas);
-    	 m_Atlas.Lock(locked);
+    void Init(const string & filename) {
         if(!m_MappedFile || m_Filename != filename)
         {
         	Clear();
-            m_Filename = filename;
-            Init();
+            x_Init(filename);
         }
-        m_Atlas.Unlock(locked);
     }
 
     //m_Filename is set
-    void Init(void)
+    void x_Init(const string & filename)
     {
+    	CFastMutexGuard mtx_gurad(m_Mtx);
+        m_Filename = filename;
         try {
             m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
             m_Mapped = true;
@@ -736,7 +734,7 @@ public:
     ///    
     void Clear()
     {
-        
+    	CFastMutexGuard mtx_gurad(m_Mtx);
         if(m_MappedFile && m_Mapped ) {
         	m_MappedFile = m_Atlas.ReturnMemoryFile(m_Filename);
             m_Mapped = false;
@@ -770,6 +768,8 @@ public:
 
 private:
     CSeqDBAtlas & m_Atlas;    
+
+    mutable CFastMutex m_Mtx;
      /// Points to the beginning of the data area.
     const char * m_DataPtr;
 
