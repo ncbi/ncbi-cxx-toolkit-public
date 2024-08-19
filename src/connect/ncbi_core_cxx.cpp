@@ -267,6 +267,8 @@ extern "C" {
 static void s_LOG_Handler(void*             /*data*/,
                           const SLOG_Message* mess) THROWS_NONE
 {
+    static const char kOutOfMemory[] = "Ouch! Out of memory";
+
     if (s_TraceLog->Get())
         _TRACE("s_LOG_Handler(" + x_Log(mess->level) + ')');
     try {
@@ -302,7 +304,17 @@ static void s_LOG_Handler(void*             /*data*/,
                               mess->module);
         CNcbiDiag diag(info, level);
         diag.SetErrorCode(mess->err_code, mess->err_subcode);
-        diag << mess->message;
+        size_t message_len;
+        if (mess->message  &&  *mess->message) {
+            message_len = strlen(mess->message);
+            do {
+                if (!isspace((unsigned char) mess->message[message_len - 1]))
+                    break;
+            } while (--message_len > 0);
+        } else
+            message_len = mess->message ? 0 : sizeof(kOutOfMemory) - 1;
+        if (message_len)
+            diag << string(mess->message ? mess->message : kOutOfMemory, message_len);
         if (mess->raw_size) {
             typedef AutoPtr< char, ArrayDeleter<char> >  TTempCharPtr;
             TTempCharPtr buf;

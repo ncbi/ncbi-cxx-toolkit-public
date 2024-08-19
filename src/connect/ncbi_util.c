@@ -430,7 +430,7 @@ extern char* LOG_ComposeMessage
     static const char kRawData_Beg[] =
         "\n#################### [BEGIN] Raw Data (%lu byte%s):%s";
     static const char kRawData_End[] =
-        "\n#################### [_END_] Raw Data\n";
+        "\n#################### [_END_] Raw Data";
 
     /* Calculated length of ... */
     size_t datetime_len  = 0;
@@ -501,9 +501,13 @@ extern char* LOG_ComposeMessage
     }
     if ((flags & fLOG_FileLine) != 0  &&  mess->file  &&  *mess->file)
         file_line_len = 12 + strlen(mess->file) + 11;
-    if (mess->message  &&  *mess->message)
+    if (mess->message  &&  *mess->message) {
         message_len = strlen(mess->message);
-    else if (!mess->message)
+        do {
+            if (!isspace((unsigned char) mess->message[message_len - 1]))
+                break;
+        } while (--message_len > 0);
+    } else if (!mess->message)
         message_len = sizeof(kOutOfMemory) - 1;
     if (mess->raw_size) {
         if (mess->raw_data) {
