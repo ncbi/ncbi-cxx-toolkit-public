@@ -2387,7 +2387,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     if (info->credentials)
         s_SaveKeyval(s, "credentials",     x_CredInfo(info->credentials, buf));
     strcat(s,
-           "#################### [_END_] SConnNetInfo\n");
+           "#################### [_END_] SConnNetInfo");
 
     assert(strlen(s) < len);
     LOG_Write(lg, NCBI_C_ERRCODE_X, 12, sev, 0, 0, 0, 0, s, 0, 0);
