@@ -114,18 +114,18 @@ BOOST_AUTO_TEST_CASE(s_TestNomenclature)
     BOOST_CHECK_EQUAL(nomen->GetSource().GetDb(), "HGNC");
     BOOST_CHECK_EQUAL(nomen->GetSource().GetTag().GetStr(), "HGNC:7455");
 
-    // Interim symbol and name, from general comment elements.
+    // Interim symbol and name, from formal-name element.
     s_GetObject("121110513", eg_obj);
-    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), false);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), true);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_interim);
     BOOST_CHECK_EQUAL(nomen->GetSymbol(), "TRNASTOP-UCA");
     BOOST_CHECK_EQUAL(nomen->GetName(), "transfer RNA opal suppressor (anticodon UCA)");
     // TODO: check source field when it becomes available
 
-    // Official symbol and name, from general comment elements.
+    // Official symbol and name, from formal-name element.
     s_GetObject("1", eg_obj);
-    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), false);
+    BOOST_CHECK_EQUAL(eg_obj.GetGene().IsSetFormal_name(), true);
     nomen = eg_obj.GetNomenclature();
     BOOST_CHECK_EQUAL(nomen->GetStatus(), CGene_nomenclature::eStatus_official);
     BOOST_CHECK_EQUAL(nomen->GetSymbol(), "A1BG");
