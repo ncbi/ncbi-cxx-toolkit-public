@@ -693,7 +693,7 @@ private:
 bool
 CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init();
+    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     if ('n' == x_GetSeqType()) {
         start = SeqDB_GetStdOrd(& x_GetAmb()[oid]);
         end   = SeqDB_GetStdOrd(& x_GetSeq()[oid+1]);
@@ -707,7 +707,7 @@ CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init();
+    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetHdr()[oid]);
     end   = SeqDB_GetStdOrd(& x_GetHdr()[oid+1]);
 }
@@ -715,7 +715,7 @@ CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init();
+    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
     
     if ('p' == x_GetSeqType()) {
@@ -728,7 +728,7 @@ CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStart(int oid, TIndx & start) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init();
+    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
 }
 
