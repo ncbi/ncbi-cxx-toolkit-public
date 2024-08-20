@@ -138,6 +138,7 @@ void CEUtils_Request::SetBaseURL(const string& url)
 {
     TEUtilsBaseURLParam::SetDefault(url);
     // Refresh cached base url.
+    ResetBaseURL();
     GetBaseURL();
 }
 
