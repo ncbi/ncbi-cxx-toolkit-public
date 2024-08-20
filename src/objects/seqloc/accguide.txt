@@ -1556,6 +1556,9 @@ version  1 # of file format
 2+6  PT  gb_patent
 2+8  PT  gb_other_nuc
 2+10 PT  gb_other_nuc
+2+6  PU  gb_patent
+2+8  PU  gb_other_nuc
+2+10 PU  gb_other_nuc
 2+6  PW  unreserved_nuc # deliberately skipped
 2+8  PW  unreserved_nuc # deliberately skipped
 2+10 PW  unreserved_nuc # deliberately skipped
