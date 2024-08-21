@@ -31,6 +31,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -45,9 +46,11 @@ void ReportErrors(TReply r)
 void OnItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 {
     if (status == EPSG_Status::eSuccess) {
-        if (item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
+        if (auto item_type = item->GetType(); item_type == CPSG_ReplyItem::eBioseqInfo) {
             auto bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(item);
             cout << bioseq_info->GetCanonicalId().GetId() << endl;
+        } else {
+            cout << "Unexpected item type: " << item_type << endl;
         }
     } else {
         ReportErrors(item);
@@ -59,6 +62,37 @@ void OnReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
     if (status != EPSG_Status::eSuccess) {
         ReportErrors(reply);
     }
+}
+
+int EventLoop(const string& service, shared_ptr<CPSG_Request> request)
+{
+    CPSG_EventLoop event_loop(service, &OnItemComplete, &OnReplyComplete);
+
+    if (event_loop.SendRequest(request, CDeadline::eInfinite)) {
+        event_loop.Stop();
+        return event_loop.Run(CDeadline::eInfinite) ? 0 : -2;
+    }
+
+    return -1;
+}
+
+int Queue(const string& service, shared_ptr<CPSG_Request> request)
+{
+    CPSG_Queue queue(service);
+
+    if (auto reply = queue.SendRequestAndGetReply(request, CDeadline::eInfinite)) {
+        for (auto item = reply->GetNextItem(CDeadline::eInfinite);
+                item->GetType() != CPSG_ReplyItem::eEndOfReply;
+                item = reply->GetNextItem(CDeadline::eInfinite)) {
+
+                OnItemComplete(item->GetStatus(CDeadline::eInfinite), item);
+            }
+
+        OnReplyComplete(reply->GetStatus(CDeadline::eInfinite), reply);
+        return 0;
+    }
+
+    return -1;
 }
 
 class CPsgClientSampleApp : public CNcbiApplication
@@ -73,6 +107,8 @@ void CPsgClientSampleApp::Init()
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "PSG client API sample");
     arg_desc->AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "");
+    arg_desc->AddFlag("event-loop", "Use event loop instead of queue");
+    arg_desc->AddFlag("https", "Enable HTTPS");
     arg_desc->AddPositional("ID", "Bio ID", CArgDescriptions::eString);
     SetupArgDescriptions(arg_desc.release());
 }
@@ -80,16 +116,15 @@ void CPsgClientSampleApp::Init()
 int CPsgClientSampleApp::Run()
 {
     const auto& args = GetArgs();
-    CPSG_EventLoop queue(args["service"].AsString(), &OnItemComplete, &OnReplyComplete);
-    auto request = make_shared<CPSG_Request_Resolve>(args["ID"].AsString());
-    request->IncludeInfo(CPSG_Request_Resolve::fCanonicalId);
 
-    if (queue.SendRequest(request, CDeadline::eInfinite)) {
-        queue.Stop();
-        return queue.Run(CDeadline::eInfinite) ? 0 : -2;
+    if (args["https"].HasValue()) {
+        TPSG_Https::SetDefault(true);
     }
 
-    return -1;
+    auto service = args["service"].AsString();
+    auto request = make_shared<CPSG_Request_Resolve>(args["ID"].AsString());
+    request->IncludeInfo(CPSG_Request_Resolve::fCanonicalId);
+    return args["event-loop"].HasValue() ? EventLoop(service, request) : Queue(service, request);
 }
 
 int main(int argc, const char* argv[])
