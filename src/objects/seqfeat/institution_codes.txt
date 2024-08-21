@@ -1057,6 +1057,7 @@ CCIAL	c	Cultures Cells for Institute Adolfo Lutz
 CCIBSO	c	Culture Collection IBSO			
 CCIBt	c	Culture Collection at the Institute of Botany, Sao Paulo			
 CCIM	c	Culture Collection of Industrial Microorganisms			
+CCLC	s	Crustacean Collection of the Laboratory of Marine and Freshwater Shrimp Biology			
 CCLU	s	Universidade Federal de Alagoas			
 CCM	c	Czech Collection of Microorganisms	CCM<CZE>		
 CCM-A	c	Coleccion de Cultivos Microbianos			
@@ -7880,6 +7881,7 @@ UEA	s	University of East Anglia
 UEC	s	Universidade Estadual de Campinas, Departamento de Botanica			
 UEFS	s	Laboratorio de Ictiologia			
 UEGQ	s	Universidade Estadual de Goias			
+UEMA	s	State University of Maranhao			
 UENF	s	Universidade Estadual do Norte Fluminense			
 UESC	s	Universidade Estadual de Santa Cruz			
 UESS	s	Universidad de El Salvador			
