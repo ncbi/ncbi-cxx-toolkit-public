@@ -969,6 +969,9 @@ proteinkmer needs xalgodustmask
 proteinkmer needs xalgowinmask
 proteinkmer needs xblast
 proteinkmer needs xnetblastcli
+protobufd needs $(Z_LIB)
+protobufd needs3party $(ORIG_LIBS)
+protobufd needs3party $(Z_LIBS)
 proxsort needs taxoscli
 psg_cache needs $(LMDB_LIB)
 psg_cache needs psg_cassandra
