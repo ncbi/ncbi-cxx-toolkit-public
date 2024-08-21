@@ -175,13 +175,13 @@ CValidError_imp::CValidError_imp
     m_ErrRepository{errs},
     m_pContext{pContext}
 {
-    x_Init(options, pContext->CumulativeInferenceCount, pContext->NotJustLocalOrGeneral);
+    x_Init(options, pContext->CumulativeInferenceCount, pContext->NotJustLocalOrGeneral, pContext->HasRefSeq);
 }
 
-void CValidError_imp::x_Init(Uint4 options, size_t initialInferenceCount, bool notJustLocalOrGeneral)
+void CValidError_imp::x_Init(Uint4 options, size_t initialInferenceCount, bool notJustLocalOrGeneral, bool hasRefSeq)
 {
     SetOptions(options);
-    Reset(initialInferenceCount, notJustLocalOrGeneral);
+    Reset(initialInferenceCount, notJustLocalOrGeneral, hasRefSeq);
 
     InitializeSourceQualTags();
 }
@@ -315,7 +315,7 @@ void CValidError_imp::SetErrorRepository(IValidError* errors)
 //LCOV_EXCL_STOP
 
 
-void CValidError_imp::Reset(size_t prevCumulativeInferenceCount, bool notJustLocalOrGeneral)
+void CValidError_imp::Reset(size_t prevCumulativeInferenceCount, bool notJustLocalOrGeneral, bool hasRefSeq)
 {
     m_Scope = nullptr;
     m_TSE = nullptr;
@@ -326,6 +326,7 @@ void CValidError_imp::Reset(size_t prevCumulativeInferenceCount, bool notJustLoc
 
     m_CumulativeInferenceCount = prevCumulativeInferenceCount;
     m_NotJustLocalOrGeneral = notJustLocalOrGeneral;
+    m_HasRefSeq = hasRefSeq;
 
     m_IsNC = false;
     m_IsNG = false;

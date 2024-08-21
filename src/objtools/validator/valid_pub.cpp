@@ -702,7 +702,7 @@ void CValidError_imp::ValidatePubHasAuthor(
                         has_name = true;
                 }
                 if (!has_name) {
-                    PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
+                    PostObjErr((IsRefSeq() || m_HasRefSeq) ? eDiag_Warning : eDiag_Error,
                                 eErr_GENERIC_MissingPubRequirement,
                                 "Publication has no author names", obj, ctx);
                 }
@@ -715,7 +715,7 @@ void CValidError_imp::ValidatePubHasAuthor(
                     has_name = true;
             }
             if (!has_name) {
-                PostObjErr(IsRefSeq() ? eDiag_Warning : eDiag_Error,
+                PostObjErr((IsRefSeq() || m_HasRefSeq) ? eDiag_Warning : eDiag_Error,
                             eErr_GENERIC_MissingPubRequirement,
                             "Publication has no author names", obj, ctx);
             }
