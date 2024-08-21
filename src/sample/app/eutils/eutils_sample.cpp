@@ -133,6 +133,8 @@ void CEUtilsApp::Init(void)
         CArgDescriptions::eString, "post");
     arg_desc->SetConstraint("http", &(*new CArgAllow_Strings, "post", "get"));
 
+    arg_desc->AddOptionalKey("base_url", "BaseURL", "Base eutils URL", CArgDescriptions::eString);
+
     // Debug flag
     arg_desc->AddFlag("dump", "Print raw incoming data", true);
 
@@ -808,6 +810,9 @@ int CEUtilsApp::Run(void)
     }
     if (args["email"]) {
         x_GetCtx()->SetEmail(args["email"].AsString());
+    }
+    if (args["base_url"]) {
+        CEUtils_Request::SetBaseURL(args["base_url"].AsString());
     }
 
     // Call the requested utils
