@@ -74,6 +74,7 @@ public:
     CRef<CSeq_entry> GetNextSeqEntry() override;
     CConstRef<CSubmit_block> GetSubmitBlock() const override;
     bool IsNotJustLocalOrGeneral() const;
+    bool HasRefSeq() const;
     CRef<CSerialObject> ReadAny();
 
     struct TBioseqInfo;
@@ -195,6 +196,7 @@ protected:
 private:
     CConstRef<CSubmit_block>  m_submit_block;
     bool                      m_NotJustLocalOrGeneral;
+    bool                      m_HasRefSeq;
 
 // flattenization structures, readonly after flattenization, accept m_Current
     TBioseqIndex              m_bioseq_index;

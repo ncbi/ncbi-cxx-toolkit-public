@@ -73,6 +73,7 @@ void CHugeAsnReader::x_ResetIndex()
     m_bioseq_set_list.clear();
     m_submit_block.Reset();
     m_NotJustLocalOrGeneral = false;
+    m_HasRefSeq = false;
 
 // flattenization structures, readonly after flattenization, accept m_Current
     m_bioseq_index.clear();
@@ -584,6 +585,9 @@ void CHugeAsnReader::FlattenGenbankSet()
             if (! id->IsLocal() && ! id->IsGeneral()) {
                 m_NotJustLocalOrGeneral = true;
             }
+            if (id->IsOther()) {
+                m_HasRefSeq = true;
+            }
             auto existingIndex = m_FlattenedIndex.find(id);
             if (existingIndex != m_FlattenedIndex.end()) {
                 x_ThrowDuplicateId(*(existingIndex->second), *last, *id);
@@ -650,6 +654,11 @@ CConstRef<CSubmit_block> CHugeAsnReader::GetSubmitBlock() const
 bool CHugeAsnReader::IsNotJustLocalOrGeneral() const
 {
     return m_NotJustLocalOrGeneral;
+}
+
+bool CHugeAsnReader::HasRefSeq() const
+{
+    return m_HasRefSeq;
 }
 
 CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()

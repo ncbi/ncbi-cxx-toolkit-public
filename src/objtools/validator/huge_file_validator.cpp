@@ -438,6 +438,9 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     if (m_Reader.IsNotJustLocalOrGeneral()) {
         context.NotJustLocalOrGeneral = true;
     }
+    if (m_Reader.HasRefSeq()) {
+        context.HasRefSeq = true;
+    }
 
     if (! context.IsIdInBlob) {
         context.IsIdInBlob = [this](const CSeq_id& id) {
