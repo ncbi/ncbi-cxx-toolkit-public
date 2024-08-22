@@ -345,6 +345,7 @@ public:
     bool IsINSDInSep() const;
     bool IsGeneious() const;
     const CBioSourceKind& BioSourceKind() const;
+    inline bool HasRefSeq(void) const { return m_HasRefSeq; }
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount() { m_NumMisplacedFeatures = 0; }
