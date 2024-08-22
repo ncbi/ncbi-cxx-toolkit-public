@@ -3,6 +3,7 @@ corelib/impl
 corelib/hash_impl$
 connect$
 connect/ext$
+connect/impl$ update-only
 connect/mbedtls
 connect/services
 -connect/services/test
@@ -16,6 +17,8 @@ misc$
 misc/xmlwrapp
 misc/third_party
 misc/third_party_static
+misc/jsonwrapp$
+misc/jsonwrapp/rapidjson11
 
 app$
 app/pubseq_gateway$
@@ -27,6 +30,7 @@ app/pubseq_gateway/server/test/input$
 app/pubseq_gateway/server/integrationsmoketest$
 app/pubseq_gateway/server/integrationsmoketest/input$
 app/pubseq_gateway/server/integrationsmoketest/baseline$
+app/pubseq_gateway/client$
 
 objtools$
 objtools/pubseq_gateway$
@@ -44,8 +48,6 @@ objtools/readers$ update-only
 objtools/data_loaders$
 objtools/data_loaders/cdd$
 objtools/data_loaders/cdd/cdd_access
-
-util/lmdbxx
 
 #define LST_COMMENT_1   pubseq_gateway/client requires a few objects/...
 objects$
@@ -87,6 +89,7 @@ objects/dbsnp
 
 serial$
 serial/datatool$
+serial/impl$ update-only
 serial/grpc_integration
 util$
 util/bitset$
@@ -97,6 +100,7 @@ util/regexp$
 util/regexp/testdata$
 util/compress
 util/checksum
+util/lmdbxx
 
 cgi
 -cgi/demo
@@ -111,4 +115,6 @@ objmgr
 -objmgr/test
 -objmgr/split
 -objmgr/util
+
+html$
 
