@@ -21,13 +21,18 @@ class CBioseq;
 class CSeq_annot;
 class CGff3Reader;
 class CGff3LocationMerger;
+namespace edit
+{
+    class CHugeFile;
+};
+
 }
 
 class CTable2AsnContext;
 class CSerialObject;
-class CAnnotationLoader;
 union CFileContentInfo;
 struct CFileContentInfoGenbank;
+class IIndexedFeatureReader;
 
 USING_SCOPE(objects);
 class CGff3LocationMerger;
@@ -40,26 +45,26 @@ public:
     CMultiReader(CTable2AsnContext& context);
     ~CMultiReader();
 
-    using TAnnots = list<CRef<CSeq_annot>>;
-    using TAnnotMap = map<string, list<CRef<CSeq_annot>>>;
+    using TAnnots = list<CRef<objects::CSeq_annot>>;
 
     static const set<TTypeInfo> kSupportedTypes;
 
     void LoadTemplate(const string& ifname);
     void LoadGFF3Fasta(istream& in, TAnnots& annots);
-    void LoadGFF3Fasta(istream& in, TAnnotMap& annotMap);
-    void AddAnnots(TAnnotMap& annotMap, set<string>& matchedAnnots, CBioseq& bioseq) const;
 
-    void LoadAnnotMap(const string& filename, TAnnotMap& annotMap);
-    void AddAnnotToMap(CRef<CSeq_annot> pAnnot, TAnnotMap& annotMap);
+    void AddAnnots(IIndexedFeatureReader* reader, CBioseq& bioseq) const;
+
+    void LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, const string& filename);
+    void GetIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, TAnnots& annots);
+
     void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc) const;
     void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source) const;
     void WriteObject(const CSerialObject&, ostream&);
     CRef<objects::CSeq_entry> ReadAlignment(CNcbiIstream& instream, const CArgs& args);
     CRef<CSerialObject> ReadNextEntry();
-    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnotMap& annotMap);
+    CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots);
     CRef<CSerialObject> FetchEntry(const CFormatGuess::EFormat& format, const string& objectType,
-            unique_ptr<CNcbiIstream>& pIstr, TAnnotMap& annotMap);
+            unique_ptr<CNcbiIstream>& pIstr, TAnnots& annots);
     static
     void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
 protected:
@@ -74,19 +79,14 @@ private:
     CRef<CSerialObject> xReadASN1Text(CObjectIStream& pObjIstrm) const;
     CRef<CSerialObject> xReadASN1Binary(CObjectIStream& pObjIstrm, const string& content_type) const;
     TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process);
-    TAnnots xReadGTF(CNcbiIstream& instream);
-    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename);
+    TAnnots xReadGTF(CNcbiIstream& instream) const;
+    CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename, CNcbiIstream& instream);
     void x_PostProcessAnnots(TAnnots& annots) const;
-    bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename) const;
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream) const;
     CFormatGuess::EFormat xInputGetFormat(CNcbiIstream&, CFileContentInfo* = nullptr) const;
-    CFormatGuess::EFormat xAnnotGetFormat(CNcbiIstream&) const;
-
-    bool x_HasMatch(bool matchVersions, 
-        const string& idString, TAnnotMap& annotMap, set<string>& matchedAnnots, list<CRef<CSeq_annot>>& annots) const;
-    bool x_HasExactMatch(const string& idString, TAnnotMap& annotMap, set<string>& matchedAnnots, list<CRef<CSeq_annot>>& annots) const;
+    void xAnnotGetFormat(objects::edit::CHugeFile& file) const;
 
     int  m_iFlags;
     string m_AnnotName;

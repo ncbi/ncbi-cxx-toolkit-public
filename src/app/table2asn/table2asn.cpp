@@ -88,7 +88,8 @@
 
 #include "table2asn.hpp"
 #include "suspect_feat.hpp"
-#include "utils.hpp"
+#include "annot_match.hpp"
+
 
 #include <common/ncbi_revision.h>
 
@@ -172,7 +173,7 @@ bool CTable2AsnLogger::PutMessage(const IObjtoolsMessage& message)
 }
 
 
-void CTable2AsnLogger::Post(const SDiagMessage& mess) 
+void CTable2AsnLogger::Post(const SDiagMessage& mess)
 {
     stringstream ss;
     mess.Write(ss, SDiagMessage::fNoEndl);
@@ -404,7 +405,7 @@ may be implemented in the future; RW-1253
                       CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc->AddFlag("intronless", "Intronless alignments");
     arg_desc->AddFlag("refine-prt-alignments", "Refine ProSplign aligments when processing .prt input");
-    arg_desc->AddOptionalKey("prt-alignment-filter-query", "String", 
+    arg_desc->AddOptionalKey("prt-alignment-filter-query", "String",
             "Filter query string for .prt alignments", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
@@ -1262,31 +1263,33 @@ void CTbl2AsnApp::ProcessOneFile(
     unique_ptr<CNcbiIstream>& pIstr,
     CNcbiOstream* output)
 {
-    CMultiReader::TAnnotMap annotMap;
+    CMultiReader::TAnnots annots;
     CRef<CSerialObject> pInputObject =
         m_reader->FetchEntry(format,
                              contentType,
                              pIstr,
-                             annotMap);
+                             annots);
 
-    xProcessOneFile(format, pInputObject, annotMap, output);
+    xProcessOneFile(format, pInputObject, annots, output);
 }
 
 
 void CTbl2AsnApp::ProcessOneFile(CNcbiOstream* output)
 {
     CRef<CSerialObject> input_obj;
-    CMultiReader::TAnnotMap annotMap;
-    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annotMap);
-    xProcessOneFile(format, input_obj, annotMap, output);
+    TAnnots annots;
+    CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj, annots);
+    xProcessOneFile(format, input_obj, annots, output);
 }
 
 void CTbl2AsnApp::xProcessOneFile(
-    CFormatGuess::EFormat format,
-    CRef<CSerialObject> input_obj,
-    TAnnotMap& annotMap,
-    CNcbiOstream* output)
+        CFormatGuess::EFormat format,
+        CRef<CSerialObject> input_obj,
+        TAnnots& /*annots*/,
+        CNcbiOstream* output)
 {
+
+#if 0
     if (! annotMap.empty()) {
         for (auto entry : annotMap) {
             auto it = m_secret_files->m_AnnotMap.find(entry.first);
@@ -1298,7 +1301,7 @@ void CTbl2AsnApp::xProcessOneFile(
         }
         annotMap.clear();
     }
-
+#endif
     do {
         CRef<CSerialObject> result;
         ProcessOneEntry(format, input_obj, result);
@@ -1435,7 +1438,8 @@ void CTbl2AsnApp::xProcessSecretFiles1Phase(bool readModsFromTitle, CSeq_entry& 
             m_reader->ApplyDescriptors(result, *m_secret_files->m_descriptors);
     }
 
-    if (! m_global_files.m_AnnotMap.empty() || ! m_secret_files->m_AnnotMap.empty()) {
+    if (m_global_files.m_indexed_annots || m_secret_files->m_indexed_annots)
+    {
         AddAnnots(result);
     }
 }
@@ -1491,36 +1495,37 @@ void CTbl2AsnApp::LoadPRTFile(const string& pathname)
 }
 
 
-void CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAnnotMap& annotMap)
+bool CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAdditionalFiles& files)
 {
     CFile file(pathname);
 
     if (! file.Exists())
-        return;
+        return false;
 
     if (file.IsIdentical(m_context.m_current_file)) {
         g_LogGeneralParsingError(
             eDiag_Warning,
             "Ignorning annotation " + pathname + " because it was already used as input source",
             *m_logger);
-        return;
+        return false;
     }
 
     if (file.GetLength() == 0) {
         g_LogGeneralParsingError(eDiag_Warning, "Empty file: " + pathname, *m_logger);
-        return;
+        return false;
     }
 
-    m_reader->LoadAnnotMap(pathname, annotMap);
+    m_reader->LoadIndexedAnnot(files.m_indexed_annots, pathname);
+    return true;
 }
 
 
 void CTbl2AsnApp::AddAnnots(CSeq_entry& entry)
 {
     if (entry.IsSeq()) {
-        m_reader->AddAnnots(m_global_files.m_AnnotMap, m_global_files.m_MatchedAnnots, entry.SetSeq());
+        m_reader->AddAnnots(m_global_files.m_indexed_annots.get(), entry.SetSeq());
         if (m_secret_files) {
-            m_reader->AddAnnots(m_secret_files->m_AnnotMap, m_secret_files->m_MatchedAnnots, entry.SetSeq());
+            m_reader->AddAnnots(m_secret_files->m_indexed_annots.get(), entry.SetSeq());
         }
         return;
     }
@@ -1593,16 +1598,17 @@ void CTbl2AsnApp::LoadAdditionalFiles()
 
     // if (m_context.m_can_use_huge_files && ! m_context.m_disable_huge_files) {
     {
-        if (! m_context.m_single_annot_file.empty() && m_global_files.m_AnnotMap.empty())
+        if (! m_context.m_single_annot_file.empty() && ! m_global_files.m_indexed_annots)
         { // load only once
-            LoadAnnotMap(m_context.m_single_annot_file, m_global_files.m_AnnotMap);
+            LoadAnnotMap(m_context.m_single_annot_file, m_global_files);
         } else {
             for (auto suffix : { ".tbl", ".gff", ".gff3", ".gff2", ".gtf" }) {
-                LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
+                if (LoadAnnotMap(name + suffix, *m_secret_files))
+                    break;
             }
 #ifdef THIS_IS_TRUNK_BUILD
             for (auto suffix : { ".gbf" }) {
-                LoadAnnotMap(name + suffix, m_secret_files->m_AnnotMap);
+                LoadAnnotMap(name + suffix, *m_secret_files);
             }
 #endif
         }
