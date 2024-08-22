@@ -4157,7 +4157,7 @@ void CPeptideValidator::Validate()
             "sig/mat/transit_peptide feature cannot be associated with a "
             "protein product of a coding region feature");
     } else {
-        PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+        PostErr((m_Imp.IsRefSeq() || m_Imp.HasRefSeq()) ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
             "Peptide processing feature should be converted to the "
             "appropriate protein feature subtype");
     }
@@ -4704,7 +4704,7 @@ void CImpFeatValidator::Validate()
                 "Pre/pro protein feature cannot be associated with a "
                 "protein product of a coding region feature");
         } else {
-            PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+            PostErr((m_Imp.IsRefSeq() || m_Imp.HasRefSeq()) ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
                 "Peptide processing feature should be converted to the "
                 "appropriate protein feature subtype");
         }
