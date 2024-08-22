@@ -64,6 +64,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <random>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
@@ -663,10 +664,11 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
     if(randomize) {
     	int num_oids = m_Source->GetNumOIDs();
     	m_RandomOids.clear();
+        std::mt19937 rng(std::time(nullptr));
     	for (int i=0; m_Source->CheckOrFindOID(i); i++) {
     		m_RandomOids.push_back(i);
     	}
-    	std::random_shuffle (m_RandomOids.begin(), m_RandomOids.end() );
+    	std::shuffle (m_RandomOids.begin(), m_RandomOids.end(), rng);
     	m_RandomOids.push_back(num_oids);
     }
 #endif
@@ -1057,7 +1059,6 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                     quoted,
                     is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide
             ));
-            const int numoids = indb->GetNumOIDs();
 
             for (int oid=0; indb->CheckOrFindOID(oid); oid++) {
                 CRef<CBlast_def_line_set> hdr = indb->GetHdr(oid);
