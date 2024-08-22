@@ -5,6 +5,7 @@ NCBI_begin_app(table2asn)
     table2asn multireader struc_cmt_reader table2asn_context feature_table_reader
     fcs_reader table2asn_validator src_quals fasta_ex suspect_feat
     table2asn_huge async_token utils
+    annot_match annot_match_5col
   )
   NCBI_uses_toolkit_libraries(
     data_loaders_util prosplign xdiscrepancy xflatfile

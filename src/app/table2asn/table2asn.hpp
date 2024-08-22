@@ -73,18 +73,19 @@ public:
         return Run();
     }
 
-    using TAnnotMap = CMultiReader::TAnnotMap;
+    using TAnnots = CMultiReader::TAnnots;
 
 private:
+    struct TAdditionalFiles;
 
     static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
     void Setup(const CArgs& args);
 
     void ProcessOneFile(bool isAlignment, bool manageDiagnosticStreams = true, bool manageDataStream=true);
     void ProcessOneFile(CNcbiOstream* output);
-    void xProcessOneFile(CFormatGuess::EFormat format, 
-            CRef<CSerialObject> pInputObject, 
-            TAnnotMap& annotMap,
+    void xProcessOneFile(CFormatGuess::EFormat format,
+            CRef<CSerialObject> pInputObject,
+            TAnnots& annots,
             CNcbiOstream* output);
     void ProcessHugeFile(edit::CHugeFile& hugeFile, CNcbiOstream* output);
     void ProcessOneFile(CFormatGuess::EFormat format, const string& contentType, unique_ptr<CNcbiIstream>& pIstr, CNcbiOstream* output);
@@ -107,22 +108,21 @@ private:
     void LoadDSCFile(const string& pathname);
     void LoadAdditionalFiles();
     void LoadCMTFile(const string& pathname, unique_ptr<CTable2AsnStructuredCommentsReader>& comments);
-    void LoadAnnotMap(const string& pathname, TAnnotMap& annotMap);
+    bool LoadAnnotMap(const string& pathname, TAdditionalFiles& files);
     void AddAnnots(CSeq_entry& entry);
     void SetupAndOpenDiagnosticStreams();
     void SetupAndOpenDataStreams();
     void CloseDiagnosticStreams();
     void CloseDataStreams();
     void xProcessHugeEntries();
-    size_t xGetNumThreads() const; 
+    size_t xGetNumThreads() const;
 
     void x_SetAlnArgs(CArgDescriptions& arg_desc);
 
     struct TAdditionalFiles
     {
         unique_ptr<CTable2AsnStructuredCommentsReader> m_struct_comments;
-        CMultiReader::TAnnotMap m_AnnotMap;
-        set<string> m_MatchedAnnots;
+        unique_ptr<IIndexedFeatureReader> m_indexed_annots;
         CRef<CSeq_entry> m_replacement_proteins;
         CRef<CSeq_entry> m_possible_proteins;
         CRef<CSeq_descr> m_descriptors;
