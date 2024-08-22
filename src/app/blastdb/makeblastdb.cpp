@@ -248,6 +248,9 @@ void CMakeBlastDBApp::Init()
                       "Create index of sequence hash values.",
                       true);
 
+    arg_desc->AddFlag("randomize",
+                      "Randomize input db seqs", true,  CArgDescriptions::fHidden);
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     arg_desc->SetCurrentGroup("Sequence masking options");
@@ -574,7 +577,7 @@ void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 
 class CRawSeqDBSource : public IRawSequenceSource {
 public:
-    CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb);
+    CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb, bool randomize);
 
     virtual ~CRawSeqDBSource()
     {
@@ -621,6 +624,7 @@ private:
     CRef<CSeqDBExpert> m_Source;
     const char * m_Sequence;
     int m_Oid;
+    vector<int> m_RandomOids;
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     vector<CBlastDbBlob> m_Blobs;
@@ -631,7 +635,7 @@ private:
 #endif
 };
 
-CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb)
+CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDatabase * outdb, bool randomize)
     : m_Sequence(NULL), m_Oid(0)
 {
     CSeqDB::ESeqType seqtype =
@@ -656,6 +660,15 @@ CRawSeqDBSource::CRawSeqDBSource(const string & name, bool protein, CBuildDataba
     for(int i = 0; i < (int)m_ColumnNames.size(); i++) {
         m_ColumnIds.push_back(m_Source->GetColumnId(m_ColumnNames[i]));
     }
+    if(randomize) {
+    	int num_oids = m_Source->GetNumOIDs();
+    	m_RandomOids.clear();
+    	for (int i=0; m_Source->CheckOrFindOID(i); i++) {
+    		m_RandomOids.push_back(i);
+    	}
+    	std::random_shuffle (m_RandomOids.begin(), m_RandomOids.end() );
+    	m_RandomOids.push_back(num_oids);
+    }
 #endif
 }
 
@@ -667,7 +680,8 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs)
 {
-    if (! m_Source->CheckOrFindOID(m_Oid))
+	int oid = (m_RandomOids.size() > 0)? m_RandomOids[m_Oid]: m_Oid;
+    if (! m_Source->CheckOrFindOID(oid))
         return false;
 
     if (m_Sequence) {
@@ -677,12 +691,12 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
 
     int slength(0), alength(0);
 
-    m_Source->GetRawSeqAndAmbig(m_Oid, & m_Sequence, & slength, & alength);
+    m_Source->GetRawSeqAndAmbig(oid, & m_Sequence, & slength, & alength);
 
     sequence    = CTempString(m_Sequence, slength);
     ambiguities = CTempString(m_Sequence + slength, alength);
 
-    deflines = m_Source->GetHdr(m_Oid);
+    deflines = m_Source->GetHdr(oid);
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
@@ -690,7 +704,7 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     ITERATE(vector<int>, algo_id, m_MaskIds) {
 
         CSeqDB::TSequenceRanges ranges;
-        m_Source->GetMaskData(m_Oid, *algo_id, ranges);
+        m_Source->GetMaskData(oid, *algo_id, ranges);
 
         SBlastDbMaskData mask_data;
         mask_data.algorithm_id = m_MaskIdMap[*algo_id];
@@ -709,7 +723,7 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     m_Blobs.resize(column_ids.size());
 
     for(int i = 0; i < (int)column_ids.size(); i++) {
-        m_Source->GetColumnBlob(column_ids[i], m_Oid, m_Blobs[i]);
+        m_Source->GetColumnBlob(column_ids[i], oid, m_Blobs[i]);
         column_blobs[i] = m_Blobs[i].Str();
     }
 #endif
@@ -1003,6 +1017,8 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
         vector<string> blastdb;
         copy(names.begin(), names.end(), back_inserter(blastdb));
         CSeqDB::ESeqType seqtype = (is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide);
+        const CArgs& args = GetArgs();
+        bool randomize = args["randomize"].AsBoolean();
 
         vector<string> final_blastdb;
 
@@ -1042,7 +1058,8 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                     is_protein ? CSeqDB::eProtein : CSeqDB::eNucleotide
             ));
             const int numoids = indb->GetNumOIDs();
-            for (int oid = 0; oid < numoids; ++oid) {
+
+            for (int oid=0; indb->CheckOrFindOID(oid); oid++) {
                 CRef<CBlast_def_line_set> hdr = indb->GetHdr(oid);
                 ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
                     CRef<CBlast_def_line> bdl = *itr;
@@ -1059,7 +1076,7 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
 
             m_DB->SetLeafTaxIds(leafTaxIds, true);
             CRef<IRawSequenceSource> raw(
-                    new CRawSeqDBSource(quoted, is_protein, m_DB)
+                    new CRawSeqDBSource(quoted, is_protein, m_DB, randomize)
             );
             m_DB->AddSequences(*raw);
         } else {
@@ -1096,6 +1113,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
             "Cannot create a BLAST database from an existing one without "
             "changing the output name, please provide a (different) database name "
             "using -" + kOutput);
+    }
+    if (input_fmt != eBlastDb && args["randomize"].AsBoolean()) {
+        NCBI_THROW(CInvalidDataException, eInvalidInput,
+        		"Option randomize is only applicable to blastdb input type");
     }
 
     vector<string> input_files;
