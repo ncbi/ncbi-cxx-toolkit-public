@@ -209,16 +209,9 @@ void CTbl2AsnApp::ProcessHugeFile(CHugeFile& hugeFile, CNcbiOstream* output)
     THugeFileWriteContext context;
     CHugeFastaReader      fasta_reader(m_context);
     if (hugeFile.m_format == CFormatGuess::eGff3) {
-        TAnnotMap annotMap;
-        m_reader->LoadGFF3Fasta(*hugeFile.m_stream, annotMap);
-        for (auto entry : annotMap) {
-            auto it = m_secret_files->m_AnnotMap.find(entry.first);
-            if (it == m_secret_files->m_AnnotMap.end()) {
-                m_secret_files->m_AnnotMap.emplace(entry.first, entry.second);
-            } else {
-                it->second.splice(it->second.end(), entry.second);
-            }
-        }
+        TAnnots annots;
+        m_reader->LoadGFF3Fasta(*hugeFile.m_stream, annots);
+        m_reader->GetIndexedAnnot(m_secret_files->m_indexed_annots, annots);
 
         fasta_reader.Open(&hugeFile, m_context.m_logger);
         context.source   = &fasta_reader;
@@ -590,7 +583,8 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(bool readModsFromTitle, TAsyncToken& 
             m_reader->ApplyDescriptors(*token.top_entry, *m_secret_files->m_descriptors);
     }
 
-    if (! m_global_files.m_AnnotMap.empty() || ! m_secret_files->m_AnnotMap.empty()) {
+    if (m_global_files.m_indexed_annots || m_secret_files->m_indexed_annots)
+    {
         AddAnnots(*token.top_entry);
     }
 }

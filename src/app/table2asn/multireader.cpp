@@ -77,6 +77,7 @@
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
 #include "descr_apply.hpp"
+#include "annot_match.hpp"
 
 #include <objtools/edit/feattable_edit.hpp>
 
@@ -101,31 +102,78 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-void g_ModifySeqIds(CSeq_annot& annot, const CSeq_id& match, CRef<CSeq_id> new_id)
-{
-    CTypeIterator<CSeq_loc> visitor(annot);
-
-    CSeq_id& id = *new_id;
-    while (visitor) {
-        CSeq_loc& loc = *visitor;
-        if (loc.GetId()->Compare(match) == CSeq_id::e_YES) {
-            loc.SetId(id);
-        }
-        ++visitor;
-    }
-}
-
-
 namespace
 {
 
-    struct SCSeqidCompare {
-        inline bool operator()(const CSeq_id* left, const CSeq_id* right) const
-        {
-            return *left < *right;
-        };
-    };
+    void s_ModifySeqIds(CSeq_annot& annot, const CSeq_id& match, CRef<CSeq_id> new_id)
+    {
+        CTypeIterator<CSeq_loc> visitor(annot);
 
+        CSeq_id& id = *new_id;
+        while (visitor)
+        {
+            CSeq_loc& loc = *visitor;
+
+            if (loc.GetId()->Compare(match) == CSeq_id::e_YES)
+            {
+                loc.SetId(id);
+            }
+            ++visitor;
+        }
+    }
+
+    CRef<CSeq_annot> s_GetBioseqAnnot(CBioseq& bioseq)
+    {
+
+        CRef<CSeq_annot> pBioseqAnnot;
+
+        if (bioseq.IsSetAnnot()) {
+            auto& bioseqAnnots = bioseq.SetAnnot();
+            auto it = find_if(bioseqAnnots.begin(),
+                            bioseqAnnots.end(),
+                                [](CRef<CSeq_annot> pAnnot)
+                                {
+                                    return (pAnnot && pAnnot->IsFtable());
+                                });
+            if (it != bioseqAnnots.end()) {
+                pBioseqAnnot = *it;
+            }
+        }
+        return pBioseqAnnot;
+    }
+
+    void s_AddAnnotsToBioseq(
+        list<CRef<CSeq_annot>>& annots,
+        CBioseq& bioseq,
+        CRef<CSeq_annot>& pBioseqAnnot)
+    {
+        if (pBioseqAnnot) {
+            for (auto pAnnot : annots) {
+                objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
+                featEdit.MergeFeatures(pAnnot->SetData().SetFtable());
+            }
+            return;
+        }
+
+        pBioseqAnnot = s_GetBioseqAnnot(bioseq);
+
+        if (!pBioseqAnnot) {
+            pBioseqAnnot = annots.front();
+            bioseq.SetAnnot().push_back(pBioseqAnnot);
+            auto it = next(annots.begin());
+            while (it != annots.end()) {
+                objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
+                featEdit.MergeFeatures((*it)->SetData().SetFtable());
+                ++it;
+            }
+        }
+        else {
+            for (auto pAnnot : annots) {
+                objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
+                featEdit.MergeFeatures(pAnnot->SetData().SetFtable());
+            }
+        }
+    }
 }
 
 
@@ -134,6 +182,7 @@ const set<TTypeInfo> CMultiReader::kSupportedTypes = {
     CBioseq::GetTypeInfo(),
     CSeq_entry::GetTypeInfo(),
     CSeq_submit::GetTypeInfo(),
+    CSeq_annot::GetTypeInfo(),
 };
 
 
@@ -365,10 +414,11 @@ CFormatGuess::EFormat CMultiReader::xInputGetFormat(CNcbiIstream& istr, CFileCon
 }
 
 //  ----------------------------------------------------------------------------
-CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
+void CMultiReader::xAnnotGetFormat(objects::edit::CHugeFile& file) const
 {
-    CFormatGuess FG(istr);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    auto* in = file.m_stream.get();
+    CFormatGuess FG(*in);
+    //FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
@@ -384,7 +434,19 @@ CFormatGuess::EFormat CMultiReader::xAnnotGetFormat(CNcbiIstream& istr) const
 #endif
     FG.GetFormatHints().DisableAllNonpreferred();
 
-    return FG.GuessFormat();
+    file.m_format = FG.GuessFormat();
+
+    switch (file.m_format)
+    {
+        case CFormatGuess::eTextASN:
+            file.m_serial_format = eSerial_AsnText;
+            break;
+        case CFormatGuess::eBinaryASN:
+            file.m_serial_format = eSerial_AsnBinary;
+            break;
+        default:
+            break;
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -403,42 +465,6 @@ CMultiReader::CMultiReader(CTable2AsnContext& context) :
     mAtSequenceData(false)
 {
 }
-
-/*
-void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
-{
-    switch(entry.Which()) {
-    case CSeq_entry::e_Seq:
-        if (!m_context.m_OrganismName.empty() || m_context.m_taxid != 0) {
-            CBioSource::TOrg& org(CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().SetOrg());
-            // we should reset taxid in case new name is different
-            if (org.IsSetTaxname() && org.GetTaxId() >0 && org.GetTaxname() != m_context.m_OrganismName) {
-                org.SetTaxId(0);
-            }
-
-            if (!m_context.m_OrganismName.empty())
-                org.SetTaxname(m_context.m_OrganismName);
-            if (m_context.m_taxid != 0)
-                org.SetTaxId(m_context.m_taxid);
-        }
-        break;
-
-    case CSeq_entry::e_Set:
-    {
-        if (!entry.GetSet().IsSetClass())
-            entry.SetSet().SetClass(CBioseq_set::eClass_genbank);
-
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            ApplyAdditionalProperties(**it);
-        }
-    }
-        break;
-    default:
-        break;
-    }
-}
-*/
 
 void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr>& out_desc) const
 {
@@ -713,38 +739,27 @@ void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
 }
 
 
-void CMultiReader::LoadGFF3Fasta(istream& in, TAnnotMap& annotMap)
-{
-    TAnnots annots;
-    LoadGFF3Fasta(in, annots);
-    for (auto pAnnot : annots) {
-        AddAnnotToMap(pAnnot, annotMap);
-    }
-}
-
-
-CRef<CSerialObject> CMultiReader::FetchEntry(
-    const CFormatGuess::EFormat& format,
-    const string&                objectType,
-    unique_ptr<istream>&         pIstr,
-    TAnnotMap&                   annotMap)
+CRef<CSerialObject> CMultiReader::FetchEntry(const CFormatGuess::EFormat& format,
+        const string& objectType,
+        unique_ptr<istream>& pIstr,
+        TAnnots& annots)
 {
     CRef<CSerialObject> pInputObject;
     switch (format) {
-    case CFormatGuess::eBinaryASN:
-        m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, *pIstr.release(), eTakeOwnership));
-        pInputObject = xReadASN1Binary(*m_obj_stream, objectType);
-        break;
-    case CFormatGuess::eTextASN:
-        m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, *pIstr.release(), eTakeOwnership));
-        pInputObject = xReadASN1Text(*m_obj_stream);
-        break;
-    case CFormatGuess::eGff3:
-        LoadGFF3Fasta(*pIstr, annotMap);
-    case CFormatGuess::eFasta: // What about buffered input?
-    default:
-        m_iFlags = CFastaReader::fNoUserObjs;
-        pInputObject = xReadFasta(*pIstr);
+        case CFormatGuess::eBinaryASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, *pIstr.release(), eTakeOwnership));
+            pInputObject = xReadASN1Binary(*m_obj_stream, objectType);
+            break;
+        case CFormatGuess::eTextASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, *pIstr.release(), eTakeOwnership));
+            pInputObject = xReadASN1Text(*m_obj_stream);
+            break;
+        case CFormatGuess::eGff3:
+            LoadGFF3Fasta(*pIstr, annots);
+        case CFormatGuess::eFasta: // What about buffered input?
+        default:
+            m_iFlags = CFastaReader::fNoUserObjs;
+            pInputObject = xReadFasta(*pIstr);
     }
 
     if (! pInputObject) {
@@ -758,7 +773,7 @@ CRef<CSerialObject> CMultiReader::FetchEntry(
 }
 
 
-CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnotMap& annotMap)
+CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSerialObject>& input_sequence, TAnnots& annots)
 {
     CFormatGuess::EFormat format;
     CFileContentInfo content_info;
@@ -769,28 +784,28 @@ CFormatGuess::EFormat CMultiReader::OpenFile(const string& filename, CRef<CSeria
 
     switch (format)
     {
-    case CFormatGuess::eBinaryASN:
-        m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
-        input_sequence = xReadASN1Binary(*m_obj_stream, content_info.mInfoGenbank.mObjectType);
-        break;
-    case CFormatGuess::eTextASN:
-        m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
-        input_sequence = xReadASN1Text(*m_obj_stream);
-        break;
-    case CFormatGuess::eGff3:
-    {
-        unique_ptr<istream> in(new CNcbiIfstream(filename));
-        LoadGFF3Fasta(*in, annotMap);
-        m_iFlags = 0;
-        m_iFlags |= CFastaReader::fNoUserObjs;
-        input_sequence = xReadFasta(*in);
-    }
-        break;
-    default: // RW-616 - Assume FASTA
-    {
-        format = CFormatGuess::eFasta;
-        m_iFlags = 0;
-        m_iFlags |= CFastaReader::fNoUserObjs;
+        case CFormatGuess::eBinaryASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnBinary, filename));
+            input_sequence = xReadASN1Binary(*m_obj_stream, content_info.mInfoGenbank.mObjectType);
+            break;
+        case CFormatGuess::eTextASN:
+            m_obj_stream.reset(CObjectIStream::Open(eSerial_AsnText, filename));
+            input_sequence = xReadASN1Text(*m_obj_stream);
+            break;
+        case CFormatGuess::eGff3:
+            {
+            unique_ptr<istream> in(new CNcbiIfstream(filename));
+            LoadGFF3Fasta(*in, annots);
+            m_iFlags = 0;
+            m_iFlags |= CFastaReader::fNoUserObjs;
+            input_sequence = xReadFasta(*in);
+            }
+            break;
+        default: // RW-616 - Assume FASTA
+            {
+            format = CFormatGuess::eFasta;
+            m_iFlags = 0;
+            m_iFlags |= CFastaReader::fNoUserObjs;
 
         CBufferedInput istream;
         istream.get().open(filename);
@@ -1003,69 +1018,13 @@ CMultiReader::~CMultiReader()
 {
 }
 
-class CAnnotationLoader
+void CMultiReader::LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, const string& filename)
 {
-public:
-    using TAnnots = CMultiReader::TAnnots;
+    auto hugefile = std::make_unique<objects::edit::CHugeFile>();
+    hugefile->OpenPlain(filename);
 
-    bool Init(const TAnnots& annots)
-    {
-        if (annots.empty()) {
-            return false;
-        }
-
-        m_Annots         = annots;
-        m_annot_iterator = m_Annots.begin();
-        return true;
-    }
-
-    bool Init(const string& seqid_prefix, unique_ptr<istream>& instream, ILineErrorListener* logger)
-    {
-        m_seqid_prefix = seqid_prefix;
-        m_line_reader = ILineReader::New(*instream, eTakeOwnership);
-        instream.release();
-        m_logger = logger;
-        return true;
-    }
-
-    CRef<CSeq_annot> GetNextAnnot()
-    {
-        if (!m_Annots.empty()) {
-            if (m_annot_iterator != m_Annots.end()) {
-                return *m_annot_iterator++;
-            }
-        } else if (m_line_reader.NotEmpty()) {
-            while (!m_line_reader->AtEOF()) {
-                CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
-                    *m_line_reader,
-                    CFeature_table_reader::fLeaveProteinIds |
-                    CFeature_table_reader::fCreateGenesFromCDSs |
-                    CFeature_table_reader::fAllIdsAsLocal |
-                    CFeature_table_reader::fPreferGenbankId,
-                    m_logger, nullptr/*filter*/, m_seqid_prefix);
-
-                if (annot.NotEmpty() && annot->IsSetData() && annot->GetData().IsFtable() &&
-                    ! annot->GetData().GetFtable().empty()) {
-                    return annot;
-                }
-            }
-        }
-        return CRef<CSeq_annot>();
-    }
-
-private:
-    TAnnots m_Annots;
-    TAnnots::iterator m_annot_iterator;
-    string m_seqid_prefix;
-    CRef<ILineReader> m_line_reader;
-    ILineErrorListener* m_logger;
-};
-
-bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& filename)
-{
-    unique_ptr<istream> in(new CNcbiIfstream(filename));
-
-    CFormatGuess::EFormat uFormat = xAnnotGetFormat(*in);
+    xAnnotGetFormat(*hugefile);
+    CFormatGuess::EFormat uFormat = hugefile->m_format;
 
     if (uFormat == CFormatGuess::eUnknown) {
         string ext;
@@ -1094,15 +1053,24 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     }
 
     TAnnots annots;
+    auto* in = hugefile->m_stream.get();
+
     switch (uFormat) {
     case CFormatGuess::eFiveColFeatureTable: {
-        string seqid_prefix;
-        if (!m_context.m_genome_center_id.empty())
-            seqid_prefix = "gnl|" + m_context.m_genome_center_id + "|";
-        return loader.Init(seqid_prefix, in, m_context.m_logger);
+        auto reader5col = std::make_unique<CFast5colReader>();
+        //auto reader5col = std::make_unique<CWholeFileAnnotation>();
+        long reader_flags =
+            CFeature_table_reader::fLeaveProteinIds |
+            CFeature_table_reader::fCreateGenesFromCDSs |
+            CFeature_table_reader::fAllIdsAsLocal |
+            CFeature_table_reader::fPreferGenbankId;
+
+        reader5col->Init(m_context.m_genome_center_id, reader_flags, m_context.m_logger);
+        reader5col->Open(std::move(hugefile));
+        reader = std::move(reader5col);
     } break;
     case CFormatGuess::eTextASN: {
-        auto obj_stream = xCreateASNStream(uFormat, in);
+        auto obj_stream = hugefile->MakeObjStream(0);
         CRef<CSerialObject> obj = xReadASN1Text(*obj_stream);
         CRef<CSeq_submit> unused;
         CRef<CSeq_entry> pEntry;
@@ -1122,8 +1090,7 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
     case CFormatGuess::eFlatFileGenbank:
     case CFormatGuess::eFlatFileEna:
     case CFormatGuess::eFlatFileUniProt: {
-        in.reset();
-        auto pEntry = xReadFlatfile(uFormat, filename);
+        auto pEntry = xReadFlatfile(uFormat, filename, *in);
         if (pEntry && pEntry->IsSetAnnot()) {
             annots = pEntry->GetAnnot();
         }
@@ -1135,226 +1102,46 @@ bool CMultiReader::xGetAnnotLoader(CAnnotationLoader& loader, const string& file
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
     }
 
-    if (! annots.empty()) {
-        loader.Init(annots);
-        return true;
+    if (!reader.get() && !annots.empty()) {
+        auto whole_file = std::make_unique<CWholeFileAnnotation>();
+        whole_file->Init(m_context.m_genome_center_id, 0);
+        whole_file->AddAnnots(annots);
+        reader = std::move(whole_file);
     }
-    return false;
 }
 
-
-static CRef<CSeq_id> s_GetAnnotId(const CSeq_annot& annot)
+void CMultiReader::AddAnnots(IIndexedFeatureReader* reader, CBioseq& bioseq) const
 {
-    CRef<CSeq_id> pAnnotId;
-    if (annot.IsSetId()) {
-        pAnnotId.Reset(new CSeq_id());
-        const CAnnot_id& firstId = *(annot.GetId().front());
-        if (firstId.IsLocal()) {
-            pAnnotId->SetLocal().Assign(firstId.GetLocal());
-        } else if (firstId.IsGeneral()) {
-            pAnnotId->SetGeneral().Assign(firstId.GetGeneral());
-        } else {
-            return pAnnotId;
-        }
-    } else if (! annot.GetData().GetFtable().empty()) {
-        // get a reference to CSeq_id instance, we'd need to update it recently
-        // 5 column feature reader has a single shared instance for all features
-        // update one at once would change all the features
-        pAnnotId.Reset(const_cast<CSeq_id*>(annot.GetData().GetFtable().front()->GetLocation().GetId()));
-    }
-
-    return pAnnotId;
-}
-
-
-void CMultiReader::AddAnnotToMap(CRef<CSeq_annot> pAnnot, TAnnotMap& annotMap)
-{
-    auto pAnnotId = s_GetAnnotId(*pAnnot);
-    if (! pAnnotId) {
+    if (!reader)
         return;
-    }
 
-    auto idString = pAnnotId->GetSeqIdString();
-    NStr::ToLower(idString);
-    auto it = annotMap.find(idString);
-    if (it == annotMap.end()) {
-        annotMap.emplace(idString, list<CRef<CSeq_annot>>{ pAnnot });
-    } else {
-        it->second.push_back(pAnnot);
-    }
-}
-
-
-void CMultiReader::LoadAnnotMap(const string& filename, TAnnotMap& annotMap)
-{
-    CAnnotationLoader annot_loader;
-    if (! xGetAnnotLoader(annot_loader, filename)) {
-        return;
-    }
-
-    CRef<CSeq_annot> pAnnot;
-    while ((pAnnot = annot_loader.GetNextAnnot()).NotEmpty()) {
-        AddAnnotToMap(pAnnot, annotMap);
-    }
-}
-
-
-static CRef<CSeq_annot> s_GetBioseqAnnot(CBioseq& bioseq)
-{
     CRef<CSeq_annot> pBioseqAnnot;
 
-    if (bioseq.IsSetAnnot()) {
-        auto& bioseqAnnots = bioseq.SetAnnot();
-        auto it = find_if(bioseqAnnots.begin(),
-                          bioseqAnnots.end(),
-                          [](CRef<CSeq_annot> pAnnot) {
-                              return (pAnnot && pAnnot->IsFtable());
-                          });
-        if (it != bioseqAnnots.end()) {
-            pBioseqAnnot = *it;
-        }
-    }
-    return pBioseqAnnot;
-}
+    std::vector<CRef<CSeq_id>> ids(bioseq.GetId().begin(), bioseq.GetId().end());
+    std::sort(ids.begin(), ids.end(), [](CRef<CSeq_id> l, CRef<CSeq_id> r) -> bool
+        {
+            return CSeq_id::Score(l) < CSeq_id::Score(r);
+        });
 
-static void s_AddAnnotsToBioseq(
-    list<CRef<CSeq_annot>>& annots,
-    CBioseq& bioseq,
-    CRef<CSeq_annot>& pBioseqAnnot)
-{
-    if (pBioseqAnnot) {
-        for (auto pAnnot : annots) {
-            objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
-            featEdit.MergeFeatures(pAnnot->SetData().SetFtable());
-        }
-        return;
-    }
+    //for (auto pSeqId : bioseq.GetId()) {
+    for (auto pSeqId : ids) {
+        auto annots = reader->GetAndUseAnnot(pSeqId);
 
-    pBioseqAnnot = s_GetBioseqAnnot(bioseq);
-
-    if (! pBioseqAnnot) {
-        pBioseqAnnot = annots.front();
-        bioseq.SetAnnot().push_back(pBioseqAnnot);
-        auto it = next(annots.begin());
-        while (it != annots.end()) {
-            objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
-            featEdit.MergeFeatures((*it)->SetData().SetFtable());
-            ++it;
-        }
-    } else {
-        for (auto pAnnot : annots) {
-            objects::edit::CFeatTableEdit featEdit(*pBioseqAnnot);
-            featEdit.MergeFeatures(pAnnot->SetData().SetFtable());
-        }
-    }
-}
-
-static bool s_HasPrefixMatch(
-    const string& idString,
-    CMultiReader::TAnnotMap& annotMap,
-    map<string, CMultiReader::TAnnotMap::iterator>& matchMap)
-{
-    matchMap.clear();
-    auto it = annotMap.lower_bound(idString);
-    while (it != annotMap.end() && NStr::StartsWith(it->first, idString)) {
-        matchMap.emplace(it->first, it);
-        ++it;
-    }
-    return ! matchMap.empty();
-}
-
-bool CMultiReader::x_HasMatch(
-    bool matchVersions,
-    const string& idString,
-    CMultiReader::TAnnotMap& annotMap,
-    set<string>& matchedAnnots,
-    list<CRef<CSeq_annot>>& annots) const
-{
-    if (matchVersions) {
-        return x_HasExactMatch(idString, annotMap, matchedAnnots, annots);
-    }
-
-    bool hasMatch = false;
-    map<string, TAnnotMap::iterator> matchMap;
-    shared_lock<shared_mutex> sLock{m_Mutex};
-    if (! s_HasPrefixMatch(idString, annotMap, matchMap)) {
-        return false;
-    }
-    sLock.unlock();
-    {
-        unique_lock<shared_mutex> uLock{ m_Mutex };
-        for (auto match : matchMap) {
-            const auto& annotId = match.first;
-            auto it = match.second;
-            if (matchedAnnots.insert(annotId).second) {
-                hasMatch = true;
-                annots.splice(annots.end(), it->second);
-                annotMap.erase(it);
-            }
-        }
-    }
-
-    return hasMatch;
-}
-
-bool CMultiReader::x_HasExactMatch(
-    const string& idString,
-    CMultiReader::TAnnotMap& annotMap,
-    set<string>& matchedAnnots,
-    list<CRef<CSeq_annot>>& annots) const
-{
-    shared_lock<shared_mutex> sLock{ m_Mutex };
-    auto it = annotMap.find(idString);
-    if (it == annotMap.end()) {
-        return false;
-    }
-    string annotId = it->first;
-    sLock.unlock();
-
-    {
-        unique_lock<shared_mutex> uLock{m_Mutex};
-        if (matchedAnnots.insert(annotId).second) {
-            annots = move(it->second);
-            annotMap.erase(it);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-void CMultiReader::AddAnnots(TAnnotMap& annotMap,
-        set<string>& matchedAnnots,
-        CBioseq& bioseq) const
-{
-    CRef<CSeq_annot> pBioseqAnnot;
-    for (auto pSeqId : bioseq.GetId()) {
-        list<CRef<CSeq_annot>> annots;
-        bool hasMatch = false;
-        bool matchVersions = (pSeqId->GetTextseq_Id() == nullptr);
-        auto idString = pSeqId->GetSeqIdString();
-        NStr::ToLower(idString);
-        hasMatch = x_HasMatch(matchVersions, idString, annotMap, matchedAnnots, annots);
-
-        if (! hasMatch &&
-            pSeqId->IsGeneral() &&
-            pSeqId->GetGeneral().IsSetDb() &&
-            (pSeqId->GetGeneral().GetDb() == m_context.m_genome_center_id) &&
-            pSeqId->GetGeneral().IsSetTag() && pSeqId->GetGeneral().GetTag().IsStr()) {
-            matchVersions = true;
-            idString = pSeqId->GetGeneral().GetTag().GetStr();
-            NStr::ToLower(idString);
-            hasMatch = x_HasMatch(matchVersions, idString, annotMap, matchedAnnots, annots);
-        }
-
-        if (! hasMatch) {
+        if (annots.empty()) {
+#ifdef _DEBUG
+            //std::cerr << "Failed to find annot for:\n" << MSerial_AsnText << *pSeqId;
+#endif
             continue;
         }
 
         for (auto pAnnot : annots) {
-            auto pAnnotId = s_GetAnnotId(*pAnnot);
-            g_ModifySeqIds(*pAnnot, *pAnnotId, pSeqId);
+            auto pAnnotId = IIndexedFeatureReader::GetAnnotId(*pAnnot);
+            CRef<CSeq_id> matching_id = pSeqId;
+#ifdef _DEBUG
+            //std::cerr << MSerial_AsnText << *pSeqId << *pAnnotId << *matching_id;
+#endif
+
+            s_ModifySeqIds(*pAnnot, *pAnnotId, matching_id);
         }
 
         s_AddAnnotsToBioseq(annots, bioseq, pBioseqAnnot);
@@ -1362,7 +1149,7 @@ void CMultiReader::AddAnnots(TAnnotMap& annotMap,
 }
 
 
-CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream)
+CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream) const
 {
     int flags = 0;
     flags |= CGtfReader::fGenbankMode;
@@ -1383,7 +1170,7 @@ CMultiReader::TAnnots CMultiReader::xReadGTF(CNcbiIstream& instream)
 }
 
 #ifdef FLATFILE_PARSER_ENABLED
-CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename)
+CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const string& filename, CNcbiIstream& instream)
 {
     unique_ptr<Parser> pp(new Parser);
     switch (format)
@@ -1409,17 +1196,11 @@ CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const
             "This flat file format is not supported: " + filename, 0);
         break;
     }
-/*
-#ifdef WIN32
-    pp->ifp = fopen(filename.c_str(), "rb");
-#else
-    pp->ifp = fopen(filename.c_str(), "r");
-#endif
-*/
+
     pp->output_format = Parser::EOutput::BioseqSet;
 
     CFlatFileParser ffparser(m_context.m_logger);
-    auto obj = ffparser.Parse(*pp, filename);
+    auto obj = ffparser.Parse(*pp, instream);
     if (obj.NotEmpty()) {
         if (obj->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
             auto bioseq_set = Ref(CTypeConverter<CBioseq_set>::SafeCast(obj.GetPointerOrNull()));
@@ -1437,5 +1218,13 @@ CRef<CSeq_entry> CMultiReader::xReadFlatfile(CFormatGuess::EFormat format, const
     return {};
 }
 #endif
+
+void CMultiReader::GetIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, TAnnots& annots)
+{
+    auto indexed_annots = std::make_unique<CWholeFileAnnotation>();
+    indexed_annots->Init(m_context.m_genome_center_id, 0);
+    indexed_annots->AddAnnots(annots);
+    reader = std::move(indexed_annots);
+}
 
 END_NCBI_SCOPE
