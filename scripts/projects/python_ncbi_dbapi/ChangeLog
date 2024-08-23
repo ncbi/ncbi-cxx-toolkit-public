@@ -1,3 +1,10 @@
+Version 1.26.0 (2024-08-23):
+* Advance to version 28.0 of the stable C++ Toolkit components.
+* Honor configuration files: python_ncbi_dbapi.ini and/or .ncbirc.
+* Allow connect to take keyword arguments (using PEP 249 names where
+  applicable) and accept support_standard_interface alongside extra
+  regardless, in that order when passing both positionally.
+
 Version 1.25.4 (2023-10-27):
 * Implement a set_logger extension.  (This module historically always used
   the root logger directly, and still does by default.)
