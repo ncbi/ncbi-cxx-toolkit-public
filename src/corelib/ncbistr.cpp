@@ -6863,7 +6863,7 @@ char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
         NCBI_THROW2(CStringException, eBadArgs,
                     "Unacceptable character encoding", 0);
     }
-    if ( cp <= 0xFF) {
+    if ( cp <= 0x7F) {
         return (char)cp;
     }
     if ( encoding == eEncoding_Windows_1252 ) {
@@ -6873,7 +6873,7 @@ char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
             }
         }
     }
-    if (cp > 0xFF) {
+    if (cp > 0xFF || (encoding == eEncoding_Ascii && cp > 0x7F)) {
         NCBI_THROW2(CStringException, eConvert,
                     "Failed to convert symbol to requested encoding", 0);
     }
