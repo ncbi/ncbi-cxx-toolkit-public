@@ -678,7 +678,8 @@ public:
         const string& db_name,
         const string& user_name,
         const string& user_pswd,
-        const pythonpp::CObject& extra_params
+        bool support_standard_interface,
+        const pythonpp::CDict& extra_params
         );
     ~CConnection(void);
 
