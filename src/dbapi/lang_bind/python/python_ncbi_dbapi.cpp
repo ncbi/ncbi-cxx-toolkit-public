@@ -1210,14 +1210,15 @@ CConnection::CConnection(
     const string& db_name,
     const string& user_name,
     const string& user_pswd,
-    const pythonpp::CObject& extra_params
+    bool support_standard_interface,
+    const pythonpp::CDict& extra_params
     )
 : m_DefParams(server_name, user_name, user_pswd)
 , m_Params(m_DefParams)
 , m_DM(CDriverManager::GetInstance())
 , m_DS(NULL)
 , m_DefTransaction( NULL )
-, m_ConnectionMode(eSimpleMode)
+, m_ConnectionMode(support_standard_interface ? eStandardMode : eSimpleMode)
 {
     try {
         m_DefParams.SetDriverName(driver_name);
@@ -1239,30 +1240,19 @@ CConnection::CConnection(
             m_DefParams.SetEncoding(eEncoding_UTF8);
         }
 
+        {{
+            // Iterate over a dict.
+            pythonpp::py_ssize_t i = 0;
+            PyObject* key;
+            PyObject* value;
+            while ( PyDict_Next(extra_params, &i, &key, &value) ) {
+                // Refer to borrowed references in key and value.
+                const string param_name = pythonpp::CString(key);
+                const string param_value = pythonpp::CString(value);
 
-        // Handle extra-parameters ...
-        if (!pythonpp::CNone::HasSameType(extra_params)) {
-            if (pythonpp::CDict::HasSameType(extra_params)) {
-                const pythonpp::CDict dict = extra_params;
-
-                // Iterate over a dict.
-                pythonpp::py_ssize_t i = 0;
-                PyObject* key;
-                PyObject* value;
-                while ( PyDict_Next(dict, &i, &key, &value) ) {
-                    // Refer to borrowed references in key and value.
-                    const string param_name = pythonpp::CString(key);
-                    const string param_value = pythonpp::CString(value);
-
-                    m_DefParams.SetParam(param_name, param_value);
-                }
-            } else if (pythonpp::CBool::HasSameType(extra_params)) {
-                bool support_standard_interface = pythonpp::CBool(extra_params);
-                m_ConnectionMode = (support_standard_interface ? eStandardMode : eSimpleMode);
-            } else {
-                throw CNotSupportedError("Expected dictionary as an argument.");
+                m_DefParams.SetParam(param_name, param_value);
             }
-        }
+        }}
 
         pythonpp::CThreadingGuard ALLOW_OTHER_THREADS;
         // Make a datasource ...
@@ -3862,10 +3852,10 @@ ReleaseGlobalLock(PyObject *self, PyObject *args)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// connect(driver_name, db_type, db_name, user_name, user_pswd)
+// connect(driver_name, db_type, server_name, db_name, user_name, user_pswd)
 static
 PyObject*
-Connect(PyObject *self, PyObject *args)
+Connect(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     CConnection* conn = NULL;
 
@@ -3873,26 +3863,59 @@ Connect(PyObject *self, PyObject *args)
         // Debugging ...
         // throw  python::CDatabaseError("oops ...");
         // throw  python::CDatabaseError("oops ...", 200, "Blah-blah-blah");
-
-        string driver_name;
-        string db_type;
-        string server_name;
-        string db_name;
-        string user_name;
-        string user_pswd;
-        pythonpp::CObject extra_params = pythonpp::CNone();
+        pythonpp::CString driver_name;
+        pythonpp::CString db_type;
+        pythonpp::CString server_name;
+        pythonpp::CString db_name;
+        pythonpp::CString user_name;
+        pythonpp::CString user_pswd;
+        pythonpp::CBool   support_standard_interface(false);
+        pythonpp::CDict   extra_params;
 
         try {
-            const pythonpp::CTuple func_args(args);
+            static const char * const kwnames[] = {
+                "driver", "type", "dsn", "database", "user", "password",
+                "support_standard_interface", "extra"
+            };
+            PyObject *py_driver_name;
+            PyObject *py_db_type;
+            PyObject *py_server_name;
+            PyObject *py_db_name;
+            PyObject *py_user_name;
+            PyObject *py_user_pswd;
+            PyObject *py_support_standard_interface = nullptr;
+            PyObject *py_extra_params = nullptr;
 
-            driver_name = pythonpp::CString(func_args[0]);
-            db_type = pythonpp::CString(func_args[1]);
-            server_name = pythonpp::CString(func_args[2]);
-            db_name = pythonpp::CString(func_args[3]);
-            user_name = pythonpp::CString(func_args[4]);
-            user_pswd = pythonpp::CString(func_args[5]);
-            if ( func_args.size() > 6 ) {
-                extra_params = func_args[6];
+            int status = PyArg_ParseTupleAndKeywords
+                (args, kwargs, "UUUUUU|OO:connect", (char**) kwnames,
+                 &py_driver_name, &py_db_type, &py_server_name, &py_db_name,
+                 &py_user_name, &py_user_pswd, &py_support_standard_interface,
+                 &py_extra_params);
+            if ( !status ) {
+                pythonpp::CError::Check();
+            }
+
+            driver_name = py_driver_name;
+            db_type     = py_db_type;
+            server_name = py_server_name;
+            db_name     = py_db_name;
+            user_name   = py_user_name;
+            user_pswd   = py_user_pswd;
+            if (py_extra_params != nullptr) {
+                extra_params = py_extra_params;
+                if (py_support_standard_interface != nullptr) {
+                    support_standard_interface = py_support_standard_interface;
+                }
+            } else if (py_support_standard_interface != nullptr) {
+                // For historical reasons, does double duty, but only
+                // when passed positionally.
+                const pythonpp::CTuple func_args(args);
+                if (func_args.size() > 6
+                    &&  pythonpp::CDict::HasSameType(py_support_standard_interface)) {
+                    extra_params = py_support_standard_interface;
+                } else {
+                    support_standard_interface = py_support_standard_interface;
+                }
             }
         } catch (const pythonpp::CError&) {
             throw CProgrammingError("Invalid parameters within 'connect' function");
@@ -3905,6 +3928,7 @@ Connect(PyObject *self, PyObject *args)
             db_name,
             user_name,
             user_pswd,
+            support_standard_interface,
             extra_params
             );
     }
@@ -4247,11 +4271,12 @@ static struct PyMethodDef python_ncbi_dbapi_methods[] = {
         "NOTE:  This is not a part of the Python Database API Specification "
         "v2.0."
     },
-    {(char*)"connect", (PyCFunction) python::Connect, METH_VARARGS, (char*)
-        "connect(driver_name, db_type, server_name, database_name, userid, password,"
-     "[extra/use_std_interface]) "
-        "-- connect to the "
-        "driver_name; db_type; server_name; database_name; userid; password;"
+    {(char*)"connect", (PyCFunction) python::Connect,
+     METH_VARARGS | METH_KEYWORDS, (char*)
+        "connect([driver=]driver_name, [type=]db_type, [dsn=]server_name,"
+        " [database=]database_name, [user=]userid, [password=]password,"
+        " [[support_standard_interface=]support_standard_interface],"
+        " [[extra=]extra]) -- connect with the specified parameters"
     },
     {(char*)"set_logger", (PyCFunction) python::SetLogger, METH_VARARGS,
      (char*)"set_logger(logger) "
