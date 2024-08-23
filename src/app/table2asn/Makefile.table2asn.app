@@ -10,7 +10,7 @@ APP = table2asn
 
 SRC = table2asn multireader struc_cmt_reader table2asn_context feature_table_reader \
       fcs_reader table2asn_validator src_quals fasta_ex suspect_feat descr_apply \
-	  table2asn_huge async_token utils
+	  table2asn_huge async_token utils annot_match annot_match_5col
 
 LIB  = xdiscrepancy xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
        xvalidate xhugeasn xobjwrite xobjreadex \
