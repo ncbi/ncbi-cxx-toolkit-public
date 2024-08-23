@@ -563,6 +563,8 @@ void CObjectIStreamXml::SkipQDecl(void)
                 m_Encoding = eEncoding_UTF8;
             } else if (NStr::CompareNocase(value.c_str(),"ISO-8859-1") == 0) {
                 m_Encoding = eEncoding_ISO8859_1;
+            } else if (NStr::CompareNocase(value.c_str(),"US-ASCII") == 0) {
+                m_Encoding = eEncoding_Ascii;
             } else if (NStr::CompareNocase(value.c_str(),"Windows-1252") == 0) {
                 m_Encoding = eEncoding_Windows_1252;
             } else {
