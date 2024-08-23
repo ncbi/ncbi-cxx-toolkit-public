@@ -3303,24 +3303,32 @@ void CScope_Impl::x_GetBioseqHandlesSorted(const TIds&     ids,
         if ( ret[i] ) {
             continue;
         }
-        TSeqMatchMap::iterator match = match_map.find(ids[i]);
-        if (match != match_map.end()  &&  match->second) {
-            ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Loaded);
-        }
-        else {
-            TSeq_idMapValue& id_info = x_GetSeq_id_Info(ids[i]);
-            CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool, CInitGuard::force);
-            if ( init || id_info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+        TSeq_idMapValue& id_info = x_GetSeq_id_Info(ids[i]);
+        CInitGuard init(id_info.second.m_Bioseq_Info, m_MutexPool, CInitGuard::force);
+        if ( init || id_info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+            TSeqMatchMap::iterator match = match_map.find(ids[i]);
+            if (match != match_map.end()  &&  match->second) {
+                CTSE_ScopeInfo& tse_info = *match->second.m_TSE_Lock;
+                _ASSERT(&tse_info.GetScopeImpl() == this);
+                // resolved
+                CRef<CBioseq_ScopeInfo> info = tse_info.GetBioseqInfo(match->second);
+                _ASSERT(&info->x_GetScopeImpl() == this);
+                id_info.second.m_Bioseq_Info = info;
+                _ASSERT(info->HasBioseq());
+                ret[i].m_Handle_Seq_id = ids[i];
+                ret[i].m_Info = info->GetLock(match->second.m_Bioseq);
+            }
+            else {
                 if ( !id_info.second.m_Bioseq_Info ) {
                     id_info.second.m_Bioseq_Info.Reset(new CBioseq_ScopeInfo(CBioseq_Handle::fState_not_found, m_BioseqChangeCounter));
                 }
                 else {
                     id_info.second.m_Bioseq_Info->SetUnresolved(CBioseq_Handle::fState_not_found, m_BioseqChangeCounter);
                 }
+                CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
+                ret[i].m_Handle_Seq_id = ids[i];
+                ret[i].m_Info.Reset(info);
             }
-            CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
-            ret[i].m_Handle_Seq_id = ids[i];
-            ret[i].m_Info.Reset(info);
         }
     }
 }
