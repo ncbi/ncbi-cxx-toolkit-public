@@ -3875,7 +3875,7 @@ Connect(PyObject *self, PyObject *args, PyObject *kwargs)
         try {
             static const char * const kwnames[] = {
                 "driver", "type", "dsn", "database", "user", "password",
-                "support_standard_interface", "extra"
+                "support_standard_interface", "extra", nullptr
             };
             PyObject *py_driver_name;
             PyObject *py_db_type;
