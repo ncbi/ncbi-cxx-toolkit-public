@@ -242,6 +242,9 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         case eEncoding_ISO8859_1:
             m_Output.PutString("\" encoding=\"ISO-8859-1");   
             break;
+        case eEncoding_Ascii:
+            m_Output.PutString("\" encoding=\"US-ASCII");
+            break;
         case eEncoding_Windows_1252:
             m_Output.PutString("\" encoding=\"Windows-1252");   
             break;
