@@ -50,8 +50,10 @@ void OnItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
             auto bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(item);
             cout << bioseq_info->GetCanonicalId().GetId() << endl;
         } else {
-            cout << "Unexpected item type: " << item_type << endl;
+            cerr << "Unexpected item type: " << item_type << endl;
         }
+    } else if (status == EPSG_Status::eInProgress) {
+        cerr << "Timeout on getting an item status" << endl;
     } else {
         ReportErrors(item);
     }
@@ -59,39 +61,51 @@ void OnItemComplete(EPSG_Status status, const shared_ptr<CPSG_ReplyItem>& item)
 
 void OnReplyComplete(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply)
 {
-    if (status != EPSG_Status::eSuccess) {
+    if (status == EPSG_Status::eInProgress) {
+        cerr << "Timeout on getting a reply status" << endl;
+    } else if (status != EPSG_Status::eSuccess) {
         ReportErrors(reply);
     }
 }
 
-int EventLoop(const string& service, shared_ptr<CPSG_Request> request)
+int EventLoop(const string& service, shared_ptr<CPSG_Request> request, CTimeout timeout)
 {
     CPSG_EventLoop event_loop(service, &OnItemComplete, &OnReplyComplete);
 
-    if (event_loop.SendRequest(request, CDeadline::eInfinite)) {
+    if (event_loop.SendRequest(request, timeout)) {
         event_loop.Stop();
-        return event_loop.Run(CDeadline::eInfinite) ? 0 : -2;
+
+        if (event_loop.Run(timeout)) {
+            return 0;
+        }
+
+        cerr << "Timeout on getting a reply" << endl;
+        return -2;
     }
 
+    cerr << "Timeout on sending a request" << endl;
     return -1;
 }
 
-int Queue(const string& service, shared_ptr<CPSG_Request> request)
+int Queue(const string& service, shared_ptr<CPSG_Request> request, CTimeout timeout)
 {
     CPSG_Queue queue(service);
 
-    if (auto reply = queue.SendRequestAndGetReply(request, CDeadline::eInfinite)) {
-        for (auto item = reply->GetNextItem(CDeadline::eInfinite);
-                item->GetType() != CPSG_ReplyItem::eEndOfReply;
-                item = reply->GetNextItem(CDeadline::eInfinite)) {
+    if (auto reply = queue.SendRequestAndGetReply(request, timeout)) {
+        for (auto item = reply->GetNextItem(timeout); item; item = reply->GetNextItem(timeout)) {
+                if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+                    OnReplyComplete(reply->GetStatus(timeout), reply);
+                    return 0;
+                }
 
-                OnItemComplete(item->GetStatus(CDeadline::eInfinite), item);
+                OnItemComplete(item->GetStatus(timeout), item);
             }
 
-        OnReplyComplete(reply->GetStatus(CDeadline::eInfinite), reply);
-        return 0;
+        cerr << "Timeout on getting a reply" << endl;
+        return -2;
     }
 
+    cerr << "Timeout on sending a request" << endl;
     return -1;
 }
 
@@ -107,6 +121,7 @@ void CPsgClientSampleApp::Init()
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "PSG client API sample");
     arg_desc->AddDefaultKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString, "");
+    arg_desc->AddDefaultKey("timeout", "SECONDS", "Timeout value in seconds", CArgDescriptions::eDouble, "1.0");
     arg_desc->AddFlag("event-loop", "Use event loop instead of queue");
     arg_desc->AddFlag("https", "Enable HTTPS");
     arg_desc->AddPositional("ID", "Bio ID", CArgDescriptions::eString);
@@ -123,8 +138,9 @@ int CPsgClientSampleApp::Run()
 
     auto service = args["service"].AsString();
     auto request = make_shared<CPSG_Request_Resolve>(args["ID"].AsString());
+    auto timeout = CTimeout(args["timeout"].AsDouble());
     request->IncludeInfo(CPSG_Request_Resolve::fCanonicalId);
-    return args["event-loop"].HasValue() ? EventLoop(service, request) : Queue(service, request);
+    return args["event-loop"].HasValue() ? EventLoop(service, request, timeout) : Queue(service, request, timeout);
 }
 
 int main(int argc, const char* argv[])
