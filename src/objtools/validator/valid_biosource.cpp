@@ -498,6 +498,20 @@ bool s_IsAllDigitsOrSpaces (string str)
     return rval;
 }
 
+static const CSeq_entry& s_GetJustNucSeqEntry(const CSeq_entry& entry)
+{
+    if (entry.IsSeq()) {
+        return entry;
+    }
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+        for (const auto& pEntry : entry.GetSet().GetSeq_set()) {
+            // return first component
+            return *pEntry;
+        }
+    }
+    return entry;
+}
+
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
 const CSerialObject& obj,
@@ -816,7 +830,7 @@ const CSeq_entry *ctx)
         }
         if (!suppress) {
             if (chromosome->IsSetName() && NStr::EqualNocase(chromosome->GetName(), "Unknown")) {
-                const CSeq_entry& entry = *ctx;
+                const CSeq_entry& entry = s_GetJustNucSeqEntry(*ctx);
                 if (entry.IsSeq()) {
                     const CBioseq& bsp = entry.GetSeq();
                     FOR_EACH_SEQID_ON_BIOSEQ(itr, bsp) {
@@ -871,7 +885,7 @@ const CSeq_entry *ctx)
         }
         if (!suppress) {
             if (linkage_group->IsSetName() && NStr::EqualNocase(linkage_group->GetName(), "Unknown")) {
-                const CSeq_entry& entry = *ctx;
+                const CSeq_entry& entry = s_GetJustNucSeqEntry(*ctx);
                 if (entry.IsSeq()) {
                     const CBioseq& bsp = entry.GetSeq();
                     FOR_EACH_SEQID_ON_BIOSEQ(itr, bsp) {
