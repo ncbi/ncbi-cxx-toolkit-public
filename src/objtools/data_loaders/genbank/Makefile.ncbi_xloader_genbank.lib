@@ -1,6 +1,7 @@
 # $Id$
 
-SRC = gbloader gbnative gbload_util psg_loader psg_loader_impl
+SRC = gbloader gbnative gbload_util psg_loader psg_loader_impl \
+    psg_evloop psg_processor psg_blob_processor psg_processors psg_cache psg_cdd
 
 LIB = ncbi_xloader_genbank
 

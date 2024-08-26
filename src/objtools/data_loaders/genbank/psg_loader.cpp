@@ -37,6 +37,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqres/seqres__.hpp>
+#include <objtools/data_loaders/genbank/seqref.hpp>
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
@@ -50,7 +51,7 @@
 
 #if defined(HAVE_PSG_LOADER)
 
-BEGIN_NCBI_SCOPE
+BEGIN_NCBI_NAMESPACE;
 
 NCBI_PARAM_ENUM_ARRAY(objects::CSeq_id::ESNPScaleLimit, PSG_LOADER, SNP_SCALE_LIMIT) {
     {"", objects::CSeq_id::eSNPScaleLimit_Default},
@@ -65,7 +66,7 @@ NCBI_PARAM_ENUM_DEF_EX(objects::CSeq_id::ESNPScaleLimit, PSG_LOADER, SNP_SCALE_L
                        eParam_NoThread, PSG_LOADER_SNP_SCALE_LIMIT);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, SNP_SCALE_LIMIT) TSNP_Scale_Limit;
 
-BEGIN_SCOPE(objects)
+BEGIN_NAMESPACE(objects);
 
 /////////////////////////////////////////////////////////////////////////////
 // CPsgBlobId
@@ -74,6 +75,14 @@ BEGIN_SCOPE(objects)
 
 CPsgBlobId::CPsgBlobId(const string& id)
     : m_Id(id)
+{
+}
+
+
+CPsgBlobId::CPsgBlobId(const string& id, bool is_dead)
+    : m_Id(id),
+      m_HasBioseqIsDead(true),
+      m_BioseqIsDead(is_dead)
 {
 }
 
@@ -201,6 +210,18 @@ CPSGDataLoader::~CPSGDataLoader(void)
 }
 
 
+CDataLoader::TBlobId CPSGDataLoader::GetBlobIdFromSatSatKey(int sat,
+                                                            int sat_key,
+                                                            int sub_sat) const
+{
+    string str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
+    if ( sub_sat != CSeqref::eSubSat_main ) {
+        str += '.'+NStr::NumericToString(sub_sat);
+    }
+    return TBlobId(new CPsgBlobId(str));
+}
+
+
 CDataLoader::TBlobId CPSGDataLoader::GetBlobId(const CSeq_id_Handle& idh)
 {
     return TBlobId(m_Impl->GetBlobId(idh).GetPointerOrNull());
@@ -229,8 +250,8 @@ CPSGDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
 
 CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
-    const SAnnotSelector* sel,
-    TProcessedNAs* processed_nas)
+                                                                     const SAnnotSelector* sel,
+                                                                     TProcessedNAs* processed_nas)
 {
     return CDataLoader::TTSE_LockSet();
 }
@@ -240,55 +261,55 @@ namespace {
     struct SBetterId
     {
         int GetScore(const CSeq_id_Handle& id1) const
-            {
-                if ( id1.IsGi() ) {
-                    return 100;
-                }
-                if ( !id1 ) {
-                    return -1;
-                }
-                CConstRef<CSeq_id> seq_id = id1.GetSeqId();
-                const CTextseq_id* text_id = seq_id->GetTextseq_Id();
-                if ( text_id ) {
-                    int score;
-                    if ( text_id->IsSetAccession() ) {
-                        if ( text_id->IsSetVersion() ) {
-                            score = 99;
-                        }
-                        else {
-                            score = 50;
-                        }
+        {
+            if ( id1.IsGi() ) {
+                return 100;
+            }
+            if ( !id1 ) {
+                return -1;
+            }
+            CConstRef<CSeq_id> seq_id = id1.GetSeqId();
+            const CTextseq_id* text_id = seq_id->GetTextseq_Id();
+            if ( text_id ) {
+                int score;
+                if ( text_id->IsSetAccession() ) {
+                    if ( text_id->IsSetVersion() ) {
+                        score = 99;
                     }
                     else {
-                        score = 0;
+                        score = 50;
                     }
-                    return score;
                 }
-                if ( seq_id->IsGeneral() ) {
-                    return 10;
+                else {
+                    score = 0;
                 }
-                if ( seq_id->IsLocal() ) {
-                    return 0;
-                }
-                return 1;
+                return score;
             }
+            if ( seq_id->IsGeneral() ) {
+                return 10;
+            }
+            if ( seq_id->IsLocal() ) {
+                return 0;
+            }
+            return 1;
+        }
         bool operator()(const CSeq_id_Handle& id1,
                         const CSeq_id_Handle& id2) const
-            {
-                int score1 = GetScore(id1);
-                int score2 = GetScore(id2);
-                if ( score1 != score2 ) {
-                    return score1 > score2;
-                }
-                return id1 < id2;
+        {
+            int score1 = GetScore(id1);
+            int score2 = GetScore(id2);
+            if ( score1 != score2 ) {
+                return score1 > score2;
             }
+            return id1 < id2;
+        }
     };
 }
 
 
 CPSGDataLoader::TTSE_LockSet CPSGDataLoader::GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
-    const SAnnotSelector* sel,
-    TProcessedNAs* processed_nas)
+                                                                       const SAnnotSelector* sel,
+                                                                       TProcessedNAs* processed_nas)
 {
     TIds ids = bioseq.GetId();
     sort(ids.begin(), ids.end(), SBetterId());
@@ -461,8 +482,8 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
             return names;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-            "blob state error for " + sih.AsString(),
-            blob_ids.GetState());
+                    "blob state error for " + sih.AsString(),
+                    blob_ids.GetState());
     }
 
     ITERATE(CFixedBlob_ids, it, blob_ids) {
@@ -472,7 +493,7 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
         }
         CConstRef<CBlob_Annot_Info> annot_info = info.GetAnnotInfo();
         ITERATE(CBlob_Annot_Info::TNamedAnnotNames, jt,
-            annot_info->GetNamedAnnotNames()) {
+                annot_info->GetNamedAnnotNames()) {
             names.insert(*jt);
         }
     }
@@ -484,7 +505,7 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih)
 
 CGBDataLoader::TNamedAnnotNames
 CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
-    const string& named_acc)
+                                        const string& named_acc)
 {
     TNamedAnnotNames names;
 
@@ -508,8 +529,8 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
             return names;
         }
         NCBI_THROW2(CBlobStateException, eBlobStateError,
-            "blob state error for " + sih.AsString(),
-            blob_ids.GetState());
+                    "blob state error for " + sih.AsString(),
+                    blob_ids.GetState());
     }
 
     ITERATE(CFixedBlob_ids, it, blob_ids) {
@@ -519,7 +540,7 @@ CPSGDataLoader::GetNamedAnnotAccessions(const CSeq_id_Handle& sih,
         }
         CConstRef<CBlob_Annot_Info> annot_info = info.GetAnnotInfo();
         ITERATE(CBlob_Annot_Info::TNamedAnnotNames, jt,
-            annot_info->GetNamedAnnotNames()) {
+                annot_info->GetNamedAnnotNames()) {
             names.insert(*jt);
         }
     }
@@ -548,7 +569,7 @@ CPSGDataLoader::x_GetRealBlobId(const TBlobId& blob_id) const
 }
 
 
-END_SCOPE(objects)
+END_NAMESPACE(objects);
 
 // ===========================================================================
 
@@ -583,6 +604,6 @@ CDataLoader* CPSG_DataLoaderCF::CreateAndRegister(
         GetPriority(params)).GetLoader();
 }
 
-END_NCBI_SCOPE
+END_NCBI_NAMESPACE;
 
 #endif // HAVE_PSG_LOADER

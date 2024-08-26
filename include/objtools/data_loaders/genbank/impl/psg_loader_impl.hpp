@@ -46,68 +46,26 @@
 BEGIN_NCBI_SCOPE
 
 class CThreadPool;
-class CThreadPool_Task;
 
 BEGIN_SCOPE(objects)
 
-struct SPsgBioseqInfo
-{
-    SPsgBioseqInfo(const CPSG_BioseqInfo& bioseq_info, int lifespan);
+BEGIN_NAMESPACE(psgl);
 
-    typedef underlying_type_t<CPSG_Request_Resolve::EIncludeInfo> TIncludedInfo;
-    typedef CDataLoader::TIds TIds;
-
-    atomic<TIncludedInfo> included_info;
-    CSeq_inst::TMol molecule_type;
-    Uint8 length;
-    CPSG_BioseqInfo::TState state;
-    CPSG_BioseqInfo::TState chain_state;
-    TTaxId tax_id;
-    int hash;
-    TGi gi;
-    CSeq_id_Handle canonical;
-    TIds ids;
-    string blob_id;
-
-    CDeadline deadline;
-
-    TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
-    CBioseq_Handle::TBioseqStateFlags GetBioseqStateFlags() const;
-    CBioseq_Handle::TBioseqStateFlags GetChainStateFlags() const;
-
-private:
-    SPsgBioseqInfo(const SPsgBioseqInfo&);
-    SPsgBioseqInfo& operator=(const SPsgBioseqInfo&);
-};
-
-
-struct SPsgBlobInfo
-{
-    explicit SPsgBlobInfo(const CPSG_BlobInfo& blob_info);
-    explicit SPsgBlobInfo(const CTSE_Info& tse);
-
-    string blob_id_main;
-    string id2_info;
-    CBioseq_Handle::TBioseqStateFlags blob_state_flags;
-    Int8 last_modified;
-
-    int GetBlobVersion() const { return int(last_modified/60000); /* ms to minutes */ }
-
-    bool IsSplit() const { return !id2_info.empty(); }
-
-private:
-    SPsgBlobInfo(const SPsgBlobInfo&);
-    SPsgBlobInfo& operator=(const SPsgBlobInfo&);
-};
-
-
+struct SPsgBioseqInfo;
+struct SPsgBlobInfo;
 class CPSGBioseqCache;
 class CPSGAnnotCache;
 class CPSGCDDInfoCache;
 class CPSGBlobMap;
 class CPSGIpgTaxIdMap;
-class CPSG_Blob_Task;
-class CPSG_PrefetchCDD_Task;
+class CPSGL_Queue;
+class CPSGL_QueueGuard;
+class CPSGL_ResultGuard;
+
+END_NAMESPACE(psgl);
+
+
+class CPSGAnnotCache;
 
 
 class CPSGDataLoader_Impl : public CObject
@@ -152,12 +110,12 @@ public:
                                          const CSeq_id_Handle& idh,
                                          CDataLoader::EChoice choice);
     CDataLoader::TTSE_LockSet GetRecordsOnce(CDataSource* data_source,
-                                         const CSeq_id_Handle& idh,
-                                         CDataLoader::EChoice choice);
-    CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
-    CRef<CPsgBlobId> GetBlobIdOnce(const CSeq_id_Handle& idh);
+                                             const CSeq_id_Handle& idh,
+                                             CDataLoader::EChoice choice);
+    CConstRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CConstRef<CPsgBlobId> GetBlobIdOnce(const CSeq_id_Handle& idh);
     CTSE_Lock GetBlobById(CDataSource* data_source,
-                              const CPsgBlobId& blob_id);
+                          const CPsgBlobId& blob_id);
     CTSE_Lock GetBlobByIdOnce(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
     void LoadChunk(CDataSource* data_source,
@@ -165,7 +123,7 @@ public:
     void LoadChunks(CDataSource* data_source,
                     const CDataLoader::TChunkSet& chunks);
     void LoadChunksOnce(CDataSource* data_source,
-                    const CDataLoader::TChunkSet& chunks);
+                        const CDataLoader::TChunkSet& chunks);
 
     void GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_sets);
     typedef set<CSeq_id_Handle> TLoadedSeqIds;
@@ -174,9 +132,9 @@ public:
     typedef CDataLoader::TSeqIdSets TSeqIdSets;
     typedef CDataLoader::TCDD_Locks TCDD_Locks;
     void GetCDDAnnots(CDataSource* data_source,
-        const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+                      const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
     void GetCDDAnnotsOnce(CDataSource* data_source,
-        const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+                          const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
                                                 const TIds& ids,
@@ -206,14 +164,6 @@ public:
     void GetSequenceHashes(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known);
     void GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded, TSequenceHashes& ret, THashKnown& known);
 
-    static CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info, const CPSG_BlobData& blob_data);
-
-    struct SReplyResult {
-        CTSE_Lock lock;
-        string blob_id;
-        shared_ptr<SPsgBlobInfo> blob_info;
-    };
-
     static void NCBI_XLOADER_GENBANK_EXPORT SetGetBlobByIdShouldFail(bool value);
     static bool NCBI_XLOADER_GENBANK_EXPORT GetGetBlobByIdShouldFail();
 
@@ -223,36 +173,28 @@ public:
                   const char* name,
                   int retry_count = 0);
     
-    void PrefetchCDD(const TIds& ids);
-
 private:
-    friend class CPSG_Blob_Task;
+    typedef psgl::SPsgBlobInfo SPsgBlobInfo;
+    typedef psgl::SPsgBioseqInfo SPsgBioseqInfo;
+    typedef psgl::CPSGBioseqCache CPSGBioseqCache;
+    typedef psgl::CPSGL_Queue CPSGL_Queue;
+    typedef psgl::CPSGL_QueueGuard CPSGL_QueueGuard;
+    typedef psgl::CPSGL_ResultGuard CPSGL_ResultGuard;
+    typedef psgl::CPSGAnnotCache CPSGAnnotCache;
+    typedef psgl::CPSGCDDInfoCache CPSGCDDInfoCache;
+    typedef psgl::CPSGBlobMap CPSGBlobMap;
+    typedef psgl::CPSGIpgTaxIdMap CPSGIpgTaxIdMap;
 
-    shared_ptr<CPSG_Reply> x_SendRequest(shared_ptr<CPSG_Request> request);
-    SReplyResult x_ProcessBlobReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source, CSeq_id_Handle req_idh, bool retry, bool lock_asap = false, CTSE_LoadLock* load_lock = nullptr);
-    SReplyResult x_RetryBlobRequest(const string& blob_id, CDataSource* data_source, CSeq_id_Handle req_idh);
-    string x_GetCachedBlobId(const CSeq_id_Handle& idh);
+    struct SReplyResult {
+        CTSE_Lock lock;
+        string blob_id;
+        shared_ptr<SPsgBlobInfo> blob_info;
+    };
+
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
     shared_ptr<SPsgBlobInfo> x_GetBlobInfo(CDataSource* data_source, const string& blob_id);
     typedef pair<shared_ptr<SPsgBioseqInfo>, shared_ptr<SPsgBlobInfo>> TBioseqAndBlobInfo;
     TBioseqAndBlobInfo x_GetBioseqAndBlobInfo(CDataSource* data_source, const CSeq_id_Handle& idh);
-
-    enum EMainChunkType {
-        eNoDelayedMainChunk,
-        eDelayedMainChunk
-    };
-    enum ESplitInfoType {
-        eNoSplitInfo,
-        eIsSplitInfo
-    };
-    // caller of x_ReadBlobData() should call SetLoaded();
-    void x_ReadBlobData(
-        const SPsgBlobInfo& psg_blob_info,
-        const CPSG_BlobInfo& blob_info,
-        const CPSG_BlobData& blob_data,
-        CTSE_LoadLock& load_lock,
-        ESplitInfoType split_info_type);
-    void x_SetLoaded(CTSE_LoadLock& load_lock, EMainChunkType main_chunk_type);
 
     typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
     typedef vector<TBioseqAndBlobInfo> TBioseqAndBlobInfos;
@@ -268,9 +210,6 @@ private:
         const TLoaded& loaded,
         TBioseqAndBlobInfos& ret);
 
-    shared_ptr<CPSG_Request_Blob>
-    x_MakeLoadLocalCDDEntryRequest(CDataSource* data_source,
-                                   CDataLoader::TChunk chunk);
     bool x_ReadCDDChunk(CDataSource* data_source,
                         CDataLoader::TChunk chunk,
                         const CPSG_BlobInfo& blob_info,
@@ -281,20 +220,31 @@ private:
                            CDataLoader::TProcessedNAs* processed_nas,
                            CDataLoader::TTSE_LockSet& locks);
     TTaxId x_GetIpgTaxId(const CSeq_id_Handle& idh);
-    void x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    pair<size_t, size_t> x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     void x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_id_Handle idh);
 
+    void x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
+                                           const CSeq_id_Handle& idh,
+                                           TBioseqAndBlobInfo& ret,
+                                           size_t id_index = 0);
+    bool x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
+                                          const CSeq_id_Handle& idh,
+                                          TBioseqAndBlobInfo& ret,
+                                          const CPSGL_ResultGuard& result);
+    bool x_FinalizeBioseqAndBlobInfo(TBioseqAndBlobInfo& ret);
+    
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
-    shared_ptr<CPSG_Queue> m_Queue;
+    CRef<CPSGL_Queue> m_Queue;
     CRef<CRequestContext> m_RequestContext;
-    unique_ptr<CPSGBlobMap> m_BlobMap;
+    unique_ptr<CPSGBlobMap> m_BlobMap; // blob_id -> blob_info
     unique_ptr<CPSGIpgTaxIdMap> m_IpgTaxIdMap;
-    unique_ptr<CPSGBioseqCache> m_BioseqCache;
+    unique_ptr<CPSGBioseqCache> m_BioseqCache; // seq_id -> bioseq_info
     unique_ptr<CPSGAnnotCache> m_AnnotCache;
     unique_ptr<CPSGCDDInfoCache> m_CDDInfoCache;
     unique_ptr<CThreadPool> m_ThreadPool;
+    class CPSG_PrefetchCDD_Task;
     CRef<CPSG_PrefetchCDD_Task> m_CDDPrefetchTask;
     int m_CacheLifespan;
     unsigned int m_RetryCount;

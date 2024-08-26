@@ -44,8 +44,8 @@
 
 #if defined(HAVE_PSG_LOADER)
 
-BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+BEGIN_NCBI_NAMESPACE;
+BEGIN_NAMESPACE(objects);
 
 class CPSGDataLoader_Impl;
 
@@ -53,34 +53,70 @@ class NCBI_XLOADER_GENBANK_EXPORT CPsgBlobId : public CBlobId
 {
 public:
     explicit CPsgBlobId(const string& id);
+    CPsgBlobId(const string& id, bool is_dead);
     CPsgBlobId(const string& id, const string& id2_info);
     virtual ~CPsgBlobId();
     
     const string& ToPsgId() const
-        {
-            return m_Id;
-        }
+    {
+        return m_Id;
+    }
     
     virtual string ToString(void) const override;
     virtual bool operator<(const CBlobId& id) const override;
     virtual bool operator==(const CBlobId& id) const override;
 
     const string& GetId2Info() const
-        {
-            return m_Id2Info;
-        }
+    {
+        return m_Id2Info;
+    }
     void SetId2Info(const string& id2_info)
-        {
-            m_Id2Info = id2_info;
-        }
+    {
+        m_Id2Info = id2_info;
+    }
+
+    const string& GetTSEName() const
+    {
+        return m_TSEName;
+    }
+    bool HasTSEName() const
+    {
+        return !m_TSEName.empty();
+    }
+    void SetTSEName(const string& name)
+    {
+        m_TSEName = name;
+    }
+    
+    bool HasBioseqIsDead() const
+    {
+        return m_HasBioseqIsDead;
+    }
+    bool BioseqIsDead() const
+    {
+        return m_BioseqIsDead;
+    }
+    void ResetBioseqIsDead()
+    {
+        m_HasBioseqIsDead = false;
+        m_BioseqIsDead = false;
+    }
+    void SetBioseqIsDead(bool is_dead = true)
+    {
+        m_HasBioseqIsDead = true;
+        m_BioseqIsDead = is_dead;
+    }
     
     bool GetSatSatkey(int& sat, int& satkey) const;
 
     static CConstRef<CPsgBlobId> GetPsgBlobId(const CBlobId& blob_id);
 
 private:
-    string m_Id;
-    string m_Id2Info;
+    string m_Id; // main blob id
+    string m_Id2Info; // needed to load chunks
+    string m_TSEName; // needed to restore TSE annot name on re-load by blob id
+    bool m_HasBioseqIsDead = false; // needed to restore 'dead' flag on re-load by blob id
+    bool m_BioseqIsDead = false;
 };
 
 
@@ -97,6 +133,9 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
 
+    TBlobId GetBlobIdFromSatSatKey(int sat,
+                                   int sat_key,
+                                   int sub_sat) const override;
     TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
     TBlobId GetBlobIdFromString(const string& str) const override;
 
@@ -106,11 +145,11 @@ public:
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
 
     TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
-        const SAnnotSelector* sel,
-        TProcessedNAs* processed_nas) override;
+                                         const SAnnotSelector* sel,
+                                         TProcessedNAs* processed_nas) override;
     TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
-        const SAnnotSelector* sel,
-        TProcessedNAs* processed_nas) override;
+                                           const SAnnotSelector* sel,
+                                           TProcessedNAs* processed_nas) override;
 
     void GetChunk(TChunk chunk) override;
     void GetChunks(const TChunkSet& chunks) override;
@@ -132,7 +171,7 @@ public:
 
     TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh) override;
     TNamedAnnotNames GetNamedAnnotAccessions(const CSeq_id_Handle& idh,
-        const string& named_acc) override;
+                                             const string& named_acc) override;
     bool HaveCache(TCacheType) override
     {
         return false;
@@ -170,9 +209,8 @@ private:
 };
 
 
-END_SCOPE(objects)
-
-END_NCBI_SCOPE
+END_NAMESPACE(objects);
+END_NCBI_NAMESPACE;
 
 #endif // HAVE_PSG_LOADER
 

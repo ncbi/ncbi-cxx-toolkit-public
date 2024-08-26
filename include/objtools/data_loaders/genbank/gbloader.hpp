@@ -240,9 +240,9 @@ public:
 
     virtual ~CGBDataLoader(void);
 
-    TBlobId GetBlobIdFromSatSatKey(int sat,
-        int sat_key,
-        int sub_sat = 0) const;
+    virtual TBlobId GetBlobIdFromSatSatKey(int sat,
+                                           int sat_key,
+                                           int sub_sat = 0) const = 0;
 
     // Create GB loader and register in the object manager if
     // no loader with the same name is registered yet.
