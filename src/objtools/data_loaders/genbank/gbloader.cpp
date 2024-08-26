@@ -675,27 +675,6 @@ string CGBDataLoader::GetParam(const TParamTree* params,
 }
 
 
-CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
-    int sat_key,
-    int sub_sat) const
-{
-#if defined(HAVE_PSG_LOADER)
-    if ( IsUsingPSGLoader() ) {
-        string str = NStr::NumericToString(sat)+'.'+NStr::NumericToString(sat_key);
-        if ( sub_sat != CSeqref::eSubSat_main ) {
-            str += '.'+NStr::NumericToString(sub_sat);
-        }
-        return TBlobId(new CPsgBlobId(str));
-    }
-#endif
-    CRef<CBlob_id> blob_id(new CBlob_id);
-    blob_id->SetSat(sat);
-    blob_id->SetSatKey(sat_key);
-    blob_id->SetSubSat(sub_sat);
-    return TBlobId(blob_id);
-}
-
-
 CConstRef<CSeqref> CGBDataLoader::GetSatSatkey(const CSeq_id_Handle& sih)
 {
     TBlobId id = GetBlobId(sih);

@@ -68,6 +68,9 @@ fi
 if test "$no_id2_test" = 0 -a "$no_vdb_wgs_test" = 0; then
     methods="$methods ID2"
 fi
+if test "$ONLY_PSG" = 1; then
+    methods=""
+fi
 if test "$no_id2_test" = 1 -o "$no_vdb_wgs_test" = 1 || disabled PSGLoader || disabled in-house-resources; then
     echo "Skipping PSG loader test"
 else

@@ -584,15 +584,12 @@ CDataSource::GetSeq_entry_Lock(const CBlobIdKey& blob_id)
     TSeq_entry_Lock ret;
     {{
         try {
-            ret.first = m_Loader->GetBlobById(blob_id);
+            ret.second = m_Loader->GetBlobById(blob_id);
+            ret.first = ret.second;
         }
         catch ( CLoaderException& exc ) {
             exc.SetFailedCall(s_FormatCall("GetBlobById", blob_id));
             throw;
-        }
-        TMainLock::TWriteLockGuard guard(m_DSMainLock);
-        if ( ret.first ) {
-            x_SetLock(ret.second, ConstRef(&ret.first->GetTSE_Info()));
         }
     }}
     return ret;

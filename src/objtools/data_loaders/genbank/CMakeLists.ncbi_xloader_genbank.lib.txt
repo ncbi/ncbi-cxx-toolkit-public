@@ -1,7 +1,8 @@
 # $Id$
 
 NCBI_begin_lib(ncbi_xloader_genbank SHARED)
-  NCBI_sources(gbloader gbnative gbload_util psg_loader psg_loader_impl)
+  NCBI_sources(gbloader gbnative gbload_util psg_loader psg_loader_impl
+      psg_evloop psg_processor psg_blob_processor psg_processors psg_cache psg_cdd)
   NCBI_add_definitions(NCBI_XLOADER_GENBANK_EXPORTS)
   NCBI_uses_toolkit_libraries(general ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2)
   NCBI_optional_toolkit_libraries(PSGLoader psg_client)

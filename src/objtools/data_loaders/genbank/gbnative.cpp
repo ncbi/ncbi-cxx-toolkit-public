@@ -532,6 +532,18 @@ CWriter* CGBDataLoader_Native::x_CreateWriter(const string& name,
 }
 
 
+CDataLoader::TBlobId CGBDataLoader_Native::GetBlobIdFromSatSatKey(int sat,
+                                                                  int sat_key,
+                                                                  int sub_sat) const
+{
+    CRef<CBlob_id> blob_id(new CBlob_id);
+    blob_id->SetSat(sat);
+    blob_id->SetSatKey(sat_key);
+    blob_id->SetSubSat(sub_sat);
+    return TBlobId(blob_id);
+}
+
+
 CDataLoader::TBlobId CGBDataLoader_Native::GetBlobId(const CSeq_id_Handle& sih)
 {
     if ( CReadDispatcher::CannotProcess(sih) ) {

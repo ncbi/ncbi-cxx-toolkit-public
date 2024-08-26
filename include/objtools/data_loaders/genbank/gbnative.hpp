@@ -167,6 +167,9 @@ public:
 
     virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret) override;
     
+    virtual TBlobId GetBlobIdFromSatSatKey(int sat,
+                                           int sat_key,
+                                           int sub_sat) const override;
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
     virtual TBlobId GetBlobIdFromString(const string& str) const override;
 
