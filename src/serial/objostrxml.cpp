@@ -233,21 +233,9 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 {
     if (m_UseXmlDecl) {
         m_Output.PutString("<?xml version=\"1.0");
-        switch (m_Encoding) {
-        default:
-            break;
-        case eEncoding_UTF8:
-            m_Output.PutString("\" encoding=\"UTF-8");
-            break;
-        case eEncoding_ISO8859_1:
-            m_Output.PutString("\" encoding=\"ISO-8859-1");   
-            break;
-        case eEncoding_Ascii:
-            m_Output.PutString("\" encoding=\"US-ASCII");
-            break;
-        case eEncoding_Windows_1252:
-            m_Output.PutString("\" encoding=\"Windows-1252");   
-            break;
+        if (m_Encoding != eEncoding_Unknown) {
+            m_Output.PutString("\" encoding=\"");
+            m_Output.PutString(CUtf8::EncodingToString(m_Encoding));
         }
         m_Output.PutString("\"?>");
     }

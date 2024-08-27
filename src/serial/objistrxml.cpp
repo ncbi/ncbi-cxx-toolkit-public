@@ -559,16 +559,8 @@ void CObjectIStreamXml::SkipQDecl(void)
         string value;
         ReadAttributeValue(value);
         if (tagName == "encoding") {
-            if (NStr::CompareNocase(value.c_str(),"UTF-8") == 0) {
-                m_Encoding = eEncoding_UTF8;
-            } else if (NStr::CompareNocase(value.c_str(),"ISO-8859-1") == 0) {
-                m_Encoding = eEncoding_ISO8859_1;
-            } else if (NStr::CompareNocase(value.c_str(),"US-ASCII") == 0 ||
-                       NStr::CompareNocase(value.c_str(),"ASCII") == 0) {
-                m_Encoding = eEncoding_Ascii;
-            } else if (NStr::CompareNocase(value.c_str(),"Windows-1252") == 0) {
-                m_Encoding = eEncoding_Windows_1252;
-            } else {
+            m_Encoding = CUtf8::StringToEncoding(value);
+            if (m_Encoding == eEncoding_Unknown || m_Encoding > eEncoding_Windows_1252) {
                 ThrowError(fFormatError, "unsupported encoding: " + value);
             }
             break;
