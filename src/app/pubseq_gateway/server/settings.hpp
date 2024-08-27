@@ -112,20 +112,32 @@ struct SPubseqGatewaySettings
     string                              m_SSLCiphers;
 
     // [HEALTH]
-    string                              m_TestSeqId;
-    bool                                m_TestSeqIdIgnoreError;
+    vector<string>                      m_CriticalDataSources;
+    double                              m_HealthTimeoutSec;
 
     // [CASSANDRA_PROCESSOR]
     bool                                m_CassandraProcessorsEnabled;
+    string                              m_CassandraProcessorHealthCommand;
+    double                              m_CassandraHealthTimeoutSec;
+
+    // [LMDB_PROCESSOR]
+    string                              m_LMDBProcessorHealthCommand;
+    double                              m_LMDBHealthTimeoutSec;
 
     // [CDD_PROCESSOR]
     bool                                m_CDDProcessorsEnabled;
+    string                              m_CDDProcessorHealthCommand;
+    double                              m_CDDHealthTimeoutSec;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
+    string                              m_WGSProcessorHealthCommand;
+    double                              m_WGSHealthTimeoutSec;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
+    string                              m_SNPProcessorHealthCommand;
+    double                              m_SNPHealthTimeoutSec;
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
@@ -152,11 +164,18 @@ private:
     void x_ReadAdminSection(const CNcbiRegistry &   registry,
                             CPSGAlerts &  alerts);
     void x_ReadSSLSection(const CNcbiRegistry &   registry);
-    void x_ReadHealthSection(const CNcbiRegistry &   registry);
-    void x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry);
-    void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry);
-    void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry);
-    void x_ReadSNPProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadHealthSection(const CNcbiRegistry &   registry,
+                             CPSGAlerts &  alerts);
+    void x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry,
+                                         CPSGAlerts &  alerts);
+    void x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry,
+                                    CPSGAlerts &  alerts);
+    void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry,
+                                   CPSGAlerts &  alerts);
+    void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry,
+                                   CPSGAlerts &  alerts);
+    void x_ReadSNPProcessorSection(const CNcbiRegistry &   registry,
+                                   CPSGAlerts &  alerts);
     void x_ReadMyNCBISection(const CNcbiRegistry &   registry);
     void x_ReadCountersSection(const CNcbiRegistry &   registry);
 

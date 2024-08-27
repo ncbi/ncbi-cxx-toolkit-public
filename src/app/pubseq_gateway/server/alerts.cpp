@@ -63,7 +63,13 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_NewCassandraPublicCommentMapping, "NewCassandraPublicCommentMapping" },
     { ePSGS_OpenCache,                        "OpenCache" },
     { ePSGS_NoCassandraPublicCommentsMapping, "NoCassandraPublicCommentsMapping" },
-    { ePSGS_NoIPGKeyspace,                    "NoIPGKeyspace" }
+    { ePSGS_NoIPGKeyspace,                    "NoIPGKeyspace" },
+    { ePSGS_ConfigHealthTimeout,              "ConfigHealthTimeout" },
+    { ePSGS_ConfigCassandraHealthTimeout,     "ConfigCassandraHealthTimeout" },
+    { ePSGS_ConfigLMDBHealthTimeout,          "ConfigLMDBHealthTimeout" },
+    { ePSGS_ConfigCDDHealthTimeout,           "ConfigWGSHealthTimeout" },
+    { ePSGS_ConfigWGSHealthTimeout,           "ConfigWGSHealthTimeout" },
+    { ePSGS_ConfigSNPHealthTimeout,           "ConfigSNPHealthTimeout" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

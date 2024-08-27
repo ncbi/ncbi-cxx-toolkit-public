@@ -1175,3 +1175,41 @@ CPubseqGatewayApp::x_GetTimeSeries(CHttpRequest &  req,
     return true;
 }
 
+
+static string  kVerboseParam = "verbose";
+
+bool
+CPubseqGatewayApp::x_GetVerboseParameter(CHttpRequest &  req,
+                                         shared_ptr<CPSGS_Reply>  reply,
+                                         const psg_time_point_t &  now,
+                                         bool &  verbose)
+{
+    verbose = false;     // default
+    SRequestParameter   verbose_protocol_param = x_GetParam(req, kVerboseParam);
+
+    // It is a flag. There is no checking if a value is provided
+
+    verbose = verbose_protocol_param.m_Found;
+    return true;
+}
+
+
+static string  kExclude = "exclude";
+
+bool CPubseqGatewayApp::x_GetExcludeChecks(CHttpRequest &  req,
+                                           shared_ptr<CPSGS_Reply>  reply,
+                                           const psg_time_point_t &  now,
+                                           vector<string> &  exclude_checks)
+{
+    req.GetMultipleValuesParam(kExclude.data(),
+                               kExclude.size(),
+                               exclude_checks);
+
+    exclude_checks.erase(
+        remove_if(exclude_checks.begin(), exclude_checks.end(),
+                  [](string const & s) { return s.empty(); }),
+        exclude_checks.end());
+
+    return true;
+}
+

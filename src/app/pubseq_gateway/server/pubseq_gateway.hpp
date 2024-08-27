@@ -32,6 +32,7 @@
  *
  */
 #include <string>
+#include <functional>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -44,6 +45,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/myncbi/myncbi_factory.hpp>
+
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #include "pending_operation.hpp"
 #include "http_daemon.hpp"
@@ -139,7 +142,16 @@ public:
     int OnGetNA(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnAccessionVersionHistory(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnIPGResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyz(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzCassandra(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzLMDB(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzWGS(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzCDD(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzSNP(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnLivez(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnHealthz(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnHealth(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnDeepHealth(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnConfig(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnInfo(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -427,6 +439,14 @@ private:
                             shared_ptr<CPSGS_Reply>  reply,
                             const psg_time_point_t &  now,
                             optional<CSeq_id::ESNPScaleLimit> &  snp_scale_limit);
+    bool x_GetVerboseParameter(CHttpRequest &  req,
+                               shared_ptr<CPSGS_Reply>  reply,
+                               const psg_time_point_t &  now,
+                               bool &  verbose);
+    bool x_GetExcludeChecks(CHttpRequest &  req,
+                            shared_ptr<CPSGS_Reply>  reply,
+                            const psg_time_point_t &  now,
+                            vector<string> &  exclude_checks);
 
 private:
     void x_FixIntrospectionVersion(void);
@@ -454,6 +474,40 @@ private:
                               CHttpRequest &  http_req,
                               shared_ptr<CPSGS_Reply>  reply,
                               const psg_time_point_t &  now);
+
+private:
+    // z end point support
+
+    // Pubseq gateway API lock to make it cheap to create CPSG_Queue instances.
+    // It is taken at the initialization and kept till the end of the app life.
+    CPSG_Queue::TApiLock    m_PSGAPILock;
+
+    void x_InitialzeZEndPointData(void);
+
+    // At the moment /readyz and healthz match. The only difference is what
+    // request counter to increment
+    int x_ReadyzHealthzImplementation(CHttpRequest &  req,
+                                      shared_ptr<CPSGS_Reply>  reply);
+
+    CRequestStatus::ECode
+    x_SelfZEndPointCheckImpl(CRef<CRequestContext>  context,
+                             const string &  check_id,
+                             const string &  check_name,
+                             const string &  check_description,
+                             bool  verbose,
+                             const string &  health_command,
+                             const CTimeout &  health_timeout,
+                             CJsonNode &  node);
+    bool x_NeedReadyZCheckPerform(const string &  check_name,
+                                  bool  verbose,
+                                  const vector<string> &  exclude_checks,
+                                  bool &  is_critical);
+    void x_SelfZEndPointCheck(CHttpRequest &  req,
+                              shared_ptr<CPSGS_Reply>  reply,
+                              const string &  health_command);
+    void x_SendZEndPointReply(CRequestStatus::ECode  http_status,
+                              shared_ptr<CPSGS_Reply>  reply,
+                              const string *  payload);
 
 private:
     SPubseqGatewaySettings              m_Settings;
