@@ -452,6 +452,25 @@ bool HasBadGenomeAssemblyName(const CUser_object& usr)
 }
 
 
+bool HasBadGenomeAssemblyPartial(const CUser_object& usr)
+{
+    if (!usr.IsSetData()) {
+        return false;
+    }
+    ITERATE(CUser_object::TData, it, usr.GetData()) {
+        if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*it)->GetLabel().GetStr(), "Genome Representation") &&
+            (*it)->IsSetData() && (*it)->GetData().IsStr()) {
+            const string& val = (*it)->GetData().GetStr();
+            if (NStr::StartsWith(val, "Partial", NStr::eNocase)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CValidError_desc::IsValidStructuredComment(const CSeqdesc& desc)
 {
     if (!desc.IsUser()) {
@@ -603,13 +622,24 @@ bool CValidError_desc::x_ValidateStructuredComment(
             return false;
         }
     }
-    if (NStr::Equal(prefix, "Genome-Assembly-Data") && HasBadGenomeAssemblyName(usr)) {
-        is_valid = false;
-        if (report) {
-            PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
-                "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
-        } else {
-            return false;
+    if (NStr::Equal(prefix, "Genome-Assembly-Data")) {
+        if (HasBadGenomeAssemblyName(usr)) {
+            is_valid = false;
+            if (report) {
+                PostErr(eDiag_Info, eErr_SEQ_DESCR_BadAssemblyName,
+                    "Assembly Name should not start with 'NCBI' or 'GenBank' in structured comment", *m_Ctx, desc);
+            } else {
+                return false;
+            }
+        }
+        if (m_Imp.IsGenomeSubmission() && HasBadGenomeAssemblyPartial) {
+            is_valid = false;
+            if (report) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_BadGenomeRepresentation,
+                    "Genome Representation should not start with 'Partial' in structured comment", *m_Ctx, desc);
+            } else {
+                return false;
+            }
         }
     }
     if (report && !is_valid && !NStr::IsBlank(prefix)) {

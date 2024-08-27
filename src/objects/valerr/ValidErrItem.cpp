@@ -998,6 +998,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_MultipleIsolates,
     { "MultipleIsolates",
       "A Biosource should only have one isolate value" } } ,
+    { eErr_SEQ_DESCR_BadGenomeRepresentation,
+    { "BadGenomeRepresentation",
+      "Genome Representation should not start with 'Partial' in structured comment" } },
 
 
     /* SEQ_GENERIC */
