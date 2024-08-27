@@ -363,6 +363,12 @@ int CPubseqGatewayApp::Run(void)
     m_RequestDispatcher.reset(new CPSGS_Dispatcher(m_Settings.m_RequestTimeoutSec));
     x_RegisterProcessors();
 
+
+    // Needs to initialize the configured health commands in the z end points
+    // data structures and some other data
+    x_InitialzeZEndPointData();
+
+
     auto purge_size = round(float(m_Settings.m_ExcludeCacheMaxSize) *
                             float(m_Settings.m_ExcludeCachePurgePercentage) / 100.0);
     m_ExcludeBlobCache.reset(
@@ -445,6 +451,54 @@ int CPubseqGatewayApp::Run(void)
                 return OnIPGResolve(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/readyz/cassandra",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzCassandra(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/readyz/lmdb",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzLMDB(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/readyz/wgs",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzWGS(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/readyz/cdd",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzCDD(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/readyz/snp",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzSNP(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/readyz",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyz(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/livez",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnLivez(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/healthz",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnHealthz(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/health",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
@@ -454,8 +508,7 @@ int CPubseqGatewayApp::Run(void)
             "/deep-health",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
-                // For the time being 'deep-health' matches 'health'
-                return OnHealth(req, reply);
+                return OnDeepHealth(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/config",

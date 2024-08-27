@@ -176,7 +176,43 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
     m_Counters[ePSGS_HealthRequest] =
         new SCounterInfo(
             "HealthRequestCount", "Health requests counter",
-            "Number of times a client requested health or deep-health status");
+            "Number of times a client requested health status (obsolete)");
+    m_Counters[ePSGS_DeepHealthRequest] =
+        new SCounterInfo(
+            "DeepHealthRequestCount", "Deep health requests counter",
+            "Number of times a client requested deep-health status (obsolete)");
+    m_Counters[ePSGS_ReadyZRequest] =
+        new SCounterInfo(
+            "ReadyZRequestCount", "readyz requests counter",
+            "Number of times a client requested ready status");
+    m_Counters[ePSGS_HealthZRequest] =
+        new SCounterInfo(
+            "HealthZRequestCount", "healthz requests counter",
+            "Number of times a client requested health status");
+    m_Counters[ePSGS_ReadyZCassandraRequest] =
+        new SCounterInfo(
+            "ReadyZCassandraRequestCount", "readyz/cassandra requests counter",
+            "Number of times a client requested readyz/cassandra status");
+    m_Counters[ePSGS_ReadyZLMDBRequest] =
+        new SCounterInfo(
+            "ReadyZLMDBRequestCount", "readyz/lmdb requests counter",
+            "Number of times a client requested readyz/lmdb status");
+    m_Counters[ePSGS_ReadyZWGSRequest] =
+        new SCounterInfo(
+            "ReadyZWGSRequestCount", "readyz/wgs requests counter",
+            "Number of times a client requested readyz/wgs status");
+    m_Counters[ePSGS_ReadyZCDDRequest] =
+        new SCounterInfo(
+            "ReadyZCDDRequestCount", "readyz/cdd requests counter",
+            "Number of times a client requested readyz/cdd status");
+    m_Counters[ePSGS_ReadyZSNPRequest] =
+        new SCounterInfo(
+            "ReadyZSNPRequestCount", "readyz/snp requests counter",
+            "Number of times a client requested readyz/snp status");
+    m_Counters[ePSGS_LiveZRequest] =
+        new SCounterInfo(
+            "LiveZRequestCount", "livez requests counter",
+            "Number of times a client requested live status");
     m_Counters[ePSGS_Si2csiCacheHit] =
         new SCounterInfo(
             "Si2csiCacheHit", "si2csi cache hit counter",

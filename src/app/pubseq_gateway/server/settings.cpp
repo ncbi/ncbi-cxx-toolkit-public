@@ -52,6 +52,7 @@ const string            kCDDProcessorSection = "CDD_PROCESSOR";
 const string            kWGSProcessorSection = "WGS_PROCESSOR";
 const string            kSNPProcessorSection = "SNP_PROCESSOR";
 const string            kCassandraProcessorSection = "CASSANDRA_PROCESSOR";
+const string            kLMDBProcessorSection = "LMDB_PROCESSOR";
 const string            kAdminSection = "ADMIN";
 const string            kMyNCBISection = "MY_NCBI";
 const string            kCountersSection = "COUNTERS";
@@ -93,12 +94,22 @@ const string            kDefaultSSLKeyFile = "";
 const string            kDefaultSSLCiphers = "EECDH+aRSA+AESGCM EDH+aRSA+AESGCM EECDH+aRSA EDH+aRSA !SHA !SHA256 !SHA384";
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTP = 0;
 const size_t            kDefaultShutdownIfTooManyOpenFDforHTTPS = 8000;
-const string            kDefaultTestSeqId = "gi|2";
-const bool              kDefaultTestSeqIdIgnoreError = true;
+const string            kDefaultCriticalDataSources = "cassandra";
+const double            kDefaultHealthTimeout = 0.5;
 const bool              kDefaultCassandraProcessorsEnabled = true;
+const string            kDefaultLMDBProcessorHealthCommand = "/ID/resolve?seq_id=gi|2&use_cache=yes";
+const double            kDefaultLMDBHealthTimeoutSec = 0.0;
+const string            kDefaultCassandraProcessorHealthCommand = "/ID/resolve?seq_id=gi|2&use_cache=no";
+const double            kDefaultCassandraHealthTimeoutSec = 0.0;
 const bool              kDefaultCDDProcessorsEnabled = true;
+const string            kDefaultCDDProcessorHealthCommand = "/ID/get_na?seq_id=6&names=CDD";
+const double            kDefaultCDDHealthTimeoutSec = 0.0;
 const bool              kDefaultWGSProcessorsEnabled = true;
+const string            kDefaultWGSProcessorHealthCommand = "/ID/resolve?seq_id=EAB1000000&disable_processor=cassandra";
+const double            kDefaultWGSHealthTimeoutSec = 0.0;
 const bool              kDefaultSNPProcessorsEnabled = true;
+const string            kDefaultSNPProcessorHealthCommand = "/ID/get_na?seq_id_type=12&seq_id=568801899&seq_ids=ref|NT_187403.1&names=SNP";
+const double            kDefaultSNPHealthTimeoutSec = 0.0;
 const size_t            kDefaultMyNCBIOKCacheSize = 10000;
 const size_t            kDefaultMyNCBINotFoundCacheSize = 10000;
 const size_t            kDefaultMyNCBINotFoundCacheExpirationSec = 3600;
@@ -146,12 +157,21 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_AllowProcessorTiming(kDefaultAllowProcessorTiming),
     m_SSLEnable(kDefaultSSLEnable),
     m_SSLCiphers(kDefaultSSLCiphers),
-    m_TestSeqId(kDefaultTestSeqId),
-    m_TestSeqIdIgnoreError(kDefaultTestSeqIdIgnoreError),
+    m_HealthTimeoutSec(kDefaultHealthTimeout),
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
+    m_CassandraProcessorHealthCommand(kDefaultCassandraProcessorHealthCommand),
+    m_CassandraHealthTimeoutSec(kDefaultCassandraHealthTimeoutSec),
+    m_LMDBProcessorHealthCommand(kDefaultLMDBProcessorHealthCommand),
+    m_LMDBHealthTimeoutSec(kDefaultLMDBHealthTimeoutSec),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
+    m_CDDProcessorHealthCommand(kDefaultCDDProcessorHealthCommand),
+    m_CDDHealthTimeoutSec(kDefaultCDDHealthTimeoutSec),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
+    m_WGSProcessorHealthCommand(kDefaultWGSProcessorHealthCommand),
+    m_WGSHealthTimeoutSec(kDefaultWGSHealthTimeoutSec),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
+    m_SNPProcessorHealthCommand(kDefaultSNPProcessorHealthCommand),
+    m_SNPHealthTimeoutSec(kDefaultSNPHealthTimeoutSec),
     m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
     m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
     m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
@@ -181,12 +201,15 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
     x_ReadAutoExcludeSection(registry);
     x_ReadIPGSection(registry);
     x_ReadDebugSection(registry);
-    x_ReadHealthSection(registry);
+    x_ReadHealthSection(registry, alerts);
     x_ReadAdminSection(registry, alerts);
-    x_ReadCassandraProcessorSection(registry);
-    x_ReadCDDProcessorSection(registry);
-    x_ReadWGSProcessorSection(registry);
-    x_ReadSNPProcessorSection(registry);
+
+    x_ReadCassandraProcessorSection(registry, alerts);  // Must be after x_ReadHealthSection()
+    x_ReadLMDBProcessorSection(registry, alerts);       // Must be after x_ReadHealthSection()
+    x_ReadCDDProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
+    x_ReadWGSProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
+    x_ReadSNPProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
+
     x_ReadMyNCBISection(registry);
     x_ReadCountersSection(registry);
 }
@@ -329,45 +352,204 @@ void SPubseqGatewaySettings::x_ReadSSLSection(const CNcbiRegistry &   registry)
 }
 
 
-void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registry,
+                                                 CPSGAlerts &  alerts)
 {
-    m_TestSeqId = registry.GetString(kHealthSection,
-                                     "test_seq_id", kDefaultTestSeqId);
-    m_TestSeqIdIgnoreError = registry.GetBool(kHealthSection,
-                                              "test_seq_id_ignore_error",
-                                              kDefaultTestSeqIdIgnoreError);
+    // Read a list of critical backends
+    string      critical_data_sources = registry.GetString(kHealthSection,
+                                                           "critical_data_sources",
+                                                           kDefaultCriticalDataSources);
+    NStr::Split(critical_data_sources, ", ", m_CriticalDataSources,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    if (!m_CriticalDataSources.empty()) {
+        for (size_t k = 0; k < m_CriticalDataSources.size(); ++k) {
+            transform(m_CriticalDataSources[k].begin(), m_CriticalDataSources[k].end(),
+                      m_CriticalDataSources[k].begin(), ::tolower);
+        }
+    }
+
+    // Remove duplicates
+    sort(m_CriticalDataSources.begin(), m_CriticalDataSources.end());
+    m_CriticalDataSources.erase(unique(m_CriticalDataSources.begin(),
+                                       m_CriticalDataSources.end()),
+                                m_CriticalDataSources.end());
+
+    // Sanity check
+    if (m_CriticalDataSources.size() == 1) {
+        if (m_CriticalDataSources[0] == "none") {
+            // Special case: only one item and this item is "none"
+            m_CriticalDataSources.clear();
+        }
+    } else {
+        vector<string>::iterator    none_it = find(m_CriticalDataSources.begin(),
+                                                   m_CriticalDataSources.end(),
+                                                   "none");
+        if (none_it != m_CriticalDataSources.end()) {
+            m_CriticalDataSources.erase(none_it);
+            PSG_WARNING("The [HEALTH]/critical_data_sources value "
+                        "has NONE together with other items. "
+                        "The NONE item is ignored.");
+        }
+    }
+
+    m_HealthTimeoutSec = registry.GetDouble(kHealthSection, "timeout",
+                                            kDefaultHealthTimeout);
+    if (m_HealthTimeoutSec <= 0) {
+        string  err_msg =
+            "The health timeout is out of range. It must be > 0. "
+            "Received: " + to_string(m_HealthTimeoutSec) + ". Reset to "
+            "default: " + to_string(kDefaultHealthTimeout);
+        alerts.Register(ePSGS_ConfigHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_HealthTimeoutSec = kDefaultHealthTimeout;
+    }
 }
 
 
-void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry,
+                                                             CPSGAlerts &  alerts)
 {
     m_CassandraProcessorsEnabled =
             registry.GetBool(kCassandraProcessorSection, "enabled",
                              kDefaultCassandraProcessorsEnabled);
+    m_CassandraProcessorHealthCommand =
+            registry.GetString(kCassandraProcessorSection, "health_command",
+                               kDefaultCassandraProcessorHealthCommand);
+
+    m_CassandraHealthTimeoutSec =
+            registry.GetDouble(kCassandraProcessorSection, "health_timeout",
+                               kDefaultCassandraHealthTimeoutSec);
+    if (m_CassandraHealthTimeoutSec == 0.0) {
+        // Valid configuration: fall back to the default value from
+        // the [HEALTH] section
+        m_CassandraHealthTimeoutSec = m_HealthTimeoutSec;
+    } else if (m_CassandraHealthTimeoutSec < 0) {
+        // Error
+        string  err_msg =
+            "The cassandra health timeout is out of range. It must be >= 0. "
+            "Received: " + to_string(m_CassandraHealthTimeoutSec) + ". Reset to "
+            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
+        alerts.Register(ePSGS_ConfigCassandraHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_CassandraHealthTimeoutSec = kDefaultHealthTimeout;
+    }
 }
 
 
-void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry,
+                                                        CPSGAlerts &  alerts)
+{
+    m_LMDBProcessorHealthCommand =
+            registry.GetString(kLMDBProcessorSection, "health_command",
+                               kDefaultLMDBProcessorHealthCommand);
+
+    m_LMDBHealthTimeoutSec =
+            registry.GetDouble(kLMDBProcessorSection, "health_timeout",
+                               kDefaultLMDBHealthTimeoutSec);
+    if (m_LMDBHealthTimeoutSec == 0.0) {
+        // Valid configuration: fall back to the default value from
+        // the [HEALTH] section
+        m_LMDBHealthTimeoutSec = m_HealthTimeoutSec;
+    } else if (m_LMDBHealthTimeoutSec < 0) {
+        // Error
+        string  err_msg =
+            "The LMDB health timeout is out of range. It must be >= 0. "
+            "Received: " + to_string(m_LMDBHealthTimeoutSec) + ". Reset to "
+            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
+        alerts.Register(ePSGS_ConfigLMDBHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_LMDBHealthTimeoutSec = kDefaultHealthTimeout;
+    }
+}
+
+
+void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   registry,
+                                                       CPSGAlerts &  alerts)
 {
     m_CDDProcessorsEnabled = registry.GetBool(kCDDProcessorSection,
                                               "enabled",
                                               kDefaultCDDProcessorsEnabled);
+    m_CDDProcessorHealthCommand =
+            registry.GetString(kCDDProcessorSection, "health_command",
+                               kDefaultCDDProcessorHealthCommand);
+
+    m_CDDHealthTimeoutSec =
+            registry.GetDouble(kCDDProcessorSection, "health_timeout",
+                               kDefaultCDDHealthTimeoutSec);
+    if (m_CDDHealthTimeoutSec == 0.0) {
+        // Valid configuration: fall back to the default value from
+        // the [HEALTH] section
+        m_CDDHealthTimeoutSec = m_HealthTimeoutSec;
+    } else if (m_CDDHealthTimeoutSec < 0) {
+        // Error
+        string  err_msg =
+            "The CDD health timeout is out of range. It must be >= 0. "
+            "Received: " + to_string(m_CDDHealthTimeoutSec) + ". Reset to "
+            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
+        alerts.Register(ePSGS_ConfigCDDHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_CDDHealthTimeoutSec = kDefaultHealthTimeout;
+    }
 }
 
 
-void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   registry,
+                                                       CPSGAlerts &  alerts)
 {
     m_WGSProcessorsEnabled = registry.GetBool(kWGSProcessorSection,
                                               "enabled",
                                               kDefaultWGSProcessorsEnabled);
+    m_WGSProcessorHealthCommand =
+            registry.GetString(kWGSProcessorSection, "health_command",
+                               kDefaultWGSProcessorHealthCommand);
+
+    m_WGSHealthTimeoutSec =
+            registry.GetDouble(kWGSProcessorSection, "health_timeout",
+                               kDefaultWGSHealthTimeoutSec);
+    if (m_WGSHealthTimeoutSec == 0.0) {
+        // Valid configuration: fall back to the default value from
+        // the [HEALTH] section
+        m_WGSHealthTimeoutSec = m_HealthTimeoutSec;
+    } else if (m_WGSHealthTimeoutSec < 0) {
+        // Error
+        string  err_msg =
+            "The WGS health timeout is out of range. It must be >= 0. "
+            "Received: " + to_string(m_WGSHealthTimeoutSec) + ". Reset to "
+            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
+        alerts.Register(ePSGS_ConfigWGSHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_WGSHealthTimeoutSec = kDefaultHealthTimeout;
+    }
 }
 
 
-void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   registry,
+                                                       CPSGAlerts &  alerts)
 {
     m_SNPProcessorsEnabled = registry.GetBool(kSNPProcessorSection,
                                               "enabled",
                                               kDefaultSNPProcessorsEnabled);
+    m_SNPProcessorHealthCommand =
+            registry.GetString(kSNPProcessorSection, "health_command",
+                               kDefaultSNPProcessorHealthCommand);
+
+    m_SNPHealthTimeoutSec =
+            registry.GetDouble(kSNPProcessorSection, "health_timeout",
+                               kDefaultSNPHealthTimeoutSec);
+    if (m_SNPHealthTimeoutSec == 0.0) {
+        // Valid configuration: fall back to the default value from
+        // the [HEALTH] section
+        m_SNPHealthTimeoutSec = m_HealthTimeoutSec;
+    } else if (m_SNPHealthTimeoutSec < 0) {
+        // Error
+        string  err_msg =
+            "The SNP health timeout is out of range. It must be >= 0. "
+            "Received: " + to_string(m_SNPHealthTimeoutSec) + ". Reset to "
+            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
+        alerts.Register(ePSGS_ConfigSNPHealthTimeout, err_msg);
+        PSG_ERROR(err_msg);
+        m_SNPHealthTimeoutSec = kDefaultHealthTimeout;
+    }
 }
 
 

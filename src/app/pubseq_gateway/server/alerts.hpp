@@ -65,7 +65,13 @@ enum EPSGS_AlertType {
     ePSGS_NewCassandraPublicCommentMapping = 17,
     ePSGS_OpenCache = 18,                           // PSG cannot create or open the LMDB cache
     ePSGS_NoCassandraPublicCommentsMapping = 19,    // PSG has no public comments mapping
-    ePSGS_NoIPGKeyspace = 20
+    ePSGS_NoIPGKeyspace = 20,
+    ePSGS_ConfigHealthTimeout = 21,
+    ePSGS_ConfigCassandraHealthTimeout = 22,
+    ePSGS_ConfigLMDBHealthTimeout = 23,
+    ePSGS_ConfigCDDHealthTimeout = 24,
+    ePSGS_ConfigWGSHealthTimeout = 25,
+    ePSGS_ConfigSNPHealthTimeout = 26
 };
 
 enum EPSGS_AlertAckResult {

@@ -505,6 +505,19 @@ void AppendDisableProcessorParameter(CJsonNode &  node)
     node.SetByKey("disable_processor", disable_processor);
 }
 
+void AppendZExcludeParameter(CJsonNode &  node)
+{
+    CJsonNode   zexclude(CJsonNode::NewObjectNode());
+    zexclude.SetBoolean(kMandatory, false);
+    zexclude.SetString(kType, "String");
+    zexclude.SetString(kDescription,
+        "A name of a check which should not be performed. "
+        "The parameter can be repeated as many times as needed.");
+    zexclude.SetString(kAllowedValues, "A string");
+    zexclude.SetString(kDefault, "");
+    node.SetByKey("exclude", zexclude);
+}
+
 void AppendProcessorEventsParameter(CJsonNode &  node)
 {
     CJsonNode   processor_events(CJsonNode::NewObjectNode());
@@ -660,6 +673,21 @@ void AppendResetParameter(CJsonNode &  node)
     reset_param.SetString(kAllowedValues, "yes and no");
     reset_param.SetString(kDefault, "no");
     node.SetByKey("reset", reset_param);
+}
+
+void AppendZVerboseParameter(CJsonNode &  node)
+{
+    CJsonNode   zverbose_param(CJsonNode::NewObjectNode());
+    zverbose_param.SetBoolean(kMandatory, false);
+    zverbose_param.SetString(kType, "");
+    zverbose_param.SetString(kDescription,
+        "This is a flag parameter, no value is needed "
+        "(if value is provided then it will be silently ignored). "
+        "If the flag is provided then the reply HTTP body "
+        "will contain a JSON dictionary, Otherwise the reply HTTP body will be empty");
+    zverbose_param.SetString(kAllowedValues, "");
+    zverbose_param.SetString(kDefault, "");
+    node.SetByKey("verbose", zverbose_param);
 }
 
 void AppendMostRecentTimeParameter(CJsonNode &  node)
@@ -1170,6 +1198,183 @@ CJsonNode  GetAdminStatisticsRequestNode(void)
     return admin_statistics;
 }
 
+// /healthz
+CJsonNode  GetHealthzRequestNode(void)
+{
+    CJsonNode   healthz(CJsonNode::NewObjectNode());
+    healthz.SetString(kDescription,
+        "Performs a functionality check. It can be used by monitoring facilities.");
+    CJsonNode   healthz_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(healthz_params);
+    AppendZExcludeParameter(healthz_params);
+    healthz.SetByKey("parameters", healthz_params);
+
+    CJsonNode   healthz_reply(CJsonNode::NewObjectNode());
+    healthz_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the functionality check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    healthz.SetByKey("reply", healthz_reply);
+
+    return healthz;
+}
+
+
+// /livez
+CJsonNode  GetLivezRequestNone(void)
+{
+    CJsonNode   livez(CJsonNode::NewObjectNode());
+    livez.SetString(kDescription,
+        "Performs a live check. It can be used by monitoring facilities.");
+    CJsonNode   livez_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(livez_params);
+    livez.SetByKey("parameters", livez_params);
+
+    CJsonNode   livez_reply(CJsonNode::NewObjectNode());
+    livez_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the live check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    livez.SetByKey("reply", livez_reply);
+
+    return livez;
+}
+
+
+// /readyz
+CJsonNode  GetReadyzRequestNode(void)
+{
+    CJsonNode   readyz(CJsonNode::NewObjectNode());
+    readyz.SetString(kDescription,
+        "Performs a functionality check. It can be used by monitoring facilities.");
+    CJsonNode   readyz_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyz_params);
+    AppendZExcludeParameter(readyz_params);
+    readyz.SetByKey("parameters", readyz_params);
+
+    CJsonNode   readyz_reply(CJsonNode::NewObjectNode());
+    readyz_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the functionality check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyz.SetByKey("reply", readyz_reply);
+
+    return readyz;
+}
+
+
+// /readyz/cassandra
+CJsonNode  GetReadyzCassandraRequestNode(void)
+{
+    CJsonNode   readyzcassandra(CJsonNode::NewObjectNode());
+    readyzcassandra.SetString(kDescription,
+        "Performs a cassandra retrieval check. It can be used by monitoring facilities.");
+    CJsonNode   readyzcassandra_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzcassandra_params);
+    readyzcassandra.SetByKey("parameters", readyzcassandra_params);
+
+    CJsonNode   readyzcassandra_reply(CJsonNode::NewObjectNode());
+    readyzcassandra_reply.SetString(kDescription,
+        "HTTP status is set to 200 if cassandra retrieval is ok. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzcassandra.SetByKey("reply", readyzcassandra_reply);
+
+    return readyzcassandra;
+}
+
+
+// /readyz/lmdb
+CJsonNode  GetReadyzLMDBRequestNode(void)
+{
+    CJsonNode   readyzlmdbresolve(CJsonNode::NewObjectNode());
+    readyzlmdbresolve.SetString(kDescription,
+        "Performs an LMDB retrieval check. It can be used by monitoring facilities.");
+    CJsonNode   readyzlmdbresolve_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzlmdbresolve_params);
+    readyzlmdbresolve.SetByKey("parameters", readyzlmdbresolve_params);
+
+    CJsonNode   readyzlmdbresolve_reply(CJsonNode::NewObjectNode());
+    readyzlmdbresolve_reply.SetString(kDescription,
+        "HTTP status is set to 200 if LMDB retrieval check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzlmdbresolve.SetByKey("reply", readyzlmdbresolve_reply);
+
+    return readyzlmdbresolve;
+}
+
+
+// /readyz/wgs
+CJsonNode  GetReadyzWGSRequestNode(void)
+{
+    CJsonNode   readyzwgsresolve(CJsonNode::NewObjectNode());
+    readyzwgsresolve.SetString(kDescription,
+        "Performs a WGS retrieval check. It can be used by monitoring facilities.");
+    CJsonNode   readyzwgsresolve_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzwgsresolve_params);
+    readyzwgsresolve.SetByKey("parameters", readyzwgsresolve_params);
+
+    CJsonNode   readyzwgsresolve_reply(CJsonNode::NewObjectNode());
+    readyzwgsresolve_reply.SetString(kDescription,
+        "HTTP status is set to 200 if WGS retrieval check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzwgsresolve.SetByKey("reply", readyzwgsresolve_reply);
+
+    return readyzwgsresolve;
+}
+
+
+// /readyz/cdd
+CJsonNode  GetReadyzCDDRequestNode(void)
+{
+    CJsonNode   readyzcddresolve(CJsonNode::NewObjectNode());
+    readyzcddresolve.SetString(kDescription,
+        "Performs a CDD retrieval check. It can be used by monitoring facilities.");
+    CJsonNode   readyzcddresolve_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzcddresolve_params);
+    readyzcddresolve.SetByKey("parameters", readyzcddresolve_params);
+
+    CJsonNode   readyzcddresolve_reply(CJsonNode::NewObjectNode());
+    readyzcddresolve_reply.SetString(kDescription,
+        "HTTP status is set to 200 if CDD retrieval check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzcddresolve.SetByKey("reply", readyzcddresolve_reply);
+
+    return readyzcddresolve;
+}
+
+
+// /readyz/snp
+CJsonNode  GetReadyzSNPRequestNode(void)
+{
+    CJsonNode   readyzsnpresolve(CJsonNode::NewObjectNode());
+    readyzsnpresolve.SetString(kDescription,
+        "Performs a SNP retrieval check. It can be used by monitoring facilities.");
+    CJsonNode   readyzsnpresolve_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzsnpresolve_params);
+    readyzsnpresolve.SetByKey("parameters", readyzsnpresolve_params);
+
+    CJsonNode   readyzsnpresolve_reply(CJsonNode::NewObjectNode());
+    readyzsnpresolve_reply.SetString(kDescription,
+        "HTTP status is set to 200 if SNP retrieval check succeeded. "
+        "Otherwise the HTTP status is set to 500. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzsnpresolve.SetByKey("reply", readyzsnpresolve_reply);
+
+    return readyzsnpresolve;
+}
+
 
 CJsonNode  GetTestIoRequestNode(void)
 {
@@ -1294,6 +1499,16 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ADMIN/get_alerts", GetAdminGetAlertsRequestNode());
     requests_node.SetByKey("ADMIN/ack_alerts", GetAdminAckAlertsRequestNode());
     requests_node.SetByKey("ADMIN/statistics", GetAdminStatisticsRequestNode());
+
+    requests_node.SetByKey("healthz", GetHealthzRequestNode());
+    requests_node.SetByKey("livez", GetLivezRequestNone());
+    requests_node.SetByKey("readyz", GetReadyzRequestNode());
+    requests_node.SetByKey("/readyz/cassandra", GetReadyzCassandraRequestNode());
+    requests_node.SetByKey("/readyz/lmdb", GetReadyzLMDBRequestNode());
+    requests_node.SetByKey("/readyz/wgs", GetReadyzWGSRequestNode());
+    requests_node.SetByKey("/readyz/cdd", GetReadyzCDDRequestNode());
+    requests_node.SetByKey("/readyz/snp", GetReadyzSNPRequestNode());
+
     requests_node.SetByKey("TEST/io", GetTestIoRequestNode());
     requests_node.SetByKey("health", GetHealthRequestNode());
     requests_node.SetByKey("deep-health", GetDeepHealthRequestNode());
