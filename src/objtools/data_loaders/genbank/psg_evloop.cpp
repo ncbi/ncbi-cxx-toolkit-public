@@ -702,8 +702,8 @@ void CPSGL_QueueGuard::MarkAsFinished(const CRef<CPSGL_RequestTracker>& tracker)
         if ( m_QueuedRequests.erase(tracker) ) {
             m_CompleteRequests.push_back(tracker);
         }
+        m_CompleteSemaphore.Post();
     }}
-    m_CompleteSemaphore.Post();
 }
 
 
