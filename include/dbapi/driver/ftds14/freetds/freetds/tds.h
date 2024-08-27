@@ -1752,6 +1752,7 @@ struct tds_bcpinfo
         TDS_INT next_col;
         TDS_INT blob_cols;
         TDS_INT rows_sent;
+        bool with_triggers;
 };
 
 TDSRET tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo);
