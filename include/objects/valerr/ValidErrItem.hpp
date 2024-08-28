@@ -360,7 +360,6 @@ enum EErrType {
     eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
     eErr_SEQ_DESCR_BadInstitutionGeoLocName,
     eErr_SEQ_DESCR_MultipleIsolates,
-    eErr_SEQ_DESCR_BadGenomeRepresentation,
     ERR_CODE_END(SEQ_DESCR),
 
 
