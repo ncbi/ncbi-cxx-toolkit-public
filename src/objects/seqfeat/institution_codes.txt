@@ -1155,7 +1155,6 @@ CET	s	Centro de Estudios Tropicales
 CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Domesticos			
 CEU	s	Collage of Eastern Utah			
 CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista			
-CFBP	c	French Collection for Plant-associated Bacteria	CIRM-CFBP		
 CFCC	cb	China Forestry Culture Collection Center			
 CFGR	s	Center for Fungal Genetic Resources			
 CFIA	s	Canadian Food Inspection Agency			
@@ -1284,6 +1283,7 @@ CIQR	s	El Colegio de la Frontera Sur
 CIR	s	Royal Agricultural College			
 CIRAD	sb	Centre de Cooperation Internationale en Recherche Agronomique pour le Developpement			
 CIRM	s	Centre International de Ressources Microbiennes			
+CIRM-CFBP	c	French Collection for Plant-associated Bacteria			
 CIRUV	s	Coleccion Ictiologica de Referencia de la Universidad del Valle			
 CIS<CHN>	s	Academia Sinica and State Planning Commission			
 CIS<USA-CA>	s	California Insect Survey			

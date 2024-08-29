@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Aug 21 05:33:04 EDT 2024; formally
+/* time_t value corresponding to Thu Aug 29 05:33:05 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1724232784UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1724923985UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1191,7 +1191,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CETESB\tc\tSetor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Domesticos\t\t\t",
 "CEU\ts\tCollage of Eastern Utah\t\t\t",
 "CFBH\ts\tCelio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista\t\t\t",
-"CFBP\tc\tFrench Collection for Plant-associated Bacteria\tCIRM-CFBP\t\t",
 "CFCC\tcb\tChina Forestry Culture Collection Center\t\t\t",
 "CFGR\ts\tCenter for Fungal Genetic Resources\t\t\t",
 "CFIA\ts\tCanadian Food Inspection Agency\t\t\t",
@@ -1320,6 +1319,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIR\ts\tRoyal Agricultural College\t\t\t",
 "CIRAD\tsb\tCentre de Cooperation Internationale en Recherche Agronomique pour le Developpement\t\t\t",
 "CIRM\ts\tCentre International de Ressources Microbiennes\t\t\t",
+"CIRM-CFBP\tc\tFrench Collection for Plant-associated Bacteria\t\t\t",
 "CIRUV\ts\tColeccion Ictiologica de Referencia de la Universidad del Valle\t\t\t",
 "CIS<CHN>\ts\tAcademia Sinica and State Planning Commission\t\t\t",
 "CIS<USA-CA>\ts\tCalifornia Insect Survey\t\t\t",
