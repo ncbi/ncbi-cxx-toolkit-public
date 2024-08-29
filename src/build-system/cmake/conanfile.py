@@ -21,6 +21,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         else:
             print("NCBI artifactory is not found")
 
+        self.requires("abseil/20230125.3")
         if self.settings.os == "Linux":
             self.requires("backward-cpp/1.6")
         self.requires("boost/[>=1.82.0 <=1.85.0]")
@@ -61,13 +62,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["grpc/*"].shared = False
         self.options["protobuf/*"].shared = False
         self.options["boost/*"].shared = False
-        self.options["libxml2/*"].shared = False
-        self.options["libiconv/*"].shared = False
         self.options["pcre/*"].shared = False
-        self.options["pcre2/*"].shared = False
         self.options["ncbicrypt/*"].shared = False
-        self.options["googleapis/*"].shared = False
-        self.options["grpc-proto/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
         self.options["libunwind"+_s].minidebuginfo = False
