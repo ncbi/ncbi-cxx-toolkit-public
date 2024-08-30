@@ -21,7 +21,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         else:
             print("NCBI artifactory is not found")
 
-        self.requires("abseil/20230125.3")
+        self.requires("abseil/[>=20230125.3]")
         if self.settings.os == "Linux":
             self.requires("backward-cpp/1.6")
         self.requires("boost/[>=1.82.0 <=1.85.0]")
