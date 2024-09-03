@@ -59,9 +59,6 @@ BEGIN_NAMESPACE(psgl);
 /////////////////////////////////////////////////////////////////////////////
 
 
-const int kSplitInfoChunkId = 999999999;
-
-
 struct CPSGL_Blob_Processor::SBlobSlot
 {
     // retrieved information
