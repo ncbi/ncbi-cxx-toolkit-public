@@ -40,6 +40,10 @@
 
 #include <corelib/ncbistd.hpp>
 
+#if defined(HAVE_LIBPCRE2)  ||  !defined(HAVE_LIBPCRE)
+#  define USE_LIBPCRE2 1
+#endif
+
 /** @addtogroup Regexp
  *
  * @{
@@ -70,7 +74,7 @@ class NCBI_XREGEXP_EXPORT CRegexp
 {
 public:
     /// Element type for GetResults().
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     typedef size_t TOffset;
 #else
     typedef int TOffset;
@@ -292,7 +296,7 @@ private:
 
     void*  m_PReg;   /// Pointer to compiled PCRE pattern.
 
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     void*    m_MatchData;
     TOffset* m_Results;
     int      m_JITStatus;
