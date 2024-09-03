@@ -835,7 +835,7 @@ private:
 };
 
 
-// Must be in correspondence with variables checked in NcbiGetClientIP[Ex]()
+// Must be in correspondence with variables checked in NcbiGetCgiClientIP[Ex]()
 // (header: <connect/ext/ncbi_localnet.h>, source: connect/ext/ncbi_localnet.c,
 // library: [x]connext)
 static const char* kTrackingVars[] = 
