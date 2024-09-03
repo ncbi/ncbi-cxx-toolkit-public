@@ -1983,16 +1983,16 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         defLine = CAlignFormatUtil::MapTemplate(defLine,"score_info",iter->bit_string);
     }
     
-    string deflId,deflFrmID,deflFastaSeq,deflAccs;
+    string deflId,deflFrmID,deflFastaSeq,deflAccs,deflFastaDwnld;
     if(sdl->gi == ZERO_GI) {
         sdl->id->GetLabel(& deflId, CSeq_id::eContent);
         deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:
-        deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
+	deflFastaDwnld = deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         deflAccs = sdl->id->AsFastaString();
     }
     else {
         deflFrmID = deflId = NStr::NumericToString(sdl->gi);
-        deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
+	deflFastaDwnld = "gi|" + NStr::NumericToString(sdl->gi);
         deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
         sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
     }     
@@ -2024,6 +2024,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnComb_id",combinedSeqID);    
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFrm_id",deflFrmID);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnFASTA_id",deflFastaSeq);
+    defLine = CAlignFormatUtil::MapTemplate(defLine,"deflFastaDwnld_id",deflFastaDwnld);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dflnAccs",deflAccs);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_rid",m_Rid);
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_hspnum",iter->hspNum);
