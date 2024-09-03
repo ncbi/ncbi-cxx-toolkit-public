@@ -119,9 +119,11 @@ BlastInitialWordParameters*
 BlastInitialWordParametersFree(BlastInitialWordParameters* parameters)
 
 {
-	sfree(parameters->cutoffs);
-	sfree(parameters);
-	return NULL;
+    if (parameters){
+        sfree(parameters->cutoffs);
+        sfree(parameters);
+    }    
+    return NULL;
 }
 
 /** Compute the default cutoff expect value for ungapped extensions

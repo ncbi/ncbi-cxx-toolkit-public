@@ -396,6 +396,7 @@ CBlastOptionsFactory::CreateTask(string task, EAPILocality locality)
             opts->SetWordSize(5);
             opts->SetOptions().SetLookupTableType(eCompressedAaLookupTable);
             opts->SetWordThreshold(BLAST_WORD_THRESHOLD_BLASTP_FAST);
+            opts->SetChaining(true);
          }
          retval = opts;
     }

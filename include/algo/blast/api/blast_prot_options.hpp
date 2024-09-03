@@ -126,6 +126,13 @@ public:
     /// @param e GapExtensionCost [in]
     void SetGapExtensionCost(int e) { m_Opts->SetGapExtensionCost(e); }
     
+    /************************ Algorithm options ************************/
+    /// Returns true if chaining is enabled, false otherwise
+    bool GetChaning() const { return m_Opts->GetChaining(); }
+    /// Enables/disables chaining
+    /// @param ch Chaining enabled, if ch is true [in]
+    void SetChaining(bool ch) { m_Opts->SetChaining(ch); }
+
 protected:
     /// Set the program and service name for remote blast.
     virtual void SetRemoteProgramAndService_Blast3()

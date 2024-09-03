@@ -63,6 +63,7 @@ typedef struct {
 
 
 typedef struct JumperGapAlign JumperGapAlign;
+typedef struct ChainingStruct ChainingStruct;
 
 
 /** Structure supporting the gapped alignment */
@@ -92,6 +93,7 @@ typedef struct BlastGapAlignStruct {
    Int4 score;   /**< Return value: alignment score */
 
    JumperGapAlign* jumper;   /**< data for jumper alignment */
+   ChainingStruct* chaining; /**< data for chaining */
 } BlastGapAlignStruct;
 
 /** Initializes the BlastGapAlignStruct structure 
@@ -129,6 +131,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  * @param score_params Options and parameters related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
  * @param hit_params Options related to saving hits [in]
+ * @param word_params Options related to ungapped alignments [in]
  * @param init_hitlist List of initial HSPs (offset pairs with additional 
  *        information from the ungapped alignment performed earlier) [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
@@ -143,6 +146,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
               const BlastScoringParameters* score_params, 
               const BlastExtensionParameters* ext_params,
               const BlastHitSavingParameters* hit_params,
+              const BlastInitialWordParameters* word_params,
               BlastInitHitList* init_hitlist,
               BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
               Boolean * fence_hit);

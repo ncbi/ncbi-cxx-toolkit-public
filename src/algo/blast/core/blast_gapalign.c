@@ -281,6 +281,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align)
    GapStateFree(gap_align->state_struct);
    sfree(gap_align->dp_mem);
    JumperGapAlignFree(gap_align->jumper);
+   ChainingStructFree(gap_align->chaining);
 
    sfree(gap_align);
    return NULL;
@@ -337,6 +338,13 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
            gap_align->gap_x_dropoff = 3 * MAX(-score_params->penalty,
                                               score_params->gap_open +
                                               score_params->gap_extend);
+       }
+   }
+
+   if (ext_params->options->chaining) {
+       gap_align->chaining = ChainingStructNew();
+       if (!gap_align->chaining) {
+	  gap_align = BLAST_GapAlignStructFree(gap_align);
        }
    }
 
@@ -3431,6 +3439,227 @@ BlastGetStartForGappedAlignment (const Uint1* query, const Uint1* subject,
     return max_offset;
 }
 
+ChainingStruct* ChainingStructFree(ChainingStruct* ch)
+{
+    if (!ch) {
+      return NULL;
+    }
+
+    if (ch->nodes) {
+        free(ch->nodes);
+    }
+    free(ch);
+    return NULL;
+}
+
+ChainingStruct* ChainingStructNew(void)
+{
+    ChainingStruct* retval = calloc(sizeof(ChainingStruct), 1);
+    if (!retval) {
+        return NULL;
+    }
+    retval->num_allocated = 100;
+    retval->nodes = malloc(sizeof(BlastInitHSPNode) * retval->num_allocated);
+    if (!retval->nodes) {
+        return ChainingStructFree(retval);
+    }
+    return retval;
+}
+
+
+static int s_CompareInitHSPsByQueryOffsetScore(const void* v1, const void* v2)
+{
+    const BlastInitHSP* h1 = (BlastInitHSP*)v1;
+    const BlastInitHSP* h2 = (BlastInitHSP*)v2;
+
+    if (!h1 && !h2) {
+        return 0;
+    }
+    else if (!h1) {
+        return -1;
+    }
+    else if (!h2) {
+        return 1;
+    }
+
+    if (h1->ungapped_data->q_start < h2->ungapped_data->q_start) {
+        return -1;
+    }
+    if (h1->ungapped_data->q_start > h2->ungapped_data->q_start) {
+        return 1;
+    }
+
+    if (h1->ungapped_data->score < h2->ungapped_data->score) {
+        return 1;
+    }
+    if (h1->ungapped_data->score > h2->ungapped_data->score) {
+        return -1;
+    }
+
+    return 0;
+}
+
+/**Approximate gapped alignment score by chaining co-linear ungapped alignments.
+ * The region between ungapped alignments is assumed to score at most
+ * ungapped alignment cutoff and we assume presence of a gap between each pair
+ * of ungapped alignments. If the approximate score plus the penalty for a
+ * single gap, plus ungapped cutoff is smaller than gapped cutoff, the ugapped
+ * alignments are dropped, because the gapped alignment is unlikely to generate
+ * score above the gapped cutoff.
+ * @param query_info Query data [in]
+ * @param gap_align Structure holding various information and allocated
+ *        memory for the gapped alignment [in]
+ * @param score_params Scoring parameters [in]
+ * @param hit_params Hit saving parameters [in]
+ * @param word_params Ungapped alignment parameters [in]
+ * @param init_hitlist Ungapped alignments [in|out]
+ */
+static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
+                                BlastGapAlignStruct* gap_align,
+                                const BlastScoringParameters* score_params,
+                                const BlastHitSavingParameters* hit_params,
+                                const BlastInitialWordParameters* word_params,
+                                BlastInitHitList* init_hitlist)
+{
+   Int4 context = query_info->first_context;
+   Int4 i = 0, k;
+   BlastInitHSPNode* nodes = gap_align->chaining->nodes;
+   /* penalty for a single gap */
+   Int4 gap_score = score_params->gap_open + score_params->gap_extend;
+
+   /* sort ungapped HSPs by query position, we need to group ungapped
+      alignments by context */
+   qsort(init_hitlist->init_hsp_array, init_hitlist->total,
+         sizeof(BlastInitHSP), s_CompareInitHSPsByQueryOffsetScore);
+
+   while (i < init_hitlist->total) {
+       const BlastContextInfo* pctx;
+       BlastInitHSP* init_array = init_hitlist->init_hsp_array;
+       Int4 num_nodes = 0;
+
+       /* find context of the first ungapped alignment */
+       while (init_array[i].offsets.qs_offsets.q_off > query_info->contexts[context].query_offset + query_info->contexts[context].query_length &&
+              context <= query_info->last_context) {
+           context++;
+       }
+       ASSERT(context <= query_info->last_context);
+       if (context > query_info->last_context) {
+           return -1;
+       }
+       pctx = &query_info->contexts[context];
+
+       nodes[num_nodes].init_hsp = &init_array[i];
+       nodes[num_nodes].best_score = init_array[i].ungapped_data->score;
+       num_nodes++;
+
+       /* find remaining ungapped alignments from the same context */
+       i++;
+       while (init_array[i].offsets.qs_offsets.q_off < pctx->query_offset + pctx->query_length &&
+              i < init_hitlist->total) {
+
+           if (num_nodes >= gap_align->chaining->num_allocated) {
+               BlastInitHSPNode* new_nodes;
+               gap_align->chaining->num_allocated *= 2;
+               new_nodes = calloc(gap_align->chaining->num_allocated,
+                                  sizeof(BlastInitHSPNode));
+               if (!new_nodes) {
+                   return -1;
+               }
+               memcpy(new_nodes, nodes, num_nodes * sizeof(BlastInitHSPNode));
+               free(gap_align->chaining->nodes);
+               gap_align->chaining->nodes = new_nodes;
+               nodes = gap_align->chaining->nodes;
+           }
+
+
+           nodes[num_nodes].init_hsp = &init_array[i];
+           nodes[num_nodes].best_score = init_array[i].ungapped_data->score;
+           num_nodes++;
+           i++;
+       }
+
+       /* process all ungapped alignments from query context: assess
+          gapped score with a simplified dynamic programming */
+       for (k = num_nodes - 1;k >= 0;k--) {
+           Int4 j;
+           Int4 self_score = nodes[k].best_score;
+           for (j = k + 1;j < num_nodes;j++) {
+               Int4 new_score = 0;
+
+               Int4 q_diff = nodes[j].init_hsp->ungapped_data->q_start - nodes[k].init_hsp->ungapped_data->q_start + nodes[k].init_hsp->ungapped_data->length;
+               Int4 s_diff = nodes[j].init_hsp->ungapped_data->s_start - nodes[k].init_hsp->ungapped_data->s_start + nodes[k].init_hsp->ungapped_data->length;
+
+               ASSERT(q_diff >= 0);
+
+               /* use only colinear alignments */
+               if (s_diff < 0) {
+                   continue;
+               }
+
+               new_score = self_score + nodes[j].best_score;
+
+               /* segment between ungapped alignments, assume a few matches
+                  that score less than ungapped alignment score cutoff */
+               new_score += MIN(MIN(q_diff, s_diff) * 3,
+                                word_params->cutoffs[context].cutoff_score);
+
+               /* there must be at least one gap, because there are two
+                  ungapped segments */
+               new_score -= MAX(abs(q_diff - s_diff), 1) + score_params->gap_open;
+
+               if (new_score > nodes[k].best_score) {
+                   nodes[k].best_score = new_score;
+                   nodes[k].next = &nodes[j];
+               }
+
+           }
+       }
+
+       /* check whether to drop ungapped alignments */
+       for (k = 0;k < num_nodes;k++) {
+
+           /* We assume that there must be at least one gap and additional
+              score from gapped extension will not be smaller than ungapped
+              alignment score cutoff (if there was a better scoring segment
+              we would have seen it as another ungapped alignment). Note
+              that this works for alignments with identity above 60% and may
+              not work for very low percent identities. */
+           if (nodes[k].best_score - gap_score + word_params->cutoffs[context].cutoff_score - 1 < hit_params->cutoffs[context].cutoff_score) {
+               /* ungapped_data == NULL indicates removed init_hsp */
+               if (nodes[k].init_hsp->ungapped_data) {
+                   free(nodes[k].init_hsp->ungapped_data);
+               }
+               nodes[k].init_hsp->ungapped_data = NULL;
+           }
+       }
+   }
+
+   /* Remove dropped initial HSPs */
+    while (init_hitlist->total > 0 &&
+          init_hitlist->init_hsp_array[init_hitlist->total - 1].ungapped_data == NULL) {
+       init_hitlist->total--;
+   }
+   for (k = 0;k < init_hitlist->total - 1;k++) {
+       if (init_hitlist->init_hsp_array[k].ungapped_data == NULL) {
+         Int4 end = init_hitlist->total - 1;
+         ASSERT(end > k);
+         init_hitlist->init_hsp_array[k] = init_hitlist->init_hsp_array[end];
+         init_hitlist->total--;
+         while (init_hitlist->total - 1 > k &&
+                init_hitlist->init_hsp_array[init_hitlist->total - 1].ungapped_data == NULL) {
+             init_hitlist->total--;
+         }
+       }
+   }
+   ASSERT(init_hitlist->total >= 0);
+
+   /* initial HSPs must be sorted by score for the gapped alignment code */
+   Blast_InitHitListSortByScore(init_hitlist);
+
+   return 0;
+}
+
+
 Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
         BLAST_SequenceBlk* subject,
@@ -3438,6 +3667,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
         const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
+        const BlastInitialWordParameters* word_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
         Boolean * fence_hit)
@@ -3481,6 +3711,18 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
               program_number != eBlastTypeMapping);
    is_greedy = (ext_params->options->ePrelimGapExt == eGreedyScoreOnly);
 
+
+   /* Compute approximate gapped alignment scores by chaining ungapped
+      alignments and drop ungapped alignments that score below the gapped cutoff */
+   if (ext_params->options->chaining) {
+      status = s_ChainingAlignment(query_info, gap_align, score_params,
+                                   hit_params, word_params, init_hitlist);
+      if (status) {
+        return 1;
+      }
+   }
+
+   
    /* turn on approximate gapped alignment if 1) the search
       specifies it, and 2) the first, highest-scoring ungapped
       alignment in init_hitlist scores below a reduced cutoff.

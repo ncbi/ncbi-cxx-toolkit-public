@@ -201,6 +201,9 @@ public:
     int GetMismatchWindow() const;
     void SetMismatchWindow(int w);
 
+    bool GetChaining(void) const;
+    void SetChaining(bool ch);
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -1247,6 +1250,18 @@ inline void
 CBlastOptionsLocal::SetMismatchWindow(int w)
 {
     m_ExtnOpts->mismatch_window = w;
+}
+
+inline bool
+CBlastOptionsLocal::GetChaining() const
+{
+    return m_ExtnOpts->chaining;
+}
+
+inline void
+CBlastOptionsLocal::SetChaining(bool ch)
+{
+    m_ExtnOpts->chaining = ch;
 }
 
 /******************* Hit saving options *************************/

@@ -315,6 +315,9 @@ public:
     int GetMismatchWindow() const;
     void SetMismatchWindow(int w);
 
+    bool GetChaining() const;
+    void SetChaining(bool ch);
+    
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);

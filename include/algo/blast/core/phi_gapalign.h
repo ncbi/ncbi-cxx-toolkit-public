@@ -80,6 +80,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1* query, Uint1* subject,
  * @param score_params Parameters related to scoring [in]
  * @param ext_params Parameters related to extensions (not used) [in]
  * @param hit_params Parameters related to saving hits [in]
+ * @param word_params Options related to ungapped alignments [in]
  * @param init_hitlist List of initial HSPs, including offset pairs and
  *                     pattern match lengths [in]
  * @param hsp_list_ptr Structure containing all saved HSPs [out]
@@ -97,6 +98,7 @@ Int2 PHIGetGappedScore (EBlastProgramType program_number,
         const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
+        const BlastInitialWordParameters* word_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
         Boolean * fence_hit);
