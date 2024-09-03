@@ -207,6 +207,9 @@
 /* Define to 1 if you have the `basename' function. */
 #cmakedefine HAVE_BASENAME 1
 
+/* Define to 1 if you have the `bcopy' function. */
+#cmakedefine HAVE_BCOPY 1
+
 /* Define to 1 if you have the <com_err.h> header file. */
 #cmakedefine HAVE_COM_ERR_H 1
 
@@ -398,11 +401,20 @@
 /* Define to 1 if you have the `malloc_options' function. */
 #cmakedefine HAVE_MALLOC_OPTIONS 1
 
+/* Define to 1 if you have the `memfd_create' function. */
+#cmakedefine HAVE_MEMFD_CREATE 1
+
+/* Define to 1 if you have the `memmove' function. */
+#cmakedefine HAVE_MEMMOVE 1
+
 /* Define to 1 if you have the <memory.h> header file. */
 #cmakedefine HAVE_MEMORY_H 1
 
 /* Define to 1 if you have the `memrchr' function. */
 #cmakedefine HAVE_MEMRCHR 1
+
+/* Define to 1 if you have the `mkostemp' function. */
+#cmakedefine HAVE_MKOSTEMP 1
 
 /* Define to 1 if you have the `nanosleep' function. */
 #cmakedefine HAVE_NANOSLEEP 1
@@ -462,6 +474,9 @@
 /* Define to 1 if you have the `readv' function. */
 #cmakedefine HAVE_READV 1
 
+/* Define to 1 if you have the `realpath' function. */
+#cmakedefine HAVE_REALPATH 1
+
 /* Define to 1 if your C compiler supports some variant of the C99 `restrict'
    keyword. */
 #define HAVE_RESTRICT_C 1
@@ -475,6 +490,9 @@
 
 /* Define to 1 if you have the `sched_yield' function. */
 #cmakedefine HAVE_SCHED_YIELD 1
+
+/* Define to 1 if you have the `secure_getenv' function. */
+#cmakedefine HAVE_SECURE_GETENV 1
 
 /* Define to 1 if you have the `select' function. */
 #cmakedefine HAVE_SELECT 1
@@ -524,6 +542,9 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #cmakedefine HAVE_STDINT_H 1
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#cmakedefine HAVE_STDIO_H 1
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #cmakedefine HAVE_STDLIB_H 1
 
@@ -541,6 +562,9 @@
 
 /* Define to 1 if you have the `strdup' function. */
 #cmakedefine HAVE_STRDUP 1
+
+/* Define to 1 if you have the `strerror' function. */
+#cmakedefine HAVE_STRERROR 1
 
 /* Define to 1 if you have the `strndup' function. */
 #cmakedefine HAVE_STRNDUP 1

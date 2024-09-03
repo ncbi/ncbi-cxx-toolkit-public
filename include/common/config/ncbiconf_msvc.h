@@ -104,7 +104,7 @@ typedef   int   ssize_t;
 #define HAVE_LIBZCF                     1
 #define HAVE_LIBBZ2                     1
 
-/* FreeTDS */
+/* FreeTDS and/or PCRE(2) */
 
 #define HAVE_ALARM                      1
 #define HAVE_ATOLL                      1
@@ -115,6 +115,7 @@ typedef   int   ssize_t;
 #define HAVE_INT64                      1
 #define HAVE_LOCALE_H                   1
 #define HAVE_MALLOC_H                   1
+#define HAVE_MEMMOVE                    1
 #define HAVE_MEMORY_H                   1
 #define HAVE_PUTENV                     1
 #define HAVE_SNPRINTF                   1
@@ -123,7 +124,9 @@ typedef   int   ssize_t;
 #define HAVE_SQLROWSETSIZE              1
 #define HAVE_SQLSETPOSIROW              1
 #define HAVE_STDBOOL_H                  1
+#define HAVE_STDIO_H                    1
 #define HAVE_STDLIB_H                   1
+#define HAVE_STRERROR                   1
 #define HAVE_STRING_H                   1
 #define HAVE_STRTOK_S                   1
 #define HAVE_WINSOCK2_H                 1

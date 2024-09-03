@@ -48,7 +48,7 @@
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;HAVE_CONFIG_H;PCRE_NO_UTF16;PCRE_NO_UTF32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;HAVE_CONFIG_H;PCRE2_CODE_UNIT_WIDTH=8;NCBI_SKIP_SITE_CONF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\..\..\..\include\; ..\..\..\..\..\..\include\internal\; ..\..\..\..\..\..\include\util\regexp\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -97,7 +97,7 @@
     <ClCompile>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;HAVE_CONFIG_H;PCRE_NO_UTF16;PCRE_NO_UTF32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_LIB;_SECURE_SCL=0;_CRT_SECURE_NO_DEPRECATE=1;HAVE_CONFIG_H;PCRE2_CODE_UNIT_WIDTH=8;NCBI_SKIP_SITE_CONF;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\..\..\..\include\; ..\..\..\..\..\..\include\internal\; ..\..\..\..\..\..\include\util\regexp\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -143,7 +143,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_chartables.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_auto_possess.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -153,7 +153,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_compile.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_chkdint.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -163,7 +163,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_config.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_compile.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -173,7 +173,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_dfa_exec.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_config.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -183,7 +183,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_exec.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_context.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -193,7 +193,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_fullinfo.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_convert.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -203,7 +203,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_get.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_dfa_match.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -213,7 +213,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_globals.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_error.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -223,7 +223,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_maketables.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_extuni.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -233,7 +233,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_newline.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_find_bracket.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -243,7 +243,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_ord2utf8.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_jit_compile.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -253,7 +253,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_refcount.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_maketables.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -263,7 +263,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_study.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_match.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -273,7 +273,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_tables.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_match_data.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -283,7 +283,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_ucd.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_newline.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -293,7 +293,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_valid_utf8.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_ord2utf.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -303,7 +303,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_version.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_pattern_info.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -313,7 +313,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_xclass.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_script_run.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -323,7 +323,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcreposix.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_serialize.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -333,7 +333,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_byte_order.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_string_utils.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -343,7 +343,7 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_jit_compile.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_study.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -353,7 +353,77 @@
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
       </PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre_string_utils.c">
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_substitute.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_substring.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_tables.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_ucd.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_valid_utf.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_xclass.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2_chartables.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+      </PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\src\util\regexp\pcre2posix.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
       </PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
@@ -365,10 +435,31 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\..\include\util\regexp\pcre.h" />
-    <ClInclude Include="..\..\..\..\..\..\include\util\regexp\pcreposix.h" />
-    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre_config.h" />
-    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre_internal.h" />
+    <ClInclude Include="..\..\..\..\..\..\include\util\regexp\pcre2.h" />
+    <ClInclude Include="..\..\..\..\..\..\include\util\regexp\pcre2posix.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\config.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_internal.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_intmodedep.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_jit_neon_inc.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_jit_simd_inc.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_ucp.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\pcre2_ucptables.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\allocator_src/sljitExecAllocatorCore.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\allocator_src/sljitExecAllocatorWindows.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\allocator_src/sljitWXExecAllocatorWindows.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitConfig.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitConfigCPU.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitConfigInternal.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitLir.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitLir.h" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeARM_32.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeARM_64.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeARM_T2_32.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeX86_32.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeX86_64.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitNativeX86_common.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitSerialize.c" />
+    <ClInclude Include="..\..\..\..\..\..\src\util\regexp\sljit\sljitUtils.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

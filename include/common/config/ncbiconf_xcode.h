@@ -147,6 +147,9 @@
 /* Define to 1 if you have the `basename' function. */
 #define HAVE_BASENAME 1
 
+/* Define to 1 if you have the `bcopy' function. */
+#define HAVE_BCOPY 1
+
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 /* #undef HAVE_BERKELEY_DB_CXX */
 
@@ -464,8 +467,17 @@
 /* Define to 1 if you have the `malloc_options' function. */
 /* #undef HAVE_MALLOC_OPTIONS */
 
+/* Define to 1 if you have the `memfd_create' function. */
+/* #undef HAVE_MEMFD_CREATE */
+
+/* Define to 1 if you have the `memmove' function. */
+#define HAVE_MEMMOVE 1
+
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
+
+/* Define to 1 if you have the `mkostemp' function. */
+#define HAVE_MKOSTEMP 1
 
 /* Define to 1 if you have the `nanosleep' function. */
 #define HAVE_NANOSLEEP 1
@@ -537,6 +549,9 @@
 /* Define to 1 if you have the `readv' function. */
 #define HAVE_READV 1
 
+/* Define to 1 if you have the `realpath' function. */
+#define HAVE_REALPATH 1
+
 /* Define to 1 if your C compiler supports some variant of the C99 `restrict'
    keyword. */
 #define HAVE_RESTRICT_C 1
@@ -550,6 +565,9 @@
 
 /* Define to 1 if you have the `sched_yield' function. */
 #define HAVE_SCHED_YIELD 1
+
+/* Define to 1 if you have the `secure_getenv' function. */
+/* #undef HAVE_SECURE_GETENV */
 
 /* Define to 1 if you have the `select' function. */
 #define HAVE_SELECT 1
@@ -614,6 +632,9 @@
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
+/* Define to 1 if you have the <stdio.h> header file. */
+#define HAVE_STDIO_H 1
+
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
 
@@ -625,6 +646,9 @@
 
 /* Define to 1 if you have the `strdup' function. */
 #define HAVE_STRDUP 1
+
+/* Define to 1 if you have the `strerror' function. */
+#define HAVE_STRERROR 1
 
 /* Define to 1 if you have the <strings.h> header file. */
 #define HAVE_STRINGS_H 1
