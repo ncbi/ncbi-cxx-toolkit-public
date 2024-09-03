@@ -34,7 +34,7 @@
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistl.hpp>
 #include <util/xregexp/regexp.hpp>
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
 #  define PCRE2_CODE_UNIT_WIDTH 8
 #  include <pcre2.h>
 #  define PCRE_FLAG(x) PCRE2_##x
@@ -110,7 +110,7 @@ static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
 
 CRegexp::CRegexp(CTempStringEx pattern, TCompile flags)
     : m_PReg(NULL),
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
       m_MatchData(NULL),
       m_Results(NULL),
       m_JITStatus(PCRE2_ERROR_UNSET),
@@ -125,7 +125,7 @@ CRegexp::CRegexp(CTempStringEx pattern, TCompile flags)
 
 CRegexp::~CRegexp()
 {
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     pcre2_code_free((pcre2_code*)m_PReg);
     pcre2_match_data_free((pcre2_match_data*)m_MatchData);
 #else
@@ -138,13 +138,13 @@ CRegexp::~CRegexp()
 void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 {
     if ( m_PReg ) {
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
         pcre2_code_free((pcre2_code*)m_PReg);
 #else
         (*pcre_free)(m_PReg);
 #endif
     }
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     int err_num;
 #else
     const char *err;
@@ -152,7 +152,7 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
     TOffset err_offset;
     int x_flags = s_GetRealCompileFlags(flags);
 
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     m_PReg = pcre2_compile((PCRE2_SPTR) pattern.data(), pattern.size(),
                            x_flags, &err_num, &err_offset, NULL);
 #else
@@ -163,14 +163,14 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
     }
 #endif
     if ( !m_PReg ) {
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
         char err[120];
         pcre2_get_error_message(err_num, (PCRE2_UCHAR*) err, ArraySize(err));
 #endif
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    string(pattern) + "' failed: " + err);
     }
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     pcre2_match_data_free((pcre2_match_data*)m_MatchData);
     m_MatchData = pcre2_match_data_create_from_pattern((pcre2_code*)m_PReg,
                                                        NULL);
@@ -202,7 +202,7 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
     if ( (int)idx >= m_NumFound ) {
         return CTempString();
     }
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     static const PCRE2_SIZE kNotFound = PCRE2_UNSET;
 #else
     static const int kNotFound = -1;
@@ -219,7 +219,7 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
 void CRegexp::x_Match(CTempString str, size_t offset, TMatch flags)
 {
     int x_flags = s_GetRealMatchFlags(flags);
-#ifdef HAVE_LIBPCRE2
+#ifdef USE_LIBPCRE2
     auto f = (m_JITStatus == 0) ? &pcre2_jit_match : &pcre2_match;
     auto *match_data = (pcre2_match_data*) m_MatchData;
     int rc = (*f)((pcre2_code*) m_PReg, (PCRE2_UCHAR*)str.data(), str.length(),
