@@ -74,8 +74,6 @@ BEGIN_SCOPE(objects)
 
 using namespace psgl;
 
-static const int kSplitInfoChunkId = CPSGL_Blob_Processor::kSplitInfoChunkId;
-
 const unsigned int kMaxWaitSeconds = 3;
 const unsigned int kMaxWaitMillisec = 0;
 
