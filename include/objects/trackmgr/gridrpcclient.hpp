@@ -245,6 +245,10 @@ protected:
             return "GZipFile";
         case CCompressStream::eConcatenatedGZipFile:
             return "GZipFile";
+        case CCompressStream::eZipCloudflare:
+            return "Zip";
+        case CCompressStream::eGZipCloudflareFile:
+            return "GZipFile";
         case CCompressStream::eZstd:
             return "ZStandard";
         };
