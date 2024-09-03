@@ -888,7 +888,7 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     pp.pbp->ibp = new InfoBioseq;
 
     if (pp.format == Parser::EFormat::GenBank) {
-        good = GenBankAscii(&pp);
+        good = GenBankAsciiOrig(&pp);
     } else if (pp.format == Parser::EFormat::EMBL) {
         good = EmblAscii(&pp);
     } else if (pp.format == Parser::EFormat::XML) {
