@@ -5,7 +5,7 @@ Written by: Philip Hazel <ph10@cam.ac.uk>
 
 University of Cambridge Computing Service,
 Cambridge, England. Phone: +44 1223 334714.
-Copyright (c) 1997-2001 University of Cambridge
+Copyright (c) 1997-2022 University of Cambridge
 
 Also, see AUTHORS and LICENCE files.
 
@@ -14,11 +14,13 @@ Also, see AUTHORS and LICENCE files.
 Modifications:
 
 May 2002. 
-    Ported to NCBI C++ Toolkit. Vladimir Ivanov (ivanov@ncbi.nlm.nih.com)
+    Ported to NCBI C++ Toolkit. Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
 
 May 2009. 
-    Updated to v7.9. Vladimir Ivanov (ivanov@ncbi.nlm.nih.com)
+    Updated to v7.9. Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
 
 July 2018. 
-    Updated to v8.42. Vladimir Ivanov (ivanov@ncbi.nlm.nih.com)
+    Updated to v8.42. Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
 
+February 2023.
+    Updated to PCRE2 10.42. Aaron Ucko (ucko@ncbi.nlm.nih.gov)

@@ -4575,6 +4575,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -4625,6 +4626,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -4675,6 +4677,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -4725,6 +4728,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -4757,6 +4761,7 @@
         <key>children</key>
         <array>
           <string>ABCDABCDABCDABCD00000160</string>
+          <string>ABCDABCDABCDABCD01000160</string>
           <string>ABCDABCDABCDABCD00000162</string>
           <string>ABCDABCDABCDABCD00000164</string>
           <string>ABCDABCDABCDABCD00000166</string>
@@ -4766,10 +4771,16 @@
           <string>ABCDABCDABCDABCD0000016E</string>
           <string>ABCDABCDABCDABCD00000170</string>
           <string>ABCDABCDABCDABCD00000172</string>
+          <string>ABCDABCDABCDABCD01000172</string>
+          <string>ABCDABCDABCDABCD02000172</string>
           <string>ABCDABCDABCDABCD00000174</string>
           <string>ABCDABCDABCDABCD00000176</string>
+          <string>ABCDABCDABCDABCD01000178</string>
+          <string>ABCDABCDABCDABCD02000178</string>
           <string>ABCDABCDABCDABCD00000178</string>
           <string>ABCDABCDABCDABCD0000017A</string>
+          <string>ABCDABCDABCDABCD0100017A</string>
+          <string>ABCDABCDABCDABCD0200017A</string>
           <string>ABCDABCDABCDABCD0000017C</string>
           <string>ABCDABCDABCDABCD0000017E</string>
           <string>ABCDABCDABCDABCD0100017E</string>
@@ -4795,12 +4806,30 @@
           <string>ABCDABCDABCDABCD0000018C</string>
           <string>ABCDABCDABCDABCD0000018D</string>
           <string>ABCDABCDABCDABCD0000018E</string>
+          <string>ABCDABCDABCDABCD0100018E</string>
           <string>ABCDABCDABCDABCD0000018F</string>
+          <string>ABCDABCDABCDABCD0100018F</string>
+          <string>ABCDABCDABCDABCD0200018F</string>
           <string>ABCDABCDABCDABCD00000190</string>
+          <string>ABCDABCDABCDABCD01000190</string>
+          <string>ABCDABCDABCDABCD02000190</string>
+          <string>ABCDABCDABCDABCD03000190</string>
           <string>ABCDABCDABCDABCD00000191</string>
+          <string>ABCDABCDABCDABCD01000191</string>
+          <string>ABCDABCDABCDABCD02000191</string>
+          <string>ABCDABCDABCDABCD03000191</string>
+          <string>ABCDABCDABCDABCD04000191</string>
+          <string>ABCDABCDABCDABCD05000191</string>
+          <string>ABCDABCDABCDABCD06000191</string>
+          <string>ABCDABCDABCDABCD07000191</string>
+          <string>ABCDABCDABCDABCD08000191</string>
           <string>ABCDABCDABCDABCD00000192</string>
           <string>ABCDABCDABCDABCD00000193</string>
+          <string>ABCDABCDABCDABCD01000193</string>
+          <string>ABCDABCDABCDABCD02000193</string>
+          <string>ABCDABCDABCDABCD03000193</string>
           <string>ABCDABCDABCDABCD00000194</string>
+          <string>ABCDABCDABCDABCD01000194</string>
         </array>
         <key>isa</key>
         <string>PBXGroup</string>
@@ -4830,9 +4859,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_chartables.c</string>
+        <string>pcre2_auto_possess.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_chartables.c</string>
+        <string>../../../../src/util/regexp/pcre2_auto_possess.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4843,6 +4872,26 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD01000160</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_chkdint.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_chkdint.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000161</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD01000160</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD00000162</key>
       <dict>
         <key>isa</key>
@@ -4850,9 +4899,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_compile.c</string>
+        <string>pcre2_compile.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_compile.c</string>
+        <string>../../../../src/util/regexp/pcre2_compile.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4870,9 +4919,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_config.c</string>
+        <string>pcre2_config.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_config.c</string>
+        <string>../../../../src/util/regexp/pcre2_config.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4890,9 +4939,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_dfa_exec.c</string>
+        <string>pcre2_dfa_match.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_dfa_exec.c</string>
+        <string>../../../../src/util/regexp/pcre2_dfa_match.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4910,9 +4959,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_exec.c</string>
+        <string>pcre2_context.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_exec.c</string>
+        <string>../../../../src/util/regexp/pcre2_context.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4930,9 +4979,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_fullinfo.c</string>
+        <string>pcre2_convert.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_fullinfo.c</string>
+        <string>../../../../src/util/regexp/pcre2_convert.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4950,9 +4999,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_get.c</string>
+        <string>pcre2_error.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_get.c</string>
+        <string>../../../../src/util/regexp/pcre2_error.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4970,9 +5019,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_globals.c</string>
+        <string>pcre2_extuni.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_globals.c</string>
+        <string>../../../../src/util/regexp/pcre2_extuni.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -4990,9 +5039,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_byte_order.c</string>
+        <string>pcre2_find_bracket.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_byte_order.c</string>
+        <string>../../../../src/util/regexp/pcre2_find_bracket.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5010,9 +5059,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_maketables.c</string>
+        <string>pcre2_maketables.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_maketables.c</string>
+        <string>../../../../src/util/regexp/pcre2_maketables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5023,6 +5072,46 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD01000172</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_match.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_match.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000173</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD01000172</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000172</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_match_data.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_match_data.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000173</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD02000172</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD00000174</key>
       <dict>
         <key>isa</key>
@@ -5030,9 +5119,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_newline.c</string>
+        <string>pcre2_newline.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_newline.c</string>
+        <string>../../../../src/util/regexp/pcre2_newline.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5050,9 +5139,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_ord2utf8.c</string>
+        <string>pcre2_ord2utf.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_ord2utf8.c</string>
+        <string>../../../../src/util/regexp/pcre2_ord2utf.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5070,9 +5159,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_refcount.c</string>
+        <string>pcre2_pattern_info.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_refcount.c</string>
+        <string>../../../../src/util/regexp/pcre2_pattern_info.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5083,6 +5172,46 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD01000178</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_script_run.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_script_run.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000179</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD01000178</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000178</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_serialize.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_serialize.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000179</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD02000178</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD0000017A</key>
       <dict>
         <key>isa</key>
@@ -5090,9 +5219,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_study.c</string>
+        <string>pcre2_study.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_study.c</string>
+        <string>../../../../src/util/regexp/pcre2_study.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5103,6 +5232,46 @@
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
+      <key>ABCDABCDABCDABCD0100017A</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_substitute.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_substitute.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0100017B</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD0100017A</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0200017A</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre2_substring.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_substring.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0200017B</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD0200017A</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
       <key>ABCDABCDABCDABCD0000017C</key>
       <dict>
         <key>isa</key>
@@ -5110,9 +5279,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_tables.c</string>
+        <string>pcre2_tables.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_tables.c</string>
+        <string>../../../../src/util/regexp/pcre2_tables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5130,9 +5299,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_jit_compile.c</string>
+        <string>pcre2_jit_compile.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_jit_compile.c</string>
+        <string>../../../../src/util/regexp/pcre2_jit_compile.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5150,9 +5319,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_string_utils.c</string>
+        <string>pcre2_string_utils.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_string_utils.c</string>
+        <string>../../../../src/util/regexp/pcre2_string_utils.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5170,9 +5339,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_ucd.c</string>
+        <string>pcre2_ucd.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_ucd.c</string>
+        <string>../../../../src/util/regexp/pcre2_ucd.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5190,9 +5359,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_valid_utf8.c</string>
+        <string>pcre2_valid_utf.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_valid_utf8.c</string>
+        <string>../../../../src/util/regexp/pcre2_valid_utf.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5210,9 +5379,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_version.c</string>
+        <string>pcre2_chartables.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_version.c</string>
+        <string>../../../../src/util/regexp/pcre2_chartables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5230,9 +5399,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_xclass.c</string>
+        <string>pcre2_xclass.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_xclass.c</string>
+        <string>../../../../src/util/regexp/pcre2_xclass.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5250,9 +5419,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcreposix.c</string>
+        <string>pcre2posix.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcreposix.c</string>
+        <string>../../../../src/util/regexp/pcre2posix.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5283,9 +5452,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcre.h</string>
+        <string>pcre2.h</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcre.h</string>
+        <string>../../../../include/util/regexp/pcre2.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5296,9 +5465,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcre_internal.h</string>
+        <string>pcre2_internal.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_internal.h</string>
+        <string>../../../../src/util/regexp/pcre2_internal.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5309,9 +5478,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcre_scanner.h</string>
+        <string>pcre2_intmodedep.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_scanner.h</string>
+        <string>../../../../src/util/regexp/pcre2_intmodedep.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5322,9 +5491,22 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp.h</string>
+        <string>pcre2_jit_neon_inc.h</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcrecpp.h</string>
+        <string>../../../../src/util/regexp/pcre2_jit_neon_inc.h</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0100018E</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>pcre2_jit_simd_inc.h</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_jit_simd_inc.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5335,9 +5517,35 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp.h</string>
+        <string>sljitConfig.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcrecpp.h</string>
+        <string>../../../../src/util/regexp/sljit/sljitConfig.h</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0100018F</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitConfigCPU.h</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitConfigCPU.h</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0200018F</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitConfigInternal.h</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitConfigInternal.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5348,9 +5556,48 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp_internal.h</string>
+        <string>sljitLir.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcrecpp_internal.h</string>
+        <string>../../../../src/util/regexp/sljit/sljitLir.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000190</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitLir.h</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitLir.h</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000190</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitSerialize.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitSerialize.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD03000190</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitUtils.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitUtils.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5361,9 +5608,113 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpparg.h</string>
+        <string>sljitNativeX86_32.c</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcrecpparg.h</string>
+        <string>../../../../src/util/regexp/sljit/sljitNativeX86_32.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativeX86_64.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativeX86_64.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativeX86_common.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativeX86_common.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD03000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativeARM_32.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativeARM_32.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD04000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativeARM_64.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativeARM_64.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD05000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativeARM_T2_32.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativeARM_T2_32.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD06000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativePPC_32.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativePPC_32.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD07000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativePPC_64.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativePPC_64.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD08000191</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitNativePPC_common.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/sljitNativePPC_common.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5374,9 +5725,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcreposix.h</string>
+        <string>pcre2posix.h</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcreposix.h</string>
+        <string>../../../../include/util/regexp/pcre2posix.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5387,9 +5738,48 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcreposix.h</string>
+        <string>sljitExecAllocatorApple.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcreposix.h</string>
+        <string>../../../../src/util/regexp/sljit/allocator_src/sljitExecAllocatorApple.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000193</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitExecAllocatorCore.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/allocator_src/sljitExecAllocatorCore.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD02000193</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitProtExecAllocatorPosix.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/allocator_src/sljitProtExecAllocatorPosix.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD03000193</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>sljitWXExecAllocatorPosix.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/sljit/allocator_src/sljitWXExecAllocatorPosix.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5400,9 +5790,22 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>ucp.h</string>
+        <string>pcre2_ucp.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/ucp.h</string>
+        <string>../../../../src/util/regexp/pcre2_ucp.h</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD01000194</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.h</string>
+        <key>name</key>
+        <string>pcre2_ucptables.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre2_ucptables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5411,6 +5814,7 @@
         <key>files</key>
         <array>
           <string>ABCDABCDABCDABCD00000161</string>
+          <string>ABCDABCDABCDABCD01000161</string>
           <string>ABCDABCDABCDABCD00000163</string>
           <string>ABCDABCDABCDABCD00000165</string>
           <string>ABCDABCDABCDABCD00000167</string>
@@ -5420,10 +5824,16 @@
           <string>ABCDABCDABCDABCD0000016F</string>
           <string>ABCDABCDABCDABCD00000171</string>
           <string>ABCDABCDABCDABCD00000173</string>
+          <string>ABCDABCDABCDABCD01000173</string>
+          <string>ABCDABCDABCDABCD02000173</string>
           <string>ABCDABCDABCDABCD00000175</string>
           <string>ABCDABCDABCDABCD00000177</string>
           <string>ABCDABCDABCDABCD00000179</string>
+          <string>ABCDABCDABCDABCD01000179</string>
+          <string>ABCDABCDABCDABCD02000179</string>
           <string>ABCDABCDABCDABCD0000017B</string>
+          <string>ABCDABCDABCDABCD0100017B</string>
+          <string>ABCDABCDABCDABCD0200017B</string>
           <string>ABCDABCDABCDABCD0000017D</string>
           <string>ABCDABCDABCDABCD0000017F</string>
           <string>ABCDABCDABCDABCD0100017F</string>
@@ -5505,8 +5915,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -5553,8 +5962,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -5601,8 +6009,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -5649,8 +6056,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -9185,8 +9591,6 @@
           <string>ABCDABCDABCDABCD00000294</string>
           <string>ABCDABCDABCDABCD00000295</string>
           <string>ABCDABCDABCDABCD00000296</string>
-          <string>ABCDABCDABCDABCD00000297</string>
-          <string>ABCDABCDABCDABCD00000298</string>
           <string>ABCDABCDABCDABCD00000299</string>
         </array>
         <key>isa</key>
@@ -9217,9 +9621,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcretest.c</string>
+        <string>pcre2test.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcretest.c</string>
+        <string>../../../../src/util/regexp/pcre2test.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9252,7 +9656,7 @@
         <key>name</key>
         <string>pcre.h</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcre.h</string>
+        <string>../../../../include/util/regexp/pcre2.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9265,7 +9669,7 @@
         <key>name</key>
         <string>pcre_internal.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_internal.h</string>
+        <string>../../../../src/util/regexp/pcre2_internal.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9276,9 +9680,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcre_scanner.h</string>
+        <string>pcre2_tables.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_scanner.h</string>
+        <string>../../../../src/util/regexp/pcre2_tables.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9289,9 +9693,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp.h</string>
+        <string>pcre2_ucd.c</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcrecpp.h</string>
+        <string>../../../../src/util/regexp/pcre2_ucd.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9302,9 +9706,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp.h</string>
+        <string>pcre2_intmodedep.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcrecpp.h</string>
+        <string>../../../../src/util/regexp/pcre2_intmodedep.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9315,9 +9719,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpp_internal.h</string>
+        <string>pcre2_printint.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcrecpp_internal.h</string>
+        <string>../../../../src/util/regexp/pcre2_printint.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9328,35 +9732,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>pcrecpparg.h</string>
+        <string>pcre2_valid_utf.c</string>
         <key>path</key>
-        <string>../../../../include/util/regexp/pcrecpparg.h</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
-      <key>ABCDABCDABCDABCD00000297</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.c.h</string>
-        <key>name</key>
-        <string>pcreposix.h</string>
-        <key>path</key>
-        <string>../../../../include/util/regexp/pcreposix.h</string>
-        <key>sourceTree</key>
-        <string>SOURCE_ROOT</string>
-      </dict>
-      <key>ABCDABCDABCDABCD00000298</key>
-      <dict>
-        <key>isa</key>
-        <string>PBXFileReference</string>
-        <key>lastKnownFileType</key>
-        <string>sourcecode.c.h</string>
-        <key>name</key>
-        <string>pcreposix.h</string>
-        <key>path</key>
-        <string>../../../../src/util/regexp/pcreposix.h</string>
+        <string>../../../../include/util/regexp/pcre2_valid_utf.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9367,9 +9745,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.h</string>
         <key>name</key>
-        <string>ucp.h</string>
+        <string>pcre2_ucp.h</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/ucp.h</string>
+        <string>../../../../src/util/regexp/pcre2_ucp.h</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -9497,8 +9875,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -9550,8 +9927,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -9603,8 +9979,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -9656,8 +10031,7 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
-            <string>PCRE_NO_UTF16</string>
-            <string>PCRE_NO_UTF32</string>
+            <string>PCRE2_CODE_UNIT_WIDTH=8</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -14475,6 +14849,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -14520,6 +14895,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -14565,6 +14941,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -14610,6 +14987,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -14828,6 +15206,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -14872,6 +15251,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -14916,6 +15296,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -14960,6 +15341,7 @@
           </array>
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
+            <string>HAVE_LIBPCRE2</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>

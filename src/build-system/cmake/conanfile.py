@@ -63,6 +63,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["protobuf/*"].shared = False
         self.options["boost/*"].shared = False
         self.options["pcre/*"].shared = False
+        self.options["pcre2/*"].shared = False
         self.options["ncbicrypt/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""

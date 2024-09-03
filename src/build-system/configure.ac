@@ -3763,13 +3763,15 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[@%:@include <sys/types.h>
 @%:@include <sys/socket.h>])
-AC_CHECK_HEADERS(atomic.h cpuid.h dlfcn.h ieeefp.h poll.h sys/epoll.h \
-                 sys/mount.h sys/sockio.h sys/statvfs.h sys/sysinfo.h \
-                 sys/sysmacros.h sys/vfs.h x86intrin.h)
+AC_CHECK_HEADERS(atomic.h cpuid.h dlfcn.h ieeefp.h poll.h \
+                 stdio.h string.h strings.h sys/epoll.h \
+                 sys/mount.h sys/sockio.h sys/stat.h \
+                 sys/statvfs.h sys/sysinfo.h \
+                 sys/sysmacros.h sys/types.h sys/vfs.h x86intrin.h)
 case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac
-# for FreeTDS
+# for FreeTDS (and in some cases PCRE2)
 AC_CHECK_HEADERS(arpa/inet.h dirent.h errno.h fcntl.h getopt.h \
                  langinfo.h libgen.h locale.h malloc.h net/inet/in.h netdb.h \
                  netinet/in.h netinet/tcp.h paths.h select.h signal.h \
@@ -4030,14 +4032,17 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(accept4 alarm asprintf atoll basename dbopen daemon euidaccess \
+AC_CHECK_FUNCS(accept4 alarm asprintf atoll basename \
+               bcopy __builtin_mul_overflow dbopen daemon euidaccess \
                eventfd execvpe fseeko fstat getgrouplist \
                gethrtime getopt getpagesize \
                getpass getpassphrase getpwuid getrusage gettimeofday getuid \
-               lchown lutimes mallinfo mallinfo2 malloc_options \
-               memrchr nl_langinfo pipe2 poll \
-               putenv readpassphrase readv select setenv setitimer setrlimit \
-               snprintf statfs statvfs strcasecmp strdup strlcat strlcpy \
+               lchown lutimes mallinfo mallinfo2 malloc_options memfd_create \
+               memmove memrchr mkostemp nl_langinfo pipe2 poll \
+               putenv readpassphrase readv realpath secure_getenv \
+               select setenv setitimer setrlimit \
+               snprintf statfs statvfs strcasecmp \
+               strdup strerror strlcat strlcpy \
                strndup strnlen strsep strtok_r sysmp timegm usleep utimes \
                vasprintf vsnprintf writev)
 AC_LANG_POP(C)
@@ -4875,7 +4880,6 @@ NCBI_CHECK_THIRD_PARTY_LIB(pcre,
  [AC_LANG_PROGRAM([@%:@include <pcre.h>],
    [[const char*s[]={"x"}; pcre* p; pcre_extra* x = pcre_study(p, 1, s);]])])
 
-: ${with_pcre2=no}
 NCBI_CHECK_THIRD_PARTY_LIB_EX(pcre2, PCRE2, pcre2-8,
  [AC_LANG_PROGRAM([@%:@define PCRE2_CODE_UNIT_WIDTH 8
                    @%:@include <pcre2.h>],

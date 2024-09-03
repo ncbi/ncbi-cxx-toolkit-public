@@ -1,10 +1,10 @@
 # $Id$
 
 NCBI_begin_app(test_pcre)
-  NCBI_sources(pcretest pcre_printint)
+  NCBI_sources(pcre2test)
   NCBI_requires(LocalPCRE)
-  NCBI_add_definitions(HAVE_CONFIG_H SUPPORT_PCRE8=1)
+  NCBI_add_definitions(HAVE_CONFIG_H)
   NCBI_project_tags(test)
-  NCBI_project_watchers(ivanov)
+  NCBI_project_watchers(ivanov ucko)
 NCBI_end_app()
 
