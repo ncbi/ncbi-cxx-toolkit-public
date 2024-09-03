@@ -216,6 +216,7 @@ typedef Int2 (*BlastGetGappedScoreType)
       const BlastScoringParameters*,
       const BlastExtensionParameters*, 
       const BlastHitSavingParameters*,
+      const BlastInitialWordParameters*,
       BlastInitHitList*, 
       BlastHSPList**, 
       BlastGappedStats*,

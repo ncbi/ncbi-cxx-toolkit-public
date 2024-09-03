@@ -633,6 +633,7 @@ Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number,
         const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
+        const BlastInitialWordParameters* word_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
         Boolean * fence_hit)

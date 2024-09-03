@@ -1746,6 +1746,27 @@ CBlastOptions::SetMismatchWindow(int w)
 }
  
 
+bool
+CBlastOptions::GetChaining() const
+{
+    if (! m_Local) {
+        x_Throwx("Error: GetChaining() not available.");
+    }
+
+    return m_Local->GetChaining();
+}
+
+void
+CBlastOptions::SetChaining(bool ch)
+{
+    if (m_Local) {
+	m_Local->SetChaining(ch);
+    }
+    else {
+        x_Throwx("Error: SetChaninig() not supported for remote searches");
+    }
+}
+
 /******************* Hit saving options *************************/
 int 
 CBlastOptions::GetHitlistSize() const

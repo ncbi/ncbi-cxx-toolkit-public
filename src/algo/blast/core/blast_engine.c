@@ -523,7 +523,7 @@ s_BlastSearchEngineOneContext(EBlastProgramType program_number,
             status = aux_struct->GetGappedScore(program_number, query,
                     query_info,
                     subject, gap_align, score_params, ext_params, hit_params,
-                    init_hitlist, &hsp_list, gapped_stats, NULL);
+                    word_params, init_hitlist, &hsp_list, gapped_stats, NULL);
         }
         else if (aux_struct->JumperGapped) {
             status = aux_struct->JumperGapped(subject, query, query_info,

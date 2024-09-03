@@ -80,23 +80,27 @@ struct CBlastExtendTestFixture
     BlastScoringParameters* m_ipScoreParams;
     BlastExtensionParameters* m_ipExtParams;
     BlastHitSavingParameters* m_ipHitParams;
+    BlastInitialWordParameters* m_ipWordParams;
     BlastGapAlignStruct* m_ipGapAlign;
     BlastInitHitList* m_ipInitHitlist;
 
     BlastScoringOptions*    m_ScoringOpts;
     BlastExtensionOptions*  m_ExtnOpts;
     BlastHitSavingOptions*  m_HitSavingOpts;
+    BlastInitialWordOptions* m_WordOpts;
 
     CBlastExtendTestFixture() {
         m_ScoringOpts = NULL;
         m_ExtnOpts = NULL;
         m_HitSavingOpts = NULL;
+        m_WordOpts = NULL;
         m_ipScoreBlk = NULL;
         m_ipInitHitlist = NULL;
         m_ipGapAlign = NULL;
         m_ipScoreParams = NULL;
         m_ipHitParams = NULL;
         m_ipExtParams = NULL;
+        m_ipWordParams = NULL;
     }
 
     ~CBlastExtendTestFixture()
@@ -105,6 +109,7 @@ struct CBlastExtendTestFixture
         m_ipInitHitlist = BLAST_InitHitListFree(m_ipInitHitlist);
         m_ipGapAlign = BLAST_GapAlignStructFree(m_ipGapAlign);
         m_ipHitParams = BlastHitSavingParametersFree(m_ipHitParams);
+        m_ipWordParams = BlastInitialWordParametersFree(m_ipWordParams);
         sfree(m_ipScoreParams);
         sfree(m_ipHitParams);
         sfree(m_ipExtParams);
@@ -112,6 +117,7 @@ struct CBlastExtendTestFixture
         BlastScoringOptionsFree(m_ScoringOpts);
         BlastExtensionOptionsFree(m_ExtnOpts);
         BlastHitSavingOptionsFree(m_HitSavingOpts);
+        BlastInitialWordOptionsFree(m_WordOpts);
     }
 
     void setupHitList()
@@ -178,27 +184,32 @@ struct CBlastExtendTestFixture
         BlastEffectiveLengthsOptionsFree(eff_len_options);
     }
 
-    void setupStructures(Uint4 subject_length, bool greedy) 
+    void setupStructures(EBlastProgramType program, Uint4 subject_length,
+                         bool greedy, bool chaining = false,
+                         double expect_value = 10) 
     {
         Int2 status;
 
-        const EBlastProgramType kCoreProgramType = eBlastTypeBlastn;
-
-        status = BlastScoringOptionsNew(kCoreProgramType, &m_ScoringOpts);
+        status = BlastScoringOptionsNew(program, &m_ScoringOpts);
         BOOST_REQUIRE(status == 0);
         
-        m_ipScoreBlk = BlastScoreBlkNew(BLASTNA_SEQ_CODE, 2);
+        if (Blast_QueryIsProtein(program)) {
+            m_ipScoreBlk = BlastScoreBlkNew(BLASTAA_SEQ_CODE, 1);
+        }
+        else {
+            m_ipScoreBlk = BlastScoreBlkNew(BLASTNA_SEQ_CODE, 2);
+        }
         if (m_ipScoreBlk->gbp) {
             sfree(m_ipScoreBlk->gbp);
             m_ipScoreBlk->gbp = NULL;
         }
-        status = Blast_ScoreBlkMatrixInit(kCoreProgramType, m_ScoringOpts,
+        status = Blast_ScoreBlkMatrixInit(program, m_ScoringOpts,
                      m_ipScoreBlk, &BlastFindMatrixPath);
 
         BOOST_REQUIRE(status == 0);
         Blast_Message* message = NULL;
         status = Blast_ScoreBlkKbpUngappedCalc(
-                     kCoreProgramType, m_ipScoreBlk, 
+                     program, m_ipScoreBlk, 
                      m_iclsQueryBlk->sequence, m_iclsQueryInfo,
                      &message);
         message = Blast_MessageFree(message);
@@ -206,35 +217,53 @@ struct CBlastExtendTestFixture
 
         BOOST_REQUIRE(status == 0);
         status = Blast_ScoreBlkKbpGappedCalc(m_ipScoreBlk, m_ScoringOpts,
-                     kCoreProgramType, m_iclsQueryInfo, NULL);
+                     program, m_iclsQueryInfo, NULL);
     
         BOOST_REQUIRE(status == 0);
     
         m_ipScoreBlk->kbp = m_ipScoreBlk->kbp_std;
         m_ipScoreBlk->kbp_gap = m_ipScoreBlk->kbp_gap_std;
 
-        fillEffectiveLengths(kCoreProgramType, m_ScoringOpts, 
+        fillEffectiveLengths(program, m_ScoringOpts, 
                              subject_length, 1);
 
         BlastScoringParametersNew(m_ScoringOpts,
                                   m_ipScoreBlk, &m_ipScoreParams);
 
-        status = BlastExtensionOptionsNew(kCoreProgramType, &m_ExtnOpts, true);
+        status = BlastExtensionOptionsNew(program, &m_ExtnOpts, true);
         if (greedy)
             m_ExtnOpts->ePrelimGapExt = eGreedyScoreOnly;
+        if (chaining)
+            m_ExtnOpts->chaining = true;
 
         BOOST_REQUIRE(status == 0);
 
-        BlastExtensionParametersNew(kCoreProgramType, 
+        BlastExtensionParametersNew(program, 
                                     m_ExtnOpts, m_ipScoreBlk, 
                                     m_iclsQueryInfo, &m_ipExtParams);
 
-        status = BlastHitSavingOptionsNew(kCoreProgramType, &m_HitSavingOpts,
+        status = BlastHitSavingOptionsNew(program, &m_HitSavingOpts,
                                           m_ScoringOpts->gapped_calculation);
+        m_HitSavingOpts->expect_value = expect_value;
         BOOST_REQUIRE(status == 0);
+
         
-        BlastHitSavingParametersNew(kCoreProgramType, m_HitSavingOpts,
-				    m_ipScoreBlk, m_iclsQueryInfo, 0, 0, &m_ipHitParams);
+        BlastHitSavingParametersNew(program, m_HitSavingOpts,
+				    m_ipScoreBlk, m_iclsQueryInfo, subject_length, 0, &m_ipHitParams);
+        
+        status = BlastInitialWordOptionsNew(program,
+                                            &m_WordOpts);
+        BOOST_REQUIRE(status == 0);
+
+        status = BlastInitialWordParametersNew(program,
+                                               m_WordOpts,
+                                               m_ipHitParams,
+                                               NULL,
+                                               m_ipScoreBlk,
+                                               m_iclsQueryInfo.Get(),
+                                               subject_length,
+                                               &m_ipWordParams);
+        BOOST_REQUIRE(status == 0);
         
         status = BLAST_GapAlignStructNew(m_ipScoreParams, m_ipExtParams, 
                                          subject_length, m_ipScoreBlk, &m_ipGapAlign);
@@ -285,7 +314,7 @@ BOOST_AUTO_TEST_CASE(testGapAlignment) {
     SetupSubjects(subjects, opts_handle.GetOptions().GetProgramType(), 
                     &subject_blk_v, &subject_length);
 
-    setupStructures(subject_length, false);
+    setupStructures(opts_handle.GetOptions().GetProgramType(), subject_length, false);
 
     setupHitList();
     
@@ -298,8 +327,8 @@ BOOST_AUTO_TEST_CASE(testGapAlignment) {
     BLAST_GetGappedScore(opts_handle.GetOptions().GetProgramType(), 
                             m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
                             m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
-                            m_ipHitParams, m_ipInitHitlist, &hsp_list, 
-                            gapped_stats, NULL);
+                            m_ipHitParams, m_ipWordParams, m_ipInitHitlist,
+                            &hsp_list, gapped_stats, NULL);
 
     BlastSequenceBlkFree(subject_blk_v[0]);
     BOOST_REQUIRE_EQUAL(num_hsps, hsp_list->hspcnt);
@@ -372,7 +401,8 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
     SetupSubjects(subjects, opts_handle.GetOptions().GetProgramType(), 
                     &subject_blk_v, &subject_length);
 
-    setupStructures(subject_length, true);
+    setupStructures(opts_handle.GetOptions().GetProgramType(), subject_length,
+                    true);
 
     setupGreedyHitList();
     
@@ -383,8 +413,8 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
     BLAST_GetGappedScore(opts_handle.GetOptions().GetProgramType(), 
                             m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
                             m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
-                            m_ipHitParams, m_ipInitHitlist, &hsp_list, 
-                            gapped_stats, NULL);
+                            m_ipHitParams, m_ipWordParams, m_ipInitHitlist,
+                            &hsp_list, gapped_stats, NULL);
 
     BOOST_REQUIRE_EQUAL(num_hsps, hsp_list->hspcnt);
 
@@ -405,8 +435,8 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
     BLAST_GetGappedScore(opts_handle.GetOptions().GetProgramType(), 
                             m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
                             m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
-                            m_ipHitParams, m_ipInitHitlist, &hsp_list, 
-                            gapped_stats, NULL);
+                            m_ipHitParams, m_ipWordParams, m_ipInitHitlist,
+                            &hsp_list, gapped_stats, NULL);
 
     BOOST_REQUIRE_EQUAL(num_hsps, hsp_list->hspcnt);
 
@@ -485,7 +515,8 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
     SetupSubjects(subjects, opts_handle.GetOptions().GetProgramType(), 
                     &subject_blk_v, &subject_length);
 
-    setupStructures(subject_length, true);
+    setupStructures(opts_handle.GetOptions().GetProgramType(), subject_length,
+                    true);
 
     // The following options must be patched to reproduce SB-666
     m_ipScoreParams->reward = 1;
@@ -512,8 +543,8 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
     BLAST_GetGappedScore(opts_handle.GetOptions().GetProgramType(), 
                             m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
                             m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
-                            m_ipHitParams, m_ipInitHitlist, &hsp_list, 
-                            gapped_stats, NULL);
+                            m_ipHitParams, m_ipWordParams, m_ipInitHitlist,
+                            &hsp_list, gapped_stats, NULL);
 
     m_ipInitHitlist->init_hsp_array[0].ungapped_data = NULL;
 
@@ -536,6 +567,90 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
 
     Blast_HSPListFree(hsp_list);
 }
+
+BOOST_AUTO_TEST_CASE(testGapAlignmentWithChaining) {
+    BlastGappedStats* gapped_stats = NULL;
+
+    CSeq_id qid("WP_026970592.1");
+    unique_ptr<SSeqLoc> qsl(
+        CTestObjMgr::Instance().CreateSSeqLoc(qid, eNa_strand_plus));
+    CSeq_id sid("OWY25257.1");
+    unique_ptr<SSeqLoc> ssl(
+        CTestObjMgr::Instance().CreateSSeqLoc(sid, eNa_strand_plus));
+
+    CRef<CBlastOptionsHandle> opts_handle(CBlastOptionsFactory::CreateTask("blastp-fast"));
+    TSeqLocVector queries;
+    TSeqLocVector subjects;
+    queries.push_back(*qsl);
+    subjects.push_back(*ssl);
+
+    const CBlastOptions& kOpts = opts_handle->GetOptions();
+    EBlastProgramType prog = kOpts.GetProgramType();
+    ENa_strand strand_opt = kOpts.GetStrandOption();
+    TSearchMessages blast_msg;
+
+    SetupQueryInfo(queries, prog, strand_opt, &m_iclsQueryInfo); 
+    SetupQueries(queries, m_iclsQueryInfo, &m_iclsQueryBlk, 
+                    prog, strand_opt, blast_msg);
+    ITERATE(TSearchMessages, m, blast_msg) {
+        BOOST_REQUIRE(m->empty());
+    }
+    
+    Uint4 subject_length;
+    vector<BLAST_SequenceBlk*> subject_blk_v;
+    SetupSubjects(subjects, opts_handle->GetOptions().GetProgramType(), 
+                  &subject_blk_v, &subject_length);
+
+    setupStructures(opts_handle->GetOptions().GetProgramType(), subject_length,
+                    false, true, 0.00001);
+    m_ipExtParams->options->chaining = true;
+
+    const int num_init_hsps = 1;
+    const int q_starts[num_init_hsps] = { 164 };
+    const int s_starts[num_init_hsps] = { 242 };
+    const int lengths[num_init_hsps] = { 9 };
+    const int scores[num_init_hsps] = { 42 };
+
+    m_ipInitHitlist = BLAST_InitHitListNew();       
+    BlastUngappedData* ungapped_data;
+    Int4 index;
+
+    for (index = 0; index < num_init_hsps; ++index) {
+      ungapped_data = 
+        (BlastUngappedData*) calloc(1, sizeof(BlastUngappedData));
+      ungapped_data->q_start = q_starts[index];
+      ungapped_data->s_start = s_starts[index];
+      ungapped_data->length = lengths[index];
+      ungapped_data->score = scores[index];
+      BLAST_SaveInitialHit(m_ipInitHitlist, q_starts[index], 
+                           s_starts[index], ungapped_data);
+    }
+
+    Blast_InitHitListSortByScore(m_ipInitHitlist);
+
+    BlastHSPList* hsp_list = Blast_HSPListNew(0);
+    gapped_stats = 
+        (BlastGappedStats*) calloc(1, sizeof(BlastGappedStats));
+
+    BLAST_GetGappedScore(opts_handle->GetOptions().GetProgramType(), 
+                            m_iclsQueryBlk, m_iclsQueryInfo, subject_blk_v[0],
+                            m_ipGapAlign, m_ipScoreParams, m_ipExtParams, 
+                            m_ipHitParams, m_ipWordParams, m_ipInitHitlist,
+                            &hsp_list, gapped_stats, NULL);
+
+    BlastSequenceBlkFree(subject_blk_v[0]);
+    BOOST_REQUIRE_EQUAL(hsp_list->hspcnt, 0);
+
+    // chaining tested and removed the only ungapped alignment, so there
+    // should be no gapped extensions
+    BOOST_REQUIRE_EQUAL(gapped_stats->extensions, 0);
+
+    sfree(gapped_stats);
+
+
+    Blast_HSPListFree(hsp_list);
+}
+
 
 BOOST_AUTO_TEST_CASE(testSmallMBSpaceValue) {
         const int kSize = 100;

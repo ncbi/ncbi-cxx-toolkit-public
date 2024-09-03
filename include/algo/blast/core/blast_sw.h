@@ -97,6 +97,7 @@ void SmithWatermanScoreWithTraceback(EBlastProgramType program_number,
  * @param score_params Options and parameters related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
  * @param hit_params Options related to saving hits [in]
+ * @param word_params Options related to ungapped alignments [in]
  * @param init_hitlist List of initial HSPs (ignored)
  * @param hsp_list_ptr Structure containing all saved HSPs. Note that
  *               there will be at most one HSP for each context that
@@ -112,6 +113,7 @@ Int2 BLAST_SmithWatermanGetGappedScore (EBlastProgramType program_number,
         const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
+        const BlastInitialWordParameters* word_params,
         BlastInitHitList* init_hitlist,
         BlastHSPList** hsp_list_ptr, BlastGappedStats* gapped_stats,
         Boolean * fence_hit);

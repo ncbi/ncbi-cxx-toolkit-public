@@ -348,6 +348,8 @@ typedef struct BlastExtensionOptions {
 
     Int4 mismatch_window;   /**< Widnow for counting mismatches for Jumper */
 
+    Boolean chaining; /**< Use chaining for fast approximate gapped extension */
+
    EBlastProgramType program_number; /**< indicates blastn, blastp, etc. */
 } BlastExtensionOptions;
 
