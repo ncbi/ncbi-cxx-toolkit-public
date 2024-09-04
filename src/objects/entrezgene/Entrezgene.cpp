@@ -76,6 +76,7 @@ CRef<CGene_nomenclature> CEntrezgene::GetNomenclature() const
     }
 
     // Second choice: look in the properties
+    // Note that this structure is deprecated.
 
     if ( ! nomen->IsSetSymbol() ) {
 
@@ -137,32 +138,7 @@ CRef<CGene_nomenclature> CEntrezgene::GetNomenclature() const
 
     if ( ! nomen->IsSetSymbol() ) {
 
-        // Third choice: get from EG.locus
-
-        if (gene_ref.IsSetLocus()) {
-            nomen->SetSymbol(gene_ref.GetLocus());
-        }
-
-        // Fourth choice: get from EG.locus_tag
-
-        else
-        if (gene_ref.IsSetLocus_tag()) {
-            nomen->SetSymbol(gene_ref.GetLocus_tag());
-        }
-
-        // Fifth choice: get from EG.gene.syn[0]
-
-        else
-        if (gene_ref.IsSetSyn() && ( ! gene_ref.GetSyn().empty() ) ) {
-            nomen->SetSymbol(*(gene_ref.GetSyn().begin()));
-        }
-
-        // Last choice: construct it as "LOC" + geneid
-
-        else
-        {
-            nomen->SetSymbol( "LOC" + NStr::IntToString(GetTrack_info().GetGeneid()) );
-        }
+        nomen->SetSymbol(GetSymbol());
     }
 
     return nomen;
@@ -205,6 +181,33 @@ string CEntrezgene::GetDescription() const
     }
 
     return desc;
+}
+
+// Produce the gene symbol.
+string CEntrezgene::GetSymbol() const
+{
+    // First choice: get from EG.locus
+
+    if (GetGene().IsSetLocus()) {
+        return GetGene().GetLocus();
+    }
+
+    // Second choice: get from EG.locus_tag
+
+    if (GetGene().IsSetLocus_tag()) {
+        return GetGene().GetLocus_tag();
+    }
+
+    // Third choice: get from EG.gene.syn[0]
+
+    if (GetGene().IsSetSyn() && ( ! GetGene().GetSyn().empty() )) {
+        return (*(GetGene().GetSyn().begin()));
+    }
+
+    // Last choice: construct it as "LOC" + geneid
+
+    string loc = "LOC" + to_string(GetTrack_info().GetGeneid());
+    return loc;
 }
 
 // Try to find a root-level comment with the given heading.
