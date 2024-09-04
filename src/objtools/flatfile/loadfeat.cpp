@@ -631,9 +631,6 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
     ParserPtr pp = reinterpret_cast<ParserPtr>(pp_ptr);
 
     int   use_indx = pp->curindx;
-    char* acnum;
-
-    Int2 vernum;
 
 #ifdef BIOSEQ_FIND_METHOD
 
@@ -656,10 +653,9 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
         Int2          text_id_ver = text_id->IsSetVersion() ? text_id->GetVersion() : numeric_limits<short>::min();
         const string& text_id_acc = text_id->GetAccession();
         for (use_indx = 0; use_indx < pp->indx; use_indx++) {
-            acnum  = pp->entrylist[use_indx]->acnum;
-            vernum = pp->entrylist[use_indx]->vernum;
-            if (text_id_acc == acnum &&
-                (pp->accver == false || vernum == text_id_ver))
+            auto& e = pp->entrylist[use_indx];
+            if (text_id_acc == e->acnum &&
+                (pp->accver == false || e->vernum == text_id_ver))
                 break;
         }
 
@@ -667,34 +663,30 @@ static Int4 flat2asn_range_func(void* pp_ptr, const CSeq_id& id)
             // entry is not present in this file use remote fetch function
             // use_indx = pp->curindx;
             //
-            size_t len = pp->ffdb ? CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver) : -1;
+            size_t len = pp->ffdb ? CheckOutsideEntry(pp, text_id_acc.c_str(), text_id_ver) : static_cast<size_t>(-1);
             if (len != static_cast<size_t>(-1))
                 return static_cast<Int4>(len);
 
             if (! pp->buf) {
-                if (pp->farseq)
-                    return -1;
-
-                string msg;
-                if (pp->accver == false || text_id_ver < 0) {
-                    msg = ErrFormat("Location points to outside entry %s", text_id_acc.c_str());
-                } else {
-                    msg = ErrFormat("Location points to outside entry %s.%d", text_id_acc.c_str(), text_id_ver);
+                if (! pp->farseq) {
+                    string msg;
+                    if (pp->accver == false || text_id_ver < 0)
+                        msg = ErrFormat("Location points to outside entry %s", text_id_acc.c_str());
+                    else
+                        msg = ErrFormat("Location points to outside entry %s.%d", text_id_acc.c_str(), text_id_ver);
+                    Nlm_ErrSetContext("validatr", __FILE__, __LINE__);
+                    Nlm_ErrPostStr(SEV_WARNING, ERR_LOCATION_FailedCheck, msg);
                 }
-                Nlm_ErrSetContext("validatr", __FILE__, __LINE__);
-                Nlm_ErrPostStr(SEV_WARNING, ERR_LOCATION_FailedCheck, msg);
-                return (-1);
+            } else {
+                if (! pp->buf->empty()) {
+                    string msg = ErrFormat("Feature location references an interval on another record : %s", pp->buf->c_str());
+                    if (pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::Refseq)
+                        ErrPostStr(SEV_WARNING, ERR_LOCATION_NCBIRefersToExternalRecord, msg);
+                    else
+                        ErrPostStr(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, msg);
+                    pp->buf->clear();
+                }
             }
-
-            if (pp->buf->empty())
-                return (-1);
-
-            auto msg = ErrFormat("Feature location references an interval on another record : %s", pp->buf->c_str());
-            if (pp->source == Parser::ESource::NCBI || pp->source == Parser::ESource::Refseq)
-                ErrPostStr(SEV_WARNING, ERR_LOCATION_NCBIRefersToExternalRecord, msg);
-            else
-                ErrPostStr(SEV_WARNING, ERR_LOCATION_RefersToExternalRecord, msg);
-            pp->buf->clear();
             return (-1);
         }
     }
@@ -2639,7 +2631,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
     DataBlkPtr tdbpprev;
     DataBlkPtr tdbpnext;
     const FeatBlk* fbp1;
-    FeatBlkPtr fbp2;
+    const FeatBlk* fbp2;
 
     if (! dbp || ! dbp->mpNext)
         return;
@@ -2658,7 +2650,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
                 continue;
             }
 
-            fbp2 = static_cast<FeatBlk*>(tdbp->mpData);
+            fbp2 = static_cast<const FeatBlk*>(tdbp->mpData);
 
             if (fbp1->location_isset() && fbp2->location_isset() &&
                 StringCmp(fbp1->location_get(), fbp2->location_get()) < 0)
