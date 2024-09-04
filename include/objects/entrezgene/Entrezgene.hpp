@@ -70,6 +70,9 @@ public:
     // Produce a standard description of the gene.
     string GetDescription() const;
 
+    // Produce the gene symbol.
+    string GetSymbol() const;
+
     // Try to find a root-level comment with the given heading.
     CRef<CGene_commentary> FindComment(const string& heading) const; 
 
