@@ -99,6 +99,27 @@ BOOST_AUTO_TEST_CASE(s_TestDescription)
     BOOST_CHECK_EQUAL(eg_obj.GetDescription(), "tRNA-Cys");
 }
 
+BOOST_AUTO_TEST_CASE(s_TestSymbol)
+{
+    CEntrezgene eg_obj;
+
+    // Data comes from gene locus
+    s_GetObject("1", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetSymbol(), "A1BG");
+
+    // Data comes from gene locus_tag
+    s_GetObject("23843401", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetSymbol(), "C813_RS15875");
+
+    // Data comes from gene syn
+    s_GetObject("2538702", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetSymbol(), "SPCC794.14c");
+
+    // Data comes from LOC + geneid
+    s_GetObject("5066033", eg_obj);
+    BOOST_CHECK_EQUAL(eg_obj.GetSymbol(), "LOC5066033");
+}
+
 BOOST_AUTO_TEST_CASE(s_TestNomenclature)
 {
     CEntrezgene eg_obj;
