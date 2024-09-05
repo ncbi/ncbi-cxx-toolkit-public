@@ -1009,7 +1009,7 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
     return false;
 }
 
-EPSG_Status s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
+SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
 {
     auto& state = ts->state;
 
@@ -1597,6 +1597,14 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     }
 
     return true;
+}
+
+int CPSG_Misc::GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply)
+{
+    assert(reply);
+    assert(reply->m_Impl);
+    auto& state = reply->m_Impl->reply->reply_item->state;
+    return state.InProgress() ? 0 : state.GetStatus().GetHttpCode();
 }
 
 

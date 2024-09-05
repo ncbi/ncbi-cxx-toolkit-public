@@ -194,6 +194,14 @@ private:
     atomic_bool m_Stopped;
 };
 
+class CPSG_Reply;
+
+class CPSG_Misc
+{
+public:
+    static int GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply);
+};
+
 template <class TParam>
 struct SPSG_ParamMin
 {

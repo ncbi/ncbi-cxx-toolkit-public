@@ -630,6 +630,16 @@ void SPSG_Reply::SState::Reset()
     m_Messages.clear();
 }
 
+int SPSG_Reply::SState::SStatus::From(EPSG_Status status)
+{
+    switch (status) {
+        case EPSG_Status::eSuccess:         return CRequestStatus::e200_Ok;
+        case EPSG_Status::eForbidden:       return CRequestStatus::e403_Forbidden;
+        case EPSG_Status::eNotFound:        return CRequestStatus::e404_NotFound;
+        default:                            return CRequestStatus::e400_BadRequest;
+    }
+}
+
 EPSG_Status SPSG_Reply::SState::SStatus::From(int status)
 {
     switch (status) {
