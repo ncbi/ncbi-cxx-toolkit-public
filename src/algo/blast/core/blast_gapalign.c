@@ -3714,7 +3714,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    /* Compute approximate gapped alignment scores by chaining ungapped
       alignments and drop ungapped alignments that score below the gapped cutoff */
-   if (ext_params->options->chaining) {
+   if (ext_params->options->chaining &&
+       /* Chaining has only been tested for protein searches with BLOSUM62. */
+       is_prot && strcmp(score_params->options->matrix, "BLOSUM62") == 0) {
       status = s_ChainingAlignment(query_info, gap_align, score_params,
                                    hit_params, word_params, init_hitlist);
       if (status) {
