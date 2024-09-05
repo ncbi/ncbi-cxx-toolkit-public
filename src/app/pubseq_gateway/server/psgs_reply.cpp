@@ -114,10 +114,19 @@ bool CPSGS_Reply::IsClosed(void) const
     return m_Reply->IsClosed();
 }
 
+
 void CPSGS_Reply:: SetRequestId(size_t  request_id)
 {
     m_RequestId = request_id;
     m_Reply->SetRequestId(request_id);
+}
+
+
+bool CPSGS_Reply::GetExceedSoftLimitFlag(void) const
+{
+    if (m_Reply)
+        return m_Reply->GetExceedSoftLimitFlag();
+    return false;
 }
 
 

@@ -464,6 +464,12 @@ private:
                      const string &  err_msg);
     bool x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                           const psg_time_point_t &  now);
+    bool x_IsShuttingDownForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
+                                       bool  verbose);
+    bool x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  reply,
+                                      const psg_time_point_t &  create_timestamp);
+    bool x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
+                                         bool  verbose);
     void x_RegisterProcessors(void);
     bool x_DispatchRequest(CRef<CRequestContext>   context,
                            shared_ptr<CPSGS_Request>  request,

@@ -84,6 +84,14 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     if (http_req.GetPath() == "/") {
         // Special case: no path at all so provide a help message
         try {
@@ -191,6 +199,13 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_BlobBySeqIdRequest,
                            CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
@@ -332,6 +347,14 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     try {
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         int                             hops = 0;
@@ -450,6 +473,14 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_ResolveRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     try {
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         int                             hops = 0;
@@ -562,6 +593,14 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_TSEChunkRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     try {
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         int                             hops = 0;
@@ -654,6 +693,14 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_AnnotationRequest,
                            CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
@@ -864,6 +911,14 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     try {
         SPSGS_RequestBase::EPSGS_Trace  trace = SPSGS_RequestBase::ePSGS_NoTracing;
         int                             hops = 0;
@@ -942,6 +997,14 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_IPGResolveRequest,
                            CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
@@ -1651,6 +1714,14 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     string                  msg;
 
     try {
@@ -1740,6 +1811,14 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
         return 0;
@@ -1941,6 +2020,14 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
         return 0;
     }
 
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
     try {
         string                  err_msg;
 
@@ -2039,6 +2126,81 @@ bool CPubseqGatewayApp::x_IsShuttingDown(shared_ptr<CPSGS_Reply>  reply,
                                          ePSGS_ShuttingDown,
                                          eDiag_Error);
         PSG_WARNING(kShuttingDownMsg);
+        return true;
+    }
+    return false;
+}
+
+
+bool CPubseqGatewayApp::x_IsShuttingDownForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
+                                                      bool  verbose)
+{
+    if (g_ShutdownData.m_ShutdownRequested) {
+        if (verbose) {
+            CJsonNode   final_json_node = CJsonNode::NewObjectNode();
+            final_json_node.SetString("message", kShuttingDownMsg);
+            final_json_node.SetByKey("checks", CJsonNode::NewArrayNode());
+
+            string      content = final_json_node.Repr(CJsonNode::fStandardJson);
+
+            reply->SetContentType(ePSGS_JsonMime);
+            reply->SetContentLength(content.size());
+            x_SendZEndPointReply(CRequestStatus::e503_ServiceUnavailable,
+                                 reply, &content);
+        } else {
+            reply->SetContentType(ePSGS_PlainTextMime);
+            reply->SetContentLength(0);
+            x_SendZEndPointReply(CRequestStatus::e503_ServiceUnavailable,
+                                 reply, nullptr);
+        }
+
+        PSG_WARNING(kShuttingDownMsg);
+        return true;
+    }
+    return false;
+}
+
+
+static string   kConnectionAboveSoftLimitMsg = "The connection exceeds the soft limit";
+
+bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  reply,
+                                                     const psg_time_point_t &  create_timestamp)
+{
+    if (reply->GetExceedSoftLimitFlag()) {
+        x_SendMessageAndCompletionChunks(reply, create_timestamp, kConnectionAboveSoftLimitMsg,
+                                         CRequestStatus::e503_ServiceUnavailable,
+                                         ePSGS_ConnectionExceedsSoftLimit,
+                                         eDiag_Error);
+        PSG_WARNING(kConnectionAboveSoftLimitMsg);
+        return true;
+    }
+    return false;
+}
+
+
+bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
+                                                                  bool  verbose)
+{
+    if (reply->GetExceedSoftLimitFlag()) {
+        if (verbose) {
+            CJsonNode   final_json_node = CJsonNode::NewObjectNode();
+            final_json_node.SetString("message", kConnectionAboveSoftLimitMsg);
+            final_json_node.SetByKey("checks", CJsonNode::NewArrayNode());
+
+            string      content = final_json_node.Repr(CJsonNode::fStandardJson);
+
+            reply->SetContentType(ePSGS_JsonMime);
+            reply->SetContentLength(content.size());
+            x_SendZEndPointReply(CRequestStatus::e503_ServiceUnavailable,
+                                 reply, &content);
+        } else {
+            reply->SetContentType(ePSGS_PlainTextMime);
+            reply->SetContentLength(0);
+            x_SendZEndPointReply(CRequestStatus::e503_ServiceUnavailable,
+                                 reply, nullptr);
+        }
+
+        PSG_WARNING(kConnectionAboveSoftLimitMsg);
         return true;
     }
     return false;

@@ -154,6 +154,8 @@ public:
         return GetTimespanToNowMks(m_LastActivityTimestamp);
     }
 
+    bool GetExceedSoftLimitFlag(void) const;
+
 public:
     // PSG protocol facilities
     void PrepareBioseqMessage(size_t  item_id,

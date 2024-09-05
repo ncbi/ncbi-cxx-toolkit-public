@@ -175,6 +175,7 @@ private:
     unsigned short                  m_num_workers;
     unsigned short                  m_backlog;
     unsigned short                  m_max_connections;
+    size_t                          m_MaxConnSoftLimit;
     CTcpWorkersList *               m_workers;
     std::atomic_uint_fast16_t       m_connection_count;
 
@@ -199,6 +200,7 @@ private:
 
     bool ClientConnected(void);
     bool ClientDisconnected(void);
+    bool DoesConnectionExceedSoftLimit(void);
 
 protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
@@ -206,12 +208,14 @@ protected:
 public:
     CTcpDaemon(const std::string &  Address, unsigned short  Port,
                unsigned short  NumWorkers, unsigned short  BackLog,
-               unsigned short  MaxConnections) :
+               unsigned short  MaxConnections,
+               size_t  MaxConnectionsSoftLimit) :
         m_address(Address),
         m_port(Port),
         m_num_workers(NumWorkers),
         m_backlog(BackLog),
         m_max_connections(MaxConnections),
+        m_MaxConnSoftLimit(MaxConnectionsSoftLimit),
         m_workers(nullptr),
         m_connection_count(0)
     {}
@@ -224,6 +228,10 @@ public:
     unsigned short GetMaxConnections(void) const
     {
         return m_max_connections;
+    }
+    size_t GetMaxConnectionsSoftLimit(void) const
+    {
+        return m_MaxConnSoftLimit;
     }
 
     void Run(CHttpDaemon &  http_daemon,

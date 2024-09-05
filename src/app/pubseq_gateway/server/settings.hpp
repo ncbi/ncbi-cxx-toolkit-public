@@ -56,6 +56,7 @@ struct SPubseqGatewaySettings
     unsigned short                      m_HttpWorkers;
     unsigned int                        m_ListenerBacklog;
     unsigned short                      m_TcpMaxConn;
+    size_t                              m_TcpMaxConnSoftLimit;
     unsigned int                        m_TimeoutMs;
     unsigned int                        m_MaxRetries;
     unsigned long                       m_SendBlobIfSmall;
@@ -155,7 +156,8 @@ struct SPubseqGatewaySettings
     size_t                              m_MyNCBIResolveTimeoutMs;
 
 private:
-    void x_ReadServerSection(const CNcbiRegistry &   registry);
+    void x_ReadServerSection(const CNcbiRegistry &   registry,
+                                   CPSGAlerts &  alerts);
     void x_ReadStatisticsSection(const CNcbiRegistry &   registry);
     void x_ReadLmdbCacheSection(const CNcbiRegistry &   registry);
     void x_ReadAutoExcludeSection(const CNcbiRegistry &   registry);
