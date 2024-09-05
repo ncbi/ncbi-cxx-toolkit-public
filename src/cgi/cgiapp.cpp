@@ -1828,6 +1828,15 @@ bool CCgiApplication::x_ProcessAdminRequest(CCgiRequestProcessor& processor)
     else if ( NStr::EqualNocase(cmd_name, "deep-health") ) {
         cmd = eAdmin_HealthDeep;
     }
+    else if ( NStr::EqualNocase(cmd_name, "healthz") ) {
+        cmd = eAdmin_HealthZ;
+    }
+    else if ( NStr::EqualNocase(cmd_name, "readyz") ) {
+        cmd = eAdmin_ReadyZ;
+    }
+    else if ( NStr::EqualNocase(cmd_name, "livez") ) {
+        cmd = eAdmin_LiveZ;
+    }
 
     // If the overriden method failed or refused to process a command,
     // fallback to the default processing which returns true for all known commands.

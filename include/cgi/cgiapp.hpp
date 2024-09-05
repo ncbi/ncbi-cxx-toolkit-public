@@ -327,6 +327,9 @@ protected:
     enum EAdminCommand {
         eAdmin_Health,       ///< Report health for this CGI only
         eAdmin_HealthDeep,   ///< Report health for this CGI and any services used by it.
+        eAdmin_HealthZ,      ///< Report health for this CGI as kubernetes expects
+        eAdmin_ReadyZ,       ///< Report readyness for this CGI as kubernetes expects
+        eAdmin_LiveZ,        ///< Report if this CGI is alive as kubernetes expects
         eAdmin_Unknown       ///< Unrecognized command. Overriden ProcessAdminRequest()
                              ///< can use GetEntry() to fetch command name if necessary.
     };
