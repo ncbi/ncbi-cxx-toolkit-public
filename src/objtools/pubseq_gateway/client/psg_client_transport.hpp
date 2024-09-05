@@ -376,21 +376,37 @@ struct SPSG_Reply
 {
     struct SState
     {
+        struct SStatus
+        {
+            template <typename T, enable_if_t<is_convertible_v<T, int>, int> = 0>
+            SStatus(T h) : m_Psg(From(static_cast<int>(h))) {}
+            SStatus(EPSG_Status p) : m_Psg(p) {}
+
+            operator EPSG_Status() const { return m_Psg; }
+
+            auto CanBeChangedTo(const SStatus& other) const { return m_Psg < other.m_Psg; }
+
+        private:
+            static EPSG_Status From(int status);
+
+            EPSG_Status m_Psg;
+        };
+
         SPSG_CV<> change;
 
         SState() : m_InProgress(true), m_Status(EPSG_Status::eSuccess) {}
 
-        EPSG_Status GetStatus() const volatile { return m_Status; }
+        SStatus GetStatus() const volatile { return m_Status; }
         SPSG_Message GetMessage(EDiagSev min_severity);
         const volatile atomic_bool& InProgress() const volatile { return m_InProgress; }
 
-        void SetStatus(EPSG_Status status, bool reset) volatile
+        void SetStatus(SStatus status, bool reset) volatile
         {
-            EPSG_Status expected = m_Status;
-            while (((expected < status) || reset) && !m_Status.compare_exchange_weak(expected, status));
+            SStatus expected = m_Status;
+            while (((expected.CanBeChangedTo(status)) || reset) && !m_Status.compare_exchange_weak(expected, status));
         }
 
-        void AddError(string message, EPSG_Status status = EPSG_Status::eError, EDiagSev severity = eDiag_Error, optional<int> code = nullopt)
+        void AddError(string message, SStatus status = EPSG_Status::eError, EDiagSev severity = eDiag_Error, optional<int> code = nullopt)
         {
             AddMessage(std::move(message), severity, code);
             SetStatus(status, false);
@@ -404,11 +420,9 @@ struct SPSG_Reply
         void SetComplete() volatile { if (m_InProgress.exchange(false)) change.NotifyOne(); }
         void Reset();
 
-        static EPSG_Status FromRequestStatus(int status);
-
     private:
         atomic_bool m_InProgress;
-        atomic<EPSG_Status> m_Status;
+        atomic<SStatus> m_Status;
         deque<SPSG_Message> m_Messages;
     };
 
@@ -441,7 +455,7 @@ struct SPSG_Reply
     {}
 
     void SetComplete();
-    void SetFailed(string message, EPSG_Status status = EPSG_Status::eError);
+    void SetFailed(string message, SState::SStatus status = EPSG_Status::eError);
     optional<SItem::TTS*> GetNextItem(CDeadline deadline);
     void Reset();
 };

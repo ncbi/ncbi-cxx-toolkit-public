@@ -424,7 +424,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
         _TROUBLE;
 
     } else if (type != CPSG_ReplyItem::eEndOfReply) {
-        if (stats) stats->IncCounter(SPSG_Stats::eReplyItemStatus, static_cast<unsigned>(status));
+        if (stats) stats->IncCounter(SPSG_Stats::eReplyItemStatus, static_cast<unsigned>(static_cast<EPSG_Status>(status)));
         return new CPSG_ReplyItem(type);
     }
 
@@ -1325,7 +1325,7 @@ CPSG_NamedAnnotStatus::TId2AnnotStatusList CPSG_NamedAnnotStatus::GetId2AnnotSta
             error = !value.IsInteger();
 
             if (!error) {
-                auto status = SPSG_Reply::SState::FromRequestStatus(static_cast<int>(value.AsInteger()));
+                auto status = SPSG_Reply::SState::SStatus(value.AsInteger());
                 rv.emplace_back(it.GetKey(), status);
             }
         }
