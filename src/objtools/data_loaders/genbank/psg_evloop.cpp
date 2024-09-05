@@ -315,7 +315,7 @@ void CPSGL_RequestTracker::QueueInBackground(const CRef<CBackgroundTask>& task)
     {{
         CFastMutexGuard guard(m_TrackerMutex);
         m_BackgroundTasks.insert(task);
-        if ( task-> m_Item ) {
+        if ( task->m_Item ) {
             ++m_BackgroundItemTasks;
         }
     }}
@@ -349,13 +349,15 @@ void CPSGL_RequestTracker::OnStatusChange(CBackgroundTask* task,
         {{
             CFastMutexGuard guard(m_TrackerMutex);
             m_BackgroundTasks.erase(Ref(task));
+            if ( m_BackgroundTasks.empty() ) {
+                m_BackgroundTasksSemaphore.Post();
+            }
         }}
         if ( CBackgroundTask::s_IsAborted(new_task_status) ) {
             // save error status
             m_Status = new_task_status;
             m_QueueGuard.MarkAsFinished(Ref(this));
         }
-        m_BackgroundTasksSemaphore.Post();
     }
 }
 
