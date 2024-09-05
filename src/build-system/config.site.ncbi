@@ -282,7 +282,7 @@ case "$ncbi_platform" in
     *          ) : ${LZO_PATH=$NCBI/lzo-2.05} ;;
 esac
 
-: ${MBEDTLS_PATH=$NCBI/mbedtls-3.6.0}
+: ${MBEDTLS_PATH=$NCBI/mbedtls-3.6.1}
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.8-ncbi1}
 
