@@ -757,7 +757,7 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
                                 MBEDTLS_SSL_TRANSPORT_STREAM,
                                 MBEDTLS_SSL_PRESET_DEFAULT);
     mbedtls_ssl_conf_authmode(&s_MbedTlsConf, MBEDTLS_SSL_VERIFY_NONE);
-#if MBEDTLS_VERSION_MAJOR >= 3
+#if MBEDTLS_VERSION_NUMBER == 0x03060000
     /* The above line can otherwise be ineffective. */
     mbedtls_ssl_conf_max_tls_version(&s_MbedTlsConf,
                                      MBEDTLS_SSL_VERSION_TLS1_2);
