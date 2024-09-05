@@ -86,6 +86,14 @@ void CHttpReply::SetCompleted(void)
 }
 
 
+bool CHttpReply::GetExceedSoftLimitFlag(void) const
+{
+    if (m_HttpConn)
+        return m_HttpConn->GetExceedSoftLimitFlag();
+    return false;
+}
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;

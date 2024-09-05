@@ -308,6 +308,8 @@ public:
     shared_ptr<CCassDataCallbackReceiver> GetDataReadyCB(void)
     { return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady); }
 
+    bool GetExceedSoftLimitFlag(void) const;
+
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver
     {

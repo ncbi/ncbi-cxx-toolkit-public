@@ -601,7 +601,8 @@ int CPubseqGatewayApp::Run(void)
                             m_Settings.m_HttpPort,
                             m_Settings.m_HttpWorkers,
                             m_Settings.m_ListenerBacklog,
-                            m_Settings.m_TcpMaxConn));
+                            m_Settings.m_TcpMaxConn,
+                            m_Settings.m_TcpMaxConnSoftLimit));
 
     // Run the monitoring thread
     int             ret_code = 0;

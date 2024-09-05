@@ -117,7 +117,9 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_NotFoundID2BlobPropWithFallback       = 347,
     ePSGS_ID2ChunkErrorWithFallback             = 348,
     ePSGS_ID2ChunkErrorAfterFallbackRequested   = 349,
-    ePSGS_ID2InfoParseErrorFallback             = 350
+    ePSGS_ID2InfoParseErrorFallback             = 350,
+
+    ePSGS_ConnectionExceedsSoftLimit            = 351
 };
 
 

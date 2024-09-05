@@ -69,7 +69,9 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_ConfigLMDBHealthTimeout,          "ConfigLMDBHealthTimeout" },
     { ePSGS_ConfigCDDHealthTimeout,           "ConfigWGSHealthTimeout" },
     { ePSGS_ConfigWGSHealthTimeout,           "ConfigWGSHealthTimeout" },
-    { ePSGS_ConfigSNPHealthTimeout,           "ConfigSNPHealthTimeout" }
+    { ePSGS_ConfigSNPHealthTimeout,           "ConfigSNPHealthTimeout" },
+    { ePSGS_ConfigTcpMaxConnSoftLimit,        "ConfigTcpMaxConnSoftLimit" },
+    { ePSGS_ConfigTcpMaxConn,                 "ConfigTcpMaxConn" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

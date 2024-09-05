@@ -71,7 +71,9 @@ enum EPSGS_AlertType {
     ePSGS_ConfigLMDBHealthTimeout = 23,
     ePSGS_ConfigCDDHealthTimeout = 24,
     ePSGS_ConfigWGSHealthTimeout = 25,
-    ePSGS_ConfigSNPHealthTimeout = 26
+    ePSGS_ConfigSNPHealthTimeout = 26,
+    ePSGS_ConfigTcpMaxConnSoftLimit = 27,
+    ePSGS_ConfigTcpMaxConn = 28
 };
 
 enum EPSGS_AlertAckResult {

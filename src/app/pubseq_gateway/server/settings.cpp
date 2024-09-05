@@ -61,6 +61,8 @@ const string            kCountersSection = "COUNTERS";
 const unsigned short    kWorkersDefault = 64;
 const unsigned int      kListenerBacklogDefault = 256;
 const unsigned short    kTcpMaxConnDefault = 4096;
+const size_t            kTcpConnHardSoftDiffDefault = 256;
+const size_t            kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
 const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 2;
 const string            kDefaultRootKeyspace = "sat_info3";
@@ -127,6 +129,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpWorkers(kWorkersDefault),
     m_ListenerBacklog(kListenerBacklogDefault),
     m_TcpMaxConn(kTcpMaxConnDefault),
+    m_TcpMaxConnSoftLimit(kTcpMaxConnSoftLimitDefault),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
@@ -195,7 +198,7 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
     //       So, reading of the SSL settings is done first
     x_ReadSSLSection(registry);
 
-    x_ReadServerSection(registry);
+    x_ReadServerSection(registry, alerts);
     x_ReadStatisticsSection(registry);
     x_ReadLmdbCacheSection(registry);
     x_ReadAutoExcludeSection(registry);
@@ -215,7 +218,8 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
 }
 
 
-void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registry)
+void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registry,
+                                                 CPSGAlerts &  alerts)
 {
 
     if (!registry.HasEntry(kServerSection, "port"))
@@ -232,6 +236,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                         kListenerBacklogDefault);
     m_TcpMaxConn = registry.GetInt(kServerSection, "maxconn",
                                    kTcpMaxConnDefault);
+    m_TcpMaxConnSoftLimit = registry.GetInt(kServerSection, "maxconnsoftlimit",
+                                            kTcpMaxConnSoftLimitDefault);
     m_TimeoutMs = registry.GetInt(kServerSection, "optimeout",
                                   kTimeoutDefault);
     m_MaxRetries = registry.GetInt(kServerSection, "maxretries",
@@ -272,6 +278,37 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
         m_ShutdownIfTooManyOpenFD =
                 registry.GetInt(kServerSection, "ShutdownIfTooManyOpenFD",
                                 kDefaultShutdownIfTooManyOpenFDforHTTP);
+    }
+
+    if (m_TcpMaxConnSoftLimit == 0) {
+        string  err_msg = "Invalid [SERVER]/maxconnsoftlimit value. "
+                          "It must be > 0. Resetting to the default value (" +
+                          to_string(kTcpMaxConnSoftLimitDefault) + ")";
+        alerts.Register(ePSGS_ConfigTcpMaxConnSoftLimit, err_msg);
+        PSG_ERROR(err_msg);
+        m_TcpMaxConnSoftLimit = kTcpMaxConnSoftLimitDefault;
+    }
+
+
+    if (m_TcpMaxConn < m_TcpMaxConnSoftLimit) {
+        m_TcpMaxConn = m_TcpMaxConnSoftLimit + kTcpConnHardSoftDiffDefault;
+        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconn value. "
+                              "It must be >= [SERVER]/maxconnsoftlimit value. "
+                              "Resetting to " +
+                              to_string(m_TcpMaxConn);
+        alerts.Register(ePSGS_ConfigTcpMaxConn, err_msg);
+        PSG_ERROR(err_msg);
+    }
+
+    // Min spare connections must not be less than
+    if (m_TcpMaxConn - m_TcpMaxConnSoftLimit < 16) {
+        m_TcpMaxConn = m_TcpMaxConnSoftLimit + 16;
+        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconn value. "
+                              "It must be so that ([SERVER]/maxconn value - [SERVER]/maxconnsoftlimit value) >= 16. "
+                              "Resetting to " +
+                              to_string(m_TcpMaxConn);
+        alerts.Register(ePSGS_ConfigTcpMaxConn, err_msg);
+        PSG_ERROR(err_msg);
     }
 }
 

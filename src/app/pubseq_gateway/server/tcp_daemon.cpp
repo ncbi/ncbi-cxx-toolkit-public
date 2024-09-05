@@ -603,8 +603,12 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
+
+    CHttpConnection *   http_conn = & get<1>(*it);
+
+    http_conn->SetExceedSoftLimitFlag(m_daemon->DoesConnectionExceedSoftLimit());
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
-                               & get<1>(*it), s_OnClientClosed);
+                               http_conn, s_OnClientClosed);
 }
 
 
@@ -653,6 +657,12 @@ bool CTcpDaemon::ClientDisconnected(void)
 {
     uint16_t n = --m_connection_count;
     return n < m_max_connections;
+}
+
+
+bool CTcpDaemon::DoesConnectionExceedSoftLimit(void)
+{
+    return m_connection_count > m_MaxConnSoftLimit;
 }
 
 

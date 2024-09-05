@@ -200,6 +200,20 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
     bool                    verbose = false;    // default
     x_GetVerboseParameter(http_req, reply, now, verbose);
 
+    if (x_IsShuttingDownForZEndPoints(reply, verbose)) {
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+    if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+
     vector<string>          exclude_checks;
     x_GetExcludeChecks(http_req, reply, now, exclude_checks);
 
@@ -369,6 +383,18 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
     bool                    verbose = false;    // default
     x_GetVerboseParameter(req, reply, now, verbose);
 
+    if (x_IsShuttingDownForZEndPoints(reply, verbose)) {
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return;
+    }
+    if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return;
+    }
 
     CJsonNode               check_node;
     SCheckDescription       check;
@@ -385,7 +411,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
             check_node.SetString("name", "unknown");
             check_node.SetString("description", "unknown");
             check_node.SetString("status", "fail");
-            check_node.SetString("message", "Caanot find the check description");
+            check_node.SetString("message", "Cannot find the check description");
         }
     }
 
@@ -433,7 +459,7 @@ CRequestStatus::ECode  OnReplyComplete(const shared_ptr<CPSG_Reply>&  reply,
 
     if (reply_status == EPSG_Status::eInProgress) {
        err_msg = "Timeout on getting a reply status";
-       return CRequestStatus::e500_InternalServerError;
+       return CRequestStatus::e504_GatewayTimeout;
     }
 
     // Here: some kind of error
@@ -481,7 +507,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
     auto    reply = req_queue.SendRequestAndGetReply(self_request,
                                                      health_timeout);
     if (!reply) {
-        ret_code = CRequestStatus::e500_InternalServerError;
+        ret_code = CRequestStatus::e504_GatewayTimeout;
         err_msg = "Timeout on sending a request";
     } else {
         for (auto item = reply->GetNextItem(health_timeout);
@@ -496,7 +522,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
             // Current item is complete
             auto    item_status = item->GetStatus(health_timeout);
             if (item_status == EPSG_Status::eInProgress) {
-                ret_code = CRequestStatus::e500_InternalServerError;
+                ret_code = CRequestStatus::e504_GatewayTimeout;
                 err_msg = "Timeout on getting an item status";
                 break;
             }

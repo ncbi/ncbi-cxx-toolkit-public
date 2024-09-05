@@ -44,6 +44,7 @@ public:
     CHttpConnection(size_t  http_max_backlog,
                     size_t  http_max_running) :
         m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
+        m_ExceedSoftLimitFlag(false),
         m_IsClosed(false), m_ScheduledMaintainTimer{0}
     {}
 
@@ -89,9 +90,20 @@ public:
         x_MaintainFinished();
     }
 
+    void SetExceedSoftLimitFlag(bool  value)
+    {
+        m_ExceedSoftLimitFlag = value;
+    }
+
+    bool GetExceedSoftLimitFlag(void) const
+    {
+        return m_ExceedSoftLimitFlag;
+    }
+
 private:
     size_t                          m_HttpMaxBacklog;
     size_t                          m_HttpMaxRunning;
+    bool                            m_ExceedSoftLimitFlag;
 
     volatile bool                   m_IsClosed;
     uv_timer_t                      m_ScheduledMaintainTimer;
