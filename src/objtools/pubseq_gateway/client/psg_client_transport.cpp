@@ -630,7 +630,7 @@ void SPSG_Reply::SState::Reset()
     m_Messages.clear();
 }
 
-EPSG_Status SPSG_Reply::SState::FromRequestStatus(int status)
+EPSG_Status SPSG_Reply::SState::SStatus::From(int status)
 {
     switch (status) {
         case CRequestStatus::e200_Ok:               return EPSG_Status::eSuccess;
@@ -681,7 +681,7 @@ void SPSG_Reply::SetComplete()
     queue->NotifyOne();
 }
 
-void SPSG_Reply::SetFailed(string message, EPSG_Status status)
+void SPSG_Reply::SetFailed(string message, SState::SStatus status)
 {
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
@@ -972,7 +972,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
         if (const auto status = get_status(); can_retry_503(status, "Server returned a meta with status 503")) {
             return eRetry503;
         } else if (status) {
-            item.state.SetStatus(SPSG_Reply::SState::FromRequestStatus(status), true);
+            item.state.SetStatus(status, true);
         }
 
         if ((item_type != SPSG_Args::eBlob) || item.chunks.empty()) {
@@ -1002,7 +1002,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
         } else if (const auto status = get_status(); can_retry_503(status, chunk.c_str())) {
             return eRetry503;
         } else {
-            item.state.AddError(std::move(chunk), SPSG_Reply::SState::FromRequestStatus(status), severity, code);
+            item.state.AddError(std::move(chunk), status, severity, code);
         }
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
@@ -1207,7 +1207,7 @@ int SPSG_IoSession::OnHeader(nghttp2_session*, const nghttp2_frame* frame, const
 
         if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
             const auto request_status = static_cast<CRequestStatus::ECode>(atoi(status_str));
-            const auto status = SPSG_Reply::SState::FromRequestStatus(request_status);
+            const auto status = SPSG_Reply::SState::SStatus(request_status);
 
             if (status != EPSG_Status::eSuccess) {
                 if (auto [processor_id, req] = it->second.Get(); req) {
