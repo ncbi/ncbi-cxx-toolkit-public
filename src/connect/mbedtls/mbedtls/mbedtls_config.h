@@ -4063,6 +4063,7 @@
  * persistent key. Therefore large values may cause poor performance.
  *
  * This option has no effect when #MBEDTLS_PSA_CRYPTO_C is disabled.
+ */
 //#define MBEDTLS_PSA_KEY_SLOT_COUNT 32
 
 /* RSA OPTIONS */
