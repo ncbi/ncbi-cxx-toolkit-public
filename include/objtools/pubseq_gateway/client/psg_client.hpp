@@ -1114,6 +1114,7 @@ private:
     shared_ptr<const CPSG_Request> m_Request;
 
     friend class CPSG_Queue;
+    friend class CPSG_Misc;
 };
 
 

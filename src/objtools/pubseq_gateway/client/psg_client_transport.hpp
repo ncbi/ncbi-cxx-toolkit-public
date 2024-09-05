@@ -379,16 +379,19 @@ struct SPSG_Reply
         struct SStatus
         {
             template <typename T, enable_if_t<is_convertible_v<T, int>, int> = 0>
-            SStatus(T h) : m_Psg(From(static_cast<int>(h))) {}
-            SStatus(EPSG_Status p) : m_Psg(p) {}
+            SStatus(T h) : m_Http(static_cast<int>(h)), m_Psg(From(m_Http)) {}
+            SStatus(EPSG_Status p) : m_Http(From(p)), m_Psg(p) {}
 
+            int GetHttpCode() const { return m_Http; }
             operator EPSG_Status() const { return m_Psg; }
 
             auto CanBeChangedTo(const SStatus& other) const { return m_Psg < other.m_Psg; }
 
         private:
+            static int From(EPSG_Status status);
             static EPSG_Status From(int status);
 
+            int m_Http;
             EPSG_Status m_Psg;
         };
 
