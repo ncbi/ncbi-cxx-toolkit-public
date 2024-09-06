@@ -369,21 +369,7 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
     return 0;
 }
 
-class CRawRequest : public CPSG_Request
-{
-public:
-    CRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
-        : CPSG_Request(std::move(user_context), std::move(request_context)),
-          m_AbsPathRef(std::move(abs_path_ref))
-    {}
-
-private:
-    EType x_GetType() const override { return eBlob; }
-    string x_GetId() const override { return m_AbsPathRef; }
-    void x_GetAbsPathRef(ostream& os) const override { os << m_AbsPathRef; }
-
-    string m_AbsPathRef;
-};
+using CRawRequest = CPSG_Request;
 
 struct SRequestBuilder
 {
@@ -614,7 +600,7 @@ template <>
 template <class TReader>
 shared_ptr<CRawRequest> SRequestBuilder::SImpl<CRawRequest>::Build(const TReader& reader)
 {
-    return Create(reader.GetAbsPathRef());
+    return CPSG_Misc::CreateRawRequest(reader.GetAbsPathRef(), std::move(user_context), std::move(request_context));
 }
 
 template <class TRequest>
