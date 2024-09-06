@@ -159,14 +159,14 @@ if(UNIX)
     endif()
 
     try_compile(NCBI_ATOMIC64_STD ${CMAKE_BINARY_DIR}
-                ${CMAKE_SOURCE_DIR}/build-system/cmake/test-atomic64.cpp)
+                ${NCBI_TREE_ROOT}/src/build-system/cmake/test-atomic64.cpp)
     if(NCBI_ATOMIC64_STD)
         message(STATUS "Found 64-bit atomic<> support in standard libraries")
         set(ATOMIC64_LIBS "")
     else()
         NCBI_find_system_library(ATOMIC64_LIBS atomic)
         try_compile(NCBI_ATOMIC64_LIBATOMIC ${CMAKE_BINARY_DIR}
-                    ${CMAKE_SOURCE_DIR}/build-system/cmake/test-atomic64.cpp
+                    ${NCBI_TREE_ROOT}/src/build-system/cmake/test-atomic64.cpp
                     LINK_LIBRARIES ${ATOMIC64_LIBS})
         if(NCBI_ATOMIC64_LIBATOMIC)
             message(STATUS "Found 64-bit atomic<> support in ${ATOMIC64_LIBS}")
