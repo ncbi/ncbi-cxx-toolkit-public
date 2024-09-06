@@ -157,6 +157,23 @@ if(UNIX)
         set(NCBI_REQUIRE_Iconv_FOUND YES)
         list(APPEND NCBI_ALL_REQUIRES Iconv)
     endif()
+
+    try_compile(NCBI_ATOMIC64_STD ${CMAKE_BINARY_DIR}
+                ${CMAKE_SOURCE_DIR}/build-system/cmake/test-atomic64.cpp)
+    if(NCBI_ATOMIC64_STD)
+        message(STATUS "Found 64-bit atomic<> support in standard libraries")
+        set(ATOMIC64_LIBS "")
+    else()
+        NCBI_find_system_library(ATOMIC64_LIBS atomic)
+        try_compile(NCBI_ATOMIC64_LIBATOMIC ${CMAKE_BINARY_DIR}
+                    ${CMAKE_SOURCE_DIR}/build-system/cmake/test-atomic64.cpp
+                    LINK_LIBRARIES ${ATOMIC64_LIBS})
+        if(NCBI_ATOMIC64_LIBATOMIC)
+            message(STATUS "Found 64-bit atomic<> support in ${ATOMIC64_LIBS}")
+        else()
+            message(WARNING "64-bit atomic<> support not found")
+        endif()
+    endif()
 elseif(WIN32)
     set(ORIG_LIBS bcrypt.lib ws2_32.lib dbghelp.lib)
 endif()

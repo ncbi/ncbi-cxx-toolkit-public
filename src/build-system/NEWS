@@ -24,4 +24,6 @@ installations.
 
 2017-05-01: new variables for FreeTDS 1.0.
 
-2024-mm-dd: new variables for FreeTDS 1.4.
+2024-04-09: new variables for FreeTDS 1.4.
+
+2024-09-06: new @ATOMIC64_LIBS@ variable, used by PSG_CLIENT_LIBS.

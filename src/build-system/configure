@@ -832,6 +832,7 @@ MATH_LIBS
 RESOLVER_LIBS
 NETWORK_PURE_LIBS
 NETWORK_LIBS
+ATOMIC64_LIBS
 COLOR_DIAGNOSTICS
 AES_FLAG
 SSE4_1_FLAG
@@ -16480,6 +16481,41 @@ $as_echo "no" >&6; }
 fi
 
 ### Common-use system and miscellaneous libs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking library needed for 64-bit std::atomic" >&5
+$as_echo_n "checking library needed for 64-bit std::atomic... " >&6; }
+if ${ncbi_cv_lib_atomic64+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  orig_LIBS=$LIBS
+    for x in '' -latomic; do
+       LIBS="$x $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <atomic>
+             struct S { int x, y; };
+             int f(std::atomic<S> &s) { return s.load().x; }
+int
+main ()
+{
+std::atomic<S> s; return f(s);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_atomic64=${x:-none required}; break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    done
+    LIBS=$orig_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_atomic64" >&5
+$as_echo "$ncbi_cv_lib_atomic64" >&6; }
+if test "x$ncbi_cv_lib_atomic64" != "xnone required"; then
+   ATOMIC64_LIBS=$ncbi_cv_lib_atomic64
+fi
+
 if test -z "${NETWORK_LIBS+set}"; then
    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing gethostbyname" >&5
 $as_echo_n "checking for library containing gethostbyname... " >&6; }
@@ -37867,6 +37903,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
