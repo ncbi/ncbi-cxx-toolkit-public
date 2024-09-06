@@ -3413,6 +3413,7 @@ IMRU	c	Waksman Institute of Microbiology
 IMS<TZA>	s	Institute of Marine Sciences			
 IMS<USA-NC>	s	University of North Carolina at Chapel Hill			
 IMSNU	c	Institute of Microbiology, Seoul National University			
+IMSS	c	Institute of Microbial Systems Society, University of Regina, Canada			
 IMSSM	s	Instituto Mexicano del Seguro Social			
 IMT<BRA>	c	Micoteca do Instituto de Medicina Tropical de Sao Paulo			
 IMT<JPN>	s	Imperial Museum			
