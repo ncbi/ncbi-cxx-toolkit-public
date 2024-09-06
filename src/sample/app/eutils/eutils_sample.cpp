@@ -774,6 +774,10 @@ void CEUtilsApp::CallEFetch(const CArgs& args)
     }
     req->SetRetMode(retmode);
 
+    if ( args["retmax"] ) {
+        req->SetRetMax(args["retmax"].AsInteger());
+    }
+
     cout << req->GetScriptName() << "?" << req->GetQueryString() << endl;
 
     if ( m_DumpRequests ) {
