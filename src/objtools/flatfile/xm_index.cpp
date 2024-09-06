@@ -470,47 +470,44 @@ static void XMLPerformIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-static void XMLParseVersion(IndexblkPtr ibp, char* line)
+static void XMLParseVersion(IndexblkPtr ibp, string* line)
 {
-    char* p;
-    char* q;
-
     if (! line) {
         ErrPostStr(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
-    for (p = line; *p != '\0' && *p != ' ' && *p != '\t';)
-        p++;
-    if (*p != '\0') {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = true;
-        return;
+    for (char c : *line) {
+        if (c == ' ' || c == '\t') {
+            ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+            ibp->drop = true;
+            return;
+        }
     }
-    q = StringRChr(line, '.');
-    if (! q) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = true;
-        return;
-    }
-    for (p = q + 1; *p >= '0' && *p <= '9';)
-        p++;
-    if (*p != '\0') {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line);
-        ibp->drop = true;
-        return;
-    }
-    *q = '\0';
-    if (! StringEqu(ibp->acnum, line)) {
-        *q = '.';
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line, ibp->acnum);
-        ibp->drop = true;
-        return;
-    }
-    *q++        = '.';
-    ibp->vernum = atoi(q);
 
+    auto q = line->rfind('.');
+    if (q == string::npos) {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+        ibp->drop = true;
+        return;
+    }
+    if (ibp->acnum != line->substr(0, q)) {
+        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line->c_str(), ibp->acnum);
+        ibp->drop = true;
+        return;
+    }
+    q++;
+
+    for (auto p = line->begin() + q; p < line->end(); ++p) {
+        char ch = *p;
+        if (! (ch >= '0' && ch <= '9')) {
+            ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+            ibp->drop = true;
+            return;
+        }
+    }
+    ibp->vernum = NStr::StringToInt(line->substr(q), NStr::fConvErr_NoThrow);
     if (ibp->vernum > 0)
         return;
 
@@ -571,11 +568,10 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
         for (xip = ibp->xip; xip; xip = xip->next) {
             if (xip->tag != INSDSEQ_ACCESSION_VERSION)
                 continue;
-            buf = StringSave(XMLGetTagValue(entry, xip));
-            XMLParseVersion(ibp, buf);
+            auto buf = XMLGetTagValue(entry, xip);
+            XMLParseVersion(ibp, buf ? buf.get() : nullptr);
             if (buf) {
-                FtaInstallPrefix(PREFIX_ACCESSION, buf);
-                MemFree(buf);
+                FtaInstallPrefix(PREFIX_ACCESSION, buf->c_str());
             }
             break;
         }
