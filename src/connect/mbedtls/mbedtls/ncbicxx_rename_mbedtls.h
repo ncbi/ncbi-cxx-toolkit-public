@@ -46,6 +46,16 @@
         mbedtls_aesce_inverse_key_ncbicxx_3_6_1
 #define mbedtls_aesce_setkey_enc \
         mbedtls_aesce_setkey_enc_ncbicxx_3_6_1
+#define mbedtls_aesni_crypt_ecb \
+        mbedtls_aesni_crypt_ecb_ncbicxx_3_6_1
+#define mbedtls_aesni_gcm_mult \
+        mbedtls_aesni_gcm_mult_ncbicxx_3_6_1
+#define mbedtls_aesni_has_support \
+        mbedtls_aesni_has_support_ncbicxx_3_6_1
+#define mbedtls_aesni_inverse_key \
+        mbedtls_aesni_inverse_key_ncbicxx_3_6_1
+#define mbedtls_aesni_setkey_enc \
+        mbedtls_aesni_setkey_enc_ncbicxx_3_6_1
 #define mbedtls_arc4_crypt \
         mbedtls_arc4_crypt_ncbicxx_3_6_1
 #define mbedtls_arc4_free \
