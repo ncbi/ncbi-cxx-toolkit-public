@@ -474,6 +474,12 @@ CRequestStatus::ECode  OnReplyComplete(const shared_ptr<CPSG_Reply>&  reply,
     if (err_msg.empty())
         err_msg = "Unknown error on reply completion";
 
+    int     reply_http_code = CPSG_Misc::GetReplyHttpCode(reply);
+    if (reply_http_code >= 200) {
+        // Looks like a valid http code
+        return static_cast<CRequestStatus::ECode>(reply_http_code);
+    }
+
     return CRequestStatus::e500_InternalServerError;
 }
 
