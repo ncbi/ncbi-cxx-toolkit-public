@@ -148,6 +148,7 @@ protected:
     friend class CPSGL_QueueGuard;
     
     class CBackgroundTask;
+    class CCallbackGuard;
     
     CThreadPool_Task::EStatus
     BackgroundProcessItemCallback(CBackgroundTask* task,
@@ -162,8 +163,8 @@ protected:
     void StartProcessReplyInBackground();
     void OnStatusChange(CBackgroundTask* task,
                         CThreadPool_Task::EStatus old_task_status);
-    void CancelBackgroundTasks();
-    void WaitForBackgroundTasks();
+    void CancelBackgroundTasks(); // cancel background tasks and wait
+    void WaitForBackgroundTasks(); // wait until it's safe to destruct
     void MarkAsFinished(CThreadPool_Task::EStatus status);
     void MarkAsCompleted();
     void MarkAsFailed();
@@ -180,10 +181,12 @@ protected:
     shared_ptr<CPSG_Reply> m_Reply;
 
     CFastMutex m_TrackerMutex;
+    // track background tasks to prevent premature destruction
+    CSemaphore m_BackgroundTasksSemaphore; // safe to destruct
     typedef set<CRef<CBackgroundTask>> TBackgroundTasks;
-    TBackgroundTasks m_BackgroundTasks;
-    CSemaphore m_BackgroundTasksSemaphore;
-    size_t m_BackgroundItemTasks;
+    TBackgroundTasks m_BackgroundTasks; // all background tasks
+    unsigned m_BackgroundItemTasks; // background 'item' tasks
+    unsigned m_Callbacks; // active callbacks from PSG client library
 };
 
 
