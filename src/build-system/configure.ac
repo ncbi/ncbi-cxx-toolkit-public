@@ -4540,6 +4540,22 @@ else
 fi
 
 ### Common-use system and miscellaneous libs
+AC_CACHE_CHECK([library needed for 64-bit std::atomic], ncbi_cv_lib_atomic64,
+   [orig_LIBS=$LIBS
+    for x in '' -latomic; do
+       LIBS="$x $orig_LIBS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+           [[@%:@include <atomic>
+             struct S { int x, y; };
+             int f(std::atomic<S> &s) { return s.load().x; }]],
+           [[std::atomic<S> s; return f(s);]])],
+          [ncbi_cv_lib_atomic64=${x:-none required}; break])
+    done
+    LIBS=$orig_LIBS])
+if test "x$ncbi_cv_lib_atomic64" != "xnone required"; then
+   ATOMIC64_LIBS=$ncbi_cv_lib_atomic64
+fi
+
 if test -z "${NETWORK_LIBS+set}"; then
    AC_SEARCH_LIBS(gethostbyname, [nsl],
       [test "x$ac_cv_search_gethostbyname" = "xnone required" \
@@ -10057,6 +10073,7 @@ AC_SUBST(UNSAFE_MATH_FLAG)
 AC_SUBST(SSE4_1_FLAG)
 AC_SUBST(AES_FLAG)
 AC_SUBST(COLOR_DIAGNOSTICS)
+AC_SUBST(ATOMIC64_LIBS)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(RESOLVER_LIBS)

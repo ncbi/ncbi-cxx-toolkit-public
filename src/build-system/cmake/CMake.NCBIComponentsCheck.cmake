@@ -34,6 +34,10 @@ string(REPLACE ":" ";" NCBI_PKG_CONFIG_PATH  "$ENV{PKG_CONFIG_PATH}")
 set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 #message("NCBI_PKG_CONFIG_PATH init = ${NCBI_PKG_CONFIG_PATH}")
 
+separate_arguments(NCBI_EXTRA_SYS_LIB_DIRS NATIVE_COMMAND ${CMAKE_EXE_LINKER_FLAGS})
+list(FILTER NCBI_EXTRA_SYS_LIB_DIRS INCLUDE REGEX "^-L")
+list(TRANSFORM NCBI_EXTRA_SYS_LIB_DIRS REPLACE "^-L" "")
+
 #############################################################################
 function(NCBI_get_component_config_locations _sub _type)
     set(_ncbi_build_type  "$<CONFIG>${NCBI_PlatformBits}")
@@ -916,9 +920,9 @@ function(NCBI_find_system_library _name _lib)
 
     set(_libname "NCBI::${_name}")
     if("${_type}" STREQUAL "STATIC")
-        find_library(__NCBI_SYS_LIBS NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}${_lib}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_lib})
+        find_library(__NCBI_SYS_LIBS NAMES ${CMAKE_STATIC_LIBRARY_PREFIX}${_lib}${CMAKE_STATIC_LIBRARY_SUFFIX} ${_lib} PATHS ${NCBI_EXTRA_SYS_LIB_DIRS})
     else()
-        find_library(__NCBI_SYS_LIBS NAMES ${_lib})
+        find_library(__NCBI_SYS_LIBS NAMES ${_lib} PATHS ${NCBI_EXTRA_SYS_LIB_DIRS})
     endif()
     if(__NCBI_SYS_LIBS)
         add_library(${_libname} INTERFACE IMPORTED)
