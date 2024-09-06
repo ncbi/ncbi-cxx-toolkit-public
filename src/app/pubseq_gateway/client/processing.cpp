@@ -308,29 +308,17 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
     throw logic_error("Received unknown item: " + to_string(reply_item_type));
 }
 
-auto s_IsRawRequest(shared_ptr<const CPSG_Request>& request)
-{
-    return (request->GetType() == CPSG_Request::eBlob) && dynamic_pointer_cast<const CRawRequest>(request);
-}
-
-auto s_IsRawResponse(const CPSG_BlobId* blob_id)
-{
-    return blob_id && (blob_id->GetLastModified() == CPSG_BlobId::TLastModified(numeric_limits<Int8>::min()));
-}
-
 void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
 {
-    if (auto request = blob_data->GetReply()->GetRequest(); s_IsRawRequest(request)) {
-        if (auto blob_id = blob_data->GetId<CPSG_BlobId>(); s_IsRawResponse(blob_id)) {
-            if (CJson_Document json_doc; json_doc.Read(blob_data->GetStream())) {
-                Set("reply", blob_id->GetId());
+    if (auto blob_id = CPSG_Misc::GetRawResponseBlobId(blob_data)) {
+        if (CJson_Document json_doc; json_doc.Read(blob_data->GetStream())) {
+            Set("reply", blob_id->GetId());
 
-                for (const auto& p : json_doc.GetObject()) {
-                    m_JsonObj.insert(p.name,  p.value);
-                }
-
-                return;
+            for (const auto& p : json_doc.GetObject()) {
+                m_JsonObj.insert(p.name,  p.value);
             }
+
+            return;
         }
     }
 

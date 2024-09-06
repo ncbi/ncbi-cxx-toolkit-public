@@ -45,24 +45,6 @@
 USING_NCBI_SCOPE;
 
 
-class CRawRequest : public CPSG_Request
-{
-    public:
-        CRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
-            : CPSG_Request(std::move(user_context), std::move(request_context)),
-              m_AbsPathRef(std::move(abs_path_ref))
-        {}
-
-    private:
-        EType x_GetType() const override { return eBlob; }
-        string x_GetId() const override { return m_AbsPathRef; }
-        void x_GetAbsPathRef(ostream& os) const override { os << m_AbsPathRef; }
-
-        string m_AbsPathRef;
-};
-
-
-
 struct SCheckDescription
 {
     SCheckDescription()
@@ -506,7 +488,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
     string                  err_msg = "";
 
     // Prepare request and send it
-    auto        self_request = make_shared<CRawRequest>
+    auto        self_request = CPSG_Misc::CreateRawRequest
                             (health_command, nullptr, request_context);
     CPSG_Queue  req_queue("localhost:" + to_string(m_Settings.m_HttpPort));
 

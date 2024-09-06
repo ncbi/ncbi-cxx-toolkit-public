@@ -433,6 +433,8 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
 
 struct SItemTypeAndReason : pair<CPSG_ReplyItem::EType, CPSG_SkippedBlob::EReason>
 {
+    static constexpr auto raw_last_modified = numeric_limits<Int8>::min();
+
     static SItemTypeAndReason Get(SPSG_Args& args, bool raw);
 
 private:
@@ -481,7 +483,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
         case SPSG_Args::eUnknownItem:
             if (!raw) break;
             args.SetValue("blob_id", args.GetValue("item_type"));
-            args.SetValue("last_modified", to_string(numeric_limits<Int8>::min()));
+            args.SetValue("last_modified", to_string(raw_last_modified));
             return CPSG_ReplyItem::eBlobData;
     }
 
@@ -1597,6 +1599,44 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     }
 
     return true;
+}
+
+class CPSG_Request_Raw : public CPSG_Request
+{
+public:
+    CPSG_Request_Raw(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_AbsPathRef(std::move(abs_path_ref))
+    {}
+
+private:
+    EType x_GetType() const override { return eBlob; }
+    string x_GetId() const override { return m_AbsPathRef; }
+    void x_GetAbsPathRef(ostream& os) const override { os << m_AbsPathRef; }
+
+    string m_AbsPathRef;
+};
+
+shared_ptr<CPSG_Request> CPSG_Misc::CreateRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context)
+{
+    return make_shared<CPSG_Request_Raw>(std::move(abs_path_ref), std::move(user_context), std::move(request_context));
+}
+
+const CPSG_BlobId* CPSG_Misc::GetRawResponseBlobId(const shared_ptr<CPSG_BlobData>& blob_data)
+{
+    auto request = blob_data->GetReply()->GetRequest();
+
+    if (request->GetType() == CPSG_Request::eBlob) {
+        if (dynamic_pointer_cast<const CPSG_Request_Raw>(request)) {
+            if (auto blob_id = blob_data->GetId<CPSG_BlobId>()) {
+                if (blob_id->GetLastModified() == CPSG_BlobId::TLastModified(SItemTypeAndReason::raw_last_modified)) {
+                    return blob_id;
+                }
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 int CPSG_Misc::GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply)
