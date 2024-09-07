@@ -952,7 +952,6 @@ pcassay needs $(SEQ_LIBS)
 pcassay needs pcsubstance
 pcassay2 needs $(SEQ_LIBS)
 pcassay2 needs pcsubstance
-pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
 phytree_format needs align_format
 phytree_format needs xalgophytree
@@ -1612,9 +1611,7 @@ xprimer needs xalgoalignnw
 xprimer needs xalnmgr
 xprimer needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xqueryparse needs xncbi
-xregexp needs $(PCRE_LIB)
 xregexp needs xutil
-xregexp needs3party $(PCRE_LIBS)
 xregexp_template_tester needs xregexp
 xsd_sample_lib needs xser
 xser needs xutil
