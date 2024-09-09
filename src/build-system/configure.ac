@@ -4547,8 +4547,10 @@ AC_CACHE_CHECK([library needed for 64-bit std::atomic], ncbi_cv_lib_atomic64,
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
            [[@%:@include <atomic>
              struct S { int x, y; };
-             int f(std::atomic<S> &s) { return s.load().x; }]],
-           [[std::atomic<S> s; return f(s);]])],
+             bool f(std::atomic<S> &as, S &s1, S s2) {
+	         bool b = as.compare_exchange_strong(s1, s2);
+		 return b ? as.load().x : as.load().y; }]],
+           [[std::atomic<S> as; S s1, s2; return f(as, s1, s2);]])],
           [ncbi_cv_lib_atomic64=${x:-none required}; break])
     done
     LIBS=$orig_LIBS])
