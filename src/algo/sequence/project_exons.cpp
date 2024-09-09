@@ -316,29 +316,30 @@ public:
 
         if(false /*orig_loc.GetStart(eExtreme_Positional) == 1988953*/) {
             NcbiCerr << "Orig:  " << AsString(loc->GetPacked_int()) << "\n";
-            AdjustBiostops                   (loc->SetPacked_int());
+            AdjustBiostops(loc->SetPacked_int());
             NcbiCerr << "Adj1:  " << AsString(loc->GetPacked_int()) << "\n";
-            SubsumeMicroIntervals            (loc->SetPacked_int());
+            SubsumeMicroIntervals(loc->SetPacked_int());
             NcbiCerr << "Subs:  " << AsString(loc->GetPacked_int()) << "\n";
-            AdjustBiostops                   (loc->SetPacked_int());
+            AdjustBiostops(loc->SetPacked_int());
             NcbiCerr << "Adj2:  " << AsString(loc->GetPacked_int()) << "\n";
             if (convert_overlaps) {
-            ConvertOverlapsToGaps            (loc->SetPacked_int());
-            NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
+                ConvertOverlapsToGaps(loc->SetPacked_int());
+                NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
             }
-            CollapseNonframeshiftting        (loc->SetPacked_int());
+            CollapseNonframeshiftting(loc->SetPacked_int());
+
             NcbiCerr << "Final: " << AsString(loc->GetPacked_int()) << "\n";
             NcbiCerr << "Tweaked: " 
                      << (orig_loc.Equals(*loc) ? "equal" : "not-equal")
                      << "\n\n";
         } else {
-            AdjustBiostops            (loc->SetPacked_int());
-            SubsumeMicroIntervals     (loc->SetPacked_int());
-            AdjustBiostops            (loc->SetPacked_int());
+            AdjustBiostops(loc->SetPacked_int());
+            SubsumeMicroIntervals(loc->SetPacked_int());
+            AdjustBiostops(loc->SetPacked_int());
             if (convert_overlaps) {
-            ConvertOverlapsToGaps     (loc->SetPacked_int());
+                ConvertOverlapsToGaps(loc->SetPacked_int());
             }
-            CollapseNonframeshiftting (loc->SetPacked_int());
+            CollapseNonframeshiftting(loc->SetPacked_int());
         }
 
         Validate(orig_loc, *loc);
@@ -1670,6 +1671,60 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(
 }
 
 
+// GP-38765
+// Given projected cds-loc, adjust first chunk of first exon and
+// last chunk of last exon to be of length at least 3bp, 
+// if possible, as not to eat into the start and stop codons.
+static CRef<CSeq_loc> PreserveTerminalCodons(CRef<CSeq_loc> exons_loc)
+{
+    if (!(   
+             exons_loc->IsMix()        // multi-exon
+          || exons_loc->IsPacked_int() // single-exon with parts
+        ))
+    {
+        return exons_loc;
+    }
+
+    const auto orig_len = sequence::GetLength(*exons_loc, NULL);
+    (void)orig_len;
+
+    if (auto& first_exon = exons_loc->IsMix() ? exons_loc->SetMix().Set().front() : exons_loc;
+           !exons_loc->IsPartialStart(eExtreme_Biological)
+        && first_exon->IsPacked_int()
+        && first_exon->GetPacked_int().Get().size() >= 2
+    ) {
+        auto& chunks = first_exon->SetPacked_int().Set();
+
+        if (auto& next_chunk = **std::next(chunks.begin());
+            chunks.front()->GetLength() < 3 && next_chunk.GetLength() > 3
+        ) {
+            NTweakExon::AdjustBioStop(*chunks.front(), 3);
+            NTweakExon::AdjustBioStart(next_chunk, 3);
+        }
+    }
+
+    if (auto& last_exon = exons_loc->IsMix() ? exons_loc->SetMix().Set().back() : exons_loc;
+           !exons_loc->IsPartialStop(eExtreme_Biological)
+        && last_exon->IsPacked_int()
+        && last_exon->GetPacked_int().Get().size() >= 2
+    ) {
+        auto& chunks = last_exon->SetPacked_int().Set();
+
+        if (auto& prev_chunk = **std::next(chunks.rbegin());
+            prev_chunk.GetLength() > 3 && chunks.back()->GetLength() < 3
+        ) {
+            NTweakExon::AdjustBioStop(prev_chunk, -3);
+            NTweakExon::AdjustBioStart(*chunks.back(), -3);
+        }
+    }
+
+    const auto final_len = sequence::GetLength(*exons_loc, NULL);
+    (void)final_len;
+    _ASSERT(orig_len == final_len);
+
+    return exons_loc;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
@@ -1717,10 +1772,11 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
         const CSeq_loc& product_cds_loc,
         bool convert_overlaps)
 {
-    return ProjectExons(
+    return PreserveTerminalCodons(
+        ProjectExons(
             spliced_aln, 
             CConstRef<CSeq_loc>(&product_cds_loc),
-            convert_overlaps);
+            convert_overlaps));
 }
 
 
