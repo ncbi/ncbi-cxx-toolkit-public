@@ -1295,8 +1295,7 @@ bool IsSPROTAccession(const char* acc)
     return true;
 }
 
-
-/*
+#if 0
 static bool sCheckAccession(const list<string>& tokens,
                             Parser::ESource source,
                             Parser::EMode mode,
@@ -1484,10 +1483,10 @@ static bool sCheckAccession(const list<string>& tokens,
 
     return(res);
 }
-*/
+#endif
 
 
-static bool sNotAllDigits(const char* first, const char* last)
+inline bool sNotAllDigits(const char* first, const char* last)
 {
     return any_of(first, last, [](char c) { return ! isdigit(c); });
 }
@@ -1508,7 +1507,7 @@ static bool CheckAccession(
     TokenStatBlkPtr stoken,
     Parser::ESource source,
     Parser::EMode   mode,
-    char*           priacc,
+    const char*     priacc,
     unsigned        skip)
 {
     bool badac;
@@ -1938,24 +1937,17 @@ bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr e
 */
 
 
-bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned skip)
+bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned skip)
 {
     Char   acc[200];
-    string temp;
-    char*  p;
     bool   get = true;
-    Int4   i;
 
     if ((skip != 2 && pp->source == Parser::ESource::Flybase) ||
         pp->source == Parser::ESource::USPTO)
         return true;
 
-    string line = str;
-    for (char& c : line)
-        if (c == ';')
-            c = ' ';
-
-    auto stoken = TokenString(line.c_str(), ' ');
+    string line(str);
+    auto stoken = TokenString(line.c_str(), ';');
 
     if (skip != 2) {
         get = ParseAccessionRange(stoken.get(), skip);
@@ -1997,7 +1989,7 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
     StringCpy(entry->acnum, acc);
 
     if (pp->format != Parser::EFormat::XML) {
-        temp = acc;
+        string temp = acc;
         if (pp->accver && entry->vernum > 0) {
             temp += '.';
             temp += to_string(entry->vernum);
@@ -2070,12 +2062,12 @@ bool GetAccession(ParserPtr pp, const char* str, IndexblkPtr entry, unsigned ski
     IsTSAAccPrefix(*pp, acc, entry);
     IsTLSAccPrefix(*pp, acc, entry);
 
-    i = IsNewAccessFormat(entry->acnum);
+    auto i = IsNewAccessFormat(entry->acnum);
     if (i == 3 || i == 8) {
         entry->is_wgs = true;
         entry->wgs_and_gi |= 02;
     } else if (i == 5) {
-        p = entry->acnum;
+        const char* p = entry->acnum;
         if (pp->source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
             ! StringEqu(p + 5, "0000000")) {
             string sourceName = sourceNames.at(pp->source);

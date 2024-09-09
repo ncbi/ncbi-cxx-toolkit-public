@@ -770,7 +770,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
         buf.reserve(len);
         buf.append(XML_FAKE_ACC_TAG);
         buf.append(ibp->acnum);
-        ret = GetAccession(pp, buf.c_str(), ibp, 2);
+        ret = GetAccession(pp, buf, ibp, 2);
         return ret;
     }
 
@@ -796,7 +796,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
             MemFree(p);
         }
     }
-    ret = GetAccession(pp, buf.c_str(), ibp, 2);
+    ret = GetAccession(pp, buf, ibp, 2);
     return ret;
 }
 
