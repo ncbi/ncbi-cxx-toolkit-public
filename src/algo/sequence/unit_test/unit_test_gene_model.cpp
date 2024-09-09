@@ -46,6 +46,7 @@
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/serialbase.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqalign/seqalign__.hpp>
@@ -502,6 +503,296 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 }
 
 BOOST_AUTO_TEST_SUITE(TestSuiteTrimAlignment)
+
+// GP-38765
+BOOST_AUTO_TEST_CASE(TestCasePreserveTermialCodons)
+{
+    CRef<CSeq_align> aln = R"(
+    Seq-align ::= {
+      type partial,
+      score {
+        {
+          id str "pct_identity_gap",
+          value real { 999284180386543, 10, -13 }
+        },
+        {
+          id str "num_ident",
+          value int 1396
+        },
+        {
+          id str "num_mismatch",
+          value int 0
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 1, 10, 2 }
+        },
+        {
+          id str "gap_count",
+          value int 1
+        },
+        {
+          id str "pct_coverage",
+          value real { 999284180386543, 10, -13 }
+        },
+        {
+          id str "pct_coverage_hiqual",
+          value real { 999284180386543, 10, -13 }
+        },
+        {
+          id str "rank",
+          value int 1
+        }
+      },
+      segs spliced {
+        product-id general {
+          db "GNOMON",
+          tag str "28070434.m"
+        },
+        genomic-id local str "NC_065531.1",
+        product-strand plus,
+        genomic-strand minus,
+        product-type transcript,
+        exons {
+          {
+            product-start nucpos 0,
+            product-end nucpos 137,
+            genomic-start 21499788,
+            genomic-end 21499924,
+            parts {
+              match 33,
+              product-ins 1,
+              match 104
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 138,
+            product-end nucpos 253,
+            genomic-start 21499594,
+            genomic-end 21499709,
+            parts {
+              match 116
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 254,
+            product-end nucpos 365,
+            genomic-start 21499412,
+            genomic-end 21499523,
+            parts {
+              match 112
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 366,
+            product-end nucpos 497,
+            genomic-start 21499215,
+            genomic-end 21499346,
+            parts {
+              match 132
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 498,
+            product-end nucpos 735,
+            genomic-start 21498905,
+            genomic-end 21499142,
+            parts {
+              match 238
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 736,
+            product-end nucpos 904,
+            genomic-start 21497635,
+            genomic-end 21497803,
+            parts {
+              match 169
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 905,
+            product-end nucpos 1090,
+            genomic-start 21497394,
+            genomic-end 21497579,
+            parts {
+              match 186
+            },
+            acceptor-before-exon {
+              bases "AG"
+            },
+            donor-after-exon {
+              bases "GT"
+            }
+          },
+          {
+            product-start nucpos 1091,
+            product-end nucpos 1396,
+            genomic-start 21495897,
+            genomic-end 21496202,
+            parts {
+              match 306
+            },
+            acceptor-before-exon {
+              bases "AG"
+            }
+          }
+        },
+        product-length 1397
+      },
+      id {
+        str "1e2ab0a6-9988-42fb-bad9-d870580d9fbc"
+      },
+      ext {
+        {
+          class "Gnomon",
+          type str "AlignmentAttributes",
+          data {
+            {
+              label str "Is [re]constructed alignment",
+              data bool TRUE
+            }
+          }
+        },
+        {
+          type str "ModelEvidence",
+          data {
+            {
+              label str "AlignSource",
+              data str "GNOMON:28070434.m"
+            }
+          }
+        }
+      }
+    }
+)"_asn;
+
+    CRef<CSeq_feat> cds_feat = R"(
+    Seq-feat ::= {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      product whole general {
+        db "GNOMON",
+        tag str "28070434.p"
+      },
+      location int {
+        from 30,
+        to 1367,
+        strand plus,
+        id general {
+          db "GNOMON",
+          tag str "28070434.m"
+        }
+      },
+      ids {
+        local str "cds.28070434"
+      }
+    }
+)"_asn;
+
+    // Note that the first chunk in the first exon was extended to 3bp,
+    // and the second chunk is truncated correspondingly.
+    CRef<CSeq_loc> expected_loc = R"(
+	Seq-loc ::= mix {
+	  packed-int {
+		{
+		  from 21499891,
+		  to 21499894,
+		  strand minus,
+		  id local str "NC_065531.1"
+		},
+		{
+		  from 21499788,
+		  to 21499888,
+		  strand minus,
+		  id local str "NC_065531.1"
+		}
+	  },
+	  int {
+		from 21499594,
+		to 21499709,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21499412,
+		to 21499523,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21499215,
+		to 21499346,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21498905,
+		to 21499142,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21497635,
+		to 21497803,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21497394,
+		to 21497579,
+		strand minus,
+		id local str "NC_065531.1"
+	  },
+	  int {
+		from 21495926,
+		to 21496202,
+		strand minus,
+		id local str "NC_065531.1"
+	  }
+	}
+)"_asn;
+
+    const auto projected_loc = CFeatureGenerator::s_ProjectCDS(*aln, cds_feat->GetLocation(), true);
+	BOOST_CHECK(projected_loc->Equals(*expected_loc));
+}
 
 BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
 {
