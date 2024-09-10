@@ -647,29 +647,26 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 /**********************************************************/
 static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& bioseq, Parser::ESource source)
 {
-    char* organism = nullptr;
-    char* taxonomy = nullptr;
+    unique_ptr<string> organism;
+    unique_ptr<string> taxonomy;
 
-    char* p;
-    char* q;
+    const char* p;
 
     for (; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_ORGANISM && ! organism)
-            organism = StringSave(XMLGetTagValue(entry, xip));
+            organism = XMLGetTagValue(entry, xip);
         else if (xip->tag == INSDSEQ_TAXONOMY && ! taxonomy)
-            taxonomy = StringSave(XMLGetTagValue(entry, xip));
+            taxonomy = XMLGetTagValue(entry, xip);
     }
 
     if (! organism) {
         ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No <INSDSeq_organism> data in XML format file.");
-        if (taxonomy)
-            MemFree(taxonomy);
         return;
     }
 
     CRef<CBioSource> bio_src(new CBioSource);
 
-    p = organism;
+    p = organism->c_str();
     if (GetGenomeInfo(*bio_src, p) && bio_src->GetGenome() != CBioSource::eGenome_plasmid) {
         while (*p != ' ' && *p != '\0')
             p++;
@@ -680,7 +677,7 @@ static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& biose
     COrg_ref& org_ref = bio_src->SetOrg();
 
     if (source == Parser::ESource::EMBL) {
-        q = StringChr(p, '(');
+        const char* q = StringChr(p, '(');
         if (q && q > p) {
             for (q--; *q == ' ' || *q == '\t'; q--)
                 if (q == p)
@@ -688,22 +685,21 @@ static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& biose
             if (*q != ' ' && *q != '\t')
                 q++;
             if (q > p) {
-                *q = '\0';
-                org_ref.SetCommon(p);
+                org_ref.SetCommon(string(p, q));
             }
         }
     }
 
     org_ref.SetTaxname(p);
-    MemFree(organism);
+    organism.reset();
 
     if (org_ref.GetTaxname() == "Unknown.") {
         string& taxname = org_ref.SetTaxname();
-        taxname         = taxname.substr(0, taxname.size() - 1);
+        taxname.pop_back();
     }
 
     if (taxonomy) {
-        org_ref.SetOrgname().SetLineage(taxonomy);
+        org_ref.SetOrgname().SetLineage(*taxonomy);
     }
 
     CRef<CSeqdesc> descr(new CSeqdesc);
