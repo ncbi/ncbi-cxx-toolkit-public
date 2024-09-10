@@ -91,8 +91,8 @@ int  CheckTPG(const string& str);
 Int2 CheckDIV(const char* str);
 Int4 IsNewAccessFormat(const char* acnum);
 bool IsSPROTAccession(const char* acc);
-Int2 XMLCheckSTRAND(const char* str);
-Int2 XMLCheckTPG(const char* str);
+Int2 XMLCheckSTRAND(string_view str);
+Int2 XMLCheckTPG(string_view str);
 Int2 CheckNADDBJ(const char* str);
 Int2 CheckNA(const char* str);
 

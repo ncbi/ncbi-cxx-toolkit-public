@@ -188,42 +188,36 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
 {
     IndexblkPtr ibp;
     XmlIndexPtr xip;
-    Int2        topology;
-    Int2        strand;
-    char*       topstr;
-    char*       strandstr;
 
-    ibp       = pp->entrylist[pp->curindx];
-    topstr    = nullptr;
-    strandstr = nullptr;
+    unique_ptr<string> topstr;
+    unique_ptr<string> strandstr;
+
+    ibp = pp->entrylist[pp->curindx];
     for (xip = ibp->xip; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
-            topstr = StringSave(XMLGetTagValue(dbp->mOffset, xip));
+            topstr = XMLGetTagValue(dbp->mOffset, xip);
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
-            strandstr = StringSave(XMLGetTagValue(dbp->mOffset, xip));
+            strandstr = XMLGetTagValue(dbp->mOffset, xip);
     }
-    if (! topstr)
-        topstr = StringSave("   ");
-    if (! strandstr)
-        strandstr = StringSave("   ");
 
     CSeq_inst& inst = bioseq.SetInst();
     inst.SetRepr(CSeq_inst::eRepr_raw);
 
     /* get linear, circular, tandem topology, blank is linear which = 1
      */
-    topology = XMLCheckTPG(topstr);
-    if (topology > 1)
-        inst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
+    if (topstr) {
+        auto topology = XMLCheckTPG(*topstr);
+        if (topology > 1)
+            inst.SetTopology(static_cast<CSeq_inst::ETopology>(topology));
+        topstr.reset();
+    }
 
-    strand = XMLCheckSTRAND(strandstr);
-    if (strand > 0)
-        inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
-
-    if (topstr)
-        MemFree(topstr);
-    if (strandstr)
-        MemFree(strandstr);
+    if (strandstr) {
+        auto strand = XMLCheckSTRAND(*strandstr);
+        if (strand > 0)
+            inst.SetStrand(static_cast<CSeq_inst::EStrand>(strand));
+        strandstr.reset();
+    }
 
     if (! GetSeqData(pp, *dbp, bioseq, 0, dnaconv, ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna))
         return false;
