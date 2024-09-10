@@ -44,11 +44,13 @@
  *                CORE_SetLOGFILE[_Ex](), CORE_SetLOGFILE_NAME[_Ex]()
  *                LOG_ToFILE[_Ex]()
  *
- * 2. Auxiliary API:
+ * 2. Auxiliary APIs:
  *       CORE_GetAppName()
- *       CORE_GetNcbiRequestID()
  *       CORE_GetPlatform()
+ *       CORE_GetNcbiRequestID()
+ *
  *       CORE_GetUsername[Ex]()
+ * 
  *       CORE_GetVMPageSize()
  *       CORE_Msdelay()
  *
@@ -414,7 +416,7 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 
 /******************************************************************************
- *  Auxiliary API
+ *  Auxiliary APIs
  */
 
 /** Obtain current application name (toolkit dependent).
@@ -428,13 +430,19 @@ extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 extern NCBI_XCONNECT_EXPORT const char* CORE_GetAppName(void);
 
 
+/** Return NCBI platrofm ID (if known).
+ * @return
+ *  Return read-only textual but machine-readable platform description.
+ */
+extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
+
+
 /** NCBI request ID enumerator */
 typedef enum {
     eNcbiRequestID_None = 0,
     eNcbiRequestID_HitID,     /**< NCBI Hit     ID */
     eNcbiRequestID_SID        /**< NCBI Session ID */
 } ENcbiRequestID;
-
 
 /** Obtain current NCBI request ID (if known, per thread).
  * @return
@@ -446,20 +454,12 @@ extern NCBI_XCONNECT_EXPORT char* CORE_GetNcbiRequestID
 (ENcbiRequestID reqid);
 
 
-/** Return NCBI platrofm ID (if known).
- * @return
- *  Return read-only textual but machine-readable platform description.
- */
-extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
-
-
 /** Select which username is the most preferable to obtain from the system. */
 typedef enum {
     eCORE_UsernameCurrent,  /**< process UID */
     eCORE_UsernameLogin,    /**< login UID   */
     eCORE_UsernameReal      /**< real UID    */
 } ECORE_Username;
-
 
 /** Obtain and store in the buffer provided, the best (as possible) user name
  * that matches the requested username selector.
