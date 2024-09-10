@@ -175,7 +175,7 @@ static void set_parser_context_options(xmlParserCtxtPtr  ctxt)
     // may need to be supplied if the user requested the loading external DTD
     // (default). This behavior is controlled by the user via the
     // xml::init::load_external_subsets() call.
-    if (xmlLoadExtDtdDefaultValue != 0)
+    if (init::get_load_external_subsets())
         options |= XML_PARSE_DTDLOAD;
 
     // When the xmlCtxtUseOptions() is called it updates the context
@@ -183,14 +183,14 @@ static void set_parser_context_options(xmlParserCtxtPtr  ctxt)
     // may need to be supplied.
     // The user controls this behavior via the xml::init::remove_whitespace()
     // call.
-    if (xmlKeepBlanksDefaultValue == 0)
+    if (init::get_remove_whitespace())
         options |= XML_PARSE_NOBLANKS;
 
     // When the xmlCtxtUseOptions() is called it updates the context
     // 'validate' field. To avoid updating it the XML_PARSE_DTDVALID flag may
     // need to be supplied.
     // The user controls this behavior via the xml::init::validate_xml() call.
-    if (xmlDoValidityCheckingDefaultValue != 0)
+    if (init::get_validate_xml())
         options |= XML_PARSE_DTDVALID;
 
     // When the xmlCtxtUseOptions() is called it updates the context
@@ -198,7 +198,7 @@ static void set_parser_context_options(xmlParserCtxtPtr  ctxt)
     // may need to be supplied.
     // The user controls this behavior via the xml::init::substitute_entities()
     // call.
-    if (xmlSubstituteEntitiesDefaultValue != 0)
+    if (init::get_substitute_entities())
         options |= XML_PARSE_NOENT;
 
     // Set the context options
@@ -299,7 +299,7 @@ xml::document::document (const char *               filename,
     sax.error      = cb_tree_parser_error;
     sax.fatalError = cb_tree_parser_fatal_error;
 
-    if (xmlKeepBlanksDefaultValue == 0)
+    if (init::get_remove_whitespace())
         sax.ignorableWhitespace =  cb_tree_parser_ignore;
 
     error_messages *                temp(messages);
@@ -363,7 +363,7 @@ xml::document::document (const char *               data,
     sax.error      = cb_tree_parser_error;
     sax.fatalError = cb_tree_parser_fatal_error;
 
-    if (xmlKeepBlanksDefaultValue == 0)
+    if (init::get_remove_whitespace())
         sax.ignorableWhitespace =  cb_tree_parser_ignore;
 
     if (ctxt->sax)
@@ -435,7 +435,7 @@ xml::document::document (std::istream &           stream,
     sax.fatalError  = cb_tree_parser_fatal_error;
 
 
-    if (xmlKeepBlanksDefaultValue == 0)
+    if (init::get_remove_whitespace())
         sax.ignorableWhitespace =  cb_tree_parser_ignore;
 
     /* Make sure we have where to collect messages */
@@ -838,21 +838,21 @@ void xml::document::save_to_string_canonical (
 
     // Serialize and deserialize: this covers the XSLT results processing
     // and checks if the document is well formed
-    int             old_remove_whitespaces = xmlKeepBlanksDefaultValue;
+    bool            old_remove_whitespaces = init::get_remove_whitespace();
     std::string     serialized_doc;
 
     save_to_string(serialized_doc, save_op_no_format);
     if (format_option == with_formatting)
-        xmlKeepBlanksDefaultValue = 0;
+        init::remove_whitespace(true);
     else
-        xmlKeepBlanksDefaultValue = 1;
+        init::remove_whitespace(false);
 
     document    tmp_doc;
     try {
         tmp_doc = document(serialized_doc.c_str(), serialized_doc.size(), NULL,
                            type_warnings_not_errors);
     } catch (...) {
-        xmlKeepBlanksDefaultValue = old_remove_whitespaces;
+        init::remove_whitespace(old_remove_whitespaces);
         throw;
     }
 
@@ -865,7 +865,7 @@ void xml::document::save_to_string_canonical (
     if (format_option == with_formatting) {
         // It was loaded with stripped formatting whitespaces.
         // Now we save and load keeping whitespaces
-        xmlKeepBlanksDefaultValue = 1;
+        init::remove_whitespace(false);
         // save_op_default makes libxml2 to insert the formatting
         tmp_doc.save_to_string(serialized_doc, save_op_default);
         // Load the document with saved formatting nodes
@@ -873,8 +873,8 @@ void xml::document::save_to_string_canonical (
                            type_warnings_not_errors);
     }
 
-    // Restore the previous value of the xmlKeepBlanksDefaultValue
-    xmlKeepBlanksDefaultValue = old_remove_whitespaces;
+    // Restore the previous value remove whitespaces flag
+    init::remove_whitespace(old_remove_whitespaces);
 
     if (libxml2_mode != -1) {
         // Finally, canonicalize the temporary document
