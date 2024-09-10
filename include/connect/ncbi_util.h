@@ -436,10 +436,6 @@ typedef enum {
 } ENcbiRequestID;
 
 
-/** NCBI request "DTab-Local" header  */
-extern NCBI_XCONNECT_EXPORT char* CORE_GetNcbiRequestDtab;
-
-
 /** Obtain current NCBI request ID (if known, per thread).
  * @return
  *  Return NULL when the ID cannot be determined or an error has occurred;
