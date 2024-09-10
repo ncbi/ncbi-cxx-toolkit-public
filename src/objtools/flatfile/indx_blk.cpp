@@ -480,19 +480,19 @@ int CheckSTRAND(const string& str)
 }
 
 /**********************************************************/
-Int2 XMLCheckSTRAND(const char* str)
+Int2 XMLCheckSTRAND(string_view str)
 {
     return (StringMatchIcase(XML_STRAND_array, str));
 }
 
 /**********************************************************/
-Int2 XMLCheckTPG(const char* str)
+Int2 XMLCheckTPG(string_view str)
 {
     Int2 i;
 
     i = StringMatchIcase(XML_TPG_array, str);
     if (i == 0)
-        i++;
+        i = 1;
     return (i);
 }
 
@@ -983,7 +983,7 @@ void DelNonDigitTail(string& str)
  *
  */
 
-static bool sIsUpperAlpha(char c)
+inline bool sIsUpperAlpha(char c)
 {
     return (c >= 'A' && c <= 'Z');
 }
