@@ -726,6 +726,21 @@ extern const char* CORE_GetAppName(void)
 
 
 /******************************************************************************
+ *  CORE_GetPlatform
+ */
+
+extern const char* CORE_GetPlatform(void)
+{
+#ifndef NCBI_CXX_TOOLKIT
+    return Nlm_PlatformName();
+#else
+    return HOST;
+#endif /*NCBI_CXX_TOOLKIT*/
+}
+
+
+
+/******************************************************************************
  *  CORE_GetNcbiRequestID
  */
 
@@ -762,21 +777,6 @@ extern char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
     CORE_UNLOCK;
 
     return id;
-}
-
-
-
-/******************************************************************************
- *  CORE_GetPlatform
- */
-
-extern const char* CORE_GetPlatform(void)
-{
-#ifndef NCBI_CXX_TOOLKIT
-    return Nlm_PlatformName();
-#else
-    return HOST;
-#endif /*NCBI_CXX_TOOLKIT*/
 }
 
 
