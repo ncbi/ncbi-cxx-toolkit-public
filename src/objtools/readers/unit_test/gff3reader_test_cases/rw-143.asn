@@ -48,8 +48,8 @@ Seq-annot ::= {
     },
     {
       id local id 2,
-      data imp {
-        key "misc_RNA"
+      data rna {
+        type mRNA
       },
       comment "Gap in scaffold at 5 end of conserved domain,Partial GTPX
  conserved domain at 5 end of model near gap in scaffold. Premature

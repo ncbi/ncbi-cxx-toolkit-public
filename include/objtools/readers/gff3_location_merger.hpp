@@ -51,10 +51,7 @@ public:
         unsigned int,
         CGff3ReadRecord::SeqIdResolver);
 
-    CGff3LocationRecord(
-        const CGff3LocationRecord&);
-
-    CSeq_id mGffId;
+    CConstRef<CSeq_id> mpGffId;
     TSeqPos mStart;
     TSeqPos mStop;
     ENa_strand mStrand;

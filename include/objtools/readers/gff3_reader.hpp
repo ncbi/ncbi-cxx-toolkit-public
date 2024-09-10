@@ -116,6 +116,9 @@ public:
         return mpLocations;
     };
 
+private:
+    bool xHasCdsChild(const string& id) const;
+
 protected:
     void xProcessData(
         const TReaderData&,
@@ -140,10 +143,6 @@ protected:
         const CGff2Record&,
         CRef<CSeq_feat>,
         CSeq_annot&,
-        ILineErrorListener*);
-
-    virtual bool xJoinLocationIntoRna(
-        const CGff2Record&,
         ILineErrorListener*);
 
     virtual bool xUpdateAnnotCds(
@@ -208,14 +207,6 @@ protected:
     bool xIsIgnoredFeatureType(
         const string&) override;
 
-    virtual void xAddPendingExon(
-        const string&,
-        const CGff2Record&);
-
-    virtual void xGetPendingExons(
-        const string&,
-        list<CGff2Record>&);
-
     void xPostProcessAnnot(
         CSeq_annot&) override;
 
@@ -238,9 +229,6 @@ protected:
     map<string, CRef<CSeq_interval> > mMrnaLocs;
     map<string, string> mIdToSeqIdMap;
     SAlignmentData mAlignmentData;
-
-    using PENDING_EXONS = map<string, list<CGff2Record> >;
-    PENDING_EXONS mPendingExons;
 
     shared_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;

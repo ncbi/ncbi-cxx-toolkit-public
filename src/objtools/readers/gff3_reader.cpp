@@ -55,6 +55,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
 
 #include <objtools/readers/gff3_reader.hpp>
 #include <objtools/readers/gff3_location_merger.hpp>
@@ -468,7 +469,6 @@ bool CGff3Reader::xUpdateAnnotExon(
     if (record.GetAttribute("Parent", parentId)) {
         CRef<CSeq_feat> pParent;
         if (!x_GetFeatureById(parentId, pParent)) {
-            xAddPendingExon(parentId, record);
             return true;
         }
         if (pParent->GetData().IsRna()) {
@@ -493,41 +493,6 @@ bool CGff3Reader::xUpdateAnnotExon(
 
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::xJoinLocationIntoRna(
-    const CGff2Record& record,
-    //CRef<CSeq_feat> pFeature,
-    //CSeq_annot& annot,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    string parentId;
-    if (!record.GetAttribute("Parent", parentId)) {
-        return true;
-    }
-    list<string> parents;
-    CRef<CSeq_feat> pParent;
-    if (!x_GetFeatureById(parentId, pParent)) {
-        // Danger:
-        // We don't know whether the CDS parent is indeed an RNA and it could
-        //  possible be a gene.
-        // If the parent is indeed a gene then gene construction will have to
-        //  purge this pending exon (or it will cause a sanity check to fail
-        //  during post processing).
-        xAddPendingExon(parentId, record);
-        return true;
-    }
-    if (!pParent->GetData().IsRna()) {
-        return true;
-    }
-    xVerifyExonLocation(parentId, record);
-    if (!record.UpdateFeature(m_iFlags, pParent)) {
-        return false;
-    }
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotCds(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
@@ -535,13 +500,17 @@ bool CGff3Reader::xUpdateAnnotCds(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    if (!xJoinLocationIntoRna(record, pEC)) {
-        return false;
-    }
     xVerifyCdsParents(record);
 
     string cdsId = xMakeRecordId(record);
     mpLocations->AddRecordForId(cdsId, record);
+    
+    string parentId;
+    record.GetAttribute("Parent", parentId);
+
+    if (!parentId.empty()) {
+        mpLocations->AddRecordForId(parentId, record);
+    }
 
     auto pExistingFeature = m_MapIdToFeature.find(cdsId);
     if (pExistingFeature != m_MapIdToFeature.end()) {
@@ -552,8 +521,6 @@ bool CGff3Reader::xUpdateAnnotCds(
     xInitializeFeature(record, pFeature);
     xAddFeatureToAnnot(pFeature, annot);
 
-    string parentId;
-    record.GetAttribute("Parent", parentId);
     if (!parentId.empty()) {
         xFeatureSetQualifier("Parent", parentId, pFeature);
         xFeatureSetXrefParent(parentId, pFeature);
@@ -779,12 +746,6 @@ bool CGff3Reader::xUpdateAnnotRna(
     mrnaLoc->Assign(pFeature->GetLocation().GetInt());
     mMrnaLocs[strId] = mrnaLoc;
 
-    list<CGff2Record> pendingExons;
-    xGetPendingExons(strId, pendingExons);
-    for (auto exonRecord: pendingExons) {
-        CRef< CSeq_feat > pFeature(new CSeq_feat);
-        xUpdateAnnotExon(exonRecord, pFeature, annot, pEC);
-    }
     if (! xAddFeatureToAnnot(pFeature, annot)) {
         return false;
     }
@@ -814,13 +775,6 @@ bool CGff3Reader::xUpdateAnnotGene(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
-    // address corner case:
-    // parent of CDS is a gene but the DCS is listed before the gene so at the
-    //  time we did not know the parent would be a gene.
-    // remedy: throw out any collected cds locations that were meant for RNA
-    //  construction.
-    list<CGff2Record> pendingExons;
-    xGetPendingExons(strId, pendingExons);
     return true;
 }
 
@@ -882,6 +836,21 @@ void CGff3Reader::xVerifyCdsParents(
         "Bad data line: CDS record with bad parent assignments.");
     throw error;
 }
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xHasCdsChild(const string& id) const
+//  ----------------------------------------------------------------------------
+{
+    for (const auto& element : mCdsParentMap) {
+        const string parentId = element.second;
+        if (parentId == id) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xReadInit()
@@ -1009,33 +978,19 @@ CGff3Reader::xInitializeFeature(
 }
 
 //  ----------------------------------------------------------------------------
-void
-CGff3Reader::xAddPendingExon(
-    const string& rnaId,
-    const CGff2Record& exonRecord)
-//  ----------------------------------------------------------------------------
+
+static bool s_TreatAsRna(const CSeqFeatData& featData)
 {
-    PENDING_EXONS::iterator it = mPendingExons.find(rnaId);
-    if (it == mPendingExons.end()) {
-        mPendingExons[rnaId] = list<CGff2Record>();
+    if (featData.IsRna()) {
+        return true;
     }
-    mPendingExons[rnaId].push_back(exonRecord);
+    const auto subtype = featData.GetSubtype();
+    return (subtype == CSeqFeatData::eSubtype_C_region ||
+            subtype == CSeqFeatData::eSubtype_D_segment ||
+            subtype == CSeqFeatData::eSubtype_J_segment ||
+            subtype == CSeqFeatData::eSubtype_V_segment);
 }
 
-//  ----------------------------------------------------------------------------
-void
-CGff3Reader::xGetPendingExons(
-    const string& rnaId,
-    list<CGff2Record>& pendingExons)
-//  ----------------------------------------------------------------------------
-{
-    PENDING_EXONS::iterator it = mPendingExons.find(rnaId);
-    if (it == mPendingExons.end()) {
-        return;
-    }
-    pendingExons.swap(mPendingExons[rnaId]);
-    mPendingExons.erase(rnaId);
-}
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xPostProcessAnnot(
@@ -1046,31 +1001,63 @@ void CGff3Reader::xPostProcessAnnot(
         xProcessAlignmentData(annot);
         return;
     }
-    if (!mCurrentFeatureCount) {
+    if (! mCurrentFeatureCount) {
         return;
     }
 
-    /*
-    for (const auto& it: mPendingExons) {
-        CReaderMessage warning(
-            eDiag_Warning,
-            m_uLineNumber,
-            "Bad data line: Record references non-existent Parent=" + it.first);
-        m_pMessageHandler->Report(warning);
-    }
-    */
-
-    //location fixup:
-    for (auto itLocation: mpLocations->LocationMap()) {
-        auto id = itLocation.first;
+    // location fixup:
+    for (auto itLocation : mpLocations->LocationMap()) {
+        auto id        = itLocation.first;
         auto itFeature = m_MapIdToFeature.find(id);
         if (itFeature == m_MapIdToFeature.end()) {
             continue;
         }
-        CRef<CSeq_loc> pNewLoc(new CSeq_loc);
+        CRef<CSeq_loc>    pNewLoc(new CSeq_loc);
+        CRef<CSeq_feat>   pFeature = itFeature->second;
         CCdregion::EFrame frame;
+        const auto&       locs = itLocation.second;
+
+        if (pFeature->GetData().IsImp() &&
+            pFeature->GetData().GetImp().IsSetKey() &&
+            pFeature->GetData().GetImp().GetKey() == "misc_RNA") {
+            // RW-143: if this has a child (pseudogenic) CDS, convert to mRNA
+            if (xHasCdsChild(id)) {
+                pFeature->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+            }
+        }
+
+        if (s_TreatAsRna(pFeature->GetData())) {
+            // check for exons
+            list<CGff3LocationRecord> exonLocs;
+            for (auto record : locs) {
+                if (record.mType == "exon") {
+                    exonLocs.push_back(record);
+                }
+            }
+            // prioritize exons over UTR and CDS child features
+            if (! exonLocs.empty()) {
+                mpLocations->MergeLocation(pNewLoc, frame, exonLocs);
+                pFeature->SetLocation(*pNewLoc);
+                continue;
+            }
+        } else if (pFeature->GetData().IsGene()) {
+
+            list<CGff3LocationRecord> geneLocs;
+            for (auto record : locs) {
+                if (record.mType == "gene") {
+                    geneLocs.push_back(record);
+                }
+            }
+
+            if (! geneLocs.empty()) { // should never be empty
+                mpLocations->MergeLocation(pNewLoc, frame, geneLocs);
+                pFeature->SetLocation(*pNewLoc);
+                continue;
+            }
+        }
+
+
         mpLocations->MergeLocation(pNewLoc, frame, itLocation.second);
-        CRef<CSeq_feat> pFeature = itFeature->second;
         pFeature->SetLocation(*pNewLoc);
         if (pFeature->GetData().IsCdregion()) {
             auto& cdrData = pFeature->SetData().SetCdregion();
