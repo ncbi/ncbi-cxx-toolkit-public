@@ -470,7 +470,7 @@ static void XMLPerformIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-static void XMLParseVersion(IndexblkPtr ibp, string* line)
+static void XMLParseVersion(IndexblkPtr ibp, const string* line)
 {
     if (! line) {
         ErrPostStr(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
@@ -519,7 +519,6 @@ static void XMLParseVersion(IndexblkPtr ibp, string* line)
 static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Parser::ESource source)
 {
     XmlIndexPtr xip;
-    char*       buf;
 
     if (! ibp || ! ibp->xip || ! entry)
         return;
@@ -582,17 +581,15 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
     StringCpy(ibp->division, "???");
     for (xip = ibp->xip; xip; xip = xip->next) {
         if (xip->tag == INSDSEQ_LENGTH && ibp->bases == 0) {
-            buf = StringSave(XMLGetTagValue(entry, xip));
+            auto buf = XMLGetTagValue(entry, xip);
             if (! buf)
                 continue;
-            ibp->bases = (size_t)atoi(buf);
-            MemFree(buf);
+            ibp->bases = (size_t)atoi(buf->c_str());
         } else if (xip->tag == INSDSEQ_UPDATE_DATE && ! ibp->date) {
-            buf = StringSave(XMLGetTagValue(entry, xip));
+            auto buf = XMLGetTagValue(entry, xip);
             if (! buf)
                 continue;
-            ibp->date = GetUpdateDate(buf, source);
-            MemFree(buf);
+            ibp->date = GetUpdateDate(buf->c_str(), source);
         } else if (xip->tag == INSDSEQ_DIVISION && ibp->division[0] == '?') {
             if (xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
                 xip->end - xip->start < 3)
@@ -608,10 +605,9 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             else if (StringEqu(ibp->division, "HTC"))
                 ibp->HTC = true;
         } else if (xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
-            buf = StringSave(XMLGetTagValue(entry, xip));
-            if (NStr::CompareNocase(buf, "AA") == 0)
+            auto buf = XMLGetTagValue(entry, xip);
+            if (NStr::CompareNocase(*buf, "AA") == 0)
                 ibp->is_prot = true;
-            MemFree(buf);
         }
         if (ibp->bases > 0 && ibp->date && ibp->division[0] != '?')
             break;
@@ -757,7 +753,6 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     XmlIndexPtr xip;
     XmlIndexPtr xipsec;
     string      buf;
-    char*       p;
 
     bool   ret = true;
     size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG);
@@ -789,11 +784,10 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     buf.append(XML_FAKE_ACC_TAG);
     buf.append(ibp->acnum);
     for (xipsec = xip->subtags; xipsec; xipsec = xipsec->next) {
-        p = StringSave(XMLGetTagValue(entry, xipsec));
+        auto p = XMLGetTagValue(entry, xipsec);
         if (p) {
             buf.append(" ");
-            buf.append(p);
-            MemFree(p);
+            buf.append(*p);
         }
     }
     ret = GetAccession(pp, buf, ibp, 2);
@@ -806,7 +800,6 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     XmlIndexPtr xip;
     XmlIndexPtr xipkwd;
     ValNodePtr  vnp;
-    char*       p;
 
     bool tpa_check = (source == Parser::ESource::EMBL);
 
@@ -821,7 +814,7 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
 
     xip->subtags = XMLIndexSameSubTags(entry, xip, INSDKEYWORD);
     if (! xip->subtags) {
-        p = (char*)XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
+        const char* p = XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = true;
         return false;
@@ -834,12 +827,11 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     string buf;
     buf.reserve(len);
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
-        p = StringSave(XMLGetTagValue(entry, xipkwd));
+        auto p = XMLGetTagValue(entry, xipkwd);
         if (p) {
             if (! buf.empty())
                 buf += "; ";
-            buf += p;
-            MemFree(p);
+            buf += *p;
         }
     }
 
@@ -1267,7 +1259,7 @@ static bool XMLCheckRequiredRefTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
+static Int2 XMLGetRefTypePos(const char* reftag, size_t bases)
 {
     if (! reftag || *reftag == '\0')
         return (ParFlat_REF_NO_TARGET);
@@ -1281,9 +1273,9 @@ static Int2 XMLGetRefTypePos(char* reftag, size_t bases)
 }
 
 /**********************************************************/
-static Int2 XMLGetRefType(char* reftag, size_t bases)
+static Int2 XMLGetRefType(const char* reftag, size_t bases)
 {
-    char* p;
+    const char* p;
 
     if (! reftag)
         return (ParFlat_REF_NO_TARGET);
@@ -1335,8 +1327,6 @@ static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
     XmlIndexPtr xipref;
     XmlIndexPtr txip;
     XmlIndexPtr xipsub;
-    char*       reftagref;
-    char*       reftagpos;
 
     if (! xip || ! entry)
         return true;
@@ -1359,19 +1349,15 @@ static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
             XMLCheckRequiredRefTags(xipref->subtags) == false)
             break;
 
-        reftagref = nullptr;
-        reftagpos = nullptr;
+        unique_ptr<string> reftagref;
+        unique_ptr<string> reftagpos;
         for (txip = xipref->subtags; txip; txip = txip->next) {
             if (txip->tag == INSDREFERENCE_REFERENCE) {
-                if (reftagref)
-                    MemFree(reftagref);
-                reftagref = StringSave(XMLGetTagValue(entry, txip));
+                reftagref = XMLGetTagValue(entry, txip);
                 continue;
             }
             if (txip->tag == INSDREFERENCE_POSITION) {
-                if (reftagpos)
-                    MemFree(reftagpos);
-                reftagpos = StringSave(XMLGetTagValue(entry, txip));
+                reftagpos = XMLGetTagValue(entry, txip);
                 continue;
             }
             if (txip->tag == INSDREFERENCE_AUTHORS) {
@@ -1391,12 +1377,14 @@ static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
         }
 
         if (reftagpos) {
-            xipref->type = XMLGetRefTypePos(reftagpos, bases);
-            MemFree(reftagpos);
-        } else
-            xipref->type = XMLGetRefType(reftagref, bases);
-        if (reftagref)
-            MemFree(reftagref);
+            xipref->type = XMLGetRefTypePos(reftagpos->c_str(), bases);
+            reftagpos.reset();
+        } else if (reftagref) {
+            xipref->type = XMLGetRefType(reftagref->c_str(), bases);
+            reftagref.reset();
+        } else {
+            xipref->type = ParFlat_REF_NO_TARGET;
+        }
 
         if (txip)
             break;
@@ -1516,7 +1504,6 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
 void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywords)
 {
     XmlIndexPtr xipkwd;
-    char*       p;
 
     keywords.clear();
     if (! entry || ! xip)
@@ -1529,12 +1516,10 @@ void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywor
         return;
 
     for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next) {
-        p = StringSave(XMLGetTagValue(entry, xipkwd));
+        auto p = XMLGetTagValue(entry, xipkwd);
         if (! p)
             continue;
-
-        keywords.push_back(p);
-        MemFree(p);
+        keywords.push_back(*p);
     }
 }
 
