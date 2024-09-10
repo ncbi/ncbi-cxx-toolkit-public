@@ -41,7 +41,7 @@
  * This file contains the implementation of the xml::init class for libxml.
 **/
 
-// defintion include
+// definition include
 #include <misc/xmlwrapp/xml_init.hpp>
 #include "deref_impl.hpp"
 #include "https_input_impl.hpp"
@@ -50,6 +50,31 @@
 #include <libxml/globals.h>
 #include <libxml/xmlerror.h>
 #include <libxml/parser.h>
+
+#include <optional>
+
+// libxml2 global variables replacement.
+// The globals were deprecated (there are compilation warnings for the newer
+// library version). However it is necessary to keep the backward
+// compatibility. Thus the following variables are introduced together with the
+// thread local counterparts
+
+// xmlKeepBlanksDefaultValue replacement
+bool                                g_remove_whitespaces = false;
+thread_local std::optional<bool>    thr_remove_whitespaces;
+
+// xmlSubstituteEntitiesDefaultValue replacement
+bool                                g_substitute_entities = true;
+thread_local std::optional<bool>    thr_substitute_entities;
+
+// xmlLoadExtDtdDefaultValue replacement
+bool                                g_load_external_subsets = true;
+thread_local std::optional<bool>    thr_load_external_subsets;
+
+// xmlDoValidityCheckingDefaultValue replacement
+bool                                g_validate_xml = false;
+thread_local std::optional<bool>    thr_validate_xml;
+
 
 //####################################################################
 namespace {
@@ -72,10 +97,10 @@ xml::init::~init (void) {
 void xml::init::init_library() {
     // set some libxml global variables
     indent_output(true);
-    remove_whitespace(false);
-    substitute_entities(true);
-    load_external_subsets(true);
-    validate_xml(false);
+    global_remove_whitespace(false);
+    global_substitute_entities(true);
+    global_load_external_subsets(true);
+    global_validate_xml(false);
 
     // keep libxml2 from using stderr
     xmlSetGenericErrorFunc(0, xml_error);
@@ -100,24 +125,80 @@ void xml::init::indent_output (bool flag) {
 }
 //####################################################################
 void xml::init::remove_whitespace (bool flag) {
-    xmlKeepBlanksDefaultValue = flag ? 0 : 1;
+    thr_remove_whitespaces = flag;
 }
 //####################################################################
 bool xml::init::get_remove_whitespace (void) {
-    return xmlKeepBlanksDefaultValue == 0;
+    if (thr_remove_whitespaces.has_value())
+        return thr_remove_whitespaces.value();
+    return g_remove_whitespaces;
 }
+
+void xml::init::global_remove_whitespace (bool flag) {
+    g_remove_whitespaces = flag;
+}
+
+bool xml::init::get_global_remove_whitespace (void) {
+    return g_remove_whitespaces;
+}
+
 //####################################################################
 void xml::init::substitute_entities (bool flag) {
-    xmlSubstituteEntitiesDefaultValue = flag ? 1 : 0;
+    thr_substitute_entities = flag;
 }
+
+bool xml::init::get_substitute_entities (void) {
+    if (thr_substitute_entities.has_value())
+        return thr_substitute_entities.value();
+    return g_substitute_entities;
+}
+
+void xml::init::global_substitute_entities (bool flag) {
+    g_substitute_entities = flag;
+}
+
+bool xml::init::get_global_substitute_entities (void) {
+    return g_substitute_entities;
+}
+
 //####################################################################
 void xml::init::load_external_subsets (bool flag) {
-    xmlLoadExtDtdDefaultValue = flag ? 1 : 0;
+    thr_load_external_subsets = flag;
 }
+
+bool xml::init::get_load_external_subsets (void) {
+    if (thr_load_external_subsets.has_value())
+        return thr_load_external_subsets.value();
+    return g_load_external_subsets;
+}
+
+void xml::init::global_load_external_subsets (bool flag) {
+    g_load_external_subsets = flag;
+}
+
+bool xml::init::get_global_load_external_subsets (void) {
+    return g_load_external_subsets;
+}
+
 //####################################################################
 void xml::init::validate_xml (bool flag) {
-    xmlDoValidityCheckingDefaultValue = flag ? 1 : 0;
+    thr_validate_xml = flag;
 }
+
+bool xml::init::get_validate_xml (void) {
+    if (thr_validate_xml.has_value())
+        return thr_validate_xml.value();
+    return g_validate_xml;
+}
+
+void xml::init::global_validate_xml (bool flag) {
+    g_validate_xml = flag;
+}
+
+bool xml::init::get_global_validate_xml (void) {
+    return g_validate_xml;
+}
+
 //####################################################################
 void xml::init::library_cleanup_on_exit (bool flag) {
     do_cleanup_at_exit = flag;

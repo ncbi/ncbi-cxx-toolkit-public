@@ -92,11 +92,23 @@ public:
     //####################################################################
     static void remove_whitespace (bool flag);
 
+    /**
+     * This member function controls whether or not the XML parser should
+     * remove ignorable whitespace around XML elements. The default
+     * is false.
+     * The setting is per application.
+     *
+     * @param flag True to remove whitespace, false to leave alone.
+     * @sa xml::init::get_global_remove_whitespace()
+    **/
+    static void global_remove_whitespace (bool flag);
+
     //####################################################################
     /**
      * This member function provides the current setting of the XML parser
      * which tells whether it should remove ignorable whitespace around XML
      * elements.
+     * It gets the thread local value.
      *
      * @return True if the parser will remove whitespace, false to leave alone.
      * @sa xml::init::remove_whitespace()
@@ -104,10 +116,22 @@ public:
     //####################################################################
     static bool get_remove_whitespace (void);
 
+    /**
+     * This member function provides the current setting of the XML parser
+     * which tells whether it should remove ignorable whitespace around XML
+     * elements.
+     * It gets the global value.
+     *
+     * @return True if the parser will remove whitespace, false to leave alone.
+     * @sa xml::init::global_remove_whitespace()
+    **/
+    static bool get_global_remove_whitespace (void);
+
     //####################################################################
     /**
      * This member function controls whether or not the XML parser should
      * substitute entities while parsing. The default is true.
+     * It sets the value per thread.
      *
      * @note see the xml::event_parser::text(...) and
      *       xml::event_parser::entity_reference(...) callback notes as they
@@ -118,12 +142,48 @@ public:
     //####################################################################
     static void substitute_entities (bool flag);
 
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should substitute entities while parsing.
+     * The default is true.
+     * It gets the per thread value.
+     *
+     * @return True if the parser will substitute entities while parsing.
+     * @sa xml::init::substitute_entities()
+    **/
+    static bool get_substitute_entities (void);
+
+    /**
+     * This member function controls whether or not the XML parser should
+     * substitute entities while parsing. The default is true.
+     * It sets the value per application.
+     *
+     * @note see the xml::event_parser::text(...) and
+     *       xml::event_parser::entity_reference(...) callback notes as they
+     *       are affected by this flag.
+     * @param flag True to turn on substitution, false to turn off.
+     * @author Peter Jones
+    **/
+    static void global_substitute_entities (bool flag);
+
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should substitute entities while parsing.
+     * The default is true.
+     * It gets the global value.
+     *
+     * @return True if the parser will substitute entities while parsing.
+     * @sa xml::init::global_substitute_entities()
+    **/
+    static bool get_global_substitute_entities (void);
+
     //####################################################################
     /**
      * This member function controls whether or not the XML parser should
      * load external (DTD) subsets while parsing. This will only affect the
      * loading of the subsets, it does not cause files to be validated. The
      * default is true.
+     * It sets the value per thread.
      *
      * @param flag True to turn on loading, false to turn it off.
      * @author Peter Jones
@@ -131,17 +191,84 @@ public:
     //####################################################################
     static void load_external_subsets (bool flag);
 
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should load external (DTD) subsets while parsing.
+     * The default is true.
+     * It gets the per thread value.
+     *
+     * @return True if the parser will load external (DTD) subsets while parsing.
+     * @sa xml::init::load_external_subsets()
+    **/
+    static bool get_load_external_subsets (void);
+
+    /**
+     * This member function controls whether or not the XML parser should
+     * load external (DTD) subsets while parsing. This will only affect the
+     * loading of the subsets, it does not cause files to be validated. The
+     * default is true.
+     * It sets the value per application.
+     *
+     * @param flag True to turn on loading, false to turn it off.
+    **/
+    static void global_load_external_subsets (bool flag);
+
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should load external (DTD) subsets while parsing.
+     * The default is true.
+     * It gets the per application value.
+     *
+     * @return True if the parser will load external (DTD) subsets while parsing.
+     * @sa xml::init::global_load_external_subsets()
+    **/
+    static bool get_global_load_external_subsets (void);
+
     //####################################################################
     /**
      * This member function controls whether or not the XML parser should
      * validate every XML document that is parses with its DTD. The default
      * is false.
+     * It sets the value per thread.
      *
      * @param flag True to turn on validation, false to turn it off.
      * @author Peter Jones
     **/
     //####################################################################
     static void validate_xml (bool flag);
+
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should validate every XML document.
+     * The default is true.
+     * It gets the per thread value.
+     *
+     * @return True if the parser will validate every XML document.
+     * @sa xml::init::validate_xml()
+    **/
+    static bool get_validate_xml (void);
+
+    /**
+     * This member function controls whether or not the XML parser should
+     * validate every XML document that is parses with its DTD. The default
+     * is false.
+     * It sets the value per application.
+     *
+     * @param flag True to turn on validation, false to turn it off.
+     * @author Peter Jones
+    **/
+    static void global_validate_xml (bool flag);
+
+    /**
+     * This member function provides the current value whether or not
+     * the XML parser should validate every XML document.
+     * The default is true.
+     * It gets the per application value.
+     *
+     * @return True if the parser will validate every XML document.
+     * @sa xml::init::global_validate_xml()
+    **/
+    static bool get_global_validate_xml (void);
 
     //####################################################################
     /**

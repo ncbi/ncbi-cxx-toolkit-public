@@ -664,7 +664,7 @@ epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
         sax_handler_.reference = cb_entity_reference;
 
 
-    if ((xmlKeepBlanksDefaultValue != 0) && (mask & event_parser::characters_handler))
+    if ( (init::get_remove_whitespace() == false) && (mask & event_parser::characters_handler))
         sax_handler_.ignorableWhitespace = cb_text;
     else
         sax_handler_.ignorableWhitespace = cb_ignore;
