@@ -153,12 +153,12 @@ void CHttpConnection::x_RegisterPending(shared_ptr<CPSGS_Request>  request,
                                         list<string>  processor_names)
 {
     if (m_RunningRequests.size() < m_HttpMaxRunning) {
-        x_Start(request, reply, move(processor_names));
+        x_Start(request, reply, std::move(processor_names));
     } else if (m_BacklogRequests.size() < m_HttpMaxBacklog) {
         RegisterBackloggedRequest(request->GetRequestType());
         m_BacklogRequests.push_back(
                 SBacklogAttributes{request, reply,
-                                   move(processor_names),
+                                   std::move(processor_names),
                                    psg_clock_t::now()});
         IncrementBackloggedCounter();
     } else {
@@ -204,8 +204,8 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     request->SetConcurrentProcessorCount(processors.size());
     for (auto & processor : processors) {
         reply->GetHttpReply()->AssignPendingReq(
-                move(unique_ptr<CPendingOperation>(
-                    new CPendingOperation(request, reply, processor))));
+                unique_ptr<CPendingOperation>(
+                    new CPendingOperation(request, reply, processor)));
     }
 
     // Add the reply to the list of running replies
@@ -252,7 +252,7 @@ void CHttpConnection::Postpone(shared_ptr<CPSGS_Request>  request,
     }
 
     http_reply->SetPostponed();
-    x_RegisterPending(request, reply, move(processor_names));
+    x_RegisterPending(request, reply, std::move(processor_names));
 }
 
 
@@ -363,7 +363,7 @@ void CHttpConnection::x_MaintainBacklog(void)
             GetDiagContext().Extra().Print("backlog_time_mks", mks);
         }
 
-        x_Start(request, reply, move(processor_names));
+        x_Start(request, reply, std::move(processor_names));
     }
 }
 

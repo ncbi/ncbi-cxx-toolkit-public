@@ -89,7 +89,7 @@ public:
         eTimeout
     };
 
-    virtual const char *  GetErrCodeString(void) const;
+    virtual const char *  GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CPubseqGatewayException, CException);
 };
 
@@ -109,7 +109,7 @@ public:
         eUvExportWaitFailure
     };
 
-    virtual const char *  GetErrCodeString(void) const;
+    virtual const char *  GetErrCodeString(void) const override;
 
     CPubseqGatewayUVException(const CDiagCompileInfo &  info,
                               const CException *  prev_exception,

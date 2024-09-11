@@ -411,7 +411,7 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     CCassBlobTaskLoadBlob *             load_task =
         new CCassBlobTaskLoadBlob(cass_connection,
                                   cass_blob_id.m_Keyspace->keyspace,
-                                  move(blob_record),
+                                  std::move(blob_record),
                                   true, nullptr);
 
     unique_ptr<CCassBlobFetch>  cass_blob_fetch;
@@ -554,7 +554,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
             load_task = new CCassBlobTaskLoadBlob(
                             cass_connection,
                             info_blob_id.m_Keyspace->keyspace,
-                            move(blob_record),
+                            std::move(blob_record),
                             true, nullptr);
         } else {
             // The handler deals with both kind of blob requests:
@@ -621,7 +621,7 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
         m_RequestedID2BlobChunks.push_back(info_blob_id_as_str);
         info_blob_requested = true;
         cass_blob_fetch->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(move(cass_blob_fetch));
+        m_FetchDetails.push_back(std::move(cass_blob_fetch));
     }
 
     auto    to_init_iter = m_FetchDetails.end();
@@ -746,7 +746,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
             load_task = new CCassBlobTaskLoadBlob(
                             cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
-                            move(blob_record),
+                            std::move(blob_record),
                             true, nullptr);
             details->SetLoader(load_task);
         } else {
@@ -806,7 +806,7 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         details->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(move(details));
+        m_FetchDetails.push_back(std::move(details));
     }
 }
 
@@ -1039,7 +1039,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
             load_task = new CCassBlobTaskLoadBlob(
                             cass_connection,
                             chunks_blob_id.m_Keyspace->keyspace,
-                            move(blob_record),
+                            std::move(blob_record),
                             true, nullptr);
             details->SetLoader(load_task);
         } else {
@@ -1103,7 +1103,7 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
 
         m_RequestedID2BlobChunks.push_back(chunks_blob_id_as_str);
         details->SetNeedAddId2ChunkId2Info(true);
-        m_FetchDetails.push_back(move(details));
+        m_FetchDetails.push_back(std::move(details));
 
         if (need_wait) {
             // Needed only when the method is called from the last chunk
@@ -1545,7 +1545,7 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                 m_Request->GetStartTimestamp());
         }
 
-        m_FetchDetails.push_back(move(comment_fetch_details));
+        m_FetchDetails.push_back(std::move(comment_fetch_details));
         load_task->Wait();  // Initiate cassandra request
     }
 

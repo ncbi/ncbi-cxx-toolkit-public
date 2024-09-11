@@ -82,7 +82,8 @@ class CAccVerHistCallback
             }
 
             ++m_Count;
-            return m_AccVerHistCB(move(acc_ver_hist_record), last, m_FetchDetails);
+            return m_AccVerHistCB(std::move(acc_ver_hist_record),
+                                  last, m_FetchDetails);
         }
 
     private:

@@ -112,7 +112,7 @@ public:
 
     void AssignPendingReq(unique_ptr<CPendingOperation>  pending_req)
     {
-        m_PendingReqs.emplace_back(move(pending_req));
+        m_PendingReqs.emplace_back(std::move(pending_req));
     }
 
     // The method is used only when the reply is finished.
@@ -316,8 +316,8 @@ private:
     public:
         CDataTrigger(const CDataTrigger &  from) = delete;
         CDataTrigger &  operator=(const CDataTrigger &  from) = delete;
-        CDataTrigger(CDataTrigger &&  from) = default;
-        CDataTrigger &  operator=(CDataTrigger &&  from) = default;
+        CDataTrigger(CDataTrigger &&  from) = delete;
+        CDataTrigger &  operator=(CDataTrigger &&  from) = delete;
 
         CDataTrigger(CHttpProto *  proto) :
             m_Triggered(false),

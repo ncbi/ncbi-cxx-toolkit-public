@@ -251,7 +251,7 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
     unique_ptr<CHttpReply>      low_level_reply(
                                     new CHttpReply(req, this,
                                                    http_conn, cd_uid));
-    shared_ptr<CPSGS_Reply>     reply(new CPSGS_Reply(move(low_level_reply)));
+    shared_ptr<CPSGS_Reply>     reply(new CPSGS_Reply(std::move(low_level_reply)));
 
     try {
         if (rh->m_GetParser)

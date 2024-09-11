@@ -104,7 +104,8 @@ void PSGSortSeqIds(list<SPSGSeqId>& seq_ids,
         if (parsed_seq_id_type == CSeq_id_Base::e_not_set) {
             seq_ids.push_back(SPSGSeqId{-1, item->AsFastaString()});
         } else {
-            seq_ids.push_back(SPSGSeqId{parsed_seq_id_type, item->AsFastaString()});
+            seq_ids.push_back(SPSGSeqId{static_cast<int16_t>(parsed_seq_id_type),
+                                        item->AsFastaString()});
         }
     }
 

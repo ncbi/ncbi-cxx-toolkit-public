@@ -85,7 +85,7 @@ class CIPGResolveCallback
             }
 
             ++m_Count;
-            return m_IPGResolveCB(move(page), is_last, m_FetchDetails);
+            return m_IPGResolveCB(std::move(page), is_last, m_FetchDetails);
         }
 
     private:

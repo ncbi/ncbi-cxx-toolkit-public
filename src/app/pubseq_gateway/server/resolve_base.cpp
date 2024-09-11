@@ -392,7 +392,7 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
             }
 
             if (!continue_with_cassandra) {
-                x_OnSeqIdResolveFinished(move(bioseq_resolution));
+                x_OnSeqIdResolveFinished(std::move(bioseq_resolution));
                 return;
             }
         }
@@ -413,10 +413,10 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
         CPSGS_AsyncResolveBase::Process(
                 GetEffectiveVersion(oslt_seq_id.GetTextseq_Id()),
                 effective_seq_id_type,
-                move(secondary_id_list),
-                move(primary_id),
+                std::move(secondary_id_list),
+                std::move(primary_id),
                 composed_ok,
-                move(bioseq_resolution));
+                std::move(bioseq_resolution));
 
         // Async resolver will call a callback
         return;
@@ -581,7 +581,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
                     }
 
                     CPSGS_AsyncBioseqInfoBase::MakeRequest(
-                                                    move(bioseq_resolution));
+                                                    std::move(bioseq_resolution));
                     return;
                 }
 
@@ -612,7 +612,7 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
     // All good
     x_OnResolutionGoodData();
     x_RegisterSuccessTiming(bioseq_resolution);
-    m_FinalFinishedCB(move(bioseq_resolution));
+    m_FinalFinishedCB(std::move(bioseq_resolution));
 }
 
 

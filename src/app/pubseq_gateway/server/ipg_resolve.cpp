@@ -525,7 +525,7 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(details));
+    m_FetchDetails.push_back(std::move(details));
     fetch_task->Wait();
 }
 

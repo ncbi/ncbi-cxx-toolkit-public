@@ -144,11 +144,11 @@ CPSGS_AsyncResolveBase::Process(int16_t               effective_version,
                                 SBioseqResolution &&  bioseq_resolution)
 {
     m_ComposedOk = composed_ok;
-    m_PrimarySeqId = move(primary_seq_id);
+    m_PrimarySeqId = std::move(primary_seq_id);
     m_EffectiveVersion = effective_version;
     m_EffectiveSeqIdType = effective_seq_id_type;
-    m_SecondaryIdList = move(secondary_id_list);
-    m_BioseqResolution = move(bioseq_resolution);
+    m_SecondaryIdList = std::move(secondary_id_list);
+    m_BioseqResolution = std::move(bioseq_resolution);
     m_AsyncCassResolutionStart = psg_clock_t::now();
 
     m_ResolveStage = eInit;
@@ -495,7 +495,7 @@ void CPSGS_AsyncResolveBase::x_Process(void)
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
             m_BioseqResolution.GetBioseqInfo().Reset();
 
-            x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
+            x_OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
     }
 }
 
@@ -782,7 +782,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
     app->GetCounters().Increment(this,
                                  CPSGSCounters::ePSGS_BioseqInfoFoundOne);
 
-    x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
+    x_OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
 
 
@@ -818,7 +818,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
             // Data callback
-            x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
+            x_OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
             break;
         case CRequestStatus::e404_NotFound:
             app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusNotFound,
@@ -997,7 +997,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
         return;
     }
 
-    x_OnSeqIdAsyncResolutionFinished(move(m_BioseqResolution));
+    x_OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
 }
 
 
@@ -1081,7 +1081,7 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
         // Just in case; the second call will be prevented anyway
         x_SignalStartProcessing();
 
-        m_FinishedCB(move(async_bioseq_resolution));
+        m_FinishedCB(std::move(async_bioseq_resolution));
     } else {
         // Could not resolve by some reasons.
         // May be there is more seq_id/seq_id_type to try

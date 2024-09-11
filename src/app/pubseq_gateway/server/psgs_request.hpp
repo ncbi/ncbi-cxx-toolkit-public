@@ -137,7 +137,7 @@ public:
 
 public:
     CPSGS_Request();
-    ~CPSGS_Request();
+    virtual ~CPSGS_Request();
     CPSGS_Request(const CHttpRequest &  http_request,
                   unique_ptr<SPSGS_RequestBase> req,
                   CRef<CRequestContext>  request_context);
@@ -217,10 +217,10 @@ public:
 
     string GetLimitedProcessorsMessage(void);
 
-    CPSGS_Request(const CPSGS_Request &) = default;
-    CPSGS_Request(CPSGS_Request &&) = default;
-    CPSGS_Request &  operator=(const CPSGS_Request &) = default;
-    CPSGS_Request &  operator=(CPSGS_Request &&) = default;
+    CPSGS_Request(const CPSGS_Request &) = delete;
+    CPSGS_Request(CPSGS_Request &&) = delete;
+    CPSGS_Request &  operator=(const CPSGS_Request &) = delete;
+    CPSGS_Request &  operator=(CPSGS_Request &&) = delete;
 
 private:
     CHttpRequest                    m_HttpRequest;
@@ -605,7 +605,7 @@ struct SPSGS_BlobBySeqIdRequest : public SPSGS_BlobRequestBase
                               start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
-        m_ExcludeBlobs(move(exclude_blobs)),
+        m_ExcludeBlobs(std::move(exclude_blobs)),
         m_AccSubstOption(subst_option),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
         m_SeqIdResolve(seq_id_resolve)
@@ -721,9 +721,9 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
                               start_timestamp),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
-        m_Names(move(names)),
+        m_Names(std::move(names)),
         m_ResendTimeoutMks((unsigned long)(resend_timeout * 1000000)),
-        m_SeqIds(move(seq_ids)),
+        m_SeqIds(std::move(seq_ids)),
         m_SeqIdResolve(seq_id_resolve),
         m_SNPScaleLimit(snp_scale_limit),
         m_Lock(false),
@@ -738,10 +738,10 @@ struct SPSGS_AnnotRequest : public SPSGS_BlobRequestBase
         m_ProcessedBioseqInfo(kUnknownPriority)
     {}
 
-    SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = default;
-    SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = default;
-    SPSGS_AnnotRequest &  operator=(const SPSGS_AnnotRequest &) = default;
-    SPSGS_AnnotRequest &  operator=(SPSGS_AnnotRequest &&) = default;
+    SPSGS_AnnotRequest(const SPSGS_AnnotRequest &) = delete;
+    SPSGS_AnnotRequest(SPSGS_AnnotRequest &&) = delete;
+    SPSGS_AnnotRequest &  operator=(const SPSGS_AnnotRequest &) = delete;
+    SPSGS_AnnotRequest &  operator=(SPSGS_AnnotRequest &&) = delete;
 
     virtual CPSGS_Request::EPSGS_Type GetRequestType(void) const
     {

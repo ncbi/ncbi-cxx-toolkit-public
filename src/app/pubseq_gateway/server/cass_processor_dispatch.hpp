@@ -63,12 +63,12 @@ public:
                                           shared_ptr<CPSGS_Reply> reply) const override;
     virtual IPSGS_Processor* CreateProcessor(shared_ptr<CPSGS_Request> request,
                                              shared_ptr<CPSGS_Reply> reply,
-                                             TProcessorPriority priority) const;
-    virtual void Process(void);
-    virtual void Cancel(void);
-    virtual EPSGS_Status GetStatus(void);
-    virtual string GetName(void) const;
-    virtual string GetGroupName(void) const;
+                                             TProcessorPriority priority) const override;
+    virtual void Process(void) override;
+    virtual void Cancel(void) override;
+    virtual EPSGS_Status GetStatus(void) override;
+    virtual string GetName(void) const override;
+    virtual string GetGroupName(void) const override;
 
 private:
     unique_ptr<CPSGS_ResolveProcessor>                  m_ResolveProcessor;

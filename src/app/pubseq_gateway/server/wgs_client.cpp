@@ -75,12 +75,6 @@ NCBI_PARAM_DECL(bool, WGS, MARK_MASTER_DESCR);
 NCBI_PARAM_DEF(bool, WGS, MARK_MASTER_DESCR, false);
 
 
-static inline bool s_FilterAll(void)
-{
-    static bool value = NCBI_PARAM_TYPE(WGS, FILTER_ALL)::GetDefault();
-    return value;
-}
-
 static bool s_SplitFeatures(void)
 {
     static bool value = NCBI_PARAM_TYPE(WGS, SPLIT_FEATURES)::GetDefault();
@@ -1700,7 +1694,7 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         }
         string content;
         id->GetLabel(&content, CSeq_id::eFastaContent);
-        psg_ids.insert(make_tuple(id->Which(), move(content)));
+        psg_ids.insert(make_tuple(id->Which(), std::move(content)));
     }
     if ( gi != ZERO_GI ) {
         // gi goes either to canonical id or to other ids
@@ -1718,11 +1712,11 @@ void CWGSClient::GetBioseqInfo(shared_ptr<SWGSData>& data, SWGSSeqInfo& seq)
         }
         else {
             // to other ids
-            psg_ids.insert(make_tuple(gi_id.Which(), move(content)));
+            psg_ids.insert(make_tuple(gi_id.Which(), std::move(content)));
         }
     }
     if ( (data->m_BioseqInfoFlags & SPSGS_ResolveRequest::fPSGS_CanonicalId)  ||  !psg_ids.empty() ) {
-        info.SetSeqIds(move(psg_ids));
+        info.SetSeqIds(std::move(psg_ids));
         // all ids are requested, so we should get GI and acc.ver too if they exist
         info.SetGI(GI_TO(CBioseqInfoRecord::TGI, gi)); // even if it's zero
         data->m_BioseqInfoFlags |=

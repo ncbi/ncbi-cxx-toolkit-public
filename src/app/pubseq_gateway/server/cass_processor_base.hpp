@@ -59,7 +59,7 @@ public:
                             shared_ptr<CPSGS_Reply> reply,
                             TProcessorPriority  priority);
     virtual ~CPSGS_CassProcessorBase();
-    virtual void Cancel(void);
+    virtual void Cancel(void) override;
     void SignalFinishProcessing(void);
     void UnlockWaitingProcessor(void);
     void CallOnData(void);
