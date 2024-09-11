@@ -2769,7 +2769,7 @@ static inline void x_tvcpy(struct timeval* dst, struct timeval* src)
 
 /* connect() could be async/interrupted by a signal or just cannot establish
  * the connection immediately;  yet, it must have been in progress
- * (asynchronous), so wait here for it to succeed (become writeable).
+ * (asynchronously), so wait here for it to succeed (become writeable).
  */
 static EIO_Status s_IsConnected_(SOCK                  sock,
                                  const struct timeval* tv,
@@ -3161,6 +3161,7 @@ static EIO_Status s_Read_(SOCK    sock,
             x_todo = SOCK_BUF_CHUNK_SIZE;
             x_buf  = p_buf;
         }
+        assert(x_buf  &&  x_todo);
         if (sock->sslctx) {
             int error = 0;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
