@@ -32,12 +32,11 @@
 
 ### Sybase
 
-# SYBASE_PATH="/netopt/Sybase/clients/current"
-# SYBASE_LOCAL_PATH="/export/home/sybase/clients/current"
+# SYBASE_PATH="/opt/sybase/clients/current"
 
 ### FreeTDS (we recommend just using the bundled version)
 
-# FTDS_PATH="/netopt/Sybase/clients-mssql/current"
+# FTDS_PATH="/opt/sybase/clients-mssql/current"
 ## -L$FTDS_PATH/lib automatically prepended
 # FTDS_LIBS="-lsybdb -ltds"
 
