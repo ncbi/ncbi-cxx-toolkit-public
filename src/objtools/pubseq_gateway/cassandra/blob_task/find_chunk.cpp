@@ -57,7 +57,7 @@ CCassBlobTaskFindChunk::CCassBlobTaskFindChunk(
     CBlobRecord::TSatKey need_old,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(conn), keyspace, 0, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(conn), keyspace, 0, true, std::move(data_error_cb))
 {
     m_id2_ent  = id2_ent;
     m_need_old = need_old;
@@ -65,7 +65,7 @@ CCassBlobTaskFindChunk::CCassBlobTaskFindChunk(
 
 void CCassBlobTaskFindChunk::SetFindID2ChunkIDCallback( TFindID2ChunkIDCallback callback)
 {
-    m_FindID2ChunkIDCallback = move(callback);
+    m_FindID2ChunkIDCallback = std::move(callback);
 }
 
 void CCassBlobTaskFindChunk::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)

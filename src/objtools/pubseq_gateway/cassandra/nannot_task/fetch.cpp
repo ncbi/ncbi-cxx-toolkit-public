@@ -58,12 +58,12 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     TNAnnotConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
-    , m_Accession(move(accession))
+    : CCassBlobWaiter(std::move(connection), keyspace, true, std::move(data_error_cb))
+    , m_Accession(std::move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
     , m_AnnotNames(annot_names)
-    , m_Consume(move(consume_callback))
+    , m_Consume(std::move(consume_callback))
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -76,12 +76,12 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     TNAnnotConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
-    , m_Accession(move(accession))
+    : CCassBlobWaiter(std::move(connection), keyspace, true, std::move(data_error_cb))
+    , m_Accession(std::move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
     , m_AnnotNamesTemp(annot_names)
-    , m_Consume(move(consume_callback))
+    , m_Consume(std::move(consume_callback))
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -93,16 +93,16 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     TNAnnotConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
-    , m_Accession(move(accession))
+    : CCassBlobWaiter(std::move(connection), keyspace, true, std::move(data_error_cb))
+    , m_Accession(std::move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_Consume(move(consume_callback))
+    , m_Consume(std::move(consume_callback))
 {}
 
 void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
 {
-    m_Consume = move(callback);
+    m_Consume = std::move(callback);
 }
 
 void CCassNAnnotTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
@@ -247,8 +247,8 @@ void CCassNAnnotTaskFetch::Wait1()
 
                         if (m_Consume && record.GetState() == CNAnnotRecord::eStateAlive) {
                             string annot_name = record.GetAnnotName();
-                            do_next = m_Consume(move(record), false);
-                            m_LastConsumedAnnot = move(annot_name);
+                            do_next = m_Consume(std::move(record), false);
+                            m_LastConsumedAnnot = std::move(annot_name);
                         }
                         if (do_next) {
                             state = m_QueryArr[0].query->NextRow();

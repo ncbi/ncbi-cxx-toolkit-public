@@ -107,7 +107,7 @@ static auto get_messages_fn =
     const string config_section = "TEST";
     auto r = make_shared<CNcbiRegistry>();
     r->Set(config_section, "service", string(cluster_name), IRegistry::fPersistent);
-    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", move(connection), r, config_section);
+    CSatInfoSchemaProvider schema_provider("sat_info3", "PSG_TEST", std::move(connection), r, config_section);
     EXPECT_EQ(ESatInfoRefreshMessagesResult::eMessagesUpdated, schema_provider.RefreshMessages(true));
     return schema_provider.GetMessages();
 };

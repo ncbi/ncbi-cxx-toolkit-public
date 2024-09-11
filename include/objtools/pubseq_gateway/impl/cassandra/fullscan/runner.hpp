@@ -53,9 +53,9 @@ class CCassandraFullscanRunner
 
     CCassandraFullscanRunner();
     CCassandraFullscanRunner(const CCassandraFullscanRunner&) = delete;
-    CCassandraFullscanRunner(CCassandraFullscanRunner&&) = default;
+    CCassandraFullscanRunner(CCassandraFullscanRunner&&) = delete;
     CCassandraFullscanRunner& operator=(const CCassandraFullscanRunner&) = delete;
-    CCassandraFullscanRunner& operator=(CCassandraFullscanRunner&&) = default;
+    CCassandraFullscanRunner& operator=(CCassandraFullscanRunner&&) = delete;
 
     CCassandraFullscanRunner& SetThreadCount(size_t value);
     CCassandraFullscanRunner& SetConsistency(CassConsistency value);

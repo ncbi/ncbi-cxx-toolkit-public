@@ -206,7 +206,7 @@ CBlobRecord& CBlobRecord::SetBigBlobSchema(bool value)
 CBlobRecord& CBlobRecord::AppendBlobChunk(TBlobChunk&& chunk)
 {
     if (!chunk.empty()) {
-        m_BlobChunks.emplace_back(move(chunk));
+        m_BlobChunks.emplace_back(std::move(chunk));
     }
     return *this;
 }
@@ -217,7 +217,7 @@ CBlobRecord& CBlobRecord::InsertBlobChunk(size_t index, TBlobChunk&& chunk)
         if (index >= m_BlobChunks.size()) {
             m_BlobChunks.resize(index + 1);
         }
-        m_BlobChunks[index] = move(chunk);
+        m_BlobChunks[index] = std::move(chunk);
     }
     return *this;
 }

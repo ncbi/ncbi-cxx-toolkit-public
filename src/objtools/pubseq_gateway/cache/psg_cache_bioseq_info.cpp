@@ -160,7 +160,7 @@ bool CPubseqGatewayCacheBioseqInfo::x_ExtractRecord(CBioseqInfoRecord& record, l
         .SetSeqState(info.seq_state())
         .SetTaxId(info.tax_id())
         .SetDateChanged(info.date_changed())
-        .SetSeqIds(move(seq_ids));
+        .SetSeqIds(std::move(seq_ids));
     return true;
 }
 

@@ -464,10 +464,10 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
     }
     if (entry.IsSecureSat()) {
         entry.connection = nullptr;
-        entry.m_SecureConnection = move(connection);
+        entry.m_SecureConnection = std::move(connection);
     }
     else {
-        entry.connection = move(connection);
+        entry.connection = std::move(connection);
         entry.m_SecureConnection = nullptr;
     }
 
@@ -481,23 +481,23 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_AddSatInfoEntry(
             if (!m_ResolverKeyspace.keyspace.empty()) {
                 return ESatInfoRefreshSchemaResult::eResolverKeyspaceDuplicated;
             }
-            m_ResolverKeyspace = move(entry);
+            m_ResolverKeyspace = std::move(entry);
             break;
         }
         case eNamedAnnotationsSchema: {
             m_BlobKeyspaces.emplace(entry.sat, entry);
-            m_BioseqNaKeyspaces.push_back(move(entry));
+            m_BioseqNaKeyspaces.push_back(std::move(entry));
             break;
         }
         case eBlobVer1Schema:
         case eBlobVer2Schema:
         {
-            m_BlobKeyspaces.emplace(entry.sat, move(entry));
+            m_BlobKeyspaces.emplace(entry.sat, std::move(entry));
             break;
         }
         case eIPGSchema:
         {
-            m_IPGKeyspace = make_optional(move(entry));
+            m_IPGKeyspace = make_optional(std::move(entry));
             break;
         }
         case eUnknownSchema: // LCOV_EXCL_LINE
@@ -595,8 +595,8 @@ CSatInfoSchemaProvider::CSatInfoSchemaProvider(
 )
     : m_SatInfoKeyspace(sat_info_keyspace)
     , m_Domain(domain)
-    , m_SatInfoConnection(move(sat_info_connection))
-    , m_Registry(move(registry))
+    , m_SatInfoConnection(std::move(sat_info_connection))
+    , m_Registry(std::move(registry))
     , m_RegistrySection(registry_section)
 {
     if (m_SatInfoConnection == nullptr) {
@@ -606,7 +606,7 @@ CSatInfoSchemaProvider::CSatInfoSchemaProvider(
 
 void CSatInfoSchemaProvider::SetSatInfoConnection(shared_ptr<CCassConnection> sat_info_connection)
 {
-    atomic_store(&m_SatInfoConnection, move(sat_info_connection));
+    atomic_store(&m_SatInfoConnection, std::move(sat_info_connection));
 }
 
 shared_ptr<CCassConnection> CSatInfoSchemaProvider::x_GetSatInfoConnection() const
@@ -692,11 +692,11 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
     auto schema = make_shared<CSatInfoSchema>();
     schema->m_ResolveTimeout = m_Timeout;
     auto old_schema = GetSchema();
-    auto result = x_PopulateNewSchema(schema, old_schema, move(rows), move(secure_users));
+    auto result = x_PopulateNewSchema(schema, old_schema, std::move(rows), std::move(secure_users));
     if (result.has_value()) {
         return result.value();
     }
-    atomic_store(&m_SatInfoSchema, move(schema));
+    atomic_store(&m_SatInfoSchema, std::move(schema));
     m_SatInfoHash = rows_hash;
     return ESatInfoRefreshSchemaResult::eSatInfoUpdated;
 }
@@ -771,7 +771,7 @@ ESatInfoRefreshMessagesResult CSatInfoSchemaProvider::RefreshMessages(bool apply
     else if (!apply) {
         return ESatInfoRefreshMessagesResult::eMessagesUpdated;
     }
-    atomic_store(&m_SatInfoMessages, move(messages));
+    atomic_store(&m_SatInfoMessages, std::move(messages));
     return ESatInfoRefreshMessagesResult::eMessagesUpdated;
 }
 
@@ -784,7 +784,7 @@ string CSatInfoSchemaProvider::GetRefreshErrorMessage() const
 void CSatInfoSchemaProvider::x_SetRefreshErrorMessage(string const& message)
 {
     auto msg = make_shared<string>(message);
-    atomic_store(&m_RefreshErrorMessage, move(msg));
+    atomic_store(&m_RefreshErrorMessage, std::move(msg));
 }
 
 

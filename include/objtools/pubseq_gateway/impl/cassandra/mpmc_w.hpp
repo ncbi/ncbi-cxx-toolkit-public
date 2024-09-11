@@ -123,7 +123,7 @@ public:
 	bool push_wait(TT&& data, int64_t timeoutmks) {
 		bool rv = false;
 		int prev_val = m_readypush_ev.Value();
-		rv = push(forward<TT>(data));
+		rv = push(std::forward<TT>(data));
 		if (rv)
 			m_readypop_ev.Inc();
 		else if (timeoutmks > 0) {
@@ -139,14 +139,14 @@ public:
 		bool rslt = false;
         while (!rslt) {
             int prev_val = m_readypush_ev.Value();
-            rslt = push(forward<TT>(data));
+            rslt = push(std::forward<TT>(data));
             if (rslt) {
                 m_readypop_ev.Inc();
                 break;
             }
             CFutex::EWaitResult wr = m_readypush_ev.WaitWhile(prev_val);
             if (wr == CFutex::eWaitResultOk || wr == CFutex::eWaitResultOkFast)
-                rslt = push(forward<TT>(data));
+                rslt = push(std::forward<TT>(data));
         };
 	}
 

@@ -51,7 +51,7 @@ CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
     int64_t done_when,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(connection), keyspace, sat_key, true, std::move(data_error_cb))
     , m_DoneWhen(done_when)
 {}
 
@@ -61,7 +61,7 @@ CCassStatusHistoryTaskFetch::CCassStatusHistoryTaskFetch(
     int32_t sat_key,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(connection), keyspace, sat_key, true, std::move(data_error_cb))
 {}
 
 void CCassStatusHistoryTaskFetch::Wait1()
@@ -112,8 +112,8 @@ void CCassStatusHistoryTaskFetch::Wait1()
                             vector<int32_t> replaces_ids, replaced_by_ids;
                             query->FieldGetContainerValue(6, back_inserter(replaces_ids));
                             query->FieldGetContainerValue(7, back_inserter(replaced_by_ids));
-                            m_Record->SetReplacesIds(move(replaces_ids));
-                            m_Record->SetReplacedByIds(move(replaced_by_ids));
+                            m_Record->SetReplacesIds(std::move(replaces_ids));
+                            m_Record->SetReplacedByIds(std::move(replaced_by_ids));
                             m_State = eDone;
                             CloseAll();
                             need_repeat = true;

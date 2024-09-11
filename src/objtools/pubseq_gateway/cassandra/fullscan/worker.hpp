@@ -62,8 +62,8 @@ class CCassandraFullscanWorker
     {
         SQueryContext(const SQueryContext &) = delete;
         SQueryContext & operator=(const SQueryContext &) = delete;
-        SQueryContext(SQueryContext &&) = default;
-        SQueryContext & operator=(SQueryContext &&) = default;
+        SQueryContext(SQueryContext &&) = delete;
+        SQueryContext & operator=(SQueryContext &&) = delete;
 
         SQueryContext()
             : SQueryContext(nullptr, nullptr, 0)

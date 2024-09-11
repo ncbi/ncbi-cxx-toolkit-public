@@ -121,7 +121,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
         m_Connection, m_KeyspaceName, si2csi_request,
         [&call_count, &si2csi_records](vector<CSI2CSIRecord> &&records) {
             ++call_count;
-            si2csi_records = move(records);
+            si2csi_records = std::move(records);
         },
         error_function
     );
@@ -143,7 +143,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
         m_Connection, m_KeyspaceName, bioseq_request,
         [&call_count, &bioseq_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            bioseq_records = move(records);
+            bioseq_records = std::move(records);
         },
         error_function
     );

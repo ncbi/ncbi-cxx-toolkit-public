@@ -122,7 +122,7 @@ CCassandraFullscanPlan& CCassandraFullscanPlan::SetConnection(shared_ptr<CCassCo
 
 CCassandraFullscanPlan& CCassandraFullscanPlan::SetFieldList(vector<string> fields)
 {
-    m_FieldList = move(fields);
+    m_FieldList = std::move(fields);
     return *this;
 }
 

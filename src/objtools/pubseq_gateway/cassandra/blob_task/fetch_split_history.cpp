@@ -55,7 +55,7 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskFetchSplitHistory(
-        move(connection), keyspace, sat_key, kAllVersions, move(consume_callback), data_error_cb
+        std::move(connection), keyspace, sat_key, kAllVersions, std::move(consume_callback), data_error_cb
     )
 {
 }
@@ -68,15 +68,15 @@ CCassBlobTaskFetchSplitHistory::CCassBlobTaskFetchSplitHistory(
     TConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(connection), keyspace, sat_key, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(connection), keyspace, sat_key, true, std::move(data_error_cb))
     , m_SplitVersion(split_version)
-    , m_ConsumeCallback(move(consume_callback))
+    , m_ConsumeCallback(std::move(consume_callback))
 {
 }
 
 void CCassBlobTaskFetchSplitHistory::SetConsumeCallback(TConsumeCallback callback)
 {
-    m_ConsumeCallback = move(callback);
+    m_ConsumeCallback = std::move(callback);
 }
 
 void CCassBlobTaskFetchSplitHistory::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)
@@ -134,7 +134,7 @@ void CCassBlobTaskFetchSplitHistory::Wait1()
                     }
                     if (query->IsEOF()) {
                         if (m_ConsumeCallback) {
-                            m_ConsumeCallback(move(m_Result));
+                            m_ConsumeCallback(std::move(m_Result));
                             m_Result.clear();
                         }
 

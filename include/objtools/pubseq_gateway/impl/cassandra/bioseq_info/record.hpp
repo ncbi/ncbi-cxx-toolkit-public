@@ -159,7 +159,7 @@ class CBioseqInfoRecord
 
     CBioseqInfoRecord & SetSeqIds(TSeqIds&& value)
     {
-        m_SeqIds = move(value);
+        m_SeqIds = std::move(value);
         return *this;
     }
 

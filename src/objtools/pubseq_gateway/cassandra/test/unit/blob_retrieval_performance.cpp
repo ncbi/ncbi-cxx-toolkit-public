@@ -193,7 +193,7 @@ TEST_F(CBlobRetrievalPerformanceTest, DISABLED_LoadBlobs)
             );
             cout << *itr << " started " << endl;
             request->request->Wait();
-            requests.push_back(move(request));
+            requests.push_back(std::move(request));
             ++running;
             ++itr;
         }

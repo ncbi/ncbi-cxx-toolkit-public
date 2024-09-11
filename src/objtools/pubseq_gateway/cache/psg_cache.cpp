@@ -204,7 +204,7 @@ CPubseqGatewayCache::TBlobPropResponse CPubseqGatewayCache::FetchBlobPropLast(TB
 void CPubseqGatewayCache::EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn)
 {
     if (m_BlobPropCache) {
-        m_BlobPropCache->EnumerateBlobProp(sat, move(fn));
+        m_BlobPropCache->EnumerateBlobProp(sat, std::move(fn));
     }
 }
 
