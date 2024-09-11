@@ -54,7 +54,7 @@ class IPSG_MyNCBIRequest
 public:
     void SetErrorCallback(TDataErrorCallback fn)
     {
-        m_ErrorCallback = move(fn);
+        m_ErrorCallback = std::move(fn);
     }
 
     void ReceiveHttpResponseData(string data);
@@ -89,12 +89,12 @@ public:
     using TConsumeCallback = function<void(SUserInfo)>;
 
     explicit CPSG_MyNCBIRequest_WhoAmI(string cookie)
-        : m_Cookie(move(cookie))
+        : m_Cookie(std::move(cookie))
     {}
 
     void SetConsumeCallback(TConsumeCallback fn)
     {
-        m_Consume = move(fn);
+        m_Consume = std::move(fn);
     }
 
     string GetRequestXML() const override
@@ -137,8 +137,8 @@ class CPSG_MyNCBIRequest_SignIn
 {
 public:
     CPSG_MyNCBIRequest_SignIn(string username, string password)
-        : m_Username(move(username))
-        , m_Password(move(password))
+        : m_Username(std::move(username))
+        , m_Password(std::move(password))
     {}
 
     string GetRequestXML() const override

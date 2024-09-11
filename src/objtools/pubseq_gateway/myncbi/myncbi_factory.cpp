@@ -528,8 +528,8 @@ shared_ptr<CPSG_MyNCBIRequest_SignIn> CPSG_MyNCBIFactory::CreateSignIn(
     if (!multi_context) {
         return nullptr;
     }
-    auto request = make_shared<CPSG_MyNCBIRequest_SignIn>(move(username), move(password));
-    request->SetErrorCallback(move(error_cb));
+    auto request = make_shared<CPSG_MyNCBIRequest_SignIn>(std::move(username), std::move(password));
+    request->SetErrorCallback(std::move(error_cb));
     multi_context->request = request;
     curl_send_request(multi_context.get(), this, request->GetRequestXML());
     multi_context.release();
@@ -546,9 +546,9 @@ shared_ptr<CPSG_MyNCBIRequest_WhoAmI> CPSG_MyNCBIFactory::CreateWhoAmI(
     if (!multi_context) {
         return nullptr;
     }
-    auto request = make_shared<CPSG_MyNCBIRequest_WhoAmI>(move(cookie));
-    request->SetErrorCallback(move(error_cb));
-    request->SetConsumeCallback(move(consume_cb));
+    auto request = make_shared<CPSG_MyNCBIRequest_WhoAmI>(std::move(cookie));
+    request->SetErrorCallback(std::move(error_cb));
+    request->SetConsumeCallback(std::move(consume_cb));
     multi_context->request = request;
     curl_send_request(multi_context.get(), this, request->GetRequestXML());
     multi_context.release();
