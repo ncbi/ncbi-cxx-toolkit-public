@@ -62,7 +62,6 @@ public:
     shared_ptr<CCassQuery> Extract(size_t slot_index);
 protected:
     CCassQueryList() :
-        m_cnt(0),
         m_has_error(false),
         m_max_queries(kDfltMaxQuery),
         m_yield_in_progress(false),
@@ -113,7 +112,6 @@ private:
     shared_ptr<CCassConnection> m_cass_conn;
     vector<SQrySlot> m_query_arr;
     mpmc_bounded_queue_w<size_t, kNotifyQueueLen> m_ready;
-    int64_t m_cnt;
     bool m_has_error;
     size_t m_max_queries;
     vector<SPendingSlot> m_pending_arr;
@@ -138,13 +136,13 @@ public:
     CCassOneExecConsumer(CCassOneExecConsumer&&) = delete;
     CCassOneExecConsumer& operator=(const CCassOneExecConsumer&) = delete;
     CCassOneExecConsumer& operator=(CCassOneExecConsumer&&) = delete;
-    virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override {
+    bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override {
         assert(!m_is_started);
         assert(!m_is_finished);
         m_is_started = true;
         return m_cb(*query, list);
     }
-    virtual bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) {
+    bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override {
         assert(m_is_started);
         assert(!m_is_finished);
         m_is_finished = true;
@@ -152,13 +150,13 @@ public:
             m_finish_cb(*query, list, !m_is_failed);
         return true;
     }
-    virtual bool ProcessRow(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) {
+    bool ProcessRow(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override {
         assert(false);
         return true;
     }
-    virtual void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) {
+    void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override {
     }
-    virtual void Failed(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/, const exception*) {
+    void Failed(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/, const exception*) override {
         m_is_failed = true;
     }
 private:

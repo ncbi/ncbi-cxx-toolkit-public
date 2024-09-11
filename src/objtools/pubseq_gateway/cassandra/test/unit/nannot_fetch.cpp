@@ -104,9 +104,9 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     )
-        : CCassNAnnotTaskFetch(move(connection),
+        : CCassNAnnotTaskFetch(std::move(connection),
             keyspace, accession, version, seq_id_type,
-            move(consume_callback), move(data_error_cb)
+                               std::move(consume_callback), std::move(data_error_cb)
         )
         , m_CallCount(nullptr)
         , m_RestartTrigger(0)
@@ -125,9 +125,9 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
         TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     )
-        : CCassNAnnotTaskFetch(move(connection),
+        : CCassNAnnotTaskFetch(std::move(connection),
             keyspace, accession, version, seq_id_type, annot_names,
-            move(consume_callback), move(data_error_cb)
+                               std::move(consume_callback), std::move(data_error_cb)
         )
         , m_CallCount(nullptr)
         , m_RestartTrigger(0)

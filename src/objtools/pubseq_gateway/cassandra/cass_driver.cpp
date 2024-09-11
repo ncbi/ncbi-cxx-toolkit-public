@@ -1496,10 +1496,10 @@ void CCassQuery::RestartQuery(TCassConsistency c)
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
     }
     unsigned int page_size = m_page_size;
-    CCassParams params = move(m_params);
+    CCassParams params = std::move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
     Close();
-    m_params = move(params);
+    m_params = std::move(params);
     auto retry_timeout = m_connection->QryTimeoutRetryMs();
     if (retry_timeout != 0) {
         SetTimeout(retry_timeout);
@@ -1593,10 +1593,10 @@ void CCassQuery::RestartExecute(TCassConsistency c)
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is is not in restartable state");
     }
-    CCassParams params = move(m_params);
+    CCassParams params = std::move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
     Close();
-    m_params = move(params);
+    m_params = std::move(params);
     auto retry_timeout = m_connection->QryTimeoutRetryMs();
     if (retry_timeout != 0) {
         SetTimeout(retry_timeout);

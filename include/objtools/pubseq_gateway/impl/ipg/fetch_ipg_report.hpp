@@ -184,8 +184,8 @@ public:
     CPubseqGatewayFetchIpgReport(const CPubseqGatewayFetchIpgReport&) = delete;
     CPubseqGatewayFetchIpgReport& operator=(const CPubseqGatewayFetchIpgReport&) = delete;
 
-    CPubseqGatewayFetchIpgReport(CPubseqGatewayFetchIpgReport&&) = default;
-    CPubseqGatewayFetchIpgReport& operator=(CPubseqGatewayFetchIpgReport&&) = default;
+    CPubseqGatewayFetchIpgReport(CPubseqGatewayFetchIpgReport&&) = delete;
+    CPubseqGatewayFetchIpgReport& operator=(CPubseqGatewayFetchIpgReport&&) = delete;
 
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
     void SetConsumeCallback(CPubseqGatewayIpgReportConsumeCallback callback);
@@ -230,7 +230,6 @@ private:
 
     CassConsistency m_Consistency{CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM};
     unsigned int m_PageSize{CCassQuery::DEFAULT_PAGE_SIZE};
-    unsigned int m_RestartCounter{0};
 };
 
 END_SCOPE(ipg)

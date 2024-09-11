@@ -180,14 +180,14 @@ void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int re
             slot = CheckSlots(false, !post_async);
         }
         if (post_async && !slot) {
-            m_pending_arr.push_back({move(consumer), retry_count});
+            m_pending_arr.push_back({std::move(consumer), retry_count});
             Tick();
             return;
         }
     }
     while (!slot);
 
-    AttachSlot(slot, {move(consumer), retry_count});
+    AttachSlot(slot, {std::move(consumer), retry_count});
 }
 
 bool CCassQueryList::HasEmptySlot()
@@ -244,7 +244,7 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot)
     assert(pending_slot.m_retry_count < 1000);
     slot->m_retry_count = pending_slot.m_retry_count;
     assert(slot->m_consumer == nullptr);
-    slot->m_consumer = move(pending_slot.m_consumer);
+    slot->m_consumer = std::move(pending_slot.m_consumer);
 
     if (!slot->m_qry) {
         slot->m_qry = m_cass_conn->NewQuery();
@@ -268,9 +268,9 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot)
 void CCassQueryList::CheckPending(SQrySlot* slot) {
     assert(slot->m_state == ssAvailable);    
     if (!m_pending_arr.empty()) {
-        SPendingSlot pending_slot = move(m_pending_arr.back());
+        SPendingSlot pending_slot = std::move(m_pending_arr.back());
         m_pending_arr.pop_back();
-        AttachSlot(slot, move(pending_slot));
+        AttachSlot(slot, std::move(pending_slot));
     }
 }
 

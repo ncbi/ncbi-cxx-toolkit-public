@@ -90,17 +90,17 @@ class CBlobStatusHistoryRecord {
     }
 
     CBlobStatusHistoryRecord& SetComment(string value) {
-        m_Comment = move(value);
+        m_Comment = std::move(value);
         return *this;
     }
 
     CBlobStatusHistoryRecord& SetPublicComment(string value) {
-        m_PublicComment = move(value);
+        m_PublicComment = std::move(value);
         return *this;
     }
 
     CBlobStatusHistoryRecord& SetUserName(string value) {
-        m_UserName = move(value);
+        m_UserName = std::move(value);
         return *this;
     }
 

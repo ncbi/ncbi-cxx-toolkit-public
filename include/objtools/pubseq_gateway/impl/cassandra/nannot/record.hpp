@@ -127,7 +127,7 @@ class CNAnnotRecord {
 
     CNAnnotRecord& SetSeqAnnotInfo(TAnnotInfo&& value)
     {
-        m_SeqAnnotInfo = move(value);
+        m_SeqAnnotInfo = std::move(value);
         return *this;
     }
 

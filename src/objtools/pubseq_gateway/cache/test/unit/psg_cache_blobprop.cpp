@@ -186,7 +186,6 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropForLastRecord)
 
 TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
 {
-    CPubseqGatewayCache::TBlobPropRequest request;
     int rows{0};
     m_Cache->EnumerateBlobProp(4,
         [&rows] (int32_t sat_key, int64_t modified)

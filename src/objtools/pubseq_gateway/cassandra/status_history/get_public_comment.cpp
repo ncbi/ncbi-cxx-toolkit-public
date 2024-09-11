@@ -79,7 +79,7 @@ CCassStatusHistoryTaskGetPublicComment::CCassStatusHistoryTaskGetPublicComment(
     CBlobRecord const &blob,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(conn), keyspace, blob.GetKey(), true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(conn), keyspace, blob.GetKey(), true, std::move(data_error_cb))
     , m_BlobFlags(blob.GetFlags())
     , m_ReplacesRetries(kMaxReplacesRetries)
     , m_CurrentKey(blob.GetKey())
@@ -106,12 +106,12 @@ void CCassStatusHistoryTaskGetPublicComment::JumpToReplaced(CBlobRecord::TSatKey
 
 void CCassStatusHistoryTaskGetPublicComment::SetMessages(shared_ptr<CPSGMessages> messages)
 {
-    m_Messages = move(messages);
+    m_Messages = std::move(messages);
 }
 
 void CCassStatusHistoryTaskGetPublicComment::SetCommentCallback(TCommentCallback callback)
 {
-    m_CommentCallback = move(callback);
+    m_CommentCallback = std::move(callback);
 }
 
 void CCassStatusHistoryTaskGetPublicComment::Wait1()
@@ -226,14 +226,14 @@ void CCassStatusHistoryTaskGetPublicComment::Wait1()
                                 snprintf(msg, sizeof(msg), "Message is empty for (%s)", message_type);
                                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData, eDiag_Error, msg);
                             } else {
-                                m_CommentCallback(move(comment), true);
+                                m_CommentCallback(std::move(comment), true);
                             }
                         } else {
                             Error(CRequestStatus::e502_BadGateway, CCassandraException::eMissData,
                                 eDiag_Error, "Messages provider not configured for Public Comment retrieval");
                         }
                     } else {
-                        m_CommentCallback(move(m_PublicComment), true);
+                        m_CommentCallback(std::move(m_PublicComment), true);
                     }
                 }
                 m_State = eDone;

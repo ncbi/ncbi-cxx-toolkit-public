@@ -134,18 +134,18 @@ void PopulateEntry(shared_ptr<CCassQuery>& query, CIpgStorageReportEntry& entry)
     if (!query->FieldIsNull(FieldIndex("src_refseq"))) {
         list<string> src_refseq;
         query->FieldGetContainerValue(FieldIndex("src_refseq"), back_inserter(src_refseq));
-        entry.SetRefseq(move(src_refseq));
+        entry.SetRefseq(std::move(src_refseq));
     }
 
     if (!query->FieldIsNull(FieldIndex("weights"))) {
         TIpgWeights weights;
         query->FieldGetContainerValue(FieldIndex("weights"), back_inserter(weights));
-        entry.SetWeights(move(weights));
+        entry.SetWeights(std::move(weights));
     }
     if (!query->FieldIsNull(FieldIndex("pubmedids"))) {
         TPubMedIds ids;
         query->FieldGetContainerValue(FieldIndex("pubmedids"), inserter(ids, ids.end()));
-        entry.SetPubMedIds(move(ids));
+        entry.SetPubMedIds(std::move(ids));
     }
 
     if (!query->FieldIsNull(FieldIndex("cds"))) {
@@ -167,9 +167,9 @@ CPubseqGatewayFetchIpgReport::CPubseqGatewayFetchIpgReport(
     TDataErrorCallback data_error_cb,
     bool async
 )
-    : CCassBlobWaiter(move(connection), keyspace, async, move(data_error_cb))
+    : CCassBlobWaiter(std::move(connection), keyspace, async, std::move(data_error_cb))
     , m_Request(request)
-    , m_ConsumeCallback(move(consume_callback))
+    , m_ConsumeCallback(std::move(consume_callback))
 {}
 
 const size_t CPubseqGatewayFetchIpgReport::kReadBufferReserveDefault = 512;
@@ -178,7 +178,7 @@ CPubseqGatewayFetchIpgReport::~CPubseqGatewayFetchIpgReport() = default;
 
 void CPubseqGatewayFetchIpgReport::SetConsumeCallback(CPubseqGatewayIpgReportConsumeCallback  callback)
 {
-    m_ConsumeCallback = move(callback);
+    m_ConsumeCallback = std::move(callback);
 }
 
 void CPubseqGatewayFetchIpgReport::SetConsistency(CassConsistency value)
@@ -358,7 +358,7 @@ void CPubseqGatewayFetchIpgReport::Wait1()
                     if (!m_Container.empty()) {
                         m_LastAccession = rbegin(m_Container)->GetAccession();
                         m_LastNucAccession = rbegin(m_Container)->GetNucAccession();
-                        do_next = m_ConsumeCallback(move(m_Container), false);
+                        do_next = m_ConsumeCallback(std::move(m_Container), false);
                         m_Container.clear();
                     }
                     if (!do_next) {

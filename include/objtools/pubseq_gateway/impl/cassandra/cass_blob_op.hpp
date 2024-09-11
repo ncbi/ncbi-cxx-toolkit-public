@@ -86,8 +86,8 @@ public:
         bool async,
         TDataErrorCallback error_cb
     )
-      : m_ErrorCb(move(error_cb))
-      , m_Conn(move(conn))
+      : m_ErrorCb(std::move(error_cb))
+      , m_Conn(std::move(conn))
       , m_Async(async)
       , m_Keyspace(keyspace)
       , m_Key(key)
@@ -103,8 +103,8 @@ public:
         bool async,
         TDataErrorCallback error_cb
     )
-      : m_ErrorCb(move(error_cb))
-      , m_Conn(move(conn))
+      : m_ErrorCb(std::move(error_cb))
+      , m_Conn(std::move(conn))
       , m_Async(async)
       , m_Keyspace(keyspace)
     {

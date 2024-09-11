@@ -68,7 +68,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetAccession(string&& value) {
-        m_Accession = move(value);
+        m_Accession = std::move(value);
         return *this;
     }
 
@@ -88,7 +88,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetNucAccession(string&& value) {
-        m_NucAccession = move(value);
+        m_NucAccession = std::move(value);
         return *this;
     }
 
@@ -98,7 +98,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetProductName(string&& value) {
-        m_ProductName = move(value);
+        m_ProductName = std::move(value);
         return *this;
     }
 
@@ -108,7 +108,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetStrain(string&& value) {
-        m_Strain = move(value);
+        m_Strain = std::move(value);
         return *this;
     }
 
@@ -138,7 +138,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetDiv(string&& value) {
-        m_Div = move(value);
+        m_Div = std::move(value);
         return *this;
     }
 
@@ -148,7 +148,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetAssembly(string&& value) {
-        m_Assembly = move(value);
+        m_Assembly = std::move(value);
         return *this;
     }
 
@@ -178,7 +178,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetWeights(TIpgWeights&& value) {
-        m_Weights = move(value);
+        m_Weights = std::move(value);
         return *this;
     }
 
@@ -193,7 +193,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetBioProject(string&& value) {
-        m_BioProject = move(value);
+        m_BioProject = std::move(value);
         return *this;
     }
 
@@ -243,7 +243,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetPubMedIds(TPubMedIds&& ids) {
-        m_PubMedIds = move(ids);
+        m_PubMedIds = std::move(ids);
         return *this;
     }
 
@@ -258,7 +258,7 @@ struct CIpgStorageReportEntry
     }
 
     CIpgStorageReportEntry& SetDefLine(string&& value) {
-        m_DefLine = move(value);
+        m_DefLine = std::move(value);
         return *this;
     }
 

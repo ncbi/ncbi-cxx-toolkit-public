@@ -100,7 +100,7 @@ void CPubseqGatewayCacheBlobProp::Open(const set<int>& sat_ids)
         if (static_cast<size_t>(sat_id) > m_Dbis.size()) {
             m_Dbis.resize(sat_id);
         }
-        m_Dbis.push_back(move(pdbi));
+        m_Dbis.push_back(std::move(pdbi));
 
     }
 }

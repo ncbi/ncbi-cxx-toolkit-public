@@ -1240,7 +1240,7 @@ public:
                             ex.AddToMessage(GetColumnDef(ifld));
                             throw;
                         }
-                        insert_iterator++ = move(v);
+                        insert_iterator++ = std::move(v);
                     }
                 }
             }
@@ -1311,7 +1311,7 @@ public:
                         ex.AddToMessage(GetColumnDef(ifld));
                         throw;
                     }
-                    values.push_back(move(v));
+                    values.push_back(std::move(v));
                 }
                 break;
             }
@@ -1350,7 +1350,7 @@ public:
                             ex.AddToMessage(GetColumnDef(ifld));
                             throw;
                         }
-                        values.insert(move(v));
+                        values.insert(std::move(v));
                     }
                 }
                 break;
@@ -1397,7 +1397,7 @@ public:
                             ex.AddToMessage(GetColumnDef(ifld));
                             throw;
                         }
-                        result.emplace(move(k), move(v));
+                        result.emplace(std::move(k), std::move(v));
                     }
                 }
                 break;

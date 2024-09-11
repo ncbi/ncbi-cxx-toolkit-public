@@ -55,19 +55,19 @@ CCassAccVerHistoryTaskFetch::CCassAccVerHistoryTaskFetch(
     int16_t seq_id_type
 )
     : CCassBlobWaiter(
-        move(connection), keyspace,
+    std::move(connection), keyspace,
         true, // false, // m_Async
-        move(data_error_cb)
+        std::move(data_error_cb)
     )
-    , m_Accession(move( accession))
+    , m_Accession(std::move( accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_Consume(move( consume_callback))
+    , m_Consume(std::move( consume_callback))
 {}
 
 void CCassAccVerHistoryTaskFetch::SetConsumeCallback( TAccVerHistConsumeCallback callback)
 {
-    m_Consume = move(callback);
+    m_Consume = std::move(callback);
 }
 
 void CCassAccVerHistoryTaskFetch::SetDataReadyCB(
@@ -157,7 +157,7 @@ void CCassAccVerHistoryTaskFetch::Wait1()
 
                     if( m_Consume)
                     {
-                        do_next = m_Consume( move( record), false);
+                        do_next = m_Consume( std::move( record), false);
                     }
                     if( do_next)
                     {

@@ -68,7 +68,7 @@ CCassandraFullscanWorker& CCassandraFullscanWorker::SetConsumerFactory(
     TCassandraFullscanConsumerFactory consumer_factory
 )
 {
-    m_ConsumerFactory = move(consumer_factory);
+    m_ConsumerFactory = std::move(consumer_factory);
     return *this;
 }
 

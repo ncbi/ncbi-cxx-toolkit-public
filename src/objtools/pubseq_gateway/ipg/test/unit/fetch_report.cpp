@@ -258,7 +258,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, Huge) {
         else {
             EXPECT_EQ(1UL, page.size());
             for (auto && item : page) {
-                report[item.GetAccession()] = move(item);
+                report[item.GetAccession()] = std::move(item);
             }
         }
         return true;
@@ -293,7 +293,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeWithFilter) {
         else {
             EXPECT_EQ(1UL, page.size());
             for (auto && item : page) {
-                report[item.GetAccession()] = move(item);
+                report[item.GetAccession()] = std::move(item);
             }
         }
         return true;
@@ -335,7 +335,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeDisabled) {
             else {
                 EXPECT_EQ(1UL, page.size());
                 for (auto && item : page) {
-                    report[item.GetAccession()] = move(item);
+                    report[item.GetAccession()] = std::move(item);
                 }
             }
             return true;

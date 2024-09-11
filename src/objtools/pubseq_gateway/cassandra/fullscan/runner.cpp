@@ -79,7 +79,7 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetConsumerFactory(
     TCassandraFullscanConsumerFactory consumer_factory
 )
 {
-    m_ConsumerFactory = move(consumer_factory);
+    m_ConsumerFactory = std::move(consumer_factory);
     return *this;
 }
 
@@ -98,7 +98,7 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetExecutionPlan(
                "Invalid sequence of operations, execution plan should not be overriden"
             );
     }
-    m_ExecutionPlan = move(plan);
+    m_ExecutionPlan = std::move(plan);
     return *this;
 }
 
@@ -165,7 +165,7 @@ bool CCassandraFullscanRunner::Execute()
             .SetConsumerFactory(consumer_factory_fn)
             .SetConsumerCreationPolicy(m_ConsumerCreationPolicy)
             .SetTaskProvider(task_provider);
-        workers.emplace_back(move(worker));
+        workers.emplace_back(std::move(worker));
     }
 
     // Starting threads for all except the last worker

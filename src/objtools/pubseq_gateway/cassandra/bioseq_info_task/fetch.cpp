@@ -78,15 +78,15 @@ CCassBioseqInfoTaskFetch::CCassBioseqInfoTaskFetch(
                             CBioseqInfoFetchRequest const& request,
                             TBioseqInfoConsumeCallback     consume_callback,
                             TDataErrorCallback             data_error_cb) :
-    CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb)),
+    CCassBlobWaiter(std::move(connection), keyspace, true, std::move(data_error_cb)),
     m_Request(request),
     m_Accession(request.GetAccession()),
-    m_ConsumeCallback(move(consume_callback))
+    m_ConsumeCallback(std::move(consume_callback))
 {}
 
 void CCassBioseqInfoTaskFetch::SetConsumeCallback(TBioseqInfoConsumeCallback  callback)
 {
-    m_ConsumeCallback = move(callback);
+    m_ConsumeCallback = std::move(callback);
 }
 
 void CCassBioseqInfoTaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
@@ -276,7 +276,7 @@ void CCassBioseqInfoTaskFetch::Wait1()
                             bool final_state = true;
                             if (m_ConsumeCallback) {
                                 if (m_Records.empty()) {
-                                    m_ConsumeCallback(move(m_Records));
+                                    m_ConsumeCallback(std::move(m_Records));
                                 } else {
                                     if (x_InheritanceRequired()) {
                                         final_state = false;
@@ -285,7 +285,7 @@ void CCassBioseqInfoTaskFetch::Wait1()
                                         x_StartQuery();
                                         m_State = eFetchAliveVersionStarted;
                                     } else {
-                                        m_ConsumeCallback(move(m_Records));
+                                        m_ConsumeCallback(std::move(m_Records));
                                     }
                                 }
                             }
@@ -322,7 +322,7 @@ void CCassBioseqInfoTaskFetch::Wait1()
                             }
                         }
                         if (m_QueryArr[0].query->IsEOF() || m_InheritanceRequired.empty()) {
-                            m_ConsumeCallback(move(m_Records));
+                            m_ConsumeCallback(std::move(m_Records));
                             CloseAll();
                             m_State = eDone;
                         }

@@ -72,7 +72,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     TDataErrorCallback data_error_cb
 )
     : CCassBlobTaskLoadBlob(
-        move(conn),
+        std::move(conn),
         keyspace,
         sat_key,
         kAnyModified,
@@ -90,7 +90,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     bool load_chunks,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(conn), keyspace, sat_key, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(conn), keyspace, sat_key, true, std::move(data_error_cb))
     , m_Blob(make_unique<CBlobRecord>(sat_key))
     , m_Modified(modified)
     , m_LoadChunks(load_chunks)
@@ -106,8 +106,8 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     bool load_chunks,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(conn), keyspace, blob_record->GetKey(), true, move(data_error_cb))
-    , m_Blob(move(blob_record))
+    : CCassBlobWaiter(std::move(conn), keyspace, blob_record->GetKey(), true, std::move(data_error_cb))
+    , m_Blob(std::move(blob_record))
     , m_Modified(m_Blob->GetModified())
     , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
@@ -126,7 +126,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     CBlobRecord::TSatKey need_old,
     TDataErrorCallback data_error_cb
 )
-    : CCassBlobWaiter(move(conn), keyspace, 0, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(conn), keyspace, 0, true, std::move(data_error_cb))
     , m_Blob(make_unique<CBlobRecord>(0))
     , m_Modified(-1)
     , m_LoadChunks(false)
@@ -145,17 +145,17 @@ bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
 
 void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallbackEx callback)
 {
-    m_ChunkCallback = move(callback);
+    m_ChunkCallback = std::move(callback);
 }
 
 void CCassBlobTaskLoadBlob::SetPropsCallback(TBlobPropsCallback callback)
 {
-    m_PropsCallback = move(callback);
+    m_PropsCallback = std::move(callback);
 }
 
 void CCassBlobTaskLoadBlob::SetFindID2ChunkIDCallback( TFindID2ChunkIDCallback callback)
 {
-    m_FindID2ChunkIDCallback = move(callback);
+    m_FindID2ChunkIDCallback = std::move(callback);
 }
 
 void CCassBlobTaskLoadBlob::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)

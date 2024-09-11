@@ -57,14 +57,14 @@ CCassSI2CSITaskFetch::CCassSI2CSITaskFetch(
                             CSi2CsiFetchRequest const&  request,
                             TSI2CSIConsumeCallback      consume_callback,
                             TDataErrorCallback          data_error_cb)
-    : CCassBlobWaiter(move(connection), keyspace, true, move(data_error_cb))
+    : CCassBlobWaiter(std::move(connection), keyspace, true, std::move(data_error_cb))
     , m_Request(request)
     , m_ConsumeCallback(consume_callback)
 {}
 
 void CCassSI2CSITaskFetch::SetConsumeCallback(TSI2CSIConsumeCallback  callback)
 {
-    m_ConsumeCallback = move(callback);
+    m_ConsumeCallback = std::move(callback);
 }
 
 void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver>  callback)
@@ -140,7 +140,7 @@ void CCassSI2CSITaskFetch::Wait1()
                         }
                         if (m_QueryArr[0].query->IsEOF()) {
                             if (m_ConsumeCallback) {
-                                m_ConsumeCallback(move(m_Records));
+                                m_ConsumeCallback(std::move(m_Records));
                             }
                             CloseAll();
                             m_State = eDone;

@@ -120,7 +120,7 @@ TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
     cache_blob->SetModified(1342057137103);
     cache_blob->SetSize(12509);
     cache_blob->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, move(cache_blob), true, fn404);
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, std::move(cache_blob), true, fn404);
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
@@ -193,7 +193,7 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
         ++call_count;
         EXPECT_EQ(502, status);
     };
-    CCassBlobTaskLoadBlob fetch1(m_Connection, m_KeyspaceName, move(blob), true, error_function);
+    CCassBlobTaskLoadBlob fetch1(m_Connection, m_KeyspaceName, std::move(blob), true, error_function);
     wait_function(fetch1);
     EXPECT_EQ(1UL, call_count);
 }
@@ -231,7 +231,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
     auto blob_prop = make_unique<CBlobRecord>();
     blob_prop->SetKey(numeric_limits<CBlobRecord::TSatKey>::max());
     blob_prop->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(m_Connection, "fake_keyspace", move(blob_prop), true, error_function);
+    CCassBlobTaskLoadBlob fetch(m_Connection, "fake_keyspace", std::move(blob_prop), true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     EXPECT_EQ(call_count, 1);
@@ -319,7 +319,7 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
 
     auto blob = make_unique<CBlobRecord>();
     (*blob).SetKey(8091).SetModified(1000412801493).SetNChunks(1).SetSize(1114);
-    CCassBlobTaskLoadBlob blob_fetch(m_Connection, "psg_test_sat_4", move(blob), true, timeout_function);
+    CCassBlobTaskLoadBlob blob_fetch(m_Connection, "psg_test_sat_4", std::move(blob), true, timeout_function);
     blob_fetch.SetQueryTimeout(chrono::milliseconds(1));
     blob_fetch.SetUsePrepared(false);
     blob_fetch.SetChunkCallback(chunk_callback);

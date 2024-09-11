@@ -241,7 +241,7 @@ TEST_F(CCassandraFullscanRunnerTest, BrokenQueryRunnerTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [] { return make_unique<CSimpleRowConsumer>(nullptr);}
         );
@@ -266,7 +266,7 @@ TEST_F(CCassandraFullscanRunnerTest, AtLeastOneActiveStatementPerThread) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetMaxActiveStatements(1)
         .SetConsumerFactory(
             [&context] {
@@ -291,7 +291,7 @@ TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -330,7 +330,7 @@ TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -365,7 +365,7 @@ TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -390,7 +390,7 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -415,7 +415,7 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -444,7 +444,7 @@ TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(1)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -472,7 +472,7 @@ TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
         .SetThreadCount(1)
         .SetConsistency(CASS_CONSISTENCY_LOCAL_ONE)
         .SetPageSize(2)
-        .SetExecutionPlan(move(plan_mock))
+        .SetExecutionPlan(std::move(plan_mock))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -507,7 +507,7 @@ TEST_F(CCassandraFullscanRunnerTest, ConsumerPerQueryTest)
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan))
+        .SetExecutionPlan(std::move(plan))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);
@@ -543,7 +543,7 @@ TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
     CCassandraFullscanRunner runner;
     runner
         .SetThreadCount(4)
-        .SetExecutionPlan(move(plan))
+        .SetExecutionPlan(std::move(plan))
         .SetConsumerFactory(
             [&context] {
                 return make_unique<CSimpleRowConsumer>(&context);

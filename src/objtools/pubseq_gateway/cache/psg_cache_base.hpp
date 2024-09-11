@@ -54,7 +54,7 @@ class CLMDBReadOnlyTxn
     }
 
     explicit CLMDBReadOnlyTxn(lmdb::txn&& txn)
-        : m_Txn(move(txn))
+        : m_Txn(std::move(txn))
     {
     }
 

@@ -111,7 +111,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -129,7 +129,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -158,7 +158,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_AccessionVersionMultiple) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -186,7 +186,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -209,7 +209,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionSeqIdType) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -232,7 +232,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
@@ -256,7 +256,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_SeqIdsInheritance) {
         m_Connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
-            actual_records = move(records);
+            actual_records = std::move(records);
         },
         error_function
     );
