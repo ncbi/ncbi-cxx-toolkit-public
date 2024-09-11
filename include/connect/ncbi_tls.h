@@ -60,12 +60,14 @@ extern "C" {
  *
  * CONN_USESSL={1,0,MBEDTLS,GNUTLS}
  *
- * "Off", "No", "False", case-insensitively, are also accepted for "0";  and
- * "On", "Yes", "True" -- for "1".
+ * "No", "Off", "None", "False", case-insensitively, are also accepted for "0";
+ * and "On", "Yes", "True" -- for "1".
  *
- * If no provider is present in the build, "0" is assumed.  "1" selects the
- * default provider as currently configured within the toolkit.  With "0", SSL
+ * If no provider is present in the build, "0" is assumed.  With "0", SSL
  * will not be availbale for sockets, and any secure session will fail.
+ *
+ * A missing setting or "1" both select the default provider as currently
+ * configured within the toolkit.  
  *
  * @note GNUTLS is only available as an external 3-rd party library, and must
  * be so configured --with-gnutls at the configuration stage of the build.
@@ -92,8 +94,8 @@ SOCKSSL NcbiSetupTls(void);
  * provider name merged with the above.  For example, for mbedTLS the setting
  * would be "MBEDTLS_LOGLEVEL" and would have priority over the generic one.
  *
- * Note that GNUTLS has its own environment setting "GNUTLS_DEBUG_LEVEL", which
- * will be considered if none of the TLS_LOGLEVEL settings are encountered.
+ * Note that GNUTLS has also its own environment setting "GNUTLS_DEBUG_LEVEL",
+ * which will be considered if none of the TLS_LOGLEVEL settings are used.
  */
 
 
