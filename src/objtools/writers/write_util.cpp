@@ -262,40 +262,161 @@ bool CWriteUtil::GetAaName(
     return true;
 }
 
+
+static void s_AddComplement(string& cbString)
+{
+    cbString = "complement(" + cbString + ")";
+}
+
+
+static string s_GetCodeBreak(const CSeq_interval& intv, bool checkStrand = true)
+{
+    string intv_str;
+    intv_str += NStr::IntToString(intv.GetFrom() + 1);
+    intv_str += "..";
+    intv_str += NStr::IntToString(intv.GetTo() + 1);
+
+    if (checkStrand && intv.IsSetStrand() && intv.GetStrand() == eNa_strand_minus) {
+        s_AddComplement(intv_str);
+    }
+    return intv_str;
+}
+
+
+static string s_GetCodeBreak(const CSeq_point& point, bool checkStrand = true)
+{
+    auto pntString = NStr::IntToString(point.GetPoint() + 1);
+
+    if (checkStrand && point.IsSetStrand() && point.GetStrand() == eNa_strand_minus) {
+        s_AddComplement(pntString);
+    }
+    return pntString;
+}
+
+
+static string s_GetCodeBreak(const CPacked_seqpnt& packedPnt)
+{
+    if (! packedPnt.IsSetPoints()) {
+        return kEmptyStr;
+    }
+
+    string      cbString;
+    const bool  minusStrand = (packedPnt.GetStrand() == eNa_strand_minus);
+    const auto& points      = packedPnt.GetPoints();
+    if (minusStrand) {
+        for (auto it = points.rbegin(); it != points.rend(); ++it) {
+            cbString += NStr::IntToString((*it) + 1) + ",";
+        }
+    } else {
+        for (const auto& point : points) {
+            cbString += NStr::IntToString(point + 1) + ",";
+        }
+    }
+    if (cbString.empty()) {
+        return kEmptyStr;
+    }
+    cbString.back() = ')';
+    cbString        = "join(" + cbString + ")";
+
+    if (minusStrand) {
+        s_AddComplement(cbString);
+    }
+    return cbString;
+}
+
+
+static void s_MixStringAppend(const CSeq_loc& loc, string& mixString, bool& isOrdered)
+{
+    if (loc.IsNull()) {
+        isOrdered = true;
+        return;
+    }
+
+    if (loc.IsInt()) {
+        mixString += s_GetCodeBreak(loc.GetInt(), false);
+    } else if (loc.IsPnt()) {
+        mixString += s_GetCodeBreak(loc.GetPnt(), false);
+    } else {
+        return;
+    }
+
+    mixString += ",";
+}
+
+
+static string s_GetCodeBreak(const CSeq_loc_mix& mix)
+{
+    if (! mix.IsSet()) {
+        return kEmptyStr;
+    }
+
+    bool       isOrdered{ false };
+    string     mixString;
+    const bool minusStrand = (mix.GetStrand() == eNa_strand_minus);
+    if (minusStrand) {
+        for (auto it = mix.Get().rbegin(); it != mix.Get().rend(); ++it) {
+            s_MixStringAppend(**it, mixString, isOrdered);
+        }
+    } else {
+        for (const auto& pLoc : mix.Get()) {
+            s_MixStringAppend(*pLoc, mixString, isOrdered);
+        }
+    }
+
+    if (mixString.empty()) {
+        return kEmptyStr;
+    }
+    mixString.back() = ')';
+
+    if (isOrdered) {
+        mixString = "order(" + mixString;
+    } else {
+        mixString = "join(" + mixString;
+    }
+
+    if (minusStrand) {
+        s_AddComplement(mixString);
+    }
+
+    return mixString;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetCodeBreak(
     const CCode_break& cb,
-    string& cbString )
+    string&            cbString)
 //  ----------------------------------------------------------------------------
 {
     string cb_str = ("(pos:");
-    if ( cb.IsSetLoc() ) {
+    if (cb.IsSetLoc()) {
         const CCode_break::TLoc& loc = cb.GetLoc();
-        switch( loc.Which() ) {
-            default: {
-                cb_str += NStr::IntToString( loc.GetStart(eExtreme_Positional)+1 );
-                cb_str += "..";
-                cb_str += NStr::IntToString( loc.GetStop(eExtreme_Positional)+1 );
-                break;
-            }
-            case CSeq_loc::e_Int: {
-                const CSeq_interval& intv = loc.GetInt();
-                string intv_str;
-                intv_str += NStr::IntToString( intv.GetFrom()+1 );
-                intv_str += "..";
-                intv_str += NStr::IntToString( intv.GetTo()+1 );
-                if ( intv.IsSetStrand()  &&  intv.GetStrand() == eNa_strand_minus ) {
-                    intv_str = "complement(" + intv_str + ")";
-                }
-                cb_str += intv_str;
-                break;
-            }
+        switch (loc.Which()) {
+        case CSeq_loc::e_Int:
+            cb_str += s_GetCodeBreak(loc.GetInt());
+            break;
+        case CSeq_loc::e_Mix:
+            cb_str += s_GetCodeBreak(loc.GetMix());
+            break;
+        case CSeq_loc::e_Pnt:
+            cb_str += s_GetCodeBreak(loc.GetPnt());
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            cb_str += s_GetCodeBreak(loc.GetPacked_pnt());
+            break;
+        default:
+        {
+            string label;
+            loc.GetLabel(&label);
+            NCBI_THROW(CObjWriterException, eBadInput, 
+                    "Unsupported code-break location type : " + label);
+        }
         }
     }
     cb_str += ",aa:";
 
     string aaName;
-    if (!CWriteUtil::GetAaName(cb, aaName)) {
+    if (! CWriteUtil::GetAaName(cb, aaName)) {
         return false;
     }
     cb_str += aaName + ")";
