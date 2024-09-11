@@ -5249,74 +5249,24 @@ if test "$with_sybase" != "no" ; then
    resolve_sybase=true
    default_pointer=default-${NCBI_PLATFORM_BITS}bit
    : ${with_sybase_new:="no"}
-   case "$host_os" in
-      linux* )
-         : ${with_sybase_local:=yes}
-         ;;
-      * )
-         if test -d "$net_sybase_root" ; then
-            : ${with_sybase_local:=no}
-         else
-            : ${with_sybase_local:=yes}
-         fi
-         ;;
-   esac
 
-   if test "$with_sybase_local" != "no" ; then
-      if test "$with_sybase_local" = "yes" ; then
-         if test -n "$SYBASE_PATH" ; then
-            with_sybase_local=$SYBASE_PATH
-         else
-            if test "$with_sybase_new" = "yes" ; then
-               with_sybase_local=$local_sybase_root/new
-            elif test -f "$local_sybase_root/$default_pointer" ; then
-               with_sybase_local=`cat $local_sybase_root/$default_pointer`
-               resolve_sybase=false
-            else
-               with_sybase_local=$local_sybase_root/current
-            fi
-            if test -d "$with_sybase_local$NCBI_PLATFORM_BITS" ; then
-               with_sybase_local=$with_sybase_local$NCBI_PLATFORM_BITS
-            fi
-         fi # default paths
-      fi # no command-line path
-      if test -d "$with_sybase_local" ; then
-         SYBASE_PATH=$with_sybase_local
-         SYBASE_LCL_PATH=
-      else
-         with_sybase_local=no
-      fi
-   fi
-
-   if test "$with_sybase_local" = "no" ; then
+   if test -n "$SYBASE_PATH" ; then
+      with_sybase_local=$SYBASE_PATH
+   else
       if test "$with_sybase_new" = "yes" ; then
-         if test -d "$net_sybase_root/new$NCBI_PLATFORM_BITS" ; then
-            SYBASE_LCL_PATH=$local_sybase_root/new$NCBI_PLATFORM_BITS
-            SYBASE_PATH=$net_sybase_root/new$NCBI_PLATFORM_BITS
-         elif test -d "$net_sybase_root/new" ; then
-            SYBASE_LCL_PATH=$local_sybase_root/new
-            SYBASE_PATH=$net_sybase_root/new
-         else
-            with_sybase_new=no
-         fi
+         with_sybase_local=$local_sybase_root/new
+      elif test -f "$local_sybase_root/$default_pointer" ; then
+         with_sybase_local=`cat $local_sybase_root/$default_pointer`
+         resolve_sybase=false
+      else
+         with_sybase_local=$local_sybase_root/current
       fi
-
-      if test -z "$SYBASE_PATH" ; then
-         if test -f "$net_sybase_root/$default_pointer" ; then
-            SYBASE_LCL_PATH=
-            SYBASE_PATH=`cat $local_sybase_root/$default_pointer`
-            resolve_sybase=false
-         elif test -d "$net_sybase_root/current$NCBI_PLATFORM_BITS" ; then
-            SYBASE_LCL_PATH=$local_sybase_root/current$NCBI_PLATFORM_BITS
-            SYBASE_PATH=$net_sybase_root/current$NCBI_PLATFORM_BITS
-         elif test -d "$net_sybase_root/current" ; then
-            SYBASE_LCL_PATH=$local_sybase_root/current
-            SYBASE_PATH=$net_sybase_root/current
-         else
-            SYBASE_LCL_PATH=
-            SYBASE_PATH=$SYBASE
-         fi
+      if test -d "$with_sybase_local$NCBI_PLATFORM_BITS" ; then
+         with_sybase_local=$with_sybase_local$NCBI_PLATFORM_BITS
       fi
+   fi # default paths
+   if test -d "$with_sybase_local" ; then
+      SYBASE_PATH=$with_sybase_local
    fi
 
    # Lock in the version we found, ignoring symlinks further up
@@ -5342,38 +5292,10 @@ if test "$with_sybase" != "no" ; then
       esac
    fi
 
-   if test -d "$SYBASE_LCL_PATH"  &&  $resolve_sybase ; then
-      # SYBASE_LCL_PATH_=`cd $SYBASE_LCL_PATH && /bin/pwd`
-      SYBASE_LCL_PATH_=`ls -ld $SYBASE_LCL_PATH | sed -ne 's/.* -> //p'`
-      case "$SYBASE_LCL_PATH_" in
-         '' ) ;;
-         /* )
-            SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
-            SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_LCL_VERSION
-            test -d "$SYBASE_LCL_PATH"  ||  SYBASE_LCL_PATH=$SYBASE_LCL_PATH_
-            ;;
-         * )
-            orig_parent=`dirname $SYBASE_LCL_PATH`
-            SYBASE_LCL_VERSION=`basename $SYBASE_LCL_PATH_`
-            SYBASE_LCL_PATH=$orig_parent/$SYBASE_LCL_VERSION
-            test -d "$SYBASE_LCL_PATH"  || \
-               SYBASE_LCL_PATH=$orig_parent/$SYBASE_LCL_PATH_
-            ;;
-      esac
-   elif test -n "$SYBASE_LCL_PATH" ; then
-      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_VERSION
-   fi
-
-   if test -n "$SYBASE_VERSION" -a -n "$SYBASE_LCL_VERSION" \
-        -a "$SYBASE_VERSION" != "$SYBASE_LCL_VERSION" ; then
-      AC_MSG_WARN([ignoring inconsistent local Sybase symlink: $SYBASE_LCL_VERSION vs. $SYBASE_VERSION])
-      SYBASE_LCL_PATH=`dirname $SYBASE_LCL_PATH`/$SYBASE_VERSION
-   fi
-
    if test -n "$SYBASE" ; then
-      if test -d "$net_sybase_root" -o -d "$local_sybase_root" ; then
+      if test -d "$local_sybase_root" ; then
          case $SYBASE in
-            $net_sybase_root/* | $local_sybase_root/* ) ;;
+            $local_sybase_root/* ) ;;
             * ) AC_MSG_WARN([ignoring non-standard SYBASE setting: $SYBASE]) ;;
             # Ignored regardless, but standard values are not so concerning.
          esac
@@ -5438,13 +5360,7 @@ if test "$with_sybase" != "no" ; then
 
    # deduce conf.macro: SYBASE_INCLUDE, SYBASE_LIBS, SYBASE_DLLS, SYBASE_DBLIBS
    SYBASE_INCLUDE="-I$SYBASE_PATH$ocs/include $SYBASE_INCLUDE"
-   if test -z "$SYBASE_LCL_PATH" ; then
-      NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LIBPATH)
-   else
-      SYBASE_LCL_LIBPATH="$SYBASE_LCL_PATH$ocs/${sybase_lib}"
-      NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH)
-      SYBASE_INCLUDE="-I$SYBASE_LCL_PATH$ocs/include $SYBASE_INCLUDE"
-   fi
+   NCBI_RPATHIFY(SYBASE_LPATH, $SYBASE_LIBPATH)
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
@@ -5506,7 +5422,6 @@ if test "$with_sybase" = no; then
 fi
 
 SYBASE_LPATH=
-SYBASE_LCL_LIBPATH=
 SYBASE_LIBLIST=
 SYBASE_DLLLIST=
 SYBASE_LIBPATH=
