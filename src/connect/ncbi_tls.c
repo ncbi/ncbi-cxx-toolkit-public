@@ -58,6 +58,7 @@ extern "C" {
     static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push);
 }
 #endif /*__cplusplus*/
+/*ARGSUSED*/
 static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 {
     CORE_LOG_X(41, eLOG_Critical, "SSL has been explicitly disabled");
@@ -87,8 +88,9 @@ static FSSLSetup x_NcbiSetupTls(void)
             s_Setup = NcbiSetupMbedTls;
         else if (strcasecmp(str, "GNUTLS")  == 0)
             s_Setup = NcbiSetupGnuTls;
-        else if (!(none = strcasecmp(str, "none") == 0 ? 1/*T*/ : 0/*F*/)
-                 &&  (ConnNetInfo_Boolean(str)  ||  !*str)) {
+        else if (!*str
+                 ||  (!(none = strcasecmp(str, "none") == 0 ? 1/*T*/ : 0/*F*/)
+                      &&  ConnNetInfo_Boolean(str))) {
             s_Setup = NcbiSetupDefaultTls;
             if (!s_Setup) {
                 CORE_LOG_X(44, eLOG_Critical,
