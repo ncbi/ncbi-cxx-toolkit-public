@@ -43,16 +43,18 @@
 
 #if defined(HAVE_LIBMBEDTLS)  ||  defined(NCBI_CXX_TOOLKIT)
 
-#    include <mbedtls/ctr_drbg.h>
-#    include <mbedtls/debug.h>
-#    include <mbedtls/entropy.h>
-#    include <mbedtls/error.h>
-#    include <mbedtls/pk.h>
-#    include <mbedtls/net_sockets.h>
-#    include <mbedtls/ssl.h>
-#    include <mbedtls/threading.h>
-#    include <mbedtls/version.h>
+#  include <mbedtls/ctr_drbg.h>
+#  include <mbedtls/debug.h>
+#  include <mbedtls/entropy.h>
+#  include <mbedtls/error.h>
+#  include <mbedtls/pk.h>
+#  include <mbedtls/net_sockets.h>
+#  include <mbedtls/ssl.h>
+#  include <mbedtls/threading.h>
+#  include <mbedtls/version.h>
+#  ifdef MBEDTLS_PSA_CRYPTO_C
 #    include <psa/crypto.h>
+#  endif /*MBEDTLS_PSA_CRYPTO_C*/
 
 #  if   defined(ENOTSUP)
 #    define NCBI_NOTSUPPORTED  ENOTSUP
@@ -95,7 +97,7 @@ static void mbtls_user_mutex_deinit(MT_LOCK* lock)
         } else
             *lock = 0;
     } else
-        CORE_LOG_X(50, eLOG_Warning, "NULL MT_LOCK deinit in MBEDTLS");
+        CORE_LOG_X(20, eLOG_Warning, "NULL MT_LOCK deinit in MBEDTLS");
 }
 static int mbtls_user_mutex_lock(MT_LOCK* lock)
 {
@@ -206,7 +208,7 @@ static EIO_Status x_RetryStatus(SOCK sock, EIO_Event direction)
             : eIO_Closed;
     } else
         status = SOCK_Status(sock, direction);
-    return status == eIO_Success ? eIO_Timeout : status;
+    return status;
 }
 
 
@@ -244,6 +246,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 #ifdef MBEDTLS_ERR_SSL_NO_USABLE_CIPHERSUITE
     case MBEDTLS_ERR_SSL_NO_USABLE_CIPHERSUITE:
 #endif
+    case MBEDTLS_ERR_CIPHER_FEATURE_UNAVAILABLE:
     case MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE:
 #ifdef MBEDTLS_ERR_SSL_UNKNOWN_CIPHER
     case MBEDTLS_ERR_SSL_UNKNOWN_CIPHER:
@@ -286,7 +289,9 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
         break;
     }
 
-    assert(status != eIO_Success);
+    assert(error == MBEDTLS_ERR_SSL_WANT_READ   ||
+           error == MBEDTLS_ERR_SSL_WANT_WRITE  ||
+           status != eIO_Success);
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
                      error, IO_StatusStr(status)));
@@ -365,11 +370,15 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
     mbedtls_ssl_context* session;
     int err;
 
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACE("MbedTlsCreate(): Enter");
+
     if (end == MBEDTLS_SSL_IS_SERVER) {
         CORE_LOG_X(2, eLOG_Critical,
                    "Server-side SSL not yet supported with MBEDTLS");
         *error = NCBI_NOTSUPPORTED;
-        return 0;
+        session = 0;
+        goto out;
     }
 
     if (ctx->cred) {
@@ -381,18 +390,16 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
                          ? "Foreign"
                          : "Empty"));
             *error = EINVAL;
-            return 0;
+            session = 0;
+            goto out;
         }
         xcred = (struct SNcbiMbedTlsCred*) ctx->cred->data;
     } else
         xcred = 0;
 
-    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-        CORE_TRACE("MbedTlsCreate(): Enter");
-
     if (!(session = (mbedtls_ssl_context*) malloc(sizeof(*session)))) {
         *error = errno;
-        return 0;
+        goto out;
     }
     mbedtls_ssl_init(session);
 
@@ -405,15 +412,51 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
         mbedtls_ssl_free(session);
         free(session);
         *error = err;
-        return 0;
+        session = 0;
+        goto out;
     }
 
     mbedtls_ssl_set_bio(session, ctx, x_MbedTlsPush, x_MbedTlsPull, 0);
- 
+
+out:
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACEF(("MbedTlsCreate(): Leave(%p)", session));
 
     return session;
+}
+
+
+static char* x_MbedTlsDesc(const mbedtls_ssl_context* session)
+{
+    const char* alpn     = mbedtls_ssl_get_alpn_protocol(session);
+    size_t      alpn_len = alpn ? strlen(alpn) : 0;
+    const char* sslv     = mbedtls_ssl_get_version(session);
+    size_t      sslv_len = sslv ? strlen(sslv) : 0;
+    const char* ciph     = mbedtls_ssl_get_ciphersuite(session);
+    size_t      ciph_len = ciph ? strlen(ciph) : 0;
+    size_t           len = alpn_len + sslv_len + ciph_len;
+    char*       str;
+    if (!len  ||  !(str = (char*) malloc(len + 3/*seps+EOL*/)))
+        return 0;
+    len = 0;
+    if (alpn_len) {
+        memcpy(str, alpn, alpn_len);
+        len = alpn_len;
+    }
+    if (sslv_len) {
+        if (len)
+            str[len++] = '/';
+        memcpy(str + len, sslv, sslv_len);
+        len += sslv_len;
+    }
+    if (ciph_len) {
+        if (len)
+            str[len++] = '/';
+        memcpy(str + len, ciph, ciph_len);
+        len += ciph_len;
+    }
+    str[len] = '\0';
+    return str;
 }
 
 
@@ -430,48 +473,15 @@ static EIO_Status s_MbedTlsOpen(void* session, int* error, char** desc)
     if (x_error < 0) {
         status = x_ErrorToStatus(x_error, (mbedtls_ssl_context*) session,
                                  eIO_Open);
+        if (status == eIO_Success)
+            status  = eIO_Unknown;
         *error = x_error;
         if (desc)
             *desc = 0;
     } else {
-        if (desc) {
-            const char* alpn
-                = mbedtls_ssl_get_alpn_protocol((const mbedtls_ssl_context*)
-                                                session);
-            size_t alpn_len = alpn ? strlen(alpn) : 0;
-            const char* sslv 
-                = mbedtls_ssl_get_version      ((const mbedtls_ssl_context*)
-                                                session);
-            size_t sslv_len = sslv ? strlen(sslv) : 0;
-            const char* ciph
-                = mbedtls_ssl_get_ciphersuite  ((const mbedtls_ssl_context*)
-                                                session);
-            size_t ciph_len = ciph ? strlen(ciph) : 0;
-            size_t len = alpn_len + sslv_len + ciph_len;
-            if (!len)
-                *desc = 0;
-            else if ((*desc = (char*) malloc(len + 3/*seps+EOL*/)) != 0) {
-                char* ptr = *desc;
-                if (alpn_len) {
-                    memcpy(ptr, alpn, alpn_len);
-                    ptr += alpn_len;
-                }
-                if (sslv_len) {
-                    if (ptr != *desc)
-                        *ptr++ = '/';
-                    memcpy(ptr, sslv, sslv_len);
-                    ptr += sslv_len;
-                }
-                if (ciph_len) {
-                    if (ptr != *desc)
-                        *ptr++ = '/';
-                    memcpy(ptr, ciph, ciph_len);
-                    ptr += ciph_len;
-                }
-                *ptr = '\0';
-            }
-        }
         status = eIO_Success;
+        if (desc)
+            *desc = x_MbedTlsDesc((mbedtls_ssl_context*) session);
     }
 
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
@@ -549,8 +559,9 @@ static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
     EIO_Status status;
     int        x_read;
 
-    assert(session);
+    assert(session  &&  buf  &&  n_todo);
 
+again:
     x_read = mbedtls_ssl_read((mbedtls_ssl_context*) session,
                               (unsigned char*) buf, n_todo);
     assert(x_read < 0  ||  (size_t) x_read <= n_todo);
@@ -558,6 +569,8 @@ static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
     if (x_read <= 0) {
         status = x_ErrorToStatus(x_read, (mbedtls_ssl_context*) session,
                                  eIO_Read);
+        if (status == eIO_Success  &&  x_read == MBEDTLS_ERR_SSL_WANT_READ)
+            goto again;
         *error = x_read;
         x_read = 0;
     } else
@@ -574,8 +587,6 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
     EIO_Status status;
     int        x_written;
 
-    assert(session);
-
     x_written = mbedtls_ssl_write((mbedtls_ssl_context*) session,
                                   (const unsigned char*) data, n_todo);
     assert(x_written < 0  ||  (size_t) x_written <= n_todo);
@@ -583,6 +594,8 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
     if (x_written <= 0) {
         status = x_ErrorToStatus(x_written, (mbedtls_ssl_context*) session,
                                  eIO_Write);
+        if (status == eIO_Success)
+            status  = eIO_Unknown;
         *error = x_written;
         x_written = 0;
     } else
@@ -599,6 +612,8 @@ static EIO_Status s_MbedTlsWrite(void* session, const void* data,
     size_t max_size = mbedtls_ssl_get_max_out_record_payload
         ((mbedtls_ssl_context*) session);
     EIO_Status status;
+
+    assert(session  &&  data  &&  n_todo);
 
     *n_done = 0;
 
@@ -625,6 +640,7 @@ static EIO_Status s_MbedTlsWrite(void* session, const void* data,
 /*ARGSUSED*/
 static EIO_Status s_MbedTlsClose(void* session, int how/*unused*/, int* error)
 {
+    EIO_Status status;
     int x_error;
 
     assert(session);
@@ -634,14 +650,16 @@ static EIO_Status s_MbedTlsClose(void* session, int how/*unused*/, int* error)
 
     x_error = mbedtls_ssl_close_notify((mbedtls_ssl_context*) session);
 
-    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-        CORE_TRACEF(("MbedTlsClose(%p): Leave", session));
-
     if (x_error) {
         *error = x_error;
-        return eIO_Unknown;
-    }
-    return eIO_Success;
+        status = eIO_Unknown;
+    } else
+        status = eIO_Success;
+
+    CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
+        CORE_TRACEF(("MbedTlsClose(%p): Leave(%d)", session, status));
+
+    return status;
 }
 
 
@@ -704,13 +722,18 @@ static EIO_Status x_InitLocking(void)
 }
 
 
-static void x_MbedTlsExit(void)
+/*ARGSUSED*/
+static void x_MbedTlsExit(int/*bool*/ nopsa)
 {
     s_Push = 0;
     s_Pull = 0;
 
     mbedtls_ctr_drbg_free(&s_MbedTlsCtrDrbg);
     mbedtls_entropy_free(&s_MbedTlsEntropy);
+#ifdef MBEDTLS_PSA_CRYPTO_C
+    if (!nopsa)
+        mbedtls_psa_crypto_free();
+#endif /*MBEDTLS_PSA_CRYPTO_C*/
     mbedtls_ssl_config_free(&s_MbedTlsConf);
     mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
     memset(&s_MbedTlsCtrDrbg, 0, sizeof(s_MbedTlsCtrDrbg));
@@ -732,11 +755,15 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         "Embedded "
 #  endif /*HAVE_LIBMBEDTLS*/
         "MBEDTLS";
+#ifdef MBEDTLS_PSA_CRYPTO_C
+    psa_status_t psa_status;
+#endif /*MBEDTLS_PSA_CRYPTO_C*/
     EIO_Status status;
     char version[80];
     const char* val;
     char buf[32];
-    psa_status_t psa_status;
+
+    CORE_TRACE("MbedTlsInit(): Enter");
 
     mbedtls_version_get_string(version);
     if (strcasecmp(MBEDTLS_VERSION_STRING, version) != 0) {
@@ -746,10 +773,10 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         assert(0);
     }
 
-    CORE_TRACE("MbedTlsInit(): Enter");
-
-    if (!pull  ||  !push)
-        return eIO_InvalidArg;
+    if (!pull  ||  !push) {
+        status = eIO_InvalidArg;
+        goto out;
+    }
 
     mbedtls_ssl_config_init(&s_MbedTlsConf);
     mbedtls_ssl_config_defaults(&s_MbedTlsConf,
@@ -789,10 +816,10 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
         CORE_TRACE("MbedTlsInit(): Go-on");
 
     if ((status = x_InitLocking()) != eIO_Success) {
-        mbedtls_ssl_config_free(&s_MbedTlsConf);
         mbedtls_debug_set_threshold(s_MbedTlsLogLevel = 0);
+        mbedtls_ssl_config_free(&s_MbedTlsConf);
         memset(&s_MbedTlsConf, 0, sizeof(s_MbedTlsConf));
-        return status;
+        goto out;
     }
 
     mbedtls_entropy_init(&s_MbedTlsEntropy);
@@ -800,24 +827,36 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
 
     if (mbedtls_ctr_drbg_seed(&s_MbedTlsCtrDrbg, mbedtls_entropy_func,
                               &s_MbedTlsEntropy, 0, 0) != 0) {
-        x_MbedTlsExit();
-        return eIO_Unknown;
+        x_MbedTlsExit(1/*nopsa*/);
+        status = eIO_Unknown;
+        goto out;
     }
     mbedtls_ssl_conf_rng(&s_MbedTlsConf,
                          mbedtls_ctr_drbg_random, &s_MbedTlsCtrDrbg);
 
+#ifdef MBEDTLS_PSA_CRYPTO_C
     if ((psa_status = psa_crypto_init()) != PSA_SUCCESS) {
-        CORE_LOGF_X(51, eLOG_Error,
-                    ("psa_crypto_init failed with status %d", psa_status));
-        return eIO_NotSupported;
+        extern int psa_generic_status_to_mbedtls(psa_status_t status);
+        int err = psa_generic_status_to_mbedtls(psa_status);
+        char errbuf[80];
+        mbedtls_strerror(err, errbuf, sizeof(errbuf));
+        CORE_LOG_ERRNO_EXX(13, eLOG_Error, psa_status, errbuf,
+                           "Platform Security Architecture (PSA) failed to initialize");
+        x_MbedTlsExit(1/*nopsa*/);
+        status = eIO_Unknown;
+        goto out;
     }
+#endif /*MBEDTLS_PSA_CRYPTO_C*/
 
     s_Pull = pull;
     s_Push = push;
+    status = eIO_Success;
 
+out:
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-        CORE_TRACE("MbedTlsInit(): Leave");
-    return eIO_Success;
+        CORE_TRACEF(("MbedTlsInit(): Leave(%d)", status));
+
+    return status;
 }
 
 
@@ -827,7 +866,7 @@ static void s_MbedTlsExit(void)
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
         CORE_TRACE("MbedTlsExit(): Enter");
 
-    x_MbedTlsExit();
+    x_MbedTlsExit(0/*psa as well*/);
 
     CORE_TRACE("MbedTlsExit(): Leave");
 }
