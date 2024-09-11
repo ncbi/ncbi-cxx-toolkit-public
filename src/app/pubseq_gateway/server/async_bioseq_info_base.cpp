@@ -67,7 +67,7 @@ CPSGS_AsyncBioseqInfoBase::~CPSGS_AsyncBioseqInfoBase()
 void
 CPSGS_AsyncBioseqInfoBase::MakeRequest(SBioseqResolution &&  bioseq_resolution)
 {
-    m_BioseqResolution = move(bioseq_resolution);
+    m_BioseqResolution = std::move(bioseq_resolution);
     x_MakeRequest();
 }
 
@@ -201,7 +201,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                                   m_BioseqRequestStart);
         app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
         m_BioseqResolution.SetBioseqInfo(records[0]);
-        m_FinishedCB(move(m_BioseqResolution));
+        m_FinishedCB(std::move(m_BioseqResolution));
         return;
     }
     // Here: there are more than one records so a record will be picked for
@@ -244,7 +244,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
                               m_BioseqRequestStart);
     app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
     m_BioseqResolution.SetBioseqInfo(records[index]);
-    m_FinishedCB(move(m_BioseqResolution));
+    m_FinishedCB(std::move(m_BioseqResolution));
 }
 
 
@@ -282,7 +282,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             m_BioseqResolution.SetBioseqInfo(records[decision.index]);
 
             // Data callback
-            m_FinishedCB(move(m_BioseqResolution));
+            m_FinishedCB(std::move(m_BioseqResolution));
             break;
         case CRequestStatus::e404_NotFound:
             if (m_NeedTrace)

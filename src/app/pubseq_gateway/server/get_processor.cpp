@@ -399,7 +399,7 @@ void CPSGS_GetProcessor::x_GetBlobFinalStage(void)
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(cass_connection,
                                               m_BlobId.m_Keyspace->keyspace,
-                                              move(blob_record),
+                                              std::move(blob_record),
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
     } else {
@@ -461,7 +461,7 @@ void CPSGS_GetProcessor::x_GetBlobFinalStage(void)
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(fetch_details));
+    m_FetchDetails.push_back(std::move(fetch_details));
 
     // Initiate cassandra request
     load_task->Wait();
@@ -563,7 +563,7 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    bool        overall_final_state = false;
+    /* bool        overall_final_state = false; */
 
     while (true) {
         auto initial_size = m_FetchDetails.size();
@@ -574,7 +574,7 @@ void CPSGS_GetProcessor::x_Peek(bool  need_wait)
                     continue;
                 }
                 details->SetInPeek(true);
-                overall_final_state |= x_Peek(details, need_wait);
+                /* overall_final_state |= */ x_Peek(details, need_wait);
                 details->SetInPeek(false);
             }
         }

@@ -240,6 +240,8 @@ class CProcessorRequestTimeSeries : public CTimeSeriesBase
 {
     public:
         CProcessorRequestTimeSeries();
+        virtual ~CProcessorRequestTimeSeries() = default;
+
         void Add(void);
         void Rotate(void);
         void Reset(void);

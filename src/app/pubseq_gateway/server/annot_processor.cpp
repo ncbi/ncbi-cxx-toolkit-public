@@ -276,7 +276,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
 
-        m_FetchDetails.push_back(move(details));
+        m_FetchDetails.push_back(std::move(details));
     }
 
     // Initiate the retrieval loop
@@ -413,7 +413,7 @@ CPSGS_AnnotProcessor::x_OnNamedAnnotData(CNAnnotRecord &&  annot_record,
     // Memorize a good annotation
     m_Success.insert(annot_record.GetAnnotName());
 
-    x_SendAnnotDataToClient(move(annot_record), sat);
+    x_SendAnnotDataToClient(std::move(annot_record), sat);
     x_Peek(false);
     return true;
 }
@@ -664,7 +664,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     if (blob_prop_cache_lookup_result == ePSGS_CacheHit) {
         load_task = new CCassBlobTaskLoadBlob(blob_id.m_Keyspace->GetConnection(),
                                               blob_id.m_Keyspace->keyspace,
-                                              move(blob_record),
+                                              std::move(blob_record),
                                               false, nullptr);
         fetch_details->SetLoader(load_task);
     } else {
@@ -717,7 +717,7 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(fetch_details));
+    m_FetchDetails.push_back(std::move(fetch_details));
 
     // Initiate cassandra request
     load_task->Wait();

@@ -560,7 +560,7 @@ int CPubseqGatewayApp::Run(void)
             }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/favicon.ico",
-            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            [/*this*/](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
                 // It's a browser, most probably admin request
                 reply->SetContentType(ePSGS_ImageMime);

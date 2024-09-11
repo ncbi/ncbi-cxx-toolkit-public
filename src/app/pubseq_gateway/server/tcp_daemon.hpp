@@ -180,7 +180,7 @@ private:
     std::atomic_uint_fast16_t       m_connection_count;
 
     friend class CTcpWorkersList;
-    friend class CTcpWorker;
+    friend struct CTcpWorker;
 
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);

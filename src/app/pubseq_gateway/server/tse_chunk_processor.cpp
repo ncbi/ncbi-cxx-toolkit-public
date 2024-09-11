@@ -436,7 +436,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             CCassBlobTaskLoadBlob *         load_task =
                 new CCassBlobTaskLoadBlob(cass_connection,
                                           chunk_blob_id.m_Keyspace->keyspace,
-                                          move(blob_record),
+                                          std::move(blob_record),
                                           true, nullptr);
             fetch_details->SetLoader(load_task);
             load_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
@@ -467,7 +467,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
                     IPSGS_Processor::m_Request->GetStartTimestamp());
             }
 
-            m_FetchDetails.push_back(move(fetch_details));
+            m_FetchDetails.push_back(std::move(fetch_details));
             load_task->Wait();  // Initiate cassandra request
             return;
         } while (false);
@@ -531,7 +531,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(fetch_details));
+    m_FetchDetails.push_back(std::move(fetch_details));
     load_task->Wait();  // Initiate cassandra request
 }
 
@@ -690,7 +690,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
         // Blob props are already here
         load_task = new CCassBlobTaskLoadBlob(cass_connection,
                                               m_SatInfoChunkVerBlobId.m_Keyspace->keyspace,
-                                              move(blob_record),
+                                              std::move(blob_record),
                                               true, nullptr);
     }
 
@@ -723,7 +723,7 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(fetch_details));
+    m_FetchDetails.push_back(std::move(fetch_details));
     load_task->Wait();  // Initiate cassandra request
 }
 
@@ -1119,7 +1119,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
         load_task = new CCassBlobTaskLoadBlob(
                             cass_connection,
                             chunk_blob_id.m_Keyspace->keyspace,
-                            move(blob_record),
+                            std::move(blob_record),
                             true, nullptr);
     } else {
         load_task = new CCassBlobTaskLoadBlob(
@@ -1162,7 +1162,7 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
-    m_FetchDetails.push_back(move(cass_blob_fetch));
+    m_FetchDetails.push_back(std::move(cass_blob_fetch));
     load_task->Wait();
 }
 
@@ -1293,7 +1293,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call reply->Send()  to send what we have if it is ready
-    bool        overall_final_state = false;
+    /* bool        overall_final_state = false; */
 
     while (true) {
         auto initial_size = m_FetchDetails.size();
@@ -1304,7 +1304,7 @@ void CPSGS_TSEChunkProcessor::x_Peek(bool  need_wait)
                     continue;
                 }
                 details->SetInPeek(true);
-                overall_final_state |= x_Peek(details, need_wait);
+                /* overall_final_state |= */ x_Peek(details, need_wait);
                 details->SetInPeek(false);
             }
         }

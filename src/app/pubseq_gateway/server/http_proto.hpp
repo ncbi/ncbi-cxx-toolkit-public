@@ -47,7 +47,7 @@ class CHttpConnection;
 class CHttpRequest;
 class CPSGS_Reply;
 class CTcpDaemon;
-class CTcpWorker;
+struct CTcpWorker;
 
 void GetSSLSettings(bool &  enabled,
                     string &  cert_file,

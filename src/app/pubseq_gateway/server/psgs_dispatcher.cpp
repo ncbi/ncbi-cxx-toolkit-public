@@ -101,7 +101,7 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
     m_ProcessorConcurrency[index].m_Limit = limit;
 
     m_RegisteredProcessorGroups.push_back(processor_group_name);
-    m_RegisteredProcessors.push_back(move(processor));
+    m_RegisteredProcessors.push_back(std::move(processor));
 }
 
 
@@ -314,7 +314,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         size_t      bucket_index = x_GetBucketIndex(request_id);
         m_GroupsLock[bucket_index].lock();
         m_ProcessorGroups[bucket_index].insert(m_ProcessorGroups[bucket_index].end(),
-                                               move(req_grp));
+                                               std::move(req_grp));
         m_GroupsLock[bucket_index].unlock();
     }
 

@@ -84,7 +84,7 @@ class CNamedAnnotationCallback
             }
 
             ++m_AnnotCount;
-            return m_NamedAnnotationCB(move(annot_record),
+            return m_NamedAnnotationCB(std::move(annot_record),
                                        last, m_FetchDetails, m_Sat);
         }
 
