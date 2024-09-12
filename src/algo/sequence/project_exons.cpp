@@ -1672,49 +1672,64 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(
 
 
 // GP-38765
-// Given projected cds-loc, adjust first chunk of first exon and
-// last chunk of last exon to be of length at least 3bp, 
-// if possible, as not to eat into the start and stop codons.
-static CRef<CSeq_loc> PreserveTerminalCodons(CRef<CSeq_loc> exons_loc)
+// Given projected rna orcds-loc, shift the micro-intron downstream|upstream
+// for start|stop codon if the terminal chunk is less than 3bp (partial codon).
+static CRef<CSeq_loc> PreserveTerminalCodons(CRef<CSeq_loc> exons_loc, TSeqPos cds_start, TSeqPos cds_stop)
 {
-    if (!(   
-             exons_loc->IsMix()        // multi-exon
-          || exons_loc->IsPacked_int() // single-exon with parts
-        ))
-    {
+    if (cds_start == kInvalidSeqPos && cds_stop == kInvalidSeqPos) {
         return exons_loc;
+    }
+
+    bool is_minus_strand = exons_loc->GetStrand() == eNa_strand_minus;
+
+    // convert to biological
+    if (exons_loc->GetStrand() == eNa_strand_minus && cds_start < cds_stop) {
+        std::swap(cds_start, cds_stop);
     }
 
     const auto orig_len = sequence::GetLength(*exons_loc, NULL);
     (void)orig_len;
 
-    if (auto& first_exon = exons_loc->IsMix() ? exons_loc->SetMix().Set().front() : exons_loc;
-           !exons_loc->IsPartialStart(eExtreme_Biological)
-        && first_exon->IsPacked_int()
-        && first_exon->GetPacked_int().Get().size() >= 2
-    ) {
-        auto& chunks = first_exon->SetPacked_int().Set();
-
-        if (auto& next_chunk = **std::next(chunks.begin());
-            chunks.front()->GetLength() < 3 && next_chunk.GetLength() > 3
-        ) {
-            NTweakExon::AdjustBioStop(*chunks.front(), 3);
-            NTweakExon::AdjustBioStart(next_chunk, 3);
+    CSeq_loc_mix loc_mix{};
+    loc_mix.Set().push_back(exons_loc);
+    auto& exons = exons_loc->IsMix() ? exons_loc->SetMix().Set() : loc_mix.Set();
+    
+    for (auto it = exons.begin(); it != exons.end(); ++it) {
+        CSeq_loc& exon = **it;
+        if (!exon.IsPacked_int() || exon.GetPacked_int().Get().size() < 2) {
+            continue;
         }
-    }
+        // dealing with multipart exon (with micro-introns)
 
-    if (auto& last_exon = exons_loc->IsMix() ? exons_loc->SetMix().Set().back() : exons_loc;
-           !exons_loc->IsPartialStop(eExtreme_Biological)
-        && last_exon->IsPacked_int()
-        && last_exon->GetPacked_int().Get().size() >= 2
-    ) {
-        auto& chunks = last_exon->SetPacked_int().Set();
+        auto& chunks = exon.SetPacked_int().Set();
 
-        if (auto& prev_chunk = **std::next(chunks.rbegin());
-            prev_chunk.GetLength() > 3 && chunks.back()->GetLength() < 3
-        ) {
-            NTweakExon::AdjustBioStop(prev_chunk, -3);
-            NTweakExon::AdjustBioStart(*chunks.back(), -3);
+        for (auto it = chunks.begin(); it != chunks.end(); ++it) {
+            auto      ivl = *it;
+            auto prev_ivl = it == chunks.begin()          ? CRef<CSeq_interval>{} : *std::prev(it);
+            auto next_ivl = it == std::prev(chunks.end()) ? CRef<CSeq_interval>{} : *std::next(it);
+
+            auto is_overlapping = [&](TSeqPos pos)
+            {
+                return ivl->GetFrom() <= pos && pos <= ivl->GetTo();
+            };
+
+            if (   is_overlapping(cds_start)                               // 1st bp of start-codon
+                && !is_overlapping(cds_start + (is_minus_strand ? -2 : 2)) // 3rd bp of start codon
+                && next_ivl
+                && next_ivl->GetLength() > 3)
+            {
+                NTweakExon::AdjustBioStop(*ivl, 3);
+                NTweakExon::AdjustBioStart(*next_ivl, 3);
+            }
+
+            if (   is_overlapping(cds_stop)                               // 3rd bp of stop-codon
+                && !is_overlapping(cds_stop - (is_minus_strand ? -2 : 2)) // 1st bp of stop-codon
+                && prev_ivl
+                && prev_ivl->GetLength() > 3)
+            {
+                NTweakExon::AdjustBioStop(*prev_ivl, -3);
+                NTweakExon::AdjustBioStart(*ivl, -3);
+            }
         }
     }
 
@@ -1761,10 +1776,12 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
 
     // note, if there's no product-cds-loc, 
     // this will collapse discontinuities in every exon
-    return CollapseDiscontinuitiesInUTR(
-            *projected_rna_loc, 
-            cds_start, 
-            cds_stop);
+    return 
+        PreserveTerminalCodons(
+            CollapseDiscontinuitiesInUTR(
+                *projected_rna_loc, 
+                cds_start, cds_stop),
+            cds_start, cds_stop);
 }
 
 CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
@@ -1772,11 +1789,15 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
         const CSeq_loc& product_cds_loc,
         bool convert_overlaps)
 {
+    auto loc = ProjectExons(
+        spliced_aln, 
+        CConstRef<CSeq_loc>(&product_cds_loc),
+        convert_overlaps);
+
     return PreserveTerminalCodons(
-        ProjectExons(
-            spliced_aln, 
-            CConstRef<CSeq_loc>(&product_cds_loc),
-            convert_overlaps));
+        loc,
+        loc->GetStart(eExtreme_Positional),
+        loc->GetStop(eExtreme_Positional));
 }
 
 
