@@ -116,6 +116,7 @@ public:
     static size_t CheckDateFormat(const string& date_string);
 
     static string GetCollectionDateProblem (const string& date_string);
+    static string GetCollectionDateProblem (const string& date_string, bool& is_null_and_virus, bool is_influenza_or_Sars2);
     static bool IsCollectionDateAfterTime(const string& collection_date, time_t t, bool& bad_format);
     static bool IsCollectionDateAfterTime(const CDate& collection_date, time_t t);
     static bool IsCollectionDateAfterTime(const CDate& collection_date, CTime& ctime);
@@ -303,6 +304,7 @@ public:
 
     static bool IsValid(const string& country);
     static bool IsValid(const string& country, bool& is_miscapitalized);
+    static bool IsValid(const string& country, bool& is_miscapitalized, bool& is_null_and_virus, bool is_influenza_or_Sars2);
     static bool WasValid(const string& country);
     static bool WasValid(const string& country, bool& is_miscapitalized);
     static string CapitalizeFirstLetterOfEveryWord (const string &phrase);
