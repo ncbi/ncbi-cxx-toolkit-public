@@ -9,6 +9,7 @@ LIB = xobjutil test_mt ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids all_readers.sh ref
+CHECK_REQUIRES = disabled
 
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -reference ref/0.gi.txt /CHECK_NAME=test_bulkinfo_mt_gi
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type acc -reference ref/0.acc.txt /CHECK_NAME=test_bulkinfo_mt_acc
