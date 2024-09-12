@@ -664,6 +664,18 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
             else
                 exon.SetProduct_start().SetNucpos() += aa_offset*3;
         }
+
+        //
+        // GP-2513 / PGAP-10124:
+        // MaximizeTranslation() alters the alignment coordinate system to
+        // unroll genomic insertions where possible, creating an artificial
+        // alignment for which we don't care about the identity
+        //
+        // The goal is to present a capable range on a genomic coordinate
+        // system over which we can consider placing a CDS
+        //
+
+
         if (exon.IsSetParts()) {
             int part_index = 0;
             ERASE_ITERATE (CSpliced_exon::TParts, part_it, exon.SetParts()) {
@@ -676,8 +688,10 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                     } else {
                         if (part_index == 0 && prev_exon_it != spliced_seg.SetExons().end() &&
                             (*prev_exon_it)->IsSetParts()) {
+                            // first part of non-first exon, start on genomic-ins not a multiple of a codon
+                            // hence, there is a hanging portion of this part
                             CSpliced_exon_chunk& prev_chunk = **(*prev_exon_it)->SetParts().rbegin();
-                            if (prev_chunk.Which()==CSpliced_exon_chunk::e_Genomic_ins) {
+                            if (prev_chunk.Which() == CSpliced_exon_chunk::e_Genomic_ins) {
                                 int prev_len = prev_chunk.GetGenomic_ins();
                                 if (prev_len + len >= 3) {
 
@@ -702,10 +716,11 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                                         CRef<CSpliced_exon_chunk> new_chunk(new CSpliced_exon_chunk);
                                         new_chunk->SetDiag(3-prev_len);
                                         exon.SetParts().insert(part_it, new_chunk);
-                                        chunk.SetGenomic_ins(len - (3-prev_len));
+                                        chunk.SetDiag(len - (3-prev_len));
                                     } else {
                                         chunk.SetDiag(len);
                                     }
+
                                     aa_offset += 1; 
                                     len -= 3-prev_len;
                                 }
@@ -713,7 +728,7 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                         }
                         if (len > 3) {
                             CRef<CSpliced_exon_chunk> new_chunk(new CSpliced_exon_chunk);
-                            new_chunk->SetDiag((len/3)*3);
+                            new_chunk->SetDiag(len - (len % 3));
                             exon.SetParts().insert(part_it, new_chunk);
                             chunk.SetGenomic_ins(len % 3);
                         }
@@ -721,6 +736,7 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                     aa_offset += len/3;
                 }
                     break;
+
                 case CSpliced_exon_chunk::e_Product_ins: {
                     int len = chunk.GetProduct_ins();
                     if (len % 3 == 0) {
