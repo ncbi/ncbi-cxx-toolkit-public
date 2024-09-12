@@ -517,6 +517,8 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_TrichDB, "https://trichdb.org/trichdb/app/record/gene/" },
     { CDbtag::eDbtagType_TriTrypDB, "https://tritrypdb.org/tritrypdb/app/record/gene/" },
     { CDbtag::eDbtagType_VEuPathDB, "https://veupathdb.org/gene/" },
+
+    { CDbtag::eDbtagType_NCBIOrtholog, "https://www.ncbi.nlm.nih.gov/gene/" }, // modified below
 })
 
 string CDbtag::GetUrl(void) const
@@ -858,6 +860,10 @@ string CDbtag::GetUrl(const string & genus,
             }
             tag += "&db=" + abbrev;
         }
+        break;
+
+    case CDbtag::eDbtagType_NCBIOrtholog:
+        tag += "/ortholog";
         break;
 
     default:
