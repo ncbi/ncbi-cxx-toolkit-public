@@ -729,7 +729,7 @@ BOOST_AUTO_TEST_CASE(TestCasePreserveTermialCodons)
 
     // Note that the first chunk in the first exon was extended to 3bp,
     // and the second chunk is truncated correspondingly.
-    CRef<CSeq_loc> expected_loc = R"(
+    CRef<CSeq_loc> expected_cds_loc = R"(
 	Seq-loc ::= mix {
 	  packed-int {
 		{
@@ -790,8 +790,72 @@ BOOST_AUTO_TEST_CASE(TestCasePreserveTermialCodons)
 	}
 )"_asn;
 
-    const auto projected_loc = CFeatureGenerator::s_ProjectCDS(*aln, cds_feat->GetLocation(), true);
-	BOOST_CHECK(projected_loc->Equals(*expected_loc));
+    CRef<CSeq_loc> expected_rna_loc = R"(
+    Seq-loc ::= mix {
+      packed-int {
+        {
+          from 21499891,
+          to 21499924,
+          strand minus,
+          id local str "NC_065531.1"
+        },
+        {
+          from 21499788,
+          to 21499888,
+          strand minus,
+          id local str "NC_065531.1"
+        }
+      },
+      int {
+        from 21499594,
+        to 21499709,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21499412,
+        to 21499523,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21499215,
+        to 21499346,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21498905,
+        to 21499142,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21497635,
+        to 21497803,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21497394,
+        to 21497579,
+        strand minus,
+        id local str "NC_065531.1"
+      },
+      int {
+        from 21495897,
+        to 21496202,
+        strand minus,
+        id local str "NC_065531.1"
+      }
+    }
+)"_asn;
+
+    const auto projected_cds_loc = CFeatureGenerator::s_ProjectCDS(*aln, cds_feat->GetLocation(), true);
+	BOOST_CHECK(projected_cds_loc->Equals(*expected_cds_loc));
+
+    const auto projected_rna_loc = CFeatureGenerator::s_ProjectRNA(*aln, Ref(&cds_feat->SetLocation()), true);
+    BOOST_CHECK(projected_rna_loc->Equals(*expected_rna_loc));
 }
 
 BOOST_AUTO_TEST_CASE(TestCaseTrimAlignmentCall)
