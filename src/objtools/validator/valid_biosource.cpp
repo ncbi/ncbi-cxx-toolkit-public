@@ -526,6 +526,8 @@ const CSeq_entry *ctx)
     const COrg_ref& orgref = bsrc.GetOrg();
     const bool hasTaxname = orgref.IsSetTaxname();
 
+    bool isInfluenzaOrSars2 = false;
+
     // look at uncultured required modifiers
     if (hasTaxname) {
         const string & taxname = orgref.GetTaxname();
@@ -547,6 +549,16 @@ const CSeq_entry *ctx)
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyBlankSample,
                 "Blank sample should not be associated with any sequences",
                 obj, ctx);
+        } else if (NStr::StartsWith(taxname, "influenza", NStr::eNocase)) {
+            if (NStr::EqualNocase(taxname, "influenza A virus") ||
+                NStr::EqualNocase(taxname, "influenza B virus") ||
+                NStr::EqualNocase(taxname, "influenza C virus") ||
+                NStr::EqualNocase(taxname, "influenza D virus") ||
+                NStr::EqualNocase(taxname, "influenza E virus")) {
+                isInfluenzaOrSars2 = true;
+            }
+        } else if (NStr::EqualNocase(taxname, "Severe acute respiratory syndrome coronavirus 2")) {
+            isInfluenzaOrSars2 = true;
         }
     }
 
@@ -602,7 +614,7 @@ const CSeq_entry *ctx)
 
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
-        ValidateSubSource(**ssit, obj, ctx, isViral);
+        ValidateSubSource(**ssit, obj, ctx, isViral, isInfluenzaOrSars2);
         if (!(*ssit)->IsSetSubtype()) {
             continue;
         }
@@ -1237,7 +1249,8 @@ void CValidError_imp::ValidateSubSource
 (const CSubSource&    subsrc,
 const CSerialObject& obj,
 const CSeq_entry *ctx,
-const bool isViral)
+const bool isViral,
+const bool isInfluenzaOrSars2)
 {
     if (!subsrc.IsSetSubtype()) {
         PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_BadSubSource,
@@ -1273,8 +1286,9 @@ const bool isViral)
         {
             string countryname = subsrc.GetName();
             bool is_miscapitalized = false;
+            bool is_null_and_virus = false;
             bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
-            if (CCountries::IsValid(countryname, is_miscapitalized)) {
+            if (CCountries::IsValid(countryname, is_miscapitalized, is_null_and_virus, isInfluenzaOrSars2)) {
                 if (is_miscapitalized) {
                     if (use_geo_loc_name) {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadGeoLocNameCapitalization,
@@ -1283,6 +1297,17 @@ const bool isViral)
                     } else {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCapitalization,
                             "Bad country capitalization [" + countryname + "]",
+                            obj, ctx);
+                    }
+                }
+                if (is_null_and_virus) {
+                    if (use_geo_loc_name) {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadNullGeoLocName,
+                            "Null geo_loc_name [" + countryname + "] for influenza or Sars virus",
+                            obj, ctx);
+                    } else {
+                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadNullCountry,
+                            "Null country [" + countryname + "] for influenza or Sars virus",
                             obj, ctx);
                     }
                 }
@@ -1542,9 +1567,16 @@ const bool isViral)
                 "Collection_date format is not in DD-Mmm-YYYY format",
                 obj, ctx);
         } else {
-            string problem = CSubSource::GetCollectionDateProblem(subsrc.GetName());
+            bool is_null_and_virus = false;
+            string problem = CSubSource::GetCollectionDateProblem(subsrc.GetName(), is_null_and_virus, isInfluenzaOrSars2);
             if (!NStr::IsBlank(problem)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, problem, obj, ctx);
+                if (NStr::StartsWith(problem, "Collection_date", NStr::eNocase)) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCollectionDate, problem, obj, ctx);
+                } else if (isInfluenzaOrSars2) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadNullCollectionDate,
+                        "Null collection date [" + problem + "] for influenza or Sars virus",
+                        obj, ctx);
+                }
             }
         }
         break;

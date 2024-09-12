@@ -1001,6 +1001,15 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadGenomeRepresentation,
     { "BadGenomeRepresentation",
       "Genome Representation should not start with 'Partial' in structured comment" } },
+    { eErr_SEQ_DESCR_BadNullGeoLocName,
+    { "BadNullGeoLocName",
+      "A null geo_loc_name should be be present on influenza or Sars virus records." } },
+    { eErr_SEQ_DESCR_BadNullCountry,
+    { "BadNullCountry",
+      "A null country should be be present on influenza or Sars virus records." } },
+    { eErr_SEQ_DESCR_BadNullCollectionDate,
+    { "BadNullCollectionDate",
+      "A null collection date should be be present on influenza or Sars virus records." } },
 
 
     /* SEQ_GENERIC */
