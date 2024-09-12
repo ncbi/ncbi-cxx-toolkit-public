@@ -2,7 +2,7 @@
 
 NCBI_begin_app(test_objmgr_data_mt)
   NCBI_sources(test_objmgr_data_mt)
-  NCBI_requires(FreeTDS)
+  NCBI_requires(FreeTDS disabled)
   NCBI_uses_toolkit_libraries(
     ncbi_xloader_genbank ncbi_xloader_lds2
     ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 test_mt xobjutil
