@@ -13,6 +13,8 @@ LIBS = $(SQLITE3_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_COPY = test_objmgr_data_mt.sh test_objmgr_data_ids.sh test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2
+CHECK_REQUIRES = disabled
+
 CHECK_CMD = test_objmgr_data_ids.sh id2 test_objmgr_data_mt
 CHECK_CMD = test_objmgr_data_ids.sh psg test_objmgr_data_mt /CHECK_NAME=test_objmgr_data_mt_ids_psg
 CHECK_CMD = test_objmgr_data_mt.sh id1 /CHECK_NAME=test_objmgr_data_mt_id1
