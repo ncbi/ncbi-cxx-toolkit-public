@@ -7,3 +7,6 @@ echo '{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "CAP20437
 Check json validity:
 echo testcases.json | json_verify
 
+
+Use a token for HUP data, e.g.:
+NCBI_PSG_AUTH_TOKEN="B856DA....VJQ9;logged-in=true;my-name=vakatov@40ncbi.nlm.nih.gov;persistent=true%40EC239...1_0000SID" ./psg_client.py testcases -service psg13.be-md:10010 -input-file ./testcases.json -report -data-limit 1KB -preview-size 16 -timeout 60 -testcase "HUP biodata of gb|PP445004| (ok)"
