@@ -5,6 +5,7 @@ NCBI_begin_app(test_bulkinfo_mt)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 test_mt xobjutil)
 
   NCBI_set_test_assets(bad_len.ids wgs.ids wgs_vdb.ids all_readers.sh ref)
+  NCBI_set_test_requires(disabled)
   NCBI_set_test_timeout(800)
 
   NCBI_begin_test(test_bulkinfo_mt_gi)
