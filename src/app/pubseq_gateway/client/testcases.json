@@ -26629,8 +26629,8 @@
                 }
             ]
         },
-        "HUP biodata of gb|WMV97217| (ok)": {
-            "description": "HUP biodata of gb|WMV97217| (ok)",
+        "HUP biodata of gb|PP445004| (ok)": {
+            "description": "HUP biodata of gb|PP445004| (ok)",
             "tags": ["id-get", "cassandra", "200", "hup-ok"],
             "requests": [
                 [
@@ -26639,7 +26639,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "gb|WMV97217|",
+                                "gb|PP445004|",
                                 "5"
                             ],
                             "request_flags": [
@@ -26658,26 +26658,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2574876738",
+                            "id": "gi|2695360147",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|WMV97217",
+                                "id": "gb|PP445004",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "aa",
-                        "length": 232,
+                        "molecule_type": "rna",
+                        "length": 6680,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37295152"
+                            "id": "20.37823530"
                         },
                         "tax_id": 0,
-                        "hash": 987162254,
-                        "date_changed": "09/08/2023 11:54:03",
-                        "gi": 2574876738
+                        "hash": 195649713,
+                        "date_changed": "03/07/2024 21:58:14",
+                        "gi": 2695360147
                     }
                 },
                 {
@@ -26686,12 +26686,12 @@
                     "result": {
                         "reply": "BlobData",
                         "id": {
-                            "id": "20.37295152",
-                            "last_modified": 1694174043360
+                            "id": "20.37823530",
+                            "last_modified": 1709848694053
                         },
-                        "length": 30295,
-                        "hash": "48A4074D412D9AD8",
-                        "preview": "eJztnX2AXUV5//MGAioKBg=="
+                        "length": 5460,
+                        "hash": "65C493163AAAE291",
+                        "preview": "eJylWk2P3Nh1bfXo23YcEg=="
                     }
                 },
                 {
@@ -26700,21 +26700,21 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "20.37295152",
-                            "last_modified": 1694174043360
+                            "id": "20.37823530",
+                            "last_modified": 1709848694053
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 30295,
-                        "size": 614857,
+                        "storage_size": 5460,
+                        "size": 9979,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_withdrawn": false,
-                        "hup_release_date": "09/04/2024 04:00:00",
+                        "hup_release_date": "03/07/2034 05:00:00",
                         "owner": 13,
-                        "original_load_date": "09/08/2023 11:54:03",
-                        "class": "pop-set",
-                        "division": "PRI",
+                        "original_load_date": "03/07/2024 21:58:14",
+                        "class": "nuc-prot",
+                        "division": "VRL",
                         "username": "gbupdate",
                         "id2_info": "",
                         "n_chunks": 1
@@ -26729,8 +26729,8 @@
                 }
             ]
         },
-        "HUP biodata of 2574876738 (ok)": {
-            "description": "HUP biodata of 2574876738 (ok)",
+        "HUP biodata of 2695360147 (ok)": {
+            "description": "HUP biodata of 2695360147 (ok)",
             "tags": ["id-get", "cassandra", "200", "hup-ok"],
             "requests": [
                 [
@@ -26739,7 +26739,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "2574876738",
+                                "2695360147",
                                 "12"
                             ],
                             "request_flags": [
@@ -26758,26 +26758,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "gi|2574876738",
+                            "id": "gi|2695360147",
                             "type": 12
                         },
                         "other_ids": [
                             {
-                                "id": "gb|WMV97217",
+                                "id": "gb|PP445004",
                                 "type": 5
                             }
                         ],
-                        "molecule_type": "aa",
-                        "length": 232,
+                        "molecule_type": "rna",
+                        "length": 6680,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "20.37295152"
+                            "id": "20.37823530"
                         },
                         "tax_id": 0,
-                        "hash": 987162254,
-                        "date_changed": "09/08/2023 11:54:03",
-                        "gi": 2574876738
+                        "hash": 195649713,
+                        "date_changed": "03/07/2024 21:58:14",
+                        "gi": 2695360147
                     }
                 },
                 {
@@ -26786,12 +26786,12 @@
                     "result": {
                         "reply": "BlobData",
                         "id": {
-                            "id": "20.37295152",
-                            "last_modified": 1694174043360
+                            "id": "20.37823530",
+                            "last_modified": 1709848694053
                         },
-                        "length": 30295,
-                        "hash": "48A4074D412D9AD8",
-                        "preview": "eJztnX2AXUV5//MGAioKBg=="
+                        "length": 5460,
+                        "hash": "65C493163AAAE291",
+                        "preview": "eJylWk2P3Nh1bfXo23YcEg=="
                     }
                 },
                 {
@@ -26800,21 +26800,21 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "20.37295152",
-                            "last_modified": 1694174043360
+                            "id": "20.37823530",
+                            "last_modified": 1709848694053
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 30295,
-                        "size": 614857,
+                        "storage_size": 5460,
+                        "size": 9979,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_withdrawn": false,
-                        "hup_release_date": "09/04/2024 04:00:00",
+                        "hup_release_date": "03/07/2034 05:00:00",
                         "owner": 13,
-                        "original_load_date": "09/08/2023 11:54:03",
-                        "class": "pop-set",
-                        "division": "PRI",
+                        "original_load_date": "03/07/2024 21:58:14",
+                        "class": "nuc-prot",
+                        "division": "VRL",
                         "username": "gbupdate",
                         "id2_info": "",
                         "n_chunks": 1
