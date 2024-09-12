@@ -533,10 +533,9 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
             os << " ETA: "
                << (eta > 24 * 3600.0
                    ? CTimeSpan(eta).AsString("d") + "+ day(s)"
-                   : CTimeSpan(eta).AsString("h:m:s"));
-        } else {
-            os << "              ";
-        }
+                   : CTimeSpan(eta).AsString("h:m:s")) << ' ';
+        } else
+            os << "               ";
         string line = CNcbiOstrstreamToString(os);
         size_t linelen = line.size();
         NcbiCout.flush();
