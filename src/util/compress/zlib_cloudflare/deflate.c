@@ -1273,8 +1273,7 @@ static void check_match(deflate_state *s, IPos start, IPos match, int length) {
  */
 static void fill_window(deflate_state *s)
 {
-    register uint32_t  n, m;
-    register Pos *p;
+    register uint32_t  n;
     uint32_t more;    /* Amount of free space at the end of the window. */
     uint32_t wsize = s->w_size;
 
