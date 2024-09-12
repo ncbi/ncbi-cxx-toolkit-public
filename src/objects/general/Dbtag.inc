@@ -174,6 +174,8 @@
   { "TriTrypDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_TriTrypDB } },
   { "VEuPathDB",           { CDbtag::fGenBank, CDbtag::eDbtagType_VEuPathDB } },
 
+  { "NCBIOrtholog",        { CDbtag::fGenBank, CDbtag::eDbtagType_NCBIOrtholog } },
+
 // Note from RW-1843: INSDC documentation contains outdated information
 // It requires ENSEMBL and PseudoCap, but actially Ensembl and PseudoCAP are correct
 // https://www.insdc.org/submitting-standards/dbxref-qualifier-vocabulary/
