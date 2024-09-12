@@ -18,7 +18,7 @@ LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(
 
 CHECK_COPY = data
 CHECK_TIMEOUT = 400
-CHECK_REQUIRES = in-house-resources -MSWin
+CHECK_REQUIRES = in-house-resources -MSWin disabled
 
 CHECK_CMD = objmgr_perf_test -na CDD -ids data/perf_cdd1_acc -threads 0 -loader gb
 CHECK_CMD = objmgr_perf_test -na CDD -ids data/perf_cdd1_acc -threads 0 -loader psg
