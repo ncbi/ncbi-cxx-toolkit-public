@@ -272,8 +272,7 @@ void CTbl2AsnApp::Init()
     arg_desc->AddDefaultKey(
         "a", "String", "File Type\n"
 "      a Any\n"
-"      s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco,\n"
-"        s9 Small-genome)\n"
+"      s FASTA Set\n"
 "      d FASTA Delta, di FASTA Delta with Implicit Gaps\n"
 #if 0
 may be implemented in the future; RW-1253
