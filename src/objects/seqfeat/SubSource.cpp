@@ -574,10 +574,14 @@ MAKE_CONST_SET(s_Null_CollectionDatesSet, ct::tagStrCase,
     "restricted access",
 })
 
-string CSubSource::GetCollectionDateProblem (const string& date_string)
+string CSubSource::GetCollectionDateProblem (const string& date_string, bool& is_null_and_virus, bool is_influenza_or_Sars2)
 {
     string problem;
     if (s_Null_CollectionDatesSet.find(date_string.c_str()) != s_Null_CollectionDatesSet.end()) {
+        if (is_influenza_or_Sars2) {
+            is_null_and_virus = true;
+            problem = date_string;
+        }
         return problem;
     }
     size_t rval = CheckDateFormat(date_string);
@@ -589,6 +593,13 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
         problem = "Collection_dates are out of order";
     }
     return problem;
+}
+
+
+string CSubSource::GetCollectionDateProblem (const string& date_string)
+{
+    bool is_null_and_virus = false;
+    return GetCollectionDateProblem(date_string, is_null_and_virus, false);
 }
 
 
@@ -3358,7 +3369,7 @@ bool CCountries::IsValid(const string& country)
 }
 
 
-bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
+bool CCountries::IsValid(const string& country, bool& is_miscapitalized, bool& is_null_and_virus, bool is_influenza_or_Sars2)
 {
     is_miscapitalized = false;
 
@@ -3381,6 +3392,9 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
         return true;
     }
     if ( s_Null_CountriesSet.find(name.c_str()) != s_Null_CountriesSet.end() ) {
+        if (is_influenza_or_Sars2) {
+            is_null_and_virus = true;
+        }
         return true;
     }
     // slow check for miscapitalized
@@ -3404,6 +3418,13 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
     }
 
     return false;
+}
+
+
+bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
+{
+    bool is_null_and_virus = false;
+    return IsValid(country, is_miscapitalized, is_null_and_virus, false);
 }
 
 
