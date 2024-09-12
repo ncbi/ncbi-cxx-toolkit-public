@@ -487,6 +487,12 @@ int CPerfTestApp::Run(void)
         if ( bad_no_cdd_count ) {
             ERR_POST("GetCDDAnnot() didn't return CDDs for " << bad_no_cdd_count << " records");
         }
+        if ( !has_cdd_count ) {
+            LOG_POST(Warning << " there were no sequences with CDD");
+        }
+        if ( !no_cdd_count ) {
+            LOG_POST(Warning << " there were no sequences without CDD");
+        }
     }
     else {
         if (thread_count == 0) {
