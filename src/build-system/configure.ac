@@ -9404,7 +9404,9 @@ if test -n "$OPENTELEMETRY_PATH"; then
       fi
    done
 fi
-OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
+if test -n "$otel_pc"
+   OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
+fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
   opentelemetry_exporter_otlp_grpc,
   [AC_LANG_PROGRAM([[@%:@include <opentelemetry/exporters/otlp/otlp_grpc_exporter.h>]],
@@ -9419,9 +9421,11 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
   [$GRPC_LIBS $PROTOBUF_LIBS $CURL_LIBS], [$GRPC_INCLUDE $OPENTELEMETRY_CFLAGS])
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
-   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
+   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_common-static.a"; then
+   test -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"  ||  \
+     	ot_extra_sed='; s/\(-lopentelemetry_proto[[^ ]]*\)-static/\1/g'
    OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
-       | sed -e 's/ -l[[^ ]]*/&-static/g'`
+       | sed -e "s/ -l[[^ ]]*/&-static/g$ot_extra_sed"`
 else
    OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
 fi

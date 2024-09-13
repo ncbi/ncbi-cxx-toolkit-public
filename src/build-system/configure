@@ -37163,7 +37163,9 @@ if test -n "$OPENTELEMETRY_PATH"; then
       fi
    done
 fi
-OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
+if test -n "$otel_pc"
+   OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
+fi
 if test "$with_opentelemetry" != "no"; then
     case "$OPENTELEMETRY_PATH:$with_opentelemetry" in
        *:yes | *: | $with_opentelemetry* ) ;;
@@ -37307,9 +37309,11 @@ $as_echo "#define HAVE_LIBOPENTELEMETRY 1" >>confdefs.h
 
 OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
-   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"; then
+   -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_common-static.a"; then
+   test -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"  ||  \
+     	ot_extra_sed='; s/\(-lopentelemetry_proto[^ ]*\)-static/\1/g'
    OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
-       | sed -e 's/ -l[^ ]*/&-static/g'`
+       | sed -e "s/ -l[^ ]*/&-static/g$ot_extra_sed"`
 else
    OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
 fi
