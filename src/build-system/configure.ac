@@ -9404,7 +9404,7 @@ if test -n "$OPENTELEMETRY_PATH"; then
       fi
    done
 fi
-if test -n "$otel_pc"
+if test -n "$otel_pc"; then
    OPENTELEMETRY_CFLAGS=`$otel_pc opentelemetry_api --cflags`
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(opentelemetry, OPENTELEMETRY,
