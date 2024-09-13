@@ -5069,7 +5069,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     r = nullptr;
     c = '\0';
     if (! ibp->moltype.empty()) {
-        if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
+        if (pp->source == Parser::ESource::DDBJ && molstr && StringEquNI(molstr, "PRT", 3))
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;

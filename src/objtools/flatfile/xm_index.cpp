@@ -606,7 +606,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
                 ibp->HTC = true;
         } else if (xip->tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
             auto buf = XMLGetTagValue(entry, xip);
-            if (NStr::CompareNocase(*buf, "AA") == 0)
+            if (buf && NStr::CompareNocase(*buf, "AA") == 0)
                 ibp->is_prot = true;
         }
         if (ibp->bases > 0 && ibp->date && ibp->division[0] != '?')
