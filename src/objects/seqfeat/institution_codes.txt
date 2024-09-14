@@ -6670,8 +6670,8 @@ SAF	s	Department of Agricultural and Forest Sciences
 SAFB	s	University of Saskatchewan, Forestry Department			
 SAFC	s	Sergio Augusto Fragoso			
 SAFU	s	University of San Francisco			
-SAG	c	Sammlung von Algenkulturen at Universitat Gottingen		http://sagdb.uni-goettingen.de/detailedList.php?str_number=	
-SAG<CHL>	c	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero			
+SAG	cs	Sammlung von Algenkulturen at Universitat Gottingen		http://sagdb.uni-goettingen.de/detailedList.php?str_number=	
+SAG<CHL>	cs	Coleccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero			
 SAIAB	sb	South African Institute of Aquatic Biodiversity			
 SAIM	s	South African Institute for Medical Research	SAIMR		
 SAITP	c	School of Pharmacy and Medical Sciences, University of South Australia			
