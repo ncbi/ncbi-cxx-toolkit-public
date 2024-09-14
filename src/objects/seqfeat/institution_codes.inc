@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Sep 10 05:33:05 EDT 2024; formally
+/* time_t value corresponding to Sat Sep 14 05:33:05 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1725960785UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1726306385UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -6706,8 +6706,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SAFB\ts\tUniversity of Saskatchewan, Forestry Department\t\t\t",
 "SAFC\ts\tSergio Augusto Fragoso\t\t\t",
 "SAFU\ts\tUniversity of San Francisco\t\t\t",
-"SAG\tc\tSammlung von Algenkulturen at Universitat Gottingen\t\thttp://sagdb.uni-goettingen.de/detailedList.php?str_number=\t",
-"SAG<CHL>\tc\tColeccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero\t\t\t",
+"SAG\tcs\tSammlung von Algenkulturen at Universitat Gottingen\t\thttp://sagdb.uni-goettingen.de/detailedList.php?str_number=\t",
+"SAG<CHL>\tcs\tColeccion de Micoligica Laboratorio Regional, Servicio Agricola y Ganadero\t\t\t",
 "SAIAB\tsb\tSouth African Institute of Aquatic Biodiversity\t\t\t",
 "SAIM\ts\tSouth African Institute for Medical Research\tSAIMR\t\t",
 "SAITP\tc\tSchool of Pharmacy and Medical Sciences, University of South Australia\t\t\t",
