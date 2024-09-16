@@ -1080,6 +1080,8 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             CCgiRequestProcessor& processor = *pprocessor;
             const CCgiRequest& req = processor.GetContext().GetRequest();
 
+            // Set span kind for tracing, if any.
+            CDiagContext::GetRequestContext().SetTracerSpanKind(ITracerSpan::eKind_Server);
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 CExtraEntryCollector collector;
@@ -1102,16 +1104,36 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             // Post request properties to the current tracer span, if any.
             auto span = req_ctx.GetTracerSpan();
             if ( span ) {
-                string s = req.GetProperty(eCgi_ServerName);
+                string s = req.GetProperty(eCgi_ScriptName);
+                if (!s.empty()) span->SetName(s);
+                s = req.GetProperty(eCgi_ServerName);
                 if (!s.empty()) {
                     span->SetAttribute(ITracerSpan::eServerAddress, s);
                     s = req.GetProperty(eCgi_ServerPort);
                     if (!s.empty()) span->SetAttribute(ITracerSpan::eServerPort, s);
                 }
                 s = processor.GetContext().GetSelfURL();
-                if (!s.empty()) span->SetAttribute(ITracerSpan::eUrl, s);
+                if (!s.empty()) {
+                    string args = req.GetRandomProperty("REDIRECT_QUERY_STRING", false);
+                    if ( args.empty() ) {
+                        args = req.GetProperty(eCgi_QueryString);
+                    }
+                    if ( !args.empty() ) {
+                        s += "?" + args;
+                    }
+                    span->SetAttribute(ITracerSpan::eUrl, s);
+                }
                 s = req.GetProperty(eCgi_RequestMethod);
                 if (!s.empty()) span->SetAttribute(ITracerSpan::eRequestMethod, s);
+                s = req.GetProperty(eCgi_ServerProtocol);
+                if (!s.empty()) {
+                    span->SetAttribute(ITracerSpan::eUrlScheme, s);
+                    // Although HttpScheme is deprecated by Opentelemetry in favor of UrlScheme,
+                    // elasticapm may expect it.
+                    span->SetAttribute(ITracerSpan::eHttpScheme, s);
+                }
+                s = req.GetProperty(eCgi_RemoteAddr);
+                if (!s.empty()) span->SetAttribute(ITracerSpan::eClientAddress, s);
                 s = req.GetProperty(eCgi_ContentType);
                 if (!s.empty()) span->SetHttpHeader(ITracerSpan::eRequest, "CONTENT_TYPE", s);
                 s = req.GetProperty(eCgi_ContentLength);
