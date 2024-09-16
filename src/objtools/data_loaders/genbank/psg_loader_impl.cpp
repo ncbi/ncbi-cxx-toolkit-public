@@ -194,7 +194,7 @@ void CPSGDataLoader_Impl::CPSG_PrefetchCDD_Task::AddRequest(const CDataLoader::T
         // known for no CDDs
         return;
     }
-    auto cached = m_Loader.m_AnnotCache->Get(kCDDAnnotName, ids.front());
+    auto cached = m_Loader.m_AnnotCache->Find(make_pair(kCDDAnnotName, ids));
     if ( cached ) {
         return;
     }
@@ -797,7 +797,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     }
     
     // we may already know blob_id
-    auto bioseq_info = m_BioseqCache->Get(idh);
+    auto bioseq_info = m_BioseqCache->Find(idh);
     if ( bioseq_info && bioseq_info->KnowsBlobId() ) {
         // blob id is known
         if ( !bioseq_info->HasBlobId() ) {
@@ -860,7 +860,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         locks.insert(GetBlobByIdOnce(data_source, *processor->GetDLBlobId()));
     }
     if ( m_CDDPrefetchTask ) {
-        if ( auto bioseq_info = m_BioseqCache->Get(idh) ) {
+        if ( auto bioseq_info = m_BioseqCache->Find(idh) ) {
             auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
             if (cdd_ids && !m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids))) {
                 m_CDDPrefetchTask->AddRequest(bioseq_info->ids);
@@ -885,7 +885,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         return null;
     }
     string blob_id;
-    auto seq_info = m_BioseqCache->Get(idh);
+    auto seq_info = m_BioseqCache->Find(idh);
     if ( seq_info && seq_info->KnowsBlobId() ) {
         // blob id is known
     }
@@ -1387,7 +1387,7 @@ bool CPSGDataLoader_Impl::x_CheckAnnotCache(
     CDataLoader::TProcessedNAs* processed_nas,
     CDataLoader::TTSE_LockSet& locks)
 {
-    auto cached = m_AnnotCache->Get(name, *ids.begin());
+    auto cached = m_AnnotCache->Find(make_pair(name, ids));
     if (cached) {
         for (auto& info : cached->infos) {
             CDataLoader::SetProcessedNA(name, processed_nas);
@@ -1906,7 +1906,7 @@ void CPSGDataLoader_Impl::GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded
 
 shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Handle& idh)
 {
-    if ( shared_ptr<SPsgBioseqInfo> ret = m_BioseqCache->Get(idh) ) {
+    if ( shared_ptr<SPsgBioseqInfo> ret = m_BioseqCache->Find(idh) ) {
         if ( ret->tax_id <= 0 ) {
             _TRACE("bad tax_id for "<<idh<<" : "<<ret->tax_id);
         }
@@ -1940,7 +1940,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
         return std::move(processor->m_BioseqInfoResult);
     }
     else {
-        return m_BioseqCache->Add(*processor->m_BioseqInfo, idh);
+        return m_BioseqCache->Add(idh, *processor->m_BioseqInfo);
     }
 }
 
@@ -2104,7 +2104,7 @@ void CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& qu
     if ( CannotProcess(idh) ) {
         return;
     }
-    shared_ptr<SPsgBioseqInfo> bioseq_info = m_BioseqCache->Get(idh);
+    shared_ptr<SPsgBioseqInfo> bioseq_info = m_BioseqCache->Find(idh);
     shared_ptr<SPsgBlobInfo> blob_info;
     if ( bioseq_info && bioseq_info->KnowsBlobId() ) {
         // blob id is known
@@ -2280,7 +2280,7 @@ void CPSGDataLoader_Impl::x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_
 {
     if (!idh) return;
     if (!(blob_info.blob_state_flags & CBioseq_Handle::fState_dead)) return;
-    auto seq_info = m_BioseqCache->Get(idh);
+    auto seq_info = m_BioseqCache->Find(idh);
     if (!seq_info) return;
     auto seq_state = seq_info->GetBioseqStateFlags();
     auto chain_state = seq_info->GetChainStateFlags();
@@ -2306,7 +2306,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         if ( CannotProcess(ids[i]) ) {
             continue;
         }
-        ret[i] = m_BioseqCache->Get(ids[i]);
+        ret[i] = m_BioseqCache->Find(ids[i]);
         if (ret[i]) {
             counts.first += 1;
             continue;
@@ -2345,7 +2345,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         }
         // all good
         _ASSERT(processor->m_BioseqInfo);
-        ret[i] = m_BioseqCache->Add(*processor->m_BioseqInfo, id);
+        ret[i] = m_BioseqCache->Add(id, *processor->m_BioseqInfo);
         counts.first += 1;
     }
     return counts;

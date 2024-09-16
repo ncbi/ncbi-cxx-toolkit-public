@@ -65,9 +65,6 @@ class CPSGL_ResultGuard;
 END_NAMESPACE(psgl);
 
 
-class CPSGAnnotCache;
-
-
 class CPSGDataLoader_Impl : public CObject
 {
 public:
