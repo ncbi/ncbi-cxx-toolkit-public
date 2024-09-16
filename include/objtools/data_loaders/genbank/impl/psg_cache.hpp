@@ -51,8 +51,7 @@ BEGIN_NAMESPACE(psgl);
 struct SPsgBioseqInfo
 {
     SPsgBioseqInfo(const CSeq_id_Handle& request_id,
-                   const CPSG_BioseqInfo& bioseq_info,
-                   int lifespan);
+                   const CPSG_BioseqInfo& bioseq_info);
 
     typedef underlying_type_t<CPSG_Request_Resolve::EIncludeInfo> TIncludedInfo;
     typedef vector<CSeq_id_Handle> TIds;
@@ -69,8 +68,6 @@ struct SPsgBioseqInfo
     CSeq_id_Handle canonical;
     TIds ids;
     string psg_blob_id;
-
-    CDeadline deadline;
 
     TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
     bool IsDead() const;
@@ -101,22 +98,43 @@ private:
 class CPSGBioseqCache
 {
 public:
-    CPSGBioseqCache(int lifespan, size_t max_size)
-        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
-    ~CPSGBioseqCache(void) {}
+    CPSGBioseqCache(int lifespan, size_t max_size);
+    ~CPSGBioseqCache(void);
+    CPSGBioseqCache(const CPSGBioseqCache&) = delete;
+    CPSGBioseqCache& operator=(const CPSGBioseqCache&) = delete;
 
-    shared_ptr<SPsgBioseqInfo> Get(const CSeq_id_Handle& idh);
-    shared_ptr<SPsgBioseqInfo> Add(const CPSG_BioseqInfo& info, CSeq_id_Handle req_idh);
+    typedef CSeq_id_Handle key_type;
+    typedef shared_ptr<SPsgBioseqInfo> mapped_type;
+    
+    mapped_type Find(const key_type& key);
+    mapped_type Add(const key_type& key, const CPSG_BioseqInfo& info);
 
 private:
-    typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TIdMap;
-    typedef list<shared_ptr<SPsgBioseqInfo> > TInfoQueue;
+    struct SNode;
+    typedef map<key_type, SNode> TValues;
+    typedef typename TValues::iterator TValueIter;
+    typedef list<TValueIter> TRemoveList;
+    typedef typename TRemoveList::iterator TRemoveIter;
+    struct SNode {
+        SNode(const mapped_type& value, unsigned lifespan)
+            : value(value),
+              deadline(lifespan)
+        {}
+        mapped_type value;
+        CDeadline deadline;
+        TRemoveIter remove_list_iterator;
+    };
 
+    void x_Erase(TValueIter iter);
+    void x_PopFront();
+    void x_LimitSize();
+    void x_Expire();
+    
     mutable CFastMutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
-    TIdMap m_Ids;
-    TInfoQueue m_Infos;
+    TValues m_Values;
+    TRemoveList m_RemoveList;
 };
 
 
@@ -137,6 +155,8 @@ public:
           m_Lifespan(lifespan),
           m_MaxSize(max_size)
     {}
+    CPSGCache_Base(const CPSGCache_Base&) = delete;
+    CPSGCache_Base& operator=(const CPSGCache_Base&) = delete;
 
     TValue Find(const TKey& key) {
         CFastMutexGuard guard(m_Mutex);
@@ -288,15 +308,12 @@ struct SPsgAnnotInfo
     typedef CDataLoader::TIds TIds;
     typedef list<shared_ptr<CPSG_NamedAnnotInfo>> TInfos;
 
-    SPsgAnnotInfo(const string& _name,
-                  const TIds& _ids,
-                  const TInfos& _infos,
-                  int lifespan);
+    SPsgAnnotInfo(const pair<string, TIds>& key,
+                  const TInfos& infos);
 
     string name;
     TIds ids;
     TInfos infos;
-    CDeadline deadline;
 
 private:
     SPsgAnnotInfo(const SPsgAnnotInfo&);
@@ -307,27 +324,46 @@ private:
 class CPSGAnnotCache
 {
 public:
-    CPSGAnnotCache(int lifespan, size_t max_size)
-        : m_Lifespan(lifespan), m_MaxSize(max_size) {}
-    ~CPSGAnnotCache(void) {}
+    CPSGAnnotCache(int lifespan, size_t max_size);
+    ~CPSGAnnotCache();
+    CPSGAnnotCache(const CPSGAnnotCache&) = delete;
+    CPSGAnnotCache& operator=(const CPSGAnnotCache&) = delete;
 
     typedef CDataLoader::TIds TIds;
+    typedef string key1_type;
+    typedef TIds key2_type;
+    typedef pair<key1_type, key2_type> key_type;
+    typedef shared_ptr<SPsgAnnotInfo> mapped_type;
 
-    shared_ptr<SPsgAnnotInfo> Get(const string& name, const CSeq_id_Handle& idh);
-    shared_ptr<SPsgAnnotInfo> Add(const SPsgAnnotInfo::TInfos& infos,
-                                  const string& name,
-                                  const TIds& ids);
+    mapped_type Find(const key_type& key);
+    mapped_type Add(const key_type& key, const SPsgAnnotInfo::TInfos& infos);
 
 private:
-    typedef map<CSeq_id_Handle, shared_ptr<SPsgAnnotInfo>> TIdMap;
-    typedef map<string, TIdMap> TNameMap;
-    typedef list<shared_ptr<SPsgAnnotInfo>> TInfoQueue;
+    struct SNode;
+    typedef map<key_type, SNode> TValues;
+    typedef typename TValues::iterator TValueIter;
+    typedef list<TValueIter> TRemoveList;
+    typedef typename TRemoveList::iterator TRemoveIter;
+    struct SNode {
+        SNode(const mapped_type& value, unsigned lifespan)
+            : value(value),
+              deadline(lifespan)
+        {}
+        mapped_type value;
+        CDeadline deadline;
+        TRemoveIter remove_list_iterator;
+    };
 
+    void x_Erase(TValueIter iter);
+    void x_PopFront();
+    void x_LimitSize();
+    void x_Expire();
+    
     mutable CFastMutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
-    TNameMap m_NameMap;
-    TInfoQueue m_Infos;
+    TValues m_Values;
+    TRemoveList m_RemoveList;
 };
 
 

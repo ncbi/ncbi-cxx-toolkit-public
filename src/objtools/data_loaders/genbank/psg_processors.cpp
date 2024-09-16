@@ -113,7 +113,7 @@ CPSGL_BioseqInfo_Processor::ProcessItemFast(EPSG_Status status,
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
         if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(*bioseq_info, m_Seq_id);
+            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
         }
         CFastMutexGuard guard(m_BioseqInfoMutex);
         if ( !m_BioseqInfo ) {
@@ -316,7 +316,7 @@ CPSGL_Info_Processor::ProcessItemFast(EPSG_Status status,
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
         if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(*bioseq_info, m_Seq_id);
+            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
         }
         CFastMutexGuard guard(m_InfoMutex);
         if ( !m_BioseqInfo ) {
@@ -569,7 +569,7 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
     else {
         SPsgAnnotInfo::TInfos infos{m_AnnotInfo};
         if ( m_AnnotInfoCache ) {
-            m_AnnotInfoCache->Add(infos, kCDDAnnotName, m_SeqIdSet);
+            m_AnnotInfoCache->Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
         }
         dl_blob_id = new CPsgBlobId(blob_id.GetId());
     }
@@ -596,7 +596,7 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
         else {
             SPsgAnnotInfo::TInfos infos{m_AnnotInfo};
             if ( m_AnnotInfoCache ) {
-                m_AnnotInfoCache->Add(infos, kCDDAnnotName, m_SeqIdSet);
+                m_AnnotInfoCache->Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
             }
             if ( m_BlobInfoCache ) {
                 m_BlobInfoCache->Add(blob_id.GetId(), make_shared<SPsgBlobInfo>(*m_BlobInfo));
@@ -699,7 +699,7 @@ CPSGL_Get_Processor::ProcessItemFast(EPSG_Status status,
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
         if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(*bioseq_info, m_Seq_id);
+            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
         }
         CConstRef<CPsgBlobId> dl_blob_id;
         {{

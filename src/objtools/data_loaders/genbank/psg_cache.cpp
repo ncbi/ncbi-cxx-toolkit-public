@@ -48,51 +48,82 @@ BEGIN_NAMESPACE(psgl);
 /////////////////////////////////////////////////////////////////////////////
 
 
-shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Get(const CSeq_id_Handle& idh)
+CPSGBioseqCache::CPSGBioseqCache(int lifespan, size_t max_size)
+    : m_Lifespan(lifespan),
+      m_MaxSize(max_size)
 {
-    CFastMutexGuard guard(m_Mutex);
-    auto found = m_Ids.find(idh);
-    if (found == m_Ids.end()) {
-        return nullptr;
-    }
-    shared_ptr<SPsgBioseqInfo> ret = found->second;
-    m_Infos.remove(ret);
-    if (ret->deadline.IsExpired()) {
-        m_Ids.erase(found);
-        return nullptr;
-    }
-    ret->deadline = CDeadline(m_Lifespan);
-    m_Infos.push_back(ret);
-    return ret;
 }
 
 
-shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSeq_id_Handle req_idh)
+CPSGBioseqCache::~CPSGBioseqCache()
 {
-    _ASSERT(req_idh);
+}
+
+
+void CPSGBioseqCache::x_Erase(TValueIter iter)
+{
+    m_RemoveList.erase(iter->second.remove_list_iterator);
+    m_Values.erase(iter++);
+}
+
+
+void CPSGBioseqCache::x_PopFront()
+{
+    _ASSERT(!m_RemoveList.empty());
+    _ASSERT(m_RemoveList.front() != m_Values.end());
+    _ASSERT(m_RemoveList.front()->second.remove_list_iterator == m_RemoveList.begin());
+    m_Values.erase(m_RemoveList.front());
+    m_RemoveList.pop_front();
+}
+
+
+void CPSGBioseqCache::x_Expire()
+{
+    while ( !m_RemoveList.empty() &&
+            m_RemoveList.front()->second.deadline.IsExpired() ) {
+        x_PopFront();
+    }
+}
+
+
+void CPSGBioseqCache::x_LimitSize()
+{
+    while ( m_Values.size() > m_MaxSize ) {
+        x_PopFront();
+    }
+}
+
+
+CPSGBioseqCache::mapped_type CPSGBioseqCache::Find(const key_type& key)
+{
+    CFastMutexGuard guard(m_Mutex);
+    x_Expire();
+    auto found = m_Values.find(key);
+    return found == m_Values.end()? nullptr: found->second.value;
+}
+
+
+CPSGBioseqCache::mapped_type CPSGBioseqCache::Add(const key_type& key,
+                                                  const CPSG_BioseqInfo& info)
+{
     // Try to find an existing entry (though this should not be a common case).
     CFastMutexGuard guard(m_Mutex);
-    auto found = m_Ids.find(req_idh);
-    if (found != m_Ids.end()) {
-        if (!found->second->deadline.IsExpired()) {
-            found->second->Update(info);
-            return found->second;
+    x_Expire();
+    auto iter = m_Values.lower_bound(key);
+    if ( iter != m_Values.end() && key == iter->first ) {
+        if ( !iter->second.deadline.IsExpired() ) {
+            iter->second.value->Update(info);
+            return iter->second.value;
         }
-        m_Infos.remove(found->second);
-        m_Ids.erase(found);
-    }
-    while (!m_Infos.empty() && (m_Infos.size() > m_MaxSize || m_Infos.front()->deadline.IsExpired())) {
-        m_Ids.erase(m_Infos.front()->request_id);
-        m_Infos.pop_front();
+        x_Erase(iter++);
     }
     // Create new entry.
-    shared_ptr<SPsgBioseqInfo> ret = make_shared<SPsgBioseqInfo>(req_idh, info, m_Lifespan);
-    if ( ret->tax_id <= 0 ) {
-        _TRACE("bad tax_id for "<<req_idh<<" : "<<ret->tax_id);
-    }
-    m_Infos.push_back(ret);
-    m_Ids[req_idh] = ret;
-    return ret;
+    shared_ptr<SPsgBioseqInfo> value = make_shared<SPsgBioseqInfo>(key, info);
+    iter = m_Values.insert(iter,
+                           typename TValues::value_type(key, SNode(value, m_Lifespan)));
+    iter->second.remove_list_iterator = m_RemoveList.insert(m_RemoveList.end(), iter);
+    x_LimitSize();
+    return iter->second.value;
 }
 
 
@@ -102,8 +133,7 @@ shared_ptr<SPsgBioseqInfo> CPSGBioseqCache::Add(const CPSG_BioseqInfo& info, CSe
 
 
 SPsgBioseqInfo::SPsgBioseqInfo(const CSeq_id_Handle& request_id,
-                               const CPSG_BioseqInfo& bioseq_info,
-                               int lifespan)
+                               const CPSG_BioseqInfo& bioseq_info)
     : request_id(request_id),
       included_info(0),
       molecule_type(CSeq_inst::eMol_not_set),
@@ -111,8 +141,7 @@ SPsgBioseqInfo::SPsgBioseqInfo(const CSeq_id_Handle& request_id,
       state(0),
       chain_state(0),
       tax_id(INVALID_TAX_ID),
-      hash(0),
-      deadline(lifespan)
+      hash(0)
 {
     Update(bioseq_info);
 }
@@ -149,10 +178,6 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
         chain_state = bioseq_info.GetChainState();
     }
 
-    if (new_info & CPSG_Request_Resolve::fTaxId) {
-        tax_id = bioseq_info.GetTaxId();
-    }
-
     if (new_info & CPSG_Request_Resolve::fHash) {
         hash = bioseq_info.GetHash();
     }
@@ -177,6 +202,14 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
             if (other_idh) ids.push_back(other_idh);
         }
     }
+
+    if (new_info & CPSG_Request_Resolve::fTaxId) {
+        tax_id = bioseq_info.GetTaxId();
+        if ( tax_id <= 0 ) {
+            _TRACE("bad tax_id for "<<ids.front()<<" : "<<tax_id);
+        }
+    }
+
     if (new_info & CPSG_Request_Resolve::fBlobId) {
         psg_blob_id = bioseq_info.GetBlobId().GetId();
     }
@@ -282,85 +315,87 @@ SPsgBlobInfo::SPsgBlobInfo(const CTSE_Info& tse)
 // CPSGAnnotCache
 /////////////////////////////////////////////////////////////////////////////
 
-SPsgAnnotInfo::SPsgAnnotInfo(
-    const string& _name,
-    const TIds& _ids,
-    const TInfos& _infos,
-    int lifespan)
-    : name(_name), ids(_ids), infos(_infos), deadline(lifespan)
+SPsgAnnotInfo::SPsgAnnotInfo(const pair<string, TIds>& key,
+                             const TInfos& infos)
+    : name(key.first),
+      ids(key.second),
+      infos(infos)
 {
 }
 
 
-shared_ptr<SPsgAnnotInfo> CPSGAnnotCache::Get(const string& name, const CSeq_id_Handle& idh)
+CPSGAnnotCache::CPSGAnnotCache(int lifespan, size_t max_size)
+    : m_Lifespan(lifespan),
+      m_MaxSize(max_size)
 {
-    CFastMutexGuard guard(m_Mutex);
-    TNameMap::iterator found_name = m_NameMap.find(name);
-    if (found_name == m_NameMap.end()) return nullptr;
-    TIdMap& ids = found_name->second;
-    TIdMap::iterator found_id = ids.find(idh);
-    if (found_id == ids.end()) return nullptr;
-    shared_ptr<SPsgAnnotInfo> ret = found_id->second;
-    m_Infos.remove(ret);
-    if (ret->deadline.IsExpired()) {
-        for (auto& id : ret->ids) {
-            ids.erase(id);
-        }
-        if (ids.empty()) {
-            m_NameMap.erase(found_name);
-        }
-        return nullptr;
+}
+
+
+CPSGAnnotCache::~CPSGAnnotCache()
+{
+}
+
+
+void CPSGAnnotCache::x_Erase(TValueIter iter)
+{
+    m_RemoveList.erase(iter->second.remove_list_iterator);
+    m_Values.erase(iter++);
+}
+
+
+void CPSGAnnotCache::x_PopFront()
+{
+    _ASSERT(!m_RemoveList.empty());
+    _ASSERT(m_RemoveList.front() != m_Values.end());
+    _ASSERT(m_RemoveList.front()->second.remove_list_iterator == m_RemoveList.begin());
+    m_Values.erase(m_RemoveList.front());
+    m_RemoveList.pop_front();
+}
+
+
+void CPSGAnnotCache::x_Expire()
+{
+    while ( !m_RemoveList.empty() &&
+            m_RemoveList.front()->second.deadline.IsExpired() ) {
+        x_PopFront();
     }
-    ret->deadline = CDeadline(m_Lifespan);
-    m_Infos.push_back(ret);
-    return ret;
 }
 
 
-shared_ptr<SPsgAnnotInfo> CPSGAnnotCache::Add(
-    const SPsgAnnotInfo::TInfos& infos,
-    const string& name,
-    const TIds& ids)
+void CPSGAnnotCache::x_LimitSize()
 {
-    if (name.empty() || ids.empty()) return nullptr;
+    while ( m_Values.size() > m_MaxSize ) {
+        x_PopFront();
+    }
+}
+
+
+CPSGAnnotCache::mapped_type CPSGAnnotCache::Find(const key_type& key)
+{
     CFastMutexGuard guard(m_Mutex);
+    x_Expire();
+    auto found = m_Values.find(key);
+    return found == m_Values.end()? nullptr: found->second.value;
+}
+
+
+CPSGAnnotCache::mapped_type CPSGAnnotCache::Add(const key_type& key,
+                                                const SPsgAnnotInfo::TInfos& infos)
+{
     // Try to find an existing entry (though this should not be a common case).
-    TNameMap::iterator found_name = m_NameMap.find(name);
-    if (found_name != m_NameMap.end()) {
-        TIdMap& idmap = found_name->second;
-        TIdMap::iterator found = idmap.find(ids.front());
-        if (found != idmap.end()) {
-            if (!found->second->deadline.IsExpired()) {
-                return found->second;
-            }
-            for (auto& id : found->second->ids) {
-                idmap.erase(id);
-            }
-            if (idmap.empty()) {
-                m_NameMap.erase(found_name);
-            }
-        }
-    }
-    while (!m_Infos.empty() && (m_Infos.size() > m_MaxSize || m_Infos.front()->deadline.IsExpired())) {
-        auto rm = m_Infos.front();
-        m_Infos.pop_front();
-        TNameMap::iterator found_name = m_NameMap.find(rm->name);
-        _ASSERT(found_name != m_NameMap.end());
-        for (auto& id : rm->ids) {
-            found_name->second.erase(id);
-        }
-        if (found_name->second.empty() && found_name->first != name) {
-            m_NameMap.erase(found_name);
-        }
+    CFastMutexGuard guard(m_Mutex);
+    x_Expire();
+    auto iter = m_Values.lower_bound(key);
+    if ( iter != m_Values.end() && key == iter->first ) {
+        x_Erase(iter++);
     }
     // Create new entry.
-    shared_ptr<SPsgAnnotInfo> ret = make_shared<SPsgAnnotInfo>(name, ids, infos, m_Lifespan);
-    m_Infos.push_back(ret);
-    TIdMap& idmap = m_NameMap[name];
-    for (auto& id : ids) {
-        idmap[id] = ret;
-    }
-    return ret;
+    shared_ptr<SPsgAnnotInfo> value = make_shared<SPsgAnnotInfo>(key, infos);
+    iter = m_Values.insert(iter,
+                           typename TValues::value_type(key, SNode(value, m_Lifespan)));
+    iter->second.remove_list_iterator = m_RemoveList.insert(m_RemoveList.end(), iter);
+    x_LimitSize();
+    return iter->second.value;
 }
 
 
