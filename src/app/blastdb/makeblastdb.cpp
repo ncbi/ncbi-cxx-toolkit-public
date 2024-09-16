@@ -54,6 +54,7 @@
 #include <objtools/blast/seqdb_writer/writedb_error.hpp>
 #include <util/format_guess.hpp>
 #include <util/util_exception.hpp>
+#include <util/compress/stream_util.hpp> 
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 
 #include <serial/objostrjson.hpp>
@@ -808,7 +809,24 @@ CMakeBlastDBApp::x_VerifyInputFilesType(const vector<CTempString>& filenames,
         }
 
         CNcbiIfstream f(seq_file.c_str(), ios::binary);
-        if(input_type == eFasta && x_ConvertToSupportedType(x_GuessFileType(f)) != eFasta) {
+	unique_ptr<CDecompressIStream>  comp_seq_istream;
+	CNcbiIstream *data_in = & f;
+
+	// SB-4223 : support for compressed input
+	bool is_gz = false, is_bz2 = false, is_zst=false;
+	CCompressStream::EMethod method = CDecompressIStream::eGZipFile; 
+	if( (is_gz  = NStr::EndsWith( seq_file, ".gz", NStr::eNocase)) || 
+	    (is_bz2 = NStr::EndsWith( seq_file, ".bz2",NStr::eNocase)) ||    
+	    (is_zst = NStr::EndsWith( seq_file, ".zst",NStr::eNocase))    
+	    )
+	{
+	    if( is_bz2  ) method = CDecompressIStream::eBZip2;
+	    if( is_zst  ) method = CDecompressIStream::eZstd;
+	    comp_seq_istream.reset(new CDecompressIStream(f , method ));
+	    data_in =  comp_seq_istream.get();
+	}
+
+        if(input_type == eFasta && x_ConvertToSupportedType(x_GuessFileType( *data_in ) ) != eFasta) {
             string msg = "\nInput file " + seq_file + " does NOT appear to be FASTA (processing anyway).\n" \
                  + "Advise validating database with 'blastdbcheck -dbtype [prot|nucl] -db ${DBNAME}'\n";
             ERR_POST(Warning << msg);
@@ -1007,11 +1025,28 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
             x_AddSequenceData(cin, build_fmt);
         }
         else {
-            x_VerifyInputFilesType(names, input_fmt);
+             x_VerifyInputFilesType(names, input_fmt);
             for (size_t i = 0; i < names.size(); i++) {
                 string seq_file = names[i];
                 CNcbiIfstream f(seq_file.c_str(), ios::binary);
-                x_AddSequenceData(f, build_fmt);
+		CNcbiIstream *data_in = &f;  // uncompressed by default
+
+		unique_ptr<CDecompressIStream>  comp_seq_istream;
+		bool is_gz = false, is_bz2 = false, is_zst=false;
+		CCompressStream::EMethod method = CDecompressIStream::eGZipFile; // default gzip method if compressed
+
+		if( (is_gz  = NStr::EndsWith( seq_file, ".gz", NStr::eNocase)) || 
+		    (is_bz2 = NStr::EndsWith( seq_file, ".bz2",NStr::eNocase)) ||
+		    (is_zst = NStr::EndsWith( seq_file, ".zst",NStr::eNocase))    
+		  )
+		{
+		    if( is_bz2  ) method = CDecompressIStream::eBZip2;
+		    if( is_zst  ) method = CDecompressIStream::eZstd;
+		    comp_seq_istream.reset(new CDecompressIStream(f , method ));
+		    data_in =  comp_seq_istream.get();
+		}
+		// common part
+		x_AddSequenceData( *data_in , build_fmt);
             }
         }
     }
