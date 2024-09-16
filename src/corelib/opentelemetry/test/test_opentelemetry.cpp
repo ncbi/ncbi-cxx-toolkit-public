@@ -127,6 +127,9 @@ int COpenteleTestApp::Run(void)
         phid = GetDiagContext().GetDefaultHitID();
     }
 
+    // Change span kind for some requests.
+    if (depth % 2) CDiagContext::GetRequestContext().SetTracerSpanKind(ITracerSpan::eKind_Server);
+
     GetDiagContext().PrintRequestStart();
     ERR_POST(Warning << "Starting OpenTelemetry test at depth " << depth);
     if (depth < max_depth) {
@@ -141,6 +144,7 @@ int COpenteleTestApp::Run(void)
             if ( args["file"] ) {
                 cmd += " -file " + args["file"].AsString();
             }
+            cmd += " -spawn " + NStr::NumericToString(spawn);
             cmd += " -max_depth " + NStr::NumericToString(max_depth);
             cmd += " -depth " + NStr::NumericToString(depth + 1);
             cmd += " -phid " + CDiagContext::GetRequestContext().GetHitID() + "." + NStr::NumericToString(i + 1);

@@ -152,6 +152,13 @@ class ITracerSpan
 public:
     virtual ~ITracerSpan(void) {}
 
+    enum ESpanKind {
+        eKind_NotSet,
+        eKind_Internal,
+        eKind_Server,
+        eKind_Client
+    };
+
     enum ESpanAttribute {
         eSessionId,
         eClientAddress,
@@ -160,6 +167,8 @@ public:
         eServerPort,
         eUrl,
         eRequestMethod,
+        eUrlScheme,
+        eHttpScheme,
         eStatusCode,
         eStatusString
     };
@@ -174,6 +183,7 @@ public:
         eError
     };
 
+    virtual void SetName(const string& name) = 0;
     virtual void SetAttribute(ESpanAttribute attr, const string& value) = 0;
     virtual void SetCustomAttribute(const string& attr, const string& value) = 0;
     virtual void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) = 0;
@@ -414,6 +424,11 @@ public:
     /// @sa IRequestTracer
     static void SetRequestTracer(const shared_ptr<IRequestTracer>& tracer);
 
+    /// At least Opentememetry tracer allows to set span kind only at span creation time.
+    /// These methods allow to pass span kind to the tracer.
+    void SetTracerSpanKind(ITracerSpan::ESpanKind kind) { m_SpanKind = kind; }
+    ITracerSpan::ESpanKind GetTracerSpanKind(void) const { return m_SpanKind; }
+
     void SetTracerSpan(const shared_ptr<ITracerSpan>& span) { m_TracerSpan = span; }
     shared_ptr<ITracerSpan> GetTracerSpan(void) const { return m_TracerSpan; }
 
@@ -530,6 +545,7 @@ private:
 
     // Make sure the same tracer is used through the whole request.
     shared_ptr<IRequestTracer> m_Tracer;
+    ITracerSpan::ESpanKind m_SpanKind;
     shared_ptr<ITracerSpan> m_TracerSpan;
 
     // Patterns from NCBI_CONTEXT_FIELDS variable.
