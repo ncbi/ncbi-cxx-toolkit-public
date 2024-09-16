@@ -144,7 +144,7 @@ public:
 
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
 
-    TTSE_LockSet GetOrphanAnnotRecordsNA(const CSeq_id_Handle& idh,
+    TTSE_LockSet GetOrphanAnnotRecordsNA(const TSeq_idSet& seq_ids,
                                          const SAnnotSelector* sel,
                                          TProcessedNAs* processed_nas) override;
     TTSE_LockSet GetExternalAnnotRecordsNA(const CBioseq_Info& bioseq,
