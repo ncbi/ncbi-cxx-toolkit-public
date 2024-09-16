@@ -167,6 +167,8 @@ public:
 
 using TTracer = nostd::shared_ptr<trace::Tracer>;
 
+static string s_DefaultSpanNamePrefix;
+
 static TTracer s_GetTracer(void)
 {
     string app_name = "ncbi-app";
@@ -176,6 +178,7 @@ static TTracer s_GetTracer(void)
         if ( guard ) {
             app_name = guard->GetProgramDisplayName();
             app_ver = guard->GetVersion().Print();
+            s_DefaultSpanNamePrefix = app_name;
         }
     }
     return trace::Provider::GetTracerProvider()->GetTracer(app_name, app_ver);
@@ -355,25 +358,45 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
         trace::TraceFlags(0), false);
     trace::StartSpanOptions options;
     options.parent = parent_ctx;
-    options.kind = m_SpanKind;
 
-    auto span = tracer->StartSpan("request-start", {}, options);
+    switch (context.GetTracerSpanKind()) {
+    case ITracerSpan::eKind_Internal:
+        options.kind = trace::SpanKind::kInternal;
+        break;
+    case ITracerSpan::eKind_Server:
+        options.kind = trace::SpanKind::kServer;
+        break;
+    case ITracerSpan::eKind_Client:
+        options.kind = trace::SpanKind::kClient;
+        break;
+    default:
+        options.kind = m_SpanKind;
+    }
+
+    auto span = tracer->StartSpan(s_DefaultSpanNamePrefix + "/request-start", {}, options);
 
     CDiagContext& diag_context = GetDiagContext();
     char buf[17];
     diag_context.GetStringUID(diag_context.GetUID(), buf, 17);
 
     span->SetStatus(trace_api::StatusCode::kOk);
-    span->SetAttribute("ncbi.phid", context.GetHitID());
-    span->SetAttribute("ncbi.request_id", context.GetRequestID());
+
+    // Some values (e.g. SemanticConventions::kClientAddress) can be set
+    // by CGIs or other external code. Opentelemetry span's SetAttribute()
+    // creates multiple attributes with the same name instead of replacing
+    // the value (despite what the documentation says). To avoid having
+    // duplicate names the values from request context are added as 'ncbi.*'
+    // rather than using SemanticConventions::* names.
     span->SetAttribute("ncbi.guid", buf);
     span->SetAttribute("ncbi.pid", diag_context.GetPID());
     span->SetAttribute("ncbi.tid", (Uint8)GetCurrentThreadSystemID());
     span->SetAttribute("ncbi.host", diag_context.GetHost());
-    string s = context.GetSessionID();
-    if ( !s.empty() ) span->SetAttribute(trace::SemanticConventions::kSessionId, s);
-    s = context.GetClientIP();
-    if ( !s.empty() ) span->SetAttribute(trace::SemanticConventions::kClientAddress, s);
+    span->SetAttribute("ncbi.request_id", context.GetRequestID());
+    span->SetAttribute("ncbi.phid", context.GetHitID());
+    string s = context.GetClientIP();
+    if ( !s.empty() ) span->SetAttribute("ncbi.client_ip", s);
+    s = context.GetSessionID();
+    if ( !s.empty() ) span->SetAttribute("ncbi.session_id", s);
 
     char trace_id[2*trace::TraceId::kSize + 1];
     trace_id[2*trace::TraceId::kSize] = 0;
@@ -412,6 +435,13 @@ COpentelemetryTracerSpan::~COpentelemetryTracerSpan(void)
 }
 
 
+void COpentelemetryTracerSpan::SetName(const string& name)
+{
+    if (!m_Span) return;
+    m_Span->UpdateName(name);
+}
+
+
 void COpentelemetryTracerSpan::SetAttribute(ESpanAttribute attr, const string& value)
 {
     if ( !m_Span ) return;
@@ -436,6 +466,12 @@ void COpentelemetryTracerSpan::SetAttribute(ESpanAttribute attr, const string& v
         break;
     case eRequestMethod:
         m_Span->SetAttribute(trace::SemanticConventions::kHttpRequestMethod, value);
+        break;
+    case eUrlScheme:
+        m_Span->SetAttribute(trace::SemanticConventions::kUrlScheme, value);
+        break;
+    case eHttpScheme:
+        m_Span->SetAttribute(trace::SemanticConventions::kHttpScheme, value);
         break;
     case eStatusCode:
         m_Span->SetAttribute(trace::SemanticConventions::kHttpResponseStatusCode, value);

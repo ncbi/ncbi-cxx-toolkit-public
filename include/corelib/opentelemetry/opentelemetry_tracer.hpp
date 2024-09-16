@@ -65,6 +65,7 @@ public:
 
     TSpan& GetSpan(void) { return m_Span; }
 
+    void SetName(const string& name) override;
     void SetAttribute(ESpanAttribute attr, const string& value) override;
     void SetCustomAttribute(const string& attr, const string& value) override;
     void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;

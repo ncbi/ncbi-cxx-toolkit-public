@@ -57,6 +57,7 @@ public:
     CJaegerTracerSpan(shared_ptr<jaegertracing::Span> span) : m_Span(move(span)) {}
     jaegertracing::Span& GetSpan(void) { return *m_Span; }
 
+    void SetName(const string& name) override {}
     void SetAttribute(ESpanAttribute attr, const string& value) override;
     void SetCustomAttribute(const string& attr, const string& value) override;
     void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;

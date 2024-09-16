@@ -176,7 +176,8 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_Flags(flags),
       m_OwnerTID(-1),
       m_IsReadOnly(false),
-      m_Version(sm_VersionCounter.Add(1))
+      m_Version(sm_VersionCounter.Add(1)),
+      m_SpanKind(ITracerSpan::eKind_NotSet)
 {
     x_LoadEnvContextProperties();
 }
