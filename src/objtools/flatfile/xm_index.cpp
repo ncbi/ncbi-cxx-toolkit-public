@@ -358,7 +358,7 @@ static void XMLPerformIndex(ParserPtr pp)
     for (count = 0, line = 1;;) {
         if (c != '<') {
             c = s_GetCharAndAdvance(*pp);
-            if (c < 0)
+            if (c == -1)
                 break;
             count++;
             if ((Char)c == '\n')
@@ -370,7 +370,7 @@ static void XMLPerformIndex(ParserPtr pp)
         s[0] = '<';
         for (i = 1; i < 50; i++) {
             c = s_GetCharAndAdvance(*pp);
-            if (c < 0)
+            if (c == -1)
                 break;
             count++;
             ch = (Char)c;
@@ -972,7 +972,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
 
     for (p = entry, i = 0; i < ibp->len; i++) {
         c = s_GetCharAndAdvance(*pp);
-        if (c < 0)
+        if (c == -1)
             break;
         if (c == 13) {
             c = 10;
