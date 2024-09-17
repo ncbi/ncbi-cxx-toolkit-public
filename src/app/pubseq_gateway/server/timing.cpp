@@ -52,10 +52,13 @@ static string   kTotalCount("TotalCount");
 static string   kValueSum("ValueSum");
 static string   kName("name");
 static string   kDescription("description");
+static string   kMaxValue("MaxValue");
+
 
 CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
                              const string  &  name,
-                             const string  &  description)
+                             const string  &  description,
+                             uint64_t  max_value)
 {
     CJsonNode       ret(CJsonNode::NewObjectNode());
     ret.SetString(kName, name);
@@ -89,6 +92,7 @@ CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
     ret.SetInteger(kTotalCount, histogram.GetCount() +
                                 lower_anomalies + upper_anomalies);
     ret.SetInteger(kValueSum, histogram.GetSum());
+    ret.SetInteger(kMaxValue, max_value);
     return ret;
 }
 
@@ -128,7 +132,8 @@ CJsonNode CPSGTimingBase::SerializeSeries(int  most_ancient_time,
         }
 
         // Histogram is within the range. Take the counters.
-        CJsonNode   slice = SerializeHistogram(bin.histogram, name, description);
+        CJsonNode   slice = SerializeHistogram(bin.histogram, name, description,
+                                               GetMaxValue());
         slice.SetInteger(kTimeRangeStart, histogram_start_time);
         slice.SetInteger(kTimeRangeEnd, histogram_end_time);
         ret.Append(slice);
@@ -193,7 +198,8 @@ CJsonNode CPSGTimingBase::SerializeCombined(int  most_ancient_time,
         return CJsonNode::NewObjectNode();
     }
 
-    CJsonNode   ret = SerializeHistogram(combined_histogram, name, description);
+    CJsonNode   ret = SerializeHistogram(combined_histogram, name, description,
+                                         GetMaxValue());
     ret.SetInteger(kTimeRangeStart, actual_recent_time);
     ret.SetInteger(kTimeRangeEnd, actual_ancient_time);
     return ret;
