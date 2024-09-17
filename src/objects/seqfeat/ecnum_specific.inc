@@ -30,9 +30,10 @@
  *
  */
 
-/* time_t value corresponding to Wed Aug 21 02:53:09 EDT 2024; formally
+/* time_t value corresponding to Mon Sep 16 16:12:21 EDT 2024
+; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1724223189UL;
+static const unsigned long kECNum_specific_Timestamp = 1726517541UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
