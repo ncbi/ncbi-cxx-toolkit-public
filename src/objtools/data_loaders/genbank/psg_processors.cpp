@@ -744,7 +744,8 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
     }
 
     if ( !m_BioseqInfoResult ||
-         status != EPSG_Status::eSuccess ||
+         !(status == EPSG_Status::eSuccess ||
+           status == EPSG_Status::eForbidden) ||
          m_BioseqInfoStatus != EPSG_Status::eSuccess ) {
         // inconsistent reply - invalid bioseq info or status
         // unexpected status
@@ -768,6 +769,7 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
         if ( !psg_blob_id.empty() ) {
             state |= (GetBlobInfoState(psg_blob_id) & ~CBioseq_Handle::fState_dead);
         }
+        m_GotForbidden = true;
         m_ForbiddenBlobState = state;
         _TRACE(Descr()<<": ProcessReplySlow(): forbidden state: "<<state);
         return eProcessed;
@@ -834,13 +836,37 @@ ostream& CPSGL_GetBlob_Processor::PrintProcessorArgs(ostream& out) const
 
 
 CPSGL_Processor::EProcessResult
+CPSGL_GetBlob_Processor::ProcessReplyFast(EPSG_Status status,
+                                          const shared_ptr<CPSG_Reply>& reply)
+{
+    _TRACE(Descr()<<": ProcessReplyFast()");
+    if ( status == EPSG_Status::eError ) {
+        _TRACE(Descr()<<": ProcessReplyFast(): error: "<<m_Blob_id);
+        return eFailed;
+    }
+    if ( status == EPSG_Status::eForbidden ) {
+        _TRACE(Descr()<<": ProcessReplyFast(): forbidden: "<<m_Blob_id);
+        m_GotForbidden = true;
+        return eProcessed;
+    }
+
+    return eToNextStage;
+}
+
+
+CPSGL_Processor::EProcessResult
 CPSGL_GetBlob_Processor::ProcessReplySlow(EPSG_Status status,
                                           const shared_ptr<CPSG_Reply>& reply)
 {
     _TRACE(Descr()<<": ProcessReplySlow()");
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplySlow(): error status");
+        _TRACE(Descr()<<": ProcessReplySlow(): error: "<<m_Blob_id);
         return eFailed;
+    }
+    if ( status == EPSG_Status::eForbidden ) {
+        _TRACE(Descr()<<": ProcessReplySlow(): forbidden: "<<m_Blob_id);
+        m_GotForbidden = true;
+        return eProcessed;
     }
 
     // prepare TSE lock
