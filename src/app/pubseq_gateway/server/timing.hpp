@@ -120,7 +120,8 @@ typedef CHistogramTimeSeries<uint64_t, uint64_t, uint64_t>  TPSGTiming;
 // Returns a serialized dictionary
 CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
                              const string &  name,
-                             const string &  description);
+                             const string &  description,
+                             uint64_t  max_value);
 
 
 // The base class for all the collected statistics.
@@ -129,7 +130,7 @@ CJsonNode SerializeHistogram(const TOnePSGTiming &  histogram,
 class CPSGTimingBase
 {
     public:
-        CPSGTimingBase() {}
+        CPSGTimingBase() : m_MaxValue(0) {}
         virtual ~CPSGTimingBase() {}
 
     public:
@@ -138,6 +139,8 @@ class CPSGTimingBase
             if (m_PSGTiming)
                 m_PSGTiming->Add(mks);
             m_AvgTimeSeries.Add(mks);
+            if (mks > m_MaxValue)
+                m_MaxValue = mks;
         }
 
         void Reset(void)
@@ -151,6 +154,11 @@ class CPSGTimingBase
         {
             if (m_PSGTiming)
                 m_PSGTiming->Rotate();
+        }
+
+        uint64_t GetMaxValue(void) const
+        {
+            return m_MaxValue;
         }
 
         // The Average time series rotate is done once per minute while the
@@ -200,7 +208,9 @@ class CPSGTimingBase
 
         // Lets to collect average mks required by an operation within 1 min
         // intervals for a total of 1 month
-        CAvgPerformanceSeries   m_AvgTimeSeries;
+        CAvgPerformanceSeries       m_AvgTimeSeries;
+
+        uint64_t                    m_MaxValue;
 };
 
 // At the moment almost all the timing classes are the same
