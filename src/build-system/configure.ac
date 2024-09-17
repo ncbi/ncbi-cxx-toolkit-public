@@ -1198,6 +1198,7 @@ case "/$CXX" in
 
       compiler_root=${x_CXX%/bin/*}
       icc_libdir=$compiler_root/compiler/lib/$intel_cpu_name
+      test -d $icc_libdir  ||  icc_libdir=$compiler_root/lib
       LDFLAGS="-L$icc_libdir -Wl,-rpath,$icc_libdir -lintlc $LDFLAGS"
       ;;
 esac
