@@ -2552,6 +2552,7 @@ GM	s	Museum of Southeastern Moravia
 GMACC	c	Laboratory of Molecular Genetics and Breeding of Edible Mushrooms			
 GMAU	s	Geological Museum of Amsterdam University			
 GMB	s	Guizhou Medical University			
+GMBCC	c	Guizhou Medical University Culture Collection			
 GMBL	s	College of Charleston			
 GMC	s	Guangxi Medical College			
 GMCE	s	Grosvenor Museum			
