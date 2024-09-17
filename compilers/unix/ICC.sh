@@ -48,6 +48,11 @@ case "$1" in
       CC=icx
       CXX=icpx
       ;;
+  24* | 2024  )
+      search=$intel_root/Compiler/24.0/compiler/latest/bin
+      CC=icx
+      CXX=icpx
+      ;;
   *           ) search=                                          ;;
 esac
 

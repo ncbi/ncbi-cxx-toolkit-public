@@ -71,7 +71,8 @@ case "$cxx_version" in
   [2-9][0-9] | [2-9][0-9].* )
     CC=icx
     CXX=icpx
-    cxx_path=$cxx_version/compiler/latest/linux
+    cxx_path=$cxx_version/compiler/latest
+    [ -d $intel_root/Compiler/$cxx_path/bin ] || cxx_path=$cxx_path/linux
     ;;
   * )
     cxx_path=$cxx_version
@@ -121,6 +122,7 @@ case $cxx_version in
     NCBI_CLANG_CXX=$CXX
     NCBI_CLANG_NAME="ICC"
     libICC=$intel_root/Compiler/$cxx_path/compiler/lib/intel64 
+    [ -d $libICC ]  ||  libICC=$intel_root/Compiler/$cxx_path/lib
     export NCBI_CLANG_CC NCBI_CLANG_CXX NCBI_CLANG_NAME libICC
     exec "`dirname $0`"/cmClang.sh "$@"
     ;;
