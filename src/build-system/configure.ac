@@ -3615,16 +3615,10 @@ changequote(, )dnl
    NOPT_CFLAGS=`  echo " $CFLAGS "    | sed "s/$optrx/ /g"`
    NOPT_CXXFLAGS=`echo " $CXXFLAGS "  | sed "s/$optrx/ /g"`
    NOPT_LDFLAGS=` echo " $LDFLAGS "   | sed "s/$optrx/ /g"`
-   if test "${with_tcheck-no}" != "no"; then
-      # Suppress warnings when building with ICC.
-      NOPT_CFLAGS="$NOPT_CFLAGS -O0"
-      NOPT_CXXFLAGS="$NOPT_CXXFLAGS -O0"
-      NOPT_LDFLAGS="$NOPT_LDFLAGS -O0"
-   fi
    if test "$with_optimization" = "no" ; then
-      CFLAGS="$NOPT_CFLAGS"
-      CXXFLAGS="$NOPT_CXXFLAGS"
-      LDFLAGS="$NOPT_LDFLAGS"
+      CFLAGS="$NOPT_CFLAGS -O0"
+      CXXFLAGS="$NOPT_CXXFLAGS -O0"
+      LDFLAGS="$NOPT_LDFLAGS -O0"
       FAST_CFLAGS="$CFLAGS"
       FAST_CXXFLAGS="$CXXFLAGS"
       FAST_LDFLAGS="$LDFLAGS"
