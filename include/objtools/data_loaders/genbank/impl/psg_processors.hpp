@@ -413,6 +413,8 @@ public:
         return m_TSE_Lock;
     }
 
+    EProcessResult ProcessReplyFast(EPSG_Status status,
+                                    const shared_ptr<CPSG_Reply>& reply) override;
     EProcessResult ProcessReplySlow(EPSG_Status status,
                                     const shared_ptr<CPSG_Reply>& reply) override;
     EProcessResult ProcessReplyFinal() override;
