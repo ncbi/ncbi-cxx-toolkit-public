@@ -644,26 +644,11 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
     bool is_protein_align =
         spliced_seg.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
 
-    int aa_offset = 0;
-
     CSpliced_seg::TExons::iterator prev_exon_it = spliced_seg.SetExons().end();
 
+    bool has_parts = false;
     NON_CONST_ITERATE (CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
         CSpliced_exon& exon = **exon_it;
-
-        if (exon_it == spliced_seg.SetExons().begin()) {
-            if (is_protein_align)
-                aa_offset = - int(exon.GetProduct_start().GetProtpos().GetAmin());
-            else
-                aa_offset = - int(exon.GetProduct_start().GetNucpos())/3;
-        }
-
-        if (aa_offset) {
-            if (is_protein_align)
-                exon.SetProduct_start().SetProtpos().SetAmin() += aa_offset;
-            else
-                exon.SetProduct_start().SetNucpos() += aa_offset*3;
-        }
 
         //
         // GP-2513 / PGAP-10124:
@@ -677,6 +662,7 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
 
 
         if (exon.IsSetParts()) {
+            has_parts = true;
             int part_index = 0;
             ERASE_ITERATE (CSpliced_exon::TParts, part_it, exon.SetParts()) {
                 CSpliced_exon_chunk& chunk = **part_it;
@@ -700,13 +686,13 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                                     if (is_protein_align) {
                                         TSeqPos product_end = (*prev_exon_it)->GetProduct_end().AsSeqPos();
                                         product_end += prev_len;
-                                        (*prev_exon_it)->SetProduct_end().SetProtpos().SetAmin (product_end/3);
-                                        (*prev_exon_it)->SetProduct_end().SetProtpos().SetFrame(product_end%3+1);
+                                        (*prev_exon_it)->SetProduct_end().SetProtpos().SetAmin (product_end / 3);
+                                        (*prev_exon_it)->SetProduct_end().SetProtpos().SetFrame((product_end % 3) + 1);
 
                                         TSeqPos product_start = exon.GetProduct_start().AsSeqPos();
                                         product_start += prev_len;
-                                        exon.SetProduct_start().SetProtpos().SetAmin (product_start/3);
-                                        exon.SetProduct_start().SetProtpos().SetFrame(product_start%3+1);
+                                        exon.SetProduct_start().SetProtpos().SetAmin (product_start / 3);
+                                        exon.SetProduct_start().SetProtpos().SetFrame((product_start % 3) + 1);
                                     }  else {
                                         (*prev_exon_it)->SetProduct_end().SetNucpos() += prev_len;
                                         exon.SetProduct_start().SetNucpos() += prev_len;
@@ -716,12 +702,11 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                                         CRef<CSpliced_exon_chunk> new_chunk(new CSpliced_exon_chunk);
                                         new_chunk->SetDiag(3-prev_len);
                                         exon.SetParts().insert(part_it, new_chunk);
-                                        chunk.SetDiag(len - (3-prev_len));
+                                        chunk.SetGenomic_ins(len - (3-prev_len));
                                     } else {
                                         chunk.SetDiag(len);
                                     }
 
-                                    aa_offset += 1; 
                                     len -= 3-prev_len;
                                 }
                             }
@@ -733,7 +718,6 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                             chunk.SetGenomic_ins(len % 3);
                         }
                     }
-                    aa_offset += len/3;
                 }
                     break;
 
@@ -744,7 +728,6 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                     } else {
                         chunk.SetProduct_ins(len % 3);
                     }
-                    aa_offset -= len/3;
                 }
                     break;
                 default:
@@ -753,14 +736,69 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                 ++part_index;
             }
         }
-        if (aa_offset) {
-            if (is_protein_align)
-                exon.SetProduct_end().SetProtpos().SetAmin() += aa_offset;
-            else
-                exon.SetProduct_end().SetNucpos() += aa_offset*3;
-        }
         prev_exon_it = exon_it;
     }
+
+    //
+    // PGAP-10124:
+    // Something in the code above had a lingering heebie-jeebie.
+    // The code above does two things:
+    // - Adjusts exon parts.  This looks correct
+    // - Adjusts ends of exons. _*This part has a hard to identify bug*_
+    //
+    // If we assume the parts are correct, we can just set the exon ends separately
+    // the change below splits that out and simply asserts "the parts are
+    // correct, adjust the ends accordingly"
+    //
+
+    if (has_parts) {
+        int product_pos = 0;
+        for (auto& exon_it : spliced_seg.SetExons()) {
+            // reset start
+            if (is_protein_align) {
+                exon_it->SetProduct_start().SetProtpos().SetAmin(product_pos / 3);
+                exon_it->SetProduct_start().SetProtpos().SetFrame(product_pos % 3 + 1);
+            }
+            else {
+                exon_it->SetProduct_start().SetNucpos(product_pos);
+            }
+
+            // iterate the parts
+            for (const auto& part : exon_it->GetParts()) {
+                switch (part->Which()) {
+                case CSpliced_exon_chunk::e_Match:
+                    product_pos += part->GetMatch();
+                    break;
+                case CSpliced_exon_chunk::e_Mismatch:
+                    product_pos += part->GetMismatch();
+                    break;
+                case CSpliced_exon_chunk::e_Diag:
+                    product_pos += part->GetDiag();
+                    break;
+                case CSpliced_exon_chunk::e_Genomic_ins:
+                    break;
+                case CSpliced_exon_chunk::e_Product_ins:
+                    product_pos += part->GetProduct_ins();
+                    break;
+
+                default:
+                    NCBI_THROW(CException, eUnknown,
+                               "unhandled part type in exon length computation");
+                }
+            }
+
+            // reset end
+            if (is_protein_align) {
+                exon_it->SetProduct_end().SetProtpos().SetAmin ((product_pos - 1) / 3);
+                exon_it->SetProduct_end().SetProtpos().SetFrame((product_pos - 1) % 3 + 1);
+            }
+            else {
+                exon_it->SetProduct_start().SetNucpos(product_pos - 1);
+            }
+        }
+    }
+
+    // we set the length artificially to be the end of the last exon
     spliced_seg.SetProduct_length() = is_protein_align
         ? (*prev_exon_it)->GetProduct_end().GetProtpos().GetAmin()+1
         : (*prev_exon_it)->GetProduct_end().GetNucpos()+1;
