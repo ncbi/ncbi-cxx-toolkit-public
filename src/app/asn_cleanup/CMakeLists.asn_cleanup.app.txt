@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(asn_cleanup)
-  NCBI_sources(asn_cleanup read_hooks bigfile_processing huge_file_cleanup)
+  NCBI_sources(asn_cleanup huge_file_cleanup)
   NCBI_uses_toolkit_libraries(
     data_loaders_util
     xcleanup xobjedit xvalidate xobjwrite
