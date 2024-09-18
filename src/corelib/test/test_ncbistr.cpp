@@ -4467,7 +4467,8 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     cout << "Testing iswspace" << endl;
     for (i=0; ws[i]; ++i) {
         if (iswspace(ws[i]) == 0) {
-            cout << "WARNING: wide char " << hex << ws[i] << " is not whitespace" << endl;
+            cout << "WARNING: wide char " << hex << static_cast<int>(ws[i])
+                 << " is not whitespace" << endl;
         }
     }
     cout << "Testing CStringUTF8::IsWhiteSpace" << endl;
