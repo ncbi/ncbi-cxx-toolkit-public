@@ -753,6 +753,16 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
 
     if (has_parts) {
         int product_pos = 0;
+        if (is_protein_align) {
+            product_pos =
+                (*spliced_seg.GetExons().begin())
+                ->GetProduct_start().GetProtpos().GetFrame() - 1;
+        }
+        else {
+            product_pos =
+                (*spliced_seg.GetExons().begin())
+                ->GetProduct_start().GetNucpos() % 3;
+        }
         for (auto& exon_it : spliced_seg.SetExons()) {
             // reset start
             if (is_protein_align) {
