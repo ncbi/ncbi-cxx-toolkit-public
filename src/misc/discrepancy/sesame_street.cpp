@@ -368,6 +368,45 @@ static float g_GetSesameStreetCutoff()
     return g_SesameStreetCutoff;
 }
 
+static const char* const s_DeprecatedSourceQuals[] = {
+    "acronym",
+    "anamorph",
+    "authority",
+    "biotype",
+    "biovar",
+    "chemovar",
+    "clone-lib",
+    "common",
+    "forma",
+    "forma-specialis",
+    "group",
+    "identified-by",
+    "pathovar",
+    "phenotype",
+    "pop-variant",
+    "serogroup",
+    "subclone",
+    "subgroup",
+    "substrain",
+    "subtype",
+    "synonym",
+    "teleomorph",
+    "tissue-lib",
+    "type"
+};
+
+typedef CStaticArraySet<const char*, PNocase_CStr> TCDeprecatedSourceQualSet;
+static const TCDeprecatedSourceQualSet s_DeprecatedSourceQualSet(s_DeprecatedSourceQuals, sizeof(s_DeprecatedSourceQuals), __FILE__, __LINE__);
+
+bool s_IsDeprecatedSourceQual(const string& value)
+{
+    if (s_DeprecatedSourceQualSet.find(value.c_str()) != s_DeprecatedSourceQualSet.end()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
     bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
@@ -417,7 +456,11 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += pres == total ? "all present" : "some missing";
         diagnosis += ", ";
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
-        diagnosis += mul ? ", some multi)" : ")";
+        diagnosis += mul ? ", some multi" : "";
+        if (s_IsDeprecatedSourceQual(qual)) {
+            diagnosis += ", DEPRECATED";
+        }
+        diagnosis += ")";
         report[diagnosis];
 
         if ((num != total || bins != 1)
