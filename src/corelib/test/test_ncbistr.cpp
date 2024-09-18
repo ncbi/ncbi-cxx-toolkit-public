@@ -4200,7 +4200,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
     }
 #endif
     {
-        typedef unsigned short xxxMywchar;
+        typedef char16_t xxxMywchar;
         basic_string<xxxMywchar> xxxwss;
         string w8test( CUtf8::AsUTF8(xxxwss));
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
@@ -4211,7 +4211,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
     }
     {
-        typedef unsigned int xxxMywchar;
+        typedef char32_t xxxMywchar;
         basic_string<xxxMywchar> xxxwss;
         string w8test( CUtf8::AsUTF8(xxxwss));
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
@@ -4221,19 +4221,6 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         CUtf8::AppendAsUTF8(w8test,xxxwss.data(), xxxwss.size());
         CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
     }
-#if NCBITOOLKIT_USE_LONG_UCS4
-    {
-        typedef unsigned long xxxMywchar;
-        basic_string<xxxMywchar> xxxwss;
-        string w8test( CUtf8::AsUTF8(xxxwss));
-        xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
-
-        xxxwss.append(1,1000);
-        CUtf8::AppendAsUTF8(w8test,xxxwss);
-        CUtf8::AppendAsUTF8(w8test,xxxwss.data(), xxxwss.size());
-        CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
-    }
-#endif
     // iteration
     {
         wss.erase().append(1,0x1000).append(1,0x1100).append(1,0x1110).append(1,0x1111);
@@ -4280,7 +4267,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
 // locales
 #if defined(HAVE_WSTRING) && defined(NCBI_OS_MSWIN)
     {
-        typedef unsigned short xxxMywchar;
+        typedef char16_t xxxMywchar;
         basic_string<xxxMywchar> xxxwss, wstest;
         string u8, u8x, res;
         const char* lcl_name;
