@@ -138,7 +138,7 @@ typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
 // Unicode-related definitions and conversions
 
 /// Unicode character
-typedef Uint4 TUnicodeSymbol;
+typedef char32_t TUnicodeSymbol;
 /// Unicode string
 typedef basic_string<TUnicodeSymbol> TStringUnicode;
 
@@ -3834,19 +3834,11 @@ private:
 ///
 
 
-#define NCBITOOLKIT_USE_LONG_UCS4 (SIZEOF_LONG == 4)
-#if NCBITOOLKIT_USE_LONG_UCS4
-/// UCS-4 character
-typedef unsigned long TCharUCS4;
-/// UCS-4 string
-typedef basic_string<TCharUCS4> TStringUCS4;
-#else
 typedef TUnicodeSymbol TCharUCS4;
 typedef TStringUnicode TStringUCS4;
-#endif
 
 /// Type for character in UCS-2 encoding
-typedef Uint2 TCharUCS2;
+typedef char16_t TCharUCS2;
 /// Type for string in UCS-2 encoding
 typedef basic_string<TCharUCS2> TStringUCS2;
 
