@@ -357,13 +357,52 @@ int CBlastDB_SeqFormatter::Write(CSeqDB::TOID oid, const CBlastDB_FormatterConfi
     return 0;
 }
 
+/// Auxiliary function to format the defline by rejoining multiple deflines using standard or <CNTRL>-A
+static string
+s_RejoinDeflineTitle(const string& title, bool use_ctrl_a )
+{
+    static const string kStandardSeparator(" >");
+    const string kSeparator(use_ctrl_a ? "\001" : kStandardSeparator); // actual, will b eused for output
+    string retval;
+    list<string> tokens;
+    NStr::Split(title, kStandardSeparator, tokens, NStr::fSplit_ByPattern);
+    int idx = 0;
+    for (auto token : tokens) {
+        if (idx++ == 0) {
+            retval += token;
+            continue;
+        }
+
+        SIZE_TYPE pos = token.find(' ');
+        const string kPossibleId(token, 0, pos != NPOS ? pos : token.length());
+        CBioseq::TId seqids;
+	// verify found token via CSeq_id::ParseIDs
+        try {
+            CSeq_id::ParseIDs(seqids, kPossibleId, CSeq_id::fParse_PartialOK);
+        } catch (const CException&) {}
+
+        if (!seqids.empty()) {
+	    // OK, this is real seq_id leave it w/o modifications
+	    // combine with current separator
+            retval += kSeparator + token; 
+        } else {
+	    // string after sparator till speace doesn't look like seq_id
+            retval += kStandardSeparator + token; 
+        }
+
+    }
+    return retval;
+}
+// originally this function was changing " >gi|" to "\001gi|"
+// as more BLAST DB's are now giless, more general approach is needed  
+// with verification of a string object after strandard separator to be
+// valid sequence ID ( done via CSeq_id::ParseIDs ).
 static void s_ReplaceCtrlAsInTitle(CBioseq & bioseq)
 {
-    static const string kTarget(" >gi|");
-    static const string kCtrlA = string(1, '\001') + string("gi|");
     NON_CONST_ITERATE(CSeq_descr::Tdata, desc, bioseq.SetDescr().Set()) {
         if ((*desc)->Which() == CSeqdesc::e_Title) {
-            NStr::ReplaceInPlace((*desc)->SetTitle(), kTarget, kCtrlA);
+	    string old_title = (*desc)->GetTitle();
+	    (*desc)->SetTitle() = s_RejoinDeflineTitle( old_title, true );
             break;
         }
     }
