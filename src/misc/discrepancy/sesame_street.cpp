@@ -457,9 +457,11 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += ", ";
         diagnosis += uniq == num ? "all unique" : bins == 1 ? "all same" : "some duplicates";
         diagnosis += mul ? ", some multi" : "";
+        /*
         if (s_IsDeprecatedSourceQual(qual)) {
             diagnosis += ", DEPRECATED";
         }
+        */
         diagnosis += ")";
         report[diagnosis];
 
