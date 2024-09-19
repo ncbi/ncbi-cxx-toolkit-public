@@ -41,8 +41,8 @@ SRV2 = None
 
 # Sometimes, especially under valgrind, it takes longer to start.
 # So, wait a bit before running a test suite
-AFTER_START_DELAY = 30
-AFTER_STOP_DELAY = 30
+AFTER_START_DELAY = 45
+AFTER_STOP_DELAY = 45
 
 PRODUCTION_SERVICE = 'PSG2'
 DEV_SERVICE = 'PSG2_DEV'
@@ -210,12 +210,14 @@ def stopServer(srv, reset=True):
     global SRV2
 
     if srv is SRV1:
+        print_verbose('Sending SIGINT to server 1 ...')
         srv.send_signal(signal.SIGINT)
         srv.wait()
         if reset:
             SRV1 = None
         time.sleep(AFTER_STOP_DELAY)
     else:
+        print_verbose('Sending SIGINT to server 2 ...')
         srv.send_signal(signal.SIGINT)
         srv.wait()
         if reset:
