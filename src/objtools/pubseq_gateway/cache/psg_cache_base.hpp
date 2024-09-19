@@ -47,7 +47,7 @@ USING_NCBI_SCOPE;
 
 class CLMDBReadOnlyTxn
 {
- public:
+public:
     CLMDBReadOnlyTxn()
         : m_Txn(nullptr)
     {
@@ -73,22 +73,32 @@ class CLMDBReadOnlyTxn
         return m_Txn.handle();
     }
 
- private:
+private:
     lmdb::txn m_Txn;
 };
 
 class CPubseqGatewayCacheBase
 {
- public:
+public:
     explicit CPubseqGatewayCacheBase(const string& file_name);
     virtual ~CPubseqGatewayCacheBase() = default;
     // @throws lmdb::error
     void Open();
 
- protected:
+    ///
+    /// \param value - true/false to enable/disable OS level read ahead
+    void UseReadAhead(bool value)
+    {
+        m_UseReadAhead = value;
+    }
+
+protected:
     CLMDBReadOnlyTxn BeginReadTxn();
     string m_FileName;
     unique_ptr<lmdb::env> m_Env;
+
+private:
+    bool m_UseReadAhead{true};
 };
 
 END_IDBLOB_SCOPE

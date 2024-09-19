@@ -72,7 +72,12 @@ void CPubseqGatewayCacheBase::Open()
     m_Env->set_max_dbs(kLmdbMaxDbCount);
     m_Env->set_max_readers(kMaxReaders);
     m_Env->set_mapsize(mapsize);
-    m_Env->open(m_FileName.c_str(), MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC, 0664);
+
+    unsigned int flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC;
+    if (!m_UseReadAhead) {
+        flags |= MDB_NORDAHEAD;
+    }
+    m_Env->open(m_FileName.c_str(), flags, 0664);
 }
 
 END_IDBLOB_SCOPE

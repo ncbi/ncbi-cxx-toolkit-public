@@ -74,6 +74,7 @@ class CPsgCacheBioseqInfoTest
         CNcbiRegistry r(i);
         string file_name = r.GetString("LMDB_CACHE", "bioseq_info", "");
         m_Cache = make_unique<CPubseqGatewayCache>(file_name, "", "");
+        m_Cache->UseReadAhead(false);
         m_Cache->Open({});
     }
 
@@ -90,6 +91,7 @@ unique_ptr<CPubseqGatewayCache> CPsgCacheBioseqInfoTest::m_Cache(nullptr);
 TEST_F(CPsgCacheBioseqInfoTest, LookupUninitialized)
 {
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
+    cache->UseReadAhead(false);
     cache->Open({});
     CPubseqGatewayCache::TBioseqInfoRequest request;
     auto response = cache->FetchBioseqInfo(request);

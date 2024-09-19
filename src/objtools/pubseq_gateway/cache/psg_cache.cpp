@@ -117,6 +117,7 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
     if (!m_BioseqInfoPath.empty()) {
         m_BioseqInfoCache = make_unique<CPubseqGatewayCacheBioseqInfo>(m_BioseqInfoPath);
         try {
+            m_BioseqInfoCache->UseReadAhead(m_UseReadAhead);
             m_BioseqInfoCache->Open();
         } catch (const lmdb::error& e) {
             stringstream s;
@@ -130,6 +131,7 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
     if (!m_Si2CsiPath.empty()) {
         m_Si2CsiCache = make_unique<CPubseqGatewayCacheSi2Csi>(m_Si2CsiPath);
         try {
+            m_Si2CsiCache->UseReadAhead(m_UseReadAhead);
             m_Si2CsiCache->Open();
         } catch (const lmdb::error& e) {
             stringstream s;
@@ -142,6 +144,7 @@ void CPubseqGatewayCache::Open(const set<int>& sat_ids)
     if (!m_BlobPropPath.empty()) {
         m_BlobPropCache = make_unique<CPubseqGatewayCacheBlobProp>(m_BlobPropPath);
         try {
+            m_BlobPropCache->UseReadAhead(m_UseReadAhead);
             m_BlobPropCache->Open(sat_ids);
         } catch (const lmdb::error& e) {
             stringstream s;

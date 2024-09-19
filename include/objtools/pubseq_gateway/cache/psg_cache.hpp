@@ -64,7 +64,7 @@ class CPubseqGatewayCache
 
     using TBlobPropEnumerateFn = function<bool(int32_t, int64_t)>;
 
- public:
+public:
     using TRuntimeError = SRuntimeError;
     using TRuntimeErrorList = deque<SRuntimeError>;
 
@@ -84,6 +84,12 @@ class CPubseqGatewayCache
     virtual ~CPubseqGatewayCache();
 
     void Open(const set<int>& sat_ids);
+
+    /// \param value - true/false to enable/disable OS level read ahead
+    void UseReadAhead(bool value)
+    {
+        m_UseReadAhead = value;
+    }
 
     void ResetErrors();
     const TRuntimeErrorList& GetErrors() const
@@ -116,7 +122,8 @@ class CPubseqGatewayCache
 
     void EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn);
 
- private:
+
+private:
     string m_BioseqInfoPath;
     string m_Si2CsiPath;
     string m_BlobPropPath;
@@ -124,6 +131,7 @@ class CPubseqGatewayCache
     unique_ptr<CPubseqGatewayCacheSi2Csi> m_Si2CsiCache;
     unique_ptr<CPubseqGatewayCacheBlobProp> m_BlobPropCache;
     TRuntimeErrorList m_RuntimeErrors;
+    bool m_UseReadAhead{true};
 };
 
 END_IDBLOB_SCOPE
