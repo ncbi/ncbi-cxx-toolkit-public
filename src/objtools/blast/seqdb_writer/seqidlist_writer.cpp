@@ -144,7 +144,7 @@ int WriteBlastSeqidlistFile(const vector<string> & idlist, CNcbiOstream & os, co
 
 	total_num_ids = tmplist.size();
 	CTime now(CTime::eCurrent);
-	create_date = now.AsString("b d, Y  H:m P");
+	create_date = now.AsString(CSeqDB::kBlastDbDateFormat);
 	create_date_size = create_date.size();
 
 	os.write(&null_byte, 1);
