@@ -1011,10 +1011,6 @@ string CSeqDBImpl::GetDate() const
         return m_Date;
     }
 
-    // This is close enough to allow parsing but does not precisely
-    // describe the format normally used for generated dates.
-
-    string fmt = "b d, Y  H:m P";
     string date;
 
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
@@ -1024,8 +1020,8 @@ string CSeqDBImpl::GetDate() const
             date = d;
         } else if (d != date) {
             try {
-                CTime t1(date, fmt);
-                CTime t2(d, fmt);
+                CTime t1(date, CSeqDB::kBlastDbDateFormat);
+                CTime t2(d, CSeqDB::kBlastDbDateFormat);
 
                 if (t2 > t1) {
                     date.swap(d);
