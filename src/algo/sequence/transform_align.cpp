@@ -803,7 +803,7 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
                 exon_it->SetProduct_end().SetProtpos().SetFrame((product_pos - 1) % 3 + 1);
             }
             else {
-                exon_it->SetProduct_start().SetNucpos(product_pos - 1);
+                exon_it->SetProduct_end().SetNucpos(product_pos - 1);
             }
         }
     }
