@@ -82,7 +82,7 @@ struct SPubseqGatewaySettings
     string                              m_StatScaleType;
     unsigned long                       m_TickSpan;
     string                              m_OnlyForProcessor;
-
+    bool                                m_LmdbReadAhead;
 
     // [LMDB_CACHE]
     string                              m_Si2csiDbFile;

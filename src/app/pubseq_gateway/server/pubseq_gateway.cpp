@@ -192,6 +192,7 @@ void CPubseqGatewayApp::OpenCache(void)
             }
         }
 
+        m_LookupCache->UseReadAhead(m_Settings.m_LmdbReadAhead);
         m_LookupCache->Open(sat_ids);
         const auto        errors = m_LookupCache->GetErrors();
         if (!errors.empty()) {

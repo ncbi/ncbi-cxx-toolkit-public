@@ -81,6 +81,7 @@ const unsigned int      kDefaultMaxHops = 2;
 const bool              kDefaultAllowIOTest = false;
 const bool              kDefaultAllowProcessorTiming = false;
 const string            kDefaultOnlyForProcessor = "";
+const bool              kDefaultLmdbReadAhead = false;
 const double            kDefaultResendTimeoutSec = 0.2;
 const double            kDefaultRequestTimeoutSec = 30.0;
 const size_t            kDefaultProcessorMaxConcurrency = 1200;
@@ -153,6 +154,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_StatScaleType(kStatScaleType),
     m_TickSpan(kTickSpan),
     m_OnlyForProcessor(kDefaultOnlyForProcessor),
+    m_LmdbReadAhead(kDefaultLmdbReadAhead),
     m_ExcludeCacheMaxSize(kDefaultExcludeCacheMaxSize),
     m_ExcludeCachePurgePercentage(kDefaultExcludeCachePurgePercentage),
     m_ExcludeCacheInactivityPurge(kDefaultExcludeCacheInactivityPurge),
@@ -341,6 +343,8 @@ void SPubseqGatewaySettings::x_ReadLmdbCacheSection(const CNcbiRegistry &   regi
                                             "dbfile_bioseq_info", "");
     m_BlobPropDbFile = registry.GetString(kLmdbCacheSection,
                                           "dbfile_blob_prop", "");
+    m_LmdbReadAhead = registry.GetBool(kLmdbCacheSection, "read_ahead",
+                                       kDefaultLmdbReadAhead);
 }
 
 
