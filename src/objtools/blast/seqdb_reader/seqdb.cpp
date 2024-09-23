@@ -643,7 +643,6 @@ CSeqDB::GetDate(const string   & dbname,
 {
     vector<string> vols;
     CSeqDB::FindVolumePaths(dbname, seqtype, vols);
-    string fmt = "b d, Y  H:m P";
     CTime retv;
     char date[128];
     ITERATE(vector<string>, vol, vols) {
@@ -658,7 +657,7 @@ CSeqDB::GetDate(const string   & dbname,
             f.read(s, 4);
             offset = SeqDB_GetStdOrd((Uint4 *) s);
             f.read(date, offset);
-            CTime d(string(date), fmt);
+            CTime d(string(date), kBlastDbDateFormat);
             if (retv.IsEmpty() || d > retv) {
                 retv = d;
             }
@@ -1728,8 +1727,7 @@ CRef<CBlast_db_metadata> CSeqDB::GetDBMetaData(string user_path)
 	m->SetNumber_of_sequences(num_seqs);
 
 	CTimeFormat timeFmt = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec);
-	string fmt = "b d, Y  H:m P";
-	CTime date(GetDate(), fmt);
+	CTime date(GetDate(), kBlastDbDateFormat);
 	m->SetLast_updated(date.AsString(timeFmt));
 
 	Int8 disk_bytes(0), cached_bytes(0);
