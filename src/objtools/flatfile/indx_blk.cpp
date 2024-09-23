@@ -216,7 +216,7 @@ static const char* ValidMolTypes[] = {
 
 // functions below are implemented in different source files
 bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
-bool GenBankIndex(ParserPtr pp);
+bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 bool XMLIndex(ParserPtr pp);
 
@@ -2184,7 +2184,7 @@ bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, In
 
     switch (pp->format) {
     case Parser::EFormat::GenBank:
-        index = GenBankIndex(pp);
+        index = GenBankIndex(pp, fun);
         break;
     case Parser::EFormat::EMBL:
         index = EmblIndex(pp, fun);
