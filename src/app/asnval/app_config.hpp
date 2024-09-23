@@ -38,6 +38,8 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbireg.hpp>
 
+class CValidatorThreadPool;
+
 using namespace ncbi;
 
 class CAppConfig
@@ -65,7 +67,9 @@ public:
     bool mOnlyAnnots;
     bool mHugeFile = false;
     unsigned int m_Options = 0;
-    int mNumInstances;
+    unsigned int mNumInstances;
+    CValidatorThreadPool* m_thread_pool1 = nullptr;
+    CValidatorThreadPool* m_thread_pool2 = nullptr;
 };
 
 #endif

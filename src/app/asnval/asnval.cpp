@@ -57,46 +57,14 @@
 #include <util/message_queue.hpp>
 #include <future>
 
+#include "thread_pool.hpp"
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
 USING_SCOPE(objects);
 USING_SCOPE(validator);
 USING_SCOPE(edit);
-
-template<class _T>
-class TThreadPoolLimited
-{
-public:
-    using token_type = _T;
-    TThreadPoolLimited(unsigned num_slots, unsigned queue_depth = 0):
-        m_tasks_semaphore{num_slots, num_slots},
-        m_product_queue{queue_depth == 0 ? num_slots : queue_depth}
-    {}
-
-    // acquire new slot to run on
-    void acquire() {
-        m_tasks_semaphore.Wait();
-    }
-
-    // release a slot and send a product down to the queue
-    void release(token_type&& token) {
-        m_tasks_semaphore.Post();
-        m_product_queue.push_back(std::move(token));
-    }
-
-    auto GetNext() {
-        return m_product_queue.pop_front();
-    }
-
-    void request_stop() {
-        m_product_queue.push_back({});
-    }
-
-private:
-    CSemaphore            m_tasks_semaphore;  //
-    CMessageQueue<token_type> m_product_queue{8}; // the queue of threads products
-};
 
 class CAsnvalApp : public CNcbiApplication
 {
@@ -115,16 +83,19 @@ private:
     CThreadExitData xValidate(const string& filename, CNcbiOstream& ostr);
     CThreadExitData xValidateSeparateOutputs(const string& filename);
 
-    void xValidateThreadSeparateOutputs(const string& filename);
-    void xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler);
+    CThreadExitData xValidateThreadSeparateOutputs(const string& filename);
+    CThreadExitData xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler);
     CThreadExitData xCombinedStatsTask();
 
-    using TPool = TThreadPoolLimited<std::future<CThreadExitData>>;
+    using TMainPoolEx = TThreadPoolLimitedEx<CThreadExitData>;
 
-    size_t ValidateOneDirectory(string dir_name, 
-                                bool recurse, 
+    size_t ValidateOneDirectory(string dir_name,
+                                bool recurse,
                                 CAsyncMessageHandler* pMessageHandler=nullptr); // returns the number of processed files
-    TPool m_queue{8};
+
+    TMainPoolEx m_queue{8};
+    CValidatorThreadPool m_thread_pool1{4};
+    CValidatorThreadPool m_thread_pool2{8};
 
     unique_ptr<CAppConfig> mAppConfig;
     unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
@@ -134,9 +105,9 @@ private:
 };
 
 
-static unique_ptr<CNcbiOstream> s_MakeOstream(const string& in_filename, 
-        const string& inputDir=kEmptyStr, 
-        const string& outputDir=kEmptyStr) 
+static unique_ptr<CNcbiOstream> s_MakeOstream(const string& in_filename,
+        const string& inputDir=kEmptyStr,
+        const string& outputDir=kEmptyStr)
 {
     string path;
     if (in_filename.empty()) {
@@ -171,24 +142,16 @@ CThreadExitData CAsnvalApp::xValidateSeparateOutputs(const string& filename)
     return xValidate(filename, *pOstr);
 }
 
-void CAsnvalApp::xValidateThreadSeparateOutputs(const string& filename)
+CThreadExitData CAsnvalApp::xValidateThreadSeparateOutputs(const string& filename)
 {
-    CThreadExitData result = xValidateSeparateOutputs(filename);
-    std::promise<CThreadExitData> prom;
-    prom.set_value(std::move(result));
-    auto fut = prom.get_future();
-    m_queue.release(std::move(fut));
+    return xValidateSeparateOutputs(filename);
 }
 
 
-void CAsnvalApp::xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler)
+CThreadExitData CAsnvalApp::xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler)
 {
     CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
-    auto exitData =  mContext.ValidateOneFile(filename, msgHandler);
-    std::promise<CThreadExitData> prom;
-    prom.set_value(std::move(exitData));
-    auto fut = prom.get_future();
-    m_queue.release(std::move(fut));
+    return mContext.ValidateOneFile(filename, msgHandler);
 }
 
 
@@ -402,10 +365,10 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
                 (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
                 string fpath = CDirEntry::MakePath(dir_name, fname);
 
-                m_queue.acquire();
-                // start thread detached, it will post results to the queue itself
-                std::thread([this, fpath]()
-                    { xValidateThreadSeparateOutputs(fpath); }).detach();
+                // start thread, it will post results to the queue itself
+                auto f = [this, fpath]() -> CThreadExitData
+                    { return xValidateThreadSeparateOutputs(fpath); };
+                m_queue.run(f);
 
                 ++num_to_process;
             }
@@ -417,10 +380,10 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
                 (!args["f"] || NStr::Find(fname, args["f"].AsString()) != NPOS)) {
                 string fpath = CDirEntry::MakePath(dir_name, fname);
 
-                m_queue.acquire();
-                // start thread detached, it will post results to the queue itself
-                std::thread([this, fpath, separate_outputs, pMsgHandler]()
-                    { xValidateThreadSingleOutput(fpath, *pMsgHandler); }).detach();
+                // start thread, it will post results to the queue itself
+                auto f = [this, fpath, separate_outputs, pMsgHandler]() -> CThreadExitData
+                    { return xValidateThreadSingleOutput(fpath, *pMsgHandler); };
+                m_queue.run(f);
 
                 ++num_to_process;
             }
@@ -448,10 +411,10 @@ CThreadExitData CAsnvalApp::xCombinedStatsTask()
     while(true)
     {
         auto fut = m_queue.GetNext();
-        if (!fut.valid())
+        if (!fut.has_value())
             break;
 
-        auto exit_data = fut.get();
+        auto exit_data = *fut;
 
         m_NumFiles++;
 
@@ -477,7 +440,7 @@ int CAsnvalApp::Run()
 
     if (args["outdir"]) {
         m_OutputDir = args["outdir"].AsString();
-    }   
+    }
 
     mRemoteUpdater.reset(new edit::CRemoteUpdater(nullptr)); //m_logger));
 
@@ -516,23 +479,34 @@ int CAsnvalApp::Run()
         if (!m_InputDir.empty()) {
 
             if (ValidErrorStream) { // '-o' specified
-                CAsyncMessageHandler msgHandler(*mAppConfig, *ValidErrorStream); 
+                CAsyncMessageHandler msgHandler(*mAppConfig, *ValidErrorStream);
                 msgHandler.SetInvokeWrite(false); // don't invoke write inside ValidateOneDirectory()
 
                 auto writer_task = std::async([this, &msgHandler] { msgHandler.Write(); });
 
-                auto num_to_process = ValidateOneDirectory(m_InputDir, args["u"], &msgHandler);
-                while (m_NumFiles != num_to_process) {
-                    auto fut = m_queue.GetNext();
-                    auto exitData = fut.get(); // this forces a wait
-                    exit_data.mReported += exitData.mReported;
-                    exit_data.mNumRecords += exitData.mNumRecords;
-                    if (exitData.mLongest > exit_data.mLongest) {
-                        exit_data.mLongest = exitData.mLongest;
-                        exit_data.mLongestId = exitData.mLongestId;
+                auto combination_task = std::async([this, &exit_data]()
+                {
+                    while(true) {
+                        auto fut = m_queue.GetNext();
+                        if (fut.has_value()) {
+                            auto exitData = *fut;
+                            exit_data.mReported += exitData.mReported;
+                            exit_data.mNumRecords += exitData.mNumRecords;
+                            if (exitData.mLongest > exit_data.mLongest) {
+                                exit_data.mLongest = exitData.mLongest;
+                                exit_data.mLongestId = exitData.mLongestId;
+                            }
+                            ++m_NumFiles;
+                        } else {
+                            break;
+                        }
                     }
-                    ++m_NumFiles;
-                }
+                });
+
+                ValidateOneDirectory(m_InputDir, args["u"], &msgHandler);
+                m_queue.request_stop();
+                m_queue.wait();
+                combination_task.wait();
                 msgHandler.RequestStop();
                 writer_task.wait();
                 exit_data.mReported += msgHandler.GetNumReported();
@@ -540,10 +514,9 @@ int CAsnvalApp::Run()
             else { // write to separate files
                 auto writer_task = std::async([this, ValidErrorStream] { return xCombinedStatsTask(); });
 
-                auto num_to_process = ValidateOneDirectory(m_InputDir, args["u"]);
-                while (m_NumFiles != num_to_process) {
-                }
+                ValidateOneDirectory(m_InputDir, args["u"]);
                 m_queue.request_stop();
+                m_queue.wait();
                 exit_data = writer_task.get(); // this will wait writer task completion
             }
 
@@ -586,6 +559,8 @@ void CAsnvalApp::Setup(const CArgs& args)
     // CORE_SetLOCK(MT_LOCK_cxx2c());
 
     mAppConfig.reset(new CAppConfig(args, GetConfig()));
+    mAppConfig->m_thread_pool1 = &m_thread_pool1;
+    mAppConfig->m_thread_pool2 = &m_thread_pool2;
 
     // Create object manager
     CDataLoadersUtil::SetupObjectManager(args, *CObjectManager::GetInstance(),
@@ -606,25 +581,8 @@ int main(int argc, const char* argv[])
 
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
     {
-        NStr::Split(argv[1], " ", split_args);
+        NStr::Split(argv[1], " ", split_args, NStr::fSplit_CanEscape | NStr::fSplit_CanQuote | NStr::fSplit_Truncate | NStr::fSplit_MergeDelimiters);
 
-        auto it = split_args.begin();
-        while (it != split_args.end())
-        {
-            auto next = it; ++next;
-            if (next != split_args.end() &&
-                ((it->front() == '"' && it->back() != '"') ||
-                 (it->front() == '\'' && it->back() != '\'')))
-            {
-                it->append(" "); it->append(*next);
-                next = split_args.erase(next);
-            } else it = next;
-        }
-        for (auto& rec: split_args)
-        {
-            if (rec.front()=='\'' && rec.back()=='\'')
-                rec=rec.substr(1, rec.length()-2);
-        }
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
