@@ -34,6 +34,7 @@
 #define ASNVAL_THREAD_STATE_HPP
 
 #include <corelib/ncbistd.hpp>
+#include "thread_pool.hpp"
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -76,6 +77,12 @@ namespace ncbi {
 class IMessageHandler;
 }
 
+class CValidatorThreadPool: public CThreadPoolCore
+{
+public:
+    using CThreadPoolCore::CThreadPoolCore;
+};
+
 class CAsnvalThreadState
 {
 public:
@@ -88,7 +95,7 @@ public:
 
 protected:
 
-    void ReadClassMember(CObjectIStream& in, 
+    void ReadClassMember(CObjectIStream& in,
             const CObjectInfo::CMemberIterator& member,
             IMessageHandler& msgHandler);
 
@@ -123,10 +130,10 @@ protected:
     void ValidateBlobSequential(const string& loader_name, edit::CHugeFileProcess& process, IMessageHandler& msgHandler);
 
     void ValidateAsync(
-        const string& loader_name, 
-        CConstRef<CSubmit_block> pSubmitBlock, 
+        const string& loader_name,
+        CConstRef<CSubmit_block> pSubmitBlock,
         CConstRef<CSeq_id> seqid,
-        IMessageHandler& msgHandler 
+        IMessageHandler& msgHandler
         ) const;
 
     static CThreadExitData ValidateWorker(CAsnvalThreadState* _this,

@@ -117,10 +117,10 @@ public:
     CSerialMessageHandler(const CAppConfig& config, CNcbiOstream& ostr);
 
     ~CSerialMessageHandler();
-    
+
     void AddValidErrItem(CRef<objects::CValidErrItem> item) override;
 
-    void Write(bool ignoreInferences = true) override {}
+    void Write(bool /*ignoreInferences*/ = true) override {}
     void RequestStop() override {}
     bool InvokeWrite() const override { return false; }
     void SetInvokeWrite(bool /* dummy */) override {}
@@ -136,7 +136,7 @@ public:
     CAsyncMessageHandler(const CAppConfig& config, CNcbiOstream& ostr);
 
     ~CAsyncMessageHandler();
-    
+
     void AddValidErrItem(CRef<objects::CValidErrItem> item) override;
 
     void Write(bool ignoreInferences = true) override;
