@@ -334,7 +334,7 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
 
 
 /**********************************************************/
-bool GenBankIndex(ParserPtr pp)
+bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len))
 {
     FinfoBlk finfo;
 
@@ -351,6 +351,7 @@ bool GenBankIndex(ParserPtr pp)
     bool after_MGA;
 
     IndexblkPtr   entry;
+    DataBlkPtr    data;
     int           currentKeyword;
     Int4          indx = 0;
     IndBlkNextPtr ibnp;
@@ -719,6 +720,11 @@ bool GenBankIndex(ParserPtr pp)
             if (dbl) {
                 dbl = ValNodeFreeData(dbl);
                 // dbl_len = 0;
+            }
+            if (fun) {
+                data = LoadEntry(pp, entry->offset, entry->len);
+                (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
+                delete data;
             }
         } /* if, entry */
         else {
