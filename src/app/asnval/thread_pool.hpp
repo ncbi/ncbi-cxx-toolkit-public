@@ -160,10 +160,10 @@ public:
         typename = std::enable_if_t<!std::is_void_v<_Token>>,  // prevents void(...) functions
         typename = std::enable_if_t<std::is_void_v<std::invoke_result_t<_Deliver, _Token&&>>>
         >
-    void schedule(_Deliver&& deliver, _Function&& f, TArgs&&...args)
+    void schedule(_Deliver deliver, _Function f, TArgs&&...args)
     {
-        auto task = make_task(std::forward<_Function>(f), std::forward<TArgs>(args)...);
-        x_schedule<_Token>(std::move(task), std::forward<_Deliver>(deliver));
+        auto task = make_task(f, std::forward<TArgs>(args)...);
+        x_schedule<_Token>(task, deliver);
     }
 
     // cancel all workers and wait threads to finish
@@ -183,7 +183,7 @@ public:
 
     template<typename _Function, typename...TArgs>
     static
-    auto make_task(_Function&& f, TArgs&&...args)
+    auto make_task(_Function f, TArgs&&...args)
     {
         if constexpr (sizeof...(TArgs) == 0) {
             return std::forward<_Function>(f);
