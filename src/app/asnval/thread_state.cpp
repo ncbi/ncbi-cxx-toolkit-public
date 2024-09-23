@@ -165,7 +165,7 @@ CAsnvalThreadState::~CAsnvalThreadState()
 }
 
 
-void CAsnvalThreadState::ReadClassMember(CObjectIStream& in, 
+void CAsnvalThreadState::ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member,
         IMessageHandler& msgHandler)
 {
@@ -510,7 +510,7 @@ void CAsnvalThreadState::ProcessSeqSubmit(CRef<CSerialObject> serial, IMessageHa
     if (!mAppConfig.mQuiet) {
         LOG_POST_XX(Corelib_App, 1, m_CurrentId);
     }
-    CValidErrorSuppress::TCodes suppressed; 
+    CValidErrorSuppress::TCodes suppressed;
     CValidErrorSuppress::SetSuppressedCodes(*ss, suppressed);
     validator.Validate(*ss, scope, m_Options, msgHandler, &suppressed);
     m_NumRecords++;
@@ -634,9 +634,9 @@ void CAsnvalThreadState::ValidateInput(TTypeInfo asninfo, IMessageHandler& msgHa
 
 
 void CAsnvalThreadState::ValidateAsync(
-        const string& loader_name, 
-        CConstRef<CSubmit_block> pSubmitBlock, 
-        CConstRef<CSeq_id> seqid, 
+        const string& loader_name,
+        CConstRef<CSubmit_block> pSubmitBlock,
+        CConstRef<CSeq_id> seqid,
         IMessageHandler& msgHandler) const
 {
     CRef<CSeq_entry> pEntry;
@@ -692,7 +692,7 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     string loader_name = CDirEntry::CreateAbsolutePath(process.GetFile().m_filename);
     bool use_mt = true;
     #ifdef _DEBUG
-        use_mt = false;
+        //use_mt = false;
     #endif
 
     auto& reader = process.GetReader();
@@ -720,7 +720,7 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
         s_StartWrite(msgHandler, ignoreInferences);
     }
 
-   
+
     if (use_mt) {
         ValidateBlobAsync(loader_name, process, msgHandler);
     } else {
@@ -770,8 +770,8 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
 
 CThreadExitData CAsnvalThreadState::ValidateWorker(
     CAsnvalThreadState* _this,
-    const string& loader_name, 
-    CConstRef<CSubmit_block> pSubmitBlock, 
+    const string& loader_name,
+    CConstRef<CSubmit_block> pSubmitBlock,
     CConstRef<CSeq_id> seqid,
     IMessageHandler& msgHandler)
 {
@@ -794,29 +794,37 @@ CThreadExitData CAsnvalThreadState::ValidateWorker(
 }
 
 
-void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process, 
+void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process,
         IMessageHandler& msgHandler)
 {
     bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     auto& reader = process.GetReader();
-    auto writer_task = std::async([this, &ignoreInferences, &msgHandler] { if(msgHandler.InvokeWrite()){ msgHandler.Write(ignoreInferences); } });
+
+    auto writer_task = mAppConfig.m_thread_pool1->launch(
+        [this, &ignoreInferences, &msgHandler] {
+            if(msgHandler.InvokeWrite())
+                {
+                    msgHandler.Write(ignoreInferences);
+                }
+            return true;
+        }
+    );
 
     CMessageQueue<std::future<CThreadExitData>> val_queue{ mAppConfig.mNumInstances };
     // start a loop in a separate thread
-    auto topids_task = std::async(std::launch::async, [this, &val_queue, &loader_name, &reader, &msgHandler]()
+    auto topids_task = mAppConfig.m_thread_pool1->launch([this, &val_queue, &loader_name, &reader, &msgHandler]() -> bool
         {
             auto pSubmitBlock = reader.GetSubmitBlock();
             for (auto seqid : reader.GetTopIds())
             {
-                auto fut = std::async(std::launch::async, ValidateWorker, 
-                        this, loader_name, pSubmitBlock, seqid, std::ref(msgHandler));
+                auto fut = mAppConfig.m_thread_pool2->launch(ValidateWorker, this, loader_name, pSubmitBlock, seqid, std::ref(msgHandler));
                 // std::future is not copiable, so passing it for move constructor
                 val_queue.push_back(std::move(fut));
             }
 
             val_queue.push_back({});
+            return true;
         });
-
 
     while (true)
     {
@@ -841,9 +849,9 @@ void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHug
 
 
 void CAsnvalThreadState::ValidateBlobSequential(
-        const string& loader_name, 
-        edit::CHugeFileProcess& process, 
-        IMessageHandler& msgHandler)  
+        const string& loader_name,
+        edit::CHugeFileProcess& process,
+        IMessageHandler& msgHandler)
 {
     auto& reader = process.GetReader();
 
@@ -870,7 +878,7 @@ bool CAsnvalThreadState::ValidateTraditionally(TTypeInfo asninfo, IMessageHandle
     }
     bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     s_StartWrite(msgHandler, ignoreInferences);
-  
+
     if (m_ReadFailure) {
         return false;
     }
@@ -914,7 +922,7 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename,
     unique_ptr<IMessageHandler> pMsgHandler;
     if (mAppConfig.mHugeFile) { // Also need to check input stream here
         pMsgHandler.reset(new CAsyncMessageHandler(mAppConfig, ostr));
-    } 
+    }
     else {
         pMsgHandler.reset(new CSerialMessageHandler(mAppConfig, ostr));
     }
@@ -942,7 +950,7 @@ CThreadExitData CAsnvalThreadState::ValidateOneFile(const std::string& filename,
             CHugeFileValidator::RegisterReaderHooks(istream, m_GlobalInfo);
         });
 
-        mpHugeFileProcess.reset(new edit::CHugeFileProcess(huge_reader.GetPointer())); 
+        mpHugeFileProcess.reset(new edit::CHugeFileProcess(huge_reader.GetPointer()));
         try {
             mpHugeFileProcess->Open(filename, &s_known_types);
             asninfo = mpHugeFileProcess->GetFile().m_content;

@@ -34,7 +34,7 @@
 #include <objects/valerr/ValidError.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include "message_handler.hpp" 
+#include "message_handler.hpp"
 #include "app_config.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -42,10 +42,13 @@ USING_SCOPE(objects);
 
 
 IMessageHandler::IMessageHandler(const CAppConfig& config, CNcbiOstream& ostr) :
-    mAppConfig(config), m_pFormat(g_CreateFormatter(config, ostr)), m_Ostr(ostr) {}
+    m_pFormat(g_CreateFormatter(config, ostr)),
+    m_Ostr(ostr),
+    mAppConfig(config)
+    {}
 
 
-bool IMessageHandler::Ignore(const CValidErrItem& item) const 
+bool IMessageHandler::Ignore(const CValidErrItem& item) const
 {
     const auto severity = item.GetSeverity();
 
@@ -70,7 +73,7 @@ void IMessageHandler::AddValidErrItem(
     const string&        acc,
     const int            ver,
     const string&        location,
-    const int            seq_offset) 
+    const int            seq_offset)
 {
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, &obj, nullptr, acc, ver, seq_offset));
     if (!NStr::IsBlank(location)) {
@@ -89,7 +92,7 @@ void IMessageHandler::AddValidErrItem(
     const string&        acc,
     const int            ver,
     const string&        location,
-    const int            seq_offset) 
+    const int            seq_offset)
 {
     CRef<CValidErrItem> item(new CValidErrItem(sev, ec, msg, desc, nullptr, nullptr, acc, ver, seq_offset));
     if (!NStr::IsBlank(location)) {
@@ -163,10 +166,10 @@ CAsyncMessageHandler::CAsyncMessageHandler(const CAppConfig& config, CNcbiOstrea
 }
 
 
-CAsyncMessageHandler::~CAsyncMessageHandler() 
+CAsyncMessageHandler::~CAsyncMessageHandler()
 {
     // Make sure that all messages are written
-    { 
+    {
         lock_guard<mutex> lock(m_Mutex);
         if (m_Items.empty()) {
             m_pFormat->Finish();
@@ -184,7 +187,7 @@ CAsyncMessageHandler::~CAsyncMessageHandler()
 
 
 void CAsyncMessageHandler::AddValidErrItem(CRef<CValidErrItem> pItem) {
-   
+
     const auto notEmpty = pItem.NotEmpty();
     if (notEmpty) {
         if (Ignore(*pItem)) {
@@ -195,7 +198,7 @@ void CAsyncMessageHandler::AddValidErrItem(CRef<CValidErrItem> pItem) {
         }
     }
 
-        
+
     {
         lock_guard<mutex> lock(m_Mutex);
         m_Items.push(pItem);
