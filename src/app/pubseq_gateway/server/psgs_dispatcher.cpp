@@ -702,6 +702,12 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                           request->GetStartTimestamp());
             procs->second->m_FinallyFlushed = true;
 
+            // Note: the flag setting is logically needs to be done a few lines
+            // down, just before x_PrintRequestStop()
+            // However the iterator based modifications have to be done before
+            // releasing the group lock
+            procs->second->m_RequestStopPrinted = true;
+
             // To avoid flushing and stopping request under a lock
             m_GroupsLock[bucket_index].unlock();
             need_unlock = false;
@@ -711,7 +717,6 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
             reply->Flush(CPSGS_Reply::ePSGS_SendAndFinish);
             reply->SetCompleted();
 
-            procs->second->m_RequestStopPrinted = true;
             x_PrintRequestStop(request, request_status, reply->GetBytesSent());
         }
     }
