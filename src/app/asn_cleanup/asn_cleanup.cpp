@@ -541,12 +541,14 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
 bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
 {
     return process.ForEachBlob([this](edit::CHugeFileProcess& p_process) -> bool {
-        m_state.m_IsMultiSeq = p_process.GetReader().IsMultiSequence();
-        if (m_state.m_IsMultiSeq) {
+        bool multi_seq = p_process.GetReader().IsMultiSequence();
+        if (multi_seq && !p_process.GetReader().HasLoneProteins()) {
+            m_state.m_IsMultiSeq = true;
             bool proceed = x_ProcessHugeFileBlob(p_process);
             if (! proceed)
                 return false;
         } else {
+            m_state.m_IsMultiSeq = false;
             auto topobject = x_ProcessTraditionally(p_process.GetReader());
             m_Out->ResetLocalHooks();
             *m_Out << *topobject;
@@ -1106,64 +1108,49 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char** argv)
 {
-    // scan and replace deprecated arguments; RW-1324
-    for (int i = 1; i < argc; ++i) {
-        string a = argv[i];
-        if (a == "-r") {
-            if ((i + 1) < argc) {
-                string param = argv[i + 1];
-                if (! param.empty() && param[0] != '-') {
-                    argv[i] = "-outdir";
-                    ++i; // skip parameter
-                    cerr << "Warning: deprecated use of -r argument. Please use -outdir instead." << endl;
-                }
-            }
-        } else if (a == "-p") {
-            argv[i] = "-indir";
-            cerr << "Warning: argument -p is deprecated. Please use -indir instead." << endl;
-        } else if (a == "-R") {
-            argv[i] = "-r";
-            cerr << "Warning: argument -R is deprecated. Please use -r instead." << endl;
-        } else if (a == "-gbload") {
-            argv[i] = "-genbank";
-            cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead." << endl;
-        }
-    }
-
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;
     vector<const char*> new_argv;
 
     if (argc == 2 && argv && argv[1] && strchr(argv[1], ' ')) {
-        NStr::Split(argv[1], " ", split_args);
+        NStr::Split(argv[1], " ", split_args, NStr::fSplit_MergeDelimiters | NStr::fSplit_CanQuote | NStr::fSplit_CanEscape);
 
-        auto it = split_args.begin();
-        while (it != split_args.end()) {
-            auto next = it;
-            ++next;
-            if (next != split_args.end() &&
-                ((it->front() == '"' && it->back() != '"') ||
-                 (it->front() == '\'' && it->back() != '\''))) {
-                it->append(" ");
-                it->append(*next);
-                next = split_args.erase(next);
-            } else
-                it = next;
-        }
-        for (auto& rec : split_args) {
-            if (rec.front() == '\'' && rec.back() == '\'')
-                rec = rec.substr(1, rec.length() - 2);
-        }
         argc = 1 + int(split_args.size());
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (const string& s : split_args) {
+        for (auto& s : split_args) {
             new_argv.push_back(s.c_str());
+            #ifdef _DEBUG
             std::cerr << s.c_str() << " ";
+            #endif
         }
         std::cerr << "\n";
 
         argv = new_argv.data();
+    }
+
+    // scan and replace deprecated arguments; RW-1324
+    for (int i = 1; i < argc; ++i) {
+        CTempString a = argv[i];
+        if (a == "-r") {
+            if ((i + 1) < argc) {
+                CTempString param = argv[i + 1];
+                if (! param.empty() && param[0] != '-') {
+                    argv[i] = "-outdir";
+                    ++i; // skip parameter
+                    cerr << "Warning: deprecated use of -r argument. Please use -outdir instead.\n";
+                }
+            }
+        } else if (a == "-p") {
+            argv[i] = "-indir";
+            cerr << "Warning: argument -p is deprecated. Please use -indir instead.\n";
+        } else if (a == "-R") {
+            argv[i] = "-r";
+            cerr << "Warning: argument -R is deprecated. Please use -r instead.\n";
+        } else if (a == "-gbload") {
+            argv[i] = "-genbank";
+            cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead.\n";
+        }
     }
 
     return CCleanupApp().AppMain(argc, argv);

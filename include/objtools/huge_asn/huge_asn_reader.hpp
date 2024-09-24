@@ -54,11 +54,12 @@ BEGIN_SCOPE(objects)
 class CBioseq;
 class CSeq_submit;
 class CSeqdesc;
+class CSeq_annot;
 
 BEGIN_SCOPE(edit)
 
 
-class NCBI_XHUGEASN_EXPORT CHugeAsnReader: 
+class NCBI_XHUGEASN_EXPORT CHugeAsnReader:
     public IHugeAsnSource,
     public CObject
 {
@@ -99,8 +100,9 @@ public:
         TBioseqSetList::const_iterator m_parent_set;
         CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
         CConstRef<CSeq_descr> m_descr;
-        bool m_HasAnnot{false};
+        TFileSize m_annot_pos{0};
         optional<int> m_Level;
+        bool HasAnnot() const { return m_annot_pos != 0; }
     };
 
     using CRefLess = PPtrLess<CConstRef<CSeq_id>>;
@@ -143,6 +145,7 @@ public:
     using t_more_hooks = std::function<void(CObjectIStream&)>;
     void ExtendReadHooks(t_more_hooks hooks);
     void ResetTopEntry();
+    bool HasLoneProteins() const;
 
 protected:
     // temporary structure for indexing
@@ -176,7 +179,7 @@ private:
     void x_ThrowDuplicateId(
         const TBioseqSetInfo& existingInfo,const TBioseqSetInfo& newInfo, const CSeq_id& duplicateId);
 
-    CRef<CSeq_descr> x_GetTopLevelDescriptors() const;
+    std::tuple<CRef<CSeq_descr>, std::list<CRef<CSeq_annot>>> x_GetTopLevelDescriptors() const;
     bool x_HasNestedGenbankSets() const;
 
     ILineErrorListener *    mp_MessageListener = nullptr;

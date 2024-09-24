@@ -574,9 +574,8 @@ void CAsnvalApp::Setup(const CArgs& args)
 
 int main(int argc, const char* argv[])
 {
-    #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing
-    list<string> split_args;
+    list<string>        split_args;
     vector<const char*> new_argv;
 
     if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
@@ -586,16 +585,16 @@ int main(int argc, const char* argv[])
         argc = 1 + split_args.size();
         new_argv.reserve(argc);
         new_argv.push_back(argv[0]);
-        for (const string& s : split_args)
-        {
+        for (auto& s : split_args) {
             new_argv.push_back(s.c_str());
+            #ifdef _DEBUG
             std::cerr << s.c_str() << " ";
+            #endif
         }
         std::cerr << "\n";
 
-
         argv = new_argv.data();
     }
-    #endif
+
     return CAsnvalApp().AppMain(argc, argv);
 }

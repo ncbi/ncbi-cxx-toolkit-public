@@ -36,6 +36,15 @@
 
 using namespace ncbi;
 
+static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
+{
+    if (args["disable-huge"])
+        return false;
+    if (args["huge"])
+        return true;
+    return cfg.GetBool("asnvalidate", "UseHugeFiles", false);
+}
+
 CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
 {
     mQuiet = args["quiet"] && args["quiet"].AsBoolean();
@@ -62,7 +71,7 @@ CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
         mOnlyError = args["E"].AsString();
     }
     mOnlyAnnots = args["annot"];
-    mHugeFile = ! args["disable-huge"] && (args["huge"] || reg.GetBool("asnvalidate", "UseHugeFiles", false));
+    mHugeFile = s_IsHugeMode(args, reg);
 
     mContinue = false;
     // Set validator options
