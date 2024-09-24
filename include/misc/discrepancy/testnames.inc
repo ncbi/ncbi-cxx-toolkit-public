@@ -43,6 +43,7 @@ enum class eTestNames
     CULTURE_TAXNAME_MISMATCH,
     DEFLINE_ON_SET,
     DEFLINE_PRESENT,
+    DEPRECATED,
     DIVISION_CODE_CONFLICTS,
     DUPLICATE_LOCUS_TAGS,
     DUPLICATE_PRIMER_SET,
@@ -211,6 +212,7 @@ enum class eTestNames
     eTestNames::CONSORTIUM,  \
     eTestNames::CONTAINED_CDS,  \
     eTestNames::COUNTRY_COLON,  \
+    eTestNames::DEPRECATED,  \
     eTestNames::EC_NUMBER_ON_UNKNOWN_PROTEIN,  \
     eTestNames::END_COLON_IN_COUNTRY,  \
     eTestNames::EXON_ON_MRNA,  \
