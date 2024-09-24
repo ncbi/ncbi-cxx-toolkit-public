@@ -521,45 +521,13 @@ static int x_MbedTlsPull(void* ctx, unsigned char* buf, size_t size)
 }
 
 
-static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
-{
-    SOCK sock = ((SNcbiSSLctx*) ctx)->sock;
-    FSSLPush push = s_Push;
-    EIO_Status status;
-
-    if (push) {
-        ssize_t n_written = 0;
-        do {
-            size_t x_written = 0;
-            status = push(sock, data, size, &x_written, x_IfToLog());
-            if (!x_written) {
-                assert(!size  ||  status != eIO_Success);
-                if (size  ||  status != eIO_Success)
-                    goto out;
-            } else {
-                assert(status == eIO_Success);
-                assert(x_written <= size);
-                n_written += (ssize_t) x_written;
-                size      -=           x_written;
-                data       = data  +   x_written;
-            }
-        } while (size);
-        return (int) n_written;
-    } else
-        status = eIO_NotSupported;
-
- out:
-    return x_StatusToError(status, sock, eIO_Write);
-}
-
-
-static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
-                               size_t* n_done, int* error)
+static EIO_Status s_MbedTlsRead(void* session, void* buf,
+                                size_t n_todo, size_t* n_done, int* error)
 {
     EIO_Status status;
     int        x_read;
 
-    assert(session  &&  buf  &&  n_todo);
+    assert(session  &&  buf  &&  n_todo > 0);
 
 again:
     x_read = mbedtls_ssl_read((mbedtls_ssl_context*) session,
@@ -581,14 +549,47 @@ again:
 }
 
 
-static EIO_Status x_MbedTlsWrite(void* session, const void* data,
+static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
+{
+    SOCK sock = ((SNcbiSSLctx*) ctx)->sock;
+    FSSLPush push = s_Push;
+    EIO_Status status;
+
+    if (push) {
+        ssize_t n_written = 0;
+        do {
+            size_t x_written = 0;
+            status = push(sock, data, size, &x_written, x_IfToLog());
+            if (!x_written) {
+                assert(!size  ||  status != eIO_Success);
+                if (size  ||  status != eIO_Success)
+                    goto out;
+            } else {
+                assert(status == eIO_Success);
+                assert(x_written <= size);
+                n_written += (ssize_t) x_written;
+                size      -=           x_written;
+                data      +=           x_written;
+            }
+        } while (size);
+        return (int) n_written;
+    } else
+        status = eIO_NotSupported;
+
+ out:
+    return x_StatusToError(status, sock, eIO_Write);
+}
+
+
+static EIO_Status x_MbedTlsWrite(void* session, const unsigned char* data,
                                  size_t n_todo, size_t* n_done, int* error)
 {
     EIO_Status status;
     int        x_written;
 
-    x_written = mbedtls_ssl_write((mbedtls_ssl_context*) session,
-                                  (const unsigned char*) data, n_todo);
+    assert(data  &&  n_todo > 0);
+
+    x_written = mbedtls_ssl_write((mbedtls_ssl_context*) session, data, n_todo);
     assert(x_written < 0  ||  (size_t) x_written <= n_todo);
 
     if (x_written <= 0) {
@@ -606,18 +607,19 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
 }
 
 
-static EIO_Status s_MbedTlsWrite(void* session, const void* data,
+static EIO_Status s_MbedTlsWrite(void* session, const void* x_data,
                                  size_t n_todo, size_t* n_done, int* error)
 {
+    const unsigned char* data = (const unsigned char*) x_data;
     size_t max_size = mbedtls_ssl_get_max_out_record_payload
         ((mbedtls_ssl_context*) session);
     EIO_Status status;
 
-    assert(session  &&  data  &&  n_todo);
+    assert(session  &&  data  &&  n_todo > 0);
 
     *n_done = 0;
 
-    do {
+    for (;;) {
         size_t x_todo = n_todo > max_size ? max_size : n_todo;
         size_t x_done;
         status = x_MbedTlsWrite(session, data, x_todo, &x_done, error);
@@ -630,8 +632,10 @@ static EIO_Status s_MbedTlsWrite(void* session, const void* data,
         if (x_todo != x_done)
             break;
         n_todo  -= x_done;
-        data     = (const char*) data + x_done;
-    } while (n_todo);
+        if (!n_todo)
+            break;
+        data    += x_done;
+    }
 
     return *n_done ? eIO_Success : status;
 }
