@@ -757,6 +757,12 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
             }
             throw;
         }
+        catch (const CSerialException& e) {
+            // mimic traditional mode and do not pass exception information
+            ReportReadFailure(nullptr, msgHandler);
+            LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to process invalid ASN.1 file " + process.GetConstFile().m_filename);
+            return;
+        }
         catch (const CException& e) {
             ReportReadFailure(&e, msgHandler);
             return;

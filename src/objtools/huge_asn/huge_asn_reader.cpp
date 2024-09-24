@@ -556,7 +556,7 @@ std::tuple<CRef<CSeq_descr>, std::list<CRef<CSeq_annot>>> CHugeAsnReader::x_GetT
     return {pDescriptors, pAnnots};
 }
 
-bool CHugeAsnReader::x_HasNestedGenbankSets() const
+bool CHugeAsnReader::HasNestedGenbankSets() const
 {
     if (GetBiosets().size() <= 2) {
         return false;
@@ -638,7 +638,7 @@ void CHugeAsnReader::FlattenGenbankSet()
         auto top = next(GetBiosets().begin());
         if (m_FlattenedSets.size() == 1) {
             // exposing the whole top entry
-            if (x_HasNestedGenbankSets()) {
+            if (HasNestedGenbankSets()) {
                 CRef<CSeq_descr> pDescriptors;
                 std::list<CRef<CSeq_annot>> pAnnots;
                 std::tie(pDescriptors, pAnnots) = x_GetTopLevelDescriptors();
@@ -719,7 +719,7 @@ CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()
 
     const auto addTopEntry =
         (m_FlattenedSets.size() == 1 &&
-           x_HasNestedGenbankSets()) ?
+           HasNestedGenbankSets()) ?
         eAddTopEntry::yes :
         eAddTopEntry::no;
 

@@ -541,15 +541,19 @@ bool CCleanupApp::x_ProcessHugeFileBlob(edit::CHugeFileProcess& process)
 bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
 {
     return process.ForEachBlob([this](edit::CHugeFileProcess& p_process) -> bool {
-        bool multi_seq = p_process.GetReader().IsMultiSequence();
-        if (multi_seq && !p_process.GetReader().HasLoneProteins()) {
+        auto& reader = p_process.GetReader();
+        bool multi_seq = reader.IsMultiSequence();
+        if (multi_seq && !reader.HasLoneProteins()) {
+            if (reader.HasNestedGenbankSets()) {
+                m_state.m_changes.SetChanged(CCleanupChange::eCollapseSet);
+            }
             m_state.m_IsMultiSeq = true;
             bool proceed = x_ProcessHugeFileBlob(p_process);
             if (! proceed)
                 return false;
         } else {
             m_state.m_IsMultiSeq = false;
-            auto topobject = x_ProcessTraditionally(p_process.GetReader());
+            auto topobject = x_ProcessTraditionally(reader);
             m_Out->ResetLocalHooks();
             *m_Out << *topobject;
         }
