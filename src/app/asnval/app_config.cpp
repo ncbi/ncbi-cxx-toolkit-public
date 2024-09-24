@@ -42,7 +42,7 @@ static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
         return false;
     if (args["huge"])
         return true;
-    return cfg.GetBool("asnvalidate", "UseHugeFiles", false);
+    return cfg.GetBool("asnvalidate", "UseHugeFiles", true);
 }
 
 CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
