@@ -510,8 +510,7 @@ static void x_set_errno(gnutls_session_t session, int error)
 }
 
 
-static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
-                            void* buf, size_t size)
+static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr, void* buf, size_t size)
 {
     SNcbiSSLctx* ctx = (SNcbiSSLctx*) ptr;
     FSSLPull pull = s_Pull;
@@ -537,51 +536,13 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
 }
 
 
-static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
-                            const void* data, size_t size)
-{
-    SNcbiSSLctx* ctx = (SNcbiSSLctx*) ptr;
-    FSSLPush push = s_Push;
-    EIO_Status status;
-    int x_error;
-
-    if (push) {
-        ssize_t n_written = 0;
-        do {
-            size_t x_written = 0;
-            status = push(ctx->sock, data, size, &x_written, x_IfToLog());
-            if (!x_written) {
-                assert(!size  ||  status != eIO_Success);
-                if (size  ||  status != eIO_Success)
-                    goto out;
-            } else {
-                assert(status == eIO_Success);
-                assert(x_written <= size);
-                n_written += (ssize_t)            x_written;
-                size      -=                      x_written;
-                data       = (const char*) data + x_written;
-            }
-        } while (size);
-        x_set_errno((gnutls_session_t) ctx->sess, 0);
-        return n_written;
-    } else
-        status = eIO_NotSupported;
-
- out:
-    x_error = x_StatusToError(status, ctx->sock, eIO_Write);
-    if (x_error)
-        x_set_errno((gnutls_session_t) ctx->sess, x_error);
-    return -1;
-}
-
-
-static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
-                               size_t* n_done, int* error)
+static EIO_Status s_GnuTlsRead(void* session, void* buf,
+                               size_t n_todo, size_t* n_done, int* error)
 {
     EIO_Status status;
     ssize_t    x_read;
 
-    assert(session  &&  buf  &&  n_todo);
+    assert(session  &&  buf  &&  n_todo > 0);
 
 again:
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
@@ -603,11 +564,52 @@ again:
 }
 
 
-static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
-                                size_t* n_done, int* error)
+static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
+                            const void* x_data, size_t size)
+{
+    const unsigned char* data = (const unsigned char*) x_data;
+    SNcbiSSLctx* ctx = (SNcbiSSLctx*) ptr;
+    FSSLPush push = s_Push;
+    EIO_Status status;
+    int x_error;
+
+    if (push) {
+        ssize_t n_written = 0;
+        do {
+            size_t x_written = 0;
+            status = push(ctx->sock, data, size, &x_written, x_IfToLog());
+            if (!x_written) {
+                assert(!size  ||  status != eIO_Success);
+                if (size  ||  status != eIO_Success)
+                    goto out;
+            } else {
+                assert(status == eIO_Success);
+                assert(x_written <= size);
+                n_written += (ssize_t) x_written;
+                size      -=           x_written;
+                data      +=           x_written;
+            }
+        } while (size);
+        x_set_errno((gnutls_session_t) ctx->sess, 0);
+        return n_written;
+    } else
+        status = eIO_NotSupported;
+
+ out:
+    x_error = x_StatusToError(status, ctx->sock, eIO_Write);
+    if (x_error)
+        x_set_errno((gnutls_session_t) ctx->sess, x_error);
+    return -1;
+}
+
+
+static EIO_Status x_GnuTlsWrite(void* session, const unsigned char* data,
+                                size_t n_todo, size_t* n_done, int* error)
 {
     EIO_Status status;
     ssize_t    x_written;
+
+    assert(data  &&  n_todo > 0);
 
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
     assert(x_written < 0  ||  (size_t) x_written <= n_todo);
@@ -628,17 +630,18 @@ static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
 }
 
 
-static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
-                                size_t* n_done, int* error)
+static EIO_Status s_GnuTlsWrite(void* session, const void* x_data,
+                                size_t n_todo, size_t* n_done, int* error)
 {
+    const unsigned char* data = (const unsigned char*) x_data;
     size_t max_size = gnutls_record_get_max_size((gnutls_session_t) session);
     EIO_Status status;
 
-    assert(session  &&  data  &&  n_todo);
+    assert(session  &&  data  &&  n_todo > 0);
 
     *n_done = 0;
 
-    do {
+    for (;;) {
         size_t x_todo = n_todo > max_size ? max_size : n_todo;
         size_t x_done;
         status = x_GnuTlsWrite(session, data, x_todo, &x_done, error);
@@ -651,8 +654,10 @@ static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
         if (x_todo != x_done)
             break;
         n_todo  -= x_done;
-        data     = (const char*) data + x_done;
-    } while (n_todo);
+        if (!n_todo)
+            break;
+        data    += x_done;
+    }
 
     return *n_done ? eIO_Success : status;
 }
