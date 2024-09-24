@@ -43,6 +43,7 @@ static constexpr std::initializer_list<eTestNames> g_ReportOrder0 = {
 
 static constexpr std::initializer_list<eTestNames> g_ReportOrder1 = {
         eTestNames::SOURCE_QUALS,
+        eTestNames::DEPRECATED,
         eTestNames::DUP_SRC_QUAL,
         eTestNames::MAP_CHROMOSOME_CONFLICT,
         eTestNames::BIOMATERIAL_TAXNAME_MISMATCH,
@@ -212,7 +213,8 @@ static void RecursiveSummary(ostream& out, const TReportItemList& list, unsigned
         auto title = it->GetTitle();
         auto msg = it->GetMsg();
         bool includeInSummary = (level == 0 )
-            ||  (title == string_view("SOURCE_QUALS")  &&  level == 1);
+            ||  (title == string_view("SOURCE_QUALS")  &&  level == 1)
+            ||  (title == string_view("DEPRECATED")  &&  level == 1);
         if (includeInSummary) {
             if (fatal && ShowFatal(*it)) {
                 out << "FATAL: ";
@@ -239,6 +241,7 @@ static bool RecursiveFatalSummary(ostream& out, const TReportItemList& list, siz
     bool found = false;
     for (const auto& it : list) {
         if (it->IsFatal() && it->GetTitle() != string_view("SOURCE_QUALS")
+            && it->GetTitle() != string_view("DEPRECATED")
             && it->GetTitle() != string_view("SUSPECT_PRODUCT_NAMES")) {
             found = true;
             if (level == 0) {
