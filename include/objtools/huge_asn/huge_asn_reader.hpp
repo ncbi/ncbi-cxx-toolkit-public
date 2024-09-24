@@ -146,6 +146,7 @@ public:
     void ExtendReadHooks(t_more_hooks hooks);
     void ResetTopEntry();
     bool HasLoneProteins() const;
+    bool HasNestedGenbankSets() const;
 
 protected:
     // temporary structure for indexing
@@ -172,7 +173,6 @@ protected:
     using TStreamPos = streampos;
     TStreamPos GetCurrentPos() const;
 
-
 private:
     void x_ResetIndex();
     void x_IndexNextAsn1();
@@ -180,7 +180,6 @@ private:
         const TBioseqSetInfo& existingInfo,const TBioseqSetInfo& newInfo, const CSeq_id& duplicateId);
 
     std::tuple<CRef<CSeq_descr>, std::list<CRef<CSeq_annot>>> x_GetTopLevelDescriptors() const;
-    bool x_HasNestedGenbankSets() const;
 
     ILineErrorListener *    mp_MessageListener = nullptr;
     TStreamPos              m_current_pos      = 0; // points to current blob in concatenated ASN.1 file
