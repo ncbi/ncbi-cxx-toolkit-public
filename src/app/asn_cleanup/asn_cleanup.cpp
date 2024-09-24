@@ -330,7 +330,7 @@ static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
         return false;
     if (args["huge"])
         return true;
-    return cfg.GetBool("asn_cleanup", "UseHugeFiles", false);
+    return cfg.GetBool("asn_cleanup", "UseHugeFiles", true);
 }
 
 void CCleanupApp::x_ProcessOneFile(const string& filename)
