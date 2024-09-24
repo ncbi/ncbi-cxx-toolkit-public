@@ -649,7 +649,7 @@ public:
         if (m_JobContext.GetShutdownLevel() ==
                 CNetScheduleAdmin::eShutdownImmediate) {
             m_JobContext.ReturnJob();
-            return eStop;
+            return m_ProcessManager(pid) ? eExit : eStop;
         }
 
         EAction action = CTimedProcessWatcher::Watch(pid);
