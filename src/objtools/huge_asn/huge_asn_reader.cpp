@@ -47,6 +47,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -306,9 +307,11 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
 
 
     SetLocalReadHook(bioseqset_annot_mi, objStream,
-            [&context](CObjectIStream& in, const CObjectInfoMI& member)
+            [&context, this](CObjectIStream& in, const CObjectInfoMI& member)
             {
-                context.bioseq_set_stack.back()->m_HasAnnot = true;
+                auto pos = in.GetStreamPos() + m_next_pos;
+                auto& set_rec = context.bioseq_set_stack.back();
+                set_rec->m_annot_pos = pos;
                 (*member).GetTypeInfo()->DefaultSkipData(in);
             });
 
@@ -385,7 +388,7 @@ void CHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, CHugeAsnRead
                 }
 
                 if (IsHugeSet(last->m_class) &&
-                    last->m_HasAnnot) {
+                    last->HasAnnot()) {
                     m_HasHugeSetAnnot = true;
                 }
 
@@ -407,7 +410,7 @@ void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader:
         }
     });
 
-    SetLocalReadHook(CType<CFeat_id>(), objStream, 
+    SetLocalReadHook(CType<CFeat_id>(), objStream,
             [this](CObjectIStream& in, const CObjectInfo& object)
     {
         auto* pObject = object.GetObjectPtr();
@@ -503,17 +506,26 @@ const CBioseq_set::TClass* CHugeAsnReader::GetTopLevelClass() const
     return m_pTopLevelClass;
 }
 
-CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
+std::tuple<CRef<CSeq_descr>, std::list<CRef<CSeq_annot>>> CHugeAsnReader::x_GetTopLevelDescriptors() const
 {
     CRef<CSeq_descr> pDescriptors;
+    std::list<CRef<CSeq_annot>> pAnnots;
     if (GetBiosets().size() < 2) {
-        return pDescriptors;
+        return {pDescriptors, pAnnots};
     }
+
+    CObjectTypeInfo bioseq_set_info = CType<CBioseq_set>();
+    auto bioseqset_annot_mi = bioseq_set_info.FindMember("annot");
 
     auto top = next(GetBiosets().begin());
     if (top->m_descr) {
         pDescriptors = Ref(new CSeq_descr());
         pDescriptors->Assign(*top->m_descr);
+    }
+
+    if (top->HasAnnot()) {
+        auto obj_stream = MakeObjStream(top->m_annot_pos);
+        bioseqset_annot_mi.GetMemberInfo()->GetTypeInfo()->ReadData(*obj_stream, &pAnnots);
     }
 
     for (auto it = next(top); it != end(GetBiosets()); ++it) {
@@ -532,8 +544,16 @@ CRef<CSeq_descr> CHugeAsnReader::x_GetTopLevelDescriptors() const
                 }
             }
         }
+        if (it->HasAnnot()) {
+            auto obj_stream = MakeObjStream(it->m_annot_pos);
+            list< CRef< CSeq_annot > > annots;
+            bioseqset_annot_mi.GetMemberInfo()->GetTypeInfo()->ReadData(*obj_stream, &annots);
+            if (!annots.empty()) {
+                pAnnots.splice(pAnnots.end(), std::move(annots));
+            }
+        }
     }
-    return pDescriptors;
+    return {pDescriptors, pAnnots};
 }
 
 bool CHugeAsnReader::x_HasNestedGenbankSets() const
@@ -544,6 +564,22 @@ bool CHugeAsnReader::x_HasNestedGenbankSets() const
     auto it = next(GetBiosets().begin());
     return (it->m_class == CBioseq_set::eClass_genbank &&
             next(it)->m_class == CBioseq_set::eClass_genbank);
+}
+
+bool CHugeAsnReader::HasLoneProteins() const
+{
+    for (auto it = m_bioseq_list.begin(); it!= m_bioseq_list.end(); ++it)
+    {
+        auto& rec = *it;
+        if (rec.m_mol != CSeq_inst::eMol_aa)
+            continue;
+        auto& parent = rec.m_parent_set;
+        if (parent->m_class == CBioseq_set::eClass_nuc_prot)
+            continue;
+
+        return true;
+    }
+    return false;
 }
 
 void CHugeAsnReader::FlattenGenbankSet()
@@ -561,8 +597,8 @@ void CHugeAsnReader::FlattenGenbankSet()
 
     for (auto it = m_bioseq_list.begin(); it!= m_bioseq_list.end(); ++it)
     {
-        auto rec = *it;
-        auto parent = rec.m_parent_set;
+        auto& rec = *it;
+        auto& parent = rec.m_parent_set;
 
         if (auto _class = parent->m_class; IsHugeSet(_class))
         { // create fake bioseq_set
@@ -603,7 +639,9 @@ void CHugeAsnReader::FlattenGenbankSet()
         if (m_FlattenedSets.size() == 1) {
             // exposing the whole top entry
             if (x_HasNestedGenbankSets()) {
-                auto pDescriptors = x_GetTopLevelDescriptors();
+                CRef<CSeq_descr> pDescriptors;
+                std::list<CRef<CSeq_annot>> pAnnots;
+                std::tie(pDescriptors, pAnnots) = x_GetTopLevelDescriptors();
                 auto pTopEntry = Ref(new CSeq_entry());
                 if (top->m_Level) {
                     pTopEntry->SetSet().SetLevel() = top->m_Level.value();
@@ -611,6 +649,10 @@ void CHugeAsnReader::FlattenGenbankSet()
                 pTopEntry->SetSet().SetClass() = top->m_class;
                 if (pDescriptors) {
                     pTopEntry->SetSet().SetDescr().Assign(*pDescriptors);
+                }
+                if (!pAnnots.empty()) {
+                    auto& dest = pTopEntry->SetAnnot();
+                    dest.splice(dest.end(), std::move(pAnnots));
                 }
                 m_top_entry = pTopEntry;
             }
@@ -626,15 +668,21 @@ void CHugeAsnReader::FlattenGenbankSet()
             }
         }
         else { // m_FlattenedSets.size() > 1)
-            auto pDescriptors = x_GetTopLevelDescriptors();
-            if (pDescriptors || top->m_Level) {
+            CRef<CSeq_descr> pDescriptors;
+            std::list<CRef<CSeq_annot>> pAnnots;
+            std::tie(pDescriptors, pAnnots) = x_GetTopLevelDescriptors();
+            if (pDescriptors || !pAnnots.empty() || top->m_Level) {
                 auto top_entry = Ref(new CSeq_entry());
                 if (top->m_Level) {
                     top_entry->SetSet().SetLevel() = top->m_Level.value();
                 }
                 top_entry->SetSet().SetClass() = top->m_class;
                 if (pDescriptors) {
-                    top_entry->SetSet().SetDescr().Assign(*pDescriptors);
+                    top_entry->SetSet().SetDescr(*pDescriptors);
+                }
+                if (!pAnnots.empty()) {
+                    auto& dest = top_entry->SetAnnot();
+                    dest.splice(dest.end(), std::move(pAnnots));
                 }
                 m_top_entry = top_entry;
             }
