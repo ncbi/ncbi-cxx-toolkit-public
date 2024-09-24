@@ -3006,7 +3006,9 @@ static EIO_Status s_Recv(SOCK    sock,
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
                 if (x_read/*<0*/) {
-                    sock->r_status = sock->w_status = eIO_Closed;
+                    if (error != SOCK_ENOTCONN)
+                        sock->w_status = eIO_Closed;
+                    sock->r_status = eIO_Closed;
                     return eIO_Unknown/*error*/;
                 }
 #ifdef NCBI_OS_MSWIN
@@ -3097,6 +3099,7 @@ static EIO_Status s_Read_(SOCK    sock,
     int/*bool*/ done;
 
     assert(sock->type & eSOCK_Socket);
+    assert(peek >= 0  ||  (!buf  &&  !size));
 
     if (sock->type != eSOCK_Datagram  &&  peek >= 0) {
         *n_read = 0;
@@ -3143,10 +3146,18 @@ static EIO_Status s_Read_(SOCK    sock,
         return eIO_Closed/*EOF*/;
     }
 
-    rtv_set = 2;
+    if (peek < 0) {
+        /* upread */
+        if ((rtv_set = sock->r_tv_set) != 0)
+            rtv = sock->r_tv;
+        /*zero timeout*/
+        sock->r_tv_set = 1;
+        memset(&sock->r_tv, 0, sizeof(sock->r_tv));
+    } else
+        rtv_set = 2;
     done = 0/*false*/;
     assert(!*n_read  ||  peek > 0);
-    assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !buf  &&  !size));
+    assert((peek >= 0  &&  size > 0)  ||  (peek < 0  &&  !buf  &&  !size));
     do {
         char   xx_buf[SOCK_BUF_CHUNK_SIZE / 4], *x_buf, *p_buf;
         size_t x_todo, x_read, x_save;
@@ -3259,7 +3270,7 @@ static EIO_Status s_Read_(SOCK    sock,
             sock->r_tv_set = 1;
             memset(&sock->r_tv, 0, sizeof(sock->r_tv));
         }
-    } while (peek < 0  ||  (!buf  &&  *n_read < size));
+    } while (peek < 0/*upread*/  ||  (!buf  &&  *n_read < size));
     if (!(rtv_set & 2)  &&  (sock->r_tv_set = rtv_set & 1) != 0)
         x_tvcpy(&sock->r_tv, &rtv);
 
@@ -3450,7 +3461,6 @@ static void s_AddTimeout(struct timeval* tv, int ms_addend)
 #  define s_Send  s_Send_
 #endif /*SOCK_SEND_SLICE*/
 
-
 /* Write data to the socket "as is" (as many bytes at once as possible).
  * Return eIO_Success iff at least some bytes have been written successfully.
  * Otherwise (nothing written), return an error code to indicate the problem.
@@ -3471,7 +3481,7 @@ static EIO_Status s_Send(SOCK        sock,
     memset(&waited, 0, sizeof(waited));
 #endif /*NCBI_OS_MSWIN*/
 
-    assert(sock->type == eSOCK_Socket  &&  data  &&  size  &&  !*n_written);
+    assert(sock->type == eSOCK_Socket  &&  data  &&  size > 0  &&  !*n_written);
 
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
@@ -3515,7 +3525,7 @@ static EIO_Status s_Send(SOCK        sock,
                 break/*success*/;
             }
             if (x_written < 0) {
-                if (error != SOCK_EPIPE)
+                if (error != SOCK_EPIPE  &&  error != SOCK_ENOTCONN)
                     sock->r_status = eIO_Closed;
                 sock->w_status = eIO_Closed;
                 break/*closed*/;
@@ -3644,17 +3654,19 @@ static EIO_Status s_Send(SOCK        sock,
 #ifdef SOCK_SEND_SLICE
 #  undef s_Send
 static EIO_Status s_Send(SOCK        sock,
-                         const void* data,
+                         const void* x_data,
                          size_t      size,
                          size_t*     n_written,
                          int         flag)
 {
     /* split output buffer in slices (of size <= SOCK_SEND_SLICE) */
+    const unsigned char* data = (const unsigned char*) x_data;
     unsigned int wtv_set = 2;
     struct timeval wtv;
     EIO_Status status;
-    assert(!*n_written);
 
+    assert(sock->type == eSOCK_Socket  &&  data  &&  size > 0  &&  !*n_written);
+    
     for (;;) {
         size_t n_todo = size > SOCK_SEND_SLICE ? SOCK_SEND_SLICE : size;
         size_t n_done = 0;
@@ -3668,7 +3680,7 @@ static EIO_Status s_Send(SOCK        sock,
             break;
         if (!(size -= n_done))
             break;
-        data        = (const char*) data + n_done;
+        data       += n_done;
         if (wtv_set & 2) {
             if ((wtv_set = sock->w_tv_set) != 0)
                 wtv = sock->w_tv;
@@ -3694,7 +3706,7 @@ static EIO_Status s_WriteData(SOCK        sock,
 {
     EIO_Status status;
 
-    assert(sock->type == eSOCK_Socket  &&  !sock->pending  &&  size);
+    assert(sock->type == eSOCK_Socket  &&  !sock->pending  &&  size > 0);
 
     if (sock->sslctx) {
         int error = 0;
@@ -3739,7 +3751,7 @@ static size_t x_WriteBuf(void* x_ctx, const void* data, size_t size)
     struct XWriteBufCtx* ctx = (struct XWriteBufCtx*) x_ctx;
     size_t n_written = 0;
 
-    assert(data  &&  size  &&  ctx->status == eIO_Success);
+    assert(data  &&  size > 0  &&  ctx->status == eIO_Success);
 
     do {
         size_t x_written;
@@ -3876,7 +3888,7 @@ static EIO_Status s_Write_(SOCK        sock,
         return size ? status : eIO_Success;
     }
 
-    assert(size  &&  sock->w_len == 0);
+    assert(size > 0  &&  sock->w_len == 0);
     return s_WriteData(sock, data, size, n_written, oob);
 }
 
@@ -7279,6 +7291,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
     char       _id[MAXIDLEN];
 
     if (sock->sock != SOCK_INVALID) {
+        char*  x_buf;
         switch (how) {
         case eIO_ReadPeek:
             status = s_Read(sock, buf, size, &x_read, 1/*peek*/);
@@ -7289,13 +7302,16 @@ extern EIO_Status SOCK_Read(SOCK           sock,
             break;
 
         case eIO_ReadPersist:
+            x_buf = (char*) buf;
             x_read = 0;
             do {
                 size_t xx_read;
-                status = s_Read(sock, (char*) buf + (buf ? x_read : 0),
+                status = s_Read(sock, x_buf,
                                 size, &xx_read, 0/*read*/);
-                x_read += xx_read;
-                size   -= xx_read;
+                x_read    += xx_read;
+                if (x_buf)
+                    x_buf += xx_read;
+                size      -= xx_read;
             } while (size  &&  status == eIO_Success);
             break;
 
@@ -7501,6 +7517,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         return eIO_InvalidArg;
     }
     if (sock->sock != SOCK_INVALID) {
+        const char* x_data;
         switch (how) {
         case eIO_WriteOutOfBand:
             if (sock->type == eSOCK_Datagram) {
@@ -7521,11 +7538,13 @@ extern EIO_Status SOCK_Write(SOCK            sock,
 
         case eIO_WritePersist:
             x_written = 0;
+            x_data = (const char*) data;
             do {
                 size_t xx_written;
-                status = s_Write(sock, (char*) data + x_written,
+                status = s_Write(sock, x_data,
                                  size, &xx_written, 0);
                 x_written += xx_written;
+                x_data    += xx_written;
                 size      -= xx_written;
             } while (size  &&  status == eIO_Success);
             break;
