@@ -130,10 +130,12 @@ void CNCBITestConnStreamApp::Init(void)
     // Create and populate test registry
     CNcbiRegistry& reg = GetRWConfig();
 
-    reg.Set("ID1",    DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("ID1",    DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg.Set("bounce", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("bounce", DEF_CONN_REG_SECTION "_" REG_CONN_DEBUG_PRINTOUT,"DATA");
+    reg.Set("ID1",          DEF_CONN_REG_SECTION"_"REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("ID1",          DEF_CONN_REG_SECTION"_"REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg.Set("ID1_INTERNAL", DEF_CONN_REG_SECTION"_"REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("ID1_INTERNAL", DEF_CONN_REG_SECTION"_"REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg.Set("bounce",       DEF_CONN_REG_SECTION"_"REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("bounce",       DEF_CONN_REG_SECTION"_"REG_CONN_DEBUG_PRINTOUT,"DATA");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
