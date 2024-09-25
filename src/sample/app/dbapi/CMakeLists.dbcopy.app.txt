@@ -1,7 +1,7 @@
 # $Id$
 
 NCBI_begin_app(dbcopy)
-  NCBI_sources(dbcopy)
+  NCBI_sources(dbcopy dbcopy_common)
   if(NCBI_PTBCFG_PACKAGED)
     NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::dbapi)
   else()

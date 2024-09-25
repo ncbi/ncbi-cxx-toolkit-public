@@ -3,7 +3,7 @@
 REQUIRES = dbapi
 
 APP = dbapi_advanced_features
-SRC = dbapi_advanced_features
+SRC = dbapi_advanced_features dbapi_advanced_features_common
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
