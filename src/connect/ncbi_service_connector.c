@@ -1282,21 +1282,27 @@ extern CONNECTOR SERVICE_CreateConnectorEx
  const SSERVICE_Extra* extra)
 {
     SConnNetInfo*      x_net_info;
-    char*              x_name;
     size_t             len;
     CONNECTOR          ccc;
     SServiceConnector* xxx;
 
-    if (!(x_name = SERV_ServiceName(name)))
+    if (!net_info) {
+        char* x_name = SERV_ServiceName(name);
+        if (!x_name)
+            return 0;
+        x_net_info = ConnNetInfo_CreateInternal(x_name);
+    } else
+        x_net_info = ConnNetInfo_Clone(net_info);
+    if (!x_net_info)
         return 0;
 
     if (!(ccc = (SConnector*) malloc(sizeof(SConnector)))) {
-        free(x_name);
+        ConnNetInfo_Destroy(x_net_info);
         return 0;
     }
     len = strlen(name);
-    if (!(xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + len + 1))) {
-        free(x_name);
+    if (!(xxx = (SServiceConnector*) calloc(1, sizeof(*xxx) + len))) {
+        ConnNetInfo_Destroy(x_net_info);
         free(ccc);
         return 0;
     }
@@ -1308,14 +1314,6 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc->setup    = s_Setup;
     ccc->destroy  = s_Destroy;
 
-    x_net_info    = (net_info
-                     ? ConnNetInfo_Clone(net_info)
-                     : ConnNetInfo_CreateInternal(x_name));
-    free(x_name);
-    if (!x_net_info) {
-        s_Destroy(ccc);
-        return 0;
-    }
     xxx->net_info = x_net_info;
     xxx->types    = (TSERV_TypeOnly) types;
     /* NB: zero'ed block, no need to copy the trailing '\0' */
