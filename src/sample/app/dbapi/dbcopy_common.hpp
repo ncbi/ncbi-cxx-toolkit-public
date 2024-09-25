@@ -1,3 +1,6 @@
+#ifndef SAMPLE__DBCOPY_COMMON__HPP
+#define SAMPLE__DBCOPY_COMMON__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -23,42 +26,56 @@
  *
  * ===========================================================================
  *
- * Author: Sergey Sikorskiy
+ * Authors: Sergey Sikorskiy
  *
- * File Description: Example of usage of DBAPI
- *
- * ===========================================================================
  */
 
-#include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
+ /// @dbcopy_common.hpp
+ /// CNcbiSample_DbCopy class definition, to be used by
+ /// 'dbcopy' test and the NEW_PROJECT-class utilities.
 
-#include "dbcopy_common.hpp"
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <sample/ncbi_sample_api.hpp>
+#include <dbapi/dbapi.hpp>
 
+
+/** @addtogroup Sample
+ *
+ * @{
+ */
 
 USING_NCBI_SCOPE;
 
 
-/////////////////////////////////////////////////////////////////////////////
-//  CDbCopyApp::
-
-class CDbCopyApp : public CNcbiApplication
+/// CNcbiSample_DbCopy - class describing 'dbcopy' test business logic.
+/// 
+class CNcbiSample_DbCopy : public CNcbiSample
 {
 public:
-    virtual void Init(void) { m_Sample.Init(); };
-    virtual int  Run(void)  { return m_Sample.Run(); };
-    virtual void Exit(void) { m_Sample.Exit(); };
+    CNcbiSample_DbCopy() {}
 
-    CNcbiSample_DbCopy m_Sample;
+    /// Sample description
+    virtual string Description(void) { return "DBCOPY"; }
+
+    /// Initialization
+    virtual void Init(void) {}
+
+    /// Sample's business logic
+    virtual int Run(void)
+    {
+        // Demo copying tables
+        int exit_code = DemoDbCopyTable();
+        return exit_code;
+    }
+
+    /// Cleanup
+    void Exit(void) {}
+
+public:
+    int DemoDbCopyTable(void);
 };
 
 
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN
+/* @} */
 
-int NcbiSys_main(int argc, ncbi::TXChar* argv[])
-{
-    return CDbCopyApp().AppMain(argc, argv);
-}
+#endif // SAMPLE__DBCOPY_COMMON__HPP

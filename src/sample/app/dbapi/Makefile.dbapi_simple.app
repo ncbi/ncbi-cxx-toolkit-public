@@ -3,7 +3,7 @@
 REQUIRES = dbapi FreeTDS
 
 APP = dbapi_simple
-SRC = dbapi_simple
+SRC = dbapi_simple dbapi_simple_common
 
 # new_project.sh will copy everything in the following block to any
 # Makefile.*_app generated from this sample project.  Do not change
