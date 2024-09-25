@@ -153,7 +153,7 @@ static char* x_ServiceName(unsigned int depth,
             s = buf;
         }
         if (*s) {
-            CORE_TRACEF(("[%s]  CONN_ServiceName(\"%s\"): \"%s\"",
+            CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
             if (strcasecmp(svc, s) != 0) {
                 if (depth++ < SERV_SERVICE_NAME_RECURSION_MAX)
