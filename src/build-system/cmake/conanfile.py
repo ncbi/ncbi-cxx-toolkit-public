@@ -44,7 +44,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.requires("lmdb/[>=0.9.29 <=0.9.32]")
         self.requires("lzo/2.10")
         self.requires("openssl/1.1.1s")
-        # self.requires("opentelemetry-cpp/1.14.2")
+#        self.requires("opentelemetry-cpp/1.14.2")
         self.requires("pcre/8.45")
         self.requires("pcre2/10.44")
         self.requires("protobuf/[>=3.21.12 <=5.27.0]")
@@ -102,15 +102,6 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 #boost/*:without_timer = True
         self.options["boost"+_s].without_type_erasure = True
         self.options["boost"+_s].without_wave = True
-
-        self.options["opentelemetry-cpp"+_s].with_abseil = False
-        # Not looking to use Jaeger, but the recipe might not provide
-        # the option and catching e.g. AttributeError won't work.
-        # self.options["opentelemetry-cpp"+_s].with_jaeger = False
-        self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
-        # otlp-http is already on by default
-        # self.options["opentelemetry-cpp"+_s].with_otlp_http = True
-        self.options["opentelemetry-cpp"+_s].with_zipkin = False
 
     def _optional_requires(self, package):
         pkg = package[:package.find("/")]
