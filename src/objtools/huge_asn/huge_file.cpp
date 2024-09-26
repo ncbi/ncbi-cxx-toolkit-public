@@ -84,7 +84,7 @@ bool CHugeFile::x_TryOpenMemoryFile(const string& filename)
 
         m_filesize = memfile->GetFileSize();
         m_filename = filename;
-        m_memory = (const char*)memfile->Map(0, 0);
+        m_memory = (const char*)memfile->GetPtr();
 
         if (m_filesize == 0 || m_memory == 0)
             return false;
