@@ -48,10 +48,6 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 
-const int kDestructionDelay = 0;
-const int kFailureRate = 0;
-
-
 /////////////////////////////////////////////////////////////////////////////
 // Object references held:
 //
@@ -318,9 +314,6 @@ public:
     }
     ~CBackgroundTask()
     {
-        if ( kDestructionDelay ) {
-            SleepMilliSec(random()%kDestructionDelay);
-        }
     }
 
     CFastMutex& GetTrackerMutex()
@@ -360,9 +353,6 @@ public:
     {
         if ( s_IsFinished(GetStatus()) ) {
             DisconnectFromTracker();
-            if ( kDestructionDelay ) {
-                SleepMilliSec(random()%kDestructionDelay);
-            }
         }
     }
 
@@ -519,12 +509,6 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
         return;
     }
     try {
-        if ( kFailureRate ) {
-            if ( random() % kFailureRate == 0 ) {
-                NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "simulated callback exception");
-            }
-        }
         _ASSERT(item);
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
