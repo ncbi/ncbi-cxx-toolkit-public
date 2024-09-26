@@ -48,6 +48,10 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 
+const int kDestructionDelay = 0;
+const int kFailureRate = 0;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // Object references held:
 //
@@ -205,9 +209,10 @@ CPSGL_RequestTracker::CPSGL_RequestTracker(CPSGL_QueueGuard& queue_guard,
       m_Status(CThreadPool_Task::eExecuting),
       m_ReplyStatus(EPSG_Status::eInProgress),
       m_NeedsFinalization(false),
-      m_BackgroundTasksSemaphore(0, kMax_UInt),
-      m_BackgroundItemTasks(0),
-      m_Callbacks(0)
+      m_TrackerMutex(new CObjectFor<CFastMutex>()),
+      m_InCallbackSemaphore(0, kMax_UInt),
+      m_BackgroundItemTaskCount(0),
+      m_InCallbackCount(0)
 {
 }
 
@@ -218,79 +223,36 @@ CPSGL_RequestTracker::~CPSGL_RequestTracker()
 }
 
 
-class CPSGL_RequestTracker::CBackgroundTask : public CThreadPool_Task
+static inline bool s_IsFinished(CThreadPool_Task::EStatus status)
 {
-public:
-    CBackgroundTask(CPSGL_RequestTracker* tracker,
-                    EPSG_Status item_status,
-                    const shared_ptr<CPSG_ReplyItem>& item)
-        : m_Tracker(tracker),
-          m_ItemStatus(item_status),
-          m_Item(item)
-    {
-    }
-    explicit
-    CBackgroundTask(CPSGL_RequestTracker* tracker) // for reply processing
-        : m_Tracker(tracker),
-          m_ItemStatus(EPSG_Status::eError)
-    {
-    }
+    return status >= CThreadPool_Task::eCompleted;
+}
 
-    static bool s_IsFinished(EStatus status)
-    {
-        return status >= eCompleted;
-    }
-    static bool s_IsAborted(EStatus status)
-    {
-        return status > eCompleted;
-    }
-    
-    EStatus Execute() override
-    {
-        if ( m_Item ) {
-            return m_Tracker->BackgroundProcessItemCallback(this, m_ItemStatus, m_Item);
-        }
-        else {
-            return m_Tracker->BackgroundProcessReplyCallback(this);
-        }
-    }
 
-    void OnStatusChange(EStatus old_task_status) override
-    {
-        m_Tracker->OnStatusChange(this, old_task_status);
-    }
-    
-    CRef<CPSGL_RequestTracker> m_Tracker;
-    EPSG_Status m_ItemStatus;
-    shared_ptr<CPSG_ReplyItem> m_Item;
-};
+static inline bool s_IsAborted(CThreadPool_Task::EStatus status)
+{
+    return status > CThreadPool_Task::eCompleted;
+}
 
 
 class CPSGL_RequestTracker::CCallbackGuard
 {
 public:
-    explicit
-    CCallbackGuard(CPSGL_RequestTracker* tracker)
-        : m_Tracker(tracker)
+    CCallbackGuard()
+        : m_Tracker(nullptr)
     {
-        CFastMutexGuard guard(m_Tracker->m_TrackerMutex);
-        if ( CBackgroundTask::s_IsFinished(m_Tracker->m_Status) ) {
-            m_Tracker = nullptr;
-        }
-        else {
-            ++m_Tracker->m_Callbacks;
-        }
     }
     
+    explicit
+    CCallbackGuard(CPSGL_RequestTracker* tracker)
+        : m_Tracker(nullptr)
+    {
+        Set(tracker);
+    }
+
     ~CCallbackGuard()
     {
-        if ( !m_Tracker ) {
-            return;
-        }
-        CFastMutexGuard guard(m_Tracker->m_TrackerMutex);
-        if ( --m_Tracker->m_Callbacks == 0 && m_Tracker->m_BackgroundTasks.empty() ) {
-            m_Tracker->m_BackgroundTasksSemaphore.Post();
-        }
+        Reset();
     }
 
     operator bool() const {
@@ -303,8 +265,123 @@ public:
     void* operator new(size_t) = delete;
     void* operator new[](size_t) = delete;
     
+    void Reset()
+    {
+        if ( auto tracker = m_Tracker ) {
+            CFastMutexGuard guard(tracker->GetTrackerMutex());
+            if ( --tracker->m_InCallbackCount == 0 ) {
+                tracker->m_InCallbackSemaphore.Post();
+            }
+            m_Tracker = 0; 
+        }
+    }
+    
+    void Set(CPSGL_RequestTracker* tracker)
+    {
+        if ( tracker ) {
+            CFastMutexGuard guard(tracker->GetTrackerMutex());
+            SetNoLock(tracker);
+        }
+    }
+
+    void SetNoLock(CPSGL_RequestTracker* tracker)
+    {
+        if ( !s_IsFinished(tracker->m_Status) ) {
+            ++tracker->m_InCallbackCount;
+            m_Tracker = tracker;
+        }
+    }
+
 private:
     CPSGL_RequestTracker* m_Tracker;
+};
+
+
+class CPSGL_RequestTracker::CBackgroundTask : public CThreadPool_Task
+{
+public:
+    CBackgroundTask(CPSGL_RequestTracker* tracker,
+                    EPSG_Status item_status,
+                    const shared_ptr<CPSG_ReplyItem>& item)
+        : m_Tracker(tracker),
+          m_TrackerMutex(tracker->m_TrackerMutex),
+          m_ItemStatus(item_status),
+          m_Item(item)
+    {
+    }
+    explicit
+    CBackgroundTask(CPSGL_RequestTracker* tracker) // for reply processing
+        : m_Tracker(tracker),
+          m_TrackerMutex(tracker->m_TrackerMutex),
+          m_ItemStatus(EPSG_Status::eError)
+    {
+    }
+    ~CBackgroundTask()
+    {
+        if ( kDestructionDelay ) {
+            SleepMilliSec(random()%kDestructionDelay);
+        }
+    }
+
+    CFastMutex& GetTrackerMutex()
+    {
+        return *m_TrackerMutex;
+    }
+
+    EStatus Execute() override
+    {
+        CCallbackGuard callback_guard;
+        CRef<CPSGL_RequestTracker> tracker;
+        {{
+            CFastMutexGuard guard(GetTrackerMutex());
+            tracker = m_Tracker;
+            if ( tracker ) {
+                callback_guard.SetNoLock(tracker);
+            }
+        }}
+        if ( !callback_guard ) {
+            return eCanceled;
+        }
+        if ( m_Item ) {
+            return tracker->BackgroundProcessItemCallback(this, m_ItemStatus, m_Item);
+        }
+        else {
+            return tracker->BackgroundProcessReplyCallback(this);
+        }
+    }
+
+    void Cancel()
+    {
+        RequestToCancel();
+        DisconnectFromTracker();
+    }
+    
+    void OnStatusChange(EStatus old_task_status) override
+    {
+        if ( s_IsFinished(GetStatus()) ) {
+            DisconnectFromTracker();
+            if ( kDestructionDelay ) {
+                SleepMilliSec(random()%kDestructionDelay);
+            }
+        }
+    }
+
+    void DisconnectFromTracker()
+    {
+        CRef<CPSGL_RequestTracker> tracker;
+        {{
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( m_Tracker ) {
+                m_Tracker->m_BackgroundTasks.erase(Ref(this));
+                swap(tracker, m_Tracker); // destruct out of guard
+            }
+        }}
+    }
+    
+    CRef<CPSGL_RequestTracker> m_Tracker;
+    CRef<CObjectFor<CFastMutex>> m_TrackerMutex;
+    EPSG_Status m_ItemStatus;
+    shared_ptr<CPSG_ReplyItem> m_Item;
 };
 
 
@@ -326,13 +403,17 @@ void CPSGL_RequestTracker::Reset()
 
 void CPSGL_RequestTracker::CancelBackgroundTasks()
 {
-    TBackgroundTasks tasks;
-    {{
-        CFastMutexGuard guard(m_TrackerMutex);
-        tasks = m_BackgroundTasks;
-    }}
-    for ( auto& task : tasks ) {
-        task.GetNCObject().RequestToCancel();
+    CRef<CBackgroundTask> task;
+    for ( ;; ) {
+        {{
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( m_BackgroundTasks.empty() ) {
+                break;
+            }
+            _ASSERT(*m_BackgroundTasks.begin() != task);
+            task = *m_BackgroundTasks.begin();
+        }}
+        task->Cancel();
     }
     WaitForBackgroundTasks();
 }
@@ -342,12 +423,12 @@ void CPSGL_RequestTracker::WaitForBackgroundTasks()
 {
     for ( ;; ) {
         {{
-            CFastMutexGuard guard(m_TrackerMutex);
-            if ( m_BackgroundTasks.empty() && !m_Callbacks ) {
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( m_InCallbackCount == 0 ) {
                 return;
             }
         }}
-        m_BackgroundTasksSemaphore.Wait();
+        m_InCallbackSemaphore.Wait();
     }
 }
 
@@ -356,10 +437,10 @@ inline
 void CPSGL_RequestTracker::QueueInBackground(const CRef<CBackgroundTask>& task)
 {
     {{
-        CFastMutexGuard guard(m_TrackerMutex);
+        CFastMutexGuard guard(GetTrackerMutex());
         m_BackgroundTasks.insert(task);
         if ( task->m_Item ) {
-            ++m_BackgroundItemTasks;
+            ++m_BackgroundItemTaskCount;
         }
     }}
     m_QueueGuard.m_ThreadPool.AddTask(task.GetNCPointer());
@@ -378,41 +459,17 @@ void CPSGL_RequestTracker::StartProcessItemInBackground(EPSG_Status status,
 void CPSGL_RequestTracker::StartProcessReplyInBackground()
 {
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::StartProcessReplyInBackground()");
-    _ASSERT(m_BackgroundItemTasks == 0);
+    _ASSERT(m_BackgroundItemTaskCount == 0);
     _ASSERT(m_Reply);
     QueueInBackground(Ref(new CBackgroundTask(this)));
 }
 
 
-void CPSGL_RequestTracker::OnStatusChange(CBackgroundTask* task,
-                                          CThreadPool_Task::EStatus old_task_status)
-{
-    auto new_task_status = task->GetStatus();
-    if ( CBackgroundTask::s_IsFinished(new_task_status) ) {
-        {{
-            CFastMutexGuard guard(m_TrackerMutex);
-            m_BackgroundTasks.erase(Ref(task));
-        }}
-        if ( CBackgroundTask::s_IsAborted(new_task_status) ) {
-            // save error status
-            m_Status = new_task_status;
-            m_QueueGuard.MarkAsFinished(Ref(this));
-        }
-        {{
-            CFastMutexGuard guard(m_TrackerMutex);
-            if ( m_BackgroundTasks.empty() && !m_Callbacks ) {
-                m_BackgroundTasksSemaphore.Post();
-            }
-        }}
-    }
-}
-
-
 void CPSGL_RequestTracker::MarkAsFinished(CThreadPool_Task::EStatus status)
 {
-    _ASSERT(CBackgroundTask::s_IsFinished(status));
+    _ASSERT(s_IsFinished(status));
     {{
-        CFastMutexGuard guard(m_TrackerMutex);
+        CFastMutexGuard guard(GetTrackerMutex());
         CThreadPool_Task::EStatus old_status = m_Status;
         if ( status > old_status ) {
             m_Status = status;
@@ -462,6 +519,12 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
         return;
     }
     try {
+        if ( kFailureRate ) {
+            if ( random() % kFailureRate == 0 ) {
+                NCBI_THROW(CLoaderException, eLoaderFailed,
+                           "simulated callback exception");
+            }
+        }
         _ASSERT(item);
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
@@ -494,11 +557,11 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
         {{
             // items may be still being processed in background
             // and we cannot yet process reply in this case
-            CFastMutexGuard guard(m_TrackerMutex);
+            CFastMutexGuard guard(GetTrackerMutex());
             _ASSERT(!m_Reply);
             m_ReplyStatus = status;
             m_Reply = reply;
-            if ( m_BackgroundItemTasks > 0 ) {
+            if ( m_BackgroundItemTaskCount > 0 ) {
                 // not all items processed
                 // the reply will be processed by the last item task
                 return;
@@ -532,14 +595,17 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
                                                     const shared_ptr<CPSG_ReplyItem>& item)
 {
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback()");
+    CCallbackGuard guard(this);
+    if ( !guard ) {
+        _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback() - finished");
+        return m_Status;
+    }
     try {
         {{
             // check if canceled
-            CFastMutexGuard guard(m_TrackerMutex);
-            if ( CBackgroundTask::s_IsAborted(m_Status) ) {
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( s_IsAborted(m_Status) ) {
                 // failed or canceled, no need to process
-                _ASSERT(m_Status == CThreadPool_Task::eCanceled ||
-                        m_Status == CThreadPool_Task::eFailed);
                 return m_Status;
             }
         }}
@@ -555,20 +621,18 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
         }}
         {{
             // check if result needs to be processed too
-            CFastMutexGuard guard(m_TrackerMutex);
-            if ( CBackgroundTask::s_IsAborted(m_Status) ) {
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( s_IsAborted(m_Status) ) {
                 // failed or canceled, no need to process
-                _ASSERT(m_Status == CThreadPool_Task::eCanceled ||
-                        m_Status == CThreadPool_Task::eFailed);
                 return m_Status;
             }
-            if ( --m_BackgroundItemTasks > 0 || !m_Reply ) {
+            if ( --m_BackgroundItemTaskCount > 0 || !m_Reply ) {
                 // either there are other background item tasks
                 // or reply wasn't received yet
                 return CThreadPool_Task::eCompleted;
             }
             _ASSERT(m_BackgroundTasks.find(Ref(task)) != m_BackgroundTasks.end());
-            _ASSERT(m_BackgroundItemTasks == 0);
+            _ASSERT(m_BackgroundItemTaskCount == 0);
         }}
         {{
             // process reply, first 'fast' call
@@ -583,6 +647,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             else if ( result != CPSGL_Processor::eToNextStage ) {
                 ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
                 MarkAsFailed();
+                return CThreadPool_Task::eFailed;
             }
         }}
         {{
@@ -592,15 +657,17 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReplySlow(): "<<result);
             if ( result == CPSGL_Processor::eProcessed ) {
                 MarkAsCompleted();
+                return CThreadPool_Task::eCompleted;
             }
             else if ( result != CPSGL_Processor::eToNextStage ) {
                 ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
                 MarkAsFailed();
+                return CThreadPool_Task::eFailed;
             }
             else {
                 MarkAsNeedsFinalization();
+                return CThreadPool_Task::eCompleted;
             }
-            return CThreadPool_Task::eCompleted;
         }}
     }
     catch ( exception& exc ) {
@@ -615,18 +682,21 @@ CThreadPool_Task::EStatus
 CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
 {
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessReplyCallback()");
+    CCallbackGuard guard(this);
+    if ( !guard ) {
+        _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessReplyCallback() - finished");
+        return m_Status;
+    }
     try {
         {{
-            CFastMutexGuard guard(m_TrackerMutex);
-            if ( CBackgroundTask::s_IsAborted(m_Status) ) {
+            CFastMutexGuard guard(GetTrackerMutex());
+            if ( s_IsAborted(m_Status) ) {
                 // failed or canceled, no need to process
-                _ASSERT(m_Status == CThreadPool_Task::eCanceled ||
-                        m_Status == CThreadPool_Task::eFailed);
                 return m_Status;
             }
             _ASSERT(m_BackgroundTasks.find(Ref(task)) != m_BackgroundTasks.end());
         }}
-        _ASSERT(m_BackgroundItemTasks == 0);
+        _ASSERT(m_BackgroundItemTaskCount == 0);
         _ASSERT(m_Reply);
         auto result = m_Processor->ProcessReplySlow(m_ReplyStatus, m_Reply);
         if ( result == CPSGL_Processor::eProcessed ) {

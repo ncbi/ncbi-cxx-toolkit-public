@@ -149,6 +149,11 @@ protected:
     
     class CBackgroundTask;
     class CCallbackGuard;
+
+    CFastMutex& GetTrackerMutex()
+    {
+        return *m_TrackerMutex;
+    }
     
     CThreadPool_Task::EStatus
     BackgroundProcessItemCallback(CBackgroundTask* task,
@@ -161,8 +166,6 @@ protected:
     void StartProcessItemInBackground(EPSG_Status status,
                                       const shared_ptr<CPSG_ReplyItem>& item);
     void StartProcessReplyInBackground();
-    void OnStatusChange(CBackgroundTask* task,
-                        CThreadPool_Task::EStatus old_task_status);
     void CancelBackgroundTasks(); // cancel background tasks and wait
     void WaitForBackgroundTasks(); // wait until it's safe to destruct
     void MarkAsFinished(CThreadPool_Task::EStatus status);
@@ -180,13 +183,13 @@ protected:
     bool m_NeedsFinalization;
     shared_ptr<CPSG_Reply> m_Reply;
 
-    CFastMutex m_TrackerMutex;
+    CRef<CObjectFor<CFastMutex>> m_TrackerMutex;
     // track background tasks to prevent premature destruction
-    CSemaphore m_BackgroundTasksSemaphore; // safe to destruct
+    CSemaphore m_InCallbackSemaphore; // wait for safe destructtion
     typedef set<CRef<CBackgroundTask>> TBackgroundTasks;
-    TBackgroundTasks m_BackgroundTasks; // all background tasks
-    unsigned m_BackgroundItemTasks; // background 'item' tasks
-    unsigned m_Callbacks; // active callbacks from PSG client library
+    TBackgroundTasks m_BackgroundTasks; // background tasks for cancellation
+    unsigned m_BackgroundItemTaskCount; // background 'item' tasks
+    unsigned m_InCallbackCount; // active callbacks - PSG or thread pool
 };
 
 
