@@ -841,7 +841,15 @@ CPSGL_Blob_Processor::Chunk_ToOM(const CPSG_ChunkId* chunk_id,
 {
     _ASSERT(chunk_id && chunk_id->GetId2Chunk() != kSplitInfoChunkId);
     _ASSERT(chunk_slot);
-    CRef<CSerialObject> chunk = std::move(chunk_slot->m_BlobObject);
+    CRef<CSerialObject> chunk;
+    {{
+        CFastMutexGuard guard(m_BlobProcessorMutex);
+        swap(chunk, chunk_slot->m_BlobObject);
+        if ( !chunk ) {
+            // the chunk was already attached by another thread
+            return eProcessed;
+        }
+    }}
     _ASSERT(chunk);
     CTSE_Chunk_Info* chunk_info = chunk_slot->m_LockedChunkInfo;
     AutoPtr<CInitGuard> chunk_load_lock;
