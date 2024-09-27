@@ -35,7 +35,7 @@
  /// 'dbcopy' test and the NEW_PROJECT-class utilities.
 
 
-#include <sample/ncbi_sample_api.hpp>
+#include <common/ncbi_sample_api.hpp>
 #include <dbapi/dbapi.hpp>
 
 
