@@ -92,6 +92,9 @@ public:
         m_UseReadAhead = value;
     }
 
+    /// @ForTesting
+    unsigned int GetEnvFlags() const;
+
 protected:
     CLMDBReadOnlyTxn BeginReadTxn();
     string m_FileName;

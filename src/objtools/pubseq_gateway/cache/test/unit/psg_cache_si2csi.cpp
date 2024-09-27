@@ -45,6 +45,7 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+#include <util/lmdbxx/lmdb++.h>
 
 BEGIN_SCOPE()
 
@@ -90,8 +91,12 @@ TEST_F(CPsgCacheSi2CsiTest, LookupUninitialized)
 
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({});
+    EXPECT_EQ(0U, cache->GetSi2CsiEnvFlags());
     request.SetSecSeqId("3643631");
     EXPECT_TRUE(cache->FetchSi2Csi(request).empty());
+
+    unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC;
+    EXPECT_EQ(expected_flags, m_Cache->GetSi2CsiEnvFlags());
 }
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)

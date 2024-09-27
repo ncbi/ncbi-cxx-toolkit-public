@@ -37,7 +37,6 @@
 #include <set>
 #include <string>
 #include <tuple>
-#include <utility>
 
 #include <unistd.h>
 #include <libgen.h>
@@ -48,6 +47,7 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+#include <util/lmdbxx/lmdb++.h>
 
 BEGIN_SCOPE()
 
@@ -93,9 +93,13 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupUninitialized)
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->UseReadAhead(false);
     cache->Open({});
+    EXPECT_EQ(0U, cache->GetBioseqInfoEnvFlags());
     CPubseqGatewayCache::TBioseqInfoRequest request;
     auto response = cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
+
+    unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC | MDB_NORDAHEAD;
+    EXPECT_EQ(expected_flags, m_Cache->GetBioseqInfoEnvFlags());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupWithoutResult)
