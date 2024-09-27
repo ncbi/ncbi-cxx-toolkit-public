@@ -214,7 +214,20 @@ TESTS="bad_id2info_fallback_slim bad_id2info_fallback_smart bad_id2info_fallback
        bad_id2info_fallback_orig_2 bad_id2info_fallback_none_2"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # The chunks may come in an arbitrary order so diff may fail
-    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sed  -r 's/eInvalidId2Info.*id2info.cpp//g' | sed  -r 's/size=[0-9]+/size=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | sed -r 's/line [0-9]+/line xx/g' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | sed  -r 's/eInvalidId2Info.*id2info.cpp//g' | sed  -r 's/size=[0-9]+/size=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
+    exit 0
+fi
+
+
+TESTS="readyz_exclude healthz readyz_snp_no_verbose readyz_cdd_no_verbose
+       readyz_wgs_no_verbose readyz_lmdb_no_verbose readyz_cassandra_no_verbose
+       readyz_no_verbose readyz_snp readyz_cdd readyz_wgs readyz_lmdb
+       readyz_cassandra readyz livez_no_verbose livez"
+if echo $TESTS | grep -w $obasename > /dev/null; then
+    # in addition to the most common case the 'content length' needs to be
+    # stripped because the http outputs it starting with a capital letter while
+    # https outputs it in all small letters
+    curl "${curl_https}" -s -i "${full_url}" | grep --text -v '^HTTP/' | grep --text -v '^Connection: keep-alive' | grep --text -v '^transfer-encoding: chunked' | grep --text -v -i '^Date: ' | grep --text -v -i '^Server: ' | grep --text -v -i '^Content-Length: ' | sed  -r 's/exec_time=[0-9]+/exec_time=/g' | sed  -r 's/sent_seconds_ago=[0-9]+.[0-9]+/sent_seconds_ago=/g' | sed  -r 's/time_until_resend=[0-9]+.[0-9]+/time_until_resend=/g' | ${cdir}/printable_string encode --exempt 92,10,13 -z > $ofile
     exit 0
 fi
 
