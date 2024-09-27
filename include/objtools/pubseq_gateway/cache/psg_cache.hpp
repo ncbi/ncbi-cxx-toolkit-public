@@ -122,7 +122,10 @@ public:
 
     void EnumerateBlobProp(int32_t sat, TBlobPropEnumerateFn fn);
 
-
+    //@ForTesting
+    unsigned int GetBioseqInfoEnvFlags() const;
+    unsigned int GetSi2CsiEnvFlags() const;
+    unsigned int GetBlobPropFlags() const;
 private:
     string m_BioseqInfoPath;
     string m_Si2CsiPath;

@@ -57,6 +57,9 @@ USING_IDBLOB_SCOPE;
 TEST(PubseqGatewayCacheRuntimeErrors, EmptyOnStart) {
     CPubseqGatewayCache cache("", "", "");
     EXPECT_TRUE(cache.GetErrors().empty());
+    EXPECT_EQ(0U, cache.GetBioseqInfoEnvFlags());
+    EXPECT_EQ(0U, cache.GetSi2CsiEnvFlags());
+    EXPECT_EQ(0U, cache.GetBlobPropFlags());
 }
 
 TEST(PubseqGatewayCacheRuntimeErrors, WrongFileNames) {

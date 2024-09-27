@@ -45,6 +45,7 @@
 #include <corelib/ncbistre.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
+#include <util/lmdbxx/lmdb++.h>
 
 BEGIN_SCOPE()
 
@@ -95,10 +96,14 @@ TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
     CPubseqGatewayCache::TBlobPropRequest request;
     unique_ptr<CPubseqGatewayCache> cache = make_unique<CPubseqGatewayCache>("", "", "");
     cache->Open({0, 4});
+    EXPECT_EQ(0U, cache->GetBlobPropFlags());
 
     request.SetSat(0).SetSatKey(2054006);
     auto response = cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
+
+    unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC;
+    EXPECT_EQ(expected_flags, m_Cache->GetBlobPropFlags());
 }
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)

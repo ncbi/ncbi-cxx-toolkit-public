@@ -112,6 +112,21 @@ CPubseqGatewayCache::~CPubseqGatewayCache()
 {
 }
 
+unsigned int CPubseqGatewayCache::GetBioseqInfoEnvFlags() const
+{
+    return m_BioseqInfoCache ? m_BioseqInfoCache->GetEnvFlags() : 0;
+}
+
+unsigned int CPubseqGatewayCache::GetSi2CsiEnvFlags() const
+{
+    return m_Si2CsiCache ? m_Si2CsiCache->GetEnvFlags() : 0;
+}
+
+unsigned int CPubseqGatewayCache::GetBlobPropFlags() const
+{
+    return m_BlobPropCache ? m_BlobPropCache->GetEnvFlags() : 0;
+}
+
 void CPubseqGatewayCache::Open(const set<int>& sat_ids)
 {
     if (!m_BioseqInfoPath.empty()) {

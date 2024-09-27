@@ -80,4 +80,13 @@ void CPubseqGatewayCacheBase::Open()
     m_Env->open(m_FileName.c_str(), flags, 0664);
 }
 
+unsigned int CPubseqGatewayCacheBase::GetEnvFlags() const
+{
+    unsigned int flags{0};
+    if (m_Env && m_Env->handle()) {
+        lmdb::env_get_flags(m_Env->handle(), &flags);
+    }
+    return flags;
+}
+
 END_IDBLOB_SCOPE
