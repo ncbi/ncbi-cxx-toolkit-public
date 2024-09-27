@@ -2488,60 +2488,6 @@ BOOST_AUTO_TEST_CASE(WithdrawnStateTest)
 }
 
 
-#if defined(NCBI_OS_DARWIN) || (defined(NCBI_OS_LINUX) && SIZEOF_VOIDP == 4)
-# define PAN1_PATH "/net/pan1"
-#else
-# define PAN1_PATH "//panfs/pan1"
-#endif
-
-BOOST_AUTO_TEST_CASE(TPGTest)
-{
-    CRef<CObjectManager> om = sx_GetEmptyOM();
-    CScope scope(*om);
-
-    string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
-    sx_CheckTestDirectory(wgs_root);
-    CWGSDataLoader::RegisterInObjectManager(*om,  wgs_root, vector<string>(), CObjectManager::eDefault);
-    scope.AddDefaults();
-
-    CBioseq_Handle bh;
-
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
-    BOOST_CHECK(bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAG01000001.1"));
-    BOOST_CHECK(bh);
-    //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
-    //BOOST_CHECK(!bh);
-    //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
-    //BOOST_CHECK(!bh);
-}
-
-
-BOOST_AUTO_TEST_CASE(FixedFileTest)
-{
-    CRef<CObjectManager> om = sx_GetEmptyOM();
-    CScope scope(*om);
-
-    vector<string> files;
-    string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
-    sx_CheckTestDirectory(wgs_root);
-    files.push_back(wgs_root+"/DAAH01");
-    CWGSDataLoader::RegisterInObjectManager(*om,  "", files, CObjectManager::eDefault);
-    scope.AddDefaults();
-
-    CBioseq_Handle bh;
-
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
-    BOOST_CHECK(bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAG01000001.1"));
-    BOOST_CHECK(!bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
-    BOOST_CHECK(!bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
-    BOOST_CHECK(!bh);
-}
-
-
 BOOST_AUTO_TEST_CASE(QualityTest)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
@@ -3379,6 +3325,4 @@ NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
     NCBITEST_DISABLE(WithdrawnStateTest);
-    NCBITEST_DISABLE(TPGTest);
-    NCBITEST_DISABLE(FixedFileTest);
 }
