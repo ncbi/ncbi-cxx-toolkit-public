@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Sep 17 05:33:04 EDT 2024; formally
+/* time_t value corresponding to Sat Sep 28 05:33:04 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1726565584UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1727515984UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1180,6 +1180,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEPH\tb\tFoundation Jean Dausset (CEPH)\t\t\t",
 "CEPIM\tc\tCentro per gli Enterobatteri Patogeni per l'Italia Meridionale\t\t\t",
 "CEPM\tc\tCEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes\t\t\t",
+"CEPUJ\ts\tMuzeum Przyrodnicze Uniwersytetu Jagiellonskiego\t\t\t",
 "CERL/BIC\ts\tUnited States Army, Biological Inventory Collection\t\t\t",
 "CERMES\ts\tCentre for Resource Management and Environmental Studies, University of the West Indies\t\t\t",
 "CES\ts\tThe Centre for Ecological Sciences, Indian Institute of Science\t\t\t",
@@ -3976,7 +3977,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KLU\ts\tUniversity of Malaya\t\t\t",
 "KM<CAN>\ts\tKelowna Museum\t\t\t",
 "KM<CZE>\ts\tSprava Krkonoaskeho narodniho parku\t\t\t",
-"KM<POL>\ts\tMuzeum Przyrodnicze Uniwersytetu Jagiellonskiego\t\t\t",
 "KM<RUS>\ts\tKotel'nich Museum\t\t\t",
 "KMFC\ts\tKenneth M. Fender ?\t\t\t",
 "KMG\ts\tMcGregor Museum\t\t\t",
