@@ -1144,6 +1144,7 @@ CEPEC	s	CEPEC, CEPLAC
 CEPH	b	Foundation Jean Dausset (CEPH)			
 CEPIM	c	Centro per gli Enterobatteri Patogeni per l'Italia Meridionale			
 CEPM	c	CEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes			
+CEPUJ	s	Muzeum Przyrodnicze Uniwersytetu Jagiellonskiego			
 CERL/BIC	s	United States Army, Biological Inventory Collection			
 CERMES	s	Centre for Resource Management and Environmental Studies, University of the West Indies			
 CES	s	The Centre for Ecological Sciences, Indian Institute of Science			
@@ -3940,7 +3941,6 @@ KLSC	s	Kurt L. Schmude
 KLU	s	University of Malaya			
 KM<CAN>	s	Kelowna Museum			
 KM<CZE>	s	Sprava Krkonoaskeho narodniho parku			
-KM<POL>	s	Muzeum Przyrodnicze Uniwersytetu Jagiellonskiego			
 KM<RUS>	s	Kotel'nich Museum			
 KMFC	s	Kenneth M. Fender ?			
 KMG	s	McGregor Museum			
