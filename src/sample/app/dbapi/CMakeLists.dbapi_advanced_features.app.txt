@@ -2,11 +2,10 @@
 
 NCBI_begin_app(dbapi_advanced_features)
   NCBI_sources(dbapi_advanced_features dbapi_advanced_features_common)
-  NCBI_optional_components(connext)
   if(NCBI_PTBCFG_PACKAGED)
     NCBI_uses_toolkit_libraries(ncbi-cxx-toolkit-core::dbapi)
   else()
-    NCBI_uses_toolkit_libraries(dbapi)
+    NCBI_uses_toolkit_libraries(dbapi xconnext)
   endif()
   NCBI_set_test_assets(dbapi_advanced_features.sh)
   NCBI_project_watchers(ucko)
