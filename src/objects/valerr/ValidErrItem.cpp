@@ -1010,6 +1010,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadNullCollectionDate,
     { "BadNullCollectionDate",
       "A null collection date should be be present on influenza or Sars virus records." } },
+    { eErr_SEQ_DESCR_UnculturedGenome,
+    { "UnculturedGenome",
+        "A genomic sequence should not have uncultured in its organism name"} },
 
 
     /* SEQ_GENERIC */
