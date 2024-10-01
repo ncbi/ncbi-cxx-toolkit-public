@@ -1605,7 +1605,7 @@ void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 // returns the data_str, but wrapped in appropriate <a href...>...</a> if applicable
 static
 string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_str, const string &data_str,
-                                       const char* provider, const char* status, bool has_name, const char* organism,
+                                       const char* provider, const char* pipeline, const char* status, bool has_name, const char* organism,
                                        const char* source, const char* category, const char* accession )
 {
     if( ! is_html ) {
@@ -1623,7 +1623,10 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( NStr::Equal (label_str, "Annotation Name") && ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) ) {
+    } else if ( NStr::Equal (label_str, "Annotation Name") &&
+        ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) &&
+        NStr::FindNoCase (pipeline, "NCBI Eukaryotic Genome Annotation Pipeline") != NPOS &&
+        NStr::FindNoCase(pipeline, "EGAPx") == NPOS) {
         string fst;
         string snd;
         if (NStr::Find(data_str, "Updated Annotation Release") != NPOS) {
@@ -1717,6 +1720,7 @@ void s_GetStrForStructuredComment(
     const char* prefix = "##Metadata-START##";
     const char* suffix = "##Metadata-END##";
     const char* provider = "";
+    const char* pipeline = "";
     const char* status = "";
     const char* source = "";
     const char* category = "";
@@ -1741,6 +1745,8 @@ void s_GetStrForStructuredComment(
             } else {
                 if ( label == "Annotation Provider" ) {
                     provider = (*it_for_len)->GetData().GetStr().c_str();
+                } else if ( label == "Annotation Pipeline" ) {
+                    pipeline = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Status" ) {
                     status = (*it_for_len)->GetData().GetStr().c_str();
                 } else if ( label == "Annotation Name" ) {
@@ -1813,7 +1819,7 @@ void s_GetStrForStructuredComment(
         }
         next_line.append( " :: " );
         next_line.append( s_HtmlizeStructuredCommentData( is_html, (*it)->GetLabel().GetStr(), (*it)->GetData().GetStr(),
-                                                          provider, status, has_name, organism, source, category, accession.c_str() ) );
+                                                          provider, pipeline, status, has_name, organism, source, category, accession.c_str() ) );
         next_line.append( "\n" );
 
         ExpandTildes(next_line, eTilde_comment);
