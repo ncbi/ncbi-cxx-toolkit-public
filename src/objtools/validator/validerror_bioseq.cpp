@@ -5037,6 +5037,18 @@ void CValidError_bioseq::CheckSourceDescriptor(const CBioseq_Handle& bsh)
             "Mitochondrial Metazoan sequences should be less than 65000 bp",
             *(bsh.GetBioseqCore()));
     }
+
+    if (bsh.IsNa() && m_Imp.IsGenomeSubmission() && src.IsSetOrg()) {
+        const COrg_ref& org = src.GetOrg();
+        if (org.IsSetTaxname()) {
+            const string & taxname = org.GetTaxname();
+            if (NStr::FindNoCase(taxname, "uncultured") != NPOS) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_UnculturedGenome,
+                    "A genomic sequence should not have uncultured in its organism name",
+                    *(bsh.GetBioseqCore()));
+            }
+        }
+    }
 }
 
 
