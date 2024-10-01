@@ -78,6 +78,8 @@ do_build() {
         return $error
     fi
     cd trunk/c++/src/$proj
+    # Re-enable some heavy tests
+    find . -name 'Makefile.*.app' | xargs grep -l 'CHECK_REQUIRES.*=.*disabled' | while read mf ; do sed 's%disabled%%' "$mf" > qq && mv -f qq "$mf" ; done
     make all_r -j 15
     error=$?
     if [ $error -ne 0 ]; then
