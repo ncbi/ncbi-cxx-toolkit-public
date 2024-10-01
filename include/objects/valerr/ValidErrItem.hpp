@@ -364,6 +364,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadNullGeoLocName,
     eErr_SEQ_DESCR_BadNullCountry,
     eErr_SEQ_DESCR_BadNullCollectionDate,
+    eErr_SEQ_DESCR_UnculturedGenome,
     ERR_CODE_END(SEQ_DESCR),
 
 
