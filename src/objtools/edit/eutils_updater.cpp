@@ -39,7 +39,6 @@
 #include <objtools/eutils/efetch/PubmedBookArticle.hpp>
 #include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
 
-#include <objtools/eutils/api/efetch.hpp>
 #include <objtools/eutils/api/esearch.hpp>
 #include <objtools/eutils/esearch/IdList.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
@@ -499,19 +498,29 @@ static void Normalize(CPub& pub)
     }
 }
 
+namespace
+{
+    struct CFetch_Request : CEUtils_Request {
+        TEntrezId m_pmid;
+        CFetch_Request(CRef<CEUtils_ConnContext>& ctx, TEntrezId pmid) :
+            CEUtils_Request(ctx, "efetch.fcgi"), m_pmid(pmid)
+        {
+            SetRequestMethod(CEUtils_Request::eHttp_Get);
+        }
+        string GetQueryString() const override
+        {
+            return "db=pubmed&retmode=xml&id="s + to_string(m_pmid);
+        }
+    };
+}
+
 CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
-    unique_ptr<CEFetch_Request> req(
-        new CEFetch_Literature_Request(CEFetch_Literature_Request::eDB_pubmed, m_Ctx)
-    );
-
-    req->SetRequestMethod(CEUtils_Request::eHttp_Get);
-    req->GetId().AddId(NStr::NumericToString(pmid));
-    req->SetRetMode(CEFetch_Request::eRetMode_xml);
+    CFetch_Request req(m_Ctx, pmid);
 
     eutils::CPubmedArticleSet pas;
     string content;
-    req->Read(&content);
+    req.Read(&content);
     try {
         CNcbiIstrstream(content) >> MSerial_Xml >> pas;
     } catch (const CSerialException&) {
