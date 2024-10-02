@@ -1,0 +1,405 @@
+#!/bin/sh 
+#############################################################################
+# $Id$
+# Add C++ API sample to the existing P2 project's (CMake/Conan).
+# Author: Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
+#############################################################################
+
+initial_dir=`pwd`
+script_name=`basename $0`
+script_dir=`dirname $0`
+script_dir=`(cd "${script_dir}" ; pwd)`
+
+repository="https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/c++"
+
+cxxtk='ncbi-cxx-toolkit-core'
+assets_dir='deployment_artifacts'
+tag_base='@NEW_PROJECT::SampleAPI'
+
+indent='   '
+separator='------------------------------------------------'
+
+tmp="tmp.sample.$$"
+trap "rm -rf $tmp >/dev/null 2>&1; echo; exit" 0 1 2 3 9 15
+
+if test -x /usr/bin/nawk; then
+   awk=nawk
+else
+   awk=awk
+fi
+
+
+############################################################################# 
+
+Usage()
+{
+    cat <<EOF
+USAGE:
+  $script_name <project_dir> <api> [<sample>]
+SYNOPSIS:
+  Add C++ API sample to the existing P2 project.
+ARGUMENTS:
+  --help        -- print Usage
+  <project_dir> -- existing P2 project directory (local copy; use 'git clone')
+  <api>         -- API type to add
+  <sample>      -- sample to use, if specified API have many samples (optional)
+EOF
+    if test -z "$1"; then
+       echo
+       echo The following API types are available:
+       svn list -R $repository/src/sample | while IFS= read -r line; do
+       case "$line" in */ )
+         count=`echo $line | tr -cd '/' | wc -c`
+         if [ $count -eq 2 ]; then
+            prj=${line%?}
+            case "$prj" in 
+              app/alnmgr)         echo "  app/alnmgr          an application that uses Alignment Manager";;
+              app/asn)            echo "  app/asn             an application that uses ASN.1 specification";;
+              app/basic)          echo "  app/basic           a simple application";;
+              app/blast)          echo "  app/blast           a BLAST application";;
+              app/cgi)            echo "  app/cgi             a CGI application";;
+              app/connect)        echo "  app/connect         a Usage report logging";;
+              app/dbapi)          echo "  app/dbapi           a DBAPI application";;
+              app/deployable_cgi) echo "  app/deployable_cgi  a CD-deployable CGI application";;
+              app/eutils)         echo "  app/eutils          an eUtils client application";;
+              app/http_session)   echo "  app/http_session    an application that uses CHttpSession";;
+              app/lds)            echo "  app/lds             an application that uses local data store";;
+              app/multicmd)       echo "  app/multicmd        a simple command-based application";;
+              app/netcache)       echo "  app/netcache        an application that uses NetCache";;
+              app/netschedule)    echo "  app/netschedule     an NCBI GRID (NetSchedule) application";;
+              app/objects)        echo "  app/objects         an application that uses ASN.1 objects";;
+              app/objmgr)         echo "  app/objmgr          an application that uses Object Manager";;
+              app/sdbapi)         echo "  app/sdbapi          a Simple-DBAPI application";;
+              app/serial)         echo "  app/serial          a data serialization application";;
+              app/soap)           echo "  app/soap/client     a SOAP client"
+                                  echo "  app/soap/server     a SOAP server";;
+              app/unit_test)      echo "  app/unit_test       a Boost-based unit test application";;
+              lib/asn_lib)        echo "  lib/asn_lib         a static library from ASN.1 specification";;
+              lib/basic)          echo "  lib/basic           a simple static library";;
+              lib/dtd)            echo "  lib/dtd             a static library from DTD specification";;
+              lib/jsd)            echo "  lib/jsd             a static library from JSON Schema specification";;
+              lib/xsd)            echo "  lib/xsd             a static library from XML Schema specification";;
+              *)                  echo "  $prj";;
+            esac 
+         fi
+         ;;
+       esac
+       done
+    fi
+    echo
+    test -z "$1"  ||  echo ERROR:  $1
+    echo
+    exit 1
+}
+
+case $# in
+  3)  prj_dir="$1" ; sample_dir="$2" ; sample_prj="$3" ;;
+  2)  prj_dir="$1" ; sample_dir="$2" ;;
+  0)  Usage "" ;;
+  *)  Usage "Invalid number of arguments" ;;
+esac
+
+
+Error()
+{
+  cd "$initial_dir"
+  echo ERROR: "$@"
+  echo
+  exit 1
+}
+
+
+# Parse CMake makefile and return value for <property>: property(value).
+# Pur resuklt into $result.
+# Usage: GetMakefileProperty <property> <makefile>
+
+result=''
+GetMakefileProperty()
+{
+  result=`\
+     $awk -v p="$1" '$0 ~ p, /)/ {src = src $0} END {print src}' < "$2" \
+     | sed -e "s/$1//g"  \
+     | tr -d "()" \
+     | xargs -n1  \
+     | xargs`
+}
+
+#----------------------------------------------------------------------------
+# Checkout adding sample to temporary directory
+
+
+if [ ! -d $prj_dir ]; then
+   Error "Project directory $prj_dir doesn\`t exists"
+fi
+cd $prj_dir
+
+rm -rf $tmp_dir 2>/dev/null
+mkdir $tmp 2>/dev/null
+svn co $repository/include/sample/$sample_dir $tmp >/dev/null 2>&1
+svn co $repository/src/sample/$sample_dir $tmp >/dev/null 2>&1
+find $tmp -name ".svn" -exec rm -rf {} \; >/dev/null 2>&1
+
+if [ ! -d "$tmp" ]; then
+   Error "Failed to checkout API samples $sample_dir"
+fi
+
+src_dir="$tmp"
+
+#----------------------------------------------------------------------------
+# If sample project has not specified, and there are more than one, ask user.
+
+if [ -z "$sample_prj" ]; then
+   
+   # Prepare list of samples for specified API
+   
+   list=`grep -s "NCBI_add_app" "$src_dir/CMakeLists.txt" | sed -e "s/NCBI_add_app(//" -e "s/).*//" | xargs -n1 | sort | xargs`
+   if [ -z "list" ]; then
+      Error "Unable to find sample applications for $sample_prj"
+   fi
+   count=`echo "$list" | wc -w`
+   
+   if [ "$count" -eq "1" ]; then
+      sample_prj="$list"
+   else
+      echo
+      echo "Please select API sample to add:"
+      i=1
+      for s in $list; do
+         echo "$indent" $i"." $s
+         i=`expr $i + 1`
+      done
+      echo "$indent" $i"." - ALL -
+
+      while true; do
+         read -p "Enter sample number: " n
+         case $n in
+              [1-9] ) 
+                 if [ $n -le $i ]; then
+                    break
+                 fi
+                 ;;
+              * );;
+         esac
+      done
+     
+      if [ $n -eq $i ]; then
+         sample_prj="$list"
+      else 
+         sample_prj=`echo "$list" | cut -d' ' -f$n`
+      fi
+   fi
+fi
+
+
+#----------------------------------------------------------------------------
+# Add each selected sample project
+
+for sample in $sample_prj; do
+
+   echo $separator
+   echo "Adding API $sample_dir - $sample:"
+   echo $separator
+
+   src_makefile="CMakeLists.$sample.app.txt"
+
+
+   # --- Copy source files ---
+   
+   echo "Copy new source files to '$prj_dir'"
+
+   GetMakefileProperty "NCBI_sources" "$src_dir/$src_makefile"
+   sources="$result"
+
+   if [ -z "$sources" ]; then
+      Error "Unable to find source files in the $src_makefile"
+   fi
+   
+   new_files=''
+   new_sources=''
+
+   for src in $sources; do
+       for ext in .h .hpp; do
+           file="$src_dir/${src}${ext}"
+           if [ -f $file ]; then
+              echo "$indent" ${src}${ext}
+              cp $file .
+              new_files="$new_files ${src}${ext}"
+           fi
+       done
+       # Conan/CMake build system require extentions for source files,
+       # so detect and add if necessary
+       for ext in '' .c .cpp .cxx .cc .c++ ; do
+           file="$src_dir/${src}${ext}"
+           if [ -f $file ]; then
+              # Exclude main sample file
+              if [ "${src}${ext}" = "${sample_prj}${ext}" ]; then
+                 continue
+              fi
+              echo "$indent" ${src}${ext}
+              cp $file .
+              new_files="$new_files ${src}${ext}"
+              new_sources="$new_sources ${src}${ext}"
+           fi
+       done
+   done
+
+
+   # --- CMakeLists.txt ---
+
+   echo "Modifying CMakeLists.txt..."
+   # add_executable(app src1 src2 ...)
+
+   target_makefile="CMakeLists.txt"
+   GetMakefileProperty "add_executable" "$target_makefile"
+   orig_sources=`echo $result | xargs -n1 | xargs | sed "s/[^ ]* //"`
+   target_sources=`echo $result $new_sources | xargs -n1 | $awk '!seen[$0]++' | xargs`
+   $awk -v src="$target_sources" '
+       /add_executable\(/ {p = 1}
+       // { if (!p) { print $0 } }
+       /)/ { if (p) { print "add_executable(" src ")" } p = 0 }
+   ' < "$target_makefile" > "$target_makefile.$$"
+   mv -f "$target_makefile.$$" "$target_makefile"
+
+
+   # --- Components / Libs ---
+
+   echo "Modifying conanfile.txt..."
+
+   # ncbi-cxx-toolkit-core/*:with_targets=lib1;lib2;...
+   # ncbi-cxx-toolkit-core/*:with_components=comp1;comp2;...
+   
+   GetMakefileProperty "NCBI_uses_toolkit_libraries.*${cxxtk}" "$src_dir/$src_makefile"
+   comps=`echo $result | tr -d ':'`
+   
+   GetMakefileProperty "NCBI_uses_toolkit_libraries" "$src_dir/$src_makefile"
+   libs=`echo $result | sed "s/${cxxtk}::[a-zA-Z0-9-]*//g"`
+
+   if [ -z "$comps" -a  -z "$libs" ]; then
+      Error "Unable to find libraries to link in the $src_makefile"
+   fi
+   
+   target_conanfile="conanfile.txt"
+      
+   target_comps=`grep -s "$cxxtk/.*:with_components" "$target_conanfile" | sed -e "s/.*=//" -e "s/;/ /g"`
+   comps=`echo $target_comps $comps | xargs -n1 | $awk '!seen[$0]++' | xargs | tr ' ' ';'`
+   target_libs=`grep -s "$cxxtk/.*:with_targets" "$target_conanfile" | sed -e "s/.*=//" -e "s/;/ /g"`
+   libs=`echo $target_libs $libs | xargs -n1 | $awk '!seen[$0]++' | xargs | tr ' ' ';'`
+
+   $awk -v comps="$comps" -v libs="$libs" -v OFS= '
+       /:with_components=/ {
+          s = substr($0,0,index($0,"="))
+          print s,comps
+          p = 1
+       }
+       /:with_targets=/ {
+          s = substr($0,0,index($0,"="))
+          print s,libs
+          p = 1
+       }
+       // { if (!p) { print $0 } else {p=0} }
+   ' < "$target_conanfile" > "$target_conanfile.$$"
+   mv -f "$target_conanfile.$$" "$target_conanfile"
+
+
+   # --- Modify sources ---
+   
+   echo "Injecting sample code..."
+   
+   # Find class name derived from CNcbiSample
+   
+   header=''
+   class=''
+   member=''
+   
+   for file in $new_files; do
+       class=`grep 'public CNcbiSample' "$file" | sed -e "s/.*class *\(\w*\) *:.*$/\1/"`
+       if [ -n "$class" ]; then
+          header="$file"
+          break;
+       fi
+   done
+   if [ -z "$class" ]; then
+      Error "Unable to find class name derived from CNcbiSample"
+   fi
+   member=`echo $class | sed -e 's/[^_]*_//'`
+   member="m_Sample_${member}"
+
+   # Search all .cpp specified in the CMake file and inject code
+
+   for ext in '' .c .cpp .cxx .cc .c++; do
+       for src in $orig_sources; do
+           file="${src}${ext}"
+           if [ -f $file ]; then
+              if grep "$tag_base" $file >/dev/null 2>&1; then
+
+                 echo "$indent" $file
+
+                 # Inject code after tags. Process tags after first #include only.
+
+                 $awk -v tag_base="$tag_base" \
+                      -v tag_header="$tag_base::Header@" \
+                      -v tag_decl="$tag_base::Decl@" \
+                      -v tag_init="$tag_base::Init@" \
+                      -v tag_run="$tag_base::Run@" \
+                      -v tag_exit="$tag_base::Exit@" \
+                      -v header="$header" \
+                      -v class="$class" \
+                      -v member="$member" \
+                      -v OFS= '
+ 
+                     // { print $0 }
+                     /#include/ {a = 1}
+                     $0 ~ tag_base {
+                         if (a) {
+                            indent = substr($0,0,index($0,"/")-1)
+                         
+                            if ($0 ~ tag_header) { 
+                               print indent "#include \"",header,"\"" 
+                            }
+                            if ($0 ~ tag_decl) { 
+                               print indent class " " member ";"
+                            }
+                            if ($0 ~ tag_init) { 
+                               print indent member ".Init();"
+                            }
+                            if ($0 ~ tag_run) { 
+                               print indent "/* int exit_code = */ " member ".Run();"
+                            }
+                            if ($0 ~ tag_exit) { 
+                               print indent member ".Exit();"
+                            }
+                         }
+                     }
+                 ' < "$file" > "$file.$$"
+                 mv -f "$file.$$" "$file"
+              fi
+           fi
+       done
+   done
+
+   # --- Assets ---
+
+   GetMakefileProperty "NCBI_set_test_assets" "$src_dir/$src_makefile"
+   assets="$result"
+
+   if [ -n "$assets" ]; then
+      echo "Copy sample assets to '$prj_dir/$assets_dir'"
+      mkdir -p $assets_dir
+      for src in $assets; do
+          file="$src_dir/$src"
+          if [ -f $file ]; then
+             echo "$indent" ${src}
+             cp -r $file $assets_dir
+          fi
+      done
+   fi
+
+done
+
+#----------------------------------------------------------------------------
+
+rm -rf $tmp >/dev/null 2>&1
+cd "$initial_dir"
+
+echo $separator
+echo Done.
