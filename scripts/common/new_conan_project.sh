@@ -190,7 +190,7 @@ find $rep_src -name "Makefile.*" -exec rm -rf {} \; 1>/dev/null 2>/dev/null
   echo "  cmake --preset conan-release"
   echo " "
   echo "To build the project:"
-  echo "  cmake --build build/Release"
+  echo "  cmake --build --preset conan-release"
   echo " "
   echo "For other command line options, see documentation:"
   echo " https://docs.conan.io/2/reference/commands/install.html"

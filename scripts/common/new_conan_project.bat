@@ -198,7 +198,7 @@ REM create readme
  echo   cmake --preset conan-default
  echo:
  echo To build the project:
- echo   cmake --build --config Release
+ echo   cmake --build --preset conan-release
  echo:
  echo For other command line options, see documentation:
  echo  https://docs.conan.io/2/reference/commands/install.html
