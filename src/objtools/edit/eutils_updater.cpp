@@ -39,7 +39,7 @@
 #include <objtools/eutils/efetch/PubmedBookArticle.hpp>
 #include <objtools/eutils/efetch/PubmedBookArticleSet.hpp>
 
-#include <objtools/eutils/api/esearch.hpp>
+#include <objtools/eutils/esearch/ESearchResult.hpp>
 #include <objtools/eutils/esearch/IdList.hpp>
 #include <objects/pubmed/Pubmed_entry.hpp>
 #include <objects/medline/Medline_entry.hpp>
@@ -210,10 +210,10 @@ void SCitMatch::FillFromArticle(const CCit_art& A)
 namespace
 {
 
-struct CSearch_Request : CESearch_Request
+struct CSearch_Request : CEUtils_Request
 {
     CSearch_Request(CRef<CEUtils_ConnContext>& ctx) :
-        CESearch_Request("pubmed", ctx)
+        CEUtils_Request(ctx, "esearch.fcgi")
     {
     }
 
@@ -316,13 +316,34 @@ struct CSearch_Request : CESearch_Request
         return true;
     }
 
-    TEntrezId GetResponse(EPubmedError& err)
+    string m_Term;
+
+    string GetQueryString() const override
+    {
+        string args = "db=pubmed&field=title&retmax=2&rettype=ulist&term=";
+        args += NStr::URLEncode(m_Term, NStr::eUrlEnc_ProcessMarkChars);
+        return args;
+    }
+
+    ESerialDataFormat GetSerialDataFormat() const override
+    {
+        return eSerial_Xml;
+    }
+
+    TEntrezId GetResponse(EPubmedError& err, string term)
     {
         err = EPubmedError::operational_error;
 
-        CRef<esearch::CESearchResult> result = this->GetESearchResult();
-        if (result && result->IsSetData()) {
-            auto& D = result->GetData();
+        m_Term = term;
+
+        CObjectIStream* is = GetObjIStream();
+        _ASSERT(is);
+        esearch::CESearchResult result;
+        *is >> result;
+        Disconnect();
+
+        if (result.IsSetData()) {
+            auto& D = result.GetData();
             if (D.IsInfo() && D.GetInfo().IsSetContent() && D.GetInfo().GetContent().IsSetIdList()) {
                 const auto& idList = D.GetInfo().GetContent().GetIdList();
                 if (idList.IsSetId()) {
@@ -374,10 +395,6 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
     CSearch_Request req(m_Ctx);
-    req.SetField("title");
-    req.SetRetMax(2);
-    req.SetUseHistory(false);
-    req.SetRetType(CESearch_Request::eRetType_uilist);
     EPubmedError err = EPubmedError::citation_not_found;
 
     // clang-format off
@@ -408,8 +425,7 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 
         string term;
         if (CSearch_Request::BuildSearchTerm(cm, r, term)) {
-            req.SetTerm(term);
-            TEntrezId pmid = req.GetResponse(err);
+            TEntrezId pmid = req.GetResponse(err, term);
             if (pmid != ZERO_ENTREZ_ID) {
                 return pmid;
             }
