@@ -207,10 +207,12 @@ void SCitMatch::FillFromArticle(const CCit_art& A)
     }
 }
 
-class CECitMatch_Request : public CESearch_Request
+namespace
 {
-public:
-    CECitMatch_Request(CRef<CEUtils_ConnContext>& ctx) :
+
+struct CSearch_Request : CESearch_Request
+{
+    CSearch_Request(CRef<CEUtils_ConnContext>& ctx) :
         CESearch_Request("pubmed", ctx)
     {
     }
@@ -348,6 +350,7 @@ public:
     }
 };
 
+}
 
 CEUtilsUpdater::CEUtilsUpdater(ENormalize norm) :
     m_Ctx(new CEUtils_ConnContext), m_Norm(norm)
@@ -370,14 +373,15 @@ TEntrezId CEUtilsUpdater::CitMatch(const CPub& pub, EPubmedError* perr)
 
 TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
 {
-    unique_ptr<CECitMatch_Request> req(new CECitMatch_Request(m_Ctx));
-    req->SetField("title");
-    req->SetRetMax(2);
-    req->SetUseHistory(false);
+    CSearch_Request req(m_Ctx);
+    req.SetField("title");
+    req.SetRetMax(2);
+    req.SetUseHistory(false);
+    req.SetRetType(CESearch_Request::eRetType_uilist);
     EPubmedError err = EPubmedError::citation_not_found;
 
     // clang-format off
-    constexpr array<eCitMatchFlags, 6> ruleset_single = {
+    static constexpr array<eCitMatchFlags, 6> ruleset_single = {
         e_J | e_V | e_P       | e_A | e_I,
         e_J | e_V | e_P       | e_A,
         e_J | e_V | e_P,
@@ -386,7 +390,7 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
                                 e_A       | e_T,
     };
 
-    constexpr array<eCitMatchFlags, 6> ruleset_in_press = {
+    static constexpr array<eCitMatchFlags, 6> ruleset_in_press = {
         e_J | e_V | e_P | e_Y | e_A,
         e_J | e_V | e_P | e_Y,
         e_J | e_V       | e_Y | e_A       | e_T,
@@ -397,16 +401,15 @@ TEntrezId CEUtilsUpdater::CitMatch(const SCitMatch& cm, EPubmedError* perr)
     // clang-format on
 
     const auto& ruleset = cm.InPress ? ruleset_in_press : ruleset_single;
-    const unsigned n       = cm.Option1 ? 6 : 5;
+    const unsigned n    = cm.Option1 ? 6 : 5;
 
     for (unsigned i = 0; i < n; ++i) {
         eCitMatchFlags r = ruleset[i];
 
         string term;
-        if (CECitMatch_Request::BuildSearchTerm(cm, r, term)) {
-            req->SetArgument("term", term);
-            req->SetRetType(CESearch_Request::eRetType_uilist);
-            TEntrezId pmid = req->GetResponse(err);
+        if (CSearch_Request::BuildSearchTerm(cm, r, term)) {
+            req.SetTerm(term);
+            TEntrezId pmid = req.GetResponse(err);
             if (pmid != ZERO_ENTREZ_ID) {
                 return pmid;
             }
