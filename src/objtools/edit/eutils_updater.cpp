@@ -512,7 +512,7 @@ namespace
         }
         string GetQueryString() const override
         {
-            return "db=pubmed&retmode=xml&id="s + to_string(m_pmid);
+            return "db=pubmed&retmode=xml&id="s + NStr::NumericToString(m_pmid);
         }
     };
 }
