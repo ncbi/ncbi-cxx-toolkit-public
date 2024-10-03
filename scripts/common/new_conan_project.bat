@@ -191,16 +191,14 @@ REM create readme
  echo To install Conan packages:
  echo   conan install . --build missing -s build_type=Release
  echo:
+ echo To list available presets:
+ echo   cmake --list-presets
+ echo:
  echo To run CMake to generate makefiles:
- echo   cd build
- echo   cmake .. --preset conan-default
+ echo   cmake --preset conan-default
  echo:
  echo To build the project:
- echo   cd build
- echo   cmake --build . --config Release
- echo:
- echo To list available presets:
- echo   cmake . --list-presets
+ echo   cmake --build --config Release
  echo:
  echo For other command line options, see documentation:
  echo  https://docs.conan.io/2/reference/commands/install.html
