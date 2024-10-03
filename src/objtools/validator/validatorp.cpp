@@ -1510,7 +1510,9 @@ bool CValidError_imp::Validate
         while (feat_inf && ! m_IgnoreInferences) {
             FOR_EACH_GBQUAL_ON_FEATURE (qual, *feat_inf) {
                 if (! m_IgnoreInferences && (*qual)->IsSetQual() && (*qual)->IsSetVal() && NStr::Equal((*qual)->GetQual(), "inference")) {
-                    m_CumulativeInferenceCount++;
+                    if (! GetContext().PreprocessHugeFile) {
+                        m_CumulativeInferenceCount++;
+                    }
                     if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                         // disable inference checking for remainder of run
                         m_IgnoreInferences = true;
@@ -1531,11 +1533,15 @@ bool CValidError_imp::Validate
                             string acc_prefix, accession;
                             if (CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (accessions[i], acc_prefix, accession)) {
                                 num_accessions++;
-                                m_CumulativeInferenceCount++;
+                                if (! GetContext().PreprocessHugeFile) {
+                                    m_CumulativeInferenceCount++;
+                                }
                             }
                         }
                         if (num_accessions > 0) {
-                            m_CumulativeInferenceCount += num_accessions;
+                            if (! GetContext().PreprocessHugeFile) {
+                                m_CumulativeInferenceCount += num_accessions;
+                            }
                             if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                                 // disable inference checking for remainder of run
                                 m_IgnoreInferences = true;
