@@ -58,4 +58,4 @@ clean : $(CLEAN_THIRD_PARTY_LIBS)
 rebuild : clean all
 
 dirs :
-    @if not exist $(INSTALL_BINPATH) (echo Creating directory $(INSTALL_BINPATH)... & mkdir $(INSTALL_BINPATH))
+    @if not exist $(INSTALL_BINPATH) (echo Creating directory $(INSTALL_BINPATH)... && (mkdir $(INSTALL_BINPATH) || echo: ))
