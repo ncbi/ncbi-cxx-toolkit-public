@@ -238,6 +238,18 @@ void s_PostErr(EDiagSev      severity,
 }
 
 
+void s_PostErr(EDiagSev      severity,
+               EErrType      errorType,
+               const string& message,
+               const string& desc,
+               const string& accnver,
+               IValidError&  errors)
+{
+    int version = 0;
+    errors.AddValidErrItem(severity, errorType, message, desc, accnver, version);
+}
+
+
 static bool s_IsNa(CSeq_inst::EMol mol)
 {
     return (mol == CSeq_inst::eMol_dna ||
@@ -404,6 +416,7 @@ void CHugeFileValidator::ReportPostErrors(const SValidatorContext& context,
                   eErr_SEQ_FEAT_TooManyInferenceAccessions,
                   "Skipping validation of remaining /inference qualifiers",
                   x_GetHugeSetLabel(),
+                  x_GetIdString(),
                   errors);
     }
 }
