@@ -1368,7 +1368,7 @@ version  2 # of file format
 2+6  PK  ddbj_patent
 2+8  PK  ddbj_other_nuc
 2+10 PK  ddbj_other_nuc
-2+6  PL  ddbj_other_nuc
+2+6  PL  ddbj_patent # from Korea
 2+8  PL  ddbj_other_nuc
 2+10 PL  ddbj_other_nuc
 2+6  PM  ddbj_other_nuc
