@@ -77,6 +77,9 @@ namespace xml
             }
             return *this;
         }
+
+        exception (const exception &) = default;
+        exception &  operator= (const exception &) = default;
     };
 
 } // namespace xml
