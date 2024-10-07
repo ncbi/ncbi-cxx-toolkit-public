@@ -73,6 +73,14 @@ bool s_HasFailedStatus(const CPSG_NamedAnnotStatus& na_status)
 }
 
 
+template<class Class>
+static
+string x_FormatPtr(const shared_ptr<Class>& ptr)
+{
+    return (ptr? " ...": " null");
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CPSGL_BioseqInfo_Processor
 /////////////////////////////////////////////////////////////////////////////
@@ -129,7 +137,7 @@ CPSGL_BioseqInfo_Processor::ProcessItemFast(EPSG_Status status,
 
 CPSGL_Processor::EProcessResult
 CPSGL_BioseqInfo_Processor::ProcessReplyFast(EPSG_Status status,
-                                             const shared_ptr<CPSG_Reply>& /*reply*/)
+                                             const shared_ptr<CPSG_Reply>& reply)
 {
     _TRACE(Descr()<<": ProcessReplyFast("<<int(status)<<")");
     if ( status == EPSG_Status::eSuccess &&
@@ -147,7 +155,9 @@ CPSGL_BioseqInfo_Processor::ProcessReplyFast(EPSG_Status status,
         return eProcessed;
     }
     // inconsistent reply - invalid bioseq info or status
-    return eFailed;
+    return x_Failed("inconsistent reply:"+
+                    x_Format(status, reply)+
+                    " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
 }
 
 
@@ -233,7 +243,7 @@ CPSGL_BlobInfo_Processor::ProcessItemFast(EPSG_Status status,
 
 CPSGL_Processor::EProcessResult
 CPSGL_BlobInfo_Processor::ProcessReplyFast(EPSG_Status status,
-                                           const shared_ptr<CPSG_Reply>& /*reply*/)
+                                           const shared_ptr<CPSG_Reply>& reply)
 {
     if ( status == EPSG_Status::eSuccess &&
          m_BlobInfoStatus == EPSG_Status::eSuccess &&
@@ -250,7 +260,9 @@ CPSGL_BlobInfo_Processor::ProcessReplyFast(EPSG_Status status,
         return eProcessed;
     }
     // inconsistent reply - invalid bioseq info or status
-    return eFailed;
+    return x_Failed("inconsistent reply:"+
+                    x_Format(status, reply)+
+                    " blob info"+x_Format(m_BlobInfoStatus)+x_FormatPtr(m_BlobInfo));
 }
 
 
@@ -348,14 +360,14 @@ CPSGL_Info_Processor::ProcessItemFast(EPSG_Status status,
 
 CPSGL_Processor::EProcessResult
 CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
-                                       const shared_ptr<CPSG_Reply>& /*reply*/)
+                                       const shared_ptr<CPSG_Reply>& reply)
 {
     _TRACE(Descr()<<": ProcessReplyFast("<<int(status)<<")");
     if ( status == EPSG_Status::eNotFound ) {
         return eProcessed;
     }
     if ( status != EPSG_Status::eSuccess ) {
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
 
     // process bioseq info result
@@ -369,7 +381,9 @@ CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
     }
     else {
         // inconsistent reply - invalid bioseq info or status
-        return eFailed;
+        return x_Failed("inconsistent reply:"+
+                        x_Format(status, reply)+
+                        " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
     }
     
     // process blob info result
@@ -383,7 +397,9 @@ CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
     }
     else {
         // inconsistent reply - invalid blob info or status
-        return eFailed;
+        return x_Failed("inconsistent reply:"+
+                        x_Format(status, reply)+
+                        " blob info"+x_Format(m_BlobInfoStatus)+x_FormatPtr(m_BlobInfo));
     }
     
     // all good
@@ -448,7 +464,7 @@ CPSGL_IpgTaxId_Processor::ProcessItemFast(EPSG_Status status,
         }
         else {
             _TRACE(Descr()<<": ProcessItemFast("<<int(status)<<", "<<item.get()<<") no tax id");
-            return eFailed;
+            return x_Failed("no IPG tax id");
         }
     }
     return eProcessed;
@@ -457,14 +473,14 @@ CPSGL_IpgTaxId_Processor::ProcessItemFast(EPSG_Status status,
 
 CPSGL_Processor::EProcessResult
 CPSGL_IpgTaxId_Processor::ProcessReplyFast(EPSG_Status status,
-                                           const shared_ptr<CPSG_Reply>& /*reply*/)
+                                           const shared_ptr<CPSG_Reply>& reply)
 {
     _TRACE(Descr()<<": ProcessReplyFast("<<int(status)<<")");
     if ( status == EPSG_Status::eNotFound ) {
         return eProcessed;
     }
     if ( status != EPSG_Status::eSuccess ) {
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
     return eProcessed;
 }
@@ -519,7 +535,7 @@ CPSGL_CDDAnnot_Processor::ProcessItemFast(EPSG_Status status,
     case CPSG_ReplyItem::eNamedAnnotStatus:
         m_AnnotStatus = dynamic_pointer_cast<CPSG_NamedAnnotStatus>(item);
         if ( s_HasFailedStatus(*m_AnnotStatus) ) {
-            return eFailed;
+            return x_Failed("annot status: failed");
         }
         break;
     case CPSG_ReplyItem::eBlobInfo:
@@ -550,8 +566,7 @@ CPSGL_CDDAnnot_Processor::ProcessReplyFast(EPSG_Status status,
     if ( !s_SameId(m_BlobInfo->GetId<CPSG_BlobId>(), blob_id) ||
          !s_SameId(m_BlobData->GetId<CPSG_BlobId>(), blob_id) ) {
         // inconsistent blob ids
-        LOG_POST("CPSGDataLoader: inconsistent CDD blob ids for "<<m_SeqIdSet.front());
-        return eFailed;
+        return x_Failed("inconsistent CDD blob ids for "+m_SeqIdSet.front().AsString());
     }
     return eToNextStage;
 }
@@ -608,8 +623,7 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
     unique_ptr<CObjectIStream> in(GetBlobDataStream(*m_BlobInfo, *m_BlobData));
     if (!in.get()) {
         // failed
-        LOG_POST("CPSGDataLoader: cannot open CDD data stream for "<<m_SeqIdSet.front());
-        return eFailed;
+        return x_Failed("cannot open CDD data stream for "+m_SeqIdSet.front().AsString());
     }
     CRef<CSeq_entry> entry(new CSeq_entry);
     *in >> *entry;
@@ -733,7 +747,8 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
     
     // determine sequence blob id
     if ( status == EPSG_Status::eError || m_BioseqInfoStatus == EPSG_Status::eError ) {
-        return eFailed;
+        return x_Failed(x_Format(status, reply)+
+                        " bioseq info"+x_Format(m_BioseqInfoStatus));
     }
     if ( (status == EPSG_Status::eNotFound ||
           status == EPSG_Status::eSuccess) &&
@@ -749,8 +764,8 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
          m_BioseqInfoStatus != EPSG_Status::eSuccess ) {
         // inconsistent reply - invalid bioseq info or status
         // unexpected status
-        _TRACE(Descr()<<": ProcessReplySlow(): failed");
-        return eFailed;
+        return x_Failed(x_Format(status, reply)+
+                        " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfoResult));
     }
     
     auto& psg_blob_id = GetPSGBlobId();
@@ -776,8 +791,7 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
     }
     if ( psg_blob_id.empty() ) {
         // inconsistent reply - no blob id
-        _TRACE(Descr()<<": ProcessReplySlow(): failed");
-        return eFailed;
+        return x_Failed("psg_blob_id is empty"+x_Format(status, reply));
     }
 
     // prepare bioseq TSE lock
@@ -841,8 +855,7 @@ CPSGL_GetBlob_Processor::ProcessReplyFast(EPSG_Status status,
 {
     _TRACE(Descr()<<": ProcessReplyFast()");
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplyFast(): error: "<<m_Blob_id);
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
     if ( status == EPSG_Status::eForbidden ) {
         _TRACE(Descr()<<": ProcessReplyFast(): forbidden: "<<m_Blob_id);
@@ -860,8 +873,7 @@ CPSGL_GetBlob_Processor::ProcessReplySlow(EPSG_Status status,
 {
     _TRACE(Descr()<<": ProcessReplySlow()");
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplySlow(): error: "<<m_Blob_id);
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
     if ( status == EPSG_Status::eForbidden ) {
         _TRACE(Descr()<<": ProcessReplySlow(): forbidden: "<<m_Blob_id);
@@ -936,8 +948,7 @@ CPSGL_GetChunk_Processor::ProcessReplySlow(EPSG_Status status,
                                            const shared_ptr<CPSG_Reply>& reply)
 {
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplySlow(): error status");
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
 
     // TODO: check if the chunk is loaded
@@ -1065,11 +1076,11 @@ CPSGL_NA_Processor::ProcessItemFast(EPSG_Status status,
     case CPSG_ReplyItem::eNamedAnnotStatus:
         if ( auto annot_status = dynamic_pointer_cast<CPSG_NamedAnnotStatus>(item) ) {
             if ( s_HasFailedStatus(*annot_status) ) {
-                return eFailed;
+                return x_Failed("annot status: failed");
             }
         }
         else {
-            return eFailed;
+            return x_Failed("annot status: absent");
         }
         return eProcessed;
     case CPSG_ReplyItem::eNamedAnnotInfo:
@@ -1128,8 +1139,7 @@ CPSGL_NA_Processor::ProcessReplySlow(EPSG_Status status,
                                      const shared_ptr<CPSG_Reply>& reply)
 {
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplySlow(): error status");
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
 
     // prepare NA TSE locks
@@ -1208,11 +1218,11 @@ CPSGL_LocalCDDBlob_Processor::ProcessItemFast(EPSG_Status status,
     case CPSG_ReplyItem::eNamedAnnotStatus:
         if ( auto annot_status = dynamic_pointer_cast<CPSG_NamedAnnotStatus>(item) ) {
             if ( s_HasFailedStatus(*annot_status) ) {
-                return eFailed;
+                return x_Failed("annot status: failed");
             }
         }
         else {
-            return eFailed;
+            return x_Failed("annot status: absent");
         }
         break;
     case CPSG_ReplyItem::eNamedAnnotInfo:
@@ -1250,8 +1260,7 @@ CPSGL_LocalCDDBlob_Processor::ProcessReplySlow(EPSG_Status status,
 {
     _TRACE(Descr()<<": ProcessReplySlow("<<int(status)<<")");
     if ( status == EPSG_Status::eError ) {
-        _TRACE(Descr()<<": ProcessReplySlow(): error status");
-        return eFailed;
+        return x_Failed(x_Format(status, reply));
     }
     if ( status == EPSG_Status::eNotFound ) {
         x_CreateEmptyLocalCDDEntry(m_DataSource, &m_CDDChunkInfo);

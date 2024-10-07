@@ -375,6 +375,20 @@ tuple<const CPSG_BlobId*, const CPSG_ChunkId*> CPSGL_Blob_Processor::ParseId(con
 }
 
 
+static
+string ToString(const CPSG_BlobId* blob_id)
+{
+    return blob_id->GetId();
+}
+
+
+static
+string ToString(const CPSG_ChunkId* chunk_id)
+{
+    return chunk_id->GetId2Info()+"."+NStr::NumericToString(chunk_id->GetId2Chunk());
+}
+
+
 CPSGL_Processor::EProcessResult
 CPSGL_Blob_Processor::ProcessItemFast(EPSG_Status status,
                                       const shared_ptr<CPSG_ReplyItem>& item)
@@ -546,20 +560,20 @@ CPSGL_Blob_Processor::PostProcessBlob(const CPSG_DataId* id)
 
     if ( blob_id ) {
         if ( ready_data && !ParseTSE(blob_id, slot) ) {
-            return eFailed;
+            return x_Failed("cannot parse blob "+ToString(blob_id));
         }
         return TSE_ToOM(blob_id, chunk_id, slot);
     }
     else if ( chunk_id->GetId2Chunk() == kSplitInfoChunkId ) {
         if ( ready_data && !ParseSplitInfo(chunk_id, slot) ) {
-            return eFailed;
+            return x_Failed("cannot parse split "+ToString(chunk_id));
         }
         return TSE_ToOM(blob_id, chunk_id, slot);
     }
     else {
         _ASSERT(ready_object || ready_data);
         if ( ready_data && !ParseChunk(chunk_id, slot) ) {
-            return eFailed;
+            return x_Failed("cannot parse chunk "+ToString(chunk_id));
         }
         return Chunk_ToOM(chunk_id, static_cast<SChunkSlot*>(slot));
     }
@@ -726,8 +740,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
         return eProcessed;
     }
     if ( CPSGDataLoader_Impl::GetGetBlobByIdShouldFail() ) {
-        _TRACE(Descr()<<": GetBlobByIdShouldFail=true for: "<<dl_blob_id->ToString());
-        return eFailed;
+        return x_Failed("GetBlobByIdShouldFail=true for: "+dl_blob_id->ToString());
     }
     if ( s_GetDebugLevel() >= 6 ) {
         LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): getting TSE load lock: "<<dl_blob_id->ToString());
@@ -1072,8 +1085,7 @@ CPSGL_Blob_Processor::ProcessTSE_Lock(const string& blob_id,
 {
     if ( blob_id.empty() ) {
         // inconsistent reply - no blob id
-        _TRACE(Descr()<<": ProcessReply(): empty blob id");
-        return eFailed;
+        return x_Failed("ProcessReply(): empty blob id");
     }
     if ( tse_lock ) {
         _TRACE(Descr()<<": ProcessReply(): TSE lock: "<<tse_lock.GetPointerOrNull());
