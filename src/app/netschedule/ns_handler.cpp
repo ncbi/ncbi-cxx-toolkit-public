@@ -775,7 +775,7 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
 
     bool          error = true;
     string        error_client_message;
-    unsigned int  error_code;
+    unsigned int  error_code = eStatus_OK;
 
     try {
         // Single line user input processor
