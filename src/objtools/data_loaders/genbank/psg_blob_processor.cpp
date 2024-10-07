@@ -1059,7 +1059,7 @@ unique_ptr<CDeadline> CPSGL_Blob_Processor::GetWaitDeadline(const CPSG_SkippedBl
     default:
         return nullptr;
     }
-    return make_unique<CDeadline>(CTimeout(timeout+1));
+    return make_unique<CDeadline>(CTimeout(timeout));
 }
 
 
