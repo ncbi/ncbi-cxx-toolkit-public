@@ -57,7 +57,7 @@ static inline
 void s_SimulateDelay()
 {
     if ( kDestructionDelay ) {
-        SleepMilliSec(rand()%kDestructionDelay);
+        SleepMilliSec(rand()%(kDestructionDelay?kDestructionDelay:1));
     }
 }
 
@@ -65,8 +65,8 @@ void s_SimulateDelay()
 static inline
 void s_SimulateFailure(CPSGL_Processor* processor, const char* message)
 {
-    if ( kFailureRate ) {	 
-        if ( rand() % kFailureRate == 0 ) {
+    if ( kFailureRate ) {
+        if ( rand() % (kFailureRate?kFailureRate:1) == 0 ) {
             string full_message = string("simulated exception: ")+message;
             if ( processor ) {
                 processor->AddError(full_message);
