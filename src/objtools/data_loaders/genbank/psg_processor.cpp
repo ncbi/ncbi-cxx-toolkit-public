@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/data_loaders/genbank/impl/psg_processor.hpp>
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -68,6 +69,42 @@ ostream& CPSGL_Processor::PrintProcessorArgs(ostream& out) const
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(s_ErrorsMutex);
+
+void CPSGL_Processor::AddError(const string& message)
+{
+    CFastMutexGuard guard(s_ErrorsMutex);
+    m_Errors.push_back(message);
+}
+
+
+CPSGL_Processor::EProcessResult
+CPSGL_Processor::x_Failed(const string& message)
+{
+    AddError(message);
+    return eFailed;
+}
+
+
+string CPSGL_Processor::x_Format(EPSG_Status status)
+{
+    return " status="+NStr::NumericToString(int(status));
+}
+
+
+string CPSGL_Processor::x_Format(EPSG_Status status,
+                                 const shared_ptr<CPSG_Reply>& reply)
+{
+    string ret = x_Format(status);
+    if ( reply ) {
+        if ( auto http_code = CPSG_Misc::GetReplyHttpCode(reply) ) {
+            ret += " HTTP="+NStr::NumericToString(http_code);
+        }
+    }
+    return ret;
+}
+
+
 CPSGL_Processor::EProcessResult
 CPSGL_Processor::ProcessItemFast(EPSG_Status /*status*/,
                                  const shared_ptr<CPSG_ReplyItem>& /*item*/)
@@ -80,7 +117,8 @@ CPSGL_Processor::EProcessResult
 CPSGL_Processor::ProcessItemSlow(EPSG_Status /*status*/,
                                  const shared_ptr<CPSG_ReplyItem>& /*item*/)
 {
-    return eFailed;
+    ERR_POST(GetProcessorName()<<"::ProcessItemSlow() is not implemented");
+    return x_Failed("ProcessItemSlow() is not implemented");
 }
 
 
@@ -96,7 +134,8 @@ CPSGL_Processor::EProcessResult
 CPSGL_Processor::ProcessReplySlow(EPSG_Status /*status*/,
                                   const shared_ptr<CPSG_Reply>& /*reply*/)
 {
-    return eFailed;
+    ERR_POST(GetProcessorName()<<"::ProcessReplySlow() is not implemented");
+    return x_Failed("ProcessReplySlow() is not implemented");
 }
 
 

@@ -38,6 +38,7 @@
 #include <util/thread_pool.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <cstdlib>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -46,6 +47,34 @@ BEGIN_NCBI_NAMESPACE;
 //NCBI_DEFINE_ERR_SUBCODE_X(1);
 BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
+
+
+static const int kDestructionDelay = 0;
+static const int kFailureRate = 0;
+
+
+static inline
+void s_SimulateDelay()
+{
+    if ( kDestructionDelay ) {
+        SleepMilliSec(random()%kDestructionDelay);
+    }
+}
+
+
+static inline
+void s_SimulateFailure(CPSGL_Processor* processor, const char* message)
+{
+    if ( kFailureRate ) {	 
+        if ( random() % kFailureRate == 0 ) {
+            string full_message = string("simulated exception: ")+message;
+            if ( processor ) {
+                processor->AddError(full_message);
+            }
+            NCBI_THROW(CLoaderException, eLoaderFailed, full_message);
+        }
+    }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -314,6 +343,7 @@ public:
     }
     ~CBackgroundTask()
     {
+        s_SimulateDelay();
     }
 
     CFastMutex& GetTrackerMutex()
@@ -353,6 +383,7 @@ public:
     {
         if ( s_IsFinished(GetStatus()) ) {
             DisconnectFromTracker();
+            s_SimulateDelay();
         }
     }
 
@@ -509,6 +540,7 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
         return;
     }
     try {
+        s_SimulateFailure(m_Processor, "ProcessItemCallback item fast");
         _ASSERT(item);
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
@@ -516,12 +548,13 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
             StartProcessItemInBackground(status, item);
         }
         else if ( result != CPSGL_Processor::eProcessed ) {
-            ERR_POST("CPSGDataLoader: failed processing reply item: "<<result);
+            _TRACE("CPSGDataLoader: failed processing reply item: "<<result);
             MarkAsFailed();
         }
     }
     catch ( exception& exc ) {
-        ERR_POST("CPSGDataLoader: exception while processing reply item: "<<exc.what());
+        _TRACE("CPSGDataLoader: exception while processing reply item: "<<exc.what());
+        m_Processor->AddError(exc.what());
         MarkAsFailed();
     }
 }
@@ -552,6 +585,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
             }
         }}
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast()");
+        s_SimulateFailure(m_Processor, "ProcessReplyCallback reply fast");
         auto result = m_Processor->ProcessReplyFast(status, reply);
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast(): "<<result);
         if ( result == CPSGL_Processor::eToNextStage ) {
@@ -559,7 +593,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
             StartProcessReplyInBackground();
         }
         else if ( result != CPSGL_Processor::eProcessed ) {
-            ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
+            _TRACE("CPSGDataLoader: failed processing reply: "<<result);
             MarkAsFailed();
         }
         else {
@@ -567,7 +601,8 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
         }
     }
     catch ( exception& exc ) {
-        ERR_POST("CPSGDataLoader: exception while processing reply: "<<exc.what());
+        _TRACE("CPSGDataLoader: exception while processing reply: "<<exc.what());
+        m_Processor->AddError(exc.what());
         MarkAsFailed();
     }
 }
@@ -596,9 +631,10 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
         {{
             // process item
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessItemSlow()");
+            s_SimulateFailure(m_Processor, "BackgroundProcessItemCallback item slow");
             auto result = m_Processor->ProcessItemSlow(status, item);
             if ( result != CPSGL_Processor::eProcessed ) {
-                ERR_POST("CPSGDataLoader: failed processing reply item: "<<result);
+                _TRACE("CPSGDataLoader: failed processing reply item: "<<result);
                 MarkAsFailed();
                 return CThreadPool_Task::eFailed;
             }
@@ -622,6 +658,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             // process reply, first 'fast' call
             _ASSERT(m_Reply);
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReplyFast()");
+            s_SimulateFailure(m_Processor, "BackgroundProcessItemCallback reply fast");
             auto result = m_Processor->ProcessReplyFast(m_ReplyStatus, m_Reply);
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReplyFast(): "<<result);
             if ( result == CPSGL_Processor::eProcessed ) {
@@ -629,7 +666,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
                 return CThreadPool_Task::eCompleted;
             }
             else if ( result != CPSGL_Processor::eToNextStage ) {
-                ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
+                _TRACE("CPSGDataLoader: failed processing reply: "<<result);
                 MarkAsFailed();
                 return CThreadPool_Task::eFailed;
             }
@@ -637,6 +674,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
         {{
             // process reply, regular call
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReply()");
+            s_SimulateFailure(m_Processor, "BackgroundProcessItemCallback reply slow");
             auto result = m_Processor->ProcessReplySlow(m_ReplyStatus, m_Reply);
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReplySlow(): "<<result);
             if ( result == CPSGL_Processor::eProcessed ) {
@@ -644,7 +682,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
                 return CThreadPool_Task::eCompleted;
             }
             else if ( result != CPSGL_Processor::eToNextStage ) {
-                ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
+                _TRACE("CPSGDataLoader: failed processing reply: "<<result);
                 MarkAsFailed();
                 return CThreadPool_Task::eFailed;
             }
@@ -655,7 +693,8 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
         }}
     }
     catch ( exception& exc ) {
-        ERR_POST("CPSGDataLoader: exception while processing reply item: "<<exc.what());
+        _TRACE("CPSGDataLoader: exception while processing reply item: "<<exc.what());
+        m_Processor->AddError(exc.what());
         MarkAsFailed();
         return CThreadPool_Task::eFailed;
     }
@@ -682,13 +721,14 @@ CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
         }}
         _ASSERT(m_BackgroundItemTaskCount == 0);
         _ASSERT(m_Reply);
+        s_SimulateFailure(m_Processor, "BackgroundProcessReplyCallback reply slow");
         auto result = m_Processor->ProcessReplySlow(m_ReplyStatus, m_Reply);
         if ( result == CPSGL_Processor::eProcessed ) {
             MarkAsCompleted();
             return CThreadPool_Task::eCompleted;
         }
         else if ( result != CPSGL_Processor::eToNextStage ) {
-            ERR_POST("CPSGDataLoader: failed processing reply: "<<result);
+            _TRACE("CPSGDataLoader: failed processing reply: "<<result);
             MarkAsFailed();
             return CThreadPool_Task::eFailed;
         }
@@ -698,7 +738,8 @@ CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
         }
     }
     catch ( exception& exc ) {
-        ERR_POST("CPSGDataLoader: exception while processing reply: "<<exc.what());
+        _TRACE("CPSGDataLoader: exception while processing reply: "<<exc.what());
+        m_Processor->AddError(exc.what());
         MarkAsFailed();
         return CThreadPool_Task::eFailed;
     }
@@ -712,6 +753,7 @@ CPSGL_ResultGuard CPSGL_RequestTracker::FinalizeResult()
         _ASSERT(GetStatus() == CThreadPool_Task::eCompleted);
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::FinalizeResult(): calling");
         try {
+            s_SimulateFailure(m_Processor, "FinalizeResult final");
             auto result = m_Processor->ProcessReplyFinal();
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::FinalizeResult(): finalized: "<<result);
             if ( result != CPSGL_Processor::eProcessed ) {
@@ -719,7 +761,8 @@ CPSGL_ResultGuard CPSGL_RequestTracker::FinalizeResult()
             }
         }
         catch ( exception& exc ) {
-            ERR_POST("CPSGDataLoader: exception while processing reply: "<<exc.what());
+            _TRACE("CPSGDataLoader: exception while processing reply: "<<exc.what());
+            m_Processor->AddError(exc.what());
             m_Status = CThreadPool_Task::eFailed;
         }
     }

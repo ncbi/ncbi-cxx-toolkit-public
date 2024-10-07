@@ -138,6 +138,19 @@ public:
     //   eProcessed
     //   eFailed
     virtual EProcessResult ProcessReplyFinal();
+
+    const vector<string>& GetErrors() const
+    {
+        return m_Errors;
+    }
+    void AddError(const string& message);
+    
+protected:
+    EProcessResult x_Failed(const string& message);
+    static string x_Format(EPSG_Status status);
+    static string x_Format(EPSG_Status status, const shared_ptr<CPSG_Reply>& reply);
+
+    vector<string> m_Errors;
 };
 
 

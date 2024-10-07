@@ -777,6 +777,34 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
 }
 
 
+struct SErrorFormatter
+{
+    explicit
+    SErrorFormatter(const CPSGL_Processor* processor)
+        : processor(processor)
+    {
+    }
+
+    const CPSGL_Processor* processor;
+};
+static ostream& operator<<(ostream& out, SErrorFormatter formatter)
+{
+    if ( auto processor = formatter.processor ) {
+        out << ": " << processor->Descr() << ':';
+        for ( auto& error : processor->GetErrors() ) {
+            out << ' ' << error << '\n';
+        }
+    }
+    return out;
+}
+
+
+static auto FormatError(const CPSGL_Processor* processor)
+{
+    return SErrorFormatter(processor);
+}
+
+
 CDataLoader::TTSE_LockSet
 CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
                                     const CSeq_id_Handle& idh,
@@ -837,7 +865,8 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     _ASSERT(result);
     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to get bioseq info for "<<idh);
+                       "failed to get bioseq info for "<<idh<<
+                       FormatError(result.GetProcessor()));
     }
     
     auto processor = result.GetProcessor<CPSGL_Get_Processor>();
@@ -909,15 +938,17 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("Failed to get blob id for " << idh);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "CPSGDataLoader::GetBlobId("<<idh<<") failed");
+                           "CPSGDataLoader::GetBlobId("<<idh<<") failed"<<
+                           FormatError(result.GetProcessor()));
         }
         
         auto processor = result.GetProcessor<CPSGL_Get_Processor>();
         _ASSERT(processor);
         if ( processor->GetBioseqInfoStatus() == EPSG_Status::eError ) {
             _TRACE("Failed to get blob id for " << idh);
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "CPSGDataLoader::GetBlobId() failed");
+            NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                           "CPSGDataLoader::GetBlobId() failed"<<
+                           FormatError(result.GetProcessor()));
         }
         seq_info = processor->GetBioseqInfoResult();
     }
@@ -991,7 +1022,8 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         _ASSERT(result);
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "failed to get blob "<<blob_id.ToPsgId());
+                           "failed to get blob "<<blob_id.ToPsgId()<<
+                           FormatError(result.GetProcessor()));
         }
 
         auto processor = result.GetProcessor<CPSGL_GetBlob_Processor>();
@@ -1007,8 +1039,8 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
     }
     if (!ret) {
         _TRACE("Failed to load blob for " << blob_id.ToPsgId()<<" @ "<<CStackTrace());
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CPSGDataLoader::GetBlobById("+blob_id.ToPsgId()+") failed");
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CPSGDataLoader::GetBlobById("+blob_id.ToPsgId()+") failed");
     }
     return ret;
 }
@@ -1068,13 +1100,15 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
     // we need to remember the reason for reqursive getblob requests
     typedef vector<CSeq_id_Handle> TRequests;
     map<CRef<CPSGL_GetBlob_Processor>, TRequests> getblob2reqs;
+    CRef<CPSGL_Processor> first_failed_processor;
     while ( auto result = queue.GetNextResult() ) {
         if ( result.GetIndex() == eRequestGet ) {
             auto processor = result.GetProcessor<CPSGL_Get_Processor>();
             const CSeq_id_Handle& idh = processor->GetSeq_id();
             if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
                 NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                               "failed to get bioseq info for "<<idh);
+                               "failed to get bioseq info for "<<idh<<
+                               FormatError(result.GetProcessor()));
             }
             
             if ( auto tse_lock = processor->GetTSE_Lock() ) {
@@ -1111,7 +1145,8 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
                  !processor->GetTSE_Lock() ) {
                 NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                                "failed to get blob "<<processor->GetBlob_id()<<
-                               " for "<<reqs.front());
+                               " for "<<reqs.front()<<
+                               FormatError(result.GetProcessor()));
             }
             
             auto tse_lock = processor->GetTSE_Lock();
@@ -1123,7 +1158,8 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" blobs");
+                       "failed to load "<<failed_count<<" blobs"<<
+                       FormatError(first_failed_processor));
     }
 }
 
@@ -1275,11 +1311,15 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
         }
     }
     size_t failed_count = 0;
+    CRef<CPSGL_Processor> first_failed_processor;
     while ( auto result = queue.GetNextResult() ) {
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("CPSGDataLoader::LoadChunks(): failed to process request "<<
                    result.GetProcessor<CPSGL_Blob_Processor>()->Descr());
             ++failed_count;
+            if ( !first_failed_processor ) {
+                first_failed_processor = result.GetProcessor();
+            }
             continue;
         }
     }
@@ -1294,7 +1334,8 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" chunks");
+                       "failed to load "<<failed_count<<" chunks"<<
+                       FormatError(first_failed_processor));
     }
 }
 
@@ -1489,7 +1530,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
                         _TRACE("Failed to load annotations for "<<ids.front());
                         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed");
+                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed"<<
+                                       FormatError(result.GetProcessor()));
                     }
                     for ( auto& r : processor->GetResults() ) {
                         if ( r.m_TSE_Lock ) {
@@ -1519,7 +1561,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
                         _TRACE("Failed to load annotations for "<<ids.front());
                         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed");
+                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed"<<
+                                       FormatError(result.GetProcessor()));
                     }
                     for ( auto& name : reqs ) {
                         CDataLoader::SetProcessedNA(name, processed_nas);
@@ -1636,7 +1679,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     }
 
     size_t failed_count = 0;
-    
+    CRef<CPSGL_Processor> first_failed_processor;
     while ( auto result = queue.GetNextResult() ) {
         size_t i = result.GetIndex();
         _ASSERT(i < cdd_ids.size() && cdd_ids[i]);
@@ -1648,6 +1691,9 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             // execution or processing are failed somehow
             _TRACE("Failed to load CDDs for " << cdd_ids[i]);
             ++failed_count;
+            if ( !first_failed_processor ) {
+                first_failed_processor = result.GetProcessor();
+            }
             continue;
         }
         ret[i] = processor->m_TSE_Lock;
@@ -1655,7 +1701,8 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" CDD annots in bulk request");
+                       "failed to load "<<failed_count<<" CDD annots in bulk request"<<
+                       FormatError(first_failed_processor));
     }
 }
 
