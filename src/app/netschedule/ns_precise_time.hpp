@@ -72,7 +72,7 @@ class CNSPreciseTime : public timespec
           tv_nsec = 0; }
         CNSPreciseTime(double  time)
         { tv_sec = int(time);
-          tv_nsec = int( (time - tv_sec) * kNSecsPerSecond ); }
+          tv_nsec = int( (time - tv_sec) * (long)(kNSecsPerSecond) ); }
         CNSPreciseTime(unsigned int sec, unsigned int  nsec)
         { tv_sec = sec;
           tv_nsec = nsec; }
