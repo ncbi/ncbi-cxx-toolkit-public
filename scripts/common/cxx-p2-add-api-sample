@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 #############################################################################
 # $Id$
 # Add C++ API sample to the existing P2 project's (CMake/Conan).
@@ -60,7 +60,7 @@ EOF
               app/cgi)            echo "  app/cgi             a CGI application";;
               app/connect)        echo "  app/connect         a Usage report logging";;
               app/dbapi)          echo "  app/dbapi           a DBAPI application";;
-              app/deployable_cgi) echo "  app/deployable_cgi  a CD-deployable CGI application";;
+              app/deployable_cgi) continue;; # not applicable
               app/eutils)         echo "  app/eutils          an eUtils client application";;
               app/http_session)   echo "  app/http_session    an application that uses CHttpSession";;
               app/lds)            echo "  app/lds             an application that uses local data store";;
@@ -74,11 +74,11 @@ EOF
               app/soap)           echo "  app/soap/client     a SOAP client"
                                   echo "  app/soap/server     a SOAP server";;
               app/unit_test)      echo "  app/unit_test       a Boost-based unit test application";;
-              lib/asn_lib)        echo "  lib/asn_lib         a static library from ASN.1 specification";;
-              lib/basic)          echo "  lib/basic           a simple static library";;
-              lib/dtd)            echo "  lib/dtd             a static library from DTD specification";;
-              lib/jsd)            echo "  lib/jsd             a static library from JSON Schema specification";;
-              lib/xsd)            echo "  lib/xsd             a static library from XML Schema specification";;
+              lib/basic)          continue;; # not applicable
+              lib/asn_lib)        echo "  lib/asn_lib         a source generation from ASN.1 specification";;
+              lib/dtd)            echo "  lib/dtd             a source generation from DTD specification";;
+              lib/jsd)            echo "  lib/jsd             a source generation from JSON Schema specification";;
+              lib/xsd)            echo "  lib/xsd             a source generation from XML Schema specification";;
               *)                  echo "  $prj";;
             esac 
          fi
@@ -86,9 +86,10 @@ EOF
        esac
        done
     fi
-    echo
-    test -z "$1"  ||  echo ERROR:  $1
-    echo
+    if [ -n "$1" ]; then
+       echo
+       echo ERROR:  $1
+    fi
     exit 1
 }
 
@@ -97,6 +98,11 @@ case $# in
   2)  prj_dir="$1" ; sample_dir="$2" ;;
   0)  Usage "" ;;
   *)  Usage "Invalid number of arguments" ;;
+esac
+
+case "$sample_dir" in
+  lib/*) is_lib=true;  is_app=false ;;
+  *)     is_lib=false; is_app=true ;;
 esac
 
 
@@ -109,15 +115,17 @@ Error()
 }
 
 
-# Parse CMake makefile and return value for <property>: property(value).
-# Pur resuklt into $result.
 # Usage: GetMakefileProperty <property> <makefile>
+# Parses CMake makefile $2 and return value for <property> $1: property(value).
+# Replaces '$' with '@' for the sake of CMake variables, to avoid accidentally
+# change by any shell commands.
+# Put result into $result.
 
 result=''
 GetMakefileProperty()
 {
   result=`\
-     $awk -v p="$1" '$0 ~ p, /)/ {src = src $0} END {print src}' < "$2" \
+     $awk -v p="$1" '$0 ~ p, /)/ {s=$0; gsub(/\\${/,"@{",s); src = src s} END {print src}' < "$2" \
      | sed -e "s/$1//g"  \
      | tr -d "()" \
      | xargs -n1  \
@@ -151,10 +159,17 @@ src_dir="$tmp"
 if [ -z "$sample_prj" ]; then
    
    # Prepare list of samples for specified API
-   
-   list=`grep -s "NCBI_add_app" "$src_dir/CMakeLists.txt" | sed -e "s/NCBI_add_app(//" -e "s/).*//" | xargs -n1 | sort | xargs`
-   if [ -z "list" ]; then
-      Error "Unable to find sample applications for $sample_prj"
+
+   if $is_app; then
+      list=`grep -s "NCBI_add_app" "$src_dir/CMakeLists.txt" | sed -e "s/NCBI_add_app(//" -e "s/).*//" | xargs -n1 | sort | xargs`
+      if [ -z "list" ]; then
+         Error "Unable to find sample apps for $sample_prj"
+      fi
+   else
+      list=`grep -s "NCBI_add_library" "$src_dir/CMakeLists.txt" | sed -e "s/NCBI_add_library(//" -e "s/).*//" | xargs -n1 | sort | xargs`
+      if [ -z "list" ]; then
+         Error "Unable to find sample libs for $sample_prj"
+      fi
    fi
    count=`echo "$list" | wc -w`
    
@@ -200,65 +215,143 @@ for sample in $sample_prj; do
    echo "Adding API $sample_dir - $sample:"
    echo $separator
 
-   src_makefile="CMakeLists.$sample.app.txt"
+   if $is_app; then
+      src_makefile="CMakeLists.$sample.app.txt"
+   else
+      for ext in lib asn; do
+          src_makefile="CMakeLists.$sample.$ext.txt"
+          if [ -f $src_dir/$src_makefile ]; then
+             break
+          fi
+      done
+   fi
 
 
    # --- Copy source files ---
    
-   echo "Copy new source files to '$prj_dir'"
+   if $is_app; then
+      echo "Copy new source files to '$prj_dir'"
 
-   GetMakefileProperty "NCBI_sources" "$src_dir/$src_makefile"
-   sources="$result"
+      GetMakefileProperty "NCBI_sources" "$src_dir/$src_makefile"
+      sources="$result"
 
-   if [ -z "$sources" ]; then
-      Error "Unable to find source files in the $src_makefile"
+      if [ -z "$sources" ]; then
+         Error "Unable to find source files in the $src_makefile"
+      fi
+   
+      new_files=''
+      new_sources=''
+
+      for src in $sources; do
+          for ext in .h .hpp; do
+              file="$src_dir/${src}${ext}"
+              if [ -f $file ]; then
+                 echo "$indent" ${src}${ext}
+                 cp $file .
+                 new_files="$new_files ${src}${ext}"
+              fi
+          done
+          # Conan/CMake build system require extentions for source files,
+          # so detect and add if necessary
+          for ext in '' .c .cpp .cxx .cc .c++ ; do
+              file="$src_dir/${src}${ext}"
+              if [ -f $file ]; then
+                 # Exclude main sample file
+                 if [ "${src}${ext}" = "${sample_prj}${ext}" ]; then
+                    continue
+                 fi
+                 echo "$indent" ${src}${ext}
+                 cp $file .
+                 new_files="$new_files ${src}${ext}"
+                 new_sources="$new_sources ${src}${ext}"
+              fi
+          done
+      done
+   
    fi
    
-   new_files=''
-   new_sources=''
+   if $is_lib; then
+      echo "Copy schema specification to '$prj_dir'"
+      GetMakefileProperty "NCBI_dataspecs" "$src_dir/$src_makefile"
+      sources="$result"
 
-   for src in $sources; do
-       for ext in .h .hpp; do
-           file="$src_dir/${src}${ext}"
-           if [ -f $file ]; then
-              echo "$indent" ${src}${ext}
-              cp $file .
-              new_files="$new_files ${src}${ext}"
-           fi
-       done
-       # Conan/CMake build system require extentions for source files,
-       # so detect and add if necessary
-       for ext in '' .c .cpp .cxx .cc .c++ ; do
-           file="$src_dir/${src}${ext}"
-           if [ -f $file ]; then
-              # Exclude main sample file
-              if [ "${src}${ext}" = "${sample_prj}${ext}" ]; then
-                 continue
-              fi
-              echo "$indent" ${src}${ext}
-              cp $file .
-              new_files="$new_files ${src}${ext}"
-              new_sources="$new_sources ${src}${ext}"
-           fi
-       done
-   done
+      if [ -z "$sources" ]; then
+         Error "Unable to find schema specification in the $src_makefile"
+      fi
+      for src in $sources; do
+          echo "$indent" $src
+          cp "$src_dir/$src" .
+      done
+   
+   fi
 
 
    # --- CMakeLists.txt ---
 
-   echo "Modifying CMakeLists.txt..."
-   # add_executable(app src1 src2 ...)
-
    target_makefile="CMakeLists.txt"
-   GetMakefileProperty "add_executable" "$target_makefile"
-   orig_sources=`echo $result | xargs -n1 | xargs | sed "s/[^ ]* //"`
-   target_sources=`echo $result $new_sources | xargs -n1 | $awk '!seen[$0]++' | xargs`
-   $awk -v src="$target_sources" '
-       /add_executable\(/ {p = 1}
-       // { if (!p) { print $0 } }
-       /)/ { if (p) { print "add_executable(" src ")" } p = 0 }
-   ' < "$target_makefile" > "$target_makefile.$$"
-   mv -f "$target_makefile.$$" "$target_makefile"
+   
+   echo "Modifying $target_makefile..."
+
+   if $is_lib; then
+      # Add generation like:
+      #   NCBI_generate_cpp(ASN_SRC ASN_HEADERS sample.asn)
+      # New sources wil be added as:
+      #   add_executable(app src1 src2 ... ${ASN_SRC})
+
+      new_sources=''
+      for src in $sources; do
+          type=''
+          case "$src" in
+            *.asn) type='ASN' ;;
+            *.dtd) type='DTD' ;;
+            *.jsd) type='JSD' ;;
+            *.xsd) type='XSD' ;;
+            *)     Error "Unknown chema specifivation type: $src" ;;
+          esac
+          if grep "NCBI_generate_cpp(.*${src}" $target_makefile >/dev/null 2>&1; then
+             continue
+          fi
+          for i in '' $(seq 1 99); do
+              s="${type}_SRC${i}"
+              h="${type}_HEADERS${i}"
+              if grep "$s" $target_makefile >/dev/null 2>&1; then
+                 continue
+              else 
+                 break
+              fi
+          done
+          $awk -v src="$src" \
+               -v s="$s" \
+               -v h="$h" \
+               -v OFS= '
+              /add_executable\(/ { print "NCBI_generate_cpp(" s " " h " " src ")" }
+              // { print $0 }
+              ' < "$target_makefile" > "$target_makefile.$$"
+          mv -f "$target_makefile.$$" "$target_makefile"
+
+          # Use '@' instead of '$', that wil be replaced back later
+          new_sources="$new_sources @{$s}"
+      done
+   fi
+
+   # Add sources like:
+   #    add_executable(app src1 src2 ...)
+   if [ -n "$new_sources" ]; then
+      GetMakefileProperty "add_executable" "$target_makefile"
+      orig_sources=`echo $result | xargs -n1 | xargs | sed "s/[^ ]* //"`
+      target_sources=`echo $result $new_sources | xargs -n1 | $awk '!seen[$0]++' | xargs`
+      $awk -v src="$target_sources" '
+          /add_executable\(/ {p = 1}
+          //  { if (!p) { print $0 } }
+          /)/ { if (p) { 
+                   gsub(/@{/,"${", src);
+                   print "add_executable(" src ")" 
+                }
+                p = 0 
+              }
+          ' < "$target_makefile" > "$target_makefile.$$"
+      mv -f "$target_makefile.$$" "$target_makefile"
+   fi
 
 
    # --- Components / Libs ---
@@ -302,6 +395,8 @@ for sample in $sample_prj; do
 
 
    # --- Modify sources ---
+
+   if $is_app; then
    
    echo "Injecting sample code..."
    
@@ -324,7 +419,7 @@ for sample in $sample_prj; do
    member=`echo $class | sed -e 's/[^_]*_//'`
    member="m_Sample_${member}"
 
-   # Search all .cpp specified in the CMake file and inject code
+   # Search all source files specified in the original CMakeList and inject code
 
    for ext in '' .c .cpp .cxx .cc .c++; do
        for src in $orig_sources; do
@@ -376,6 +471,7 @@ for sample in $sample_prj; do
            fi
        done
    done
+   fi # is_app
 
    # --- Assets ---
 
