@@ -133,8 +133,11 @@ private:
     void x_ReportMissingBioSources(IValidError& errors) const;
 
     void x_ReportConflictingBiomols(IValidError& errors) const;
-
-
+    
+    void x_PostMsg(EDiagSev severity,
+                   EErrType errorType,
+                   const string& message,
+                   IValidError& errors) const;
 
     string x_GetIdString() const;
 
