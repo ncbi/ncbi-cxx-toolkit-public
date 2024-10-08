@@ -277,11 +277,11 @@ private:
                 throw std::runtime_error("Thread pool already cancelled");
 
             if (!m_thread.valid()) {
+                m_owner->m_running_threads++;
                 m_thread = std::async([this]()
                 {
                     x_run();
                 });
-                m_owner->m_running_threads++;
             }
 
             {
@@ -397,16 +397,23 @@ private:
         auto deliver = [this] (token_type&& result)
         {
             m_product_queue.push_back(std::move(result));
+            m_delivered_tasks++;
         };
 
+        unsigned scheduled_tasks{0};
         while(true) {
             auto msg = m_works.pop_front();
             if (msg) {
                 auto work = std::move(msg.value());
                 m_thread_pool.schedule(deliver, std::move(work));
+                scheduled_tasks++;
             } else {
                 break;
             }
+        }
+
+        // Can't proceed until all tasks have been delivered to m_product_queue
+        while (m_delivered_tasks.load() != scheduled_tasks) {
         }
 
         m_thread_pool.finish_threads();
@@ -418,6 +425,7 @@ private:
     CMessageQueue<std::optional<token_type>> m_product_queue; // the queue of threads products
     CMessageQueue<std::optional<TWork>>      m_works;         // the queue of work to do
     std::future<void>                        m_push_thread;
+    atomic<unsigned> m_delivered_tasks{0}; // # of tasks delivered to the product queue
 };
 
 }
