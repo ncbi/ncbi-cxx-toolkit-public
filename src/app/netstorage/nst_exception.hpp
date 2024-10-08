@@ -46,7 +46,7 @@ class CNetStorageServerException : public CException,
     public:
         typedef CNetStorageServerError::EErrCode EErrCode;
 
-        virtual const char *  GetErrCodeString(void) const;
+        virtual const char *  GetErrCodeString(void) const override;
         unsigned int ErrCodeToHTTPStatusCode(void) const;
         NCBI_EXCEPTION_DEFAULT(CNetStorageServerException, CException);
 };
