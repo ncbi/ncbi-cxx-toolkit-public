@@ -211,42 +211,13 @@ static string s_GetIdString(const list<CConstRef<CSeq_id>>& ids, int* version)
 }
 
 
-void s_PostErr(EDiagSev           severity,
-               EErrType           errorType,
-               const string&      message,
-               const string&      desc,
-               CRef<CValidError>& pErrors)
-{
-
-    if (! pErrors) {
-        pErrors = Ref(new CValidError());
-    }
-
-    int version = 0;
-    pErrors->AddValidErrItem(severity, errorType, message, desc, "", version);
-}
-
-
-void s_PostErr(EDiagSev      severity,
-               EErrType      errorType,
-               const string& message,
-               const string& desc,
-               IValidError&  errors)
+void CHugeFileValidator::x_PostMsg(EDiagSev      severity,
+                                   EErrType      errorType,
+                                   const string& message,
+                                   IValidError&  errors) const
 {
     int version = 0;
-    errors.AddValidErrItem(severity, errorType, message, desc, "", version);
-}
-
-
-void s_PostErr(EDiagSev      severity,
-               EErrType      errorType,
-               const string& message,
-               const string& desc,
-               const string& accnver,
-               IValidError&  errors)
-{
-    int version = 0;
-    errors.AddValidErrItem(severity, errorType, message, desc, accnver, version);
+    errors.AddValidErrItem(severity, errorType, message, x_GetHugeSetLabel(), x_GetIdString(), version);
 }
 
 
@@ -305,7 +276,7 @@ void CHugeFileValidator::x_ReportCollidingSerialNumbers(const set<int>& collidin
                                                         IValidError&    errors) const
 {
     for (auto val : collidingNumbers) {
-        s_PostErr(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers, "Multiple publications have serial number " + NStr::IntToString(val), x_GetHugeSetLabel(), errors);
+        x_PostMsg(eDiag_Warning, eErr_GENERIC_CollidingSerialNumbers, "Multiple publications have serial number " + NStr::IntToString(val), errors);
     }
 }
 
@@ -315,7 +286,7 @@ void CHugeFileValidator::x_ReportMissingPubs(IValidError& errors) const
     if (! (m_Reader.GetSubmitBlock())) {
         if (auto info = m_Reader.GetBioseqs().front(); s_x_ReportMissingPubs(info, m_Reader)) {
             auto severity = g_IsCuratedRefSeq(info) ? eDiag_Warning : eDiag_Error;
-            s_PostErr(severity, eErr_SEQ_DESCR_NoPubFound, "No publications anywhere on this entire record.", x_GetHugeSetLabel(), errors);
+            x_PostMsg(severity, eErr_SEQ_DESCR_NoPubFound, "No publications anywhere on this entire record.", errors);
         }
     }
 }
@@ -328,7 +299,7 @@ void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, IValidE
 
         if (auto info = m_Reader.GetBioseqs().front(); s_x_ReportMissingCitSub(info, m_Reader, isRefSeq)) {
             auto severity = (m_Options & CValidator::eVal_genome_submission) ? eDiag_Error : eDiag_Info;
-            s_PostErr(severity, eErr_GENERIC_MissingPubRequirement, "No submission citation anywhere on this entire record.", x_GetHugeSetLabel(), errors);
+            x_PostMsg(severity, eErr_GENERIC_MissingPubRequirement, "No submission citation anywhere on this entire record.", errors);
         }
     }
 }
@@ -336,10 +307,9 @@ void CHugeFileValidator::x_ReportMissingCitSubs(bool hasRefSeqAccession, IValidE
 
 void CHugeFileValidator::x_ReportMissingBioSources(IValidError& errors) const
 {
-    s_PostErr(eDiag_Error,
+    x_PostMsg(eDiag_Error,
               eErr_SEQ_DESCR_NoSourceDescriptor,
               "No source information included on this record.",
-              x_GetHugeSetLabel(),
               errors);
 }
 
@@ -347,10 +317,9 @@ void CHugeFileValidator::x_ReportMissingBioSources(IValidError& errors) const
 void CHugeFileValidator::x_ReportConflictingBiomols(IValidError& errors) const
 {
     auto severity = (m_Options & CValidator::eVal_genome_submission) ? eDiag_Error : eDiag_Warning;
-    s_PostErr(severity,
+    x_PostMsg(severity,
               eErr_SEQ_PKG_InconsistentMoltypeSet,
               "Pop/phy/mut/eco set contains inconsistent moltype",
-              x_GetHugeSetLabel(),
               errors);
 }
 
@@ -385,17 +354,15 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, IVali
 
     if (globalInfo.TpaAssemblyHist > 0 &&
         globalInfo.JustTpaAssembly > 0) {
-        s_PostErr(eDiag_Error,
+        x_PostMsg(eDiag_Error,
                   eErr_SEQ_INST_TpaAssemblyProblem,
                   "There are " + NStr::SizetToString(globalInfo.TpaAssemblyHist) + " TPAs with history and " + NStr::SizetToString(globalInfo.JustTpaAssembly) + " without history in this record.",
-                  x_GetHugeSetLabel(),
                   errors);
     }
     if (globalInfo.TpaNoHistYesGI > 0) {
-        s_PostErr(eDiag_Warning,
+        x_PostMsg(eDiag_Warning,
                   eErr_SEQ_INST_TpaAssemblyProblem,
                   "There are " + NStr::SizetToString(globalInfo.TpaNoHistYesGI) + " TPAs without history in this record where the record has a gi number assignment.",
-                  x_GetHugeSetLabel(),
                   errors);
     }
 }
@@ -405,18 +372,15 @@ void CHugeFileValidator::ReportPostErrors(const SValidatorContext& context,
                                           IValidError&             errors) const
 {
     if (context.NumGenes == 0 && context.NumGeneXrefs > 0) {
-        s_PostErr(eDiag_Warning,
+        x_PostMsg(eDiag_Warning,
                   eErr_SEQ_FEAT_OnlyGeneXrefs,
                   "There are " + NStr::SizetToString(context.NumGeneXrefs) + " gene xrefs and no gene features in this record.",
-                  x_GetHugeSetLabel(),
                   errors);
     }
     if (context.CumulativeInferenceCount >= InferenceAccessionCutoff) {
-        s_PostErr(eDiag_Info,
+        x_PostMsg(eDiag_Info,
                   eErr_SEQ_FEAT_TooManyInferenceAccessions,
                   "Skipping validation of remaining /inference qualifiers",
-                  x_GetHugeSetLabel(),
-                  x_GetIdString(),
                   errors);
     }
 }
@@ -606,16 +570,13 @@ void CHugeFileValidator::RegisterReaderHooks(CObjectIStream& objStream, CHugeFil
     auto gbqual_qual_mi = gbqual_info.FindMember("qual");
 
     // Set Gb-qual.qual skip hook
-    SetLocalSkipHook(gbqual_qual_mi, objStream,
-                     [&m_GlobalInfo](CObjectIStream& in, const CObjectTypeInfo& type)
-    {
+    SetLocalSkipHook(gbqual_qual_mi, objStream, [&m_GlobalInfo](CObjectIStream& in, const CObjectTypeInfo& type) {
         string str;
         type.GetTypeInfo()->DefaultReadData(in, &str);
         if (str == "inference") {
             m_GlobalInfo.CumulativeInferenceCount++;
         }
     });
-
 }
 
 
