@@ -559,7 +559,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     Int8          error_code = NCBI_ERRCODE_X_NAME(
                                             NetStorageServer_ErrorCode);
     string        error_client_message;
-    unsigned int  error_sub_code;
+    unsigned int  error_sub_code = CNetStorageServerError::eUnknownError;
     string        error_scope;
 
     try {
