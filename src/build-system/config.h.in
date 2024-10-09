@@ -1023,6 +1023,9 @@
 /* Define to 1 if Zorba is available. */
 #undef HAVE_ZORBA
 
+/* Define to 1 if you have the `__builtin_mul_overflow' function. */
+#undef HAVE___BUILTIN_MUL_OVERFLOW
+
 /* Define to 1 if the system has the type `__CLPK_integer'. */
 #undef HAVE___CLPK_INTEGER
 

@@ -720,6 +720,9 @@
 /* Define to 1 if you have the <x86intrin.h> header file. */
 #define HAVE_X86INTRIN_H 1
 
+/* Define to 1 if you have the `__builtin_mul_overflow' function. */
+#cmakedefine HAVE___BUILTIN_MUL_OVERFLOW 1
+
 /* Define to 0xffffffff if your operating system doesn't. */
 /* #undef INADDR_NONE */
 
