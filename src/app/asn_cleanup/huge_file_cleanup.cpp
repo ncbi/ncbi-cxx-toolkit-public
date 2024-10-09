@@ -148,16 +148,37 @@ bool CCleanupHugeAsnReader::x_IsExtendedCleanup() const
 }
 
 
+bool CCleanupHugeAsnReader::x_NeedsNcbiUserObject() const
+{
+    return x_IsExtendedCleanup() && (!(m_CleanupOptions & eNoNcbiUserObjects));
+}
+
+
+
 void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
 {
 
     m_TopLevelBiosources.clear();
     m_pTopLevelMolInfo.Reset();
 
-
-    if (!m_top_entry ||
-        !m_top_entry->IsSetDescr() ||
-        !m_top_entry->GetDescr().IsSet()) {
+    if (x_NeedsNcbiUserObject()) { // RW-2363
+        if (! m_top_entry ||
+            ! m_top_entry->IsSetDescr() ||
+            ! m_top_entry->GetDescr().IsSet()) {
+            // If necessary, instantiate m_top_entry
+            // Add NcbiCleanup user object
+            if (! m_top_entry) {
+                m_top_entry                      = Ref(new CSeq_entry());
+                m_top_entry->SetSet().SetClass() = CBioseq_set::eClass_genbank;
+            }
+            CCleanup::AddNcbiCleanupObject(1, m_top_entry->SetSet().SetDescr());
+            m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
+            return;
+        }
+    } else if (! m_top_entry || ! m_top_entry->IsSetDescr()) {
+        return;
+    } else if (! m_top_entry->GetDescr().IsSet()) {
+        m_top_entry->SetSet().ResetDescr();
         return;
     }
 
