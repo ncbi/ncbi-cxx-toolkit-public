@@ -69,6 +69,7 @@ public:
     using TFeatId = CFeat_id::TLocal::TId;
 private:
     bool x_IsExtendedCleanup() const;
+    bool x_NeedsNcbiUserObject() const;
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context) override;
