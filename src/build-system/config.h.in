@@ -1207,6 +1207,12 @@
 /* Define to 1 to use a strict 64-bit type for GI numbers. */
 #undef NCBI_STRICT_GI
 
+/* Define to 1 to use a strict 64-bit type for Entrez IDs. */
+#undef NCBI_STRICT_TAX_ID
+
+/* Define to 1 to use a strict 64-bit type for Entrez IDs. */
+#undef NCBI_TEST_STRICT_ENTREZ_ID
+
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */
 #undef NCBI_TLS_VAR

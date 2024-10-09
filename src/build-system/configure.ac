@@ -200,7 +200,7 @@ AC_ARG_WITH(lfs,
 AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
 AC_ARG_WITH(experimental,
-   [ --with-experimental=... enable named experimental feature(s): Int{4,8}GI,StrictGI,PSGLoader,BM64,C++20,C2X])
+   [ --with-experimental=... enable named experimental feature(s): StrictGI,StrictEntrezId,StrictTaxId,BM64,C++20,C2X])
 AC_ARG_WITH(skew-guard,
    [ --with-skew-guard       catch incomplete rebuilds])
 
@@ -1056,6 +1056,24 @@ if test -n "$with_experimental"; then
                [Define to 1 to use a strict 64-bit type for GI numbers.])
             NCBI_FEATURE(Int8GI)
             NCBI_FEATURE(StrictGI)
+            want_gi64=yes
+            ;;
+         StrictEntrezId )
+            AC_DEFINE(NCBI_STRICT_GI, 1)
+            AC_DEFINE(NCBI_TEST_STRICT_ENTREZ_ID, 1,
+               [Define to 1 to use a strict 64-bit type for Entrez IDs.])
+            NCBI_FEATURE(Int8GI)
+            NCBI_FEATURE(StrictGI)
+            NCBI_FEATURE(StrictEntrezID)
+            want_gi64=yes
+            ;;
+         StrictTaxId )
+            AC_DEFINE(NCBI_STRICT_GI, 1)
+            AC_DEFINE(NCBI_STRICT_TAX_ID, 1,
+               [Define to 1 to use a strict 64-bit type for Entrez IDs.])
+            NCBI_FEATURE(Int8GI)
+            NCBI_FEATURE(StrictGI)
+            NCBI_FEATURE(StrictTaxID)
             want_gi64=yes
             ;;
          PSGLoader )
