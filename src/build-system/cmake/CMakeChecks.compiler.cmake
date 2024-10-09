@@ -160,6 +160,8 @@ set(NCBI_PTBCFG_KNOWN_FEATURES
     Int8GI
     Int4GI
     StrictGI
+    StrictEntrezId
+    StrictTaxId
     BackwardSig
     Symbols
     StaticComponents
@@ -194,7 +196,21 @@ if(Int4GI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}Int4GI")
 endif()
 
-if(StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+if(StrictEntrezId IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_compile_definitions(NCBI_STRICT_GI NCBI_TEST_STRICT_ENTREZ_ID)
+    if(StrictTaxId IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        add_compile_definitions(NCBI_STRICT_TAX_ID)
+        set(NCBI_PTBCFG_INSTALL_SUFFIX
+            "${NCBI_PTBCFG_INSTALL_SUFFIX}StrictIds")
+    else()
+        set(NCBI_PTBCFG_INSTALL_SUFFIX
+            "${NCBI_PTBCFG_INSTALL_SUFFIX}StrictEntrezId")
+    endif()
+elseif(StrictTaxId IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+    add_compile_definitions(NCBI_STRICT_GI NCBI_STRICT_TAX_ID)
+    set(NCBI_PTBCFG_INSTALL_SUFFIX
+        "${NCBI_PTBCFG_INSTALL_SUFFIX}StrictTaxId")
+elseif(StrictGI IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
     add_compile_definitions(NCBI_STRICT_GI)
     set(NCBI_PTBCFG_INSTALL_SUFFIX "${NCBI_PTBCFG_INSTALL_SUFFIX}StrictGI")
 endif()
