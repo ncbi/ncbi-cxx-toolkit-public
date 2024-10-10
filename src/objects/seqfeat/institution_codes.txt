@@ -4776,7 +4776,7 @@ MHUA	s	Museo de Herpetologia de la Universidad de Antioquia
 MHV	s	Musee de Haute Volta			
 MHWK	s	Much Wenlock Museum			
 MHYAU	s	Yunnan Agricultural University			
-MI	s	Universita degli Studi di Milano, Dipartimento di Biologia			
+MI	s	Universita degli Studi di Milano, Dipartimento di Bioscienze			
 MIB	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences			
 MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab			
 MIC	s	Mar Ivanios College (Zoology museum)			
@@ -6040,7 +6040,7 @@ PAT	s	Museum National d'Histoire Naturelle, Laboratoire d'Ethnobiologie-Biogeogr
 PAUH	s	University of Texas-Pan American, Biology Department			
 PAUMC	s	Pan American University, Mammal Collection			
 PAUP	s	Punjab Agricultural University			
-PAV	s	Universita di Pavia, Dipartimento de Ecologia del Territorio			
+PAV	s	Universita di Pavia, Dipartimento di Scienze della Terra e dell'Ambiente			
 PAY	s	Paisley Philosophical Institute			
 PBB	s	Research Center for the Conservation of Natural Resources University and Phu An Botanic Gardens			
 PBC<USA-HI>	c	Pacific Bacterial Collection			
