@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Sat Sep 28 05:33:04 EDT 2024; formally
+/* time_t value corresponding to Thu Oct 10 05:33:04 EDT 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1727515984UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1728552784UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -4812,7 +4812,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MHV\ts\tMusee de Haute Volta\t\t\t",
 "MHWK\ts\tMuch Wenlock Museum\t\t\t",
 "MHYAU\ts\tYunnan Agricultural University\t\t\t",
-"MI\ts\tUniversita degli Studi di Milano, Dipartimento di Biologia\t\t\t",
+"MI\ts\tUniversita degli Studi di Milano, Dipartimento di Bioscienze\t\t\t",
 "MIB\ts\tUniversity of Milano - Bicocca, Department of Biotechnology and Biosciences\t\t\t",
 "MIB:ZPL\ts\tUniversity of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab\t\t\t",
 "MIC\ts\tMar Ivanios College (Zoology museum)\t\t\t",
@@ -6076,7 +6076,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PAUH\ts\tUniversity of Texas-Pan American, Biology Department\t\t\t",
 "PAUMC\ts\tPan American University, Mammal Collection\t\t\t",
 "PAUP\ts\tPunjab Agricultural University\t\t\t",
-"PAV\ts\tUniversita di Pavia, Dipartimento de Ecologia del Territorio\t\t\t",
+"PAV\ts\tUniversita di Pavia, Dipartimento di Scienze della Terra e dell'Ambiente\t\t\t",
 "PAY\ts\tPaisley Philosophical Institute\t\t\t",
 "PBB\ts\tResearch Center for the Conservation of Natural Resources University and Phu An Botanic Gardens\t\t\t",
 "PBC<USA-HI>\tc\tPacific Bacterial Collection\t\t\t",
