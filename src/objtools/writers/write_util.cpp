@@ -271,16 +271,22 @@ static void s_AddComplement(string& cbString)
 
 static string s_GetCodeBreak(const CSeq_interval& intv, bool checkStrand = true)
 {
+    auto from = intv.GetFrom()+1;
+    auto to   = intv.GetTo()+1;
     string intv_str;
-    intv_str += NStr::IntToString(intv.GetFrom() + 1);
-    intv_str += "..";
-    intv_str += NStr::IntToString(intv.GetTo() + 1);
-
+    if (from == to) { // RW-2356 - interval can be used to represent a single point
+        intv_str = NStr::IntToString(from);
+    } else {
+        intv_str += NStr::IntToString(from);
+        intv_str += "..";
+        intv_str += NStr::IntToString(to);
+    }
     if (checkStrand && intv.IsSetStrand() && intv.GetStrand() == eNa_strand_minus) {
         s_AddComplement(intv_str);
     }
     return intv_str;
 }
+
 
 
 static string s_GetCodeBreak(const CSeq_point& point, bool checkStrand = true)
@@ -382,6 +388,39 @@ static string s_GetCodeBreak(const CSeq_loc_mix& mix)
 }
 
 
+static string s_GetCodeBreak(const CPacked_seqint& packedInt)
+{
+    if (! packedInt.IsSet()) {
+        return kEmptyStr;
+    }
+
+    string     intsString;
+    const bool minusStrand = (packedInt.GetStrand() == eNa_strand_minus);
+    if (minusStrand) {
+        for (auto it = packedInt.Get().rbegin(); it != packedInt.Get().rend(); ++it) {
+            intsString += s_GetCodeBreak(**it, false) + ",";
+        }
+    } else {
+        for (const auto& pInt : packedInt.Get()) {
+            intsString += s_GetCodeBreak(*pInt, false) + ",";
+        }
+    }
+
+    if (intsString.empty()) {
+        return kEmptyStr;
+    }
+    intsString.back() = ')';
+    intsString        = "join(" + intsString;
+
+
+    if (minusStrand) {
+        s_AddComplement(intsString);
+    }
+
+    return intsString;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetCodeBreak(
     const CCode_break& cb,
@@ -403,6 +442,9 @@ bool CWriteUtil::GetCodeBreak(
             break;
         case CSeq_loc::e_Packed_pnt:
             cb_str += s_GetCodeBreak(loc.GetPacked_pnt());
+            break;
+        case CSeq_loc::e_Packed_int:
+            cb_str += s_GetCodeBreak(loc.GetPacked_int());
             break;
         default:
         {
