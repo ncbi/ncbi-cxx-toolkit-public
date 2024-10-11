@@ -49,8 +49,13 @@ sure both macros are undefined; an emulation function will then be used. */
 #  define HAVE_ATTRIBUTE_UNINITIALIZED 1
 #endif
 
-/* Handled via ncbiconf.h: HAVE_BCOPY, HAVE_BZLIB_H, HAVE_DIRENT_H,
-   HAVE_DLFCN_H */
+/* Handled via ncbiconf.h: HAVE_BCOPY */
+
+#ifdef HAVE___BUILTIN_MUL_OVERFLOW
+#  define HAVE_BUILTIN_MUL_OVERFLOW HAVE___BUILTIN_MUL_OVERFLOW
+#endif
+
+/* Handled via ncbiconf.h: HAVE_BZLIB_H, HAVE_DIRENT_H, HAVE_DLFCN_H */
 
 /* Left off for simplicity (and unused by library): HAVE_*READLINE*_H */
 
