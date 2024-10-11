@@ -326,6 +326,7 @@ CGtfLocationMerger::MergeLocationDefault(
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation());
     }
+    pSeqloc = pSeqloc->Merge(CSeq_loc::fMerge_AbuttingOnly, nullptr);
     return pSeqloc;
 }
 
@@ -344,7 +345,7 @@ CGtfLocationMerger::MergeLocationForCds(
     for (auto& location: locations) {
         mix.AddSeqLoc(*location.GetLocation());
     }
-    pSeqloc = pSeqloc->Merge(CSeq_loc::fMerge_All, 0);
+    pSeqloc = pSeqloc->Merge(CSeq_loc::fMerge_AbuttingOnly, nullptr);
     return pSeqloc;
 }
 
@@ -433,6 +434,7 @@ CGtfLocationMerger::MergeLocationForGene(
             pSeqloc->SetMix(*pMix);
         }
     }
+    pSeqloc = pSeqloc->Merge(CSeq_loc::fMerge_AbuttingOnly, nullptr);
     return pSeqloc;
 }
 

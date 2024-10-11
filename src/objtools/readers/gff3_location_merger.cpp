@@ -453,6 +453,7 @@ CGff3LocationMerger::MergeLocation(
     for (auto& location: locations) {
         mix.AddSeqLoc(*xGetRecordLocation(location));
     }
+    pSeqLoc = pSeqLoc->Merge(CSeq_loc::fMerge_AbuttingOnly, nullptr);
     const auto& front = locations.front();
     frame = front.mFrame;
 }
