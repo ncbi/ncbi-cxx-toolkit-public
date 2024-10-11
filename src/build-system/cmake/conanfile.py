@@ -43,7 +43,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.requires("libxslt/[>=1.1.34 <=1.1.42]")
         self.requires("lmdb/[>=0.9.29 <=0.9.32]")
         self.requires("lzo/2.10")
-#        self.requires("openssl/1.1.1s")
+        self.requires("openssl/1.1.1s")
 #        self.requires("opentelemetry-cpp/1.14.2")
         self.requires("pcre/8.45")
         self.requires("pcre2/10.44")
