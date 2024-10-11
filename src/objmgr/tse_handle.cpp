@@ -495,10 +495,6 @@ void CScopeInfo_Base::x_SetTSE_Handle(const CTSE_Handle& tse)
     _ASSERT(IsAttached());
     _ASSERT(!HasObject() || GetObjectInfo_Base().BelongsToTSE_Info(tse.x_GetTSE_Info()));
     _ASSERT(m_LockCounter > 0);
-    if ( m_TSE_HandleAssigned ) {
-        _ASSERT(m_TSE_Handle == tse);
-        return;
-    }
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_HandleAssigned ) {
@@ -517,11 +513,6 @@ void CScopeInfo_Base::x_SetTSE_Lock(const CTSE_ScopeUserLock& tse,
     _ASSERT(tse);
     _ASSERT(&*tse == m_TSE_ScopeInfo);
     _ASSERT(m_LockCounter > 0);
-    if ( m_TSE_HandleAssigned && HasObject() ) {
-        _ASSERT(m_TSE_Handle == tse);
-        _ASSERT(HasObject(info));
-        return;
-    }
     CTSE_Handle save_tse;
     CFastMutexGuard guard(s_Info_TSE_HandleMutex);
     if ( !m_TSE_HandleAssigned || !HasObject() ) {
@@ -543,9 +534,7 @@ void CScopeInfo_Base::x_ResetTSE_Lock()
         CFastMutexGuard guard(s_Info_TSE_HandleMutex);
         if ( m_TSE_HandleAssigned && m_LockCounter == 0 ) {
             m_TSE_HandleAssigned = false;
-            if ( m_LockCounter == 0 ) {
-                save_tse.Swap(m_TSE_Handle);
-            }
+            save_tse.Swap(m_TSE_Handle);
         }
     }
 }
