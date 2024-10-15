@@ -62,8 +62,6 @@ void CCassQueryList::CQryNotification::OnData() {
 
 /** CCassQueryList */
 
-string CCassQueryList::SQrySlotStateStr[] = {"ssAvailable", "ssAttached", "ssReadingRow", "ssReseting", "ssReleasing"};
-
 shared_ptr<CCassQueryList> CCassQueryList::Create(shared_ptr<CCassConnection> cass_conn) noexcept {
     struct CCassQueryListAccess : public CCassQueryList {};
     shared_ptr<CCassQueryList> rv = make_shared<CCassQueryListAccess>();
@@ -145,11 +143,13 @@ size_t CCassQueryList::NumberOfPendingSlots() const {
     return m_pending_arr.size();
 }
 
+const char* kSQrySlotStateStr[] = {"ssAvailable", "ssAttached", "ssReadingRow", "ssReseting", "ssReleasing"};
+
 string CCassQueryList::ToString() const {
     stringstream ss;
     for (size_t i = 0; i < m_query_arr.size(); ++i) {
         const SQrySlot& slot = m_query_arr[i];
-        ss << "SLOT #" << i << ": st:" << (slot.m_state < ssLast ? SQrySlotStateStr[slot.m_state] : "???") << ", sql: " << (slot.m_qry ? slot.m_qry->GetSQL() : "");
+        ss << "SLOT #" << i << ": st:" << (slot.m_state < ssLast ? kSQrySlotStateStr[slot.m_state] : "???") << ", sql: " << (slot.m_qry ? slot.m_qry->GetSQL() : "");
     }
     return ss.str();
 }

@@ -77,7 +77,6 @@ private:
         ssReleasing,
         ssLast = ssReleasing + 1
     };
-    static string SQrySlotStateStr[ssLast];
     struct SQrySlot {
         unique_ptr<ICassQueryListConsumer> m_consumer;
         shared_ptr<CCassQuery> m_qry;
