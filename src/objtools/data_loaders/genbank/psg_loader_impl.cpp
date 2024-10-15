@@ -74,11 +74,6 @@ BEGIN_SCOPE(objects)
 
 using namespace psgl;
 
-const unsigned int kMaxWaitSeconds = 3;
-const unsigned int kMaxWaitMillisec = 0;
-
-#define DEFAULT_DEADLINE CDeadline(kMaxWaitSeconds, kMaxWaitMillisec)
-
 const int kDefaultCacheLifespanSeconds = 2*3600;
 const size_t kDefaultMaxCacheSize = 10000;
 const unsigned int kDefaultRetryCount = 4;
