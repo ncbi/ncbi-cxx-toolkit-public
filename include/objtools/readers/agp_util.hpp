@@ -513,14 +513,14 @@ public:
     virtual string GetErrorMessage(int mask=0xFFFFFFFF);
     virtual int AppliesTo(int mask=0xFFFFFFFF);
 
-    // When adding new errors to this enum, also update sMessageMap
+    // When adding new errors to this enum, also update sMessageMap (see .cpp file)
     enum EErrCode {
         // Errors within one line (detected in CAgpRow)
         E_ColumnCount=1 ,
         E_EmptyColumn   ,
         E_EmptyLine     ,
         E_InvalidValue  ,
-        E_InvalidLinkage    ,
+        E_InvalidLinkage,
 
         E_MustBePositive,
         E_MustFitSeqPosType,
@@ -628,9 +628,6 @@ public:
 protected:
     typedef const char* TStr;
     static const TStr s_msg[]; // s_msg is deprecated and will be removed in SC-25. Use s_MessageMap instead.
-
-    using TMsgMap = map<EErrCode,string>;
-    static const TMsgMap sMessageMap;
 
     static string FormatMessage(const string& msg, const string& details);
 
