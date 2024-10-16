@@ -713,6 +713,11 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
     CBioSource_Base::TSubtype subtypes;
 
     ITERATE(TFieldDiffList, it, diffs) {
+        string label = (*it)->GetFieldName();
+    bool skipStopWord = true;
+    if (NStr::EqualNocase(label, "collection_date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo_loc_name")) {
+        skipStopWord = false;
+    }
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
             SetOrg().SetTaxname((*it)->GetSampleVal());
             if (GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetName()) {
@@ -727,7 +732,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             }
         } else {
             string sample_val = (*it)->GetSampleVal();
-            if (IsStopWord(sample_val)) {
+            if (skipStopWord && IsStopWord(sample_val)) {
                 sample_val = "";
             }
             try {
@@ -1035,8 +1040,12 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
     size_t i;
     bool rval = false;
 
+    bool skipStopWord = true;
+    if (NStr::EqualNocase(label, "collection_date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo_loc_name")) {
+        skipStopWord = false;
+    }
     // ignore if BioSource value is blank and BioSample value is a stop word
-    if (NStr::IsBlank(src_val) && CBioSource::IsStopWord(sample_val)) {
+    if (NStr::IsBlank(src_val) && skipStopWord && CBioSource::IsStopWord(sample_val)) {
         return true;
     }
 
@@ -1090,7 +1099,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
                     }
                     break;
                 case eConflictIgnoreMissingInBioSample:
-                    if (NStr::IsBlank(sample_val) || CBioSource::IsStopWord(sample_val)) {
+                    if (NStr::IsBlank(sample_val) || (skipStopWord && CBioSource::IsStopWord(sample_val))) {
                       rval = true;
                     }
                     break;
