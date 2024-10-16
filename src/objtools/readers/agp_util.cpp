@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/agp_util.hpp>
+#include <util/compile_time.hpp> // for MAKE_CONST_MAP
 
 #ifndef i2s
 #define i2s(x) NStr::NumericToString(x)
@@ -39,8 +40,9 @@
 
 BEGIN_NCBI_SCOPE
 
-const CAgpErr::TMsgMap
-CAgpErr::sMessageMap = {
+
+MAKE_CONST_MAP(sMessageMap, CAgpErr::EErrCode, const char*,
+{
     // Content Errors (codes 1..20)
     {CAgpErr::E_ColumnCount, "expecting 9 tab-separated columns"},
     {CAgpErr::E_EmptyColumn, "column X is empty"},
@@ -144,8 +146,7 @@ CAgpErr::sMessageMap = {
     {CAgpErr::G_InvalidObjId, "object X not found in FASTA file(s)"},
     {CAgpErr::G_BadObjLen, "final object_end (column 3) not equal to object length in FASTA file(s)"},
     {CAgpErr::G_NsWithinCompSpan, "run(s) of Ns within the component span"},
-
-};
+});
 
 // When updating s_msg, also update the enum that indexes into this
 const CAgpErr::TStr CAgpErr::s_msg[]= {
@@ -279,7 +280,7 @@ const char* CAgpErr::GetMsg(int code)
 {
     auto it = sMessageMap.find(static_cast<EErrCode>(code));
     if (it != sMessageMap.end()) {
-        return it->second.c_str();
+        return it->second.data();
     }
     return NcbiEmptyCStr;
 }
