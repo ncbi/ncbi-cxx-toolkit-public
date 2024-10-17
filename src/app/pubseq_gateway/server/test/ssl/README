@@ -1,0 +1,3 @@
+The files in this directory are used exclusively for testing.
+PSG server configuration file points to psg.key and psg.crt and this enables
+testing the server in https mode.
