@@ -3226,6 +3226,7 @@ IBSP	s	Instituto Butantan
 IBT	c	IBT Culture Collection of Fungi, Mycology Group, Technical University of Denmark			
 IBTS	s	Institutul de Biologie, Tr. Savulescu			
 IBUG	s	Universidad de Guadalajara			
+IBUN	s	Instituto de Biotecnologia de la Universidad Nacional de Colombia			
 IBUNAM	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico	UNAM		
 IBUNAM:CFB	b	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion de Fotocolectas Biologicas			
 IBUNAM:CNAC	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Acaros			
