@@ -63,6 +63,9 @@ public:
     void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;
     void SetSpanStatus(ESpanStatus status) override;
 
+    const string& GetTraceState(void) const override { return kEmptyStr; }
+    const string& GetTraceParent(void) const override { return kEmptyStr; }
+
     void PostEvent(const SDiagMessage& message) override {}
 
     void EndSpan(void) override {}

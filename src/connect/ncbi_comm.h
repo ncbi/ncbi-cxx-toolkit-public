@@ -42,6 +42,8 @@
 #define HTTP_NCBI_MESSAGE       "NCBI-Message:"
 #define HTTP_NCBI_SID           "NCBI-SID:"
 #define HTTP_NCBI_PHID          "NCBI-PHID:"
+#define HTTP_TRACESTATE         "tracestate:"
+#define HTTP_TRACEPARENT        "traceparent:"
 #define LBSM_DEFAULT_TIME       30      /* Default expiration time, seconds */
 #define LBSM_DEFAULT_RATE       1000.0  /* For SLBSM_Service::info::rate    */
 #define LBSM_STANDBY_THRESHOLD  0.01

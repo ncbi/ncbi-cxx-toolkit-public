@@ -1080,8 +1080,17 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             CCgiRequestProcessor& processor = *pprocessor;
             const CCgiRequest& req = processor.GetContext().GetRequest();
 
+            // 'tracestate' and 'traceparent' values must be passed to the tracer before
+            // starting request since they are used to generate trace-id and parent-id.
+            auto& req_ctx = CDiagContext::GetRequestContext();
+            string s = req.GetRandomProperty("TRACESTATE");
+            if (!s.empty()) req_ctx.SetSrcTraceState(s);
+            s = req.GetRandomProperty("TRACEPARENT");
+            if (!s.empty()) req_ctx.SetSrcTraceParent(s);
+
             // Set span kind for tracing, if any.
             CDiagContext::GetRequestContext().SetTracerSpanKind(ITracerSpan::eKind_Server);
+
             // Print request start message
             if ( !CDiagContext::IsSetOldPostFormat() ) {
                 CExtraEntryCollector collector;
@@ -1096,7 +1105,6 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             processor.SetHTTPStatus(200);
             processor.SetErrorStatus(false);
 
-            auto& req_ctx = CDiagContext::GetRequestContext();
             // This will log ncbi_phid as a separate 'extra' message
             // if not yet logged.
             req_ctx.GetHitID();
@@ -1104,7 +1112,7 @@ void CCgiApplication::x_OnEvent(CCgiRequestProcessor* pprocessor, EEvent event, 
             // Post request properties to the current tracer span, if any.
             auto span = req_ctx.GetTracerSpan();
             if ( span ) {
-                string s = req.GetProperty(eCgi_ScriptName);
+                s = req.GetProperty(eCgi_ScriptName);
                 if (!s.empty()) span->SetName(s);
                 s = req.GetProperty(eCgi_ServerName);
                 if (!s.empty()) {

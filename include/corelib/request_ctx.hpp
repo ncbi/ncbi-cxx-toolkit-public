@@ -189,6 +189,9 @@ public:
     virtual void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) = 0;
     virtual void SetSpanStatus(ESpanStatus status) = 0;
 
+    virtual const string& GetTraceState(void) const = 0;
+    virtual const string& GetTraceParent(void) const = 0;
+
     virtual void PostEvent(const SDiagMessage& message) = 0;
 
     virtual void EndSpan(void) = 0;
@@ -432,6 +435,23 @@ public:
     void SetTracerSpan(const shared_ptr<ITracerSpan>& span) { m_TracerSpan = span; }
     shared_ptr<ITracerSpan> GetTracerSpan(void) const { return m_TracerSpan; }
 
+    /// OpenTelemetry: get 'tracestate' and 'traceparent' values to be passed in
+    /// HTTP headers. NCBI HTTP streams do this automatically, third party HTTP
+    /// libraries may require manual propagation.
+    const string GetTraceState(void) const;
+    const string GetTraceParent(void) const;
+
+    /// OpenTelemetry: set the incoming 'tracestate' and 'traceparent' values.
+    /// This must be done before the call to StartRequest() for the values
+    /// to be available to the tracer for generating correct trace-id and parent-id.
+    void SetSrcTraceState(const string& state) { m_TraceState = state; }
+    void SetSrcTraceParent(const string& parent) { m_TraceParent = parent; }
+    /// The getters provide access to the incoming values (unlike GetTraceState and
+    /// GetTraceParent which return the new values to be used for outgoing connections).
+    /// The getters are expected to be used mostly by tracer and span classes.
+    const string& GetSrcTraceState(void) const { return m_TraceState; }
+    const string& GetSrcTraceParent(void) const { return m_TraceParent; }
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -547,6 +567,8 @@ private:
     shared_ptr<IRequestTracer> m_Tracer;
     ITracerSpan::ESpanKind m_SpanKind;
     shared_ptr<ITracerSpan> m_TracerSpan;
+    string m_TraceState;
+    string m_TraceParent;
 
     // Patterns from NCBI_CONTEXT_FIELDS variable.
     static unique_ptr<CMaskFileName> sm_ContextFields;
@@ -959,6 +981,20 @@ void CRequestContext::UnsetBytesWr(void)
     if (!x_CanModify()) return;
     x_UnsetProp(eProp_BytesWr);
     m_BytesWr = 0;
+}
+
+
+inline
+const string CRequestContext::GetTraceState(void) const
+{
+    return m_TracerSpan ? m_TracerSpan->GetTraceState() : m_TraceState;
+}
+
+
+inline
+const string CRequestContext::GetTraceParent(void) const
+{
+    return m_TracerSpan ? m_TracerSpan->GetTraceParent() : m_TraceParent;
 }
 
 

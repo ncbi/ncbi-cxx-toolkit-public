@@ -768,6 +768,12 @@ extern char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
             break;
         id = x_getenv("NCBI_LOG_HIT_ID");
         break;
+    case eNcbiTraceState:
+        id = x_getenv("HTTP_TRACESTATE");
+        break;
+    case eNcbiTraceParent:
+        id = x_getenv("HTTP_TRACEPARENT");
+        break;
     default:
         id = 0;
         goto out;

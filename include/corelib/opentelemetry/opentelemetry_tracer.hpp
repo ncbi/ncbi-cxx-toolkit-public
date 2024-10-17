@@ -71,12 +71,19 @@ public:
     void SetHttpHeader(EHttpHeaderType header_type, const string& name, const string& value) override;
     void SetSpanStatus(ESpanStatus status) override;
 
+    const string& GetTraceState(void) const override;
+    const string& GetTraceParent(void) const override;
+
     void PostEvent(const SDiagMessage& message) override;
 
     void EndSpan(void) override;
 
 private:
+    friend class COpentelemetryTracer;
+
     TSpan m_Span;
+    string m_TraceState;
+    string m_TraceParent;
 };
 
 

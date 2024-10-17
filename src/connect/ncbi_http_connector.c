@@ -806,6 +806,38 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
             free(tag);
         }
     }
+    id = CORE_GetNcbiRequestID(eNcbiTraceState);
+    assert(!id  ||  *id);
+    if (id) {
+        char*  tag;
+        size_t len = strlen(id);
+        if (!(tag = (char*) realloc(id, ++len + sizeof(HTTP_TRACESTATE)))) {
+            ConnNetInfo_DeleteUserHeader(net_info, HTTP_TRACESTATE);
+            free(id);
+        } else {
+            memmove(tag + sizeof(HTTP_TRACESTATE), tag, len);
+            memcpy (tag,         HTTP_TRACESTATE, sizeof(HTTP_TRACESTATE) - 1);
+            tag[sizeof(HTTP_TRACESTATE) - 1] = ' ';
+            ConnNetInfo_PostOverrideUserHeader(net_info, tag);
+            free(tag);
+        }
+    }
+    id = CORE_GetNcbiRequestID(eNcbiTraceParent);
+    assert(!id  ||  *id);
+    if (id) {
+        char*  tag;
+        size_t len = strlen(id);
+        if (!(tag = (char*) realloc(id, ++len + sizeof(HTTP_TRACEPARENT)))) {
+            ConnNetInfo_DeleteUserHeader(net_info, HTTP_TRACEPARENT);
+            free(id);
+        } else {
+            memmove(tag + sizeof(HTTP_TRACEPARENT), tag, len);
+            memcpy (tag,         HTTP_TRACEPARENT, sizeof(HTTP_TRACEPARENT) - 1);
+            tag[sizeof(HTTP_TRACEPARENT) - 1] = ' ';
+            ConnNetInfo_PostOverrideUserHeader(net_info, tag);
+            free(tag);
+        }
+    }
 }
 
 
