@@ -334,6 +334,84 @@ void COpentelemetryTracer::x_InitStream(ostream& ostr)
 }
 
 
+TIdBuf string_to_id(const string& id)
+{
+    TIdBuf buf(id.size() / 2, 0);
+    for (size_t b = 0; b < id.size() / 2; ++b) {
+        buf[b] = NStr::StringToNumeric<uint8_t>(id.substr(b*2, 2), 0, 16);
+    }
+    return buf;
+}
+
+
+static void s_ParseIds(CRequestContext& ctx, trace::TraceId& trace_id, trace::SpanId& parent_id, int& flags)
+{
+    constexpr size_t kVersion_Digits = 2;
+    constexpr size_t kTraceId_Digits = 32;
+    constexpr size_t kParentId_Digits = 16;
+    constexpr size_t kFlags_Digits = 2;
+    constexpr size_t kSeparator1_Pos = kVersion_Digits;
+    constexpr size_t kSeparator2_Pos = kSeparator1_Pos + 1 + kTraceId_Digits;
+    constexpr size_t kSeparator3_Pos = kSeparator2_Pos + 1 + kParentId_Digits;
+    constexpr size_t kTraceParent_Size = kVersion_Digits + 1 + kTraceId_Digits + 1 + kParentId_Digits + 1 + kFlags_Digits;
+    _ASSERT(kTraceIdSize*2 == kTraceId_Digits);
+    _ASSERT(kSpanIdSize*2 == kParentId_Digits);
+
+    const string& traceparent = ctx.GetSrcTraceParent();
+    // Make sure the incoming value has the correct format, ignore otherwise.
+    if (traceparent.size() >= kTraceParent_Size &&
+        traceparent[kSeparator1_Pos] == '-' &&
+        traceparent[kSeparator2_Pos] == '-' &&
+        traceparent[kSeparator3_Pos] == '-') {
+        try {
+            string_to_id(traceparent.substr(0, kVersion_Digits)); // version
+            TIdBuf tid_buf = string_to_id(traceparent.substr(kSeparator1_Pos + 1, kTraceId_Digits));
+            TIdBuf pid_buf = string_to_id(traceparent.substr(kSeparator2_Pos + 1, kParentId_Digits));
+            TIdBuf flags_buf = string_to_id(traceparent.substr(kSeparator3_Pos + 1, kFlags_Digits));
+            trace_id = trace::TraceId(TTraceIdBuf(tid_buf.data(), tid_buf.size()));
+            parent_id = trace::SpanId(TSpanIdBuf(pid_buf.data(), pid_buf.size()));
+            flags = (flags_buf[0] << 8) | flags_buf[1];
+            return;
+        }
+        catch (CStringException) {
+        }
+    }
+
+    // Failed to parse the incoming ids, generate new ones from PHID.
+    trace_id = CPhidIdGenerator::s_GenerateTraceId();
+    parent_id = CPhidIdGenerator::s_GenerateParentSpanId();
+}
+
+
+static string s_UpdateTraceState(CRequestContext& ctx, const string& traceparent)
+{
+    string ts = ctx.GetSrcTraceState();
+    size_t ncbi_pos = ts.find("ncbi");
+    if (ncbi_pos == NPOS) return ts;
+
+    vector<string> states;
+    NStr::Split(ts, ",", states);
+    string new_ts;
+    for (const auto& state : states) {
+        if (state.find("ncbi") != NPOS) {
+            string key, val;
+            NStr::SplitInTwo(state, "=", key, val);
+            NStr::TruncateSpaces(key);
+            NStr::TruncateSpaces(val);
+            if (key == "ncbi") {
+                val = traceparent;
+                if (!new_ts.empty()) val += ",";
+                new_ts = key + "=" + val + new_ts; // the updated 'ncbi' state goes first
+                continue;
+            }
+        }
+        if (!new_ts.empty()) new_ts += ",";
+        new_ts += state;
+    }
+    return new_ts;
+}
+
+
 void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
 {
     auto tracer = s_GetTracer();
@@ -352,10 +430,12 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
             phid_cur << "; tracer context phid=" << phid_arg);
     }
 
-    trace::SpanContext parent_ctx(
-        CPhidIdGenerator::s_GenerateTraceId(),
-        CPhidIdGenerator::s_GenerateParentSpanId(),
-        trace::TraceFlags(0), false);
+    trace::TraceId context_tid;
+    trace::SpanId context_pid;
+    int flags = 0;
+    s_ParseIds(current_ctx, context_tid, context_pid, flags);
+
+    trace::SpanContext parent_ctx(context_tid, context_pid, trace::TraceFlags(0), false);
     trace::StartSpanOptions options;
     options.parent = parent_ctx;
 
@@ -398,21 +478,27 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
     s = context.GetSessionID();
     if ( !s.empty() ) span->SetAttribute("ncbi.session_id", s);
 
-    char trace_id[2*trace::TraceId::kSize + 1];
-    trace_id[2*trace::TraceId::kSize] = 0;
+    char trace_id_buf[2*trace::TraceId::kSize + 1];
+    trace_id_buf[2*trace::TraceId::kSize] = 0;
     span->GetContext().trace_id().ToLowerBase16(
-        nostd::span<char, 2*trace::TraceId::kSize>(trace_id, 2*trace::TraceId::kSize));
+        nostd::span<char, 2*trace::TraceId::kSize>(trace_id_buf, 2*trace::TraceId::kSize));
+    string trace_id(trace_id_buf);
 
-    char span_id[2*trace::SpanId::kSize + 1];
-    span_id[2*trace::SpanId::kSize] = 0;
+    char span_id_buf[2*trace::SpanId::kSize + 1];
+    span_id_buf[2*trace::SpanId::kSize] = 0;
     span->GetContext().span_id().ToLowerBase16(
-        nostd::span<char, 2*trace::SpanId::kSize>(span_id, 2*trace::SpanId::kSize));
+        nostd::span<char, 2*trace::SpanId::kSize>(span_id_buf, 2*trace::SpanId::kSize));
+    string span_id(span_id_buf);
 
     GetDiagContext().Extra()
         .Print("opentelemetry_trace_id", trace_id)
         .Print("opentelemetry_span_id", span_id);
 
-    shared_ptr<ITracerSpan> ctx_span = make_shared<COpentelemetryTracerSpan>(span);
+    shared_ptr<COpentelemetryTracerSpan> ctx_span = make_shared<COpentelemetryTracerSpan>(span);
+    // NOTE: Version must be set to the latest known to the application. Since the app is
+    // sampling the span, flags indlude 'sampled' bit regardless of what the parent did.
+    ctx_span->m_TraceParent = "00-" + string(trace_id) + "-" + span_id + "-01";
+    ctx_span->m_TraceState = s_UpdateTraceState(current_ctx, ctx_span->m_TraceParent);
     context.SetTracerSpan(ctx_span);
 }
 
@@ -512,6 +598,18 @@ void COpentelemetryTracerSpan::SetSpanStatus(ESpanStatus status)
 {
     if ( !m_Span ) return;
     m_Span->SetStatus(status == eSuccess ? trace::StatusCode::kOk : trace::StatusCode::kError);
+}
+
+
+const string& COpentelemetryTracerSpan::GetTraceState(void) const
+{
+    return m_TraceState;
+}
+
+
+const string& COpentelemetryTracerSpan::GetTraceParent(void) const
+{
+    return m_TraceParent;
 }
 
 

@@ -441,7 +441,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_GetPlatform(void);
 typedef enum {
     eNcbiRequestID_None = 0,
     eNcbiRequestID_HitID,     /**< NCBI Hit     ID */
-    eNcbiRequestID_SID        /**< NCBI Session ID */
+    eNcbiRequestID_SID,       /**< NCBI Session ID */
+    eNcbiTraceState,          /**< OpenTelemetry tracestate header */
+    eNcbiTraceParent          /**< OpenTelemetry traceparent header */
 } ENcbiRequestID;
 
 /** Obtain current NCBI request ID (if known, per thread).

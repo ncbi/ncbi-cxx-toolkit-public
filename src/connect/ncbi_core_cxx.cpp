@@ -496,6 +496,12 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
     case eNcbiRequestID_HitID:
         id = CDiagContext::GetRequestContext().GetNextSubHitID();
         break;
+    case eNcbiTraceState:
+        id = CDiagContext::GetRequestContext().GetTraceState();
+        break;
+    case eNcbiTraceParent:
+        id = CDiagContext::GetRequestContext().GetTraceParent();
+        break;
     default:
         return 0;
     }
