@@ -98,7 +98,7 @@ typedef NCBI_PARAM_TYPE(server, broken_message) TParamServerBrokenMessage;
 static CSafeStatic<TParamServerBrokenMessage> s_BrokenMessage;
 
 NCBI_PARAM_DECL(string, server, broken_host);
-NCBI_PARAM_DEF_EX(string, server, broken_host, "coremake11", 0, DBAPI_SVC_TEST_BROKEN_HOST);
+NCBI_PARAM_DEF_EX(string, server, broken_host, "coremake14", 0, DBAPI_SVC_TEST_BROKEN_HOST);
 typedef NCBI_PARAM_TYPE(server, broken_host) TParamServerBrokenHost;
 static CSafeStatic<TParamServerBrokenHost> s_BrokenHost;
 
