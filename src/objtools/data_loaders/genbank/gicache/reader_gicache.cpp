@@ -80,8 +80,33 @@ CGICacheReader::~CGICacheReader()
 }
 
 
+static
+void s_LogFunc(int severity, char* msg)
+{
+    /*
+      Severity values from gicache.c
+      #define SEV_NONE 0 
+      #define SEV_INFO 1
+      #define SEV_WARNING 2
+      #define SEV_ERROR 3
+      #define SEV_REJECT 4 
+      #define SEV_FATAL 5
+     */
+    static const EDiagSev sev[] = {
+        eDiag_Info,
+        eDiag_Info,
+        eDiag_Warning,
+        eDiag_Error,
+        eDiag_Critical,
+        eDiag_Fatal
+    };
+    ERR_POST(Severity(sev[min(size_t(severity), ArraySize(sev)-1)]) << msg);
+}
+
+
 void CGICacheReader::x_Initialize(void)
 {
+    ERR_POST_ONCE("This app is using deprecated OM++ reader gicache. Please remove it from your configuration.");
     string index = m_Path;
     if ( CFile(index).IsDir() ) {
         const char* file;
@@ -93,6 +118,7 @@ void CGICacheReader::x_Initialize(void)
         index = CFile::MakePath(index, file);
     }
     CMutexGuard guard(m_Mutex);
+    GICache_SetLogEx(s_LogFunc);
     GICache_ReadData(index.c_str());
 }
 
