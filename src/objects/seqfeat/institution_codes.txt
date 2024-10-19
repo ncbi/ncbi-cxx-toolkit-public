@@ -2753,7 +2753,7 @@ HBOM	s	Harbor Branch Oceanographic Museum	HBOI
 HBR	s	Herbario Barbosa Rodrigues			
 HBRA	s	Universidade Federal do Para, Campus Braganca			
 HBSH	s	Highlands Biological Station			
-HBU	s	Hebei University			
+HBU	sc	Hebei University			
 HBUM	s	College of Life Sciences Hebei Univesity, Baoding			
 HC	s	Hangchow Christian College			
 HCAT	s	University of Tabriz, Landscape Department			
