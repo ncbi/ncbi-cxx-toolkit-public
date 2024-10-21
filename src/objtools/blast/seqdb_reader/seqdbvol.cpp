@@ -43,6 +43,7 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <sstream>
 
@@ -232,8 +233,8 @@ CSeqDBVol::x_UnleaseTiFile(void) const{
 
 void
 CSeqDBVol::x_OpenHashFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
+    DEFINE_STATIC_FAST_MUTEX(mtx);
+    CFastMutexGuard mtx_guard(mtx);
     if (!m_HashFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'h') &&
          m_Idx->GetNumOIDs() != 0) {
@@ -249,8 +250,8 @@ CSeqDBVol::x_OpenHashFile(void) const{
 
 void
 CSeqDBVol::x_OpenOidFile(void) const{
-    static CFastMutex mtx;
-    CFastMutexGuard mtx_gurad(mtx);
+    DEFINE_STATIC_FAST_MUTEX(mtx);
+    CFastMutexGuard mtx_guard(mtx);
     if (!m_OidFileOpened &&
          CSeqDBGiIndex::IndexExists(m_VolName, (m_IsAA?'p':'n')) &&
          m_Idx->GetNumOIDs() != 0) {
@@ -337,6 +338,9 @@ int CSeqDBVol::GetSeqLengthApprox(int oid) const
     return (whole_bytes * 4) + (oid & 0x03);
 }
 
+/// Translation table type
+typedef vector<Uint1> TTable;
+
 /// Build NA2 to NcbiNA4 translation table
 ///
 /// This builds a translation table for nucleotide data.  The table
@@ -347,17 +351,15 @@ int CSeqDBVol::GetSeqLengthApprox(int oid) const
 ///
 /// @return
 ///    The NA2 to NA4 translation table
-static vector<Uint1>
-s_SeqDBMapNA2ToNA4Setup()
+static void
+s_SeqDBMapNA2ToNA4Setup(TTable& translated)
 {
-    vector<Uint1> translated;
     translated.resize(512);
 
     Uint1 convert[16] = { 0x11,  0x12, 0x14, 0x18,
                           0x21,  0x22, 0x24, 0x28,
                           0x41,  0x42, 0x44, 0x48,
                           0x81,  0x82, 0x84, 0x88 };
-
     Int2 pair1 = 0;
     Int2 pair2 = 0;
 
@@ -369,8 +371,6 @@ s_SeqDBMapNA2ToNA4Setup()
             translated[index+1] = convert[pair2];
         }
     }
-
-    return translated;
 }
 
 /// Convert sequence data from NA2 to NA4 format
@@ -390,7 +390,11 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
                    vector<char> & buf4bit,
                    int            base_length)
 {
-    static vector<Uint1> expanded = s_SeqDBMapNA2ToNA4Setup();
+    static CSafeStatic<TTable> expanded_storage;
+    TTable& expanded = expanded_storage.Get();
+    if (expanded.empty()) {
+        s_SeqDBMapNA2ToNA4Setup(expanded);
+    }
 
     int estimated_length = (base_length + 1)/2;
     int bytes = 0;
@@ -436,13 +440,12 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
 ///
 /// @return
 ///    The NA2 to NA8 translation table
-static vector<Uint1>
-s_SeqDBMapNA2ToNA8Setup()
+static void
+s_SeqDBMapNA2ToNA8Setup(TTable& translated)
 {
     // Builds a table; each two bit slice holds 0,1,2 or 3.  These are
     // converted to whole bytes containing 1,2,4, or 8, respectively.
 
-    vector<Uint1> translated;
     translated.reserve(1024);
 
     for(int i = 0; i<256; i++) {
@@ -456,8 +459,6 @@ s_SeqDBMapNA2ToNA8Setup()
         translated.push_back(1 << p3);
         translated.push_back(1 << p4);
     }
-
-    return translated;
 }
 
 /// Convert sequence data from NA2 to NA8 format
@@ -487,7 +488,11 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     // data and is maintained to point at the next unused byte of
     // input data.
 
-    static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
+    static CSafeStatic<TTable> expanded_storage;
+    TTable& expanded = expanded_storage.Get();
+    if (expanded.empty()) {
+        s_SeqDBMapNA2ToNA8Setup(expanded);
+    }
 
     int pos = range.begin;
 
@@ -1537,9 +1542,8 @@ int CSeqDBVol::GetAmbigPartialSeq(int                oid,
 	    NCBI_THROW(CSeqDBException, eFileErr, "Error: could not get sequence or range.");
 	}
 
-
     int num_ranges = static_cast<int>(partial_ranges->size());
-    if ((*partial_ranges)[num_ranges - 1].second > base_length) {
+    if ((*partial_ranges)[num_ranges - 1].second > static_cast<TSeqPos>(base_length)) {
         NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
     }
 
