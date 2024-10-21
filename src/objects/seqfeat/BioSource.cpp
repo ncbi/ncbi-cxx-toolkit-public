@@ -1355,6 +1355,39 @@ TFieldDiffList CBioSource::GetBiosampleDiffs(const CBioSource& biosample, bool i
     return rval;
 }
 
+static const std::set<std::string> s_insdcNullTerms = {
+    "-",
+    "?",
+    "missing: control sample",
+    "missing: data agreement established pre-2023",
+    "missing: endangered species",
+    "missing: human-identifiable",
+    "missing: lab stock",
+    "missing: sample group",
+    "missing: synthetic construct",
+    "missing: third party data",
+    "missing",
+    "n/a",
+    "na",
+    "none",
+    "not applicable",
+    "not available",
+    "not collected",
+    "not determined",
+    "not provided",
+    "not recorded",
+    "null",
+    "restricted access",
+    "unk",
+    "unknown",
+    "unspecified"
+};
+
+
+set<string> GetINSDCMissingValues()
+{
+    return s_insdcNullTerms;
+}
 
 static const char* const s_StopWords[] = {
     "-",

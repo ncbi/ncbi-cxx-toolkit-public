@@ -129,6 +129,7 @@ public:
     TNameValList GetNameValPairs() const;
 
     static bool IsStopWord(const string& value);
+    static set<string> GetINSDCMissingValues();
 
     void AutoFix();
     void RemoveCultureNotes(bool is_species_level = true);
