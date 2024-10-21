@@ -555,5 +555,46 @@ shared_ptr<CPSG_MyNCBIRequest_WhoAmI> CPSG_MyNCBIFactory::CreateWhoAmI(
     return request;
 }
 
+SPSG_MyNCBISyncResponse<CPSG_MyNCBIRequest_WhoAmI::TResponse>
+CPSG_MyNCBIFactory::ExecuteWhoAmI(uv_loop_t * loop, string cookie)
+{
+    using TMyNCBIResponse = SPSG_MyNCBISyncResponse<CPSG_MyNCBIRequest_WhoAmI::TResponse>;
+    TMyNCBIResponse response;
+    auto request = CreateWhoAmI(
+        loop,
+        cookie,
+        [&response](TMyNCBIResponse::TRequestResponse value)
+        {
+            response.response = value;
+        },
+        [&response](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
+        {
+            response.error.status = status;
+            response.error.code = code;
+            response.error.severity = severity;
+            response.error.message = message;
+        }
+    );
+    if (!request) {
+        response.response_status = EPSG_MyNCBIResponseStatus::eError;
+        response.error.status = CRequestStatus::e500_InternalServerError;
+        response.error.code = 0;
+        response.error.severity = eDiag_Error;
+        response.error.message = "Failed to initialize WhoAmI request";
+        return response;
+    }
+    auto loop_run_result = uv_run(loop, UV_RUN_DEFAULT);
+    if (loop_run_result != 0) {
+        response.response_status = EPSG_MyNCBIResponseStatus::eError;
+        response.error.status = CRequestStatus::e500_InternalServerError;
+        response.error.code = loop_run_result;
+        response.error.severity = eDiag_Error;
+        response.error.message = "uv_run execution finished with non zero result";
+        return response;
+    }
+    response.response_status = request->GetResponseStatus();
+    return response;
+}
+
 END_NCBI_SCOPE
 

@@ -84,6 +84,12 @@ public:
         string username, string password,
         TDataErrorCallback error_cb
     );
+
+    // Executes WhoAmI request synchronously
+    // {loop} needs to be initialized/finalized in the same thread
+    //     as ExecuteWhoAmI() will call {uv_run(loop, UV_RUN_DEFAULT)}
+    SPSG_MyNCBISyncResponse<CPSG_MyNCBIRequest_WhoAmI::TResponse> ExecuteWhoAmI(uv_loop_t * loop, string cookie);
+
 private:
     chrono::milliseconds m_RequestTimeout{chrono::milliseconds(1000)};
     chrono::milliseconds m_ResolveTimeout{chrono::milliseconds(300)};

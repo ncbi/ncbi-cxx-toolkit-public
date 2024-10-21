@@ -49,6 +49,25 @@ enum class EPSG_MyNCBIResponseStatus
 
 using TDataErrorCallback = function<void(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)>;
 
+template <typename TResponse>
+struct SPSG_MyNCBISyncResponse
+{
+private:
+    struct SError {
+        CRequestStatus::ECode status{};
+        int code{0};
+        EDiagSev severity{eDiagSevMin};
+        string message;
+    };
+public:
+    using TRequestResponse = TResponse;
+    using TError = SError;
+
+    EPSG_MyNCBIResponseStatus response_status{EPSG_MyNCBIResponseStatus::eUndefined};
+    TRequestResponse response{};
+    TError error{};
+};
+
 class IPSG_MyNCBIRequest
 {
 public:
@@ -86,7 +105,8 @@ public:
         string username;
         string email_address;
     };
-    using TConsumeCallback = function<void(SUserInfo)>;
+    using TResponse = SUserInfo;
+    using TConsumeCallback = function<void(TResponse)>;
 
     explicit CPSG_MyNCBIRequest_WhoAmI(string cookie)
         : m_Cookie(std::move(cookie))
