@@ -112,18 +112,44 @@ namespace {
         uv_run(&loop, UV_RUN_DEFAULT);
         ASSERT_EQ(signin->GetResponseStatus(), EPSG_MyNCBIResponseStatus::eSuccess);
         ASSERT_EQ(error_cb_called, 0UL);
-        auto whoami = factory->CreateWhoAmI(&loop, signin->GetCookie(), user_fn, error_fn);
+        auto cookie = signin->GetCookie();
         signin.reset();
-        uv_run(&loop, UV_RUN_DEFAULT);
-        ASSERT_EQ(whoami->GetResponseStatus(), EPSG_MyNCBIResponseStatus::eSuccess);
-        ASSERT_EQ(error_cb_called, 0UL);
-        EXPECT_EQ(whoami->GetUserId(), 3500004);
-        EXPECT_EQ(whoami->GetUserName(), m_Username);
-        EXPECT_EQ(whoami->GetEmailAddress(), "qa@ncbi.nlm.nih.gov");
-        EXPECT_EQ(whoami->GetUserId(), user_info.user_id);
-        EXPECT_EQ(whoami->GetUserName(), user_info.username);
-        EXPECT_EQ(whoami->GetEmailAddress(), user_info.email_address);
-        whoami.reset();
+        {
+            auto whoami = factory->CreateWhoAmI(&loop, cookie, user_fn, error_fn);
+            uv_run(&loop, UV_RUN_DEFAULT);
+            ASSERT_EQ(whoami->GetResponseStatus(), EPSG_MyNCBIResponseStatus::eSuccess);
+            ASSERT_EQ(error_cb_called, 0UL);
+            EXPECT_EQ(whoami->GetUserId(), 3500004);
+            EXPECT_EQ(whoami->GetUserName(), m_Username);
+            EXPECT_EQ(whoami->GetEmailAddress(), "qa@ncbi.nlm.nih.gov");
+            EXPECT_EQ(whoami->GetUserId(), user_info.user_id);
+            EXPECT_EQ(whoami->GetUserName(), user_info.username);
+            EXPECT_EQ(whoami->GetEmailAddress(), user_info.email_address);
+            whoami.reset();
+        }
+        {
+            auto whoami_response = factory->ExecuteWhoAmI(&loop, cookie);
+            ASSERT_EQ(whoami_response.response_status, EPSG_MyNCBIResponseStatus::eSuccess);
+            EXPECT_EQ(whoami_response.response.user_id, 3500004);
+            EXPECT_EQ(whoami_response.response.username, m_Username);
+            EXPECT_EQ(whoami_response.response.email_address, "qa@ncbi.nlm.nih.gov");
+        }
+        {
+            auto whoami_response = factory->ExecuteWhoAmI(&loop, "cookie");
+            EXPECT_EQ(whoami_response.response_status, EPSG_MyNCBIResponseStatus::eError);
+            EXPECT_EQ(whoami_response.response.user_id, 0);
+            EXPECT_EQ(whoami_response.response.username, string());
+            EXPECT_EQ(whoami_response.response.email_address, string());
+            EXPECT_EQ(whoami_response.error.status, CRequestStatus::e404_NotFound);
+            EXPECT_EQ(whoami_response.error.code, 200);
+            EXPECT_EQ(whoami_response.error.severity, eDiag_Error);
+            EXPECT_EQ(whoami_response.error.message, "MyNCBIUser data not found: MyNCBI response status - 200; "
+                 "MyNCBI response text - '<?xml version=\"1.0\"?><MyNcbiResponse><ERROR>Not signed in</ERROR>"
+                 "<SignInURL>https://account.ncbi.nlm.nih.gov/?</SignInURL>"
+                 "<SignOutURL>http://www.ncbi.nlm.nih.gov/account/signout/?</SignOutURL>"
+                 "<RegisterURL>https://account.ncbi.nlm.nih.gov/signup/?</RegisterURL>"
+                 "<HomePageURL>http://www.ncbi.nlm.nih.gov/myncbi/?</HomePageURL></MyNcbiResponse>'");
+        }
         factory.reset();
         EXPECT_EQ(0, UvLoopClose(&loop)) << "Failed to close uv_loop properly";
     }
