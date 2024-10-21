@@ -92,8 +92,7 @@ void CCDDClient::Ask(const CCDD_Request_Packet& request, CCDD_Reply& reply)
 void CCDDClient::WriteRequest(CObjectOStream& out,
                               const CCDD_Request_Packet& request)
 {
-    static const TSerial_Format_Flags kJSONFlags
-        = fSerial_Json_NoIndentation | fSerial_Json_NoEol;
+    const TSerial_Format_Flags kJSONFlags = fSerial_Json_NoIndentation | fSerial_Json_NoEol;
     if (m_DataFormat == eSemiBinary) {
         CNcbiOstrstream oss;
         CObjectOStreamJson joos(oss, eNoOwnership);

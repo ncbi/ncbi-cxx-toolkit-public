@@ -196,7 +196,7 @@ CRemoteBlastDbDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
 void
 CRemoteBlastDbDataLoader::GetChunks(const TChunkSet& chunks_orig)
 {
-    static const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
+    const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
 
     TChunkSet& chunks = const_cast<TChunkSet&>(chunks_orig);
     if (chunks.empty()) {
