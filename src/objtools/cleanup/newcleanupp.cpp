@@ -1547,6 +1547,24 @@ string s_CleanupLatLon( string &subname ) {
     return lat + " " + north_or_south + " " + lon + " " + east_or_west;
 }
 
+static string s_CleanUpNullTerms (string& str)
+{
+    if (str.empty()) {
+        return str;
+    }
+    string tmp = NStr::ToLower(str);
+    if (NStr::StartsWith(tmp, "missing:") && ! NStr::StartsWith(tmp, "missing: ")) {
+        string fst, scd;
+        if (NStr::SplitInTwo(tmp, ":", fst, scd)) {
+            tmp = fst + ": " + scd;
+        }
+    }
+    if (CBioSource::IsStopWord(tmp)) {
+        return tmp;
+    }
+    return str;
+}
+
 void CNewCleanup_imp::BiosourceBC (
     CBioSource& biosrc
 )
@@ -1599,8 +1617,13 @@ void CNewCleanup_imp::BiosourceBC (
                 } else if( NStr::StartsWith(country, kUSPrefix, NStr::eNocase) ) {
                     country.replace( 0, kUSPrefix.length(), "USA:" );
                     ChangeMade(CCleanupChange::eCleanSubsource);
+                } else {
+                    string tmp = s_CleanUpNullTerms(country);
+                    if (! NStr::EqualNocase(country, tmp)) {
+                        country = tmp;
+                        ChangeMade(CCleanupChange::eCleanSubsource);
+                    }
                 }
-
             }
 
             if( chs == NCBI_SUBSOURCE(altitude) ) {
@@ -1656,6 +1679,12 @@ void CNewCleanup_imp::BiosourceBC (
                 if (!NStr::Equal(new_date, coll_date)) {
                     coll_date = new_date;
                     ChangeMade(CCleanupChange::eCleanSubsource);
+                } else {
+                    string tmp = s_CleanUpNullTerms(coll_date);
+                    if (! NStr::EqualNocase(coll_date, tmp)) {
+                        coll_date = tmp;
+                        ChangeMade(CCleanupChange::eCleanSubsource);
+                    }
                 }
             }
 
