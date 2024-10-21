@@ -30,8 +30,8 @@
  *
  * File Description:
  *
- *  const_map   -- constexpr equivalent of std::map
- *
+ *  const_map  -- constexpr equivalent of std::map
+ *  const_set  -- constexpr equivalent of std::set
  *
  */
 
@@ -228,6 +228,18 @@ namespace ct
 #else
 #    define MAKE_CONST_MAP_COMPAT MAKE_CONST_MAP
 #endif
+
+/// Macro to calculate a length of a static string at compile time.
+/// Especially usefull for char* strings.
+/// @note
+///   std::size() can be used with char[], but not with char* strings.
+///   This macro can be used with both.
+/// @example
+///   static const char* str = "some string";
+///   static const char  str[] = "some string";
+///   static const size_t len = CT_CONST_STR_LEN(str);
+///
+#define CT_CONST_STR_LEN(s) std::string_view(s).size()
 
 
 #endif
