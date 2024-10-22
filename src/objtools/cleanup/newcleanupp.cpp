@@ -1542,7 +1542,8 @@ static string s_CleanUpNullTerms (string& str)
     if (str.empty()) {
         return str;
     }
-    string tmp = NStr::ToLower(str);
+    string tmp = str;
+    NStr::ToLower(tmp);
     if (NStr::StartsWith(tmp, "missing:") && ! NStr::StartsWith(tmp, "missing: ")) {
         string fst, scd;
         if (NStr::SplitInTwo(tmp, ":", fst, scd)) {
