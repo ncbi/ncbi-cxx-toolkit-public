@@ -662,7 +662,7 @@ void SPSG_UserArgsBuilder::Build(ostream& os, const SPSG_UserArgs& request_args)
 
         // We can use cached args unless request_args are actually adding something
         if (Merge(combined_args, request_args)) {
-            Merge(combined_args, m_QueueArgs);
+            x_MergeOthers(combined_args);
             os << combined_args;
             return;
         }
@@ -691,20 +691,35 @@ void SPSG_UserArgsBuilder::BuildRaw(ostringstream& os, const SPSG_UserArgs& requ
     }
 }
 
+void SPSG_UserArgsBuilder::x_MergeOthers(SPSG_UserArgs& combined_args)
+{
+    static const SPSG_UserArgs default_args{{ "client_id", { GetDiagContext().GetStringUID() }}};
+
+    Merge(combined_args, m_QueueArgs);
+    Merge(combined_args, default_args);
+}
 
 void SPSG_UserArgsBuilder::x_UpdateCache()
 {
     auto combined_args = s_GetIniArgs();
-    Merge(combined_args, m_QueueArgs);
+    x_MergeOthers(combined_args);
 
     ostringstream os;
     os << combined_args;
     m_CachedArgs = os.str();
 }
 
+SPSG_UserArgs SPSG_UserArgsBuilder::s_ReadIniArgs()
+{
+    TPSG_UseCache use_cache(TPSG_UseCache::eGetDefault);
+    SPSG_UserArgs rv(use_cache == EPSG_UseCache::eNo ? "use_cache=no" : use_cache == EPSG_UseCache::eYes ? "use_cache=yes" : "");
+    Merge(rv, TPSG_RequestUserArgs::GetDefault());
+    return rv;
+}
+
 const SPSG_UserArgs& SPSG_UserArgsBuilder::s_GetIniArgs()
 {
-    static SPSG_UserArgs instance(TPSG_RequestUserArgs::GetDefault());
+    static const SPSG_UserArgs instance(s_ReadIniArgs());
     return instance;
 }
 
@@ -729,33 +744,14 @@ const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
     return nullptr;
 }
 
-string s_GetOtherArgs()
-{
-    ostringstream os;
-    TPSG_UseCache use_cache(TPSG_UseCache::eGetDefault);
-
-    switch (use_cache) {
-        case EPSG_UseCache::eDefault:                         break;
-        case EPSG_UseCache::eNo:      os << "&use_cache=no";  break;
-        case EPSG_UseCache::eYes:     os << "&use_cache=yes"; break;
-    }
-
-    os << "&client_id=" << GetDiagContext().GetStringUID();
-
-    return os.str();
-}
-
 string CPSG_Queue::SImpl::x_GetAbsPathRef(shared_ptr<const CPSG_Request> user_request, const CPSG_Request::TFlags& flags, bool raw)
 {
-    static const string other_args(s_GetOtherArgs());
-
     _ASSERT(user_request);
     ostringstream os;
     user_request->x_GetAbsPathRef(os);
 
     if (!raw) {
         os << "&include_hup=" << (flags & CPSG_Request::fIncludeHUP ? "yes" : "no");
-        os << other_args;
         m_UserArgsBuilder.GetLock()->Build(os, user_request->m_UserArgs);
     } else {
         m_UserArgsBuilder.GetLock()->BuildRaw(os, user_request->m_UserArgs);
