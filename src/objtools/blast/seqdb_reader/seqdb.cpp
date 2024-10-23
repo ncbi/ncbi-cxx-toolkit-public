@@ -50,7 +50,7 @@
 
 BEGIN_NCBI_SCOPE
 
-const string CSeqDB::kOidNotFound("OID not found");
+const char* CSeqDB::kOidNotFound = "OID not found";
 
 /// Helper function to translate enumerated type to character.
 ///
