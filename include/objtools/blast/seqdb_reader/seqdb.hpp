@@ -250,7 +250,7 @@ public:
         }
 
         void x_reallocate_if_necessary() {
-            static size_t kResizeFactor = 2;
+            const size_t kResizeFactor = 2;
             if (_size + 1 > _capacity) {
                 reserve((_capacity + 1) * kResizeFactor -1);
             }
@@ -313,7 +313,7 @@ public:
     };
     /// String containing the error message in exceptions thrown when a given
     /// OID cannot be found
-    static const string kOidNotFound;
+    static const char* kOidNotFound;
 
     /// Short Constructor
     ///
