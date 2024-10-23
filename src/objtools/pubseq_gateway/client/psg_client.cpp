@@ -582,9 +582,15 @@ struct SPSG_UserArgsBuilder::MergeValues
     explicit operator bool() &&;
 
 private:
-    bool AddNoMerge();
     void AddCorrelated(const string& correlated_name);
-    void AddAll() { m_ToValues.insert(m_FromValues.begin(), m_FromValues.end()); }
+    void AddAll();
+
+    static auto s_ReadMultivalued()
+    {
+        const auto multivalued = "enable_processor disable_processor exclude " + TPSG_MultivaluedUserArgs::GetDefault();
+        vector<string> rv;
+        return NStr::Split(multivalued, ", ", rv, NStr::fSplit_Truncate);
+    }
 
     const string& m_Name;
     SPSG_UserArgs& m_To;
@@ -600,34 +606,15 @@ SPSG_UserArgsBuilder::MergeValues::operator bool() &&
         { "disable_processor", "enable_processor" },
     };
 
-    if (!AddNoMerge()) {
-        auto found = correlations.find(m_Name);
+    auto found = correlations.find(m_Name);
 
-        if (found == correlations.end()) {
-            AddAll();
-        } else {
-            AddCorrelated(found->second);
-        }
+    if (found == correlations.end()) {
+        AddAll();
+    } else {
+        AddCorrelated(found->second);
     }
 
     return m_ToValues.size() > m_ToValuesSizeBefore;
-}
-
-bool SPSG_UserArgsBuilder::MergeValues::AddNoMerge()
-{
-    static const unordered_set<string> no_merge{
-        "hops",
-    };
-
-    if (no_merge.find(m_Name) == no_merge.end()) {
-        return false;
-    }
-
-    if (m_ToValues.empty()) {
-        AddAll();
-    }
-
-    return true;
 }
 
 void SPSG_UserArgsBuilder::MergeValues::AddCorrelated(const string& correlated_name)
@@ -639,6 +626,18 @@ void SPSG_UserArgsBuilder::MergeValues::AddCorrelated(const string& correlated_n
     } else {
         const auto& correlated = found->second;
         set_difference(m_FromValues.begin(), m_FromValues.end(), correlated.begin(), correlated.end(), inserter(m_ToValues, m_ToValues.end()));
+    }
+}
+
+void SPSG_UserArgsBuilder::MergeValues::AddAll()
+{
+    static const auto multivalued(s_ReadMultivalued());
+
+    if (find(multivalued.begin(), multivalued.end(), m_Name) != multivalued.end()) {
+        m_ToValues.insert(m_FromValues.begin(), m_FromValues.end());
+
+    } else if (m_ToValues.empty() && !m_FromValues.empty()) {
+        m_ToValues.emplace(*m_FromValues.begin());
     }
 }
 
