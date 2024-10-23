@@ -72,6 +72,7 @@ NCBI_PARAM_DEF(double,   PSG, competitive_after,      0.0);
 NCBI_PARAM_DEF(unsigned, PSG, request_retries,        2);
 NCBI_PARAM_DEF(unsigned, PSG, refused_stream_retries, 2);
 NCBI_PARAM_DEF(string,   PSG, request_user_args,      "");
+NCBI_PARAM_DEF(string,   PSG, multivalued_user_args,  "");
 NCBI_PARAM_DEF(bool,     PSG, user_request_ids,       false);
 NCBI_PARAM_DEF(unsigned, PSG, localhost_preference,   1);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);

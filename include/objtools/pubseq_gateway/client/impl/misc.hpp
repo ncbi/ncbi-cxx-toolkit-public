@@ -358,6 +358,9 @@ using TPSG_RefusedStreamRetries = PSG_PARAM_VALUE_TYPE(PSG, refused_stream_retri
 NCBI_PARAM_DECL(string, PSG, request_user_args);
 typedef NCBI_PARAM_TYPE(PSG, request_user_args) TPSG_RequestUserArgs;
 
+NCBI_PARAM_DECL(string, PSG, multivalued_user_args);
+typedef NCBI_PARAM_TYPE(PSG, multivalued_user_args) TPSG_MultivaluedUserArgs;
+
 NCBI_PARAM_DECL(bool, PSG, user_request_ids);
 using TPSG_UserRequestIds = PSG_PARAM_VALUE_TYPE(PSG, user_request_ids);
 
