@@ -24,6 +24,7 @@ no_id2_test=0
 only_vdb_wgs_test=0
 no_vdb_wgs_test=0
 no_cache=0
+netcache=""
 
 while true; do
     case "$1" in
@@ -83,85 +84,148 @@ if disabled DLL_BUILD; then
     export NCBI_LOAD_PLUGINS_FROM_DLLS
 fi
 
-# netcache port on localhost
-case "$NCBI_CONFIG_OVERRIDES" in
-    *.netcache)
-    f=~/"$NCBI_CONFIG_OVERRIDES"
-    nc="localhost:9135"
-    ncs="ids blobs"
-    if test -r "$f"; then
-        h=`grep '^host *=' $f | sed 's/.*= *//'`
-        p=`grep '^port *=' $f | sed 's/.*= *//'`
-        if  test -n "$h" && test -n "$p"; then
-            nc="$h:$p"
-        fi
-        s=`grep '^service *=' $f | sed 's/.*= *//'`
-        if  test -n "$s"; then
-            nc="$s"
-        fi
-        a=`grep '^name *= *ids' $f | sed 's/.*= *//'`
-        b=`grep '^name *= *blobs' $f | sed 's/.*= *//'`
-        if  test -z "$a"; then
-            a=ids
-        fi
-        if  test -z "$b"; then
-            b=blobs
-        fi
-        ncs="$a $b"
-    fi
-    ;;
-    *)
-    nc="";;
-esac
-
-test_name=`basename "$1"`
-base_cache_dir="./$test_name.$$.genbank_cache"
-unset cache_dir
-
-remove_cache() {
-    if test -d "$cache_dir"; then
-	rm -rf "$cache_dir"
+clear_cache() {
+    if test -n "$netcache"; then
+	echo "Clearing netcache at $netcache"
+        for c in $ncs; do
+            echo "Clearing netcache $netcache/$c"
+            if grid_cli --admin purge --nc "$netcache" --auth netcache_admin $c; then
+                :
+            else
+		return 1;
+            fi
+        done
+	return 0
+    else
+	if test -d "$cache_dir"; then
+	    echo "Init BDB cache in $cache_dir"
+	    rm -rf "$cache_dir"
+	fi
+	return 0
     fi
 }
 
-init_cache() {
-    if test -n "$nc"; then
-        echo "Init netcache $nc/$ncs"
-        for c in $ncs; do
-            if grid_cli --admin purge --nc "$nc" --auth netcache_admin $c; then
-                :
-            else
-                nc=""
-                break
-            fi
-        done
-        if test -n "$nc"; then
-            return 0
-        fi
-        unset NCBI_CONFIG_OVERRIDES
+cache_disk_is_slow() {
+    # disable disk cache on Windows
+    if disabled MSWin; then
+	:
+    else
+	echo Running on MSWin
+	return 0
     fi
-    if disabled BerkeleyDB; then
-        echo BerkeleyDB is not enabled
-        return 1
+    # disable disk cache on Cygwin
+    if disabled Cygwin; then
+	:
+    else
+	echo Running on Cygwin
+	return 0
+    fi
+    # disable disk cache on BSD
+    if disabled BSD; then
+	:
+    else
+	echo Running on BSD
+	return 0
+    fi
+    # disable disk cache on CentOS 7
+    if grep -q 'CPE_NAME="cpe:/o:centos:centos:7"' /etc/os-release 2>/dev/null; then
+	echo Running on CentOS 7
+	return 0
+    fi
+    return 1
+}
+
+test_name=`basename "$1"`
+
+init_cache_config() {
+    if test "$no_cache" = 1; then
+	# already disabled
+	return 1
     fi
     if disabled MT; then
-        echo MT is not enabled
+        echo MT is not enabled, cache is disabled
+	no_cache=1
         return 1
     fi
     if disabled DLL; then
-        echo No DLL plugins
+        echo No DLL plugins, cache is disabled
+	no_cache=1
         return 1
     fi
-    cache_dir="$base_cache_dir"
-    NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH="$cache_dir"
-    NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH="$cache_dir"
-    export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH
-    export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH
-    echo "Init BDB cache in $cache_dir"
-    remove_cache
-    trap "rm -rf \"$cache_dir\"" 0 1 2 15
+    # netcache port on localhost
+    case "$NCBI_CONFIG_OVERRIDES" in
+	*.netcache)
+	    f=~/"$NCBI_CONFIG_OVERRIDES"
+	    netcache="localhost:9135"
+	    ncs="ids blobs"
+	    if test -r "$f"; then
+		h=`grep '^host *=' $f | sed 's/.*= *//'`
+		p=`grep '^port *=' $f | sed 's/.*= *//'`
+		if  test -n "$h" && test -n "$p"; then
+		    netcache="$h:$p"
+		fi
+		s=`grep '^service *=' $f | sed 's/.*= *//'`
+		if  test -n "$s"; then
+		    netcache="$s"
+		fi
+		a=`grep '^name *= *ids' $f | sed 's/.*= *//'`
+		b=`grep '^name *= *blobs' $f | sed 's/.*= *//'`
+		if  test -z "$a"; then
+		    a=ids
+		fi
+		if  test -z "$b"; then
+		    b=blobs
+		fi
+		nes="$a $b"
+	    fi
+	    ;;
+	*)
+	    netcache="";;
+    esac
+    if test -n "$netcache"; then
+	# check netcache
+	if clear_cache; then
+	    :
+	else
+	    echo Failed to clear netcache, cache is disabled
+	    unset NCBI_CONFIG_OVERRIDES
+	    netcache=""
+	    no_cache=1
+	    return 1
+	fi
+    else
+	# check BDB cache
+	if disabled BerkeleyDB; then
+            echo BerkeleyDB is not enabled, cache is disabled
+	    no_cache=1
+            return 1
+	fi
+	if cache_disk_is_slow; then
+	    echo Disk for cache is slow, cache is disabled
+	    no_cache=1
+	    return 1
+	fi
+	base_cache_dir="./$test_name.$$.genbank_cache"
+	unset cache_dir
+    fi
     return 0
 }
+
+init_cache() {
+    if test -n "$netcache"; then
+	:
+    else
+	cache_dir="$base_cache_dir"
+	NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH="$cache_dir"
+	NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH="$cache_dir"
+	export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_BLOB_CACHE_SLASH_BDB__PATH
+	export NCBI_CONFIG__GENBANK_SLASH_CACHE_SLASH_ID_CACHE_SLASH_BDB__PATH
+	trap "rm -rf \"$cache_dir\"" 0 1 2 15
+    fi
+    clear_cache
+}
+
+init_cache_config
 
 exitcode=0
 failed=''
@@ -216,11 +280,11 @@ for method in $methods; do
             esac
         fi
         if test "$cache" = 3; then
-	    remove_cache
+	    clear_cache
 	fi
     done
 done
-remove_cache
+clear_cache
 
 if test $exitcode -ne 0; then
     echo "Failed tests:$failed"
