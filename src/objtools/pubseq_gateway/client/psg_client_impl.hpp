@@ -103,11 +103,13 @@ struct SPSG_UserArgsBuilder
     void BuildRaw(ostringstream& os, const SPSG_UserArgs& request_args);
 
 private:
+    void x_MergeOthers(SPSG_UserArgs& combined_args);
     void x_UpdateCache();
 
     struct MergeValues; // A function-like class
     static bool Merge(SPSG_UserArgs& higher_priority, const SPSG_UserArgs& lower_priority);
 
+    static SPSG_UserArgs s_ReadIniArgs();
     static const SPSG_UserArgs& s_GetIniArgs();
     
     SPSG_UserArgs m_QueueArgs;
