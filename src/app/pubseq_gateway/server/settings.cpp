@@ -122,8 +122,11 @@ const string            kDefaultMyNCBIURL = "http://txproxy.linkerd.ncbi.nlm.nih
 const string            kDefaultMyNCBIHttpProxy = "linkerd:4140";
 const size_t            kDefaultMyNCBITimeoutMs = 100;
 const size_t            kDefaultMyNCBIResolveTimeoutMs = 300;
-
-
+const size_t            kDefaultMyNCBIDnsResolveOkPeriodSec = 60;
+const size_t            kDefaultMyNCBIDnsResolveFailPeriodSec = 10;
+const string            kDefaultMyNCBITestWebCubbyUser = "MVWNUIMYDR41F2XRDBT8JTFGDFFR9KJM;logged-in=true;my-name=vakatov@ncbi.nlm.nih.gov;persistent=true@E7321B44700304B1_0000SID";
+const size_t            kDefaultMyNCBITestOkPeriodSec = 180;
+const size_t            kDefaultMyNCBITestFailPeriodSec = 20;
 
 SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpPort(0),
@@ -185,7 +188,12 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBIURL(kDefaultMyNCBIURL),
     m_MyNCBIHttpProxy(kDefaultMyNCBIHttpProxy),
     m_MyNCBITimeoutMs(kDefaultMyNCBITimeoutMs),
-    m_MyNCBIResolveTimeoutMs(kDefaultMyNCBIResolveTimeoutMs)
+    m_MyNCBIResolveTimeoutMs(kDefaultMyNCBIResolveTimeoutMs),
+    m_MyNCBIDnsResolveOkPeriodSec(kDefaultMyNCBIDnsResolveOkPeriodSec),
+    m_MyNCBIDnsResolveFailPeriodSec(kDefaultMyNCBIDnsResolveFailPeriodSec),
+    m_MyNCBITestWebCubbyUser(kDefaultMyNCBITestWebCubbyUser),
+    m_MyNCBITestOkPeriodSec(kDefaultMyNCBITestOkPeriodSec),
+    m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec)
 {}
 
 
@@ -623,6 +631,21 @@ void SPubseqGatewaySettings::x_ReadMyNCBISection(const CNcbiRegistry &   registr
     m_MyNCBIResolveTimeoutMs = registry.GetInt(kMyNCBISection,
                                                "resolve_timeout_ms",
                                                kDefaultMyNCBIResolveTimeoutMs);
+    m_MyNCBIDnsResolveOkPeriodSec = registry.GetInt(kMyNCBISection,
+                                                    "dns_resolve_ok_period_sec",
+                                                    kDefaultMyNCBIDnsResolveOkPeriodSec);
+    m_MyNCBIDnsResolveFailPeriodSec = registry.GetInt(kMyNCBISection,
+                                                      "dns_resolve_fail_period_sec",
+                                                      kDefaultMyNCBIDnsResolveFailPeriodSec);
+    m_MyNCBITestWebCubbyUser = registry.GetString(kMyNCBISection,
+                                                  "test_web_cubby_user",
+                                                  kDefaultMyNCBITestWebCubbyUser);
+    m_MyNCBITestOkPeriodSec = registry.GetInt(kMyNCBISection,
+                                              "test_ok_period_sec",
+                                              kDefaultMyNCBITestOkPeriodSec);
+    m_MyNCBITestFailPeriodSec = registry.GetInt(kMyNCBISection,
+                                                "test_fail_period_sec",
+                                                kDefaultMyNCBITestFailPeriodSec);
 }
 
 
