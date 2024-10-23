@@ -134,6 +134,7 @@ private:
     bool                       m_do_extended = false;
     TThreadState               m_state;
     bool                       m_IsHugeSet = false;
+    bool                       m_AsSeqEntry = false;
 };
 
 
@@ -248,6 +249,10 @@ void CCleanupApp::Init()
         arg_desc->SetDependency("disable-huge",
                                 CArgDescriptions::eExcludes,
                                 "huge");
+
+        // Seq-entry output
+        arg_desc->AddFlag("as-seqentry",
+                          "Write Bioseq result wrapped in a Seq-entry");
     }
 
     // remote
@@ -555,7 +560,13 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
             m_state.m_IsMultiSeq = false;
             auto topobject = x_ProcessTraditionally(reader);
             m_Out->ResetLocalHooks();
-            *m_Out << *topobject;
+            if (m_AsSeqEntry) {
+                CSeq_entry topentry;
+                topentry.SetSeq(const_cast<CBioseq&> (static_cast<const CBioseq&>(*topobject)));
+                *m_Out << topentry;
+            } else {
+                *m_Out << *topobject;
+            }
         }
         return true;
     });
@@ -602,6 +613,9 @@ int CCleanupApp::Run()
     }
     if (args["batch"] && args["bigfile"]) {
         NCBI_THROW(CArgException, eInvalidArg, "\"batch\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
+    }
+    if (args["as-seqentry"]) {
+        m_AsSeqEntry = true;
     }
 
     if (args["K"]) {
