@@ -73,7 +73,10 @@ enum EPSGS_AlertType {
     ePSGS_ConfigWGSHealthTimeout = 25,
     ePSGS_ConfigSNPHealthTimeout = 26,
     ePSGS_ConfigTcpMaxConnSoftLimit = 27,
-    ePSGS_ConfigTcpMaxConn = 28
+    ePSGS_ConfigTcpMaxConn = 28,
+    ePSGS_MyNCBIResolveDNS = 29,
+    ePSGS_MyNCBITest = 30,
+    ePSGS_MyNCBIUvLoop = 31
 };
 
 enum EPSGS_AlertAckResult {

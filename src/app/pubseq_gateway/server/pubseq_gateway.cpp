@@ -44,6 +44,7 @@
 
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/ipg/ipg_huge_report_helper.hpp>
+#include <objtools/pubseq_gateway/impl/myncbi/myncbi_request.hpp>
 
 #include "http_request.hpp"
 #include "pubseq_gateway.hpp"
@@ -51,6 +52,7 @@
 #include "pubseq_gateway_logging.hpp"
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
+#include "myncbi_monitor.hpp"
 #include "introspection.hpp"
 #include "backlog_per_request.hpp"
 #include "active_proc_per_request.hpp"
@@ -103,7 +105,9 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_ExcludeBlobCache(nullptr),
     m_SplitInfoCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
-    m_LogFields("http")
+    m_LogFields("http"),
+    m_LastMyNCBIResolveOK(true),
+    m_LastMyNCBITestOk(true)
 {
     sm_PubseqApp = this;
 
@@ -295,6 +299,11 @@ void CPubseqGatewayApp::CloseCass(void)
 
 void CPubseqGatewayApp::CreateMyNCBIFactory(void)
 {
+    string  error;
+    if (CPSG_MyNCBIFactory::InitGlobal(error) == false) {
+        PSG_ERROR("Error initializing My NCBI factory: " + error);
+    }
+
     m_MyNCBIFactory = make_shared<CPSG_MyNCBIFactory>();
     m_MyNCBIFactory->SetMyNCBIURL(m_Settings.m_MyNCBIURL);
     if (!m_Settings.m_MyNCBIHttpProxy.empty()) {
@@ -306,13 +315,64 @@ void CPubseqGatewayApp::CreateMyNCBIFactory(void)
     // Supposedly the resolved name is ending up in some kind of cache so the
     // further requests will go faster.
     m_MyNCBIFactory->SetResolveTimeout(chrono::milliseconds(m_Settings.m_MyNCBIResolveTimeoutMs));
+}
+
+
+void CPubseqGatewayApp::DoMyNCBIDnsResolve(void)
+{
+    // Called periodically from the my ncbi monitoring thread
     try {
         m_MyNCBIFactory->ResolveAccessPoint();
+        m_LastMyNCBIResolveOK = true;
     } catch (const exception &  exc) {
-        PSG_ERROR("Error resolving My NCBI access point: " + string(exc.what()) +
-                  ". Ignore and continue.");
+        string      err_msg = "Error while periodically resolving My NCBI "
+                              "access point: " + string(exc.what());
+        PSG_WARNING(err_msg);
+        m_Alerts.Register(ePSGS_MyNCBIResolveDNS, err_msg);
+        m_LastMyNCBIResolveOK = false;
     } catch (...) {
-        PSG_ERROR("Unknown error resolving My NCBI access point. Ignore and continue.");
+        string      err_msg = "Unknown error while periodically resolving "
+                              "My NCBI access point.";
+        PSG_WARNING(err_msg);
+        m_Alerts.Register(ePSGS_MyNCBIResolveDNS, err_msg);
+        m_LastMyNCBIResolveOK = false;
+    }
+}
+
+
+void CPubseqGatewayApp::TestMyNCBI(uv_loop_t *  loop)
+{
+    // Called periodically from the my ncbi monitoring thread
+    if (m_Settings.m_MyNCBITestWebCubbyUser.empty()) {
+        // Effectively disables the test
+        return;
+    }
+
+    m_LastMyNCBITestOk = true;
+    try {
+        auto whoami_response = m_MyNCBIFactory->ExecuteWhoAmI(loop,
+                                                              m_Settings.m_MyNCBITestWebCubbyUser);
+        if (whoami_response.response_status == EPSG_MyNCBIResponseStatus::eError) {
+            if (whoami_response.error.status >= CRequestStatus::e500_InternalServerError) {
+                string      err_msg = "Error while periodically testing My NCBI: " +
+                                      whoami_response.error.message;
+                PSG_WARNING(err_msg);
+                m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
+                m_LastMyNCBITestOk = false;
+            }
+        }
+    } catch (const exception &  exc) {
+        string      err_msg = "Error while periodically testing My NCBI: " +
+                              string(exc.what());
+        PSG_WARNING(err_msg);
+        m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
+        m_LastMyNCBITestOk = false;
+    } catch (...) {
+        string      err_msg = "Unknown error while periodically testing "
+                              "My NCBI.";
+        PSG_WARNING(err_msg);
+        m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
+        m_LastMyNCBITestOk = false;
     }
 }
 
@@ -607,7 +667,14 @@ int CPubseqGatewayApp::Run(void)
 
     // Run the monitoring thread
     int             ret_code = 0;
-    std::thread     monitoring_thread(CassMonitorThreadedFunction);
+    std::thread     cass_monitoring_thread(CassMonitorThreadedFunction);
+    std::thread     myncbi_monitoring_thread(MyNCBIMonitorThreadedFunction,
+                                             m_Settings.m_MyNCBIDnsResolveOkPeriodSec,
+                                             m_Settings.m_MyNCBIDnsResolveFailPeriodSec,
+                                             m_Settings.m_MyNCBITestOkPeriodSec,
+                                             m_Settings.m_MyNCBITestFailPeriodSec,
+                                             &m_LastMyNCBIResolveOK,
+                                             &m_LastMyNCBITestOk);
 
     try {
         m_TcpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
@@ -646,11 +713,12 @@ int CPubseqGatewayApp::Run(void)
         ret_code = 1;
     }
 
-    // To stop the monitoring thread a shutdown flag needs to be set.
+    // To stop the monitoring threads a shutdown flag needs to be set.
     // It is going to take no more than 0.1 second because the period of
-    // checking the shutdown flag in the monitoring thread is 100ms
+    // checking the shutdown flag in the monitoring threads is 100ms
     g_ShutdownData.m_ShutdownRequested = true;
-    monitoring_thread.join();
+    myncbi_monitoring_thread.join();
+    cass_monitoring_thread.join();
 
     CloseCass();
     return ret_code;

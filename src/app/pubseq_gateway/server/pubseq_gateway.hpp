@@ -82,6 +82,9 @@ public:
     void OpenCache(void);
     bool OpenCass(void);
     void CreateMyNCBIFactory(void);
+    void DoMyNCBIDnsResolve(void);
+    void TestMyNCBI(uv_loop_t *  loop);
+
     bool PopulateCassandraMapping(bool  initialization);
     void CheckCassMapping(void);
     void CloseCass(void);
@@ -556,6 +559,10 @@ private:
         unique_ptr<CPSGS_UvLoopBinder>> m_ThreadToBinder;
     mutex                               m_ThreadToBinderGuard;
     map<uv_thread_t, uv_loop_t *>       m_ThreadToUVLoop;
+
+    // My NCBI periodic check support
+    bool                                m_LastMyNCBIResolveOK;
+    bool                                m_LastMyNCBITestOk;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

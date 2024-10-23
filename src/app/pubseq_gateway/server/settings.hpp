@@ -155,6 +155,12 @@ struct SPubseqGatewaySettings
     size_t                              m_MyNCBITimeoutMs;
     size_t                              m_MyNCBIResolveTimeoutMs;
 
+    size_t                              m_MyNCBIDnsResolveOkPeriodSec;
+    size_t                              m_MyNCBIDnsResolveFailPeriodSec;
+    string                              m_MyNCBITestWebCubbyUser;
+    size_t                              m_MyNCBITestOkPeriodSec;
+    size_t                              m_MyNCBITestFailPeriodSec;
+
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry,
                                    CPSGAlerts &  alerts);
