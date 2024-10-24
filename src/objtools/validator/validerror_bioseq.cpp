@@ -35,6 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <util/compile_time.hpp>
 
 #include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/validator_context.hpp>
@@ -524,14 +525,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
             } else if (m_Imp.IsIndexerVersion()) {
                 sev = eDiag_Error;
             }
-            static const auto max_dblen = CSeq_id::kMaxGeneralDBLength;
+            const auto max_dblen = CSeq_id::kMaxGeneralDBLength;
             if (dblen > max_dblen) {
                 PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than " + NStr::NumericToString(max_dblen) + " characters", ctx);
             }
             if (! s_IsSkippableDbtag(dbt)) {
                 if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                     size_t idlen = dbt.GetTag().GetStr().length();
-                    static const auto maxlen = CSeq_id::kMaxGeneralTagLength;
+                    const auto maxlen = CSeq_id::kMaxGeneralTagLength;
                     if (longer_general) {
                         if (idlen > 100 && ! m_Imp.IsGI()) {
                             PostErr(sev, eErr_SEQ_INST_BadSeqIdLength, "General identifier longer than " + NStr::NumericToString(100) + " characters", ctx);
@@ -1984,8 +1985,9 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels(
         return;
     }
 
-    static const string kWarningPrefix =
+    static const char* kWarningPrefix =
         "Multiple equivalent publications annotated on this sequence [";
+    static const size_t kWarningPrefixLen = CT_CONST_STR_LEN(kWarningPrefix);
     static const string::size_type kMaxSummaryLen = 100;
 
     // TTempStringCount maps a CTempString to the number of times it appears
@@ -2014,7 +2016,7 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels(
     ITERATE(vector<CTempString>, dup_label_it, sorted_dup_labels) {
         const CTempString& summary = *dup_label_it;
 
-        err_msg.resize(kWarningPrefix.length());
+        err_msg.resize(kWarningPrefixLen);
         if (summary.length() > kMaxSummaryLen) {
             err_msg += summary.substr(0, kMaxSummaryLen);
             err_msg += "...";
@@ -4318,8 +4320,7 @@ static TSeqPos s_GetDeltaLen(const CDelta_seq& seg, CScope* scope)
     }
 }
 
-
-static string linkEvStrings[] = {
+static const char* linkEvStrings[] = {
     "paired-ends",
     "align genus",
     "align xgenus",
@@ -4788,7 +4789,7 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
         for (int i = 0; i < 13; i++) {
             if (linkevarray[i] > 1) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
-                    "Linkage evidence '" + linkEvStrings[i] + "' appears " +
+                    string("Linkage evidence '") + linkEvStrings[i] + "' appears " +
                     NStr::IntToString(linkevarray[i]) + " times", seq);
             }
         }
@@ -9828,32 +9829,32 @@ MAKE_CONST_MAP(kViralStrandMap, string, string,
     {"environmental samples",                       "unknown"},
 });
 
+
 typedef map<string, string> TViralMap;
 
-static TViralMap s_InitializeViralMap()
+static TViralMap* s_InitializeViralMap()
 {
+    TViralMap* viral_map = new TViralMap;
+
     //auto tax_update = m_Imp.SetContext().m_taxon_update;
     try {
         CTaxon1 tax;
         CTaxon1::TInfoList moltypes;
-        TViralMap viral_map;
         if (tax.GetInheritedPropertyDefines("genomic_moltype", moltypes)) {
             string sName;
             for (auto it : moltypes) {
                 if (tax.GetScientificName(TAX_ID_FROM(TIntId, it->GetIval1()), sName )) {
                     if (it->GetIval2() == 1) {
-                        viral_map [sName] = it->GetSval();
+                        (*viral_map)[sName] = it->GetSval();
                     }
                 }
             }
         }
-        return viral_map;
     } catch (const CException& e) {
         // report if desired (at severity info or warning, probably)
         LOG_POST_XX(Corelib_App, 1, e.GetMsg());
     }
-
-    return {};
+    return viral_map;
 }
 
 
@@ -9892,16 +9893,16 @@ string CValidError_bioseq::s_GetStrandedMolStringFromLineage(const string& linea
         return "ssRNA(+)";
     }
 
-    static const auto s_ViralMap = s_InitializeViralMap();
+    static CSafeStatic<TViralMap> s_ViralMap(s_InitializeViralMap, nullptr);
 
-    if (s_ViralMap.empty()) {
+    if (s_ViralMap->empty()) {
         for (const auto& x : kViralStrandMap) {
             if (NStr::FindNoCase(lineage, x.first) != NPOS) {
                 return x.second;
             }
         }
     } else {
-        for (const auto& x : s_ViralMap) {
+        for (const auto& x : s_ViralMap.Get()) {
             if (NStr::FindNoCase(lineage, x.first) != NPOS) {
                 return x.second;
             }
