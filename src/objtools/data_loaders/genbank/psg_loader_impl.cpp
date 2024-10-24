@@ -435,6 +435,13 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
     if (params.IsSetEnableCDD()) {
         args.AddValue(params.GetEnableCDD() ? "enable_processor" : "disable_processor", "cdd");
     }
+    static size_t s_PSGLoaderInstanceCounter = 0;
+    size_t current_instance_number = ++s_PSGLoaderInstanceCounter;
+    if ( current_instance_number > 1 ) {
+        string base_client_id = GetDiagContext().GetStringUID();
+        string new_client_id = base_client_id+'.'+NStr::NumericToString(current_instance_number);
+        args.AddValue("client_id", new_client_id);
+    }
     if (!args.GetArgs().empty()) {
         m_Queue->GetPSG_Queue().SetUserArgs(SPSG_UserArgs(args));
     }
