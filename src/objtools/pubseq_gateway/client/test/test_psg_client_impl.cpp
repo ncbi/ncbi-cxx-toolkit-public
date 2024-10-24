@@ -746,7 +746,9 @@ SPSG_UserArgs s_Build(SPSG_UserArgsBuilder& builder, const SPSG_UserArgs& reques
 {
     ostringstream os;
     builder.Build(os, request_args);
-    return os.str();
+    SPSG_UserArgs rv(os.str());
+    rv.erase("client_id");
+    return rv;
 }
 
 BOOST_AUTO_TEST_CASE(UserArgsBuilder)
