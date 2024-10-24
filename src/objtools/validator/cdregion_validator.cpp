@@ -33,6 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <util/compile_time.hpp>
+
 #include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/single_feat_validator.hpp>
 #include <objtools/validator/utilities.hpp>
@@ -1132,13 +1134,12 @@ bool CCdregionValidator::x_HasGoodParent()
     } catch (CException&) {
         return false;
     }
-
-    static const list<CSeqFeatData::ESubtype> parent_types = {
+    static constexpr auto parent_types = ct::make_array<CSeqFeatData::ESubtype> (
         CSeqFeatData::eSubtype_C_region,
         CSeqFeatData::eSubtype_D_segment,
         CSeqFeatData::eSubtype_J_segment,
         CSeqFeatData::eSubtype_V_segment
-    };
+    );
 
     CRef<feature::CFeatTree> feat_tree;
     if (m_Imp.IsHugeFileMode()) {
@@ -1438,7 +1439,8 @@ void CCdregionValidator::x_ValidateCDSPartial()
 }
 
 
-static const char* const sc_BypassCdsPartialCheckText[] = {
+MAKE_CONST_SET(sc_BypassCdsPartialCheckText, ct::tagStrNocase,
+{
     "RNA editing",
     "annotated by transcript or proteomic data",
     "artificial frameshift",
@@ -1447,16 +1449,14 @@ static const char* const sc_BypassCdsPartialCheckText[] = {
     "reasons given in citation",
     "translated product replaced",
     "unclassified translation discrepancy"
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsPartialCheckSet;
-DEFINE_STATIC_ARRAY_MAP(TBypassCdsPartialCheckSet, sc_BypassCdsPartialCheck, sc_BypassCdsPartialCheckText);
+})
 
 bool CCdregionValidator::x_BypassCDSPartialTest() const
 {
     if (m_Feat.CanGetExcept() && m_Feat.GetExcept() && m_Feat.CanGetExcept_text()) {
         const string& except_text = m_Feat.GetExcept_text();
-        ITERATE(TBypassCdsPartialCheckSet, it, sc_BypassCdsPartialCheck) {
-            if (NStr::FindNoCase(except_text, *it) != NPOS) {
+        for (auto& str : sc_BypassCdsPartialCheckText) {
+            if (NStr::FindNoCase(except_text, str) != NPOS) {
                 return true;  // biological exception
             }
         }
