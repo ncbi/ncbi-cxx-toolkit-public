@@ -534,10 +534,10 @@ if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  \$is_max_debug = false; then
    ulimit -n 8192
    if [ \$cygwin = false ]; then
        if test "\$NCBI_CHECK_TOOLS" = "regular"; then
-          ulimit -v 110000000
+          ulimit -v 150000000
        else
           # Increase memory limits if run under check tool
-          ulimit -v 150000000
+          ulimit -v 200000000
        fi
    fi
 fi
