@@ -36,6 +36,7 @@
 
 #include <objtools/edit/dblink_field.hpp>
 #include <objtools/edit/seqid_guesser.hpp>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,7 +45,7 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 
-const string kDBLink = "DBLink";
+static const char* kDBLink = "DBLink";
 
 
 bool CDBLinkField::SetVal(CObject& object, const string & newValue, EExistingText existing_text)
@@ -278,34 +279,36 @@ void CDBLinkField::SetConstraint(const string& field_name, CConstRef<CStringCons
 }
 
 
-CDBLinkField::EDBLinkFieldType CDBLinkField::GetTypeForLabel(string label)
+
+MAKE_TWOWAY_CONST_MAP(kMapTypeToLabel, CDBLinkField::EDBLinkFieldType, ct::tagStrNocase,
 {
-    //CTempString normal = GetNormalizedDBLinkFieldName(label);
-    for (int i = eDBLinkFieldType_Trace; i < eDBLinkFieldType_Unknown; i++) {
-        const string& match = GetLabelForType((EDBLinkFieldType)i);
-        if (NStr::EqualNocase(label, match)) {
-            return (EDBLinkFieldType)i;
-        }
+    { CDBLinkField::eDBLinkFieldType_Trace,     "Trace Assembly Archive" },
+    { CDBLinkField::eDBLinkFieldType_BioSample, "BioSample" },
+    { CDBLinkField::eDBLinkFieldType_ProbeDB,   "ProbeDB" },
+    { CDBLinkField::eDBLinkFieldType_SRA,       "Sequence Read Archive" },
+    { CDBLinkField::eDBLinkFieldType_BioProject,"BioProject" },
+    { CDBLinkField::eDBLinkFieldType_Assembly,  "Assembly" },
+    { CDBLinkField::eDBLinkFieldType_Unknown,   "Unknown" },
+});
+
+
+CDBLinkField::EDBLinkFieldType CDBLinkField::GetTypeForLabel(const string& label)
+{
+    auto type_it = kMapTypeToLabel.second.find(label);
+    if (type_it == kMapTypeToLabel.second.end()) {
+        return eDBLinkFieldType_Unknown;
     }
-    return eDBLinkFieldType_Unknown;
+    return type_it->second;
 }
 
 
-const string& CDBLinkField::GetLabelForType(EDBLinkFieldType field_type)
+const string CDBLinkField::GetLabelForType(EDBLinkFieldType field_type)
 {
-    static const string g_types[] = {
-        "Trace Assembly Archive",
-        "BioSample",
-        "ProbeDB",
-        "Sequence Read Archive",
-        "BioProject",
-        "Assembly"
-    };
-
-    if (field_type < 0 || field_type >= eDBLinkFieldType_Unknown)
+    auto type_it = kMapTypeToLabel.first.find(field_type);
+    if (type_it == kMapTypeToLabel.first.end()) {
         return kEmptyStr;
-    else
-        return g_types[field_type];
+    }
+    return type_it->second;
 }
 
 
