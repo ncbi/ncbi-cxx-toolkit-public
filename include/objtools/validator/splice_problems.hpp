@@ -143,13 +143,6 @@ private:
 };
 
 
-const string kSpliceSiteGTAG = "GT-AG";
-const string kSpliceSiteGCAG = "GC-AG";
-const string kSpliceSiteATAC = "AT-AC";
-const string kSpliceSiteGT = "GT";
-const string kSpliceSiteGC = "GC";
-const string kSpliceSiteAG = "AG";
-
 typedef Char const (&TConstSpliceSite)[2];
 
 bool CheckAdjacentSpliceSites(const string& signature, ENa_strand strand, TConstSpliceSite donor, TConstSpliceSite acceptor);

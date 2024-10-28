@@ -30,6 +30,7 @@
  *   .......
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -40,22 +41,24 @@
 
 #include <objtools/validator/go_term_validation_and_cleanup.hpp>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 
 
-static const string kGoTermText = "text string";
-static const string kGoTermID = "go id";
-static const string kGoTermPubMedID = "pubmed id";
-static const string kGoTermRef = "go ref";
-static const string kGoTermEvidence = "evidence";
+static const char* kGoTermText      = "text string";
+static const char* kGoTermID        = "go id";
+static const char* kGoTermPubMedID  = "pubmed id";
+static const char* kGoTermRef       = "go ref";
+static const char* kGoTermEvidence  = "evidence";
 
-static const string kGoTermProcess = "Process";
-static const string kGoTermComponent = "Component";
-static const string kGoTermFunction = "Function";
+static const char* kGoTermProcess   = "Process";
+static const char* kGoTermComponent = "Component";
+static const char* kGoTermFunction  = "Function";
 
-static const string kGeneOntology = "GeneOntology";
+static const char* kGeneOntology    = "GeneOntology";
+
 
 class CGoTermSortStruct
 {
@@ -81,7 +84,6 @@ protected:
     int m_Pmid;
     set<string> m_Evidence;
     vector<string> m_Errors;
-
 };
 
 

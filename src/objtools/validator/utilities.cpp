@@ -29,9 +29,11 @@
  *      Implementation of utility classes and functions.
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <util/compile_time.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
@@ -1803,13 +1805,13 @@ static bool s_AreLinkedToDifferentFeats (const CSeq_feat_Handle& f1, const CSeq_
 }
 
 
-static bool s_AreCodingRegionsLinkedToDifferentmRNAs (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
+static inline bool s_AreCodingRegionsLinkedToDifferentmRNAs (const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
 }
 
 
-static bool s_AremRNAsLinkedToDifferentCodingRegions(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
+static inline bool s_AremRNAsLinkedToDifferentCodingRegions(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2)
 {
     return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_mRNA, CSeqFeatData::eSubtype_cdregion);
 }
@@ -2019,7 +2021,8 @@ bool FindMatchInOrgRef (const string& str, const COrg_ref& org)
 }
 
 
-static const string sIgnoreHostWordList[] = {
+MAKE_CONST_SET(s_IgnoreHostWordList, ct::tagStrCase,
+{
     " cf.",
     " cf ",
     " aff ",
@@ -2027,12 +2030,12 @@ static const string sIgnoreHostWordList[] = {
     " near",
     " nr.",
     " nr ",
-};
+})
 
 void AdjustSpecificHostForTaxServer (string& spec_host)
 {
-    for (unsigned i = 0; i < ArraySize(sIgnoreHostWordList); ++i) {
-        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], " ");
+    for (auto& word : s_IgnoreHostWordList) {
+        NStr::ReplaceInPlace(spec_host, word, " ");
     }
     NStr::ReplaceInPlace(spec_host, "  ", " ");
     NStr::TruncateSpacesInPlace(spec_host);
@@ -2317,39 +2320,39 @@ bool HasBadStartCodon(const CSeq_loc& loc, const string& transl_prot)
 }
 
 
-static const char * kUnclassifiedTranslationDiscrepancy = "unclassified translation discrepancy";
+static const char* kUnclassifiedTranslationDiscrepancy = "unclassified translation discrepancy";
 
-static const char* const sc_BypassCdsTransCheckText[] = {
+MAKE_CONST_SET(sc_BypassCdsTransCheck, ct::tagStrCase,
+{
     "RNA editing",
     "adjusted for low-quality genome",
     "annotated by transcript or proteomic data",
     "rearrangement required for product",
     "reasons given in citation",
     "translated product replaced",
-    kUnclassifiedTranslationDiscrepancy
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsTransCheckSet;
-DEFINE_STATIC_ARRAY_MAP(TBypassCdsTransCheckSet, sc_BypassCdsTransCheck, sc_BypassCdsTransCheckText);
+    "unclassified translation discrepancy"
+});
 
-static const char* const sc_ForceCdsTransCheckText[] = {
+MAKE_CONST_SET(sc_ForceCdsTransCheck, ct::tagStrCase,
+{ 
     "artificial frameshift",
     "mismatches in translation"
-};
-typedef CStaticArraySet<const char*, PCase_CStr> TForceCdsTransCheckSet;
-DEFINE_STATIC_ARRAY_MAP(TForceCdsTransCheckSet, sc_ForceCdsTransCheck, sc_ForceCdsTransCheckText);
+});
 
 bool ReportTranslationErrors(const string& except_text)
 {
     bool report = true;
-    ITERATE(TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
-        if (NStr::FindNoCase(except_text, *it) != NPOS) {
+    for (auto& str : sc_BypassCdsTransCheck) {
+        if (NStr::FindNoCase(except_text, str) != NPOS) {
             report = false;
+            break;
         }
     }
     if (!report) {
-        ITERATE(TForceCdsTransCheckSet, it, sc_ForceCdsTransCheck) {
-            if (NStr::FindNoCase(except_text, *it) != NPOS) {
+        for (auto& str : sc_ForceCdsTransCheck) {
+            if (NStr::FindNoCase(except_text, str) != NPOS) {
                 report = true;
+                break;
             }
         }
     }

@@ -30,6 +30,7 @@
  *   .......
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
@@ -194,8 +195,7 @@ static const AmbCharData ambiguity_list[] = {
     { 'V', "ACG" },
     { 'D', "AGT" },
 };
-
-static const int num_ambiguities = sizeof (ambiguity_list) / sizeof (AmbCharData);
+static const int num_ambiguities = ArraySize(ambiguity_list);
 
 static bool s_AmbiguousMatch (char a, char b)
 {
@@ -1360,7 +1360,7 @@ void CValidError_align::x_ReportAlignErr(
     PostErr(sev, et, prefix + ": In " + s_DescribeSegment(id, id_context, segment, pos) + ", " + message, align);
 }
 
-static const string kAlignmentTooLong = "the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment";
+static const char* kAlignmentTooLong = "the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment";
 
 void CValidError_align::x_ReportSumLenStart(
     const CSeq_align& align,

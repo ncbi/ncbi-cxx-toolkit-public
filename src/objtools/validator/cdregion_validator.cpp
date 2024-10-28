@@ -30,6 +30,7 @@
  *   .......
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -1439,7 +1440,7 @@ void CCdregionValidator::x_ValidateCDSPartial()
 }
 
 
-MAKE_CONST_SET(sc_BypassCdsPartialCheckText, ct::tagStrNocase,
+MAKE_CONST_SET(sc_BypassCdsPartialCheck, ct::tagStrNocase,
 {
     "RNA editing",
     "annotated by transcript or proteomic data",
@@ -1449,13 +1450,13 @@ MAKE_CONST_SET(sc_BypassCdsPartialCheckText, ct::tagStrNocase,
     "reasons given in citation",
     "translated product replaced",
     "unclassified translation discrepancy"
-})
+});
 
 bool CCdregionValidator::x_BypassCDSPartialTest() const
 {
     if (m_Feat.CanGetExcept() && m_Feat.GetExcept() && m_Feat.CanGetExcept_text()) {
         const string& except_text = m_Feat.GetExcept_text();
-        for (auto& str : sc_BypassCdsPartialCheckText) {
+        for (auto& str : sc_BypassCdsPartialCheck) {
             if (NStr::FindNoCase(except_text, str) != NPOS) {
                 return true;  // biological exception
             }
