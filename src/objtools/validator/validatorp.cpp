@@ -30,10 +30,12 @@
  *   .......
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/validator/validatorp.hpp>
@@ -133,13 +135,12 @@
 #include <util/line_reader.hpp>
 #include <util/util_misc.hpp>
 #include <util/static_set.hpp>
-
 #include <algorithm>
-
 
 #include <serial/iterator.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -2125,11 +2126,10 @@ void CValidError_imp::x_ReportInvalidFuzz(const CPacked_seqint& packed_int, cons
 }
 
 
-static const string kSpaceLeftFirst = "Should not specify 'space to left' at first position of non-circular sequence";
-static const string kSpaceRightLast = "Should not specify 'space to right' at last position of non-circular sequence";
-
-static const string kSpaceLeftCircle = "Should not specify 'circle to left' except at first position of circular sequence";
-static const string kSpaceRightCircle = "Should not specify 'circle to right' except at last position of circular sequence";
+static const char* kSpaceLeftFirst   = "Should not specify 'space to left' at first position of non-circular sequence";
+static const char* kSpaceRightLast   = "Should not specify 'space to right' at last position of non-circular sequence";
+static const char* kSpaceLeftCircle  = "Should not specify 'circle to left' except at first position of circular sequence";
+static const char* kSpaceRightCircle = "Should not specify 'circle to right' except at last position of circular sequence";
 
 void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj)
 {
@@ -2997,23 +2997,21 @@ void CValidError_imp::FindEmbeddedScript (const CSerialObject& obj)
                 state = GetNextState(state, *str_it);
                 if( IsMatchFound(state) ) {
                     return true;
+                }
             }
-        }
-
             return false;
-    }
+        }
     };
-    static CScriptTagTextFsm s_ScriptTagFsm;
-
+    static CSafeStatic<CScriptTagTextFsm> s_ScriptTagFsm;
 
     CStdTypeConstIterator<string> it(obj);
     for( ; it; ++it) {
-        if (s_ScriptTagFsm.DoesStrHaveFsmHits(*it)) {
+        if (s_ScriptTagFsm->DoesStrHaveFsmHits(*it)) {
             PostErr (eDiag_Error, eErr_GENERIC_EmbeddedScript,
                      "Script tag found in item", obj);
             return;
+        }
     }
-}
 }
 
 
@@ -4058,8 +4056,8 @@ CCacheImpl::GetBioseqsOfFeatCache(
     if( find_iter != m_featToBioseqCache.end() ) {
         return find_iter->second;
     } else {
-        const static  TFeatToBioseqValue kEmptyFeatToBioseqCache;
-        return kEmptyFeatToBioseqCache;
+        static CSafeStatic<TFeatToBioseqValue> kEmptyFeatToBioseqCache;
+        return kEmptyFeatToBioseqCache.Get();
     }
 }
 //LCOV_EXCL_STOP
@@ -4090,8 +4088,8 @@ CCacheImpl::GetIdToBioseq(
     if( find_iter != m_IdToBioseqCache.end() ) {
         return find_iter->second;
     } else {
-        static const TIdToBioseqValue s_EmptyResult;
-        return s_EmptyResult;
+        static CSafeStatic<TIdToBioseqValue> s_EmptyResult;
+        return s_EmptyResult.Get();
     }
 }
 
@@ -4104,7 +4102,6 @@ CCacheImpl::GetBioseqHandleFromLocation(
         // fall back on old style
         return BioseqHandleFromLocation(scope, loc);
     }
-
 
     for ( CSeq_loc_CI citer (loc); citer; ++citer) {
         CConstRef<CSeq_id> id(&citer.GetSeq_id());
@@ -4131,9 +4128,6 @@ void CCacheImpl::Clear()
     m_featToBioseqCache.clear();
     m_IdToBioseqCache.clear();
 }
-
-
-
 
 
 END_SCOPE(validator)

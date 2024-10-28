@@ -30,6 +30,7 @@
  *   .......
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -47,6 +48,13 @@ BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
 
+
+static const char* kSpliceSiteGTAG = "GT-AG";
+static const char* kSpliceSiteGCAG = "GC-AG";
+static const char* kSpliceSiteATAC = "AT-AC";
+static const char* kSpliceSiteGT = "GT";
+static const char* kSpliceSiteGC = "GC";
+static const char* kSpliceSiteAG = "AG";
 
 
 void CSpliceProblems::ValidateDonorAcceptorPair(
@@ -633,22 +641,22 @@ void CSpliceProblems::ValidateSpliceCdregion(const CSeq_feat& feat, const CBiose
 }
 
 
-static bool s_EqualsG(Char c)
+static inline bool s_EqualsG(Char c)
 {
     return c == 'G';
 }
 
-static bool s_EqualsC(Char c)
+static inline bool s_EqualsC(Char c)
 {
     return c == 'C';
 }
 
-static bool s_EqualsA(Char c)
+static inline bool s_EqualsA(Char c)
 {
     return c == 'A';
 }
 
-static bool s_EqualsT(Char c)
+static inline bool s_EqualsT(Char c)
 {
     return c == 'T';
 }
@@ -658,7 +666,7 @@ bool CheckAdjacentSpliceSites(const string& signature, ENa_strand strand, TConst
     static
     struct tagSpliceSiteInfo
     {
-        const string& id;
+        const char* id;
         ENa_strand strand;
         bool(*check_donor0)(Char);
         bool(*check_donor1)(Char);
@@ -698,7 +706,7 @@ bool CheckSpliceSite(const string& signature, ENa_strand strand, TConstSpliceSit
     static
     struct tagSpliceSiteInfo
     {
-        const string& id;
+        const char* id;
         ENa_strand strand;
         bool(*check_site0)(Char);
         bool(*check_site1)(Char);
@@ -747,6 +755,7 @@ bool CheckIntronAcceptor(ENa_strand strand, TConstSpliceSite acceptor)
 {
     return CheckSpliceSite(kSpliceSiteAG, strand, acceptor);
 }
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

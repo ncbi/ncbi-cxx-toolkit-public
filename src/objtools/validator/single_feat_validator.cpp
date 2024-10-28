@@ -30,6 +30,7 @@
  *   .......
  *
  */
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -49,10 +50,13 @@
 #include <objtools/validator/validator_context.hpp>
 #include <atomic>
 
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
+
+
 
 CSingleFeatValidator::CSingleFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp)
     : m_Feat(feat), m_Scope(scope), m_Imp(imp), m_ProductIsFar(false)
@@ -1517,14 +1521,15 @@ void CSingleFeatValidator::x_ValidateRptUnitVal (const string& val, const string
          !multiple_rpt_unit ) {
         if (val.length() <= GetLength(m_Feat.GetLocation(), &m_Scope) ) {
             bool just_nuc_letters = true;
-            static const string nuc_letters = "ACGTNacgtn";
+            MAKE_CONST_SET(nuc_letters, char,            {
+                'A','C','G','T','N','a','c','g','t','n'
+            });
             ITERATE(string, it, val) {
-                if ( nuc_letters.find(*it) == NPOS ) {
+                if ( nuc_letters.find(*it) == nuc_letters.end() ) {
                     just_nuc_letters = false;
                     break;
                 }
             }
-
             if ( just_nuc_letters ) {
                 CSeqVector vec = GetSequenceFromFeature(m_Feat, m_Scope);
                 if ( !vec.empty() ) {

@@ -30,10 +30,14 @@
  *   .......
  *
  */
+ 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <util/compile_time.hpp>
+#include <util/utf8.hpp>
+
 #include <objtools/validator/validerror_desc.hpp>
 #include <objtools/validator/validerror_descr.hpp>
 #include <objtools/validator/validerror_annot.hpp>
@@ -56,7 +60,6 @@
 
 #include <objects/misc/sequence_macros.hpp>
 
-#include <util/utf8.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -386,7 +389,8 @@ bool CValidError_desc::ValidateStructuredCommentGeneric(const CUser_object& usr,
 }
 
 
-static string s_OfficialPrefixList[] = {
+MAKE_CONST_SET(sc_OfficialPrefixList, ct::tagStrNocase,
+{
     "Assembly-Data",
     "BWP:1.0",
     "EpifluData",
@@ -419,16 +423,11 @@ static string s_OfficialPrefixList[] = {
     "SIVDataBaseData",
     "SymbiotaSpecimenReference",
     "Taxonomic-Update-Statistics",
-};
+});
 
-static bool s_IsAllowedPrefix(const string& val)
+static inline bool s_IsAllowedPrefix(const string& val)
 {
-    for (size_t i = 0; i < ArraySize(s_OfficialPrefixList); ++i) {
-        if (NStr::EqualNocase(val, s_OfficialPrefixList[i])) {
-            return true;
-        }
-    }
-    return false;
+    return sc_OfficialPrefixList.find(val) != sc_OfficialPrefixList.end();
 }
 
 
@@ -740,14 +739,15 @@ static bool x_IsBadBioProjectFormat(const string& str)
     return false;
 }
 
-static string s_legalDblinkNames [] = {
+MAKE_CONST_SET(s_legalDblinkNames, ct::tagStrNocase,
+{
     "Trace Assembly Archive",
     "ProbeDB",
     "Assembly",
     "BioSample",
     "Sequence Read Archive",
     "BioProject"
-};
+});
 
 bool CValidError_desc::ValidateDblink(
     const CUser_object& usr,
@@ -835,9 +835,10 @@ bool CValidError_desc::ValidateDblink(
                     }
                 }
             }
-
-            for ( size_t i = 0; i < sizeof(s_legalDblinkNames) / sizeof(string); ++i) {
-                if (NStr::EqualNocase (label_str, s_legalDblinkNames[i]) && ! NStr::EqualCase (label_str, s_legalDblinkNames[i])) {
+    
+            for (auto& str : s_legalDblinkNames) {
+                if (NStr::EqualNocase(label_str, str) && 
+                  ! NStr::EqualCase(label_str, str)) {
                     PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkBadCapitalization,
                          "Bad DBLink capitalization - " + label_str, *m_Ctx, desc);
                 }
