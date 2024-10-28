@@ -2237,7 +2237,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             int j_length = germline_j_bh.GetBioseqLength();
             if (m_AirrData["v_germline_start"] != NcbiEmptyString && 
                 NStr::StringToInt(m_AirrData["v_germline_start"]) == 1 &&
-                NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4])) {
+                NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4]) - 1) { //-1 to allow J gene missing the last bp
 
                 m_AirrData["complete_vdj"] = "T";
             }
