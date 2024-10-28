@@ -79,8 +79,8 @@ public:
     bool SetVal(CUser_object& object, const string& newValue, EExistingText existing_text);
     bool SetVal(CUser_field& field, const string& newValue, EExistingText existing_text);
     virtual string GetLabel() const;
-    static EDBLinkFieldType GetTypeForLabel(string label);
-    static const string& GetLabelForType(EDBLinkFieldType field_type);
+    static EDBLinkFieldType GetTypeForLabel(const string& label);
+    static const string GetLabelForType(EDBLinkFieldType field_type);
     static bool IsDBLink(const CUser_object& user);
     static CTempString GetNormalizedDBLinkFieldName(const CTempString& orig_label);
     static vector<string> GetFieldNames();
