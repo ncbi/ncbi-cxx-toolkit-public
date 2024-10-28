@@ -561,9 +561,22 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
             auto topobject = x_ProcessTraditionally(reader);
             m_Out->ResetLocalHooks();
             if (m_AsSeqEntry) {
+                if (topobject->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
+                    auto bioseq = Ref(CTypeConverter<CBioseq>::SafeCast(topobject));
+                    CSeq_entry topentry;
+                    topentry.SetSeq(const_cast<CBioseq&>(*bioseq));
+                    *m_Out << topentry;
+                } else if (topobject->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
+                    auto bioset = Ref(CTypeConverter<CBioseq_set>::SafeCast(topobject));
+                    CSeq_entry topentry;
+                    topentry.SetSet(const_cast<CBioseq_set&>(*bioset));
+                    *m_Out << topentry;
+                }
+                /*
                 CSeq_entry topentry;
                 topentry.SetSeq(const_cast<CBioseq&> (static_cast<const CBioseq&>(*topobject)));
                 *m_Out << topentry;
+                */
             } else {
                 *m_Out << *topobject;
             }
