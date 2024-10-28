@@ -150,10 +150,17 @@ void CEUtils_Request::ResetBaseURL(void)
 }
 
 
-void CEUtils_Request::Connect(void)
+string CEUtils_Request::GetURL(void) const
 {
     string url = GetBaseURL() + GetScriptName();
-    string body = GetQueryString();
+    if (m_Method == eHttp_Post) return url;
+    return url + "?" + GetQueryString();
+}
+
+
+void CEUtils_Request::Connect(void)
+{
+    string url = GetURL();
     STimeout timeout_value;
     const STimeout* timeout = 
         g_CTimeoutToSTimeout(GetConnContext()->GetTimeout(), timeout_value);
@@ -166,11 +173,11 @@ void CEUtils_Request::Connect(void)
             NULL, NULL, NULL, NULL,
             fHTTP_AutoReconnect,
             timeout));
-        *m_Stream << body;
+        *m_Stream << GetQueryString();
     }
     else {
         m_Stream.reset(new CConn_HttpStream(
-            url + "?" + body,
+            url,
             fHTTP_AutoReconnect,
             timeout));
     }
