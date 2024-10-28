@@ -14,5 +14,6 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) $(NETWORK_LIBS) \
 
 CHECK_CMD = blast_dataloader_unit_test
 CHECK_COPY = blast_dataloader_unit_test.ini data
+CHECK_TIMEOUT = 400
 
 WATCHERS = camacho fongah2
