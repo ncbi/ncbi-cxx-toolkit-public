@@ -884,19 +884,13 @@ CSNPDataLoader_Impl::GetOrphanAnnotRecordsOnce(CDataSource* ds,
                 // default SNP track
                 string acc_ver = s_GetAccVer(id);
                 if ( !acc_ver.empty() ) {
-                    string na_acc;
-                    try {
-                        // add default SNP track
-                        if ( GetDebugLevel() >= eDebug_resolve ) {
-                            LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: resolving "<<acc_ver);
-                        }
-                        na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
-                        if ( GetDebugLevel() >= eDebug_resolve ) {
-                            LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: "<<acc_ver<<" primary SNP track is "<<na_acc);
-                        }
+                    // add default SNP track
+                    if ( GetDebugLevel() >= eDebug_resolve ) {
+                        LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: resolving "<<acc_ver);
                     }
-                    catch ( CException& exc ) {
-                        ERR_POST_X(2, "CSNPDataLoader: failed to add PTIS track for "<<acc_ver<<": "<<exc);
+                    string na_acc = m_PTISClient->GetPrimarySnpTrackForAccVer(acc_ver);
+                    if ( GetDebugLevel() >= eDebug_resolve ) {
+                        LOG_POST_X(13, Info<<"CSNPDataLoader:PTIS: "<<acc_ver<<" primary SNP track is "<<na_acc);
                     }
                     if ( !na_acc.empty() ) {
                         size_t filter_index = sx_ExtractFilterIndex(na_acc);
