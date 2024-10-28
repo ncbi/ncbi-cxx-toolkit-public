@@ -196,6 +196,9 @@ protected:
     /// and is automatically destroyed by Disconnect().
     CObjectIStream* GetObjIStream(void);
 
+    /// Return base url + script name. Does not include query string.
+    virtual string GetURL(void) const;
+
 private:
     CEUtils_Request(const CEUtils_Request&);
     CEUtils_Request& operator=(const CEUtils_Request&);
