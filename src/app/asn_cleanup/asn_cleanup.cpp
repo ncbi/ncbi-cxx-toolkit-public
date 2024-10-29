@@ -102,7 +102,7 @@ private:
 
     bool                     x_ProcessHugeFile(edit::CHugeFileProcess& process);
     bool                     x_ProcessHugeFileBlob(edit::CHugeFileProcess& process);
-    CConstRef<CSerialObject> x_ProcessTraditionally(edit::CHugeAsnReader& reader);
+    CRef<CSerialObject>      x_ProcessTraditionally(edit::CHugeAsnReader& reader);
     void                     x_ProcessTraditionally(edit::CHugeFileProcess& process);
 
     void x_FeatureOptionsValid(const string& opt);
@@ -440,14 +440,14 @@ void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process)
     // }
 }
 
-CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReader& reader)
+CRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReader& reader)
 {
     auto anytop = reader.ReadAny();
     if (anytop.Empty())
         return {};
 
-    CConstRef<CSerialObject> topobject;
-    CRef<CSeq_entry>         topentry;
+    CRef<CSerialObject> topobject;
+    CRef<CSeq_entry>    topentry;
 
     if (anytop->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
         topentry.Reset(CTypeConverter<CSeq_entry>::SafeCast(anytop));
@@ -472,9 +472,9 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
         bioset.Reset();
         HandleSeqEntry(topentry);
         if (topentry->IsSet())
-            topobject.Reset(&topentry->GetSet());
+            topobject.Reset(&topentry->SetSet());
         else
-            topobject.Reset(&topentry->GetSeq());
+            topobject.Reset(&topentry->SetSeq());
     } else if (anytop->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
         auto bioseq = Ref(CTypeConverter<CBioseq>::SafeCast(anytop));
         topentry    = Ref(new CSeq_entry);
@@ -482,9 +482,9 @@ CConstRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReade
         bioseq.Reset();
         HandleSeqEntry(topentry);
         if (topentry->IsSet())
-            topobject.Reset(&topentry->GetSet());
+            topobject.Reset(&topentry->SetSet());
         else
-            topobject.Reset(&topentry->GetSeq());
+            topobject.Reset(&topentry->SetSeq());
     } else {
         //_ASSERT(0);
     }
@@ -564,21 +564,16 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
                 if (topobject->GetThisTypeInfo() == CBioseq::GetTypeInfo()) {
                     auto bioseq = Ref(CTypeConverter<CBioseq>::SafeCast(topobject));
                     CSeq_entry topentry;
-                    topentry.SetSeq(const_cast<CBioseq&>(*bioseq));
+                    topentry.SetSeq(*bioseq);
                     *m_Out << topentry;
                 } else if (topobject->GetThisTypeInfo() == CBioseq_set::GetTypeInfo()) {
                     auto bioset = Ref(CTypeConverter<CBioseq_set>::SafeCast(topobject));
                     CSeq_entry topentry;
-                    topentry.SetSet(const_cast<CBioseq_set&>(*bioset));
+                    topentry.SetSet(*bioset);
                     *m_Out << topentry;
                 } else {
                     *m_Out << *topobject;
                 }
-                /*
-                CSeq_entry topentry;
-                topentry.SetSeq(const_cast<CBioseq&> (static_cast<const CBioseq&>(*topobject)));
-                *m_Out << topentry;
-                */
             } else {
                 *m_Out << *topobject;
             }
