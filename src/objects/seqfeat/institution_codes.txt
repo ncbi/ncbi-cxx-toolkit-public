@@ -1115,6 +1115,8 @@ CDC<CHN>	s	Changdu Institute for Drug Control
 CDCM	s	Chengdu College of Traditional Chinese Medicine			
 CDFM	s	Cardiff Museum			
 CDFN	s	Canadian Forest Service - Atlantic			
+CDFW	s	California Department of Fish and Wildlife			
+CDFW:Bird	s	Bird Collection			
 CDMU	s	Chengde Medical University			
 CDN	s	Whitgift School			
 CDRI	s	Central Drug Research Institute			
