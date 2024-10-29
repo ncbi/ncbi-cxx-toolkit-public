@@ -1748,7 +1748,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     if (str)
         MemFree(str);
 
-    if (seq_data_type == CSeq_data::e_Iupacaa) {
+    if (seq_data_type == CSeq_data::e_Iupacna) {
         if (bioseq.GetLength() < 10) {
             if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
                 if (ibp->is_pat == false)
