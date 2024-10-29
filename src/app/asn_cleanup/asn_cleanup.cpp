@@ -571,6 +571,8 @@ bool CCleanupApp::x_ProcessHugeFile(edit::CHugeFileProcess& process)
                     CSeq_entry topentry;
                     topentry.SetSet(const_cast<CBioseq_set&>(*bioset));
                     *m_Out << topentry;
+                } else {
+                    *m_Out << *topobject;
                 }
                 /*
                 CSeq_entry topentry;
