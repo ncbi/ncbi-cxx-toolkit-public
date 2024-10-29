@@ -443,7 +443,7 @@ static int xgbparselex_ver(string_view linein, TTokens& tokens, bool accver)
                     retval++;
                 } else {
                     size_t len         = closing_quote_pos - current_col + 1;
-                    current_token.data = string(line.c_str(), +current_col);
+                    current_token.data = string(line.c_str() + current_col, len);
                     current_col += len;
                 }
                 break;
