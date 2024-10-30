@@ -51,6 +51,7 @@ public:
     static CGenbankIdResolve&
     Get();
 
+    CGenbankIdResolve();
     ~CGenbankIdResolve();
 
     void
@@ -78,8 +79,6 @@ public:
         string&);
 
 private:
-    CGenbankIdResolve();
-
     CScope&
     xGetDefaultScope();
 
