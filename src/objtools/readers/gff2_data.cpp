@@ -67,6 +67,40 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+    CRef<CSeq_loc>
+    s_GetCodeBreakSeqLocMix(const string& locString, const CSeq_id& id, ENa_strand strand)
+{
+    CRef<CSeq_loc> pLoc;
+    list<string>   tokens;
+    NStr::Split(locString, ",", tokens);
+
+    if (tokens.empty()) {
+        return pLoc;
+    }
+
+    pLoc      = Ref(new CSeq_loc());
+    auto& mix = pLoc->SetMix();
+
+    if (strand == eNa_strand_minus) {
+        tokens.reverse(); // different ordering of seq-loc-mix components on minus strand
+    }
+
+    for (const auto token : tokens) {
+        auto divPos = token.find("..");
+        if (divPos == string::npos) {
+            auto point = NStr::StringToInt(token) - 1;
+            mix.AddInterval(id, point, point, strand);
+        } else {
+            auto from = NStr::StringToInt(token.substr(0, divPos)) - 1;
+            auto to   = NStr::StringToInt(token.substr(divPos + 2)) - 1;
+            mix.AddInterval(id, from, to, strand);
+        }
+    }
+
+    return pLoc;
+}
+
 //  ----------------------------------------------------------------------------
 CRef<CCode_break> s_StringToCodeBreak(
     const string& str,
@@ -95,28 +129,33 @@ CRef<CCode_break> s_StringToCodeBreak(
         posstr = posstr.substr(0, posstr.length()-1);
         strand = eNa_strand_minus;
     }
-    const string posstr_div = "..";
-    size_t pos_div = posstr.find(posstr_div);
-    if (pos_div == string::npos) {
-        return pCodeBreak;
-    }
 
-    int from, to;
-    try {
-        from = NStr::StringToInt(posstr.substr(0, pos_div))-1;
-        to = NStr::StringToInt(posstr.substr(pos_div + posstr_div.length()))-1;
-    }
-    catch(...) {
-        return pCodeBreak;
+
+    if (NStr::StartsWith(posstr, "join(")) {
+        posstr = posstr.substr(5); // strip "join("
+        _ASSERT(posstr.back() == ')');
+        posstr     = posstr.substr(0, posstr.length() - 1);
+        auto pLoc  = s_GetCodeBreakSeqLocMix(posstr, id, strand);
+        pCodeBreak = Ref(new CCode_break());
+        pCodeBreak->SetLoc(*pLoc);
+    } else {
+        const string posstr_div = "..";
+        size_t       pos_div    = posstr.find(posstr_div);
+        if (pos_div == string::npos) {
+            return pCodeBreak;
+        }
+
+        const auto from = NStr::StringToInt(posstr.substr(0, pos_div)) - 1;
+        const auto to   = NStr::StringToInt(posstr.substr(pos_div + posstr_div.length())) - 1;
+
+        pCodeBreak.Reset(new CCode_break);
+        pCodeBreak->SetLoc().SetInt().SetId(id);
+        pCodeBreak->SetLoc().SetInt().SetFrom(from);
+        pCodeBreak->SetLoc().SetInt().SetTo(to);
+        pCodeBreak->SetLoc().SetInt().SetStrand(strand);
     }
 
     int aacode = 'U'; //for now
-
-    pCodeBreak.Reset(new CCode_break);
-    pCodeBreak->SetLoc().SetInt().SetId(id);
-    pCodeBreak->SetLoc().SetInt().SetFrom(from);
-    pCodeBreak->SetLoc().SetInt().SetTo(to);
-    pCodeBreak->SetLoc().SetInt().SetStrand(strand);
     pCodeBreak->SetAa().SetNcbieaa(aacode);
     return pCodeBreak;
 }
@@ -864,8 +903,14 @@ bool CGff2Record::xMigrateAttributes(
                     it1 != codebreaks.end(); ++it1 ) {
                 string breakData = xNormalizedAttributeValue(*it1);
                 CRef<CSeq_id> pBreakId = GetSeqId(flags);
-                CRef<CCode_break> pCodeBreak = s_StringToCodeBreak(
-                    breakData, *pBreakId, flags);
+                CRef<CCode_break> pCodeBreak;
+                try {
+                    pCodeBreak = s_StringToCodeBreak(breakData, *pBreakId, flags);
+                } catch (...) {
+                    string         message = "Unable to parse code-break : \"" + it->second + "\"";
+                    CReaderMessage error(eDiag_Error, 0, message);
+                    throw error;
+                }
                 if (pCodeBreak) {
                     pFeature->SetData().SetCdregion().SetCode_break().push_back(
                         pCodeBreak);
