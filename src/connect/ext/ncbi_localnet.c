@@ -41,18 +41,64 @@
 #endif /*NCBI_OS_UNIX*/
 
 
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+/*#  define NCBI_LOCALNET_DEBUG  1*/
+#endif /*_DEBUG && !NDEBUG*/
+
+
 #ifndef   INADDR_LOOPBACK
 #  define INADDR_LOOPBACK  0x7F000001
 #endif /*!INADDR_LOOPBACK*/
+
+
+/* Extract local net if Class A */
+#ifdef IN_CLASSA_NET
+#  define X_LOCALNET(addr)  ((addr) & IN_CLASSA_NET)
+#else
+#  define X_LOCALNET(addr)  ((addr) & 0xFF000000)
+#endif 
+
+
+/* 0/8 -- "This network", RFC1122 3.2.1.3 (a)-(b), RFC5735 4 */
+#define X_THISNET(addr)     (!X_LOCALNET(addr))
+
+
+/* 127/8 -- Loopback, RFC1122 3.2.1.3 (g), RFC5735 4 */
+#ifndef IN_LOOPBACK
+#  if defined(IN_LOOPBACKNET)  &&  defined(IN_CLASSA_NSHIFT)
+#    define IN_LOOPBACK(addr)   (!(X_LOCALNET(addr) ^ (IN_LOOPBACKNET << IN_CLASSA_NSHIFT)))
+#  else
+#    define IN_LOOPBACK(addr)   (!(X_LOCALNET(addr) ^ (INADDR_LOOPBACK-1)))
+#  endif
+#endif /*!IN_LOOPBACK*/
+
+
+/* 224/4 -- Class D: Multicast, RFC3171, RFC5735 4 */
+#ifndef IN_MULTICAST
+#  if defined(IN_CLASSD)
+#    define IN_MULTICAST(addr)  IN_CLASSD(addr)
+#  else
+#    define IN_MULTICAST(addr)  (!(((addr) & 0xF0000000) ^ 0xE0000000))
+#  endif
+#endif /*!IN_MULTICAST*/
+
+
+/* Combined multicast IP range (224/4: 224.0.0.0-239.255.255.255) and
+ * IN_BADCLASS (Class E, nonroutable IPs, 240/4), which includes the
+ * "limited broadcast" INADDR_NONE, RFC1122 3.2.1.3 (c), RFC5735 4:
+ * IN_MULTICAST(addr)  ||  IN_BADCLASS(addr)
+ */
+#ifdef IN_EXPERIMENTAL
+#  define X_CLASS_DEF(addr)     IN_EXPERIMENTAL(addr)
+#else
+#  define X_CLASS_DEF(addr)     (!((addr) & 0xE0000000) ^ 0xE0000000))
+#endif
+
 
 #ifdef    SizeOf
 #  undef  SizeOf
 #endif  /*SizeOf*/
 #define   SizeOf(a)  (sizeof(a) / sizeof((a)[0]))
-
-#if defined(_DEBUG)  &&  !defined(NDEBUG)
-/*#  define NCBI_LOCALNET_DEBUG  1*/
-#endif /*_DEBUG && !NDEBUG*/
 
 
 #ifdef __GNUC__
@@ -60,29 +106,13 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ x_IsPrivateIP(unsigned int addr)
 {
-    return
-#if   defined(IN_LOOPBACK)
-        IN_LOOPBACK(addr)  ||
-#elif defined(IN_LOOPBACKNET) &&                                        \
-    defined(IN_CLASSA) && defined(IN_CLASSA_NET) && defined(IN_CLASSA_NSHIFT)
-        (IN_CLASSA(addr)
-         && (addr & IN_CLASSA_NET) == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT))  ||
-#else
-        !((addr & 0xFF000000) ^ (INADDR_LOOPBACK-1))  || /* 127/8 */
-#endif /*IN_LOOPBACK*/
-        /* private [non-routable] IP ranges, according to RFC1918 */
-        !((addr & 0xFF000000) ^ 0x0A000000)  || /* 10/8                      */
-        !((addr & 0xFFF00000) ^ 0xAC100000)  || /* 172.16.0.0-172.31.255.255 */
-        !((addr & 0xFFFF0000) ^ 0xC0A80000)  || /* 192.168/16                */
-        /* multicast IP range is also excluded: 224.0.0.0-239.255.255.255 */
-#if   defined(IN_MULTICAST)
-        IN_MULTICAST(addr)
-#elif defined(IN_CLASSD)
-        IN_CLASSD(addr)
-#else
-        !((addr & 0xF0000000) ^ 0xE0000000)
-#endif /*IN_MULTICAST*/
-        ;
+    return X_THISNET(addr)  ||  IN_LOOPBACK(addr)
+        /* private [non-routable] IP ranges, according to RFC1918, RFC5735 4 */
+        ||  !((addr & 0xFF000000) ^ 0x0A000000) /* 10/8                      */
+        ||  !((addr & 0xFFF00000) ^ 0xAC100000) /* 172.16.0.0-172.31.255.255 */
+        ||  !((addr & 0xFFFF0000) ^ 0xC0A80000) /* 192.168/16                */
+        /* non-routable ranges: multicast, Class E and "limited broadcast"   */
+        ||  X_CLASS_DEF(addr);
 }
 
 
@@ -97,6 +127,7 @@ inline
 #endif /*__GNUC__*/
 static int/*bool*/ x_IsAPIPA(unsigned int addr)
 {
+    /* RFC3927, RFC5735 4 */
     return !((addr & 0xFFFF0000) ^ 0xA9FE0000); /* 169.254/16 per IANA */
 }
 
