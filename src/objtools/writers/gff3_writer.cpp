@@ -80,9 +80,11 @@
 
 #include <array>
 #include <sstream>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 #define IS_INSERTION(sf, tf) \
     ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
@@ -2180,9 +2182,11 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
 {
     //FIX_ME
     CGff3FeatureRecord& record = dynamic_cast<CGff3FeatureRecord&>(rec);
-    static set<string> gff3_attributes =
-    {"ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
-     "Note", "Dbxref", "Ontology_term", "Is_circular"};
+    
+    MAKE_CONST_SET(gff3_attributes, ct::tagStrNocase, {
+       "ID", "Name", "Alias", "Parent", "Target", "Gap", "Derives_from",
+       "Note", "Dbxref", "Ontology_term", "Is_circular"
+    });
 
     const CSeq_feat::TQual& quals = mf.GetQual();
     for (const auto& qual: quals) {
@@ -3039,14 +3043,13 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
     const CMappedFeat& mf)
 //  ============================================================================
 {
-    static array<CSeqFeatData::ESubtype, 4> parent_types =
-    { CSeqFeatData::eSubtype_C_region,
-      CSeqFeatData::eSubtype_D_segment,
-      CSeqFeatData::eSubtype_J_segment,
-      CSeqFeatData::eSubtype_V_segment
-    };
-
-
+    MAKE_CONST_SET(parent_types, CSeqFeatData::ESubtype, 
+    {
+        CSeqFeatData::eSubtype_C_region,
+        CSeqFeatData::eSubtype_D_segment,
+        CSeqFeatData::eSubtype_J_segment,
+        CSeqFeatData::eSubtype_V_segment
+    });
     for (const auto& parent_type : parent_types) {
         auto parent = feature::GetBestParentForFeat(
             mf, parent_type, &fc.FeatTree());
@@ -3058,7 +3061,6 @@ bool CGff3Writer::xAssignFeatureAttributeParentVDJsegmentCregion(
             }
         }
     }
-
     return false;
 }
 

@@ -52,8 +52,13 @@
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
 
+#include <corelib/ncbi_safe_static.hpp>
+#include <util/compile_time.hpp> 
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
@@ -951,7 +956,7 @@ sGetClosestGeneRef(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    static const CGene_ref noRef;
+    static CSafeStatic<CGene_ref> noRef;
     if (mf.GetData().IsGene()) {
         return mf.GetData().GetGene();
     }
@@ -960,7 +965,7 @@ sGetClosestGeneRef(
     if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
         return gene.GetData().GetGene();
     }
-    return noRef;
+    return noRef.Get();
 }
 
 //  ----------------------------------------------------------------------------
@@ -1392,18 +1397,16 @@ bool CGff2Writer::IsTranscriptType(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    static list<CSeqFeatData::ESubtype> acceptableTranscriptTypes = {
+    MAKE_CONST_SET(acceptableTranscriptTypes, CSeqFeatData::ESubtype, {
         CSeqFeatData::eSubtype_mRNA,
         CSeqFeatData::eSubtype_otherRNA,
         CSeqFeatData::eSubtype_C_region,
         CSeqFeatData::eSubtype_D_segment,
         CSeqFeatData::eSubtype_J_segment,
-        CSeqFeatData::eSubtype_V_segment
-    };
-   auto itType = std::find(
-        acceptableTranscriptTypes.begin(), acceptableTranscriptTypes.end(),
-        mf.GetFeatSubtype());
-    return (itType != acceptableTranscriptTypes.end());
+        CSeqFeatData::eSubtype_V_segment   
+    });
+    return acceptableTranscriptTypes.find(mf.GetFeatSubtype()) !=
+           acceptableTranscriptTypes.end();
 }
 
 //  ----------------------------------------------------------------------------

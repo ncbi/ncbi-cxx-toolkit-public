@@ -37,8 +37,8 @@
 #include <objtools/writers/gff_base_record.hpp>
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 //  ----------------------------------------------------------------------------
 const char* CGffBaseRecord::ATTR_SEPARATOR

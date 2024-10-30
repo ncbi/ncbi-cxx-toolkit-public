@@ -48,7 +48,6 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
-
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/items/flat_seqloc.hpp>
@@ -58,6 +57,7 @@
 
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil.hpp>
+#include <util/compile_time.hpp> 
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -459,7 +459,7 @@ string CFastaOstreamEx::x_GetOtherIdString(const CSeq_feat& feat,
     return id_string;
 }
 
-
+   
 string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
                                          CScope& scope)
 {
@@ -473,7 +473,7 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
     const auto& rna = feat.GetData().GetRna();
     const auto rna_type = rna.IsSetType() ? rna.GetType() : CRNA_ref::eType_unknown;
 
-    static const map<CRNA_ref::EType, string> kTypeToTag{
+    MAKE_CONST_MAP(kTypeToTag, CRNA_ref::EType, ct::tagStrNocase, {
         {CRNA_ref::eType_mRNA,   "_mrna_"},
         {CRNA_ref::eType_snoRNA, "_ncrna_"},
         {CRNA_ref::eType_scRNA,  "_ncrna_"},
@@ -482,12 +482,11 @@ string CFastaOstreamEx::x_GetRNAIdString(const CSeq_feat& feat,
         {CRNA_ref::eType_rRNA,   "_rrna_"},
         {CRNA_ref::eType_tRNA,   "_trna_"},
         {CRNA_ref::eType_premsg, "_precursorrna_"},
-        {CRNA_ref::eType_tmRNA,  "_tmrna_"}};   
-
+        {CRNA_ref::eType_tmRNA,  "_tmrna_"}  
+    });
 
     string rna_tag;
-    if (auto it = kTypeToTag.find(rna_type);
-        it != kTypeToTag.end()) {
+    if (auto it = kTypeToTag.find(rna_type); it != kTypeToTag.end()) {
         rna_tag = it->second;
     }
     else {
@@ -814,7 +813,6 @@ bool CFastaOstreamEx::x_GetCodeBreak(const CSeq_feat& feat, const CCode_break& c
      TSeqPos offset = sequence::LocationOffset(feat.GetLocation(), loc,
                                                 sequence::eOffset_FromStart,
                                                 &scope);
-
      TSeqPos frame = 0;
      if (feat.GetData().IsCdregion()) {
          const CCdregion& cdr = feat.GetData().GetCdregion();
@@ -979,8 +977,8 @@ void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
     x_AddDeflineAttribute("ncRNA_class", ncRNA_class, defline);
 }
 
-
-static const string s_TrnaList[] = {
+// Not used ???
+MAKE_CONST_SET(s_TrnaList, ct::tagStrNocase, {
     "tRNA-Gap",
     "tRNA-Ala",
     "tRNA-Asx",
@@ -1009,8 +1007,7 @@ static const string s_TrnaList[] = {
     "tRNA-Tyr",
     "tRNA-Glx",
     "tRNA-TERM"
-};
-
+});
 
 void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
                                                string& defline) const
