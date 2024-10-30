@@ -91,7 +91,7 @@
 #ifdef IN_EXPERIMENTAL
 #  define X_CLASS_DEF(addr)     IN_EXPERIMENTAL(addr)
 #else
-#  define X_CLASS_DEF(addr)     (!((addr) & 0xE0000000) ^ 0xE0000000))
+#  define X_CLASS_DEF(addr)     (!((addr) & 0xE0000000) ^ 0xE0000000)
 #endif
 
 
