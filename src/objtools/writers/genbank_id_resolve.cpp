@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <objmgr/util/sequence.hpp>
 
@@ -38,6 +39,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve::CGenbankIdResolve():
@@ -56,8 +58,8 @@ CGenbankIdResolve&
 CGenbankIdResolve::Get()
 //  ----------------------------------------------------------------------------
 {
-    static CGenbankIdResolve resolver;
-    return resolver;
+    static CSafeStatic<CGenbankIdResolve> resolver;
+    return resolver.Get();
 }
 
 //  ----------------------------------------------------------------------------
