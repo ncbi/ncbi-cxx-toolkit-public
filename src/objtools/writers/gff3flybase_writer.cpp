@@ -55,8 +55,11 @@
 #include <objtools/writers/gff3flybase_writer.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 
+#include <util/compile_time.hpp>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 #define INSERTION(sf, tf) ( ((sf) &  CAlnMap::fSeq) && !((tf) &  CAlnMap::fSeq) )
 #define DELETION(sf, tf) ( !((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
@@ -69,25 +72,24 @@ bool CGff3FlybaseWriter::xIsNeededScore(
     const CScore& score) const
 //  ----------------------------------------------------------------------------
 {
-    static const vector<string> supportedScores{
+    MAKE_CONST_SET(supportedScores, ct::tagStrNocase, {
         "Gap", "ambiguous_orientation", "consensus_splices",
         "pct_coverage", "pct_identity_gap", "pct_identity_ungap",
-        "rank", "score"
-    };
-    static const vector<string> coreScores{
-        "ID", "Target", "Gap"
-    };
+        "rank", "score"   
+    });
+    MAKE_CONST_SET(coreScores, ct::tagStrNocase, {
+        "ID", "Target", "Gap" 
+    });
 
     if (!score.IsSetId()  ||  !score.GetId().IsStr()) {
         return false;
     }
     string key = score.GetId().GetStr();
     if (seqId == mCurrentIdForAttributes  &&
-            std::find(coreScores.begin(), coreScores.end(), key) == coreScores.end()) {
+        coreScores.find(key) == coreScores.end()) {
         return false;
     }
-    if (std::find(supportedScores.begin(), supportedScores.end(), key)
-            == supportedScores.end()) {
+    if (supportedScores.find(key) == supportedScores.end()) {
         return false;
     }
     return true;
