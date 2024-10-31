@@ -37,6 +37,7 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(FSM);
 
+
 CMultipatternSearch::CMultipatternSearch() : m_FSM(new CRegExFSA) {}
 CMultipatternSearch::~CMultipatternSearch() {}
 
@@ -960,7 +961,7 @@ void CRegEx::CRegXTerm::Print(ostream& out, size_t off) const
 
 void CRegEx::CRegXAssert::Print(ostream& out, size_t off) const
 {
-    static const string A[] = { "error", "beginning of string", "end of string", "word boundary", "not word boundary", "look ahead", "look ahead negative", "look back", "look back negative" };
+    static const char* A[] = { "error", "beginning of string", "end of string", "word boundary", "not word boundary", "look ahead", "look ahead negative", "look back", "look back negative" };
     PrintOffset(out, off);
     out << "<assert>\t" << A[m_Assert] << "\n";
     if (m_RegX) {
