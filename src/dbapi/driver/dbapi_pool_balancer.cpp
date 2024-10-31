@@ -89,7 +89,7 @@ CDBPoolBalancer::CDBPoolBalancer(IDBServiceInfo& service_info,
     : CPoolBalancer(service_info.GetServiceName(), service_info.GetOptions(),
                     x_GetFlags(driver_ctx, is_pooled)),
       m_ServiceInfo(&service_info), m_PoolName(pool_name),
-      m_DriverCtx(driver_ctx), m_IsPooled(is_pooled)
+      m_DriverCtx(driver_ctx)
 {
     x_ReinitFromCounts();
 }
