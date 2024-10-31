@@ -71,6 +71,9 @@ CBlobOStream::CBlobOStream(CDB_Connection* connAux,
                                      (flags & fBOS_SkipLogging) == 0));
 }
 
+#ifdef NCBI_COARSE_DEPRECATION_WARNING_GRANULARITY
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+#endif
 CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
                            unsigned int item_num,
                            size_t datasize, 
@@ -81,10 +84,14 @@ CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
       m_conn(conn), m_destroyConn(false)
 {
     _TRACE("CBlobOStream: flags = " << flags);
+#ifndef NCBI_COARSE_DEPRECATION_WARNING_GRANULARITY
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+#endif
     ((CByteStreamBuf*)rdbuf())
         ->SetCmd(curCmd->SendDataCmd(item_num, datasize,
                                      (flags & fBOS_SkipLogging) == 0));
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 CBlobOStream::~CBlobOStream()
 {

@@ -1236,6 +1236,14 @@ EDB_ResType CTL_CursorResultExpl::ResultType() const
 }
 
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+inline
+static I_BlobDescriptor* s_GetBlobDescriptor(I_Result& result)
+{
+    return result.GetBlobDescriptor();
+}
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 bool CTL_CursorResultExpl::Fetch()
 {
     // try to get next cursor result
@@ -1276,7 +1284,7 @@ bool CTL_CursorResultExpl::Fetch()
         for (int i = 0; i < col_cnt; ++i) {
             EDB_Type item_type = m_Res->ItemDataType(m_Res->CurrentItemNo());
             if (CDB_Object::IsBlobType(item_type)) {
-                m_BlobDescrs[i] = m_Res->GetBlobDescriptor();
+                m_BlobDescrs[i] = s_GetBlobDescriptor(*m_Res);
                 if ((m_BlobDescrs[i]->DescriptorType()
                      == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM)
                     &&  (static_cast<CTL_BlobDescriptor*>(m_BlobDescrs[i])

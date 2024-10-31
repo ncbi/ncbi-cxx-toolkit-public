@@ -250,6 +250,14 @@ bool CResultSet::Next()
     return more;
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+inline
+static I_BlobDescriptor* s_GetBlobDescriptor(I_Result& result)
+{
+    return result.GetBlobDescriptor();
+}
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 void CResultSet::x_CacheItems(int last_num) {
     int ind;
     while ((ind = m_rs->CurrentItemNo()) >= 0 && ind <= last_num) {
@@ -258,7 +266,7 @@ void CResultSet::x_CacheItems(int last_num) {
         CVariant& var = m_data[ind];
         if (CDB_Object::IsBlobType(type)) {
             ((CDB_Stream*)var.GetNonNullData())->Truncate();
-            var.SetBlobDescriptor(m_rs->GetBlobDescriptor());
+            var.SetBlobDescriptor(s_GetBlobDescriptor(*m_rs));
         }
         m_rs->GetItem(var.GetNonNullData());
 
@@ -381,7 +389,7 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
     m_rs->ReadItem(0, 0);
 
 
-    unique_ptr<I_BlobDescriptor> desc(m_rs->GetBlobDescriptor());
+    unique_ptr<I_BlobDescriptor> desc(s_GetBlobDescriptor(*m_rs));
     if(desc.get() == NULL) {
 #ifdef _DEBUG
         NcbiCerr << "CResultSet::GetBlobOStream(): zero IT Descriptor" << endl;

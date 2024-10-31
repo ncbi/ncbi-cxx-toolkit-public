@@ -35,6 +35,23 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+
+inline
+static CBlobBookmark s_GetBookmark(const CQuery::CField& field)
+{
+    return field.GetBookmark();
+}
+
+inline
+static CNcbiOstream& s_GetOStream(const CQuery::CField& field,
+                                 size_t blob_size)
+{
+    return field.GetOStream(blob_size, kBOSFlags);
+}
+
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 
 BOOST_AUTO_TEST_CASE(Test_LOB)
 {
@@ -77,7 +94,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 query.RequireRowCount(1);
 
                 CQuery::iterator it = query.SingleSet().begin();
-                bm = it[1].GetBookmark();
+                bm = s_GetBookmark(it[1]);
                 BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
@@ -238,7 +255,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
             query.RequireRowCount(1);
 
             for (const auto& row: query.SingleSet()) {
-                ostream& out = row[1].GetOStream(clob_value.size(), kBOSFlags);
+                ostream& out = s_GetOStream(row[1], clob_value.size());
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
@@ -307,8 +324,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                         query.RequireRowCount(1);
 
                         for (const auto& row: query.SingleSet()) {
-                            ostream& out = row[1].GetOStream(clob_value.size(),
-                                                             kBOSFlags);
+                            ostream& out = s_GetOStream(row[1],
+                                                        clob_value.size());
                             out.write(clob_value.data(), clob_value.size());
                             out.flush();
                         }
@@ -489,8 +506,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
                 query.RequireRowCount(num_of_records);
 
                 for (const auto& row: query.SingleSet()) {
-                    ostream& out = row[1].GetOStream(sizeof(clob_value) - 1,
-                                                     kBOSFlags);
+                    ostream& out = s_GetOStream(row[1],
+                                                sizeof(clob_value) - 1);
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
@@ -812,8 +829,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
 
                 for (const auto& row: query.SingleSet()) {
                     for (unsigned int pos = 1; pos <= 4; ++pos) {
-                        ostream& out = row[pos].GetOStream(clob_value.size(),
-                                                           kBOSFlags);
+                        ostream& out = s_GetOStream(row[pos],
+                                                    clob_value.size());
                         out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
@@ -963,13 +980,17 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
 
         // Prepare data ...
         {
-            ostrstream out;
+            string data;
+            {
+                CNcbiOstrstream out;
 
-            for (int i = 0; i < test_size; ++i) {
-                out << i << " ";
+                for (int i = 0; i < test_size; ++i) {
+                    out << i << " ";
+                }
+                data = CNcbiOstrstreamToString(out);
+                data_len = data.size();
             }
 
-            data_len = long(out.pcount());
             BOOST_CHECK(data_len > 0);
 
             // Create and clean table ...
@@ -1010,10 +1031,9 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             query.RequireRowCount(1);
 
             for (const auto& row: query.SingleSet()) {
-                ostream& ostrm = row[1].GetOStream(data_len, kBOSFlags);
+                ostream& ostrm = s_GetOStream(row[1], data_len);
 
-                ostrm.write(out.str(), data_len);
-                out.freeze(false);
+                ostrm.write(data.data(), data_len);
 
                 BOOST_CHECK_EQUAL(ostrm.fail(), false);
 

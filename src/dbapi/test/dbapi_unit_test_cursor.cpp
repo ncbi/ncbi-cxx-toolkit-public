@@ -35,6 +35,15 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+inline
+static ostream& s_GetBlobOStream(ICursor& cursor, unsigned int col,
+                                 size_t blob_size)
+{
+    return cursor.GetBlobOStream(col, blob_size, kBOSFlags);
+}
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_Cursor)
 {
@@ -303,8 +312,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
                 unique_ptr<IResultSet> blobRs(auto_cursor->Open());
 
                 if (blobRs->Next()) {
-                    ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob),
-                                                               kBOSFlags);
+                    ostream& out = s_GetBlobOStream(*auto_cursor, 1,
+                                                    strlen(clob));
                     out.write(clob, strlen(clob));
                     out.flush();
                 } else {
@@ -330,8 +339,7 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
                     BOOST_FAIL( msg_record_expected );
                 }
 
-                ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob),
-                                                           kBOSFlags);
+                ostream& out = s_GetBlobOStream(*auto_cursor, 1, strlen(clob));
                 out.write(clob, strlen(clob));
                 out.flush();
             }
