@@ -445,7 +445,7 @@ I_BlobDescriptor& CSimpleBlobStore::BlobDescriptor(void)
         s.append(m_Key.AsString());
         s += "' AND " + m_NumColName + "=";
         char buf[32];
-        sprintf(buf, "%ld", (long) m_RowNum.Value());
+        snprintf(buf, sizeof(buf), "%ld", (long) m_RowNum.Value());
         s.append(buf);
 
         m_Desc.SetSearchConditions(s);
@@ -617,7 +617,7 @@ CBlobStoreBase::SetTableDescr(const string& tableName,
                               const string& keyColName,
                               const string& numColName,
                               const string* blobColNames,
-                              unsigned nofBC,
+                              size_t nofBC,
                               bool isText)
 {
     if(m_BlobColumn)
@@ -646,7 +646,7 @@ CBlobStoreBase::SetTableDescr(const string& tableName,
     m_BlobColumn = new string[m_NofBC+1];
     m_BlobColumn[m_NofBC] = kEmptyStr;
 
-    for(unsigned i=0; i<m_NofBC; ++i)
+    for(size_t i=0; i<m_NofBC; ++i)
         m_BlobColumn[i] = blobColNames[i];
 }
 
@@ -690,7 +690,7 @@ void CBlobStoreBase::GenReadQuery(const CTempString& table_hint)
     m_ReadQuery = kEmptyStr;
 
     m_ReadQuery = "select ";
-    for(unsigned i= 0; i < m_NofBC; i++)
+    for(size_t i= 0; i < m_NofBC; i++)
     {
         if(i) m_ReadQuery+= ", ";
         m_ReadQuery+= m_BlobColumn[i];
@@ -911,7 +911,7 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
                                    const string& keyColName,
                                    const string& numColName,
                                    const string* blobColNames,
-                                   unsigned nofBC,
+                                   size_t nofBC,
                                    bool isText,
                                    ECompressMethod cm,
                                    size_t image_limit,
@@ -932,7 +932,7 @@ CBlobStoreStatic::CBlobStoreStatic(CDB_Connection* pConn,
                                    const string& keyColName,
                                    const string& numColName,
                                    const string* blobColNames,
-                                   unsigned nofBC,
+                                   size_t nofBC,
                                    CSimpleBlobStore::TFlags flags,
                                    ECompressMethod cm,
                                    size_t image_limit)
