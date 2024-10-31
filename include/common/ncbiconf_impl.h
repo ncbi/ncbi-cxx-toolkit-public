@@ -200,6 +200,39 @@
 #  define NCBI_DEPRECATED NCBI_LEGACY_DEPRECATED_0
 #endif
 
+#ifdef __clang__ // ... including modern ICC
+// Preexpand to reduce warning noise -- Clang otherwise recapitulates these
+// macros' expansions step by step.
+#  undef NCBI_DEPRECATED
+#  define NCBI_DEPRECATED __attribute__((deprecated))
+#  undef NCBI_STD_DEPRECATED
+#  if NCBI_HAS_STD_ATTRIBUTE(deprecated)
+#    define NCBI_STD_DEPRECATED(message) [[deprecated(message)]]
+#  else
+#    define NCBI_STD_DEPRECATED(message) __attribute__((deprecated(message)))
+#  endif
+#endif
+
+#ifdef NCBI_COMPILER_MSVC
+#  define NCBI_SUSPEND_DEPRECATION_WARNINGS \
+    _Pragma("warning(push)") _Pragma("warning(disable : 4996)")
+#  define NCBI_RESUME_DEPRECATION_WARNINGS _Pragma("warning(pop)")
+#  define NCBI_COARSE_DEPRECATION_WARNING_GRANULARITY 1
+#elif defined(NCBI_COMPILER_ICC)  &&  !defined(__clang__)
+#  define NCBI_SUSPEND_DEPRECATION_WARNINGS \
+    _Pragma("warning(push)") _Pragma("warning(disable : 1478)")
+#  define NCBI_RESUME_DEPRECATION_WARNINGS _Pragma("warning(pop)")
+#elif defined(NCBI_COMPILER_GCC)  ||  defined(NCBI_COMPILER_ICC) \
+    ||  defined(NCBI_COMPILER_ANY_CLANG)
+#  define NCBI_SUSPEND_DEPRECATION_WARNINGS \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#  define NCBI_RESUME_DEPRECATION_WARNINGS _Pragma("GCC diagnostic pop")
+#else
+#  define NCBI_SUSPEND_DEPRECATION_WARNINGS
+#  define NCBI_RESUME_DEPRECATION_WARNINGS
+#endif
+
 #ifndef NCBI_FORCEINLINE
 #  ifdef __cplusplus
 #    define NCBI_FORCEINLINE inline
