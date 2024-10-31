@@ -314,7 +314,7 @@ protected:
                        const string& keyColName,
                        const string& numColName,
                        const string* blobColNames,
-                       unsigned nofBC,
+                       size_t nofBC,
                        bool isText = false);
     void SetTextSizeServerSide(CDB_Connection* pConn,
                                size_t textSize = 2147483647);
@@ -332,7 +332,7 @@ private:
     string m_NumColName;
     string m_ReadQuery;
     string* m_BlobColumn;
-    unsigned m_NofBC;
+    size_t m_NofBC;
 };
 
 
@@ -364,7 +364,7 @@ public:
                      const string& keyColName,
                      const string& numColName,
                      const string* blobColNames,
-                     unsigned nofBC,
+                     size_t nofBC,
                      CSimpleBlobStore::TFlags flags
                      = CSimpleBlobStore::kDefaults,
                      ECompressMethod cm = eNone,
@@ -375,7 +375,7 @@ public:
                      const string& keyColName,
                      const string& numColName,
                      const string* blobColNames,
-                     unsigned nofBC,
+                     size_t nofBC,
                      bool isText,
                      ECompressMethod cm = eNone,
                      size_t image_limit = IMAGE_LIMIT_16MB,
