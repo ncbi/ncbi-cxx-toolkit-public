@@ -37,6 +37,23 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+
+inline
+static I_BlobDescriptor* s_GetBlobDescriptor(I_Result& result)
+{
+    return result.GetBlobDescriptor();
+}
+
+inline
+static ostream& s_GetBlobOStream(ICursor& cursor, unsigned int col,
+                                 size_t blob_size)
+{
+    return cursor.GetBlobOStream(col, blob_size, kBOSFlags);
+}
+
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 {
@@ -83,7 +100,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Replication)
 
                 while(rs->Fetch()) {
                     rs->ReadItem(NULL, 0);
-                    descr[i].reset(rs->GetBlobDescriptor());
+                    descr[i].reset(s_GetBlobDescriptor(*rs));
                     ++i;
 
                 }
@@ -133,9 +150,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             // blobRs should be destroyed before auto_cursor ...
             unique_ptr<IResultSet> blobRs(auto_cursor->Open());
             while(blobRs->Next()) {
-                ostream& out = auto_cursor->GetBlobOStream(1,
-                                                           clob_value.size(),
-                                                           kBOSFlags);
+                ostream& out = s_GetBlobOStream(*auto_cursor, 1,
+                                                clob_value.size());
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
@@ -285,9 +301,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                             // blobRs should be destroyed before auto_cursor ...
                             unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                             while(blobRs->Next()) {
-                                ostream& out = auto_cursor->GetBlobOStream(1,
-                                        clob_value.size(),
-                                        kBOSFlags);
+                                ostream& out = s_GetBlobOStream(
+                                    *auto_cursor, 1, clob_value.size());
                                 out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
@@ -302,9 +317,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                             // blobRs should be destroyed before auto_cursor ...
                             unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                             while(blobRs->Next()) {
-                                ostream& out = auto_cursor->GetBlobOStream(1,
-                                        clob_value.size(),
-                                        kBOSFlags);
+                                ostream& out = s_GetBlobOStream(
+                                    *auto_cursor, 1, clob_value.size());
                                 out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
@@ -491,11 +505,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                 // blobRs should be destroyed before auto_cursor ...
                 unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                 while(blobRs->Next()) {
-                    ostream& out =
-                        auto_cursor->GetBlobOStream(1,
-                                                    sizeof(clob_value) - 1,
-                                                    kBOSFlags
-                                                    );
+                    ostream& out = s_GetBlobOStream(
+                        *auto_cursor, 1, sizeof(clob_value) - 1);
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
@@ -718,11 +729,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 unique_ptr<IResultSet> blobRs(auto_cursor->Open());
                 while(blobRs->Next()) {
                     for (int pos = 1; pos <= 4; ++pos) {
-                        ostream& out =
-                            auto_cursor->GetBlobOStream(pos,
-                                                        clob_value.size(),
-                                                        kBOSFlags
-                                                        );
+                        ostream& out = s_GetBlobOStream(*auto_cursor, pos,
+                                                        clob_value.size());
                         out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
@@ -817,7 +825,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
 
                 while(rs->Fetch()) {
                     rs->ReadItem(NULL, 0);
-                    descr.reset(rs->GetBlobDescriptor());
+                    descr.reset(s_GetBlobDescriptor(*rs));
                 }
             }
 
@@ -984,19 +992,19 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_LowLevel)
                 while (rs->Fetch()) {
                     // ReadItem must not be called here
                     //rs->ReadItem(NULL, 0);
-                    text01.reset(rs->GetBlobDescriptor());
+                    text01.reset(s_GetBlobDescriptor(*rs));
                     BOOST_CHECK(text01.get());
                     rs->SkipItem();
 
-                    text02.reset(rs->GetBlobDescriptor());
+                    text02.reset(s_GetBlobDescriptor(*rs));
                     BOOST_CHECK(text02.get());
                     rs->SkipItem();
 
-                    image01.reset(rs->GetBlobDescriptor());
+                    image01.reset(s_GetBlobDescriptor(*rs));
                     BOOST_CHECK(image01.get());
                     rs->SkipItem();
 
-                    image02.reset(rs->GetBlobDescriptor());
+                    image02.reset(s_GetBlobDescriptor(*rs));
                     BOOST_CHECK(image02.get());
                     rs->SkipItem();
                 }
@@ -1128,9 +1136,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             // blobRs should be destroyed before auto_cursor ...
             unique_ptr<IResultSet> blobRs(auto_cursor->Open());
             while (blobRs->Next()) {
-                ostream& ostrm = auto_cursor->GetBlobOStream(1,
-                                                             data_len,
-                                                             kBOSFlags);
+                ostream& ostrm = s_GetBlobOStream(*auto_cursor, 1, data_len);
                 string s = CNcbiOstrstreamToString(out);
 
                 ostrm.write(s.data(), data_len);
@@ -1352,7 +1358,7 @@ BOOST_AUTO_TEST_CASE(Test_Iskhakov)
             while(rs->Fetch()) {
                 rs->ReadItem(NULL, 0);
 
-                descr.reset(rs->GetBlobDescriptor());
+                descr.reset(s_GetBlobDescriptor(*rs));
             }
         }
     }

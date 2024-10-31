@@ -79,6 +79,7 @@ ERW_Result CxBlobReader::PendingCount(size_t* /* count */)
 
 //------------------------------------------------------------------------------------------------
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
                          unsigned int item_num,
                          size_t datasize, 
@@ -88,6 +89,7 @@ CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
     m_dataCmd = curCmd->SendDataCmd(item_num, datasize,
                                     (flags & fBOS_SkipLogging) == 0);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 CxBlobWriter::CxBlobWriter(CDB_Connection* conn,
                          I_BlobDescriptor &d,

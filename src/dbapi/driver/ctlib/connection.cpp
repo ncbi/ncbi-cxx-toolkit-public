@@ -1324,6 +1324,14 @@ bool CTL_Connection::x_SendUpdateWrite(CDB_BlobDescriptor& desc,
 }
 
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+inline
+static I_BlobDescriptor* s_GetBlobDescriptor(I_Result& result)
+{
+    return result.GetBlobDescriptor();
+}
+NCBI_RESUME_DEPRECATION_WARNINGS
+
 I_BlobDescriptor*
 CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
 {
@@ -1364,7 +1372,7 @@ CTL_Connection::x_GetNativeBlobDescriptor(const CDB_BlobDescriptor& descr_in)
         if((res->ResultType() == eDB_RowResult) && (descr == NULL)) {
             while(res->Fetch()) {
                 // res->ReadItem(NULL, 0);
-                descr = res->GetBlobDescriptor();
+                descr = s_GetBlobDescriptor(*res);
                 if (descr) {
                     _ASSERT(descr->DescriptorType()
                             == CTL_BLOB_DESCRIPTOR_TYPE_MAGNUM);
