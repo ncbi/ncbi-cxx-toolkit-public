@@ -1341,6 +1341,7 @@ struct SStringDataSizeValues
     }
 };
 
+static const NStr::TStringToNumFlags kNoThrow = NStr::fConvErr_NoThrow;
 static const SStringDataSizeValues s_Str2DataSizeTests[] = {
     // str  flags     num
     { "10",    0,      10 },
@@ -1469,18 +1470,18 @@ static const SStringDataSizeValues s_Str2DataSizeTests[] = {
     { "123,4,,56", NStr::fAllowCommas + NStr::fAllowTrailingSymbols, 1234 },
     { ",123,4", NStr::fAllowCommas, kBad },
     { ",123,4", NStr::fAllowCommas + NStr::fAllowLeadingSymbols, 1234 },
-    { "10", NStr::fDecimalPosix + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDecimalPosixOrLocal + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fWithSign + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fWithCommas + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDoubleFixed + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDoubleScientific + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDoublePosix + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDS_Binary + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDS_NoDecimalPoint + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDS_PutSpaceBeforeSuffix + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDS_ShortSuffix + NStr::fConvErr_NoThrow, kBad },
-    { "10", NStr::fDS_PutBSuffixToo + NStr::fConvErr_NoThrow, kBad }
+    { "10", NStr::fDecimalPosix + kNoThrow, kBad },
+    { "10", NStr::fDecimalPosixOrLocal + kNoThrow, kBad },
+    { "10", NStr::fWithSign + kNoThrow, kBad },
+    { "10", NStr::fWithCommas + kNoThrow, kBad },
+    { "10", NStr::fDoubleFixed + kNoThrow, kBad },
+    { "10", NStr::fDoubleScientific + kNoThrow, kBad },
+    { "10", NStr::fDoublePosix + kNoThrow, kBad },
+    { "10", NStr::fDS_Binary + kNoThrow, kBad },
+    { "10", NStr::fDS_NoDecimalPoint + kNoThrow, kBad },
+    { "10", NStr::fDS_PutSpaceBeforeSuffix + kNoThrow, kBad },
+    { "10", NStr::fDS_ShortSuffix + kNoThrow, kBad },
+    { "10", NStr::fDS_PutBSuffixToo + kNoThrow, kBad }
 };
 
 BOOST_AUTO_TEST_CASE(s_StringToNum_DataSize)
@@ -3891,6 +3892,9 @@ static const SFindStr s_FindStrTest[] =
 };
 
 
+#ifdef NCBI_COARSE_DEPRECATION_WARNING_GRANULARITY
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+#endif
 BOOST_AUTO_TEST_CASE(s_Find)
 {
     {
@@ -3910,6 +3914,9 @@ BOOST_AUTO_TEST_CASE(s_Find)
     // @deprecated
     // TODO: change to Find() later.
     
+#ifndef NCBI_COARSE_DEPRECATION_WARNING_GRANULARITY
+NCBI_SUSPEND_DEPRECATION_WARNINGS
+#endif
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz"),                           NPOS);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz"),                           NPOS);
@@ -3920,6 +3927,7 @@ BOOST_AUTO_TEST_CASE(s_Find)
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5U);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5U);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 BOOST_AUTO_TEST_CASE(s_FindWord)
