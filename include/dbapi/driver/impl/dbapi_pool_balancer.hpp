@@ -86,7 +86,6 @@ private:
     I_DriverContext*     m_DriverCtx;
     TFakeConnections     m_FakeConnections;
     CFastMutex           m_FakeConnLock;
-    bool                 m_IsPooled;
 };
 
 
