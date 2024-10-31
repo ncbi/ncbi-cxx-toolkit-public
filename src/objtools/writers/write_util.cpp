@@ -576,12 +576,14 @@ bool CWriteUtil::GetTrnaProductName(
         "tRNA-Arg", "tRNA-Ser", "tRNA-Thr", "tRNA-Sec", "tRNA-Val", "tRNA-Trp",
         "tRNA-OTHER", "tRNA-Tyr", "tRNA-Glx", "tRNA-TERM"
     };
+    static int sTrnaListSize = static_cast<int>(ArraySize(sTrnaList));
+    
     if (!trna.IsSetAa()  ||  !trna.GetAa().IsNcbieaa()) {
         return false;
     }
     int aa = trna.GetAa().GetNcbieaa();
     (aa == '*') ? (aa = 25) : (aa -= 64);
-    name = ((0 < aa  &&  aa < ArraySize(sTrnaList)) ? sTrnaList[aa] : "");
+    name = ((0 < aa  &&  aa < sTrnaListSize) ? sTrnaList[aa] : "");
     return true;
 }
 
