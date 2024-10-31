@@ -487,6 +487,13 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
     CRequestStatus::ECode   ret_code = CRequestStatus::e200_Ok;
     string                  err_msg = "";
 
+    if (request_context.NotNull()) {
+        // psg client API internally tries to modify the request context.
+        // It uses GetNextSubHitID() method. To let it do it the read only
+        // property should be reset and then restored
+        CDiagContext::GetRequestContext().SetReadOnly(false);
+    }
+
     // Prepare request and send it
     auto        self_request = CPSG_Misc::CreateRawRequest
                             (health_command, nullptr, request_context);
@@ -530,6 +537,11 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
                 break;
             }
         }
+    }
+
+    if (request_context.NotNull()) {
+        // Restore the read only property after a seft request is completed
+        CDiagContext::GetRequestContext().SetReadOnly(true);
     }
 
     if (verbose) {
