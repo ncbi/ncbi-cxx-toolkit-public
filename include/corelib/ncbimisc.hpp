@@ -1214,6 +1214,15 @@ private:
 /// @sa NCBI_DEPRECATED_CTOR
 #define NCBI_DEPRECATED_CLASS NCBI_DEPRECATED_CTOR(class)
 
+#ifdef __clang__ // ... including modern ICC
+// Preexpand to reduce warning noise -- Clang otherwise recapitulates these
+// macros' expansions step by step.
+#  undef NCBI_DEPRECATED_CTOR
+#  undef NCBI_DEPRECATED_CLASS
+#  define NCBI_DEPRECATED_CTOR(decl) decl  __attribute__((deprecated))
+#  define NCBI_DEPRECATED_CLASS      class __attribute__((deprecated))
+#endif
+
 //#define NCBI_ENABLE_SAFE_FLAGS
 #ifdef NCBI_ENABLE_SAFE_FLAGS
 /////////////////////////////////////////////////////////////////////////////
@@ -1252,16 +1261,16 @@ public:
     typedef Enum enum_type;
     typedef typename underlying_type<enum_type>::type storage_type;
 
-    CSafeFlags()
+    constexpr CSafeFlags()
         : m_Flags(0)
         {
         }
     explicit
-    CSafeFlags(storage_type flags)
+    constexpr CSafeFlags(storage_type flags)
         : m_Flags(flags)
         {
         }
-    CSafeFlags(enum_type flags)
+    constexpr CSafeFlags(enum_type flags)
         : m_Flags(static_cast<storage_type>(flags))
         {
         }
