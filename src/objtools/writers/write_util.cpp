@@ -258,7 +258,7 @@ bool CWriteUtil::GetAaName(
         default:
             return false;
     }
-    aaName = ((aa < sizeof(AANames)/sizeof(*AANames)) ? AANames[aa] : other);
+    aaName = ((aa < ArraySize(AANames)) ? AANames[aa] : other);
     return true;
 }
 
@@ -569,21 +569,19 @@ bool CWriteUtil::GetTrnaProductName(
     string& name )
 //  ----------------------------------------------------------------------------
 {
-    static const string sTrnaList[] = {
+    static const char* sTrnaList[] = {
         "tRNA-Gap", "tRNA-Ala", "tRNA-Asx", "tRNA-Cys", "tRNA-Asp", "tRNA-Glu",
         "tRNA-Phe", "tRNA-Gly", "tRNA-His", "tRNA-Ile", "tRNA-Xle", "tRNA-Lys",
         "tRNA-Leu", "tRNA-Met", "tRNA-Asn", "tRNA-Pyl", "tRNA-Pro", "tRNA-Gln",
         "tRNA-Arg", "tRNA-Ser", "tRNA-Thr", "tRNA-Sec", "tRNA-Val", "tRNA-Trp",
         "tRNA-OTHER", "tRNA-Tyr", "tRNA-Glx", "tRNA-TERM"
     };
-    static int AACOUNT = sizeof(sTrnaList)/sizeof(string);
-
     if (!trna.IsSetAa()  ||  !trna.GetAa().IsNcbieaa()) {
         return false;
     }
     int aa = trna.GetAa().GetNcbieaa();
     (aa == '*') ? (aa = 25) : (aa -= 64);
-    name = ((0 < aa  &&  aa < AACOUNT) ? sTrnaList[aa] : "");
+    name = ((0 < aa  &&  aa < ArraySize(sTrnaList)) ? sTrnaList[aa] : "");
     return true;
 }
 
