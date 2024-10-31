@@ -569,7 +569,7 @@ const CVersionInfo& CConnection::GetVersionInfo() const
         unique_ptr<CVersionInfo> info(new CVersionInfo);
         ParseVersionString(m_connection->GetVersionString(),
                            &name, info.get());
-        m_versionInfo = move(info);
+        m_versionInfo = std::move(info);
     }
     return *m_versionInfo;
 }
