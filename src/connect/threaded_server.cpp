@@ -41,17 +41,19 @@
 BEGIN_NCBI_SCOPE
 
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 class CSocketRequest : public CStdRequest
 {
 public:
-    CSocketRequest(CThreadedServer& server, SOCK sock) // NCBI_FAKE_WARNING
+    CSocketRequest(CThreadedServer& server, SOCK sock)
         : m_Server(server), m_Sock(sock) {}
     virtual void Process(void);
 
 private:
-    CThreadedServer& m_Server; // NCBI_FAKE_WARNING
+    CThreadedServer& m_Server;
     SOCK             m_Sock;
 };
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 void CSocketRequest::Process(void)
