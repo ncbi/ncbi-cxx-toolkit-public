@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 
 
 static          unsigned int s_Requests;
-static volatile unsigned int s_Processed = 0;
+static CAtomicCounter_WithAutoInit s_Processed;
 DEFINE_STATIC_FAST_MUTEX(s_Mutex);
 
 
@@ -92,7 +92,8 @@ static void s_Send(const string& host, unsigned short port,
     case eHello:
     {
         CFastMutexGuard guard(s_Mutex);
-        cerr << "Processed " << ++s_Processed << "/" << s_Requests << endl;
+        cerr << "Processed " << s_Processed.Add(1) << "/" << s_Requests
+             << endl;
         break;
     }
     case eGoodbye:
