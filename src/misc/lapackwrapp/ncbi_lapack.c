@@ -44,6 +44,7 @@
 #  define HAVE_LAPACK_CONFIG_H 1
 #  include <lapacke/lapacke.h>
 #elif defined(HAVE_ACCELERATE_ACCELERATE_H)
+#  define ACCELERATE_NEW_LAPACK
 #  include <Accelerate/Accelerate.h>
 #elif defined(HAVE___CLPK_INTEGER)
 #  include <clapack.h>
@@ -72,6 +73,11 @@ typedef lapack_int            TLapackInt;
 typedef lapack_logical        TLapackLogical;
 typedef lapack_complex_float  TLapackComplexFloat;
 typedef lapack_complex_double TLapackComplexDouble;
+#elif defined(__LAPACK_SUFFIX_NEW_LAPACK)
+typedef __LAPACK_int            TLapackInt;
+typedef __LAPACK_bool           TLapackLogical;
+typedef __LAPACK_float_complex  TLapackComplexFloat;
+typedef __LAPACK_double_complex TLapackComplexDouble;
 #elif defined(HAVE___CLPK_INTEGER) 
 typedef __CLPK_integer       TLapackInt;
 typedef __CLPK_logical       TLapackLogical;
