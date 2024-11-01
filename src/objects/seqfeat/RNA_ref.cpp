@@ -121,7 +121,7 @@ static CTempString s_AaName(int aa)
         idx = 27;  
     }
 
-    if (idx > 0 && idx < ArraySize(sc_TrnaList)) {
+    if (idx > 0  &&  idx < (int) ArraySize(sc_TrnaList)) {
         return sc_TrnaList [idx];
     }
     return kEmptyStr;
@@ -183,7 +183,7 @@ static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& rem
     } else {
         remainder = product;
         bool found_three_letter_code = false;
-        for (int i = 0; i < ArraySize(sc_TrnaList); ++i) {
+        for (int i = 0; i < (int) ArraySize(sc_TrnaList); ++i) {
             if (NStr::StartsWith(test, sc_TrnaList[i], NStr::eNocase)) {
                 trna.SetAa().SetNcbieaa(i + 64);
                 remainder = test.substr(CTempString(sc_TrnaList[i]).length());
