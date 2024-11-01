@@ -111,6 +111,7 @@ IResultSet::~IResultSet()
 {
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream& IResultSet::GetBlobOStream(size_t blob_size, EAllowLog log_it,
                                          size_t buf_size)
 {
@@ -126,6 +127,7 @@ CNcbiOstream& IResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
                           (log_it == eDisableLog) ? fBOS_SkipLogging : 0,
                           buf_size);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 IResultSetMetaData::~IResultSetMetaData()
 {
@@ -149,6 +151,7 @@ ICursor::~ICursor()
 {
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream& ICursor::GetBlobOStream(unsigned int col, size_t blob_size,
                                       EAllowLog log_it, size_t buf_size)
 {
@@ -163,6 +166,7 @@ IWriter* ICursor::GetBlobWriter(unsigned int col, size_t blob_size,
     return GetBlobWriter(col, blob_size,
                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 IBulkInsert::~IBulkInsert()
 {

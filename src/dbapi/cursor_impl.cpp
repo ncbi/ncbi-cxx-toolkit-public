@@ -103,6 +103,7 @@ void CCursor::Delete(const string& table)
     GetCursorCmd()->Delete(table);
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
                                       size_t blob_size, 
                                       TBlobOStreamFlags flags,
@@ -150,6 +151,7 @@ IWriter* CCursor::GetBlobWriter(unsigned int col,
 {
     return ICursor::GetBlobWriter(col, blob_size, log_it);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 void CCursor::Cancel()
 {

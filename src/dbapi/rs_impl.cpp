@@ -330,6 +330,7 @@ CNcbiIstream& CResultSet::GetBlobIStream(size_t buf_size)
     return *m_istr;
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
                                          EAllowLog log_it,
                                          size_t buf_size)
@@ -344,6 +345,7 @@ CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn,
 {
     return IResultSet::GetBlobOStream(conn, blob_size, log_it, buf_size);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 IReader* CResultSet::GetBlobReader()
 {
@@ -353,6 +355,7 @@ IReader* CResultSet::GetBlobReader()
     return m_rd;
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
                                          TBlobOStreamFlags flags,
 										 size_t buf_size)
@@ -371,6 +374,7 @@ CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn,
 	return xGetBlobOStream(conn->GetCDB_Connection(), blob_size,
                            flags, buf_size, false);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn, 
 										  size_t blob_size,
