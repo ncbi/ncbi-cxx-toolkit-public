@@ -3635,7 +3635,7 @@ CFastaOstream::GetGapModText(
 template <class Container>
 void x_Translate(const Container& seq,
                  string& prot,
-                 int frame,
+                 unsigned int frame,
                  const CGenetic_code* code,
                  bool is_5prime_complete,
                  bool is_3prime_complete,
@@ -3661,7 +3661,7 @@ void x_Translate(const Container& seq,
         // main loop through bases
         typename Container::const_iterator start = seq.begin();
         {{
-                for (int i = 0; i < frame; ++i) {
+                for (unsigned int i = 0; i < frame; ++i) {
                     ++start;
                 }
         }}
@@ -4188,7 +4188,7 @@ void CSeqTranslator::Translate(const CSeq_feat& feat,
                                bool* alt_start)
 {
     const CGenetic_code* code = NULL;
-    int frame = 0;
+    unsigned int frame = 0;
     if (feat.GetData().IsCdregion()) {
         const CCdregion& cdr = feat.GetData().GetCdregion();
         if (cdr.IsSetFrame ()) {
