@@ -603,7 +603,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             AutoArray<char> buf(n);
             par.MoveTo(0);
             CS_INT n2 = static_cast<CS_INT>(par.Read(buf.get(), n));
-            _ASSERT(n2 == n);
+            _ASSERT(n2 >= 0  &&  static_cast<size_t>(n2) == n);
             ret_code = Check(ct_param(x_GetSybaseCmd(), &param_fmt,
                                       buf.get(), n2, indicator));
         }
@@ -877,6 +877,10 @@ CTL_LRCmd::x_Cancel(ECancelType cancel_type)
                 switch (cancel_type) {
                 case eAsyncCancel:  guard_ctx = TGuard::eAsyncCancel;  break;
                 case eSyncCancel:   guard_ctx = TGuard::eSyncCancel;   break;
+                default:
+                    DATABASE_DRIVER_ERROR(FORMAT("Invalid cancel type "
+                                                 << cancel_type)
+                                          + GetDbgInfo(), 122011);
                 }
                 TGuard guard(GetConnection(), guard_ctx);
                 if ( !guard.IsForCancelInProgress() ) {
