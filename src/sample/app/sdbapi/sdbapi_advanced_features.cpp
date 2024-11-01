@@ -353,7 +353,7 @@ int CSdbapiTest::Run()
         query.VerifyDone();
         cout << "Done." << endl;
     }
-    catch(out_of_range) {
+    catch(out_of_range&) {
         cout << "Exception: Out of range" << endl;
         return 1;
     }
