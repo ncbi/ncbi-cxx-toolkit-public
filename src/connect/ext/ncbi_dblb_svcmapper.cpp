@@ -230,7 +230,8 @@ CDBLB_ServiceMapper::GetServersList(const string& service, list<string>* serv_li
     serv_list->clear();
     SConnNetInfo* net_info = ConnNetInfo_Create(service.c_str());
     SERV_ITER srv_it = SERV_Open(service.c_str(),
-                                 fSERV_Standalone | fSERV_IncludeDown,
+                                 fSERV_Standalone
+                                 | (TSERV_Type) fSERV_IncludeDown,
                                  0, net_info);
     ConnNetInfo_Destroy(net_info);
     const SSERV_Info* sinfo;
@@ -296,8 +297,8 @@ CDBLB_ServiceMapper::GetServerOptions(const string& service, TOptions* options)
         }
     }
 
-    TSERV_Type     type      = (fSERV_Standalone | fSERV_ReverseDns
-                                | fSERV_Promiscuous);
+    TSERV_Type     type      = ((TSERV_Type) fSERV_Standalone
+                                | fSERV_ReverseDns | fSERV_Promiscuous);
     SConnNetInfo*  net_info  = ConnNetInfo_Create(service.c_str());
     SERV_ITER      srv_it    = SERV_Open(service.c_str(), type, 0, net_info);
     ConnNetInfo_Destroy(net_info);
