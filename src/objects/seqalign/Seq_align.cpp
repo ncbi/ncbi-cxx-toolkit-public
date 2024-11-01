@@ -1361,6 +1361,7 @@ void CSeq_align::OffsetRow(TDim row,
 }
 
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 /// @deprecated
 void CSeq_align::RemapToLoc(TDim row,
                             const CSeq_loc& dst_loc,
@@ -1396,6 +1397,7 @@ void CSeq_align::RemapToLoc(TDim row,
                    "CSeq_align::RemapToLoc only supports Dense-seg and Std-seg alignments.");
     }
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 CRef<CSeq_align> RemapAlignToLoc(const CSeq_align& align,
