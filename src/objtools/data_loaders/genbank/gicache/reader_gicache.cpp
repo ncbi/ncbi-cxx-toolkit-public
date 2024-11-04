@@ -44,8 +44,13 @@
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 
-#include "gicache.h"
+//#define USE_GICACHE
 
+#ifdef USE_GICACHE
+# include "gicache.h"
+#else
+# define DEFAULT_GI_CACHE_PATH ""
+#endif
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_GICache
 
@@ -75,11 +80,14 @@ CGICacheReader::CGICacheReader(const TPluginManagerParamTree* params,
 
 CGICacheReader::~CGICacheReader()
 {
+#ifdef USE_GICACHE
     CMutexGuard guard(m_Mutex);
     GICache_ReadEnd();
+#endif
 }
 
 
+#ifdef USE_GICACHE
 static
 void s_LogFunc(int severity, char* msg)
 {
@@ -102,11 +110,13 @@ void s_LogFunc(int severity, char* msg)
     };
     ERR_POST(Severity(sev[min(size_t(severity), ArraySize(sev)-1)]) << msg);
 }
+#endif
 
 
 void CGICacheReader::x_Initialize(void)
 {
     ERR_POST_ONCE("This app is using deprecated OM++ reader gicache. Please remove it from your configuration.");
+#ifdef USE_GICACHE
     string index = m_Path;
     if ( CFile(index).IsDir() ) {
         const char* file;
@@ -120,6 +130,7 @@ void CGICacheReader::x_Initialize(void)
     CMutexGuard guard(m_Mutex);
     GICache_SetLogEx(s_LogFunc);
     GICache_ReadData(index.c_str());
+#endif
 }
 
 
@@ -166,6 +177,7 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
 {
     if ( seq_id.IsGi() ) {
         CLoadLockAcc ids(result, seq_id);
+#ifdef USE_GICACHE
         char buffer[256];
         int got;
         {{
@@ -187,6 +199,7 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
                 }
             }
         }
+#endif
     }
     // if any problem occurs -> fall back to regular reader
     return false;
