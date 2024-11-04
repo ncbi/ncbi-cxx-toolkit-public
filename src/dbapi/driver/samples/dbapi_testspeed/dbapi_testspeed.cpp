@@ -363,6 +363,7 @@ CDbapiTestSpeedApp::RunSample(void)
                 if ( col_count > 3 ) bcp->Bind(3, &str_val );
                 if ( col_count > 4 ) bcp->Bind(4, &pTxt    );
             } else {
+                _ASSERT(ins_cmd.get());
                 if ( !ins_cmd->BindParam("@i", &int_val) ) {
                     cerr << "Error in BindParam()\n";
                     DeleteTable(GetTableName());
@@ -400,6 +401,7 @@ CDbapiTestSpeedApp::RunSample(void)
                     }
                     ++count;
                 } else {
+                    _ASSERT(ins_cmd.get());
                     ins_cmd->Send();
                     while ( ins_cmd->HasMoreResults() ) {
                         unique_ptr<CDB_Result> r(ins_cmd->Result());
@@ -551,7 +553,7 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
                          rt != eDB_DateTime && rt != eDB_SmallDateTime ) {
                         bool isNull;
                         char buf[1024];
-                        size_t sz=0;
+                        size_t sz NCBI_UNUSED = 0;
                         while ( j == (unsigned int) r->CurrentItemNo() ) {
                             sz += r->ReadItem(buf, sizeof(buf), &isNull);
                         }
