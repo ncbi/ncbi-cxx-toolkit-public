@@ -3864,12 +3864,14 @@ CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
     return m_Impl->GetOStream(blob_size, flags);
 }
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 CNcbiOstream&
 CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it) const
 {
     return GetOStream(blob_size,
                       (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 CBlobBookmark IQueryFieldBasis::GetBookmark(void) const
 {
