@@ -519,9 +519,9 @@ private:
                            CRebase::EEnzymesToLoad which_enzymes);
 
     static void x_ExpandRecursion(string& s, unsigned int pos,
-                                  CTextFsm<int>& fsm, int match_value);
-    static void x_AddPattern(const string& pat, CTextFsm<int>& fsm,
-                             int match_value);
+                                  CTextFsm<size_t>& fsm, size_t match_value);
+    static void x_AddPattern(const string& pat, CTextFsm<size_t>& fsm,
+                             size_t match_value);
     static bool x_IsAmbig(char nuc);
 
     template<class Seq>
