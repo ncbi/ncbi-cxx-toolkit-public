@@ -172,8 +172,8 @@ CRSpec CRebase::MakeRSpec(const string& site)
         }
         x_ParseCutPair(s.substr(idx), plus_cut, minus_cut);
         s.erase(idx);
-        spec.SetPlusCuts().push_back(plus_cut + s.length());
-        spec.SetMinusCuts().push_back(minus_cut + s.length());
+        spec.SetPlusCuts().push_back(plus_cut + (TSeqPos) s.length());
+        spec.SetMinusCuts().push_back(minus_cut + (TSeqPos) s.length());
     }
     for (unsigned int i = 0;  i < s.length();  i++) {
         if (s[i] == '^') {
@@ -209,7 +209,7 @@ CRSpec CRebase::MakeRSpec(const string& site)
             // plus strand cut
             spec.SetPlusCuts().push_back(plus_cut);
             // symmetric cut on minus strand
-            spec.SetMinusCuts().push_back(s.length() - plus_cut);
+            spec.SetMinusCuts().push_back((TSeqPos)s.length() - plus_cut);
             break;  // there better be just one '^'
         }
     }
@@ -337,28 +337,28 @@ struct SCompareLocation
 class CPatternRec
 {
 public:
-    CPatternRec(string pattern, int enzyme_index, int spec_index,
-                ENa_strand strand,
-                unsigned int fsm_pat_size) : m_Pattern(pattern),
-                                             m_EnzymeIndex(enzyme_index),
-                                             m_SpecIndex(spec_index),
-                                             m_Strand(strand),
-                                             m_FsmPatSize(fsm_pat_size) {}
+    CPatternRec(string pattern, size_t enzyme_index, size_t spec_index,
+                ENa_strand strand, TSeqPos fsm_pat_size)
+        : m_Pattern(pattern), m_EnzymeIndex(enzyme_index),
+          m_SpecIndex(spec_index), m_Strand(strand),
+          m_FsmPatSize(fsm_pat_size)
+        { }
     // member access
     const string& GetPattern(void) const {return m_Pattern;}
-    int GetEnzymeIndex(void) const {return m_EnzymeIndex;}
-    int GetSpecIndex(void) const {return m_SpecIndex;}
+    TSeqPos GetPatternSize(void) const {return (TSeqPos)m_Pattern.size();}
+    size_t GetEnzymeIndex(void) const {return m_EnzymeIndex;}
+    size_t GetSpecIndex(void) const {return m_SpecIndex;}
     ENa_strand GetStrand(void) const {return m_Strand;}
-    unsigned int GetFsmPatSize(void) const {return m_FsmPatSize;}
+    TSeqPos GetFsmPatSize(void) const {return m_FsmPatSize;}
 private:
     // pattern in ncbi8na
     string m_Pattern;
     // which enzyme and specificity we represent
-    int m_EnzymeIndex;
-    int m_SpecIndex;
+    size_t m_EnzymeIndex;
+    size_t m_SpecIndex;
     // whether we represent the complement of the specificity
     ENa_strand m_Strand;
-    unsigned int m_FsmPatSize;
+    TSeqPos m_FsmPatSize;
 };
 
 
@@ -409,7 +409,7 @@ struct SLessSeq_loc
 
 
 void CFindRSites::x_ExpandRecursion(string& s, unsigned int pos,
-                                    CTextFsm<int>& fsm, int match_value)
+                                    CTextFsm<size_t>& fsm, size_t match_value)
 {
     if (pos == s.size()) {
         // this is the place
@@ -605,8 +605,8 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
     }
 
     TAnnot annot;
-    int total_definite_sites = 0, total_possible_sites = 0;
-    int total_non_cutters = 0;
+    size_t total_definite_sites = 0, total_possible_sites = 0;
+    size_t total_non_cutters = 0;
 
     ITERATE (TResults, result, results) {
         const vector<CRSite>& definite_sites =
@@ -614,8 +614,8 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
         const vector<CRSite>& possible_sites =
             (*result)->GetPossibleSites();
 
-        int count_definite_sites = definite_sites.size();
-        int count_possible_sites = possible_sites.size();
+        size_t count_definite_sites = definite_sites.size();
+        size_t count_possible_sites = possible_sites.size();
 
         if (count_definite_sites  ||  count_possible_sites) {
             total_definite_sites += count_definite_sites;
@@ -671,8 +671,8 @@ CFindRSites::GetAnnot(CBioseq_Handle bsh) const
 }
 
 
-void CFindRSites::x_AddPattern(const string& pat, CTextFsm<int>& fsm,
-                               int match_value)
+void CFindRSites::x_AddPattern(const string& pat, CTextFsm<size_t>& fsm,
+                               size_t match_value)
 {
     string s = pat;
     x_ExpandRecursion(s, 0, fsm, match_value);
@@ -708,7 +708,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
     patterns.reserve(enzymes.size());  // an underestimate
     
     // the finite state machine for the search
-    CTextFsm<int> fsm;
+    CTextFsm<size_t> fsm;
 
     // iterate over enzymes
     ITERATE (CFindRSites::TEnzymes, enzyme, enzymes) {
@@ -751,7 +751,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
             patterns.push_back(CPatternRec(pat, enzyme - enzymes.begin(),
                                            spec - specs.begin(), 
                                            strand,
-                                           fsm_pat_size));
+                                           (TSeqPos) fsm_pat_size));
             // add pattern to fsm
             // (add only fsm_pat_size of it)
             CFindRSites::x_AddPattern(pat.substr(0, fsm_pat_size), fsm,
@@ -771,7 +771,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                                                - enzymes.begin(),
                                                spec - specs.begin(), 
                                                Reverse(strand),
-                                               fsm_pat_size));
+                                               (TSeqPos) fsm_pat_size));
                 // add pattern to fsm
                 // (add only fsm_pat_size of it)
                 CFindRSites::x_AddPattern(comp.substr(0, fsm_pat_size), fsm,
@@ -784,25 +784,23 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
     // Now do the search.
 
     fsm.Prime();
-    vector<int> ambig_nucs;  // for dealing with ambiguities later
+    vector<TSeqPos> ambig_nucs;  // for dealing with ambiguities later
 
     int state = fsm.GetInitialState();
-    for (unsigned int i = 0;  i < seq.size();  i++) {
+    for (TSeqPos i = 0;  i < seq.size();  i++) {
         if (CFindRSites::x_IsAmbig(seq[i])) {
             ambig_nucs.push_back(i);
         }
         state = fsm.GetNextState(state, seq[i]);
         if (fsm.IsMatchFound(state)) {
-            const vector<int>& matches = fsm.GetMatches(state);
-            ITERATE (vector<int>, match, matches) {
+            const auto& matches = fsm.GetMatches(state);
+            ITERATE (vector<size_t>, match, matches) {
                 const CPatternRec& pattern = patterns[*match];
                 TSeqPos begin_pos = i + 1 - pattern.GetFsmPatSize();
-                TSeqPos end_pos = begin_pos 
-                    + pattern.GetPattern().size() - 1;
+                TSeqPos end_pos = begin_pos + pattern.GetPatternSize() - 1;
                 
                 // check for a full match to sequence
-                if (pattern.GetFsmPatSize()
-                    != pattern.GetPattern().size()) {
+                if (pattern.GetFsmPatSize() != pattern.GetPatternSize()) {
                     // Pattern put into fsm was less than the full pattern.
                     // Must check that the sequence really matches.
                     if (end_pos >= seq.size()) {
@@ -846,7 +844,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     if (IsReverse(pattern.GetStrand())) {
                         site.SetPlusCuts()
                             .push_back(begin_pos 
-                                       + pattern.GetPattern().size()
+                                       + pattern.GetPatternSize()
                                        - *cut);
                     } else {
                         site.SetPlusCuts().push_back(begin_pos + *cut);
@@ -857,7 +855,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     if (IsReverse(pattern.GetStrand())) {
                         site.SetMinusCuts()
                             .push_back(begin_pos
-                                       + pattern.GetPattern().size()
+                                       + pattern.GetPatternSize()
                                        - *cut);
                     } else {
                         site.SetMinusCuts().push_back(begin_pos + *cut);
@@ -875,25 +873,26 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
     if (!ambig_nucs.empty()) {
         ITERATE (vector<CPatternRec>, pattern, patterns) {
             const string& pat = pattern->GetPattern();
+            TSeqPos pat_size = pattern->GetPatternSize();
 
             // for reordering later
-            int ds_pos = results[pattern->GetEnzymeIndex()]
+            size_t ds_pos = results[pattern->GetEnzymeIndex()]
                 ->GetDefiniteSites().size();
-            int ps_pos = results[pattern->GetEnzymeIndex()]
+            size_t ps_pos = results[pattern->GetEnzymeIndex()]
                 ->GetPossibleSites().size();
 
             // the next possible (starting) position to check
             int next_pos = 0;
 
             // iterate over ambiguous positions
-            ITERATE (vector<int>, pos, ambig_nucs) {
-                int begin_check = *pos - pat.size() + 1;
+            ITERATE (vector<TSeqPos>, pos, ambig_nucs) {
+                TSignedSeqPos begin_check = *pos - pat_size + 1;
                 // don't try to check a negative position
                 begin_check = max(begin_check, 0);
                 // to avoid recording a site multiple times
                 // when there are two nearby ambiguities
                 begin_check = max(begin_check, next_pos);
-                int end_check = min(*pos, (int) (seq.size() - pat.size()));
+                int end_check = min(*pos, (TSeqPos) (seq.size() - pat_size));
                 int i;
                 for (i = begin_check;  i <= end_check;  i++) {
                     CSeqMatch::EMatch match
@@ -903,7 +902,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     }
                     // otherwise, a definite or possible site
 
-                    CRSite site(i, i + pat.size() -1);
+                    CRSite site(i, i + pat_size -1);
                     site.SetStrand(pattern->GetStrand());
 
                     // figure out cleavage locations
@@ -913,7 +912,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     ITERATE (vector<int>, cut, plus_cuts) {
                         if (IsReverse(pattern->GetStrand())) {
                             site.SetPlusCuts()
-                                .push_back(i + pattern->GetPattern().size()
+                                .push_back(i + pattern->GetPatternSize()
                                            - *cut);
                         } else {
                             site.SetPlusCuts().push_back(i + *cut);
@@ -927,7 +926,7 @@ void x_FindRSite(const Seq& seq, const CFindRSites::TEnzymes& enzymes,
                     ITERATE (vector<int>, cut, minus_cuts) {
                         if (IsReverse(pattern->GetStrand())) {
                             site.SetMinusCuts()
-                                .push_back(i + pattern->GetPattern().size()
+                                .push_back(i + pattern->GetPatternSize()
                                            - *cut);
                         } else {
                             site.SetMinusCuts().push_back(i + *cut);
