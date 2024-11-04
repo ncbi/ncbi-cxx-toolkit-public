@@ -44,8 +44,8 @@ BEGIN_NCBI_SCOPE
 
 NCBI_SUSPEND_DEPRECATION_WARNINGS
 class CTestThreadedServer : public CThreadedServer
-NCBI_RESUME_DEPRECATION_WARNINGS
 {
+NCBI_RESUME_DEPRECATION_WARNINGS
 public:
     CTestThreadedServer(unsigned short port, unsigned int threads,
                         unsigned int max, unsigned int queue_size)
