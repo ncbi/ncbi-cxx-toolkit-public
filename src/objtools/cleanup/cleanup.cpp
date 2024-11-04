@@ -2650,13 +2650,14 @@ static bool s_CleanupIsShortrRNA(const CSeq_feat& f, CScope* scope) // used in f
     return is_bad;
 }
 
-bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options, bool run_extended_cleanup)
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_proteins, Uint4 options, bool run_extended_cleanup, bool also_fix_location)
 {
     bool any_changes = false;
 
     int protein_id_counter = 1;
     bool create_general_only = edit::IsGeneralIdProtPresent(entry.GetTopLevelEntry());
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
         bool change_this_cds = false;
         CRef<CSeq_feat> new_cds(new CSeq_feat());
@@ -2666,9 +2667,11 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         } else {
             string current_name = GetProteinName(*new_cds, entry);
 
-            change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
+            if (also_fix_location) {
+                change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
 
-            change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
+                change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
+            }
 
             // retranslate
             if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandleFromTSE(*(new_cds->GetProduct().GetId()), entry)) {
@@ -2689,7 +2692,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                         any_changes = true;
                     }
                 }
-                any_changes |= feature::AdjustForCDSPartials(*new_cds, entry);
+                if (also_fix_location) {
+                    any_changes |= feature::AdjustForCDSPartials(*new_cds, entry);
+                }
             }
             //prefer ncbieaa
             if (new_cds->IsSetProduct()) {
@@ -2742,12 +2747,14 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                     change_mrna = true;
                 }
                 // Adjust mRNA partials to match coding region
-                change_mrna |= feature::CopyFeaturePartials(*new_mrna, *new_cds);
-                if (change_mrna) {
-                    CSeq_feat_Handle fh = entry.GetScope().GetSeq_featHandle(*mrna);
-                    CSeq_feat_EditHandle feh(fh);
-                    feh.Replace(*new_mrna);
-                    any_changes = true;
+                if (also_fix_location) {
+                    change_mrna |= feature::CopyFeaturePartials(*new_mrna, *new_cds);
+                    if (change_mrna) {
+                        CSeq_feat_Handle fh = entry.GetScope().GetSeq_featHandle(*mrna);
+                        CSeq_feat_EditHandle feh(fh);
+                        feh.Replace(*new_mrna);
+                        any_changes = true;
+                    }
                 }
             }
         }
@@ -2761,7 +2768,6 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
 
             //also need to redo protein title
         }
-
     }
 
     CTSE_Handle tse = entry.GetTSE_Handle();
@@ -2777,24 +2783,26 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
             CRef<CSeq_feat> new_rrna(new CSeq_feat());
             new_rrna->Assign(*(rna_it->GetSeq_feat()));
 
-            const CSeq_loc& loc = rna_feat.GetLocation();
-            if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
-              if (loc.GetStart(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
-                    new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
-                    change_this_rrna = true;
-                }
-                if (loc.GetStop(eExtreme_Biological) < 1) {
-                    new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
-                    change_this_rrna = true;
-                }
-            } else {
-                if (loc.GetStart(eExtreme_Biological) < 1) {
-                    new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
-                    change_this_rrna = true;
-                }
-                if (loc.GetStop(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
-                    new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
-                    change_this_rrna = true;
+            if (also_fix_location) {
+                const CSeq_loc& loc = rna_feat.GetLocation();
+                if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+                  if (loc.GetStart(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+                        new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
+                        change_this_rrna = true;
+                    }
+                    if (loc.GetStop(eExtreme_Biological) < 1) {
+                        new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                        change_this_rrna = true;
+                    }
+                } else {
+                    if (loc.GetStart(eExtreme_Biological) < 1) {
+                        new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
+                        change_this_rrna = true;
+                    }
+                    if (loc.GetStop(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+                        new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                        change_this_rrna = true;
+                    }
                 }
             }
 
@@ -2807,13 +2815,15 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     }
 
     for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
-        bool change_this_gene;
+        bool change_this_gene = false;
         CRef<CSeq_feat> new_gene(new CSeq_feat());
         new_gene->Assign(*(gene_it->GetSeq_feat()));
 
-        change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
+        if (also_fix_location) {
+            change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
 
-        change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
+            change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
+        }
 
         if (change_this_gene) {
             CSeq_feat_EditHandle gene_h(*gene_it);
