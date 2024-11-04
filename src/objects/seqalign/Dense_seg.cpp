@@ -86,7 +86,7 @@ void CDense_seg::Assign(const CSerialObject& obj, ESerialRecursionMode how)
         _ASSERT(size_t(dim) == GetIds().size());                        \
     } while (false)
 #else
-#  define ASSERT_CONSISTENCY() NCBI_EAT_SEMICOLON()
+#  define ASSERT_CONSISTENCY() NCBI_EAT_SEMICOLON(_)
 #endif
 
 CDense_seg::TDim CDense_seg::CheckNumRows() const
