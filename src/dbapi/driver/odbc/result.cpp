@@ -1437,10 +1437,12 @@ size_t CODBC_CursorResult::ReadItem(void* buffer, size_t buffer_size,
 }
 
 
+NCBI_SUSPEND_DEPRECATION_WARNINGS
 I_BlobDescriptor* CODBC_CursorResult::GetBlobDescriptor()
 {
     return m_Res ? m_Res->GetBlobDescriptor() : 0;
 }
+NCBI_RESUME_DEPRECATION_WARNINGS
 
 
 bool CODBC_CursorResult::SkipItem()
