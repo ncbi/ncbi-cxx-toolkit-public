@@ -305,7 +305,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     } else if (title.empty()  &&  is_nm  &&  source.NotEmpty()
                &&  (flags & fGetTitle_NoExpensive) == 0) {
-        unsigned int         genes = 0, cdregions = 0, prots = 0;
+        unsigned int         genes = 0, cdregions = 0, prots NCBI_UNUSED = 0;
         CConstRef<CSeq_feat> gene(0),   cdregion(0);
         for (CFeat_CI it(hnd);
              it;  ++it) {
