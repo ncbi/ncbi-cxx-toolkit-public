@@ -30,8 +30,8 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/threaded_server.hpp>
 #include <connect/error_codes.hpp>
+#include <connect/threaded_server.hpp>
 #include <util/thread_pool.hpp>
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
