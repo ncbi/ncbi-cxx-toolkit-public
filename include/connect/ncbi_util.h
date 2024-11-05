@@ -59,6 +59,8 @@
  *       UTIL_Adler32_Update()
  *
  * 4. Miscellaneous:
+ *       UTIL_Timezone()
+ *       UTIL_HelpRequested()
  *       UTIL_MatchesMask[Ex]()
  *       UTIL_NcbiLocalHostName()
  *       UTIL_PrintableString[Ex|Size]()
@@ -69,6 +71,7 @@
 
 #include <connect/ncbi_core.h>
 #include <stdio.h>
+#include <time.h>
 
 
 /** @addtogroup UtilityFunc
@@ -784,6 +787,14 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableStringEx
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_HelpRequested
 (int argc, char** argv);
+
+
+/** Return timezone offset (in seconds West of UTC) for the current time zone.
+ * Must be called after either mktime() or localtime() or tzset() to return a
+ * valid result.  On platforms that do not provide TZ information, the result
+ * is cached internally for the life of the application.
+ */
+extern NCBI_XCONNECT_EXPORT time_t UTIL_Timezone(void);
 
 
 /** Conversion from Unicode to UTF8, and back.  MSWIN-specific and internal.
