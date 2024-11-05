@@ -139,7 +139,7 @@ extern int/*bool*/ BASE64_Decode
             pad = 1/*true*/;
         }
         if (pad) {
-            assert(nb);
+            _ASSERT(nb);
             if (c != '=')
                 break;
             if (!(nb -= 2))
