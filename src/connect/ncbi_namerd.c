@@ -380,6 +380,7 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t now,
     if (tm.tm_isdst > 0  &&  h == tm.tm_hour)
         exp += 3600;
 #else
+   (void) h;
 #  undef mktime
 #endif /*HAVE_TIMEGM*/
 
