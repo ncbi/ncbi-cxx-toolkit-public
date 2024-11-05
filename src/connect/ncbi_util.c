@@ -459,31 +459,21 @@ extern char* LOG_ComposeMessage
 
     /* Pre-calculate total message length */
     if ((flags & fLOG_DateTime) != 0) {
-#ifdef NCBI_OS_MSWIN /*Should be compiler-dependent but C-Tkit lacks it*/
-        _strdate(&datetime[datetime_len]);
-        datetime_len += strlen(&datetime[datetime_len]);
-        datetime[datetime_len++] = ' ';
-        _strtime(&datetime[datetime_len]);
-        datetime_len += strlen(&datetime[datetime_len]);
-        datetime[datetime_len++] = ' ';
-        datetime[datetime_len]   = '\0';
-#else /*NCBI_OS_MSWIN*/
         static const char timefmt[] = "%m/%d/%y %H:%M:%S ";
         struct tm tm;
-#  ifdef NCBI_CXX_TOOLKIT
+#ifdef NCBI_CXX_TOOLKIT
         time_t now = time(0);
-#    ifdef HAVE_LOCALTIME_R
+#  ifdef HAVE_LOCALTIME_R
         localtime_r(&now, &tm);
-#    else /*HAVE_LOCALTIME_R*/
+#  else /*HAVE_LOCALTIME_R*/
         CORE_LOCK_WRITE;
         tm = *localtime(&now);
         CORE_UNLOCK;
-#    endif/*HAVE_LOCALTIME_R*/
-#  else /*NCBI_CXX_TOOLKIT*/
+#  endif/*HAVE_LOCALTIME_R*/
+#else /*NCBI_CXX_TOOLKIT*/
         Nlm_GetDayTime(&tm);
-#  endif /*NCBI_CXX_TOOLKIT*/
+#endif /*NCBI_CXX_TOOLKIT*/
         datetime_len = strftime(datetime, sizeof(datetime), timefmt, &tm);
-#endif /*NCBI_OS_MSWIN*/
     }
     if ((flags & fLOG_Level) != 0
         &&  (mess->level != eLOG_Note  ||  !(flags & fLOG_OmitNoteLevel))) {
@@ -1430,6 +1420,35 @@ extern int/*bool*/ UTIL_HelpRequested(int argc, char** argv)
                             strcasecmp(argv[1] + 1, "help")   == 0  ||
                             strcasecmp(argv[1],     "--help") == 0))
         ? 1/*true*/ : 0/*false*/;
+}
+
+
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#  define timezone  _timezone
+#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
+
+extern time_t UTIL_Timezone(void)
+{
+#if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+    static time_t timezone = (time_t)(-1);
+
+    /* NB: timezone information is unavailable on Darwin or BSD :-/ */
+    if (timezone == (time_t)(-1)) {
+        time_t now = time(0);
+        struct tm tm;
+#  ifdef HAVE_LOCALTIME_R
+        gmtime_r(&now, &tm);
+#  else
+        CORE_LOCK_WRITE;
+        tm = *gmtime(&now);
+        CORE_UNLOCK;
+#  endif /*HAVE_LOCALTIME_R*/
+        assert(tm.tm_isdst == 0);
+        timezone  = mktime(&tm) - now;
+    }
+#endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+
+    return timezone;
 }
 
 
