@@ -52,11 +52,6 @@
 #include <connect/ncbi_ftp_connector.h>
 #include <ctype.h>
 #include <stdlib.h>
-#include <time.h>
-
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
-#  define timezone  _timezone
-#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_FTP
 
@@ -1412,11 +1407,10 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
 {
     static const int kDay[12] = {31,  0, 31, 30, 31, 30,
                                  31, 31, 30, 31, 30, 31};
-#if !defined(HAVE_TIMEGM) \
-    &&  (defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD))
-    static time_t timezone = (time_t)(-1);
-#endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
     char* frac = strchr(timestamp, '.');
+#ifndef HAVE_TIMEGM
+    time_t tzdiff;
+#endif /*HAVE_TIMEGM*/
     int field[6], n;
     struct tm tm;
     char buf[80];
@@ -1484,25 +1478,10 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
     if ((t = mktime(&tm)) == (time_t)(-1))
         return eIO_Unknown;
 
-#  if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-    /* NB: timezone information is unavailable on Darwin or BSD :-/ */
-    if (timezone == (time_t)(-1)) {
-        time_t now = time(0);
-        struct tm tmp;
-#    ifdef HAVE_LOCALTIME_R
-        gmtime_r(&now, &tmp);
-#    else
-        CORE_LOCK_WRITE;
-        tmp = *gmtime(&now);
-        CORE_UNLOCK;
-#    endif /*HAVE_LOCALTIME_R*/
-        assert(tmp.tm_isdst == 0);
-        timezone  = mktime(&tmp) - now;
-    }
-#  endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+    tzdiff = UTIL_Timezone();
 
-    if (t >= timezone)
-        t -= timezone;
+    if (t >= tzdiff)
+        t -= tzdiff;
     if (tm.tm_isdst > 0  &&  n == tm.tm_hour)
         t += 3600;
 #endif /*HAVE_TIMEGM*/
