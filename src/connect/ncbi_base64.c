@@ -83,8 +83,9 @@ extern int/*bool*/ BASE64_Encode
     _ASSERT(i  &&  j  &&  j <= dst_size);
     *src_read = i;
 
-    if (nb/*2 or 4*/) {
+    if (nb) {
         char c = kSyms[(bs << (6 - nb)) & 0x3F];
+        _ASSERT(nb == 2  ||  nb == 4);
         do {
             if (max_len  &&  len++ >= max_len) {
                 dst[j++] = '\n';
@@ -132,41 +133,42 @@ extern int/*bool*/ BASE64_Decode
         if (c == '='  &&  !pad) {
             if (!nb) {
                 --i;
-                break;
+                break/*done*/;
             }
             if (nb > 4  ||  (bs & ((1 << nb) - 1)))
-                break;
+                break/*bad endgame*/;
+            _ASSERT(nb == 2  ||  nb == 4);
             pad = 1/*true*/;
         }
         if (pad) {
             _ASSERT(nb);
             if (c != '=')
-                break;
+                break/*bad pad*/;
             if (!(nb -= 2))
-                break;
-            continue;
+                break/*done*/;
+            continue/*endgame*/;
         }
         if (c == '\r'  ||  c == '\n'  ||  c == '\v'  ||  c == '\f')
-            continue;
+            continue/*ignore line breaks*/;
         else if (c >= 'A'  &&  c <= 'Z')
-            c = (unsigned char)(c - 'A');         /* c -= 'A'; */
+            c -= (unsigned char) 'A';
         else if (c >= 'a'  &&  c <= 'z')
-            c = (unsigned char)(c - ('a' - 26));  /* c -= 'a' - 26; */
+            c -= (unsigned char)('a' - 26);
         else if (c >= '0'  &&  c <= '9')
-            c = (unsigned char)(c - ('0' - 52));  /* c -= '0' - 52; */
+            c -= (unsigned char)('0' - 52);
         else if (c == '+')
             c  = 62;
         else if (c == '/')
             c  = 63;
         else
-            break;
+            break/*bad input*/;
 
         bs <<= 6;
         bs  |= c & 0x3F;
         nb  += 6;
         if (nb >= 8) {
             if (j >= dst_size)
-                break;
+                break/*no room*/;
             nb -= 8;
             dst[j++] = (unsigned char)(bs >> nb);
         }
