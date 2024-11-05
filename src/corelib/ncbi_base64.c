@@ -33,76 +33,74 @@
 
 #include "ncbi_base64.h"
 
+#define BASE64_DEFAULT_LINE_LEN  76
 
-extern void BASE64_Encode
-(const void* src_buf,
- size_t      src_size,
- size_t*     src_read,
- void*       dst_buf,
- size_t      dst_size,
- size_t*     dst_written,
- size_t*     line_len)
+
+extern int/*bool*/ BASE64_Encode
+(const void*   src_buf,
+ size_t        src_size,
+ size_t*       src_read,
+ void*         dst_buf,
+ size_t        dst_size,
+ size_t*       dst_written,
+ const size_t* line_len)
 {
     static const unsigned char kSyms[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ" /*26*/
         "abcdefghijklmnopqrstuvwxyz" /*52*/
         "0123456789+/";              /*64*/
-    const size_t max_len = line_len ? *line_len : 76;
+    const size_t max_len = line_len ? *line_len : BASE64_DEFAULT_LINE_LEN;
     const size_t max_src =
         ((dst_size - (max_len ? dst_size/(max_len + 1) : 0)) >> 2) * 3;
     unsigned char* src = (unsigned char*) src_buf;
     unsigned char* dst = (unsigned char*) dst_buf;
-    size_t len = 0, i = 0, j = 0;
-    unsigned char temp = 0, c;
-    unsigned char shift = 2;
+    int bs = 0/*bitstream*/, nb = 0/*number of bits*/;
+    size_t i, j, len;
+
     if (!max_src  ||  !src_size) {
         *src_read    = 0;
         *dst_written = 0;
-        if (dst_size > 0) {
+        if (dst_size > 0)
             *dst = '\0';
-        }
-        return;
+        return dst_size  &&  !src_size;
     }
-    if (src_size > max_src) {
+    if (src_size > max_src)
         src_size = max_src;
+
+    for (i = j = len = 0;  i < src_size;  ++i) {
+        bs <<= 8;
+        bs  |= src[i];
+        nb  += 8;
+        do {
+            if (max_len  &&  len++ >= max_len) {
+                dst[j++] = '\n';
+                len = 1;
+            } 
+            nb -= 6;
+            dst[j++] = kSyms[(bs >> nb) & 0x3F];
+        } while (nb >= 6);
     }
-    c = src[0];
-    for (;;) {
-        unsigned char bits = (c >> shift) & 0x3F;
-        if (max_len  &&  len >= max_len) {
-            dst[j++] = '\n';
-            len = 0;
-        }
-        _ASSERT((size_t)(temp | bits) < sizeof(kSyms) - 1);
-        dst[j++] = kSyms[temp | bits];
-        ++len;
-        if (i >= src_size) {
-            break;
-        }
-        shift += 2;
-        shift &= 7;
-        temp = (c << (8 - shift)) & 0x3F;
-        if (shift) {
-            c = ++i < src_size ? src[i] : 0;
-        } else if (i + 1 == src_size) {
-            ++i;
-        }
-    }
-    _ASSERT(j <= dst_size);
+    _ASSERT(i  &&  j  &&  j <= dst_size);
     *src_read = i;
-    for (i = 0;  i < (3 - src_size % 3) % 3;  ++i) {
-        if (max_len  &&  len >= max_len) {
-            dst[j++] = '\n';
-            len = 0;
-        }
-        dst[j++] = '=';
-        ++len;
+
+    if (nb/*2 or 4*/) {
+        char c = kSyms[(bs << (6 - nb)) & 0x3F];
+        do {
+            if (max_len  &&  len++ >= max_len) {
+                dst[j++] = '\n';
+                len = 1;
+            }
+            dst[j++] = c;
+            c = '=';
+            nb += 2;
+        } while (nb < 8);
     }
     _ASSERT(j <= dst_size);
     *dst_written = j;
-    if (j < dst_size) {
+
+    if (j < dst_size)
         dst[j] = '\0';
-    }
+    return 1/*success*/;
 }
 
 
@@ -116,92 +114,69 @@ extern int/*bool*/ BASE64_Decode
 {
     const unsigned char* src = (const unsigned char*) src_buf;
     unsigned char*       dst = (unsigned char*)       dst_buf;
-    size_t i = 0, j = 0, k = 0, l;
-    unsigned int temp = 0;
-    if (src_size < 4  ||  dst_size < 3) {
+    int bs = 0/*bitstream*/, nb = 0/*number of bits*/;
+    int/*bool*/ pad = 0/*false*/;
+    size_t i, j;
+
+    if (src_size < 4  ||  !dst_size) {
         *src_read    = 0;
         *dst_written = 0;
-        return 0/*false*/;
+        if (dst_size)
+            *dst = '\0';
+        return !src_size;
     }
-    for (;;) {
-        int/*bool*/  ok = i < src_size ? 1/*true*/ : 0/*false*/;
-        unsigned char c = ok ? src[i++] : '=';
-        if (c == '=') {
-            c  = 64; /*end*/
-        } else if (c >= 'A'  &&  c <= 'Z') {
-            c = (unsigned char)(c - 'A');         /* c -= 'A'; */
-        } else if (c >= 'a'  &&  c <= 'z') {
-            c = (unsigned char)(c - ('a' - 26));  /* c -= 'a' - 26; */
-        } else if (c >= '0'  &&  c <= '9') {
-            c = (unsigned char)(c - ('0' - 52));  /* c -= '0' - 52; */
-        } else if (c == '+') {
-            c  = 62;
-        } else if (c == '/') {
-            c  = 63;
-        } else {
+
+    i = j = 0;
+    do {
+        unsigned char c = src[i++];
+        if (c == '='  &&  !pad) {
+            if (!nb) {
+                --i;
+                break;
+            }
+            if (nb > 4  ||  (bs & ((1 << nb) - 1)))
+                break;
+            pad = 1/*true*/;
+        }
+        if (pad) {
+            assert(nb);
+            if (c != '=')
+                break;
+            if (!(nb -= 2))
+                break;
             continue;
         }
-        temp <<= 6;
-        temp  |= c & 0x3F;
-        if (!(++k & 3)  ||  c == 64) {
-            if (c == 64) {
-                if (k < 2) {
-                    if (ok) {
-                        /* pushback leading '=' */
-                        --i;
-                    }
-                    break;
-                }
-                switch (k) {
-                case 2:
-                    temp >>= 4;
-                    break;
-                case 3:
-                    temp >>= 10;
-                    break;
-                case 4:
-                    temp >>= 8;
-                    break;
-                default:
-                    _ASSERT(0);
-                    break;
-                }
-                l = 4 - k;
-                while (l > 0) {
-                    /* eat up '='-padding */
-                    if (i >= src_size)
-                        break;
-                    if (src[i] == '=')
-                        --l;
-                    else if (src[i] != '\r'  &&  src[i] != '\n')
-                        break;
-                    ++i;
-                }
-            } else {
-                k = 0;
-            }
-            switch (k) {
-            case 0:
-                dst[j++] = (unsigned char)((temp & 0xFF0000) >> 16);
-                /*FALLTHRU*/
-            case 4:
-                dst[j++] = (unsigned char)((temp & 0xFF00) >> 8);
-                /*FALLTHRU*/
-            case 3:
-                dst[j++] = (unsigned char) (temp & 0xFF);
+        if (c == '\r'  ||  c == '\n'  ||  c == '\v'  ||  c == '\f')
+            continue;
+        else if (c >= 'A'  &&  c <= 'Z')
+            c = (unsigned char)(c - 'A');         /* c -= 'A'; */
+        else if (c >= 'a'  &&  c <= 'z')
+            c = (unsigned char)(c - ('a' - 26));  /* c -= 'a' - 26; */
+        else if (c >= '0'  &&  c <= '9')
+            c = (unsigned char)(c - ('0' - 52));  /* c -= '0' - 52; */
+        else if (c == '+')
+            c  = 62;
+        else if (c == '/')
+            c  = 63;
+        else
+            break;
+
+        bs <<= 6;
+        bs  |= c & 0x3F;
+        nb  += 6;
+        if (nb >= 8) {
+            if (j >= dst_size)
                 break;
-            default:
-                break;
-            }
-            if (j + 3 >= dst_size  ||  c == 64) {
-                break;
-            }
-            temp = 0;
+            nb -= 8;
+            dst[j++] = (unsigned char)(bs >> nb);
         }
-    }
+    } while (i < src_size);
+
     *src_read    = i;
     *dst_written = j;
-    return i  &&  j ? 1/*true*/ : 0/*false*/;
+    if (j < dst_size)
+        dst[j] = '\0';
+    return i  &&  j  &&  !nb;
 }
 
 
