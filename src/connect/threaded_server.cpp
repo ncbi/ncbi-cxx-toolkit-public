@@ -34,7 +34,6 @@
 #include <connect/error_codes.hpp>
 #include <util/thread_pool.hpp>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
 

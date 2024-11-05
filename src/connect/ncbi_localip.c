@@ -57,6 +57,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_LocalIP
 
+
 #if defined(NCBI_OS_UNIX)
 #  define NcbiSys_access    access
 #elif defined(NCBI_OS_MSWIN)
