@@ -54,10 +54,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#if !defined(NCBI_OS_MSWIN)  &&  !defined(__CYGWIN__)
-#  define _timezone timezone
-#  define _daylight daylight
-#endif /*!NCBI_OS_MSWIN && !__CYGWIN__*/
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#  define timezone  _timezone
+#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_FTP
 
@@ -1413,6 +1412,10 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
 {
     static const int kDay[12] = {31,  0, 31, 30, 31, 30,
                                  31, 31, 30, 31, 30, 31};
+#if !defined(HAVE_TIMEGM) \
+    &&  (defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD))
+    static time_t timezone = (time_t)(-1);
+#endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
     char* frac = strchr(timestamp, '.');
     int field[6], n;
     struct tm tm;
@@ -1437,7 +1440,7 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
      *    input format specifiers in the format string (%-based);
      * 2. None to any spaces are allowed to match a space in the format, whilst
      *    an MDTM response must not contain even a single space. */
-    for (n = 0;  n < 6;  ++n) {
+    for (n = 0;  n < (int)(sizeof(field)/sizeof(field[0]));  ++n) {
         len = n ? 2 : 4/*year*/;
         if (len != strlen(strncpy0(buf, timestamp, len))  ||
             len != strspn(buf, kDigits)) {
@@ -1453,7 +1456,7 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
     if (field[1] < 1  ||  field[1] > 12)
         return eIO_Unknown;
     tm.tm_mon   = field[1] - 1;
-    if (field[2] < 1  ||  field[2] > (field[1] != 2
+    if (field[2] < 1  ||  field[2] > (field[1] != 2/*Feb*/
                                       ? kDay[tm.tm_mon]
                                       : 28 +
                                       (!(field[0] % 4)  &&
@@ -1471,24 +1474,41 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
     if (field[5] < 0  ||  field[5] > 60) /* allow one leap second */
         return eIO_Unknown;
     tm.tm_sec   = field[5];
+
 #ifdef HAVE_TIMEGM
-    tm.tm_isdst = -1;
     if ((t = timegm(&tm)) == (time_t)(-1))
         return eIO_Unknown;
 #else
-    tm.tm_isdst =  0;
+    n = tm.tm_hour;
+    tm.tm_isdst = -1;
     if ((t = mktime(&tm)) == (time_t)(-1))
         return eIO_Unknown;
-#  if !defined(NCBI_OS_DARWIN)  &&  !defined(NCBI_OS_BSD)
+
+#  if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
     /* NB: timezone information is unavailable on Darwin or BSD :-/ */
-    if (t >= _timezone)
-        t -= _timezone;
-    if (t >= _daylight  &&  tm.tm_isdst > 0)
-        t -= _daylight;
-#  endif /*!NCBI_OS_DARWIN && !NCBI_OS_BSD*/
+    if (timezone == (time_t)(-1)) {
+        time_t now = time(0);
+        struct tm tmp;
+#    ifdef HAVE_LOCALTIME_R
+        gmtime_r(&now, &tmp);
+#    else
+        CORE_LOCK_WRITE;
+        tmp = *gmtime(&now);
+        CORE_UNLOCK;
+#    endif /*HAVE_LOCALTIME_R*/
+        assert(tmp.tm_isdst == 0);
+        timezone  = mktime(&tmp) - now;
+    }
+#  endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+
+    if (t >= timezone)
+        t -= timezone;
+    if (tm.tm_isdst > 0  &&  n == tm.tm_hour)
+        t += 3600;
 #endif /*HAVE_TIMEGM*/
+
     n = sprintf(buf, "%lu%s%-.9s", (unsigned long) t,
-                frac  &&  *frac ? "." : "", frac ? frac : "");
+                &"."[!frac || !*frac], frac ? frac : "");
     if (n <= 0  ||  !BUF_Write(&xxx->rbuf, buf, (size_t) n))
         return eIO_Unknown;
     return eIO_Success;

@@ -51,7 +51,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 #ifdef _MSC_VER
 #define FMT_SIZE_T      "%llu"
 #define FMT_TIME_T      "%llu"
@@ -60,14 +59,17 @@
 #define FMT_TIME_T      "%lu"
 #endif
 
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#  define timezone  _timezone
+#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 
 #define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 
 #ifdef _DEBUG
-#define DEBUG_PARAM(x)  , x
+#  define DEBUG_PARAM(x)  , x
 #else
-#define DEBUG_PARAM(x)  /*void*/
+#  define DEBUG_PARAM(x)  /*void*/
 #endif /*_DEBUG*/
 
 
@@ -309,20 +311,22 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info
 /* Parse the "addrs[i].meta.expires" JSON from the namerd API, and adjust
    it according to the local timezone/DST to get the UTC epoch time.
    This function is not meant to be a generic ISO-8601 parser.  It expects
-   the namerd API to return times in the format: "2017-03-29T23:02:55Z"
-   Unfortunately, strptime is not supported at all on Windows, and doesn't
-   support the "%z" format on Unix, so some custom parsing is required.
+   the namerd API to return times in this format: "2017-03-29T23:02:55Z"
 */
-static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
+static TNCBI_Time x_ParseExpires(const char* expires, time_t now,
                                  const char* name, size_t i)
 {
-    struct tm tm_exp, tm_now;
-    time_t exp, now;
-    char   exp_zulu;
-    long   tzdiff;
-    int    n;
+#ifdef HAVE_TIMEGM
+#  define mktime  timegm
+#elif defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+    static time_t timezone = (time_t)(-1);
+#endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+    struct tm tm;
+    char   zulu;
+    int    n, h;
+    time_t exp;
 
-    assert(utc);
+    assert(now);
     if ( ! expires  ||  ! *expires) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unable to get JSON {\"addrs[" FMT_SIZE_T
@@ -330,46 +334,62 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t utc,
         return 0/*failure*/;
     }
 
-    memset(&tm_exp, 0, sizeof(tm_exp));
+    memset(&tm, 0, sizeof(tm));
+    tm.tm_isdst = -1;  /* NB: timegm() ignores; resets to 0 */
     if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c%n",
-               &tm_exp.tm_year, &tm_exp.tm_mon, &tm_exp.tm_mday,
-               &tm_exp.tm_hour, &tm_exp.tm_min, &tm_exp.tm_sec,
-               &exp_zulu, &n) < 7  ||  expires[n]
-        ||  tm_exp.tm_year < 2017  ||  tm_exp.tm_year > 9999
-        ||  tm_exp.tm_mon  < 1     ||  tm_exp.tm_mon  > 12
-        ||  tm_exp.tm_mday < 1     ||  tm_exp.tm_mday > 31
-        ||  tm_exp.tm_hour < 0     ||  tm_exp.tm_hour > 23
-        ||  tm_exp.tm_min  < 0     ||  tm_exp.tm_min  > 59
-        ||  tm_exp.tm_sec  < 0     ||  tm_exp.tm_sec  > 60/* 60 for leap sec */
-        ||  exp_zulu != 'Z'
+               &tm.tm_year, &tm.tm_mon, &tm.tm_mday,
+               &tm.tm_hour, &tm.tm_min, &tm.tm_sec,
+               &zulu, &n) < 7  ||  expires[n]
+        ||  tm.tm_year < 2017  ||  tm.tm_year > 9999
+        ||  tm.tm_mon  < 1     ||  tm.tm_mon  > 12
+        ||  tm.tm_mday < 1     ||  tm.tm_mday > 31
+        ||  tm.tm_hour < 0     ||  tm.tm_hour > 23
+        ||  tm.tm_min  < 0     ||  tm.tm_min  > 59
+        ||  tm.tm_sec  < 0     ||  tm.tm_sec  > 60/* 60 for leap sec */
+        ||  zulu != 'Z'
         /* Get the UTC epoch time for the expires value */
-        ||  (tm_exp.tm_year -= 1900,  /* years since 1900 */
-             tm_exp.tm_mon--,         /* months since January: 0-11 */
-             (exp = mktime(&tm_exp)) == (time_t)(-1L))) {
+        ||  (tm.tm_year -= 1900,  /* years since 1900 */
+             tm.tm_mon--,         /* months since January: 0-11 */
+             h = tm.tm_hour,
+             (exp = mktime(&tm)) == (time_t)(-1L))) {
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Invalid JSON {\"addrs[" FMT_SIZE_T
                      "].meta.expires\"} value \"%s\"", name, i, expires));
         return 0/*failure*/;
     }
 
-    CORE_LOCK_WRITE;
-    tm_now = *gmtime(&utc);
-    CORE_UNLOCK;
-    verify((now = mktime(&tm_now)) != (time_t)(-1L));
+#ifndef HAVE_TIMEGM
+#  if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
+    /* NB: timezone information is unavailable on Darwin or BSD :-/ */
+    if (timezone == (time_t)(-1)) {
+        struct tm tmp;
+#    ifdef HAVE_LOCALTIME_R
+        gmtime_r(&now, &tmp);
+#    else
+        CORE_LOCK_WRITE;
+        tmp = *gmtime(&now);
+        CORE_UNLOCK;
+#    endif /*HAVE_LOCALTIME_R*/
+        assert(tmp.tm_isdst == 0);
+        timezone  = mktime(&tmp) - now;
+    }
+#  endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
 
-    /* Adjust for time diff between local and UTC, which should
-       correspond to 3600 x (number of time zones from UTC),
-       i.e. diff between current TZ (UTC-12 to UTC+14) and UTC */
-    tzdiff = (long)(utc - now);
-    assert(-12 * 3600 <= tzdiff  &&  tzdiff <= 14 * 3600);
-    exp += (time_t) tzdiff;
-    if (exp < utc) {
-        time_t diff = utc - exp;
+    if (exp >= timezone)
+        exp -= timezone;
+    if (tm.tm_isdst > 0  &&  h == tm.tm_hour)
+        exp += 3600;
+#else
+#  undef mktime
+#endif /*HAVE_TIMEGM*/
+
+    if (exp < now) {
+        time_t diff = now - exp;
         CORE_LOGF_X(eNSub_Json, eLOG_Error,
                     ("[%s]  Unexpected JSON {\"addrs[" FMT_SIZE_T
                      "].meta.expires\"} value expired: %s=" FMT_TIME_T " vs. "
                      FMT_TIME_T " now, ahead by " FMT_TIME_T " second%s",
-                     name, i, expires, exp, utc, diff, &"s"[diff==1]));
+                     name, i, expires, exp, now, diff, &"s"[diff==1]));
         return 0/*failure*/;
     }
     return (TNCBI_Time) exp;
