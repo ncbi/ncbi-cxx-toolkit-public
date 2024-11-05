@@ -564,21 +564,23 @@ extern const char* CORE_SendMailEx(const char*          to,
             static const char  kDateFmt[] = "%d %%s %Y %H:%M:%S %z" MX_CRLF;
             time_t now = time(0);
             char datefmt[80];
-            struct tm* tm;
+            struct tm* tmp;
 #if   defined(NCBI_OS_SOLARIS)
             /* MT safe */
-            tm = localtime(&now);
-#elif defined(HAVE_LOCALTIME_R)
-            struct tm tmp;
-            localtime_r(&now, tm = &tmp);
+            tmp = localtime(&now);
 #else
-            struct tm tmp;
+            struct tm tm;
+            tmp = &tm;
+#  ifdef HAVE_LOCALTIME_R
+            localtime_r(&now, tmp);
+#  else
             CORE_LOCK_WRITE;
-            tm = (struct tm*) memcpy(&tmp, localtime(&now), sizeof(tmp));
+            tm = *localtime(&now);
             CORE_UNLOCK;
+#  endif /*HAVE_LOCALTIME_R*/
 #endif /*NCBI_OS_SOLARIS*/
-            if (strftime(datefmt, sizeof(datefmt), kDateFmt, tm)) {
-                sprintf(buffer, datefmt, kMonth[tm->tm_mon]);
+            if (strftime(datefmt, sizeof(datefmt), kDateFmt, tmp)) {
+                sprintf(buffer, datefmt, kMonth[tmp->tm_mon]);
                 if (!s_SockWrite(sock, "Date: ", 6)  ||
                     !s_SockWrite(sock, buffer, 0)) {
                     SENDMAIL_RETURN(32, "Write error in sending Date");
