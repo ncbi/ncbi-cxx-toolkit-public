@@ -49,7 +49,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <time.h>
+
+#define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
+
 
 #ifdef _MSC_VER
 #define FMT_SIZE_T      "%llu"
@@ -57,14 +59,7 @@
 #else
 #define FMT_SIZE_T      "%zu"
 #define FMT_TIME_T      "%lu"
-#endif
-
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
-#  define timezone  _timezone
-#endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
-
-#define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
-
+#endif /*_MSC_VER*/
 
 #ifdef _DEBUG
 #  define DEBUG_PARAM(x)  , x
@@ -318,9 +313,9 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t now,
 {
 #ifdef HAVE_TIMEGM
 #  define mktime  timegm
-#elif defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-    static time_t timezone = (time_t)(-1);
-#endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+#else
+    time_t tzdiff;
+#endif /*HAVE_TIMEGM*/
     struct tm tm;
     char   zulu;
     int    n, h;
@@ -359,30 +354,16 @@ static TNCBI_Time x_ParseExpires(const char* expires, time_t now,
     }
 
 #ifndef HAVE_TIMEGM
-#  if defined(NCBI_OS_DARWIN)  ||  defined(NCBI_OS_BSD)
-    /* NB: timezone information is unavailable on Darwin or BSD :-/ */
-    if (timezone == (time_t)(-1)) {
-        struct tm tmp;
-#    ifdef HAVE_LOCALTIME_R
-        gmtime_r(&now, &tmp);
-#    else
-        CORE_LOCK_WRITE;
-        tmp = *gmtime(&now);
-        CORE_UNLOCK;
-#    endif /*HAVE_LOCALTIME_R*/
-        assert(tmp.tm_isdst == 0);
-        timezone  = mktime(&tmp) - now;
-    }
-#  endif /*NCBI_OS_DARWIN || NCBI_OS_BSD*/
+    tzdiff = UTIL_Timezone();
 
-    if (exp >= timezone)
-        exp -= timezone;
+    if (exp >= tzdiff)
+        exp -= tzdiff;
     if (tm.tm_isdst > 0  &&  h == tm.tm_hour)
         exp += 3600;
 #else
    (void) h;
 #  undef mktime
-#endif /*HAVE_TIMEGM*/
+#endif /*!HAVE_TIMEGM*/
 
     if (exp < now) {
         time_t diff = now - exp;
