@@ -58,7 +58,7 @@ extern int/*bool*/ NcbiIsLocalCgiClient
 
 /**
  * Return non-zero (true) if the IP address (in network byte order) provided as
- * an agrument, is a nonroutable private IP address (including loopback,
+ * an agrument, is a nonroutable private IP address (including local, loopback,
  * multicast, and RFC1918);  return zero (false) otherwise.
  */
 extern int/*bool*/ NcbiIsPrivateIP
@@ -67,8 +67,8 @@ extern int/*bool*/ NcbiIsPrivateIP
 
 /**
  * Return non-zero (true) if the IP address (in network byte order) provided as
- * an agrument, is an Automatic Private IP Address (APIPA); return zero (false)
- * otherwise.
+ * an agrument, is an Automatic Private IP Address (APIPA), RFC3927; return zero
+ * (false) otherwise.
  */
 extern int/*bool*/ NcbiIsAPIPA
 (unsigned int ip);
