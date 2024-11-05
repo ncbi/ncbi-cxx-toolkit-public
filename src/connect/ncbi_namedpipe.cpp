@@ -48,7 +48,6 @@
 #  error "The CNamedPipe class is supported only on Windows and Unix"
 #endif
 
-
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
 
 

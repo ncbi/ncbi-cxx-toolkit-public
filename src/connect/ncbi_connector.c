@@ -36,6 +36,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_Conn
 
+
 /* Standardized logging message */
 #define METACONN_LOG(subcode, level, message)       \
     CORE_LOGF_X(subcode, level,                     \

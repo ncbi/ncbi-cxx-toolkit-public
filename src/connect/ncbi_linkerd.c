@@ -47,7 +47,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_NamerdLinkerd
 
 

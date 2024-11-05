@@ -40,12 +40,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
+
+
 #ifdef   fabs
 #  undef fabs
 #endif /*fabs*/
 #define  fabs(v)  ((v) < 0.0 ? -(v) : (v))
-
-#define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 /* Lower bound of up-to-date/out-of-date ratio */
 #define DISPD_STALE_RATIO_OK  0.8

@@ -41,6 +41,7 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_SMTP
 
+
 #define MX_SENDMAIL_MAGIC  0xBA8ADEDA
 #define MX_CRLF            "\r\n"
 
