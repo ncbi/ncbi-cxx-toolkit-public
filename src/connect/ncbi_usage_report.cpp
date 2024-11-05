@@ -34,8 +34,8 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_usage_report.hpp>
-#include <sstream>
 #include <atomic>
+#include <sstream>
 
 BEGIN_NCBI_SCOPE
 

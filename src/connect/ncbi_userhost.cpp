@@ -31,9 +31,9 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_util.h>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_userhost.hpp>
+#include <connect/ncbi_util.h>
 
 
 BEGIN_NCBI_SCOPE

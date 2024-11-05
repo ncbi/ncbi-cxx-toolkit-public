@@ -31,11 +31,10 @@
 /// Framework for a multithreaded network server
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbi_param.hpp>
 #include "connection_pool.hpp"
-#include <connect/ncbi_buffer.h>
 #include <connect/error_codes.hpp>
-
+#include <corelib/ncbi_param.hpp>
+#include <connect/ncbi_buffer.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_ThrServer
 
@@ -133,6 +132,7 @@ CBlockingQueue_ForServer::Put(const TRequest& data)
     return handle;
 }
 
+
 CBlockingQueue_ForServer::TItemHandle
 CBlockingQueue_ForServer::GetHandle(void)
 {
@@ -153,12 +153,14 @@ CBlockingQueue_ForServer::GetHandle(void)
 
 CThreadInPool_ForServer::CAutoUnregGuard::CAutoUnregGuard(TThread* thr)
     : m_Thread(thr)
-{}
+{ }
+
 
 CThreadInPool_ForServer::CAutoUnregGuard::~CAutoUnregGuard(void)
 {
     m_Thread->x_UnregisterThread();
 }
+
 
 void
 CThreadInPool_ForServer::CountSelf(void)
@@ -168,18 +170,21 @@ CThreadInPool_ForServer::CountSelf(void)
     m_Counted = true;
 }
 
-CThreadInPool_ForServer::~CThreadInPool_ForServer(void)
+
+CThreadInPool_ForServer::~CThreadInPool_ForServer()
 {
     if (m_Counted) {
         m_Pool->m_ThreadCount.Add(-1);
     }
 }
 
+
 void
 CThreadInPool_ForServer::x_UnregisterThread(void)
 {
     m_Pool->UnRegister(*this);
 }
+
 
 void
 CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
@@ -203,6 +208,7 @@ CThreadInPool_ForServer::x_HandleOneRequest(bool catch_all)
         ProcessRequest(handle);
     }
 }
+
 
 void*
 CThreadInPool_ForServer::Main(void)
@@ -228,6 +234,7 @@ CThreadInPool_ForServer::Main(void)
     return NULL;
 }
 
+
 void
 CThreadInPool_ForServer::ProcessRequest(TItemHandle handle)
 {
@@ -245,7 +252,8 @@ CPoolOfThreads_ForServer::CPoolOfThreads_ForServer(unsigned int max_threads,
     m_ThreadCount.Set(0);
 }
 
-CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
+
+CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer()
 {
     try {
         KillAllThreads(false);
@@ -259,6 +267,7 @@ CPoolOfThreads_ForServer::~CPoolOfThreads_ForServer(void)
     }
 }
 
+
 void
 CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
 {
@@ -270,11 +279,13 @@ CPoolOfThreads_ForServer::Spawn(unsigned int num_threads)
     }
 }
 
+
 void
 CPoolOfThreads_ForServer::AcceptRequest(const TRequest& req)
 {
     m_Queue.Put(req);
 }
+
 
 CPoolOfThreads_ForServer::TItemHandle
 CPoolOfThreads_ForServer::GetHandle(void)
@@ -323,6 +334,7 @@ CPoolOfThreads_ForServer::Register(TThread& thread)
     }
 }
 
+
 void
 CPoolOfThreads_ForServer::UnRegister(TThread& thread)
 {
@@ -338,7 +350,6 @@ CPoolOfThreads_ForServer::UnRegister(TThread& thread)
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 // Abstract class for CAcceptRequest and CServerConnectionRequest
 class CServer_Request : public CStdRequest
@@ -347,7 +358,8 @@ public:
     CServer_Request(EServIO_Event event,
                     CServer_ConnectionPool& conn_pool,
                     const STimeout* timeout)
-        : m_Event(event), m_ConnPool(conn_pool), m_IdleTimeout(timeout) {}
+        : m_Event(event), m_ConnPool(conn_pool), m_IdleTimeout(timeout)
+    { }
 
     virtual void Cancel(void) = 0;
 
@@ -355,7 +367,7 @@ protected:
     EServIO_Event            m_Event;
     CServer_ConnectionPool&  m_ConnPool;
     const STimeout*          m_IdleTimeout;
-} ;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -373,7 +385,8 @@ private:
     void x_DoProcess(void);
 
     CServer_Connection* m_Connection;
-} ;
+};
+
 
 CAcceptRequest::CAcceptRequest(EServIO_Event event,
                                CServer_ConnectionPool& conn_pool,
@@ -409,6 +422,7 @@ CAcceptRequest::CAcceptRequest(EServIO_Event event,
     m_Connection = conn.release();
 }
 
+
 void CAcceptRequest::x_DoProcess(void)
 {
     if (m_ConnPool.Add(m_Connection, eActiveSocket)) {
@@ -423,6 +437,7 @@ void CAcceptRequest::x_DoProcess(void)
     }
 }
 
+
 void CAcceptRequest::Process(void)
 {
     if (!m_Connection) return;
@@ -436,6 +451,7 @@ void CAcceptRequest::Process(void)
     }
 }
 
+
 void CAcceptRequest::Cancel(void)
 {
     // As of now, Cancel can not be called.
@@ -445,6 +461,7 @@ void CAcceptRequest::Cancel(void)
         delete m_Connection;
     }
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CServerConnectionRequest
@@ -457,7 +474,7 @@ public:
                              CServer_Connection*     connection)
         : CServer_Request(event, conn_pool, timeout),
           m_Connection(connection)
-    {}
+    { }
     virtual void Process(void);
     virtual void Cancel(void);
 private:
@@ -525,10 +542,12 @@ CServer_Connection::CreateRequest(EServIO_Event           event,
     return new CServerConnectionRequest(event, conn_pool, timeout, this);
 }
 
+
 bool CServer_Connection::IsOpen(void)
 {
     return m_Open;
 }
+
 
 void CServer_Connection::OnSocketEvent(EServIO_Event event)
 {
@@ -564,6 +583,7 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
     }
 }
 
+
 CServer_Connection::~CServer_Connection()
 {
     static const STimeout zero_timeout = {0, 0};
@@ -572,6 +592,7 @@ CServer_Connection::~CServer_Connection()
     // TIME_WAIT state on the server.
     SetTimeout(eIO_Close, &zero_timeout);
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CServer implementation
@@ -768,6 +789,7 @@ void CServer::x_DoRun(void)
     }
 }
 
+
 void CServer::Run(void)
 {
     StartListening(); // detect unavailable ports ASAP
@@ -829,20 +851,24 @@ void CServer::AddConnectionToPool(CServer_Connection* conn)
     }
 }
 
+
 void CServer::RemoveConnectionFromPool(CServer_Connection* conn)
 {
     m_ConnectionPool->Remove(conn);
 }
+
 
 void CServer::WakeUpPollCycle(void)
 {
     m_ConnectionPool->PingControlConnection();
 }
 
+
 vector<unsigned short>  CServer::GetListenerPorts(void)
 {
     return m_ConnectionPool->GetListenerPorts();
 }
+
 
 /////////////////////////////////////////////////////////////////////////////
 // SServer_Parameters implementation
@@ -857,8 +883,8 @@ SServer_Parameters::SServer_Parameters() :
     init_threads(5),
     max_threads(10),
     spawn_threshold(1)
-{
-}
+{ }
+
 
 const char* CServer_Exception::GetErrCodeString(void) const
 {
@@ -869,5 +895,6 @@ const char* CServer_Exception::GetErrCodeString(void) const
     default:             return CException::GetErrCodeString();
     }
 }
+
 
 END_NCBI_SCOPE

@@ -38,7 +38,10 @@ BEGIN_NCBI_SCOPE
 /// Server monitor
 ///
 
-CServer_Monitor::CServer_Monitor() : m_Sock(0) {}
+CServer_Monitor::CServer_Monitor()
+    : m_Sock(0)
+{ }
+
 
 CServer_Monitor::~CServer_Monitor() 
 { 
@@ -64,6 +67,7 @@ void CServer_Monitor::SetSocket(CSocket& socket)
     m_Sock = s.release(); 
 }
 
+
 bool CServer_Monitor::IsMonitorActive()
 {
     if (!m_Sock) return false;
@@ -79,6 +83,7 @@ bool CServer_Monitor::IsMonitorActive()
     return false;
 }
 
+
 void CServer_Monitor::SendMessage(const char* msg, size_t length)
 {
     CFastMutexGuard guard(m_Lock);
@@ -89,6 +94,7 @@ void CServer_Monitor::SendMessage(const char* msg, size_t length)
         m_Sock = 0;
     }
 }
+
 
 void CServer_Monitor::SendString(const string& str)
 {
@@ -101,10 +107,12 @@ bool CServer_Monitor::IsActive()
     return IsMonitorActive();
 }
 
+
 void CServer_Monitor::Send(const char* msg, size_t length)
 {
     SendMessage(msg, length);
 }
+
 
 void CServer_Monitor::Send(const string& str)
 {
