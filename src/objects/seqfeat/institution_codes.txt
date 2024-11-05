@@ -1666,9 +1666,10 @@ CUMV:Bird	s	Cornell University Museum of Vertebrates, Bird Collection	Ornitholog
 CUMV:Fish	s	Cornell University Museum of Vertebrates, Fish Collection	Ichthyology		
 CUMV:Mamm	s	Cornell University Museum of Vertebrates, Mammal Collection	Mammalogy		
 CUMV:Rept	s	Cornell University Museum of Vertebrates, Reptile Collection	Herpetology		
+CUMZ:THA>:A	s	Amphibian Collection			
 CUMZ<CAN>	s	Carleton University, Museum of Zoology			
 CUMZ<CMR>	s	Cameroon University, Museum of Zoology			
-CUMZ<THA>	s	Chulalongkorn University Museum of Natural History	CUB		
+CUMZ<THA>	s	Chulalongkorn University Museum of Natural History			
 CUMZ<THA>:R	s	Chulalongkorn University Museum of Natural History, Reptile Collection	CUMZ:R,CUMZ<THA>R,CUMZR		
 CUMZ<UK>	s	Cambridge University, Museum of Zoology			
 CUNRC	s	Universidad Nacional de Rio Cuarto, Coleccion de Mamiferos (Argentina)			

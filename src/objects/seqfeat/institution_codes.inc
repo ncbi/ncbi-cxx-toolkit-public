@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Oct 30 05:33:05 EDT 2024; formally
+/* time_t value corresponding to Tue Nov  5 05:33:04 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1730280785UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1730802784UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1702,9 +1702,10 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CUMV:Fish\ts\tCornell University Museum of Vertebrates, Fish Collection\tIchthyology\t\t",
 "CUMV:Mamm\ts\tCornell University Museum of Vertebrates, Mammal Collection\tMammalogy\t\t",
 "CUMV:Rept\ts\tCornell University Museum of Vertebrates, Reptile Collection\tHerpetology\t\t",
+"CUMZ:THA>:A\ts\tAmphibian Collection\t\t\t",
 "CUMZ<CAN>\ts\tCarleton University, Museum of Zoology\t\t\t",
 "CUMZ<CMR>\ts\tCameroon University, Museum of Zoology\t\t\t",
-"CUMZ<THA>\ts\tChulalongkorn University Museum of Natural History\tCUB\t\t",
+"CUMZ<THA>\ts\tChulalongkorn University Museum of Natural History\t\t\t",
 "CUMZ<THA>:R\ts\tChulalongkorn University Museum of Natural History, Reptile Collection\tCUMZ:R,CUMZ<THA>R,CUMZR\t\t",
 "CUMZ<UK>\ts\tCambridge University, Museum of Zoology\t\t\t",
 "CUNRC\ts\tUniversidad Nacional de Rio Cuarto, Coleccion de Mamiferos (Argentina)\t\t\t",
