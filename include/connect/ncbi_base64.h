@@ -40,6 +40,7 @@
 
 #define BASE64_Encode CONNECT_BASE64_Encode
 #define BASE64_Decode CONNECT_BASE64_Decode
+
 #define EBase64_Result CONNECT_EBase64_Result
 #define base64url_encode CONNECT_base64url_encode
 #define base64url_decode CONNECT_base64url_decode
@@ -58,17 +59,18 @@ extern "C" {
  *  Resulting lines will not exceed "*line_len" (or the standard default
  *  if "line_len" is NULL) bytes;  *line_len == 0 disables the line breaks.
  *  To estimate required destination buffer size, you can take into account
- *  that BASE64 encoding converts every 3 bytes of source into 4 bytes of
- *  encoded output, not including the additional line breaks ('\n').
+ *  that BASE64 encoding converts every 3 bytes (including incomplete) of
+ *  source into 4 bytes of encoded output, not counting the additional line
+ *  breaks ('\n').
  */
-extern NCBI_XCONNECT_EXPORT void        BASE64_Encode
-(const void* src_buf,     /* [in]     non-NULL */
- size_t      src_size,    /* [in]              */
- size_t*     src_read,    /* [out]    non-NULL */
- void*       dst_buf,     /* [in/out] non-NULL */
- size_t      dst_size,    /* [in]              */
- size_t*     dst_written, /* [out]    non-NULL */
- size_t*     line_len     /* [in]  may be NULL */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Encode
+(const void*   src_buf,     /* [in]     non-NULL */
+ size_t        src_size,    /* [in]              */
+ size_t*       src_read,    /* [out]    non-NULL */
+ void*         dst_buf,     /* [in/out] non-NULL */
+ size_t        dst_size,    /* [in]              */
+ size_t*       dst_written, /* [out]    non-NULL */
+ const size_t* line_len     /* [in]  may be NULL */
  );
 
 
@@ -78,17 +80,17 @@ extern NCBI_XCONNECT_EXPORT void        BASE64_Encode
  *  Assign "*src_read" with the # of bytes successfully decoded from "src_buf".
  *  Assign "*dst_written" with the # of bytes written to buffer "dst_buf".
  *  Return FALSE (0) only if this call cannot decode anything at all.
- *  The destination buffer size, as a worst case, equal to the source size
+ *  The destination buffer size, as the worst case, equal to the source size
  *  will accommodate the entire output.  As a rule, each 4 bytes of source
  *  (line breaks ignored) get converted into 3 bytes of decoded output.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ BASE64_Decode
-(const void* src_buf,     /* [in]     non-NULL */
- size_t      src_size,    /* [in]              */
- size_t*     src_read,    /* [out]    non-NULL */
- void*       dst_buf,     /* [in/out] non-NULL */
- size_t      dst_size,    /* [in]              */
- size_t*     dst_written  /* [out]    non-NULL */
+(const void*   src_buf,     /* [in]     non-NULL */
+ size_t        src_size,    /* [in]              */
+ size_t*       src_read,    /* [out]    non-NULL */
+ void*         dst_buf,     /* [in/out] non-NULL */
+ size_t        dst_size,    /* [in]              */
+ size_t*       dst_written  /* [out]    non-NULL */
  );
 
 

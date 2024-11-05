@@ -32,6 +32,7 @@
  *
  */
 
+#include <connect/ncbi_base64.h>
 #include <connect/ncbi_util.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_assert.h"
@@ -484,6 +485,88 @@ static void TEST_UTIL(void)
 }
 
 
+static void TEST_Base64(void)
+{
+    static struct {
+        const char* plain;
+        const char* encoded;
+    } kTests[] = {
+        { "", "T===" },
+        { "", "TE==" },
+        /* Test vectors from RFC4648 */
+        { "f",      "Zg=="     },
+        { "fo",     "Zm8="     },
+        { "foo",    "Zm9v"     },
+        { "foob",   "Zm9vYg==" },
+        { "fooba",  "Zm9vYmE=" },
+        { "foobar", "Zm9vYmFy" },
+        /* Test vectors from Wikipedia */
+        { "M",   "TQ==" },
+        { "Ma",  "TWE=" },
+        { "Man", "TWFu" },
+        { "Many hands make light work.",
+          "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsu" },
+        { "light work.",
+          "bGlnaHQgd29yay4=" },
+        { "light work",
+          "bGlnaHQgd29yaw==" },        
+        { "light wor",
+          "bGlnaHQgd29y" },
+        { "light wo",
+          "bGlnaHQgd28=" },
+        { "light w",
+          "bGlnaHQgdw==" },
+        /* Other test vectors */
+        { "The quick brown fox jumps over the lazy dog.",
+          "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZy4=" },
+        {  "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do"
+           " eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut"
+           " enim ad minim veniam, quis nostrud exercitation ullamco laboris"
+           " nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor"
+           " in reprehenderit in voluptate velit esse cillum dolore eu fugiat"
+           " nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
+           " sunt in culpa qui officia deserunt mollit anim id est laborum.",
+           "TG9yZW0gaXBzdW0gZG9sb3Igc2l0IGFtZXQsIGNvbnNlY3RldHVyIGFkaXBpc2NpbmcgZWxpdCwg\n"
+           "c2VkIGRvIGVpdXNtb2QgdGVtcG9yIGluY2lkaWR1bnQgdXQgbGFib3JlIGV0IGRvbG9yZSBtYWdu\n"
+           "YSBhbGlxdWEuIFV0IGVuaW0gYWQgbWluaW0gdmVuaWFtLCBxdWlzIG5vc3RydWQgZXhlcmNpdGF0\n"
+           "aW9uIHVsbGFtY28gbGFib3JpcyBuaXNpIHV0IGFsaXF1aXAgZXggZWEgY29tbW9kbyBjb25zZXF1\n"
+           "YXQuIER1aXMgYXV0ZSBpcnVyZSBkb2xvciBpbiByZXByZWhlbmRlcml0IGluIHZvbHVwdGF0ZSB2\n"
+           "ZWxpdCBlc3NlIGNpbGx1bSBkb2xvcmUgZXUgZnVnaWF0IG51bGxhIHBhcmlhdHVyLiBFeGNlcHRl\n"
+           "dXIgc2ludCBvY2NhZWNhdCBjdXBpZGF0YXQgbm9uIHByb2lkZW50LCBzdW50IGluIGN1bHBhIHF1\n"
+           "aSBvZmZpY2lhIGRlc2VydW50IG1vbGxpdCBhbmltIGlkIGVzdCBsYWJvcnVtLg==" }
+    };
+    size_t n, n_read, n_written;
+    char buf[1024];
+
+    for (n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
+        const char* plain   = kTests[n].plain;
+        const char* encoded = kTests[n].encoded;
+        size_t len;
+
+        printf("Test %zu\n", n);
+
+        len = strlen(plain);
+        assert(BASE64_Encode(plain, len,         &n_read,
+                             buf,   sizeof(buf), &n_written, 0));
+        assert(n_read == len);
+        len = strlen(encoded);
+        if (n > 1) {
+            assert(n_written == len);
+            assert(strcmp(encoded, buf) == 0);
+        }
+
+        assert(BASE64_Decode(encoded, len,         &n_read,
+                             buf,     sizeof(buf), &n_written) == (n > 1));
+        if (n > 1) {
+            assert(n_read == len);
+            len = strlen(plain);
+            assert(n_written == len);
+            assert(memcmp(plain, buf, len) == 0);
+        } else
+            assert((n == 0  &&  n_read == 2)  ||  (n == 1  &&  n_read == 3));
+    }
+}
+
 
 /*****************************************************************************
  *  MAIN -- test all
@@ -493,5 +576,7 @@ int main(void)
 {
     TEST_CORE();
     TEST_UTIL();
+    DO_TEST(TEST_Base64);
+    puts("\nTEST completed successfully");
     return 0;
 }
