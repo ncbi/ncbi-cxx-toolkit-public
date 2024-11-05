@@ -444,7 +444,7 @@ extern char* LOG_ComposeMessage
     size_t total_len;
 
     const char* level;
-    char *str, *s, datetime[32];
+    char *str, *s, datetime[40];
 
     /* Adjust formatting flags */
     if (mess->level == eLOG_Trace  &&  !(flags & fLOG_None))
@@ -469,22 +469,20 @@ extern char* LOG_ComposeMessage
         datetime[datetime_len]   = '\0';
 #else /*NCBI_OS_MSWIN*/
         static const char timefmt[] = "%m/%d/%y %H:%M:%S ";
-        struct tm* tm;
+        struct tm tm;
 #  ifdef NCBI_CXX_TOOLKIT
-        time_t t = time(0);
+        time_t now = time(0);
 #    ifdef HAVE_LOCALTIME_R
-        struct tm temp;
-        localtime_r(&t, &temp);
-        tm = &temp;
+        localtime_r(&now, &tm);
 #    else /*HAVE_LOCALTIME_R*/
-        tm = localtime(&t);
+        CORE_LOCK_WRITE;
+        tm = *localtime(&now);
+        CORE_UNLOCK;
 #    endif/*HAVE_LOCALTIME_R*/
 #  else /*NCBI_CXX_TOOLKIT*/
-        struct tm temp;
-        Nlm_GetDayTime(&temp);
-        tm = &temp;
+        Nlm_GetDayTime(&tm);
 #  endif /*NCBI_CXX_TOOLKIT*/
-        datetime_len = strftime(datetime, sizeof(datetime), timefmt, tm);
+        datetime_len = strftime(datetime, sizeof(datetime), timefmt, &tm);
 #endif /*NCBI_OS_MSWIN*/
     }
     if ((flags & fLOG_Level) != 0
