@@ -130,6 +130,8 @@ extern int/*bool*/ BASE64_Decode
     i = j = 0;
     do {
         unsigned char c = src[i++];
+        if (c == '\r'  ||  c == '\n'  ||  c == '\v'  ||  c == '\f')
+            continue/*ignore line breaks*/;
         if (c == '='  &&  !pad) {
             if (!nb) {
                 --i;
@@ -148,8 +150,6 @@ extern int/*bool*/ BASE64_Decode
                 break/*done*/;
             continue/*endgame*/;
         }
-        if (c == '\r'  ||  c == '\n'  ||  c == '\v'  ||  c == '\f')
-            continue/*ignore line breaks*/;
         else if (c >= 'A'  &&  c <= 'Z')
             c -= (unsigned char) 'A';
         else if (c >= 'a'  &&  c <= 'z')
