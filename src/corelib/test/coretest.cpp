@@ -1167,20 +1167,20 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
     BOOST_CHECK(buf1[written] == '\0');
 
     BOOST_CHECK(BASE64_Decode(buf1, written, &read,
-                          buf2, sizeof(buf2), &written));
+                              buf2, sizeof(buf2), &written));
     BOOST_CHECK(strlen(buf1) == read);
     BOOST_CHECK(written == strlen(test_string) + 1);
     BOOST_CHECK(buf2[written - 1] == '\0');
     BOOST_CHECK(strcmp(buf2, test_string) == 0);
 
-    for (i = 0; i < 100; i++) {
-        len = rand() % 250;
+    for (i = 0;  i < 100;  ++i) {
         memset(buf1, '\0', sizeof(buf1));
         memset(buf2, '\0', sizeof(buf2));
         memset(buf3, '\0', sizeof(buf3));
-        for (j = 0; j < len; j++) {
+
+        len = rand() % 250;
+        for (j = 0;  j < len;  ++j)
             buf1[j] = char(rand() & 0xFF);
-        }
 
         j = rand() % 100;
         BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j);
@@ -1190,13 +1190,12 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         BOOST_CHECK(written < sizeof(buf2));
         BOOST_CHECK(buf2[written] == '\0');
 
-        if (rand() & 1) {
+        if (rand() & 1)
             buf2[written] = '=';
-        }
         j = written;
         BASE64_Decode(buf2, j, &read, buf3, sizeof(buf3), &written);
         if (j != read)
-            NcbiCerr << "j = " << len << ", read = " << read << NcbiEndl;
+            NcbiCerr << "j = " << j << ", read = " << read << NcbiEndl;
         BOOST_CHECK(j == read);
         BOOST_CHECK(len == written);
         BOOST_CHECK(memcmp(buf1, buf3, len) == 0);
