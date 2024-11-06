@@ -648,7 +648,12 @@ public:
     {
         if (m_JobContext.GetShutdownLevel() ==
                 CNetScheduleAdmin::eShutdownImmediate) {
-            m_JobContext.ReturnJob();
+            try {
+                m_JobContext.ReturnJob();
+            }
+            catch (...) {
+            }
+
             return m_ProcessManager(pid) ? eExit : eStop;
         }
 
