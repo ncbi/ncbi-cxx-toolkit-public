@@ -417,6 +417,11 @@ public:
     /// Get current read-only flag.
     bool GetReadOnly(void) const { return m_IsReadOnly; }
 
+    void SetDisabledAppLog(bool disable) { m_DisabledAppLog = disable; }
+    bool GetDisabledAppLog(void) const { return m_DisabledAppLog; }
+    void SetDisabledAppLogEvents(CDiagContext::EDisabledAppLogEvents events) { m_DisabledAppLogEvents = events; }
+    CDiagContext::EDisabledAppLogEvents GetDisabledAppLogEvents(void) const { return m_DisabledAppLogEvents; }
+
     typedef CAtomicCounter::TValue TVersion;
 
     /// Return version increased on every context change (hit/subhit id, client ip,
@@ -545,6 +550,10 @@ private:
     bool           m_AutoIncOnPost;
     TContextFlags  m_Flags;
     string         m_SubHitIDCache;
+
+    // Disabling diag messages; By default the global values from CDiagContext are used.
+    bool                                m_DisabledAppLog;
+    CDiagContext::EDisabledAppLogEvents m_DisabledAppLogEvents;
 
     // For saving/checking owner TID.
     friend class CDiagContextThreadData;

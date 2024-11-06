@@ -2300,6 +2300,18 @@ public:
 
     static bool IsMainThreadDataInitialized(void);
 
+    /// Get flag disabling applog events (set by DIAG_DISABLE_APPLOG_MESSAGES variable).
+    static bool GetDisabledAppLog(void);
+
+    /// Flags for disabling groups of applog events with DIAG_DISABLE_APPLOG_MESSAGES.
+    /// The global value can be set using DIAG_DISABLE_APPLOG_MESSAGE_TYPES.
+    enum EDisabledAppLogEvents {
+        eDisable_All, ///< Disable all applog events (default).
+        eEnable_App,   ///< Allow only application start/stop.
+    };
+    /// Get disabled applog events (set by DIAG_DISABLE_APPLOG_MESSAGE_TYPES variable).
+    static EDisabledAppLogEvents GetDisabledAppLogEvents(void);
+    
 private:
     CDiagContext(const CDiagContext&);
     CDiagContext& operator=(const CDiagContext&);

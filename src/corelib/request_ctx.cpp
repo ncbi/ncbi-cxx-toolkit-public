@@ -174,6 +174,8 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_IsRunning(false),
       m_AutoIncOnPost(false),
       m_Flags(flags),
+      m_DisabledAppLog(CDiagContext::GetDisabledAppLog()),
+      m_DisabledAppLogEvents(CDiagContext::GetDisabledAppLogEvents()),
       m_OwnerTID(-1),
       m_IsReadOnly(false),
       m_Version(sm_VersionCounter.Add(1)),
@@ -608,6 +610,8 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_IsRunning = m_IsRunning;
     ret->m_AutoIncOnPost = m_AutoIncOnPost;
     ret->m_Flags = m_Flags;
+    ret->m_DisabledAppLog = m_DisabledAppLog;
+    ret->m_DisabledAppLogEvents = m_DisabledAppLogEvents;
     ret->m_IsReadOnly = m_IsReadOnly;
     // NOTE: Do not clone m_Version - the new context gets its own unique version.
     return ret;

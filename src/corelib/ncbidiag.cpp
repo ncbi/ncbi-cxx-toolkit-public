@@ -434,6 +434,45 @@ NCBI_PARAM_DEF_EX(bool, Diag, Disable_AppLog_Messages, false, eParam_NoThread,
     DIAG_DISABLE_APPLOG_MESSAGES);
 static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disable_AppLog_Messages)> s_DisableAppLog;
 
+// Set applog event types to disable with DIAG_DISABLE_APPLOG_MESSAGES.
+// By default all events are disabled.
+NCBI_PARAM_ENUM_DECL(CDiagContext::EDisabledAppLogEvents, Diag, Disabled_Applog_Events);
+NCBI_PARAM_ENUM_ARRAY(CDiagContext::EDisabledAppLogEvents, Diag, Disabled_Applog_Events)
+{
+    {"All", CDiagContext::eDisable_All},
+    {"Enable_App", CDiagContext::eEnable_App}
+};
+NCBI_PARAM_ENUM_DEF_EX(CDiagContext::EDisabledAppLogEvents, Diag, Disabled_Applog_Events,
+    CDiagContext::eDisable_All, eParam_NoThread, DIAG_DISABLED_APPLOG_EVENTS);
+static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disabled_Applog_Events)> s_DisabledAppLogEvents;
+
+
+bool CDiagContext::GetDisabledAppLog(void)
+{
+    return s_DisableAppLog->Get();
+}
+
+
+CDiagContext::EDisabledAppLogEvents CDiagContext::GetDisabledAppLogEvents(void)
+{
+    return s_DisabledAppLogEvents->Get();
+}
+
+
+static bool s_IsDisabledAppLogEvent(const CRequestContext& rctx, SDiagMessage::EEventType event_type)
+{
+    if (!rctx.GetDisabledAppLog()) return false;
+    auto disabled_events = rctx.GetDisabledAppLogEvents();
+    switch (disabled_events) {
+    case CDiagContext::eDisable_All:
+        return true;
+    case CDiagContext::eEnable_App:
+        // Allow only app-start and app-stop.
+        return event_type != SDiagMessage::eEvent_Start &&
+            event_type != SDiagMessage::eEvent_Stop;
+    }
+}
+
 
 static bool s_FinishedSetupDiag = false;
 
@@ -2375,7 +2414,7 @@ void CDiagContext_Extra::Flush(void)
             .append(NStr::DoubleToString(m_PerfTime, -1, NStr::fDoubleFixed));
     }
 
-    if (!s_DisableAppLog->Get()) {
+    if (!s_IsDisabledAppLogEvent(CDiagContext::GetRequestContext(), m_EventType)) {
         SDiagMessage mess(eDiag_Info,
                           s.data(), s.size(),
                           0, 0, // file, line
@@ -3323,7 +3362,7 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
         str.append(message);
     }
 
-    if (!s_DisableAppLog->Get()) {
+    if (!s_IsDisabledAppLogEvent(ctx, event)) {
         SDiagMessage mess(eDiag_Info,
             str.data(), str.size(),
             0, 0, // file, line
@@ -4115,7 +4154,7 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
             if ( ctx.ApproveMessage(mess, &show_warning) ) {
                 if (mess.m_Severity >= eDiag_Error &&
                     mess.m_Severity != eDiag_Trace &&
-                    s_DisableAppLog->Get() &&
+                    s_IsDisabledAppLogEvent(rctx, mess.m_Event) &&
                     rctx.x_LogHitIDOnError()) {
                     const CNcbiDiag diag(DIAG_COMPILE_INFO);
                     SDiagMessage phid_msg(eDiag_Error,
