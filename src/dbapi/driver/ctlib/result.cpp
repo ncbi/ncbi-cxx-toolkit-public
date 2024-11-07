@@ -752,7 +752,8 @@ CDB_Object* CTL_RowResult::GetItemInternal(
         }
         *bdt = t;
         if (dr.datetzone != 0  ||  fmt.usertype == 43) {
-            bdt->Assign(bdt->GetCTime(), bdt->GetSQLType(), dr.datetzone);
+            bdt->Assign(bdt->GetCTime(), bdt->GetSQLType(),
+                        static_cast<short>(dr.datetzone));
         }
         break;
     }
