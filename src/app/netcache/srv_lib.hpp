@@ -335,6 +335,13 @@ public:
     string GetDefaultClientIP(void) {
         return "";
     }
+
+    enum EDisabledAppLogEvents {
+        eDisable_All,
+        eEnable_App
+    };
+    static bool GetDisabledAppLog(void) { return false; }
+    static EDisabledAppLogEvents GetDisabledAppLogEvents(void) { return eDisable_All; }
 private:
     string m_hid;
 };
