@@ -623,7 +623,7 @@ xxx_GetTypeInfo(void)
 
 template<typename TRoot>
 //typename enable_if< !is_base_of< CSerialObject, TRoot>::value, TTypeInfo>::type
-typename enable_if< is_pod<TRoot>::value || is_convertible<TRoot, std::string>::value, TTypeInfo>::type
+typename enable_if< (is_trivial<TRoot>::value && is_standard_layout <TRoot>::value) || is_convertible<TRoot, std::string>::value, TTypeInfo>::type
 xxx_GetTypeInfo(void)
 {
     return CStdTypeInfo<TRoot>::GetTypeInfo();
