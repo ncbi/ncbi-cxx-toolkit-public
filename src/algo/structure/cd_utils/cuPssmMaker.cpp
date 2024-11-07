@@ -426,7 +426,7 @@ CRef<CPssmWithParameters> PssmMaker::makeDefaultPssm()
 	CRef<CPssmWithParameters> pssmPara(new CPssmWithParameters);
 	CPssm& pssm = pssmPara->SetPssm();
 	pssm.SetNumColumns(consensus.size());
-	int numRows = ColumnResidueProfile::m_residues.size();
+	int numRows = ColumnResidueProfile::getResiduesStringSize();
 	pssm.SetNumRows(numRows);
 	list< double >* freqs = 0;
 	if (m_config.requestFrequencyRatios)

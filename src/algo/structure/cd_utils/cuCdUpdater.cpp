@@ -1580,7 +1580,7 @@ void CDUpdater::OssToDefline(const CUser_field::TData::TOss & oss, CBlast_def_li
 //  Check for changes in original source if this forked version misbehaves in the future.
 CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& bioseq)
 {
-	static const string asnDeflineObjLabel = "ASN1_BlastDefLine";
+    static const char* asnDeflineObjLabel = "ASN1_BlastDefLine";
 
     CRef<CBlast_def_line_set> bdls(new CBlast_def_line_set());
     if(bioseq.IsSetDescr()){
@@ -1612,7 +1612,7 @@ CRef<CBlast_def_line_set>  CDUpdater::GetBlastDefline (const CBioseq& bioseq)
 
 void CDUpdater::RemoveBlastDefline (CBioseq& handle)
 {
-	static const string asnDeflineObjLabel = "ASN1_BlastDefLine";
+	static const char* asnDeflineObjLabel = "ASN1_BlastDefLine";
 	if(handle.IsSetDescr())
 	{
 		CSeq_descr& desc = handle.SetDescr();
