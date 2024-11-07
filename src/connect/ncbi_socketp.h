@@ -48,7 +48,8 @@
  */
 
 #ifdef NCBI_OS_MSWIN
-#  define  _WINSOCK_DEPRECATED_NO_WARNINGS  1
+#  define _WINSOCK_DEPRECATED_NO_WARNINGS  1
+#  define  WIN32_LEAN_AND_MEAN
 #  include <winsock2.h>
 #else /*NCBI_OS_UNIX*/
 #  include <sys/socket.h>
@@ -393,6 +394,13 @@ size_t SOCK_HostPortToStringEx(unsigned int   host,
 void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init);
 
 EIO_Status SOCK_SetupSSLInternalEx(FSSLSetup setup, int/*bool*/ init);
+
+
+#ifdef NCBI_OS_MSWIN
+/* Utility */
+
+int gettimeofday(struct timeval* tp, void* unused);
+#endif /*NCBI_OS_MSWIN*/
 
 
 #ifdef __cplusplus
