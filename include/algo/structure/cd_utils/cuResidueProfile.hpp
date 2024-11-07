@@ -41,27 +41,29 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
+
 //on one column
  class NCBI_CDUTILS_EXPORT ColumnResidueProfile
  {
  public:
-	static const string m_residues;
-	static unsigned char getNcbiStdCode(char eaa);
-	static char getEaaCode(char stdCode) {return m_residues[stdCode];}
+    static unsigned char  getNcbiStdCode(char eaa);
+	static char           getEaaCode(char stdCode);
+    static const string   getResiduesString();
+    static int            getResiduesStringSize();
+    
+    ColumnResidueProfile(); //init occurence to 0
+    ~ColumnResidueProfile();
 
-	 ColumnResidueProfile(); //init occurence to 0
-	 ~ColumnResidueProfile();
-
-	 void addOccurence(char residue, int row, bool aligned);
-	 double calculateColumnWeight(char residue, bool countGap, int numRows)const;
-	 //return the total weights for this column, which should be 1
-	 double sumUpColumnWeightsByRow(vector<double>& rowWeights, bool countGap, int numRows) const;
-	 double reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const;
-	 int getSumCount() const;
-	char getMostFrequentResidue(int& count) const ;
-	//bool hasRow(int row) const;
-	void getResiduesByRow(vector<char>& residues, bool byNcbiStd=true)const;
-	//residues will be in Ncbistd
+    void addOccurence(char residue, int row, bool aligned);
+    double calculateColumnWeight(char residue, bool countGap, int numRows)const;
+    //return the total weights for this column, which should be 1
+    double sumUpColumnWeightsByRow(vector<double>& rowWeights, bool countGap, int numRows) const;
+    double reweightColumnByRowWeights(const vector<double>& rowWeights, char& heaviestResidue)const;
+    int getSumCount() const;
+    char getMostFrequentResidue(int& count) const ;
+    //bool hasRow(int row) const;
+    void getResiduesByRow(vector<char>& residues, bool byNcbiStd=true)const;
+    //residues will be in Ncbistd
 	unsigned char getResidueByRow(int row);
 	bool isAligned(char residue, int row)const;
 	bool isAligned(int row);
@@ -80,12 +82,11 @@ BEGIN_SCOPE(cd_utils)
         return (row > (int)(m_residuesByRow.size()-1)) ? 0 : m_residuesByRow[row];
     };
 	// inline ResidueRowsMap::const_iterator* findRow(int row)const;
-	 //set<int> m_rows;
+    //set<int> m_rows;
 	 bool m_masterIn;
 	 ResidueRowsMap m_residueRowsMap;
 	 //to speed up findRow
      vector<ResidueRowsMap::iterator*> m_residuesByRow;
-	 static map<char, double> m_backgroundResFreq;
 	 static void useDefaultBackgroundResFreq();
 	 double getBackgroundResFreq(char res);
 	 int m_residueTypeCount;
