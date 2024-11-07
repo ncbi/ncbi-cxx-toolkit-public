@@ -235,7 +235,8 @@ string CCdFromFasta::GetSequenceReadFromFile(unsigned int index) const
 
 string CCdFromFasta::GetColumnReadFromFile(unsigned int column) const
 {
-    static const string gap("-");
+    const char gap = '-';
+    
     string result = "";
     string rowSequence;
     unsigned int row = 0, nNoSuchColumn = 0;
@@ -268,8 +269,8 @@ unsigned int CCdFromFasta::GetGaplessColumnsReadFromFile(map<unsigned int, strin
 
 unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& columns, bool skipGappedColumns) const
 {
-    static const string gap("-");
-    static const string letters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+    const char gap = '-';
+    static const char* letters("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
     string result = "";
     string rowSequence, columnString;
@@ -360,7 +361,7 @@ bool CCdFromFasta::UpdateSourceId(const string& sourceId, int version)
 
 bool CCdFromFasta::WriteToFile(const string& outputFile) const
 {
-    static const string cdExt = ".cn3";
+    static const char* cdExt = ".cn3";
     bool result = true;
     string cdOutFile, cdOutExt, err;
 
@@ -378,6 +379,7 @@ bool CCdFromFasta::WriteToFile(const string& outputFile) const
     }
     return result;
 }
+
 
 END_SCOPE(cd_utils)
 END_NCBI_SCOPE

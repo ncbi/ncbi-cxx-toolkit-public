@@ -84,8 +84,6 @@ int GetReMasterFailureCode(const CCdCore* cd) {
 }
 
 
-
-
 void ResetFields(CCdCore* cd) {
     if (cd) {
         cd->ResetProfile_range();
@@ -106,7 +104,6 @@ void ResetFields(CCdCore* cd) {
 		}
     }
 }
-
 
 
 bool Reorder(CCdCore* pCD, const vector<int> positions)
@@ -727,7 +724,7 @@ bool obeysParentTypeConstraints(const CCdCore* pCD) {
 
 bool RemasterWithStructure(CCdCore* cd, string* msg)
 {
-    static const string msgHeader = "Remastering CD to ";
+    static const char* msgHeader = "Remastering CD to ";
 
 	CRef< CSeq_id > seqId;
 	cd->GetSeqIDForRow(0,0,seqId);
