@@ -21,30 +21,48 @@
  *
  *  Please cite the author in any work or product based on this material.
  */
+ 
 #include <ncbi_pch.hpp>
 #include <algo/structure/cd_utils/cuResidueProfile.hpp>
 #include <algo/structure/cd_utils/cuUtils.hpp>
 #include <algo/blast/core/blast_util.h>
-#include  <math.h>
+#include <math.h>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-// define ColumnResidueProfile
-const string ColumnResidueProfile::m_residues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; //ncbieaa
+
+static const char*  kResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; //ncbieaa
+static const size_t kResiduesSize = CT_CONST_STR_LEN(kResidues);
 
 unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 {
-	unsigned char  ret = m_residues.find(eaa);
-	if(ret < m_residues.size())
-		return ret;
-	else
-		return m_residues.find('X');
+    std::string_view residues(kResidues,kResiduesSize);
+    auto ret = residues.find(eaa);
+    if (ret == NPOS) {
+        ret = residues.find('X');
+    }
+    return static_cast<unsigned char>(ret);
 }
 
+inline char ColumnResidueProfile::getEaaCode(char stdCode) {
+    return kResidues[static_cast<int>(stdCode)];
+}
+
+inline const string ColumnResidueProfile::getResiduesString()
+{
+    return kResidues;
+}
+
+inline int ColumnResidueProfile::getResiduesStringSize()
+{
+    return static_cast<int>(kResiduesSize);
+}
+
+
 ColumnResidueProfile::ColumnResidueProfile()
-:m_masterIn(false), m_residueRowsMap(), m_residueTypeCount(0), m_indexByConsensus(-1)
- //m_backgroundResFreq()
+: m_masterIn(false), m_residueRowsMap(), m_residueTypeCount(0), m_indexByConsensus(-1)
 {
 }
 
@@ -82,7 +100,7 @@ bool ColumnResidueProfile::hasRow(int row) const
 {
 	return m_rows.find(row) != m_rows.end();
 }*/
- /*
+/*
 ColumnResidueProfile::ResidueRowsMap::iterator* ColumnResidueProfile::findRow(int row)
 {
 	if (row > (m_residuesByRow.size()-1))
@@ -90,7 +108,7 @@ ColumnResidueProfile::ResidueRowsMap::iterator* ColumnResidueProfile::findRow(in
 	else
 		return m_residuesByRow[row];
 }
- */
+*/
 
 /*ColumnResidueProfile::ResidueRowsMap::const_iterator* ColumnResidueProfile::findRow(int row)const
 {
@@ -105,16 +123,16 @@ int ColumnResidueProfile::getSumCount() const
 char ColumnResidueProfile::getMostFrequentResidue(int& count) const
 {
 	unsigned int max = 0;
-	count = m_residueRowsMap.count(m_residues[max]);
-	for (unsigned int i = 1; i < m_residues.size(); i++)
+	count = m_residueRowsMap.count(kResidues[max]);
+	for (unsigned int i = 1; i < kResiduesSize; i++)
 	{
-		if ((int)m_residueRowsMap.count(m_residues[i]) > count)
+		if ((int)m_residueRowsMap.count(kResidues[i]) > count)
 		{
 			max = i;
-			count = m_residueRowsMap.count(m_residues[i]);
+			count = m_residueRowsMap.count(kResidues[i]);
 		}
 	}
-	return m_residues[max];
+	return kResidues[max];
 }
 	 
 double ColumnResidueProfile::calculateColumnWeight(char residue, bool countGap, int numRows)const
@@ -173,10 +191,10 @@ double ColumnResidueProfile::reweightColumnByRowWeights(const vector<double>& ro
 	double totalWeight = 0;
 	double maxResWeight = 0;
 	double resWeight = 0;
-	for (unsigned int i = 0; i < m_residues.size(); i++)
+	for (unsigned int i = 0; i < kResiduesSize; i++)
 	{
 		pair <ResidueRowsMap::const_iterator, ResidueRowsMap::const_iterator> range =
-			m_residueRowsMap.equal_range(m_residues[i]);
+			m_residueRowsMap.equal_range(kResidues[i]);
 		resWeight = 0;
 		for (ResidueRowsMap::const_iterator cit = range.first; cit != range.second; cit++)
 		{
@@ -185,7 +203,7 @@ double ColumnResidueProfile::reweightColumnByRowWeights(const vector<double>& ro
 		}
 		if (resWeight > maxResWeight)
 		{
-			heaviestResidue = m_residues[i];
+			heaviestResidue = kResidues[i];
 			maxResWeight = resWeight;
 		}
 		totalWeight += resWeight;
@@ -222,7 +240,7 @@ unsigned char ColumnResidueProfile::getResidueByRow(int row)
 bool ColumnResidueProfile::isAligned(char residue, int row)const
 {
 	pair <ResidueRowsMap::const_iterator, ResidueRowsMap::const_iterator> range =
-		m_residueRowsMap.equal_range(m_residues[residue]);
+		m_residueRowsMap.equal_range(kResidues[static_cast<int>(residue)]);
 	for (ResidueRowsMap::const_iterator cit = range.first; cit != range.second; cit++)
 	{
 		if (cit->second.first == row)
@@ -251,11 +269,15 @@ bool ColumnResidueProfile::isAllRowsAligned()const
 	return true;
 }
 
- map<char, double> ColumnResidueProfile::m_backgroundResFreq;
- double* m_backgroundResFreqArray = 0;
+
+// NOTE: seems useDefaultBackgroundResFreq() and global map<> is not used anymore.
+
+static CSafeStatic< map<char, double> > s_BackgroundResFreq;
 
 void ColumnResidueProfile::useDefaultBackgroundResFreq()
 {
+    auto backgroundResFreq = s_BackgroundResFreq.Get();
+    
 	//-------------------------------------------------------------------------
 	//
 	// residue frequencies, SWISS-PROT, Release 40.20, 06-Jun-2002:
@@ -267,34 +289,38 @@ void ColumnResidueProfile::useDefaultBackgroundResFreq()
 	//
 	//-------------------------------------------------------------------------
 	// these are the only residues used for calculating information content
-	m_backgroundResFreq['A'] = 7.67/100.0;  // Ala
-	m_backgroundResFreq['R'] = 5.21/100.0;  // Arg
-	m_backgroundResFreq['N'] = 4.32/100.0;  // Asn
-	m_backgroundResFreq['D'] = 5.25/100.0;  // Asp
-	m_backgroundResFreq['C'] = 1.62/100.0;  // Cys
-	m_backgroundResFreq['Q'] = 3.93/100.0;  // Gln
-	m_backgroundResFreq['E'] = 6.48/100.0;  // Glu
-	m_backgroundResFreq['G'] = 6.88/100.0;  // Gly
-	m_backgroundResFreq['H'] = 2.25/100.0;  // His
-	m_backgroundResFreq['I'] = 5.85/100.0;  // Ile
-	m_backgroundResFreq['L'] = 9.56/100.0;  // Leu
-	m_backgroundResFreq['K'] = 5.95/100.0;  // Lys
-	m_backgroundResFreq['M'] = 2.37/100.0;  // Met
-	m_backgroundResFreq['F'] = 4.08/100.0;  // Phe
-	m_backgroundResFreq['P'] = 4.89/100.0;  // Pro
-	m_backgroundResFreq['S'] = 7.04/100.0;  // Ser
-	m_backgroundResFreq['T'] = 5.55/100.0;  // Thr
-	m_backgroundResFreq['W'] = 1.20/100.0;  // Trp
-	m_backgroundResFreq['Y'] = 3.14/100.0;  // Tyr
-	m_backgroundResFreq['V'] = 6.63/100.0;  // Val
+	backgroundResFreq['A'] = 7.67/100.0;  // Ala
+	backgroundResFreq['R'] = 5.21/100.0;  // Arg
+	backgroundResFreq['N'] = 4.32/100.0;  // Asn
+	backgroundResFreq['D'] = 5.25/100.0;  // Asp
+	backgroundResFreq['C'] = 1.62/100.0;  // Cys
+	backgroundResFreq['Q'] = 3.93/100.0;  // Gln
+	backgroundResFreq['E'] = 6.48/100.0;  // Glu
+	backgroundResFreq['G'] = 6.88/100.0;  // Gly
+	backgroundResFreq['H'] = 2.25/100.0;  // His
+	backgroundResFreq['I'] = 5.85/100.0;  // Ile
+	backgroundResFreq['L'] = 9.56/100.0;  // Leu
+	backgroundResFreq['K'] = 5.95/100.0;  // Lys
+	backgroundResFreq['M'] = 2.37/100.0;  // Met
+	backgroundResFreq['F'] = 4.08/100.0;  // Phe
+	backgroundResFreq['P'] = 4.89/100.0;  // Pro
+	backgroundResFreq['S'] = 7.04/100.0;  // Ser
+	backgroundResFreq['T'] = 5.55/100.0;  // Thr
+	backgroundResFreq['W'] = 1.20/100.0;  // Trp
+	backgroundResFreq['Y'] = 3.14/100.0;  // Tyr
+	backgroundResFreq['V'] = 6.63/100.0;  // Val
 }
+
 
 double ColumnResidueProfile::getBackgroundResFreq(char res)
 {
-	if (m_backgroundResFreqArray == 0)
-		m_backgroundResFreqArray = BLAST_GetStandardAaProbabilities();
+    static double* backgroundResFreqArray = 0;
+
+	if (backgroundResFreqArray == 0)
+		backgroundResFreqArray = BLAST_GetStandardAaProbabilities();
 	
-	return m_backgroundResFreqArray[getNcbiStdCode(res)];
+	return backgroundResFreqArray[getNcbiStdCode(res)];
+    
 	/*
 	if (m_backgroundResFreq.size() == 0)
 		useDefaultBackgroundResFreq();
@@ -310,15 +336,15 @@ double ColumnResidueProfile::calcInformationContent()
 	double info = 0;
 	double freqThreshold = 0.0001f;
 	double total = (double) m_residueRowsMap.size();
-	static const double ln2 = log(2.0f);
-	for (unsigned int i = 0; i < m_residues.size(); i++)
+	const double ln2 = log(2.0f);
+	
+    for (unsigned int i = 0; i < kResiduesSize; i++)
 	{
-
-		int count = m_residueRowsMap.count(m_residues[i]);
+		int count = m_residueRowsMap.count(kResidues[i]);
 		if (count > 0)
 		{
-			//double standardFreq = GetStandardProbability(m_residues[i]);
-			double standardFreq = getBackgroundResFreq(m_residues[i]);
+			//double standardFreq = GetStandardProbability(kResidues[i]);
+			double standardFreq = getBackgroundResFreq(kResidues[i]);
 			if ( standardFreq > freqThreshold)
 			{
 				double freq = double(count)/total;
@@ -328,7 +354,7 @@ double ColumnResidueProfile::calcInformationContent()
 			}
 		}
 	}
-		return info;
+    return info;
 }
 
 //---------------------------ColumnAddress--------------------------------
