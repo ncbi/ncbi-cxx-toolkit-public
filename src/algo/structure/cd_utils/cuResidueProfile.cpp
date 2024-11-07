@@ -46,16 +46,16 @@ unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
     return static_cast<unsigned char>(ret);
 }
 
-inline char ColumnResidueProfile::getEaaCode(char stdCode) {
+char ColumnResidueProfile::getEaaCode(char stdCode) {
     return kResidues[static_cast<int>(stdCode)];
 }
 
-inline const string ColumnResidueProfile::getResiduesString()
+const string ColumnResidueProfile::getResiduesString()
 {
     return kResidues;
 }
 
-inline int ColumnResidueProfile::getResiduesStringSize()
+int ColumnResidueProfile::getResiduesStringSize()
 {
     return static_cast<int>(kResiduesSize);
 }
