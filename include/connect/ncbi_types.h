@@ -53,7 +53,6 @@
 #    define __STDC_FORMAT_MACROS
 #  endif /*!__STDC_FORMAT_MACROS*/
 #  include <inttypes.h>
-#  include <stdint.h>
 #endif /*_WIN32*/
 #include <stddef.h>
 
