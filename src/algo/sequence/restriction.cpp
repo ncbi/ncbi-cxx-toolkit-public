@@ -605,8 +605,9 @@ CFindRSites::GetAnnot(CScope& scope, const CSeq_loc& loc) const
     }
 
     TAnnot annot;
-    size_t total_definite_sites = 0, total_possible_sites = 0;
-    size_t total_non_cutters = 0;
+    size_t total_definite_sites NCBI_UNUSED = 0,
+           total_possible_sites NCBI_UNUSED = 0,
+           total_non_cutters NCBI_UNUSED = 0;
 
     ITERATE (TResults, result, results) {
         const vector<CRSite>& definite_sites =
