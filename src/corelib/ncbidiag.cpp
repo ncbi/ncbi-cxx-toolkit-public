@@ -464,12 +464,12 @@ static bool s_IsDisabledAppLogEvent(const CRequestContext& rctx, SDiagMessage::E
     if (!rctx.GetDisabledAppLog()) return false;
     auto disabled_events = rctx.GetDisabledAppLogEvents();
     switch (disabled_events) {
-    case CDiagContext::eDisable_All:
-        return true;
     case CDiagContext::eEnable_App:
         // Allow only app-start and app-stop.
         return event_type != SDiagMessage::eEvent_Start &&
             event_type != SDiagMessage::eEvent_Stop;
+    default:
+        return true;
     }
 }
 
