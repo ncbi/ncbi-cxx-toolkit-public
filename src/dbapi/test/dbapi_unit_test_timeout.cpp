@@ -173,7 +173,7 @@ static void s_HugeTableSelect(IConnection& conn)
 
     // Read data ...
     {
-        size_t num = 0;
+        size_t num NCBI_UNUSED = 0;
 
         unique_ptr<IStatement> auto_stmt(conn.GetStatement());
 
