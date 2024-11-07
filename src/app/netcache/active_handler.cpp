@@ -2366,7 +2366,7 @@ CNCActiveHandler::CheckCommandTimeout(void)
         return;
     }
 
-    if (CSrvTime::CurSecs() - m_LastActive
+    if (Uint8(CSrvTime::CurSecs() - m_LastActive)
         > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugSyncAborted2, "CheckCommandTimeout");

@@ -317,7 +317,7 @@ string CNCBlobStorage::FindBlob(Uint2 bucket, const string& mask, Uint8 cr_time_
         TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
-                if (lb->expire <= cur_time) {
+                if (Uint8(lb->expire) <= cur_time) {
                     continue;
                 }
                 if (lb->create_time <= cr_time_hi) {
@@ -395,7 +395,7 @@ CNCBlobStorage::GetBList(const string& mask, unique_ptr<TNCBufferType>& buffer, 
         for ( ; lb != cache->key_map.end(); ++lb) {
 //            SNCCacheData& d = *lb;
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
-                if (!show_exp && lb->expire <= cur_time) {
+                if (!show_exp && Uint8(lb->expire) <= cur_time) {
                     continue;
                 }
                 if (!extra || (

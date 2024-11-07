@@ -39,15 +39,12 @@
 BEGIN_NCBI_SCOPE
 
 
-enum {
-    kMSecsPerSecond = 1000,
-    kUSecsPerMSec = 1000,
-    kNSecsPerUSec = 1000,
-    kUSecsPerSecond = kUSecsPerMSec * kMSecsPerSecond,
-    kNSecsPerMSec = kNSecsPerUSec * kUSecsPerMSec,
-    kNSecsPerSecond = kNSecsPerMSec * kMSecsPerSecond
-};
-
+constexpr Uint8 kMSecsPerSecond = 1000;
+constexpr Uint8 kUSecsPerMSec = 1000;
+constexpr Uint8 kNSecsPerUSec = 1000;
+constexpr Uint8 kUSecsPerSecond = kUSecsPerMSec * kMSecsPerSecond;
+constexpr Uint8 kNSecsPerMSec = kNSecsPerUSec * kUSecsPerMSec;
+constexpr Uint8 kNSecsPerSecond = kNSecsPerMSec * kMSecsPerSecond;
 
 /// Class incorporating convenient methods to work with struct timespec.
 /// Besides that the class allows to hide all dependency on Linux inside
