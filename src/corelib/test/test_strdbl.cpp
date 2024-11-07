@@ -1178,7 +1178,7 @@ void CTestApp::RunD2SSpeedBenchmark(void)
         dbl2str += sw.Restart();
 
         for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
-            sprintf(buffer, "%.*g", precision, *d);
+            snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", precision, *d);
         }
         sprn += sw.Elapsed();
     } while (count < COUNT);
@@ -1254,7 +1254,7 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
     for (vector<double>::const_iterator d=dbls.begin(); d != dbls.end(); ++d) {
         ++i;
         buffer1[ NStr::DoubleToStringPosix( *d, precision, buffer1, sizeof(buffer1)) ] = '\0';
-        sprintf(buffer2, "%.*g", precision, *d);
+        snprintf(buffer2, sizeof(buffer2)/sizeof(char), "%.*g", precision, *d);
 
         {
             char buffer_t[64];
@@ -1277,12 +1277,12 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
         if (strcmp(buffer1,buffer2)==0) {
             if (!CompareSerialization(*d, DBL_DIG)) {
                 ++errors;
-                sprintf(buffer1, "%.20g", *d);
+                snprintf(buffer1, sizeof(buffer1)/sizeof(char), "%.20g", *d);
                 LOG_POST("ERROR: serialization with high precision: " << buffer1);
             }
             if (!CompareSerialization(*d, FLT_DIG)) {
 //                ++errors;
-                sprintf(buffer1, "%.20g", *d);
+                snprintf(buffer1, sizeof(buffer1)/sizeof(char), "%.20g", *d);
                 LOG_POST("ERROR: serialization with low precision: " << buffer1);
             }
             continue;
@@ -1468,7 +1468,7 @@ bool CTestApp::CompareSerialization(double data, unsigned int digits)
             asntext_old += NStr::NumericToString(exp - fractDigits);
             asntext_old += string(" }");
 #else
-            int width = sprintf(buffer, "%.*g", int(digits), data);
+            int width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", int(digits), data);
             _ASSERT(int(strlen(buffer)) == width);
 
             int exp = 0;
@@ -1536,7 +1536,7 @@ bool CTestApp::CompareSerialization(double data, unsigned int digits)
         // ensure buffer is large enough to fit result
         // (additional bytes are for sign, dot and exponent)
         char buffer[kMaxDoubleLength + 16];
-        int width = sprintf(buffer, "%.*g", precision, data);
+        int width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", precision, data);
         _ASSERT(strlen(buffer) == size_t(width));
         char* dot = strchr(buffer,',');
         if (dot) {
