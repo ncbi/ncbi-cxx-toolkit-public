@@ -2307,7 +2307,7 @@ public:
     /// The global value can be set using DIAG_DISABLE_APPLOG_MESSAGE_TYPES.
     enum EDisabledAppLogEvents {
         eDisable_All, ///< Disable all applog events (default).
-        eEnable_App,   ///< Allow only application start/stop.
+        eEnable_App   ///< Allow only application start/stop.
     };
     /// Get disabled applog events (set by DIAG_DISABLE_APPLOG_MESSAGE_TYPES variable).
     static EDisabledAppLogEvents GetDisabledAppLogEvents(void);
