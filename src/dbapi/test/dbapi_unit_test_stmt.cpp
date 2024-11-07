@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
 
         // Running parametrized statement ...
         {
-            int result_num = 0;
+            int result_num NCBI_UNUSED = 0;
 
             auto_stmt->SetParam( CVariant( "master" ), "@dbname" );
 
