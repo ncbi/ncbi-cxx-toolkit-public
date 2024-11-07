@@ -225,7 +225,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
         // (additional bytes are for sign, dot and exponent)
         _ASSERT(sizeof(buffer) > digits + 16);
 #if !defined(NCBI_COMPILER_MSVC)
-        int width = sprintf(buffer, "%.*e", int(digits-1), data);
+        int width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*e", int(digits-1), data);
         if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
             ThrowError(fOverflow, "buffer overflow");
         _ASSERT(int(strlen(buffer)) == width);
@@ -263,7 +263,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
         m_Output.PutInt4(exp - fractDigits);
         m_Output.PutString(" }");
 #else
-        int width = sprintf(buffer, "%.*g", int(digits), data);
+        int width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", int(digits), data);
         if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
             ThrowError(fOverflow, "buffer overflow");
         _ASSERT(int(strlen(buffer)) == width);
