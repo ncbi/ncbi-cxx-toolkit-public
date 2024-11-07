@@ -785,7 +785,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
 
         // ensure buffer is large enough to fit result
         // (additional bytes are for sign, dot and exponent)
-        width = sprintf(buffer, "%.*g", precision, data);
+        width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", precision, data);
         if ( width <= 0 || width >= int(sizeof(buffer) - 1) )
             ThrowError(fOverflow, "buffer overflow");
         _ASSERT(strlen(buffer) == size_t(width));

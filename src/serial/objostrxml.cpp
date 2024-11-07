@@ -697,7 +697,7 @@ void CObjectOStreamXml::WriteDouble2(double data, unsigned digits)
         if (m_FastWriteDouble) {
             width = NStr::DoubleToStringPosix(data, digits, buffer, sizeof(buffer));
         } else {
-            width = sprintf(buffer, "%.*g", (int)digits, data);
+            width = snprintf(buffer, sizeof(buffer)/sizeof(char), "%.*g", (int)digits, data);
             char* dot = strchr(buffer,',');
             if (dot) {
                 *dot = '.'; // enforce C locale
