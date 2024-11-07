@@ -759,134 +759,121 @@ static string       kRequestPathApplog = "request_path";
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                                                 CHttpRequest &  req)
 {
-    bool                        need_log_sampling = false;
     CRef<CRequestContext>       context;
-    unique_ptr<CRequestContext> low_level_req_ctx;
 
-    if (!g_Log) {
+    // A request context is created unconditionally of the g_Log value
+    context.Reset(new CRequestContext());
+
+    string      sid = req.GetHeaderValue(kNcbiSidHeader);
+    if (!sid.empty()) {
+        context->SetSessionID(sid);
+    } else {
+        context->SetSessionID();
+    }
+
+    bool    overall_need_log = g_Log;
+    if (!overall_need_log) {
+        // May be overridden by log sampling
         if (m_Settings.m_LogSamplingRatio > 0) {
-            low_level_req_ctx.reset(new CRequestContext());
-
-            // NCBI SID may come from the header
-            string      sid = req.GetHeaderValue(kNcbiSidHeader);
-            if (!sid.empty()) {
-                low_level_req_ctx->SetSessionID(sid);
-            } else {
-                low_level_req_ctx->SetSessionID();
-            }
-
             // Check the session ID checksum against the configured log samplig
             CChecksum       session_id_checksum(CChecksum::eCRC32);
-            session_id_checksum.AddLine(low_level_req_ctx->GetSessionID());
+            session_id_checksum.AddLine(context->GetSessionID());
             auto            checksum = session_id_checksum.GetChecksum();
 
             if (checksum % m_Settings.m_LogSamplingRatio == 0) {
-                need_log_sampling = true;
+                overall_need_log = true;
             }
         }
     }
 
-    if (g_Log || need_log_sampling) {
-        if (need_log_sampling) {
-            context.Reset(low_level_req_ctx.release());
+    if (!overall_need_log) {
+        context->SetDisabledAppLog(true);
+        context->SetDisabledAppLogEvents(CDiagContext::eDisable_All);
+    }
+
+    context->SetRequestID();
+
+    // NCBI PHID may come from the header
+    string      phid = req.GetHeaderValue(kNcbiPhidHeader);
+    if (!phid.empty())
+        context->SetHitID(phid);
+    else
+        context->SetHitID();
+
+    bool    need_peer_ip = false;
+
+    // Client IP may come from the headers
+    string      client_ip = req.GetHeaderValue(kXForwardedForHeader);
+    if (!client_ip.empty()) {
+        vector<string>      ip_addrs;
+        NStr::Split(client_ip, ",", ip_addrs);
+        if (!ip_addrs.empty()) {
+            // Take the first one, there could be many...
+            context->SetClientIP(ip_addrs[0]);
         } else {
-            context.Reset(new CRequestContext());
+            need_peer_ip = true;
         }
-        context->SetRequestID();
-
-        // NCBI SID may come from the header
-        if (!need_log_sampling) {
-            // If log sampling is set to true that means the session id has
-            // already been set for the context
-            string      sid = req.GetHeaderValue(kNcbiSidHeader);
-            if (!sid.empty()) {
-                context->SetSessionID(sid);
-            } else {
-                context->SetSessionID();
-            }
-        }
-
-        // NCBI PHID may come from the header
-        string      phid = req.GetHeaderValue(kNcbiPhidHeader);
-        if (!phid.empty())
-            context->SetHitID(phid);
-        else
-            context->SetHitID();
-
-        bool    need_peer_ip = false;
-
-        // Client IP may come from the headers
-        string      client_ip = req.GetHeaderValue(kXForwardedForHeader);
+    } else {
+        client_ip = req.GetPeerIP();
         if (!client_ip.empty()) {
-            vector<string>      ip_addrs;
-            NStr::Split(client_ip, ",", ip_addrs);
-            if (!ip_addrs.empty()) {
-                // Take the first one, there could be many...
-                context->SetClientIP(ip_addrs[0]);
-            } else {
-                need_peer_ip = true;
-            }
-        } else {
-            client_ip = req.GetPeerIP();
-            if (!client_ip.empty()) {
-                context->SetClientIP(client_ip);
-            }
+            context->SetClientIP(client_ip);
         }
-
-        // It was decided not to use the standard C++ Toolkit function because
-        // it searches in the CGI environment and does quite a bit of
-        // unnecessary things. The PSG server only needs X-Forwarded-For
-        // TNCBI_IPv6Addr  client_address = req.GetClientIP();
-        // if (!NcbiIsEmptyIPv6(&client_address)) {
-        //     char        buf[256];
-        //     if (NcbiIPv6ToString(buf, sizeof(buf), &client_address) != 0) {
-        //         context->SetClientIP(buf);
-        //     }
-        // }
-
-        CDiagContext::SetRequestContext(context);
-        CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
-
-        // This is the URL path
-        extra.Print(kRequestPathApplog, req.GetPath());
-
-        string      user_agent = req.GetHeaderValue(kUserAgentHeader);
-        if (!user_agent.empty())
-            extra.Print(kUserAgentApplog, user_agent);
-
-        req.PrintParams(extra, need_peer_ip);
-        req.PrintLogFields(m_LogFields);
-
-        // If extra is not flushed then it picks read-only even though it is
-        // done after...
-        extra.Flush();
-
-        // Just in case, avoid to have 0
-        context->SetRequestStatus(CRequestStatus::e200_Ok);
-        context->SetReadOnly(true);
     }
+
+    // It was decided not to use the standard C++ Toolkit function because
+    // it searches in the CGI environment and does quite a bit of
+    // unnecessary things. The PSG server only needs X-Forwarded-For
+    // TNCBI_IPv6Addr  client_address = req.GetClientIP();
+    // if (!NcbiIsEmptyIPv6(&client_address)) {
+    //     char        buf[256];
+    //     if (NcbiIPv6ToString(buf, sizeof(buf), &client_address) != 0) {
+    //         context->SetClientIP(buf);
+    //     }
+    // }
+
+    CDiagContext::SetRequestContext(context);
+    CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
+
+    // This is the URL path
+    extra.Print(kRequestPathApplog, req.GetPath());
+
+    string      user_agent = req.GetHeaderValue(kUserAgentHeader);
+    if (!user_agent.empty())
+        extra.Print(kUserAgentApplog, user_agent);
+
+    req.PrintParams(extra, need_peer_ip);
+    req.PrintLogFields(m_LogFields);
+
+    // If extra is not flushed then it picks read-only even though it is
+    // done after...
+    extra.Flush();
+
+    // Just in case, avoid to have 0
+    context->SetRequestStatus(CRequestStatus::e200_Ok);
+    context->SetReadOnly(true);
+
     return context;
 }
 
 
 void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
                                            CPSGS_Request::EPSGS_Type  request_type,
-                                           CRequestStatus::ECode  status, size_t  bytes_sent)
+                                           CRequestStatus::ECode  status,
+                                           size_t  bytes_sent)
 {
     m_Counters->IncrementRequestStopCounter(status);
 
-    if (request_type != CPSGS_Request::ePSGS_UnknownRequest)
+    if (request_type != CPSGS_Request::ePSGS_UnknownRequest) {
         GetTiming().RegisterForTimeSeries(request_type, status);
-
-    if (context.NotNull()) {
-        CDiagContext::SetRequestContext(context);
-        context->SetReadOnly(false);
-        context->SetRequestStatus(status);
-        context->SetBytesWr(bytes_sent);
-        GetDiagContext().PrintRequestStop();
-        context.Reset();
-        CDiagContext::SetRequestContext(NULL);
     }
+
+    CDiagContext::SetRequestContext(context);
+    context->SetReadOnly(false);
+    context->SetRequestStatus(status);
+    context->SetBytesWr(bytes_sent);
+    GetDiagContext().PrintRequestStop();
+    context.Reset();
+    CDiagContext::SetRequestContext(NULL);
 }
 
 

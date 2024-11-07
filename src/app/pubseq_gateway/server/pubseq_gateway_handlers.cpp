@@ -2218,10 +2218,8 @@ bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext>   context,
     if (processor_names.empty())
         return false;
 
-    if (context.NotNull()) {
-        CDiagContext::SetRequestContext(context);
-        GetDiagContext().Extra().Print("psg_request_id", request->GetRequestId());
-    }
+    CDiagContext::SetRequestContext(context);
+    GetDiagContext().Extra().Print("psg_request_id", request->GetRequestId());
 
     reply->SetRequestId(request->GetRequestId());
 
