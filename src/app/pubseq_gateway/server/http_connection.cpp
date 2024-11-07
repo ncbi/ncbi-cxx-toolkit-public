@@ -356,12 +356,11 @@ void CHttpConnection::x_MaintainBacklog(void)
         request->SetBacklogTime(mks);
 
         auto    context = request->GetRequestContext();
-        if (context.NotNull()) {
-            CRequestContextResetter     context_resetter;
-            request->SetRequestContext();
 
-            GetDiagContext().Extra().Print("backlog_time_mks", mks);
-        }
+        CRequestContextResetter     context_resetter;
+        request->SetRequestContext();
+
+        GetDiagContext().Extra().Print("backlog_time_mks", mks);
 
         x_Start(request, reply, std::move(processor_names));
     }

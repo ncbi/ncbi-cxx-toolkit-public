@@ -820,14 +820,12 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
             break;
     }
 
-    if (request->GetRequestContext().NotNull()) {
-        request->SetRequestContext();
-        CDiagContext::GetRequestContext().SetRequestStatus(status);
-        CDiagContext::GetRequestContext().SetBytesWr(bytes_sent);
-        GetDiagContext().PrintRequestStop();
-        CDiagContext::GetRequestContext().Reset();
-        CDiagContext::SetRequestContext(NULL);
-    }
+    request->SetRequestContext();
+    CDiagContext::GetRequestContext().SetRequestStatus(status);
+    CDiagContext::GetRequestContext().SetBytesWr(bytes_sent);
+    GetDiagContext().PrintRequestStop();
+    CDiagContext::GetRequestContext().Reset();
+    CDiagContext::SetRequestContext(NULL);
 }
 
 

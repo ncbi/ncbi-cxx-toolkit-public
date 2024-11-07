@@ -1237,14 +1237,13 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
                                              CPSGSCounters::ePSGS_OpTooLong);
 
                 auto    request = processor->GetRequest();
-                if (request->GetRequestContext().NotNull()) {
-                    CRequestContextResetter     context_resetter;
-                    request->SetRequestContext();
 
-                    GetDiagContext().Extra().Print("op_too_long", mks);
-                    GetDiagContext().Extra().Print(m_TooLongIDs[operation], mks);
-                    GetDiagContext().Extra().Print("processor", processor->GetGroupName());
-                }
+                CRequestContextResetter     context_resetter;
+                request->SetRequestContext();
+
+                GetDiagContext().Extra().Print("op_too_long", mks)
+                                        .Print(m_TooLongIDs[operation], mks)
+                                        .Print("processor", processor->GetGroupName());
             }
         }
     }

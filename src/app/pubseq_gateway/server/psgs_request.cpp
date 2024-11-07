@@ -226,10 +226,8 @@ CRef<CRequestContext>  CPSGS_Request::GetRequestContext(void)
 // Sets the cloned request context so that many threads can produce messages
 void CPSGS_Request::SetRequestContext(void)
 {
-    if (m_RequestContext.NotNull()) {
-        CDiagContext::SetRequestContext(m_RequestContext->Clone());
-        CDiagContext::GetRequestContext().SetReadOnly(false);
-    }
+    CDiagContext::SetRequestContext(m_RequestContext->Clone());
+    CDiagContext::GetRequestContext().SetReadOnly(false);
 }
 
 

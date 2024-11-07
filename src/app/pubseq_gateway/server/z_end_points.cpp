@@ -490,7 +490,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
     // psg client API internally tries to modify the request context.
     // It uses GetNextSubHitID() method. To let it do it the read only
     // property should be reset and then restored
-    bool request_context_ro = request_context.NotNull() && request_context->GetReadOnly();
+    bool request_context_ro = request_context->GetReadOnly();
     if (request_context_ro)
         request_context->SetReadOnly(false);
 
