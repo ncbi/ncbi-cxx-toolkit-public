@@ -202,6 +202,7 @@ blast_sra_input needs $(SRAREAD_LIBS)
 blast_unit_test_util needs $(BLAST_LIBS)
 blast_unit_test_util needs $(OBJMGR_LIBS)
 blast_unit_test_util needs3party $(BLAST_THIRD_PARTY_LIBS)
+blast_unit_test_util needs3party $(BOOST_TEST_LIBS)
 blast_unit_test_util needs3party $(GENBANK_THIRD_PARTY_LIBS)
 blastapi needs3party ncbitool
 blastdb needs $(SEQ_LIBS)
@@ -219,6 +220,8 @@ blastinput needs3party $(BLAST_THIRD_PARTY_LIBS)
 blaststoreasncpp_g needs bl2seqasn_g
 blastxml needs xser
 blastxml2 needs xser
+boost_system-gcc132-mt-d-64 needs3party $(ORIG_LIBS)
+boost_thread-gcc132-mt-d-64 needs3party $(ORIG_LIBS)
 boost_unit_test_framework-gcc132-mt-d-64 needs3party $(ORIG_LIBS)
 boringcrypto needs3party $(ORIG_LIBS)
 boringssl needs3party $(ORIG_LIBS)
@@ -711,6 +714,7 @@ mongoc-1.0 needs3party $(ZSTD_LIBS)
 mongoc-1.0 needs3party $(Z_LIBS)
 mongoc-1.0 needs3party bson-1.0
 mongocache needs eclib
+mongocache needs3party $(BOOST_THREAD_LIBS)
 mongocache needs3party $(KRB5_LIBS)
 mongocache needs3party $(MONGODB3_LIBS)
 mongocache needs3party $(OPENSSL_LIBS)
@@ -1205,6 +1209,7 @@ tds_ftds14 needs3party $(NETWORK_LIBS)
 tds_ftds14 needs3party $(ORIG_LIBS)
 tds_ut_common_ftds14 needs tds_ftds14
 tea_crypt needs generic_db_utils
+test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
 test_dll needs3party $(ORIG_LIBS)
 test_mt needs xncbi
