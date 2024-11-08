@@ -315,10 +315,6 @@ dbldasn_g needs splitdbasn_g
 dbloadb needs asnmuxdblb
 dbloadb needs tea_crypt
 dbloadb_asn needs asngendefs
-dbpool needs $(DBAPI_FTDS100)
-dbpool needs $(FTDS100_LIB)
-dbpool needs dbapi_driver
-dbpool needs ssssys
 dbsnp_ptis needs $(SEQ_LIBS)
 dbsnp_ptis needs grpc_integration
 dbsnp_ptis needs pub
@@ -1558,10 +1554,6 @@ xlsxwriter needs3party $(ORIG_LIBS)
 xlsxwriter needs3party $(Z_LIBS)
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
-xmlcgi needs sssutils
-xmlcgi needs xcgi
-xmlcgi needs xhtml
-xmlcgi needs xslt_libxml
 xmlreaders needs xmlwrapp
 xmlwrapp needs xconnect
 xmlwrapp needs3party $(LIBXML_LIBS)
