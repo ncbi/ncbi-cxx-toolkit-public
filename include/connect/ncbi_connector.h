@@ -224,7 +224,7 @@ typedef struct {
     } while (0)
 
 
-/** Insert a connector in the beginning of the connection's list of connectors.
+/** Insert a connector at the beginning of the connection's list of connectors.
  * Calls connector's FSetupVTable, which must be defined.
  */
 extern NCBI_XCONNECT_EXPORT EIO_Status METACONN_Insert
