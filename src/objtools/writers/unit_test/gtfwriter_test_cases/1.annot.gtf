@@ -218,4 +218,3 @@ NC_000018.10	protein_coding	CDS	644910	645097	.	+	0	gene_id "ENSG00000079101"; t
 NC_000018.10	protein_coding	CDS	649898	649898	.	+	1	gene_id "ENSG00000079101"; transcript_id "ENST00000400606"; gbkey "CDS"; gene_name "CLUL1"; product "ENSP00000383449"; protein_id "ENSP00000383449"; transcript_name "CLUL1-202"; exon_number "9"; 
 NC_000018.10	protein_coding	start_codon	618001	618003	.	+	0	gene_id "ENSG00000079101"; transcript_id "ENST00000400606"; gbkey "CDS"; gene_name "CLUL1"; product "ENSP00000383449"; protein_id "ENSP00000383449"; transcript_name "CLUL1-202"; exon_number "2"; 
 NC_000018.10	protein_coding	stop_codon	649899	649901	.	+	0	gene_id "ENSG00000079101"; transcript_id "ENST00000400606"; gbkey "CDS"; gene_name "CLUL1"; product "ENSP00000383449"; protein_id "ENSP00000383449"; transcript_name "CLUL1-202"; exon_number "9"; 
-###

@@ -5,4 +5,3 @@ AB019592.1	DDBJ	transcript	186	204	.	+	.	gene_id "IgH"; transcript_id "unassigne
 AB019592.1	DDBJ	exon	186	204	.	+	.	gene_id "IgH"; transcript_id "unassigned_transcript_2"; gene "IgH"; note "D21/9"; transcript_biotype "D_gene_segment"; exon_number "1"; 
 AB019592.1	DDBJ	transcript	1	171	.	+	.	gene_id "IgH"; transcript_id "unassigned_transcript_3"; gbkey "V_segment"; gene "IgH"; note "DP58"; transcript_biotype "V_gene_segment"; 
 AB019592.1	DDBJ	exon	1	171	.	+	.	gene_id "IgH"; transcript_id "unassigned_transcript_3"; gene "IgH"; note "DP58"; transcript_biotype "V_gene_segment"; exon_number "1"; 
-###

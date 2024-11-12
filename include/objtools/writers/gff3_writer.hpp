@@ -170,6 +170,7 @@ public:
     bool WriteHeader() override;
     bool WriteHeader(
         const CSeq_annot& annot) override { return CGff2Writer::WriteHeader(annot); };
+    bool WriteFooter() override;
     bool WriteAlign(
         const CSeq_align&,
         const string& asmblyName="",

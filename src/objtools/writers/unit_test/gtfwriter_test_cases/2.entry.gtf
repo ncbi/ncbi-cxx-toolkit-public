@@ -34,4 +34,3 @@ U54469.1	Genbank	CDS	2317	2404	.	+	0	gene_id "eIF4E"; transcript_id "unassigned_
 U54469.1	Genbank	CDS	2466	2626	.	+	2	gene_id "eIF4E"; transcript_id "unassigned_transcript_3"; db_xref "NCBI_GP:AAC03524.1"; gbkey "CDS"; gene "eIF4E"; product "eukaryotic initiation factor 4E-II"; protein_id "AAC03524.1"; exon_number "5"; 
 U54469.1	Genbank	start_codon	201	203	.	+	0	gene_id "eIF4E"; transcript_id "unassigned_transcript_3"; db_xref "NCBI_GP:AAC03524.1"; gbkey "CDS"; gene "eIF4E"; product "eukaryotic initiation factor 4E-II"; protein_id "AAC03524.1"; exon_number "1"; 
 U54469.1	Genbank	stop_codon	2627	2629	.	+	0	gene_id "eIF4E"; transcript_id "unassigned_transcript_3"; db_xref "NCBI_GP:AAC03524.1"; gbkey "CDS"; gene "eIF4E"; product "eukaryotic initiation factor 4E-II"; protein_id "AAC03524.1"; exon_number "5"; 
-###
