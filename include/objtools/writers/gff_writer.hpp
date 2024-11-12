@@ -102,10 +102,6 @@ public:
 
     /// Write a trailer marking the end of a parsing context.
     ///
-    bool WriteFooter() override;
-
-    virtual bool WriteFooter(
-        const CSeq_annot& ) { return WriteFooter(); };
 
     /// Convenience function to render a "naked" Seq-annot. Makes use of the
     /// internal scope.
