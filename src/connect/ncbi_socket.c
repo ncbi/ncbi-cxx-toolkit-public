@@ -4074,12 +4074,12 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 }
 
 
-typedef enum {
+enum ESOCK_Keep {
     fSOCK_KeepNone    = 0,
     fSOCK_KeepEvent   = 1,
     fSOCK_KeepSession = 2,
     fSOCK_KeepPending = 4
-} ESOCK_Keep;
+};
 typedef unsigned int TSOCK_Keep;  /* Bitwise-OR of ESOCK_Keep */
 
 
