@@ -343,14 +343,6 @@ bool CGff2Writer::WriteHeader()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::WriteFooter()
-//  ----------------------------------------------------------------------------
-{
-    m_Os << "###" << '\n';
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteAssemblyInfo(
     const string& strName,
     const string& strAccession )

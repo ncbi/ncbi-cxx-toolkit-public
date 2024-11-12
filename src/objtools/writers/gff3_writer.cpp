@@ -1082,6 +1082,15 @@ bool CGff3Writer::WriteHeader()
 }
 
 
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::WriteFooter()
+{
+//  ----------------------------------------------------------------------------
+    m_Os << "###" << '\n';
+    return true;
+}
+
+
 static string s_GetSequenceRegionId(CBioseq_Handle& bsh)
 {
     string id;

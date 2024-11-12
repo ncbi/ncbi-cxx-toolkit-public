@@ -610,4 +610,3 @@ AJ507799.2	EMBL	gene	167062	167067	.	-	.	gene_id "BNLF2a_1"; transcript_id ""; g
 AJ507799.2	EMBL	gene	168738	168743	.	-	.	gene_id "lytic LMP1"; transcript_id ""; gbkey "Gene"; gene "lytic LMP1"; gene_biotype "other"; 
 AJ507799.2	EMBL	gene	169083	169088	.	-	.	gene_id "LMP1_1"; transcript_id ""; gbkey "Gene"; gene "LMP1"; gene_biotype "other"; 
 AJ507799.2	EMBL	gene	169294	169448	.	+	.	gene_id "LMP2B"; transcript_id ""; gbkey "Gene"; gene "LMP2B"; gene_biotype "other"; 
-###

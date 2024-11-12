@@ -525,4 +525,3 @@ AP000423.1	DDBJ	CDS	152806	153195	.	+	0	gene_id "rpl2_1"; transcript_id "unassig
 AP000423.1	DDBJ	CDS	153878	154309	.	+	0	gene_id "rpl2_1"; transcript_id "unassigned_transcript_132"; db_xref "NCBI_GP:BAA84451.1"; gbkey "CDS"; gene "rpl2"; product "ribosomal protein L2"; protein_id "BAA84451.1"; transl_table "11"; exon_number "2"; 
 AP000423.1	DDBJ	start_codon	152806	152808	.	+	0	gene_id "rpl2_1"; transcript_id "unassigned_transcript_132"; db_xref "NCBI_GP:BAA84451.1"; gbkey "CDS"; gene "rpl2"; product "ribosomal protein L2"; protein_id "BAA84451.1"; transl_table "11"; exon_number "1"; 
 AP000423.1	DDBJ	stop_codon	154310	154312	.	+	0	gene_id "rpl2_1"; transcript_id "unassigned_transcript_132"; db_xref "NCBI_GP:BAA84451.1"; gbkey "CDS"; gene "rpl2"; product "ribosomal protein L2"; protein_id "BAA84451.1"; transl_table "11"; exon_number "2"; 
-###
