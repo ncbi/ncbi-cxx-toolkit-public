@@ -94,7 +94,7 @@ public:
 
     virtual void AddValidErrItem(CRef<objects::CValidErrItem> item) override = 0;
 
-    virtual void Write(bool ignoreInferences = true) = 0;
+    virtual void Write() = 0;
     virtual void RequestStop() = 0;
     virtual bool InvokeWrite() const = 0;
     virtual void SetInvokeWrite(bool invokeWrite) = 0;
@@ -120,7 +120,7 @@ public:
 
     void AddValidErrItem(CRef<objects::CValidErrItem> item) override;
 
-    void Write(bool /*ignoreInferences*/ = true) override {}
+    void Write() override {}
     void RequestStop() override {}
     bool InvokeWrite() const override { return false; }
     void SetInvokeWrite(bool /* dummy */) override {}
@@ -139,7 +139,7 @@ public:
 
     void AddValidErrItem(CRef<objects::CValidErrItem> item) override;
 
-    void Write(bool ignoreInferences = true) override;
+    void Write() override;
     void RequestStop() override;
     bool InvokeWrite() const override { return m_InvokeWrite; }
     void SetInvokeWrite(bool invokeWrite) override { m_InvokeWrite=invokeWrite; }
