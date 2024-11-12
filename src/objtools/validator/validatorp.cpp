@@ -1681,7 +1681,13 @@ bool CValidError_imp::Validate
 
     // validate cit-sub
     if (cs) {
-        ValidateCitSub (*cs, *(seh.GetCompleteSeq_entry()), seh.GetCompleteSeq_entry());
+        auto pEntry = seh.GetCompleteSeq_entry();
+        if (IsHugeFileMode()) {
+            call_once(SetContext().CitSubOnceFlag,
+                      [this, &cs, &pEntry]() { ValidateCitSub(*cs, *pEntry, pEntry); });
+        } else {
+            ValidateCitSub(*cs, *pEntry, pEntry);
+        }
     }
 
     // optional barcode tests

@@ -207,7 +207,7 @@ void CAsyncMessageHandler::AddValidErrItem(CRef<CValidErrItem> pItem) {
 }
 
 
-void CAsyncMessageHandler::Write(bool ignoreInferences) {
+void CAsyncMessageHandler::Write() {
     while (true) {
         unique_lock<mutex> lock(m_Mutex);
         m_Cv.wait(lock, [this]()->bool
@@ -218,10 +218,6 @@ void CAsyncMessageHandler::Write(bool ignoreInferences) {
         m_Items.pop();
         if (!pItem) {
             break;
-        }
-        if (ignoreInferences && pItem->GetErrGroup() == "SEQ_FEAT" && pItem->GetErrCode() == "InvalidInferenceValue") {
-            cerr << "CAsyncMessageHandler::Write skip InvalidInferenceValue" << endl;
-            continue;
         }
         (*m_pFormat)(*pItem);
     }

@@ -74,6 +74,7 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     once_flag   WgsSetInSeqSubmitOnceFlag;
     once_flag   ClassNotSetOnceFlag;
     once_flag   ProteinHaveGeneralIDOnceFlag;
+    once_flag   CitSubOnceFlag;
 
     using FIdInBlob = function<bool(const CSeq_id& id)>;
     FIdInBlob IsIdInBlob{nullptr};
