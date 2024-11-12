@@ -346,7 +346,7 @@ bool CGff2Writer::WriteHeader()
 bool CGff2Writer::WriteFooter()
 //  ----------------------------------------------------------------------------
 {
-    // m_Os << "###" << '\n';
+    m_Os << "###" << '\n';
     return true;
 }
 
