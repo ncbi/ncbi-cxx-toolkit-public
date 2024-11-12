@@ -2225,10 +2225,12 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         }
         
         if (m_TopAlign_J) {
-            s_GetCigarString(*m_TopAlign_J, cigar, query_handle.GetBioseqLength(), scope);
+	    int query_length = query_handle.GetBioseqLength();
+            s_GetCigarString(*m_TopAlign_J, cigar, query_length, scope);
+	    int query_J_stop = m_TopAlign_J->GetSeqStop(0);
             m_AirrData["j_cigar"] = cigar;
             m_AirrData["j_sequence_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0) + 1);
-            m_AirrData["j_sequence_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0) + 1);
+            m_AirrData["j_sequence_end"] = NStr::IntToString(query_J_stop + 1);
             
             m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1) + 1);
             m_AirrData["j_germline_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1) + 1);
@@ -2237,7 +2239,9 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
             int j_length = germline_j_bh.GetBioseqLength();
             if (m_AirrData["v_germline_start"] != NcbiEmptyString && 
                 NStr::StringToInt(m_AirrData["v_germline_start"]) == 1 &&
-                NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4]) - 1) { //-1 to allow J gene missing the last bp
+		(NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4]) ||
+                (NStr::StringToInt(m_AirrData["j_germline_end"]) >= j_length - max(0, annot->m_JDomain[4]) - 1 &&
+		 query_length > query_J_stop))) { //-1 to allow J gene missing the last bp but the query must have at least one base past the query j end
 
                 m_AirrData["complete_vdj"] = "T";
             }
