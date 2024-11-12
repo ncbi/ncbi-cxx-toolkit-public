@@ -4074,7 +4074,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 }
 
 
-enum {
+typedef enum {
     fSOCK_KeepNone    = 0,
     fSOCK_KeepEvent   = 1,
     fSOCK_KeepSession = 2,
@@ -9047,8 +9047,8 @@ extern int gettimeofday(struct timeval* tp, void* unused)
 {
     struct timespec ts;
     if (timespec_get(&ts, TIME_UTC) == TIME_UTC) {
-        tp->tv_sec  = ts.tv_sec;
-        tp->tv_usec = ts.tv_nsec / 1000;
+        tp->tv_sec  = (long) ts.tv_sec;
+        tp->tv_usec = (long)(ts.tv_nsec / 1000);
     } else {
         /* Seconds since January 1, 1601 (UTC) to January 1, 1970 (UTC) */
         static const ULONGLONG EPOCH = 11644473600L;
