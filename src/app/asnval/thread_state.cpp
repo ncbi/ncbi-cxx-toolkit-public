@@ -300,11 +300,11 @@ unique_ptr<CObjectIStream> CAsnvalThreadState::OpenFile(TTypeInfo& asn_info, con
 }
 
 
-static void s_StartWrite(IMessageHandler& msgHandler, bool ignoreInferences = false) // Commence write if necessary
+static void s_StartWrite(IMessageHandler& msgHandler) // Commence write if necessary
 { // does nothing if msgHandler.InvokeWrite() returns false
     if (msgHandler.InvokeWrite()) {
         msgHandler.RequestStop();
-        msgHandler.Write(ignoreInferences);
+        msgHandler.Write();
     }
 }
 
@@ -336,9 +336,7 @@ void CAsnvalThreadState::ReportReadFailure(const CException* p_exception, IMessa
     errstr = NStr::Replace(errstr, " *   ", " * ");
 
     msgHandler.AddValidErrItem(eDiag_Critical, eErr_GENERIC_InvalidAsn, errstr);
-
-    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-    s_StartWrite(msgHandler, ignoreInferences);
+    s_StartWrite(msgHandler);
 }
 
 
@@ -716,8 +714,7 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
         if (! mAppConfig.mOnlyAnnots) {
             hugeFileValidator.ReportGlobalErrors(m_GlobalInfo, msgHandler);
         }
-        bool ignoreInferences = (m_GlobalInfo.CumulativeInferenceCount >= InferenceAccessionCutoff);
-        s_StartWrite(msgHandler, ignoreInferences);
+        s_StartWrite(msgHandler);
     }
 
 
@@ -728,9 +725,8 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     }
 
     hugeFileValidator.ReportPostErrors(*m_pContext, msgHandler);
-
-    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-    s_StartWrite(msgHandler, ignoreInferences);
+    
+    s_StartWrite(msgHandler);
 }
 
 
@@ -750,8 +746,7 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
             if (e.GetErrCode() == edit::CHugeFileException::eDuplicateSeqIds)
             {
                 msgHandler.AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, e.GetMsg());
-                bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-                s_StartWrite(msgHandler, ignoreInferences);
+                s_StartWrite(msgHandler);
                 ++m_Reported;
                 continue;
             }
@@ -803,14 +798,13 @@ CThreadExitData CAsnvalThreadState::ValidateWorker(
 void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHugeFileProcess& process,
         IMessageHandler& msgHandler)
 {
-    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
     auto& reader = process.GetReader();
 
     auto writer_task = mAppConfig.m_thread_pool1->launch(
-        [this, &ignoreInferences, &msgHandler] {
+        [this, &msgHandler] {
             if(msgHandler.InvokeWrite())
                 {
-                    msgHandler.Write(ignoreInferences);
+                    msgHandler.Write();
                 }
             return true;
         }
@@ -866,8 +860,7 @@ void CAsnvalThreadState::ValidateBlobSequential(
         auto pSubmitBlock = reader.GetSubmitBlock();
         ValidateAsync(loader_name, pSubmitBlock, seqid, msgHandler);
     }
-    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-    s_StartWrite(msgHandler, ignoreInferences);
+    s_StartWrite(msgHandler);
 }
 
 
@@ -882,8 +875,7 @@ bool CAsnvalThreadState::ValidateTraditionally(TTypeInfo asninfo, IMessageHandle
         m_Longest = elapsed;
         m_LongestId = m_CurrentId;
     }
-    bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-    s_StartWrite(msgHandler, ignoreInferences);
+    s_StartWrite(msgHandler);
 
     if (m_ReadFailure) {
         return false;
@@ -896,8 +888,7 @@ bool CAsnvalThreadState::ValidateBatchMode(TTypeInfo asninfo, IMessageHandler& m
 {
     if (asninfo == CBioseq_set::GetTypeInfo()) {
         ProcessBSSReleaseFile(msgHandler);
-        bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-        s_StartWrite(msgHandler, ignoreInferences);
+        s_StartWrite(msgHandler);
         return true;
     }
     else
@@ -912,8 +903,7 @@ bool CAsnvalThreadState::ValidateBatchMode(TTypeInfo asninfo, IMessageHandler& m
             throw;
         }
         m_Options = commandLineOptions;
-        bool ignoreInferences = (m_pContext->CumulativeInferenceCount >= InferenceAccessionCutoff);
-        s_StartWrite(msgHandler, ignoreInferences);
+        s_StartWrite(msgHandler);
         return true;
     }
     else {
