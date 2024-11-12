@@ -141,7 +141,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * or tab characters.  Single filenames(f), directories(d), and paths(p) span
  * up to the end of the command ('\n'), and do not require any quoting for
  * special characters.  Exception is the REN command, which takes two names,
- * f1 and f2, each being either a single token (no leading '"' and embedded
+ * f1 and f2, each being either a single token (no leading '"' nor embedded
  * spaces / tabs), or quoted FTP-style (enclosed in double quotes, with any
  * embedded double quote character doubled, e.g. """a""b" encodes the file
  * name "a"b).  Note that the filename a"b (no leading quote) does not require
