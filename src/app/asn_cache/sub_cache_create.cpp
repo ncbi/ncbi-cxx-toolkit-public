@@ -242,7 +242,7 @@ void ExtractExtraIds(CBioseq_Handle         bsh,
     ///
     if (extract_products) {
         SAnnotSelector sel;
-        sel.SetResolveDepth(kMax_Int)
+        sel.SetResolveDepth(0)
            .SetExactDepth(false)
            .SetAdaptiveDepth(true)
            .SetResolveAll()
