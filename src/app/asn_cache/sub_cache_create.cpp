@@ -1703,6 +1703,10 @@ CAsnSubCacheCreateApplication::SBlobVersion::SBlobVersion(const string &line)
 
     vector<string> tokens;
     NStr::Split(line, " ", tokens, NStr::fSplit_Tokenize);
+    if (tokens[3] == "GPIPE_Pub") {
+        /// Ignore loads of unannotated sequences, which have owner "GPIPE_Pub"
+        return;
+    }
     gi = GI_FROM(Int8, NStr::StringToInt8(tokens[1]));
     sat = s_SatelliteMap[tokens[3]];
     satkey = NStr::StringToInt(tokens[2]);
