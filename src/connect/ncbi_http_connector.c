@@ -1250,10 +1250,6 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                     uuu->received = 0;
                     uuu->chunked = 0;
                     BUF_Erase(uuu->http);
-#if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_CYGWIN)
-                    if (!uuu->keepalive)
-                        ; //status = SOCK_Shutdown(uuu->sock, eIO_Write);
-#endif /*NCBI_OS_MSWIN*/
                     break;
                 }
             } else
