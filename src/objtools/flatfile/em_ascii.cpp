@@ -2431,7 +2431,6 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     bool cancelled;
 
     char* tempdiv;
-    char* r;
     Int4  i;
     Char  dataclass[4];
 
@@ -2615,18 +2614,16 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         RemoveHtgPhase(embl->SetKeywords());
     }
 
-    char* kw = StringSave(XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';'));
-    if (kw) {
-        if (! est_kwd && StringStr(kw, "EST")) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
+    if (auto kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';')) {
+        if (! est_kwd && kw->find("EST") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw->c_str());
         }
-        if (! sts_kwd && StringStr(kw, "STS")) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
+        if (! sts_kwd && kw->find("STS") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw->c_str());
         }
-        if (! gss_kwd && StringStr(kw, "GSS")) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw);
+        if (! gss_kwd && kw->find("GSS") != string::npos) {
+            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw->c_str());
         }
-        MemFree(kw);
     }
     if (! ibp->is_contig) {
         bool            drop = false;
@@ -2658,7 +2655,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     if (is_htc_div) {
-        r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
+        char* r = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (r) {
             p = r;
             if (*r == 'm' || *r == 'r')
