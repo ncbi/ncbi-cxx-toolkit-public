@@ -46,8 +46,8 @@ fi
 
 #### Substitute for the new $(builddir)
 
-files="\
-Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl install.sh new_module.sh"
+files="Makefile.mk Makefile.meta Makefile.lib.tmpl Makefile.app.tmpl"
+files="$files Makefile.flat install.sh new_module.sh"
 rwcdr=run_with_cd_reporter.py
 
 for f in $files ; do
