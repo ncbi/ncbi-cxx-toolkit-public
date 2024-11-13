@@ -236,7 +236,6 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
     IndexblkPtr ibp;
     char*       bptr;
-    char*       str;
     char        msg[4];
     Int2        div;
     bool        if_cds;
@@ -265,8 +264,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
     ibp->wgssec[0] = '\0';
 
-    str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE));
-    if (str) {
+    if (char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE))) {
         p = StringRChr(str, '.');
         if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
             *p = '\0';
@@ -438,15 +436,13 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
                 RemoveHtgPhase(gbb->SetKeywords());
             }
 
-            char* kw = StringSave(XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';'));
-            if (kw) {
-                if (! est_kwd && StringStr(kw, "EST")) {
-                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw);
+            if (auto kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';')) {
+                if (! est_kwd && kw->find("EST") != string::npos) {
+                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw->c_str());
                 }
-                if (! sts_kwd && StringStr(kw, "STS")) {
-                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw);
+                if (! sts_kwd && kw->find("STS") != string::npos) {
+                    ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw->c_str());
                 }
-                MemFree(kw);
             }
 
             if (! ibp->is_contig) {
@@ -506,7 +502,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
     }
 
     if (is_htc_div) {
-        str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
+        char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_MOLTYPE));
         if (str) {
             p = str;
             if (*str == 'm' || *str == 'r')
