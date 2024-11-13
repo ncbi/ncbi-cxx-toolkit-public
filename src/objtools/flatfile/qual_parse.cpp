@@ -175,7 +175,7 @@ bool CQualParser::xParseQualifierStart(
     if (! NStr::StartsWith(tail, '\"')) {
         // sanity check tail?
         qualVal     = tail;
-        thereIsMore = (qualKey == "anticodon");
+        thereIsMore = (qualKey == "anticodon") && ! NStr::EndsWith(tail, ')');
         return true;
     }
     // established: tail starts with quote
@@ -209,9 +209,7 @@ bool CQualParser::xParseQualifierTail(
             return true;
         }
         if (! xParseQualifierCont(qualKey, qualVal, thereIsMore)) {
-            if (qualKey != "anticodon") {
-                return false;
-            }
+            return false;
         }
     }
     NStr::TruncateSpacesInPlace(qualVal);
