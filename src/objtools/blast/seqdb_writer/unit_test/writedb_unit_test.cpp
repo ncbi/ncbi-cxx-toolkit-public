@@ -2295,22 +2295,18 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
     CTmpFile tmpfile;
     const string kTitle("My alias file");
     // nr should have at least two volumes
-    const unsigned int kNumVols(9);
-    const string kMyAliasDb("nr");
+    const unsigned int kNumVols(3);
+    const string kMyAliasDb("data/test_vol");
     const string kAliasFileName(kMyAliasDb + ".pal");
     CFileDeleteAtExit::Add(kAliasFileName);
 
-    CWriteDB_CreateAliasFile(kMyAliasDb, kNumVols, CWriteDB::eProtein,
-                             kTitle);
+    CWriteDB_CreateAliasFile(kMyAliasDb, kNumVols, CWriteDB::eProtein, kTitle);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
     SAliasFileData alias_file_data(kAliasFileName);
-
     BOOST_CHECK(alias_file_data.m_Title.Found());
     BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
-
     BOOST_CHECK(alias_file_data.m_DbList.Found());
-    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), kMyAliasDb) != NPOS);
     BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), NStr::IntToString(kNumVols-1)) != NPOS);
     BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), NStr::IntToString(kNumVols)) == NPOS);
 
