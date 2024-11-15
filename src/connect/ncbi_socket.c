@@ -2963,9 +2963,9 @@ static EIO_Status s_Recv(SOCK    sock,
 
     assert(sock->type == eSOCK_Socket  &&  buf  &&  size > 0  &&  !*n_read);
 
-    if (sock->r_status == eIO_Closed)
-        return eIO_Unknown;
     if (sock->eof)
+        return sock->r_status == eIO_Closed ? eIO_Unknown : eIO_Closed;
+    if (sock->r_status == eIO_Closed)
         return eIO_Closed;
 
     /* read from the socket */
@@ -3939,9 +3939,9 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     switch (dir) {
     case eIO_Read:
         if (sock->eof) {
-            /* hit EOF (and may be not yet shut down) -- so, flag it as been
+            /* hit EOF (and maybe not yet shut down) -- so, flag it as been
              * shut down, but do not perform the actual system call,
-             * as it can cause smart OS'es like Linux to complain.
+             * as it can cause smart OS'es like Linux to complain
              */
             sock->eof = 0/*false*/;
             sock->r_status = eIO_Closed;
@@ -3988,7 +3988,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                 } else if (!(dir & eIO_ReadWrite)  &&  !sock->w_len)
                     status = eIO_Success;
             }
-            if (!sock->pending  &&  sock->sslctx) {
+            if (dir != eIO_Write  &&  !sock->pending  &&  sock->sslctx) {
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
                 if (sslclose) {
                     const unsigned int rtv_set = sock->r_tv_set;
@@ -4037,25 +4037,20 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         return eIO_InvalidArg;
     }
     assert((EIO_Event)(dir | eIO_ReadWrite) == eIO_ReadWrite);
-    
+
+    /* Secure connection can use both READ and WRITE for any I/O */
+    if (dir != eIO_ReadWrite  &&  sock->sslctx)
+        return status;
+
 #ifdef NCBI_OS_BSD
     /* at least on FreeBSD: shutting down a socket for write (i.e. forcing to
-     * send a FIN) for a socket that has been already closed by another end
+     * send a FIN) for a socket that has been already closed by the other end
      * (e.g. when peer has done writing, so this end has done reading and is
      * about to close) seems to cause ECONNRESET in the coming close()...
      * see kern/146845 @ http://www.freebsd.org/cgi/query-pr.cgi?pr=146845 */
     if (dir == eIO_ReadWrite  &&  how != SOCK_SHUTDOWN_RDWR)
         return status;
 #endif /*NCBI_OS_BSD*/
-
-#ifdef NCBI_OS_UNIX
-    if (sock->path[0])
-        return status;
-#endif /*NCBI_OS_UNIX*/
-
-#ifndef NCBI_OS_MSWIN
-    /* on MS-Win, socket shutdown for write apparently messes up (?!)
-     * with later reading, especially when reading a lot of data... */
 
     if (s_Initialized > 0  &&  shutdown(sock->sock, how) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
@@ -4068,7 +4063,6 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         UTIL_ReleaseBuffer(strerr);
         status = eIO_Unknown;
     }
-#endif /*!NCBI_OS_MSWIN*/
 
     return status;
 }
@@ -4798,7 +4792,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
                      " Invalid handle%s %lu",
                      x_id,
                      handle ? " size"                     : "",
-                     handle ? (unsigned long) handle_size : 0));
+                     handle ? (unsigned long) handle_size : 0UL));
         assert(0);
         return eIO_InvalidArg;
     }
@@ -5088,9 +5082,13 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         x_sock->w_buf = x_orig->w_buf;
         x_orig->w_buf = 0;
         x_orig->w_len = 0;
-        BUF_Splice(&x_sock->w_buf, w_buf);
-        BUF_Read(x_sock->w_buf, 0, w_len);
-        BUF_Destroy(w_buf);
+        verify(BUF_Read(x_sock->w_buf, 0, w_len) == w_len);
+        if (x_sock->w_buf) {
+            verify(BUF_Splice(&x_sock->w_buf, w_buf));
+            assert(!BUF_Size(w_buf));
+            BUF_Destroy(w_buf);
+        } else
+            x_sock->w_buf = w_buf;
     } else
         BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_len = BUF_Size(x_sock->w_buf);
@@ -6594,7 +6592,7 @@ extern EIO_Status LSOCK_GetOSHandleEx(LSOCK      lsock,
                      " Invalid handle%s %lu",
                      lsock->id, (unsigned int) lsock->sock,
                      handle ? " size"                     : "",
-                     handle ? (unsigned long) handle_size : 0));
+                     handle ? (unsigned long) handle_size : 0UL));
         assert(0);
         return eIO_InvalidArg;
     }
@@ -7486,8 +7484,9 @@ extern EIO_Status SOCK_Status(SOCK      sock,
             if (!sock->connected  ||  sock->pending)
                 return eIO_Timeout;
             if (direction == eIO_Read) {
-                return sock->type == eSOCK_Socket  &&  sock->eof
-                    ? eIO_Closed : (EIO_Status) sock->r_status;
+                if (sock->type != eSOCK_Socket  ||  !sock->eof)
+                    return (EIO_Status) sock->r_status;
+                return sock->r_status == eIO_Closed ? eIO_Unknown : eIO_Closed;
             }
             if (direction == eIO_Write)
                 return (EIO_Status) sock->w_status;
@@ -7738,7 +7737,7 @@ extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
                      " Invalid handle%s %lu",
                      s_ID(sock, _id),
                      handle ? " size"                     : "",
-                     handle ? (unsigned long) handle_size : 0));
+                     handle ? (unsigned long) handle_size : 0UL));
         assert(0);
         return eIO_InvalidArg;
     }
