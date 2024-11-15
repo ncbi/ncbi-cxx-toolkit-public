@@ -3,7 +3,19 @@
 BEGIN                        { stage = 0; target = ""; in_all_projects = 0 }
 (stage == 0  &&  /^[ \t]*$/) { stage = 1 }
 (stage == 1  &&  /^all_/)    { stage = 2 }
-(stage == 1)                 { print; next }
+(stage == 1)                 {
+    if (/^import_root *=/) {
+        root = subdir
+        gsub("[^/]*", "..", root)
+        print "import_root = " root
+        next
+    } else if (/^include Makefile\.mk$/) {
+        print "include $(import_root)/Makefile.mk"
+        next
+    }
+    print
+    next
+}
 /^all_projects[ \t]*=/       { in_all_projects = 1; next }
 /^all_dataspec[ \t]*=/       { in_all_dataspec = 1; next }
 /^all_dirs[ \t]*=/           { in_all_dirs = 1; last_dir = ""; print; next }
