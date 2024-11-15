@@ -1335,8 +1335,12 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
             }
             if (org.IsSetLineage()) {
                 string org_lineage = org.GetLineage();
-                if (! NStr::IsBlank(org_lineage) && NStr::Find(org_lineage, "Bacteria; Cyanobacteriota") != NPOS) {
-                    is_cyanobacteria = true;
+                if (! NStr::IsBlank(org_lineage)) {
+                    // check old and new lineages to avoid false positives
+                    if (NStr::Find(org_lineage, "Bacteria; Cyanobacteriota") != NPOS ||
+                        NStr::Find(org_lineage, "Bacteria; Bacillati; Cyanobacteriota") != NPOS) {
+                        is_cyanobacteria = true;
+                    }
                 }
             }
         }
