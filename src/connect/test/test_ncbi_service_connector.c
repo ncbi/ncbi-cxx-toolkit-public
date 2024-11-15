@@ -40,17 +40,21 @@
 #include "test_assert.h"  /* This header must go last */
 
 
+static const char kBounce[] = "bounce";
+
+
 int main(int argc, const char* argv[])
 {
-    const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
+    const char* service = argc > 1 && *argv[1] ? argv[1] : kBounce;
     static char obuf[8192 + 2];
     SConnNetInfo* net_info;
     CONNECTOR connector;
     EIO_Status status;
     char ibuf[1024];
+    size_t n, m, k;
+    char* descr;
     CONN conn;
     SOCK sock;
-    size_t n;
 
     g_NCBI_ConnectRandomSeed
         = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
@@ -70,33 +74,21 @@ int main(int argc, const char* argv[])
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     connector = SERVICE_CreateConnectorEx(service, fSERV_Any, net_info, 0);
-
     if (!connector)
         CORE_LOG(eLOG_Fatal, "Failed to create service connector");
 
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-    if (argc > 2) {
-        if (strcmp(argv[2], "") != 0) {
-            strncpy0(obuf, argv[2], sizeof(obuf) - 2);
-            obuf[n = strlen(obuf)] = '\n';
-            obuf[++n]              = '\0';
-            if (CONN_Write(conn, obuf, strlen(obuf), &n, eIO_WritePersist)
-                != eIO_Success) {
-                CONN_Close(conn);
-                CORE_LOG(eLOG_Fatal, "Cannot write to connection");
-            }
-            assert(n == strlen(obuf));
-        }
-    } else {
+    if (argc <= 2) {
+        m = 0;
         for (n = 0;  n < 10;  ++n) {
-            size_t m;
-            for (m = 0;  m < sizeof(obuf) - 2;  ++m)
-                obuf[m] = "0123456789\n"[rand() % 11];
-            obuf[m++] = '\n';
-            obuf[m]   = '\0';
-            if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
+            for (k = 0;  k < sizeof(obuf) - 2;  ++k)
+                obuf[k] = "0123456789\n"[rand() % 11];
+            obuf[k++] = '\n';
+            obuf[k]   = '\0';
+            k = strlen(obuf);
+            if (CONN_Write(conn, obuf, k, &k, eIO_WritePersist)
                 != eIO_Success) {
                 if (!n) {
                     CONN_Close(conn);
@@ -104,35 +96,69 @@ int main(int argc, const char* argv[])
                 } else
                     break;
             }
-            assert(m == strlen(obuf));
+            assert(k == strlen(obuf));
+            m += k;
         }
-    }
+    } else if (strcmp(argv[2], "") != 0) {
+        strncpy0(obuf, argv[2], sizeof(obuf) - 2);
+        obuf[m = strlen(obuf)] = '\n';
+        obuf[++m]              = '\0';
+        if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
+            != eIO_Success) {
+            CONN_Close(conn);
+            CORE_LOG(eLOG_Fatal, "Cannot write to connection");
+        }
+        assert(m == strlen(obuf));
+    } else
+        m = 0;
     if (CONN_GetSOCK(conn, &sock) == eIO_Success)
         verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
+    descr = CONN_Description(conn);
 
+    n = 0;
     for (;;) {
-        if (CONN_Wait(conn, eIO_Read, net_info->timeout) != eIO_Success) {
-            CONN_Close(conn);
-            CORE_LOG(eLOG_Fatal, "Failed to wait for reading");
+        status = CONN_Wait(conn, eIO_Read, net_info->timeout);
+        if (status != eIO_Success) {
+            CORE_LOGF(eLOG_Fatal,
+                      ("Failed to wait for read (%s%s%s): %s",
+                       CONN_GetType(conn),
+                       descr ? ", " : "", descr ? descr : "",
+                       IO_StatusStr(status)));
         }
 
-        status = CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPersist);
-        if (n) {
-            char* descr = CONN_Description(conn);
-            CORE_DATAF(eLOG_Note, ibuf, n,
-                       ("%lu bytes read from service (%s%s%s):",
-                        (unsigned long) n, CONN_GetType(conn),
+        status = CONN_Read(conn, ibuf, sizeof(ibuf), &k, eIO_ReadPersist);
+        if (k) {
+            CORE_DATAF(eLOG_Note, ibuf, k,
+                       ("%lu byte(s) read (%s%s%s)",
+                        (unsigned long) k, CONN_GetType(conn),
                         descr ? ", " : "", descr ? descr : ""));
-            if (descr)
-                free(descr);
+            n += k;
         }
         if (status != eIO_Success) {
-            if (status != eIO_Closed)
+            if (status != eIO_Closed) {
                 CORE_LOGF(n ? eLOG_Error : eLOG_Fatal,
-                          ("Read error: %s", IO_StatusStr(status)));
+                          ("Read error (%s%s%s): %s",
+                           CONN_GetType(conn),
+                           descr ? ", " : "", descr ? descr : "",
+                           IO_StatusStr(status)));
+            }
+            CORE_LOGF(eLOG_Note,
+                      ("Total byte(s) read (%s%s%s): %lu",
+                       CONN_GetType(conn),
+                       descr ? ", " : "", descr ? descr : "",
+                       (unsigned long) n));
+            if (service == kBounce  &&  m != n) {
+                CORE_LOGF(eLOG_Fatal,
+                          ("Not entirely bounced (%s%s%s) %lu != %lu",
+                           CONN_GetType(conn),
+                           descr ? ", " : "", descr ? descr : "",
+                           (unsigned long) m, (unsigned long) n));
+            }
             break;
         }
     }
+    if (descr)
+        free(descr);
 
     ConnNetInfo_Destroy(net_info);
     CONN_Close(conn);
