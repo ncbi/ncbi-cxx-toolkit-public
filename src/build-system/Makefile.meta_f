@@ -3,12 +3,15 @@
 
 ### Flat-makefile-based recursive builds
 
+fmfs=$(import_root)/Makefile.flat $(builddir)/Makefile.flat
+main_fmf=$(word 1,$(wildcard $(fmfs)))
+
 ifneq "" "$(filter-out $(CURDIR),$(builddir))"
   CREATE_FSMF     = $(top_srcdir)/scripts/common/impl/create_flat_submakefile.sh
   CREATE_FSMF_AWK = $(CREATE_FSMF:.sh=.awk)
 
-  Makefile.flat: $(CREATE_FSMF) $(CREATE_FSMF_AWK) $(builddir)/Makefile.flat
-	+$< $(builddir) $(subdir)
+  Makefile.flat: $(CREATE_FSMF) $(CREATE_FSMF_AWK) $(main_fmf)
+	+$< $(dir $(main_fmf)) $(subdir)
 endif
 MAKE_FLAT = $(MAKE) $(MFLAGS_NR) -f Makefile.flat
 
