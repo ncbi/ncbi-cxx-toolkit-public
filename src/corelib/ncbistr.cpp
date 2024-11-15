@@ -6271,7 +6271,7 @@ string NStr::Base64Encode(const CTempString str, size_t line_len)
     size_t pos = 0, n_read, n_written;
 
     while ( n ) {
-        BASE64_Encode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written, &line_len);
+        _VERIFY(BASE64_Encode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written, &line_len));
 	    pos += n_read;
 	    n   -= n_read;
 	    dst.append(dst_buf, n_written);

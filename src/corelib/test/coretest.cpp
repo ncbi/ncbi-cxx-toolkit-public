@@ -1199,6 +1199,10 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         BOOST_CHECK(j == read);
         BOOST_CHECK(len == written);
         BOOST_CHECK(memcmp(buf1, buf3, len) == 0);
+
+        string test = NStr::Base64Decode(CTempString(buf2, j));
+        BOOST_CHECK(test.size() == len);
+        BOOST_CHECK(test == string(buf3, len));
     }
 }
 
