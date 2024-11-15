@@ -171,6 +171,8 @@ extern int/*bool*/ BASE64_Decode
                 break/*no room*/;
             nb -= 8;
             dst[j++] = (unsigned char)(bs >> nb);
+            if (!nb  &&  j + 3 > dst_size)
+                break/*safe restart point*/;
         }
     } while (i < src_size);
 
