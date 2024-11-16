@@ -52,15 +52,15 @@ extern int/*bool*/ BASE64_Encode
     const size_t max_len = line_len ? *line_len : BASE64_DEFAULT_LINE_LEN;
     size_t len = !dst_size ? 0
         : ((dst_size - (max_len ? dst_size / (max_len + 1) : 0)) >> 2) * 3;
-    unsigned char* src = (unsigned char*) src_buf;
-    unsigned char* dst = (unsigned char*) dst_buf;
+    const unsigned char* src = (const unsigned char*) src_buf;
+    unsigned char*       dst = (unsigned char*)       dst_buf;
     int bs = 0/*bitstream*/, nb = 0/*number of bits*/;
     size_t i, j;
 
     if (!src_size  ||  !len) {
         *src_read    = 0;
         *dst_written = 0;
-        if (dst_size > 0)
+        if (dst_size)
             *dst = '\0';
         return !src_size;
     }
