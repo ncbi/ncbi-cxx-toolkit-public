@@ -6272,9 +6272,9 @@ string NStr::Base64Encode(const CTempString str, size_t line_len)
 
     while ( n ) {
         _VERIFY(BASE64_Encode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written, &line_len));
-	    pos += n_read;
-	    n   -= n_read;
-	    dst.append(dst_buf, n_written);
+        pos += n_read;
+        n   -= n_read;
+        dst.append(dst_buf, n_written);
     }
     return dst;
 }
@@ -6288,11 +6288,12 @@ string NStr::Base64Decode(const CTempString str)
 
     while ( n ) {
         if (!BASE64_Decode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written)) {
-            return string();
+            dst.erase();
+            break;
         }
-	    pos += n_read;
-	    n   -= n_read;
-	    dst.append(dst_buf, n_written);
+        pos += n_read;
+        n   -= n_read;
+        dst.append(dst_buf, n_written);
     }
     return dst;
 }
