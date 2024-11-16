@@ -50,22 +50,22 @@ extern int/*bool*/ BASE64_Encode
         "abcdefghijklmnopqrstuvwxyz" /*52*/
         "0123456789+/";              /*64*/
     const size_t max_len = line_len ? *line_len : BASE64_DEFAULT_LINE_LEN;
-    const size_t max_src =
-        ((dst_size - (max_len ? dst_size/(max_len + 1) : 0)) >> 2) * 3;
+    size_t max_src_size = !dst_size ? 0
+        : ((dst_size - (max_len ? dst_size / (max_len + 1) : 0)) >> 2) * 3;
     unsigned char* src = (unsigned char*) src_buf;
     unsigned char* dst = (unsigned char*) dst_buf;
     int bs = 0/*bitstream*/, nb = 0/*number of bits*/;
     size_t i, j, len;
 
-    if (!max_src  ||  !src_size) {
+    if (!src_size  ||  !max_src_size) {
         *src_read    = 0;
         *dst_written = 0;
         if (dst_size > 0)
             *dst = '\0';
-        return dst_size  &&  !src_size;
+        return !src_size;
     }
-    if (src_size > max_src)
-        src_size = max_src;
+    if (src_size > max_src_size)
+        src_size = max_src_size;
 
     for (i = j = len = 0;  i < src_size;  ++i) {
         bs <<= 8;
