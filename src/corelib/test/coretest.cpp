@@ -1156,7 +1156,7 @@ BOOST_AUTO_TEST_CASE(TestCRefMove)
 
 BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
 {
-    const char test_string[] = "Quick brown fox jumps over the lazy dog";
+    static const char test_string[] = "Quick brown fox jumps over the lazy dog";
     char buf1[1024], buf2[1024], buf3[1024];
     size_t read, written, len = 16, i, j;
 
@@ -1178,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         memset(buf2, '\0', sizeof(buf2));
         memset(buf3, '\0', sizeof(buf3));
 
-        len = rand() % 250;
+        len = rand() % 700;
         for (j = 0;  j < len;  ++j)
             buf1[j] = char(rand() & 0xFF);
 
@@ -1190,6 +1190,9 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         BOOST_CHECK(written < sizeof(buf2));
         BOOST_CHECK(buf2[written] == '\0');
 
+        string test = NStr::Base64Encode(CTempString(buf1, len), j);
+        BOOST_CHECK(test == string(buf2, written));
+
         if (rand() & 1)
             buf2[written] = '=';
         j = written;
@@ -1200,7 +1203,7 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         BOOST_CHECK(len == written);
         BOOST_CHECK(memcmp(buf1, buf3, len) == 0);
 
-        string test = NStr::Base64Decode(CTempString(buf2, j));
+        test = NStr::Base64Decode(CTempString(buf2, j));
         BOOST_CHECK(test.size() == len);
         BOOST_CHECK(test == string(buf3, len));
     }

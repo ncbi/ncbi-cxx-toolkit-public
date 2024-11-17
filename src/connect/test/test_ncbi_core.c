@@ -491,8 +491,19 @@ static void TEST_Base64(void)
         const char* plain;
         const char* encoded;
     } kTests[] = {
-        { "", "T===" },
-        { "", "TE==" },
+        /* Empty input (valid) and illegal encoded sequence */
+        { "", "1"    },   /* 0: Too short     */
+        { "", "22"   },   /* 1: Too short     */
+        { "", "333"  },   /* 2: Too short     */
+        { "", "====" },   /* 3: Invalid       */
+        { "", "T===" },   /* 4: Invalid       */
+        { "", "TE==" },   /* 5: Incomplete    */
+        { "", "TQ=x" },   /* 6: Bad padding   */
+        { "", "TQ?=" },   /* 7: Bad character */
+        /* Carriage control => empty decode   */
+        { "", "\n\f\r\v" }, /* 8: Whitespace  */
+        /* Valid empty input <=> empty output */
+        { "", "" },
         /* Test vectors from RFC4648 */
         { "f",      "Zg=="     },
         { "fo",     "Zm8="     },
@@ -543,27 +554,51 @@ static void TEST_Base64(void)
         const char* encoded = kTests[n].encoded;
         size_t len;
 
-        printf("Test %zu\n", n);
+        printf("Test %zu\n", n + 1);
 
         len = strlen(plain);
         assert(BASE64_Encode(plain, len,         &n_read,
                              buf,   sizeof(buf), &n_written, 0));
         assert(n_read == len);
         len = strlen(encoded);
-        if (n > 1) {
+        if (n > 8) {
             assert(n_written == len);
             assert(strcmp(encoded, buf) == 0);
         }
 
         assert(BASE64_Decode(encoded, len,         &n_read,
-                             buf,     sizeof(buf), &n_written) == (n > 1));
-        if (n > 1) {
+                             buf,     sizeof(buf), &n_written) == (n > 7));
+        if (n > 7) {
             assert(n_read == len);
             len = strlen(plain);
             assert(n_written == len);
             assert(memcmp(plain, buf, len) == 0);
-        } else
-            assert((n == 0  &&  n_read == 2)  ||  (n == 1  &&  n_read == 3));
+        } else switch (n) {
+        case 0:
+            assert(n_read == 1  &&  n_written == 0);
+            break;
+        case 1:
+            assert(n_read == 2  &&  n_written == 1);
+            break;
+        case 2:
+            assert(n_read == 3  &&  n_written == 2);
+            break;
+        case 3:
+            assert(n_read == 0  &&  n_written == 0);
+            break;
+        case 4:
+            assert(n_read == 2  &&  n_written == 0);
+            break;
+        case 5:
+            assert(n_read == 3  &&  n_written == 1);
+            break;
+        case 6:
+            assert(n_read == 3  &&  n_written == 1);
+            break;
+        case 7:
+            assert(n_read == 2  &&  n_written == 1);
+            break;
+        }
     }
 }
 
