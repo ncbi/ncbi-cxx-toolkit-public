@@ -598,6 +598,9 @@ static void TEST_Base64(void)
         case 7:
             assert(n_read == 2  &&  n_written == 1);
             break;
+        default:
+            assert(0);
+            break;
         }
     }
 }
