@@ -84,7 +84,7 @@ extern int/*bool*/ BASE64_Encode
     *src_read = i;
 
     if (nb) {
-        char c = kSyms[(bs << (6 - nb)) & 0x3F];
+        unsigned char c = kSyms[(bs << (6 - nb)) & 0x3F];
         _ASSERT(nb == 2  ||  nb == 4);
         do {
             if (max_len  &&  len++ >= max_len) {
@@ -159,9 +159,10 @@ extern int/*bool*/ BASE64_Decode
             --i;
             break/*bad input*/;
         }
+        _ASSERT(0 <= c  &&  c <= 0x3F);
 
         bs <<= 6;
-        bs  |= c & 0x3F;
+        bs  |= c;
         nb  += 6;
         if (nb >= 8) {
             if (j >= dst_size)
