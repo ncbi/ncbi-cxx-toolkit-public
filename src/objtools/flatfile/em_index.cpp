@@ -119,12 +119,12 @@ static bool em_err_field(const char* str)
 }
 
 /**********************************************************/
-static void ParseEmblVersion(IndexblkPtr entry, char* line)
+static void ParseEmblVersion(IndexblkPtr entry, const char* line)
 {
     char* p;
     char* q;
 
-    p = StringRChr(line, '.');
+    p = StringRChr(const_cast<char*>(line), '.');
     if (! p) {
         ErrPostStr(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
         entry->drop = true;
@@ -151,35 +151,30 @@ static void ParseEmblVersion(IndexblkPtr entry, char* line)
 }
 
 /**********************************************************/
-static char* EmblGetNewIDVersion(char* locus, char* str)
+optional<string> EmblGetNewIDVersion(const char* locus, const char* str)
 {
-    char* res;
-    char* p;
-    char* q;
+    const char* p;
+    const char* q;
 
     if (! locus || ! str)
-        return nullptr;
+        return {};
     p = StringChr(str, ';');
     if (! p)
-        return nullptr;
+        return {};
     for (p++; *p == ' ';)
         p++;
     if (p[0] != 'S' || p[1] != 'V')
-        return nullptr;
+        return {};
     for (p += 2; *p == ' ';)
         p++;
     q = StringChr(p, ';');
     if (! q)
-        return nullptr;
-    *q = '\0';
+        return {};
 
-    string s = locus;
-    s.append(".");
-    s.append(p);
-    res = StringSave(s);
-
-    *q = ';';
-    return (res);
+    string res(locus);
+    res += '.';
+    res += string(p, q);
+    return res;
 }
 
 /**********************************************************
@@ -212,7 +207,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     IndBlkNextPtr tibnp;
     size_t        i;
     int           j;
-    char*         line_sv;
     char*         p;
     char*         q;
 
@@ -249,7 +243,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             after_SV         = false;
             after_DT         = false;
 
-            line_sv = nullptr;
+            optional<string> line_sv;
 
             auto keywordEnd = emblKeywords[ParFlatEM_END];
             auto keywordId  = emblKeywords[ParFlat_ID];
@@ -321,10 +315,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         for (q = p; *q != '\0' && *q != ' ' && *q != '\t' &&
                                     *q != '\n';)
                             q++;
-                        i       = q - p;
-                        line_sv = StringNew(i);
-                        StringNCpy(line_sv, p, i);
-                        line_sv[i] = '\0';
+                        line_sv = string(p, q);
                     }
                 }
                 if (StringEquN(finfo.str, "OC", 2))
@@ -401,12 +392,9 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->drop = em_err_field("Sequence data");
             }
             if (! entry->drop && pp->accver) {
-                ParseEmblVersion(entry, line_sv);
+                ParseEmblVersion(entry, line_sv ? line_sv->c_str() : nullptr);
             }
-            if (line_sv) {
-                MemFree(line_sv);
-                line_sv = nullptr;
-            }
+            line_sv.reset();
 
             entry->len = pp->ffbuf.get_offs() - entry->offset;
 
