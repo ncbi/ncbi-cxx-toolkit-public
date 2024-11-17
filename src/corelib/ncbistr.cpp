@@ -6268,36 +6268,59 @@ string NStr::Base64Encode(const CTempString str, size_t line_len)
     size_t n = str.size();
     string dst;
     char   dst_buf[128];
-    size_t pos = 0, n_read, n_written;
+    size_t pos = 0, len = 0, n_read, n_written;
 
     while ( n ) {
-        _VERIFY(BASE64_Encode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written, &line_len));
+        static const size_t no_breaks = 0;
+        const char* ptr = dst_buf;
+        _VERIFY(BASE64_Encode(str.data() + pos, n, &n_read, dst_buf,
+                              sizeof(dst_buf), &n_written, &no_breaks));
+        _ASSERT(n_read  &&  n_written);
         pos += n_read;
         n   -= n_read;
-        dst.append(dst_buf, n_written);
+        if (line_len  &&  len + n_written > line_len) {
+            do {
+                len = line_len - len;
+                dst.append(ptr, len);
+                dst.append(1, '\n');
+                ptr       += len;
+                n_written -= len;
+                len = 0;
+            } while (/*len + */n_written > line_len);
+        }
+        dst.append(ptr, n_written);
+        len += n_written;
     }
     return dst;
 }
+
 
 string NStr::Base64Decode(const CTempString str)
 {
     size_t n = str.size();
     string dst;
     char   dst_buf[128];
-    size_t pos = 0, n_read, n_written;
+    const char* prev = 0;
+    size_t pos = 0, n_prev = 0, n_read, n_written;
 
     while ( n ) {
-        if (!BASE64_Decode(str.data() + pos, n, &n_read, dst_buf, sizeof(dst_buf), &n_written)) {
+        const char* next = str.data() + pos;
+        if (!BASE64_Decode(next, n, &n_read, dst_buf, sizeof(dst_buf), &n_written)
+            ||  (n_written  &&  prev  &&  memchr(prev, '=', n_prev))) {
             dst.erase();
             break;
         }
+        _ASSERT(n_read);
         pos += n_read;
         n   -= n_read;
-        dst.append(dst_buf, n_written);
+        if (n_written) {
+            prev   = next;
+            n_prev = n_read;
+            dst.append(dst_buf, n_written);
+        }
     }
     return dst;
 }
-
 
 
 /// @internal
