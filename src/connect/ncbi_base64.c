@@ -116,22 +116,15 @@ extern int/*bool*/ BASE64_Decode
     const unsigned char* src = (const unsigned char*) src_buf;
     unsigned char*       dst = (unsigned char*)       dst_buf;
     int bs = 0/*bitstream*/, nb = 0/*number of bits*/;
-    int/*bool*/ pad = 0/*false*/;
-    size_t i, j;
+    int/*bool*/ pad = -1/*uninited*/;
+    size_t i = 0, j = 0;
 
-    if (src_size < 4  ||  !dst_size) {
-        *src_read    = 0;
-        *dst_written = 0;
-        if (dst_size)
-            *dst = '\0';
-        return !src_size;
-    }
-
-    i = j = 0;
-    do {
+    while (i < src_size) {    
         unsigned char c = src[i++];
-        if (c == '\r'  ||  c == '\n'  ||  c == '\v'  ||  c == '\f')
+        if (c == '\f'  ||  c == '\n'  ||  c == '\r'  ||  c == '\v')
             continue/*ignore line breaks*/;
+        if (pad < 0)
+            pad = 0/*inited:false*/;
         if (c == '='  &&  !pad) {
             if (!nb) {
                 --i;
@@ -144,8 +137,10 @@ extern int/*bool*/ BASE64_Decode
         }
         if (pad) {
             _ASSERT(nb);
-            if (c != '=')
+            if (c != '=') {
+                --i;
                 break/*bad pad*/;
+            }
             if (!(nb -= 2))
                 break/*done*/;
             continue/*endgame*/;
@@ -160,8 +155,10 @@ extern int/*bool*/ BASE64_Decode
             c  = 62;
         else if (c == '/')
             c  = 63;
-        else
+        else {
+            --i;
             break/*bad input*/;
+        }
 
         bs <<= 6;
         bs  |= c & 0x3F;
@@ -174,13 +171,13 @@ extern int/*bool*/ BASE64_Decode
             if (!nb  &&  j + 3 > dst_size)
                 break/*safe restart point*/;
         }
-    } while (i < src_size);
+    }
 
     *src_read    = i;
     *dst_written = j;
     if (j < dst_size)
         dst[j] = '\0';
-    return i  &&  j  &&  !nb;
+    return (i  &&  j  &&  !nb)  ||  pad < 0;
 }
 
 
