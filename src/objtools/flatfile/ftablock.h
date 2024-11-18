@@ -294,7 +294,6 @@ class DataBlk : public CFlatFileData
 {
 public:
     DataBlk(
-        DataBlk* parent = nullptr,
         int      type_  = 0,
         char*    offset = nullptr,
         size_t   len_   = 0) :
@@ -305,13 +304,7 @@ public:
         mDrop(false),
         mpNext(nullptr)
     {
-        if (parent) {
-            while (parent->mpNext) {
-                parent = parent->mpNext;
-            }
-            parent->mpNext = this;
-        }
-    };
+    }
 
     // static void operator delete(void* p);
     ~DataBlk();
