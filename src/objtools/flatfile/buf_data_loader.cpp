@@ -326,7 +326,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
                 // MemFree(molconv);
             } else {
                 pp->farseq = true;
-                res        = GetGenBankInstContig(entry, *bioseq, pp);
+                res        = GetGenBankInstContig(*entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
@@ -352,7 +352,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
 static DataBlkPtr make_entry(char* entry_str)
 {
-    DataBlkPtr entry = new DataBlk(nullptr, ParFlat_ENTRYNODE);
+    DataBlkPtr entry = new DataBlk(ParFlat_ENTRYNODE);
 
     if (entry) {
         entry->mpNext  = nullptr; /* assume no segment at this time */
