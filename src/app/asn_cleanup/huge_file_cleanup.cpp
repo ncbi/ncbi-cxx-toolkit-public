@@ -217,6 +217,9 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
         m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
     }
 
+    if (m_CleanupOptions & eRemoveNcbiUserObjects) {
+        CCleanup::RemoveNcbiCleanupObject(m_top_entry->SetDescr());
+    }
 
     if (descriptors.empty()) {
         m_top_entry->SetSet().ResetDescr();
