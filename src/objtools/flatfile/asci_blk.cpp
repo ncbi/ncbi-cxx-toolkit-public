@@ -230,8 +230,14 @@ void ShrinkSpaces(string& line)
  **********************************************************/
 static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type, char* offset, size_t len)
 {
-    DataBlk* ldp = new DataBlk(*dbp, type, offset, len);
-    if (! *dbp) {
+    DataBlk* ldp = new DataBlk(type, offset, len);
+    if (*dbp) {
+        DataBlk* tail = *dbp;
+        while (tail->mpNext) {
+            tail = tail->mpNext;
+        }
+        tail->mpNext = ldp;
+    } else {
         *dbp = ldp;
     }
 }
