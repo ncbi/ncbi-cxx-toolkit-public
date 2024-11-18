@@ -323,13 +323,15 @@ string CSimpleEnvRegMapper::GetPrefix(void) const
 }
 
 
-const char* CNcbiEnvRegMapper::sm_Prefix = "NCBI_CONFIG_";
+static constexpr char*  kPrefix = "NCBI_CONFIG_";
+static constexpr size_t kPrefixLen = std::string_view(kPrefix).size();
 
 
 string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
     const
 {
-    string result(sm_Prefix);
+    string result;
+    result.assign(kPrefix, kPrefixLen);
     if (NStr::StartsWith(name, ".")) {
         result += name.substr(1) + "__" + section;
     } else {
@@ -380,8 +382,7 @@ static char s_IdentifySubstitution(const CTempString& s) {
 bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
                                  string& name) const
 {
-    static const SIZE_TYPE kPfxLen = strlen(sm_Prefix);
-    if (env_in.size() <= kPfxLen  ||  !NStr::StartsWith(env_in, sm_Prefix) ) {
+    if (env_in.size() <= kPrefixLen  ||  !NStr::StartsWith(env_in, kPrefix) ) {
         return false;
     }
 #ifdef UPPER_CASE_ONLY
@@ -413,7 +414,7 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
     }
     // Make an offset until the first symbol that could be section name
     // (alphanumeric character)
-    SIZE_TYPE section_start_pos = kPfxLen;
+    SIZE_TYPE section_start_pos = kPrefixLen;
     for (  ; section_start_pos < env.size(); section_start_pos++) {
         if (isalnum(env[section_start_pos])) break;
     }
@@ -422,11 +423,11 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
         return false;
     }
     /* Parse section and entry names from the variable */
-    if (env[kPfxLen] == '_') { // regular entry
-        section = env.substr(kPfxLen + 1, uu_pos - kPfxLen - 1);
+    if (env[kPrefixLen] == '_') { // regular entry
+        section = env.substr(kPrefixLen + 1, uu_pos - kPrefixLen - 1);
         name    = env.substr(uu_pos + 2);
     } else {
-        name    = env.substr(kPfxLen - 1, uu_pos - kPfxLen + 1);
+        name    = env.substr(kPrefixLen - 1, uu_pos - kPrefixLen + 1);
         _ASSERT(name[0] == '_');
         name[0] = '.';
         section = env.substr(uu_pos + 2);
@@ -445,7 +446,7 @@ bool CNcbiEnvRegMapper::EnvToReg(const string& env_in, string& section,
 
 string CNcbiEnvRegMapper::GetPrefix(void) const
 {
-    return sm_Prefix;
+    return kPrefix;
 }
 
 
