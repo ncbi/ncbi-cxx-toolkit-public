@@ -367,6 +367,11 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         options |= CCleanupHugeAsnReader::eEnableSmallGenomeSets;
     }
 
+    if (args["K"] && NStr::Find(args["K"].AsString(), "u") != NPOS) {
+        options |= CCleanupHugeAsnReader::eRemoveNcbiUserObjects;
+    }
+
+
     edit::CHugeFileProcess huge_process(new CCleanupHugeAsnReader(options));
     huge_process.OpenFile(filename);
 
