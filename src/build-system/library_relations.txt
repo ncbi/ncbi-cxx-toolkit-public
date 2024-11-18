@@ -37,7 +37,6 @@ GLX needs3party xcb
 GLdispatch needs3party $(ORIG_LIBS)
 OSMesa needs $(Z_LIB)
 OSMesa needs3party $(ORIG_LIBS)
-OSMesa needs3party $(ZSTD_LIBS)
 OSMesa needs3party $(Z_LIBS)
 OSMesa needs3party glapi
 VDBUtils needs bdbasncli
@@ -148,7 +147,6 @@ align_format needs3party $(GENBANK_THIRD_PARTY_LIBS)
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
-aligndb_reader needs $(SDBAPI_LIBS)
 aligndb_reader needs taxon1
 aligndb_reader needs xobjutil
 alndb_asnclient needs alndb_query
@@ -186,7 +184,6 @@ biocollect needs $(FTDS_LIB)
 biocollect needs dbapi_driver
 biocollect needs3party $(FTDS_LIBS)
 biosample needs $(SDBAPI_LIB)
-biosample needs $(SDBAPI_LIBS)
 biosample needs xmlwrapp
 biosample needs xregexp
 biotree needs general
@@ -444,7 +441,6 @@ gpinit needs gpinit_access
 gpinit needs gpinit_obj
 gpinit needs gpipe_objutil
 gpinit_access needs $(SDBAPI_LIB)
-gpinit_access needs $(SDBAPI_LIBS)
 gpinit_access needs xconnect
 gpinit_obj needs general
 gpinit_register needs gc_organism
@@ -456,7 +452,6 @@ gpipe_alnutil needs xalnmgr
 gpipe_attr needs gpipe_property
 gpipe_attr needs taxon1
 gpipe_common needs $(SDBAPI_LIB)
-gpipe_common needs $(SDBAPI_LIBS)
 gpipe_common needs eutils_client
 gpipe_common needs vdb_reader
 gpipe_common needs xcgi
@@ -490,7 +485,6 @@ gpipe_sadb needs seqset
 gpipe_sadb needs taxon1
 gpipe_sadb needs xmlwrapp
 gpipe_sqlite needs $(SDBAPI_LIB)
-gpipe_sqlite needs $(SDBAPI_LIBS)
 gpipe_sqlite needs $(SEQ_LIBS)
 gpipe_sqlite needs $(SQLITE3_WRAPPER)
 gpipe_sqlite needs pub
@@ -627,7 +621,6 @@ ideo_gridcli needs trackmgrgridcli
 ideochr needs3party vibrant
 ideocli needs ideo
 ideocoord needs $(SDBAPI_LIB)
-ideocoord needs $(SDBAPI_LIBS)
 ideocoord needs ideo_gridcli
 idgen needs dbassist
 idload needs3party ctutils
@@ -713,7 +706,6 @@ mongoc-1.0 needs3party $(NETWORK_LIBS)
 mongoc-1.0 needs3party $(OPENSSL_LIBS)
 mongoc-1.0 needs3party $(ORIG_LIBS)
 mongoc-1.0 needs3party $(SASL2_LIBS)
-mongoc-1.0 needs3party $(ZSTD_LIBS)
 mongoc-1.0 needs3party $(Z_LIBS)
 mongoc-1.0 needs3party bson-1.0
 mongocache needs eclib
@@ -725,7 +717,6 @@ mongocxx needs3party $(NETWORK_LIBS)
 mongocxx needs3party $(OPENSSL_LIBS)
 mongocxx needs3party $(ORIG_LIBS)
 mongocxx needs3party $(SASL2_LIBS)
-mongocxx needs3party $(ZSTD_LIBS)
 mongocxx needs3party $(Z_LIBS)
 mongocxx needs3party bson-1.0
 mongocxx needs3party bsoncxx
@@ -1090,7 +1081,6 @@ seqdb_maintenance_cassandra needs psg_cassandra
 seqedit needs seqset
 seqentry_comparator needs xobjwrite
 seqgapscan_utils needs $(SDBAPI_LIB)
-seqgapscan_utils needs $(SDBAPI_LIBS)
 seqgapscan_utils needs xconnect
 seqgapscan_utils needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
@@ -1508,9 +1498,7 @@ xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
 xcleanup needs $(OBJEDIT_LIBS)
 xcleanup needs xobjutil
-xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
-xcompress needs3party $(CMPRS_LIBS)
 xconnect includes connect
 xconnect includes connssl
 xconnect needs xncbi
@@ -1603,7 +1591,6 @@ xmyncbi_captcha needs $(CONNEXT)
 xmyncbi_captcha needs connect
 xmyncbi_captcha needs xncbi
 xncbi needs3party $(ORIG_LIBS)
-xncbi needs3party $(ZSTD_LIBS)
 xnetblast needs scoremat
 xnetblastcli needs xconnect
 xnetblastcli needs xnetblast
@@ -1687,4 +1674,3 @@ xxconnect2 needs3party $(NGHTTP2_LIBS)
 yaml-cpp needs3party $(ORIG_LIBS)
 z needs3party $(ORIG_LIBS)
 zcf needs3party $(ORIG_LIBS)
-zstd needs3party $(ORIG_LIBS)
