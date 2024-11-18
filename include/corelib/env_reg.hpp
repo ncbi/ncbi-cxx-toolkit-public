@@ -184,9 +184,6 @@ public:
     string RegToEnv (const string& section, const string& name) const;
     bool   EnvToReg (const string& env, string& section, string& name) const;
     string GetPrefix(void) const;
-
-private:
-    static const char* sm_Prefix;
 };
 
 
