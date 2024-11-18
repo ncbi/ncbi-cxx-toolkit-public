@@ -53,6 +53,7 @@ public:
         eExtendedCleanup       = 1,
         eNoNcbiUserObjects     = 1<<1,
         eEnableSmallGenomeSets = 1<<2,
+        eRemoveNcbiUserObjects = 1<<3,
     };
 
     using TOptions = int;

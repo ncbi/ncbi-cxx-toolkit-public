@@ -1895,22 +1895,45 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
 }
 
 
+
+static bool s_IsCleanupObject(const CSeqdesc& desc)
+{
+    return (desc.IsUser() && 
+            (desc.GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup));
+}
+
+
+bool CCleanup::RemoveNcbiCleanupObject(CSeq_descr& descr)
+{
+    if (!descr.IsSet() || descr.Get().empty()) {
+        return false;
+    }
+
+    auto& elements = descr.Set();
+    auto it = elements.begin();
+
+    bool rval = false;
+    while (it != elements.end()) {
+        if (s_IsCleanupObject(**it)) {
+            it = elements.erase(it);
+            rval = true;
+        } 
+        else {
+            ++it;
+        }
+    }
+    return rval;
+}
+
+
 bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
 {
     bool rval = false;
+
     if (seq_entry.IsSetDescr()) {
-        CBioseq::TDescr::Tdata::iterator it = seq_entry.SetDescr().Set().begin();
-        while (it != seq_entry.SetDescr().Set().end()) {
-            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup){
-                it = seq_entry.SetDescr().Set().erase(it);
-                rval = true;
-            }
-            else {
-                ++it;
-            }
-        }
-        if (seq_entry.SetDescr().Set().empty()) {
-            if (seq_entry.IsSeq()) {
+        rval = RemoveNcbiCleanupObject(seq_entry.SetDescr());
+        if (rval && seq_entry.GetDescr().Get().empty()) {
+            if (seq_entry.IsSet()) {
                 seq_entry.SetSeq().ResetDescr();
             }
             else if (seq_entry.IsSet()) {
@@ -1918,27 +1941,29 @@ bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
             }
         }
     }
+
     if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
-            rval |= RemoveNcbiCleanupObject(**it);
+        for (auto pEntry : seq_entry.SetSet().SetSeq_set()) {
+            rval |= RemoveNcbiCleanupObject(*pEntry);
         }
     }
     return rval;
 }
+
 
 void CCleanup::AddNcbiCleanupObject(int ncbi_cleanup_version, CSeq_descr& descr)
 {
     // update existing
     if (descr.IsSet()) {
         for (auto pDesc : descr.Set()) {
-            if (pDesc->IsUser() && pDesc->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
+            if (s_IsCleanupObject(*pDesc)) {
                 pDesc->SetUser().UpdateNcbiCleanup(ncbi_cleanup_version);
                 return;
             }
         }
     }
 
-    // create new
+    // create new cleanup object
     auto pCleanupObject = Ref(new CSeqdesc());
     auto& user = pCleanupObject->SetUser();
     user.UpdateNcbiCleanup(ncbi_cleanup_version);
