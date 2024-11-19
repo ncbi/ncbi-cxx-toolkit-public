@@ -6870,7 +6870,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "true");
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "MissingEnvironmentalSample",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingEnvironmentalSample",
         "Metagenomic should also have environmental sample annotated"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
