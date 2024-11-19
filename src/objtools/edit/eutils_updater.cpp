@@ -531,6 +531,20 @@ namespace
             return "db=pubmed&retmode=xml&id="s + NStr::NumericToString(m_pmid);
         }
     };
+
+    struct CPubOneRequest : CEUtils_Request {
+        TEntrezId m_pmid;
+        CPubOneRequest(CRef<CEUtils_ConnContext>& ctx, TEntrezId pmid) :
+            CEUtils_Request(ctx, ""), m_pmid(pmid)
+        {
+            CEUtils_Request::SetBaseURL("https://pubmed.ncbi.nlm.nih.gov/api/pubone/pubmed/");
+            SetRequestMethod(CEUtils_Request::eHttp_Get);
+        }
+        string GetURL() const override
+        {
+            return GetBaseURL() + "pubmed_"s + NStr::NumericToString(m_pmid);
+        }
+    };
 }
 
 CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
