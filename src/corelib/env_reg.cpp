@@ -323,8 +323,8 @@ string CSimpleEnvRegMapper::GetPrefix(void) const
 }
 
 
-static constexpr char*  kPrefix = "NCBI_CONFIG_";
-static constexpr size_t kPrefixLen = std::string_view(kPrefix).size();
+static const char*  kPrefix = "NCBI_CONFIG_";
+static const size_t kPrefixLen = std::string_view(kPrefix).size();
 
 
 string CNcbiEnvRegMapper::RegToEnv(const string& section, const string& name)
