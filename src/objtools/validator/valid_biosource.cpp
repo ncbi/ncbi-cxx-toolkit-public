@@ -1005,7 +1005,7 @@ const CSeq_entry *ctx)
             "Transgenic and environmental sample should not both be present", obj, ctx);
     }
     if (count[CSubSource::eSubtype_metagenomic] && !count[CSubSource::eSubtype_environmental_sample]) {
-        PostObjErr(eDiag_Critical, eErr_SEQ_DESCR_MissingEnvironmentalSample,
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingEnvironmentalSample,
             "Metagenomic should also have environmental sample annotated", obj, ctx);
     }
     if (count[CSubSource::eSubtype_sex] && count[CSubSource::eSubtype_mating_type]) {
