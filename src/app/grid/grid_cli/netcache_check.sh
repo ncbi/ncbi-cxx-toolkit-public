@@ -3,7 +3,8 @@
 #
 # Check netcached services
 
-res_file="/tmp/`basename $0`.$$"
+script_name=`basename $0`
+res_file="/tmp/$script_name.$$"
 trap 'rm -f $res_file' 1 2 15 0
 
 set -o pipefail
@@ -26,7 +27,7 @@ export GRID_CLI_LOGIN_TOKEN
 for service in `echo $services $hosts`; do
    echo "-------------------------------------------------------"
    printf '%-40s' "Testing service '$service'"
-   $CHECK_EXEC grid_cli --admin sanitycheck --nc $service > $res_file 2>&1
+   $CHECK_EXEC grid_cli --admin --auth "$script_name" sanitycheck --nc $service > $res_file 2>&1
    if test $? -eq 0 ; then
       echo ":OK"
       n_ok=`expr $n_ok + 1`
