@@ -1157,7 +1157,7 @@ BOOST_AUTO_TEST_CASE(TestCRefMove)
 BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
 {
     static const char test_string[] = "Quick brown fox jumps over the lazy dog";
-    char buf1[1024], buf2[1024], buf3[1024];
+    char buf1[1024], buf2[2048], buf3[1024];
     size_t read, written, len = 16, i, j;
 
     BOOST_CHECK(BASE64_Encode(test_string, strlen(test_string) + 1, &read,
