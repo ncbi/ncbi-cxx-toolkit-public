@@ -1185,7 +1185,7 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         j = rand() % 100;
         BOOST_CHECK(BASE64_Encode(buf1, len, &read, buf2, sizeof(buf2), &written, &j));
         if (len != read)
-            NcbiCerr << "len = " << len << ", read = " << read << NcbiEndl;
+            NcbiCerr << "len = " << len << ", read = " << read << ", j = " << j << NcbiEndl;
         BOOST_CHECK(len == read);
         BOOST_CHECK(written < sizeof(buf2));
         BOOST_CHECK(buf2[written] == '\0');
