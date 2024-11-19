@@ -103,6 +103,8 @@ static void s_DoServer(const char* sport, int n_cycle)
                 break;
             }
         }
+        fprintf(s_LogFile, "DoServer() done: %s\n", IO_StatusStr(status));
+        fflush(s_LogFile);
         assert(status == eIO_Closed);
 
         /* Close connection */
