@@ -365,6 +365,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadNullCountry,
     eErr_SEQ_DESCR_BadNullCollectionDate,
     eErr_SEQ_DESCR_UnculturedGenome,
+    eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
     ERR_CODE_END(SEQ_DESCR),
 
 

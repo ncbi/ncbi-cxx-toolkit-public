@@ -1480,6 +1480,10 @@ const bool isInfluenzaOrSars2)
                 "Problematic plasmid/chromosome/linkage group name '" + sname + "'",
                 obj, ctx);
         }
+        if (NStr::FindNoCase(sname, "contig") != string::npos || NStr::FindNoCase(sname, "scaffold") != string::npos)
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
+                "Chromosome should not include contig or scaffold: '" + sname + "'",
+                obj, ctx);
         break;
     case CSubSource::eSubtype_linkage_group:
         if (!CSubSource::IsLinkageGroupNameValid(sname, taxname)) {
