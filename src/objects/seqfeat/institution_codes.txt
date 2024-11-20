@@ -5324,6 +5324,7 @@ MUT<ITA>	c	Mycotheca Universitatis Taurinensis
 MUV		Museum of Natural History of the University Distrital Francisco Jose de Caldas			
 MUV:Invertebrae Collection	s	Museum of Natural History of the University Distrital Francisco Jose de Caldas, INV	MUVInvertebrae Collection		
 MUZ	s	King Abdulaziz City for Science and Technology			
+MUZAC	s	Museo Zoologico Lidia Liaci dell'Universita degli Studi di Bari Aldo Moro			
 MV	s	University of Montana Museum			
 MVC	s	University of Charleston, Natural Sciences Department			
 MVDA	s	Ministerio de Ganaderia y Agricultura			
@@ -7550,6 +7551,7 @@ SZL	s	Landesherbar von Salzburg
 SZM	s	Saitama Zoogeographical Museum			
 SZMC	c	Szeged Microbiological Collection			
 SZMN	s	Siberian Zoological Museum			
+SZN	s	Zoological collection of the Stazione Zoologica Anton Dohrn			
 SZP	s	Smthsonian Zoological Park			
 SZPT	s	Shenzhen Polytechnic			
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection	SZPTENT		
