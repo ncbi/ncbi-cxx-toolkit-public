@@ -549,11 +549,15 @@ namespace
 
 CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
-    CFetch_Request req(m_Ctx, pmid);
-
-    eutils::CPubmedArticleSet pas;
     string content;
-    req.Read(&content);
+    if (true) {
+        CFetch_Request req(m_Ctx, pmid);
+        req.Read(&content);
+    } else {
+        CPubOneRequest req(m_Ctx, pmid);
+        req.Read(&content);
+    }
+    eutils::CPubmedArticleSet pas;
     try {
         CNcbiIstrstream(content) >> MSerial_Xml >> pas;
     } catch (const CSerialException&) {
