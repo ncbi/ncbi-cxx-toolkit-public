@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Nov  5 05:33:04 EST 2024; formally
+/* time_t value corresponding to Wed Nov 20 05:33:05 EST 2024; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1730802784UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1732098785UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5360,6 +5360,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUV\t\tMuseum of Natural History of the University Distrital Francisco Jose de Caldas\t\t\t",
 "MUV:Invertebrae Collection\ts\tMuseum of Natural History of the University Distrital Francisco Jose de Caldas, INV\tMUVInvertebrae Collection\t\t",
 "MUZ\ts\tKing Abdulaziz City for Science and Technology\t\t\t",
+"MUZAC\ts\tMuseo Zoologico Lidia Liaci dell'Universita degli Studi di Bari Aldo Moro\t\t\t",
 "MV\ts\tUniversity of Montana Museum\t\t\t",
 "MVC\ts\tUniversity of Charleston, Natural Sciences Department\t\t\t",
 "MVDA\ts\tMinisterio de Ganaderia y Agricultura\t\t\t",
@@ -7586,6 +7587,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SZM\ts\tSaitama Zoogeographical Museum\t\t\t",
 "SZMC\tc\tSzeged Microbiological Collection\t\t\t",
 "SZMN\ts\tSiberian Zoological Museum\t\t\t",
+"SZN\ts\tZoological collection of the Stazione Zoologica Anton Dohrn\t\t\t",
 "SZP\ts\tSmthsonian Zoological Park\t\t\t",
 "SZPT\ts\tShenzhen Polytechnic\t\t\t",
 "SZPT:ENT\ts\tShenzhen Polytechnic, Entomology Collection\tSZPTENT\t\t",
