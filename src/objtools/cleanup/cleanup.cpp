@@ -1933,7 +1933,7 @@ bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
     if (seq_entry.IsSetDescr()) {
         rval = RemoveNcbiCleanupObject(seq_entry.SetDescr());
         if (rval && seq_entry.GetDescr().Get().empty()) {
-            if (seq_entry.IsSet()) {
+            if (seq_entry.IsSeq()) {
                 seq_entry.SetSeq().ResetDescr();
             }
             else if (seq_entry.IsSet()) {
