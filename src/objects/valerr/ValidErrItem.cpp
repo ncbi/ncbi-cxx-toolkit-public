@@ -1013,6 +1013,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_UnculturedGenome,
     { "UnculturedGenome",
         "A genomic sequence should not have uncultured in its organism name"} },
+    { eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
+    { "BadContigOrScaffoldChromosome",
+        "Chromosome name should not contain contig or scaffold" }},
 
 
     /* SEQ_GENERIC */
