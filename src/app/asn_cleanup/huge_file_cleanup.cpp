@@ -185,6 +185,14 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     CCleanup cleanup;
     m_Changes += *cleanup.BasicCleanup(m_top_entry->SetDescr());
 
+    if (m_CleanupOptions & eRemoveNcbiUserObjects) {
+        CCleanup::RemoveNcbiCleanupObject(m_top_entry->SetDescr());
+        if (! m_top_entry->GetDescr().IsSet() ||
+            m_top_entry->GetDescr().Get().empty()) {
+            m_top_entry->SetSet().ResetDescr();
+        }
+    }
+
     if (!x_IsExtendedCleanup()) {
         return;
     }
@@ -215,10 +223,6 @@ void CCleanupHugeAsnReader::x_CleanupTopLevelDescriptors()
     if (!(m_CleanupOptions & eNoNcbiUserObjects)) {
         CCleanup::AddNcbiCleanupObject(1, m_top_entry->SetDescr());
         m_Changes.SetChanged(CCleanupChange::eAddNcbiCleanupObject);
-    }
-
-    if (m_CleanupOptions & eRemoveNcbiUserObjects) {
-        CCleanup::RemoveNcbiCleanupObject(m_top_entry->SetDescr());
     }
 
     if (descriptors.empty()) {
