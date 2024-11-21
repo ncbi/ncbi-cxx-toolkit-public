@@ -2692,11 +2692,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         } else {
             string current_name = GetProteinName(*new_cds, entry);
 
-            if (also_fix_location) {
-                change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
-
-                change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
-            }
+            // the next two lines should not be under the control of also_fix_location
+            change_this_cds |= SetBestFrame(*new_cds, entry.GetScope());
+            change_this_cds |= SetCDSPartialsByFrameAndTranslation(*new_cds, entry.GetScope());
 
             // retranslate
             if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandleFromTSE(*(new_cds->GetProduct().GetId()), entry)) {
