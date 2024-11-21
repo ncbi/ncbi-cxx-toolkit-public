@@ -849,9 +849,12 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
             if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
 
                 const CRange<TSeqPos>& display_range = GetRange();
+                CRef<CTrna_ext> trimmed_trna;
+                if (!display_range.IsWhole())
+                    trimmed_trna = sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
                 const CTrna_ext& trna = display_range.IsWhole() ?
                     rna.GetExt().GetTRNA() :
-                    *sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
+                    *trimmed_trna;
 
                 string anticodon;
                 if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
