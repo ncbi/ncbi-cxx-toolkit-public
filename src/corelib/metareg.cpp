@@ -273,7 +273,12 @@ string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style,
                 } else {
                     abs_name = CDirEntry::ConcatPath(CDir::GetCwd(), name);
                 }
-                return CDirEntry::NormalizePath(abs_name);
+                string result = CDirEntry::NormalizePath(abs_name);
+                if (CFile(name).IsIdentical(result, eFollowLinks)) {
+                    return result;
+                } else {
+                    return CDirEntry::NormalizePath(abs_name, eFollowLinks);
+                }
             }
             break;
         case eName_Ini:
