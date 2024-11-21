@@ -557,38 +557,62 @@ CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedErro
         CPubOneRequest req(m_Ctx, pmid);
         req.Read(&content);
     }
-    eutils::CPubmedArticleSet pas;
+
     try {
+        eutils::CPubmedArticleSet pas;
         CNcbiIstrstream(content) >> MSerial_Xml >> pas;
-    } catch (const CSerialException&) {
-        if (perr) {
-            *perr = EPubmedError::operational_error;
+        if (pas.IsSetPP() && pas.GetPP().IsSetPP()) {
+            const auto& pp = pas.GetPP().GetPP();
+            if (! pp.empty()) {
+                const auto& ppf = *pp.front();
+                if (ppf.IsPubmedArticle()) {
+                    const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
+                    return article.ToPubmed_entry();
+                } else if (ppf.IsPubmedBookArticle()) {
+                    const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
+                    return article.ToPubmed_entry();
+                }
+            }
         }
-        return {};
-    } catch (...) {
         if (perr) {
             *perr = EPubmedError::citation_not_found;
         }
         return {};
-    }
-
-    const auto& pp = pas.GetPP().GetPP();
-    if (! pp.empty()) {
-        const auto& ppf = *pp.front();
-
-        CRef<CPubmed_entry> pme;
-        if (ppf.IsPubmedArticle()) {
-            const eutils::CPubmedArticle& article = ppf.GetPubmedArticle();
-            pme.Reset(article.ToPubmed_entry());
-        } else if (ppf.IsPubmedBookArticle()) {
-            const eutils::CPubmedBookArticle& article = ppf.GetPubmedBookArticle();
-            pme.Reset(article.ToPubmed_entry());
+    } catch (const CSerialException&) {
+        // not a <PubmedArticleSet>; continue
+    } catch (...) {
+        if (perr) {
+            *perr = EPubmedError::operational_error;
         }
-        return pme;
+        return {};
     }
 
+    try {
+        eutils::CPubmedBookArticleSet pbas;
+        CNcbiIstrstream(content) >> MSerial_Xml >> pbas;
+        if (pbas.IsSetPubmedBookArticle()) {
+            const auto& articles = pbas.GetPubmedBookArticle();
+            if (! articles.empty()) {
+                const eutils::CPubmedBookArticle& article = *articles.front();
+                return article.ToPubmed_entry();
+            }
+        }
+        if (perr) {
+            *perr = EPubmedError::citation_not_found;
+        }
+        return {};
+    } catch (const CSerialException&) {
+        // not a <PubmedBookArticleSet>; continue
+    } catch (...) {
+        if (perr) {
+            *perr = EPubmedError::operational_error;
+        }
+        return {};
+    }
+
+    // unrecognized content; fail
     if (perr) {
-        *perr = EPubmedError::citation_not_found;
+        *perr = EPubmedError::operational_error;
     }
     return {};
 }
