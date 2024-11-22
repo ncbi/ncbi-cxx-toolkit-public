@@ -537,12 +537,14 @@ namespace
         CPubOneRequest(CRef<CEUtils_ConnContext>& ctx, TEntrezId pmid) :
             CEUtils_Request(ctx, ""), m_pmid(pmid)
         {
-            CEUtils_Request::SetBaseURL("https://pubmed.ncbi.nlm.nih.gov/api/pubone/pubmed/");
             SetRequestMethod(CEUtils_Request::eHttp_Get);
         }
         string GetURL() const override
         {
-            return GetBaseURL() + "pubmed_"s + NStr::NumericToString(m_pmid);
+            string s("https://pubmed.ncbi.nlm.nih.gov/api/pubone/pubmed/");
+            s += "pubmed_";
+            s += NStr::NumericToString(m_pmid);
+            return s;
         }
     };
 }
