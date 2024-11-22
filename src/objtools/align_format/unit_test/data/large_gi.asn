@@ -22,9 +22,7 @@ Seq-annot ::= {
       type str "Blast Database Title",
       data {
         {
-          label str "Copy of 
-'/panfs/pan1.be-md.ncbi.nlm.nih.gov/blastprojects/madden/BLASTQA_DB_BACKUP/OLD
-_DBS/nucl_32b_gi': /net/snowman/vol/export4/blastqa/queries/nucl_32b_gi.fasta",
+          label str "Large Nucl GI",
           data bool TRUE
         }
       }
