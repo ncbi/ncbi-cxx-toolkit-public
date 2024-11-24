@@ -452,7 +452,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
 
 #endif
 
-    for (subdbp = static_cast<DataBlk*>(dbp->mpData); subdbp; subdbp = subdbp->mpNext) {
+    for (subdbp = dbp->GetSubData(); subdbp; subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
         str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));

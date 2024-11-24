@@ -225,7 +225,7 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
 
     topstr = bptr + lcp->topology;
 
-    ebp             = static_cast<EntryBlk*>(entry.mpData);
+    ebp             = entry.GetEntryData();
     CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
     CSeq_inst& inst = bioseq.SetInst();
@@ -1416,7 +1416,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
             return false;
         }
 
-        ebp   = static_cast<EntryBlk*>(pEntry->mpData);
+        ebp   = pEntry->GetEntryData();
         ptr   = pEntry->mOffset;
         eptr  = ptr + pEntry->len;
         curkw = ParFlat_LOCUS;

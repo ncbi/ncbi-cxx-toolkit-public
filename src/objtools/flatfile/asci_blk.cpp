@@ -777,7 +777,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(temp);
     }
 
-    ebp    = static_cast<EntryBlk*>(entry.mpData);
+    ebp    = entry.GetEntryData();
     temp   = ebp->chain;
     predbp = temp;
     curdbp = temp->mpNext;
@@ -848,7 +848,7 @@ void GetLenSubNode(DataBlkPtr dbp)
     Int2       n;
     bool       done = false;
 
-    if (! dbp->mpData) /* no sublocks in this block */
+    if (! dbp->GetSubData()) /* no sublocks in this block */
         return;
 
     offset = dbp->mOffset;
@@ -856,7 +856,7 @@ void GetLenSubNode(DataBlkPtr dbp)
         s++;
     n    = atoi(s);
     ldbp = nullptr;
-    for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp; ndbp = ndbp->mpNext) {
+    for (ndbp = dbp->GetSubData(); ndbp; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp->len) {
             dbp->len = l;
@@ -864,16 +864,16 @@ void GetLenSubNode(DataBlkPtr dbp)
         }
     }
 
-    if (ldbp != dbp->mpData && ldbp) {
+    if (ldbp != dbp->GetSubData() && ldbp) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }
 
-    curdbp = static_cast<DataBlk*>(dbp->mpData);
+    curdbp = dbp->GetSubData();
     for (; curdbp->mpNext; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
         ldbp   = nullptr;
-        for (ndbp = static_cast<DataBlk*>(dbp->mpData); ndbp; ndbp = ndbp->mpNext) {
+        for (ndbp = dbp->GetSubData(); ndbp; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
@@ -1052,7 +1052,7 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len
     if (! mdbp)
         return nullptr;
 
-    sdbp = static_cast<DataBlk*>(mdbp->mpData);
+    sdbp = mdbp->GetSubData();
 
     while (sdbp && sdbp->mType != subtype)
         sdbp = sdbp->mpNext;

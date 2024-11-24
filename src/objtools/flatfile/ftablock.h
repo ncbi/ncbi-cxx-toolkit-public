@@ -287,6 +287,8 @@ struct FTAOperon
     mutable string               mLocStr;
 };
 
+struct EntryBlk;
+struct FeatBlk;
 
 //  ============================================================================
 class DataBlk : public CFlatFileData
@@ -315,6 +317,16 @@ public:
         this->mSimpleDelete = true;
         delete this;
     }
+
+    // accessors to mpData
+    void      SetSubData(DataBlk* p) { mpData = p; }
+    DataBlk*  GetSubData() const { return static_cast<DataBlk*>(mpData); }
+    void      SetEntryData(EntryBlk* p);
+    EntryBlk* GetEntryData() const;
+    void      SetFeatData(FeatBlk*);
+    FeatBlk*  GetFeatData() const;
+    void      SetXmlData(XmlIndex* p) { mpData = p; }
+    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(mpData); }
 
 public:
     int            mType;    // which keyword block or node type

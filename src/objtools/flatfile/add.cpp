@@ -276,12 +276,12 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
             continue;
 
         size_t len = 0;
-        for (dbp = static_cast<DataBlk*>(temp->mpData); dbp; dbp = dbp->mpNext)
+        for (dbp = temp->GetSubData(); dbp; dbp = dbp->mpNext)
             len += dbp->len;
         if (len == 0)
             continue;
 
-        dbp     = static_cast<DataBlk*>(temp->mpData);
+        dbp     = temp->GetSubData();
         char* p = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
 
         if (p)

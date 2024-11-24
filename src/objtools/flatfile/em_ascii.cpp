@@ -648,7 +648,7 @@ static void GetReleaseInfo(const DataBlk& entry)
 
     size_t len;
 
-    ebp                 = static_cast<EntryBlk*>(entry.mpData);
+    ebp                 = entry.GetEntryData();
     CBioseq&     bioseq = ebp->seq_entry->SetSeq();
     CTextseq_id& id     = SetTextIdRef(*(bioseq.SetId().front()));
 
@@ -847,7 +847,7 @@ static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaco
     Int4 i;
     Int2 strand;
 
-    ebp = static_cast<EntryBlk*>(entry.mpData);
+    ebp = entry.GetEntryData();
 
     CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
@@ -2031,7 +2031,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        subdbp = static_cast<DataBlk*>(dbp->mpData);
+        subdbp = dbp->GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType == ParFlat_OG) {
                 GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
@@ -2170,7 +2170,7 @@ bool EmblAscii(ParserPtr pp)
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
                 return false;
             }
-            ebp   = static_cast<EntryBlk*>(pEntry->mpData);
+            ebp   = pEntry->GetEntryData();
             ptr   = pEntry->mOffset; /* points to beginning of the
                                            memory line */
             eptr  = ptr + pEntry->len;
