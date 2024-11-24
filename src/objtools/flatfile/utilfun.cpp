@@ -996,7 +996,7 @@ DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
     DataBlkPtr  temp;
     EntryBlkPtr ebp;
 
-    ebp  = static_cast<EntryBlk*>(entry.mpData);
+    ebp  = entry.GetEntryData();
     temp = ebp->chain;
     while (temp && temp->mType != type)
         temp = temp->mpNext;

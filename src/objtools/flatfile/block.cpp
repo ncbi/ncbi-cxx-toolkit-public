@@ -94,6 +94,15 @@ DataBlk::~DataBlk()
     }
 }
 
+void DataBlk::SetEntryData(EntryBlk* p)
+{
+    mpData = p;
+}
+EntryBlk* DataBlk::GetEntryData() const
+{
+    return static_cast<EntryBlk*>(mpData);
+}
+
 /**********************************************************
  *
  *   void FreeEntry(entry):

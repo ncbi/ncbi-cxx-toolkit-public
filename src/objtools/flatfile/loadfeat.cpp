@@ -577,6 +577,15 @@ FeatBlk::~FeatBlk()
     }
 }
 
+void DataBlk::SetFeatData(FeatBlk* p)
+{
+    mpData = p;
+}
+FeatBlk* DataBlk::GetFeatData() const
+{
+    return static_cast<FeatBlk*>(mpData);
+}
+
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
 extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids);
 
@@ -588,7 +597,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
 
     for (; dbp; dbp = dbpnext) {
         dbpnext = dbp->mpNext;
-        fbp     = static_cast<FeatBlk*>(dbp->mpData);
+        fbp     = dbp->GetFeatData();
         if (fbp) {
             delete fbp;
             dbp->mpData = nullptr;
@@ -1176,9 +1185,9 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         unique_ptr<string> ploc;
         if (pp->format == Parser::EFormat::XML) {
-            ploc = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_POSITION);
+            ploc = XMLFindTagValue(dbp->mOffset, dbp->GetXmlData(), INSDREFERENCE_POSITION);
             if (! ploc) {
-                auto q = XMLFindTagValue(dbp->mOffset, static_cast<XmlIndex*>(dbp->mpData), INSDREFERENCE_REFERENCE);
+                auto q = XMLFindTagValue(dbp->mOffset, dbp->GetXmlData(), INSDREFERENCE_REFERENCE);
                 if (q) {
                     auto i = q->find('(');
                     if (i != string::npos)
@@ -1197,7 +1206,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 p++;
             ploc = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
-            subdbp = static_cast<DataBlk*>(dbp->mpData);
+            subdbp = dbp->GetSubData();
             for (; subdbp; subdbp = subdbp->mpNext) {
                 if (subdbp->mType != ParFlat_RP)
                     continue;
@@ -2640,7 +2649,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
         if (! dbp->mpData)
             continue;
 
-        fbp1     = static_cast<const FeatBlk*>(dbp->mpData);
+        fbp1     = dbp->GetFeatData();
         tdbpprev = dbp;
         for (tdbp = dbp->mpNext; tdbp; tdbp = tdbpnext) {
             tdbpnext = tdbp->mpNext;
@@ -2650,7 +2659,7 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
                 continue;
             }
 
-            fbp2 = static_cast<const FeatBlk*>(tdbp->mpData);
+            fbp2 = tdbp->GetFeatData();
 
             if (fbp1->location_isset() && fbp2->location_isset() &&
                 StringCmp(fbp1->location_get(), fbp2->location_get()) < 0)
@@ -2697,7 +2706,7 @@ static void fta_check_multiple_locus_tag(DataBlkPtr dbp, bool* drop)
     FeatBlkPtr fbp;
 
     for (; dbp; dbp = dbp->mpNext) {
-        fbp = static_cast<FeatBlk*>(dbp->mpData);
+        fbp = dbp->GetFeatData();
         if (! fbp)
             continue;
 
@@ -2719,7 +2728,7 @@ static void fta_check_old_locus_tags(DataBlkPtr dbp, bool* drop)
         isLocusTag("locus_tag");
 
     for (; dbp; dbp = dbp->mpNext) {
-        FeatBlkPtr fbp = static_cast<FeatBlk*>(dbp->mpData);
+        FeatBlkPtr fbp = dbp->GetFeatData();
         if (! fbp)
             continue;
         size_t olt = std::count_if(fbp->quals.begin(), fbp->quals.end(), isOldLocusTag);
@@ -2791,7 +2800,7 @@ static void fta_check_pseudogene_qual(DataBlkPtr dbp)
     bool       got_pseudo;
 
     for (; dbp; dbp = dbp->mpNext) {
-        fbp = static_cast<FeatBlk*>(dbp->mpData);
+        fbp = dbp->GetFeatData();
         if (! fbp)
             continue;
 
@@ -2855,7 +2864,7 @@ static void fta_check_compare_qual(DataBlkPtr dbp, bool is_tpa)
     Int4       cit_count;
 
     for (; dbp; dbp = dbp->mpNext) {
-        fbp = static_cast<FeatBlk*>(dbp->mpData);
+        fbp = dbp->GetFeatData();
         if (! fbp)
             continue;
 
@@ -2919,7 +2928,7 @@ static void fta_check_non_tpa_tsa_tls_locations(DataBlkPtr  dbp,
 
     location = nullptr;
     for (; dbp; dbp = dbp->mpNext) {
-        fbp = static_cast<FeatBlk*>(dbp->mpData);
+        fbp = dbp->GetFeatData();
         if (! fbp || ! fbp->location_isset())
             continue;
         location = StringSave(fbp->location_get());
@@ -3193,10 +3202,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         linkage_evidence_names.clear();
         asn_linkage_evidence.clear();
 
-        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext) {
+        for (tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
             if (ibp->drop)
                 break;
-            fbp = static_cast<FeatBlk*>(tdbp->mpData);
+            fbp = tdbp->GetFeatData();
             if (! fbp || fbp->key.empty())
                 continue;
             if (fbp->key == "gap") {
@@ -3552,11 +3561,11 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
             dbp->mpNext = new DataBlk;
             dbp         = dbp->mpNext;
         }
-        dbp->mpData = fbp;
+        dbp->SetFeatData(fbp);
     }
     ret         = new DataBlk;
     ret->mType  = XML_FEATURES;
-    ret->mpData = headdbp;
+    ret->SetSubData(headdbp);
     ret->mpNext = nullptr;
     return (ret);
 }
@@ -3840,7 +3849,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Parser::ESource
         fbp          = new FeatBlk;
         fbp->spindex = -1;
         fbp->num     = num;
-        dbp->mpData  = fbp;
+        dbp->SetFeatData(fbp);
 
         bptr = dbp->mOffset;
         eptr = bptr + dbp->len;
@@ -4109,7 +4118,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
     for (num = 0; dbp; dbp = dbp->mpNext, num++) {
         if (! dbp->mpData)
             continue;
-        fbp      = static_cast<FeatBlk*>(dbp->mpData);
+        fbp      = dbp->GetFeatData();
         fbp->num = num;
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
 
@@ -4341,8 +4350,8 @@ static bool SortFeaturesByLoc(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
     FeatBlkPtr fbp2;
     Int4       status;
 
-    fbp1 = static_cast<FeatBlk*>(sp1->mpData);
-    fbp2 = static_cast<FeatBlk*>(sp2->mpData);
+    fbp1 = sp1->GetFeatData();
+    fbp2 = sp2->GetFeatData();
 
     if (! fbp1->location_isset() && fbp2->location_isset())
         return false;
@@ -4374,8 +4383,8 @@ static bool SortFeaturesByOrder(const DataBlkPtr& sp1, const DataBlkPtr& sp2)
     FeatBlkPtr fbp1;
     FeatBlkPtr fbp2;
 
-    fbp1 = static_cast<FeatBlk*>(sp1->mpData);
-    fbp2 = static_cast<FeatBlk*>(sp2->mpData);
+    fbp1 = sp1->GetFeatData();
+    fbp2 = sp2->GetFeatData();
 
     return fbp1->num < fbp2->num;
 }
@@ -4427,7 +4436,7 @@ static void fta_check_replace_regulatory(DataBlkPtr dbp, bool* drop)
     Int4         count;
 
     for (; dbp; dbp = dbp->mpNext) {
-        fbp = static_cast<FeatBlk*>(dbp->mpData);
+        fbp = dbp->GetFeatData();
         if (! fbp || fbp->key.empty())
             continue;
 
@@ -4779,25 +4788,25 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
          * it also checks semantics of qualifiers and keys
          */
         if (pp->format == Parser::EFormat::XML)
-            XMLParseFeatureBlock(pp->debug, static_cast<DataBlk*>(dbp->mpData), pp->source);
+            XMLParseFeatureBlock(pp->debug, dbp->GetSubData(), pp->source);
         else
-            ParseFeatureBlock(ibp, pp->debug, static_cast<DataBlk*>(dbp->mpData), pp->source, pp->format);
+            ParseFeatureBlock(ibp, pp->debug, dbp->GetSubData(), pp->source, pp->format);
 
-        dbp->mpData = fta_sort_features(static_cast<DataBlk*>(dbp->mpData), false);
-        fta_check_pseudogene_qual(static_cast<DataBlk*>(dbp->mpData));
-        fta_check_old_locus_tags(static_cast<DataBlk*>(dbp->mpData), &ibp->drop);
-        fta_check_compare_qual(static_cast<DataBlk*>(dbp->mpData), ibp->is_tpa);
-        tdbp = static_cast<DataBlk*>(dbp->mpData);
+        dbp->SetSubData(fta_sort_features(dbp->GetSubData(), false));
+        fta_check_pseudogene_qual(dbp->GetSubData());
+        fta_check_old_locus_tags(dbp->GetSubData(), &ibp->drop);
+        fta_check_compare_qual(dbp->GetSubData(), ibp->is_tpa);
+        tdbp = dbp->GetSubData();
         for (i = 0; tdbp; i++, tdbp = tdbp->mpNext)
-            fta_remove_dup_quals(static_cast<FeatBlk*>(tdbp->mpData));
-        fta_remove_dup_feats(static_cast<DataBlk*>(dbp->mpData));
-        for (tdbp = static_cast<DataBlk*>(dbp->mpData); tdbp; tdbp = tdbp->mpNext)
-            fta_check_rpt_unit_range(static_cast<FeatBlk*>(tdbp->mpData), ibp->bases);
-        fta_check_multiple_locus_tag(static_cast<DataBlk*>(dbp->mpData), &ibp->drop);
+            fta_remove_dup_quals(tdbp->GetFeatData());
+        fta_remove_dup_feats(dbp->GetSubData());
+        for (tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext)
+            fta_check_rpt_unit_range(tdbp->GetFeatData(), ibp->bases);
+        fta_check_multiple_locus_tag(dbp->GetSubData(), &ibp->drop);
         if (ibp->is_tpa || ibp->is_tsa || ibp->is_tls)
-            fta_check_non_tpa_tsa_tls_locations(static_cast<DataBlk*>(dbp->mpData), ibp);
-        fta_check_replace_regulatory(static_cast<DataBlk*>(dbp->mpData), &ibp->drop);
-        dbp->mpData = fta_sort_features(static_cast<DataBlk*>(dbp->mpData), true);
+            fta_check_non_tpa_tsa_tls_locations(dbp->GetSubData(), ibp);
+        fta_check_replace_regulatory(dbp->GetSubData(), &ibp->drop);
+        dbp->SetSubData(fta_sort_features(dbp->GetSubData(), true));
     }
 
     if (i > 1 && ibp->is_mga) {
@@ -4816,7 +4825,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         ibp->drop = true;
         for (; dab; dab = dabnext) {
             dabnext = dab->mpNext;
-            FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
+            FreeFeatBlk(dab->GetSubData(), pp->format);
             if (pp->format == Parser::EFormat::XML)
                 dab->SimpleDelete();
         }
@@ -4853,11 +4862,11 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             continue;
         }
 
-        for (dbp = static_cast<DataBlk*>(dab->mpData); dbp; dbp = dbp->mpNext) {
+        for (dbp = dab->GetSubData(); dbp; dbp = dbp->mpNext) {
             if (dbp->mDrop == true)
                 continue;
 
-            fbp = static_cast<FeatBlk*>(dbp->mpData);
+            fbp = dbp->GetFeatData();
             if (fbp->key == "source" ||
                 fbp->key == "assembly_gap" ||
                 (fbp->key == "gap" &&
@@ -4930,7 +4939,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 seq_feats.push_back(feat);
             }
         }
-        FreeFeatBlk(static_cast<DataBlk*>(dab->mpData), pp->format);
+        FreeFeatBlk(dab->GetSubData(), pp->format);
         if (pp->format == Parser::EFormat::XML)
             dab->SimpleDelete();
     }
@@ -5048,7 +5057,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     bool  same;
     bool  is_syn;
 
-    ebp = static_cast<EntryBlk*>(entry.mpData);
+    ebp = entry.GetEntryData();
 
     CBioseq& bioseq = ebp->seq_entry->SetSeq();
     ibp             = pp->entrylist[pp->curindx];
@@ -5522,7 +5531,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     dbp = TrackNodeType(entry, ParFlat_FH);
     if (! dbp)
         return;
-    dbp = static_cast<DataBlk*>(dbp->mpData);
+    dbp = dbp->GetSubData();
     for (i = 0; dbp && i < 2; dbp = dbp->mpNext) {
         if (! dbp->mOffset)
             continue;
