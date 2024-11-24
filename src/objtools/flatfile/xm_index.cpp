@@ -1494,7 +1494,7 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
         }
         tdbp->mType   = txip->type;
         tdbp->mOffset = entry;
-        tdbp->mpData  = txip->subtags;
+        tdbp->SetXmlData(txip->subtags);
         tdbp->mpNext  = nullptr;
     }
     return (dbp);

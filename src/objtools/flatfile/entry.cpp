@@ -311,7 +311,7 @@ DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
     entry->mpNext  = nullptr;        /* assume no segment at this time */
     entry->mOffset = StringNew(len); /* includes nul byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
-    entry->mpData  = new EntryBlk();
+    entry->SetEntryData(new EntryBlk());
 
     if ((size_t)entry->len != len) /* hardware problem */
     {

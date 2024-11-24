@@ -768,7 +768,7 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
 
     for (; dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS) {
-            subdbp = static_cast<DataBlk*>(dbp->mpData);
+            subdbp = dbp->GetSubData();
             for (; subdbp; subdbp = subdbp->mpNext)
                 if (subdbp->mType == ParFlatSP_OG) {
                     p = subdbp->mOffset + ParFlat_COL_DATA_SP;
@@ -1330,7 +1330,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
     if (! dbp)
         return nullptr;
 
-    for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp; dbp = dbp->mpNext)
+    for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OH)
             break;
     if (! dbp)
@@ -1436,7 +1436,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        subdbp = static_cast<DataBlk*>(dbp->mpData);
+        subdbp = dbp->GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
@@ -1503,7 +1503,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(dbp, "OS   ");
-        for (dbp = static_cast<DataBlk*>(dbp->mpData); dbp; dbp = dbp->mpNext) {
+        for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext) {
             if (dbp->mType != ParFlatSP_OC)
                 continue;
             line_OC = GetLineOSorOC(dbp, "OC   ");
@@ -1546,7 +1546,7 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        subdbp = static_cast<DataBlk*>(dbp->mpData);
+        subdbp = dbp->GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OG)
                 continue;
@@ -2783,7 +2783,7 @@ static void GetSPInst(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 {
     EntryBlkPtr ebp;
 
-    ebp = static_cast<EntryBlk*>(entry->mpData);
+    ebp = entry->GetEntryData();
 
     CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
@@ -3986,7 +3986,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
  **********************************************************/
 static Int4 GetSeqLen(DataBlkPtr entry)
 {
-    EntryBlkPtr    ebp    = static_cast<EntryBlk*>(entry->mpData);
+    EntryBlkPtr    ebp    = entry->GetEntryData();
     const CBioseq& bioseq = ebp->seq_entry->GetSeq();
     return bioseq.GetLength();
 }
@@ -4333,7 +4333,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     EntryBlkPtr ebp;
 
-    ebp = static_cast<EntryBlk*>(entry->mpData);
+    ebp = entry->GetEntryData();
 
     CSeq_entry& seq_entry = *ebp->seq_entry;
     CBioseq&    bioseq    = seq_entry.SetSeq();
@@ -4737,7 +4737,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     SPSegLocPtr  spslp; /* segment location, data from NON_CONS */
     SPSegLocPtr  next;
 
-    ebp                   = static_cast<EntryBlk*>(entry->mpData);
+    ebp                   = entry->GetEntryData();
     CSeq_entry& seq_entry = *ebp->seq_entry;
 
     spfbp = new SPFeatBln;
@@ -4783,7 +4783,7 @@ static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protco
     char*       eptr;
     EntryBlkPtr ebp;
 
-    ebp  = static_cast<EntryBlk*>(entry->mpData);
+    ebp  = entry->GetEntryData();
     ptr  = entry->mOffset;
     eptr = ptr + entry->len;
     for (curkw = ParFlatSP_ID; curkw != ParFlatSP_END;) {
@@ -4850,7 +4850,7 @@ bool SprotAscii(ParserPtr pp)
             SpPrepareEntry(pp, entry, protconv.get());
 
             if (! ibp->drop) {
-                CRef<CSeq_entry>& cur_entry = (static_cast<EntryBlk*>(entry->mpData))->seq_entry;
+                CRef<CSeq_entry>& cur_entry = entry->GetEntryData()->seq_entry;
                 pp->entries.push_back(cur_entry);
 
                 cur_entry.Reset();
