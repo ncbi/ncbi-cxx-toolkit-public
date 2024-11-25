@@ -404,8 +404,14 @@ size_t CRegexpUtil::Replace(
             CTempString subpattern;
             if ( n > 0  &&  n < num_found ) {
                 result = re.GetResults(n);
-                if (result[0] >= 0  &&  result[1] >= 0) {
+                if (result) {
+#ifdef USE_LIBPCRE2
                     subpattern.assign(m_Content.data() + result[0], result[1] - result[0]);
+#else
+                    if (result[0] >= 0 && result[1] >= 0) {
+                        subpattern.assign(m_Content.data() + result[0], result[1] - result[0]);
+                    }
+#endif
                 }
             }
 
