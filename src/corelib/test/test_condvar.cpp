@@ -36,6 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/test_mt.hpp>
+#include <corelib/ncbi_test.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -123,7 +124,6 @@ void CTestCondVarApp::Produce(int idx)
     bool   alt = ((idx+1) % 4) != 0;
     
     __TEST_OUTPUT(" producer started");
-    srand((unsigned) time(0));
     
     for (;;) {
 //        SleepMilliSec( i < 25 ? 5 : (i%10)*20 );
@@ -165,7 +165,6 @@ void CTestCondVarApp::Produce(int idx)
 
 void CTestCondVarApp::Consume(int idx)
 {
-    srand((unsigned) time(0));
 #if USE_WRONG_MUTEX
     CMutex wrongMtx;
     bool wrong = (idx % 4) != 0;

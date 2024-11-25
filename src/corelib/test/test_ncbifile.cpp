@@ -35,6 +35,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_mask.hpp>
 #include <corelib/ncbierror.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <stdio.h>
 #include <limits.h>
 
@@ -1266,8 +1267,6 @@ static void s_TEST_MemoryFile(void)
         char* buf = new char[s_BufLen];
         assert(buf);
 
-        unsigned int seed = (unsigned int)time(0);
-        srand(seed);
         for (size_t i=0; i<s_BufLen; i++) {
             buf[i] = (char)((double)rand()/RAND_MAX*255);
         }
@@ -1546,7 +1545,6 @@ static void s_TEST_FileIO_LargeFiles(void)
     assert(buf_cmp);
      
     // Init buffer
-    srand((unsigned)time(NULL));
     for (size_t i=0; i<kDataSize; i++) {
         buf_src[i] = (char)(rand() % sizeof(char));
     }
@@ -1688,6 +1686,9 @@ int CTest::Run(void)
 {
     // Process command line
     const CArgs& args = GetArgs();
+
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
     if (args["largefiles"]) {
         // Run as separate test

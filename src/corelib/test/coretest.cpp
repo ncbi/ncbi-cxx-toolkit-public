@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <algorithm>
 #include <unordered_map>
 
@@ -1174,12 +1175,7 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
     BOOST_CHECK(buf2[written - 1] == '\0');
     BOOST_CHECK(strcmp(buf2, test_string) == 0);
 
-    unsigned int seed;
-    const char* seed_str = getenv("NCBI_TEST_BASE64_SEED");
-    if (!seed_str  ||  !NStr::StringToNumeric(seed_str, &seed, NStr::fConvErr_NoThrow))
-        seed = (unsigned int) CCurrentProcess::GetPid() ^ (unsigned int) time(0);
-    NcbiCerr << "BASE64 random SEED = " << NStr::NumericToString(seed) << NcbiEndl;
-    srand(seed);
+    CNcbiTest::SetRandomSeed("BASE64");
 
     for (i = 0;  i < 100;  ++i) {
         memset(buf1, '\0', sizeof(buf1));
@@ -1453,6 +1449,8 @@ void TestEraseIterateForVec(const C&)
 
 BOOST_AUTO_TEST_CASE(TestIterate)
 {
+    CNcbiTest::SetRandomSeed("TestIterate");
+
     CCharVector cv("test");
     set<int> ts;
     list<int> tl;

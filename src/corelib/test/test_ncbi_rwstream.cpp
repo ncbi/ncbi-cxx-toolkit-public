@@ -35,7 +35,9 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/rwstream.hpp>
-#include <stdlib.h>                // atoi() & rand()
+#include <corelib/ncbi_test.hpp>
+
+#include <stdlib.h>              // rand()
 
 #include <common/test_assert.h>  // This header must go last
 
@@ -274,19 +276,8 @@ int main(int argc, char* argv[])
 
     ERR_POST(Info << "Testing NCBI CRWStream API");
 
-    int seed;
-    if (argc == 2) {
-        seed = atoi(argv[1]);
-        ERR_POST(Info << "Reusing SEED " << seed);
-    } else {
-        seed = (int(CCurrentProcess::GetPid()) ^
-                int(CTime(CTime::eCurrent).GetTimeT()));
-        ERR_POST(Info << "Setting SEED " << seed);
-    }
-    srand(seed);
-
+    CNcbiTest::SetRandomSeed();
     unsigned char* hugedata = new unsigned char[kHugeBufsize * 3];
-
     ERR_POST(Info << "Generating data: " << kHugeBufsize << " random bytes");
 
     for (size_t n = 0;  n < kHugeBufsize;  n += 2) {
