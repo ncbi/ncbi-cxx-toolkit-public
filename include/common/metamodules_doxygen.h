@@ -101,7 +101,6 @@
  *  @ingroup CORELIB
  */
 
-
 /** @defgroup Exec Process Creation and Execution
  *  @ingroup CORELIB
  */
@@ -154,10 +153,14 @@
  *  @ingroup CORELIB
  */
 
-
 /** @defgroup Param Parameters Storage
  *  @ingroup CORELIB
  */
+
+/** @defgroup Test Tests related code
+ *  @ingroup CORELIB
+ */
+
 
 /* ========================================================================= */
 
