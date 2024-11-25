@@ -1,0 +1,12 @@
+suppression = {
+	name = "NStr::Split() / __std_find_trivial_impl"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>",src=vector_algorithms.cpp;
+			func=Advance,src=ncbistr.cpp;
+			func=SplitInTwo,src=ncbistr.cpp;
+		}
+	}
+}
