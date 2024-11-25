@@ -36,6 +36,7 @@
 #include <math.h>
 #include <map>
 #include <corelib/ncbifloat.h>
+#include <corelib/ncbi_test.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -314,9 +315,6 @@ void CTestApp::Init(void)
 
     d->AddFlag("randomize",
                "Randomize test data (for precision and double-to-string tests)");
-    d->AddOptionalKey("seed", "Randomization",
-                             "Randomization seed value",
-                             CArgDescriptions::eInt8);
     d->AddDefaultKey("digits", "significantDigits",
                      "The number of significant digits in double-to-string conversion",
                      CArgDescriptions::eInteger, NStr::NumericToString(DBL_DIG));
@@ -340,18 +338,13 @@ int CTestApp::Run(void)
     m_VerboseLevel = args["verbose"].AsInteger();
 
     if (args["randomize"]) {
-        unsigned int seed = GetArgs()["seed"]
-            ? (unsigned int) GetArgs()["seed"].AsInt8()
-            : (unsigned int) time(NULL);
-        LOG_POST("Randomization seed value: " << seed);
-        srand(seed);
+        CNcbiTest::SetRandomSeed();
     }
     if (args["mode"].AsString() == "str2dbl" || args["mode"].AsString() == "both") {
 
         if ( args["speed"] ) {
             RunSpeedBenchmark();
         }
-    
         if ( args["precision"] ) {
             RunPrecisionBenchmark();
         }
@@ -361,7 +354,6 @@ int CTestApp::Run(void)
         if ( args["speed"] ) {
             RunD2SSpeedBenchmark();
         }
-    
 //        if ( args["precision"] )
         {
             RunD2SPrecisionBenchmark();

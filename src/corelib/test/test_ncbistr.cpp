@@ -38,6 +38,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiexec.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <algorithm>
 #include <locale.h>
 #include <math.h>
@@ -2072,7 +2073,7 @@ BOOST_AUTO_TEST_CASE(s_Replace)
         BOOST_CHECK(src_buf);
         assert(src_buf);
 
-        srand((unsigned int)time(0));
+        CNcbiTest::SetRandomSeed("Replace");
         for (size_t i = 0; i < kStringSize; i++) {
             src_buf[i] = (rand() % 2 == 0) ? 'A' : 'B';
         }
@@ -2179,6 +2180,7 @@ BOOST_AUTO_TEST_CASE(s_PrintableString)
 
 
     // NStr::PrintableString() vs. Printable()
+    CNcbiTest::SetRandomSeed("ParseEscapes");
     size_t size = (size_t)(rand() & 0xFFFF);
     string data;
     for (size_t i = 0;  i < size;  i++) {

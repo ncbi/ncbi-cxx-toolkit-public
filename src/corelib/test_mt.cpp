@@ -35,6 +35,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <math.h>
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -534,8 +535,7 @@ int CThreadedApp::Run(void)
 
     unsigned int seed = GetArgs()["seed"]
         ? static_cast<unsigned int>(GetArgs()["seed"].AsInteger())
-        : (static_cast<unsigned int>(CCurrentProcess::GetPid()) ^
-           static_cast<unsigned int>(time(NULL)) % 1000000);
+        : CNcbiTest::GetRandomSeed();
     TESTAPP_LOG_POST("Randomization seed value: " << seed);
     srand(seed);
 

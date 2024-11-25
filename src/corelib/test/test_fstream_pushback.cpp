@@ -34,7 +34,8 @@
 #include "pbacktest.hpp"
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
-#include <stdio.h>                 // remove()
+
+#include <stdio.h>               // remove()
 
 #include <common/test_assert.h>  // This header must go last
 

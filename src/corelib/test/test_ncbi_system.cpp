@@ -37,6 +37,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <math.h>
 #include <memory>
 #include <stdlib.h>
@@ -264,6 +265,9 @@ void CTestApplication::Init(void)
 
 int CTestApplication::Run(void)
 {
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
+
     const CArgs& args = GetArgs();
 
     // Specific tests
