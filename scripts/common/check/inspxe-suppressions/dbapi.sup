@@ -7,9 +7,6 @@ suppression = {
 			func=vasprintf_ver95,src=vasprintf.c;
 			func=asprintf_ver95,src=asprintf.c;
 		}
-		allocation={
-			...;
-		}
 	}
 }
 suppression = {
@@ -34,10 +31,6 @@ suppression = {
 			func=vasprintf_ver95;
 			func=asprintf_ver95;
 		}
-		allocation={
-			...;
-			func=tds_get_homedir_ver100;
-		}
 	}
 }
 suppression = {
@@ -49,9 +42,6 @@ suppression = {
 			func=tds_vasprintf_ver100,src=vasprintf.c;
 			func=tds_asprintf_ver100,src=asprintf.c;
 		}
-		allocation={
-			...;
-		}
 	}
 }
 suppression = {
@@ -62,10 +52,6 @@ suppression = {
 			...;
 			mod=ucrtbase.DLL,func=_stdio_common_vsprintf;
 			func=tds_vasprintf_ver100;
-		}
-		allocation={
-			...;
-			func=tds_get_homedir_ver100;
 		}
 	}
 }
@@ -178,10 +164,6 @@ suppression = {
 			func=snprintf;
 			func=read_login_info,src=common.c;
 		}
-		allocation={
-			...;
-			func=read_login_info,src=common.c;
-		}
 	}
 }
 suppression = {
@@ -278,6 +260,17 @@ suppression = {
 		allocation={
 			!!!;
 			src=util.c,func=tds_strndup_ver14;
+		}
+	}
+}
+suppression = {
+	name = "tds_open_socket_ver14"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=WS2_32.dll,func=getsockopt;
+			func=tds_open_socket_ver14,src=net.c;
 		}
 	}
 }
