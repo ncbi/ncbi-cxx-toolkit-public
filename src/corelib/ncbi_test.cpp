@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 unsigned int CNcbiTest::GetRandomSeed(void)
 {
     unsigned int seed;
-    const char* seed_str = NcbiSys_getenv(_TX("NCBI_TEST_RANDOM_SEED"));
+    const char* seed_str = ::getenv("NCBI_TEST_RANDOM_SEED");
     if (!seed_str || !NStr::StringToNumeric(seed_str, &seed, NStr::fConvErr_NoThrow)) {
         seed = static_cast<unsigned int>(CCurrentProcess::GetPid()) ^
                static_cast<unsigned int>(time(nullptr));
