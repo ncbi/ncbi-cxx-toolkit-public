@@ -800,14 +800,18 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    longest_chain = 2;
    for (index = 0; index < mb_lt->hashsize / kCompressionFactor; index++)
        longest_chain = MAX(longest_chain, helper_array[index]);
-   mb_lt->longest_chain = longest_chain;
+    /* +1 because helper_array is not incremented for the first position of a
+      word */
+   mb_lt->longest_chain = longest_chain + 1;
    sfree(helper_array);
 
    if (kTwoTemplates) {
       longest_chain = 2;
       for (index = 0; index < mb_lt->hashsize / kCompressionFactor; index++)
          longest_chain = MAX(longest_chain, helper_array2[index]);
-      mb_lt->longest_chain += longest_chain;
+      /* +1 because helper_array2 is not incremented for the first position of a
+         word */
+      mb_lt->longest_chain += longest_chain + 1;
       sfree(helper_array2);
    }
    return 0;
