@@ -355,7 +355,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 
         CreateSeqGap(literal, gfp);
 
-        gfp = gfp->next;
+        ++gfp;
     }
 
     if (*drop || (delta == deltas.end() && ! gfp))
@@ -381,8 +381,6 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 /**********************************************************/
 void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 {
-    GapFeatsPtr tgfp;
-
     const Char* p;
     Int4        prevto;
     Int4        nextfrom;
@@ -396,18 +394,19 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
     if (sequence.empty() || sequence.size() != bioseq.GetLength())
         return;
 
-    for (prevto = 0, tgfp = gfp; tgfp; tgfp = tgfp->next) {
-        if (tgfp->next) {
+    prevto = 0;
+    for (GapFeatsPtr tgfp = gfp; tgfp; ++tgfp) {
+        if (auto const nxt = tgfp->next) {
             p = sequence.c_str() + tgfp->to;
-            for (i = tgfp->to + 1; i < tgfp->next->from; p++, i++)
+            for (i = tgfp->to + 1; i < nxt->from; p++, i++)
                 if (*p != 'N')
                     break;
-            if (i == tgfp->next->from && tgfp->next->from > tgfp->to + 1) {
-                ErrPostEx(SEV_ERROR, ERR_FEATURE_AllNsBetweenGaps, "A run of all-N sequence exists between the gap features located at \"%d..%d\" and \"%d..%d\".", tgfp->from, tgfp->to, tgfp->next->from, tgfp->next->to);
+            if (i == nxt->from && nxt->from > tgfp->to + 1) {
+                ErrPostEx(SEV_ERROR, ERR_FEATURE_AllNsBetweenGaps, "A run of all-N sequence exists between the gap features located at \"%d..%d\" and \"%d..%d\".", tgfp->from, tgfp->to, nxt->from, nxt->to);
                 tgfp->rightNs      = true;
-                tgfp->next->leftNs = true;
+                nxt->leftNs = true;
             }
-            nextfrom = tgfp->next->from;
+            nextfrom = nxt->from;
         } else
             nextfrom = bioseq.GetLength() + 1;
 
@@ -445,7 +444,8 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 
     CDelta_ext::Tdata deltas;
 
-    for (prevto = 0, tgfp = gfp;; tgfp = tgfp->next) {
+    prevto = 0;
+    for (GapFeatsPtr tgfp = gfp;; ++tgfp) {
         Int4 len = 0;
 
         CRef<CDelta_seq> delta(new CDelta_seq);
