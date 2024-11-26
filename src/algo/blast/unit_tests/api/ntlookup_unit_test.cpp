@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize11) {
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->template_length);
 	BOOST_REQUIRE_EQUAL(1, (int)lookup->template_type);
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(2, lookup->longest_chain);
+	BOOST_REQUIRE_EQUAL(3, lookup->longest_chain);
 	BOOST_REQUIRE_EQUAL(49, lookup->hashtable[2463300]);
 	BOOST_REQUIRE_EQUAL(392, lookup->hashtable[1663305]);
 	BOOST_REQUIRE_EQUAL(1049, lookup->hashtable[3586129]);
@@ -325,7 +325,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableCodingWordSize12) {
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->template_length);
 	BOOST_REQUIRE_EQUAL(3, (int)lookup->template_type);
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(2, lookup->longest_chain);
+	BOOST_REQUIRE_EQUAL(3, lookup->longest_chain);
 	BOOST_REQUIRE_EQUAL(3631, lookup->hashtable[133875]);
 	BOOST_REQUIRE_EQUAL(2092, lookup->hashtable[351221]);
 	BOOST_REQUIRE_EQUAL(4951, lookup->hashtable[1336356]);
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize11) {
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->template_length);
 	BOOST_REQUIRE_EQUAL(2, (int)lookup->template_type);
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(2, lookup->longest_chain);
+	BOOST_REQUIRE_EQUAL(3, lookup->longest_chain);
 	BOOST_REQUIRE_EQUAL(36, lookup->hashtable[1353317]);
 	BOOST_REQUIRE_EQUAL(375, lookup->hashtable[1955444]);
 	BOOST_REQUIRE_EQUAL(5455, lookup->hashtable[1735012]);
@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableOptimalWordSize12) {
 	BOOST_REQUIRE_EQUAL(16, (int)lookup->template_length);
 	BOOST_REQUIRE_EQUAL(4, (int)lookup->template_type);
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(2, lookup->longest_chain);
+	BOOST_REQUIRE_EQUAL(3, lookup->longest_chain);
 	BOOST_REQUIRE_EQUAL(82, lookup->hashtable[9606485]);
 	BOOST_REQUIRE_EQUAL(752, lookup->hashtable[15622537]);
 	BOOST_REQUIRE_EQUAL(5408, lookup->hashtable[10084009]);
@@ -465,7 +465,7 @@ BOOST_AUTO_TEST_CASE(testDiscontiguousMBLookupTableTwoTemplatesWordSize11) {
 	BOOST_REQUIRE_EQUAL(1, (int)lookup->two_templates);
 	BOOST_REQUIRE_EQUAL(2, (int)lookup->second_template_type);
 	BOOST_REQUIRE_EQUAL(1, lookup->scan_step);
-	BOOST_REQUIRE_EQUAL(4, lookup->longest_chain);
+	BOOST_REQUIRE_EQUAL(6, lookup->longest_chain);
 	BOOST_REQUIRE_EQUAL(128, lookup->hashtable[1450605]);
 	BOOST_REQUIRE_EQUAL(342, lookup->hashtable[4025953]);
 	BOOST_REQUIRE_EQUAL(663, lookup->hashtable[3139906]);
