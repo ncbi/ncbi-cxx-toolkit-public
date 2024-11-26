@@ -59,11 +59,11 @@ using QSStructList = std::forward_list<QSStruct>;
 /**********************************************************/
 void GapFeatsFree(GapFeatsPtr gfp)
 {
-    GapFeatsPtr tgfp;
+    GapFeats* tgfp;
 
     for (; gfp; gfp = tgfp) {
         tgfp = gfp->next;
-        delete gfp;
+        delete gfp.node;
     }
 }
 

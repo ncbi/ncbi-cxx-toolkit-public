@@ -129,7 +129,16 @@ struct GapFeats {
 
     GapFeats* next = nullptr;
 };
-using GapFeatsPtr = GapFeats*;
+struct GapFeatsIter {
+    GapFeats* node = nullptr;
+    GapFeatsIter(GapFeats* p) :
+        node(p) {}
+    GapFeatsIter(const GapFeatsIter&) = default;
+    operator bool() const { return node != nullptr; }
+    GapFeats* operator->() { return node; }
+    void      operator++() { node = node->next; }
+};
+using GapFeatsPtr = GapFeatsIter;
 
 using TokenBlkList = forward_list<string>;
 
