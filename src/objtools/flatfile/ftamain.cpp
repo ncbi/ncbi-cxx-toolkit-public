@@ -798,7 +798,10 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     if (! buf || *buf == '\0') {
         return pp.entries;
     }
-    pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
+
+// It shouldn't be here. These should be set prior calling
+// fta_parse_buf() function
+//    pp.entrez_fetch = pp.taxserver = pp.medserver = 1;
 
 
     FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
