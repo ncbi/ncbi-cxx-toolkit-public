@@ -53,9 +53,8 @@ struct QSStruct {
     Int2      version = 0;
     size_t    offset  = 0;
     size_t    length  = 0;
-    QSStruct* next    = nullptr;
 };
-using QSStructPtr = QSStruct*;
+using QSStructList = std::forward_list<QSStruct>;
 
 /**********************************************************/
 void GapFeatsFree(GapFeatsPtr gfp)
@@ -177,7 +176,7 @@ static bool AccsCmp(const Indexblk* ibp1, const Indexblk* ibp2)
 }
 
 /**********************************************************/
-static bool QSCmp(const QSStruct* qs1, const QSStruct* qs2)
+static bool QSCmp(QSStructList::const_iterator qs1, QSStructList::const_iterator qs2)
 {
     int i = StringCmp(qs1->accession.c_str(), qs2->accession.c_str());
     if (i != 0)
@@ -187,33 +186,18 @@ static bool QSCmp(const QSStruct* qs1, const QSStruct* qs2)
 }
 
 /**********************************************************/
-static void QSStructFree(QSStructPtr qssp)
-{
-    QSStructPtr tqssp;
-
-    for (; qssp; qssp = tqssp) {
-        tqssp = qssp->next;
-        delete qssp;
-    }
-}
-
-/**********************************************************/
-static bool QSNoSequenceRecordErr(bool accver, QSStructPtr qssp)
+static bool QSNoSequenceRecordErr(bool accver, const QSStruct& qssp)
 {
     if (accver)
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp->accession.c_str(), qssp->version);
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp.accession.c_str(), qssp.version);
     else
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp->accession.c_str());
+        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp.accession.c_str());
     return false;
 }
 
 /**********************************************************/
 bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 {
-    QSStructPtr qssp;
-    QSStructPtr tqssp;
-    QSStructPtr tqsspprev;
-
     char*  p;
     char*  q;
     bool   ret;
@@ -228,10 +212,12 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
     if (! pp->qsfd)
         return true;
 
-    qssp      = new QSStruct;
-    tqssp     = qssp;
-    tqsspprev = nullptr;
-    count     = 0;
+    QSStructList qssp;
+    qssp.emplace_front(); // dummy item
+    QSStructList::iterator tqssp = qssp.begin();
+    QSStructList::iterator tqsspprev;
+
+    count = 0;
     while (fgets(buf, 1023, pp->qsfd)) {
         if (buf[0] != '>')
             continue;
@@ -247,32 +233,28 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         if (q)
             *q++ = '\0';
 
-        count++;
-        tqssp->next      = new QSStruct;
-        tqssp            = tqssp->next;
+        tqssp            = qssp.emplace_after(tqssp, QSStruct{});
         tqssp->accession = string(buf + 1);
         tqssp->version   = q ? atoi(q) : 0;
         tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
-        if (tqsspprev)
+        if (count > 0)
             tqsspprev->length = tqssp->offset - tqsspprev->offset;
-        tqssp->next = nullptr;
 
         tqsspprev = tqssp;
+        count++;
     }
     tqssp->length = (size_t)ftell(pp->qsfd) - tqssp->offset;
 
-    tqssp = qssp;
-    qssp  = tqssp->next;
-    delete tqssp;
+    qssp.pop_front(); // delete dummy
 
-    if (! qssp) {
+    if (qssp.empty()) {
         ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
         return false;
     }
 
-    vector<QSStructPtr> qsspp(count);
-    tqssp = qssp;
-    for (j = 0; j < count && tqssp; j++, tqssp = tqssp->next)
+    vector<QSStructList::iterator> qsspp(count);
+    tqssp = qssp.begin();
+    for (j = 0; j < count && tqssp != qssp.end(); j++, ++tqssp)
         qsspp[j] = tqssp;
 
     if (count > 1) {
@@ -290,7 +272,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
             else
                 ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession.c_str());
 
-            QSStructFree(qssp);
+            qssp.clear();
             return false;
         }
         count++;
@@ -305,20 +287,20 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 
     for (ret = true, j = 0, k = 0; j < count; j++) {
         if (k == pp->indx) {
-            ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
+            ret = QSNoSequenceRecordErr(pp->accver, *qsspp[j]);
             continue;
         }
         for (; k < pp->indx; k++) {
             l = StringCmp(qsspp[j]->accession.c_str(), ibpp[k]->acnum);
             if (l < 0) {
-                ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
+                ret = QSNoSequenceRecordErr(pp->accver, *qsspp[j]);
                 break;
             }
             if (l > 0)
                 continue;
             m = qsspp[j]->version - ibpp[k]->vernum;
             if (m < 0) {
-                ret = QSNoSequenceRecordErr(pp->accver, qsspp[j]);
+                ret = QSNoSequenceRecordErr(pp->accver, *qsspp[j]);
                 break;
             }
             if (m > 0)
@@ -330,7 +312,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         }
     }
 
-    QSStructFree(qssp);
+    qssp.clear();
 
     return (ret);
 }
