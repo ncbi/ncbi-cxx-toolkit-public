@@ -1782,7 +1782,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
 
     CRef<CPubdesc> desc;
 
-    if (! pp || ! dbp || ! dbp->mOffset || ! dbp->mpData)
+    if (! pp || ! dbp || ! dbp->mOffset || ! dbp->hasData())
         return desc;
 
     desc.Reset(new CPubdesc);

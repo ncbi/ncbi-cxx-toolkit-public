@@ -579,11 +579,11 @@ FeatBlk::~FeatBlk()
 
 void DataBlk::SetFeatData(FeatBlk* p)
 {
-    mpData = p;
+    mpData.ptr = p;
 }
 FeatBlk* DataBlk::GetFeatData() const
 {
-    return static_cast<FeatBlk*>(mpData);
+    return static_cast<FeatBlk*>(mpData.ptr);
 }
 
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
@@ -600,7 +600,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
         fbp     = dbp->GetFeatData();
         if (fbp) {
             delete fbp;
-            dbp->mpData = nullptr;
+            dbp->mpData.ptr = nullptr;
         }
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
@@ -2646,14 +2646,14 @@ static void fta_remove_dup_feats(DataBlkPtr dbp)
         return;
 
     for (; dbp; dbp = dbp->mpNext) {
-        if (! dbp->mpData)
+        if (! dbp->hasData())
             continue;
 
         fbp1     = dbp->GetFeatData();
         tdbpprev = dbp;
         for (tdbp = dbp->mpNext; tdbp; tdbp = tdbpnext) {
             tdbpnext = tdbp->mpNext;
-            if (! tdbp->mpData) {
+            if (! tdbp->hasData()) {
                 tdbpprev->mpNext = tdbpnext;
                 tdbp->SimpleDelete();
                 continue;
@@ -4115,7 +4115,7 @@ static int XMLParseFeatureBlock(bool deb, DataBlkPtr dbp, Parser::ESource source
     int        ret    = 0;
 
     for (num = 0; dbp; dbp = dbp->mpNext, num++) {
-        if (! dbp->mpData)
+        if (! dbp->hasData())
             continue;
         fbp      = dbp->GetFeatData();
         fbp->num = num;

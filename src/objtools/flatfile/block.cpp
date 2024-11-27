@@ -75,7 +75,14 @@ DataBlk::~DataBlk()
     int MAX_HEAD_RECURSION(100);
 
     mpQscore.clear();
-    delete mpData;
+    if (mbSubData) {
+        delete mpData.subblocks;
+        mpData.subblocks = nullptr;
+        mbSubData = false;
+    } else {
+        delete mpData.ptr;
+    }
+    mpData.ptr = nullptr;
     if (mType == ParFlat_ENTRYNODE) {
         MemFree(mOffset);
     }
@@ -95,11 +102,12 @@ DataBlk::~DataBlk()
 
 void DataBlk::SetEntryData(EntryBlk* p)
 {
-    mpData = p;
+    mpData.ptr = p;
 }
 EntryBlk* DataBlk::GetEntryData() const
 {
-    return static_cast<EntryBlk*>(mpData);
+    _ASSERT(!mbSubData);
+    return static_cast<EntryBlk*>(mpData.ptr);
 }
 
 /**********************************************************
@@ -116,9 +124,15 @@ EntryBlk* DataBlk::GetEntryData() const
 
 void xFreeEntry(DataBlkPtr entry)
 {
-    if (entry->mpData) {
-        delete entry->mpData;
-        entry->mpData = nullptr;
+    if (entry->hasData()) {
+        if (entry->mbSubData) {
+            delete entry->mpData.subblocks;
+            entry->mpData.subblocks = nullptr;
+            entry->mbSubData = false;
+        } else {
+            delete entry->mpData.ptr;
+        }
+        entry->mpData.ptr = nullptr;
     }
 
     delete entry;
