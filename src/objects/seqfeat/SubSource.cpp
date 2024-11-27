@@ -1020,7 +1020,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     NStr::TruncateSpacesInPlace(orig_date);
 
     orig_date = RepairSingleDigitMonth(orig_date);
-    
+
     if (IsISOFormatDate(orig_date)) {
         return orig_date;
     } else if (x_IsFixableIsoDate(orig_date)) {
@@ -5175,6 +5175,46 @@ string CSubSource::AutoFix(TSubtype subtype, const string& value)
     return new_val;
 }
 
+bool CSubSource::IsDeprecated() const
+{
+    if (CanGetSubtype() && IsDeprecated(GetSubtype()))
+        return true;
+    else
+        return false;
+}
+
+bool CSubSource::IsDeprecated(TSubtype subtype)
+{
+    static constexpr ct::const_bitset<eSubtype_other, ESubtype> deprecate_subsources = {
+        //eSubtype_acronym,
+        //eSubtype_anamorph,
+        //eSubtype_authority,
+        //eSubtype_biotype,
+        //eSubtype_biovar,
+        //eSubtype_chemovar,
+        eSubtype_clone_lib,
+        //eSubtype_common,
+        //eSubtype_forma,
+        //eSubtype_forma_specialis,
+        //eSubtype_group,
+        eSubtype_identified_by,
+        //eSubtype_pathovar,
+        eSubtype_phenotype,
+        eSubtype_pop_variant,
+        //eSubtype_serogroup,
+        eSubtype_subclone,
+        //eSubtype_subgroup,
+        //eSubtype_substrain,
+        //eSubtype_subtype,
+        //eSubtype_synonym,
+        //eSubtype_teleomorph,
+        eSubtype_tissue_lib,
+        //eSubtype_type,
+        };
+
+    return deprecate_subsources.test((ESubtype)subtype);
+
+}
 
 void CSubSource::AutoFix()
 {
