@@ -28,13 +28,16 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include "utils.hpp"
+
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seq_macros.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/sequence.hpp>
-#include "utils.hpp"
+#include "discrepancy_core.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -86,6 +89,21 @@ string GetProductName(const CSeq_feat& feat, objects::CScope& scope)
     return kEmptyStr;
 }
 
+CBioSource* GetBioSourceFromContext(CDiscrepancyObject* obj, CDiscrepancyContext& context)
+{
+    CSeq_feat* feat = nullptr;
+    CSeqdesc* desc = const_cast<CSeqdesc*>(dynamic_cast<const CSeqdesc*>(context.FindObject(*obj)));
+    if (desc && desc->IsSource()) {
+        return &desc->SetSource();
+    }
+    if (desc == nullptr) {
+        feat = const_cast<CSeq_feat*>(dynamic_cast<const CSeq_feat*>(context.FindObject(*obj)));
+        if (feat && feat->IsSetData() && feat->GetData().IsBiosrc()) {
+            return &feat->SetData().SetBiosrc();
+        }
+    }
+    return nullptr;
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

@@ -74,13 +74,13 @@ public:
                                  EVocabulary vocabulary = eVocabulary_raw);
 
     // returns false if GetSubtypeName is expected to throw an exception. True otherwise.
-    static bool IsValidSubtypeName(const string& str, 
+    static bool IsValidSubtypeName(const string& str,
                                    EVocabulary vocabulary = eVocabulary_raw);
 
     static bool IsDiscouraged(const TSubtype stype, bool indexer=false);
     static bool IsMultipleValuesAllowed(TSubtype);
 
-    /// This indicates if the given Org-mod subtype is supposed to hold an 
+    /// This indicates if the given Org-mod subtype is supposed to hold an
     /// institution code (Example: "ATCC:27305")
     static bool HoldsInstitutionCode(const TSubtype stype);
 
@@ -113,6 +113,9 @@ public:
 
     static string AutoFix(TSubtype subtype, const string& value);
     void AutoFix();
+
+    static bool IsDeprecated(TSubtype subtype);
+    bool IsDeprecated() const;
 
     // Remove "subsp. " and "serovar " from start of strain
     // Remove "subsp. " and "serovar " from start of serovar
