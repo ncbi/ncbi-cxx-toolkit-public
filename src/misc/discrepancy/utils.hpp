@@ -32,14 +32,18 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/iterator.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Seq_data.hpp>
-#include <objmgr/scope.hpp>
-
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+class CBioSource;
+class CScope;
+class CSeq_feat;
+END_SCOPE(objects)
+
 BEGIN_SCOPE(NDiscrepancy)
+class CDiscrepancyObject;
+class CDiscrepancyContext;
 
 void AddComment(objects::CSeq_feat& feat, const string& comment);
 string GetProductName(const objects::CSeq_feat& cds, objects::CScope& scope);
@@ -49,6 +53,8 @@ template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs
     CTypesConstIterator it(CStdTypeInfo<string>::GetTypeInfo(), CStdTypeInfo<utf8_string_type>::GetTypeInfo());
     for (it = ConstBegin(obj);  it;  ++it) strs.push_back(*static_cast<const string*>(it.GetFoundPtr()));
 }
+
+objects::CBioSource* GetBioSourceFromContext(CDiscrepancyObject* obj, CDiscrepancyContext& context);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

@@ -66,7 +66,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
     NStr::ToLower(name);
     replace(name.begin(), name.end(), '_', '-');
     replace(name.begin(), name.end(), ' ', '-');
-    
+
     if (name == "note" ||
         NStr::EqualNocase(name, "orgmod-note") ||
         NStr::EqualNocase(name, "note-orgmod")) {
@@ -83,7 +83,7 @@ COrgMod::TSubtype COrgMod::GetSubtypeValue(const string& str,
 }
 
 
-bool COrgMod::IsValidSubtypeName(const string& str, 
+bool COrgMod::IsValidSubtypeName(const string& str,
                                  EVocabulary vocabulary)
 {
     string name = NStr::TruncateSpaces(str);
@@ -130,7 +130,7 @@ bool COrgMod::IsMultipleValuesAllowed(TSubtype subtype)
     case eSubtype_strain: // (2) ,
     case eSubtype_substrain: // (3) ,
     case eSubtype_variety: // (6) ,
-    case eSubtype_serotype: // (7) ,        
+    case eSubtype_serotype: // (7) ,
     case eSubtype_serogroup: // (8) ,
     case eSubtype_serovar: // (9) ,
     case eSubtype_cultivar: // (10) ,
@@ -362,7 +362,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
     correct_cap.clear();
 
     s_InitializeInstitutionCollectionCodeMaps();
-    
+
     TInstitutionCodeMap::iterator ic = FindInstitutionCode(inst_coll, s_InstitutionCodeTypeMap, is_miscapitalized, correct_cap, needs_country, erroneous_country);
     if (ic != s_InstitutionCodeTypeMap.end()) {
         if (needs_country) {
@@ -371,8 +371,8 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
             string syn_correct_cap = "";
             bool syn_needs_country = false;
             bool syn_erroneous_country = false;
-            TInstitutionCodeMap::iterator it = FindInstitutionCode(inst_coll, 
-                s_InstitutionCodeSynonymsMap, syn_is_miscapitalized, syn_correct_cap, 
+            TInstitutionCodeMap::iterator it = FindInstitutionCode(inst_coll,
+                s_InstitutionCodeSynonymsMap, syn_is_miscapitalized, syn_correct_cap,
                 syn_needs_country, syn_erroneous_country);
             if (it != s_InstitutionCodeSynonymsMap.end() && !syn_needs_country) {
                 TInstitutionCodeMap::iterator is = s_InstitutionCodeTypeMap.find(it->second);
@@ -421,7 +421,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
 }
 
 
-string 
+string
 COrgMod::IsCultureCollectionValid(const string& culture_collection)
 {
     if (NStr::Find(culture_collection, ":") == string::npos) {
@@ -432,7 +432,7 @@ COrgMod::IsCultureCollectionValid(const string& culture_collection)
 }
 
 
-string 
+string
 COrgMod::IsSpecimenVoucherValid(const string& specimen_voucher)
 {
     if (NStr::Find(specimen_voucher, ":") == string::npos) {
@@ -443,7 +443,7 @@ COrgMod::IsSpecimenVoucherValid(const string& specimen_voucher)
 }
 
 
-string 
+string
 COrgMod::IsBiomaterialValid(const string& biomaterial)
 {
     if (NStr::Find(biomaterial, ":") == string::npos) {
@@ -457,7 +457,7 @@ COrgMod::IsBiomaterialValid(const string& biomaterial)
 const string kMissingInst = "Voucher is missing institution code";
 const string kMissingId = "Voucher is missing specific identifier";
 
-string 
+string
 COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
 {
     string inst_code;
@@ -481,7 +481,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
         inst_coll = inst_code;
     } else {
         inst_coll = inst_code + ":" + coll_code;
-    }    
+    }
 
     // first, check combination of institution and collection (if collection found)
     string voucher_type;
@@ -496,7 +496,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
             return "Institution code " + inst_coll + " should not be qualified with a <COUNTRY> designation";
         } else if (is_miscapitalized) {
             return "Institution code " + inst_coll + " exists, but correct capitalization is " + correct_cap;
-        } else {   
+        } else {
             if (NStr::FindNoCase(voucher_type, v_type) == string::npos) {
                 if (NStr::FindNoCase (voucher_type, "b") != string::npos) {
                     return "Institution code " + inst_coll + " should be bio_material";
@@ -507,7 +507,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
                 }
             }
             return kEmptyStr;
-        } 
+        }
     } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
         if (NStr::EqualNocase (inst_code, "personal") && NStr::IsBlank (coll_code)) {
             return "Personal collection does not have name of collector";
@@ -565,7 +565,7 @@ bool FindInstCodeAndSpecID(COrgMod::TInstitutionCodeMap& code_map, string& val)
     if (NStr::IsBlank(val)) {
         return false;
     }
-    
+
     // find first non-letter position
     size_t len = 0;
     string::iterator sit = val.begin();
@@ -579,7 +579,7 @@ bool FindInstCodeAndSpecID(COrgMod::TInstitutionCodeMap& code_map, string& val)
     }
     string inst_code = val.substr(0, len);
     string remainder = val.substr(len);
-    NStr::TruncateSpacesInPlace(remainder); 
+    NStr::TruncateSpacesInPlace(remainder);
     if (NStr::IsBlank(remainder)) {
         // no second token
         return false;
@@ -609,7 +609,7 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
     // nothing to do if value is blank
     if (NStr::IsBlank(val)) {
         return false;
-    }    
+    }
 
     s_InitializeInstitutionCollectionCodeMaps();
     if (NStr::Find(v_type, "b") != string::npos && FindInstCodeAndSpecID(s_BiomaterialInstitutionCodeMap, val)) {
@@ -620,7 +620,7 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
         return true;
     } else {
         return false;
-    }            
+    }
 }
 
 
@@ -630,7 +630,7 @@ bool COrgMod::RescueInstFromParentheses(string& val, const string& voucher_type)
 
     if (!NStr::EndsWith(val, ")")) {
         return false;
-    } 
+    }
     size_t colon_pos = NStr::Find(val, ":");
     if (colon_pos != 0 && colon_pos != string::npos) {
         return false;
@@ -653,13 +653,13 @@ bool COrgMod::RescueInstFromParentheses(string& val, const string& voucher_type)
         NStr::TruncateSpacesInPlace(val);
         rval = true;
     }
-    
+
 
     return rval;
 }
 
 
-bool 
+bool
 COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 {
     string inst_code;
@@ -1048,6 +1048,46 @@ void COrgMod::FixCapitalization()
 
 }
 
+bool COrgMod::IsDeprecated() const
+{
+    if (CanGetSubtype() && IsDeprecated(GetSubtype()))
+        return true;
+    else
+        return false;
+}
+
+bool COrgMod::IsDeprecated(TSubtype subtype)
+{
+    static constexpr ct::const_bitset<ESubtype::eSubtype_other, ESubtype> deprecate_orgmods = {
+        eSubtype_acronym,
+        eSubtype_anamorph,
+        eSubtype_authority,
+        eSubtype_biotype,
+        eSubtype_biovar,
+        eSubtype_chemovar,
+        //eSubtype_clone_lib,
+        eSubtype_common,
+        eSubtype_forma,
+        eSubtype_forma_specialis,
+        eSubtype_group,
+        //eSubtype_identified_by,
+        eSubtype_pathovar,
+        //eSubtype_phenotype,
+        //eSubtype_pop_variant,
+        eSubtype_serogroup,
+        //eSubtype_subclone,
+        eSubtype_subgroup,
+        eSubtype_substrain,
+        eSubtype_subtype,
+        eSubtype_synonym,
+        eSubtype_teleomorph,
+        //eSubtype_tissue_lib,
+        eSubtype_type,
+    };
+
+    return deprecate_orgmods.test((ESubtype)subtype);
+
+}
 
 string COrgMod::AutoFix(TSubtype subtype, const string& value)
 {
@@ -1081,7 +1121,7 @@ void COrgMod::AutoFix()
 }
 
 
-void s_HarmonizeString(string& s) 
+void s_HarmonizeString(string& s)
 {
     NStr::ReplaceInPlace (s, " ", "");
     NStr::ReplaceInPlace (s, "_", "");
@@ -1098,7 +1138,7 @@ bool COrgMod::FuzzyStrainMatch( const string& strain1, const string& strain2 )
 
     s_HarmonizeString(s1);
     s_HarmonizeString(s2);
-    return NStr::EqualNocase(s1, s2);    
+    return NStr::EqualNocase(s1, s2);
 }
 
 
