@@ -300,7 +300,7 @@ struct EntryBlk;
 struct FeatBlk;
 
 //  ============================================================================
-class DataBlk : public CFlatFileData
+class DataBlk
 //  ============================================================================
 {
 public:
@@ -309,12 +309,13 @@ public:
         char*    offset = nullptr,
         size_t   len_   = 0) :
         mType(type_),
-        mpData(nullptr),
         mOffset(offset),
         len(len_),
         mDrop(false),
         mpNext(nullptr)
     {
+        mpData.ptr = nullptr;
+        mbSubData  = false;
     }
 
     // static void operator delete(void* p);
@@ -328,18 +329,23 @@ public:
     }
 
     // accessors to mpData
-    void      SetSubData(DataBlk* p) { mpData = p; }
-    DataBlk*  GetSubData() const { return static_cast<DataBlk*>(mpData); }
-    void      SetEntryData(EntryBlk* p);
+    void      SetSubData(DataBlk* p) { mbSubData = true; mpData.subblocks = p; }
+    DataBlk*  GetSubData() const { return mbSubData ? mpData.subblocks : nullptr; }
+    void      SetEntryData(EntryBlk*);
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
-    void      SetXmlData(XmlIndex* p) { mpData = p; }
-    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(mpData); }
+    void      SetXmlData(XmlIndex* p) { mpData.ptr = p; }
+    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(mpData.ptr); }
+    bool      hasData() const { return mbSubData || mpData.ptr != nullptr; }
 
 public:
     int            mType;    // which keyword block or node type
-    CFlatFileData* mpData;   // any pointer type points to information block
+    bool           mbSubData = false;
+    union {
+        CFlatFileData* ptr;  // any pointer type points to information block
+        DataBlk*       subblocks;
+    } mpData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
     string         mpQscore; // points to quality score buffer

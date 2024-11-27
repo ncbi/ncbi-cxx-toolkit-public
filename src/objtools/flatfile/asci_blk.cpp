@@ -397,7 +397,9 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
     bptr = ptr + 1;
 
     while (bptr < eptr) {
-        InsertDatablkVal(reinterpret_cast<DataBlk**>(&dbp->mpData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
+        if (! dbp->hasData())
+            dbp->mbSubData = true;
+        InsertDatablkVal(&dbp->mpData.subblocks, ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
             bptr = SrchTheChar(bptr, eptr, '\n');
@@ -824,7 +826,9 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
     eptr = bptr + dbp->len;
 
     if (GetSubNodeType(subkw, &bptr, eptr)) {
-        InsertDatablkVal(reinterpret_cast<DataBlk**>(&dbp->mpData), subtype, bptr, eptr - bptr);
+        if (! dbp->hasData())
+            dbp->mbSubData = true;
+        InsertDatablkVal(&dbp->mpData.subblocks, subtype, bptr, eptr - bptr);
     }
 }
 
