@@ -1,0 +1,2 @@
+SET NCBI_RUN_UNDER_INSPXE=1
+"C:\Program Files (x86)\Intel\oneAPI\inspector\2024.2\bin64\inspxe-cl" -collect mi3 -knob detect-leaks-on-exit=false -knob enable-memory-growth-detection=false -knob enable-on-demand-leak-detection=false -knob still-allocated-memory=false -knob detect-resource-leaks=false -knob stack-depth=32 -result-dir TTT -return-app-exitcode -suppression-file inspxe-suppressions -- %1 %2 %3 %4 %5 %6 %7 %8

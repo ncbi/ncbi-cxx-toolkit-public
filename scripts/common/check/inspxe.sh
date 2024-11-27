@@ -14,9 +14,9 @@ suppress_dir="$(cygpath -w $script_dir)\\inspxe-suppressions"
 
 # Check Intel Inspector presence
 
-if test -z "$INSPECTOR_2019_DIR"; then
-   echo "Cannot find Intel Inspector 2019."
-#   exit 1 
+if test -z "$INSPECTOR_2024_DIR"; then
+   echo "Cannot find Intel Inspector 2024."
+   exit 1 
 fi
 inspxe=`echo $(cygpath -u $INSPECTOR_2019_DIR) | sed 's| |\ |g'`/bin32/inspxe-cl
 
