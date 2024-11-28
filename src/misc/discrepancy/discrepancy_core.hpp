@@ -90,11 +90,6 @@ public:
     CDiscrepancyItem(const string& msg)
         : m_Msg(msg) {}
 
-    /// @deprecated 
-    /// Use CDiscrepancyItem(string_view title, const string& name, const string& msg, const string& xml, const string& unit, size_t count) constructor
-    NCBI_DEPRECATED_CTOR(CDiscrepancyItem(CDiscrepancyCore& t, const string& name, 
-        const string& msg, const string& xml, const string& unit, size_t count));
-    
     CDiscrepancyItem(string_view title, const string& name, const string& msg, const string& xml, const string& unit, size_t count)
         : m_Title(title), m_Str(name), m_Msg(msg), m_Xml(xml), m_Unit(unit), m_Count(count) {}
 
@@ -105,14 +100,14 @@ public:
     string GetXml() const override { return m_Xml; }
     string GetUnit() const override { return m_Unit; }
     size_t GetCount() const override { return m_Count; }
-    
+
     TReportObjectList GetDetails() const override { return m_Objs; }
     TReportObjectList& SetDetails() { return m_Objs; }
     TReportItemList GetSubitems() const override { return m_Subs; }
 
     bool CanAutofix() const override { return m_Autofix; }
     void SetAutofix(bool value) { m_Autofix = value; }
-    
+
     ESeverity GetSeverity() const override { return m_Severity; }
     bool IsFatal() const override { return m_Severity == eSeverity_error; }
     bool IsInfo() const override { return m_Severity == eSeverity_info; }
@@ -356,7 +351,7 @@ public:
     TDiscrepancyCaseMap GetTests() const override;
     //void OutputText(CNcbiOstream& out, unsigned short flags, char group) override;
     //void OutputXML(CNcbiOstream& out, unsigned short flags) override;
-    
+
     CParseNode* FindNode(const CRefNode& obj);
     const CObject* GetMore(CReportObj& obj);
     const CSerialObject* FindObject(CReportObj& obj, bool alt = false) override;
@@ -537,7 +532,7 @@ public:
         iterator begin() { return iterator(&node); }
         iterator end() { return iterator(nullptr); }
     };
-    
+
     CSeqdesc_vec GetSeqdesc() { return CSeqdesc_vec(*m_CurrentNode); }
     CSeq_feat_vec GetFeat() { return CSeq_feat_vec(*m_CurrentNode); }
     CSeqdesc_run GetAllSeqdesc() { return CSeqdesc_run(*m_CurrentNode); }
@@ -838,28 +833,28 @@ protected:
 
 public:
     string GetBioseqLabel() const override { return m_Ref->GetBioseqLabel(); }
-    
+
     /// @deprecated
-    /// use CDiscrepancyObject::GetBioseqLabel() 
-    NCBI_DEPRECATED 
+    /// use CDiscrepancyObject::GetBioseqLabel()
+    NCBI_DEPRECATED
     string GetShort() const override { return m_Ref->GetBioseqLabel(); }
-    
+
     auto& RefNode() { return m_Ref; }
     string GetText() const override { return m_Ref->GetText(); }
-    string GetPath() const override 
-    { 
+    string GetPath() const override
+    {
         for (auto ref = m_Ref; ref; ref = ref->m_Parent) {
             if (ref->m_Type == CDiscrepancyContext::eFile) {
-                return ref->m_Text; 
+                return ref->m_Text;
             }
         }
-        return kEmptyStr; 
+        return kEmptyStr;
     }
     string GetFeatureType() const override;
     string GetProductName() const override;
     string GetLocation() const override;
     string GetLocusTag() const override;
-    
+
     void SetMoreInfo(CObject* data) override { m_More.Reset(data); }
 
     EType GetType() const override // Can we use the same enum?
@@ -886,7 +881,7 @@ public:
     bool CanAutofix() const override { return m_Fix && !m_Fixed; }
     bool IsFixed() const override { return m_Fixed; }
     void SetFixed() { m_Fixed = true; }
-    
+
     CConstRef<CObject> GetMoreInfo() { return m_More; }
     CReportObj* Clone(bool fix, CConstRef<CObject> data) const;
 
@@ -908,7 +903,7 @@ protected:
 
     friend class CDiscrepancyContext;
     friend class CReportNode;
-    friend bool operator<(const CReportObjPtr& one, const CReportObjPtr& another) { 
+    friend bool operator<(const CReportObjPtr& one, const CReportObjPtr& another) {
         return ((const CDiscrepancyObject*)one.P)->m_Ref < ((const CDiscrepancyObject*)another.P)->m_Ref;
     }
 };

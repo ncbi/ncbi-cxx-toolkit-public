@@ -41,45 +41,11 @@
 #include <util/xregexp/regexp.hpp>
 
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
-
-#if 0
-static unsigned int AutofixBiosrc(TReportObjectList& list, CScope& scope, bool (*call)(CBioSource& src))
-{
-    unsigned int n = 0;
-    for (auto& it : list) {
-        if (it->CanAutofix()) {
-            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
-            const CSeqdesc* csd = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
-            if (sf) {
-                if (sf->IsSetData() && sf->GetData().IsBiosrc()) {
-                    CRef<CSeq_feat> new_feat(new CSeq_feat());
-                    new_feat->Assign(*sf);
-                    if (call(new_feat->SetData().SetBiosrc())) {
-                        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-                        feh.Replace(*new_feat);
-                        n++;
-                        dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
-                    }
-                }
-            }
-            else if (csd) {
-                if (csd->IsSource()) {
-                    CSeqdesc* sd = const_cast<CSeqdesc*>(csd);
-                    if (call(sd->SetSource())) {
-                        n++;
-                        dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();
-                    }
-                }
-            }
-        }
-    }
-    return n;
-}
-#endif
 
 // MAP_CHROMOSOME_CONFLICT
 
@@ -424,20 +390,15 @@ static bool SetCultureCollectionFromStrain(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
 {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (SetCultureCollectionFromStrain(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
+    CBioSource* biosrc = GetBioSourceFromContext(obj, context);
+
+    if (biosrc) {
+        if (SetCultureCollectionFromStrain(*biosrc)) {
             obj->SetFixed();
             return CRef<CAutofixReport>(new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", 1));
         }
     }
-    if (desc) {
-        if (SetCultureCollectionFromStrain(const_cast<CSeqdesc*>(desc)->SetSource())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("ATCC_CULTURE_CONFLICT: Set culture collection for [n] source[s]", 1));
-        }
-    }
+
     return CRef<CAutofixReport>();
 }
 
@@ -1531,20 +1492,15 @@ static bool RemoveCountryColon(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(END_COLON_IN_COUNTRY)
 {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (RemoveCountryColon(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
+    CBioSource* biosrc = GetBioSourceFromContext(obj, context);
+
+    if (biosrc) {
+        if (RemoveCountryColon(*biosrc)) {
             obj->SetFixed();
             return CRef<CAutofixReport>(new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", 1));
         }
     }
-    if (desc) {
-        if (RemoveCountryColon(const_cast<CSeqdesc*>(desc)->SetSource())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("END_COLON_IN_COUNTRY: [n] country name[s] fixed", 1));
-        }
-    }
+
     return CRef<CAutofixReport>();
 }
 
@@ -1603,20 +1559,15 @@ static bool ChangeCountryColonToComma(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(COUNTRY_COLON)
 {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (ChangeCountryColonToComma(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
+    CBioSource* biosrc = GetBioSourceFromContext(obj, context);
+
+    if (biosrc) {
+        if (ChangeCountryColonToComma(*biosrc)) {
             obj->SetFixed();
             return CRef<CAutofixReport>(new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", 1));
         }
     }
-    if (desc) {
-        if (ChangeCountryColonToComma(const_cast<CSeqdesc*>(desc)->SetSource())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("COUNTRY_COLON: [n] country name[s] fixed", 1));
-        }
-    }
+
     return CRef<CAutofixReport>();
 }
 
@@ -1656,16 +1607,10 @@ static bool FixHumanHost(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(HUMAN_HOST)
 {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (FixHumanHost(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("HUMAN_HOST: [n] host qualifier[s] fixed", 1));
-        }
-    }
-    if (desc) {
-        if (FixHumanHost(const_cast<CSeqdesc*>(desc)->SetSource())) {
+    CBioSource* biosrc = GetBioSourceFromContext(obj, context);
+
+    if (biosrc) {
+        if (FixHumanHost(*biosrc)) {
             obj->SetFixed();
             return CRef<CAutofixReport>(new CAutofixReport("HUMAN_HOST: [n] host qualifier[s] fixed", 1));
         }
@@ -1826,20 +1771,15 @@ static bool SetEnvSampleFixAmplifiedPrimers(CBioSource& src)
 
 DISCREPANCY_AUTOFIX(AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE)
 {
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(context.FindObject(*obj));
-    if (feat) {
-        if (SetEnvSampleFixAmplifiedPrimers(const_cast<CSeq_feat*>(feat)->SetData().SetBiosrc())) {
+    CBioSource* biosrc = GetBioSourceFromContext(obj, context);
+
+    if (biosrc) {
+        if (SetEnvSampleFixAmplifiedPrimers(*biosrc)) {
             obj->SetFixed();
             return CRef<CAutofixReport>(new CAutofixReport("AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE: Set environmental_sample, fixed amplified primers note for [n] source[s]", 1));
         }
     }
-    if (desc) {
-        if (SetEnvSampleFixAmplifiedPrimers(const_cast<CSeqdesc*>(desc)->SetSource())) {
-            obj->SetFixed();
-            return CRef<CAutofixReport>(new CAutofixReport("AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE: Set environmental_sample, fixed amplified primers note for [n] source[s]", 1));
-        }
-    }
+
     return CRef<CAutofixReport>();
 }
 
