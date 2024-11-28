@@ -140,11 +140,6 @@ public:
     virtual bool IsExtended() const = 0;
     virtual bool IsSummary() const = 0;
     virtual bool IsReal() const = 0;
-
-    /// @deprecated
-    /// use CReportItemFactory::Create() function
-    NCBI_DEPRECATED 
-    static CRef<CReportItem> CreateReportItem(const string& test, const CReportObj& obj, const string& msg, bool autofix = false);
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 

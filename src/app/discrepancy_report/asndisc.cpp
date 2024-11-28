@@ -172,7 +172,7 @@ void CDiscRepApp::Init()
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
 
-string CDiscRepApp::x_ConstructOutputName(const string& input) 
+string CDiscRepApp::x_ConstructOutputName(const string& input)
 {
     const CArgs& args = GetArgs();
     CDirEntry fname(input);
@@ -182,7 +182,7 @@ string CDiscRepApp::x_ConstructOutputName(const string& input)
         ext += ".xml";
     }
     return CDirEntry::MakePath(path, fname.GetBase(), ext);
-} 
+}
 
 
 static unique_ptr<CObjectIStream> OpenUncompressedStream(const string& fname, bool& compressed)
@@ -236,7 +236,7 @@ void CDiscRepApp::x_ProcessFile(const string& fname, CDiscrepancySet& tests)
     unique_ptr<CObjectIStream> in = OpenUncompressedStream(fname, compressed);
     if (!in) {
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
-    }    
+    }
     tests.ParseStream(*in, fname, !compressed, x_DefaultHeader());
 }
 
@@ -266,7 +266,7 @@ void CDiscRepApp::x_ParseDirectory(const string& dirname, bool recursive)
 }
 
 
-unsigned CDiscRepApp::x_ProcessOne(const string& fname) 
+unsigned CDiscRepApp::x_ProcessOne(const string& fname)
 {
     unsigned severity;
     CRef<CDiscrepancyProduct> product;
@@ -524,12 +524,12 @@ int CDiscRepApp::Run()
     try {
         if (args["o"]) {
             if (abs_input_path == CDirEntry::CreateAbsolutePath(args["o"].AsString())) {
-                PrintMsg(eDiag_Error, "Input and output files should be different"); 
+                PrintMsg(eDiag_Error, "Input and output files should be different");
                 return 1;
-            } 
+            }
             severity = x_ProcessAll(args["o"].AsString());
         }
-        else { 
+        else {
             int count = 0;
             for (const string& f : m_Files) {
                 ++count;
@@ -544,7 +544,7 @@ int CDiscRepApp::Run()
     catch (const CException& e) {
         PrintMsg(eDiag_Error, e.GetMsg());
         return 1;
-    }   
+    }
 
     if (args["R"]) {
         int r = args["R"].AsInteger();
