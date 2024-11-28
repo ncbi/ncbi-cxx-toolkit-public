@@ -46,10 +46,10 @@ USING_SCOPE(objects);
 
 
 static size_t offset = 0;
-string Offset() 
+string Offset()
 {
     return string(offset<<1, ' ');
-} 
+}
 
 class CReadHook_Bioseq_set : public CReadObjectHook
 {
@@ -231,7 +231,7 @@ void CDiscrepancyContext::ParseStream(CObjectIStream& stream, const string& fnam
             stream.Read(ObjectInfo(*seq), CObjectIStream::eNoFileHeader);
         }
         else {
-            NCBI_THROW(CException, eUnknown, "Unsupported type " + header + " in " + fname); 
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header + " in " + fname);
         }
         CNcbiStreampos position = stream.GetStreamPos();
         Extend(*m_CurrentNode, stream);
@@ -786,7 +786,6 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
     string fixed_path = !compressed && (dot != string::npos) ? path.substr(0, dot) + ".autofix" + path.substr(dot) : path + ".autofix.sqn";
 
     string header = in->ReadFileHeader();
-    in = OpenUncompressedStream(path, compressed);
     unique_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, fixed_path));
     CObjectStreamCopier copier(*in, *out);
 
@@ -810,31 +809,27 @@ void CDiscrepancyContext::AutofixFile(vector<CDiscrepancyObject*>&fixes, const s
 
         if (header == CSeq_submit::GetTypeInfo()->GetName()) {
             PushNode(eSubmit);
-            copier.Copy(CSeq_submit::GetTypeInfo());
+            copier.Copy(CSeq_submit::GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
             PopNode();
         }
         else if (header == CSeq_entry::GetTypeInfo()->GetName()) {
-            copier.Copy(CSeq_entry::GetTypeInfo());
+            copier.Copy(CSeq_entry::GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
         }
         else if (header == CBioseq_set::GetTypeInfo()->GetName()) {
-            copier.Copy(CBioseq_set::GetTypeInfo());
+            copier.Copy(CBioseq_set::GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
         }
         else if (header == CBioseq::GetTypeInfo()->GetName()) {
-            copier.Copy(CBioseq::GetTypeInfo());
+            copier.Copy(CBioseq::GetTypeInfo(), CObjectStreamCopier::eNoFileHeader);
         }
         else {
-            NCBI_THROW(CException, eUnknown, "Unsupported type " + header); 
+            NCBI_THROW(CException, eUnknown, "Unsupported type " + header);
         }
         PopNode();
         if (in->EndOfData()) {
             break;
         }
         else {
-            // this will crash if the file is both compressed and concatenated,
-            // but we are not going to support those
-            CNcbiStreampos position = in->GetStreamPos();
             header = in->ReadFileHeader();
-            in->SetStreamPos(position);
         }
     }
 }

@@ -412,21 +412,6 @@ TReportObjectList CDiscrepancyCore::GetObjects() const
     return ret;
 }
 
-CRef<CReportItem> CReportItem::CreateReportItem(const string& name, const CReportObj& obj, const string& msg, bool autofix)
-{
-    auto test = CCaseRegistry::GetProps(GetDiscrepancyCaseName(name)).Constructor();
-    string s = msg;
-    NStr::ReplaceInPlace(s, "[(]", "");
-    NStr::ReplaceInPlace(s, "[)]", "");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test->GetSName(), msg, s, s, kEmptyCStr, 0));
-    item->SetAutofix(autofix);
-
-    CRef<CReportObj> new_obj = CReportObjFactory::Create(test, obj, autofix);
-    item->SetDetails().push_back(new_obj);
-
-    return CRef<CReportItem>(item);
-}
-
 CRef<CReportItem> CReportItemFactory::Create(const string& test_name, const string& name, const CReportObj& main_obj, const TReportObjectList& report_objs, bool autofix)
 {
     auto test = CCaseRegistry::GetProps(GetDiscrepancyCaseName(test_name)).Constructor();
@@ -883,11 +868,6 @@ bool CDiscrepancyContext::CompareRefs(CRef<CReportObj> a, CRef<CReportObj> b) {
     }
     return A.size() == B.size() ? &*a < &*b : A.size() < B.size();
 }
-
-
-CDiscrepancyItem::CDiscrepancyItem(CDiscrepancyCore& t, const string& s, const string& m, const string& x, const string& o, size_t n)
-    : m_Title(t.GetSName()), m_Str(s), m_Msg(m), m_Xml(x), m_Unit(o), m_Count(n)
-{}
 
 
 // CDiscrepancyContext
