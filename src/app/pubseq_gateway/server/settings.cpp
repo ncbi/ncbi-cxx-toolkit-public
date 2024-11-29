@@ -56,6 +56,7 @@ const string            kLMDBProcessorSection = "LMDB_PROCESSOR";
 const string            kAdminSection = "ADMIN";
 const string            kMyNCBISection = "MY_NCBI";
 const string            kCountersSection = "COUNTERS";
+const string            kLogSection = "LOG";
 
 
 const unsigned short    kWorkersDefault = 64;
@@ -127,6 +128,7 @@ const size_t            kDefaultMyNCBIDnsResolveFailPeriodSec = 10;
 const string            kDefaultMyNCBITestWebCubbyUser = "MVWNUIMYDR41F2XRDBT8JTFGDFFR9KJM;logged-in=true;my-name=vakatov@ncbi.nlm.nih.gov;persistent=true@E7321B44700304B1_0000SID";
 const size_t            kDefaultMyNCBITestOkPeriodSec = 180;
 const size_t            kDefaultMyNCBITestFailPeriodSec = 20;
+const bool              kDefaultLogPeerIPAlways = false;
 
 SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpPort(0),
@@ -193,7 +195,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBIDnsResolveFailPeriodSec(kDefaultMyNCBIDnsResolveFailPeriodSec),
     m_MyNCBITestWebCubbyUser(kDefaultMyNCBITestWebCubbyUser),
     m_MyNCBITestOkPeriodSec(kDefaultMyNCBITestOkPeriodSec),
-    m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec)
+    m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec),
+    m_LogPeerIPAlways(kDefaultLogPeerIPAlways)
 {}
 
 
@@ -225,6 +228,8 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
 
     x_ReadMyNCBISection(registry);
     x_ReadCountersSection(registry);
+
+    x_ReadLogSection(registry);
 }
 
 
@@ -706,6 +711,13 @@ void SPubseqGatewaySettings::x_ReadAdminSection(const CNcbiRegistry &   registry
                       m_AuthCommands[k].begin(), ::tolower);
         }
     }
+}
+
+
+void SPubseqGatewaySettings::x_ReadLogSection(const CNcbiRegistry &   registry)
+{
+    m_LogPeerIPAlways = registry.GetBool(kLogSection, "log_peer_ip_always",
+                                         kDefaultLogPeerIPAlways);
 }
 
 

@@ -161,6 +161,9 @@ struct SPubseqGatewaySettings
     size_t                              m_MyNCBITestOkPeriodSec;
     size_t                              m_MyNCBITestFailPeriodSec;
 
+    // [LOG]
+    bool                                m_LogPeerIPAlways;
+
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry,
                                    CPSGAlerts &  alerts);
@@ -186,6 +189,7 @@ private:
                                    CPSGAlerts &  alerts);
     void x_ReadMyNCBISection(const CNcbiRegistry &   registry);
     void x_ReadCountersSection(const CNcbiRegistry &   registry);
+    void x_ReadLogSection(const CNcbiRegistry &   registry);
 
     unsigned long x_GetDataSize(const CNcbiRegistry &  registry,
                                 const string &  section,
