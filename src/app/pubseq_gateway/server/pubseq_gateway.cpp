@@ -841,6 +841,11 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
     if (!user_agent.empty())
         extra.Print(kUserAgentApplog, user_agent);
 
+
+    // The [log]/log_peer_ip_always may overwrite the need_peer_ip value
+    if (m_Settings.m_LogPeerIPAlways)
+        need_peer_ip = true;
+
     req.PrintParams(extra, need_peer_ip);
     req.PrintLogFields(m_LogFields);
 
