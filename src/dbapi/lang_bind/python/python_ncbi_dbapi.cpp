@@ -4701,7 +4701,7 @@ PyObject* init_common(const string& module_name)
 {
     if (CNcbiApplication::Instance() == NULL) {
         static CSafeStaticPtr<CFakeApplication> s_app;
-        s_app->Init();
+        s_app->FlushDiag(nullptr);
         
         s_OrigDiagHandler = GetDiagHandler(true);
         SetDiagHandler(new CPythonDiagHandler);
