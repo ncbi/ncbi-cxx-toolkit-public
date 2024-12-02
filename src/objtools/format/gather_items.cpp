@@ -1617,7 +1617,7 @@ static string s_GetUserObjectTypeOrClass(const CUser_object& uop)
         int id = typ.GetId();
         return NStr::IntToString(id);
     }
-    return "";
+    return kEmptyStr;
 }
 
 static bool s_SeqDescCompare(const CConstRef<CSeqdesc>& desc1,
@@ -1631,8 +1631,8 @@ static bool s_SeqDescCompare(const CConstRef<CSeqdesc>& desc1,
     if (chs1 == CSeqdesc::e_User && chs2 == CSeqdesc::e_User) {
         const CUser_object& uop1 = desc1->GetUser();
         const CUser_object& uop2 = desc2->GetUser();
-        const string& str1 = s_GetUserObjectTypeOrClass(uop1);
-        const string& str2 = s_GetUserObjectTypeOrClass(uop2);
+        string str1 = s_GetUserObjectTypeOrClass(uop1);
+        string str2 = s_GetUserObjectTypeOrClass(uop2);
         if (str1.length() > 0 && str2.length() > 0) {
             bool issc1 = (bool) (str1 == "StructuredComment");
             bool issc2 = (bool) (str2 == "StructuredComment");
