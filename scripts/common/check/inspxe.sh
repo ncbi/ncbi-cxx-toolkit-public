@@ -18,7 +18,7 @@ if test -z "$INSPECTOR_2024_DIR"; then
    echo "Cannot find Intel Inspector 2024."
    exit 1 
 fi
-inspxe=`echo $(cygpath -u $INSPECTOR_2019_DIR) | sed 's| |\ |g'`/bin32/inspxe-cl
+inspxe=`echo $(cygpath -u $INSPECTOR_2024_DIR) | sed 's| |\ |g'`/bin64/inspxe-cl
 
 
 # Result directory name
