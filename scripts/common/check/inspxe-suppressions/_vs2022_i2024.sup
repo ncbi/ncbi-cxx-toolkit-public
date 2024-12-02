@@ -1,0 +1,82 @@
+
+# Visual Studio 2022 + Intel Inspector 2024 specific suppressions | false positives
+
+
+suppression = {
+	name = "NStr::Split() / __std_find_trivial_impl"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>",src=vector_algorithms.cpp;
+			func=Advance,src=ncbistr.cpp;
+			func=SplitInTwo,src=ncbistr.cpp;
+		}
+	}
+}
+suppression = {
+	name = "CCompressionStreambuf / zlib / inflate"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=inflate,src=inflate.c;
+			func="ncbi::CZipDecompressor::Process(char const *,unsigned __int64,char *,unsigned __int64,unsigned __int64 *,unsigned __int64 *)",src=zlib.cpp;
+		}
+		allocation={
+			...;
+			func="ncbi::CCompressionStreambuf::CCompressionStreambuf(class std::basic_ios<char,struct std::char_traits<char> > *,class ncbi::CCompressionStreamProcessor *,class ncbi::CCompressionStreamProcessor *)",src=streambuf.cpp;
+			func=Create,src=stream.cpp;
+		}
+	}
+}
+suppression = {
+	name = "ConnNetInfo_CloneInternal"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=ConnNetInfo_CloneInternal,src=ncbi_connutil.c;
+			func=ConnNetInfo_Clone,src=ncbi_connutil.c;
+		}
+		allocation={
+			...;
+			func=ConnNetInfo_CloneInternal,src=ncbi_connutil.c;
+			func=ConnNetInfo_Clone,src=ncbi_connutil.c;
+		}
+	}
+}
+suppression = {
+	name = "boost / "boost::runtime::basic_param"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_mismatch_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, const unsigned __int64)",src=vector_algorithms.cpp;
+			func=_Mismatch_vectorized,src=xtree;
+			func=_Emplace,src=parameter.hpp;
+			func="boost::unit_test::runtime_config::`anonymous namespace'::register_parameters(class boost::runtime::parameters_store & const)",src=unit_test_parameters.ipp;
+		}
+		allocation={
+			...;
+			func=_Allocate,src=xstring;
+			func="boost::runtime::basic_param::basic_param(class boost::runtime::basic_param const &)";
+		}
+	}
+}
+suppression = {
+	name = "s_CreateHttpConnector"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
+			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
+			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
+		}
+	}
+}
