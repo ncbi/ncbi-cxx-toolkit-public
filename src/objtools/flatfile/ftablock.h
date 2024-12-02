@@ -338,6 +338,7 @@ public:
     void      SetXmlData(XmlIndex* p) { mpData.ptr = p; }
     XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(mpData.ptr); }
     bool      hasData() const { return mbSubData || mpData.ptr != nullptr; }
+    void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
