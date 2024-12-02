@@ -1602,6 +1602,22 @@ static int s_StrucCommOrder(const string&str) {
     return 1000;
 }
 
+static string s_GetUserObjectTypeOrClass(const CUser_object& uop)
+{
+    const CUser_object::TType &typ = uop.GetType();
+    if (typ.IsStr()) {
+        return typ.GetStr();
+    }
+    if (uop.IsSetClass()) {
+        return uop.GetClass();
+    }
+    if (typ.IsId()) {
+        int id = typ.GetId();
+        return NStr::IntToString(id);
+    }
+    return "";
+}
+
 static bool s_SeqDescCompare(const CConstRef<CSeqdesc>& desc1,
                              const CConstRef<CSeqdesc>& desc2)
 {
@@ -1613,11 +1629,9 @@ static bool s_SeqDescCompare(const CConstRef<CSeqdesc>& desc1,
     if (chs1 == CSeqdesc::e_User && chs2 == CSeqdesc::e_User) {
         const CUser_object& uop1 = desc1->GetUser();
         const CUser_object& uop2 = desc2->GetUser();
-        const CUser_object::TType &typ1 = uop1.GetType();
-        const CUser_object::TType &typ2 = uop2.GetType();
-        if (typ1.IsStr() && typ2.IsStr()) {
-            const string& str1 = typ1.GetStr();
-            const string& str2 = typ2.GetStr();
+        const string& str1 = s_GetUserObjectTypeOrClass(uop1);
+        const string& str2 = s_GetUserObjectTypeOrClass(uop2);
+        if (str1.length() > 0 && str2.length() > 0) {
             bool issc1 = (bool) (str1 == "StructuredComment");
             bool issc2 = (bool) (str2 == "StructuredComment");
             if (issc1 && issc2) {
