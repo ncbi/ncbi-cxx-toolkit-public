@@ -4824,7 +4824,11 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         ibp->drop = true;
         for (; dab; dab = dabnext) {
             dabnext = dab->mpNext;
-            FreeFeatBlk(dab->GetSubData(), pp->format);
+            if (dab->hasData()) {
+                FreeFeatBlk(dab->GetSubData(), pp->format);
+                dab->mpData.subblocks = nullptr;
+                dab->mbSubData        = false;
+            }
             if (pp->format == Parser::EFormat::XML)
                 dab->SimpleDelete();
         }
