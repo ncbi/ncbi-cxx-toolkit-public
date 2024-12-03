@@ -3977,6 +3977,7 @@ KESC	s	Keene State College, Department of Biology
 KF	s	Kerman University of Medical Sciences			
 KFBG	s	Kadoorie Farm and Botanic Garden			
 KFCC	c	Korean Federation of Culture Collection			
+KFGB	cb	Kostrzyca Forest Gene Bank			
 KFHERB	s	Kerman Medical University			
 KFI	s	Hongnung Arboretum, Silviculture Department			
 KFNZ	s	Kenneth J. Fox, [deceased]			
