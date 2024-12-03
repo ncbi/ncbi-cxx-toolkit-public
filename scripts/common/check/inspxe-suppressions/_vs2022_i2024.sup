@@ -3,7 +3,49 @@
 
 
 suppression = {
-	name = "NStr::Split() / __std_find_trivial_impl"
+	name = "ucrtbase.dll /stat64"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=stat64;
+		}
+		allocation={
+			...;
+			mod=ucrtbase.dll,func=stat64;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.dll / putenv()"
+	type = {invalid_call}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlSetEnvironmentVar;
+			...;
+			mod=ucrtbase.dll,func=getenv_s;
+		}
+	}
+}
+suppression = {
+	name = "s_CreateHttpConnector"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
+			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
+			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "NStr::Split() / __std_find_trivial_impl - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -15,18 +57,16 @@ suppression = {
 	}
 }
 suppression = {
-	name = "CCompressionStreambuf / zlib / inflate"
-	type = {uninitialized_memory_access}
+	name = "NStr::Split() /  __std_find_trivial_impl - 2"
+	type = {invalid_memory_access}
 	stacks = {
 		{
 			...;
-			func=inflate,src=inflate.c;
-			func="ncbi::CZipDecompressor::Process(char const *,unsigned __int64,char *,unsigned __int64,unsigned __int64 *,unsigned __int64 *)",src=zlib.cpp;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)",src=vector_algorithms.cpp;
 		}
 		allocation={
 			...;
-			func="ncbi::CCompressionStreambuf::CCompressionStreambuf(class std::basic_ios<char,struct std::char_traits<char> > *,class ncbi::CCompressionStreamProcessor *,class ncbi::CCompressionStreamProcessor *)",src=streambuf.cpp;
-			func=Create,src=stream.cpp;
+			mod=ucrtbase.dll,func=wsetlocale;
 		}
 	}
 }
@@ -43,6 +83,22 @@ suppression = {
 			...;
 			func=ConnNetInfo_CloneInternal,src=ncbi_connutil.c;
 			func=ConnNetInfo_Clone,src=ncbi_connutil.c;
+		}
+	}
+}
+suppression = {
+	name = "CCompressionStreambuf / zlib / inflate"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=inflate,src=inflate.c;
+			func="ncbi::CZipDecompressor::Process(char const *,unsigned __int64,char *,unsigned __int64,unsigned __int64 *,unsigned __int64 *)",src=zlib.cpp;
+		}
+		allocation={
+			...;
+			func="ncbi::CCompressionStreambuf::CCompressionStreambuf(class std::basic_ios<char,struct std::char_traits<char> > *,class ncbi::CCompressionStreamProcessor *,class ncbi::CCompressionStreamProcessor *)",src=streambuf.cpp;
+			func=Create,src=stream.cpp;
 		}
 	}
 }
@@ -65,18 +121,53 @@ suppression = {
 	}
 }
 suppression = {
-	name = "s_CreateHttpConnector"
+	name = "bm / sse2_gap_find"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=bmsse2.h,func=sse2_gap_find;
+		}
+		allocation={
+			!!!;
+			src=bmblocks.h,func=allocate;
+		}
+	}
+}
+
+suppression = {
+	name = "crypt32.dll - CertEnumCertificatesInStore"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
 			...;
-			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
-			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
-		}
-		allocation={
-			...;
-			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
-			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
+			mod=crypt32.dll,func=CertEnumCertificatesInStore;
+			mod=crypt32.dll,func=I_CryptGetAsn1Encoder;
 		}
 	}
 }
+suppression = {
+	name = "crypt32.dll - I_CryptGetAsn1Encoder"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=crypt32.dll,func=I_CryptGetAsn1Encoder;
+		}
+	}
+}
+suppression = {
+	name = "crypt32.dll - CertCloseStore"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=crypt32.dll,func=CertCloseStore;
+		}
+		allocation={
+			...;
+			mod=crypt32.dll,func=CertCloseStore;
+		}
+	}
+}
+
