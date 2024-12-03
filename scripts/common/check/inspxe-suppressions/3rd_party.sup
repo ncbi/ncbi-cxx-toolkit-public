@@ -38,8 +38,19 @@ suppression = {
 		}
 	}
 }
+
 suppression = {
-	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258"
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258 - ima"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ncbi-vdb-md.dll,func=parse_decimal;
+		}
+	}
+}
+suppression = {
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258 - imap"
 	type = {invalid_memory_access_partial}
 	stacks = {
 		{
@@ -48,6 +59,41 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258 - umap"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ncbi-vdb-md.dll,func=parse_decimal;
+		}
+	}
+}
+suppression = {
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() - cannot confirm - VDB-5258 - uma"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ncbi-vdb-md.dll,func=parse_decimal;
+		}
+	}
+}
+suppression = {
+	name = "VDB - ncbi-vdb-md.dll - parse_decimal() / PageMapIteratorDataOffset_Ext - cannot confirm - VDB-5258 - umap"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ncbi-vdb-md.dll,func=PageMapIteratorDataOffset_Ext;
+		}
+		allocation={
+			...;
+			mod=ncbi-vdb-md.dll,func=parse_decimal;
+		}
+	}
+}
+
 suppression = {
 	name = "LIBXML - xmlLoadExternalEntity  - cannot do anything"
 	type = {invalid_memory_access_partial}
