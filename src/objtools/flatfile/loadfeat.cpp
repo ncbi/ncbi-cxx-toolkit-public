@@ -579,11 +579,11 @@ FeatBlk::~FeatBlk()
 
 void DataBlk::SetFeatData(FeatBlk* p)
 {
-    mpData.ptr = p;
+    mpData = p;
 }
 FeatBlk* DataBlk::GetFeatData() const
 {
-    return static_cast<FeatBlk*>(mpData.ptr);
+    return static_cast<FeatBlk*>(get<CFlatFileData*>(mpData));
 }
 
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
@@ -600,7 +600,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
         fbp     = dbp->GetFeatData();
         if (fbp) {
             delete fbp;
-            dbp->mpData.ptr = nullptr;
+            dbp->mpData = monostate();
         }
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
@@ -4826,8 +4826,8 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             dabnext = dab->mpNext;
             if (dab->hasData()) {
                 FreeFeatBlk(dab->GetSubData(), pp->format);
-                dab->mpData.subblocks = nullptr;
-                dab->mbSubData        = false;
+                dab->SetSubData(nullptr);
+                dab->mpData = monostate();
             }
             if (pp->format == Parser::EFormat::XML)
                 dab->SimpleDelete();
