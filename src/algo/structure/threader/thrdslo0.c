@@ -268,7 +268,11 @@ int slo0(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
 /* Signal an error if no alignment falls within the limits identified.        */
 /* This means the core motif is too big to be threaded by the query sequence. */
 /*----------------------------------------------------------------------------*/
-  if(ntmn>ctmx||ntmx<ctmn) return(0); 
+  if(ntmn>ctmx||ntmx<ctmn) {
+    free(no);
+    free(co);
+    return(0);
+  }
 
 /*----------------------------------------------------------------------------*/
 /* Reconcile n-terminal and c-terminal aligment limits                        */
@@ -290,7 +294,11 @@ int slo0(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
 
   if(qsq->sac.mn[cs]>=0) {
     lm1=qsq->sac.mn[cs];
-    if(lm1>qmx) return(0);
+    if(lm1>qmx) {
+        free(no);
+        free(co);
+        return(0);
+    }
   }
 /*----------------------------------------------------------------------------*/
 /* if(lm1>qmn) qmn=lm1;}                                                      */
@@ -300,7 +308,12 @@ int slo0(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
 #endif
   if(qsq->sac.mx[cs]>=0) {
     lm1=qsq->sac.mx[cs];
-    if(lm1<qmn) return(0); }
+    if(lm1<qmn) {
+        free(no);
+        free(co);
+        return(0);
+    }
+  }
 /*----------------------------------------------------------------------------*/
 /* if(lm1<qmx) qmx=lm1; }                                                     */
 /*----------------------------------------------------------------------------*/
@@ -317,7 +330,11 @@ int slo0(Fld_Mtf* mtf, Cor_Def* cdf, Qry_Seq* qsq, Cur_Loc* sli,
 /* If this is negative the current segment cannot be fitted onto the query    */
 /* sequence, even at it's minimum extent.  Return a zero error code.          */
 /*----------------------------------------------------------------------------*/
-  if(sl<0) return(0);
+  if(sl<0) {
+      free(no);
+      free(co);
+      return(0);
+  }
 
 /*----------------------------------------------------------------------------*/
 /* Define limits on of the current terminus using the maximum change in       */
