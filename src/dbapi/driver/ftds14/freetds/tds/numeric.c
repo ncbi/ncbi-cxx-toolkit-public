@@ -129,6 +129,12 @@ tds_numeric_to_string(const TDS_NUMERIC * numeric, char *s)
 		*--pnum = TDS_GET_UA2BE(&number[n - 1]);
 	if (n == 1)
 		*--pnum = number[n];
+    #ifdef __clang_analyzer__
+    // The line 'while (!*pnum)' is a clang analyzer false positive.
+    // The data in the tds_numeric_bytes_per_prec array is defined the way that
+    // an execution path considered by clang is not possible
+    [[clang::suppress]]
+    #endif
 	while (!*pnum) {
 		++pnum;
 		if (pnum == packet_end) {
