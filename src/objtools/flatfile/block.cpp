@@ -95,12 +95,11 @@ DataBlk::~DataBlk()
 
 void DataBlk::SetEntryData(EntryBlk* p)
 {
-    mpData.ptr = p;
+    mpData = p;
 }
 EntryBlk* DataBlk::GetEntryData() const
 {
-    _ASSERT(!mbSubData);
-    return static_cast<EntryBlk*>(mpData.ptr);
+    return static_cast<EntryBlk*>(get<CFlatFileData*>(mpData));
 }
 
 /**********************************************************
@@ -117,16 +116,18 @@ EntryBlk* DataBlk::GetEntryData() const
 
 void DataBlk::deleteData()
 {
-    if (! this->hasData())
+    if (holds_alternative<monostate>(mpData))
         return;
-    if (this->mbSubData) {
-        delete this->mpData.subblocks;
-        this->mpData.subblocks = nullptr;
-        this->mbSubData = false;
-    } else {
-        delete this->mpData.ptr;
+    if (holds_alternative<DataBlk*>(mpData)) {
+        auto& subblocks = get<DataBlk*>(mpData);
+        delete subblocks;
+        subblocks = nullptr;
+    } else if (holds_alternative<CFlatFileData*>(mpData)) {
+        auto& p = get<CFlatFileData*>(mpData);
+        delete p;
+        p = nullptr;
     }
-    this->mpData.ptr = nullptr;
+    mpData.emplace<monostate>();
 }
 
 void xFreeEntry(DataBlkPtr entry)
