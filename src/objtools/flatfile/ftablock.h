@@ -49,6 +49,7 @@
 
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 #include <forward_list>
+#include <variant>
 #include "valnode.h"
 
 BEGIN_NCBI_SCOPE
@@ -309,13 +310,12 @@ public:
         char*    offset = nullptr,
         size_t   len_   = 0) :
         mType(type_),
+        mpData(),
         mOffset(offset),
         len(len_),
         mDrop(false),
         mpNext(nullptr)
     {
-        mpData.ptr = nullptr;
-        mbSubData  = false;
     }
 
     // static void operator delete(void* p);
@@ -329,24 +329,21 @@ public:
     }
 
     // accessors to mpData
-    void      SetSubData(DataBlk* p) { mbSubData = true; mpData.subblocks = p; }
-    DataBlk*  GetSubData() const { return mbSubData ? mpData.subblocks : nullptr; }
+    void      SetSubData(DataBlk* p) { mpData = p; }
+    DataBlk*  GetSubData() const { return get<DataBlk*>(mpData); }
     void      SetEntryData(EntryBlk*);
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
-    void      SetXmlData(XmlIndex* p) { mpData.ptr = p; }
-    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(mpData.ptr); }
-    bool      hasData() const { return mbSubData || mpData.ptr != nullptr; }
+    void      SetXmlData(XmlIndex* p) { mpData = p; }
+    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(get<CFlatFileData*>(mpData)); }
+    bool      hasData() const { return ! holds_alternative<monostate>(mpData); }
     void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
-    bool           mbSubData = false;
-    union {
-        CFlatFileData* ptr;  // any pointer type points to information block
-        DataBlk*       subblocks;
-    } mpData;
+    std::variant<monostate, DataBlk*, CFlatFileData*>
+                   mpData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
     string         mpQscore; // points to quality score buffer
