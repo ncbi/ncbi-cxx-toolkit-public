@@ -583,7 +583,7 @@ void DataBlk::SetFeatData(FeatBlk* p)
 }
 FeatBlk* DataBlk::GetFeatData() const
 {
-    return static_cast<FeatBlk*>(get<CFlatFileData*>(mpData));
+    return get<FeatBlk*>(mpData);
 }
 
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
