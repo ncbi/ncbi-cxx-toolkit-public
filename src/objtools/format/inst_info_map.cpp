@@ -52,7 +52,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_bccm_base("https://bccm.belspo.be/catalogues/bm-details?accession_number=ULC%20");
     static const string  s_bcrc_base("https://catalog.bcrc.firdi.org.tw/BSAS_cart/controller?event=SEARCH&bcrc_no=");
     static const string  s_cas_base("http://collections.calacademy.org/herp/specimen/");
-    static const string  s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
+    static const string  s_cbs_base("https://wi.knaw.nl/page/fungal_display/fields/name/CBS%20");
     static const string  s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
     static const string  s_ccmp_base("https://ncma.bigelow.org/ccmp");
     static const string  s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
