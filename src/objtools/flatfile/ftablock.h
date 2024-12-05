@@ -304,7 +304,7 @@ public:
         char*    offset = nullptr,
         size_t   len_   = 0) :
         mType(type_),
-        mpData(),
+        mData(),
         mOffset(offset),
         len(len_),
         mDrop(false),
@@ -322,22 +322,22 @@ public:
         delete this;
     }
 
-    // accessors to mpData
-    void      SetSubData(DataBlk* p) { mpData = p; }
-    DataBlk*  GetSubData() const { return get<DataBlk*>(mpData); }
+    // accessors to mData
+    void      SetSubData(DataBlk* p) { mData = p; }
+    DataBlk*  GetSubData() const { return std::get<DataBlk*>(mData); }
     void      SetEntryData(EntryBlk*);
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
-    void      SetXmlData(XmlIndex* p) { mpData = p; }
-    XmlIndex* GetXmlData() const { return get<XmlIndex*>(mpData); }
-    bool      hasData() const { return ! holds_alternative<monostate>(mpData); }
+    void      SetXmlData(XmlIndex* p) { mData = p; }
+    XmlIndex* GetXmlData() const { return std::get<XmlIndex*>(mData); }
+    bool      hasData() const { return ! holds_alternative<monostate>(mData); }
     void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
     std::variant<monostate, DataBlk*, EntryBlk*, FeatBlk*, XmlIndex*>
-                   mpData;
+                   mData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
     string         mpQscore; // points to quality score buffer

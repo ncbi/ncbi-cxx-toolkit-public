@@ -96,11 +96,11 @@ DataBlk::~DataBlk()
 
 void DataBlk::SetEntryData(EntryBlk* p)
 {
-    mpData = p;
+    mData = p;
 }
 EntryBlk* DataBlk::GetEntryData() const
 {
-    return get<EntryBlk*>(mpData);
+    return std::get<EntryBlk*>(mData);
 }
 
 /**********************************************************
@@ -117,26 +117,26 @@ EntryBlk* DataBlk::GetEntryData() const
 
 void DataBlk::deleteData()
 {
-    if (holds_alternative<monostate>(mpData))
+    if (holds_alternative<monostate>(mData))
         return;
-    if (holds_alternative<DataBlk*>(mpData)) {
-        auto& subblocks = get<DataBlk*>(mpData);
+    if (holds_alternative<DataBlk*>(mData)) {
+        auto& subblocks = std::get<DataBlk*>(mData);
         delete subblocks;
         subblocks = nullptr;
-    } else if (holds_alternative<EntryBlk*>(mpData)) {
-        auto& p = get<EntryBlk*>(mpData);
+    } else if (holds_alternative<EntryBlk*>(mData)) {
+        auto& p = std::get<EntryBlk*>(mData);
         delete p;
         p = nullptr;
-    } else if (holds_alternative<FeatBlk*>(mpData)) {
-        auto& p = get<FeatBlk*>(mpData);
+    } else if (holds_alternative<FeatBlk*>(mData)) {
+        auto& p = std::get<FeatBlk*>(mData);
         delete p;
         p = nullptr;
-    } else if (holds_alternative<XmlIndex*>(mpData)) {
-        auto& p = get<XmlIndex*>(mpData);
+    } else if (holds_alternative<XmlIndex*>(mData)) {
+        auto& p = std::get<XmlIndex*>(mData);
         delete p;
         p = nullptr;
     }
-    mpData.emplace<monostate>();
+    mData.emplace<monostate>();
 }
 
 void xFreeEntry(DataBlkPtr entry)
