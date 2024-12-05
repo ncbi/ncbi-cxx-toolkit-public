@@ -334,7 +334,7 @@ void SetAlignedResiduesOnSequence(const CRef< CSeq_align >& align, const string&
 
     //  problem if alignedResCtr != length; return null pointer
     if (alignedResCtr != length) {
-        delete pAlignedRes;
+        delete [] pAlignedRes;
         pAlignedRes = NULL;
     }
     
