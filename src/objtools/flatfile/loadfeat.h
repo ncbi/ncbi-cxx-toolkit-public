@@ -40,7 +40,7 @@
 #include "asci_blk.h"
 
 BEGIN_NCBI_SCOPE
-struct FeatBlk : public CFlatFileData {
+struct FeatBlk {
     Int4   num      = 0;
     string key;
     char*  location = nullptr;
