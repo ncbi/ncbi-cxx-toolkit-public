@@ -1055,7 +1055,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CBPF\ts\tConservatoire Botanique Pierre Fabre\t\t\t",
 "CBPM\ts\tFundacao Oswaldo Cruz - FIOCRUZ (Oswaldo Cruz Foundation)\t\t\t",
 "CBRA\ts\tCraveri Civic Museum of Natural History\t\t\t",
-"CBS\tsc\tWesterdijk Fungal Biodiversity Institute\t\thttps://wi.knaw.nl/page/fungal_display/name/CBS%20\t",
+"CBS\tsc\tWesterdijk Fungal Biodiversity Institute\t\thttps://wi.knaw.nl/page/fungal_display/fields/name/CBS%20\t",
 "CBSIZA\ts\tCaspian Biological Station Institute of Zoology\t\t\t",
 "CBSS\ts\tCroatian Biospeleological Society\t\t\t",
 "CBTCCCAS\tc\tThe Cell Bank of Type Culture Collection of Chinese Academy of Sciences\t\t\t",
