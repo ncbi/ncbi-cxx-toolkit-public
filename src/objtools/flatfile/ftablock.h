@@ -149,14 +149,8 @@ struct TokenStatBlk {
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
-class CFlatFileData
-{
-public:
-    virtual ~CFlatFileData() = default;
-};
 
-
-struct XmlIndex : public CFlatFileData {
+struct XmlIndex {
     Int4      tag        = 0;
     Int4      order      = 0;
     size_t    start      = 0; /* Offset from the beginning of the record, not file! */
@@ -336,13 +330,13 @@ public:
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
     void      SetXmlData(XmlIndex* p) { mpData = p; }
-    XmlIndex* GetXmlData() const { return static_cast<XmlIndex*>(get<CFlatFileData*>(mpData)); }
+    XmlIndex* GetXmlData() const { return get<XmlIndex*>(mpData); }
     bool      hasData() const { return ! holds_alternative<monostate>(mpData); }
     void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
-    std::variant<monostate, DataBlk*, CFlatFileData*>
+    std::variant<monostate, DataBlk*, EntryBlk*, FeatBlk*, XmlIndex*>
                    mpData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
@@ -354,7 +348,7 @@ using DataBlkPtr = DataBlk*;
 
 
 //  ============================================================================
-struct EntryBlk : public CFlatFileData {
+struct EntryBlk {
     //  ============================================================================
     DataBlkPtr                chain = nullptr; /* a header points to key-word
                                            block information */
