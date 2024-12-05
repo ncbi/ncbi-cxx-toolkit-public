@@ -292,10 +292,6 @@ SPsgBlobInfo::SPsgBlobInfo(const CPSG_BlobInfo& blob_info)
         blob_state_flags |= CBioseq_Handle::fState_withdrawn;
     }
 
-    if ( 1 ) { // for testing possible 'dead' inconsistency during DB replication 
-        blob_state_flags |= CBioseq_Handle::fState_dead;
-    }
-
     auto lm = blob_id->GetLastModified(); // last_modified is in milliseconds
     last_modified = lm.IsNull()? 0: lm.GetValue();
 }
