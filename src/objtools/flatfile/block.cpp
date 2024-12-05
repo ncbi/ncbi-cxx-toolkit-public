@@ -39,6 +39,7 @@
 #include "ftaerr.hpp"
 #include "ftablock.h"
 #include "indx_blk.h"
+#include "loadfeat.h"
 #include "indx_def.h"
 #include "utilfun.h"
 
@@ -99,7 +100,7 @@ void DataBlk::SetEntryData(EntryBlk* p)
 }
 EntryBlk* DataBlk::GetEntryData() const
 {
-    return static_cast<EntryBlk*>(get<CFlatFileData*>(mpData));
+    return get<EntryBlk*>(mpData);
 }
 
 /**********************************************************
@@ -122,8 +123,16 @@ void DataBlk::deleteData()
         auto& subblocks = get<DataBlk*>(mpData);
         delete subblocks;
         subblocks = nullptr;
-    } else if (holds_alternative<CFlatFileData*>(mpData)) {
-        auto& p = get<CFlatFileData*>(mpData);
+    } else if (holds_alternative<EntryBlk*>(mpData)) {
+        auto& p = get<EntryBlk*>(mpData);
+        delete p;
+        p = nullptr;
+    } else if (holds_alternative<FeatBlk*>(mpData)) {
+        auto& p = get<FeatBlk*>(mpData);
+        delete p;
+        p = nullptr;
+    } else if (holds_alternative<XmlIndex*>(mpData)) {
+        auto& p = get<XmlIndex*>(mpData);
         delete p;
         p = nullptr;
     }
