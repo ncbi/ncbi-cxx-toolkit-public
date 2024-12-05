@@ -152,7 +152,7 @@ NCBIcomponent_report(full-blastdb)
 #############################################################################
 # NCBI_C
 if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
-    set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/ncbi")
+    set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/c++.by-date/production/20231209/C_TOOLKIT")
 
     get_directory_property(_foo_defs COMPILE_DEFINITIONS)
     if("${_foo_defs}" MATCHES NCBI_INT4_GI)
