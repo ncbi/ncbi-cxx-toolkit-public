@@ -1019,7 +1019,7 @@ CBNU	s	Department of Forest Science, Chungbuk National University
 CBPF	s	Conservatoire Botanique Pierre Fabre			
 CBPM	s	Fundacao Oswaldo Cruz - FIOCRUZ (Oswaldo Cruz Foundation)			
 CBRA	s	Craveri Civic Museum of Natural History			
-CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/name/CBS%20	
+CBS	sc	Westerdijk Fungal Biodiversity Institute		https://wi.knaw.nl/page/fungal_display/fields/name/CBS%20	
 CBSIZA	s	Caspian Biological Station Institute of Zoology			
 CBSS	s	Croatian Biospeleological Society			
 CBTCCCAS	c	The Cell Bank of Type Culture Collection of Chinese Academy of Sciences			
