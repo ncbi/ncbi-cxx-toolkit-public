@@ -579,11 +579,11 @@ FeatBlk::~FeatBlk()
 
 void DataBlk::SetFeatData(FeatBlk* p)
 {
-    mpData = p;
+    mData = p;
 }
 FeatBlk* DataBlk::GetFeatData() const
 {
-    return get<FeatBlk*>(mpData);
+    return std::get<FeatBlk*>(mData);
 }
 
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
@@ -600,7 +600,7 @@ static void FreeFeatBlk(DataBlkPtr dbp, Parser::EFormat format)
         fbp     = dbp->GetFeatData();
         if (fbp) {
             delete fbp;
-            dbp->mpData = monostate();
+            dbp->mData = monostate();
         }
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
@@ -4827,7 +4827,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (dab->hasData()) {
                 FreeFeatBlk(dab->GetSubData(), pp->format);
                 dab->SetSubData(nullptr);
-                dab->mpData = monostate();
+                dab->mData = monostate();
             }
             if (pp->format == Parser::EFormat::XML)
                 dab->SimpleDelete();
