@@ -3,7 +3,83 @@
 
 
 suppression = {
-	name = "ucrtbase.dll /stat64"
+	name = "vector / __std_find_trivial_impl - 1"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>",src=vector_algorithms.cpp;
+		}
+	}
+}
+suppression = {
+	name = "vector / __std_find_trivial_impl - 2"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)",src=vector_algorithms.cpp;
+		}
+	}
+}
+suppression = {
+	name = "vector / __std_find_trivial_impl - 3"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_4,unsigned int>(const void *, const void *, unsigned int)";
+		}
+	}
+}
+suppression = {
+	name = "vector / __std_find_trivial_impl - 4"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=vector_algorithms.cpp,func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_4,unsigned int>(const void *, const void *, unsigned int)";
+		}
+		allocation={
+			!!!;
+			src=vector,func=_Allocate;
+		}
+	}
+}
+suppression = {
+	name = "vector / __std_find_trivial_impl - 5"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=vector_algorithms.cpp,func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_4,unsigned int>(const void *, const void *, unsigned int)";
+		}
+		allocation={
+			!!!;
+			src=vector,func=_Allocate;
+		}
+	}
+}
+
+suppression = {
+	name = "ucrtbase.dll / any low level functions via setlocale"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=setlocale;
+			...;
+			func=_Construct,src=xlocale;
+		}
+		allocation={
+			...;
+			func=_Construct,src=xlocale;
+		}
+	}
+}
+
+suppression = {
+	name = "ucrtbase.dll / stat64"
 	type = {invalid_memory_access}
 	stacks = {
 		{
@@ -17,7 +93,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ucrtbase.dll / putenv()"
+	name = "ucrtbase.dll / putenv"
 	type = {invalid_call}
 	stacks = {
 		{
@@ -28,6 +104,7 @@ suppression = {
 		}
 	}
 }
+
 suppression = {
 	name = "s_CreateHttpConnector"
 	type = {uninitialized_memory_access}
@@ -41,32 +118,6 @@ suppression = {
 			...;
 			func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)",src=ncbi_http_connector.c;
 			func="s_CreateConnector(const struct SConnNetInfo *, const char *, unsigned int,  *, void *,  *,  *)",src=ncbi_http_connector.c;
-		}
-	}
-}
-suppression = {
-	name = "NStr::Split() / __std_find_trivial_impl - 1"
-	type = {invalid_memory_access_partial}
-	stacks = {
-		{
-			...;
-			func="__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>",src=vector_algorithms.cpp;
-			func=Advance,src=ncbistr.cpp;
-			func=SplitInTwo,src=ncbistr.cpp;
-		}
-	}
-}
-suppression = {
-	name = "NStr::Split() /  __std_find_trivial_impl - 2"
-	type = {invalid_memory_access}
-	stacks = {
-		{
-			...;
-			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)",src=vector_algorithms.cpp;
-		}
-		allocation={
-			...;
-			mod=ucrtbase.dll,func=wsetlocale;
 		}
 	}
 }
@@ -102,6 +153,7 @@ suppression = {
 		}
 	}
 }
+
 suppression = {
 	name = "boost / "boost::runtime::basic_param"
 	type = {uninitialized_memory_access_partial}
