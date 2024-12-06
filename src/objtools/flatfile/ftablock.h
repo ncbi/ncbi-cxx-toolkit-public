@@ -127,19 +127,50 @@ struct GapFeats {
 
     objects::CSeq_gap::TType                      asn_gap_type = objects::CSeq_gap::eType_unknown;
     objects::CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
-
-    GapFeats* next = nullptr;
+};
+struct GapFeatsNode : GapFeats {
+    GapFeatsNode* next = nullptr;
 };
 struct GapFeatsIter {
-    GapFeats* node = nullptr;
-    GapFeatsIter(GapFeats* p) :
+    GapFeatsNode* node = nullptr;
+    GapFeatsIter(GapFeatsNode* p) :
         node(p) {}
     GapFeatsIter(const GapFeatsIter&) = default;
     operator bool() const { return node != nullptr; }
-    GapFeats* operator->() { return node; }
-    void      operator++() { node = node->next; }
+    GapFeats*    operator->() const { return node; }
+    void         operator++() { node = node->next; }
+    GapFeatsIter Next() { return node->next; }
 };
 using GapFeatsPtr = GapFeatsIter;
+
+struct TGapFeatsList {
+    struct GapFeatsNodeBase {
+        GapFeatsNode* next = nullptr;
+    } head;
+    bool empty() const
+    {
+        return head.next == nullptr;
+    }
+    void         clear() { head.next = nullptr; }
+    GapFeatsIter begin()
+    {
+        return head.next;
+    }
+    GapFeatsIter end() const
+    {
+        return GapFeatsIter(nullptr);
+    }
+    void push_front(GapFeatsNode* new_node)
+    {
+        new_node->next = head.next;
+        head.next      = new_node;
+    }
+    static void insert_after(GapFeatsIter pos, GapFeatsNode* new_node)
+    {
+        new_node->next = pos.node->next;
+        pos.node->next = new_node;
+    }
+};
 
 using TokenBlkList = forward_list<string>;
 
@@ -215,7 +246,7 @@ struct Indexblk {
     bool        tsa_allowed    = false;
     LocusCont   lc;
     string      moltype; /* the value of /mol_type qual */
-    GapFeatsPtr gaps = nullptr;
+    TGapFeatsList gaps;
 
     TokenBlkList secaccs;
     XmlIndexPtr  xip             = nullptr;
@@ -362,7 +393,7 @@ using EntryBlkPtr = EntryBlk*;
 
 void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
-void GapFeatsFree(GapFeatsPtr gfp);
+void GapFeatsFree(TGapFeatsList& gf);
 void XMLIndexFree(XmlIndexPtr xip);
 
 

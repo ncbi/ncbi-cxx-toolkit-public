@@ -331,12 +331,13 @@ static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
 }
 
 /**********************************************************/
-void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
+void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
 {
     if (! bioseq.GetInst().IsSetExt() || ! bioseq.GetInst().GetExt().IsDelta() ||
-        ! gfp)
+        gf.empty())
         return;
 
+    GapFeatsPtr                 gfp    = gf.begin();
     CDelta_ext::Tdata&          deltas = bioseq.SetInst().SetExt().SetDelta();
     CDelta_ext::Tdata::iterator delta  = deltas.begin();
     for (; delta != deltas.end(); ++delta) {
@@ -379,14 +380,14 @@ void AssemblyGapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 }
 
 /**********************************************************/
-void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
+void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
 {
     const Char* p;
     Int4        prevto;
     Int4        nextfrom;
     Int4        i;
 
-    if (! gfp || ! bioseq.GetInst().IsSetSeq_data())
+    if (gf.empty() || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
     const string& sequence = bioseq.GetInst().GetSeq_data().GetIupacna();
@@ -395,8 +396,8 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
         return;
 
     prevto = 0;
-    for (GapFeatsPtr tgfp = gfp; tgfp; ++tgfp) {
-        if (auto const nxt = tgfp->next) {
+    for (GapFeatsPtr tgfp = gf.begin(); tgfp != gf.end(); ++tgfp) {
+        if (auto const nxt = tgfp.Next()) {
             p = sequence.c_str() + tgfp->to;
             for (i = tgfp->to + 1; i < nxt->from; p++, i++)
                 if (*p != 'N')
@@ -445,7 +446,7 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
     CDelta_ext::Tdata deltas;
 
     prevto = 0;
-    for (GapFeatsPtr tgfp = gfp;; ++tgfp) {
+    for (GapFeatsPtr tgfp = gf.begin();; ++tgfp) {
         Int4 len = 0;
 
         CRef<CDelta_seq> delta(new CDelta_seq);
@@ -475,7 +476,7 @@ void GapsToDelta(CBioseq& bioseq, GapFeatsPtr gfp, bool* drop)
 
         prevto = tgfp->to;
 
-        if (! tgfp->next) {
+        if (tgfp.Next() == gf.end()) {
             if (bioseq.GetLength() - prevto > 0) {
                 delta.Reset(new CDelta_seq);
 
@@ -2758,7 +2759,7 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 /**********************************************************/
 void fta_set_molinfo_completeness(CBioseq& bioseq, const Indexblk* ibp)
 {
-    if (bioseq.GetInst().GetTopology() != CSeq_inst::eTopology_circular || (ibp && ibp->gaps))
+    if (bioseq.GetInst().GetTopology() != CSeq_inst::eTopology_circular || (ibp && ! ibp->gaps.empty()))
         return;
 
     CMolInfo* mol_info = nullptr;

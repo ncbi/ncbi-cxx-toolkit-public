@@ -58,12 +58,12 @@ struct QSStruct {
 using QSStructList = std::forward_list<QSStruct>;
 
 /**********************************************************/
-void GapFeatsFree(GapFeatsPtr gfp)
+void GapFeatsFree(TGapFeatsList& gf)
 {
-    GapFeats* tgfp;
+    GapFeatsIter tgfp = nullptr;
 
-    for (; gfp; gfp = tgfp) {
-        tgfp = gfp->next;
+    for (GapFeatsPtr gfp = gf.begin(); gfp != gf.end(); gfp = tgfp) {
+        tgfp = gfp.Next();
         delete gfp.node;
     }
 }
@@ -174,7 +174,7 @@ void FreeIndexblk(IndexblkPtr ibp)
     if (! ibp)
         return;
 
-    if (ibp->gaps)
+    if (! ibp->gaps.empty())
         GapFeatsFree(ibp->gaps);
 
     if (ibp->xip)
