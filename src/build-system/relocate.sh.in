@@ -17,6 +17,7 @@ bld_tree=`(cd "${script_dir}/.." ; pwd)`
 status_dir=$bld_tree/status
 extra_sed=
 copy_times=false
+status=0
 
 for x_arg in "$@" ; do
   case "$x_arg" in
@@ -52,6 +53,10 @@ rwcdr=run_with_cd_reporter.py
 
 for f in $files ; do
    fff="$script_dir/$f"
+   if test \! -f "$fff"; then
+      echo "[$script_name]  Warning: \"$f\" not found!"
+      continue
+   fi
    sed '
       s%^\(builddir *= *\).*%\1'$script_dir'%;
       s%^\(build_root *= *\).*%\1'$bld_tree'%;
@@ -74,7 +79,8 @@ for f in $files ; do
    ' "$fff" > "$fff.tmp"
    if test $? -ne 0 ; then
       echo "[$script_name]  Error in processing file \"$f\"!" 
-      exit 2
+      rm -f "$fff.tmp"
+      status=2
    fi
 done
 
@@ -87,19 +93,21 @@ sed '
 ' $script_dir/$rwcdr > $script_dir/$rwcdr.tmp
 if test $? -ne 0 ; then
    echo "[$script_name]  Error in processing file \"$rwcdr\"!" 
-   exit 2
+   rm -f $script_dir/$rwcdr.tmp
+   status=2
 fi
 
 chmod +x "$script_dir"/*.sh.tmp "$script_dir"/*.py.tmp
 
 for f in $files run_with_cd_reporter.py ; do
    fff="$script_dir/$f"
+   test -f "$fff.tmp"  ||  continue
    echo "  $f"
    test "$copy_times" = true  &&  touch -r "$fff.tmp" "$fff"
    rm -f "$fff"  &&  mv "$fff.tmp" "$fff"
    if test $? -ne 0 ; then
       echo "[$script_name]  Error in processing file \"$f\"!" 
-      exit 3
+      status=3
    fi
 done
 
@@ -112,7 +120,8 @@ gbench_move=$gbench_dir/bin/move-gbench.sh
 if [ -x $gbench_move ]; then
    echo GBench relocation started...
    echo $gbench_move --extra-sed "$extra_sed" $gbench_dir
-   $gbench_move --extra-sed "$extra_sed" $gbench_dir
+   $gbench_move --extra-sed "$extra_sed" $gbench_dir # || status=$?
 fi
 
 echo "Done."
+exit $status
