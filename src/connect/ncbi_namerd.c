@@ -1383,7 +1383,7 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
                 svccpy(buf + len, iter->arg, iter->arglen);
                 len += iter->arglen;
             }
-            if (iter->vallen  ||  iter->val) {
+            if (iter->val) {
                 buf[len++] = '/';
                 svccpy(buf + len, iter->val, iter->vallen);
                 len += iter->vallen;
