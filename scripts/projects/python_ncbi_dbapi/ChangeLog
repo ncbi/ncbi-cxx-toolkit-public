@@ -1,3 +1,7 @@
+Version 1.26.1 (2024-12-06):
+* Eliminate spurious output accidentally introduced when adding support
+  for configuration files in the previous version.
+
 Version 1.26.0 (2024-08-23):
 * Advance to version 28.0 of the stable C++ Toolkit components.
 * Honor configuration files: python_ncbi_dbapi.ini and/or .ncbirc.
