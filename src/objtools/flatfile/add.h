@@ -48,8 +48,8 @@ bool no_reference(const objects::CBioseq& bioseq);
 bool check_cds(const DataBlk& entry, Parser::EFormat format);
 void err_install(const Indexblk* ibp, bool accver);
 void SeqToDelta(objects::CBioseq& bioseq, Int2 tech);
-void GapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, bool* drop);
-void AssemblyGapsToDelta(objects::CBioseq& bioseq, GapFeatsPtr gfp, bool* drop);
+void GapsToDelta(objects::CBioseq& bioseq, TGapFeatsList& gf, bool* drop);
+void AssemblyGapsToDelta(objects::CBioseq& bioseq, TGapFeatsList& gf, bool* drop);
 bool fta_strings_same(const char* s1, const char* s2);
 
 bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);

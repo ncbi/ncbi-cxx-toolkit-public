@@ -3192,7 +3192,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     // prev_gap     = 0;
     curr_gap     = 0;
     finished_gap = false;
-    for (ibp->gaps = nullptr; dbp; dbp = dbp->mpNext) {
+    for (ibp->gaps.clear(); dbp; dbp = dbp->mpNext) {
         if (ibp->drop)
             break;
         if (dbp->mType != type)
@@ -3414,7 +3414,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 ErrPostStr(sev, ERR_FEATURE_GapSizeEstLengthMissMatch, msg);
             }
 
-            for (gfp = ibp->gaps; gfp; ++gfp) {
+            for (gfp = ibp->gaps.begin(); gfp; ++gfp) {
                 if ((gfp->from >= from && gfp->from <= to) ||
                     (gfp->to >= from && gfp->to <= to) ||
                     (gfp->from <= from && gfp->to >= to)) {
@@ -3436,7 +3436,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             if (ibp->drop)
                 break;
 
-            gfp                   = new GapFeats;
+            gfp                   = new GapFeatsNode;
             gfp->from             = from;
             gfp->to               = to;
             gfp->estimated_length = estimated_length;
@@ -3450,29 +3450,26 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 gfp->asn_linkage_evidence.swap(asn_linkage_evidence);
                 asn_linkage_evidence.clear();
             }
-            gfp->next = nullptr;
 
-            if (! ibp->gaps) {
-                ibp->gaps = gfp;
+            if (ibp->gaps.empty()) {
+                ibp->gaps.push_front(gfp.node);
                 continue;
             }
 
-            if (ibp->gaps->from > from) {
-                gfp->next = ibp->gaps.node;
-                ibp->gaps = gfp;
+            if (ibp->gaps.begin()->from > from) {
+                ibp->gaps.push_front(gfp.node);
                 continue;
             }
 
-            if (! ibp->gaps->next) {
-                ibp->gaps->next = gfp.node;
+            if (ibp->gaps.begin().Next() == ibp->gaps.end()) {
+                ibp->gaps.insert_after(ibp->gaps.begin(), gfp.node);
                 continue;
             }
 
-            for (GapFeatsPtr tgfp = ibp->gaps; tgfp; ++tgfp) {
-                if (tgfp->next && tgfp->next->from < from)
+            for (GapFeatsPtr tgfp = ibp->gaps.begin(); tgfp; ++tgfp) {
+                if (tgfp.Next() != ibp->gaps.end() && tgfp.Next()->from < from)
                     continue;
-                gfp->next  = tgfp->next;
-                tgfp->next = gfp.node;
+                ibp->gaps.insert_after(tgfp, gfp.node);
                 break;
             }
         }
@@ -3482,12 +3479,12 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         }
     }
 
-    if (! ibp->gaps)
+    if (ibp->gaps.empty())
         return;
 
     if (ibp->drop) {
         GapFeatsFree(ibp->gaps);
-        ibp->gaps = nullptr;
+        ibp->gaps.clear();
     }
 }
 
