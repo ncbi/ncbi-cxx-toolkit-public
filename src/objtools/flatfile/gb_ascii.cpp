@@ -1504,12 +1504,12 @@ bool GenBankAsciiOrig(ParserPtr pp)
 
         if (bioseq->GetInst().IsNa()) {
             if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-                if (ibp->gaps)
+                if (! ibp->gaps.empty())
                     GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
                 else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
                          (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
                     SeqToDelta(*bioseq, ibp->htg);
-            } else if (ibp->gaps)
+            } else if (! ibp->gaps.empty())
                 AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
         }
 
