@@ -3414,7 +3414,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 ErrPostStr(sev, ERR_FEATURE_GapSizeEstLengthMissMatch, msg);
             }
 
-            for (gfp = ibp->gaps.begin(); gfp; ++gfp) {
+            for (gfp = ibp->gaps.begin(); gfp != ibp->gaps.end(); ++gfp) {
                 if ((gfp->from >= from && gfp->from <= to) ||
                     (gfp->to >= from && gfp->to <= to) ||
                     (gfp->from <= from && gfp->to >= to)) {
@@ -3466,7 +3466,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 continue;
             }
 
-            for (GapFeatsPtr tgfp = ibp->gaps.begin(); tgfp; ++tgfp) {
+            for (GapFeatsPtr tgfp = ibp->gaps.begin(); tgfp != ibp->gaps.end(); ++tgfp) {
                 if (tgfp.Next() != ibp->gaps.end() && tgfp.Next()->from < from)
                     continue;
                 ibp->gaps.insert_after(tgfp, gfp.node);

@@ -136,7 +136,7 @@ struct GapFeatsIter {
     GapFeatsIter(GapFeatsNode* p) :
         node(p) {}
     GapFeatsIter(const GapFeatsIter&) = default;
-    operator bool() const { return node != nullptr; }
+    bool operator==(const GapFeatsIter& other) const { return node == other.node; }
     GapFeats*    operator->() const { return node; }
     void         operator++() { node = node->next; }
     GapFeatsIter Next() { return node->next; }

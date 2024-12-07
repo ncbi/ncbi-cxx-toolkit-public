@@ -310,7 +310,7 @@ void err_install(const Indexblk* ibp, bool accver)
 }
 
 /**********************************************************/
-static void CreateSeqGap(CSeq_literal& seq_lit, GapFeatsPtr gfp)
+static void CreateSeqGap(CSeq_literal& seq_lit, GapFeats* gfp)
 {
     if (! gfp)
         return;
@@ -341,7 +341,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
     CDelta_ext::Tdata&          deltas = bioseq.SetInst().SetExt().SetDelta();
     CDelta_ext::Tdata::iterator delta  = deltas.begin();
     for (; delta != deltas.end(); ++delta) {
-        if (! gfp)
+        if (gfp == gf.end())
             break;
 
         if (! (*delta)->IsLiteral()) /* not Seq-lit */
@@ -354,18 +354,18 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
             break;
         }
 
-        CreateSeqGap(literal, gfp);
+        CreateSeqGap(literal, gfp.operator->());
 
         ++gfp;
     }
 
-    if (*drop || (delta == deltas.end() && ! gfp))
+    if (*drop || (delta == deltas.end() && gfp == gf.end()))
         return;
 
-    if (delta == deltas.end() && gfp) {
+    if (delta == deltas.end() && gfp != gf.end()) {
         ErrPostEx(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the assembly_gap features exceeds the number of CONTIG/CO line gaps. First extra assembly_gap is at \"%d..%d\".", gfp->from, gfp->to);
         *drop = true;
-    } else if (delta != deltas.end() && ! gfp) {
+    } else if (delta != deltas.end() && gfp == gf.end()) {
         for (; delta != deltas.end(); ++delta) {
             if ((*delta)->IsLiteral()) /* Seq-lit */
                 break;
@@ -397,7 +397,8 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
 
     prevto = 0;
     for (GapFeatsPtr tgfp = gf.begin(); tgfp != gf.end(); ++tgfp) {
-        if (auto const nxt = tgfp.Next()) {
+        auto const nxt = tgfp.Next();
+        if (nxt != gf.end()) {
             p = sequence.c_str() + tgfp->to;
             for (i = tgfp->to + 1; i < nxt->from; p++, i++)
                 if (*p != 'N')
@@ -446,7 +447,7 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
     CDelta_ext::Tdata deltas;
 
     prevto = 0;
-    for (GapFeatsPtr tgfp = gf.begin();; ++tgfp) {
+    for (GapFeatsPtr tgfp = gf.begin();;) {
         Int4 len = 0;
 
         CRef<CDelta_seq> delta(new CDelta_seq);
@@ -470,13 +471,14 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
         }
 
         if (tgfp->assembly_gap)
-            CreateSeqGap(delta->SetLiteral(), tgfp);
+            CreateSeqGap(delta->SetLiteral(), tgfp.operator->());
 
         deltas.push_back(delta);
 
         prevto = tgfp->to;
 
-        if (tgfp.Next() == gf.end()) {
+        ++tgfp;
+        if (tgfp == gf.end()) {
             if (bioseq.GetLength() - prevto > 0) {
                 delta.Reset(new CDelta_seq);
 
