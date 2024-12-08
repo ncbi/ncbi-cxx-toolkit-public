@@ -3139,7 +3139,7 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, Int2 type)
 {
     IndexblkPtr ibp;
-    GapFeatsPtr gfp = nullptr;
+    GapFeatsPtr gfp;
     DataBlkPtr  tdbp;
     FeatBlkPtr  fbp;
 
@@ -3436,7 +3436,16 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
             if (ibp->drop)
                 break;
 
-            gfp                   = new GapFeatsNode;
+            auto tgfp = ibp->gaps.before_begin();
+            for (;;) {
+                auto const nxt = next(tgfp);
+                if (nxt == ibp->gaps.end() || nxt->from >= from) {
+                    break;
+                }
+                tgfp = nxt;
+            }
+            gfp = ibp->gaps.emplace_after(tgfp);
+
             gfp->from             = from;
             gfp->to               = to;
             gfp->estimated_length = estimated_length;
@@ -3450,28 +3459,6 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
                 gfp->asn_linkage_evidence.swap(asn_linkage_evidence);
                 asn_linkage_evidence.clear();
             }
-
-            if (ibp->gaps.empty()) {
-                ibp->gaps.push_front(gfp.node);
-                continue;
-            }
-
-            if (ibp->gaps.begin()->from > from) {
-                ibp->gaps.push_front(gfp.node);
-                continue;
-            }
-
-            if (ibp->gaps.begin().Next() == ibp->gaps.end()) {
-                ibp->gaps.insert_after(ibp->gaps.begin(), gfp.node);
-                continue;
-            }
-
-            for (GapFeatsPtr tgfp = ibp->gaps.begin(); tgfp != ibp->gaps.end(); ++tgfp) {
-                if (tgfp.Next() != ibp->gaps.end() && tgfp.Next()->from < from)
-                    continue;
-                ibp->gaps.insert_after(tgfp, gfp.node);
-                break;
-            }
         }
         if (ibp->drop) {
             linkage_evidence_names.clear();
@@ -3483,7 +3470,6 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         return;
 
     if (ibp->drop) {
-        GapFeatsFree(ibp->gaps);
         ibp->gaps.clear();
     }
 }

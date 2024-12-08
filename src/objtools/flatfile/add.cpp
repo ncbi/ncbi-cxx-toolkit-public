@@ -310,20 +310,17 @@ void err_install(const Indexblk* ibp, bool accver)
 }
 
 /**********************************************************/
-static void CreateSeqGap(CSeq_literal& seq_lit, GapFeats* gfp)
+static void CreateSeqGap(CSeq_literal& seq_lit, GapFeats& gfp)
 {
-    if (! gfp)
-        return;
-
     CSeq_gap& sgap = seq_lit.SetSeq_data().SetGap();
-    sgap.SetType(gfp->asn_gap_type);
+    sgap.SetType(gfp.asn_gap_type);
 
-    if (! gfp->asn_linkage_evidence.empty())
-        sgap.SetLinkage_evidence().swap(gfp->asn_linkage_evidence);
+    if (! gfp.asn_linkage_evidence.empty())
+        sgap.SetLinkage_evidence().swap(gfp.asn_linkage_evidence);
 
     sgap.SetLinkage(CSeq_gap::eLinkage_unlinked);
-    if (! gfp->gap_type.empty()) {
-        const string& gapType(gfp->gap_type);
+    if (! gfp.gap_type.empty()) {
+        const string& gapType(gfp.gap_type);
         if (gapType == "unknown" || gapType == "within scaffold" || gapType == "repeat within scaffold") {
             sgap.SetLinkage(CSeq_gap::eLinkage_linked);
         }
@@ -354,7 +351,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
             break;
         }
 
-        CreateSeqGap(literal, gfp.operator->());
+        CreateSeqGap(literal, *gfp);
 
         ++gfp;
     }
@@ -396,8 +393,8 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
         return;
 
     prevto = 0;
-    for (GapFeatsPtr tgfp = gf.begin(); tgfp != gf.end(); ++tgfp) {
-        auto const nxt = tgfp.Next();
+    for (auto tgfp = gf.begin(); tgfp != gf.end(); ++tgfp) {
+        auto const nxt = next(tgfp);
         if (nxt != gf.end()) {
             p = sequence.c_str() + tgfp->to;
             for (i = tgfp->to + 1; i < nxt->from; p++, i++)
@@ -471,7 +468,7 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
         }
 
         if (tgfp->assembly_gap)
-            CreateSeqGap(delta->SetLiteral(), tgfp.operator->());
+            CreateSeqGap(delta->SetLiteral(), *tgfp);
 
         deltas.push_back(delta);
 
