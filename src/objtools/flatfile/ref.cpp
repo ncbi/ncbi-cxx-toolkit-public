@@ -1709,11 +1709,11 @@ static void XMLGetXrefs(char* entry, XmlIndexPtr xip, TQualVector& quals)
 
         CRef<CGb_qual> qual(new CGb_qual);
 
-        for (xipqual = xip->subtags; xipqual; xipqual = xipqual->next) {
+        for (xipqual = xip->subtags; xipqual != nullptr; xipqual = xipqual->next) {
             if (xipqual->tag == INSDXREF_DBNAME)
-                qual->SetQual(*XMLGetTagValue(entry, xipqual));
+                qual->SetQual(*XMLGetTagValue(entry, *xipqual));
             else if (xipqual->tag == INSDXREF_ID)
-                qual->SetVal(*XMLGetTagValue(entry, xipqual));
+                qual->SetVal(*XMLGetTagValue(entry, *xipqual));
         }
 
         if (qual->IsSetQual() && ! qual->GetQual().empty())

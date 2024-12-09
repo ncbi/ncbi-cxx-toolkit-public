@@ -193,11 +193,11 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
     unique_ptr<string> strandstr;
 
     ibp = pp->entrylist[pp->curindx];
-    for (xip = ibp->xip; xip; xip = xip->next) {
+    for (xip = ibp->xip; xip != nullptr; xip = xip->next) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
-            topstr = XMLGetTagValue(dbp->mOffset, xip);
+            topstr = XMLGetTagValue(dbp->mOffset, *xip);
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
-            strandstr = XMLGetTagValue(dbp->mOffset, xip);
+            strandstr = XMLGetTagValue(dbp->mOffset, *xip);
     }
 
     CSeq_inst& inst = bioseq.SetInst();
@@ -648,11 +648,11 @@ static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& biose
 
     const char* p;
 
-    for (; xip; xip = xip->next) {
+    for (; xip != nullptr; xip = xip->next) {
         if (xip->tag == INSDSEQ_ORGANISM && ! organism)
-            organism = XMLGetTagValue(entry, xip);
+            organism = XMLGetTagValue(entry, *xip);
         else if (xip->tag == INSDSEQ_TAXONOMY && ! taxonomy)
-            taxonomy = XMLGetTagValue(entry, xip);
+            taxonomy = XMLGetTagValue(entry, *xip);
     }
 
     if (! organism) {

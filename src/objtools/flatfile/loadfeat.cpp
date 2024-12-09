@@ -3487,11 +3487,11 @@ static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
-        for (xipqual = xip->subtags; xipqual; xipqual = xipqual->next) {
+        for (xipqual = xip->subtags; xipqual != nullptr; xipqual = xipqual->next) {
             if (xipqual->tag == INSDQUALIFIER_NAME)
-                qual->SetQual(*XMLGetTagValue(entry, xipqual));
+                qual->SetQual(*XMLGetTagValue(entry, *xipqual));
             else if (xipqual->tag == INSDQUALIFIER_VALUE)
-                qual->SetVal(*XMLGetTagValue(entry, xipqual));
+                qual->SetVal(*XMLGetTagValue(entry, *xipqual));
         }
 
         if (qual->GetQual() == "replace" && ! qual->IsSetVal()) {
@@ -3528,11 +3528,11 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
             continue;
         fbp          = new FeatBlk;
         fbp->spindex = -1;
-        for (xipfeat = xip->subtags; xipfeat; xipfeat = xipfeat->next) {
+        for (xipfeat = xip->subtags; xipfeat != nullptr; xipfeat = xipfeat->next) {
             if (xipfeat->tag == INSDFEATURE_KEY)
-                fbp->key = *XMLGetTagValue(entry, xipfeat);
+                fbp->key = *XMLGetTagValue(entry, *xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)
-                fbp->location_assign(*XMLGetTagValue(entry, xipfeat));
+                fbp->location_assign(*XMLGetTagValue(entry, *xipfeat));
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
