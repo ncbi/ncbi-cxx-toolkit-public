@@ -578,8 +578,7 @@ psa_status_t mbedtls_to_psa_error(int ret)
  *                              input), in case the caller doesn't check the
  *                              return status properly.
  *
- * \param output_buffer         Pointer to buffer to wipe. May not be NULL
- *                              unless \p output_buffer_size is zero.
+ * \param output_buffer         Pointer to buffer to wipe. May be NULL
  * \param status                Status of function called to generate
  *                              output_buffer originally
  * \param output_buffer_size    Size of output buffer. If zero, \p output_buffer
@@ -592,7 +591,7 @@ static void psa_wipe_tag_output_buffer(uint8_t *output_buffer, psa_status_t stat
 {
     size_t offset = 0;
 
-    if (output_buffer_size == 0) {
+    if (output_buffer_size == 0 || output_buffer == NULL) {
         /* If output_buffer_size is 0 then we have nothing to do. We must not
            call memset because output_buffer may be NULL in this case */
         return;
