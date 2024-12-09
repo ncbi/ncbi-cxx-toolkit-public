@@ -148,9 +148,9 @@ PC-XRefData ::= CHOICE {
         patent           VisibleString,           -- Patent Identifier (e.g., USPTO, EPO, WPO, JPO, CPO)
         protein-accession        VisibleString,   -- GenBank Accession for a Protein
         nucleotide-accession     VisibleString,   -- GenBank Accession for a Nucleotide
-        doi                      VisibleString,   -- digital object identifier (DOI)
-        citation                 VisibleString,   -- citation when PMID or DOI are not available
-        pathway          INTEGER                  -- PubChem Pathway identifier
+        doi              VisibleString,           -- digital object identifier (DOI)
+        citation         VisibleString,           -- citation when PMID or DOI are not available
+        pathway          VisibleString            -- PubChem Pathway accession
 }
 
 
