@@ -123,7 +123,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 }
 
 /**********************************************************/
-static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp, CBioseq& bioseq, ParserPtr pp)
+static bool XMLGetInstContig(const TXmlIndexList& xil, DataBlkPtr dbp, CBioseq& bioseq, ParserPtr pp)
 {
     char* p;
     char* q;
@@ -133,7 +133,7 @@ static bool XMLGetInstContig(XmlIndexPtr xip, DataBlkPtr dbp, CBioseq& bioseq, P
     Int4  i;
     int   numerr;
 
-    p = StringSave(XMLFindTagValue(dbp->mOffset, xip, INSDSEQ_CONTIG));
+    p = StringSave(XMLFindTagValue(dbp->mOffset, xil, INSDSEQ_CONTIG));
     if (! p)
         return false;
 
@@ -193,7 +193,7 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
     unique_ptr<string> strandstr;
 
     ibp = pp->entrylist[pp->curindx];
-    for (xip = ibp->xip; xip != nullptr; xip = xip->next) {
+    for (xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
             topstr = XMLGetTagValue(dbp->mOffset, *xip);
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
@@ -641,14 +641,14 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 }
 
 /**********************************************************/
-static void XMLFakeBioSources(XmlIndexPtr xip, const char* entry, CBioseq& bioseq, Parser::ESource source)
+static void XMLFakeBioSources(const TXmlIndexList& xil, const char* entry, CBioseq& bioseq, Parser::ESource source)
 {
     unique_ptr<string> organism;
     unique_ptr<string> taxonomy;
 
     const char* p;
 
-    for (; xip != nullptr; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_ORGANISM && ! organism)
             organism = XMLGetTagValue(entry, *xip);
         else if (xip->tag == INSDSEQ_TAXONOMY && ! taxonomy)

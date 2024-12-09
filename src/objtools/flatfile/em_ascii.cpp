@@ -400,7 +400,7 @@ static void SetXrefObjId(CEMBL_xref& xref, const string& str)
  *   type (DR) line.
  *
  **********************************************************/
-static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl)
+static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl)
 {
     const char** b;
 
@@ -422,12 +422,13 @@ static void GetEmblBlockXref(const DataBlk& entry, XmlIndexPtr xip, const char* 
 
     CEMBL_block::TXref new_xrefs;
 
+    bool xip = xil && ! xil->empty();
     if (! xip) {
         bptr     = xSrchNodeType(entry, ParFlat_DR, &len);
         col_data = ParFlat_COL_DATA_EMBL;
         xref     = nullptr;
     } else {
-        bptr = StringSave(XMLFindTagValue(chentry, xip, INSDSEQ_DATABASE_REFERENCE));
+        bptr = StringSave(XMLFindTagValue(chentry, *xil, INSDSEQ_DATABASE_REFERENCE));
         if (bptr)
             len = StringLen(bptr);
         col_data = 0;
@@ -2739,7 +2740,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     if (std_update_date.Empty() && std_creation_date.NotEmpty())
         embl->SetUpdate_date().SetStd(*std_creation_date);
 
-    GetEmblBlockXref(DataBlk(), ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
+    GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 && StringEquN(ibp->acnum, "CT", 2)) {
