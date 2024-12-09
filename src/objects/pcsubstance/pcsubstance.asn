@@ -113,7 +113,7 @@ PC-XRefData ::= CHOICE {
         mesh             VisibleString,           -- MESH Index Term
         pmid             INTEGER,                 -- PubMed ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        gi               INTEGER,                 -- GenBank General ID
+        gi               INTEGER,                 -- GenBank General ID (DEPRECATED)
                                                   --   Note: Please use protein-gi or nucleotide-gi, if possible
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         mmdb             INTEGER,                 -- MMDB ID
@@ -125,9 +125,9 @@ PC-XRefData ::= CHOICE {
         dburl            VisibleString,           -- Depositor Source Database Homepage
         sburl            VisibleString,           -- Depositor Homepage for a Substance
         asurl            VisibleString,           -- Depositor Homepage for an Assay
-        protein-gi       INTEGER,                 -- GenBank General ID for a Protein
+        protein-gi       INTEGER,                 -- GenBank General ID for a Protein (DEPRECATED)
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        nucleotide-gi    INTEGER,                 -- GenBank General ID for a Nucleotide
+        nucleotide-gi    INTEGER,                 -- GenBank General ID for a Nucleotide (DEPRECATED)
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         taxonomy         INTEGER,                 -- Taxonomy ID for an Organism
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
@@ -139,7 +139,7 @@ PC-XRefData ::= CHOICE {
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         probe            INTEGER,                 -- Probe ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
-        biosystem        INTEGER,                 -- BioSystem ID
+        biosystem        INTEGER,                 -- BioSystem ID (DEPRECATED)
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
         geogse           INTEGER,                 -- Gene Expression Omnibus Series Accession (GEO GSE) ID
                                                   --   Note: Must be greater than "0" or, if invalid, "0"
@@ -149,7 +149,8 @@ PC-XRefData ::= CHOICE {
         protein-accession        VisibleString,   -- GenBank Accession for a Protein
         nucleotide-accession     VisibleString,   -- GenBank Accession for a Nucleotide
         doi                      VisibleString,   -- digital object identifier (DOI)
-        citation                 VisibleString    -- citation when PMID or DOI are not available
+        citation                 VisibleString,   -- citation when PMID or DOI are not available
+        pathway          INTEGER                  -- PubChem Pathway identifier
 }
 
 
