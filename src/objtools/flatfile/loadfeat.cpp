@@ -3475,19 +3475,17 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
 }
 
 /**********************************************************/
-static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
+static void XMLGetQuals(char* entry, const TXmlIndexList& xil, TQualVector& quals)
 {
-    XmlIndexPtr xipqual;
-
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return;
 
-    for (; xip; xip = xip->next) {
-        if (! xip->subtags)
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
+        if (xip->subtags.empty())
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
-        for (xipqual = xip->subtags; xipqual != nullptr; xipqual = xipqual->next) {
+        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); xipqual = xipqual->next) {
             if (xipqual->tag == INSDQUALIFIER_NAME)
                 qual->SetQual(*XMLGetTagValue(entry, *xipqual));
             else if (xipqual->tag == INSDQUALIFIER_VALUE)
@@ -3504,31 +3502,31 @@ static void XMLGetQuals(char* entry, XmlIndexPtr xip, TQualVector& quals)
 }
 
 /**********************************************************/
-static DataBlkPtr XMLLoadFeatBlk(char* entry, XmlIndexPtr xip)
+static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
 {
-    XmlIndexPtr xipfeat;
-    DataBlkPtr  headdbp;
-    DataBlkPtr  dbp;
-    DataBlkPtr  ret;
-    FeatBlkPtr  fbp;
+    DataBlkPtr headdbp;
+    DataBlkPtr dbp;
+    DataBlkPtr ret;
+    FeatBlkPtr fbp;
 
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return nullptr;
 
-    for (; xip; xip = xip->next)
+    auto xip = xil.begin();
+    for (; xip != xil.end(); xip = xip->next)
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
 
-    if (! xip || ! xip->subtags)
+    if (xip == xil.end() || xip->subtags.empty())
         return nullptr;
 
     headdbp = nullptr;
-    for (xip = xip->subtags; xip; xip = xip->next) {
-        if (! xip->subtags)
+    for (xip = xip->subtags.begin(); xip != xip->subtags.end(); xip = xip->next) {
+        if (xip->subtags.empty())
             continue;
         fbp          = new FeatBlk;
         fbp->spindex = -1;
-        for (xipfeat = xip->subtags; xipfeat != nullptr; xipfeat = xipfeat->next) {
+        for (auto xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); xipfeat = xipfeat->next) {
             if (xipfeat->tag == INSDFEATURE_KEY)
                 fbp->key = *XMLGetTagValue(entry, *xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)

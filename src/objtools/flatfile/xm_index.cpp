@@ -160,7 +160,6 @@ static XmlIndexPtr XMLIndexNew(void)
     xip->end        = 0;
     xip->start_line = -1;
     xip->end_line   = -1;
-    xip->subtags    = nullptr;
     xip->next       = nullptr;
     return (xip);
 }
@@ -210,9 +209,9 @@ unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex& xip)
 }
 
 /**********************************************************/
-unique_ptr<string> XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag)
+unique_ptr<string> XMLFindTagValue(const char* entry, const TXmlIndexList& xil, Int4 tag)
 {
-    for (; xip != nullptr; xip = xip->next)
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next)
         if (xip->tag == tag)
             return XMLGetTagValue(entry, *xip);
     return {};
@@ -270,13 +269,13 @@ static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
     const char* segnum;
     const char* segtotal;
 
-    if (! entry || ! ibp || ! ibp->xip)
+    if (! entry || ! ibp || ibp->xip.empty())
         return;
 
-    for (xip = ibp->xip; xip != nullptr; xip = xip->next)
+    for (xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next)
         if (xip->tag == INSDSEQ_SEGMENT)
             break;
-    if (xip == nullptr)
+    if (xip == ibp->xip.end())
         return;
 
     auto buf = XMLGetTagValue(entry, *xip);
@@ -418,10 +417,10 @@ static void XMLPerformIndex(ParserPtr pp)
                 break;
         if (! xkbp->str)
             continue;
-        if (! ibp->xip || xip->tag != xkbp->tag) {
-            if (! ibp->xip) {
-                ibp->xip = XMLIndexNew();
-                xip      = ibp->xip;
+        if (ibp->xip.empty() || xip->tag != xkbp->tag) {
+            if (ibp->xip.empty()) {
+                ibp->xip.head = XMLIndexNew();
+                xip           = ibp->xip.head;
             } else {
                 xip->next = XMLIndexNew();
                 xip       = xip->next;
@@ -515,9 +514,7 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
 /**********************************************************/
 static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Parser::ESource source)
 {
-    XmlIndexPtr xip;
-
-    if (! ibp || ! ibp->xip || ! entry)
+    if (! ibp || ibp->xip.empty() || ! entry)
         return;
 
     if (source == Parser::ESource::USPTO)
@@ -525,7 +522,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
 
     ibp->locusname[0] = '\0';
     ibp->acnum[0]     = '\0';
-    for (xip = ibp->xip; xip; xip = xip->next) {
+    for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_LOCUS && ibp->locusname[0] == '\0') {
             if (xip->start == 0 || xip->end == 0 || xip->start >= xip->end ||
                 source == Parser::ESource::USPTO) {
@@ -561,7 +558,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
         FtaInstallPrefix(PREFIX_ACCESSION, ibp->acnum);
 
     if (accver) {
-        for (xip = ibp->xip; xip != nullptr; xip = xip->next) {
+        for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
             if (xip->tag != INSDSEQ_ACCESSION_VERSION)
                 continue;
             auto buf = XMLGetTagValue(entry, *xip);
@@ -576,7 +573,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
     ibp->bases = 0;
     ibp->date  = nullptr;
     StringCpy(ibp->division, "???");
-    for (xip = ibp->xip; xip != nullptr; xip = xip->next) {
+    for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_LENGTH && ibp->bases == 0) {
             auto buf = XMLGetTagValue(entry, *xip);
             if (! buf)
@@ -623,11 +620,10 @@ static const char* XMLStringByTag(XmlKwordBlkPtr xkbp, Int4 tag)
 }
 
 /**********************************************************/
-static bool XMLTagCheck(XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
+static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlkPtr xkbp)
 {
-    XmlIndexPtr txip;
-    bool        ret = true;
-    for (txip = xip; txip; txip = txip->next) {
+    bool ret = true;
+    for (auto txip = xil.begin(); txip != xil.end(); txip = txip->next) {
         if (txip->start == 0) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
             ret = false;
@@ -645,11 +641,11 @@ static bool XMLTagCheck(XmlIndexPtr xip, XmlKwordBlkPtr xkbp)
 }
 
 /**********************************************************/
-static bool XMLSameTagsCheck(XmlIndexPtr xip, const char* name)
+static bool XMLSameTagsCheck(const TXmlIndexList& xil, const char* name)
 {
     bool ret = true;
 
-    for (XmlIndexPtr txip = xip; txip; txip = txip->next) {
+    for (auto txip = xil.begin(); txip != xil.end(); txip = txip->next) {
         if (txip->start == 0) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", name, txip->end_line);
             ret = false;
@@ -663,9 +659,9 @@ static bool XMLSameTagsCheck(XmlIndexPtr xip, const char* name)
 }
 
 /**********************************************************/
-static XmlIndexPtr XMLIndexSameSubTags(const char* entry, const XmlIndex& xip, Int4 tag)
+static TXmlIndexList XMLIndexSameSubTags(const char* entry, const XmlIndex& xip, Int4 tag)
 {
-    XmlIndexPtr xipsub;
+    TXmlIndexList xipsub;
     XmlIndexPtr txipsub;
     const char* name;
     const char* c;
@@ -676,14 +672,13 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, const XmlIndex& xip, I
     Int4        i;
 
     if (! entry)
-        return nullptr;
+        return {};
 
     name = XMLStringByTag(xmsubkwl, tag);
     if (! name)
-        return nullptr;
+        return {};
 
     s[0]    = '\0';
-    xipsub  = nullptr;
     txipsub = nullptr;
     line    = xip.start_line;
     c       = entry + xip.start;
@@ -719,9 +714,9 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, const XmlIndex& xip, I
         if (! StringEqu(p, name + 1))
             continue;
 
-        if (! xipsub) {
-            xipsub  = XMLIndexNew();
-            txipsub = xipsub;
+        if (xipsub.empty()) {
+            xipsub.head = XMLIndexNew();
+            txipsub     = xipsub.head;
         } else if ((s[1] != '/' && txipsub->start != 0) ||
                    (s[1] == '/' && txipsub->end != 0)) {
             txipsub->next = XMLIndexNew();
@@ -741,7 +736,7 @@ static XmlIndexPtr XMLIndexSameSubTags(const char* entry, const XmlIndex& xip, I
         return (xipsub);
 
     XMLIndexFree(xipsub);
-    return nullptr;
+    return {};
 }
 
 /**********************************************************/
@@ -754,11 +749,11 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     bool   ret = true;
     size_t len = StringLen(ibp->acnum) + StringLen(XML_FAKE_ACC_TAG);
 
-    for (xip = ibp->xip; xip != nullptr; xip = xip->next)
+    for (xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next)
         if (xip->tag == INSDSEQ_SECONDARY_ACCESSIONS)
             break;
 
-    if (xip == nullptr) {
+    if (xip == ibp->xip.end()) {
         buf.reserve(len);
         buf.append(XML_FAKE_ACC_TAG);
         buf.append(ibp->acnum);
@@ -767,20 +762,20 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     }
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDSECONDARY_ACCN);
-    if (! xip->subtags) {
+    if (xip->subtags.empty()) {
         auto p = XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = true;
         return false;
     }
 
-    for (xipsec = xip->subtags; xipsec != nullptr; xipsec = xipsec->next)
+    for (xipsec = xip->subtags.begin(); xipsec != xip->subtags.end(); xipsec = xipsec->next)
         len += (xipsec->end - xipsec->start + 1);
 
     buf.reserve(len);
     buf.append(XML_FAKE_ACC_TAG);
     buf.append(ibp->acnum);
-    for (xipsec = xip->subtags; xipsec != nullptr; xipsec = xipsec->next) {
+    for (xipsec = xip->subtags.begin(); xipsec != xip->subtags.end(); xipsec = xipsec->next) {
         auto p = XMLGetTagValue(entry, *xipsec);
         if (p) {
             buf.append(" ");
@@ -800,17 +795,17 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
 
     bool tpa_check = (source == Parser::ESource::EMBL);
 
-    if (! entry || ! ibp || ! ibp->xip)
+    if (! entry || ! ibp || ibp->xip.empty())
         return true;
 
-    for (xip = ibp->xip; xip; xip = xip->next)
+    for (xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next)
         if (xip->tag == INSDSEQ_KEYWORDS)
             break;
-    if (xip == nullptr)
+    if (xip == ibp->xip.end())
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDKEYWORD);
-    if (! xip->subtags) {
+    if (xip->subtags.empty()) {
         const char* p = XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
         ibp->drop = true;
@@ -818,12 +813,12 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     }
 
     size_t len = 0;
-    for (xipkwd = xip->subtags; xipkwd; xipkwd = xipkwd->next)
+    for (xipkwd = xip->subtags.begin(); xipkwd != xip->subtags.end(); xipkwd = xipkwd->next)
         len += (xipkwd->end - xipkwd->start + 2);
 
     string buf;
     buf.reserve(len);
-    for (xipkwd = xip->subtags; xipkwd != nullptr; xipkwd = xipkwd->next) {
+    for (xipkwd = xip->subtags.begin(); xipkwd != xip->subtags.end(); xipkwd = xipkwd->next) {
         auto p = XMLGetTagValue(entry, *xipkwd);
         if (p) {
             if (! buf.empty())
@@ -848,25 +843,24 @@ static bool XMLErrField(Int4 tag)
 /**********************************************************/
 static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
 {
-    XmlIndexPtr xip;
-    bool        got_locus       = false;
-    bool        got_length      = false;
-    bool        got_moltype     = false;
-    bool        got_division    = false;
-    bool        got_update_date = false;
-    bool        got_definition  = false;
-    bool        got_accession   = false;
-    bool        got_version     = false;
-    bool        got_source      = false;
-    bool        got_organism    = false;
-    bool        got_reference   = false;
-    bool        got_primary     = false;
-    bool        got_features    = false;
-    bool        ret             = true;
+    bool got_locus       = false;
+    bool got_length      = false;
+    bool got_moltype     = false;
+    bool got_division    = false;
+    bool got_update_date = false;
+    bool got_definition  = false;
+    bool got_accession   = false;
+    bool got_version     = false;
+    bool got_source      = false;
+    bool got_organism    = false;
+    bool got_reference   = false;
+    bool got_primary     = false;
+    bool got_features    = false;
+    bool ret             = true;
 
     ibp->origin    = false;
     ibp->is_contig = false;
-    for (xip = ibp->xip; xip; xip = xip->next) {
+    for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_LOCUS && pp->source != Parser::ESource::USPTO)
             got_locus = true;
         else if (xip->tag == INSDSEQ_LENGTH)
@@ -1046,8 +1040,8 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkb
             continue;
         if (! xipsub || xipsub->tag != txkbp->tag) {
             if (! xipsub) {
-                xipsub      = XMLIndexNew();
-                xip.subtags = xipsub;
+                xipsub           = XMLIndexNew();
+                xip.subtags.head = xipsub;
             } else {
                 xipsub->next = XMLIndexNew();
                 xipsub       = xipsub->next;
@@ -1091,13 +1085,13 @@ static bool XMLIndexSubTags(const char* entry, XmlIndex& xip, XmlKwordBlkPtr xkb
 }
 
 /**********************************************************/
-static bool XMLCheckRequiredFeatTags(XmlIndexPtr xip)
+static bool XMLCheckRequiredFeatTags(const TXmlIndexList& xil)
 {
     bool got_key      = false;
     bool got_location = false;
     bool ret          = true;
 
-    for (; xip; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDFEATURE_KEY)
             got_key = true;
         else if (xip->tag == INSDFEATURE_LOCATION)
@@ -1117,7 +1111,7 @@ static bool XMLCheckRequiredFeatTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLCheckRequiredIntTags(XmlIndexPtr xip)
+static bool XMLCheckRequiredIntTags(const TXmlIndexList& xil)
 {
     bool got_from      = false;
     bool got_to        = false;
@@ -1125,7 +1119,7 @@ static bool XMLCheckRequiredIntTags(XmlIndexPtr xip)
     bool got_accession = false;
     bool ret           = true;
 
-    for (; xip; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDINTERVAL_FROM)
             got_from = true;
         else if (xip->tag == INSDINTERVAL_TO)
@@ -1155,62 +1149,60 @@ static bool XMLCheckRequiredIntTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLCheckRequiredQualTags(XmlIndexPtr xip)
+static bool XMLCheckRequiredQualTags(const TXmlIndexList& xil)
 {
-    for (; xip; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDQUALIFIER_NAME)
-            break;
+            return true;
     }
-
-    if (xip)
-        return true;
 
     ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Qualifier block is missing %s data in XML format file.", XMLStringByTag(xmqualkwl, INSDQUALIFIER_NAME));
     return false;
 }
 
 /**********************************************************/
-static bool XMLIndexFeatures(const char* entry, XmlIndexPtr xip)
+static bool XMLIndexFeatures(const char* entry, TXmlIndexList& xil)
 {
     XmlIndexPtr xipfeat;
     XmlIndexPtr xipsub;
     XmlIndexPtr txip;
 
-    if (! xip || ! entry)
+    if (! entry || xil.empty())
         return true;
 
-    for (; xip; xip = xip->next) {
+    XmlIndexPtr xip;
+    for (xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
     }
 
-    if (xip == nullptr)
+    if (xip == xil.end())
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDFEATURE);
-    if (! xip->subtags) {
+    if (xip->subtags.empty()) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
         return false;
     }
 
-    for (xipfeat = xip->subtags; xipfeat != nullptr; xipfeat = xipfeat->next) {
+    for (xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); xipfeat = xipfeat->next) {
         if (XMLIndexSubTags(entry, *xipfeat, xmfeatkwl) == false ||
             XMLCheckRequiredFeatTags(xipfeat->subtags) == false)
             break;
-        for (txip = xipfeat->subtags; txip != nullptr; txip = txip->next) {
+        for (txip = xipfeat->subtags.begin(); txip != xipfeat->subtags.end(); txip = txip->next) {
             if (txip->tag == INSDFEATURE_INTERVALS) {
                 txip->subtags = XMLIndexSameSubTags(entry, *txip, INSDINTERVAL);
-                if (! txip->subtags)
+                if (txip->subtags.empty())
                     break;
-                for (xipsub = txip->subtags; xipsub != nullptr; xipsub = xipsub->next)
+                for (xipsub = txip->subtags.begin(); xipsub != txip->subtags.end(); xipsub = xipsub->next)
                     if (XMLIndexSubTags(entry, *xipsub, xmintkwl) == false ||
                         XMLCheckRequiredIntTags(xipsub->subtags) == false)
                         break;
             } else if (txip->tag == INSDFEATURE_QUALS) {
                 txip->subtags = XMLIndexSameSubTags(entry, *txip, INSDQUALIFIER);
-                if (! txip->subtags)
+                if (txip->subtags.empty())
                     break;
-                for (xipsub = txip->subtags; xipsub != nullptr; xipsub = xipsub->next)
+                for (xipsub = txip->subtags.begin(); xipsub != txip->subtags.end(); xipsub = xipsub->next)
                     if (XMLIndexSubTags(entry, *xipsub, xmqualkwl) == false ||
                         XMLCheckRequiredQualTags(xipsub->subtags) == false)
                         break;
@@ -1228,13 +1220,13 @@ static bool XMLIndexFeatures(const char* entry, XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLCheckRequiredRefTags(XmlIndexPtr xip)
+static bool XMLCheckRequiredRefTags(const TXmlIndexList& xil)
 {
     bool got_reference = false;
     bool got_journal   = false;
     bool ret           = true;
 
-    for (; xip; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDREFERENCE_REFERENCE)
             got_reference = true;
         else if (xip->tag == INSDREFERENCE_JOURNAL)
@@ -1291,13 +1283,13 @@ static Int2 XMLGetRefType(const char* reftag, size_t bases)
 }
 
 /**********************************************************/
-static bool XMLCheckRequiredXrefTags(XmlIndexPtr xip)
+static bool XMLCheckRequiredXrefTags(const TXmlIndexList& xil)
 {
     bool got_dbname = false;
     bool got_id     = false;
     bool ret        = true;
 
-    for (; xip; xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDXREF_DBNAME)
             got_dbname = true;
         else if (xip->tag == INSDXREF_ID)
@@ -1317,36 +1309,37 @@ static bool XMLCheckRequiredXrefTags(XmlIndexPtr xip)
 }
 
 /**********************************************************/
-static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
+static bool XMLIndexReferences(const char* entry, TXmlIndexList& xil, size_t bases)
 {
     XmlIndexPtr xipref;
     XmlIndexPtr txip;
     XmlIndexPtr xipsub;
 
-    if (! xip || ! entry)
+    if (! entry || xil.empty())
         return true;
 
-    for (; xip; xip = xip->next) {
+    XmlIndexPtr xip;
+    for (xip = xil.begin(); xip != xil.end(); xip = xip->next) {
         if (xip->tag == INSDSEQ_REFERENCES)
             break;
     }
-    if (xip == nullptr)
+    if (xip == xil.end())
         return true;
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDREFERENCE);
-    if (! xip->subtags) {
+    if (xip->subtags.empty()) {
         ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
         return false;
     }
 
-    for (xipref = xip->subtags; xipref != nullptr; xipref = xipref->next) {
+    for (xipref = xip->subtags.begin(); xipref != xip->subtags.end(); xipref = xipref->next) {
         if (XMLIndexSubTags(entry, *xipref, xmrefkwl) == false ||
             XMLCheckRequiredRefTags(xipref->subtags) == false)
             break;
 
         unique_ptr<string> reftagref;
         unique_ptr<string> reftagpos;
-        for (txip = xipref->subtags; txip != nullptr; txip = txip->next) {
+        for (txip = xipref->subtags.begin(); txip != xipref->subtags.end(); txip = txip->next) {
             if (txip->tag == INSDREFERENCE_REFERENCE) {
                 reftagref = XMLGetTagValue(entry, *txip);
                 continue;
@@ -1357,13 +1350,13 @@ static bool XMLIndexReferences(const char* entry, XmlIndexPtr xip, size_t bases)
             }
             if (txip->tag == INSDREFERENCE_AUTHORS) {
                 txip->subtags = XMLIndexSameSubTags(entry, *txip, INSDAUTHOR);
-                if (! txip->subtags)
+                if (txip->subtags.empty())
                     break;
             } else if (txip->tag == INSDREFERENCE_XREF) {
                 txip->subtags = XMLIndexSameSubTags(entry, *txip, INSDXREF);
-                if (! txip->subtags)
+                if (txip->subtags.empty())
                     break;
-                for (xipsub = txip->subtags; xipsub != nullptr; xipsub = xipsub->next)
+                for (xipsub = txip->subtags.begin(); xipsub != txip->subtags.end(); xipsub = xipsub->next)
                     if (XMLIndexSubTags(entry, *xipsub, xmxrefkwl) == false ||
                         XMLCheckRequiredXrefTags(xipsub->subtags) == false)
                         break;
@@ -1462,23 +1455,23 @@ bool XMLIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
+DataBlkPtr XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
 {
-    XmlIndexPtr txip;
-    DataBlkPtr  dbp;
-    DataBlkPtr  tdbp;
+    DataBlkPtr dbp;
+    DataBlkPtr tdbp;
 
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return nullptr;
 
-    while (xip && xip->tag != INSDSEQ_REFERENCES)
+    auto xip = xil.begin();
+    while (xip != xil.end() && xip->tag != INSDSEQ_REFERENCES)
         xip = xip->next;
-    if (! xip || ! xip->subtags)
+    if (xip == xil.end() || xip->subtags.empty())
         return nullptr;
 
     dbp = nullptr;
-    for (txip = xip->subtags; txip; txip = txip->next) {
-        if (txip->type != type || ! txip->subtags)
+    for (auto txip = xip->subtags.begin(); txip != xip->subtags.end(); txip = txip->next) {
+        if (txip->type != type || txip->subtags.empty())
             continue;
         if (! dbp) {
             dbp  = new DataBlk;
@@ -1496,21 +1489,20 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type)
 }
 
 /**********************************************************/
-void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywords)
+void XMLGetKeywords(const char* entry, const TXmlIndexList& xil, TKeywordList& keywords)
 {
-    XmlIndexPtr xipkwd;
-
     keywords.clear();
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return;
 
-    for (; xip; xip = xip->next)
-        if (xip->tag == INSDSEQ_KEYWORDS && xip->subtags)
+    auto xip = xil.begin();
+    for (; xip != xil.end(); xip = xip->next)
+        if (xip->tag == INSDSEQ_KEYWORDS && ! xip->subtags.empty())
             break;
-    if (! xip)
+    if (xip == xil.end())
         return;
 
-    for (xipkwd = xip->subtags; xipkwd != nullptr; xipkwd = xipkwd->next) {
+    for (auto xipkwd = xip->subtags.begin(); xipkwd != xip->subtags.end(); xipkwd = xipkwd->next) {
         auto p = XMLGetTagValue(entry, *xipkwd);
         if (p)
             keywords.push_back(*p);
@@ -1518,26 +1510,26 @@ void XMLGetKeywords(const char* entry, const XmlIndex* xip, TKeywordList& keywor
 }
 
 /**********************************************************/
-unique_ptr<string> XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep)
+unique_ptr<string> XMLConcatSubTags(const char* entry, const TXmlIndexList& xil, Int4 tag, Char sep)
 {
-    const XmlIndex* txip;
-
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return {};
 
+    auto xip = xil.begin();
     while (xip && xip->tag != tag)
         xip = xip->next;
 
-    if (! xip || ! xip->subtags)
+    if (! xip || xip->subtags.empty())
         return {};
 
     size_t i = 0;
-    for (txip = xip->subtags; txip; txip = txip->next)
+    auto txip = xip->subtags.begin();
+    for (; txip != xip->subtags.end(); txip = txip->next)
         i += (txip->end - txip->start + 2);
 
     string buf;
     buf.reserve(i);
-    for (txip = xip->subtags; txip; txip = txip->next) {
+    for (txip = xip->subtags.begin(); txip != xip->subtags.end(); txip = txip->next) {
         if (txip->start >= txip->end)
             continue;
         if (! buf.empty()) {

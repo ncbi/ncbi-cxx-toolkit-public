@@ -2892,7 +2892,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
 }
 
 /**********************************************************/
-void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xip, bool cancelled)
+void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlIndexList& xil, bool cancelled)
 {
     const char** b;
     char*        tmp;
@@ -2901,10 +2901,10 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
     char*        r;
     Int2         count;
 
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return;
 
-    tmp = StringSave(XMLFindTagValue(entry, xip, INSDSEQ_DEFINITION));
+    tmp = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_DEFINITION));
     if (! tmp)
         p = nullptr;
     else {
@@ -2933,7 +2933,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, XmlIndexPtr xi
     if (tech != CMolInfo::eTech_htgs_3)
         return;
 
-    r = StringSave(XMLFindTagValue(entry, xip, INSDSEQ_SEQUENCE));
+    r = StringSave(XMLFindTagValue(entry, xil, INSDSEQ_SEQUENCE));
     if (! r)
         return;
 
@@ -3313,24 +3313,24 @@ void fta_fix_orgref_div(const CBioseq::TAnnot& annots, COrg_ref* org_ref, CGB_bl
 }
 
 /**********************************************************/
-bool XMLCheckCDS(const char* entry, XmlIndexPtr xip)
+bool XMLCheckCDS(const char* entry, const TXmlIndexList& xil)
 {
-    XmlIndexPtr txip;
-    XmlIndexPtr fxip;
-
-    if (! entry || ! xip)
+    if (! entry || xil.empty())
         return (false);
 
-    for (; xip; xip = xip->next)
-        if (xip->tag == INSDSEQ_FEATURE_TABLE && xip->subtags)
+    auto xip = xil.begin();
+    for (; xip != xil.end(); xip = xip->next)
+        if (xip->tag == INSDSEQ_FEATURE_TABLE && ! xip->subtags.empty())
             break;
-    if (! xip)
+    if (xip == xil.end())
         return (false);
 
-    for (txip = xip->subtags; txip; txip = txip->next) {
-        if (! txip->subtags)
+    auto txip = xip->subtags.begin();
+    for (; txip != xip->subtags.end(); txip = txip->next) {
+        if (txip->subtags.empty())
             continue;
-        for (fxip = txip->subtags; fxip; fxip = fxip->next)
+        auto fxip = txip->subtags.begin();
+        for (; fxip != txip->subtags.end(); fxip = fxip->next)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
                 StringEquN(entry + fxip->start, "CDS", 3))
                 break;

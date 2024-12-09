@@ -139,6 +139,16 @@ struct TokenStatBlk {
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
+struct XmlIndex;
+struct TXmlIndexList {
+    XmlIndex* head = nullptr;
+
+    bool                      empty() const { return head == nullptr; }
+    XmlIndex*                 begin() { return head; };
+    const XmlIndex*           begin() const { return head; };
+    constexpr XmlIndex*       end() { return nullptr; };
+    constexpr const XmlIndex* end() const { return nullptr; };
+};
 
 struct XmlIndex {
     Int4      tag        = 0;
@@ -148,7 +158,7 @@ struct XmlIndex {
     Int4      start_line = 0;
     Int4      end_line   = 0;
     Int2      type       = 0; /* Used for references */
-    XmlIndex* subtags    = nullptr;
+    TXmlIndexList subtags;
     XmlIndex* next       = nullptr;
 };
 
@@ -208,7 +218,7 @@ struct Indexblk {
     TGapFeatsList gaps;
 
     TokenBlkList secaccs;
-    XmlIndexPtr  xip             = nullptr;
+    TXmlIndexList xip;
     bool         embl_new_ID     = false;
     bool         env_sample_qual = false; /* TRUE if at least one source
                                                    feature has /environmental_sample
@@ -319,14 +329,14 @@ public:
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
-    void      SetXmlData(XmlIndex* p) { mData = p; }
-    XmlIndex* GetXmlData() const { return std::get<XmlIndex*>(mData); }
+    void      SetXmlData(TXmlIndexList xil) { mData = xil; }
+    const TXmlIndexList& GetXmlData() const { return std::get<TXmlIndexList>(mData); }
     bool      hasData() const { return ! holds_alternative<monostate>(mData); }
     void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
-    std::variant<monostate, DataBlk*, EntryBlk*, FeatBlk*, XmlIndex*>
+    std::variant<monostate, DataBlk*, EntryBlk*, FeatBlk*, TXmlIndexList>
                    mData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
@@ -352,7 +362,7 @@ using EntryBlkPtr = EntryBlk*;
 
 void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
-void XMLIndexFree(XmlIndexPtr xip);
+void XMLIndexFree(TXmlIndexList&);
 
 
 END_NCBI_SCOPE

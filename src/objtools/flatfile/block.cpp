@@ -121,10 +121,10 @@ void DataBlk::deleteData()
         auto& p = std::get<FeatBlk*>(mData);
         delete p;
         p = nullptr;
-    } else if (holds_alternative<XmlIndex*>(mData)) {
-        auto& p = std::get<XmlIndex*>(mData);
-        delete p;
-        p = nullptr;
+    } else if (holds_alternative<TXmlIndexList>(mData)) {
+        auto& xil = std::get<TXmlIndexList>(mData);
+        delete xil.head;
+        xil.head = nullptr;
     }
     mData.emplace<monostate>();
 }
@@ -146,13 +146,13 @@ EntryBlk::~EntryBlk()
 }
 
 /**********************************************************/
-void XMLIndexFree(XmlIndexPtr xip)
+void XMLIndexFree(TXmlIndexList& xil)
 {
     XmlIndexPtr xipnext;
 
-    for (; xip; xip = xipnext) {
+    for (XmlIndexPtr xip = xil.begin(); xip != xil.end(); xip = xipnext) {
         xipnext = xip->next;
-        if (xip->subtags)
+        if (! xip->subtags.empty())
             XMLIndexFree(xip->subtags);
         delete xip;
     }
@@ -166,7 +166,7 @@ void FreeIndexblk(IndexblkPtr ibp)
 
     ibp->gaps.clear();
 
-    if (ibp->xip)
+    if (! ibp->xip.empty())
         XMLIndexFree(ibp->xip);
 
     delete ibp;
