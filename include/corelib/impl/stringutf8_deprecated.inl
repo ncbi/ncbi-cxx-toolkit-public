@@ -151,11 +151,13 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const TCharUCS2* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#if defined(HAVE_WSTRING)
 inline
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     ECharBufferType type, const wchar_t* src, SIZE_TYPE char_count) {
     assign( CUtf8::AsUTF8(src, type == eCharBuffer ? char_count : NPOS));
 }
+#endif
 #endif // __EXPORT_CTOR_STRINGUTF8__
 
 #if !defined(__EXPORT_IMPL_STRINGUTF8__)
@@ -164,10 +166,12 @@ inline string CStringUTF8_DEPRECATED::AsLatin1(const char* substitute_on_error) 
 {
     return CUtf8::AsSingleByteString(*this,eEncoding_ISO8859_1,substitute_on_error);
 }
+#if defined(HAVE_WSTRING)
 inline wstring CStringUTF8_DEPRECATED::AsUnicode(const wchar_t* substitute_on_error) const
 {
     return CUtf8::AsBasicString<wchar_t>(*this,substitute_on_error,CUtf8::eNoValidate);
 }
+#endif
 inline TStringUCS2 CStringUTF8_DEPRECATED::AsUCS2(const TCharUCS2* substitute_on_error) const
 {
     return CUtf8::AsBasicString<TCharUCS2>(*this,substitute_on_error,CUtf8::eNoValidate);
