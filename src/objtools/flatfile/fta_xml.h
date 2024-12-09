@@ -107,7 +107,7 @@
 BEGIN_NCBI_SCOPE
 
 char*      XMLLoadEntry(ParserPtr pp, bool err);
-unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex* xip);
+unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex& xip);
 unique_ptr<string> XMLFindTagValue(const char* entry, const XmlIndex* xip, Int4 tag);
 DataBlkPtr XMLBuildRefDataBlk(char* entry, const XmlIndex* xip, int type);
 unique_ptr<string> XMLConcatSubTags(const char* entry, const XmlIndex* xip, Int4 tag, Char sep);
