@@ -762,6 +762,8 @@ int CTestFTPDownloadApp::Run(void)
     SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
     if (!net_info) {
         ERR_POST(Fatal << "Cannot create net_info: check your environment");
+        /*NOTREACHED*/
+        return 1;
     }
     net_info->path[0] = '\0';
     if (net_info->http_referer) {
@@ -773,6 +775,8 @@ int CTestFTPDownloadApp::Run(void)
 
     if (!ConnNetInfo_ParseURL(net_info, url)) {
         ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
+        /*NOTREACHED*/
+        return 1;
     }
 
     if (net_info->scheme == eURL_Unspec) {
