@@ -739,16 +739,17 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd && QSIndex(pp, ibnp->next) == false)
+    if (pp->qsfd && ! QSIndex(pp, ibnp->next))
         return false;
 
-    pp->entrylist.resize(indx);
+    pp->entrylist.reserve(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (int j = 0; j < indx && tibnp; j++, tibnp = ibnp) {
-        pp->entrylist[j] = tibnp->ibp;
-        ibnp             = tibnp->next;
+    for (; tibnp;) {
+        pp->entrylist.push_back(tibnp->ibp.release());
+        auto tmp = tibnp->next;
         delete tibnp;
+        tibnp = tmp;
     }
 
     return (end_of_file);

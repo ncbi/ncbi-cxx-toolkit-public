@@ -206,7 +206,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     IndBlkNextPtr ibnp;
     IndBlkNextPtr tibnp;
     size_t        i;
-    int           j;
     char*         p;
     char*         q;
 
@@ -421,13 +420,14 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     if (pp->qsfd && QSIndex(pp, ibnp->next) == false)
         return false;
 
-    pp->entrylist.resize(indx);
+    pp->entrylist.reserve(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (j = 0; j < indx && tibnp; j++, tibnp = ibnp) {
-        pp->entrylist[j] = tibnp->ibp;
-        ibnp             = tibnp->next;
+    for (; tibnp;) {
+        pp->entrylist.push_back(tibnp->ibp.release());
+        auto tmp = tibnp->next;
         delete tibnp;
+        tibnp = tmp;
     }
 
     if (pp->segment)

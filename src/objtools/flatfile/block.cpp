@@ -290,7 +290,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
 
     vector<IndexblkPtr> ibpp(pp->indx);
     for (j = 0; j < pp->indx && ibnp; j++, ibnp = ibnp->next)
-        ibpp[j] = ibnp->ibp;
+        ibpp[j] = ibnp->ibp.get();
 
     if (pp->indx > 1)
         std::sort(ibpp.begin(), ibpp.end(), AccsCmp);

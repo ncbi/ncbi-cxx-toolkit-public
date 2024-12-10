@@ -53,7 +53,7 @@ struct FinfoBlk {
 
 
 struct IndBlkNode {
-    Indexblk*   ibp;
+    unique_ptr<Indexblk> ibp;
     IndBlkNode* next;
 
     IndBlkNode(Indexblk* ibp_) :
