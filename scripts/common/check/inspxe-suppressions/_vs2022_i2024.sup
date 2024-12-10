@@ -60,6 +60,27 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "vector / __std_find_trivial_impl - 6"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			src=vector_algorithms.cpp,func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)";
+		}
+	}
+}
+suppression = {
+	name = "vector / __std_find_trivial_impl - 7"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=vector_algorithms.cpp,func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)";
+		}
+	}
+}
+
 
 suppression = {
 	name = "ucrtbase.dll / any low level functions via setlocale"
@@ -86,12 +107,9 @@ suppression = {
 			...;
 			mod=ucrtbase.dll,func=stat64;
 		}
-		allocation={
-			...;
-			mod=ucrtbase.dll,func=stat64;
-		}
 	}
 }
+
 suppression = {
 	name = "ucrtbase.dll / putenv"
 	type = {invalid_call}
@@ -104,9 +122,19 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "ucrtbase.dll / fclose"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=fclose;
+		}
+	}
+}
 
 suppression = {
-	name = "s_CreateHttpConnector"
+	name = "connect / s_CreateHttpConnector"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -122,21 +150,20 @@ suppression = {
 	}
 }
 suppression = {
-	name = "ConnNetInfo_CloneInternal"
+	name = "connect / ConnNetInfo_CloneInternal - seems false positive"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
-			...;
-			func=ConnNetInfo_CloneInternal,src=ncbi_connutil.c;
-			func=ConnNetInfo_Clone,src=ncbi_connutil.c;
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_CloneInternal;
 		}
 		allocation={
-			...;
-			func=ConnNetInfo_CloneInternal,src=ncbi_connutil.c;
-			func=ConnNetInfo_Clone,src=ncbi_connutil.c;
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_CloneInternal;
 		}
 	}
 }
+
 suppression = {
 	name = "CCompressionStreambuf / zlib / inflate"
 	type = {uninitialized_memory_access}
@@ -186,7 +213,151 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "BZ2 / BZ2_bzCompress"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="fallbackSort(unsigned int *, unsigned int *, unsigned int *, int, int)",src=blocksort.c;
+			func=BZ2_blockSort,src=blocksort.c;
+			func=BZ2_compressBlock,src=compress.c;
+			...;
+			func=BZ2_bzCompress,src=bzlib.c;
+		}
+		allocation={
+			func=BZ2_bzCompressInit,src=bzlib.c;
+		}
+	}
+}
+suppression = {
+	name = "BZ2 / BZ2_bzReadOpen"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=BZ2_decompress,src=decompress.c;
+			func=BZ2_bzDecompress,src=bzlib.c;
+			func=BZ2_bzRead,src=bzlib.c;
+		}
+		allocation={
+			func=BZ2_bzReadOpen,src=bzlib.c;
+		}
+	}
+}
+suppression = {
+	name = "lzo / lzo1x_decompress_safe"
+	type = {prob_mem_uninit,prob_mem_uninit_partial}
+	stacks = {
+		{
+			!!!;
+			func=lzo1x_decompress_safe,src=lzo1x_d.ch;
+		}
+	}
+}
+suppression = {
+	name = "zlib / inflate on a string"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			func=inflate,src=inflate.c;
+		}
+		allocation={
+			func=_Allocate,src=xstring;
+		}
+	}
+}
+suppression = {
+	name = "zstd / ZSTD_decompressContinueStream"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=ZSTD_decompressContinueStream,src=zstd_decompress.c;
+		}
+	}
+}
+suppression = {
+	name = "zstd / ZSTD_checkOutBuffer"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=zstd_decompress.c,func=ZSTD_checkOutBuffer;
+		}
+	}
+}
+suppression = {
+	name = "Compression API / CArchive / compare items - false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=compare,src=archive.cpp;
+			func="ncbi::CArchive::x_ReadAndProcess(enum ncbi::CArchive::EAction)",src=archive.cpp;
+		}
+		allocation={
+			...;
+			func="ncbi::CArchive::x_ReadAndProcess(enum ncbi::CArchive::EAction)",src=archive.cpp;
+		}
+	}
+}
+suppression = {
+	name = "test_compress / test_compress_run - zip -- false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			func="CTest::TestMethod<class ncbi::CZipCompression,class ncbi::CZipCompressionFile,class ncbi::CZipStreamCompressor,class ncbi::CZipStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+		allocation={
+			!!!;
+			func="CTest::TestMethod<class ncbi::CZipCompression,class ncbi::CZipCompressionFile,class ncbi::CZipStreamCompressor,class ncbi::CZipStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+	}
+}
+suppression = {
+	name = "test_compress / test_compress_run - bzip2 -- false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			func="CTest::TestMethod<class ncbi::CBZip2Compression,class ncbi::CBZip2CompressionFile,class ncbi::CBZip2StreamCompressor,class ncbi::CBZip2StreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+		allocation={
+			!!!;
+			func="CTest::TestMethod<class ncbi::CBZip2Compression,class ncbi::CBZip2CompressionFile,class ncbi::CBZip2StreamCompressor,class ncbi::CBZip2StreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+	}
+}
+suppression = {
+	name = "test_compress / test_compress_run - lzo -- false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			func="CTest::TestMethod<class ncbi::CLZOCompression,class ncbi::CLZOCompressionFile,class ncbi::CLZOStreamCompressor,class ncbi::CLZOStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+		allocation={
+			!!!;
+			func="CTest::TestMethod<class ncbi::CLZOCompression,class ncbi::CLZOCompressionFile,class ncbi::CLZOStreamCompressor,class ncbi::CLZOStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)",mod=test_compress.exe,src=test_compress_run.inl;
+		}
+	}
+}
+suppression = {
+	name = "test_compress / test_compress_run - zstd -- false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=test_compress_run.inl,func="CTest::TestMethod<class ncbi::CZstdCompression,class ncbi::CZstdCompressionFile,class ncbi::CZstdStreamCompressor,class ncbi::CZstdStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)";
+		}
+		allocation={
+			!!!;
+			src=test_compress_run.inl,func="CTest::TestMethod<class ncbi::CZstdCompression,class ncbi::CZstdCompressionFile,class ncbi::CZstdStreamCompressor,class ncbi::CZstdStreamDecompressor>(enum ncbi::CCompressStream::EMethod,char const *,unsigned __int64,unsigned __int64)";
+		}
+	}
+}
 suppression = {
 	name = "crypt32.dll - CertEnumCertificatesInStore"
 	type = {uninitialized_memory_access}
@@ -205,6 +376,20 @@ suppression = {
 		{
 			...;
 			mod=crypt32.dll,func=I_CryptGetAsn1Encoder;
+		}
+	}
+}
+suppression = {
+	name = "crypt32.dll - CertOpenStore"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=crypt32.dll,func=CertOpenStore;
+		}
+		allocation={
+			...;
+			mod=crypt32.dll,func=CertOpenStore;
 		}
 	}
 }
