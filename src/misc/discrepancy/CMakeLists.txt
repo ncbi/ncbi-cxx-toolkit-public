@@ -17,6 +17,7 @@ set(_discrepancy_modules
     suspect_product_names
     transl_note
     transl_too_long
+    deprecated_quals
 )
 
 
