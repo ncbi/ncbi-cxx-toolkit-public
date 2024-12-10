@@ -63,6 +63,7 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 #include <serial/iterator.hpp>
 
 #include <corelib/test_boost.hpp>
@@ -102,10 +103,37 @@ bool NeedsOtherLoaders()
 }
 
 
+class CTestScope : public CScope
+{
+public:
+    explicit
+    CTestScope(CObjectManager& om)
+        : CScope(om)
+    {
+    }
+
+
+    bool IsUsed()
+    {
+        return !ReferencedOnlyOnce() || !GetImpl().ReferencedOnlyOnce();
+    }
+    void VerifyNotUsed()
+    {
+        if ( !ReferencedOnlyOnce() ) {
+            CObjectCounterLocker::ReportLockedObjects();
+        }
+        _VERIFY(ReferencedOnlyOnce());
+        _VERIFY(GetImpl().ReferencedOnlyOnce());
+    }
+};
+
+
 static CRef<CScope> s_InitScope(bool reset_loader = true)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
     if ( reset_loader ) {
+        CObjectCounterLocker::ReportLockedObjects();
+        
         CDataLoader* loader =
             om->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
         if ( loader ) {
@@ -116,6 +144,7 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
                 BOOST_CHECK(om->RevokeDataLoader(*loader));
             }
         }
+        CObjectCounterLocker::MonitorObjectType(typeid(CTestScope));
     }
 #ifdef HAVE_PUBSEQ_OS
     DBAPI_RegisterDriver_FTDS();
@@ -124,7 +153,7 @@ static CRef<CScope> s_InitScope(bool reset_loader = true)
 #endif
     CGBDataLoader::RegisterInObjectManager(*om);
 
-    CRef<CScope> scope(new CScope(*om));
+    CRef<CScope> scope(new CTestScope(*om));
     scope->AddDefaults();
     if ( NeedsOtherLoaders() ) {
         // Add SNP/CDD/WGS loaders.
@@ -2202,6 +2231,7 @@ BOOST_AUTO_TEST_CASE(CheckSeqState)
     bh.Reset();
     LOG_POST("4th scope->GetSequenceState(id)");
     BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+    scope.Reset();
     scope = s_InitScope(false);
     LOG_POST("5th scope->GetSequenceState(id)");
     BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
@@ -2209,6 +2239,52 @@ BOOST_AUTO_TEST_CASE(CheckSeqState)
     scope = s_InitScope(true);
     LOG_POST("6th scope->GetSequenceState(id)");
     BOOST_CHECK_EQUAL(scope->GetSequenceState(id), state);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckSeqStateSatSatkey)
+{
+    LOG_POST("Checking GetSequenceState() using sat/satkey");
+    CRef<CScope> scope = s_InitScope();
+    CGBDataLoader* gb_loader =
+        dynamic_cast<CGBDataLoader*>(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"));
+    BOOST_REQUIRE(gb_loader);
+    {{
+        const string seq_id = "2";
+        const int sat = 2;
+        const int satkey = 27846539;
+        const int subsat = 0;
+        CScope::TBlobId blob_id = gb_loader->GetBlobIdFromSatSatKey(sat, satkey, subsat);
+        CSeq_entry_Handle seh = scope->GetSeq_entryHandle(gb_loader, blob_id);
+        BOOST_REQUIRE(seh);
+        CBioseq_Handle bh = scope->GetBioseqHandleFromTSE(CSeq_id_Handle::GetHandle(seq_id), seh);
+        BOOST_REQUIRE(bh);
+        BOOST_CHECK_EQUAL(bh.GetState(), CBioseq_Handle::fState_none);
+    }}
+    {{
+        const string seq_id = "AFFP01000011.1";
+        const int sat = 21;
+        const int satkey = 116465513;
+        const int subsat = 0;
+        CScope::TBlobId blob_id = gb_loader->GetBlobIdFromSatSatKey(sat, satkey, subsat);
+        CSeq_entry_Handle seh = scope->GetSeq_entryHandle(gb_loader, blob_id);
+        BOOST_REQUIRE(seh);
+        CBioseq_Handle bh = scope->GetBioseqHandleFromTSE(CSeq_id_Handle::GetHandle(seq_id), seh);
+        BOOST_REQUIRE(bh);
+        BOOST_CHECK_EQUAL(bh.GetState(), CBioseq_Handle::fState_dead|CBioseq_Handle::fState_suppress_perm);
+    }}
+    {{
+        const string seq_id = "NM_001007539.1";
+        const int sat = 4;
+        const int satkey = 10024506;
+        const int subsat = 0;
+        CScope::TBlobId blob_id = gb_loader->GetBlobIdFromSatSatKey(sat, satkey, subsat);
+        CSeq_entry_Handle seh = scope->GetSeq_entryHandle(gb_loader, blob_id);
+        BOOST_REQUIRE(seh);
+        CBioseq_Handle bh = scope->GetBioseqHandleFromTSE(CSeq_id_Handle::GetHandle(seq_id), seh);
+        BOOST_REQUIRE(bh);
+        BOOST_CHECK_EQUAL(bh.GetState(), CBioseq_Handle::fState_suppress_perm);
+    }}
 }
 
 
@@ -2300,7 +2376,7 @@ BOOST_AUTO_TEST_CASE(TestGetBlobById)
         params.SetReaderPtr(reader);
         CGBDataLoader::RegisterInObjectManager(*om, params);
     }
-    CRef<CScope> scope(new CScope(*om));
+    CRef<CScope> scope(new CTestScope(*om));
     scope->AddDefaults();
     
     map<int, set<CConstRef<CSeq_entry>>> entries;
@@ -2414,22 +2490,26 @@ BOOST_AUTO_TEST_CASE(TestGetBlobByIdSatMT)
     const int sat_key_0 = 207110312;
     
     CRef<CScope> scope = s_InitScope();
+    dynamic_cast<CTestScope&>(*scope).VerifyNotUsed();
     CDataLoader* loader =
         CObjectManager::GetInstance()->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
     BOOST_REQUIRE(loader);
 
-    const int NQ = 20;
+    const int NP = 2;
+    const int NB = 10;
+    const int NQ = NB*NP;
     vector<future<bool>> res;
     for ( int i = 0; i < NQ; ++i ) {
         res.emplace_back(async(launch::async, [&](int add_sat_key)->bool {
             int sat_key = sat_key_0 + add_sat_key;
             CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
             return seh;
-        }, i/2));
+        }, i/NP));
     }
     bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) {
         return f.get();
     });
+    dynamic_cast<CTestScope&>(*scope).VerifyNotUsed();
     BOOST_CHECK(all_is_good);
 }
 #endif
@@ -2443,6 +2523,65 @@ BOOST_AUTO_TEST_CASE(TestStateDead)
     BOOST_CHECK(bh.GetState() & bh.fState_dead);
     BOOST_CHECK(!(bh.GetState() & bh.fState_withdrawn));
     BOOST_CHECK(bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(TestRevoke)
+{
+    LOG_POST("Checking RevokeDataLoader");
+
+    for ( int i = 0; i < 100; ++i ) {
+        {{
+            LOG_POST(i<<"  TestGetBlobByIdSat");
+            const int sat = 4;
+            const int sat_key = 207110312;
+            
+            CRef<CScope> scope = s_InitScope();
+            CDataLoader* loader =
+                CObjectManager::GetInstance()->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
+            BOOST_REQUIRE(loader);
+            CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
+            BOOST_REQUIRE(seh);
+        }}
+#if defined(NCBI_THREADS)
+        {{
+            LOG_POST(i<<"  TestGetBlobByIdSatMT");
+            const int sat = 4;
+            const int sat_key_0 = 207110312;
+    
+            CRef<CScope> scope = s_InitScope();
+            dynamic_cast<CTestScope&>(*scope).VerifyNotUsed();
+            CDataLoader* loader =
+                CObjectManager::GetInstance()->FindDataLoader(CGBDataLoader::GetLoaderNameFromArgs());
+            BOOST_REQUIRE(loader);
+
+            const int NP = 2;
+            const int NB = 10;
+            const int NQ = NB*NP;
+            vector<future<bool>> res;
+            for ( int i = 0; i < NQ; ++i ) {
+                res.emplace_back(async(launch::async, [&](int add_sat_key)->bool {
+                    int sat_key = sat_key_0 + add_sat_key;
+                    CSeq_entry_Handle seh = scope->GetSeq_entryHandle(loader, s_MakeBlobId(sat, sat_key));
+                    return seh;
+                }, i/NP));
+            }
+            bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) {
+                return f.get();
+            });
+            dynamic_cast<CTestScope&>(*scope).VerifyNotUsed();
+            BOOST_CHECK(all_is_good);
+        }}
+#endif
+        {{
+            LOG_POST(i<<"  TestStateDead");
+            CRef<CScope> scope = s_InitScope();
+            CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
+            BOOST_CHECK(bh.GetState() & bh.fState_dead);
+            BOOST_CHECK(!(bh.GetState() & bh.fState_withdrawn));
+            BOOST_CHECK(bh);
+        }}
+    }
 }
 
 
@@ -2710,6 +2849,7 @@ NCBITEST_INIT_TREE()
     NCBITEST_DISABLE(TestFallback5);
     NCBITEST_DISABLE(TestFallback7);
     NCBITEST_DISABLE(TestFallback8);
+    NCBITEST_DISABLE(TestRevoke);
 
     if ( !SInvertVDB_CDD::IsPossible() ) {
         NCBITEST_DISABLE(CheckExtCDD2);
