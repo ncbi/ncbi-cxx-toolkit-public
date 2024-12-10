@@ -265,7 +265,10 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Skipping CORE_SendMail tests");
 #endif
 
-    if (argc > 1) {
+    if (argc <= 1) {
+        CORE_LOG(eLOG_Note, "Phase 2 of 2: Skipping CORE_SendMailEx tests");
+        goto done;
+    }
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
 
     SendMailInfo_Init(&info);
@@ -329,16 +332,19 @@ int main(int argc, const char* argv[])
     CORE_LOG(eLOG_Note, "Testing huge body");
     info.cc = 0;
     info.bcc = 0;
-    if (!(huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)))
+    if (!(huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE))) {
         CORE_LOG(eLOG_Fatal, "Test failed: Cannot allocate memory");
+        /*NOTREACHED*/
+        return 1;
+    }
     for (n = 0;  n < TEST_HUGE_BODY_SIZE - 1;  ++n)
         huge_body[n] = "0123456789-\n ABCDEFGHIJKLMNOPQRSTUVWXYZ."[rand()%40];
     huge_body[n] = '\0';
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", huge_body, &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
-    if (!(fp = fopen("test_ncbi_sendmail.out", "w")) ||
-        fwrite(huge_body, TEST_HUGE_BODY_SIZE - 1, 1, fp) != 1) {
+    if (!(fp = fopen("test_ncbi_sendmail.out", "w"))
+        ||  fwrite(huge_body, TEST_HUGE_BODY_SIZE - 1, 1, fp) != 1) {
         CORE_LOG(eLOG_Error, "Test failed: Cannot store huge body to file");
     } else {
         fclose(fp);
@@ -410,9 +416,8 @@ int main(int argc, const char* argv[])
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
-    } else
-    CORE_LOG(eLOG_Note, "Phase 2 of 2: Skipping CORE_SendMailEx tests");
 
+done:
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
