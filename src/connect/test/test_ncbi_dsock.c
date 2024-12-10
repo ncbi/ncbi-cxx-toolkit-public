@@ -253,8 +253,8 @@ static int s_Client(int x_port, unsigned int max_try)
     msglen = s_MTU <= 0
         ? (size_t)(-s_MTU)
         : (size_t)(((double) rand() / (double) RAND_MAX) * (double) s_MTU);
-    if (msglen < sizeof(unsigned long) + 10)
-        msglen = sizeof(unsigned long) + 10;
+    if (msglen < sizeof(id) + 10)
+        msglen = sizeof(id) + 10;
     if (msglen == MAX_UDP_DGRAM_SIZE  &&  s_MTU > 0)
         msglen--;
 
@@ -268,7 +268,7 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    for (n = sizeof(unsigned long);  n < msglen - 10;  ++n)
+    for (n = sizeof(id);  n < msglen - 10;  ++n)
         buf[n] = (char)(rand() % 0xFF);
     memcpy(buf + msglen - 10, "\0\0\0\0\0\0\0\0\0", 10);
 
@@ -282,14 +282,13 @@ static int s_Client(int x_port, unsigned int max_try)
             CORE_LOGF(eLOG_Note, ("[Client]  Attempt #%u", (unsigned int) m));
         ++id;
 
-        *((unsigned long*) buf) = id;
+        memcpy(buf, &id, sizeof(id));
 
         if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msglen))
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Client]  Cannot send to DSOCK: %s",
                                    IO_StatusStr(status)));
-            SOCK_Close(client);
-            return 1;
+            goto errout;
         }
 
         timeout.sec  = 1;
@@ -298,8 +297,7 @@ static int s_Client(int x_port, unsigned int max_try)
             != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Client]  Cannot set read timeout: %s",
                                    IO_StatusStr(status)));
-            SOCK_Close(client);
-            return 1;
+            goto errout;
         }
 
         k = 0;
@@ -314,8 +312,7 @@ static int s_Client(int x_port, unsigned int max_try)
         if (n != msglen) {
             CORE_LOGF(eLOG_Error, ("[Client]  Received message of wrong size: "
                                    "%lu", (unsigned long) n));
-            SOCK_Close(client);
-            return 1;
+            goto errout;
         }
 
         memcpy(&tmp, buf + msglen, sizeof(tmp));
@@ -334,11 +331,8 @@ static int s_Client(int x_port, unsigned int max_try)
         assert(SOCK_Read(client, 0, 1, &n, eIO_ReadPlain) == eIO_Closed);
         break;
     }
-    if (m > max_try) {
-        SOCK_Close(client);
-        free(buf);
-        return 1;
-    }
+    if (m > max_try)
+        goto errout;
 
     for (n = sizeof(unsigned long);  n < msglen - 10;  ++n) {
         if (buf[n] != buf[msglen + n])
@@ -347,17 +341,13 @@ static int s_Client(int x_port, unsigned int max_try)
     if (n < msglen - 10) {
         CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupt, offset=%lu",
                                (unsigned long) n));
-        SOCK_Close(client);
-        free(buf);
-        return 1;
+        goto errout;
     }
 
-    if (strcmp(buf + msglen*2 - 10, "--Reply--") != 0) {
+    if (memcmp(buf + msglen*2 - 10, "--Reply--", 10) != 0) {
         CORE_LOGF(eLOG_Error, ("[Client]  No signature in the message: %.9s",
                                buf + msglen*2 - 10));
-        SOCK_Close(client);
-        free(buf);
-        return 1;
+        goto errout;
     }
 
     free(buf);
@@ -371,6 +361,11 @@ static int s_Client(int x_port, unsigned int max_try)
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
+
+errout:
+    SOCK_Close(client);
+    free(buf);
+    return 1;
 }
 
 
