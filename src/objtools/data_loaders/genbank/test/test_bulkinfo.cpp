@@ -140,8 +140,8 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eOutputFile);
     args.AddDefaultKey
         ("count", "Count",
-         "Number of iterations to run (default: 1)",
-         CArgDescriptions::eInteger, "1");
+         "Number of iterations to run (default: 10)",
+         CArgDescriptions::eInteger, "10");
     string size_limit = "1000000";
     // ThreadSanitizer has a limit on number of mutexes held by a thread
 #ifdef NCBI_USE_TSAN

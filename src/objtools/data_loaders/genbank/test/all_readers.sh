@@ -36,6 +36,10 @@ while true; do
 	    no_id2_test=1
 	    shift
 	    ;;
+	-psg)
+	    ONLY_PSG=1
+	    shift
+	    ;;
 	-vdb-wgs)
 	    only_vdb_wgs_test=1
 	    shift

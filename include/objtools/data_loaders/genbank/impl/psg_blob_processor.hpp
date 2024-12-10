@@ -55,9 +55,7 @@ BEGIN_NAMESPACE(psgl);
 
 struct SPsgBioseqInfo;
 struct SPsgBlobInfo;
-class CPSGBioseqCache;
-class CPSGBlobMap;
-class CPSGAnnotCache;
+class CPSGCaches;
 class CPSGL_Blob_Processor;
 
 
@@ -71,7 +69,7 @@ class CPSGL_Blob_Processor : public CPSGL_Processor
 public:
     explicit
     CPSGL_Blob_Processor(CDataSource* data_source,
-                         CPSGBlobMap* blob_info_cache = nullptr,
+                         CPSGCaches* caches = nullptr,
                          bool add_wgs_master = false);
     ~CPSGL_Blob_Processor() override;
 
@@ -178,7 +176,7 @@ protected:
     // cache pointers and other params
     bool m_AddWGSMasterDescr;
     CDataSource* m_DataSource; // OM data source to get TSE locks from
-    CPSGBlobMap* m_BlobInfoCache; // cache for blob info
+    CPSGCaches* m_Caches; // cache for blob info
 };
 
 

@@ -175,6 +175,7 @@ protected:
     void MarkAsCanceled();
     
     CPSGL_QueueGuard& m_QueueGuard;
+    CThreadPool& m_ThreadPool;
     shared_ptr<CPSG_Request> m_Request;
     CRef<CPSGL_Processor> m_Processor;
     size_t m_Index;

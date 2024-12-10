@@ -61,6 +61,8 @@
 #define NCBI_GBLOADER_PARAM_PREOPEN  "preopen"
 /* Expiration timeout of id resolution information in seconds (must be > 0) */
 #define NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT "ID_EXPIRATION_TIMEOUT"
+/* Expiration timeout of id resolution information in seconds if there's no data (must be > 0) */
+#define NCBI_GBLOADER_PARAM_NO_ID_EXPIRATION_TIMEOUT "NO_ID_EXPIRATION_TIMEOUT"
 /* Load external annotations for other loaders */
 #define NCBI_GBLOADER_PARAM_ALWAYS_LOAD_EXTERNAL "ALWAYS_LOAD_EXTERNAL"
 /* Load NANNOT annotations for other loaders */

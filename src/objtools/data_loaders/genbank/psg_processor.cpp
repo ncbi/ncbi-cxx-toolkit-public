@@ -105,6 +105,23 @@ string CPSGL_Processor::x_Format(EPSG_Status status,
 }
 
 
+string CPSGL_Processor::x_FormatAndSetError(EPSG_Status& status)
+{
+    auto ret = x_Format(status);
+    status = EPSG_Status::eError;
+    return ret;
+}
+
+
+string CPSGL_Processor::x_FormatAndSetError(EPSG_Status& status,
+                                            const shared_ptr<CPSG_Reply>& reply)
+{
+    auto ret = x_Format(status, reply);
+    status = EPSG_Status::eError;
+    return ret;
+}
+
+
 CPSGL_Processor::EProcessResult
 CPSGL_Processor::ProcessItemFast(EPSG_Status /*status*/,
                                  const shared_ptr<CPSG_ReplyItem>& /*item*/)
