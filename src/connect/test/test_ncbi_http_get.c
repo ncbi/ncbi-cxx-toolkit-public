@@ -379,13 +379,19 @@ int main(int argc, char* argv[])
         CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"", argv[2]));
 
     CORE_LOG(eLOG_Note, "Creating network info structure");
-    if (!(net_info = ConnNetInfo_Create(0)))
+    if (!(net_info = ConnNetInfo_Create(0))) {
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
+        /*NOTREACHED*/
+        return 1;
+    }
     assert(!net_info->credentials);
 
     CORE_LOGF(eLOG_Note, ("Parsing URL \"%s\"", argv[1]));
-    if (!ConnNetInfo_ParseURL(net_info, argv[1]))
+    if (!ConnNetInfo_ParseURL(net_info, argv[1])) {
         CORE_LOG(eLOG_Fatal, "Cannot parse URL");
+        /*NOTREACHED*/
+        return 1;
+    }
 
     ConnNetInfo_GetValue(0, "HTTP11", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk))
@@ -431,6 +437,8 @@ int main(int argc, char* argv[])
                 CORE_LOGF_ERRNO(eLOG_Fatal, errno,
                                 ("Cannot load certificate from \"%s\"",
                                  cert_file));
+                /*NOTREACHED*/
+                return 1;
             }
             CORE_LOGF(eLOG_Note,
                       ("Certificate loaded from \"%s\"", cert_file));
@@ -438,12 +446,16 @@ int main(int argc, char* argv[])
                 CORE_LOGF_ERRNO(eLOG_Fatal, errno,
                                 ("Cannot load private key from \"%s\"",
                                  pkey_file));
+                /*NOTREACHED*/
+                return 1;
             }
             CORE_LOGF(eLOG_Note,
                       ("Private key loaded from \"%s\"", pkey_file));
             if (!(cred = NcbiCreateTlsCertCredentials(cert, certsz,
                                                       pkey, pkeysz))) {
                 CORE_LOG(eLOG_Fatal, "Cannot create NCBI_CRED");
+                /*NOTREACHED*/
+                return 1;
             }
 #    ifdef HAVE_LIBGNUTLS
             /* only for debugging -- not really necessary, in general */
@@ -488,6 +500,8 @@ int main(int argc, char* argv[])
                 CORE_LOGF(eLOG_Fatal,
                           ("Cannot load PKCS#12 %s credentials from"
                            " \"%s\": %s", type, file, gnutls_strerror(err)));
+                /*NOTREACHED*/
+                return 1;
             }
         } else if (net_info->debug_printout == eDebugPrintout_Data) {
             /* We don't have to create empty cert credentials, in general (as
@@ -506,8 +520,11 @@ int main(int argc, char* argv[])
         if (xcred) {
             if (net_info->debug_printout == eDebugPrintout_Data)
                 x_GnuTlsSetupCB(xcred);
-            if (!(cred = NcbiCredGnuTls(xcred)))
+            if (!(cred = NcbiCredGnuTls(xcred))) {
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
+                /*NOTREACHED*/
+                return 1;
+            }
             if (file) {
                 CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
                                       " \"%s\"", type, file));
@@ -526,8 +543,11 @@ int main(int argc, char* argv[])
                           &"\""[!url], url ? url : "NULL", &"\""[!url]));
     if (url)
         free((void*) url);
-    if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
+    if (!(connector = HTTP_CreateConnector(net_info, 0, flags))) {
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
+        /*NOTREACHED*/
+        return 1;
+    }
     /* Could have destroyed net_info at this point here if we did not use the
      * timeout off of it below, so at least unlink the credentials, if any --
      * they are copied over to the internal structures (and must be maintaned
@@ -535,16 +555,22 @@ int main(int argc, char* argv[])
     net_info->credentials = 0;
 
     CORE_LOG(eLOG_Note, "Creating connection");
-    if (CONN_Create(connector, &conn) != eIO_Success)
+    if (CONN_Create(connector, &conn) != eIO_Success) {
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
+        /*NOTREACHED*/
+        return 1;
+    }
     CONN_SetTimeout(conn, eIO_Open,      net_info->timeout);
     CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout);
     while (fp  &&  !feof(fp)) {
         static char block[20000/*to force non-default BUF allocations*/];
         n = fread(block, 1, sizeof(block), fp);
         status = CONN_Write(conn, block, n, &n, eIO_WritePersist);
-        if (status != eIO_Success)
+        if (status != eIO_Success) {
             CORE_LOGF(eLOG_Fatal, ("Write error: %s", IO_StatusStr(status)));
+            /*NOTREACHED*/
+            return 1;
+        }
     }
     if (fp)
         fclose(fp);
@@ -557,6 +583,8 @@ int main(int argc, char* argv[])
                   (net_info->timeout->sec | net_info->timeout->usec))
                  ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT) {
                 CORE_LOG(eLOG_Fatal, "Timed out");
+                /*NOTREACHED*/
+                return 1;
             }
 #if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
             usleep(500);
@@ -578,8 +606,11 @@ int main(int argc, char* argv[])
         }
         if (status == eIO_Timeout)
             continue;
-        if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector))
+        if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector)) {
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
+            /*NOTREACHED*/
+            return 1;
+        }
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
     ConnNetInfo_Destroy(net_info); /* done using the timeout field */
