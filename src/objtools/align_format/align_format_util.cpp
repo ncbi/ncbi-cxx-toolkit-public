@@ -69,6 +69,7 @@
 #include <objects/blastdb/defline_extra.hpp>
 #include <objects/blastdb/Blast_def_line.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
+#include <util/compile_time.hpp>
 
 #include <stdio.h>
 #include <sstream>
@@ -89,6 +90,24 @@ const char k_PSymbol[ePMatrixSize + 1] = "ARNDCQEGHILKMFPSTWYVBZX";
 unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
+
+MAKE_CONST_MAP(mapURLTagToAddress, ct::tagStrNocase, ct::tagStrNocase,
+{
+    { "BL2SEQ_WBLAST_CGI",  "https://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi" },                                                  //kBl2SeqWBlastCgi
+    { "CBLAST_CGI",  "https://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi" },                                                      //kCBlastCgi     
+    { "ENTREZ_QUERY_CGI",  "https://www.ncbi.nlm.nih.gov/entrez/query.fcgi" },                                                          //kEntrezQueryCgi
+    { "ENTREZ_SITES_CGI",  "https://www.ncbi.nlm.nih.gov/sites/entrez" },                                                               //kEntrezSitesCgi     
+    { "ENTREZ_SUBSEQ_TM",  "https://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>" },       //kEntrezSubseqTMUrl
+    { "ENTREZ_TM",  "https://www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>" },  //kEntrezTMUrl
+    { "ENTREZ_VIEWER_CGI",  "https://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi" },                                                        //kEntrezViewerCgi    
+    { "GENE_INFO",  "https://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s&log$=geneexplicit%s&blast_rank=%d" },  //kGeneInfoUr        
+    { "MAP_SEARCH_CGI",  "https://www.ncbi.nlm.nih.gov/mapview/map_search.cgi" },                                                       //kMapSearchCgi          
+    { "TRACE_CGI",  "https://www.ncbi.nlm.nih.gov/Traces/trace.cgi" },                                                                  //kTraceCgi
+    { "TREEVIEW_CGI",  "https://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi"},                                              //kGetTreeViewCgi         
+    { "WGS",  "https://www.ncbi.nlm.nih.gov/nuccore/<@wgsacc@>" },                                                                      //kWGSUrl 
+});
+
+
 
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
@@ -2244,7 +2263,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }
     //View Bioassays involving <accession
     if(linkout & eBioAssay && linkoutInfo.is_na && first_gi != ZERO_GI){
-        url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");
+        url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");        
         lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayNucImg;
 
         string linkTitle = " title=\"View Bioassays involving <@label@>\"";
@@ -3373,12 +3392,20 @@ string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
   string search_name = url_name;
   TTagUrlMap::const_iterator url_it;
   if( index >= 0 ) search_name += "_" + NStr::IntToString( index); // actual name for index value is NAME_{index}
-
+  
+  auto cit = mapURLTagToAddress.find(search_name);
+  
+  if( cit != mapURLTagToAddress.end()) {
+      string url_link = cit->second;
+      return url_link;
+  }
+  
   if( (url_it = sm_TagUrlMap.find( search_name ) ) != sm_TagUrlMap.end()) {
       string url_link = CAlignFormatUtil::MapProtocol(url_it->second);
       return url_link;
   }
-
+  
+  
   string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
   if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index );
   return error_msg;
@@ -3799,8 +3826,9 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
         string linkUrl,link,linkTiltle = kCustomLinkTitle;
 
         linkUrl = seqUrlInfo->seqUrl;
-        if(NStr::Find(linkUrl, "report=genbank") == NPOS) { //Geo case
-            linkUrl = s_MapCommonUrlParams(kEntrezTMUrl, seqUrlInfo);
+        if(NStr::Find(linkUrl, "report=genbank") == NPOS) { //Geo case        
+            string url = CAlignFormatUtil::GetURLFromRegistry("ENTREZ_TM");
+            linkUrl = s_MapCommonUrlParams(url, seqUrlInfo);
         }
         string linkText = (seqUrlInfo->isDbNa) ? "GenBank" : "GenPept";
         if(hspRange) {
