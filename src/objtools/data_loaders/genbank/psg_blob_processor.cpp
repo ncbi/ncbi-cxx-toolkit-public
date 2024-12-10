@@ -141,11 +141,11 @@ struct CPSGL_Blob_Processor::SSplitSlot : public CPSGL_Blob_Processor::SBlobSlot
 
 
 CPSGL_Blob_Processor::CPSGL_Blob_Processor(CDataSource* data_source,
-                                           CPSGBlobMap* blob_info_cache,
+                                           CPSGCaches* caches,
                                            bool add_wgs_master)
     : m_AddWGSMasterDescr(add_wgs_master),
       m_DataSource(data_source),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
@@ -407,8 +407,8 @@ CPSGL_Blob_Processor::ProcessItemFast(EPSG_Status status,
                 auto tse_slot = SetTSESlot(blob_id->GetId());
                 // only main blobs are cached
                 auto parsed_info = make_shared<SPsgBlobInfo>(*blob_info);
-                if ( m_BlobInfoCache ) {
-                    m_BlobInfoCache->Add(parsed_info->blob_id_main, parsed_info);
+                if ( m_Caches ) {
+                    m_Caches->m_BlobInfoCache.Add(parsed_info->blob_id_main, parsed_info);
                 }
                 // main blob may have linked split info
                 if ( !parsed_info->id2_info.empty() ) {

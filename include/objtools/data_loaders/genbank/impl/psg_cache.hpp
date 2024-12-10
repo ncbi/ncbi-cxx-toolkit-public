@@ -92,16 +92,16 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGBioseqCache
+// CPSGBioseqInfoCache
 /////////////////////////////////////////////////////////////////////////////
 
-class CPSGBioseqCache
+class CPSGBioseqInfoCache
 {
 public:
-    CPSGBioseqCache(int lifespan, size_t max_size);
-    ~CPSGBioseqCache(void);
-    CPSGBioseqCache(const CPSGBioseqCache&) = delete;
-    CPSGBioseqCache& operator=(const CPSGBioseqCache&) = delete;
+    CPSGBioseqInfoCache(int lifespan, size_t max_size);
+    ~CPSGBioseqInfoCache(void);
+    CPSGBioseqInfoCache(const CPSGBioseqInfoCache&) = delete;
+    CPSGBioseqInfoCache& operator=(const CPSGBioseqInfoCache&) = delete;
 
     typedef CSeq_id_Handle key_type;
     typedef shared_ptr<SPsgBioseqInfo> mapped_type;
@@ -149,8 +149,10 @@ public:
     typedef TK TKey;
     typedef TV TValue;
     typedef CPSGCache_Base<TKey, TValue> TParent;
+    typedef TKey key_type;
+    typedef TValue mapped_type;
 
-    CPSGCache_Base(int lifespan, size_t max_size, TValue def_val = TValue(nullptr))
+    CPSGCache_Base(int lifespan, size_t max_size, TValue def_val = TValue())
         : m_Default(def_val),
           m_Lifespan(lifespan),
           m_MaxSize(max_size)
@@ -181,8 +183,6 @@ public:
 
 protected:
     // Map blob-id to blob info
-    typedef TKey key_type;
-    typedef TValue mapped_type;
     struct SNode;
     typedef map<key_type, SNode> TValues;
     typedef typename TValues::iterator TValueIter;
@@ -231,13 +231,13 @@ protected:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGCDDInfoCache
+// CPSGNoCDDCache
 /////////////////////////////////////////////////////////////////////////////
 
-class CPSGCDDInfoCache : public CPSGCache_Base<string, bool>
+class CPSGNoCDDCache : public CPSGCache_Base<string, bool>
 {
 public:
-    CPSGCDDInfoCache(int lifespan, size_t max_size)
+    CPSGNoCDDCache(int lifespan, size_t max_size)
         : TParent(lifespan, max_size, false) {}
 };
 
@@ -267,13 +267,13 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGBlobMap
+// CPSGBlobInfoCache
 /////////////////////////////////////////////////////////////////////////////
 
-class CPSGBlobMap : public CPSGCache_Base<string, shared_ptr<SPsgBlobInfo>>
+class CPSGBlobInfoCache : public CPSGCache_Base<string, shared_ptr<SPsgBlobInfo>>
 {
 public:
-    CPSGBlobMap(int lifespan, size_t max_size)
+    CPSGBlobInfoCache(int lifespan, size_t max_size)
         : TParent(lifespan, max_size) {}
 
     void DropBlob(const CPsgBlobId& blob_id) {
@@ -288,19 +288,19 @@ public:
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGIpgTaxIdMap
+// CPSGIpgTaxIdCache
 /////////////////////////////////////////////////////////////////////////////
 
-class CPSGIpgTaxIdMap : public CPSGCache_Base<CSeq_id_Handle, TTaxId>
+class CPSGIpgTaxIdCache : public CPSGCache_Base<CSeq_id_Handle, TTaxId>
 {
 public:
-    CPSGIpgTaxIdMap(int lifespan, size_t max_size)
+    CPSGIpgTaxIdCache(int lifespan, size_t max_size)
         : TParent(lifespan, max_size, INVALID_TAX_ID) {}
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGAnnotCache
+// CPSGAnnotInfoCache
 /////////////////////////////////////////////////////////////////////////////
 
 struct SPsgAnnotInfo
@@ -321,13 +321,13 @@ private:
 };
 
 
-class CPSGAnnotCache
+class CPSGAnnotInfoCache
 {
 public:
-    CPSGAnnotCache(int lifespan, size_t max_size);
-    ~CPSGAnnotCache();
-    CPSGAnnotCache(const CPSGAnnotCache&) = delete;
-    CPSGAnnotCache& operator=(const CPSGAnnotCache&) = delete;
+    CPSGAnnotInfoCache(int lifespan, size_t max_size);
+    ~CPSGAnnotInfoCache();
+    CPSGAnnotInfoCache(const CPSGAnnotInfoCache&) = delete;
+    CPSGAnnotInfoCache& operator=(const CPSGAnnotInfoCache&) = delete;
 
     typedef CDataLoader::TIds TIds;
     typedef string key1_type;
@@ -364,6 +364,28 @@ private:
     size_t m_MaxSize;
     TValues m_Values;
     TRemoveList m_RemoveList;
+};
+
+
+class CPSGCaches
+{
+public:
+    CPSGCaches(int data_lifespan, size_t data_max_size,
+               int no_data_lifespan, size_t no_data_max_size);
+    ~CPSGCaches();
+
+    // cached data, with larger expiration time
+    CPSGBioseqInfoCache m_BioseqInfoCache; // seq_id -> bioseq_info
+    CPSGBlobInfoCache m_BlobInfoCache; // blob_id -> blob_info
+    CPSGAnnotInfoCache m_AnnotInfoCache; // NA/seq_ids -> annot_info
+    CPSGIpgTaxIdCache m_IpgTaxIdCache; // seq_id -> TaxId
+
+    // cached absence of data, with smaller expiration time
+    CPSGCache_Base<CPSGBioseqInfoCache::key_type, bool> m_NoBioseqInfoCache; // seq_id -> true
+    CPSGCache_Base<CPSGBlobInfoCache::key_type, EPSG_Status> m_NoBlobInfoCache; // blob_id -> reason
+    CPSGCache_Base<CPSGAnnotInfoCache::key_type, bool> m_NoAnnotInfoCache; // NA/seq_ids -> true
+    CPSGCache_Base<CPSGIpgTaxIdCache::key_type, bool> m_NoIpgTaxIdCache; // seq_id -> true
+    CPSGCache_Base<string, bool> m_NoCDDCache; // seq_ids -> true
 };
 
 

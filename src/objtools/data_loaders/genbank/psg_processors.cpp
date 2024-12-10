@@ -87,10 +87,10 @@ string x_FormatPtr(const shared_ptr<Class>& ptr)
 
 
 CPSGL_BioseqInfo_Processor::CPSGL_BioseqInfo_Processor(const CSeq_id_Handle& seq_id,
-                                                       CPSGBioseqCache* bioseq_info_cache)
+                                                       CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_BioseqInfoStatus(EPSG_Status::eNotFound),
-      m_BioseqInfoCache(bioseq_info_cache)
+      m_Caches(caches)
 {
 }
 
@@ -120,8 +120,8 @@ CPSGL_BioseqInfo_Processor::ProcessItemFast(EPSG_Status status,
     if ( item->GetType() == CPSG_ReplyItem::eBioseqInfo ) {
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
-        if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
+        if ( m_Caches && status == EPSG_Status::eSuccess && bioseq_info ) {
+            result = m_Caches->m_BioseqInfoCache.Add(m_Seq_id, *bioseq_info);
         }
         CFastMutexGuard guard(m_BioseqInfoMutex);
         if ( !m_BioseqInfo ) {
@@ -146,18 +146,25 @@ CPSGL_BioseqInfo_Processor::ProcessReplyFast(EPSG_Status status,
         // all good
         return eProcessed;
     }
-    if ( (status == EPSG_Status::eForbidden ||
-          status == EPSG_Status::eNotFound ||
+    if ( (status == EPSG_Status::eNotFound ||
           status == EPSG_Status::eSuccess) &&
-         (m_BioseqInfoStatus == EPSG_Status::eForbidden ||
-          m_BioseqInfoStatus == EPSG_Status::eNotFound) ) {
+         (m_BioseqInfoStatus == EPSG_Status::eNotFound) ) {
         // PSG correctly reported no bioseq info
+        if ( m_Caches ) {
+            m_Caches->m_NoBioseqInfoCache.Add(GetSeq_id(), true);
+        }
+        return eProcessed;
+    }
+    if ( (status == EPSG_Status::eForbidden ||
+          status == EPSG_Status::eSuccess) &&
+         (m_BioseqInfoStatus == EPSG_Status::eForbidden) ) {
+        // PSG correctly reported no forbidden bioseq info
         return eProcessed;
     }
     // inconsistent reply - invalid bioseq info or status
     return x_Failed("inconsistent reply:"+
                     x_Format(status, reply)+
-                    " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
+                    " bioseq info"+x_FormatAndSetError(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
 }
 
 
@@ -167,30 +174,30 @@ CPSGL_BioseqInfo_Processor::ProcessReplyFast(EPSG_Status status,
 
 
 CPSGL_BlobInfo_Processor::CPSGL_BlobInfo_Processor(const CSeq_id_Handle& seq_id,
-                                                   CPSGBlobMap* blob_info_cache)
+                                                   CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_BlobInfoStatus(EPSG_Status::eNotFound),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
 
 CPSGL_BlobInfo_Processor::CPSGL_BlobInfo_Processor(const string& blob_id,
-                                                   CPSGBlobMap* blob_info_cache)
+                                                   CPSGCaches* caches)
     : m_Blob_id(blob_id),
       m_BlobInfoStatus(EPSG_Status::eNotFound),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
 
 CPSGL_BlobInfo_Processor::CPSGL_BlobInfo_Processor(const CSeq_id_Handle& seq_id,
                                                    const string& blob_id,
-                                                   CPSGBlobMap* blob_info_cache)
+                                                   CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_Blob_id(blob_id),
       m_BlobInfoStatus(EPSG_Status::eNotFound),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
@@ -225,8 +232,8 @@ CPSGL_BlobInfo_Processor::ProcessItemFast(EPSG_Status status,
         if ( auto blob_info = dynamic_pointer_cast<CPSG_BlobInfo>(item) ) {
             if ( blob_info->GetId<CPSG_BlobId>() ) {
                 shared_ptr<SPsgBlobInfo> result = make_shared<SPsgBlobInfo>(*blob_info);
-                if ( m_BlobInfoCache && status == EPSG_Status::eSuccess ) {
-                    m_BlobInfoCache->Add(result->blob_id_main, result);
+                if ( m_Caches && status == EPSG_Status::eSuccess ) {
+                    m_Caches->m_BlobInfoCache.Add(result->blob_id_main, result);
                 }
                 CFastMutexGuard guard(m_BlobInfoMutex);
                 if ( !m_BlobInfo ) {
@@ -251,18 +258,24 @@ CPSGL_BlobInfo_Processor::ProcessReplyFast(EPSG_Status status,
         // all good
         return eProcessed;
     }
+    if ( (status == EPSG_Status::eNotFound ||
+          status == EPSG_Status::eSuccess) &&
+         (m_BlobInfoStatus == EPSG_Status::eNotFound) ) {
+        // PSG correctly reported no blob info
+        return eProcessed;
+    }
     if ( (status == EPSG_Status::eForbidden ||
-          status == EPSG_Status::eNotFound ||
           status == EPSG_Status::eSuccess) &&
          (m_BlobInfoStatus == EPSG_Status::eForbidden ||
           m_BlobInfoStatus == EPSG_Status::eNotFound) ) {
-        // PSG correctly reported no blob info
+        // PSG correctly reported forbidden blob info
+        m_BlobInfoStatus = EPSG_Status::eForbidden;
         return eProcessed;
     }
     // inconsistent reply - invalid bioseq info or status
     return x_Failed("inconsistent reply:"+
                     x_Format(status, reply)+
-                    " blob info"+x_Format(m_BlobInfoStatus)+x_FormatPtr(m_BlobInfo));
+                    " blob info"+x_FormatAndSetError(m_BlobInfoStatus)+x_FormatPtr(m_BlobInfo));
 }
 
 
@@ -272,27 +285,23 @@ CPSGL_BlobInfo_Processor::ProcessReplyFast(EPSG_Status status,
 
 
 CPSGL_Info_Processor::CPSGL_Info_Processor(const CSeq_id_Handle& seq_id,
-                                           CPSGBioseqCache* bioseq_info_cache,
-                                           CPSGBlobMap* blob_info_cache)
+                                           CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_BioseqInfoStatus(EPSG_Status::eNotFound),
       m_BlobInfoStatus(EPSG_Status::eNotFound),
-      m_BioseqInfoCache(bioseq_info_cache),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
 
 CPSGL_Info_Processor::CPSGL_Info_Processor(const CSeq_id_Handle& seq_id,
                                            const string& blob_id,
-                                           CPSGBioseqCache* bioseq_info_cache,
-                                           CPSGBlobMap* blob_info_cache)
+                                           CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_Blob_id(blob_id),
       m_BioseqInfoStatus(EPSG_Status::eNotFound),
       m_BlobInfoStatus(EPSG_Status::eNotFound),
-      m_BioseqInfoCache(bioseq_info_cache),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
@@ -327,8 +336,8 @@ CPSGL_Info_Processor::ProcessItemFast(EPSG_Status status,
     if ( item->GetType() == CPSG_ReplyItem::eBioseqInfo ) {
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
-        if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
+        if ( m_Caches && status == EPSG_Status::eSuccess && bioseq_info ) {
+            result = m_Caches->m_BioseqInfoCache.Add(m_Seq_id, *bioseq_info);
         }
         CFastMutexGuard guard(m_InfoMutex);
         if ( !m_BioseqInfo ) {
@@ -342,8 +351,8 @@ CPSGL_Info_Processor::ProcessItemFast(EPSG_Status status,
         if ( auto blob_info = dynamic_pointer_cast<CPSG_BlobInfo>(item) ) {
             if ( blob_info->GetId<CPSG_BlobId>() ) {
                 shared_ptr<SPsgBlobInfo> result = make_shared<SPsgBlobInfo>(*blob_info);
-                if ( m_BlobInfoCache && status == EPSG_Status::eSuccess ) {
-                    m_BlobInfoCache->Add(result->blob_id_main, result);
+                if ( m_Caches && status == EPSG_Status::eSuccess ) {
+                    m_Caches->m_BlobInfoCache.Add(result->blob_id_main, result);
                 }
                 CFastMutexGuard guard(m_InfoMutex);
                 if ( !m_BlobInfo ) {
@@ -363,37 +372,51 @@ CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
                                        const shared_ptr<CPSG_Reply>& reply)
 {
     _TRACE(Descr()<<": ProcessReplyFast("<<int(status)<<")");
-    if ( status == EPSG_Status::eNotFound ) {
-        return eProcessed;
-    }
-    if ( status != EPSG_Status::eSuccess ) {
-        return x_Failed(x_Format(status, reply));
-    }
-
-    // process bioseq info result
-    if ( m_BioseqInfoStatus == EPSG_Status::eSuccess &&
+    // first check bioseq info replies
+    if ( (status == EPSG_Status::eSuccess ||
+          status == EPSG_Status::eForbidden) &&
+         (m_BioseqInfoStatus == EPSG_Status::eSuccess ||
+          m_BioseqInfoStatus == EPSG_Status::eForbidden) &&
          m_BioseqInfo ) {
-        // bioseq info is good
+        // correct bioseq info reply
     }
-    else if ( m_BioseqInfoStatus == EPSG_Status::eForbidden ||
-              m_BioseqInfoStatus == EPSG_Status::eNotFound ) {
-        // PSG correctly reported no bioseq info
+    else if ( (status == EPSG_Status::eNotFound ||
+               status == EPSG_Status::eSuccess) &&
+              (m_BioseqInfoStatus == EPSG_Status::eNotFound) ) {
+        // correct 'not found' reply
+        if ( m_Caches ) {
+            m_Caches->m_NoBioseqInfoCache.Add(GetSeq_id(), true);
+        }
     }
     else {
-        // inconsistent reply - invalid bioseq info or status
+        // inconsistent bioseq info reply
         return x_Failed("inconsistent reply:"+
                         x_Format(status, reply)+
-                        " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
+                        " bioseq info"+x_FormatAndSetError(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfo));
     }
-    
-    // process blob info result
-    if ( m_BlobInfoStatus == EPSG_Status::eSuccess &&
+    // now check blob info replies
+    if ( (status == EPSG_Status::eSuccess) &&
+         (m_BlobInfoStatus == EPSG_Status::eSuccess) &&
          m_BlobInfo ) {
-        // blob info is good
+        // correct blob info reply
     }
-    else if ( m_BlobInfoStatus == EPSG_Status::eForbidden ||
-              m_BlobInfoStatus == EPSG_Status::eNotFound ) {
-        // PSG correctly reported no blob info
+    else if ( (status == EPSG_Status::eSuccess ||
+               status == EPSG_Status::eNotFound) &&
+              (m_BlobInfoStatus == EPSG_Status::eForbidden ||
+               m_BlobInfoStatus == EPSG_Status::eNotFound) ) {
+        // correct 'not found' reply
+        if ( m_Caches && m_BioseqInfoResult && m_BioseqInfoResult->HasBlobId() ) {
+            m_Caches->m_NoBlobInfoCache.Add(m_BioseqInfoResult->GetPSGBlobId(), m_BlobInfoStatus);
+        }
+    }
+    else if ( (status == EPSG_Status::eForbidden) &&
+              (m_BlobInfoStatus == EPSG_Status::eForbidden ||
+               m_BlobInfoStatus == EPSG_Status::eNotFound) ) {
+        // correct 'forbidden' reply
+        m_BlobInfoStatus = EPSG_Status::eForbidden;
+        if ( m_Caches && m_BioseqInfoResult && m_BioseqInfoResult->HasBlobId() ) {
+            m_Caches->m_NoBlobInfoCache.Add(m_BioseqInfoResult->GetPSGBlobId(), m_BlobInfoStatus);
+        }
     }
     else {
         // inconsistent reply - invalid blob info or status
@@ -401,7 +424,6 @@ CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
                         x_Format(status, reply)+
                         " blob info"+x_Format(m_BlobInfoStatus)+x_FormatPtr(m_BlobInfo));
     }
-    
     // all good
     return eProcessed;
 }
@@ -414,11 +436,11 @@ CPSGL_Info_Processor::ProcessReplyFast(EPSG_Status status,
 
 CPSGL_IpgTaxId_Processor::CPSGL_IpgTaxId_Processor(const CSeq_id_Handle& seq_id,
                                                    bool is_WP_acc,
-                                                   CPSGIpgTaxIdMap* ipg_tax_id_cache)
+                                                   CPSGCaches* caches)
     : m_Seq_id(seq_id),
       m_IsWPAcc(is_WP_acc),
       m_IpgTaxIdStatus(EPSG_Status::eNotFound),
-      m_IpgTaxIdCache(ipg_tax_id_cache)
+      m_Caches(caches)
 {
 }
 
@@ -458,8 +480,8 @@ CPSGL_IpgTaxId_Processor::ProcessItemFast(EPSG_Status status,
                 }
                 _TRACE(Descr()<<": ProcessItemFast("<<int(status)<<", "<<item.get()<<") tax id: "<<m_TaxId);
             }
-            if ( m_IpgTaxIdCache && tax_id != INVALID_TAX_ID ) {
-                m_IpgTaxIdCache->Add(m_Seq_id, tax_id);
+            if ( m_Caches && tax_id != INVALID_TAX_ID ) {
+                m_Caches->m_IpgTaxIdCache.Add(m_Seq_id, tax_id);
             }
         }
         else {
@@ -494,15 +516,11 @@ CPSGL_IpgTaxId_Processor::ProcessReplyFast(EPSG_Status status,
 CPSGL_CDDAnnot_Processor::CPSGL_CDDAnnot_Processor(const SCDDIds& cdd_ids,
                                                    const TSeqIdSet& seq_id_set,
                                                    CDataSource* data_source,
-                                                   CPSGAnnotCache* annot_info_cache,
-                                                   CPSGCDDInfoCache* cdd_info_cache,
-                                                   CPSGBlobMap* blob_info_cache)
+                                                   CPSGCaches* caches)
     : m_CDDIds(cdd_ids),
       m_SeqIdSet(seq_id_set),
       m_DataSource(data_source),
-      m_AnnotInfoCache(annot_info_cache),
-      m_CDDInfoCache(cdd_info_cache),
-      m_BlobInfoCache(blob_info_cache)
+      m_Caches(caches)
 {
 }
 
@@ -556,8 +574,8 @@ CPSGL_CDDAnnot_Processor::ProcessReplyFast(EPSG_Status status,
                                            const shared_ptr<CPSG_Reply>& reply)
 {
     if ( !m_AnnotInfo || !m_BlobInfo || !m_BlobData ) {
-        if ( !m_AnnotInfo && m_CDDInfoCache ) {
-            m_CDDInfoCache->Add(x_MakeLocalCDDEntryId(m_CDDIds), true);
+        if ( !m_AnnotInfo && m_Caches ) {
+            m_Caches->m_NoCDDCache.Add(x_MakeLocalCDDEntryId(m_CDDIds), true);
         }
         return eProcessed;
     }
@@ -583,8 +601,8 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
     }
     else {
         SPsgAnnotInfo::TInfos infos{m_AnnotInfo};
-        if ( m_AnnotInfoCache ) {
-            m_AnnotInfoCache->Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
+        if ( m_Caches ) {
+            m_Caches->m_AnnotInfoCache.Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
         }
         dl_blob_id = new CPsgBlobId(blob_id.GetId());
     }
@@ -610,11 +628,11 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
         }
         else {
             SPsgAnnotInfo::TInfos infos{m_AnnotInfo};
-            if ( m_AnnotInfoCache ) {
-                m_AnnotInfoCache->Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
+            if ( m_Caches ) {
+                m_Caches->m_AnnotInfoCache.Add(make_pair(kCDDAnnotName, m_SeqIdSet), infos);
             }
-            if ( m_BlobInfoCache ) {
-                m_BlobInfoCache->Add(blob_id.GetId(), make_shared<SPsgBlobInfo>(*m_BlobInfo));
+            if ( m_Caches ) {
+                m_Caches->m_BlobInfoCache.Add(blob_id.GetId(), make_shared<SPsgBlobInfo>(*m_BlobInfo));
             }
             UpdateOMBlobId(load_lock, dl_blob_id);
         }
@@ -656,15 +674,13 @@ CPSGL_CDDAnnot_Processor::ProcessReplySlow(EPSG_Status status,
 
 CPSGL_Get_Processor::CPSGL_Get_Processor(const CSeq_id_Handle& seq_id,
                                          CDataSource* data_source,
-                                         CPSGBioseqCache* bioseq_info_cache,
-                                         CPSGBlobMap* blob_info_cache,
+                                         CPSGCaches* caches,
                                          bool add_wgs_master)
     : CPSGL_Blob_Processor(data_source,
-                           blob_info_cache,
+                           caches,
                            add_wgs_master),
       m_Seq_id(seq_id),
-      m_BioseqInfoStatus(EPSG_Status::eNotFound),
-      m_BioseqInfoCache(bioseq_info_cache)
+      m_BioseqInfoStatus(EPSG_Status::eNotFound)
 {
     _ASSERT(m_Seq_id);
 }
@@ -712,8 +728,8 @@ CPSGL_Get_Processor::ProcessItemFast(EPSG_Status status,
     if ( item->GetType() == CPSG_ReplyItem::eBioseqInfo ) {
         auto bioseq_info = dynamic_pointer_cast<CPSG_BioseqInfo>(item);
         shared_ptr<SPsgBioseqInfo> result;
-        if ( m_BioseqInfoCache && status == EPSG_Status::eSuccess && bioseq_info ) {
-            result = m_BioseqInfoCache->Add(m_Seq_id, *bioseq_info);
+        if ( m_Caches && status == EPSG_Status::eSuccess && bioseq_info ) {
+            result = m_Caches->m_BioseqInfoCache.Add(m_Seq_id, *bioseq_info);
         }
         CConstRef<CPsgBlobId> dl_blob_id;
         {{
@@ -740,21 +756,23 @@ CPSGL_Get_Processor::ProcessItemFast(EPSG_Status status,
 
 
 CPSGL_Processor::EProcessResult
-CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
-                                      const shared_ptr<CPSG_Reply>& reply)
+CPSGL_Get_Processor::x_PreProcessReply(EPSG_Status status,
+                                       const shared_ptr<CPSG_Reply>& reply)
 {
-    _TRACE(Descr()<<": ProcessReplySlow("<<(int)status<<")");
-    
     // determine sequence blob id
     if ( status == EPSG_Status::eError || m_BioseqInfoStatus == EPSG_Status::eError ) {
         return x_Failed(x_Format(status, reply)+
-                        " bioseq info"+x_Format(m_BioseqInfoStatus));
+                        " bioseq info"+x_FormatAndSetError(m_BioseqInfoStatus));
     }
     if ( (status == EPSG_Status::eNotFound ||
           status == EPSG_Status::eSuccess) &&
          (m_BioseqInfoStatus == EPSG_Status::eNotFound) ) {
         // PSG correctly reported no bioseq info, no blobs to return
         _TRACE(Descr()<<": ProcessReplySlow(): processed w/o TSE");
+        m_BioseqInfoStatus = EPSG_Status::eNotFound;
+        if ( m_Caches ) {
+            m_Caches->m_NoBioseqInfoCache.Add(m_Seq_id, true);
+        }
         return eProcessed;
     }
 
@@ -765,7 +783,7 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
         // inconsistent reply - invalid bioseq info or status
         // unexpected status
         return x_Failed(x_Format(status, reply)+
-                        " bioseq info"+x_Format(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfoResult));
+                        " bioseq info"+x_FormatAndSetError(m_BioseqInfoStatus)+x_FormatPtr(m_BioseqInfoResult));
     }
     
     auto& psg_blob_id = GetPSGBlobId();
@@ -787,15 +805,56 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
         m_GotForbidden = true;
         m_ForbiddenBlobState = state;
         _TRACE(Descr()<<": ProcessReplySlow(): forbidden state: "<<state);
+        m_BioseqInfoStatus = EPSG_Status::eForbidden;
         return eProcessed;
     }
     if ( psg_blob_id.empty() ) {
         // inconsistent reply - no blob id
-        return x_Failed("psg_blob_id is empty"+x_Format(status, reply));
+        return x_Failed(x_Format(status, reply)+
+                        "psg_blob_id is empty"+x_FormatAndSetError(m_BioseqInfoStatus));
     }
 
-    // prepare bioseq TSE lock
-    return ProcessTSE_Lock(psg_blob_id, m_TSE_Lock);
+    _ASSERT(m_BioseqInfoStatus == EPSG_Status::eSuccess);
+    _ASSERT(m_BioseqInfo);
+    _ASSERT(m_BioseqInfoResult);
+    // do not attempt to get bioseq TSE lock
+    return eToNextStage;
+}
+
+
+CPSGL_Processor::EProcessResult
+CPSGL_Get_Processor::ProcessReplyFast(EPSG_Status status,
+                                      const shared_ptr<CPSG_Reply>& reply)
+{
+    _TRACE(Descr()<<": ProcessReplyFast("<<(int)status<<")");
+    // process reply without getting TSE lock
+    return x_PreProcessReply(status, reply);
+}
+
+
+CPSGL_Processor::EProcessResult
+CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
+                                      const shared_ptr<CPSG_Reply>& reply)
+{
+    _TRACE(Descr()<<": ProcessReplySlow("<<(int)status<<")");
+    // attempt to get bioseq TSE lock
+    _ASSERT(m_BioseqInfoStatus == EPSG_Status::eSuccess);
+    _ASSERT(m_BioseqInfo);
+    _ASSERT(m_BioseqInfoResult);
+    return ProcessTSE_Lock(GetPSGBlobId(), m_TSE_Lock);
+}
+
+
+CPSGL_Processor::EProcessResult
+CPSGL_Get_Processor::ProcessReplyFinal()
+{
+    _TRACE(Descr()<<": ProcessReplyFinal()");
+    // even if lock cannot be obtained we return eProcessed now to allow recursive getblob request
+    _ASSERT(m_BioseqInfoStatus == EPSG_Status::eSuccess);
+    _ASSERT(m_BioseqInfo);
+    _ASSERT(m_BioseqInfoResult);
+    ProcessTSE_Lock(GetPSGBlobId(), m_TSE_Lock, eWaitForLock);
+    return eProcessed;
 }
 
 
@@ -805,26 +864,16 @@ CConstRef<CPsgBlobId> CPSGL_Get_Processor::CreateDLBlobId(STSESlot* /*tse_slot*/
 }
 
 
-CPSGL_Processor::EProcessResult
-CPSGL_Get_Processor::ProcessReplyFinal()
-{
-    _TRACE(Descr()<<": ProcessReplyFinal()");
-    // even if lock cannot be obtained we return eProcessed now to allow recursive getblob request
-    ProcessTSE_Lock(GetPSGBlobId(), m_TSE_Lock, eWaitForLock);
-    return eProcessed;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 // CPSGL_GetBlob_Processor
 /////////////////////////////////////////////////////////////////////////////
 
 CPSGL_GetBlob_Processor::CPSGL_GetBlob_Processor(const CPsgBlobId& dl_blob_id,
                                                  CDataSource* data_source,
-                                                 CPSGBlobMap* blob_info_cache,
+                                                 CPSGCaches* caches,
                                                  bool add_wgs_master)
     : CPSGL_Blob_Processor(data_source,
-                           blob_info_cache,
+                           caches,
                            add_wgs_master),
       m_Blob_id(dl_blob_id.ToPsgId())
 {
@@ -901,10 +950,10 @@ CPSGL_GetBlob_Processor::ProcessReplyFinal()
 
 CPSGL_GetChunk_Processor::CPSGL_GetChunk_Processor(CTSE_Chunk_Info& chunk,
                                                    CDataSource* data_source,
-                                                   CPSGBlobMap* blob_info_cache,
+                                                   CPSGCaches* caches,
                                                    bool add_wgs_master)
     : CPSGL_Blob_Processor(data_source,
-                           blob_info_cache,
+                           caches,
                            add_wgs_master)
 {
     AddChunk(chunk);
@@ -963,10 +1012,10 @@ CPSGL_GetChunk_Processor::ProcessReplySlow(EPSG_Status status,
 
 CPSGL_NA_Processor::CPSGL_NA_Processor(const TSeq_ids& ids,
                                        CDataSource* data_source,
-                                       CPSGBlobMap* blob_info_cache,
+                                       CPSGCaches* caches,
                                        bool add_wgs_master)
     : CPSGL_Blob_Processor(data_source,
-                           blob_info_cache,
+                           caches,
                            add_wgs_master),
       m_Seq_ids(ids)
 {
@@ -1078,6 +1127,11 @@ CPSGL_NA_Processor::ProcessItemFast(EPSG_Status status,
             if ( s_HasFailedStatus(*annot_status) ) {
                 return x_Failed("annot status: failed");
             }
+            for ( auto& s : annot_status->GetId2AnnotStatusList() ) {
+                if ( s.second == EPSG_Status::eNotFound ) {
+                    m_Caches->m_NoAnnotInfoCache.Add(make_pair(s.first, m_Seq_ids), true);
+                }
+            }
         }
         else {
             return x_Failed("annot status: absent");
@@ -1174,10 +1228,10 @@ CPSGL_NA_Processor::ProcessReplyFinal()
 CPSGL_LocalCDDBlob_Processor::CPSGL_LocalCDDBlob_Processor(CTSE_Chunk_Info& cdd_chunk_info,
                                                            const SCDDIds& cdd_ids,
                                                            CDataSource* data_source,
-                                                           CPSGBlobMap* blob_info_cache,
+                                                           CPSGCaches* caches,
                                                            bool add_wgs_master)
     : CPSGL_Blob_Processor(data_source,
-                           blob_info_cache,
+                           caches,
                            add_wgs_master),
       m_CDDChunkInfo(cdd_chunk_info),
       m_CDDIds(cdd_ids)

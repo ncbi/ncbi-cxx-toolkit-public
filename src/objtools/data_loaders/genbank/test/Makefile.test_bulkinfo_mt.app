@@ -8,7 +8,7 @@ LIB = xobjutil test_mt ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids all_readers.sh ref
+CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids supp.ids all_readers.sh ref
 CHECK_REQUIRES = disabled
 
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -reference ref/0.gi.txt /CHECK_NAME=test_bulkinfo_mt_gi
@@ -59,6 +59,15 @@ CHECK_CMD = all_readers.sh test_bulkinfo_mt -type hash -idlist bad_len.ids -refe
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type bioseq -idlist bad_len.ids -reference ref/bad_len.bioseq.txt /CHECK_NAME=test_bulkinfo_mt_bad_bioseq
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type sequence -idlist bad_len.ids -reference ref/bad_len.sequence.txt /CHECK_NAME=test_bulkinfo_mt_bad_sequence
 CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type cdd -idlist bad_len.ids -reference ref/bad_len.cdd.txt /CHECK_NAME=test_bulkinfo_mt_bad_cdd
+
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -idlist supp.ids -reference ref/supp.gi.txt /CHECK_NAME=test_bulkinfo_mt_supp_gi
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type acc -idlist supp.ids -reference ref/supp.acc.txt /CHECK_NAME=test_bulkinfo_mt_supp_acc
+CHECK_CMD = all_readers.sh test_bulkinfo_mt -type label -idlist supp.ids -reference ref/supp.label.txt /CHECK_NAME=test_bulkinfo_mt_supp_label
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type taxid -idlist supp.ids -reference ref/supp.taxid.txt /CHECK_NAME=test_bulkinfo_mt_supp_taxid
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type length -idlist supp.ids -reference ref/supp.length.txt /CHECK_NAME=test_bulkinfo_mt_supp_length
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type type -idlist supp.ids -reference ref/supp.type.txt /CHECK_NAME=test_bulkinfo_mt_supp_type
+CHECK_CMD = all_readers.sh -psg test_bulkinfo_mt -type state -idlist supp.ids -reference ref/supp.state.txt /CHECK_NAME=test_bulkinfo_mt_supp_state
+CHECK_CMD = all_readers.sh -id2 test_bulkinfo_mt -type hash -idlist supp.ids -reference ref/supp.hash.txt /CHECK_NAME=test_bulkinfo_mt_supp_hash
 
 CHECK_TIMEOUT = 400
 

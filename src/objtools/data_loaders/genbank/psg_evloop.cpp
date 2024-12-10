@@ -228,6 +228,7 @@ CPSGL_RequestTracker::CPSGL_RequestTracker(CPSGL_QueueGuard& queue_guard,
                                            const CRef<CPSGL_Processor>& processor,
                                            size_t index)
     : m_QueueGuard(queue_guard),
+      m_ThreadPool(queue_guard.m_ThreadPool),
       m_Request(request),
       m_Processor(processor),
       m_Index(index),
@@ -464,7 +465,7 @@ void CPSGL_RequestTracker::QueueInBackground(const CRef<CBackgroundTask>& task)
             ++m_BackgroundItemTaskCount;
         }
     }}
-    m_QueueGuard.m_ThreadPool.AddTask(task.GetNCPointer());
+    m_ThreadPool.AddTask(task.GetNCPointer());
 }
 
 

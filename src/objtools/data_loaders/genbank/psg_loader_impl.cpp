@@ -75,6 +75,7 @@ BEGIN_SCOPE(objects)
 using namespace psgl;
 
 const int kDefaultCacheLifespanSeconds = 2*3600;
+const int kDefaultNoDataCacheLifespanSeconds = 5;
 const size_t kDefaultMaxCacheSize = 10000;
 const unsigned int kDefaultRetryCount = 4;
 const unsigned int kDefaultBulkRetryCount = 8;
@@ -185,11 +186,11 @@ void CPSGDataLoader_Impl::CPSG_PrefetchCDD_Task::AddRequest(const CDataLoader::T
         return;
     }
     string blob_id = x_MakeLocalCDDEntryId(cdd_ids);
-    if ( m_Loader.m_CDDInfoCache->Find(blob_id) ) {
+    if ( m_Loader.m_Caches->m_NoCDDCache.Find(blob_id) ) {
         // known for no CDDs
         return;
     }
-    auto cached = m_Loader.m_AnnotCache->Find(make_pair(kCDDAnnotName, ids));
+    auto cached = m_Loader.m_Caches->m_AnnotInfoCache.Find(make_pair(kCDDAnnotName, ids));
     if ( cached ) {
         return;
     }
@@ -206,9 +207,7 @@ void CPSGDataLoader_Impl::CPSG_PrefetchCDD_Task::AddRequest(const CDataLoader::T
         (new CPSGL_CDDAnnot_Processor(cdd_ids,
                                       ids,
                                       nullptr,
-                                      m_Loader.m_AnnotCache.get(),
-                                      m_Loader.m_CDDInfoCache.get(),
-                                      m_Loader.m_BlobMap.get()));
+                                      m_Loader.m_Caches.get()));
     m_QueueGuard.AddRequest(request, processor);
     m_AddRequestSemaphore.Post();
 }
@@ -370,13 +369,22 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }
 
-    m_CacheLifespan = kDefaultCacheLifespanSeconds;
+    int cache_lifespan = kDefaultCacheLifespanSeconds;
+    int no_data_cache_lifespan = kDefaultNoDataCacheLifespanSeconds;
     size_t cache_max_size = kDefaultMaxCacheSize;
     if (psg_params) {
         try {
             string value = CPSGDataLoader::GetParam(psg_params, NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT);
             if (!value.empty()) {
-                m_CacheLifespan = NStr::StringToNumeric<int>(value);
+                cache_lifespan = NStr::StringToNumeric<int>(value);
+            }
+        }
+        catch (CException&) {
+        }
+        try {
+            string value = CPSGDataLoader::GetParam(psg_params, NCBI_GBLOADER_PARAM_NO_ID_EXPIRATION_TIMEOUT);
+            if (!value.empty()) {
+                no_data_cache_lifespan = NStr::StringToNumeric<int>(value);
             }
         }
         catch (CException&) {
@@ -400,9 +408,8 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         m_WaitTime.Init(conf, NCBI_PSGLOADER_NAME, s_WaitTimeParams);
     }
 
-    m_BioseqCache.reset(new CPSGBioseqCache(m_CacheLifespan, cache_max_size));
-    m_AnnotCache.reset(new CPSGAnnotCache(m_CacheLifespan, cache_max_size));
-    m_BlobMap.reset(new CPSGBlobMap(m_CacheLifespan, cache_max_size));
+    m_Caches = make_unique<CPSGCaches>(cache_lifespan, cache_max_size,
+                                       no_data_cache_lifespan, cache_max_size);
 
     if ( !params.GetWebCookie().empty() ) {
         m_RequestContext = new CRequestContext();
@@ -416,14 +423,11 @@ CPSGDataLoader_Impl::CPSGDataLoader_Impl(const CGBLoaderParams& params)
         }
     }}
 
-    m_CDDInfoCache.reset(new CPSGCDDInfoCache(m_CacheLifespan, cache_max_size));
     if (TPSG_PrefetchCDD::GetDefault()) {
         m_CDDPrefetchTask.Reset(new CPSG_PrefetchCDD_Task(*this));
     }
 
-    if (TPSG_IpgTaxIdEnabled::GetDefault()) {
-        m_IpgTaxIdMap.reset(new CPSGIpgTaxIdMap(m_CacheLifespan, cache_max_size));
-    }
+    m_IpgTaxIdEnabled = TPSG_IpgTaxIdEnabled::GetDefault();
 
     CUrlArgs args;
     if (params.IsSetEnableSNP()) {
@@ -632,6 +636,72 @@ TTaxId CPSGDataLoader_Impl::GetTaxIdOnce(const CSeq_id_Handle& idh)
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
+struct SErrorFormatter
+{
+    explicit
+    SErrorFormatter(const CPSGL_Processor* processor)
+        : processor(processor)
+    {
+    }
+
+    operator bool() const { return processor != nullptr; }
+
+    const CPSGL_Processor* processor;
+};
+static ostream& operator<<(ostream& out, SErrorFormatter formatter)
+{
+    if ( formatter ) {
+        out << formatter.processor->Descr() << ':';
+        for ( auto& error : formatter.processor->GetErrors() ) {
+            out << ' ' << error << '\n';
+        }
+    }
+    return out;
+}
+
+
+static auto FormatError(const CPSGL_Processor* processor)
+{
+    return SErrorFormatter(processor);
+}
+
+
+struct SBulkErrorFormatter
+{
+    explicit
+    SBulkErrorFormatter(const char* type,
+                        const CPSGL_Processor* processor)
+        : type(type),
+          processor(processor)
+    {
+    }
+
+    operator bool() const { return processor; }
+    
+    const char* type;
+    SErrorFormatter processor;
+};
+static ostream& operator<<(ostream& out, SBulkErrorFormatter formatter)
+{
+    if ( formatter ) {
+        out << "failed to load "<<formatter.type<<" in bulk request: first error "<<formatter.processor;
+    }
+    return out;
+}
+
+
+static auto FormatBulkError(const char* type, const CPSGL_Processor* processor)
+{
+    return SBulkErrorFormatter(type, processor);
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
 void CPSGDataLoader_Impl::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetTaxIdsOnce, this,
@@ -641,12 +711,12 @@ void CPSGDataLoader_Impl::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& r
 
 void CPSGDataLoader_Impl::GetTaxIdsOnce(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    auto [ load_count1, fail_count1 ] = x_GetIpgTaxIds(ids, loaded, ret);
-    auto fail_count = fail_count1;
+    auto [ load_count1, failed_processor1 ] = x_GetIpgTaxIds(ids, loaded, ret);
+    auto failed_processor = failed_processor1;
     if ( load_count1 != ids.size() ) {
         vector<shared_ptr<SPsgBioseqInfo>> infos;
         infos.resize(ret.size());
-        auto [ load_count2, fail_count2 ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+        auto [ load_count2, failed_processor2 ] = x_GetBulkBioseqInfo(ids, loaded, infos);
         if ( load_count2 ) {
             // have loaded infos
             for (size_t i = 0; i < infos.size(); ++i) {
@@ -657,11 +727,13 @@ void CPSGDataLoader_Impl::GetTaxIdsOnce(const TIds& ids, TLoaded& loaded, TTaxId
                 loaded[i] = true;
             }
         }
-        fail_count += fail_count2;
+        if ( !failed_processor1 ) {
+            failed_processor1 = failed_processor2;
+        }
     }
-    if ( fail_count ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<fail_count<<" seq-ids in bulk request");
+                       FormatBulkError("tax-ids", failed_processor));
     }
 }
 
@@ -753,16 +825,28 @@ int CPSGDataLoader_Impl::GetSequenceStateOnce(CDataSource* data_source, const CS
         return kNotFound;
     }
     auto info = x_GetBioseqAndBlobInfo(data_source, idh);
+    return x_MakeSequenceState(info);
+}
+
+
+int CPSGDataLoader_Impl::x_MakeSequenceState(const TBioseqAndBlobInfo& info)
+{
+    const int kNotFound = (CBioseq_Handle::fState_not_found |
+                           CBioseq_Handle::fState_no_data);
     if ( !info.first ) {
         return kNotFound;
     }
     CBioseq_Handle::TBioseqStateFlags state = info.first->GetBioseqStateFlags();
-    if ( info.second ) {
-        state |= info.second->blob_state_flags;
-        if (!(info.first->GetBioseqStateFlags() & CBioseq_Handle::fState_dead) &&
-            !(info.first->GetChainStateFlags() & CBioseq_Handle::fState_dead)) {
-            state &= ~CBioseq_Handle::fState_dead;
-        }
+    if ( info.second.first ) {
+        state |= info.second.first->blob_state_flags;
+    }
+    else if ( info.second.second == EPSG_Status::eForbidden ) {
+        state |= (CBioseq_Handle::fState_no_data |
+                  CBioseq_Handle::fState_suppress_perm);
+    }
+    else {
+        state |= (CBioseq_Handle::fState_no_data |
+                  CBioseq_Handle::fState_other_error);
     }
     return state;
 }
@@ -776,34 +860,6 @@ CPSGDataLoader_Impl::GetRecords(CDataSource* data_source,
     return CallWithRetry(bind(&CPSGDataLoader_Impl::GetRecordsOnce, this,
                               data_source, cref(idh), choice),
                          "GetRecords");
-}
-
-
-struct SErrorFormatter
-{
-    explicit
-    SErrorFormatter(const CPSGL_Processor* processor)
-        : processor(processor)
-    {
-    }
-
-    const CPSGL_Processor* processor;
-};
-static ostream& operator<<(ostream& out, SErrorFormatter formatter)
-{
-    if ( auto processor = formatter.processor ) {
-        out << ": " << processor->Descr() << ':';
-        for ( auto& error : processor->GetErrors() ) {
-            out << ' ' << error << '\n';
-        }
-    }
-    return out;
-}
-
-
-static auto FormatError(const CPSGL_Processor* processor)
-{
-    return SErrorFormatter(processor);
 }
 
 
@@ -821,13 +877,8 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         return locks;
     }
 
-    CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
-    if (data_source) {
-        inc_data = m_TSERequestMode;
-    }
-    
     // we may already know blob_id
-    auto bioseq_info = m_BioseqCache->Find(idh);
+    auto bioseq_info = m_Caches->m_BioseqInfoCache.Find(idh);
     if ( bioseq_info && bioseq_info->KnowsBlobId() ) {
         // blob id is known
         if ( !bioseq_info->HasBlobId() ) {
@@ -835,6 +886,10 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             return locks;
         }
         locks.insert(GetBlobByIdOnce(data_source, *bioseq_info->GetDLBlobId()));
+        return locks;
+    }
+    if ( m_Caches->m_NoBioseqInfoCache.Find(idh) ) {
+        // cached absence of data
         return locks;
     }
     
@@ -848,16 +903,17 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
             data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
             ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
                 const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
-                if (!pbid) continue;
+                if (!pbid) {
+                    continue;
+                }
                 request->ExcludeTSE(CPSG_BlobId(pbid->ToPsgId()));
             }
         }
-        request->IncludeData(inc_data);
+        request->IncludeData(m_TSERequestMode);
         CRef<CPSGL_Get_Processor> processor
             (new CPSGL_Get_Processor(idh,
                                      data_source,
-                                     m_BioseqCache.get(),
-                                     m_BlobMap.get(),
+                                     m_Caches.get(),
                                      m_AddWGSMasterDescr));
         
         queue.AddRequest(request, processor);
@@ -867,7 +923,7 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     _ASSERT(result);
     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to get bioseq info for "<<idh<<
+                       "failed to get bioseq info for "<<idh<<": "<<
                        FormatError(result.GetProcessor()));
     }
     
@@ -891,9 +947,9 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
         locks.insert(GetBlobByIdOnce(data_source, *processor->GetDLBlobId()));
     }
     if ( m_CDDPrefetchTask ) {
-        if ( auto bioseq_info = m_BioseqCache->Find(idh) ) {
+        if ( auto bioseq_info = m_Caches->m_BioseqInfoCache.Find(idh) ) {
             auto cdd_ids = x_GetCDDIds(bioseq_info->ids);
-            if (cdd_ids && !m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids))) {
+            if (cdd_ids && !m_Caches->m_NoCDDCache.Find(x_MakeLocalCDDEntryId(cdd_ids))) {
                 m_CDDPrefetchTask->AddRequest(bioseq_info->ids);
             }
         }
@@ -916,7 +972,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         return null;
     }
     string blob_id;
-    auto seq_info = m_BioseqCache->Find(idh);
+    auto seq_info = m_Caches->m_BioseqInfoCache.Find(idh);
     if ( seq_info && seq_info->KnowsBlobId() ) {
         // blob id is known
     }
@@ -930,8 +986,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
             CRef<CPSGL_Get_Processor> processor
                 (new CPSGL_Get_Processor(idh,
                                          nullptr,
-                                         m_BioseqCache.get(),
-                                         m_BlobMap.get(),
+                                         m_Caches.get(),
                                          m_AddWGSMasterDescr));
             queue.AddRequest(request, processor);
         }}
@@ -940,7 +995,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("Failed to get blob id for " << idh);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "CPSGDataLoader::GetBlobId("<<idh<<") failed"<<
+                           "CPSGDataLoader::GetBlobId("<<idh<<") failed: "<<
                            FormatError(result.GetProcessor()));
         }
         
@@ -949,7 +1004,7 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         if ( processor->GetBioseqInfoStatus() == EPSG_Status::eError ) {
             _TRACE("Failed to get blob id for " << idh);
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "CPSGDataLoader::GetBlobId() failed"<<
+                           "CPSGDataLoader::GetBlobId() failed: "<<
                            FormatError(result.GetProcessor()));
         }
         seq_info = processor->GetBioseqInfoResult();
@@ -1016,7 +1071,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
             CRef<CPSGL_GetBlob_Processor> processor
                 (new CPSGL_GetBlob_Processor(blob_id,
                                              data_source,
-                                             m_BlobMap.get(),
+                                             m_Caches.get(),
                                              m_AddWGSMasterDescr));
             queue.AddRequest(request, processor);
         }}
@@ -1024,7 +1079,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         _ASSERT(result);
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "failed to get blob "<<blob_id.ToPsgId()<<
+                           "failed to get blob "<<blob_id.ToPsgId()<<": "<<
                            FormatError(result.GetProcessor()));
         }
 
@@ -1058,111 +1113,253 @@ void CPSGDataLoader_Impl::GetBlobs(CDataSource* data_source, TTSE_LockSets& tse_
 }
 
 
-void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
-                                       TLoadedSeqIds& loaded,
-                                       TTSE_LockSets& tse_sets)
+class CPSGDataLoader_Impl::CGetRequests : public CPSGL_QueueGuard
 {
-    CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
+public:
+    CGetRequests(CPSGDataLoader_Impl& loader,
+                 CDataSource* data_source,
+                 CPSG_Request_Biodata::EIncludeData include_data)
+        : CPSGL_QueueGuard(*loader.m_ThreadPool, *loader.m_Queue),
+          m_Loader(loader),
+          m_DataSource(data_source),
+          m_IncludeData(include_data)
+    {
+    }
 
+    typedef CDataLoader::TTSE_LockSet TResult;
+    
+    typedef vector<CSeq_id_Handle> TRequests;
+    optional<TResult> CreateGetRequests(const CSeq_id_Handle& idh);
+    optional<TResult> ProcessResult(const CPSGL_ResultGuard& result);
+    const TRequests& GetReadyRequests() const
+    {
+        return m_ReadyRequests;
+    }
+    void SaveFailure(const CRef<CPSGL_Processor>& processor);
+    void ReportFailures();
+
+protected:
     enum ERequestType {
         eRequestGet,
         eRequestGetBlob
     };
+
+    optional<TResult> NotReady()
+    {
+        m_ReadyRequests.clear();
+        return nullopt;
+    }
+    optional<TResult> Empty(const CSeq_id_Handle& request)
+    {
+        m_ReadyRequests.assign(1, request);
+        return make_optional<TResult>();
+    }
+    optional<TResult> Ready(const CSeq_id_Handle& request,
+                            const CTSE_Lock& tse)
+    {
+        m_ReadyRequests.assign(1, request);
+        return make_optional<TResult>({tse});
+    }
+    optional<TResult> Ready(TRequests&& requests,
+                            const CTSE_Lock& tse)
+    {
+        m_ReadyRequests = requests;
+        return make_optional<TResult>({tse});
+    }
+    
+private:
+    CPSGDataLoader_Impl& m_Loader;
+    CDataSource* m_DataSource;
+    CPSG_Request_Biodata::EIncludeData m_IncludeData;
+    
+    // we need to remember the reason for recursive getblob requests
+    map<CRef<CPSGL_GetBlob_Processor>, TRequests> m_GetBlob2Reqs;
+    TRequests m_ReadyRequests;
+
+    size_t m_FailedCount = 0;
+    CRef<CPSGL_Processor> m_FirstFailedProcessor;
+};
+
+
+optional<CPSGDataLoader_Impl::CGetRequests::TResult>
+CPSGDataLoader_Impl::CGetRequests::CreateGetRequests(const CSeq_id_Handle& idh)
+{
+    if ( CannotProcess(idh) ) {
+        return Empty(idh);
+    }
+
+    // we may already know blob_id
+    auto bioseq_info = m_Loader.m_Caches->m_BioseqInfoCache.Find(idh);
+    if ( bioseq_info && bioseq_info->KnowsBlobId() ) {
+        // blob id is known
+        if ( !bioseq_info->HasBlobId() ) {
+            // no blob
+            return Empty(idh);
+        }
+        // we know blob id already
+        
+        // find if the TSE is already loaded
+        const string& blob_id = bioseq_info->GetPSGBlobId();
+        CRef<CPsgBlobId> dl_blob_id(new CPsgBlobId(blob_id));
+        CTSE_LoadLock load_lock = m_DataSource->GetTSE_LoadLockIfLoaded(CDataLoader::TBlobId(dl_blob_id));
+        if ( load_lock && load_lock.IsLoaded() ) {
+            _TRACE("CreateGetRequests: already loaded " << blob_id);
+            return Ready(idh, load_lock);
+        }
+        // check if TSE loading is forbidden
+        if ( m_Loader.m_Caches->m_NoBlobInfoCache.Find(blob_id) == EPSG_Status::eForbidden ) {
+            _TRACE("CreateGetRequests: forbidden " << blob_id);
+            return Empty(idh);
+        }
+        
+        // create get blob by id request
+        if ( s_GetDebugLevel() >= 5 ) {
+            LOG_POST(Info<<"PSG loader: Re-loading blob: " << blob_id<<" for "<<idh);
+        }
+        auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(blob_id));
+        request->IncludeData(m_Loader.m_TSERequestMode);
+        CRef<CPSGL_GetBlob_Processor> processor2
+            (new CPSGL_GetBlob_Processor(*dl_blob_id,
+                                         m_DataSource,
+                                         m_Loader.m_Caches.get(),
+                                         m_Loader.m_AddWGSMasterDescr));
+        m_GetBlob2Reqs[processor2].push_back(idh);
+        AddRequest(request, processor2, eRequestGetBlob);
+        return NotReady();
+    }
+    if ( m_Loader.m_Caches->m_NoBioseqInfoCache.Find(idh) ) {
+        // cached absence of data
+        return Empty(idh);
+    }
+    
+    // create full 'get' request
+    CPSG_BioId bio_id(idh);
+    auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+    {{
+        CDataSource::TLoadedBlob_ids loaded_blob_ids;
+        m_DataSource->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
+        ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
+            const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
+            if ( !pbid ) {
+                continue;
+            }
+            request->ExcludeTSE(CPSG_BlobId(pbid->ToPsgId()));
+        }
+    }}
+    request->IncludeData(m_IncludeData);
+    CRef<CPSGL_Get_Processor> processor
+        (new CPSGL_Get_Processor(idh,
+                                 m_DataSource,
+                                 m_Loader.m_Caches.get(),
+                                 m_Loader.m_AddWGSMasterDescr));
+    AddRequest(request, processor, eRequestGet);
+    return NotReady();
+}
+
+
+optional<CPSGDataLoader_Impl::CGetRequests::TResult>
+CPSGDataLoader_Impl::CGetRequests::ProcessResult(const CPSGL_ResultGuard& result)
+{
+    if ( result.GetIndex() == eRequestGet ) {
+        auto processor = result.GetProcessor<CPSGL_Get_Processor>();
+        if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
+            SaveFailure(processor);
+            return NotReady();
+        }
+        
+        const CSeq_id_Handle& idh = processor->GetSeq_id();
+        if ( auto tse_lock = processor->GetTSE_Lock() ) {
+            return Ready(idh, tse_lock);
+        }
+        else if ( !processor->HasBlob_id() ) {
+            // no blob
+            return Empty(idh);
+        }
+        else if ( processor->GetBioseqInfoStatus() == EPSG_Status::eForbidden ) {
+            // forbidden to get the blob
+            return Empty(idh);
+        }
+        else {
+            // we can get only blob id without blob
+            // retry with explcit blob id
+            if ( s_GetDebugLevel() >= 5 ) {
+                LOG_POST(Info<<"PSG loader: Re-loading blob: " << processor->GetPSGBlobId()<<" for "<<idh);
+            }
+            CPSG_BlobId blob_id(processor->GetPSGBlobId());
+            auto request = make_shared<CPSG_Request_Blob>(std::move(blob_id));
+            request->IncludeData(m_IncludeData);
+            CRef<CPSGL_GetBlob_Processor> processor2
+                (new CPSGL_GetBlob_Processor(*processor->GetDLBlobId(),
+                                             m_DataSource,
+                                             m_Loader.m_Caches.get(),
+                                             m_Loader.m_AddWGSMasterDescr));
+            m_GetBlob2Reqs[processor2].push_back(idh);
+            AddRequest(request, processor2, eRequestGetBlob);
+            return NotReady();
+        }
+    }
+    else { // eRequestGetBlob
+        auto processor = result.GetProcessor<CPSGL_GetBlob_Processor>();
+        TRequests reqs = std::move(m_GetBlob2Reqs[processor]);
+        m_GetBlob2Reqs.erase(processor);
+        if ( result.GetStatus() != CThreadPool_Task::eCompleted ||
+             !processor->GetTSE_Lock() ) {
+            SaveFailure(processor);
+            return NotReady();
+        }
+        
+        auto tse_lock = processor->GetTSE_Lock();
+        return Ready(std::move(reqs), tse_lock);
+    }
+}
+
+
+void CPSGDataLoader_Impl::CGetRequests::SaveFailure(const CRef<CPSGL_Processor>& processor)
+{
+    ++m_FailedCount;
+    if ( !m_FirstFailedProcessor ) {
+        m_FirstFailedProcessor = processor;
+    }
+}
+
+
+void CPSGDataLoader_Impl::CGetRequests::ReportFailures()
+{
+    if ( m_FailedCount ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       FormatBulkError("blobs", m_FirstFailedProcessor));
+    }
+}
+
+
+void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
+                                       TLoadedSeqIds& loaded,
+                                       TTSE_LockSets& tse_sets)
+{
+    CGetRequests queue(*this, data_source, m_TSERequestModeBulk);
+
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& idh = tse_set->first;
         if ( loaded.count(idh) ) {
             continue;
         }
-        CPSG_BioId bio_id(idh);
-        auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
-        CPSG_Request_Biodata::EIncludeData inc_data = CPSG_Request_Biodata::eNoTSE;
-        if ( data_source ) {
-            inc_data = m_TSERequestModeBulk;
-            CDataSource::TLoadedBlob_ids loaded_blob_ids;
-            data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
-            ITERATE(CDataSource::TLoadedBlob_ids, loaded_blob_id, loaded_blob_ids) {
-                const CPsgBlobId* pbid = dynamic_cast<const CPsgBlobId*>(&**loaded_blob_id);
-                if (!pbid) continue;
-                request->ExcludeTSE(CPSG_BlobId(pbid->ToPsgId()));
-            }
+        if ( auto tse_set = queue.CreateGetRequests(idh) ) {
+            // result is ready, may be empty
+            tse_sets[idh] = std::move(*tse_set);
+            loaded.insert(idh);
         }
-        request->IncludeData(inc_data);
-        CRef<CPSGL_Get_Processor> processor
-            (new CPSGL_Get_Processor(idh,
-                                     data_source,
-                                     m_BioseqCache.get(),
-                                     m_BlobMap.get(),
-                                     m_AddWGSMasterDescr));
-        queue.AddRequest(request, processor, eRequestGet);
     }
-    size_t failed_count = 0;
-    // Waiting for skipped blobs can block all pool threads. To prevent this postpone
-    // waiting until all other tasks are completed.
-
-    // we need to remember the reason for reqursive getblob requests
-    typedef vector<CSeq_id_Handle> TRequests;
-    map<CRef<CPSGL_GetBlob_Processor>, TRequests> getblob2reqs;
-    CRef<CPSGL_Processor> first_failed_processor;
+    
     while ( auto result = queue.GetNextResult() ) {
-        if ( result.GetIndex() == eRequestGet ) {
-            auto processor = result.GetProcessor<CPSGL_Get_Processor>();
-            const CSeq_id_Handle& idh = processor->GetSeq_id();
-            if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
-                NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                               "failed to get bioseq info for "<<idh<<
-                               FormatError(result.GetProcessor()));
-            }
-            
-            if ( auto tse_lock = processor->GetTSE_Lock() ) {
-                tse_sets[idh].insert(tse_lock);
+        if ( auto tse_set = queue.ProcessResult(result) ) {
+            for ( auto& idh : queue.GetReadyRequests() ) {
+                tse_sets[idh] = *tse_set;
                 loaded.insert(idh);
-            }
-            else if ( !processor->HasBlob_id() ) {
-                // no blob
-                loaded.insert(idh);
-            }
-            else {
-                // we can get only blob id without blob
-                // retry with explcit blob id
-                if ( s_GetDebugLevel() >= 5 ) {
-                    LOG_POST(Info<<"PSG loader: Re-loading blob: " << processor->GetPSGBlobId()<<" for "<<idh);
-                }
-                CPSG_BlobId blob_id(processor->GetPSGBlobId());
-                auto request = make_shared<CPSG_Request_Blob>(std::move(blob_id));
-                request->IncludeData(m_TSERequestMode);
-                CRef<CPSGL_GetBlob_Processor> processor2
-                    (new CPSGL_GetBlob_Processor(*processor->GetDLBlobId(),
-                                                 data_source,
-                                                 m_BlobMap.get(),
-                                                 m_AddWGSMasterDescr));
-                getblob2reqs[processor2].push_back(idh);
-                queue.AddRequest(request, processor2, eRequestGetBlob);
-            }
-        }
-        else { // eRequestGetBlob
-            auto processor = result.GetProcessor<CPSGL_GetBlob_Processor>();
-            TRequests reqs = std::move(getblob2reqs[processor]);
-            getblob2reqs.erase(processor);
-            if ( result.GetStatus() != CThreadPool_Task::eCompleted ||
-                 !processor->GetTSE_Lock() ) {
-                NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                               "failed to get blob "<<processor->GetBlob_id()<<
-                               " for "<<reqs.front()<<
-                               FormatError(result.GetProcessor()));
-            }
-            
-            auto tse_lock = processor->GetTSE_Lock();
-            for ( auto& req : reqs ) {
-                tse_sets[req].insert(tse_lock);
-                loaded.insert(req);
             }
         }
     }
-    if ( failed_count ) {
-        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" blobs"<<
-                       FormatError(first_failed_processor));
-    }
+
+    queue.ReportFailures();
 }
 
 
@@ -1265,7 +1462,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
         if ( chunk.GetChunkId() == kDelayedMain_ChunkId ) {
             const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
             if ( SCDDIds cdd_ids = x_ParseLocalCDDEntryId(blob_id) ) {
-                if (m_CDDInfoCache->Find(blob_id.ToPsgId())) {
+                if ( m_Caches->m_NoCDDCache.Find(blob_id.ToPsgId())) {
                     x_CreateEmptyLocalCDDEntry(data_source, &chunk);
                     continue;
                 }
@@ -1283,7 +1480,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                     (new CPSGL_LocalCDDBlob_Processor(chunk,
                                                       cdd_ids,
                                                       data_source,
-                                                      m_BlobMap.get(),
+                                                      m_Caches.get(),
                                                       m_AddWGSMasterDescr));
                 queue.AddRequest(request, processor, eRequestCDD);
             }
@@ -1293,7 +1490,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                 CRef<CPSGL_GetBlob_Processor> processor
                     (new CPSGL_GetBlob_Processor(blob_id,
                                                  data_source,
-                                                 m_BlobMap.get(),
+                                                 m_Caches.get(),
                                                  m_AddWGSMasterDescr));
                 processor->SetLockedDelayedChunkInfo(blob_id.ToPsgId(), chunk);
                 queue.AddRequest(request, processor, eRequestDelayedTSE);
@@ -1307,7 +1504,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             CRef<CPSGL_GetChunk_Processor> processor
                 (new CPSGL_GetChunk_Processor(chunk,
                                               data_source,
-                                              m_BlobMap.get(),
+                                              m_Caches.get(),
                                               m_AddWGSMasterDescr));
             queue.AddRequest(request, processor, eRequestChunk);
         }
@@ -1336,8 +1533,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" chunks"<<
-                       FormatError(first_failed_processor));
+                       FormatBulkError("chunks", first_failed_processor));
     }
 }
 
@@ -1430,6 +1626,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNA(
 }
 
 
+// uses cached annot info
 bool CPSGDataLoader_Impl::x_CheckAnnotCache(
     const string& name,
     const TIds& ids,
@@ -1437,10 +1634,12 @@ bool CPSGDataLoader_Impl::x_CheckAnnotCache(
     CDataLoader::TProcessedNAs* processed_nas,
     CDataLoader::TTSE_LockSet& locks)
 {
-    auto cached = m_AnnotCache->Find(make_pair(name, ids));
-    if (cached) {
-        for (auto& info : cached->infos) {
+    auto cached = m_Caches->m_AnnotInfoCache.Find(make_pair(name, ids));
+    if ( cached ) {
+        if ( !cached->infos.empty() ) {
             CDataLoader::SetProcessedNA(name, processed_nas);
+        }
+        for ( auto& info : cached->infos ) {
             auto chunk_info = s_CreateNAChunk(*info);
             CRef<CPsgBlobId> blob_id(new CPsgBlobId(info->GetBlobId().GetId()));
             blob_id->SetTSEName(name);
@@ -1455,6 +1654,10 @@ bool CPSGDataLoader_Impl::x_CheckAnnotCache(
                 locks.insert(load_lock);
             }
         }
+        return true;
+    }
+    if ( m_Caches->m_NoAnnotInfoCache.Find(make_pair(name, ids)) ) {
+        // it's known that there are no annots
         return true;
     }
     return false;
@@ -1483,6 +1686,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
         for (auto& id : ids) {
             bio_ids.push_back(CPSG_BioId(id));
         }
+
+        // collect annot names to load
         const SAnnotSelector::TNamedAnnotAccessions& accs = sel->GetNamedAnnotAccessions();
         ITERATE(SAnnotSelector::TNamedAnnotAccessions, it, accs) {
             if ( kCreateLocalCDDEntries && NStr::EqualNocase(it->first, kCDDAnnotName) ) {
@@ -1505,6 +1710,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
             }
         }
 
+        // load missing annots
         if ( !annot_names.empty() ) {
             enum ERequestType {
                 eRequestNA,
@@ -1518,7 +1724,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                 CRef<CPSGL_NA_Processor> processor
                     (new CPSGL_NA_Processor(ids,
                                             data_source,
-                                            m_BlobMap.get(),
+                                            m_Caches.get(),
                                             m_AddWGSMasterDescr));
                 queue.AddRequest(request, processor, eRequestNA);
             }}
@@ -1532,7 +1738,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
                         _TRACE("Failed to load annotations for "<<ids.front());
                         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed"<<
+                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed: "<<
                                        FormatError(result.GetProcessor()));
                     }
                     for ( auto& r : processor->GetResults() ) {
@@ -1549,7 +1755,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                             CRef<CPSGL_GetBlob_Processor> processor2
                                 (new CPSGL_GetBlob_Processor(*dl_blob_id,
                                                              data_source,
-                                                             m_BlobMap.get(),
+                                                             m_Caches.get(),
                                                              m_AddWGSMasterDescr));
                             getblob2reqs[processor2].push_back(r.m_NA);
                             queue.AddRequest(request, processor2, eRequestGetBlob);
@@ -1563,7 +1769,7 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                     if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
                         _TRACE("Failed to load annotations for "<<ids.front());
                         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed"<<
+                                       "CPSGDataLoader::GetAnnotRecordsNA("<<ids.front()<<") failed: "<<
                                        FormatError(result.GetProcessor()));
                     }
                     for ( auto& name : reqs ) {
@@ -1616,7 +1822,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             continue;
         }
         // Skip if it's known that the bioseq has no CDDs.
-        if (m_CDDInfoCache->Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
+        if ( m_Caches->m_NoCDDCache.Find(x_MakeLocalCDDEntryId(cdd_ids[i]))) {
             // known to have no CDDs
             loaded[i] = true;
             continue;
@@ -1674,9 +1880,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
             (new CPSGL_CDDAnnot_Processor(cdd_ids[i],
                                           id_sets[i],
                                           data_source,
-                                          m_AnnotCache.get(),
-                                          m_CDDInfoCache.get(),
-                                          m_BlobMap.get()));
+                                          m_Caches.get()));
         queue.AddRequest(request, processor, i);
     }
 
@@ -1703,8 +1907,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
     }
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<failed_count<<" CDD annots in bulk request"<<
-                       FormatError(first_failed_processor));
+                       FormatBulkError("CDD annots", first_failed_processor));
     }
 }
 
@@ -1727,8 +1930,8 @@ void CPSGDataLoader_Impl::GetBulkIdsOnce(const TIds& ids, TLoaded& loaded, TBulk
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1738,9 +1941,9 @@ void CPSGDataLoader_Impl::GetBulkIdsOnce(const TIds& ids, TLoaded& loaded, TBulk
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" seq-ids in bulk request");
+                       FormatBulkError("seq-ids", failed_processor));
     }
 }
 
@@ -1758,8 +1961,8 @@ void CPSGDataLoader_Impl::GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds&
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1770,9 +1973,9 @@ void CPSGDataLoader_Impl::GetAccVersOnce(const TIds& ids, TLoaded& loaded, TIds&
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" acc.ver in bulk request");
+                       FormatBulkError("acc.vers", failed_processor));
     }
 }
 
@@ -1790,8 +1993,8 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1799,9 +2002,9 @@ void CPSGDataLoader_Impl::GetGisOnce(const TIds& ids, TLoaded& loaded, TGis& ret
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" acc.ver in bulk request");
+                       FormatBulkError("gis", failed_processor));
     }
 }
 
@@ -1819,8 +2022,8 @@ void CPSGDataLoader_Impl::GetLabelsOnce(const TIds& ids, TLoaded& loaded, TLabel
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1828,9 +2031,9 @@ void CPSGDataLoader_Impl::GetLabelsOnce(const TIds& ids, TLoaded& loaded, TLabel
             if (!ret[i].empty()) loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" labels in bulk request");
+                       FormatBulkError("labels", failed_processor));
     }
 }
 
@@ -1848,8 +2051,8 @@ void CPSGDataLoader_Impl::GetSequenceLengthsOnce(const TIds& ids, TLoaded& loade
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1858,9 +2061,9 @@ void CPSGDataLoader_Impl::GetSequenceLengthsOnce(const TIds& ids, TLoaded& loade
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" sequence lengths in bulk request");
+                       FormatBulkError("sequence lengths", failed_processor));
     }
 }
 
@@ -1878,8 +2081,8 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1887,14 +2090,17 @@ void CPSGDataLoader_Impl::GetSequenceTypesOnce(const TIds& ids, TLoaded& loaded,
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" sequence types in bulk request");
+                       FormatBulkError("sequence types", failed_processor));
     }
 }
 
 
-void CPSGDataLoader_Impl::GetSequenceStates(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
+void CPSGDataLoader_Impl::GetSequenceStates(CDataSource* data_source,
+                                            const TIds& ids,
+                                            TLoaded& loaded,
+                                            TSequenceStates& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetSequenceStatesOnce, this,
                        data_source, cref(ids), ref(loaded), ref(ret)),
@@ -1903,29 +2109,27 @@ void CPSGDataLoader_Impl::GetSequenceStates(CDataSource* data_source, const TIds
 }
 
 
-void CPSGDataLoader_Impl::GetSequenceStatesOnce(CDataSource* data_source, const TIds& ids, TLoaded& loaded, TSequenceStates& ret)
+void CPSGDataLoader_Impl::GetSequenceStatesOnce(CDataSource* data_source,
+                                                const TIds& ids,
+                                                TLoaded& loaded,
+                                                TSequenceStates& ret)
 {
     TBioseqAndBlobInfos infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqAndBlobInfo(data_source, ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqAndBlobInfo(data_source, ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
-            if (loaded[i] || (!infos[i].first.get() || !infos[i].second.get())) continue;
-            auto bioseq_info = infos[i].first;
-            auto blob_info = infos[i].second;
-            ret[i] = bioseq_info->GetBioseqStateFlags();
-            ret[i] |= blob_info->blob_state_flags;
-            if (!(bioseq_info->GetBioseqStateFlags() & CBioseq_Handle::fState_dead) &&
-                !(bioseq_info->GetChainStateFlags() & CBioseq_Handle::fState_dead)) {
-                ret[i] &= ~CBioseq_Handle::fState_dead;
+            if ( loaded[i] || !infos[i].first ) {
+                continue;
             }
+            ret[i] = x_MakeSequenceState(infos[i]);
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" sequence states in bulk request");
+                       FormatBulkError("sequence states", failed_processor));
     }
 }
 
@@ -1943,8 +2147,8 @@ void CPSGDataLoader_Impl::GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded
 {
     vector<shared_ptr<SPsgBioseqInfo>> infos;
     infos.resize(ret.size());
-    auto counts = x_GetBulkBioseqInfo(ids, loaded, infos);
-    if ( counts.first ) {
+    auto [ load_count, failed_processor ] = x_GetBulkBioseqInfo(ids, loaded, infos);
+    if ( load_count ) {
         // have loaded infos
         for (size_t i = 0; i < infos.size(); ++i) {
             if (loaded[i] || !infos[i].get()) continue;
@@ -1953,20 +2157,23 @@ void CPSGDataLoader_Impl::GetSequenceHashesOnce(const TIds& ids, TLoaded& loaded
             loaded[i] = true;
         }
     }
-    if ( counts.second ) {
+    if ( failed_processor ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                       "failed to load "<<counts.second<<" sequence hashes in bulk request");
+                       FormatBulkError("sequence hashes", failed_processor));
     }
 }
 
 
 shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Handle& idh)
 {
-    if ( shared_ptr<SPsgBioseqInfo> ret = m_BioseqCache->Find(idh) ) {
+    if ( shared_ptr<SPsgBioseqInfo> ret = m_Caches->m_BioseqInfoCache.Find(idh) ) {
         if ( ret->tax_id <= 0 ) {
             _TRACE("bad tax_id for "<<idh<<" : "<<ret->tax_id);
         }
         return ret;
+    }
+    if ( m_Caches->m_NoBioseqInfoCache.Find(idh) ) {
+        return nullptr;
     }
 
     CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
@@ -1976,7 +2183,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
         shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
         request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
         CRef<CPSGL_BioseqInfo_Processor> processor
-            (new CPSGL_BioseqInfo_Processor(idh, m_BioseqCache.get()));
+            (new CPSGL_BioseqInfo_Processor(idh, m_Caches.get()));
         queue.AddRequest(request, processor);
     }}
 
@@ -1988,16 +2195,7 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
         _TRACE("Failed to get bioseq info for " << idh << " @ "<<CStackTrace());
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed, "failed to get bioseq info for "<<idh);
     }
-    if ( !processor->m_BioseqInfo ) {
-        _TRACE("No bioseq info for " << idh);
-        return nullptr;
-    }
-    if ( processor->m_BioseqInfoResult ) {
-        return std::move(processor->m_BioseqInfoResult);
-    }
-    else {
-        return m_BioseqCache->Add(idh, *processor->m_BioseqInfo);
-    }
+    return processor->m_BioseqInfoResult;
 }
 
 
@@ -2025,11 +2223,11 @@ static bool s_IsIpgAccession(const CSeq_id_Handle& idh, string& acc_ver, bool& i
 
 TTaxId CPSGDataLoader_Impl::x_GetIpgTaxId(const CSeq_id_Handle& idh)
 {
-    if (!m_IpgTaxIdMap) {
+    if ( !m_IpgTaxIdEnabled ) {
         return INVALID_TAX_ID;
     }
 
-    TTaxId cached = m_IpgTaxIdMap->Find(idh);
+    TTaxId cached = m_Caches->m_IpgTaxIdCache.Find(idh);
     if (cached != INVALID_TAX_ID) {
         return cached;
     }
@@ -2045,7 +2243,7 @@ TTaxId CPSGDataLoader_Impl::x_GetIpgTaxId(const CSeq_id_Handle& idh)
     {{
         shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
         CRef<CPSGL_IpgTaxId_Processor> processor(
-            new CPSGL_IpgTaxId_Processor(idh, is_wp_acc, m_IpgTaxIdMap.get()));
+            new CPSGL_IpgTaxId_Processor(idh, is_wp_acc, m_Caches.get()));
         queue.AddRequest(request, processor);
     }}
 
@@ -2061,18 +2259,19 @@ TTaxId CPSGDataLoader_Impl::x_GetIpgTaxId(const CSeq_id_Handle& idh)
 }
 
 
-pair<size_t, size_t> CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+pair<size_t, CRef<CPSGL_Processor>>
+CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    if (!m_IpgTaxIdMap) {
-        return make_pair(0, 0);
+    if ( !m_IpgTaxIdEnabled ) {
+        return make_pair(0, null);
     }
 
     CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
     
     size_t load_count = 0;
-    size_t fail_count = 0;
+    CRef<CPSGL_Processor> failed_processor;
     for (size_t i = 0; i < ids.size(); ++i) {
-        TTaxId cached = m_IpgTaxIdMap->Find(ids[i]);
+        TTaxId cached = m_Caches->m_IpgTaxIdCache.Find(ids[i]);
         if ( cached != INVALID_TAX_ID ) {
             ret[i] = cached;
             loaded[i] = true;
@@ -2088,7 +2287,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoade
         
         shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
         CRef<CPSGL_IpgTaxId_Processor> processor(
-            new CPSGL_IpgTaxId_Processor(ids[i], is_wp_acc, m_IpgTaxIdMap.get()));
+            new CPSGL_IpgTaxId_Processor(ids[i], is_wp_acc, m_Caches.get()));
         queue.AddRequest(request, processor, i);
     }
 
@@ -2096,7 +2295,9 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoade
         size_t i = result.GetIndex();
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("Failed to get IPG tax id for " << ids[i]);
-            ++fail_count;
+            if ( !failed_processor ) {
+                failed_processor = result.GetProcessor();
+            }
             continue;
         }
         auto processor = result.GetProcessor<CPSGL_IpgTaxId_Processor>();
@@ -2108,7 +2309,7 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoade
             ++load_count;
         }
     }
-    return make_pair(load_count, fail_count);
+    return make_pair(load_count, failed_processor);
 }
 
 
@@ -2128,61 +2329,73 @@ CPSGDataLoader_Impl::x_GetBioseqAndBlobInfo(CDataSource* data_source,
                                             const CSeq_id_Handle& idh)
 {
     TBioseqAndBlobInfo ret;
+
+    if ( CannotProcess(idh) ) {
+        return ret;
+    }
     
     CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
     
-    x_CreateBioseqAndBlobInfoRequests(queue, idh, ret);
-    
-    while ( auto result = queue.GetNextResult() ) {
-        if ( !x_ProcessBioseqAndBlobInfoResult(queue, idh, ret, result) ) {
-            NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
-                           "failed to get bioseq/blob info for "<<idh);
-        }
+    if ( x_CreateBioseqAndBlobInfoRequests(queue, idh, ret) == eCompleted ) {
+        return ret;
     }
     
-    if ( !x_FinalizeBioseqAndBlobInfo(ret) ) {
-        if ( !ret.first || !ret.first->HasBlobId() ) {
+    while ( auto result = queue.GetNextResult() ) {
+        auto status = x_ProcessBioseqAndBlobInfoResult(queue, idh, ret, result);
+        if ( status == eFailed ) {
             NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                            "failed to get bioseq/blob info for "<<idh);
         }
-        ret.second = x_GetBlobInfo(data_source, ret.first->GetPSGBlobId());
     }
     
     return ret;
 }
 
 
-void CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
-                                                            const CSeq_id_Handle& idh,
-                                                            TBioseqAndBlobInfo& ret,
-                                                            size_t id_index)
+// x_CreateBioseqAndBlobInfoRequests() returns:
+//   eQueued if requests were created
+//   eCompleted if the data was fully processed from cache
+CPSGDataLoader_Impl::EProcessResult
+CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
+                                                       const CSeq_id_Handle& idh,
+                                                       TBioseqAndBlobInfo& ret,
+                                                       size_t id_index)
 {
-    if ( CannotProcess(idh) ) {
-        return;
-    }
-    shared_ptr<SPsgBioseqInfo> bioseq_info = m_BioseqCache->Find(idh);
+    shared_ptr<SPsgBioseqInfo> bioseq_info = m_Caches->m_BioseqInfoCache.Find(idh);
     shared_ptr<SPsgBlobInfo> blob_info;
     if ( bioseq_info && bioseq_info->KnowsBlobId() ) {
         // blob id is known
         ret.first = bioseq_info;
         if ( !bioseq_info->HasBlobId() ) {
             // no blob - no need to ask again
-            return;
+            return eCompleted;
         }
-        blob_info = m_BlobMap->Find(bioseq_info->GetPSGBlobId());
+        blob_info = m_Caches->m_BlobInfoCache.Find(bioseq_info->GetPSGBlobId());
         if ( blob_info ) {
             // blob info is cached - no need to ask again
-            ret.second = blob_info;
-            return;
+            ret.second.first = blob_info;
+            ret.second.second = EPSG_Status::eSuccess;
+            x_AdjustBlobState(ret);
+            return eCompleted;
+        }
+        ret.second.second = m_Caches->m_NoBlobInfoCache.Find(bioseq_info->GetPSGBlobId());
+        if ( ret.second.second != EPSG_Status() )  {
+            // blob is missing or forbidden
+            return eCompleted;
         }
         // ask by blob_id
         CPSG_BlobId bid(bioseq_info->GetPSGBlobId());
         shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_BlobInfo_Processor> processor
-            (new CPSGL_BlobInfo_Processor(idh, bioseq_info->GetPSGBlobId(), m_BlobMap.get()));
+            (new CPSGL_BlobInfo_Processor(idh, bioseq_info->GetPSGBlobId(), m_Caches.get()));
         queue.AddRequest(request, processor,
                          id_index*kProcessorIndex_count + kProcessorIndex_BlobInfo);
+        return eQueued;
+    }
+    else if ( m_Caches->m_NoBioseqInfoCache.Find(idh) ) {
+        // cached 'no-bioseq'
+        return eCompleted;
     }
     else {
         // ask for both bioseq info and blob info
@@ -2190,17 +2403,23 @@ void CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& qu
         auto blob_request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
         blob_request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_Info_Processor> blob_processor
-            (new CPSGL_Info_Processor(idh, m_BioseqCache.get(), m_BlobMap.get()));
+            (new CPSGL_Info_Processor(idh, m_Caches.get()));
         queue.AddRequest(blob_request, blob_processor,
                          id_index*kProcessorIndex_count + kProcessorIndex_Info);
+        return eQueued;
     }
 }
 
 
-bool CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
-                                                           const CSeq_id_Handle& idh,
-                                                           TBioseqAndBlobInfo& ret,
-                                                           const CPSGL_ResultGuard& result)
+// x_ProcessBioseqAndBlobInfoResult() returns:
+//   eCompleted -  processing was successful and complete
+//   eQueued    -  processing was successful but new request was queued
+//   eFailed    -  processing was unsuccessful, check result for errors
+CPSGDataLoader_Impl::EProcessResult
+CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
+                                                      const CSeq_id_Handle& idh,
+                                                      TBioseqAndBlobInfo& ret,
+                                                      const CPSGL_ResultGuard& result)
 {
     auto index = result.GetIndex() % kProcessorIndex_count;
     if ( index == kProcessorIndex_Info ) {
@@ -2209,38 +2428,44 @@ bool CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& que
         
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("Failed to get bioseq info for " << processor->GetSeq_id());
-            return false;
-        }
-        if ( processor->m_BioseqInfoStatus == EPSG_Status::eError ) {
-            // inconsistent reply
-            _TRACE("Failed to load bioseq info for " << processor->GetSeq_id());
-            return false;
+            return eFailed;
         }
         ret.first = processor->m_BioseqInfoResult;
         if ( !ret.first ) {
-            // not bioseq info
             _TRACE("No bioseq info for " << processor->GetSeq_id());
-            return true;
+            return eCompleted; // no such sequence
         }
-        if ( processor->m_BlobInfoStatus == EPSG_Status::eError ) {
-            // inconsistent reply
-            _TRACE("Failed to load blob info for " << processor->GetSeq_id());
-            return false;
+        ret.second.first = processor->m_BlobInfoResult;
+        ret.second.second = processor->m_BlobInfoStatus;
+        if ( ret.second.first ) {
+            x_AdjustBlobState(ret); // TODO: in processor?
+            return eCompleted;
         }
-        ret.second = processor->m_BlobInfoResult;
-        if ( !ret.second ) {
+        else if ( ret.first->HasBlobId() &&
+                  ret.second.second != EPSG_Status::eForbidden ) {
+            ret.second.second = m_Caches->m_NoBlobInfoCache.Find(ret.first->GetPSGBlobId());
+            if ( ret.second.second != EPSG_Status() ) {
+                // cached 'no-blob'
+                return eCompleted;
+            }
             // re-try with getblob request
             CPSG_BlobId bid(ret.first->GetPSGBlobId());
             shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
             request->IncludeData(CPSG_Request_Biodata::eNoTSE);
             CRef<CPSGL_BlobInfo_Processor> processor2
-                (new CPSGL_BlobInfo_Processor(processor->GetSeq_id(), ret.first->GetPSGBlobId(), m_BlobMap.get()));
+                (new CPSGL_BlobInfo_Processor(processor->GetSeq_id(), ret.first->GetPSGBlobId(), m_Caches.get()));
             size_t id_index = result.GetIndex()/kProcessorIndex_count;
             queue.AddRequest(request, processor2,
                              id_index*kProcessorIndex_count + kProcessorIndex_BlobInfo);
-            return true;
+            return eQueued;
         }
-        return true;
+        else {
+            // ret.first != null &&
+            // ret.second == null && 
+            // ( !HasBlobId() ||
+            //   m_BlobInfoStatus == eForbidden )
+            return eCompleted;
+        }
     }
     else {
         _ASSERT(index == kProcessorIndex_BlobInfo);
@@ -2249,33 +2474,19 @@ bool CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& que
                 
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             _TRACE("Failed to get blob info for " << processor->GetSeq_id());
-            return false;
+            return eFailed;
         }
-        if ( processor->m_BlobInfoStatus == EPSG_Status::eError ) {
-            // inconsistent reply
-            _TRACE("Failed to load blob info for " << processor->GetSeq_id());
-            return false;
+        ret.second.first = processor->m_BlobInfoResult;
+        ret.second.second = processor->m_BlobInfoStatus;
+        if ( ret.second.first ) {
+            x_AdjustBlobState(ret); // TODO: in processor?
+            return eCompleted;
         }
-        ret.second = processor->m_BlobInfoResult;
-        if ( !ret.second ) {
+        else {
             _TRACE("No blob info for " << processor->GetSeq_id());
-            return true;
-        }
-        x_AdjustBlobState(*ret.second, processor->GetSeq_id()); // TODO: in processor?
-        return true;
-    }
-}
-
-
-bool CPSGDataLoader_Impl::x_FinalizeBioseqAndBlobInfo(TBioseqAndBlobInfo& ret)
-{
-    if ( ret.first && ret.first->HasBlobId() && !ret.second ) {
-        ret.second = m_BlobMap->Find(ret.first->GetPSGBlobId());
-        if ( !ret.second ) {
-            return false;
+            return eCompleted;
         }
     }
-    return true;
 }
 
 
@@ -2283,7 +2494,7 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
                                                             const string& blob_id)
 {
     // lookup cached blob info
-    if ( shared_ptr<SPsgBlobInfo> ret = m_BlobMap->Find(blob_id) ) {
+    if ( shared_ptr<SPsgBlobInfo> ret = m_Caches->m_BlobInfoCache.Find(blob_id) ) {
         return ret;
     }
     // use blob info from already loaded TSE
@@ -2292,9 +2503,13 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
         auto load_lock = data_source->GetTSE_LoadLockIfLoaded(dl_blob_id);
         if ( load_lock && load_lock.IsLoaded() ) {
             auto blob_info = make_shared<SPsgBlobInfo>(*load_lock);
-            m_BlobMap->Add(blob_id, blob_info);
+            m_Caches->m_BlobInfoCache.Add(blob_id, blob_info);
             return blob_info;
         }
+    }
+    if ( m_Caches->m_NoBlobInfoCache.Find(blob_id) != EPSG_Status() ) {
+        // cached 'no blob'
+        return nullptr;
     }
 
     // load blob info from PSG
@@ -2305,7 +2520,7 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
         shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_BlobInfo_Processor> processor
-            (new CPSGL_BlobInfo_Processor(blob_id, m_BlobMap.get()));
+            (new CPSGL_BlobInfo_Processor(blob_id, m_Caches.get()));
         queue.AddRequest(request, processor);
     }}
 
@@ -2327,51 +2542,56 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
         return nullptr;
     }
     auto blob_info = make_shared<SPsgBlobInfo>(*processor->m_BlobInfo);
-    m_BlobMap->Add(blob_id, blob_info);
+    m_Caches->m_BlobInfoCache.Add(blob_id, blob_info);
     return blob_info;
 }
 
 
-void CPSGDataLoader_Impl::x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_id_Handle idh)
+void CPSGDataLoader_Impl::x_AdjustBlobState(TBioseqAndBlobInfo& info)
 {
-    if (!idh) return;
-    if (!(blob_info.blob_state_flags & CBioseq_Handle::fState_dead)) return;
-    auto seq_info = m_BioseqCache->Find(idh);
-    if (!seq_info) return;
-    auto seq_state = seq_info->GetBioseqStateFlags();
-    auto chain_state = seq_info->GetChainStateFlags();
-    if (seq_state == CBioseq_Handle::fState_none &&
-        chain_state == CBioseq_Handle::fState_none) {
-        blob_info.blob_state_flags &= ~CBioseq_Handle::fState_dead;
+    if ( info.second.first->blob_state_flags & CBioseq_Handle::fState_dead ) {
+        auto seq_state = info.first->GetBioseqStateFlags();
+        auto chain_state = info.first->GetChainStateFlags();
+        if ( seq_state == CBioseq_Handle::fState_none &&
+             chain_state == CBioseq_Handle::fState_none ) {
+            info.second.first->blob_state_flags &= ~CBioseq_Handle::fState_dead;
+        }
     }
 }
 
 
-pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
-    const TIds& ids,
-    const TLoaded& loaded,
-    TBioseqInfos& ret)
+pair<size_t, CRef<CPSGL_Processor>>
+CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
+                                         const TLoaded& loaded,
+                                         TBioseqInfos& ret)
 {
-    pair<size_t, size_t> counts(0, 0);
+    size_t load_count = 0;
+    CRef<CPSGL_Processor> failed_processor;
 
     CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
     
     for (size_t i = 0; i < ids.size(); ++i) {
         const CSeq_id_Handle& id = ids[i];
-        if (loaded[i]) continue;
+        if ( loaded[i] ) {
+            continue;
+        }
         if ( CannotProcess(ids[i]) ) {
             continue;
         }
-        ret[i] = m_BioseqCache->Find(ids[i]);
-        if (ret[i]) {
-            counts.first += 1;
+        ret[i] = m_Caches->m_BioseqInfoCache.Find(ids[i]);
+        if ( ret[i] ) {
+            load_count += 1;
+            continue;
+        }
+        if ( m_Caches->m_NoBioseqInfoCache.Find(ids[i]) ) {
+            // cached 'no-bioseq'
             continue;
         }
         CPSG_BioId bio_id(ids[i]);
         shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
         request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
         CRef<CPSGL_BioseqInfo_Processor> processor
-            (new CPSGL_BioseqInfo_Processor(id, m_BioseqCache.get()));
+            (new CPSGL_BioseqInfo_Processor(id, m_Caches.get()));
         queue.AddRequest(request, processor, i);
     }
 
@@ -2379,76 +2599,60 @@ pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqInfo(
         size_t i = result.GetIndex();
         CRef<CPSGL_BioseqInfo_Processor> processor = result.GetProcessor<CPSGL_BioseqInfo_Processor>();
         _ASSERT(processor);
-        const CSeq_id_Handle& id = ids[i];
+        const CSeq_id_Handle& idh = ids[i];
         
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             // execution or processing are failed somehow
-            _TRACE("Failed to load bioseq info for " << id);
-            counts.second += 1;
+            _TRACE("Failed to load bioseq info for " << idh);
+            if ( !failed_processor ) {
+                failed_processor = processor;
+            }
             continue;
         }
-        if ( processor->m_BioseqInfoStatus == EPSG_Status::eError ) {
-            // inconsistent reply
-            _TRACE("Failed to load bioseq info for " << id);
-            counts.second += 1;
-            continue;
+        ret[i] = processor->m_BioseqInfoResult;
+        if ( ret[i] ) {
+            load_count += 1;
         }
-        if ( !processor->m_BioseqInfo ) {
-            // no bioseq info
-            _TRACE("No bioseq info for " << id);
-            counts.first += 1;
-            continue;
-        }
-        // all good
-        _ASSERT(processor->m_BioseqInfo);
-        ret[i] = m_BioseqCache->Add(id, *processor->m_BioseqInfo);
-        counts.first += 1;
     }
-    return counts;
+    return make_pair(load_count, failed_processor);
 }
 
 
-pair<size_t, size_t> CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(
-    CDataSource* data_source,
-    const TIds& ids,
-    const TLoaded& loaded,
-    TBioseqAndBlobInfos& ret)
+pair<size_t, CRef<CPSGL_Processor>>
+CPSGDataLoader_Impl::x_GetBulkBioseqAndBlobInfo(CDataSource* data_source,
+                                                const TIds& ids,
+                                                const TLoaded& loaded,
+                                                TBioseqAndBlobInfos& ret)
 {
-    pair<size_t, size_t> counts(0, 0);
+    size_t load_count = 0;
+    CRef<CPSGL_Processor> failed_processor;
     vector<bool> errors(ids.size());
     
     CPSGL_QueueGuard queue(*m_ThreadPool, *m_Queue);
 
     for (size_t i = 0; i < ids.size(); ++i) {
-        if ( loaded[i] ) {
+        if ( loaded[i] || CannotProcess(ids[i]) ) {
             continue;
         }
-        x_CreateBioseqAndBlobInfoRequests(queue, ids[i], ret[i], i);
+        if ( x_CreateBioseqAndBlobInfoRequests(queue, ids[i], ret[i], i) == eCompleted ) {
+            ++load_count;
+        }
     }
 
     while ( auto result = queue.GetNextResult() ) {
         size_t i = result.GetIndex()/kProcessorIndex_count;
         _ASSERT(i < ids.size());
-        if ( !x_ProcessBioseqAndBlobInfoResult(queue, ids[i], ret[i], result) ) {
-            errors[i] = true;
+        auto status = x_ProcessBioseqAndBlobInfoResult(queue, ids[i], ret[i], result);
+        if ( status == eFailed ) {
+            if ( !failed_processor ) {
+                failed_processor = result.GetProcessor();
+            }
+        }
+        else if ( status == eCompleted ) {
+            ++load_count;
         }
     }
-    
-    for ( size_t i = 0; i < ids.size(); ++i ) {
-        if ( loaded[i] ) {
-            continue;
-        }
-        if ( errors[i] ) {
-            counts.second += 1;
-            continue;
-        }
-        if ( !x_FinalizeBioseqAndBlobInfo(ret[i]) ) {
-            counts.second += 1;
-            continue;
-        }
-        counts.first += 1;
-    }
-    return counts;
+    return make_pair(load_count, failed_processor);
 }
 
 

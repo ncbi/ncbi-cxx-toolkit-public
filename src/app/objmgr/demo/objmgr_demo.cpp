@@ -3240,10 +3240,12 @@ int CDemoApp::Run(void)
             exit(0);
         }
 
-        if ( handle && args["reset_scope"] ) {
-            scope.RemoveFromHistory(handle);
-            _ASSERT(!handle);
-            handle.Reset();
+        if ( args["reset_scope"] ) {
+            if ( handle ) {
+                scope.RemoveFromHistory(handle);
+                _ASSERT(!handle);
+                handle.Reset();
+            }
             scope.ResetHistory();
         }
       } catch ( CException& exc ) {

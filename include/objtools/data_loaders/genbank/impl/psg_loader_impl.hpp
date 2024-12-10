@@ -53,14 +53,11 @@ BEGIN_NAMESPACE(psgl);
 
 struct SPsgBioseqInfo;
 struct SPsgBlobInfo;
-class CPSGBioseqCache;
-class CPSGAnnotCache;
-class CPSGCDDInfoCache;
-class CPSGBlobMap;
-class CPSGIpgTaxIdMap;
+class CPSGCaches;
 class CPSGL_Queue;
 class CPSGL_QueueGuard;
 class CPSGL_ResultGuard;
+class CPSGL_Processor;
 
 END_NAMESPACE(psgl);
 
@@ -173,14 +170,11 @@ public:
 private:
     typedef psgl::SPsgBlobInfo SPsgBlobInfo;
     typedef psgl::SPsgBioseqInfo SPsgBioseqInfo;
-    typedef psgl::CPSGBioseqCache CPSGBioseqCache;
+    typedef psgl::CPSGCaches CPSGCaches;
     typedef psgl::CPSGL_Queue CPSGL_Queue;
     typedef psgl::CPSGL_QueueGuard CPSGL_QueueGuard;
     typedef psgl::CPSGL_ResultGuard CPSGL_ResultGuard;
-    typedef psgl::CPSGAnnotCache CPSGAnnotCache;
-    typedef psgl::CPSGCDDInfoCache CPSGCDDInfoCache;
-    typedef psgl::CPSGBlobMap CPSGBlobMap;
-    typedef psgl::CPSGIpgTaxIdMap CPSGIpgTaxIdMap;
+    typedef psgl::CPSGL_Processor CPSGL_Processor;
 
     struct SReplyResult {
         CTSE_Lock lock;
@@ -190,22 +184,23 @@ private:
 
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
     shared_ptr<SPsgBlobInfo> x_GetBlobInfo(CDataSource* data_source, const string& blob_id);
-    typedef pair<shared_ptr<SPsgBioseqInfo>, shared_ptr<SPsgBlobInfo>> TBioseqAndBlobInfo;
+    typedef pair<shared_ptr<SPsgBioseqInfo>,
+                 pair<shared_ptr<SPsgBlobInfo>, EPSG_Status>> TBioseqAndBlobInfo;
     TBioseqAndBlobInfo x_GetBioseqAndBlobInfo(CDataSource* data_source, const CSeq_id_Handle& idh);
 
     typedef vector<shared_ptr<SPsgBioseqInfo>> TBioseqInfos;
     typedef vector<TBioseqAndBlobInfo> TBioseqAndBlobInfos;
 
-    // returns pair(number of loaded infos, number of failed infos)
-    pair<size_t, size_t> x_GetBulkBioseqInfo(
-        const TIds& ids,
-        const TLoaded& loaded,
-        TBioseqInfos& ret);
-    pair<size_t, size_t> x_GetBulkBioseqAndBlobInfo(
-        CDataSource* data_source,
-        const TIds& ids,
-        const TLoaded& loaded,
-        TBioseqAndBlobInfos& ret);
+    // returns pair(number of loaded infos, first failed processor)
+    pair<size_t, CRef<CPSGL_Processor>>
+    x_GetBulkBioseqInfo(const TIds& ids,
+                        const TLoaded& loaded,
+                        TBioseqInfos& ret);
+    pair<size_t, CRef<CPSGL_Processor>>
+    x_GetBulkBioseqAndBlobInfo(CDataSource* data_source,
+                               const TIds& ids,
+                               const TLoaded& loaded,
+                               TBioseqAndBlobInfos& ret);
 
     bool x_ReadCDDChunk(CDataSource* data_source,
                         CDataLoader::TChunk chunk,
@@ -217,33 +212,44 @@ private:
                            CDataLoader::TProcessedNAs* processed_nas,
                            CDataLoader::TTSE_LockSet& locks);
     TTaxId x_GetIpgTaxId(const CSeq_id_Handle& idh);
-    pair<size_t, size_t> x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
-    void x_AdjustBlobState(SPsgBlobInfo& blob_info, const CSeq_id_Handle idh);
+    pair<size_t, CRef<CPSGL_Processor>>
+    x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret);
+    int x_MakeSequenceState(const TBioseqAndBlobInfo& info);
+    void x_AdjustBlobState(TBioseqAndBlobInfo& info);
 
-    void x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
-                                           const CSeq_id_Handle& idh,
-                                           TBioseqAndBlobInfo& ret,
-                                           size_t id_index = 0);
-    bool x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
-                                          const CSeq_id_Handle& idh,
-                                          TBioseqAndBlobInfo& ret,
-                                          const CPSGL_ResultGuard& result);
-    bool x_FinalizeBioseqAndBlobInfo(TBioseqAndBlobInfo& ret);
+    enum EProcessResult {
+        eFailed,
+        eQueued,
+        eCompleted
+    };
+    // x_CreateBioseqAndBlobInfoRequests() returns:
+    //   eCompleted if the data was fully processed from cache
+    //   eQueued if requests were created
+    EProcessResult x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
+                                                     const CSeq_id_Handle& idh,
+                                                     TBioseqAndBlobInfo& ret,
+                                                     size_t id_index = 0);
+    // x_ProcessBioseqAndBlobInfoResult() returns:
+    //   eCompleted -  processing was successful and complete
+    //   eQueued    -  processing was successful but a new request was queued
+    //   eFailed    -  processing was unsuccessful, check processor for errors
+    EProcessResult x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
+                                                    const CSeq_id_Handle& idh,
+                                                    TBioseqAndBlobInfo& ret,
+                                                    const CPSGL_ResultGuard& result);
+
+    class CGetRequests;
     
     CPSG_Request_Biodata::EIncludeData m_TSERequestMode = CPSG_Request_Biodata::eSmartTSE;
     CPSG_Request_Biodata::EIncludeData m_TSERequestModeBulk = CPSG_Request_Biodata::eWholeTSE;
     bool m_AddWGSMasterDescr = true;
     CRef<CPSGL_Queue> m_Queue;
     CRef<CRequestContext> m_RequestContext;
-    unique_ptr<CPSGBlobMap> m_BlobMap; // blob_id -> blob_info
-    unique_ptr<CPSGIpgTaxIdMap> m_IpgTaxIdMap;
-    unique_ptr<CPSGBioseqCache> m_BioseqCache; // seq_id -> bioseq_info
-    unique_ptr<CPSGAnnotCache> m_AnnotCache;
-    unique_ptr<CPSGCDDInfoCache> m_CDDInfoCache;
+    unique_ptr<CPSGCaches> m_Caches;
     unique_ptr<CThreadPool> m_ThreadPool;
     class CPSG_PrefetchCDD_Task;
     CRef<CPSG_PrefetchCDD_Task> m_CDDPrefetchTask;
-    int m_CacheLifespan;
+    bool m_IpgTaxIdEnabled;
     unsigned int m_RetryCount;
     unsigned int m_BulkRetryCount;
     CIncreasingTime m_WaitTime;

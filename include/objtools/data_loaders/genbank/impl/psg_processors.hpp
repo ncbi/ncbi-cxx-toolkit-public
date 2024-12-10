@@ -59,15 +59,35 @@ BEGIN_NAMESPACE(psgl);
 struct SPsgBioseqInfo;
 struct SPsgBlobInfo;
 struct SCDDIds;
-class CPSGBioseqCache;
-class CPSGBlobMap;
-class CPSGIpgTaxIdMap;
-class CPSGAnnotCache;
-class CPSGCDDInfoCache;
+class CPSGCaches;
 
 
 /////////////////////////////////////////////////////////////////////////////
 // CPSGL_BioseqInfo_Processor
+//
+// Possible states after completion:
+//   0. Error:
+//        check:
+//          GetStatus() != CThreadPool_Task::eCompleted { eFailed or eCanceled }
+//          or m_BioseqInfoStatus == { EPSG_Status::eError or EPSG_Status::eCanceled }
+//        operation failed for some reason, retry may succeed
+//   otherwise
+//          GetStatus() == CThreadPool_Task::eCompleted:
+//   1. Unresolved: PSG doesn't know about the requested seq id
+//        check:
+//          m_BioseqInfoStatus == EPSG_Status::eNotFound
+//        result:
+//          m_BioseqInfoResult == nullptr
+//   2. Resolved: normal sequence
+//        check:
+//          m_BioseqInfoStatus == EPSG_Status::eSuccess
+//        result:
+//          m_BioseqInfoResult != nullptr
+//   3. Resolved but forbidden: sequence exists but client doesn't have permission to get it
+//        check:
+//          m_BioseqInfoStatus == EPSG_Status::eForbidden
+//        result:
+//          m_BioseqInfoResult != nullptr
 /////////////////////////////////////////////////////////////////////////////
 
 class CPSGL_BioseqInfo_Processor : public CPSGL_Processor
@@ -75,7 +95,7 @@ class CPSGL_BioseqInfo_Processor : public CPSGL_Processor
 public:
     explicit
     CPSGL_BioseqInfo_Processor(const CSeq_id_Handle& seq_id,
-                               CPSGBioseqCache* bioseq_info_cache = nullptr);
+                               CPSGCaches* caches = nullptr);
     ~CPSGL_BioseqInfo_Processor() override;
 
     const CSeq_id_Handle& GetSeq_id() const
@@ -100,7 +120,7 @@ public:
     shared_ptr<CPSG_BioseqInfo> m_BioseqInfo;
     
     // cache pointers
-    CPSGBioseqCache* m_BioseqInfoCache = nullptr;
+    CPSGCaches* m_Caches = nullptr;
 
     // result
     shared_ptr<SPsgBioseqInfo> m_BioseqInfoResult;
@@ -116,14 +136,14 @@ class CPSGL_BlobInfo_Processor : public CPSGL_Processor
 public:
     explicit
     CPSGL_BlobInfo_Processor(const CSeq_id_Handle& seq_id,
-                             CPSGBlobMap* blob_info_cache = nullptr);
+                             CPSGCaches* caches = nullptr);
     explicit
     CPSGL_BlobInfo_Processor(const string& blob_id,
-                             CPSGBlobMap* blob_info_cache = nullptr);
+                             CPSGCaches* caches = nullptr);
     explicit
     CPSGL_BlobInfo_Processor(const CSeq_id_Handle& seq_id,
                              const string& blob_id,
-                             CPSGBlobMap* blob_info_cache = nullptr);
+                             CPSGCaches* caches = nullptr);
     ~CPSGL_BlobInfo_Processor() override;
 
     const CSeq_id_Handle& GetSeq_id() const
@@ -153,7 +173,7 @@ public:
     shared_ptr<CPSG_BlobInfo> m_BlobInfo;
 
     // cache pointers
-    CPSGBlobMap* m_BlobInfoCache = nullptr;
+    CPSGCaches* m_Caches = nullptr;
 
     // result
     shared_ptr<SPsgBlobInfo> m_BlobInfoResult;
@@ -169,13 +189,11 @@ class CPSGL_Info_Processor : public CPSGL_Processor
 public:
     explicit
     CPSGL_Info_Processor(const CSeq_id_Handle& seq_id,
-                         CPSGBioseqCache* bioseq_info_cache = nullptr,
-                         CPSGBlobMap* blob_info_cache = nullptr);
+                         CPSGCaches* caches = nullptr);
     explicit
     CPSGL_Info_Processor(const CSeq_id_Handle& seq_id,
                          const string& blob_id,
-                         CPSGBioseqCache* bioseq_info_cache = nullptr,
-                         CPSGBlobMap* blob_info_cache = nullptr);
+                         CPSGCaches* caches = nullptr);
     ~CPSGL_Info_Processor() override;
 
     const CSeq_id_Handle& GetSeq_id() const
@@ -207,8 +225,7 @@ public:
     shared_ptr<CPSG_BlobInfo> m_BlobInfo;
 
     // cache pointers
-    CPSGBioseqCache* m_BioseqInfoCache = nullptr;
-    CPSGBlobMap* m_BlobInfoCache = nullptr;
+    CPSGCaches* m_Caches = nullptr;
 
     // result
     shared_ptr<SPsgBioseqInfo> m_BioseqInfoResult;
@@ -226,7 +243,7 @@ public:
     explicit
     CPSGL_IpgTaxId_Processor(const CSeq_id_Handle& seq_id,
                              bool is_WP_acc,
-                             CPSGIpgTaxIdMap* ipg_tax_id_cache = nullptr);
+                             CPSGCaches* caches = nullptr);
     ~CPSGL_IpgTaxId_Processor() override;
 
     const CSeq_id_Handle& GetSeq_id() const
@@ -251,7 +268,7 @@ public:
     EPSG_Status m_IpgTaxIdStatus;
     
     // cache pointers
-    CPSGIpgTaxIdMap* m_IpgTaxIdCache = nullptr;
+    CPSGCaches* m_Caches = nullptr;
 
     // result
     TTaxId m_TaxId = INVALID_TAX_ID;
@@ -271,9 +288,7 @@ public:
     CPSGL_CDDAnnot_Processor(const SCDDIds& cdd_ids,
                              const TSeqIdSet& id_set,
                              CDataSource* data_source,
-                             CPSGAnnotCache* annot_info_cache = nullptr,
-                             CPSGCDDInfoCache* cdd_info_cache = nullptr,
-                             CPSGBlobMap* blob_info_cache = nullptr);
+                             CPSGCaches* caches = nullptr);
     ~CPSGL_CDDAnnot_Processor() override;
 
     const char* GetProcessorName() const override;
@@ -298,9 +313,7 @@ public:
 
     // cache pointers
     CDataSource* m_DataSource = nullptr; // OM data source to get TSE locks from
-    CPSGAnnotCache* m_AnnotInfoCache = nullptr; // cache for PSG annot_info
-    CPSGCDDInfoCache* m_CDDInfoCache = nullptr; // cache for 'no-CDD' info
-    CPSGBlobMap* m_BlobInfoCache = nullptr; // cache for blob info
+    CPSGCaches* m_Caches = nullptr;
 
     // result
     CTSE_Lock m_TSE_Lock;
@@ -309,6 +322,27 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 // CPSGL_Get_Processor
+//
+// Possible states after completion:
+//   1. Error:
+//        check: m_BioseqInfoStatus == { EPSG_Status::eError or EPSG_Status::eCanceled }
+//        processing status != CThreadPool_Task::eCompleted, normally eFailed or eCanceled
+//        - operation failed for some reason, retry may succeed
+//   3. Unresolved:
+//        check: m_BioseqInfoStatus == EPSG_Status::eNotFound
+//        also HasBlob_id() == false
+//        - PSG doesn't know about the requested seq id
+//   2. Loaded:
+//        check: m_BioseqInfoStatus == EPSG_Status::eSuccess && GetTSE_Lock() != null
+//        - GetTSE_Lock() returns TSE with the requested sequence
+//   3. Resolved but not loaded:
+//        check: m_BioseqInfoStatus == EPSG_Status::eSuccess && GetTSE_Lock() == null
+//        also HasBlob_id() == true and GotForbidden() == false
+//        - the TSE can be loaded via blob id GetDLBlobId()
+//   4. Resolved but forbidden:
+//        m_BioseqInfoStatus == EPSG_Status::eForbidden
+//        GotForbidden() == true - the sequence is known but client is not allowed to load it,
+//        e.g. withdrawn or restricted, actual blob state is GetForbiddenBlobState()
 /////////////////////////////////////////////////////////////////////////////
 
 class CPSGL_Get_Processor : public CPSGL_Blob_Processor
@@ -317,8 +351,7 @@ public:
     explicit
     CPSGL_Get_Processor(const CSeq_id_Handle& seq_id,
                         CDataSource* data_source,
-                        CPSGBioseqCache* bioseq_info_cache = nullptr,
-                        CPSGBlobMap* blob_info_cache = nullptr,
+                        CPSGCaches* caches = nullptr,
                         bool add_wgs_master = false);
     ~CPSGL_Get_Processor() override;
 
@@ -354,6 +387,8 @@ public:
 
     EProcessResult ProcessItemFast(EPSG_Status status,
                                    const shared_ptr<CPSG_ReplyItem>& item) override;
+    EProcessResult ProcessReplyFast(EPSG_Status status,
+                                    const shared_ptr<CPSG_Reply>& reply) override;
     EProcessResult ProcessReplySlow(EPSG_Status status,
                                     const shared_ptr<CPSG_Reply>& reply) override;
     EProcessResult ProcessReplyFinal() override;
@@ -365,6 +400,12 @@ public:
     {
         return m_ForbiddenBlobState;
     }
+
+protected:
+    // process reply without attempting to get TSE lock
+    EProcessResult x_PreProcessReply(EPSG_Status status,
+                                     const shared_ptr<CPSG_Reply>& reply);
+
     
 private:
     CFastMutex m_GetMutex;
@@ -377,7 +418,6 @@ private:
     TBioseqInfo m_BioseqInfo;
 
     // cache pointers and other params
-    CPSGBioseqCache* m_BioseqInfoCache = nullptr; // cache for bioseq info
     
     // result:
     shared_ptr<SPsgBioseqInfo> m_BioseqInfoResult;
@@ -396,7 +436,7 @@ public:
     explicit
     CPSGL_GetBlob_Processor(const CPsgBlobId& dl_blob_id,
                             CDataSource* data_source,
-                            CPSGBlobMap* blob_info_cache = nullptr,
+                            CPSGCaches* caches = nullptr,
                             bool add_wgs_master = false);
     ~CPSGL_GetBlob_Processor() override;
 
@@ -438,7 +478,7 @@ public:
     explicit
     CPSGL_GetChunk_Processor(CTSE_Chunk_Info& chunk,
                              CDataSource* data_source,
-                             CPSGBlobMap* blob_info_cache = nullptr,
+                             CPSGCaches* caches = nullptr,
                              bool add_wgs_master = false);
     ~CPSGL_GetChunk_Processor() override;
     
@@ -468,7 +508,7 @@ public:
     explicit
     CPSGL_NA_Processor(const TSeq_ids& ids,
                        CDataSource* data_source,
-                       CPSGBlobMap* blob_info_cache = nullptr,
+                       CPSGCaches* caches = nullptr,
                        bool add_wgs_master = false);
     ~CPSGL_NA_Processor() override;
 
@@ -532,7 +572,7 @@ public:
     CPSGL_LocalCDDBlob_Processor(CTSE_Chunk_Info& cdd_chunk_info,
                                  const SCDDIds& cdd_ids,
                                  CDataSource* data_source,
-                                 CPSGBlobMap* blob_info_cache = nullptr,
+                                 CPSGCaches* caches = nullptr,
                                  bool add_wgs_master = false);
     ~CPSGL_LocalCDDBlob_Processor() override;
 

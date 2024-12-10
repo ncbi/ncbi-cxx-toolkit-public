@@ -545,7 +545,7 @@ public:
             data_verify.resize(ids.size());
             for ( size_t i = 0; i < ids.size(); ++i ) {
                 const string& line = lines[i];
-                data[i] = line;
+                data_verify[i] = line;
             }
         }
     void SaveResults(CNcbiOstream& out) const

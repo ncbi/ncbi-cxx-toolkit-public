@@ -44,30 +44,30 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGBioseqCache
+// CPSGBioseqInfoCache
 /////////////////////////////////////////////////////////////////////////////
 
 
-CPSGBioseqCache::CPSGBioseqCache(int lifespan, size_t max_size)
+CPSGBioseqInfoCache::CPSGBioseqInfoCache(int lifespan, size_t max_size)
     : m_Lifespan(lifespan),
       m_MaxSize(max_size)
 {
 }
 
 
-CPSGBioseqCache::~CPSGBioseqCache()
+CPSGBioseqInfoCache::~CPSGBioseqInfoCache()
 {
 }
 
 
-void CPSGBioseqCache::x_Erase(TValueIter iter)
+void CPSGBioseqInfoCache::x_Erase(TValueIter iter)
 {
     m_RemoveList.erase(iter->second.remove_list_iterator);
     m_Values.erase(iter++);
 }
 
 
-void CPSGBioseqCache::x_PopFront()
+void CPSGBioseqInfoCache::x_PopFront()
 {
     _ASSERT(!m_RemoveList.empty());
     _ASSERT(m_RemoveList.front() != m_Values.end());
@@ -77,7 +77,7 @@ void CPSGBioseqCache::x_PopFront()
 }
 
 
-void CPSGBioseqCache::x_Expire()
+void CPSGBioseqInfoCache::x_Expire()
 {
     while ( !m_RemoveList.empty() &&
             m_RemoveList.front()->second.deadline.IsExpired() ) {
@@ -86,7 +86,7 @@ void CPSGBioseqCache::x_Expire()
 }
 
 
-void CPSGBioseqCache::x_LimitSize()
+void CPSGBioseqInfoCache::x_LimitSize()
 {
     while ( m_Values.size() > m_MaxSize ) {
         x_PopFront();
@@ -94,7 +94,7 @@ void CPSGBioseqCache::x_LimitSize()
 }
 
 
-CPSGBioseqCache::mapped_type CPSGBioseqCache::Find(const key_type& key)
+CPSGBioseqInfoCache::mapped_type CPSGBioseqInfoCache::Find(const key_type& key)
 {
     CFastMutexGuard guard(m_Mutex);
     x_Expire();
@@ -103,8 +103,9 @@ CPSGBioseqCache::mapped_type CPSGBioseqCache::Find(const key_type& key)
 }
 
 
-CPSGBioseqCache::mapped_type CPSGBioseqCache::Add(const key_type& key,
-                                                  const CPSG_BioseqInfo& info)
+CPSGBioseqInfoCache::mapped_type
+CPSGBioseqInfoCache::Add(const key_type& key,
+                         const CPSG_BioseqInfo& info)
 {
     // Try to find an existing entry (though this should not be a common case).
     CFastMutexGuard guard(m_Mutex);
@@ -308,7 +309,7 @@ SPsgBlobInfo::SPsgBlobInfo(const CTSE_Info& tse)
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CPSGAnnotCache
+// CPSGAnnotInfoCache
 /////////////////////////////////////////////////////////////////////////////
 
 SPsgAnnotInfo::SPsgAnnotInfo(const pair<string, TIds>& key,
@@ -320,26 +321,26 @@ SPsgAnnotInfo::SPsgAnnotInfo(const pair<string, TIds>& key,
 }
 
 
-CPSGAnnotCache::CPSGAnnotCache(int lifespan, size_t max_size)
+CPSGAnnotInfoCache::CPSGAnnotInfoCache(int lifespan, size_t max_size)
     : m_Lifespan(lifespan),
       m_MaxSize(max_size)
 {
 }
 
 
-CPSGAnnotCache::~CPSGAnnotCache()
+CPSGAnnotInfoCache::~CPSGAnnotInfoCache()
 {
 }
 
 
-void CPSGAnnotCache::x_Erase(TValueIter iter)
+void CPSGAnnotInfoCache::x_Erase(TValueIter iter)
 {
     m_RemoveList.erase(iter->second.remove_list_iterator);
     m_Values.erase(iter++);
 }
 
 
-void CPSGAnnotCache::x_PopFront()
+void CPSGAnnotInfoCache::x_PopFront()
 {
     _ASSERT(!m_RemoveList.empty());
     _ASSERT(m_RemoveList.front() != m_Values.end());
@@ -349,7 +350,7 @@ void CPSGAnnotCache::x_PopFront()
 }
 
 
-void CPSGAnnotCache::x_Expire()
+void CPSGAnnotInfoCache::x_Expire()
 {
     while ( !m_RemoveList.empty() &&
             m_RemoveList.front()->second.deadline.IsExpired() ) {
@@ -358,7 +359,7 @@ void CPSGAnnotCache::x_Expire()
 }
 
 
-void CPSGAnnotCache::x_LimitSize()
+void CPSGAnnotInfoCache::x_LimitSize()
 {
     while ( m_Values.size() > m_MaxSize ) {
         x_PopFront();
@@ -366,7 +367,7 @@ void CPSGAnnotCache::x_LimitSize()
 }
 
 
-CPSGAnnotCache::mapped_type CPSGAnnotCache::Find(const key_type& key)
+CPSGAnnotInfoCache::mapped_type CPSGAnnotInfoCache::Find(const key_type& key)
 {
     CFastMutexGuard guard(m_Mutex);
     x_Expire();
@@ -375,7 +376,7 @@ CPSGAnnotCache::mapped_type CPSGAnnotCache::Find(const key_type& key)
 }
 
 
-CPSGAnnotCache::mapped_type CPSGAnnotCache::Add(const key_type& key,
+CPSGAnnotInfoCache::mapped_type CPSGAnnotInfoCache::Add(const key_type& key,
                                                 const SPsgAnnotInfo::TInfos& infos)
 {
     // Try to find an existing entry (though this should not be a common case).
@@ -393,6 +394,24 @@ CPSGAnnotCache::mapped_type CPSGAnnotCache::Add(const key_type& key,
     x_LimitSize();
     return iter->second.value;
 }
+
+
+CPSGCaches::CPSGCaches(int data_lifespan, size_t data_max_size,
+                       int no_data_lifespan, size_t no_data_max_size)
+    : m_BioseqInfoCache(data_lifespan, data_max_size),
+      m_BlobInfoCache(data_lifespan, data_max_size),
+      m_AnnotInfoCache(data_lifespan, data_max_size),
+      m_IpgTaxIdCache(data_lifespan, data_max_size),
+      m_NoBioseqInfoCache(no_data_lifespan, no_data_max_size),
+      m_NoBlobInfoCache(no_data_lifespan, no_data_max_size),
+      m_NoAnnotInfoCache(no_data_lifespan, no_data_max_size),
+      m_NoIpgTaxIdCache(no_data_lifespan, no_data_max_size),
+      m_NoCDDCache(no_data_lifespan, no_data_max_size)
+{
+}
+
+
+CPSGCaches::~CPSGCaches() = default;
 
 
 END_NAMESPACE(psgl);
