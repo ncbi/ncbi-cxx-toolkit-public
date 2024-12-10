@@ -457,11 +457,12 @@ static void XMLPerformIndex(ParserPtr pp)
         }
     }
 
-    pp->entrylist.resize(pp->indx, nullptr);
-    for (tibnp = ibnp, i = 0; tibnp; i++, tibnp = ibnp) {
-        pp->entrylist[i] = tibnp->ibp;
-        ibnp             = tibnp->next;
+    pp->entrylist.reserve(pp->indx);
+    for (tibnp = ibnp; tibnp;) {
+        pp->entrylist.push_back(tibnp->ibp.release());
+        auto tmp = tibnp->next;
         delete tibnp;
+        tibnp = tmp;
     }
 }
 

@@ -117,7 +117,6 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     IndexblkPtr   entry;
     DataBlkPtr    data;
-    Int4          i;
     Int4          indx = 0;
     IndBlkNextPtr ibnp;
     IndBlkNextPtr tibnp;
@@ -235,13 +234,14 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     pp->indx = indx;
 
-    pp->entrylist.resize(indx);
+    pp->entrylist.reserve(indx);
     tibnp = ibnp->next;
     delete ibnp;
-    for (i = 0; i < indx && tibnp; i++, tibnp = ibnp) {
-        pp->entrylist[i] = tibnp->ibp;
-        ibnp             = tibnp->next;
+    for (; tibnp;) {
+        pp->entrylist.push_back(tibnp->ibp.release());
+        auto tmp = tibnp->next;
         delete tibnp;
+        tibnp = tmp;
     }
 
     return end_of_file;
