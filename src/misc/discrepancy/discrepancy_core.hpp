@@ -94,7 +94,8 @@ public:
         : m_Title(title), m_Str(name), m_Msg(msg), m_Xml(xml), m_Unit(unit), m_Count(count) {}
 
 public:
-    string_view GetTitle() const override { return m_Title; };
+    string_view GetTitle() const override { return m_Title; }
+    void ClearTitle() { m_Title = {}; }
     string GetStr() const override { return m_Str; }
     string GetMsg() const override { return m_Msg; }
     string GetXml() const override { return m_Xml; }
