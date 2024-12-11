@@ -206,7 +206,7 @@ static bool QSNoSequenceRecordErr(bool accver, const QSStruct& qssp)
 }
 
 /**********************************************************/
-bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
+bool QSIndex(ParserPtr pp, const TIndBlkList& ibl)
 {
     char*  p;
     char*  q;
@@ -223,8 +223,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         return true;
 
     QSStructList qssp;
-    qssp.emplace_front(); // dummy item
-    QSStructList::iterator tqssp = qssp.begin();
+    QSStructList::iterator tqssp = qssp.before_begin();
     QSStructList::iterator tqsspprev;
 
     count = 0;
@@ -243,7 +242,7 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         if (q)
             *q++ = '\0';
 
-        tqssp            = qssp.emplace_after(tqssp, QSStruct{});
+        tqssp            = qssp.emplace_after(tqssp);
         tqssp->accession = string(buf + 1);
         tqssp->version   = q ? atoi(q) : 0;
         tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
@@ -254,8 +253,6 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         count++;
     }
     tqssp->length = (size_t)ftell(pp->qsfd) - tqssp->offset;
-
-    qssp.pop_front(); // delete dummy
 
     if (qssp.empty()) {
         ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
@@ -288,9 +285,10 @@ bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp)
         count++;
     }
 
-    vector<IndexblkPtr> ibpp(pp->indx);
-    for (j = 0; j < pp->indx && ibnp; j++, ibnp = ibnp->next)
-        ibpp[j] = ibnp->ibp.get();
+    vector<IndexblkPtr> ibpp;
+    ibpp.reserve(pp->indx);
+    for (const auto& it : ibl)
+        ibpp.push_back(it.get());
 
     if (pp->indx > 1)
         std::sort(ibpp.begin(), ibpp.end(), AccsCmp);

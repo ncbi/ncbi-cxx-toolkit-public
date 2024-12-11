@@ -51,18 +51,7 @@ struct FinfoBlk {
     }
 };
 
-
-struct IndBlkNode {
-    unique_ptr<Indexblk> ibp;
-    IndBlkNode* next;
-
-    IndBlkNode(Indexblk* ibp_) :
-        ibp(ibp_),
-        next(nullptr)
-    {
-    }
-};
-using IndBlkNextPtr = IndBlkNode*;
+using TIndBlkList = forward_list<unique_ptr<Indexblk>>;
 
 CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
 
@@ -79,7 +68,7 @@ void CloseFiles(ParserPtr pp);
 void MsgSkipTitleFail(const Char* flatfile, FinfoBlk& finfo);
 bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 void ResetParserStruct(ParserPtr pp);
-bool QSIndex(ParserPtr pp, IndBlkNextPtr ibnp);
+bool QSIndex(ParserPtr pp, const TIndBlkList& ibl);
 
 // bool IsValidAccessPrefix(char* acc, char** accpref);
 
