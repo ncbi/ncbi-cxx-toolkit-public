@@ -200,14 +200,11 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     bool end_of_file;
 
-    IndexblkPtr   entry;
-    DataBlkPtr    data;
-    Int4          indx = 0;
-    IndBlkNextPtr ibnp;
-    IndBlkNextPtr tibnp;
-    size_t        i;
-    char*         p;
-    char*         q;
+    IndexblkPtr entry;
+    DataBlkPtr  data;
+    Int4        indx = 0;
+    char*       p;
+    char*       q;
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if (end_of_file) {
@@ -217,16 +214,15 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
-    ibnp  = new IndBlkNode(nullptr);
-    tibnp = ibnp;
+    TIndBlkList ibl;
+    auto tibnp = ibl.before_begin();
 
     while (! end_of_file) {
         entry = InitialEntry(pp, finfo);
 
         if (entry) {
             pp->curindx = indx;
-            tibnp->next = new IndBlkNode(entry);
-            tibnp       = tibnp->next;
+            tibnp       = ibl.emplace_after(tibnp, entry);
 
             indx++;
 
@@ -417,17 +413,12 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd && QSIndex(pp, ibnp->next) == false)
+    if (pp->qsfd && ! QSIndex(pp, ibl))
         return false;
 
     pp->entrylist.reserve(indx);
-    tibnp = ibnp->next;
-    delete ibnp;
-    for (; tibnp;) {
-        pp->entrylist.push_back(tibnp->ibp.release());
-        auto tmp = tibnp->next;
-        delete tibnp;
-        tibnp = tmp;
+    for (auto& it : ibl) {
+        pp->entrylist.push_back(it.release());
     }
 
     if (pp->segment)

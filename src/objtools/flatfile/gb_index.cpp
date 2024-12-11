@@ -354,8 +354,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     DataBlkPtr    data;
     int           currentKeyword;
     Int4          indx = 0;
-    IndBlkNextPtr ibnp;
-    IndBlkNextPtr tibnp;
     char*         p;
     char*         q;
     char*         line_ver;
@@ -376,8 +374,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
     bool tpa_check = (pp->source == Parser::ESource::EMBL);
 
-    ibnp  = new IndBlkNode(nullptr);
-    tibnp = ibnp;
+    TIndBlkList ibl;
+    auto tibnp = ibl.before_begin();
 
     pp->num_drop = 0;
     kwds         = nullptr;
@@ -386,8 +384,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
         entry = InitialEntry(pp, finfo);
         if (entry) {
             pp->curindx = indx;
-            tibnp->next = new IndBlkNode(entry);
-            tibnp       = tibnp->next;
+            tibnp       = ibl.emplace_after(tibnp, entry);
 
             indx++;
 
@@ -739,17 +736,12 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd && ! QSIndex(pp, ibnp->next))
+    if (pp->qsfd && ! QSIndex(pp, ibl))
         return false;
 
     pp->entrylist.reserve(indx);
-    tibnp = ibnp->next;
-    delete ibnp;
-    for (; tibnp;) {
-        pp->entrylist.push_back(tibnp->ibp.release());
-        auto tmp = tibnp->next;
-        delete tibnp;
-        tibnp = tmp;
+    for (auto& it : ibl) {
+        pp->entrylist.push_back(it.release());
     }
 
     return (end_of_file);
