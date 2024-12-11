@@ -37,6 +37,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/test_boost.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
@@ -493,11 +494,10 @@ NCBITEST_AUTO_INIT()
 {
     tls->SetValue(new int, TlsCleanup);
     *tls->GetValue() = kMainThreadNumber;
-#ifdef NCBI_OS_MSWIN
-    srand(NULL);
-#else
-    srand(time(NULL));
-#endif
+    
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
+    
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(&config);
     s_ResponseThread = new CResponseThread;

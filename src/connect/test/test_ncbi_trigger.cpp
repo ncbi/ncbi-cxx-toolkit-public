@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -145,9 +146,8 @@ int CTest::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    g_NCBI_ConnectRandomSeed
-        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    ::srand(g_NCBI_ConnectRandomSeed);
+    // Set randomization seed for the test
+    g_NCBI_ConnectRandomSeed = CNcbiTest::SetRandomSeed();
 
     m_Port = args["port"].AsString();
 

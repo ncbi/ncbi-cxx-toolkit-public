@@ -34,6 +34,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_namedpipe.hpp>
 
@@ -187,12 +188,11 @@ void CTest::Init(void)
 
 int CTest::Run(void)
 {
+    // Set randomization seed for the test
+    g_NCBI_ConnectRandomSeed = CNcbiTest::SetRandomSeed();
+    
     const CArgs& args = GetArgs();
-
-    g_NCBI_ConnectRandomSeed
-        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    ::srand(g_NCBI_ConnectRandomSeed);
-
+        
     m_PipeName = args["basename"].AsString();
     if ( m_PipeName.empty() ) {
         m_PipeName = kPipeName;

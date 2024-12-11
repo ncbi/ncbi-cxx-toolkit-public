@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
 #ifdef NCBI_OS_MSWIN
@@ -219,6 +220,9 @@ CNCBITestHttpStreamApp::EX509DataType CNCBITestHttpStreamApp::x_X509DataType
 
 int CNCBITestHttpStreamApp::Run(void)
 {
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
+
     const CArgs& args = GetArgs();
     size_t n = args.GetNExtra();
     _ASSERT(n > 0);

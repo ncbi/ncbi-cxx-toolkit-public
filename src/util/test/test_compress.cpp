@@ -34,6 +34,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <util/compress/stream_util.hpp>
 
 #include <common/test_assert.h>  // This header must go last
@@ -223,10 +224,8 @@ int CTest::Run(void)
         #endif
     }
 
-    // Set a random starting point
-    unsigned int seed = (unsigned int)time(0);
-    ERR_POST(Info << "Random seed = " << seed);
-    srand(seed);
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
     // For custom size we add extra ~20% to the buffer size,
     // some tests like LZO need it, for others it is not necessary, 

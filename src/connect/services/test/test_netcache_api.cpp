@@ -44,6 +44,7 @@
 #include <corelib/ncbimisc.hpp>
 #include <corelib/test_boost.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbi_test.hpp>
 
 #include <chrono>
 #include <memory>
@@ -219,6 +220,9 @@ void s_StressTest(const string&             service,
                   unsigned                  key_factor // repr. choose factor
                   )
 {
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed("StressTest");
+
     cout << "BLOB size = " << size
          << " Repeats = " << repeats
          << ". Please wait... " << endl;

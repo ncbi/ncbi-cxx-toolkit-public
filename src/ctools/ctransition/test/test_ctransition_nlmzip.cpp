@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbi_test.hpp>
 
 #include <ctools/ctransition/nlmzip.hpp>
 
@@ -75,14 +76,13 @@ int CTest::Run()
     char src[kBufLen];
     char dst[kBufLen];
     char cmp[kBufLen];
-    
-    // Set a random starting point
-    unsigned int seed = (unsigned int)time(0);
-    srand(seed);
+
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
     
     // Initialize buffer with rabdom data
     for (size_t i = 0; i < kDataLen; i++) {
-         // Use a set of 25 chars [A-Z]
+        // Use a set of 25 chars [A-Z]
         src[i] = (char)(65 + (double)rand() / RAND_MAX*(90 - 65));
     }
     

@@ -35,6 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/stream_utils.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_misc.hpp>
 #include <connect/ncbi_socket.hpp>
@@ -742,11 +743,14 @@ int CTestFTPDownloadApp::Run(void)
     };
     typedef unsigned int TProcessor;
 
-    const CArgs& args = GetArgs();
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
 #if 0
     SOCK_SetApproveHookAPI(s_FtpOnly, 0/*unused*/);
 #endif /*0*/
+
+    const CArgs& args = GetArgs();
 
     // Process command line parameters (up to 3)
     Uint8 offset = 0;
