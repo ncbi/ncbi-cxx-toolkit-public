@@ -99,10 +99,14 @@ endif()
 if(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
 #############################################################################
 # Basic checks
+NCBI_util_elapsed(_elapsed)
+message("${_elapsed}: Basic checks...")
 include(${NCBI_TREE_CMAKECFG}/CMakeChecks.basic-checks.cmake)
 
 #############################################################################
 # External libraries
+NCBI_util_elapsed(_elapsed)
+message("${_elapsed}: External libraries...")
 include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 
 #############################################################################
