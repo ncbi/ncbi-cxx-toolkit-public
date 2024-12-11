@@ -325,8 +325,6 @@ void s_SetPointer(Parser& config, size_t offset)
 static void XMLPerformIndex(ParserPtr pp)
 {
     XmlKwordBlkPtr xkbp;
-    IndBlkNextPtr  ibnp;
-    IndBlkNextPtr  tibnp;
     XmlIndexPtr    xip;
     IndexblkPtr    ibp;
     char*          p;
@@ -342,11 +340,12 @@ static void XMLPerformIndex(ParserPtr pp)
         return;
     }
 
+    TIndBlkList ibl;
+    auto tibnp = ibl.before_begin();
+
     c                = 0;
     s[0]             = '\0';
     bool within      = false;
-    tibnp            = nullptr;
-    ibnp             = nullptr;
     ibp              = nullptr;
     xip              = nullptr;
     pp->indx         = 0;
@@ -390,13 +389,7 @@ static void XMLPerformIndex(ParserPtr pp)
             ibp->offset  = count - start_len;
             ibp->linenum = line;
 
-            if (! ibnp) {
-                ibnp  = new IndBlkNode(ibp);
-                tibnp = ibnp;
-            } else {
-                tibnp->next = new IndBlkNode(ibp);
-                tibnp       = tibnp->next;
-            }
+            tibnp = ibl.emplace_after(tibnp, ibp);
 
             pp->indx++;
             continue;
@@ -458,11 +451,8 @@ static void XMLPerformIndex(ParserPtr pp)
     }
 
     pp->entrylist.reserve(pp->indx);
-    for (tibnp = ibnp; tibnp;) {
-        pp->entrylist.push_back(tibnp->ibp.release());
-        auto tmp = tibnp->next;
-        delete tibnp;
-        tibnp = tmp;
+    for (auto& it : ibl) {
+        pp->entrylist.push_back(it.release());
     }
 }
 
