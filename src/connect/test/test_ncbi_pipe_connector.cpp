@@ -38,6 +38,7 @@
 #define  _FORTIFY_SOURCE 0
 #include "../ncbi_priv.h"
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_pipe_connector.hpp>
 #include <connect/ncbi_util.h>
@@ -169,10 +170,9 @@ int CTest::Run(void)
     size_t      n_read;
     size_t      n_written;
     EIO_Status  status;
-
-    g_NCBI_ConnectRandomSeed
-        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    ::srand(g_NCBI_ConnectRandomSeed);
+    
+    // Set randomization seed for the test
+    g_NCBI_ConnectRandomSeed = CNcbiTest::SetRandomSeed();
 
     // Run the test
     ERR_POST(Info << "Starting PIPE CONNECTOR test...");

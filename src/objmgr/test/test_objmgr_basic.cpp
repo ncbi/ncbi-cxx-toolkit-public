@@ -32,9 +32,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
-
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -136,6 +136,9 @@ CRef<CSeq_entry> CTestApplication::CreateTestEntry(void)
 int CTestApplication::Run()
 //---------------------------------------------------------------------------
 {
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
+
     int error = 0;
 
     string name1("DL_1"), name2("DL_2");

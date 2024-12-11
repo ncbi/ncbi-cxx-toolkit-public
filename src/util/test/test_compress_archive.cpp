@@ -33,6 +33,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbifile.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <util/compress/archive.hpp>
 #include <common/test_assert.h>  // This header must go last
 
@@ -116,10 +117,8 @@ void CTest::RunInternalTest(void)
     const CArgs& args = GetArgs();
     string test = args["fmt"].AsString();
 
-    // Set a random starting point
-    unsigned int seed = (unsigned int)time(0);
-    //LOG_POST("Random seed = " << seed);
-    srand(seed);
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
     // Preparing test data
     m_BufLen = 10*100*1024;  // 10MB

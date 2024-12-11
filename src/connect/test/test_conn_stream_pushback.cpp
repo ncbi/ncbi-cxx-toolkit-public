@@ -47,12 +47,7 @@ class CTestConnStreamPushbackApp : public CNcbiApplication
 {
 public:
     CTestConnStreamPushbackApp(void);
-
-public:
     int Run(void);
-
-private:
-    unsigned int m_Seed;
 };
 
 
@@ -74,7 +69,7 @@ CTestConnStreamPushbackApp::CTestConnStreamPushbackApp(void)
 int CTestConnStreamPushbackApp::Run(void)
 {
     const CNcbiArguments& app_args = GetArguments();
-    m_Seed = app_args.Size() > 1
+    unsigned int seed = app_args.Size() > 1
         ? (unsigned int) atoi(app_args[1].c_str())
         : (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     string host = "www.ncbi.nlm.nih.gov";
@@ -82,8 +77,8 @@ int CTestConnStreamPushbackApp::Run(void)
     string args = kEmptyStr;
     string uhdr = kEmptyStr;
 
-    ERR_POST(Info << "Seed = " << m_Seed);
-    srand(m_Seed);
+    ERR_POST(Info << "Seed = " << seed);
+    srand(seed);
 
     string url = "https://" + host + path + &"?"[args.empty() ? 1 : 0] + args;
     ERR_POST(Info << "Creating HTTP connection to " + url);
