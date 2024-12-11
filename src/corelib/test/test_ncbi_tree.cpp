@@ -178,7 +178,7 @@ static void s_TEST_Tree()
     unsigned int cnt;
     TTree::TNodeList_CI it = tr->SubNodeBegin();
     TTree::TNodeList_CI it_end = tr->SubNodeEnd();
-    
+
     for (cnt = 0; it != it_end; ++it, ++cnt) {
         const TTree* t = *it;
         int v = t->GetValue();
@@ -186,11 +186,11 @@ static void s_TEST_Tree()
     }
     assert(cnt == 1);
     }}
-    
+
     delete tr;
 
     TTree* str = tr = new TTree(0);
-    
+
     //
     // 0 - 2 
     //       - 4
@@ -199,10 +199,10 @@ static void s_TEST_Tree()
     //       - 6
     //
 
-    TTree* tr4 = tr->AddNode(2)->AddNode(4);
+    /* TTree* tr4 = */ tr->AddNode(2)->AddNode(4);
     tr = tr->AddNode(3);
-    TTree* tr5 = tr->AddNode(5);
-    TTree* tr6 = tr->AddNode(6);
+    /* TTree* tr5 = */ tr->AddNode(5);
+    /* TTree* tr6 = */ tr->AddNode(6);
 
     cout << "Test Tree: " << endl;
 
@@ -210,13 +210,12 @@ static void s_TEST_Tree()
     cout << endl;
 
     delete str;
-    str = tr5 = tr4 = tr6;  // just to eliminate "unused var" warning
 }
 
 struct IdValue
 {
     int id;
-    
+
     IdValue() : id(0) {}
     IdValue(int v) : id(v) {}
 
