@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <util/transmissionrw.hpp>
 #include <stdio.h>
 #include <stdlib.h>
@@ -199,8 +200,8 @@ int CTestTransmission::Run(void)
 {
     LOG_POST("Test IReader/IWriter transmission");
 
-    // Randomize the random
-    srand(static_cast<unsigned>(time(NULL)));
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
     const int test_buf_size = 1024;
     unsigned char buf[test_buf_size  * 10];

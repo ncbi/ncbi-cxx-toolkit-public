@@ -36,6 +36,7 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_test.hpp>
 
 #include <util/logrotate.hpp>
 
@@ -144,7 +145,9 @@ int CTestLogrotateApplication::Run(void)
     me += '/' + NStr::IntToString(getpid());
 #endif
     SetDiagPostPrefix(me.c_str());
-    srand((unsigned int)time(0));
+    
+    // Set randomization seed for the test
+    CNcbiTest::SetRandomSeed();
 
     for (unsigned int n = 0;  n < 1000000;  ++n) {
         if (perline) {
