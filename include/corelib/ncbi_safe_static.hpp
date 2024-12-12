@@ -294,7 +294,8 @@ public:
         if ( !stack ) {
             x_Get();
         }
-        stack->insert(ptr);
+        // Pacify CLANG Static Analyzer
+        if (stack) stack->insert(ptr);
     }
 
     /// Disable checking on child thread(s) running during destruction
