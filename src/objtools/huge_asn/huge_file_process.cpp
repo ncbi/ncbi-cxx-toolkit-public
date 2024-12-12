@@ -239,7 +239,7 @@ bool CHugeFileProcess::ForEachEntry(CRef<CScope> scope, THandlerEntries handler)
             scope->ResetHistory();
         }
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         scope->RemoveDataLoader(loader_name);
         throw;

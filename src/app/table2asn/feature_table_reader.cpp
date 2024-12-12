@@ -994,7 +994,7 @@ void CFeatureTableReader::xParseCdregions(CSeq_entry& entry, TAsyncToken& token)
         bioseq->SetAnnot().remove(main_ftable);
     }
     else {
-        main_ftable->SetData().SetFtable() = move(seq_ftable);
+        main_ftable->SetData().SetFtable() = std::move(seq_ftable);
     }
 
     if (/*bioseq->IsSetAnnot()  &&*/  bioseq->GetAnnot().empty())
