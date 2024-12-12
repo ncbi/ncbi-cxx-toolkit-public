@@ -875,7 +875,6 @@ string CVersionAPI::PrintJson(const string& appname, TPrintFlags flags) const
     if (flags & fBuildInfo) {
         if ( need_separator ) os << ",\n";
         os << "    \"build_info\": " << m_BuildInfo.PrintJson();
-        need_separator = true;
     }
 
     os << "\n  }\n}\n";
