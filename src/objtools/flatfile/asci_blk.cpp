@@ -3319,18 +3319,18 @@ bool XMLCheckCDS(const char* entry, const TXmlIndexList& xil)
         return (false);
 
     auto xip = xil.begin();
-    for (; xip != xil.end(); xip = xip->next)
+    for (; xip != xil.end(); ++xip)
         if (xip->tag == INSDSEQ_FEATURE_TABLE && ! xip->subtags.empty())
             break;
     if (xip == xil.end())
         return (false);
 
     auto txip = xip->subtags.begin();
-    for (; txip != xip->subtags.end(); txip = txip->next) {
+    for (; txip != xip->subtags.end(); ++txip) {
         if (txip->subtags.empty())
             continue;
         auto fxip = txip->subtags.begin();
-        for (; fxip != txip->subtags.end(); fxip = fxip->next)
+        for (; fxip != txip->subtags.end(); ++fxip)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
                 StringEquN(entry + fxip->start, "CDS", 3))
                 break;

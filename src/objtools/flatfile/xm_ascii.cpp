@@ -187,13 +187,12 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, DataBlkPtr dbp, CBioseq& 
 bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
-    XmlIndexPtr xip;
 
     unique_ptr<string> topstr;
     unique_ptr<string> strandstr;
 
     ibp = pp->entrylist[pp->curindx];
-    for (xip = ibp->xip.begin(); xip != ibp->xip.end(); xip = xip->next) {
+    for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); ++xip) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
             topstr = XMLGetTagValue(dbp->mOffset, *xip);
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
@@ -648,7 +647,7 @@ static void XMLFakeBioSources(const TXmlIndexList& xil, const char* entry, CBios
 
     const char* p;
 
-    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); ++xip) {
         if (xip->tag == INSDSEQ_ORGANISM && ! organism)
             organism = XMLGetTagValue(entry, *xip);
         else if (xip->tag == INSDSEQ_TAXONOMY && ! taxonomy)

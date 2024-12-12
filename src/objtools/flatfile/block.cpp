@@ -145,18 +145,6 @@ EntryBlk::~EntryBlk()
 }
 
 /**********************************************************/
-void TXmlIndexList::clear()
-{
-    for (XmlIndex* xip = this->head; xip;) {
-        auto xipnext = xip->next;
-        xip->subtags.clear();
-        delete xip;
-        xip = xipnext;
-    }
-    this->head = nullptr;
-}
-
-/**********************************************************/
 void FreeIndexblk(IndexblkPtr ibp)
 {
     if (! ibp)

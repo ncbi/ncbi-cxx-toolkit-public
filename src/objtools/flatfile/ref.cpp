@@ -1701,13 +1701,13 @@ static void XMLGetXrefs(char* entry, const TXmlIndexList& xil, TQualVector& qual
     if (! entry || xil.empty())
         return;
 
-    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); ++xip) {
         if (xip->subtags.empty())
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
 
-        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); xipqual = xipqual->next) {
+        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); ++xipqual) {
             if (xipqual->tag == INSDXREF_DBNAME)
                 qual->SetQual(*XMLGetTagValue(entry, *xipqual));
             else if (xipqual->tag == INSDXREF_ID)
@@ -1908,7 +1908,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, DataBlkPtr dbp, bool& no_auth, bool&
     MemFree(p);
 
     TQualVector xrefs;
-    for (auto xip = dbp->GetXmlData().begin(); xip != dbp->GetXmlData().end(); xip = xip->next) {
+    for (auto xip = dbp->GetXmlData().begin(); xip != dbp->GetXmlData().end(); ++xip) {
         if (xip->tag == INSDREFERENCE_XREF)
             XMLGetXrefs(dbp->mOffset, xip->subtags, xrefs);
     }
