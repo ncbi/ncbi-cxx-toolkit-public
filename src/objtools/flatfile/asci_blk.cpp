@@ -3334,11 +3334,11 @@ bool XMLCheckCDS(const char* entry, const TXmlIndexList& xil)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
                 StringEquN(entry + fxip->start, "CDS", 3))
                 break;
-        if (fxip)
+        if (fxip != txip->subtags.end())
             break;
     }
 
-    if (! txip)
+    if (txip == xip->subtags.end())
         return (false);
     return (true);
 }

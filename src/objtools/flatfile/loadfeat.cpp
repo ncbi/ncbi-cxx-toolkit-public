@@ -3521,7 +3521,9 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
         return nullptr;
 
     headdbp = nullptr;
-    for (xip = xip->subtags.begin(); xip != xip->subtags.end(); xip = xip->next) {
+
+    const auto& subtags = xip->subtags;
+    for (xip = subtags.begin(); xip != subtags.end(); xip = xip->next) {
         if (xip->subtags.empty())
             continue;
         fbp          = new FeatBlk;
