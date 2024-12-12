@@ -646,6 +646,7 @@ endif()
 
 ##############################################################################
 # wxWidgets
+if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
 NCBI_define_Wcomponent( wxWidgets
         wxbase.lib wxbase_net.lib wxbase_xml.lib wxmsw_core.lib wxmsw_gl.lib
         wxmsw_html.lib wxmsw_aui.lib wxmsw_adv.lib wxmsw_richtext.lib wxmsw_propgrid.lib
@@ -658,6 +659,7 @@ if(NCBI_COMPONENT_wxWidgets_FOUND)
     else()
         set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH)
     endif()
+endif()
 endif()
 
 ##############################################################################
