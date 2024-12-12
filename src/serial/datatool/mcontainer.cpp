@@ -92,11 +92,4 @@ const CNamespace& CModuleContainer::GetNamespace(void) const
     return GetModuleContainer().GetNamespace();
 }
 
-string CModuleContainer::GetNamespaceRef(const CNamespace& ns) const
-{
-    return m_Parent?
-        GetModuleContainer().GetNamespaceRef(ns):
-        GetNamespace().GetNamespaceRef(ns);
-}
-
 END_NCBI_SCOPE
