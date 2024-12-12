@@ -456,6 +456,7 @@ NCBIcomponent_report(VDB)
 
 ##############################################################################
 # wxWidgets
+if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
 NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
 NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
 set(_wx_ver 3.2)
@@ -489,6 +490,7 @@ else()
     NCBI_define_Xcomponent(NAME wxWidgets PACKAGE wxWidgets)
 endif()
 NCBIcomponent_report(wxWidgets)
+endif()
 
 ##############################################################################
 # GCRYPT

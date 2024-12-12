@@ -287,3 +287,7 @@ NCBI_define_Pkgcomponent(NAME OPENTELEMETRY PACKAGE opentelemetry-cpp
 # AWS_SDK
 NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK FIND AWSSDK)
 
+#############################################################################
+# wxWidgets
+NCBI_define_Pkgcomponent(NAME wxWidgets PACKAGE wxWidgets FIND wxWidgets)
+

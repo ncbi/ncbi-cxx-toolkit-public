@@ -397,6 +397,7 @@ NCBIcomponent_report(VDB)
 
 #############################################################################
 # wxWidgets
+if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
 set(_wx_ver 3.2)
 NCBI_define_Xcomponent(NAME wxWidgets LIB
     wx_osx_cocoa_gl-${_wx_ver}
@@ -419,6 +420,7 @@ if(NCBI_COMPONENT_wxWidgets_FOUND)
     set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/osx_cocoa-ansi-${_wx_ver})
     set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  "-framework Cocoa")
     set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
+endif()
 endif()
 
 #############################################################################
