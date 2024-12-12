@@ -7207,7 +7207,7 @@ void CFileDiagHandler::WriteMessage(const char*   buf,
 struct SAsyncDiagMessage
 {
     SAsyncDiagMessage(void)
-        : m_Message(0), m_Composed(0), m_FileType(eDiagFile_All) {}
+        : m_Message(nullptr), m_Composed(nullptr), m_FileType(eDiagFile_All) {}
 
     SDiagMessage* m_Message;
     string*       m_Composed;
@@ -7345,6 +7345,8 @@ CAsyncDiagHandler::Post(const SDiagMessage& mess)
     else {
         thr->Stop();
         thr->m_SubHandler->Post(mess);
+        if (async.m_Composed) delete async.m_Composed;
+        if (async.m_Message) delete async.m_Message;
     }
 }
 
