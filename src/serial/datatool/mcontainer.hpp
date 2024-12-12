@@ -78,7 +78,6 @@ public:
                                        const string& typeName) const;
 
     virtual const CNamespace& GetNamespace(void) const;
-    virtual string GetNamespaceRef(const CNamespace& ns) const;
 
 	void SetModuleContainer(const CModuleContainer* parent);
 	const CModuleContainer& GetModuleContainer(void) const;
