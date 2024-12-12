@@ -423,7 +423,6 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
 void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process)
 {
     bool   proceed     = true;
-    size_t num_cleaned = 0;
     auto   reader      = process.GetReader();
 
     while (proceed) {
@@ -435,14 +434,7 @@ void CCleanupApp::x_ProcessTraditionally(edit::CHugeFileProcess& process)
             *m_Out << *anytop;
         }
 
-        if (proceed) {
-            ++num_cleaned;
-        }
     }
-
-    // if (num_cleaned == 0 || (! first_only && (is->GetFailFlags() & CObjectIStream::fEOF) != CObjectIStream::fEOF)) {
-    //     NCBI_THROW(CArgException, eInvalidArg, "Unable to construct Seq-entry object");
-    // }
 }
 
 CRef<CSerialObject> CCleanupApp::x_ProcessTraditionally(edit::CHugeAsnReader& reader)

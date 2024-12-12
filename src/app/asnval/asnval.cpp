@@ -381,7 +381,7 @@ size_t CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse, CAsyncMes
                 string fpath = CDirEntry::MakePath(dir_name, fname);
 
                 // start thread, it will post results to the queue itself
-                auto f = [this, fpath, separate_outputs, pMsgHandler]() -> CThreadExitData
+                auto f = [this, fpath, pMsgHandler]() -> CThreadExitData
                     { return xValidateThreadSingleOutput(fpath, *pMsgHandler); };
                 m_queue.run(f);
 

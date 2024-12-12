@@ -325,7 +325,7 @@ bool CSrcChkApp::xGetDesiredFields(
         try {
             pIfstr = &args["F"].AsInputFile();
         }
-        catch (const std::exception& e) {
+        catch (const std::exception&) {
             CSrcError* pE = CSrcError::Create(
                 ncbi::eDiag_Error,
                 "Unable to open fields file \"" + args["F"].AsString() + "\".");

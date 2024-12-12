@@ -2841,7 +2841,7 @@ bool CFormatGuess::TestFormatJson(
 
     // What remains is either a truncated number
     // or a truncated keyword
-    return x_IsTruncatedJsonNumber(testString) | 
+    return x_IsTruncatedJsonNumber(testString) ||
            x_IsTruncatedJsonKeyword(testString);
 }
 //  ----------------------------------------------------------------------------

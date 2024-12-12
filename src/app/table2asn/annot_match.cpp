@@ -152,7 +152,7 @@ bool CWholeFileAnnotation::x_HasExactMatch(
     {
         unique_lock<shared_mutex> uLock{m_Mutex};
         if (m_MatchedAnnots.insert(annotId).second) {
-            annots = move(it->second);
+            annots = std::move(it->second);
             m_AnnotMap.erase(it);
             return true;
         }
