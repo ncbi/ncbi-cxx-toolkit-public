@@ -149,19 +149,9 @@ XmlKwordBlk xmsubkwl[] = {
 // clang-format on
 
 /**********************************************************/
-static XmlIndexPtr XMLIndexNew(void)
+static XmlIndexPtr XMLIndexNew()
 {
-    XmlIndexPtr xip;
-
-    xip             = new XmlIndex;
-    xip->tag        = -1;
-    xip->order      = -1;
-    xip->start      = 0;
-    xip->end        = 0;
-    xip->start_line = -1;
-    xip->end_line   = -1;
-    xip->next       = nullptr;
-    return (xip);
+    return new XmlIndex();
 }
 
 /**********************************************************/
@@ -623,7 +613,7 @@ static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlkPtr xkbp)
             ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
             ret = false;
         }
-        if (txip->next && txip->order >= txip->next->order) {
+        if (txip->next != xil.end() && txip->order >= txip->next->order) {
             ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"%s\" at line %d is out of order.", XMLStringByTag(xkbp, txip->next->tag), (txip->next->start > 0) ? txip->next->start_line : txip->next->end_line);
             ret = false;
         }
@@ -726,7 +716,7 @@ static TXmlIndexList XMLIndexSameSubTags(const char* entry, const XmlIndex& xip,
     if (XMLSameTagsCheck(xipsub, name))
         return (xipsub);
 
-    XMLIndexFree(xipsub);
+    xipsub.clear();
     return {};
 }
 
@@ -1199,11 +1189,11 @@ static bool XMLIndexFeatures(const char* entry, TXmlIndexList& xil)
                         break;
             }
         }
-        if (txip)
+        if (txip != xipfeat->subtags.end())
             break;
     }
 
-    if (! xipfeat)
+    if (xipfeat == xip->subtags.end())
         return true;
 
     ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
@@ -1364,11 +1354,11 @@ static bool XMLIndexReferences(const char* entry, TXmlIndexList& xil, size_t bas
             xipref->type = ParFlat_REF_NO_TARGET;
         }
 
-        if (txip)
+        if (txip != xipref->subtags.end())
             break;
     }
 
-    if (! xipref)
+    if (xipref == xip->subtags.end())
         return true;
 
     ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));

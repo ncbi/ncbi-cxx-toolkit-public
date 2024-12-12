@@ -148,15 +148,17 @@ struct TXmlIndexList {
     const XmlIndex*           begin() const { return head; };
     constexpr XmlIndex*       end() { return nullptr; };
     constexpr const XmlIndex* end() const { return nullptr; };
+
+    void clear();
 };
 
 struct XmlIndex {
-    Int4      tag        = 0;
-    Int4      order      = 0;
+    Int4      tag        = -1;
+    Int4      order      = -1;
     size_t    start      = 0; /* Offset from the beginning of the record, not file! */
     size_t    end        = 0; /* Offset from the beginning of the record, not file! */
-    Int4      start_line = 0;
-    Int4      end_line   = 0;
+    Int4      start_line = -1;
+    Int4      end_line   = -1;
     Int2      type       = 0; /* Used for references */
     TXmlIndexList subtags;
     XmlIndex* next       = nullptr;
@@ -362,7 +364,6 @@ using EntryBlkPtr = EntryBlk*;
 
 void xFreeEntry(DataBlkPtr entry);
 void FreeIndexblk(IndexblkPtr ibp);
-void XMLIndexFree(TXmlIndexList&);
 
 
 END_NCBI_SCOPE
