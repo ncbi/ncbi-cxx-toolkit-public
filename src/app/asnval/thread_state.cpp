@@ -172,7 +172,6 @@ void CAsnvalThreadState::ReadClassMember(CObjectIStream& in,
     m_Level++;
 
     if (m_Level == 1) {
-        size_t n = 0;
         // Read each element separately to a local TSeqEntry,
         // process it somehow, and... not store it in the container.
         for (CIStreamContainerIterator i(in, member); i; ++i) {
@@ -219,7 +218,6 @@ void CAsnvalThreadState::ReadClassMember(CObjectIStream& in,
                 }
                 scope->RemoveTopLevelSeqEntry(seh);
                 scope->ResetHistory();
-                n++;
             }
             catch (exception&) {
                 if (!mAppConfig.mContinue) {
@@ -725,7 +723,7 @@ void CAsnvalThreadState::ValidateOneHugeBlob(edit::CHugeFileProcess& process, IM
     }
 
     hugeFileValidator.ReportPostErrors(*m_pContext, msgHandler);
-    
+
     s_StartWrite(msgHandler);
 }
 
@@ -752,7 +750,7 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
             }
             throw;
         }
-        catch (const CSerialException& e) {
+        catch (const CSerialException&) {
             // mimic traditional mode and do not pass exception information
             ReportReadFailure(nullptr, msgHandler);
             LOG_POST_XX(Corelib_App, 1, "FAILURE: Unable to process invalid ASN.1 file " + process.GetConstFile().m_filename);
@@ -801,7 +799,7 @@ void CAsnvalThreadState::ValidateBlobAsync(const string& loader_name, edit::CHug
     auto& reader = process.GetReader();
 
     auto writer_task = mAppConfig.m_thread_pool1->launch(
-        [this, &msgHandler] {
+        [&msgHandler] {
             if(msgHandler.InvokeWrite())
                 {
                     msgHandler.Write();

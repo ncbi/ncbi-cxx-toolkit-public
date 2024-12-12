@@ -200,7 +200,7 @@ bool xTryProductRules(const string& filename, std::istream& file, std::ostream& 
         if (types.size() != 1 || *types.begin() != CSuspect_rule_set::GetTypeInfo())
             return false;
     }
-    catch(const CSerialException& e)
+    catch(const CSerialException&)
     {
         return false;
     }

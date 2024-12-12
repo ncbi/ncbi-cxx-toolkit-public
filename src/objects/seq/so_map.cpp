@@ -75,7 +75,7 @@ namespace
     bool xSoMapMapMiscRecomb(const CSeq_feat&, TSoType&);
     bool xSoMapMapRna(const CSeq_feat&, TSoType&);
     bool xSoMapMapNcRna(const CSeq_feat&, TSoType&);
-    bool xSoMapMapOtherRna(const CSeq_feat&, TSoType&);
+    //bool xSoMapMapOtherRna(const CSeq_feat&, TSoType&);
     bool xSoMapMapRegion(const CSeq_feat&, TSoType&);
     bool xSoMapMapRegulatory(const CSeq_feat&, TSoType&);
     bool xSoMapMapRepeatRegion(const CSeq_feat&, TSoType&);
@@ -998,6 +998,7 @@ bool xSoMapMapMiscRecomb(
     return true;
 }
 
+#if 0
 //  ----------------------------------------------------------------------------
 bool xSoMapMapOtherRna(
     const CSeq_feat& /*feature*/,
@@ -1007,6 +1008,7 @@ bool xSoMapMapOtherRna(
     so_type = "transcript";
     return true;
 }
+#endif
 
 //  ----------------------------------------------------------------------------
 bool xSoMapMapNcRna(
