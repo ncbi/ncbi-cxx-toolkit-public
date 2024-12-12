@@ -139,19 +139,6 @@ struct TokenStatBlk {
 };
 using TokenStatBlkPtr = TokenStatBlk*;
 
-struct XmlIndex;
-struct TXmlIndexList {
-    XmlIndex* head = nullptr;
-
-    bool                      empty() const { return head == nullptr; }
-    XmlIndex*                 begin() { return head; };
-    const XmlIndex*           begin() const { return head; };
-    constexpr XmlIndex*       end() { return nullptr; };
-    constexpr const XmlIndex* end() const { return nullptr; };
-
-    void clear();
-};
-
 struct XmlIndex {
     Int4      tag        = -1;
     Int4      order      = -1;
@@ -160,11 +147,9 @@ struct XmlIndex {
     Int4      start_line = -1;
     Int4      end_line   = -1;
     Int2      type       = 0; /* Used for references */
-    TXmlIndexList subtags;
-    XmlIndex* next       = nullptr;
+    forward_list<XmlIndex> subtags;
 };
-
-using XmlIndexPtr = XmlIndex*;
+using TXmlIndexList = forward_list<XmlIndex>;
 
 typedef std::list<std::string> TKeywordList;
 

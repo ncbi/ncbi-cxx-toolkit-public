@@ -3480,12 +3480,12 @@ static void XMLGetQuals(char* entry, const TXmlIndexList& xil, TQualVector& qual
     if (! entry || xil.empty())
         return;
 
-    for (auto xip = xil.begin(); xip != xil.end(); xip = xip->next) {
+    for (auto xip = xil.begin(); xip != xil.end(); ++xip) {
         if (xip->subtags.empty())
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
-        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); xipqual = xipqual->next) {
+        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); ++xipqual) {
             if (xipqual->tag == INSDQUALIFIER_NAME)
                 qual->SetQual(*XMLGetTagValue(entry, *xipqual));
             else if (xipqual->tag == INSDQUALIFIER_VALUE)
@@ -3513,7 +3513,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
         return nullptr;
 
     auto xip = xil.begin();
-    for (; xip != xil.end(); xip = xip->next)
+    for (; xip != xil.end(); ++xip)
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
 
@@ -3523,12 +3523,12 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
     headdbp = nullptr;
 
     const auto& subtags = xip->subtags;
-    for (xip = subtags.begin(); xip != subtags.end(); xip = xip->next) {
+    for (xip = subtags.begin(); xip != subtags.end(); ++xip) {
         if (xip->subtags.empty())
             continue;
         fbp          = new FeatBlk;
         fbp->spindex = -1;
-        for (auto xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); xipfeat = xipfeat->next) {
+        for (auto xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); ++xipfeat) {
             if (xipfeat->tag == INSDFEATURE_KEY)
                 fbp->key = *XMLGetTagValue(entry, *xipfeat);
             else if (xipfeat->tag == INSDFEATURE_LOCATION)
