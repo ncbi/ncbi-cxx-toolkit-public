@@ -145,19 +145,6 @@ EntryBlk::~EntryBlk()
 }
 
 /**********************************************************/
-void FreeIndexblk(IndexblkPtr ibp)
-{
-    if (! ibp)
-        return;
-
-    ibp->gaps.clear();
-
-    ibp->xip.clear();
-
-    delete ibp;
-}
-
-/**********************************************************/
 static bool AccsCmp(const Indexblk* ibp1, const Indexblk* ibp2)
 {
     int i = StringCmp(ibp1->acnum, ibp2->acnum);

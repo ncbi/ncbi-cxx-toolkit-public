@@ -348,8 +348,6 @@ using EntryBlkPtr = EntryBlk*;
 /**************************************************************************/
 
 void xFreeEntry(DataBlkPtr entry);
-void FreeIndexblk(IndexblkPtr ibp);
-
 
 END_NCBI_SCOPE
 
