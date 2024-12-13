@@ -2093,9 +2093,9 @@ void ResetParserStruct(ParserPtr pp)
         return;
 
     if (! pp->entrylist.empty()) {
-        for (auto* ibp : pp->entrylist)
+        for (Indexblk* ibp : pp->entrylist)
             if (ibp)
-                FreeIndexblk(ibp);
+                delete ibp;
 
         pp->entrylist.clear();
     }
