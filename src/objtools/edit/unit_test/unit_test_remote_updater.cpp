@@ -182,9 +182,9 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
 static void check_pubmed_error(EPubmedError err, string msg)
 {
-    CNcbiOstrstream oss;
+    stringstream oss;
     oss << err;
-    BOOST_CHECK_EQUAL(msg, CNcbiOstrstreamToString(oss));
+    BOOST_CHECK_EQUAL(msg, oss.str());
 }
 
 BOOST_AUTO_TEST_CASE(Test_PubmedError)
