@@ -6,7 +6,6 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
 
-#include <objtools/edit/eutils_updater.hpp>
 #include <objtools/edit/remote_updater.hpp>
 
 USING_NCBI_SCOPE;
@@ -46,11 +45,6 @@ public:
             return 1;
         }
 
-        if (args["url"]) {
-            string url = args["url"].AsString();
-            CEUtils_Request::SetBaseURL(url);
-        }
-
         auto normalize = args["normalize"].AsBoolean() ? CEUtilsUpdater::ENormalize::On : CEUtilsUpdater::ENormalize::Off;
 
         ostream* output = nullptr;
@@ -61,6 +55,12 @@ public:
         }
 
         CRemoteUpdater upd(nullptr, normalize);
+
+        if (args["url"]) {
+            string url = args["url"].AsString();
+            upd.SetBaseURL(url);
+        }
+
         CRef<CPub>     pub(new CPub);
         pub->SetPmid().Set(pmid);
         CRef<CSeqdesc> desc(new CSeqdesc);

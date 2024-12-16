@@ -652,6 +652,11 @@ CRef<CPub> CEUtilsUpdater::GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
     return x_GetPub(pmid, perr);
 }
 
+void CEUtilsUpdater::SetBaseURL(string url)
+{
+    CEUtils_Request::SetBaseURL(url);
+}
+
 CRef<CPub> CEUtilsUpdaterWithCache::GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
     m_num_requests++;
