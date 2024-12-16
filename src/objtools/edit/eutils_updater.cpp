@@ -373,8 +373,8 @@ struct CSearch_Request : CEUtils_Request
 
 }
 
-CEUtilsUpdater::CEUtilsUpdater(ENormalize norm) :
-    m_Ctx(new CEUtils_ConnContext), m_Norm(norm)
+CEUtilsUpdater::CEUtilsUpdater(ENormalize norm, EPubmedSource pmsrc) :
+    m_Ctx(new CEUtils_ConnContext), m_Norm(norm), m_pubmed_src(pmsrc)
 {
 }
 
@@ -552,10 +552,10 @@ namespace
 CRef<CPubmed_entry> CEUtilsUpdater::x_GetPubmedEntry(TEntrezId pmid, EPubmedError* perr)
 {
     string content;
-    if (true) {
+    if (m_pubmed_src == EPubmedSource::EUtils) {
         CFetch_Request req(m_Ctx, pmid);
         req.Read(&content);
-    } else {
+    } else if (m_pubmed_src == EPubmedSource::PubOne) {
         CPubOneRequest req(m_Ctx, pmid);
         req.Read(&content);
     }

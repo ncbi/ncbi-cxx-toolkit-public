@@ -77,9 +77,10 @@ class NCBI_XOBJEDIT_EXPORT CEUtilsUpdater
 {
 public:
     enum class ENormalize { Off, On };
+    enum class EPubmedSource { EUtils, PubOne };
 
 public:
-    CEUtilsUpdater(ENormalize = ENormalize::Off);
+    CEUtilsUpdater(ENormalize = ENormalize::Off, EPubmedSource = EPubmedSource::EUtils);
     virtual ~CEUtilsUpdater() {}
 
     virtual bool       Init() { return true; }
@@ -106,6 +107,7 @@ protected:
 protected:
     CRef<CEUtils_ConnContext> m_Ctx;
     ENormalize                m_Norm;
+    EPubmedSource             m_pubmed_src;
     TPubInterceptor           m_pub_interceptor = nullptr;
 };
 
