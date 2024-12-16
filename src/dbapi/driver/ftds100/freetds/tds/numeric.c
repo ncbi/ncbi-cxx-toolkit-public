@@ -132,7 +132,7 @@ tds_numeric_to_string(const TDS_NUMERIC * numeric, char *s)
     // The line 'while (!*pnum)' is a clang analyzer false positive.
     // The data in the tds_numeric_bytes_per_prec array is defined the way that
     // an execution path considered by clang is not possible
-    [[clang::suppress]]
+    __attribute__((suppress))
     #endif
 	while (!*pnum) {
 		++pnum;
