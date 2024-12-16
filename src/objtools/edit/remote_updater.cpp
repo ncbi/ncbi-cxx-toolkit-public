@@ -541,7 +541,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
                 m_pubmed.reset(new CEUtilsUpdater(m_pm_normalize));
             }
             if (! m_pm_url.empty()) {
-                CEUtils_Request::SetBaseURL(m_pm_url);
+                m_pubmed->SetBaseURL(m_pm_url);
             }
             if (m_pm_interceptor) {
                 m_pubmed->SetPubInterceptor(m_pm_interceptor);
