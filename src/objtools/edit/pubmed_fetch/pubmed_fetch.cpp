@@ -114,11 +114,6 @@ public:
             return 0;
         }
 
-        if (args["url"]) {
-            string url = args["url"].AsString();
-            CEUtils_Request::SetBaseURL(url);
-        }
-
         auto normalize = args["normalize"].AsBoolean() ? CEUtilsUpdater::ENormalize::On : CEUtilsUpdater::ENormalize::Off;
 
         ostream* output = nullptr;
@@ -129,6 +124,11 @@ public:
         }
 
         unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater(normalize));
+
+        if (args["url"]) {
+            string url = args["url"].AsString();
+            upd->SetBaseURL(url);
+        }
 
         bool       bstats = args["stats"];
         unsigned   nruns  = 0;
