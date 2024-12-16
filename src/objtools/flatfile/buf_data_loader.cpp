@@ -162,7 +162,7 @@ static bool get_accession_from_id(const CSeq_id& id, string& accession, int& ver
     return ret;
 }
 
-static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entry)
+static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, const DataBlk& entry)
 {
     int i = 0;
     for (; i < pp->indx; i++) {
@@ -182,8 +182,8 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     cur_block->ppp    = pp;
 
     if (pp->format == Parser::EFormat::GenBank) {
-        char* q = entry->mOffset;
-        if (q && entry->len != 0 && StringEquN(q, "LOCUS ", 6)) {
+        char* q = entry.mOffset;
+        if (q && entry.len != 0 && StringEquN(q, "LOCUS ", 6)) {
             char* p = StringChr(q, '\n');
             if (p)
                 *p = '\0';
@@ -215,7 +215,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, DataBlkPtr entr
     return pp->indx - 1;
 }
 
-static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat format)
+static void AddToIndexBlk(const DataBlk& entry, IndexblkPtr ibp, Parser::EFormat format)
 {
     char* div;
     char* eptr;
@@ -224,8 +224,8 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     if (format != Parser::EFormat::GenBank && format != Parser::EFormat::EMBL)
         return;
 
-    offset     = entry->mOffset;
-    size_t len = entry->len;
+    offset     = entry.mOffset;
+    size_t len = entry.len;
 
     if (! offset || len == 0)
         return;
@@ -269,7 +269,8 @@ static void AddToIndexBlk(DataBlkPtr entry, IndexblkPtr ibp, Parser::EFormat for
     ibp->division[3] = '\0';
 }
 
-CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
+static
+CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
 {
     IndexblkPtr ibp;
     EntryBlkPtr ebp;
@@ -277,9 +278,9 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
     char*       eptr;
 
     ibp  = pp->entrylist[pp->curindx];
-    ebp  = entry->GetEntryData();
-    ptr  = entry->mOffset;
-    eptr = ptr + entry->len;
+    ebp  = entry.GetEntryData();
+    ptr  = entry.mOffset;
+    eptr = ptr + entry.len;
 
     CRef<CBioseq> bioseq(new CBioseq);
     CRef<CSeq_id> new_id(new CSeq_id);
@@ -304,11 +305,11 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
             if (! ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res          = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+                res          = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
                 //   MemFree(molconv);
             } else {
                 pp->farseq = true;
-                res        = GetEmblInstContig(*entry, *bioseq, pp);
+                res        = GetEmblInstContig(entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
@@ -322,11 +323,11 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
         if (ptr < eptr) {
             if (! ibp->is_contig) {
                 auto molconv = GetDNAConv();
-                res          = GetSeqData(pp, *entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
+                res          = GetSeqData(pp, entry, *bioseq, ParFlat_ORIGIN, molconv.get(), eSeq_code_type_iupacna);
                 // MemFree(molconv);
             } else {
                 pp->farseq = true;
-                res        = GetGenBankInstContig(*entry, *bioseq, pp);
+                res        = GetGenBankInstContig(entry, *bioseq, pp);
                 pp->farseq = false;
             }
         }
@@ -339,7 +340,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, DataBlkPtr entry, const CSeq_id& id)
 
         if (ptr < eptr) {
             auto molconv = GetProteinConv();
-            res          = GetSeqData(pp, *entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
+            res          = GetSeqData(pp, entry, *bioseq, ParFlat_SQ, molconv.get(), eSeq_code_type_iupacna);
             //    MemFree(molconv);
         }
     }
@@ -372,16 +373,16 @@ static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& ac
     if (! entry)
         return ret;
 
-    int ix       = add_entry(pp, accession.c_str(), ver, entry),
+    int ix       = add_entry(pp, accession.c_str(), ver, *entry),
         old_indx = pp->curindx;
 
     pp->curindx = ix;
 
     if (pp->entrylist[ix]->bases == 0) {
-        AddToIndexBlk(entry, pp->entrylist[ix], pp->format);
+        AddToIndexBlk(*entry, pp->entrylist[ix], pp->format);
     }
 
-    ret = get_bioseq(pp, entry, id);
+    ret = get_bioseq(pp, *entry, id);
     delete entry;
     pp->curindx = old_indx;
 
@@ -443,7 +444,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (! entry)
         return -1;
 
-    int ix       = objects::add_entry(pp, acc, vernum, entry),
+    int ix       = objects::add_entry(pp, acc, vernum, *entry),
         old_indx = pp->curindx;
     pp->curindx  = ix;
 
@@ -465,7 +466,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     }
 
     if (pp->entrylist[ix]->bases == 0) {
-        objects::AddToIndexBlk(entry, pp->entrylist[ix], pp->format);
+        objects::AddToIndexBlk(*entry, pp->entrylist[ix], pp->format);
     }
 
     delete entry;

@@ -946,11 +946,11 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
  *   the "type".
  *
  **********************************************************/
-char* SrchNodeType(DataBlkPtr entry, Int4 type, size_t* len)
+char* SrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
 {
     DataBlkPtr temp;
 
-    temp = TrackNodeType(*entry, (Int2)type);
+    temp = TrackNodeType(entry, (Int2)type);
     if (temp) {
         *len = temp->len;
         return (temp->mOffset);

@@ -159,15 +159,15 @@ static bool NotName(const char* name)
  *                                              10-27-93
  *
  **********************************************************/
-static Int4 GetDataFromRN(DataBlkPtr dbp, Uint2 col_data)
+static Int4 GetDataFromRN(const DataBlk& dbp, Uint2 col_data)
 {
     char* bptr;
     char* eptr;
     char* str;
     Int4  num = 0;
 
-    bptr = dbp->mOffset + col_data;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset + col_data;
+    eptr = bptr + dbp.len;
     while (isdigit(*bptr) == 0 && bptr < eptr)
         bptr++;
     for (str = bptr; isdigit(*str) != 0 && str < eptr;)
@@ -433,7 +433,7 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
  *                                              10-27-93
  *
  **********************************************************/
-static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
+static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_data)
 {
     DataBlkPtr subdbp;
     char*      str;
@@ -452,7 +452,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
 
 #endif
 
-    for (subdbp = dbp->GetSubData(); subdbp; subdbp = subdbp->mpNext) {
+    for (subdbp = dbp.GetSubData(); subdbp; subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
         str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));
@@ -1276,7 +1276,7 @@ static CRef<CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
 }
 
 /**********************************************************/
-CRef<CPubdesc> sp_refs(ParserPtr pp, DataBlkPtr dbp, Uint2 col_data)
+CRef<CPubdesc> sp_refs(ParserPtr pp, const DataBlk& dbp, Uint2 col_data)
 {
     ParRefBlkPtr prbp = SprotRefString(pp, dbp, col_data);
 

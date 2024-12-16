@@ -119,7 +119,7 @@ static const char* ref_tag_embl[] = {
 };
 
 /**********************************************************/
-void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat bank)
+void ind_subdbp(DataBlk& dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat bank)
 {
     DataBlkPtr   subdbp;
     const char** ref_tag;
@@ -141,7 +141,7 @@ void ind_subdbp(DataBlkPtr dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat ban
         ind[j] = nullptr;
 
     n_rest = 0;
-    for (subdbp = dbp->GetSubData(); subdbp; subdbp = subdbp->mpNext) {
+    for (subdbp = dbp.GetSubData(); subdbp; subdbp = subdbp->mpNext) {
         if (ind[subdbp->mType]) {
             if (n_rest >= 21) {
                 fprintf(stderr, "Too many rest\n");

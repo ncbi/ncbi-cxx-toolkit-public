@@ -800,7 +800,7 @@ static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
 }
 
 /**********************************************************/
-static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
+static void SpAddToIndexBlk(const DataBlk& entry, IndexblkPtr pIndex)
 {
     char*  eptr;
     char*  offset;
@@ -837,33 +837,33 @@ static void SpAddToIndexBlk(DataBlkPtr entry, IndexblkPtr pIndex)
  *                                              9-23-93
  *
  **********************************************************/
-static void GetSprotSubBlock(ParserPtr pp, const DataBlk* entry)
+static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
 {
     DataBlkPtr dbp;
 
-    dbp = TrackNodeType(*entry, ParFlatSP_OS);
+    dbp = TrackNodeType(entry, ParFlatSP_OS);
     if (dbp) {
-        BuildSubBlock(dbp, ParFlatSP_OG, "OG");
-        BuildSubBlock(dbp, ParFlatSP_OC, "OC");
-        BuildSubBlock(dbp, ParFlatSP_OX, "OX");
-        BuildSubBlock(dbp, ParFlatSP_OH, "OH");
-        GetLenSubNode(dbp);
+        BuildSubBlock(*dbp, ParFlatSP_OG, "OG");
+        BuildSubBlock(*dbp, ParFlatSP_OC, "OC");
+        BuildSubBlock(*dbp, ParFlatSP_OX, "OX");
+        BuildSubBlock(*dbp, ParFlatSP_OH, "OH");
+        GetLenSubNode(*dbp);
     }
 
-    dbp = TrackNodeType(*entry, ParFlatSP_RN);
+    dbp = TrackNodeType(entry, ParFlatSP_RN);
     for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_RN)
             continue;
 
-        BuildSubBlock(dbp, ParFlatSP_RP, "RP");
-        BuildSubBlock(dbp, ParFlatSP_RC, "RC");
-        BuildSubBlock(dbp, ParFlatSP_RM, "RM");
-        BuildSubBlock(dbp, ParFlatSP_RX, "RX");
-        BuildSubBlock(dbp, ParFlatSP_RG, "RG");
-        BuildSubBlock(dbp, ParFlatSP_RA, "RA");
-        BuildSubBlock(dbp, ParFlatSP_RT, "RT");
-        BuildSubBlock(dbp, ParFlatSP_RL, "RL");
-        GetLenSubNode(dbp);
+        BuildSubBlock(*dbp, ParFlatSP_RP, "RP");
+        BuildSubBlock(*dbp, ParFlatSP_RC, "RC");
+        BuildSubBlock(*dbp, ParFlatSP_RM, "RM");
+        BuildSubBlock(*dbp, ParFlatSP_RX, "RX");
+        BuildSubBlock(*dbp, ParFlatSP_RG, "RG");
+        BuildSubBlock(*dbp, ParFlatSP_RA, "RA");
+        BuildSubBlock(*dbp, ParFlatSP_RT, "RT");
+        BuildSubBlock(*dbp, ParFlatSP_RL, "RL");
+        GetLenSubNode(*dbp);
         dbp->mType = ParFlat_REF_END; /* swiss-prot only has one type */
     }
 }
@@ -1026,21 +1026,21 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
 }
 
 /**********************************************************/
-static char* GetLineOSorOC(DataBlkPtr dbp, const char* pattern)
+static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
 {
     char* res;
     char* p;
     char* q;
 
-    size_t len = dbp->len;
+    size_t len = dbp.len;
     if (len == 0)
         return nullptr;
-    for (size_t i = 0; i < dbp->len; i++)
-        if (dbp->mOffset[i] == '\n')
+    for (size_t i = 0; i < dbp.len; i++)
+        if (dbp.mOffset[i] == '\n')
             len -= 5;
     res = StringNew(len - 1);
     p   = res;
-    for (q = dbp->mOffset; *q != '\0';) {
+    for (q = dbp.mOffset; *q != '\0';) {
         if (! StringEquN(q, pattern, 5))
             break;
         if (p > res)
@@ -1502,11 +1502,11 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
     for (dbp = entry; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
-        line_OS = GetLineOSorOC(dbp, "OS   ");
+        line_OS = GetLineOSorOC(*dbp, "OS   ");
         for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext) {
             if (dbp->mType != ParFlatSP_OC)
                 continue;
-            line_OC = GetLineOSorOC(dbp, "OC   ");
+            line_OC = GetLineOSorOC(*dbp, "OC   ");
             break;
         }
         break;
@@ -1531,7 +1531,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 }
 
 /**********************************************************/
-static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
+static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
 {
     DataBlkPtr dbp;
     DataBlkPtr subdbp;
@@ -1541,7 +1541,7 @@ static void get_plasmid(DataBlkPtr entry, CSP_block::TPlasnm& plasms)
     char*      ptr;
     Int4       gmod = -1;
 
-    dbp = TrackNodeType(*entry, ParFlatSP_OS);
+    dbp = TrackNodeType(entry, ParFlatSP_OS);
     for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
@@ -1848,7 +1848,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
  *      Also need to delete duplicated DR line.
  *
  **********************************************************/
-static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser::ESource source)
+static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
     ValNodePtr   acc_list      = nullptr;
@@ -2118,7 +2118,7 @@ static void GetDRlineDataSP(DataBlkPtr entry, CSP_block& spb, bool* drop, Parser
  *                                              9-30-93
  *
  **********************************************************/
-static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequpd, CDate& annotupd, short* ver_num)
+static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& sequpd, CDate& annotupd, short* ver_num)
 {
     ValNodePtr vnp;
     ValNodePtr tvnp;
@@ -2271,7 +2271,7 @@ static bool GetSPDate(ParserPtr pp, DataBlkPtr entry, CDate& crdate, CDate& sequ
  *
  **********************************************************/
 static CRef<CSP_block>
-GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
+GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
@@ -2284,7 +2284,7 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* first ID line, 2nd token
      */
-    bptr     = PointToNextToken(entry->mOffset + ParFlat_COL_DATA_SP);
+    bptr     = PointToNextToken(entry.mOffset + ParFlat_COL_DATA_SP);
     reviewed = StringEquNI(bptr, "reviewed", 8);
     if (reviewed || StringEquNI(bptr, "standard", 8)) {
         spb->SetClass(CSP_block::eClass_standard);
@@ -2296,7 +2296,7 @@ GetDescrSPBlock(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         ErrPostStr(SEV_WARNING, ERR_DATACLASS_UnKnownClass, "Not a standard/reviewed or preliminary/unreviewed class in SWISS-PROT");
     }
 
-    GetSequenceOfKeywords(*entry, ParFlatSP_KW, ParFlat_COL_DATA_SP, spb->SetKeywords());
+    GetSequenceOfKeywords(entry, ParFlatSP_KW, ParFlat_COL_DATA_SP, spb->SetKeywords());
 
     ibp            = pp->entrylist[pp->curindx];
     ibp->wgssec[0] = '\0';
@@ -2415,7 +2415,7 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, char* line)
  *                                              10-1-93
  *
  **********************************************************/
-static void GetSPDescrComment(DataBlkPtr entry, CSeq_descr::Tdata& descrs, char* acc, Uint1 cla)
+static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, char* acc, Uint1 cla)
 {
     char* offset;
     char* bptr;
@@ -2558,7 +2558,7 @@ static bool IfOHTaxIdMatchOHName(const char* orpname, const char* ohname)
 }
 
 /**********************************************************/
-static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
+static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 {
     DataBlkPtr dbp;
     char*      offset;
@@ -2645,12 +2645,12 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
         ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"%s\" precedes create-date \"%s\".", upd_date_str.c_str(), create_date_str.c_str());
     }
 
-    dbp  = TrackNodeType(*entry, ParFlatSP_OS);
+    dbp  = TrackNodeType(entry, ParFlatSP_OS);
     gmod = GetSPGenome(dbp);
 
     /* Org-ref from ID lines
      */
-    for (dbp = TrackNodeType(*entry, ParFlatSP_ID); dbp; dbp = dbp->mpNext) {
+    for (dbp = TrackNodeType(entry, ParFlatSP_ID); dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
@@ -2754,12 +2754,12 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
 
     /* RN data ==> pub
      */
-    dbp = TrackNodeType(*entry, ParFlat_REF_END);
+    dbp = TrackNodeType(entry, ParFlat_REF_END);
     for (; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pub_desc = DescrRefs(pp, dbp, ParFlat_COL_DATA_SP);
+        CRef<CPubdesc> pub_desc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_SP);
         if (pub_desc.NotEmpty()) {
             CRef<CSeqdesc> pub_desc_descr(new CSeqdesc);
             pub_desc_descr->SetPub(*pub_desc);
@@ -2779,18 +2779,18 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, DataBlkPtr entry)
  *                                              10-8-93
  *
  **********************************************************/
-static void GetSPInst(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
+static void GetSPInst(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
 {
     EntryBlkPtr ebp;
 
-    ebp = entry->GetEntryData();
+    ebp = entry.GetEntryData();
 
     CBioseq& bioseq = ebp->seq_entry->SetSeq();
 
     bioseq.SetInst().SetRepr(CSeq_inst::eRepr_raw);
     bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
 
-    GetSeqData(pp, *entry, bioseq, ParFlatSP_SQ, protconv, CSeq_data::e_Iupacaa);
+    GetSeqData(pp, entry, bioseq, ParFlatSP_SQ, protconv, CSeq_data::e_Iupacaa);
 }
 
 /**********************************************************/
@@ -2951,7 +2951,7 @@ static void SPPostProcVarSeq(string& varseq)
  *                                              10-15-93
  *
  **********************************************************/
-static SPFeatInputPtr ParseSPFeat(DataBlkPtr entry, size_t seqlen)
+static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
 {
     SPFeatInputPtr temp;
     SPFeatInputPtr current;
@@ -3984,9 +3984,9 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
  *                                              11-3-93
  *
  **********************************************************/
-static Int4 GetSeqLen(DataBlkPtr entry)
+static Int4 GetSeqLen(const DataBlk& entry)
 {
-    EntryBlkPtr    ebp    = entry->GetEntryData();
+    EntryBlkPtr    ebp    = entry.GetEntryData();
     const CBioseq& bioseq = ebp->seq_entry->GetSeq();
     return bioseq.GetLength();
 }
@@ -4017,7 +4017,7 @@ static Int4 GetSeqLen(DataBlkPtr entry)
  *                                              10-25-93
  *
  **********************************************************/
-static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, DataBlkPtr entry)
+static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, const DataBlk& entry)
 {
     char* offset;
     char* str;
@@ -4261,7 +4261,7 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
 }
 
 /**********************************************************/
-static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
+static void SPGetPEValue(const DataBlk& entry, CSeq_feat& feat)
 {
     char* offset;
     char* buf;
@@ -4316,7 +4316,7 @@ static void SPGetPEValue(DataBlkPtr entry, CSeq_feat& feat)
  *                                              10-20-93
  *
  **********************************************************/
-static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, DataBlkPtr entry, SPFeatBlnPtr spfbp)
+static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, const DataBlk& entry, SPFeatBlnPtr spfbp)
 {
     IndexblkPtr ibp;
 
@@ -4333,7 +4333,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, Data
 
     EntryBlkPtr ebp;
 
-    ebp = entry->GetEntryData();
+    ebp = entry.GetEntryData();
 
     CSeq_entry& seq_entry = *ebp->seq_entry;
     CBioseq&    bioseq    = seq_entry.SetSeq();
@@ -4728,7 +4728,7 @@ static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
  *                                              10-15-93
  *
  **********************************************************/
-static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
+static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
 {
     SPFeatInputPtr spfip;
     EntryBlkPtr    ebp;
@@ -4737,7 +4737,7 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
     SPSegLocPtr  spslp; /* segment location, data from NON_CONS */
     SPSegLocPtr  next;
 
-    ebp                   = entry->GetEntryData();
+    ebp                   = entry.GetEntryData();
     CSeq_entry& seq_entry = *ebp->seq_entry;
 
     spfbp = new SPFeatBln;
@@ -4776,16 +4776,16 @@ static void GetSPAnnot(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
 }
 
 /**********************************************************/
-static void SpPrepareEntry(ParserPtr pp, DataBlkPtr entry, unsigned char* protconv)
+static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
 {
     Int2        curkw;
     char*       ptr;
     char*       eptr;
     EntryBlkPtr ebp;
 
-    ebp  = entry->GetEntryData();
-    ptr  = entry->mOffset;
-    eptr = ptr + entry->len;
+    ebp  = entry.GetEntryData();
+    ptr  = entry.mOffset;
+    eptr = ptr + entry.len;
     for (curkw = ParFlatSP_ID; curkw != ParFlatSP_END;) {
         ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
     }
@@ -4847,7 +4847,7 @@ bool SprotAscii(ParserPtr pp)
                 return false;
             }
 
-            SpPrepareEntry(pp, entry, protconv.get());
+            SpPrepareEntry(pp, *entry, protconv.get());
 
             if (! ibp->drop) {
                 CRef<CSeq_entry>& cur_entry = entry->GetEntryData()->seq_entry;
