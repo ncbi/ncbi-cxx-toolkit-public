@@ -340,20 +340,20 @@ char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
  *                                              5-19-93
  *
  **********************************************************/
-static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
+static void GetGenBankRefType(DataBlk& dbp, size_t bases)
 {
     char* bptr;
     char* eptr;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset;
+    eptr = bptr + dbp.len;
 
     const string s    = to_string(bases);
     const string str  = "(bases 1 to " + s + ")";
     const string str1 = "(bases 1 to " + s + ";";
     const string str2 = "(residues 1 to " + s + "aa)";
 
-    string ref(bptr, bptr + dbp->len);
+    string ref(bptr, bptr + dbp.len);
 
     while (bptr < eptr && *bptr != '\n' && *bptr != '(')
         bptr++;
@@ -361,14 +361,14 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
         bptr++;
 
     if (*bptr == '\n')
-        dbp->mType = ParFlat_REF_NO_TARGET;
+        dbp.mType = ParFlat_REF_NO_TARGET;
     else if (NStr::Find(ref, str) != NPOS || NStr::Find(ref, str1) != NPOS ||
              NStr::Find(ref, str2) != NPOS)
-        dbp->mType = ParFlat_REF_END;
+        dbp.mType = ParFlat_REF_END;
     else if (NStr::Find(ref, "(sites)") != NPOS)
-        dbp->mType = ParFlat_REF_SITES;
+        dbp.mType = ParFlat_REF_SITES;
     else
-        dbp->mType = ParFlat_REF_BTW;
+        dbp.mType = ParFlat_REF_BTW;
 }
 
 /**********************************************************
@@ -380,15 +380,15 @@ static void GetGenBankRefType(DataBlkPtr dbp, size_t bases)
  *                                              5-3-93
  *
  **********************************************************/
-static void BuildFeatureBlock(DataBlkPtr dbp)
+static void BuildFeatureBlock(DataBlk& dbp)
 {
     char* bptr;
     char* eptr;
     char* ptr;
     bool  skip;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset;
+    eptr = bptr + dbp.len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
     if (! ptr)
@@ -397,9 +397,9 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
     bptr = ptr + 1;
 
     while (bptr < eptr) {
-        if (! dbp->hasData())
-            dbp->SetSubData(nullptr);
-        InsertDatablkVal(&std::get<DataBlk*>(dbp->mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
+        if (! dbp.hasData())
+            dbp.SetSubData(nullptr);
+        InsertDatablkVal(&std::get<DataBlk*>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
             bptr = SrchTheChar(bptr, eptr, '\n');
@@ -415,25 +415,25 @@ static void BuildFeatureBlock(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* ptag)
+static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char* ptag)
 {
     char* p;
     Char  ch;
     Int4  muids;
     Int4  pmids;
 
-    if (! dbp || ! dbp->mOffset || (! mtag && ! ptag))
+    if (! dbp.mOffset || (! mtag && ! ptag))
         return;
 
-    ch                     = dbp->mOffset[dbp->len];
-    dbp->mOffset[dbp->len] = '\0';
+    ch                     = dbp.mOffset[dbp.len];
+    dbp.mOffset[dbp.len] = '\0';
 
     size_t mlen = mtag ? StringLen(mtag) : 0;
     size_t plen = ptag ? StringLen(ptag) : 0;
 
     muids = 0;
     pmids = 0;
-    for (p = dbp->mOffset;; p++) {
+    for (p = dbp.mOffset;; p++) {
         p = StringChr(p, '\n');
         if (! p)
             break;
@@ -442,7 +442,7 @@ static void fta_check_mult_ids(DataBlkPtr dbp, const char* mtag, const char* pta
         else if (ptag && StringEquN(p + 1, ptag, plen))
             pmids++;
     }
-    dbp->mOffset[dbp->len] = ch;
+    dbp.mOffset[dbp.len] = ch;
 
     if (muids > 1) {
         ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
@@ -465,8 +465,8 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 
     dbp = TrackNodeType(entry, ParFlat_SOURCE);
     if (dbp) {
-        BuildSubBlock(dbp, ParFlat_ORGANISM, "  ORGANISM");
-        GetLenSubNode(dbp);
+        BuildSubBlock(*dbp, ParFlat_ORGANISM, "  ORGANISM");
+        GetLenSubNode(*dbp);
     }
 
     dbp = TrackNodeType(entry, ParFlat_REFERENCE);
@@ -474,17 +474,17 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         if (dbp->mType != ParFlat_REFERENCE)
             continue;
 
-        fta_check_mult_ids(dbp, "  MEDLINE", "   PUBMED");
-        BuildSubBlock(dbp, ParFlat_AUTHORS, "  AUTHORS");
-        BuildSubBlock(dbp, ParFlat_CONSRTM, "  CONSRTM");
-        BuildSubBlock(dbp, ParFlat_TITLE, "  TITLE");
-        BuildSubBlock(dbp, ParFlat_JOURNAL, "  JOURNAL");
-        BuildSubBlock(dbp, ParFlat_MEDLINE, "  MEDLINE");
-        BuildSubBlock(dbp, ParFlat_PUBMED, "   PUBMED");
-        BuildSubBlock(dbp, ParFlat_STANDARD, "  STANDARD");
-        BuildSubBlock(dbp, ParFlat_REMARK, "  REMARK");
-        GetLenSubNode(dbp);
-        GetGenBankRefType(dbp, bases);
+        fta_check_mult_ids(*dbp, "  MEDLINE", "   PUBMED");
+        BuildSubBlock(*dbp, ParFlat_AUTHORS, "  AUTHORS");
+        BuildSubBlock(*dbp, ParFlat_CONSRTM, "  CONSRTM");
+        BuildSubBlock(*dbp, ParFlat_TITLE, "  TITLE");
+        BuildSubBlock(*dbp, ParFlat_JOURNAL, "  JOURNAL");
+        BuildSubBlock(*dbp, ParFlat_MEDLINE, "  MEDLINE");
+        BuildSubBlock(*dbp, ParFlat_PUBMED, "   PUBMED");
+        BuildSubBlock(*dbp, ParFlat_STANDARD, "  STANDARD");
+        BuildSubBlock(*dbp, ParFlat_REMARK, "  REMARK");
+        GetLenSubNode(*dbp);
+        GetGenBankRefType(*dbp, bases);
     }
 
     dbp = TrackNodeType(entry, ParFlat_FEATURES);
@@ -492,8 +492,8 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         if (dbp->mType != ParFlat_FEATURES)
             continue;
 
-        BuildFeatureBlock(dbp);
-        GetLenSubNode(dbp);
+        BuildFeatureBlock(*dbp);
+        GetLenSubNode(*dbp);
     }
 }
 
@@ -609,24 +609,24 @@ char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat f
  *                                              6-15-93
  *
  **********************************************************/
-static bool TrimEmblFeatBlk(DataBlkPtr dbp)
+static bool TrimEmblFeatBlk(DataBlk& dbp)
 {
     char* bptr;
     char* eptr;
     char* ptr;
     bool  flag = false;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset;
+    eptr = bptr + dbp.len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
     while (ptr && ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
-            dbp->len     = dbp->len - (ptr - dbp->mOffset + 1);
-            dbp->mOffset = ptr + 1;
+            dbp.len     = dbp.len - (ptr - dbp.mOffset + 1);
+            dbp.mOffset = ptr + 1;
 
-            bptr = dbp->mOffset;
-            eptr = bptr + dbp->len;
+            bptr = dbp.mOffset;
+            eptr = bptr + dbp.len;
         } else {
             bptr = ptr + 1;
 
@@ -689,45 +689,45 @@ static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
  *                                              6-15-93
  *
  **********************************************************/
-static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlkPtr dbp)
+static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
 {
     char* ptr;
     char* bptr;
     char* eptr;
     char* sptr;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset;
+    eptr = bptr + dbp.len;
 
     if (! GetSubNodeType("RP", &bptr, eptr)) {
         if (source == Parser::ESource::EMBL)
-            dbp->mType = ParFlat_REF_NO_TARGET;
+            dbp.mType = ParFlat_REF_NO_TARGET;
         else
-            dbp->mType = ParFlat_REF_END;
+            dbp.mType = ParFlat_REF_END;
         return;
     }
 
     const string str = " 1-" + to_string(bases);
     ptr = SrchTheStr(bptr, eptr, str.c_str());
     if (ptr) {
-        dbp->mType = ParFlat_REF_END;
+        dbp.mType = ParFlat_REF_END;
         return;
     }
 
     if (source == Parser::ESource::EMBL) {
         ptr = SrchTheStr(bptr, eptr, " 0-0");
         if (ptr) {
-            dbp->mType = ParFlat_REF_NO_TARGET;
+            dbp.mType = ParFlat_REF_NO_TARGET;
             return;
         }
     }
 
-    dbp->mType = ParFlat_REF_BTW;
+    dbp.mType = ParFlat_REF_BTW;
     if (source == Parser::ESource::NCBI) {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
         if (SrchTheStr(bptr, sptr, "sites"))
-            dbp->mType = ParFlat_REF_SITES;
+            dbp.mType = ParFlat_REF_SITES;
     }
 }
 
@@ -757,9 +757,9 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         if (temp->mType != ParFlat_OS)
             continue;
 
-        BuildSubBlock(temp, ParFlat_OC, "OC");
-        BuildSubBlock(temp, ParFlat_OG, "OG");
-        GetLenSubNode(temp);
+        BuildSubBlock(*temp, ParFlat_OC, "OC");
+        BuildSubBlock(*temp, ParFlat_OG, "OG");
+        GetLenSubNode(*temp);
     }
 
     temp = TrackNodeType(entry, ParFlat_RN);
@@ -767,16 +767,16 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         if (temp->mType != ParFlat_RN)
             continue;
 
-        fta_check_mult_ids(temp, "RX   MEDLINE;", "RX   PUBMED;");
-        BuildSubBlock(temp, ParFlat_RC, "RC");
-        BuildSubBlock(temp, ParFlat_RP, "RP");
-        BuildSubBlock(temp, ParFlat_RX, "RX");
-        BuildSubBlock(temp, ParFlat_RG, "RG");
-        BuildSubBlock(temp, ParFlat_RA, "RA");
-        BuildSubBlock(temp, ParFlat_RT, "RT");
-        BuildSubBlock(temp, ParFlat_RL, "RL");
-        GetEmblRefType(bases, source, temp);
-        GetLenSubNode(temp);
+        fta_check_mult_ids(*temp, "RX   MEDLINE;", "RX   PUBMED;");
+        BuildSubBlock(*temp, ParFlat_RC, "RC");
+        BuildSubBlock(*temp, ParFlat_RP, "RP");
+        BuildSubBlock(*temp, ParFlat_RX, "RX");
+        BuildSubBlock(*temp, ParFlat_RG, "RG");
+        BuildSubBlock(*temp, ParFlat_RA, "RA");
+        BuildSubBlock(*temp, ParFlat_RT, "RT");
+        BuildSubBlock(*temp, ParFlat_RL, "RL");
+        GetEmblRefType(bases, source, *temp);
+        GetLenSubNode(*temp);
     }
 
     ebp    = entry.GetEntryData();
@@ -790,9 +790,9 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
             continue;
         }
 
-        if (TrimEmblFeatBlk(curdbp)) {
-            BuildFeatureBlock(curdbp);
-            GetLenSubNode(curdbp);
+        if (TrimEmblFeatBlk(*curdbp)) {
+            BuildFeatureBlock(*curdbp);
+            GetLenSubNode(*curdbp);
 
             predbp = curdbp;
             curdbp = curdbp->mpNext;
@@ -817,18 +817,18 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
  *                                              4-7-93
  *
  **********************************************************/
-void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
+void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
 {
     char* bptr;
     char* eptr;
 
-    bptr = dbp->mOffset;
-    eptr = bptr + dbp->len;
+    bptr = dbp.mOffset;
+    eptr = bptr + dbp.len;
 
     if (GetSubNodeType(subkw, &bptr, eptr)) {
-        if (! dbp->hasData())
-            dbp->SetSubData(nullptr);
-        InsertDatablkVal(&std::get<DataBlk*>(dbp->mData), subtype, bptr, eptr - bptr);
+        if (! dbp.hasData())
+            dbp.SetSubData(nullptr);
+        InsertDatablkVal(&std::get<DataBlk*>(dbp.mData), subtype, bptr, eptr - bptr);
     }
 }
 
@@ -842,7 +842,7 @@ void BuildSubBlock(DataBlkPtr dbp, Int2 subtype, const char* subkw)
  *                                              4-7-93
  *
  **********************************************************/
-void GetLenSubNode(DataBlkPtr dbp)
+void GetLenSubNode(DataBlk& dbp)
 {
     DataBlkPtr curdbp;
     DataBlkPtr ndbp;
@@ -852,32 +852,32 @@ void GetLenSubNode(DataBlkPtr dbp)
     Int2       n;
     bool       done = false;
 
-    if (! dbp->GetSubData()) /* no sublocks in this block */
+    if (! dbp.GetSubData()) /* no sublocks in this block */
         return;
 
-    offset = dbp->mOffset;
+    offset = dbp.mOffset;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
     n    = atoi(s);
     ldbp = nullptr;
-    for (ndbp = dbp->GetSubData(); ndbp; ndbp = ndbp->mpNext) {
+    for (ndbp = dbp.GetSubData(); ndbp; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
-        if (l > 0 && l < dbp->len) {
-            dbp->len = l;
+        if (l > 0 && l < dbp.len) {
+            dbp.len = l;
             ldbp     = ndbp;
         }
     }
 
-    if (ldbp != dbp->GetSubData() && ldbp) {
+    if (ldbp != dbp.GetSubData() && ldbp) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }
 
-    curdbp = dbp->GetSubData();
+    curdbp = dbp.GetSubData();
     for (; curdbp->mpNext; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
         ldbp   = nullptr;
-        for (ndbp = dbp->GetSubData(); ndbp; ndbp = ndbp->mpNext) {
+        for (ndbp = dbp.GetSubData(); ndbp; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;

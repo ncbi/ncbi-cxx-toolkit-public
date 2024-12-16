@@ -879,7 +879,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     for (; dbp; dbp = dbpnext) {
         dbpnext = dbp->mpNext;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -893,7 +893,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     for (; dbp; dbp = dbpnext) {
         dbpnext = dbp->mpNext;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
