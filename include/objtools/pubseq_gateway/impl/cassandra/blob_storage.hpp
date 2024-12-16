@@ -161,6 +161,7 @@ enum class ESatInfoRefreshSchemaResult : char
     eBlobKeyspacesEmpty = 8,
     eLbsmServiceNotResolved = 9,
     eUnsupportedSecureKeyspace = 10,
+    eServiceFieldParseError = 11,
 };
 
 enum class ESatInfoRefreshMessagesResult : char

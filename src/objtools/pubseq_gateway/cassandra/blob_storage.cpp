@@ -40,6 +40,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
+#include "sat_info_service_parser.hpp"
+
 BEGIN_IDBLOB_SCOPE
 
 const char* const SBlobStorageConstants::kChunkTableDefault = "blob_chunk";
@@ -255,6 +257,37 @@ inline string GetConnectionPointKey(string const& peer, int16_t port, string con
     return registry_section + "|" + peer + ":" + to_string(port);
 }
 
+string GetConnectionDatacenterName(shared_ptr<CCassConnection> connection)
+{
+    for (int i = kSatInfoReadRetry; i >= 0; --i) {
+        try {
+           return connection->GetDatacenterName();
+        }
+        catch (CCassandraException const& e) {
+            if (!CanRetry(e, i)) {
+                throw;
+            }
+        }
+    }
+    return {}; // unreachable
+}
+
+string ParseSatInfoServiceField(shared_ptr<CCassConnection>& connection, vector<SSatInfoEntry>& sat_info)
+{
+    auto datacenter = GetConnectionDatacenterName(connection);
+    CSatInfoServiceParser parser;
+    for (auto & entry: sat_info) {
+        if (!entry.service.empty()) {
+            auto lbsm_service = parser.GetConnectionString(entry.service, datacenter);
+            if (lbsm_service.empty()) {
+                return "Cannot parse service field value: '" + entry.service + "'";
+            }
+            entry.service = lbsm_service;
+        }
+    }
+    return {};
+}
+
 END_SCOPE()
 
 optional<SSatInfoEntry> CSatInfoSchema::GetBlobKeyspace(int32_t sat) const
@@ -398,10 +431,6 @@ optional<ESatInfoRefreshSchemaResult> CSatInfoSchema::x_ResolveConnectionByServi
         else {
             service = registry->Get(registry_section, "service");
         }
-    }
-    if (service.empty() && registry_section == m_DefaultRegistrySection) {
-        connection = m_DefaultConnection;
-
     }
     connection = x_GetConnectionByService(service, registry_section);
     if (connection) {
@@ -666,10 +695,16 @@ ESatInfoRefreshSchemaResult CSatInfoSchemaProvider::RefreshSchema(bool apply)
         x_SetRefreshErrorMessage("mapping_keyspace is not specified");
         return ESatInfoRefreshSchemaResult::eSatInfoKeyspaceUndefined;
     }
-    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, x_GetSatInfoConnection(), m_Timeout);
+    auto sat_info_connection = x_GetSatInfoConnection();
+    auto rows = ReadCassandraSatInfo(m_SatInfoKeyspace, m_Domain, sat_info_connection, m_Timeout);
     if (rows.empty()) {
-        x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty");
+        x_SetRefreshErrorMessage(m_SatInfoKeyspace + ".sat2keyspace info is empty for domain '" + m_Domain + "'");
         return ESatInfoRefreshSchemaResult::eSatInfoSat2KeyspaceEmpty;
+    }
+    auto service_result = ParseSatInfoServiceField(sat_info_connection, rows);
+    if (!service_result.empty()) {
+        x_SetRefreshErrorMessage(service_result);
+        return ESatInfoRefreshSchemaResult::eServiceFieldParseError;
     }
     map<int32_t, set<string>> secure_users;
     if (!m_SecureSatRegistrySection.empty()) {

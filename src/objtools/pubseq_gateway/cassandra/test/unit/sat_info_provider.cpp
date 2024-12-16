@@ -413,4 +413,53 @@ TEST_F(CSatInfoProviderTest, SchemaProviderTimeoutOverride) {
     provider.RefreshSchema(true);
 }
 
+TEST_F(CSatInfoProviderTest, JsonServiceValueEmptyBrackets) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT9", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+    testing::internal::CaptureStderr();
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eServiceFieldParseError, provider.RefreshSchema(true));
+    auto stderr = testing::internal::GetCapturedStderr();
+    EXPECT_EQ("Cannot parse service field value: '{}'", provider.GetRefreshErrorMessage());
+    EXPECT_EQ("Warning: Failed to parse JSON value for 'service' field:"
+              " 'Value for datacenter (DC1) not found' - '{}'\n", stderr);
+}
+
+TEST_F(CSatInfoProviderTest, JsonServiceValueNotAString) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT12", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+    testing::internal::CaptureStderr();
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eServiceFieldParseError, provider.RefreshSchema(true));
+    auto stderr = testing::internal::GetCapturedStderr();
+    EXPECT_EQ("Cannot parse service field value: '{\"DC1\":2}'", provider.GetRefreshErrorMessage());
+    EXPECT_EQ("Warning: Failed to parse JSON value for 'service' field:"
+              " 'Value for datacenter (DC1) key is not a string' - '{\"DC1\":2}'\n", stderr);
+}
+
+TEST_F(CSatInfoProviderTest, JsonServiceValue) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT10", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+        EXPECT_EQ(ESatInfoRefreshSchemaResult::eSatInfoUpdated, provider.RefreshSchema(true));
+    EXPECT_EQ("", provider.GetRefreshErrorMessage());
+    EXPECT_EQ("ID_CASS_TEST", provider.GetResolverKeyspace().service);
+}
+
+TEST_F(CSatInfoProviderTest, JsonServiceValueBrokenJson) {
+    CSatInfoSchemaProvider provider(
+        m_KeyspaceName, "PSG_CASS_UNIT11", m_Connection,
+        m_RegistryPtr, m_ConfigSection
+    );
+    testing::internal::CaptureStderr();
+    EXPECT_EQ(ESatInfoRefreshSchemaResult::eServiceFieldParseError, provider.RefreshSchema(true));
+    auto stderr = testing::internal::GetCapturedStderr();
+    EXPECT_EQ("Cannot parse service field value: '{\"DC1\":ID_CASS_TEST\"'", provider.GetRefreshErrorMessage());
+    EXPECT_EQ("Warning: Failed to parse JSON value for 'service' field:"
+              " 'Invalid value.(7)' - '{\"DC1\":ID_CASS_TEST\"'\n", stderr);
+}
+
 }  // namespace
