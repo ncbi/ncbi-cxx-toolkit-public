@@ -10,6 +10,7 @@ NCBI_begin_lib(psg_cassandra)
     status_history/fetch acc_ver_hist/fetch
   )
   NCBI_uses_toolkit_libraries(xconnect connect xncbi)
+  NCBI_add_definitions(RAPIDJSON_HAS_STDSTRING)
   NCBI_requires(CASSANDRA)
   NCBI_project_watchers(satskyse saprykin)
 NCBI_end_lib()

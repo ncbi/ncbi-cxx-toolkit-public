@@ -386,7 +386,7 @@ TEST_F(CGetPublicCommentTest, SuppressedWithDefaultCommentFromSatInfo2)
 
 TEST_F(CGetPublicCommentTest, AliveBlob)
 {
-    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 358006939, false, error_function);
+    CCassBlobTaskLoadBlob fetch_blob(m_Connection, m_KeyspaceName, 537505088, false, error_function);
     wait_function(fetch_blob);
     ASSERT_TRUE(fetch_blob.IsBlobPropsFound());
 
