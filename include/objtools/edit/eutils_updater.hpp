@@ -88,7 +88,8 @@ public:
     virtual TEntrezId  CitMatch(const CPub&, EPubmedError* = nullptr);
     virtual TEntrezId  CitMatch(const SCitMatch&, EPubmedError* = nullptr);
     virtual CRef<CPub> GetPubmedEntry(TEntrezId pmid, EPubmedError* = nullptr);
-    CRef<CPub> GetPub(TEntrezId pmid, EPubmedError* = nullptr);
+    CRef<CPub>         GetPub(TEntrezId pmid, EPubmedError* = nullptr);
+    void               SetBaseURL(string);
 
     TPubInterceptor SetPubInterceptor(TPubInterceptor f)
     {

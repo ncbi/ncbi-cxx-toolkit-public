@@ -167,11 +167,6 @@ public:
             return 0;
         }
 
-        if (args["url"]) {
-            string url = args["url"].AsString();
-            CEUtils_Request::SetBaseURL(url);
-        }
-
         ostream* output = nullptr;
         if (args["o"]) {
             output = &args["o"].AsOutputFile();
@@ -180,6 +175,11 @@ public:
         }
 
         unique_ptr<CEUtilsUpdater> upd(new CEUtilsUpdater());
+
+        if (args["url"]) {
+            string url = args["url"].AsString();
+            upd->SetBaseURL(url);
+        }
 
         bool           bstats = args["stats"];
         unsigned       nruns  = 0;

@@ -148,6 +148,10 @@ public:
         m_pm_interceptor = f;
         return old;
     }
+    void SetBaseURL(string url)
+    {
+        m_pm_url = url;
+    }
 
 private:
     void xUpdatePubReferences(CSeq_entry& entry);
