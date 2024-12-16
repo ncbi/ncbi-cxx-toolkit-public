@@ -1180,7 +1180,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -1193,7 +1193,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);

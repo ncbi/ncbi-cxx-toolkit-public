@@ -678,10 +678,10 @@ static void GetReleaseInfo(const DataBlk& entry)
  *      >= 1 OS per entry.
  *
  **********************************************************/
-static CRef<COrg_ref> GetEmblOrgRef(const DataBlkPtr dbp)
+static CRef<COrg_ref> GetEmblOrgRef(const DataBlk& dbp)
 {
-    const char* bptr = dbp->mOffset;
-    const char* eptr = bptr + dbp->len;
+    const char* bptr = dbp.mOffset;
+    const char* eptr = bptr + dbp.len;
 
     string         sTaxname;
     vector<string> taxLines;
@@ -1757,7 +1757,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (dbp->mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -1770,7 +1770,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (dbp->mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -2011,7 +2011,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
         if (dbp->mType != ParFlat_OS)
             continue;
 
-        CRef<COrg_ref> org_ref = GetEmblOrgRef(dbp);
+        CRef<COrg_ref> org_ref = GetEmblOrgRef(*dbp);
         if (org_ref.Empty())
             continue;
 

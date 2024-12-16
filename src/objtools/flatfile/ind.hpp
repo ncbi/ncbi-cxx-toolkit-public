@@ -38,7 +38,7 @@
 #include "ftablock.h"
 
 BEGIN_NCBI_SCOPE
-void ind_subdbp(DataBlk* dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank);
+void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank);
 END_NCBI_SCOPE
 
 #endif

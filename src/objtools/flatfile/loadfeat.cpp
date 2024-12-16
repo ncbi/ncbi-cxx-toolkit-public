@@ -1176,7 +1176,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         if (dbp->mType != ParFlat_REF_BTW)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, col_data);
         if (pubdesc.Empty())
             continue;
 
@@ -1296,7 +1296,7 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
         if (dbp->mType != ParFlat_REF_SITES)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, col_data);
         if (pubdesc.Empty() || ! pubdesc->IsSetPub())
             continue;
 
