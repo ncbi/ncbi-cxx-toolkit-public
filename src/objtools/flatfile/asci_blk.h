@@ -50,11 +50,11 @@ void StripSerialNumbers(TEntryList& seq_entries);
 void PackEntries(TEntryList& seq_entries);
 
 Int4       ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns);
-char*      GetGenBankBlock(DataBlkPtr* chain, char* ptr, short* retkw, char* eptr);
+char*      GetGenBankBlock(TDataBlkList& chain, char* ptr, short* retkw, char* eptr);
 void       xGetGenBankBlocks(Entry& entry);
 void       GetGenBankSubBlock(const DataBlk& entry, size_t bases);
 void       xGetGenBankSubBlocks(Entry& entry, size_t bases);
-char*      GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
+char*      GetEmblBlock(TDataBlkList& chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr);
 void       GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry);
 void       BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw);
 SectionPtr xBuildSubBlock(Section&, int subtype, const char* subKw);

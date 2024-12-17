@@ -109,10 +109,10 @@ void DataBlk::deleteData()
 {
     if (holds_alternative<monostate>(mData))
         return;
-    if (holds_alternative<DataBlk*>(mData)) {
-        auto& subblocks = std::get<DataBlk*>(mData);
-        delete subblocks;
-        subblocks = nullptr;
+    if (holds_alternative<TDataBlkList>(mData)) {
+        auto& subblocks = std::get<TDataBlkList>(mData);
+        delete subblocks.head;
+        subblocks.head = nullptr;
     } else if (holds_alternative<EntryBlk*>(mData)) {
         auto& p = std::get<EntryBlk*>(mData);
         delete p;
@@ -138,8 +138,8 @@ void xFreeEntry(DataBlkPtr entry)
 
 EntryBlk::~EntryBlk()
 {
-    if (chain) {
-        delete chain;
+    if (chain.head) {
+        delete chain.head;
         chain = nullptr;
     }
 }

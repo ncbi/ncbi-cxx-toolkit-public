@@ -286,6 +286,16 @@ class DataBlk
 //  ============================================================================
 {
 public:
+    struct TList {
+        DataBlk* head;
+        TList(DataBlk* p) :
+            head(p) {}
+        bool           empty() const { return head == nullptr; }
+        DataBlk*       begin() { return head; }
+        const DataBlk* begin() const { return head; }
+    };
+
+public:
     DataBlk(
         int      type_  = 0,
         char*    offset = nullptr,
@@ -310,8 +320,7 @@ public:
     }
 
     // accessors to mData
-    void      SetSubData(DataBlk* p) { mData = p; }
-    DataBlk*  GetSubData() const { return std::get<DataBlk*>(mData); }
+    DataBlk*  GetSubData() const { return std::get<TList>(mData).head; }
     void      SetEntryData(EntryBlk*);
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
@@ -323,7 +332,7 @@ public:
 
 public:
     int            mType;    // which keyword block or node type
-    std::variant<monostate, DataBlk*, EntryBlk*, FeatBlk*, TXmlIndexList>
+    std::variant<monostate, TList, EntryBlk*, FeatBlk*, TXmlIndexList>
                    mData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
@@ -332,12 +341,13 @@ public:
     DataBlk*       mpNext; // next in line
 };
 using DataBlkPtr = DataBlk*;
+using TDataBlkList = DataBlk::TList;
 
 
 //  ============================================================================
 struct EntryBlk {
     //  ============================================================================
-    DataBlkPtr                chain = nullptr; /* a header points to key-word
+    TDataBlkList              chain = nullptr; /* a header points to key-word
                                            block information */
     CRef<objects::CSeq_entry> seq_entry;       /* points to sequence entry */
 
