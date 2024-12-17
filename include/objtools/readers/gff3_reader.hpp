@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff2_reader.hpp>
+#include <set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
@@ -226,6 +227,7 @@ protected:
 
     // Data:
     map<string, string> mCdsParentMap;
+    set<string> mCdsParents;
     map<string, CRef<CSeq_interval> > mMrnaLocs;
     map<string, string> mIdToSeqIdMap;
     SAlignmentData mAlignmentData;
