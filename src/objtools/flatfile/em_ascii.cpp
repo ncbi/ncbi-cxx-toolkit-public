@@ -2180,7 +2180,7 @@ bool EmblAscii(ParserPtr pp)
             // TODO: below is a potentially infinite cycle!!!!
             while (curkw != ParFlatEM_END) {
                 /* ptr points to current keyword's memory line */
-                ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
+                ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
             }
 
             if (ibp->embl_new_ID)

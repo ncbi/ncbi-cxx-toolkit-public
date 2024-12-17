@@ -4787,7 +4787,7 @@ static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* pr
     ptr  = entry.mOffset;
     eptr = ptr + entry.len;
     for (curkw = ParFlatSP_ID; curkw != ParFlatSP_END;) {
-        ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
+        ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
     }
     GetSprotSubBlock(pp, entry);
 
