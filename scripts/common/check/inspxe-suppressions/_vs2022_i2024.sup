@@ -214,7 +214,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "BZ2 / BZ2_bzCompress"
+	name = "bzip2 / BZ2_bzCompress"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -231,7 +231,18 @@ suppression = {
 	}
 }
 suppression = {
-	name = "BZ2 / BZ2_bzReadOpen"
+	name = "bzip2 / BZ2_decompress"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=BZ2_decompress,src=decompress.c;
+			func=BZ2_bzDecompress,src=bzlib.c;
+		}
+	}
+}
+suppression = {
+	name = "bzip2 / BZ2_bzReadOpen"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -256,14 +267,12 @@ suppression = {
 	}
 }
 suppression = {
-	name = "zlib / inflate on a string"
+	name = "zlib / inflate"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
+			...;
 			func=inflate,src=inflate.c;
-		}
-		allocation={
-			func=_Allocate,src=xstring;
 		}
 	}
 }
