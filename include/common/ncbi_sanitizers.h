@@ -109,4 +109,13 @@
 #endif
 
 
+/// Suppress clang analyzer report.
+
+#ifdef __clang_analyzer__
+#  define NCBI_CLANG_ANALYZER_SUPPRESS __attribute__((suppress))
+#else
+#  define NCBI_CLANG_ANALYZER_SUPPRESS
+#endif
+
+
 #endif /*COMMON___NCBI_SANITIZERS__H */
