@@ -299,7 +299,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
 
         Int2 curkw = ParFlat_ID;
         while (curkw != ParFlatEM_END) {
-            ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
+            ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
         }
         if (ptr < eptr) {
 
@@ -318,7 +318,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
 
         Int2 curkw = ParFlat_LOCUS;
         while (curkw != ParFlat_END) {
-            ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
+            ptr = GetGenBankBlock(ebp->chain, ptr, &curkw, eptr);
         }
         if (ptr < eptr) {
             if (! ibp->is_contig) {
@@ -335,7 +335,7 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
         bioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
         Int2 curkw = ParFlat_ID;
         while (curkw != ParFlatSP_END) {
-            ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
+            ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
         }
 
         if (ptr < eptr) {
@@ -454,7 +454,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     Int2        curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
         /* ptr points to current keyword's memory line */
-        ptr = GetEmblBlock(&ebp->chain, ptr, &curkw, pp->format, eptr);
+        ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
     }
 
     if (ptr >= eptr) {

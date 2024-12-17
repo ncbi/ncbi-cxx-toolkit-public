@@ -62,7 +62,7 @@ struct FeatBlk {
 using FeatBlkPtr = FeatBlk*;
 
 void LoadFeat(ParserPtr pp, const DataBlk& entry, objects::CBioseq& bioseq);
-int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, DataBlkPtr dbp, Int2 source, Parser::EFormat format);
+int  ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Int2 source, Parser::EFormat format);
 
 void GetFlatBiomol(int& biomol, int tech, char* molstr, ParserPtr pp, const DataBlk& entry, const objects::COrg_ref* org_ref);
 

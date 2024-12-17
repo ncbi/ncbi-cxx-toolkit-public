@@ -1421,7 +1421,7 @@ bool GenBankAsciiOrig(ParserPtr pp)
         eptr  = ptr + pEntry->len;
         curkw = ParFlat_LOCUS;
         while (curkw != ParFlat_END && ptr < eptr) {
-            ptr = GetGenBankBlock(&ebp->chain, ptr, &curkw, eptr);
+            ptr = GetGenBankBlock(ebp->chain, ptr, &curkw, eptr);
         }
 
         auto ppCurrentEntry = pp->entrylist[pp->curindx];

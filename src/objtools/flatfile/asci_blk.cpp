@@ -228,17 +228,17 @@ void ShrinkSpaces(string& line)
  *                                              3-18-93
  *
  **********************************************************/
-static void InsertDatablkVal(DataBlkPtr* dbp, Int2 type, char* offset, size_t len)
+static void InsertDatablkVal(TDataBlkList& dbl, Int2 type, char* offset, size_t len)
 {
     DataBlk* ldp = new DataBlk(type, offset, len);
-    if (*dbp) {
-        DataBlk* tail = *dbp;
+    if (! dbl.empty()) {
+        DataBlk* tail = dbl.begin();
         while (tail->mpNext) {
             tail = tail->mpNext;
         }
         tail->mpNext = ldp;
     } else {
-        *dbp = ldp;
+        dbl.head = ldp;
     }
 }
 
@@ -287,7 +287,7 @@ void xGetGenBankBlocks(Entry& entry)
     entry.mSections.push_back(new Section(currentKw, sectionLines));
 }
 
-char* GetGenBankBlock(DataBlkPtr* chain, char* ptr, Int2* retkw, char* eptr)
+char* GetGenBankBlock(TDataBlkList& chain, char* ptr, Int2* retkw, char* eptr)
 {
     char* offset;
     int   curkw;
@@ -398,8 +398,8 @@ static void BuildFeatureBlock(DataBlk& dbp)
 
     while (bptr < eptr) {
         if (! dbp.hasData())
-            dbp.SetSubData(nullptr);
-        InsertDatablkVal(&std::get<DataBlk*>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
+            dbp.mData = TDataBlkList(nullptr);
+        InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
             bptr = SrchTheChar(bptr, eptr, '\n');
@@ -550,7 +550,7 @@ void xGetGenBankSubBlocks(Entry& entry, size_t bases)
  *                                              12-15-93
  *
  **********************************************************/
-char* GetEmblBlock(DataBlkPtr* chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr)
+char* GetEmblBlock(TDataBlkList& chain, char* ptr, short* retkw, Parser::EFormat format, char* eptr)
 {
     char* offset;
     Int2  curkw;
@@ -780,7 +780,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     }
 
     ebp    = entry.GetEntryData();
-    temp   = ebp->chain;
+    temp   = ebp->chain.begin();
     predbp = temp;
     curdbp = temp->mpNext;
     while (curdbp) {
@@ -827,8 +827,8 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
 
     if (GetSubNodeType(subkw, &bptr, eptr)) {
         if (! dbp.hasData())
-            dbp.SetSubData(nullptr);
-        InsertDatablkVal(&std::get<DataBlk*>(dbp.mData), subtype, bptr, eptr - bptr);
+            dbp.mData = TDataBlkList(nullptr);
+        InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), subtype, bptr, eptr - bptr);
     }
 }
 
@@ -844,15 +844,14 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
  **********************************************************/
 void GetLenSubNode(DataBlk& dbp)
 {
-    DataBlkPtr curdbp;
-    DataBlkPtr ndbp;
     DataBlkPtr ldbp;
     char*      offset;
     char*      s;
     Int2       n;
     bool       done = false;
 
-    if (! dbp.GetSubData()) /* no sublocks in this block */
+    TDataBlkList& subblocks = std::get<TDataBlkList>(dbp.mData);
+    if (subblocks.empty())
         return;
 
     offset = dbp.mOffset;
@@ -860,7 +859,7 @@ void GetLenSubNode(DataBlk& dbp)
         s++;
     n    = atoi(s);
     ldbp = nullptr;
-    for (ndbp = dbp.GetSubData(); ndbp; ndbp = ndbp->mpNext) {
+    for (auto ndbp = subblocks.begin(); ndbp; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp.len) {
             dbp.len = l;
@@ -868,16 +867,15 @@ void GetLenSubNode(DataBlk& dbp)
         }
     }
 
-    if (ldbp != dbp.GetSubData() && ldbp) {
+    if (ldbp != subblocks.begin() && ldbp) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }
 
-    curdbp = dbp.GetSubData();
-    for (; curdbp->mpNext; curdbp = curdbp->mpNext) {
+    for (auto curdbp = subblocks.begin(); curdbp->mpNext; curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
         ldbp   = nullptr;
-        for (ndbp = dbp.GetSubData(); ndbp; ndbp = ndbp->mpNext) {
+        for (auto ndbp = subblocks.begin(); ndbp; ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
