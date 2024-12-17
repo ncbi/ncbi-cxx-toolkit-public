@@ -509,6 +509,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     record.GetAttribute("Parent", parentId);
 
     if (!parentId.empty()) {
+        mCdsParents.insert(parentId);
         mpLocations->AddRecordForId(parentId, record);
     }
 
@@ -842,13 +843,7 @@ void CGff3Reader::xVerifyCdsParents(
 bool CGff3Reader::xHasCdsChild(const string& id) const
 //  ----------------------------------------------------------------------------
 {
-    for (const auto& element : mCdsParentMap) {
-        const string parentId = element.second;
-        if (parentId == id) {
-            return true;
-        }
-    }
-    return false;
+    return (mCdsParents.find(id) != mCdsParents.end());
 }
 
 
