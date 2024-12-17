@@ -11,7 +11,7 @@ set script_name=%~nx0
 set script_dir=%~dp0
 set tree_root=%initial_dir%
 
-set vsver=2019
+set vsver=2022
 REM set build_root=%NCBI%\Lib\Ncbi\CXX_Toolkit
 REM set build_vs=vs%vsver%.64
 set build_root=%NCBI%\Lib\Ncbi\CXX
@@ -43,8 +43,8 @@ echo                   default: %build_def%
 echo OPTIONS:
 echo   --noconfig       -- skip configuring build
 echo   --with-vs=N      -- use Visual Studio N generator 
-echo          examples:    --with-vs=2019  (default)
-echo                       --with-vs=2017
+echo          examples:    --with-vs=2022  (default)
+echo                       --with-vs=2019
 echo:
 if "%~1"=="" (
     echo:
