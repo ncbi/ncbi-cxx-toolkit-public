@@ -95,7 +95,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_Resolve>       ("resolve",     "Request biodata info by bio ID", SCommand::fParallel),
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID(s)"),
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
-            s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info"),
+            s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info", SCommand::fParallel),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),

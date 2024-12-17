@@ -98,7 +98,7 @@ private:
     CJsonResponse(const string& id);
 
     template <class TItem>
-    void AddRequestID(TItem item, EDoNotAddRequestID) {}
+    void AddRequestID(TItem, EDoNotAddRequestID) {}
 
     template <class TItem, class... TArgs>
     void AddRequestID(TItem item, TArgs&&... args);
