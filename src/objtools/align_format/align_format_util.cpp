@@ -91,23 +91,128 @@ unique_ptr<CNcbiRegistry> CAlignFormatUtil::m_Reg;
 string CAlignFormatUtil::m_Protocol = "";
 bool  CAlignFormatUtil::m_geturl_debug_flag = false;
 
-MAKE_CONST_MAP(mapURLTagToAddress, ct::tagStrNocase, ct::tagStrNocase,
+MAKE_CONST_MAP(kMapTagToURL, ct::tagStrNocase, ct::tagStrNocase,
 {
-    { "BL2SEQ_WBLAST_CGI",  "https://www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi" },                                                  //kBl2SeqWBlastCgi
-    { "CBLAST_CGI",  "https://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi" },                                                      //kCBlastCgi     
-    { "ENTREZ_QUERY_CGI",  "https://www.ncbi.nlm.nih.gov/entrez/query.fcgi" },                                                          //kEntrezQueryCgi
-    { "ENTREZ_SITES_CGI",  "https://www.ncbi.nlm.nih.gov/sites/entrez" },                                                               //kEntrezSitesCgi     
-    { "ENTREZ_SUBSEQ_TM",  "https://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>" },       //kEntrezSubseqTMUrl
-    { "ENTREZ_TM",  "https://www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>" },  //kEntrezTMUrl
-    { "ENTREZ_VIEWER_CGI",  "https://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi" },                                                        //kEntrezViewerCgi    
-    { "GENE_INFO",  "https://www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s&log$=geneexplicit%s&blast_rank=%d" },  //kGeneInfoUr        
-    { "MAP_SEARCH_CGI",  "https://www.ncbi.nlm.nih.gov/mapview/map_search.cgi" },                                                       //kMapSearchCgi          
-    { "TRACE_CGI",  "https://www.ncbi.nlm.nih.gov/Traces/trace.cgi" },                                                                  //kTraceCgi
-    { "TREEVIEW_CGI",  "https://www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi"},                                              //kGetTreeViewCgi         
-    { "WGS",  "https://www.ncbi.nlm.nih.gov/nuccore/<@wgsacc@>" },                                                                      //kWGSUrl 
+    { "BL2SEQ_WBLAST_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/blast/bl2seq/wblast2.cgi" },                                                  //kBl2SeqWBlastCgi
+    { "CBLAST_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi" },                                                      //kCBlastCgi         
+    { "DOWNLOAD_CGI","/blast/dumpgnl.cgi"},                                                                                                   //kDownloadUrl
+    { "ENTREZ_QUERY_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/entrez/query.fcgi" },                                                          //kEntrezQueryCgi
+    { "ENTREZ_SITES_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/sites/entrez" },                                                               //kEntrezSitesCgi     
+    { "ENTREZ_SUBSEQ_TM",  "<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>" },       //kEntrezSubseqTMUrl
+    { "ENTREZ_TM",  "<@protocol@>//www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>" },  //kEntrezTMUrl
+    { "ENTREZ_VIEWER_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/entrez/viewer.fcgi" },                                                        //kEntrezViewerCgi    
+    { "GENE_INFO",  "<@protocol@>//www.ncbi.nlm.nih.gov/sites/entrez?db=gene&cmd=search&term=%d&RID=%s&log$=geneexplicit%s&blast_rank=%d" },  //kGeneInfoUr        
+    { "MAP_SEARCH_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/mapview/map_search.cgi" },                                                       //kMapSearchCgi              
+    { "MAPVIEWER_CGI",  "https://www.ncbi.nlm.nih.gov/mapview/maps.cgi?maps=blast_set" },                                                     //kMapviewBlastHitUrl
+    {"SEQVIEW_URL","https://www.ncbi.nlm.nih.gov/<@dbtype@>/<@seqid@>?report=graph&rid=<@rid@>[<@seqid@>]&"},                                 //kSeqViewerUrl    
+    {"SEQVIEW_URL_NON_GI","https://www.ncbi.nlm.nih.gov/projects/sviewer/?RID=<@rid@>&id=<@firstSeqID@>&"},                                   //kSeqViewerUrlNonGi
+    { "TRACE_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/Traces/trace.cgi" },                                                                  //kTraceCgi
+    { "TREEVIEW_CGI",  "<@protocol@>//www.ncbi.nlm.nih.gov/blast/treeview/blast_tree_view.cgi"},                                              //kGetTreeViewCgi         
+    { "WGS",  "<@protocol@>//www.ncbi.nlm.nih.gov/nuccore/<@wgsacc@>" },                                                                      //kWGSUrl 
+});
+
+MAKE_CONST_MAP(kMapTagToHTML, ct::tagStrNocase, ct::tagStrNocase,
+{
+    ////kBioAssayNucURL
+    { "BIOASSAY_NUC",  "<a href=\"https://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[RNATargetGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>"},    
+    //kBioAssayProtURL
+    { "BIOASSAY_PROT",   "<a href=\"https://www.ncbi.nlm.nih.gov/entrez?db=pcassay&term=<@gi@>[PigGI]&RID=<@rid@>&log$=pcassay<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>"},
+    //kBioAssayNucImg, kBioAssayProtImg
+    { "BIOASSAY_IMG",  "<img border=0 height=16 width=16 src=\"images/Bioassay.gif\" alt=\"PubChem BioAssay Info linked to <@label@>\">"},   
+    //kBioAssayDispl
+    { "BIOASSAY_DISPL",  "<div><@lnk@>-<span class=\"rlLink\">bioactivity screening</span></div>" },       
+    //kGeneUrl
+    { "GENE", "<a class=\"gene\" term=\"<@uid@>\" href=\"https://www.ncbi.nlm.nih.gov/gene?<@termParam@>RID=<@rid@>&log$=gene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a><input type=\"hidden\" value=\"<@label@>\" />"},
+    //kGeneImg
+    { "GENE_IMG", "<img border=0 height=16 width=16 src=\"images/G.gif\" alt=\"Gene info linked to <@label@>\">"},
+    //kGeneDispl
+    { "GENE_DISPL","<div><@lnk@>-<span class=\"rlLink\">associated gene details</span></div>" },
+    //kGeneTerm
+    { "GENE_TERM", "term=<@label@><@uid@>&"},
+    //kGenomeDataViewerNucUrl
+    { "GENOME_DATA_VIEWER_NUC",  "<span class=\"adNew\">New</span><a href=\"https://www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>"},
+    //kGenomeDataViewerProtUrl
+    { "GENOME_DATA_VIEWER_PROT", "<span class=\"adNew\">New</span><a href=\"https://www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=Protein&acc=<@label@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },
+    //kGenomeDataViewerNuclTranscriptUrl
+    { "GENOME_DATA_VIEWER_TRANSCR", "<span class=\"adNew\">New</span><a href=\"https://www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=nucleotide&acc=<@label@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },      
+    //kGenomeDataViewerImg
+    { "GENOME_DATA_VIEWER_IMG", "<div class=\"gdv\">V</div>" },
+    //kGenomeDataViewerDispl
+    { "GENOME_DATA_VIEWER_DISPL", "<div><@lnk@>-<span class=\"rlLink\">aligned genomic context</span></div>" },
+    //kGeoUrl
+    { "GEO",  "<a href=\"https://www.ncbi.nlm.nih.gov/geoprofiles/?term=genbank[Platform+Reporter+Type]+AND+<@label@>[Reporter+Identifier]&RID=<@rid@>&log$=geo<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },  
+    //kGeoImg
+    { "GEO_IMG", "<img border=0 height=16 width=16 src=\"images/E.gif\" alt=\"GEO profiles info linked to <@label@>\">"},
+    //kGeoDispl
+    { "GEO_DISPL", "<div><@lnk@>-<span class=\"rlLink\">microarray expression data</span></div>"},
+    //kMapviwerUrl
+    { "MAPVIEWER",  "<a href=\"https://www.ncbi.nlm.nih.gov/mapview/map_search.cgi?direct=on&gbgi=<@gi@>&THE_BLAST_RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },  
+    //kMapviewBlastHitParams
+    { "MAPVIEWER_GENOME", "<a href=\"<@user_url@>&db=<@db@>&na=<@is_na@>&gnl=<@gnl@>&gi=<@gi@>&term=<@gi@>[gi]&taxid=<@taxid@>&RID=<@rid@>&QUERY_NUMBER=<@query_number@>&log$=nucl<@log@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },
+    //kMapviwerImg
+    { "MAPVIEWER_IMG", "<img border=0 height=16 width=16 src=\"images/M.gif\" alt=\"Genome view with mapviewer linked to <@label@>\">"  },  
+    //kMapviwerDispl
+    { "MAPVIEWER_DISPL",  "<div><@lnk@>-<span class=\"rlLink\">aligned genomic context</span></div>" },  
+    //kReprMicrobialGenomesUrl
+    { "REPR_MICROBIAL_GENOMES",  "<a href=\"https://www.ncbi.nlm.nih.gov/genome?term=<@label@>[<@uid@>]&RID=<@rid@>&log$=map<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>"},  
+    //kReprMicrobialGenomesImg
+    { "REPR_MICROBIAL_GENOMES_IMG", "<img border=0 height=16 width=16 src=\"images/L.gif\" alt=\"View genome information for <@label@>\">"},  
+    //kReprMicrobialGenomesDispl
+    { "REPR_MICROBIAL_GENOMES_DISPL", "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>"},          
+    //kStructureUrl
+    { "STRUCTURE_URL",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@queryID@>&command=view+annotations;set+annotation+cdd;set+annotation+site;set+view+detailed+view;select+chain+<@label@>;show+selection&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },
+    //kStructureImg
+    { "STRUCTURE_IMG",  "<img border=0 height=16 width=16 src=\"https://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">" },  
+    //kStructureDispl
+    { "STRUCTURE_DISPL",  "<div><@lnk@>-<span class=\"rlLink\">3D structure displays</span></div>" },  
+    //kStructureAlphaFoldUrl
+    { "STRUCTURE_ALPHA_FOLD",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@queryID@>&command=view+annotations;set+annotation+cdd;set+annotation+site;set+view+detailed+view;select+chain+!A;show+selection&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },          
+    //kUnigeneUrl
+    { "UNIGEN",  "<a class=\"gene\" term=\"<@uid@>\" href=\"https://www.ncbi.nlm.nih.gov/unigene/?<@termParam@>RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a><input type=\"hidden\" value=\"<@label@>\" />" },      
+    //kUnigeneImg
+    { "UNIGEN_IMG", "<img border=0 height=16 width=16 src=\"images/U.gif\" alt=\"UniGene info linked to <@label@>\">" },      
+    //kUnigeneDispl
+    { "UNIGEN_DISPL", "<div><@lnk@>-<span class=\"rlLink\">clustered expressed sequence tags</span></div>" },     
+    //kBl2seqUrl
+    { "BL2SEQ", "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&PROGRAM=tblastx&EXPECT=10&CMD=request&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>" },           
+    //kEntrezUrl
+    { "ENTREZ", "<a title=\"Show report for <@acc@>\" <@cssInf@>href=\"https://www.ncbi.nlm.nih.gov/<@db@>/<@acc@>?report=genbank&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\" <@target@>>" },
+    //kEntrezSubseqUrl
+    { "ENTREZ_SUBSEQ",  "<a href=\"https://www.ncbi.nlm.nih.gov/<@db@>/<@gi@>?report=gbwithparts&from=<@from@>&to=<@to@>&RID=<@rid@>\">" },      
+    //kStructure_Overview
+    { "STRUCTURE_OVW",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/cblast/cblast.cgi?blast_RID=%s&blast_rep_gi=%d&hit=%d&%s&blast_view=%s&hsp=0&taxname=%s&client=blast\">Related Structures</a>" },
+    //kTraceUrl
+    { "TRACE",  "<a title=\"Show report for <@val@>\" <@cssInf@>href=\"https://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=<@val@>&RID=<@rid@>\">" },  
+    //kCustomLinkTemplate
+    {"CUSTOM_LINK_TEMPLATE","<a href=\"<@custom_url@>\" class=\"<@custom_cls@>\" target=\"<@custom_trg@>\" title=\"<@custom_title@>\"><@custom_lnk_displ@></a>"},
+    //kCustomLinkTitle
+    {"CUSTOM_LINK_TITLE","Show <@custom_report_type@> report for <@seqid@>"},
+    //kGenericLinkTemplate
+    {"GENERIC_LINK_TEMPLATE","<a title=\"Show report for <@seqid@>\" href=\"<@url@>\" ><@seqid@></a>"},
+    //kGenericLinkMouseoverTmpl
+    {"GENERIC_LINK_MOUSE_OVER","<span class=\"jig-ncbipopper\" data-jigconfig=\"destText:'<@defline@>'\"><a onclick=\"window.open(this.href,'<@target@>')\" href=\"<@url@>\" ><@seqid@></a></span>"},
+    //kDownloadLink dumpgnl
+    {"DOWNLOAD_LINK", "<a href=\"<@download_url@>&segs=<@segs@>\"><@lnk_displ@></a>" },        
+    //kDownloadImg
+    {"DOWNLOAD_LINK_IMG", "<img border=0 height=16 width=16 src=\"images/D.gif\" alt=\"Download subject sequence <@label@> spanning the HSP\">" },    
+    //kIdenticalProteinsUrl
+    {"IDENTICAL_PROTEINS_URL","<a href=\"https://www.ncbi.nlm.nih.gov/ipg/<@label@>\" title=\"View proteins identical to <@label@>\" <@lnkTarget@>><@lnk_displ@></a>"},
+    //kIdenticalProteinsDispl
+    {"IDENTICAL_PROTEINS_DISPL","<div><@lnk@>-<span class=\"rlLink\">Identical proteins to <@label@></span></div>"},
 });
 
 
+MAKE_CONST_MAP(kMapTagToString, ct::tagStrNocase, ct::tagStrNocase,
+{
+    //kClassInfo
+    {"CLASS_INFO","class=\"info\""},
+    //kLinkoutOrderStr[] Default linkout order,.ncbirc alias: LINKOUT_ORDER
+    {"LINKOUT_ORDER","G,U,E,S,B,R,M,V,T"},
+    //common params from kSeqViewerUr and kSeqViewerUrlNonGi 
+    {"SEQVIEW_COMMON_PARAMS","<@seqViewerParams@>&v=<@from@>:<@to@>&appname=ncbiblast&link_loc=<@link_loc@>"},
+    //kSeqViewerParams
+    {"SEQVIEW_PARAMS", "tracks=[key:sequence_track,name:Sequence,display_name:Sequence,id:STD1,category:Sequence,annots:Sequence,ShowLabel:true][key:gene_model_track,CDSProductFeats:false][key:alignment_track,name:other alignments,annots:NG Alignments|Refseq Alignments|Gnomon Alignments|Unnamed,shown:false]"},
+});
 
 ///Get blast score information
 ///@param scoreList: score container to extract score info from
@@ -2133,10 +2238,10 @@ static list<string> s_GetLinkoutUrl(int linkout,
     string firstAcc = (accs.size() > 0)? accs[0] : labelList;
 
     if (linkout & eUnigene) {
-        url_link = CAlignFormatUtil::GetURLFromRegistry("UNIGEN");
-        lnk_displ = textLink ? "UniGene" : kUnigeneImg;
+        url_link =  CAlignFormatUtil::MapTagToHTML("UNIGEN");
+        lnk_displ = textLink ? "UniGene" : CAlignFormatUtil::MapTagToHTML("UNIGEN_IMG");
 
-        string termParam = NStr::Find(labelList,",") == NPOS ? kGeneTerm : ""; //kGeneTerm if only one seqid
+        string termParam = NStr::Find(labelList,",") == NPOS ? CAlignFormatUtil::MapTagToHTML("GENE_TERM") : ""; //kGeneTerm if only one seqid
         url_link = CAlignFormatUtil::MapTemplate(url_link,"termParam",termParam);
 
         lnkTitleInfo = "UniGene cluster";
@@ -2145,25 +2250,23 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kUnigeneDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string unigeneDispl = CAlignFormatUtil::MapTagToHTML("UNIGEN_DISPL"); 
+            url_link = CAlignFormatUtil::MapTemplate(unigeneDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if (linkout & eStructure){
         CSeq_id seqID(firstAcc);
-        string struct_link = CAlignFormatUtil::GetURLFromRegistry(
-                                                             "STRUCTURE_URL");
-
-        url_link = struct_link.empty() ? kStructureUrl : struct_link;
+        url_link = CAlignFormatUtil::MapTagToHTML("STRUCTURE_URL");
+                 
         string linkTitle;
         if(seqID.Which() == CSeq_id::e_Pdb) {
-            lnk_displ = textLink ? "Structure" : kStructureImg;
+            lnk_displ = textLink ? "Structure" : CAlignFormatUtil::MapTagToHTML("STRUCTURE_IMG");
             linkTitle = " title=\"View 3D structure <@label@>\"";
         }
         else {
-            url_link = kStructureAlphaFoldUrl;
-            lnk_displ = textLink ? "AlphaFold Structure" : kStructureImg;
+            url_link = CAlignFormatUtil::MapTagToHTML("STRUCTURE_ALPHA_FOLD");
+            lnk_displ = textLink ? "AlphaFold Structure" : CAlignFormatUtil::MapTagToHTML("STRUCTURE_IMG");
             linkTitle = " title=\"View AlphaFold 3D structure <@label@>\"";
         }
 
@@ -2175,14 +2278,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kStructureDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string structureDispl = CAlignFormatUtil::MapTagToHTML("STRUCTURE_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(structureDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if (linkout & eGeo){
-        url_link = CAlignFormatUtil::GetURLFromRegistry("GEO");
-        lnk_displ = textLink ? "GEO Profiles" : kGeoImg;
+        url_link = CAlignFormatUtil::MapTagToHTML("GEO");
+        lnk_displ = textLink ? "GEO Profiles" : CAlignFormatUtil::MapTagToHTML("GEO_IMG");
 
         lnkTitleInfo = "Expression profiles";
         //gilist contains comma separated gis
@@ -2190,21 +2293,21 @@ static list<string> s_GetLinkoutUrl(int linkout,
 
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kGeoDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string geoDispl = CAlignFormatUtil::MapTagToHTML("GEO_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(geoDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if(linkout & eGene){
-      url_link = CAlignFormatUtil::GetURLFromRegistry("GENE");
+      url_link = CAlignFormatUtil::MapTagToHTML("GENE");
       if(textLink) {        
         lnk_displ = "Gene";
         lnkTitleInfo = "gene information";
       }
       else {
-        lnk_displ = kGeneImg;
+        lnk_displ = CAlignFormatUtil::MapTagToHTML("GENE_IMG");
       }
-      string termParam = NStr::Find(labelList,",") == NPOS ? kGeneTerm : ""; //kGeneTerm if only one seqid
+      string termParam = NStr::Find(labelList,",") == NPOS ? CAlignFormatUtil::MapTagToHTML("GENE_TERM") : ""; //kGeneTerm if only one seqid
       url_link = CAlignFormatUtil::MapTemplate(url_link,"termParam",termParam);
 
       string uid = !linkoutInfo.is_na ? "[Protein Accession]" : "[Nucleotide Accession]";
@@ -2213,15 +2316,15 @@ static list<string> s_GetLinkoutUrl(int linkout,
       url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
 
       if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kGeneDispl,"lnk",url_link);
-      }
-      url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string geneDispl = CAlignFormatUtil::MapTagToHTML("GENE_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(geneDispl,"lnk",url_link);
+      }      
       linkout_list.push_back(url_link);
     }
 
     if((linkout & eGenomicSeq)  && first_gi != ZERO_GI){  //only for advanced view -> textlink = true
         if(textLink) {
-            url_link = kMapviewBlastHitParams;
+            url_link = CAlignFormatUtil::MapTagToHTML("MAPVIEWER_GENOME");
             lnk_displ = "Map Viewer";
 
             lnkTitleInfo = "BLAST hits on the " + linkoutInfo.taxName + " genome";
@@ -2229,7 +2332,8 @@ static list<string> s_GetLinkoutUrl(int linkout,
             url_link = CAlignFormatUtil::MapTemplate(url_link,"gnl",NStr::URLEncode(linkoutInfo.gnl));
             url_link = CAlignFormatUtil::MapTemplate(url_link,"db",linkoutInfo.database);
             url_link = CAlignFormatUtil::MapTemplate(url_link,"is_na",linkoutInfo.is_na? "1" : "0");
-            string user_url = (linkoutInfo.user_url.empty()) ? kMapviewBlastHitUrl : linkoutInfo.user_url;
+            string mapviewBlastHitUrl = CAlignFormatUtil::GetURLDefault("MAPVIEWER_CGI");
+            string user_url = (linkoutInfo.user_url.empty()) ? mapviewBlastHitUrl : linkoutInfo.user_url;
             url_link = CAlignFormatUtil::MapTemplate(url_link,"user_url",user_url);
 
             string taxIDStr = (linkoutInfo.taxid > ZERO_TAX_ID) ? NStr::NumericToString(linkoutInfo.taxid) : "";
@@ -2242,29 +2346,29 @@ static list<string> s_GetLinkoutUrl(int linkout,
             url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giStr,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
 
             if(textLink) {
-                url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
-            }
-            url_link = CAlignFormatUtil::MapProtocol(url_link);
+                string mapviwerDispl = CAlignFormatUtil::MapTagToHTML("MAPVIEWER_DISPL");
+                url_link = CAlignFormatUtil::MapTemplate(mapviwerDispl,"lnk",url_link);
+            }            
             linkout_list.push_back(url_link);
         }
     }
     else if((linkout & eMapviewer) && first_gi != ZERO_GI){
-        url_link = kMapviwerUrl;
-        lnk_displ = textLink ? "Map Viewer" : kMapviwerImg;
+        url_link = CAlignFormatUtil::MapTagToHTML("MAPVIEWER");
+        lnk_displ = textLink ? "Map Viewer" : CAlignFormatUtil::MapTagToHTML("MAPVIEWER_IMG");
 
         string linkTitle = " title=\"View <@label@> aligned to the "  + linkoutInfo.taxName + " genome\"";
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kMapviwerDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string mapviwerDispl = CAlignFormatUtil::MapTagToHTML("MAPVIEWER_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(mapviwerDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     //View Bioassays involving <accession
     if(linkout & eBioAssay && linkoutInfo.is_na && first_gi != ZERO_GI){
-        url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_NUC");        
-        lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayNucImg;
+        url_link = CAlignFormatUtil::MapTagToHTML("BIOASSAY_NUC");
+        lnk_displ = textLink ? "PubChem BioAssay" : CAlignFormatUtil::MapTagToHTML("BIOASSAY_IMG");
 
         string linkTitle = " title=\"View Bioassays involving <@label@>\"";
         //gilist contains comma separated gis, change it to the following
@@ -2272,14 +2376,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string bioAssayDispl = CAlignFormatUtil::MapTagToHTML("BIOASSAY_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(bioAssayDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     else if (linkout & eBioAssay && !linkoutInfo.is_na && first_gi != ZERO_GI) {
-        url_link = CAlignFormatUtil::GetURLFromRegistry("BIOASSAY_PROT");
-        lnk_displ = textLink ? "PubChem BioAssay" : kBioAssayProtImg;
+        url_link = CAlignFormatUtil::MapTagToHTML("BIOASSAY_PROT");
+        lnk_displ = textLink ? "PubChem BioAssay" : CAlignFormatUtil::MapTagToHTML("BIOASSAY_IMG");
 
         lnkTitleInfo ="Bioassay data";
         string linkTitle = " title=\"View Bioassays involving <@label@>\"";
@@ -2288,14 +2392,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,"",linkTitle);
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kBioAssayDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string bioAssayDispl = CAlignFormatUtil::MapTagToHTML("BIOASSAY_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(bioAssayDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if(linkout & eReprMicrobialGenomes){
-        url_link = CAlignFormatUtil::GetURLFromRegistry("REPR_MICROBIAL_GENOMES");
-        lnk_displ = textLink ? "Genome" : kReprMicrobialGenomesImg;
+        url_link = CAlignFormatUtil::MapTagToHTML("REPR_MICROBIAL_GENOMES");
+        lnk_displ = textLink ? "Genome" : CAlignFormatUtil::MapTagToHTML("REPR_MICROBIAL_GENOMES_IMG");
 
         lnkTitleInfo = "genomic information";
         //gilist contains comma separated gis
@@ -2304,14 +2408,14 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,labelList,lnk_displ,lnkTitleInfo);
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kReprMicrobialGenomesDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string reprMicrobialGenomesDispl = CAlignFormatUtil::MapTagToHTML("REPR_MICROBIAL_GENOMES_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(reprMicrobialGenomesDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     if((linkout & eGenomeDataViewer) || (linkout & eTranscript)){
         string urlTag;
-        lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;
+        lnk_displ = textLink ? "Genome Data Viewer" : CAlignFormatUtil::MapTagToHTML("GENOME_DATA_VIEWER_IMG");
         if(linkout & eTranscript) {
             urlTag = "GENOME_DATA_VIEWER_TRANSCR";
             lnkTitleInfo = "title=\"View the annotation of the transcript <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
@@ -2323,7 +2427,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
                          :
                          "title=\"View the annotation of the protein <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
         }
-        url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
+        url_link = CAlignFormatUtil::MapTagToHTML(urlTag);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
 
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
@@ -2338,9 +2442,9 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapTemplate(url_link,"to",seqTo);//-1
 
         if(textLink) {
-            url_link = CAlignFormatUtil::MapTemplate(kGenomeDataViewerDispl,"lnk",url_link);
-        }
-        url_link = CAlignFormatUtil::MapProtocol(url_link);
+            string genomeDataViewerDispl = CAlignFormatUtil::MapTagToHTML("GENOME_DATA_VIEWER_DISPL");
+            url_link = CAlignFormatUtil::MapTemplate(genomeDataViewerDispl,"lnk",url_link);
+        }        
         linkout_list.push_back(url_link);
     }
     return linkout_list;
@@ -2577,10 +2681,11 @@ void s_AddOtherRelatedInfoLinks(CBioseq::TId& cur_id,
      if (CAlignFormatUtil::GetTextSeqID(wid)) {
         string label;
         wid->GetLabel(&label, CSeq_id::eContent);
-        string url_link = kIdenticalProteinsUrl;
+        string url_link = CAlignFormatUtil::MapTagToHTML("IDENTICAL_PROTEINS_URL");
         string lnk_displ = "Identical Proteins";
         url_link = s_MapLinkoutGenParam(url_link,rid,NStr::NumericToString(ZERO_GI),for_alignment, cur_align,label,lnk_displ);
-        url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
+        string identicalProteinsDispl = CAlignFormatUtil::MapTagToHTML("IDENTICAL_PROTEINS_DISPL");        
+        url_link = CAlignFormatUtil::MapTemplate(identicalProteinsDispl,"lnk",url_link);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"label",label);
         linkout_list.push_back(url_link);
     }
@@ -3390,25 +3495,49 @@ string CAlignFormatUtil::GetURLFromRegistry( const string url_name, int index){
 string  CAlignFormatUtil::GetURLDefault( const string url_name, int index) {
 
   string search_name = url_name;
-  TTagUrlMap::const_iterator url_it;
+  
   if( index >= 0 ) search_name += "_" + NStr::IntToString( index); // actual name for index value is NAME_{index}
   
-  auto cit = mapURLTagToAddress.find(search_name);
-  
-  if( cit != mapURLTagToAddress.end()) {
-      string url_link = cit->second;
-      return url_link;
+  string url_link = CAlignFormatUtil::MapTagToConstString(url_name);
+  if(url_link.empty()) {
+   //Next line is for backwards compatability - look in mapTagToHTML map
+    url_link = CAlignFormatUtil::MapTagToHTML(search_name);
   }
-  
-  if( (url_it = sm_TagUrlMap.find( search_name ) ) != sm_TagUrlMap.end()) {
-      string url_link = CAlignFormatUtil::MapProtocol(url_it->second);
-      return url_link;
+  return url_link;  
+}  
+
+string  CAlignFormatUtil::MapTagToConstString( const string tag_name, CAlignFormatUtil::EMapConstString flag) 
+{
+  string mappedStr;
+  if(flag == CAlignFormatUtil::eMapToURL) {
+    auto cit = kMapTagToURL.find(tag_name);
+    string url_link;
+    if( cit != kMapTagToURL.end()) {
+        mappedStr = MapProtocol(cit->second);              
+    }    
   }
+  else if(flag == CAlignFormatUtil::eMapToHTML) {
+    auto cit = kMapTagToHTML.find(tag_name);
+      
+    if( cit != kMapTagToHTML.end()) {
+          mappedStr = cit->second;      
+    }
+  }
+  else {
+    auto cit = kMapTagToString.find(tag_name);  
+    
+    if( cit != kMapTagToString.end()) {
+        mappedStr = cit->second;      
+    }
+  }
+  return mappedStr;  
+}
   
-  
-  string error_msg = "CAlignFormatUtil::GetURLDefault:no_defualt_for"+url_name;
-  if( index != -1 ) error_msg += "_index_"+ NStr::IntToString( index );
-  return error_msg;
+
+string  CAlignFormatUtil::MapTagToHTML( const string tag_name) 
+{
+  string htmlStr = CAlignFormatUtil::MapTagToConstString(tag_name, CAlignFormatUtil::eMapToHTML);  
+  return htmlStr;  
 }
 
 void
@@ -3636,8 +3765,9 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
 
     bool hasTextSeqID = GetTextSeqID(*ids);
     string title = "title=\"Show report for " + seqUrlInfo->accession + "\" ";
-
-    string temp_class_info = kClassInfo; temp_class_info += " ";
+    
+    string classInfo = CAlignFormatUtil::MapTagToConstString("CLASS_INFO", eMapToString);
+    string temp_class_info = classInfo; temp_class_info += " ";
 	string wgsProj;
 	string wgsAccession = seqUrlInfo->accession;
 	bool isWGS = false;
@@ -3651,8 +3781,8 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
 		url_link = CAlignFormatUtil::MapTemplate(url_link,"wgsacc", wgsAccession);
 	}
     else if (hasTextSeqID) {
-        string entrezTag = (seqUrlInfo->useTemplates) ? "ENTREZ_TM" : "ENTREZ";
-        string l_EntrezUrl = CAlignFormatUtil::GetURLFromRegistry(entrezTag);
+               
+        string l_EntrezUrl = (seqUrlInfo->useTemplates) ? CAlignFormatUtil::GetURLFromRegistry("ENTREZ_TM") : CAlignFormatUtil::MapTagToHTML("ENTREZ");                
         url_link = s_MapCommonUrlParams(l_EntrezUrl, seqUrlInfo);
 
         if(!seqUrlInfo->useTemplates) {
@@ -3673,7 +3803,8 @@ string CAlignFormatUtil::GetIDUrlGen(SSeqURLInfo *seqUrlInfo,const CBioseq::TId*
                     url_link = l_TraceUrl + (string)"?cmd=retrieve&dopt=fasta&val=" + actual_id + "&RID=" + seqUrlInfo->rid;
                 }
                 else {
-                    url_link = CAlignFormatUtil::MapTemplate(kTraceUrl,"val",actual_id);
+                    string traceUrl = CAlignFormatUtil::MapTagToHTML("TRACE");
+                    url_link = CAlignFormatUtil::MapTemplate(traceUrl,"val",actual_id);
                     temp_class_info = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(temp_class_info,"defline",seqUrlInfo->defline):temp_class_info;
                     url_link = CAlignFormatUtil::MapTemplate(url_link,"cssInf",(seqUrlInfo->addCssInfo) ? temp_class_info.c_str() : "");
                     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);
@@ -3747,7 +3878,8 @@ string CAlignFormatUtil::GetIDUrl(SSeqURLInfo *seqUrlInfo,const CBioseq::TId* id
             if (!seqUrlInfo->useTemplates) {
                 string deflineInfo;
                 if(seqUrlInfo->addCssInfo) {
-                    deflineInfo = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(kClassInfo,"defline",seqUrlInfo->defline):kClassInfo;
+                    string classInfo = CAlignFormatUtil::MapTagToConstString("CLASS_INFO", eMapToString);
+                    deflineInfo = (!seqUrlInfo->defline.empty())? CAlignFormatUtil::MapTemplate(classInfo,"defline",seqUrlInfo->defline):classInfo;
                 }
                 url_link += "<a " + title + deflineInfo + "href=\"";
             }
@@ -3788,8 +3920,10 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
 {
     string seqLink;
     string linkURL = GetIDUrl(seqUrlInfo,ids);
-    if(!linkURL.empty()) {
-        string linkTmpl = (seqUrlInfo->addCssInfo) ? kGenericLinkMouseoverTmpl : kGenericLinkTemplate;
+    if(!linkURL.empty()) {        
+        string genericLinkTemplate = CAlignFormatUtil::MapTagToHTML("GENERIC_LINK_TEMPLATE");
+        string genericLinkMouseoverTmpl = CAlignFormatUtil::MapTagToHTML("GENERIC_LINK_MOUSE_OVER");
+        string linkTmpl = (seqUrlInfo->addCssInfo) ? genericLinkMouseoverTmpl : genericLinkTemplate;
         seqLink = CAlignFormatUtil::MapTemplate(linkTmpl,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
@@ -3802,9 +3936,13 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
     return seqLink;
 }
 
-static string s_MapCustomLink(string linkUrl,string reportType,string accession, string linkText, string linktrg, string linkTitle = kCustomLinkTitle,string linkCls = "")
+static string s_MapCustomLink(string linkUrl,string reportType,string accession, string linkText, string linktrg, string linkTitle = "",string linkCls = "")
 {
-    string link = CAlignFormatUtil::MapTemplate(kCustomLinkTemplate,"custom_url",linkUrl);
+    if(linkTitle.empty()) {
+        linkTitle = CAlignFormatUtil::MapTagToHTML("CUSTOM_LINK_TITLE");
+    }
+    string customLinkTemplate = CAlignFormatUtil::MapTagToHTML("CUSTOM_LINK_TEMPLATE");
+    string link = CAlignFormatUtil::MapTemplate(customLinkTemplate,"custom_url",linkUrl);
     link = CAlignFormatUtil::MapProtocol(link);
     link = CAlignFormatUtil::MapTemplate(link,"custom_title",linkTitle);
     link = CAlignFormatUtil::MapTemplate(link,"custom_report_type",reportType);
@@ -3823,7 +3961,8 @@ list<string>  CAlignFormatUtil::GetGiLinksList(SSeqURLInfo *seqUrlInfo,
     list<string> customLinksList;
     if (seqUrlInfo->hasTextSeqID) {
         //First show links to GenBank and FASTA
-        string linkUrl,link,linkTiltle = kCustomLinkTitle;
+        string customLinkTitle = CAlignFormatUtil::MapTagToHTML("CUSTOM_LINK_TITLE");
+        string linkUrl,link,linkTiltle = customLinkTitle;
 
         linkUrl = seqUrlInfo->seqUrl;
         if(NStr::Find(linkUrl, "report=genbank") == NPOS) { //Geo case        
@@ -3846,15 +3985,21 @@ string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
 {
     //seqviewer
     string dbtype = (seqUrlInfo->isDbNa) ? "nuccore" : "protein";
-    string seqViewUrl = (seqUrlInfo->gi > ZERO_GI)?kSeqViewerUrl:kSeqViewerUrlNonGi;
-
+    
+    string seqViewerUrl = CAlignFormatUtil::MapTagToConstString("SEQVIEW_URL");
+    string seqViewerUrlNonGi = CAlignFormatUtil::MapTagToConstString("SEQVIEW_URL_NON_GI");
+    seqViewerUrl += CAlignFormatUtil::MapTagToConstString("SEQVIEW_COMMON_PARAMS", eMapToString);
+    seqViewerUrlNonGi += CAlignFormatUtil::MapTagToConstString("SEQVIEW_COMMON_PARAMS", eMapToString);
+    
+    string seqViewUrl = (seqUrlInfo->gi > ZERO_GI)?seqViewerUrl:seqViewerUrlNonGi;
 	string linkUrl = CAlignFormatUtil::MapTemplate(seqViewUrl,"rid",seqUrlInfo->rid);
 
     string seqViewerParams;
     if(m_Reg && !seqUrlInfo->blastType.empty() && seqUrlInfo->blastType != "newblast") {
         seqViewerParams = m_Reg->Get(seqUrlInfo->blastType, "SEQVIEW_PARAMS");
     }
-    seqViewerParams = seqViewerParams.empty() ? kSeqViewerParams : seqViewerParams;
+    string seqViewerParamsDefault = CAlignFormatUtil::MapTagToConstString("SEQVIEW_PARAMS", eMapToString);
+    seqViewerParams = seqViewerParams.empty() ? seqViewerParamsDefault : seqViewerParams;
     linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
 
 	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);
@@ -3989,10 +4134,10 @@ string CAlignFormatUtil::GetAlignedRegionsURL(SSeqURLInfo *seqUrlInfo,
     const CBioseq::TId* ids = &handle.GetBioseqCore()->GetId();
     string linkUrl,link;
 
-
+    string downloadUrl = CAlignFormatUtil::GetURLDefault("DOWNLOAD_CGI");
     linkUrl = CAlignFormatUtil::BuildUserUrl(*ids,
                                                  ZERO_TAX_ID,
-                                                 kDownloadUrl,
+                                                 downloadUrl,
                                                  seqUrlInfo->database,
                                                  seqUrlInfo->isDbNa,
                                                  seqUrlInfo->rid,

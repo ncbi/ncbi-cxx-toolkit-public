@@ -1885,7 +1885,8 @@ void CDisplaySeqalign::x_InitAlignParams(CSeq_align_set &actual_aln_list)
         m_Reg = new CNcbiRegistry(*m_ConfigFile);
 
         if(!m_BlastType.empty()) m_LinkoutOrder = m_Reg->Get(m_BlastType,"LINKOUT_ORDER");
-        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : kLinkoutOrderStr;
+        string linkoutOrderDefault = CAlignFormatUtil::MapTagToConstString("LINKOUT_ORDER", CAlignFormatUtil::eMapToString);
+        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : linkoutOrderDefault;
 
         string feat_file = m_Reg->Get("FEATURE_INFO", "FEATURE_FILE");
         string feat_file_index = m_Reg->Get("FEATURE_INFO",
@@ -3140,15 +3141,18 @@ string CDisplaySeqalign::x_GetDumpgnlLink(const list<CRef<CSeq_id> >& ids) const
 {
 	string dowloadUrl;
     string segs = x_GetSegs(1); //row=1
-    string label =  CAlignFormatUtil::GetLabel(FindBestChoice(ids, CSeq_id::WorstRank));
-    string url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, ZERO_TAX_ID, kDownloadUrl,
+    string label =  CAlignFormatUtil::GetLabel(FindBestChoice(ids, CSeq_id::WorstRank));    
+    string downloadUrl = CAlignFormatUtil::GetURLDefault("DOWNLOAD_CGI");
+    string url_with_parameters = CAlignFormatUtil::BuildUserUrl(ids, ZERO_TAX_ID, downloadUrl,
                                                          m_DbName,
                                                          m_IsDbNa, m_Rid, m_QueryNumber,
                                                          true);
     if (url_with_parameters != NcbiEmptyString) {
-        dowloadUrl = CAlignFormatUtil::MapTemplate(kDownloadLink,"download_url",url_with_parameters);
+        string downloadLink = CAlignFormatUtil::MapTagToHTML("DOWNLOAD_LINK");
+        dowloadUrl = CAlignFormatUtil::MapTemplate(downloadLink,"download_url",url_with_parameters);
 		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"segs",segs);
-		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"lnk_displ",kDownloadImg);
+        string downloadImg = CAlignFormatUtil::MapTagToHTML("DOWNLOAD_LINK_IMG");
+		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"lnk_displ",downloadImg);
 		dowloadUrl = CAlignFormatUtil::MapTemplate(dowloadUrl,"label",label);
     }
     return dowloadUrl;
@@ -3449,8 +3453,9 @@ void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
     CSeq_id_Handle subject_seqid = GetId(subject_handle, eGetId_Best);
     TGi query_gi = FindGi(query_handle.GetBioseqCore()->GetId());
     TGi subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
-
-    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",GI_TO(TIntId, query_gi));
+    
+    string bl2seqUrl = CAlignFormatUtil::MapTagToHTML("BL2SEQ");
+    string url_link = CAlignFormatUtil::MapTemplate(bl2seqUrl,"query",GI_TO(TIntId, query_gi));
     url_link = CAlignFormatUtil::MapTemplate(url_link,"subject", GI_TO(TIntId, subject_gi));
 
     out << url_link << "\n";

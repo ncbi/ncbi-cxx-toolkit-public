@@ -344,7 +344,8 @@ void CShowBlastDefline::x_InitLinkOutInfo(SDeflineInfo* sdl,
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));
         if(!m_BlastType.empty()) m_LinkoutOrder = m_Reg->Get(m_BlastType,"LINKOUT_ORDER");
-        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : kLinkoutOrderStr;
+        string linkoutOrderDefault = CAlignFormatUtil::MapTagToConstString("LINKOUT_ORDER", CAlignFormatUtil::eMapToString);
+        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : linkoutOrderDefault;
     }
     if (m_DeflineTemplates == NULL || !m_DeflineTemplates->advancedView) {
         if(m_Option & eRealtedInfoLinks){
@@ -992,7 +993,8 @@ static void s_DisplayStructureOverview(CNcbiOstream& out,
                                        const string& entrez_term)
 {
     char buf[512];
-    snprintf(buf, sizeof(buf), kStructure_Overview, rid.c_str(),
+    string structure_Overview = CAlignFormatUtil::MapTagToHTML("STRUCTURE_OVW");
+    snprintf(buf, sizeof(buf), structure_Overview.c_str(), rid.c_str(),
              0, 0, param.c_str(), "overview",
              (entrez_term.empty()? "none": entrez_term.c_str()));
     buf[sizeof(buf)-1] = '\0';
@@ -1067,7 +1069,8 @@ void CShowBlastDefline::x_InitDeflineTable(void)
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
         m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));
         if(!m_BlastType.empty()) m_LinkoutOrder = m_Reg->Get(m_BlastType,"LINKOUT_ORDER");
-        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : kLinkoutOrderStr;
+        string linkoutOrderDefault = CAlignFormatUtil::MapTagToConstString("LINKOUT_ORDER", CAlignFormatUtil::eMapToString);
+        m_LinkoutOrder = (!m_LinkoutOrder.empty()) ? m_LinkoutOrder : linkoutOrderDefault;
     }
 
     CSeq_align_set hit;
