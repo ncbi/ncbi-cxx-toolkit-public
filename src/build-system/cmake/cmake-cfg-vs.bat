@@ -36,7 +36,7 @@ if errorlevel 1 (
 REM #########################################################################
 REM defaults
 set BUILD_SHARED_LIBS=OFF
-set VISUAL_STUDIO=2019
+set VISUAL_STUDIO=2022
 set SKIP_ANALYSIS=OFF
 set generator_multi_cfg=
 
@@ -75,8 +75,8 @@ echo                  examples:    --with-features="StrictGI"
 echo   --with-build-root=name   -- specify a non-default build directory name
 echo   --without-analysis       -- skip source tree analysis
 echo   --with-vs=N              -- use Visual Studio N generator 
-echo                  examples:    --with-vs=2019  (default)
-echo                               --with-vs=2022
+echo                  examples:    --with-vs=2022  (default)
+echo                               --with-vs=2019
 echo   --with-generator="X"     -- use generator X
 echo   --with-conan             -- use Conan to install required components
 echo OPTIONAL ENVIRONMENT VARIABLES:
