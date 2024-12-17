@@ -202,6 +202,7 @@ void CNcbiSample_Dbapi_Simple::SetupDb(void)
         m_Conn = m_Ds->CreateConnection();
         if (m_Conn == NULL) {
             ERR_POST_X(1, Fatal << "Could not create connection.");
+            return; // appease static analyzer
         }
 
         // Validate connection.  When using load balancing, this will interpret
