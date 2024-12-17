@@ -2653,6 +2653,7 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn, EBlastDbV
     extn.push_back(kExtnMol + "hd");   // ISAM sequence hash data file
     extn.push_back(kExtnMol + "ti");   // ISAM trace id index file
     extn.push_back(kExtnMol + "td");   // ISAM trace id data file
+    extn.push_back(kExtnMol + "xm");   // OID mask file to exclude models
 }
 
 
