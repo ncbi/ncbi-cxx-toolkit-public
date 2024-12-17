@@ -588,7 +588,10 @@ CNcbiOstream& CHTMLBlockElement::PrintEnd(CNcbiOstream& out, TMode mode)
             CNCBINode* node = this;
             while (node->HaveChildren()) {
                 node = node->Children().back();
-                if (node  &&  dynamic_cast<CHTMLBlockElement*>(node)) {
+                if (!node) {
+                    break;
+                }
+                if (dynamic_cast<CHTMLBlockElement*>(node)) {
                     return out;
                 }
             }
