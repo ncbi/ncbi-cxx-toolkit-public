@@ -14,7 +14,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "with_req": ""
     }
     _req_map = {
-        "AWS_SDK":    ["AWSSDK"],
+        "AWS_SDK":    ["aws-sdk-cpp"],
         "BACKWARD":   ["backward-cpp"],
         "BerkeleyDB": ["libdb"],
         "BOOST":      ["boost"],
@@ -38,7 +38,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "UNWIND":     ["libunwind"],
         "UV":         ["libuv"],
         "VDB":        ["ncbi-vdb"],
-        "wxWidgets":  ["wxWidgets"],
+        "wxWidgets":  ["wxwidgets"],
         "XML":        ["libxml2"],
         "XSLT":       ["libxslt"],
         "Z":          ["zlib"],
@@ -66,6 +66,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             print("NCBI artifactory is not found")
 
         self._default_requires("abseil/[>=20230125.3 <=20230802.1]")
+        self._optional_requires("aws-sdk-cpp/1.9.234")
         if self.settings.os == "Linux":
             self._default_requires("backward-cpp/1.6")
         self._default_requires("boost/[>=1.82.0 <=1.86.0]")
@@ -79,22 +80,22 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libjpeg/9e")
         self._default_requires("libnghttp2/[>=1.51.0 <=1.61.0]")
         self._default_requires("libpng/[>=1.6.37 <=1.6.44]")
-        self._default_requires("libtiff/[>=4.3.0 <=4.7.0]")
+        self._default_requires("libtiff/[>=4.3.0 <=4.6.0]")
         if self.settings.os == "Linux":
             self._default_requires("libunwind/[>=1.6.2 <=1.8.1]")
-        self._default_requires("libuv/[>=1.45.0 <=1.46.0]")
-        self._default_requires("libxml2/[>=2.11.4 <=2.13.4]")
+        self._default_requires("libuv/[>=1.45.0 <=1.49.2]")
+        self._default_requires("libxml2/[>=2.11.4 <3]")
         self._default_requires("libxslt/[>=1.1.34 <=1.1.42]")
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
-#        self._optional_requires("opentelemetry-cpp/1.14.2")
+        self._optional_requires("opentelemetry-cpp/1.14.2")
         self._default_requires("pcre/8.45")
-        self._default_requires("pcre2/10.44")
+        self._default_requires("pcre2/10.42")
         self._default_requires("protobuf/[>=3.21.12 <=5.27.0]")
-        self._default_requires("sqlite3/[>=3.40.0 <=3.46.1]")
+        self._default_requires("sqlite3/[>=3.40.0 <=3.47.1]")
+        self._optional_requires("wxwidgets/3.2.6")
         self._default_requires("zlib/[>=1.2.11 <2]")
         self._default_requires("zstd/[>=1.5.2 <=1.5.6]")
-##        self._optional_requires("wxwidgets/3.2.6")
 
         self._internal_requires("ncbicrypt/20230516")
         if self.settings.os == "Linux":
@@ -147,6 +148,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 #boost/*:without_timer = True
         self.options["boost"+_s].without_type_erasure = True
         self.options["boost"+_s].without_wave = True
+# hyphens make it tricky
+        setattr(self.options["aws-sdk-cpp"], "text-to-speech", False), 
 
 
     def _parse_option(self, data):
