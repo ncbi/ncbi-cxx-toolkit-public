@@ -4950,7 +4950,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         const CImp_feat& imp_feat = feat->GetData().GetImp();
 
         if (imp_feat.IsSetKey() &&
-            StringStr(imp_feat.GetKey().c_str(), "RNA")) {
+            imp_feat.GetKey().find("RNA") != string::npos) {
             if (imp_feat.GetKey() == "ncRNA" && ! fta_check_ncrna(*feat)) {
                 stop = true;
                 break;
