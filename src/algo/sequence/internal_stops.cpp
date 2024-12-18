@@ -73,13 +73,25 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
     int genomic_length = bsh.GetBioseqLength();
 
     CConstRef<CSeq_align> clean_align;
+    CConstRef<CSeq_align> padded_align(&align);
     pair<bool, bool> trim_by_contig(false, false);
     {{
-        CConstRef<CSeq_align> padded_align(&align);
         if (padding > 0) {
+            // PGAP-10539:
+            // Note: For a negative strand cross-origin alignment, PGAP
+            // presents the exons in order of the protein coordinate space.
+            // Thus, the calls to toolkit APIs produce unexpected results:
+            // - CSeq_loc::CreateRowSeq_loc() produces a Seq-loc with inervals reversed
+            // - CSeq_loc::GetStart(eExtreme_Positional) and
+            //   CSeq_loc::GetStop(eExtreme_Positional) then produce values in
+            //   the middle of the range
+            //
+            // We correct this by just using the total range, which gives the
+            // expected values
             CRef<CSeq_loc> loc = align.CreateRowSeq_loc(1);
-            int start = loc->GetStart(eExtreme_Positional);
-            int stop = loc->GetStop(eExtreme_Positional);
+            TSeqRange r = loc->GetTotalRange();
+            int start = r.GetFrom();
+            int stop = r.GetTo();
 
             bool is_circular = (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular);
 
@@ -122,7 +134,9 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
     string seq = GetCDSNucleotideSequence(*clean_align);
     if (seq.size()%3 != 0) {
-        cerr << MSerial_AsnText << align << endl;
+        cerr << "original align: " << MSerial_AsnText << align << endl;
+        cerr << "padded align: " << MSerial_AsnText << *padded_align << endl;
+        cerr << "clean align: " << MSerial_AsnText << *clean_align << endl;
         _ASSERT(seq.size()%3 == 0);
         NCBI_USER_THROW("CDSNucleotideSequence not divisible by 3");
     }
@@ -140,41 +154,43 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
     set<TSeqRange> stops;
 
     size_t state = 0;
-    int k = 0;
     string codon = "NNN";
 
-    ITERATE(string, s, seq) {
-        state = tbl.NextCodonState(static_cast<int>(state), *s);
-        codon[k%3] = *s;
+    {{
+         int k = 0;
+         ITERATE(string, s, seq) {
+             state = tbl.NextCodonState(static_cast<int>(state), *s);
+             codon[k%3] = *s;
 
-        if (++k%3)
-            continue;
+             if (++k%3)
+                 continue;
 
-        if (state == kUnknownState)
-            continue;
+             if (state == kUnknownState)
+                 continue;
 
-        if (tbl.IsOrfStart(static_cast<int>(state)) || tbl.IsOrfStop(static_cast<int>(state))) {
-            if (is_protein) {
-                query_loc->SetInt().SetFrom((k-3)/3);
-                query_loc->SetInt().SetTo((k-3)/3);
-            } else {
-                query_loc->SetInt().SetFrom(k-3);
-                query_loc->SetInt().SetTo(k-1);
-            }
-            CConstRef<CSeq_loc> mapped_loc = mapper.Map(*query_loc);
-            TSeqPos mapped_pos = mapped_loc->GetStart(eExtreme_Biological);
-            if (mapped_pos == kInvalidSeqPos)
-                continue;
-            TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
+             if (tbl.IsOrfStart(static_cast<int>(state)) || tbl.IsOrfStop(static_cast<int>(state))) {
+                 if (is_protein) {
+                     query_loc->SetInt().SetFrom((k-3)/3);
+                     query_loc->SetInt().SetTo((k-3)/3);
+                 } else {
+                     query_loc->SetInt().SetFrom(k-3);
+                     query_loc->SetInt().SetTo(k-1);
+                 }
+                 CConstRef<CSeq_loc> mapped_loc = mapper.Map(*query_loc);
+                 TSeqPos mapped_pos = mapped_loc->GetStart(eExtreme_Biological);
+                 if (mapped_pos == kInvalidSeqPos)
+                     continue;
+                 TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
 
-            if (tbl.IsOrfStart(static_cast<int>(state))) {
-                starts[TSeqRange(mapped_pos, mapped_pos2)] = codon;
-            }
-            if (tbl.IsOrfStop(static_cast<int>(state))) {
-                stops.insert(TSeqRange(mapped_pos, mapped_pos2));
-            }
-        }
-    }
+                 if (tbl.IsOrfStart(static_cast<int>(state))) {
+                     starts[TSeqRange(mapped_pos, mapped_pos2)] = codon;
+                 }
+                 if (tbl.IsOrfStop(static_cast<int>(state))) {
+                     stops.insert(TSeqRange(mapped_pos, mapped_pos2));
+                 }
+             }
+         }
+     }}
 
     if (gaps != nullptr) {
 
@@ -202,8 +218,8 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
 
         CRef<CSeq_id> id(new CSeq_id);
         id->Assign(*region_loc->GetId());
-        CRef<CSeq_loc> query_loc(new CSeq_loc(*id, 0, region_vec.size()-1));
-        CSeq_loc_Mapper mapper(*query_loc, *region_loc);
+        CRef<CSeq_loc> lcl_query_loc(new CSeq_loc(*id, 0, region_vec.size()-1));
+        CSeq_loc_Mapper lcl_mapper(*lcl_query_loc, *region_loc);
 
         for (auto s: region_seq) {
             if (s == 'N') {
@@ -212,10 +228,10 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 }
                 gap_end = k+1;
             } else if (gap_end == k) {
-                query_loc->SetInt().SetFrom(gap_begin);
-                query_loc->SetInt().SetTo(gap_end-1);
+                lcl_query_loc->SetInt().SetFrom(gap_begin);
+                lcl_query_loc->SetInt().SetTo(gap_end-1);
                 
-                auto mapped_loc = mapper.Map(*query_loc);
+                auto mapped_loc = lcl_mapper.Map(*lcl_query_loc);
                 TSeqPos mapped_pos = mapped_loc->GetStart(eExtreme_Biological);
                 TSeqPos mapped_pos2 = mapped_loc->GetStop(eExtreme_Biological);
                 if (mapped_pos == kInvalidSeqPos || mapped_pos2 == kInvalidSeqPos) {
