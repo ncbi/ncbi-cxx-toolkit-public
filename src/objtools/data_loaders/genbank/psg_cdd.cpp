@@ -192,8 +192,10 @@ SCDDIds x_GetCDDIds(const CDataLoader::TIds& ids)
             else if ( text_id->IsSetAccession() && text_id->IsSetVersion() &&
                       (acc_type & CSeq_id::fAcc_prot) ) {
                 is_protein = true;
-                ret.acc_ver = CSeq_id_Handle::GetHandle(text_id->GetAccession()+'.'+
-                                                        NStr::NumericToString(text_id->GetVersion()));
+                ret.acc_ver = CSeq_id_Handle::GetHandle(CSeq_id(seq_id->Which(),
+                                                                text_id->GetAccession(),
+                                                                kEmptyStr,
+                                                                text_id->GetVersion()));
             }
         }
     }
