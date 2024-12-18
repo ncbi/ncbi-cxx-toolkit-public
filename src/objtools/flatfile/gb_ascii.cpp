@@ -792,31 +792,25 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 
     COrg_ref& org_ref = bio_src->SetOrg();
 
-    *ptr = '\0';
-    org_ref.SetTaxname(bptr);
-    *ptr = '\n';
+    org_ref.SetTaxname(string(bptr, ptr));
 
     for (;;) {
         bptr = ptr + 1;
         if (! StringEquN(bptr, "               ", ParFlat_COL_DATA))
             break;
+        bptr += ParFlat_COL_DATA;
 
         ptr = StringChr(bptr, '\n');
         if (! ptr)
             break;
 
-        *ptr = '\0';
-        if (StringChr(bptr, ';') || ! StringChr(ptr + 1, '\n')) {
-            *ptr = '\n';
+        if (SrchTheChar(bptr, ptr, ';') || ! StringChr(ptr + 1, '\n')) {
             break;
         }
 
-        bptr += ParFlat_COL_DATA;
         string& taxname = org_ref.SetTaxname();
         taxname += ' ';
-        taxname += bptr;
-
-        *ptr = '\n';
+        taxname.append(bptr, ptr);
     }
 
     *end = ch;
@@ -845,16 +839,10 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
     Char  ch;
 
     p = StringStr(line, "USER        ");
-    if (! p)
-        ch = '\0';
-    else {
-        ch = 'U';
-        *p = '\0';
-    }
-
-    res = StringSave(line);
-    if (ch == 'U')
-        *p = 'U';
+    if (p)
+        res = StringSave(string_view(line, p - line));
+    else
+        res = StringSave(line);
 
     for (q = res, p = res; *p != '\0'; p++)
         if (*p != ' ')
@@ -872,14 +860,10 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
         q += 11;
         for (p = q; *p != '\0' && *p != '\n' && *p != ';';)
             p++;
-        ch = *p;
-        *p = '\0';
 
         CRef<CUser_field> cur_field(new CUser_field);
         cur_field->SetLabel().SetStr("accession");
-        cur_field->SetString(q);
-
-        *p = ch;
+        cur_field->SetString(string(q, p));
 
         CRef<CUser_field> field_set(new CUser_field);
         field_set->SetData().SetFields().push_back(cur_field);
