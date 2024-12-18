@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_safe_static.hpp>
-
+#include <common/ncbi_sanitizers.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -618,6 +618,7 @@ CParam<TDescription>::Get(void) const
             }
         }
     }
+    NCBI_CLANG_ANALYZER_SUPPRESS
     return m_Value;
 }
 
