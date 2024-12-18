@@ -1123,7 +1123,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     const char* bad_accession;
     bool        bad_line;
     bool        bad_interval;
-    Char        ch;
     Int4        from1;
     Int4        to1;
     Int4        len1;
@@ -1147,15 +1146,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         buf.assign(p + 1);
         buf.append("\n");
     } else {
-        ch          = offset[len];
-        offset[len] = '\0';
-        p           = StringChr(offset, '\n');
+        p = SrchTheChar(offset, offset + len, '\n');
         if (! p) {
-            offset[len] = ch;
             return false;
         }
-        buf.assign(p + 1);
-        offset[len] = ch;
+        buf.assign(p + 1, offset + len);
     }
 
     ftbp = new FTATpaBlock;
@@ -2622,17 +2617,14 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             continue;
         }
 
-        *q = '\0';
-        if (! StringStr(p + 8, "::")) {
+        if (! SrchTheStr(p + 8, q, "::")) {
             ErrPostStr(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             MemFree(tag);
             p += 8;
-            *q = '#';
             continue;
         }
 
-        buf = StringSave(p + 8);
-        *q  = '#';
+        buf = StringSave(string(p + 8, q));
 
         CRef<CUser_object> cur = fta_build_structured_comment(tag, buf);
         MemFree(buf);

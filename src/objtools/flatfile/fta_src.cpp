@@ -3055,11 +3055,11 @@ static void CheckMetagenome(CBioSource& bio)
     bool metalin = false;
 
     if (bio.IsSetOrgname() && bio.GetOrgname().IsSetLineage() &&
-        StringStr(bio.GetOrgname().GetLineage().c_str(), "metagenomes"))
+        bio.GetOrgname().GetLineage().find("metagenomes") != string::npos)
         metalin = true;
 
     if (bio.GetOrg().IsSetTaxname() &&
-        StringStr(bio.GetOrg().GetTaxname().c_str(), "metagenome"))
+        bio.GetOrg().GetTaxname().find("metagenome") != string::npos)
         metatax = true;
 
     if (! metalin && ! metatax)
