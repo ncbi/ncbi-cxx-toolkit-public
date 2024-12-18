@@ -117,14 +117,14 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->AddDefaultKey(
             kArgDb,
             "dbname",
-            "BLAST database name",
+            "Source BLAST database name",
             CArgDescriptions::eString, "nr"
     );
 
     arg_desc->AddDefaultKey(
             kArgDbType,
             "molecule_type",
-            "Molecule type stored in BLAST database",
+            "Molecule type stored in the source BLAST database",
             CArgDescriptions::eString, "prot"
     );
     arg_desc->SetConstraint(
@@ -135,15 +135,15 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->SetCurrentGroup("Configuration options");
 
     arg_desc->AddOptionalKey(kArgGiList, "input_file", 
-                             "Text or binary gi file to restrict the BLAST "
-                             "database provided in -db argument\n"
+                             "Text or binary gi file to restrict the source BLAST "
+                             "database\n"
                              "If text format is provided, it will be converted "
                              "to binary",
                              CArgDescriptions::eInputFile);   
 
     arg_desc->AddOptionalKey(kArgSeqIdList, "input_file", 
                              "Text sequence id or accession file to restrict "
-                             "the BLAST database provided in -db argument",
+                             "the source BLAST database",
                              CArgDescriptions::eInputFile);
 
     arg_desc->SetDependency(kArgSeqIdList, CArgDescriptions::eExcludes,
@@ -152,7 +152,7 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->AddOptionalKey(
             kArgDbTitle,
             "database_title",
-            "Title for BLAST database",
+            "Title for the output BLAST database",
             CArgDescriptions::eString
     );
 
@@ -164,7 +164,7 @@ void BlastdbCopyApplication::Init(void)
 
     arg_desc->AddFlag(
             kTargetOnly,
-            "Copy only entries specified in gi file",
+            "Copy only entries specified in GI file",
             true
     );
 
@@ -182,7 +182,7 @@ void BlastdbCopyApplication::Init(void)
     );
 
     arg_desc->AddOptionalKey("blastdb_version", "version",
-                             "Version of BLAST database to be created",
+                             "Version of BLAST database to be created. Default is the same version as source BLAST database",
                              CArgDescriptions::eInteger);
     arg_desc->SetConstraint("blastdb_version",
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
@@ -205,12 +205,12 @@ void BlastdbCopyApplication::Init(void)
     arg_desc->AddOptionalKey(
             kArgOutput,
             "database_name",
-            "Name of BLAST database to be created",
+            "Name of the output BLAST database to be created",
             CArgDescriptions::eString
     );
 
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
-                                "Maximum file size for BLAST database files",
+                                "Maximum file size for the output BLAST database files",
                                 CArgDescriptions::eString, "1GB");
     HideStdArgs(
             fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun
