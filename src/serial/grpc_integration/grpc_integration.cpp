@@ -39,6 +39,7 @@
 #include <util/static_map.hpp>
 #include <serial/error_codes.hpp>
 #ifdef HAVE_LIBGRPC
+#  include <grpcpp/grpcpp.h>
 #  include <grpc++/server_context.h>
 #  include <grpc/support/alloc.h>
 #  include <grpc/support/log.h>
@@ -48,6 +49,61 @@
 #endif
 
 #define NCBI_USE_ERRCODE_X Serial_GRPCIntegration
+
+
+#ifdef HAVE_LIBGRPC
+
+#if defined(GRPC_CPP_VERSION_MAJOR) && (GRPC_CPP_VERSION_MAJOR > 1 || GRPC_CPP_VERSION_MINOR >= 67)
+#include "absl/log/initialize.h"
+#include "absl/log/log_sink_registry.h"
+
+class CNCBILogSink : public absl::LogSink {
+public:
+    CNCBILogSink() {
+        absl::InitializeLog();
+        absl::AddLogSink(this);
+    }
+    ~CNCBILogSink() {
+    }
+    void Send(const absl::LogEntry& entry) override {
+        static const char* unk_func = ncbi::g_DiagUnknownFunction();
+        std::string src(entry.source_filename());
+        ncbi::CDiagCompileInfo diag_info(
+            src.c_str(), entry.source_line(),
+            unk_func, "GRPC");
+        ncbi::EDiagSev sev = ncbi::eDiag_Error;
+        switch (entry.log_severity()) {
+        case absl::LogSeverity::kInfo:    sev = ncbi::eDiag_Info;   break;
+        case absl::LogSeverity::kWarning: sev = ncbi::eDiag_Warning;   break;
+        case absl::LogSeverity::kError:   sev = ncbi::eDiag_Error;   break;
+        case absl::LogSeverity::kFatal:   sev = ncbi::eDiag_Fatal;   break;
+        }
+        std::string msg(entry.text_message());
+        ncbi::CNcbiDiag(diag_info) << ncbi::Severity(sev) << msg << ncbi::Endm;
+    }
+};
+static CNCBILogSink s_NCBILogSink;
+#define GPR_SET_LOG_FUNCION
+
+#else //ABSEIL_LOG
+
+extern "C" {
+    static void s_NCBI_GPR_Log_Function(gpr_log_func_args *args) {
+        static const char* unk_func = ncbi::g_DiagUnknownFunction();
+        ncbi::CDiagCompileInfo diag_info(args->file, args->line, unk_func, "GRPC");
+        ncbi::EDiagSev sev = ncbi::eDiag_Error;
+        switch (args->severity) {
+        case GPR_LOG_SEVERITY_DEBUG:  sev = ncbi::eDiag_Trace;  break;
+        case GPR_LOG_SEVERITY_INFO:   sev = ncbi::eDiag_Info;   break;
+        case GPR_LOG_SEVERITY_ERROR:  sev = ncbi::eDiag_Error;  break;
+        }
+        ncbi::CNcbiDiag(diag_info) << ncbi::Severity(sev) << args->message << ncbi::Endm;
+    }
+}
+#define GPR_SET_LOG_FUNCION gpr_set_log_function(s_NCBI_GPR_Log_Function)
+
+#endif //ABSEIL_LOG
+#endif //HAVE_LIBGRPC
 
 BEGIN_NCBI_SCOPE
 
@@ -113,23 +169,10 @@ private:
 grpc::Server::GlobalCallbacks* volatile CGRPCInitializer::sm_ServerCallbacks;
 static CGRPCInitializer s_GRPCInitializer;
 
-extern "C" {
-    static void s_NCBI_GPR_Log_Function(gpr_log_func_args *args) {
-        static const char* unk_func = g_DiagUnknownFunction();
-        CDiagCompileInfo diag_info(args->file, args->line, unk_func, "GRPC");
-        EDiagSev sev = eDiag_Error;
-        switch (args->severity) {
-        case GPR_LOG_SEVERITY_DEBUG:  sev = eDiag_Trace;  break;
-        case GPR_LOG_SEVERITY_INFO:   sev = eDiag_Info;   break;
-        case GPR_LOG_SEVERITY_ERROR:  sev = eDiag_Error;  break;
-        }
-        CNcbiDiag(diag_info) << Severity(sev) << args->message << Endm;
-    }
-}
 
 CGRPCInitializer::CGRPCInitializer(void)
 {
-    gpr_set_log_function(s_NCBI_GPR_Log_Function);
+    GPR_SET_LOG_FUNCION;
     sm_ServerCallbacks = new CGRPCServerCallbacks;
     grpc::Server::SetGlobalCallbacks(sm_ServerCallbacks);
     // NB: on the client side, we encourage the use of
