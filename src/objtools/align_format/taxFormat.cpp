@@ -56,6 +56,74 @@ USING_SCOPE(sequence);
 BEGIN_SCOPE(align_format)
 
 
+MAKE_CONST_MAP(kMapTagToString, ct::tagStrNocase, ct::tagStrNocase,
+{
+    //kTaxBrowserURL s_TagToConstString("TAX_BROWSER_URL")
+    { "TAX_BROWSER_URL", "<@protocol@>//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi"},
+    //kBlastNameLink s_TagToConstString("BLAST_NAME_LINK")
+    {"BLAST_NAME_LINK" ,"<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@bl_taxid@>)\"><@blast_name@></a>"},
+    //kOrgReportTable       s_TagToConstString("ORG_REPORT_TABLE")   
+    { "ORG_REPORT_TABLE", "<table><caption><h2>Organism Report</h2></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table><@taxidToSeqsMap@>"},
+    //kOrgReportOrganismHeader s_TagToConstString("ORG_REPORT_ORG_HEADER")
+     { "ORG_REPORT_ORG_HEADER", "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name_link@>] taxid <@taxid@></th></tr>"},
+    //kOrgReportOrganismHeaderNoTaxConnect s_TagToConstString("ORG_REPORT_ORG_HEADER_NO_TAX_CON")
+    { "ORG_REPORT_ORG_HEADER_NO_TAX_CON", "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name@>]</th></tr>"},
+    //*****kOrgReportTableHeader   s_TagToConstString("ORG_REPORT_TABLE_HEADER")
+    { "ORG_REPORT_TABLE_HEADER", "<tr><th>Accession</th><th>Description</th><th>Score</th><th>E-value</th></tr>"},
+    //kOrgReportTableRow       s_TagToConstString("ORG_REPORT_TABLE_ROW") 
+    { "ORG_REPORT_TABLE_ROW",  "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@acc@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>"},
+    //kTaxIdToSeqsMap          s_TagToConstString("TAXID_TO_SEQ_MAP")
+    { "TAXID_TO_SEQ_MAP", "<input type=\"hidden\" id=\"txForSeq_<@taxid@>\" value=\"<@giList@>\" />"},
+    // kLineageReportTable          s_TagToConstString("LINAGE_REPORT_TABLE")
+    { "LINAGE_REPORT_TABLE", "<table><caption><h2>Linage Report</h2><caption><@table_rows@></table>"},
+    //kLineageReportTableHeader    s_TagToConstString("LINAGE_REPORT_TABLE_HEADER")
+    {"LINAGE_REPORT_TABLE_HEADER", "<tr><th>Organism</th><th>Blast Name</th><th>Score</th><th>Number of Hits</th><th>Description</th></tr>"},
+    //kLineageReportOrganismHeader s_TagToConstString("LINAGE_REPORT_ORG_HEADER") 
+    {"LINAGE_REPORT_ORG_HEADER", "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a><td><@blast_name_link@></td><td colspan =\"3\"></td></tr>"},
+    //kLineageReportTableRow       s_TagToConstString("LINAGE_REPORT_TABLE_ROW")
+    {"LINAGE_REPORT_TABLE_ROW", "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@acc@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>"},
+    //kTaxonomyReportTable          s_TagToConstString("TAXONOMY_REPORT_TABLE")
+    { "TAXONOMY_REPORT_TABLE", "<table><caption><h2>Taxonomy Report</h2><caption><@table_rows@></table>"},
+    //kTaxonomyReportTableHeader    s_TagToConstString("TAXONOMY_REPORT_TABLE_HEADER") 
+    { "TAXONOMY_REPORT_TABLE_HEADER", "<tr><th>Taxonomy</th><th>Number of hits</th><th>Number of organisms</th><th>Description</th></tr>"}, 
+    //kTaxonomyReportOrganismHeader s_TagToConstString("TAXONOMY_REPORT_ORG_HEADER")
+    {"TAXONOMY_REPORT_ORG_HEADER", "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>"}, 
+    //kTaxonomyReportTableRow       s_TagToConstString("TAXONOMY_REPORT_TABLE_ROW")
+    { "TAXONOMY_REPORT_TABLE_ROW", "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>"},
+    // kOrgReportTxtTable          s_TagToConstString("ORG_REPORT_TXT_TABLE")
+    {"ORG_REPORT_TXT_TABLE", "<@org_report_caption@>\n<@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n<@table_rows@>"}, 
+    //kOrgReportTxtOrganismHeader s_TagToConstString("ORG_REPORT_TXT_ORG_HEADER")
+    {"ORG_REPORT_TXT_ORG_HEADER", "<@scientific_name@> <@common_name@> [<@blast_name_link@>] taxid <@taxid@>"},     
+    //kOrgReportTxtOrganismHeaderNoTaxConnect s_TagToConstString("ORG_REPORT_TXT_ORG_HEADER_NO_TAX_CON")
+    {"ORG_REPORT_TXT_ORG_HEADER_NO_TAX_CON", "<@scientific_name@> <@common_name@> [<@blast_name@>]"},
+    //kOrgReportTxtTableHeader    s_TagToConstString("ORG_REPORT_TXT_TABLE_HEADER") 
+    {"ORG_REPORT_TXT_TABLE_HEADER", " <@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n"},
+    //kOrgReportTxtTableRow       s_TagToConstString("ORG_REPORT_TXT_TABLE_ROW") 
+    {"ORG_REPORT_TXT_TABLE_ROW", " <@acc@><@descr_text@><@score@><@evalue@>\n"},
+    //kOrgReportTxtTableCaption s_TagToConstString("ORG_REPORT_TXT_TABLE_CAPTION") 
+    {"ORG_REPORT_TXT_TABLE_CAPTION", "Organism Report"},
+    //kOrgAccTxtTableHeader  s_TagToConstString("ORG_ACC_TXT_TABLE_HEADER") 
+    { "ORG_ACC_TXT_TABLE_HEADER", "Accession"},
+    //kOrgDescrTxtTableHeader  s_TagToConstString("ORG_DESCR_TXT_TABLE_HEADER") 
+    { "ORG_DESCR_TXT_TABLE_HEADER", "Description"},
+    //kOrgScoreTxtTableHeader s_TagToConstString("ORG_SCORE_TXT_TABLE_HEADER") 
+    { "ORG_SCORE_TXT_TABLE_HEADER", "Score"},
+    //kOrgEValueTxtTableHeader s_TagToConstString("ORG_EVALUE_TXT_TABLE_HEADER") 
+    { "ORG_EVALUE_TXT_TABLE_HEADER", "E-value"},
+});
+
+static string  s_TagToConstString( const string tag_name) 
+{
+  string mappedStr;
+
+  auto cit = kMapTagToString.find(tag_name);  
+  
+ if( cit != kMapTagToString.end()) {
+    mappedStr = cit->second;      
+  } 
+  return mappedStr;  
+}
+
 CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign, 
                        CScope& scope,
                        unsigned int displayOption,
@@ -106,30 +174,30 @@ void CTaxFormat::x_InitTaxFormat(void)
     if(m_Reg) {
         m_TaxBrowserURL = m_Reg->Get("TAX_BROWSER","BLASTFMTUTIL");
     }
-    m_TaxBrowserURL = (m_TaxBrowserURL.empty()) ? kTaxBrowserURL : m_TaxBrowserURL;
+    m_TaxBrowserURL = (m_TaxBrowserURL.empty()) ? s_TagToConstString("TAX_BROWSER_URL") : m_TaxBrowserURL;
     m_TaxBrowserURL = CAlignFormatUtil::MapTemplate(m_TaxBrowserURL,"protocol",m_Protocol);
 
     
         
     m_TaxFormatTemplates = new STaxFormatTemplates;        
 
-    m_TaxFormatTemplates->blastNameLink = kBlastNameLink;
-    m_TaxFormatTemplates->orgReportTable = (m_DisplayOption == eHtml) ? kOrgReportTable : kOrgReportTxtTable;
-    m_TaxFormatTemplates->orgReportOrganismHeader = (m_DisplayOption == eHtml) ? kOrgReportOrganismHeader : kOrgReportTxtOrganismHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->orgReportTableHeader  = (m_DisplayOption == eHtml) ? kOrgReportTableHeader : kOrgReportTxtTableHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->orgReportTableRow = (m_DisplayOption == eHtml) ? kOrgReportTableRow : kOrgReportTxtTableRow;
+    m_TaxFormatTemplates->blastNameLink = s_TagToConstString("BLAST_NAME_LINK");
+    m_TaxFormatTemplates->orgReportTable = (m_DisplayOption == eHtml) ? s_TagToConstString("ORG_REPORT_TABLE") : s_TagToConstString("ORG_REPORT_TXT_TABLE");
+    m_TaxFormatTemplates->orgReportOrganismHeader = (m_DisplayOption == eHtml) ? s_TagToConstString("ORG_REPORT_ORG_HEADER") : s_TagToConstString("ORG_REPORT_TXT_ORG_HEADER"); ///< Template for displaying header
+    m_TaxFormatTemplates->orgReportTableHeader  = (m_DisplayOption == eHtml) ? s_TagToConstString("ORG_REPORT_ORG_TABLE_HEADER") : s_TagToConstString("ORG_REPORT_TXT_TABLE_HEADER"); ///< Template for displaying header
+    m_TaxFormatTemplates->orgReportTableRow = (m_DisplayOption == eHtml) ? s_TagToConstString("ORG_REPORT_TABLE_ROW") : s_TagToConstString("ORG_REPORT_TXT_TABLE_ROW");
 
-    m_TaxFormatTemplates->taxIdToSeqsMap = kTaxIdToSeqsMap;
+    m_TaxFormatTemplates->taxIdToSeqsMap = s_TagToConstString("TAXID_TO_SEQ_MAP");
 
-    m_TaxFormatTemplates->lineageReportTable = kLineageReportTable;
-    m_TaxFormatTemplates->lineageReportOrganismHeader = kLineageReportOrganismHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->lineageReportTableHeader  = kLineageReportTableHeader; ///< Template for displaying header
-    m_TaxFormatTemplates->lineageReportTableRow = kLineageReportTableRow;
+    m_TaxFormatTemplates->lineageReportTable = s_TagToConstString("LINAGE_REPORT_TABLE");
+    m_TaxFormatTemplates->lineageReportOrganismHeader = s_TagToConstString("LINAGE_REPORT_ORG_HEADER"); ///< Template for displaying header
+    m_TaxFormatTemplates->lineageReportTableHeader  = s_TagToConstString("LINAGE_REPORT_TABLE_HEADER"); ///< Template for displaying header
+    m_TaxFormatTemplates->lineageReportTableRow = s_TagToConstString("LINAGE_REPORT_TABLE_ROW");
 
-    m_TaxFormatTemplates->taxonomyReportTable           = kTaxonomyReportTable;
-    m_TaxFormatTemplates->taxonomyReportOrganismHeader  = kTaxonomyReportOrganismHeader;    
-    m_TaxFormatTemplates->taxonomyReportTableHeader     = kTaxonomyReportTableHeader;
-    m_TaxFormatTemplates->taxonomyReportTableRow        = kTaxonomyReportTableRow;
+    m_TaxFormatTemplates->taxonomyReportTable           = s_TagToConstString("TAXONOMY_REPORT_TABLE");
+    m_TaxFormatTemplates->taxonomyReportOrganismHeader  = s_TagToConstString("TAXONOMY_REPORT_ORG_HEADER");    
+    m_TaxFormatTemplates->taxonomyReportTableHeader     = s_TagToConstString("TAXONOMY_REPORT_TABLE_HEADER");
+    m_TaxFormatTemplates->taxonomyReportTableRow        = s_TagToConstString("TAXONOMY_REPORT_TABLE_ROW");
 }
 
 CTaxFormat::CTaxFormat(list< pair<string,TTaxId> > &accessionTaxidList,    
@@ -392,7 +460,7 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         STaxInfo seqsForTaxID = m_BlastResTaxInfo->seqTaxInfoMap[taxid];
         
         string orgHeader = (m_ConnectToTaxServer) ? m_TaxFormatTemplates->orgReportOrganismHeader : 
-                                                    (m_DisplayOption == eHtml) ? kOrgReportOrganismHeaderNoTaxConnect : kOrgReportTxtOrganismHeaderNoTaxConnect;        
+                                                    (m_DisplayOption == eHtml) ? s_TagToConstString("ORG_REPORT_ORG_HEADER_NO_TAX_CON") : s_TagToConstString("ORG_REPORT_TXT_ORG_HEADER_NO_TAX_CON");        
         orgHeader = x_MapTaxInfoTemplate(orgHeader,seqsForTaxID);
         string prevTaxid,nextTaxid, hidePrevTaxid, hideNextTaxid, hideTop;
         const string kDisabled = "disabled=\"disabled\"";
@@ -429,12 +497,17 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
     }   
     orgReportData = CAlignFormatUtil::MapTemplate(m_TaxFormatTemplates->orgReportTable,"table_rows",orgReportData);
     if(m_DisplayOption == eText) {
-        string reportCaption = CAlignFormatUtil::AddSpaces(kOrgReportTxtTableCaption,m_LineLength,CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart);
+        string orgReportTxtTableCaption = s_TagToConstString("ORG_REPORT_TXT_TABLE_CAPTION");
+        string reportCaption = CAlignFormatUtil::AddSpaces(orgReportTxtTableCaption,m_LineLength,CAlignFormatUtil::eSpacePosToCenter | CAlignFormatUtil::eAddEOLAtLineStart);
         orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"org_report_caption",reportCaption);
-        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"acc_hd",kOrgAccTxtTableHeader,m_MaxAccLength);                
-        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"descr_hd",kOrgDescrTxtTableHeader,m_MaxDescrLength,CAlignFormatUtil::eSpacePosToCenter);                
-        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"score_hd",kOrgScoreTxtTableHeader,m_MaxScoreLength);
-        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"evalue_hd",kOrgEValueTxtTableHeader,m_MaxEvalLength);        
+        string orgAccTxtTableHeader = s_TagToConstString("ORG_ACC_TXT_TABLE_HEADER");
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"acc_hd",orgAccTxtTableHeader,m_MaxAccLength);                
+        string orgDescrTxtTableHeader = s_TagToConstString("ORG_DESCR_TXT_TABLE_HEADER");
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"descr_hd",orgDescrTxtTableHeader,m_MaxDescrLength,CAlignFormatUtil::eSpacePosToCenter);                
+        string orgScoreTxtTableHeader = s_TagToConstString("ORG_SCORE_TXT_TABLE_HEADER");
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"score_hd",orgScoreTxtTableHeader,m_MaxScoreLength);
+        string orgEValueTxtTableHeader = s_TagToConstString("ORG_EVALUE_TXT_TABLE_HEADER");
+        orgReportData = CAlignFormatUtil::MapSpaceTemplate(orgReportData,"evalue_hd",orgEValueTxtTableHeader,m_MaxEvalLength);        
     }
     else {        
         orgReportData = CAlignFormatUtil::MapTemplate(orgReportData,"taxidToSeqsMap",m_TaxIdToSeqsMap);    
@@ -824,14 +897,15 @@ bool CTaxFormat::isTaxidInAlign(TTaxId taxid)
 
 void CTaxFormat::x_InitTextFormatInfo(CTaxFormat::SSeqInfo *seqInfo)
 {
-    // std::string_view().size() is a constexpr and should be calculated on a compilation time for string constants
-    #define CSTR_SIZE(x) (unsigned int)std::string_view(x).size()
-    
-    m_MaxAccLength   = max( max(m_MaxAccLength,(unsigned int)seqInfo->label.size()),       CSTR_SIZE(kOrgAccTxtTableHeader));
-    m_MaxDescrLength = max( max(m_MaxDescrLength,(unsigned int)seqInfo->title.size()),     CSTR_SIZE(kOrgDescrTxtTableHeader));
-    m_MaxScoreLength = max( max(m_MaxScoreLength,(unsigned int)seqInfo->bit_score.size()), CSTR_SIZE(kOrgScoreTxtTableHeader));
-    m_MaxEvalLength  = max( max(m_MaxEvalLength,(unsigned int)seqInfo->evalue.size()),     CSTR_SIZE(kOrgEValueTxtTableHeader));
-    m_MaxDescrLength = m_LineLength - m_MaxAccLength - m_MaxScoreLength - m_MaxEvalLength - 4;//4 for spaces in between
+    string orgAccTxtTableHeader = s_TagToConstString("ORG_ACC_TXT_TABLE_HEADER");
+    m_MaxAccLength = max(max(m_MaxAccLength,(unsigned int)seqInfo->label.size()),(unsigned int)orgAccTxtTableHeader.size());    
+    string orgDescrTxtTableHeader = s_TagToConstString("ORG_DESCR_TXT_TABLE_HEADER");
+    m_MaxDescrLength = max(max(m_MaxDescrLength,(unsigned int)seqInfo->title.size()),(unsigned int)orgDescrTxtTableHeader.size());        
+    string orgScoreTxtTableHeader = s_TagToConstString("ORG_SCORE_TXT_TABLE_HEADER");
+    m_MaxScoreLength = max(max(m_MaxScoreLength,(unsigned int)seqInfo->bit_score.size()),(unsigned int)orgScoreTxtTableHeader.size());    
+    string orgEValueTxtTableHeader = s_TagToConstString("ORG_EVALUE_TXT_TABLE_HEADER");
+    m_MaxEvalLength = max(max(m_MaxEvalLength,(unsigned int)seqInfo->evalue.size()),(unsigned int)orgEValueTxtTableHeader.size());    
+    m_MaxDescrLength =  m_LineLength - m_MaxAccLength - m_MaxScoreLength - m_MaxEvalLength - 4;//4 for spaces in between            
  }
 
 CTaxFormat::SSeqInfo *CTaxFormat::x_FillTaxDispParams(const CBioseq_Handle& bsp_handle,
@@ -1111,7 +1185,6 @@ string CTaxFormat::x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInf
     
     return reportTableRow;
 }
-
 
 
 END_SCOPE(align_format)
