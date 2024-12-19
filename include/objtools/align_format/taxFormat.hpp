@@ -62,44 +62,8 @@ BEGIN_SCOPE(align_format)
  * txformat.DisplayTaxonomyReport(stdout); 
  * @endcode
  */
- 
-static const char kTaxBrowserURL[]           = "<@protocol@>//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
-static const char kBlastNameLink[]           = "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@bl_taxid@>)\"><@blast_name@></a>";
 
-static const char kOrgReportTable[]          = "<table><caption><h2>Organism Report</h2></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table><@taxidToSeqsMap@>";
-static const char kOrgReportOrganismHeader[] = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name_link@>] taxid <@taxid@></th></tr>";
-static const char kOrgReportOrganismHeaderNoTaxConnect[] = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@> <@common_name@> [<@blast_name@>]</th></tr>";
-static const char kOrgReportTableHeader[]    = "<tr><th>Accession</th><th>Description</th><th>Score</th><th>E-value</th></tr>";
-static const char kOrgReportTableRow[]       = "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@acc@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>";
-
-static const char kTaxIdToSeqsMap[]          = "<input type=\"hidden\" id=\"txForSeq_<@taxid@>\" value=\"<@giList@>\" />";
-
-static const char kLineageReportTable[]          = "<table><caption><h2>Linage Report</h2><caption><@table_rows@></table>";
-static const char kLineageReportTableHeader[]    = "<tr><th>Organism</th><th>Blast Name</th><th>Score</th><th>Number of Hits</th><th>Description</th></tr>";
-static const char kLineageReportOrganismHeader[] = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a><td><@blast_name_link@></td><td colspan =\"3\"></td></tr>";
-static const char kLineageReportTableRow[]       = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnktx<@rid@>\" href=\"<@protocol@>//www.ncbi.nlm.nih.gov/protein/<@acc@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>";
-
-
-static const char kTaxonomyReportTable[]          = "<table><caption><h2>Taxonomy Report</h2><caption><@table_rows@></table>";
-static const char kTaxonomyReportTableHeader[]    = "<tr><th>Taxonomy</th><th>Number of hits</th><th>Number of organisms</th><th>Description</th></tr>"; 
-static const char kTaxonomyReportOrganismHeader[] = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>"; 
-static const char kTaxonomyReportTableRow[]       = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>";
-
- 
-static const char kOrgReportTxtTable[]          = "<@org_report_caption@>\n<@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n<@table_rows@>"; 
-static const char kOrgReportTxtOrganismHeader[] = "<@scientific_name@> <@common_name@> [<@blast_name_link@>] taxid <@taxid@>"; 
-static const char kOrgReportTxtOrganismHeaderNoTaxConnect[] = "<@scientific_name@> <@common_name@> [<@blast_name@>]";
-static const char kOrgReportTxtTableHeader[]    = " <@acc_hd@><@descr_hd@><@score_hd@><@evalue_hd@>\n";
-static const char kOrgReportTxtTableRow[]       = " <@acc@><@descr_text@><@score@><@evalue@>\n"; 
-
-  
-static const char kOrgReportTxtTableCaption[] =  "Organism Report";
-static const char kOrgAccTxtTableHeader[]     =  "Accession";
-static const char kOrgDescrTxtTableHeader[]   =  "Description"; 
-static const char kOrgScoreTxtTableHeader[]   =  "Score";
-static const char kOrgEValueTxtTableHeader[]  =   "E-value";
-
-static const unsigned int kMinLineLength = 100; //used for text output
+ const unsigned int kMinLineLength = 100; //used for text output
 
 
 
