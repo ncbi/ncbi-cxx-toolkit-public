@@ -2599,11 +2599,10 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
         size_t i = result.GetIndex();
         CRef<CPSGL_BioseqInfo_Processor> processor = result.GetProcessor<CPSGL_BioseqInfo_Processor>();
         _ASSERT(processor);
-        const CSeq_id_Handle& idh = ids[i];
         
         if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
             // execution or processing are failed somehow
-            _TRACE("Failed to load bioseq info for " << idh);
+            _TRACE("Failed to load bioseq info for " << ids[i]);
             if ( !failed_processor ) {
                 failed_processor = processor;
             }
