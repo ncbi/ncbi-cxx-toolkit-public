@@ -991,17 +991,20 @@ string xGetNodeData(const DataBlk& entry, int nodeType)
  *   the "type".
  *
  **********************************************************/
+TDataBlkList& TrackNodes(const DataBlk& entry)
+{
+    EntryBlkPtr ebp = entry.GetEntryData();
+    return ebp->chain;
+}
+
 DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
 {
-    DataBlkPtr  temp;
-    EntryBlkPtr ebp;
+    auto& chain = TrackNodes(entry);
+    for (DataBlkPtr temp = chain.begin(); temp; temp = temp->mpNext)
+        if (temp->mType == type)
+            return temp;
 
-    ebp  = entry.GetEntryData();
-    temp = ebp->chain.begin();
-    while (temp && temp->mType != type)
-        temp = temp->mpNext;
-
-    return (temp);
+    return nullptr;
 }
 
 

@@ -127,6 +127,7 @@ bool             CheckLineType(char* ptr, Int4 line, const vector<string>& keywo
 char*            SrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
 char*            xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len);
 string           xGetNodeData(const DataBlk& entry, int nodeType);
+TDataBlkList&    TrackNodes(const DataBlk& entry);
 DataBlk*         TrackNodeType(const DataBlk& entry, Int2 type);
 const Section* xTrackNodeType(const Entry&, int type);
 ValNode*         ConstructValNode(objects::CSeq_id::E_Choice choice, const char* data);
