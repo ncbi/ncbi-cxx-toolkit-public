@@ -1046,8 +1046,6 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
-    DataBlkPtr dbp;
-
     char* offset;
     char* p;
     char* q;
@@ -1159,12 +1157,13 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     /* pub should be before GBblock because we need patent ref
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_END)
+    auto& chain = TrackNodes(entry);
+    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -1172,12 +1171,12 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_NO_TARGET)
+    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, ParFlat_COL_DATA);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);

@@ -1156,7 +1156,6 @@ static void fta_strip_aa(char* str)
 static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, TSeqIdList& seqids, Int4 col_data, IndexblkPtr ibp)
 {
     DataBlkPtr dbp;
-    DataBlkPtr subdbp;
     char*      p;
 
     bool  err = false;
@@ -1171,12 +1170,12 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
     if (! dbp)
         return;
 
-
     for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_BTW)
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_BTW)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, col_data);
         if (pubdesc.Empty())
             continue;
 
@@ -1185,9 +1184,9 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         unique_ptr<string> ploc;
         if (pp->format == Parser::EFormat::XML) {
-            ploc = XMLFindTagValue(dbp->mOffset, dbp->GetXmlData(), INSDREFERENCE_POSITION);
+            ploc = XMLFindTagValue(ref_blk.mOffset, ref_blk.GetXmlData(), INSDREFERENCE_POSITION);
             if (! ploc) {
-                auto q = XMLFindTagValue(dbp->mOffset, dbp->GetXmlData(), INSDREFERENCE_REFERENCE);
+                auto q = XMLFindTagValue(ref_blk.mOffset, ref_blk.GetXmlData(), INSDREFERENCE_REFERENCE);
                 if (q) {
                     auto i = q->find('(');
                     if (i != string::npos)
@@ -1202,11 +1201,11 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 }
             }
         } else if (pp->format == Parser::EFormat::GenBank) {
-            for (p = dbp->mOffset + col_data; *p != '\0' && *p != '(';)
+            for (p = ref_blk.mOffset + col_data; *p != '\0' && *p != '(';)
                 p++;
-            ploc = CheckLocStr(string(p, dbp->mOffset + dbp->len - p).c_str());
+            ploc = CheckLocStr(string(p, ref_blk.mOffset + ref_blk.len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
-            subdbp = dbp->GetSubData();
+            DataBlkPtr subdbp = ref_blk.GetSubData();
             for (; subdbp; subdbp = subdbp->mpNext) {
                 if (subdbp->mType != ParFlat_RP)
                     continue;
@@ -1293,10 +1292,11 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
     CRef<CSeq_feat> feat;
     for (first = true; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_SITES)
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_SITES)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, col_data);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, col_data);
         if (pubdesc.Empty() || ! pubdesc->IsSetPub())
             continue;
 
@@ -4765,13 +4765,14 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     else
         dab = TrackNodeType(entry, type);
     for (dbp = dab; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != type)
+        auto& dblk = *dbp;
+        if (dblk.mType != type)
             continue;
 
         /* Parsing each feature subblock to FeatBlkPtr, fbp
          * it also checks semantics of qualifiers and keys
          */
-        TDataBlkList& dbl = std::get<TDataBlkList>(dbp->mData);
+        TDataBlkList& dbl = std::get<TDataBlkList>(dblk.mData);
         if (pp->format == Parser::EFormat::XML)
             XMLParseFeatureBlock(pp->debug, dbl, pp->source);
         else

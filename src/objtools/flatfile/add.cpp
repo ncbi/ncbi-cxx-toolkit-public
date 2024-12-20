@@ -257,8 +257,6 @@ bool no_reference(const CBioseq& bioseq)
  **********************************************************/
 bool check_cds(const DataBlk& entry, Parser::EFormat format)
 {
-    DataBlkPtr  temp;
-    DataBlkPtr  dbp;
     const char* str;
     Int2        type;
 
@@ -271,25 +269,30 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
     } else
         return false;
 
-    for (temp = TrackNodeType(entry, type); temp; temp = temp->mpNext) {
-        if (temp->mType != type)
+    const auto&    chain = TrackNodes(entry);
+    const DataBlk* temp  = chain.begin();
+    for (; temp; temp = temp->mpNext) {
+        const auto& dblk = *temp;
+        if (dblk.mType != type)
             continue;
 
         size_t len = 0;
-        for (dbp = temp->GetSubData(); dbp; dbp = dbp->mpNext)
+
+        const DataBlk* subblocks = dblk.GetSubData();
+        const DataBlk* dbp       = subblocks;
+        for (; dbp; dbp = dbp->mpNext)
             len += dbp->len;
         if (len == 0)
             continue;
 
-        dbp     = temp->GetSubData();
+        dbp     = subblocks;
         char* p = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
-
         if (p)
             break;
     }
-
     if (! temp)
         return false;
+
     return true;
 }
 
