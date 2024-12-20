@@ -75,7 +75,7 @@ Seq-submit ::= {
               org {
                 taxname "Homo sapiens",
                 orgname {
-                  lineage "Eukaryota; Metazoa; Chordata; Craniata; Vertebrata;
+                  lineage "etazoa; Chordata; Craniata; Vertebrata;
  Euteleostomi; Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
  Catarrhini; Hominidae; Homo"
                 }
