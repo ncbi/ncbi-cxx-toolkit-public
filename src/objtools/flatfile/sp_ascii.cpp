@@ -843,28 +843,30 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
 
     dbp = TrackNodeType(entry, ParFlatSP_OS);
     if (dbp) {
-        BuildSubBlock(*dbp, ParFlatSP_OG, "OG");
-        BuildSubBlock(*dbp, ParFlatSP_OC, "OC");
-        BuildSubBlock(*dbp, ParFlatSP_OX, "OX");
-        BuildSubBlock(*dbp, ParFlatSP_OH, "OH");
-        GetLenSubNode(*dbp);
+        auto& os_blk = *dbp;
+        BuildSubBlock(os_blk, ParFlatSP_OG, "OG");
+        BuildSubBlock(os_blk, ParFlatSP_OC, "OC");
+        BuildSubBlock(os_blk, ParFlatSP_OX, "OX");
+        BuildSubBlock(os_blk, ParFlatSP_OH, "OH");
+        GetLenSubNode(os_blk);
     }
 
-    dbp = TrackNodeType(entry, ParFlatSP_RN);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlatSP_RN)
+    auto& chain = TrackNodes(entry);
+    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlatSP_RN)
             continue;
 
-        BuildSubBlock(*dbp, ParFlatSP_RP, "RP");
-        BuildSubBlock(*dbp, ParFlatSP_RC, "RC");
-        BuildSubBlock(*dbp, ParFlatSP_RM, "RM");
-        BuildSubBlock(*dbp, ParFlatSP_RX, "RX");
-        BuildSubBlock(*dbp, ParFlatSP_RG, "RG");
-        BuildSubBlock(*dbp, ParFlatSP_RA, "RA");
-        BuildSubBlock(*dbp, ParFlatSP_RT, "RT");
-        BuildSubBlock(*dbp, ParFlatSP_RL, "RL");
-        GetLenSubNode(*dbp);
-        dbp->mType = ParFlat_REF_END; /* swiss-prot only has one type */
+        BuildSubBlock(ref_blk, ParFlatSP_RP, "RP");
+        BuildSubBlock(ref_blk, ParFlatSP_RC, "RC");
+        BuildSubBlock(ref_blk, ParFlatSP_RM, "RM");
+        BuildSubBlock(ref_blk, ParFlatSP_RX, "RX");
+        BuildSubBlock(ref_blk, ParFlatSP_RG, "RG");
+        BuildSubBlock(ref_blk, ParFlatSP_RA, "RA");
+        BuildSubBlock(ref_blk, ParFlatSP_RT, "RT");
+        BuildSubBlock(ref_blk, ParFlatSP_RL, "RL");
+        GetLenSubNode(ref_blk);
+        ref_blk.mType = ParFlat_REF_END; /* swiss-prot only has one type */
     }
 }
 
@@ -1533,20 +1535,19 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
 /**********************************************************/
 static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
 {
-    DataBlkPtr dbp;
-    DataBlkPtr subdbp;
-    char*      offset = nullptr;
-    char*      eptr   = nullptr;
-    char*      str;
-    char*      ptr;
-    Int4       gmod = -1;
+    char* offset = nullptr;
+    char* eptr   = nullptr;
+    char* str;
+    char* ptr;
+    Int4  gmod = -1;
 
-    dbp = TrackNodeType(entry, ParFlatSP_OS);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlatSP_OS)
+    auto& chain = TrackNodes(entry);
+    for (const DataBlk* dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        const auto& os_blk = *dbp;
+        if (os_blk.mType != ParFlatSP_OS)
             continue;
 
-        subdbp = dbp->GetSubData();
+        const DataBlk* subdbp = os_blk.GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OG)
                 continue;
@@ -2650,7 +2651,8 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* Org-ref from ID lines
      */
-    for (dbp = TrackNodeType(entry, ParFlatSP_ID); dbp; dbp = dbp->mpNext) {
+    auto& chain = TrackNodes(entry);
+    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
@@ -2754,12 +2756,12 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* RN data ==> pub
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_END)
+    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pub_desc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_SP);
+        CRef<CPubdesc> pub_desc = DescrRefs(pp, ref_blk, ParFlat_COL_DATA_SP);
         if (pub_desc.NotEmpty()) {
             CRef<CSeqdesc> pub_desc_descr(new CSeqdesc);
             pub_desc_descr->SetPub(*pub_desc);

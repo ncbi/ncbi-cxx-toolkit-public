@@ -465,35 +465,37 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 
     dbp = TrackNodeType(entry, ParFlat_SOURCE);
     if (dbp) {
-        BuildSubBlock(*dbp, ParFlat_ORGANISM, "  ORGANISM");
-        GetLenSubNode(*dbp);
+        auto& src_blk = *dbp;
+        BuildSubBlock(src_blk, ParFlat_ORGANISM, "  ORGANISM");
+        GetLenSubNode(src_blk);
     }
 
-    dbp = TrackNodeType(entry, ParFlat_REFERENCE);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REFERENCE)
+    auto& chain = TrackNodes(entry);
+    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REFERENCE)
             continue;
 
-        fta_check_mult_ids(*dbp, "  MEDLINE", "   PUBMED");
-        BuildSubBlock(*dbp, ParFlat_AUTHORS, "  AUTHORS");
-        BuildSubBlock(*dbp, ParFlat_CONSRTM, "  CONSRTM");
-        BuildSubBlock(*dbp, ParFlat_TITLE, "  TITLE");
-        BuildSubBlock(*dbp, ParFlat_JOURNAL, "  JOURNAL");
-        BuildSubBlock(*dbp, ParFlat_MEDLINE, "  MEDLINE");
-        BuildSubBlock(*dbp, ParFlat_PUBMED, "   PUBMED");
-        BuildSubBlock(*dbp, ParFlat_STANDARD, "  STANDARD");
-        BuildSubBlock(*dbp, ParFlat_REMARK, "  REMARK");
-        GetLenSubNode(*dbp);
-        GetGenBankRefType(*dbp, bases);
+        fta_check_mult_ids(ref_blk, "  MEDLINE", "   PUBMED");
+        BuildSubBlock(ref_blk, ParFlat_AUTHORS, "  AUTHORS");
+        BuildSubBlock(ref_blk, ParFlat_CONSRTM, "  CONSRTM");
+        BuildSubBlock(ref_blk, ParFlat_TITLE, "  TITLE");
+        BuildSubBlock(ref_blk, ParFlat_JOURNAL, "  JOURNAL");
+        BuildSubBlock(ref_blk, ParFlat_MEDLINE, "  MEDLINE");
+        BuildSubBlock(ref_blk, ParFlat_PUBMED, "   PUBMED");
+        BuildSubBlock(ref_blk, ParFlat_STANDARD, "  STANDARD");
+        BuildSubBlock(ref_blk, ParFlat_REMARK, "  REMARK");
+        GetLenSubNode(ref_blk);
+        GetGenBankRefType(ref_blk, bases);
     }
 
-    dbp = TrackNodeType(entry, ParFlat_FEATURES);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_FEATURES)
+    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& feat_blk = *dbp;
+        if (feat_blk.mType != ParFlat_FEATURES)
             continue;
 
-        BuildFeatureBlock(*dbp);
-        GetLenSubNode(*dbp);
+        BuildFeatureBlock(feat_blk);
+        GetLenSubNode(feat_blk);
     }
 }
 
@@ -748,41 +750,37 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
 void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
     DataBlkPtr  temp;
-    DataBlkPtr  curdbp;
-    DataBlkPtr  predbp;
-    EntryBlkPtr ebp;
 
-    temp = TrackNodeType(entry, ParFlat_OS);
-    for (; temp; temp = temp->mpNext) {
-        if (temp->mType != ParFlat_OS)
+    auto& chain = TrackNodes(entry);
+    for (temp = chain.begin(); temp; temp = temp->mpNext) {
+        auto& os_blk = *temp;
+        if (os_blk.mType != ParFlat_OS)
             continue;
 
-        BuildSubBlock(*temp, ParFlat_OC, "OC");
-        BuildSubBlock(*temp, ParFlat_OG, "OG");
-        GetLenSubNode(*temp);
+        BuildSubBlock(os_blk, ParFlat_OC, "OC");
+        BuildSubBlock(os_blk, ParFlat_OG, "OG");
+        GetLenSubNode(os_blk);
     }
 
-    temp = TrackNodeType(entry, ParFlat_RN);
-    for (; temp; temp = temp->mpNext) {
-        if (temp->mType != ParFlat_RN)
+    for (temp = chain.begin(); temp; temp = temp->mpNext) {
+        auto& ref_blk = *temp;
+        if (ref_blk.mType != ParFlat_RN)
             continue;
 
-        fta_check_mult_ids(*temp, "RX   MEDLINE;", "RX   PUBMED;");
-        BuildSubBlock(*temp, ParFlat_RC, "RC");
-        BuildSubBlock(*temp, ParFlat_RP, "RP");
-        BuildSubBlock(*temp, ParFlat_RX, "RX");
-        BuildSubBlock(*temp, ParFlat_RG, "RG");
-        BuildSubBlock(*temp, ParFlat_RA, "RA");
-        BuildSubBlock(*temp, ParFlat_RT, "RT");
-        BuildSubBlock(*temp, ParFlat_RL, "RL");
-        GetEmblRefType(bases, source, *temp);
-        GetLenSubNode(*temp);
+        fta_check_mult_ids(ref_blk, "RX   MEDLINE;", "RX   PUBMED;");
+        BuildSubBlock(ref_blk, ParFlat_RC, "RC");
+        BuildSubBlock(ref_blk, ParFlat_RP, "RP");
+        BuildSubBlock(ref_blk, ParFlat_RX, "RX");
+        BuildSubBlock(ref_blk, ParFlat_RG, "RG");
+        BuildSubBlock(ref_blk, ParFlat_RA, "RA");
+        BuildSubBlock(ref_blk, ParFlat_RT, "RT");
+        BuildSubBlock(ref_blk, ParFlat_RL, "RL");
+        GetEmblRefType(bases, source, ref_blk);
+        GetLenSubNode(ref_blk);
     }
 
-    ebp    = entry.GetEntryData();
-    temp   = ebp->chain.begin();
-    predbp = temp;
-    curdbp = temp->mpNext;
+    DataBlkPtr predbp = chain.begin();
+    DataBlkPtr curdbp = predbp->mpNext;
     while (curdbp) {
         if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;

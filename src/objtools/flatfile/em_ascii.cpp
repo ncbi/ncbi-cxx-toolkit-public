@@ -1643,7 +1643,6 @@ static bool s_HasTPAPrefix(const CTempString& line)
 static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
-    DataBlkPtr  dbp;
 
     char*  offset;
     string gbdiv;
@@ -1752,12 +1751,13 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
-    dbp = TrackNodeType(entry, ParFlat_REF_END);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_END)
+    auto& chain = TrackNodes(entry);
+    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_END)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -1765,12 +1765,12 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    dbp = TrackNodeType(entry, ParFlat_REF_NO_TARGET);
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_REF_NO_TARGET)
+    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        auto& ref_blk = *dbp;
+        if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
 
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, ParFlat_COL_DATA_EMBL);
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, ref_blk, ParFlat_COL_DATA_EMBL);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -1995,23 +1995,19 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 /**********************************************************/
 static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 {
-    DataBlkPtr dbp;
-    DataBlkPtr subdbp;
-
     char* p;
     char* q;
 
-    dbp = TrackNodeType(entry, ParFlat_OS);
-    if (! dbp) {
-        ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in Embl format file");
-        return;
-    }
+    unsigned count = 0;
 
-    for (; dbp; dbp = dbp->mpNext) {
-        if (dbp->mType != ParFlat_OS)
+    const auto& chain = TrackNodes(entry);
+    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+        const auto& os_blk = *dbp;
+        if (os_blk.mType != ParFlat_OS)
             continue;
+        ++count;
 
-        CRef<COrg_ref> org_ref = GetEmblOrgRef(*dbp);
+        CRef<COrg_ref> org_ref = GetEmblOrgRef(os_blk);
         if (org_ref.Empty())
             continue;
 
@@ -2032,7 +2028,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        subdbp = dbp->GetSubData();
+        const DataBlk* subdbp = os_blk.GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType == ParFlat_OG) {
                 GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
@@ -2078,6 +2074,11 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetSource(*bio_src);
         bioseq.SetDescr().Set().push_front(descr);
+    }
+
+    if (count == 0) {
+        ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in Embl format file");
+        return;
     }
 }
 
