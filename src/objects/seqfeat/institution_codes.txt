@@ -2344,6 +2344,7 @@ FKEN	s	Folkestone Natural History Society
 FKSE	s	Fukushima University			
 FLACC	c	Free-Living Amoebae Culture Collection			
 FLAS	s	Florida Museum of Natural History Herbarium			
+FLAS:F	s	Fungal Collection			
 FLC	s	Fort Lewis College			
 FLD	s	Fort Lewis College, Biology Department			
 FLH	s	Finger Lakes Community College			
