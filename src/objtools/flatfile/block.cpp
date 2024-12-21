@@ -121,9 +121,9 @@ void DataBlk::deleteData()
         auto& p = std::get<FeatBlk*>(mData);
         delete p;
         p = nullptr;
-    } else if (holds_alternative<TXmlIndexList>(mData)) {
-        auto& xil = std::get<TXmlIndexList>(mData);
-        xil.clear();
+    } else if (holds_alternative<const TXmlIndexList*>(mData)) {
+        auto& p = std::get<const TXmlIndexList*>(mData);
+        p = nullptr;
     }
     mData.emplace<monostate>();
 }

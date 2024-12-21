@@ -325,14 +325,14 @@ public:
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);
     FeatBlk*  GetFeatData() const;
-    void      SetXmlData(TXmlIndexList xil) { mData = xil; }
-    const TXmlIndexList& GetXmlData() const { return std::get<TXmlIndexList>(mData); }
+    void      SetXmlData(const TXmlIndexList& xil) { mData = &xil; }
+    const TXmlIndexList& GetXmlData() const { return *std::get<const TXmlIndexList*>(mData); }
     bool      hasData() const { return ! holds_alternative<monostate>(mData); }
     void      deleteData();
 
 public:
     int            mType;    // which keyword block or node type
-    std::variant<monostate, TList, EntryBlk*, FeatBlk*, TXmlIndexList>
+    std::variant<monostate, TList, EntryBlk*, FeatBlk*, const TXmlIndexList*>
                    mData;
     char*          mOffset;  // points to beginning of the entry in the memory
     size_t         len;      // lenght of data in bytes
