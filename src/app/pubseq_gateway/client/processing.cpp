@@ -235,6 +235,7 @@ const char* s_GetItemName(CPSG_ReplyItem::EType type, bool trouble = true)
         case CPSG_ReplyItem::ePublicComment:  return "PublicComment";
         case CPSG_ReplyItem::eProcessor:      return "Processor";
         case CPSG_ReplyItem::eIpgInfo:        return "IpgInfo";
+        case CPSG_ReplyItem::eAccVerHistory:  return "AccVerHistory";
         case CPSG_ReplyItem::eEndOfReply:     if (!trouble) return "Reply"; _TROUBLE;
     }
 
@@ -299,6 +300,9 @@ void CJsonResponse::Fill(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyIte
 
         case CPSG_ReplyItem::eIpgInfo:
             return Fill(static_pointer_cast<CPSG_IpgInfo>(reply_item));
+
+        case CPSG_ReplyItem::eAccVerHistory:
+            return Fill(static_pointer_cast<CPSG_AccVerHistory>(reply_item));
 
         case CPSG_ReplyItem::eEndOfReply:
             _TROUBLE;
@@ -460,6 +464,15 @@ void CJsonResponse::Fill(shared_ptr<CPSG_IpgInfo> ipg_info)
     Set("nucleotide", ipg_info->GetNucleotide());
     Set("tax_id",     ipg_info->GetTaxId());
     Set("gb_state",   ipg_info->GetGbState());
+}
+
+void CJsonResponse::Fill(shared_ptr<CPSG_AccVerHistory> acc_ver_history)
+{
+    Set("canonical_id", acc_ver_history->GetCanonicalId());
+    Set("gi",           GI_TO(Int8, acc_ver_history->GetGi()));
+    Set("date",         acc_ver_history->GetDate().AsString());
+    Set("blob_id",      acc_ver_history->GetBlobId());
+    Set("chain",        acc_ver_history->GetChain());
 }
 
 void CJsonResponse::AddMessage(const SPSG_Message& message)
