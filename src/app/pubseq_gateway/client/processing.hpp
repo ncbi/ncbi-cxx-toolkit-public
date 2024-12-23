@@ -115,6 +115,7 @@ private:
     void Fill(shared_ptr<CPSG_PublicComment> public_comment);
     void Fill(shared_ptr<CPSG_Processor> processor);
     void Fill(shared_ptr<CPSG_IpgInfo> ipg_info);
+    void Fill(shared_ptr<CPSG_AccVerHistory> acc_ver_history);
 
     void AddMessage(const SPSG_Message& message);
     void AddMessage(EDoNotAddRequestID = eDoNotAddRequestID) {}
