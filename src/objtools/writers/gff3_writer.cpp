@@ -645,7 +645,7 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
         default:
             break;
         case CSpliced_exon_chunk::e_Mismatch:
-            record.AddMatch(chunk.GetMismatch());
+            record.AddMatch((chunk.GetMismatch()+tgtWidth-1)/tgtWidth);
             break;
         case CSpliced_exon_chunk::e_Diag:
             // Round to next multiple of tgtWidth to account for reverse frameshifts
