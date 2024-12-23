@@ -96,6 +96,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_NamedAnnotInfo>("named_annot", "Request named annotations info by bio ID(s)"),
             s_GetCommand<CPSG_Request_Chunk>         ("chunk",       "Request blob data chunk by chunk ID"),
             s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info", SCommand::fParallel),
+            s_GetCommand<CPSG_Request_AccVerHistory> ("acc_ver_history", "Request accession version history"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
@@ -274,6 +275,13 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_IpgResolve>(CArgDescriptions& arg
     arg_desc.AddFlag("server-mode", "Output one response per line");
     arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
+}
+
+template <>
+void CPsgClientApp::s_InitRequest<CPSG_Request_AccVerHistory>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString);
 }
 
 template<>
