@@ -511,6 +511,8 @@ shared_ptr<CPSG_Request> SRequestBuilder::Build(const string& name, const TInput
         return Build<CPSG_Request_Chunk>(input, std::forward<TArgs>(args)...);
     } else if (name == "ipg_resolve") {
         return Build<CPSG_Request_IpgResolve>(input, std::forward<TArgs>(args)...);
+    } else if (name == "acc_ver_history") {
+        return Build<CPSG_Request_AccVerHistory>(input, std::forward<TArgs>(args)...);
     } else if (name == "raw") {
         return Build<CRawRequest>(input, std::forward<TArgs>(args)...);
     } else {
@@ -595,6 +597,14 @@ shared_ptr<CPSG_Request_IpgResolve> SRequestBuilder::SImpl<CPSG_Request_IpgResol
     auto ipg = reader.GetIpg();
     auto nucleotide = reader.GetNucleotide();
     return Create(std::move(protein), ipg, std::move(nucleotide));
+}
+
+template <>
+template <class TReader>
+shared_ptr<CPSG_Request_AccVerHistory> SRequestBuilder::SImpl<CPSG_Request_AccVerHistory>::Build(const TReader& reader)
+{
+    auto bio_id = reader.GetBioId();
+    return Create(std::move(bio_id));
 }
 
 template <>

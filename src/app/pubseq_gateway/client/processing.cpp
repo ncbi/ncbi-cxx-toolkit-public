@@ -2170,6 +2170,49 @@ CJson_Document CProcessing::RequestSchema()
                 "id"
             ]
         },
+        "acc_ver_history": {
+            "$id": "#acc_ver_history",
+            "type": "object",
+            "properties": {
+                "jsonrpc": {
+                    "$ref": "#/definitions/jsonrpc"
+                },
+                "method": {
+                    "enum": [
+                        "acc_ver_history"
+                    ]
+                },
+                "params": {
+                    "type": "object",
+                    "properties": {
+                        "bio_id": {
+                            "$ref": "#/definitions/bio_id"
+                        },
+                        "context": {
+                            "$ref": "#/definitions/context"
+                        },
+                        "request_flags": {
+                            "$ref": "#/definitions/request_flags"
+                        },
+                        "user_args": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "bio_id"
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "jsonrpc",
+                "method",
+                "params",
+                "id"
+            ]
+        },
         "raw": {
             "$id": "#raw",
             "type": "object",
@@ -2232,6 +2275,9 @@ CJson_Document CProcessing::RequestSchema()
         },
         {
             "$ref": "#/definitions/ipg_resolve"
+        },
+        {
+            "$ref": "#/definitions/acc_ver_history"
         },
         {
             "$ref": "#/definitions/raw"

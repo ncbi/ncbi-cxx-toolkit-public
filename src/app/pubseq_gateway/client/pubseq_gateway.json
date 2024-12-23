@@ -1,5 +1,16 @@
 {
   "request": {
+    "acc_ver_history": {
+      "description": "Request accession version history",
+      "Request-specific Parameters": {
+        "mandatory": {
+          "id": "ID part of Bio ID"
+        },
+        "optional": {
+          "type": "Type part of bio ID"
+        }
+      }
+    },
     "biodata": {
       "description": "Request biodata info and data by bio ID",
       "Request-specific Parameters": {

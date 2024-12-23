@@ -325,6 +325,7 @@ def syntest_all(psg_client, bio_ids, blob_ids, named_annots, chunk_ids, ipgs):
             'blob':         [blob_ids,      ['include_data', 'user_args']],
             'named_annot':  [named_annots,  ['include_data', 'acc_substitution', 'bio_id_resolution', 'snp_scale_limit']],
             'chunk':        [chunk_ids,     ['user_args',    'user_args']],
+            'acc_ver_history': [bio_ids,    ['user_args',    'user_args']],
             'ipg_resolve':  [ipgs,          ['user_args',    'user_args']]
         }
 
@@ -1046,7 +1047,7 @@ def generate_cmd(args):
     else:
         bio_ids = prepare_bio_ids(read_bio_ids(args.INPUT_FILE))
 
-        if args.TYPE in ('biodata', 'resolve'):
+        if args.TYPE in ('acc_ver_history', 'biodata', 'resolve'):
             ids = bio_ids
         elif args.TYPE in ('blob', 'chunk'):
             max_blob_ids = args.NUMBER if args.TYPE == 'blob' else 0
@@ -1081,7 +1082,7 @@ def cgi_help_cmd(args):
             r.setdefault('params', []).append((param_name, param_desc))
 
     ns = {'ns': 'ncbi:application'}
-    show_requests = ['biodata', 'blob', 'chunk', 'ipg_resolve', 'named_annot', 'resolve']
+    show_requests = ['acc_ver_history', 'biodata', 'blob', 'chunk', 'ipg_resolve', 'named_annot', 'resolve']
     hide_keys = ['conffile', 'debug-printout', 'input-file', 'io-threads', 'logfile', 'max-streams', 'requests-per-io', 'worker-threads', 'rate', 'service']
     hide_flags = ['dryrun', 'latency', 'all-latency', 'first-latency', 'last-latency', 'server-mode']
     tse_flags = ['no-tse', 'slim-tse', 'smart-tse', 'whole-tse', 'orig-tse']
@@ -1289,7 +1290,7 @@ if __name__ == '__main__':
     parser_generate.add_argument('-params', help='Params to add to requests (e.g. \'{"include_info": ["canonical-id", "gi"]}\')')
     parser_generate.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_generate.add_argument('INPUT_FILE', help='CSV file with bio IDs "BioID[,Type]", named annotations "BioID,NamedAnnotID[,NamedAnnotID]... or IPG IDs "Protein,[IPG][,Nucleotide]"', type=argparse.FileType())
-    parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot, chunk or ipg_resolve)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk', 'ipg_resolve'])
+    parser_generate.add_argument('TYPE', help='Type of requests (resolve, biodata, blob, named_annot, chunk, acc_ver_history or ipg_resolve)', metavar='TYPE', choices=['resolve', 'biodata', 'blob', 'named_annot', 'chunk', 'acc_ver_history', 'ipg_resolve'])
     parser_generate.add_argument('NUMBER', help='Max number of requests', type=int)
 
     parser_cgi_help = subparsers.add_parser('cgi_help', help='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)', description='Generate JSON help for pubseq_gateway.cgi (by parsing psg_client help)')
