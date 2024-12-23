@@ -99,6 +99,7 @@ struct SPSG_ArgsBase : CUrlArgs
         ePublicComment,
         eProcessor,
         eIpgInfo,
+        eAccVerHistory,
         eUnknownItem,
     };
 
