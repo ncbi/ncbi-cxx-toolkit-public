@@ -822,6 +822,7 @@ static const char* s_GetRequestTypeName(CPSG_Request::EType type)
     case CPSG_Request::eNamedAnnotInfo: return "annot";
     case CPSG_Request::eChunk:          return "chunk";
     case CPSG_Request::eIpgResolve:     return "ipg_resolve";
+    case CPSG_Request::eAccVerHistory:  return "acc_ver_history";
     }
 
     // Should not happen

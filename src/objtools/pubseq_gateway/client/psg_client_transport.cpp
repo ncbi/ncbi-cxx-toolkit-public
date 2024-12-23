@@ -284,6 +284,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eRequest>
             case CPSG_Request::eNamedAnnotInfo:     return "named_annot_info";
             case CPSG_Request::eChunk:              return "chunk";
             case CPSG_Request::eIpgResolve:         return "ipg_resolve";
+            case CPSG_Request::eAccVerHistory:      return "acc_ver_history";
         }
 
         // Should not happen
