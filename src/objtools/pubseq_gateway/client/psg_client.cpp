@@ -177,6 +177,7 @@ const char* s_GetRequestTypeName(CPSG_Request::EType type)
         case CPSG_Request::eNamedAnnotInfo: return "annot";
         case CPSG_Request::eChunk:          return "chunk";
         case CPSG_Request::eIpgResolve:     return "ipg_resolve";
+        case CPSG_Request::eAccVerHistory:  return "acc_ver_history";
     }
 
     // Should not happen
@@ -943,6 +944,12 @@ void CPSG_Request_IpgResolve::x_GetAbsPathRef(ostream& os) const
     if (m_Ipg) os << (has_protein ? "&ipg=" : "?ipg=") << m_Ipg;
 
     if (!m_Nucleotide.IsNull()) os << "&nucleotide=" << m_Nucleotide.GetValue();
+}
+
+
+void CPSG_Request_AccVerHistory::x_GetAbsPathRef(ostream& os) const
+{
+    os << "/ID/get_acc_ver_history?" << m_BioId;
 }
 
 

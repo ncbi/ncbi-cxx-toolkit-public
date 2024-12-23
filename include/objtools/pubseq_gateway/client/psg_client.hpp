@@ -106,6 +106,7 @@ public:
         eNamedAnnotInfo,
         eChunk,
         eIpgResolve,
+        eAccVerHistory,
     };
 
     enum EFlags {
@@ -617,6 +618,31 @@ private:
     string m_Protein;
     Int8 m_Ipg;
     TNucleotide m_Nucleotide;
+};
+
+
+
+/// Request accession version history
+///
+
+class CPSG_Request_AccVerHistory : public CPSG_Request
+{
+public:
+    CPSG_Request_AccVerHistory(CPSG_BioId            bio_id,
+                               shared_ptr<void>      user_context = {},
+                               CRef<CRequestContext> request_context = {})
+        : CPSG_Request(std::move(user_context), std::move(request_context)),
+          m_BioId(std::move(bio_id))
+    {}
+
+    const CPSG_BioId& GetBioId() const { return m_BioId; }
+
+private:
+    EType x_GetType() const override { return eAccVerHistory; }
+    string x_GetId() const override { return GetBioId().Repr(); }
+    void x_GetAbsPathRef(ostream&) const override;
+
+    CPSG_BioId m_BioId;
 };
 
 
