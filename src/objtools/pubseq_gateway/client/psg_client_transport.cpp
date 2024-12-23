@@ -127,6 +127,7 @@ SPSG_ArgsBase::SArg<SPSG_ArgsBase::eItemType>::TType SPSG_ArgsBase::SArg<SPSG_Ar
     if (value == "public_comment")  return { SPSG_ArgsBase::ePublicComment,  cref(value) };
     if (value == "processor")       return { SPSG_ArgsBase::eProcessor,      cref(value) };
     if (value == "ipg_info")        return { SPSG_ArgsBase::eIpgInfo,        cref(value) };
+    if (value == "acc_ver_history") return { SPSG_ArgsBase::eAccVerHistory,  cref(value) };
     if (value.empty())              return { SPSG_ArgsBase::eReply,          cref(value) };
     return { SPSG_ArgsBase::eUnknownItem, cref(value) };
 };
@@ -308,6 +309,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
         CPSG_ReplyItem::ePublicComment,
         CPSG_ReplyItem::eProcessor,
         CPSG_ReplyItem::eIpgInfo,
+        CPSG_ReplyItem::eAccVerHistory,
         CPSG_ReplyItem::eEndOfReply,
     };
 
@@ -323,6 +325,7 @@ struct SPSG_StatsCounters::SGroup<SPSG_StatsCounters::eReplyItem>
             case CPSG_ReplyItem::ePublicComment:        return "public_comment";
             case CPSG_ReplyItem::eProcessor:            return "processor";
             case CPSG_ReplyItem::eIpgInfo:              return "ipg_info";
+            case CPSG_ReplyItem::eAccVerHistory:        return "acc_ver_history";
             case CPSG_ReplyItem::eEndOfReply:           return "end_of_reply";
         }
 

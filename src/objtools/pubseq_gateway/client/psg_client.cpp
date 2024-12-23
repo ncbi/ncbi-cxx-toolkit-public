@@ -417,6 +417,7 @@ CPSG_ReplyItem* CPSG_Reply::SImpl::CreateImpl(SPSG_Reply::SItem::TTS& item_ts, S
             case CPSG_ReplyItem::ePublicComment:    return new CPSG_PublicComment(SDataId::Get(args), chunks.empty() ? string() : chunks.front());
             case CPSG_ReplyItem::eProcessor:        return new CPSG_Processor(s_GetProgressStatus(args));
             case CPSG_ReplyItem::eIpgInfo:          return CreateImpl(new CPSG_IpgInfo, chunks);
+            case CPSG_ReplyItem::eAccVerHistory:    return CreateImpl(new CPSG_AccVerHistory, chunks);
             case CPSG_ReplyItem::eEndOfReply:       return nullptr;
         }
 
@@ -480,6 +481,7 @@ SItemTypeAndReason SItemTypeAndReason::Get(SPSG_Args& args, bool raw)
         case SPSG_Args::ePublicComment:  return CPSG_ReplyItem::ePublicComment;
         case SPSG_Args::eProcessor:      return CPSG_ReplyItem::eProcessor;
         case SPSG_Args::eIpgInfo:        return CPSG_ReplyItem::eIpgInfo;
+        case SPSG_Args::eAccVerHistory:  return CPSG_ReplyItem::eAccVerHistory;
         case SPSG_Args::eUnknownItem:
             if (!raw) break;
             args.SetValue("blob_id", args.GetValue("item_type"));
@@ -1386,6 +1388,37 @@ TTaxId CPSG_IpgInfo::GetTaxId() const
 CPSG_IpgInfo::TState CPSG_IpgInfo::GetGbState() const
 {
     return static_cast<TState>(m_Data.GetInteger("gb_state"));
+}
+
+
+CPSG_AccVerHistory::CPSG_AccVerHistory()
+    : CPSG_ReplyItem(eAccVerHistory)
+{
+}
+
+CPSG_BioId CPSG_AccVerHistory::GetCanonicalId() const
+{
+    return s_GetBioId(m_Data);
+};
+
+TGi CPSG_AccVerHistory::GetGi() const
+{
+    return static_cast<TGi>(m_Data.GetInteger("gi"));
+}
+
+CTime CPSG_AccVerHistory::GetDate() const
+{
+    return s_GetTime(m_Data.GetInteger("date"));
+}
+
+CPSG_BlobId CPSG_AccVerHistory::GetBlobId() const
+{
+    return s_GetBlobId(m_Data);
+}
+
+TGi CPSG_AccVerHistory::GetChain() const
+{
+    return static_cast<TGi>(m_Data.GetInteger("chain"));
 }
 
 

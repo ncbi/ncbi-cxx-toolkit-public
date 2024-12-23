@@ -672,6 +672,7 @@ public:
         eProcessor,
         eIpgInfo,
         eNamedAnnotStatus,
+        eAccVerHistory,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
     };
 
@@ -1054,6 +1055,36 @@ public:
 
 private:
     CPSG_IpgInfo();
+
+    CJsonNode m_Data;
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// Accession version history - reply to CPSG_Request_AccVerHistory.
+
+class CPSG_AccVerHistory : public CPSG_ReplyItem
+{
+public:
+    /// Get canonical bio-id for the bioseq (usually "accession.version")
+    CPSG_BioId GetCanonicalId() const;
+
+    /// Get GI
+    TGi GetGi() const;
+
+    /// Get date
+    CTime GetDate() const;
+
+    /// Get coordinates of the blob
+    CPSG_BlobId GetBlobId() const;
+
+    /// Get chain
+    TGi GetChain() const;
+
+private:
+    CPSG_AccVerHistory();
 
     CJsonNode m_Data;
 
