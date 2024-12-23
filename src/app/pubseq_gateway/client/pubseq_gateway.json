@@ -157,6 +157,7 @@
   },
   "Common Parameters": {
     "optional": {
+      "min-severity": "Minimum severity level of messages to output, (default: Warning)",
       "timeout": "Set request timeout (in seconds)",
       "use-cache": "Whether to use LMDB cache (no|yes|default)",
       "user-args": "Arbitrary request URL arguments (queue-wide)"
