@@ -2001,7 +2001,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
     unsigned count = 0;
 
     const auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
         const auto& os_blk = *dbp;
         if (os_blk.mType != ParFlat_OS)
             continue;
