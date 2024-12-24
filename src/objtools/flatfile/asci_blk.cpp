@@ -471,7 +471,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REFERENCE)
             continue;
@@ -489,7 +489,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         GetGenBankRefType(ref_blk, bases);
     }
 
-    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& feat_blk = *dbp;
         if (feat_blk.mType != ParFlat_FEATURES)
             continue;
@@ -752,7 +752,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     DataBlkPtr  temp;
 
     auto& chain = TrackNodes(entry);
-    for (temp = chain.begin(); temp; temp = temp->mpNext) {
+    for (temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
         auto& os_blk = *temp;
         if (os_blk.mType != ParFlat_OS)
             continue;
@@ -762,7 +762,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(os_blk);
     }
 
-    for (temp = chain.begin(); temp; temp = temp->mpNext) {
+    for (temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
         auto& ref_blk = *temp;
         if (ref_blk.mType != ParFlat_RN)
             continue;
@@ -781,7 +781,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 
     DataBlkPtr predbp = chain.begin();
     DataBlkPtr curdbp = predbp->mpNext;
-    while (curdbp) {
+    while (curdbp != chain.end()) {
         if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;
             curdbp = curdbp->mpNext;
@@ -842,11 +842,10 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
  **********************************************************/
 void GetLenSubNode(DataBlk& dbp)
 {
-    DataBlkPtr ldbp;
-    char*      offset;
-    char*      s;
-    Int2       n;
-    bool       done = false;
+    char* offset;
+    char* s;
+    Int2  n;
+    bool  done = false;
 
     TDataBlkList& subblocks = std::get<TDataBlkList>(dbp.mData);
     if (subblocks.empty())
@@ -856,8 +855,9 @@ void GetLenSubNode(DataBlk& dbp)
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
     n    = atoi(s);
-    ldbp = nullptr;
-    for (auto ndbp = subblocks.begin(); ndbp; ndbp = ndbp->mpNext) {
+
+    const DataBlk* ldbp = nullptr;
+    for (auto ndbp = subblocks.cbegin(); ndbp; ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp.len) {
             dbp.len = l;
@@ -865,7 +865,7 @@ void GetLenSubNode(DataBlk& dbp)
         }
     }
 
-    if (ldbp != subblocks.begin() && ldbp) {
+    if (ldbp != subblocks.cbegin() && ldbp != subblocks.cend()) {
         ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         done = true;
     }

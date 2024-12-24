@@ -852,7 +852,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
     }
 
     auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlatSP_RN)
             continue;
@@ -1316,7 +1316,7 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
 }
 
 /**********************************************************/
-static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
+static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp)
 {
     ViralHostPtr vhp;
     ViralHostPtr tvhp;
@@ -1425,9 +1425,8 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
+static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp)
 {
-    DataBlkPtr subdbp;
     char*      line;
     char*      p;
     char*      q;
@@ -1438,7 +1437,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        subdbp = dbp->GetSubData();
+        const DataBlk* subdbp = dbp->GetSubData();
         for (; subdbp; subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
@@ -1489,10 +1488,9 @@ static TTaxId GetTaxIdFrom_OX(DataBlkPtr dbp)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
+static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry)
 {
     SetOfSpeciesPtr sosp;
-    DataBlkPtr      dbp;
     char*           line_OS;
     char*           line_OC;
 
@@ -1501,7 +1499,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkPtr entry)
     line_OS = nullptr;
     line_OC = nullptr;
 
-    for (dbp = entry; dbp; dbp = dbp->mpNext) {
+    for (auto dbp = entry; dbp; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(*dbp, "OS   ");
@@ -1542,7 +1540,7 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
     Int4  gmod = -1;
 
     auto& chain = TrackNodes(entry);
-    for (const DataBlk* dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (const DataBlk* dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
         const auto& os_blk = *dbp;
         if (os_blk.mType != ParFlatSP_OS)
             continue;
@@ -2652,7 +2650,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
     /* Org-ref from ID lines
      */
     auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
@@ -2756,7 +2754,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* RN data ==> pub
      */
-    for (dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;

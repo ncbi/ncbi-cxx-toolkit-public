@@ -270,8 +270,8 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         return false;
 
     const auto&    chain = TrackNodes(entry);
-    const DataBlk* temp  = chain.begin();
-    for (; temp; temp = temp->mpNext) {
+    const DataBlk* temp  = chain.cbegin();
+    for (; temp != chain.cend(); temp = temp->mpNext) {
         const auto& dblk = *temp;
         if (dblk.mType != type)
             continue;
@@ -290,7 +290,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         if (p)
             break;
     }
-    if (! temp)
+    if (temp == chain.cend())
         return false;
 
     return true;
