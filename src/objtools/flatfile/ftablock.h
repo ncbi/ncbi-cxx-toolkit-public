@@ -292,7 +292,9 @@ public:
             head(p) {}
         bool           empty() const { return head == nullptr; }
         DataBlk*       begin() { return head; }
-        const DataBlk* begin() const { return head; }
+        DataBlk*       end() { return nullptr; }
+        const DataBlk* cbegin() const { return head; }
+        const DataBlk* cend() const { return nullptr; }
     };
 
 public:
