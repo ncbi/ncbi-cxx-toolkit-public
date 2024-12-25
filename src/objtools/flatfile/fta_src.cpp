@@ -359,21 +359,19 @@ static void SourceFeatBlkSetFree(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr CollectSourceFeats(DataBlkPtr dbp, Int2 type)
+static SourceFeatBlkPtr CollectSourceFeats(const DataBlk* dbp, const DataBlk* dbp_end, Int2 type)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
-    DataBlkPtr       tdbp;
-    FeatBlkPtr       fbp;
 
     sfbp  = SourceFeatBlkNew();
     tsfbp = sfbp;
 
-    for (; dbp; dbp = dbp->mpNext) {
+    for (; dbp != dbp_end; dbp = dbp->mpNext) {
         if (dbp->mType != type)
             continue;
-        for (tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
-            fbp = tdbp->GetFeatData();
+        for (const DataBlk* tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
+            const FeatBlk* fbp = tdbp->GetFeatData();
             if (! fbp || fbp->key != "source")
                 continue;
             tsfbp->next = SourceFeatBlkNew();
@@ -3123,7 +3121,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 }
 
 /**********************************************************/
-void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
+void ParseSourceFeat(ParserPtr pp, const DataBlk* dbp, const DataBlk* dbp_end, TSeqIdList& seqids, Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
@@ -3146,7 +3144,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkPtr dbp, TSeqIdList& seqids, Int2 type
     if (ibp->segnum < 2)
         pp->errstat = 0;
 
-    sfbp = CollectSourceFeats(dbp, type);
+    sfbp = CollectSourceFeats(dbp, dbp_end, type);
     if (! sfbp) {
         ErrPostStr(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
         return;

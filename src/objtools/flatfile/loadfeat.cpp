@@ -3137,12 +3137,10 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
 }
 
 /**********************************************************/
-static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, Int2 type)
+static void CollectGapFeats(const DataBlk& entry, const DataBlk* dbp, const DataBlk* dbp_end, ParserPtr pp, Int2 type)
 {
     IndexblkPtr ibp;
     GapFeatsPtr gfp;
-    DataBlkPtr  tdbp;
-    FeatBlkPtr  fbp;
 
     CLinkage_evidence::TLinkage_evidence asn_linkage_evidence;
     list<string>                         linkage_evidence_names;
@@ -3193,7 +3191,8 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
     // prev_gap     = 0;
     curr_gap     = 0;
     finished_gap = false;
-    for (ibp->gaps.clear(); dbp; dbp = dbp->mpNext) {
+    ibp->gaps.clear();
+    for (; dbp != dbp_end; dbp = dbp->mpNext) {
         if (ibp->drop)
             break;
         if (dbp->mType != type)
@@ -3202,10 +3201,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkPtr dbp, ParserPtr pp, 
         linkage_evidence_names.clear();
         asn_linkage_evidence.clear();
 
-        for (tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
+        for (const DataBlk* tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
             if (ibp->drop)
                 break;
-            fbp = tdbp->GetFeatData();
+            const FeatBlk* fbp = tdbp->GetFeatData();
             if (! fbp || fbp->key.empty())
                 continue;
             if (fbp->key == "gap") {
@@ -4764,7 +4763,8 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         dab = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
     else
         dab = TrackNodeType(entry, type);
-    for (dbp = dab; dbp; dbp = dbp->mpNext) {
+    const DataBlk* dab_end = nullptr;
+    for (dbp = dab; dbp != dab_end; dbp = dbp->mpNext) {
         auto& dblk = *dbp;
         if (dblk.mType != type)
             continue;
@@ -4801,15 +4801,15 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (! ibp->drop)
-        CollectGapFeats(entry, dab, pp, type);
+        CollectGapFeats(entry, dab, dab_end, pp, type);
 
     TSeqFeatList seq_feats;
     if (! ibp->drop)
-        ParseSourceFeat(pp, dab, ids, type, bioseq, seq_feats);
+        ParseSourceFeat(pp, dab, dab_end, ids, type, bioseq, seq_feats);
 
     if (seq_feats.empty()) {
         ibp->drop = true;
-        for (; dab; dab = dabnext) {
+        for (; dab != dab_end; dab = dabnext) {
             dabnext = dab->mpNext;
             if (dab->hasData()) {
                 TDataBlkList& dbl = std::get<TDataBlkList>(dab->mData);
@@ -4845,7 +4845,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
 
-    for (; dab; dab = dabnext) {
+    for (; dab != dab_end; dab = dabnext) {
         dabnext = dab->mpNext;
         if (dab->mType != type) {
             if (pp->format == Parser::EFormat::XML)
