@@ -760,13 +760,13 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 }
 
 /**********************************************************/
-static CBioSource::EGenome GetSPGenome(const DataBlk* dbp)
+static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
 {
     DataBlkPtr subdbp;
     char*      p;
     Int4       gmod = -1;
 
-    for (; dbp; dbp = dbp->mpNext)
+    for (auto dbp = dbl.cbegin(); dbp != dbl.cend(); dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS) {
             subdbp = dbp->GetSubData();
             for (; subdbp; subdbp = subdbp->mpNext)
@@ -1316,7 +1316,7 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
 }
 
 /**********************************************************/
-static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp)
+static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp, const DataBlk* dbp_end)
 {
     ViralHostPtr vhp;
     ViralHostPtr tvhp;
@@ -1326,10 +1326,10 @@ static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp)
     char*        r;
     Char         ch;
 
-    for (; dbp; dbp = dbp->mpNext)
+    for (; dbp != dbp_end; dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS)
             break;
-    if (! dbp)
+    if (dbp == dbp_end)
         return nullptr;
 
     for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext)
@@ -1425,15 +1425,15 @@ static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp)
 }
 
 /**********************************************************/
-static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp)
+static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp, const DataBlk* dbp_end)
 {
-    char*      line;
-    char*      p;
-    char*      q;
-    bool       got;
-    TTaxId     taxid;
+    char*  line;
+    char*  p;
+    char*  q;
+    bool   got   = false;
+    TTaxId taxid = ZERO_TAX_ID;
 
-    for (got = false, taxid = ZERO_TAX_ID; dbp; dbp = dbp->mpNext) {
+    for (; dbp != dbp_end; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
@@ -1488,7 +1488,7 @@ static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry)
+static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry, const DataBlk* end)
 {
     SetOfSpeciesPtr sosp;
     char*           line_OS;
@@ -1499,7 +1499,7 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry)
     line_OS = nullptr;
     line_OC = nullptr;
 
-    for (auto dbp = entry; dbp; dbp = dbp->mpNext) {
+    for (auto dbp = entry; dbp != end; dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(*dbp, "OS   ");
@@ -2559,7 +2559,6 @@ static bool IfOHTaxIdMatchOHName(const char* orpname, const char* ohname)
 /**********************************************************/
 static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 {
-    DataBlkPtr dbp;
     char*      offset;
     CBioSource::TGenome gmod;
     bool       fragment = false;
@@ -2644,19 +2643,18 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"%s\" precedes create-date \"%s\".", upd_date_str.c_str(), create_date_str.c_str());
     }
 
-    dbp  = TrackNodeType(entry, ParFlatSP_OS);
-    gmod = GetSPGenome(dbp);
+    auto& chain = TrackNodes(entry);
+    gmod = GetSPGenomeFrom_OS_OG(chain);
 
     /* Org-ref from ID lines
      */
-    auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
         CRef<CBioSource> bio_src;
 
-        taxid = GetTaxIdFrom_OX(dbp);
+        taxid = GetTaxIdFrom_OX(dbp, chain.cend());
         if (taxid > ZERO_TAX_ID) {
             CRef<COrg_ref> org_ref = fta_fix_orgref_byid(pp, taxid, &ibp->drop, false);
             if (org_ref.Empty())
@@ -2670,7 +2668,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
             }
         }
 
-        CRef<COrg_ref> org_ref = GetOrganismFrom_OS_OC(dbp);
+        CRef<COrg_ref> org_ref = GetOrganismFrom_OS_OC(dbp, chain.cend());
         if (org_ref.NotEmpty()) {
             if (bio_src.Empty()) {
                 bio_src.Reset(new CBioSource);
@@ -2689,7 +2687,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         if (bio_src.Empty())
             break;
 
-        vhp = GetViralHostsFrom_OH(dbp);
+        vhp = GetViralHostsFrom_OH(dbp, chain.cend());
         if (vhp) {
             COrgName& orgname = bio_src->SetOrg().SetOrgname();
 
@@ -2754,7 +2752,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* RN data ==> pub
      */
-    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
