@@ -1155,7 +1155,7 @@ static void fta_strip_aa(char* str)
  **********************************************************/
 static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, TSeqIdList& seqids, Int4 col_data, IndexblkPtr ibp)
 {
-    DataBlkPtr dbp;
+    DataBlkPtr dbp, dbp_end;
     char*      p;
 
     bool  err = false;
@@ -1163,14 +1163,20 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
     /* REFERENCE, to Seq-feat
      */
-    if (pp->format == Parser::EFormat::XML)
-        dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_BTW);
-    else
-        dbp = TrackNodeType(entry, ParFlat_REF_BTW);
-    if (! dbp)
+    TDataBlkList temp_xml_chain;
+    if (pp->format == Parser::EFormat::XML) {
+        temp_xml_chain = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_BTW);
+        dbp            = temp_xml_chain.begin();
+        dbp_end        = temp_xml_chain.end();
+    } else {
+        TDataBlkList& chain = TrackNodes(entry);
+        dbp                 = chain.begin();
+        dbp_end             = chain.end();
+    }
+    if (dbp == dbp_end)
         return;
 
-    for (; dbp; dbp = dbp->mpNext) {
+    for (; dbp != dbp_end; dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_BTW)
             continue;
@@ -1277,21 +1283,27 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
  **********************************************************/
 static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, CSeq_id& seq_id, Int4 col_data, IndexblkPtr ibp)
 {
-    DataBlkPtr dbp;
+    DataBlkPtr dbp, dbp_end;
 
-    bool first;
+    bool first = true;
 
     /* REFERENCE, Imp-feat
      */
-    if (pp->format == Parser::EFormat::XML)
-        dbp = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_SITES);
-    else
-        dbp = TrackNodeType(entry, ParFlat_REF_SITES);
-    if (! dbp)
+    TDataBlkList temp_xml_chain;
+    if (pp->format == Parser::EFormat::XML) {
+        temp_xml_chain = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_SITES);
+        dbp            = temp_xml_chain.begin();
+        dbp_end        = temp_xml_chain.end();
+    } else {
+        TDataBlkList& chain = TrackNodes(entry);
+        dbp                 = chain.begin();
+        dbp_end             = chain.end();
+    }
+    if (dbp == dbp_end)
         return;
 
     CRef<CSeq_feat> feat;
-    for (first = true; dbp; dbp = dbp->mpNext) {
+    for (; dbp != dbp_end; dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_SITES)
             continue;
@@ -3502,31 +3514,30 @@ static void XMLGetQuals(char* entry, const TXmlIndexList& xil, TQualVector& qual
 }
 
 /**********************************************************/
-static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
+static TDataBlkList XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
 {
-    DataBlkPtr dbp;
-    DataBlkPtr ret;
-    FeatBlkPtr fbp;
+    TDataBlkList ret;
 
     if (! entry || xil.empty())
-        return nullptr;
+        return ret;
 
-    auto xip = xil.begin();
-    for (; xip != xil.end(); ++xip)
+    auto xip = xil.cbegin();
+    for (; xip != xil.cend(); ++xip)
         if (xip->tag == INSDSEQ_FEATURE_TABLE)
             break;
 
-    if (xip == xil.end() || xip->subtags.empty())
-        return nullptr;
+    if (xip == xil.cend() || xip->subtags.empty())
+        return ret;
 
-    TDataBlkList dbl(nullptr);
+    TDataBlkList dbl;
+    DataBlkPtr   dbp;
 
     const auto& subtags = xip->subtags;
-    for (xip = subtags.begin(); xip != subtags.end(); ++xip) {
+    for (xip = subtags.cbegin(); xip != subtags.cend(); ++xip) {
         if (xip->subtags.empty())
             continue;
-        fbp          = new FeatBlk;
-        fbp->spindex = -1;
+        FeatBlkPtr fbp = new FeatBlk;
+        fbp->spindex   = -1;
         for (auto xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); ++xipfeat) {
             if (xipfeat->tag == INSDFEATURE_KEY)
                 fbp->key = *XMLGetTagValue(entry, *xipfeat);
@@ -3535,7 +3546,7 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
-        auto p = new DataBlk;
+        DataBlkPtr p = new DataBlk;
         if (! dbl.head) {
             dbl.head = p;
         } else {
@@ -3544,11 +3555,10 @@ static DataBlkPtr XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
         dbp = p;
         dbp->SetFeatData(fbp);
     }
-    ret         = new DataBlk;
-    ret->mType  = XML_FEATURES;
-    ret->mData  = dbl;
-    ret->mpNext = nullptr;
-    return (ret);
+    dbp        = new DataBlk(XML_FEATURES);
+    dbp->mData = std::move(dbl);
+    ret.head   = dbp;
+    return ret;
 }
 
 /**********************************************************
@@ -4708,10 +4718,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
  **********************************************************/
 void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
-    DataBlkPtr dab;
-    DataBlkPtr dabnext;
     DataBlkPtr dbp;
-    FeatBlkPtr fbp;
 
     IndexblkPtr   ibp;
     Int4          col_data;
@@ -4759,11 +4766,21 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      * parses a single feature at a time.
      *                                          -Karl
      */
-    if (pp->format == Parser::EFormat::XML)
-        dab = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
-    else
-        dab = TrackNodeType(entry, type);
-    const DataBlk* dab_end = nullptr;
+    DataBlkPtr   dab, dab_end;
+    TDataBlkList temp_xml_chain;
+    if (pp->format == Parser::EFormat::XML) {
+        temp_xml_chain = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
+        dab            = temp_xml_chain.begin();
+        dab_end        = temp_xml_chain.end();
+    } else {
+        TDataBlkList& chain = TrackNodes(entry);
+        dab                 = chain.begin();
+        dab_end             = chain.end();
+        // position on features
+        while (dab != dab_end && dab->mType != type)
+            dab = dab->mpNext;
+    }
+
     for (dbp = dab; dbp != dab_end; dbp = dbp->mpNext) {
         auto& dblk = *dbp;
         if (dblk.mType != type)
@@ -4809,6 +4826,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (seq_feats.empty()) {
         ibp->drop = true;
+        DataBlkPtr dabnext;
         for (; dab != dab_end; dab = dabnext) {
             dabnext = dab->mpNext;
             if (dab->hasData()) {
@@ -4845,6 +4863,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
 
+    DataBlkPtr dabnext;
     for (; dab != dab_end; dab = dabnext) {
         dabnext = dab->mpNext;
         if (dab->mType != type) {
@@ -4858,7 +4877,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (dbp->mDrop == true)
                 continue;
 
-            fbp = dbp->GetFeatData();
+            FeatBlkPtr fbp = dbp->GetFeatData();
             if (fbp->key == "source" ||
                 fbp->key == "assembly_gap" ||
                 (fbp->key == "gap" &&

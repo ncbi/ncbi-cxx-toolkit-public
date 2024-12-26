@@ -1402,7 +1402,7 @@ bool XMLIndex(ParserPtr pp)
 }
 
 /**********************************************************/
-DataBlkPtr XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
+TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
 {
     DataBlkPtr dbp;
     DataBlkPtr tdbp;
@@ -1432,7 +1432,7 @@ DataBlkPtr XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
         tdbp->SetXmlData(txip->subtags);
         tdbp->mpNext  = nullptr;
     }
-    return (dbp);
+    return TDataBlkList(dbp);
 }
 
 /**********************************************************/
