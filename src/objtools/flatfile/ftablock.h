@@ -288,7 +288,7 @@ class DataBlk
 public:
     struct TList {
         DataBlk* head;
-        TList(DataBlk* p) :
+        TList(DataBlk* p = nullptr) :
             head(p) {}
         bool           empty() const { return head == nullptr; }
         DataBlk*       begin() { return head; }

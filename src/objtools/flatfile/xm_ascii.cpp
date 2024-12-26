@@ -771,7 +771,6 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     IndexblkPtr ibp;
 
     DataBlkPtr dbp;
-    DataBlkPtr dbpnext;
 
     char*  crdate;
     char*  update;
@@ -875,9 +874,9 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
      */
     /* pub should be before GBblock because we need patent ref
      */
-    dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_END);
-    for (; dbp; dbp = dbpnext) {
-        dbpnext = dbp->mpNext;
+    TDataBlkList dbl = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_END);
+    for (dbp = dbl.begin(); dbp != dbl.end();) {
+        auto dbpnext = dbp->mpNext;
 
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
@@ -887,11 +886,12 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         }
 
         dbp->SimpleDelete();
+        dbp = dbpnext;
     }
 
-    dbp = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
-    for (; dbp; dbp = dbpnext) {
-        dbpnext = dbp->mpNext;
+    dbl = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
+    for (dbp = dbl.begin(); dbp != dbl.end();) {
+        auto dbpnext = dbp->mpNext;
 
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
@@ -901,6 +901,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         }
 
         dbp->SimpleDelete();
+        dbp = dbpnext;
     }
 
     TStringList dr_ena,
