@@ -2028,8 +2028,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        const DataBlk* subdbp = os_blk.GetSubData();
-        for (; subdbp; subdbp = subdbp->mpNext) {
+        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
             if (subdbp->mType == ParFlat_OG) {
                 GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
                 continue;

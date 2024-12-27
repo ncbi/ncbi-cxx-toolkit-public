@@ -1211,8 +1211,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 p++;
             ploc = CheckLocStr(string(p, ref_blk.mOffset + ref_blk.len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
-            DataBlkPtr subdbp = ref_blk.GetSubData();
-            for (; subdbp; subdbp = subdbp->mpNext) {
+            for (auto subdbp = ref_blk.GetSubBlocks().cbegin(); subdbp != ref_blk.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
                 if (subdbp->mType != ParFlat_RP)
                     continue;
 
@@ -3213,7 +3212,7 @@ static void CollectGapFeats(const DataBlk& entry, const DataBlk* dbp, const Data
         linkage_evidence_names.clear();
         asn_linkage_evidence.clear();
 
-        for (const DataBlk* tdbp = dbp->GetSubData(); tdbp; tdbp = tdbp->mpNext) {
+        for (auto tdbp = dbp->GetSubBlocks().cbegin(); tdbp != dbp->GetSubBlocks().cend(); tdbp = tdbp->mpNext) {
             if (ibp->drop)
                 break;
             const FeatBlk* fbp = tdbp->GetFeatData();
@@ -5046,7 +5045,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     Int4       genomic;
     char*      offset;
     char       c;
-    DataBlkPtr dbp;
+    const DataBlk* dbp;
 
     Int2        count;
     Int2        i;
@@ -5542,8 +5541,8 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     dbp = TrackNodeType(entry, ParFlat_FH);
     if (! dbp)
         return;
-    dbp = dbp->GetSubData();
-    for (i = 0; dbp && i < 2; dbp = dbp->mpNext) {
+    const auto& subblocks = dbp->GetSubBlocks();
+    for (dbp = subblocks.cbegin(), i = 0; dbp != subblocks.cend() && i < 2; dbp = dbp->mpNext) {
         if (! dbp->mOffset)
             continue;
         offset = dbp->mOffset + ParFlat_COL_FEATKEY;
