@@ -66,6 +66,9 @@ def processFile(content, name, stat):
             stat[name]['requests']['done'] = int(p[2].split(' ')[0])
             stat[name]['requests']['succeeded'] = int(p[3].split(' ')[0])
             stat[name]['requests']['failed'] = int(p[4].split(' ')[0])
+            if stat[name]['requests']['failed'] > 0:
+                print(f'Failure in file {name} count: {stat[name]["requests"]["failed"]}')
+
             stat[name]['requests']['errored'] = int(p[5].split(' ')[0])
             stat[name]['requests']['timeout'] = int(p[6].split(' ')[0])
         elif line.startswith('status codes:'):

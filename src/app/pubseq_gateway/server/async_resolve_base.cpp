@@ -141,9 +141,11 @@ CPSGS_AsyncResolveBase::Process(int16_t               effective_version,
                                 list<string> &&       secondary_id_list,
                                 string &&             primary_seq_id,
                                 bool                  composed_ok,
+                                bool                  seq_id_resolve,
                                 SBioseqResolution &&  bioseq_resolution)
 {
     m_ComposedOk = composed_ok;
+    m_SeqIdResolve = seq_id_resolve;
     m_PrimarySeqId = std::move(primary_seq_id);
     m_EffectiveVersion = effective_version;
     m_EffectiveSeqIdType = effective_seq_id_type;
@@ -279,6 +281,75 @@ CPSGS_AsyncResolveBase::x_GetRequestSeqIdType(void)
     NCBI_THROW(CPubseqGatewayException, eLogic,
                "Not handled request type " +
                CPSGS_Request::TypeToString(m_Request->GetRequestType()));
+}
+
+
+bool CPSGS_AsyncResolveBase::GetSeqIdResolve(void)
+{
+    bool    effective_seq_id_resolve = true;
+    switch (m_Request->GetRequestType()) {
+        case CPSGS_Request::ePSGS_ResolveRequest:
+            effective_seq_id_resolve = m_Request->GetRequest<SPSGS_ResolveRequest>().m_SeqIdResolve;
+            break;
+        case CPSGS_Request::ePSGS_BlobBySeqIdRequest:
+            effective_seq_id_resolve = m_Request->GetRequest<SPSGS_BlobBySeqIdRequest>().m_SeqIdResolve;
+            break;
+        case CPSGS_Request::ePSGS_AnnotationRequest:
+            effective_seq_id_resolve = m_Request->GetRequest<SPSGS_AnnotRequest>().m_SeqIdResolve;
+            break;
+        case CPSGS_Request::ePSGS_IPGResolveRequest:
+            effective_seq_id_resolve = m_Request->GetRequest<SPSGS_IPGResolveRequest>().m_SeqIdResolve;
+            break;
+        default:
+            // The other requests do not support the 'seq_id_resolve'
+            // parameter so the resolution must be done as usual
+            break;
+    }
+
+    if (effective_seq_id_resolve == false) {
+        // The settings may overwrite it
+        auto    app = CPubseqGatewayApp::GetInstance();
+        if (app->GetSeqIdResolveAlways() == true) {
+            if (m_Request->NeedTrace()) {
+                m_Reply->SendTrace("The request seq_id_resolve flag "
+                                   "is set to 'no' however the configuration "
+                                   "parameter [CASSANDRA_PROCESSOR]/seq_id_resolve_always "
+                                   "overwrites it. The resolution will be done "
+                                   "without optimization.",
+                                   m_Request->GetStartTimestamp());
+            }
+            effective_seq_id_resolve = true;
+        }
+    }
+
+    return effective_seq_id_resolve;
+}
+
+
+bool
+CPSGS_AsyncResolveBase::OptimizationPrecondition(
+                                    const string &  primary_id,
+                                    int16_t  effective_seq_id_type) const
+{
+    if (primary_id.empty()) {
+        return false;
+    }
+
+    if (effective_seq_id_type == CSeq_id::e_Genbank ||
+        effective_seq_id_type == CSeq_id::e_Embl ||
+        effective_seq_id_type == CSeq_id::e_Pir ||
+        effective_seq_id_type == CSeq_id::e_Swissprot ||
+        effective_seq_id_type == CSeq_id::e_Other ||
+        effective_seq_id_type == CSeq_id::e_Ddbj ||
+        effective_seq_id_type == CSeq_id::e_Prf ||
+        effective_seq_id_type == CSeq_id::e_Pdb ||
+        effective_seq_id_type == CSeq_id::e_Tpg ||
+        effective_seq_id_type == CSeq_id::e_Tpe ||
+        effective_seq_id_type == CSeq_id::e_Tpd ||
+        effective_seq_id_type == CSeq_id::e_Gpipe) {
+        return true;
+    }
+    return false;
 }
 
 
@@ -436,6 +507,21 @@ void CPSGS_AsyncResolveBase::x_Process(void)
 {
     switch (m_ResolveStage) {
         case eInit:
+            if (m_SeqIdResolve == false) {
+                // This is an optimization path. All the preconditions are
+                // checked at the synchronous stage so the bioseq searches must
+                // be performed; thus the if (...) below is extra but just to
+                // highlight that this condition is met
+
+                if (OptimizationPrecondition(m_PrimarySeqId,
+                                             m_EffectiveSeqIdType)) {
+                    m_ResolveStage = eFinished;
+                    x_PreparePrimaryBioseqInfoQuery(m_PrimarySeqId, m_EffectiveVersion,
+                                                    m_EffectiveSeqIdType, -1, true);
+                }
+                break;
+            }
+
             if (!m_ComposedOk) {
                 // The only thing to try is the AsIs resolution
                 m_ResolveStage = eSecondaryAsIs;
