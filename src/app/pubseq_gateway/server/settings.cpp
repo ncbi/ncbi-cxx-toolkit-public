@@ -105,6 +105,7 @@ const string            kDefaultLMDBProcessorHealthCommand = "/ID/resolve?seq_id
 const double            kDefaultLMDBHealthTimeoutSec = 0.0;
 const string            kDefaultCassandraProcessorHealthCommand = "/ID/resolve?seq_id=gi|2&use_cache=no";
 const double            kDefaultCassandraHealthTimeoutSec = 0.0;
+const bool              kDefaultSeqIdResolveAlways = false;
 const bool              kDefaultCDDProcessorsEnabled = true;
 const string            kDefaultCDDProcessorHealthCommand = "/ID/get_na?seq_id=6&names=CDD";
 const double            kDefaultCDDHealthTimeoutSec = 0.0;
@@ -171,6 +172,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CassandraProcessorsEnabled(kDefaultCassandraProcessorsEnabled),
     m_CassandraProcessorHealthCommand(kDefaultCassandraProcessorHealthCommand),
     m_CassandraHealthTimeoutSec(kDefaultCassandraHealthTimeoutSec),
+    m_SeqIdResolveAlways(kDefaultSeqIdResolveAlways),
     m_LMDBProcessorHealthCommand(kDefaultLMDBProcessorHealthCommand),
     m_LMDBHealthTimeoutSec(kDefaultLMDBHealthTimeoutSec),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
@@ -487,6 +489,10 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
         PSG_ERROR(err_msg);
         m_CassandraHealthTimeoutSec = kDefaultHealthTimeout;
     }
+
+    m_SeqIdResolveAlways =
+        registry.GetBool(kCassandraProcessorSection, "seq_id_resolve_always",
+                         kDefaultSeqIdResolveAlways);
 }
 
 

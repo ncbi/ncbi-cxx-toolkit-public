@@ -84,6 +84,11 @@ private:
                                 SBioseqResolution &  bioseq_resolution);
     EPSGS_CacheLookupResult x_ResolveAsIsInCache(
                                 SBioseqResolution &  bioseq_resolution);
+    void x_OptimizedResolutionInCache(
+                                CSeq_id &  parsed_seq_id,
+                                const string &  primary_id,
+                                int16_t  effective_seq_id_type,
+                                SBioseqResolution &  bioseq_resolution);
     void x_ResolveViaComposeOSLTInCache(
                                 CSeq_id &  parsed_seq_id,
                                 int16_t  effective_seq_id_type,
@@ -109,6 +114,7 @@ private:
     void x_OnSeqIdResolveFinished(
                         SBioseqResolution &&  bioseq_resolution);
     void x_RegisterSuccessTiming(const SBioseqResolution &  bioseq_resolution);
+    void x_OptimizedNotFound(const string &  err_msg);
 
 protected:
     void ResolveInputSeqId(void);

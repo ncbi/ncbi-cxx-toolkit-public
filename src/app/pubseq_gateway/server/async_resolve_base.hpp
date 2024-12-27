@@ -104,15 +104,16 @@ public:
                  list<string> &&       secondary_id_list,
                  string &&             primary_seq_id,
                  bool                  composed_ok,
+                 bool                  seq_id_resolve,
                  SBioseqResolution &&  bioseq_resolution);
 
 private:
     enum EPSGS_ResolveStage {
-        eInit,                      // Initial stage; nothing has been done yet
-        ePrimaryBioseq,             // BIOSEQ_INFO (primary) request issued
+        eInit,                          // Initial stage; nothing has been done yet
+        ePrimaryBioseq,                 // BIOSEQ_INFO (primary) request issued
 
-        eSecondarySi2csi,           // loop over all secondary seq_id in SI2CSI
-
+        eSecondarySi2csi,               // loop over all secondary seq_id in SI2CSI
+                                        // and then switch to eSecondaryAsIs
         eSecondaryAsIs,
 
         eFinished,
@@ -145,6 +146,9 @@ protected:
     }
 
     bool MoveToNextSeqId(void);
+    bool GetSeqIdResolve(void);
+    bool OptimizationPrecondition(const string &  primary_id,
+                                  int16_t  effective_seq_id_type) const;
 
 private:
     void x_Process(void);
@@ -187,6 +191,7 @@ protected:
 
     EPSGS_ResolveStage                  m_ResolveStage;
     bool                                m_ComposedOk;
+    bool                                m_SeqIdResolve;
     string                              m_PrimarySeqId;
     int16_t                             m_EffectiveVersion;
     int16_t                             m_EffectiveSeqIdType;

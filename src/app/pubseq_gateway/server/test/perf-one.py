@@ -68,7 +68,7 @@ if len(suffixes) not in [1]:
 # Must be two suffixes for each file
 for name in files.keys():
     if len(files[name]) != 1:
-        print('Unexpected number of files for the name ' + name)
+        print(f'Unexpected number of files (len(files[name])) for the name ' + name)
         print(files[name])
         sys.exit(1)
 

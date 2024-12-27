@@ -240,6 +240,7 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution)
 }
 
 
+
 void
 CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
                                 CSeq_id &  parsed_seq_id,
@@ -328,9 +329,26 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
     auto                app = CPubseqGatewayApp::GetInstance();
     string              parse_err_msg;
     CSeq_id             oslt_seq_id;
-    auto                parsing_result = ParseInputSeqId(oslt_seq_id,
-        m_CurrentSeqIdToResolve->seq_id,
-        m_CurrentSeqIdToResolve->seq_id_type, &parse_err_msg);
+    bool                seq_id_resolve = GetSeqIdResolve();
+    auto                parsing_result = ParseInputSeqId(
+                                                oslt_seq_id,
+                                                m_CurrentSeqIdToResolve->seq_id,
+                                                m_CurrentSeqIdToResolve->seq_id_type,
+                                                &parse_err_msg);
+
+    // Optimization
+    if (seq_id_resolve == false) {
+        if (parsing_result == ePSGS_ParseFailed) {
+            // Failure to parse means the seq_id will not be resolved anyway
+            // since the seq_id_resolve is set to false
+            x_OptimizedNotFound("Optimization path - no try to resolve " +
+                                m_CurrentSeqIdToResolve->seq_id +"; "
+                                "seq_id_resolve flag is set "
+                                "to 'no' and there is a seq id parsing failure: " +
+                                parse_err_msg);
+            return;
+        }
+    }
 
     // The results of the ComposeOSLT are used in both cache and DB
     int16_t         effective_seq_id_type;
@@ -342,15 +360,48 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                                     secondary_id_list, primary_id);
     }
 
+    // Optimization
+    if (seq_id_resolve == false) {
+        if (!composed_ok) {
+            // Failure to compose OSLT means the seq_id will not be resolved
+            // anyway since the seq_id_resolve is set to false
+            x_OptimizedNotFound("Optimization path - no try to resolve " +
+                                m_CurrentSeqIdToResolve->seq_id +"; "
+                                "seq_id_resolve flag is set to 'no' and "
+                                "there is a failure to compose OSLT.");
+            return;
+        }
+
+        if (!OptimizationPrecondition(primary_id, effective_seq_id_type)) {
+            x_OptimizedNotFound("Optimization path - no try to resolve " +
+                                m_CurrentSeqIdToResolve->seq_id +"; "
+                                "seq_id_resolve flag is set "
+                                "to 'no' and the seq id type (" +
+                                to_string(effective_seq_id_type) +
+                                ") does not satisfy a condition for "
+                                "the primary id.");
+            return;
+        }
+    }
+
     auto    request_use_cache = x_GetRequestUseCache();
     if (request_use_cache != SPSGS_RequestBase::ePSGS_DbOnly) {
         // Try cache
-        if (composed_ok)
-            x_ResolveViaComposeOSLTInCache(oslt_seq_id, effective_seq_id_type,
-                                           secondary_id_list, primary_id,
-                                           bioseq_resolution);
-        else
-            x_ResolveAsIsInCache(bioseq_resolution);
+        if (seq_id_resolve) {
+            // Resolution as usual
+            if (composed_ok) {
+                x_ResolveViaComposeOSLTInCache(oslt_seq_id, effective_seq_id_type,
+                                               secondary_id_list, primary_id,
+                                               bioseq_resolution);
+            } else {
+                x_ResolveAsIsInCache(bioseq_resolution);
+            }
+        } else {
+            // Optimized resolution
+            x_OptimizedResolutionInCache(oslt_seq_id, primary_id,
+                                         effective_seq_id_type,
+                                         bioseq_resolution);
+        }
 
         if (bioseq_resolution.IsValid()) {
             // Special case for the seq_id like gi|156232
@@ -416,6 +467,7 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                 std::move(secondary_id_list),
                 std::move(primary_id),
                 composed_ok,
+                seq_id_resolve,
                 std::move(bioseq_resolution));
 
         // Async resolver will call a callback
@@ -448,6 +500,57 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
             m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
             ePSGS_SkipLogging);
 }
+
+
+
+void CPSGS_ResolveBase::x_OptimizedResolutionInCache(
+                                CSeq_id &  parsed_seq_id,
+                                const string &  primary_id,
+                                int16_t  effective_seq_id_type,
+                                SBioseqResolution &  bioseq_resolution)
+{
+    // Note: checking the condition below is extra however it is left here to
+    // have a clearer view of the overall process in case of the optimization
+    if (OptimizationPrecondition(primary_id, effective_seq_id_type)) {
+        // Resolve only in BIOSEQ_INFO table
+        const CTextseq_id *  text_seq_id = parsed_seq_id.GetTextseq_Id();
+        int16_t              effective_version = GetEffectiveVersion(text_seq_id);
+
+        x_ResolvePrimaryOSLTInCache(primary_id, effective_version,
+                                    effective_seq_id_type, bioseq_resolution);
+    }
+
+    // Note: there is no need to try any seq ids from the secondary list even
+    // if it is not empty
+}
+
+
+// Used to skip resolving because of the seq_id_resolve flag and various
+// reasons
+void CPSGS_ResolveBase::x_OptimizedNotFound(const string &  err_msg)
+{
+    auto    app = CPubseqGatewayApp::GetInstance();
+
+    app->GetCounters().Increment(this,
+                                 CPSGSCounters::ePSGS_InputSeqIdNotResolved);
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(err_msg, m_Request->GetStartTimestamp());
+    }
+
+    m_ResolveErrors.AppendError(err_msg, CRequestStatus::e404_NotFound);
+
+    // Note: event if there are secondary IDs there is no need to try them so
+    // there is no MoveToNextSeqId() call here.
+
+    x_OnSeqIdResolveError(
+            m_ResolveErrors.GetCombinedErrorCode(),
+            ePSGS_UnresolvedSeqId, eDiag_Error,
+            GetCouldNotResolveMessage() +
+            m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
+            ePSGS_SkipLogging);
+}
+
 
 
 SBioseqResolution

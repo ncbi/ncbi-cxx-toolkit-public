@@ -237,6 +237,9 @@ public:
     size_t GetHttpMaxRunning(void) const
     { return m_Settings.m_HttpMaxRunning; }
 
+    bool GetSeqIdResolveAlways(void) const
+    { return m_Settings.m_SeqIdResolveAlways; }
+
     CPSGAlerts &  GetAlerts(void)
     { return m_Alerts; }
 

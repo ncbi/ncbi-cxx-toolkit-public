@@ -120,6 +120,7 @@ struct SPubseqGatewaySettings
     bool                                m_CassandraProcessorsEnabled;
     string                              m_CassandraProcessorHealthCommand;
     double                              m_CassandraHealthTimeoutSec;
+    bool                                m_SeqIdResolveAlways;
 
     // [LMDB_PROCESSOR]
     string                              m_LMDBProcessorHealthCommand;
