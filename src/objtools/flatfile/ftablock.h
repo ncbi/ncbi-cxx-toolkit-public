@@ -292,8 +292,10 @@ public:
             head(p) {}
         bool           empty() const { return head == nullptr; }
         DataBlk*       begin() { return head; }
+        constexpr
         DataBlk*       end() { return nullptr; }
         const DataBlk* cbegin() const { return head; }
+        constexpr
         const DataBlk* cend() const { return nullptr; }
     };
 
@@ -322,7 +324,8 @@ public:
     }
 
     // accessors to mData
-    DataBlk*  GetSubData() const { return std::get<TList>(mData).head; }
+    TList&    GetSubBlocks() { return std::get<TList>(mData); }
+    const TList& GetSubBlocks() const { return std::get<TList>(mData); }
     void      SetEntryData(EntryBlk*);
     EntryBlk* GetEntryData() const;
     void      SetFeatData(FeatBlk*);

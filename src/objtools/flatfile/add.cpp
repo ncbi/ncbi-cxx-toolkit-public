@@ -278,15 +278,14 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
 
         size_t len = 0;
 
-        const DataBlk* subblocks = dblk.GetSubData();
-        const DataBlk* dbp       = subblocks;
-        for (; dbp; dbp = dbp->mpNext)
+        const auto& subblocks = dblk.GetSubBlocks();
+        for (auto dbp = subblocks.cbegin(); dbp != subblocks.cend(); dbp = dbp->mpNext)
             len += dbp->len;
         if (len == 0)
             continue;
 
-        dbp     = subblocks;
-        char* p = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
+        auto dbp = subblocks.cbegin();
+        char* p  = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
         if (p)
             break;
     }

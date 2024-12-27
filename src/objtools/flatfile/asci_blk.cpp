@@ -1045,19 +1045,17 @@ static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const string& locus,
 char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len)
 {
     DataBlkPtr mdbp;
-    DataBlkPtr sdbp;
 
     *len = 0;
     mdbp = TrackNodeType(entry, type);
     if (! mdbp)
         return nullptr;
 
-    sdbp = mdbp->GetSubData();
-
-    while (sdbp && sdbp->mType != subtype)
+    const auto& sdb  = mdbp->GetSubBlocks();
+    auto        sdbp = sdb.cbegin();
+    while (sdbp != sdb.cend() && sdbp->mType != subtype)
         sdbp = sdbp->mpNext;
-
-    if (! sdbp)
+    if (sdbp == sdb.cend())
         return nullptr;
 
     *len = sdbp->len;
