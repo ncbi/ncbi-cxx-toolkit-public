@@ -762,14 +762,12 @@ static void GetIntFuzzPtr(Uint1 choice, Int4 a, Int4 b, CInt_fuzz& fuzz)
 /**********************************************************/
 static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
 {
-    DataBlkPtr subdbp;
-    char*      p;
-    Int4       gmod = -1;
+    char* p;
+    Int4  gmod = -1;
 
     for (auto dbp = dbl.cbegin(); dbp != dbl.cend(); dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OS) {
-            subdbp = dbp->GetSubData();
-            for (; subdbp; subdbp = subdbp->mpNext)
+            for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext)
                 if (subdbp->mType == ParFlatSP_OG) {
                     p = subdbp->mOffset + ParFlat_COL_DATA_SP;
                     if (StringEquNI(p, "Plastid;", 8))
@@ -1332,10 +1330,11 @@ static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp, const DataBlk* dbp_
     if (dbp == dbp_end)
         return nullptr;
 
-    for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext)
+    const auto& subblocks = dbp->GetSubBlocks();
+    for (dbp = subblocks.cbegin(); dbp != subblocks.cend(); dbp = dbp->mpNext)
         if (dbp->mType == ParFlatSP_OH)
             break;
-    if (! dbp)
+    if (dbp == subblocks.cend())
         return nullptr;
 
     vhp  = new ViralHost;
@@ -1437,8 +1436,7 @@ static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp, const DataBlk* dbp_end)
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        const DataBlk* subdbp = dbp->GetSubData();
-        for (; subdbp; subdbp = subdbp->mpNext) {
+        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
             got  = true;
@@ -1503,10 +1501,10 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry, const DataBlk*
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(*dbp, "OS   ");
-        for (dbp = dbp->GetSubData(); dbp; dbp = dbp->mpNext) {
-            if (dbp->mType != ParFlatSP_OC)
+        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+            if (subdbp->mType != ParFlatSP_OC)
                 continue;
-            line_OC = GetLineOSorOC(*dbp, "OC   ");
+            line_OC = GetLineOSorOC(*subdbp, "OC   ");
             break;
         }
         break;
@@ -1545,8 +1543,7 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
         if (os_blk.mType != ParFlatSP_OS)
             continue;
 
-        const DataBlk* subdbp = os_blk.GetSubData();
-        for (; subdbp; subdbp = subdbp->mpNext) {
+        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
             if (subdbp->mType != ParFlatSP_OG)
                 continue;
 

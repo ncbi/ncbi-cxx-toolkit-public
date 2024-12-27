@@ -435,10 +435,9 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
  **********************************************************/
 static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_data)
 {
-    DataBlkPtr subdbp;
-    char*      str;
-    char*      s;
-    char*      p;
+    char* str;
+    char* s;
+    char* p;
 
     ParRefBlkPtr prbp = new ParRefBlk;
 
@@ -452,7 +451,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
 
 #endif
 
-    for (subdbp = dbp.GetSubData(); subdbp; subdbp = subdbp->mpNext) {
+    for (auto subdbp = dbp.GetSubBlocks().cbegin(); subdbp != dbp.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
         /* process REFERENCE subkeywords
          */
         str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));
