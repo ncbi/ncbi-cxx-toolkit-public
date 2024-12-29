@@ -605,6 +605,7 @@ static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
     }
+    dbl.head   = nullptr;
 }
 
 /**********************************************************
@@ -4831,7 +4832,6 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (dab->hasData()) {
                 TDataBlkList& dbl = std::get<TDataBlkList>(dab->mData);
                 FreeFeatBlk(dbl, pp->format);
-                dbl.head   = nullptr;
                 dab->mData = monostate();
             }
             if (pp->format == Parser::EFormat::XML)

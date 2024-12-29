@@ -413,7 +413,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd && ! QSIndex(pp, ibl))
+    if (pp->qsfd && ! QSIndex(pp, ibl, indx))
         return false;
 
     pp->entrylist.reserve(indx);
