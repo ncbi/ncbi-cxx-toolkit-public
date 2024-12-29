@@ -68,7 +68,7 @@ void CloseFiles(ParserPtr pp);
 void MsgSkipTitleFail(const Char* flatfile, FinfoBlk& finfo);
 bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 len));
 void ResetParserStruct(ParserPtr pp);
-bool QSIndex(ParserPtr pp, const TIndBlkList& ibl);
+bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size);
 
 // bool IsValidAccessPrefix(char* acc, char** accpref);
 

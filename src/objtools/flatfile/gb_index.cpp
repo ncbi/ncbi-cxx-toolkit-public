@@ -736,7 +736,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
-    if (pp->qsfd && ! QSIndex(pp, ibl))
+    if (pp->qsfd && ! QSIndex(pp, ibl, indx))
         return false;
 
     pp->entrylist.reserve(indx);
