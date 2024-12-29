@@ -178,7 +178,7 @@ static bool QSNoSequenceRecordErr(bool accver, const QSStruct& qssp)
 }
 
 /**********************************************************/
-bool QSIndex(ParserPtr pp, const TIndBlkList& ibl)
+bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
 {
     char*  p;
     char*  q;
@@ -258,7 +258,7 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl)
     }
 
     vector<IndexblkPtr> ibpp;
-    ibpp.reserve(pp->indx);
+    ibpp.reserve(ibl_size);
     for (const auto& it : ibl)
         ibpp.push_back(it.get());
 
