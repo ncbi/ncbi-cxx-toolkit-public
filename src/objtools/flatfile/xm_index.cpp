@@ -1404,9 +1404,6 @@ bool XMLIndex(ParserPtr pp)
 /**********************************************************/
 TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
 {
-    DataBlkPtr dbp;
-    DataBlkPtr tdbp;
-
     if (! entry || xil.empty())
         return nullptr;
 
@@ -1416,7 +1413,8 @@ TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
     if (xip == xil.end() || xip->subtags.empty())
         return nullptr;
 
-    dbp = nullptr;
+    DataBlk*    dbp = nullptr;
+    DataBlkIter tdbp;
     for (auto txip = xip->subtags.begin(); txip != xip->subtags.end(); ++txip) {
         if (txip->type != type || txip->subtags.empty())
             continue;

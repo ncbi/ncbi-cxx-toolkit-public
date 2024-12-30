@@ -232,8 +232,8 @@ static void InsertDatablkVal(TDataBlkList& dbl, Int2 type, char* offset, size_t 
 {
     DataBlk* ldp = new DataBlk(type, offset, len);
     if (! dbl.empty()) {
-        DataBlk* tail = dbl.begin();
-        while (tail->mpNext) {
+        auto tail = dbl.begin();
+        while (tail->mpNext != dbl.end()) {
             tail = tail->mpNext;
         }
         tail->mpNext = ldp;
@@ -461,9 +461,7 @@ static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char*
  **********************************************************/
 void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
 {
-    DataBlkPtr dbp;
-
-    dbp = TrackNodeType(entry, ParFlat_SOURCE);
+    DataBlk* dbp = TrackNodeType(entry, ParFlat_SOURCE);
     if (dbp) {
         auto& src_blk = *dbp;
         BuildSubBlock(src_blk, ParFlat_ORGANISM, "  ORGANISM");
@@ -471,7 +469,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REFERENCE)
             continue;
@@ -489,7 +487,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         GetGenBankRefType(ref_blk, bases);
     }
 
-    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& feat_blk = *dbp;
         if (feat_blk.mType != ParFlat_FEATURES)
             continue;
@@ -749,10 +747,8 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
  **********************************************************/
 void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
-    DataBlkPtr  temp;
-
     auto& chain = TrackNodes(entry);
-    for (temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
+    for (auto temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
         auto& os_blk = *temp;
         if (os_blk.mType != ParFlat_OS)
             continue;
@@ -762,7 +758,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(os_blk);
     }
 
-    for (temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
+    for (auto temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
         auto& ref_blk = *temp;
         if (ref_blk.mType != ParFlat_RN)
             continue;
@@ -779,8 +775,8 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(ref_blk);
     }
 
-    DataBlkPtr predbp = chain.begin();
-    DataBlkPtr curdbp = predbp->mpNext;
+    auto predbp = chain.begin();
+    auto curdbp = predbp->mpNext;
     while (curdbp != chain.end()) {
         if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;
@@ -856,12 +852,12 @@ void GetLenSubNode(DataBlk& dbp)
         s++;
     n    = atoi(s);
 
-    const DataBlk* ldbp = nullptr;
-    for (auto ndbp = subblocks.cbegin(); ndbp; ndbp = ndbp->mpNext) {
+    DataBlkCIter ldbp = nullptr;
+    for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ndbp = ndbp->mpNext) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp.len) {
             dbp.len = l;
-            ldbp     = ndbp;
+            ldbp    = ndbp;
         }
     }
 
@@ -870,17 +866,17 @@ void GetLenSubNode(DataBlk& dbp)
         done = true;
     }
 
-    for (auto curdbp = subblocks.begin(); curdbp->mpNext; curdbp = curdbp->mpNext) {
+    for (auto curdbp = subblocks.begin(); curdbp->mpNext != subblocks.end(); curdbp = curdbp->mpNext) {
         offset = curdbp->mOffset;
         ldbp   = nullptr;
-        for (auto ndbp = subblocks.begin(); ndbp; ndbp = ndbp->mpNext) {
+        for (auto ndbp = subblocks.begin(); ndbp != subblocks.end(); ndbp = ndbp->mpNext) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
                 ldbp        = ndbp;
             }
         }
-        if (ldbp != curdbp->mpNext && ldbp && ! done) {
+        if (ldbp != curdbp->mpNext && ldbp != subblocks.end() && ! done) {
             ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         }
     }
@@ -1044,10 +1040,9 @@ static CRef<CSeq_id> MakeSegSetSeqId(const char* accession, const string& locus,
  **********************************************************/
 char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len)
 {
-    DataBlkPtr mdbp;
-
     *len = 0;
-    mdbp = TrackNodeType(entry, type);
+
+    const DataBlk* mdbp = TrackNodeType(entry, type);
     if (! mdbp)
         return nullptr;
 
@@ -2725,15 +2720,12 @@ CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
 /**********************************************************/
 void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source)
 {
-    DataBlkPtr dbp;
-    char*      offset;
-
-    dbp = TrackNodeType(entry, type);
+    const DataBlk* dbp = TrackNodeType(entry, type);
     if (! dbp)
         return;
 
-    offset            = dbp->mOffset + coldata;
-    CRef<CSeq_id> sid = StrToSeqId(offset, false);
+    const char*   offset = dbp->mOffset + coldata;
+    CRef<CSeq_id> sid    = StrToSeqId(offset, false);
     if (sid.Empty())
         return;
 
@@ -2820,7 +2812,6 @@ void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 /**********************************************************/
 void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int2 ori, bool cancelled)
 {
-    DataBlkPtr   dbp;
     const char** b;
     char*        tmp;
     char*        p;
@@ -2828,7 +2819,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     char*        r;
     Int2         count;
 
-    dbp = TrackNodeType(entry, what);
+    const DataBlk* dbp = TrackNodeType(entry, what);
     if (! dbp || ! dbp->mOffset || dbp->len < 1)
         p = nullptr;
     else {

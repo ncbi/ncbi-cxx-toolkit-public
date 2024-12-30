@@ -359,7 +359,7 @@ static void SourceFeatBlkSetFree(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr CollectSourceFeats(const DataBlk* dbp, const DataBlk* dbp_end, Int2 type)
+static SourceFeatBlkPtr CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_end, Int2 type)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
@@ -3121,7 +3121,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 }
 
 /**********************************************************/
-void ParseSourceFeat(ParserPtr pp, const DataBlk* dbp, const DataBlk* dbp_end, TSeqIdList& seqids, Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
+void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqIdList& seqids, Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;

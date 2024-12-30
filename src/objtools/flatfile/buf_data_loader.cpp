@@ -351,16 +351,14 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
     return bioseq;
 }
 
-static DataBlkPtr make_entry(char* entry_str)
+static DataBlk* make_entry(char* entry_str)
 {
-    DataBlkPtr entry = new DataBlk(ParFlat_ENTRYNODE);
+    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
 
-    if (entry) {
-        entry->mpNext  = nullptr; /* assume no segment at this time */
-        entry->mOffset = entry_str;
-        entry->len     = StringLen(entry->mOffset);
-        entry->SetEntryData(new EntryBlk);
-    }
+    entry->mpNext  = nullptr; /* assume no segment at this time */
+    entry->mOffset = entry_str;
+    entry->len     = StringLen(entry->mOffset);
+    entry->SetEntryData(new EntryBlk);
 
     return entry;
 }
@@ -368,13 +366,13 @@ static DataBlkPtr make_entry(char* entry_str)
 static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& accession, int ver, const CSeq_id& id)
 {
     CRef<CBioseq> ret;
-    DataBlkPtr    entry = make_entry(entry_str);
 
+    DataBlk* entry = make_entry(entry_str);
     if (! entry)
         return ret;
 
-    int ix       = add_entry(pp, accession.c_str(), ver, *entry),
-        old_indx = pp->curindx;
+    int ix       = add_entry(pp, accession.c_str(), ver, *entry);
+    int old_indx = pp->curindx;
 
     pp->curindx = ix;
 
@@ -440,7 +438,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (! entry_str)
         return -1;
 
-    DataBlkPtr entry = objects::make_entry(entry_str);
+    DataBlk* entry = objects::make_entry(entry_str);
     if (! entry)
         return -1;
 

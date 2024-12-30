@@ -119,7 +119,7 @@ static const char* ref_tag_embl[] = {
 };
 
 /**********************************************************/
-void ind_subdbp(DataBlk& dbp, DataBlkPtr ind[], int maxkw, Parser::EFormat bank)
+void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
 {
     const char** ref_tag;
     char*        s;

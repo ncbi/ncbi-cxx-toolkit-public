@@ -351,7 +351,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     bool after_MGA;
 
     IndexblkPtr   entry;
-    DataBlkPtr    data;
     int           currentKeyword;
     Int4          indx = 0;
     char*         p;
@@ -719,9 +718,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 // dbl_len = 0;
             }
             if (fun) {
-                data = LoadEntry(pp, entry->offset, entry->len);
+                unique_ptr<DataBlk> data(LoadEntry(pp, entry->offset, entry->len));
                 (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
-                delete data;
             }
         } /* if, entry */
         else {

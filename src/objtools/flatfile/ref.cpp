@@ -1942,9 +1942,9 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
 
 /**********************************************************/
 static
-CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool bParser, DataBlkPtr** ppInd, bool& no_auth)
+CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool bParser, DataBlk*** ppInd, bool& no_auth)
 {
-    static DataBlkPtr ind[MAXKW + 1];
+    static DataBlk* ind[MAXKW + 1];
 
     bool      has_muid;
     char*     p;
@@ -2101,9 +2101,9 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
  **********************************************************/
 static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool& no_auth)
 {
-    static DataBlkPtr ind[MAXKW + 1];
-    char*             s;
-
+    static DataBlk* ind[MAXKW + 1];
+    
+    char*     s;
     bool      has_muid;
     char*     p;
     char*     q;
