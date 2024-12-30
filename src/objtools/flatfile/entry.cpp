@@ -216,15 +216,13 @@ static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
  **********************************************************/
 EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
 {
-    DataBlkPtr entry;
-    char*      eptr;
-    char*      q;
-    size_t     i;
+    char*  eptr;
+    char*  q;
+    size_t i;
 
     pp->ffbuf.set_offs(offset);
 
-    entry          = new DataBlk(ParFlat_ENTRYNODE);
-    entry->mpNext  = nullptr;        /* assume no segment at this time */
+    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
     entry->mOffset = StringNew(len); /* includes nul byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
 
@@ -297,18 +295,16 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
     return pEntry;
 }
 
-DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len)
+DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
-    DataBlkPtr entry;
-    char*      eptr;
-    char*      q;
-    size_t     i;
+    char*  eptr;
+    char*  q;
+    size_t i;
 
     pp->ffbuf.set_offs(offset);
 
-    entry          = new DataBlk(ParFlat_ENTRYNODE);
+    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
     entry->len     = len;
-    entry->mpNext  = nullptr;        /* assume no segment at this time */
     entry->mOffset = StringNew(len); /* includes nul byte */
     entry->len     = FileReadBuf(entry->mOffset, len, pp->ffbuf);
     entry->SetEntryData(new EntryBlk());

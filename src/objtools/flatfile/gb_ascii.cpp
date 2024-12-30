@@ -134,8 +134,6 @@ static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 /**********************************************************/
 bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
 {
-    DataBlkPtr dbp;
-
     char* p;
     char* q;
     char* r;
@@ -146,7 +144,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
     Int4 i;
     int  numerr;
 
-    dbp = TrackNodeType(entry, ParFlat_CONTIG);
+    const DataBlk* dbp = TrackNodeType(entry, ParFlat_CONTIG);
     if (! dbp || ! dbp->mOffset)
         return true;
 
@@ -1158,7 +1156,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* pub should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
@@ -1171,7 +1169,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;

@@ -756,8 +756,6 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
 /**********************************************************/
 bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
 {
-    DataBlkPtr dbp;
-
     char* p;
     char* q;
     char* r;
@@ -766,7 +764,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     bool allow_crossdb_featloc;
     int  numerr;
 
-    dbp = TrackNodeType(entry, ParFlat_CO);
+    const DataBlk* dbp = TrackNodeType(entry, ParFlat_CO);
     if (! dbp || ! dbp->mOffset)
         return true;
 
@@ -1752,7 +1750,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
@@ -1765,7 +1763,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    for (auto dbp = chain.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
@@ -2147,7 +2145,6 @@ bool EmblAscii(ParserPtr pp)
     char* ptr;
     char* eptr;
 
-    // DataBlkPtr  entry;
     EntryBlkPtr ebp;
     TEntryList  seq_entries;
     CSeq_loc    locs;

@@ -837,9 +837,7 @@ static void SpAddToIndexBlk(const DataBlk& entry, IndexblkPtr pIndex)
  **********************************************************/
 static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
 {
-    DataBlkPtr dbp;
-
-    dbp = TrackNodeType(entry, ParFlatSP_OS);
+    DataBlk* dbp = TrackNodeType(entry, ParFlatSP_OS);
     if (dbp) {
         auto& os_blk = *dbp;
         BuildSubBlock(os_blk, ParFlatSP_OG, "OG");
@@ -850,7 +848,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
     }
 
     auto& chain = TrackNodes(entry);
-    for (dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlatSP_RN)
             continue;
@@ -1314,7 +1312,7 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
 }
 
 /**********************************************************/
-static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp, const DataBlk* dbp_end)
+static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
 {
     ViralHostPtr vhp;
     ViralHostPtr tvhp;
@@ -1424,7 +1422,7 @@ static ViralHostPtr GetViralHostsFrom_OH(const DataBlk* dbp, const DataBlk* dbp_
 }
 
 /**********************************************************/
-static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp, const DataBlk* dbp_end)
+static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
 {
     char*  line;
     char*  p;
@@ -1486,7 +1484,7 @@ static TTaxId GetTaxIdFrom_OX(const DataBlk* dbp, const DataBlk* dbp_end)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> GetOrganismFrom_OS_OC(const DataBlk* entry, const DataBlk* end)
+static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end)
 {
     SetOfSpeciesPtr sosp;
     char*           line_OS;
@@ -1537,8 +1535,8 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
     char* ptr;
     Int4  gmod = -1;
 
-    auto& chain = TrackNodes(entry);
-    for (const DataBlk* dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
+    const auto& chain = TrackNodes(entry);
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
         const auto& os_blk = *dbp;
         if (os_blk.mType != ParFlatSP_OS)
             continue;
@@ -4820,8 +4818,6 @@ static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* pr
  **********************************************************/
 bool SprotAscii(ParserPtr pp)
 {
-    DataBlkPtr entry;
-
     Int4        total;
     Int4        i;
     IndexblkPtr ibp;
@@ -4836,7 +4832,7 @@ bool SprotAscii(ParserPtr pp)
         err_install(ibp, pp->accver);
 
         if (! ibp->drop) {
-            entry = LoadEntry(pp, ibp->offset, ibp->len);
+            DataBlk* entry = LoadEntry(pp, ibp->offset, ibp->len);
             if (! entry) {
                 FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
                 return false;

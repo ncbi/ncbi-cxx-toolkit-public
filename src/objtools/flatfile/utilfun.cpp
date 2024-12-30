@@ -948,9 +948,7 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
  **********************************************************/
 char* SrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
 {
-    DataBlkPtr temp;
-
-    temp = TrackNodeType(entry, (Int2)type);
+    const DataBlk* temp = TrackNodeType(entry, (Int2)type);
     if (temp) {
         *len = temp->len;
         return (temp->mOffset);
@@ -962,9 +960,7 @@ char* SrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
 
 char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
 {
-    DataBlkPtr temp;
-
-    temp = TrackNodeType(entry, (Int2)type);
+    const DataBlk* temp = TrackNodeType(entry, (Int2)type);
     if (temp) {
         *len = temp->len;
         return (temp->mOffset);
@@ -997,10 +993,10 @@ TDataBlkList& TrackNodes(const DataBlk& entry)
     return ebp->chain;
 }
 
-DataBlkPtr TrackNodeType(const DataBlk& entry, Int2 type)
+DataBlk* TrackNodeType(const DataBlk& entry, Int2 type)
 {
     auto& chain = TrackNodes(entry);
-    for (DataBlkPtr temp = chain.begin(); temp; temp = temp->mpNext)
+    for (auto temp = chain.begin(); temp != chain.end(); temp = temp->mpNext)
         if (temp->mType == type)
             return temp;
 

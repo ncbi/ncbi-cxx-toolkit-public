@@ -102,8 +102,8 @@ struct Entry {
 using EntryPtr = Entry*;
 
 
-DataBlkPtr LoadEntry(ParserPtr pp, size_t offset, size_t len);
-EntryPtr   LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len);
+DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len);
+EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len);
 
 END_NCBI_SCOPE
 

@@ -269,8 +269,8 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
     } else
         return false;
 
-    const auto&    chain = TrackNodes(entry);
-    const DataBlk* temp  = chain.cbegin();
+    const auto& chain = TrackNodes(entry);
+    auto        temp  = chain.cbegin();
     for (; temp != chain.cend(); temp = temp->mpNext) {
         const auto& dblk = *temp;
         if (dblk.mType != type)

@@ -123,7 +123,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 }
 
 /**********************************************************/
-static bool XMLGetInstContig(const TXmlIndexList& xil, DataBlkPtr dbp, CBioseq& bioseq, ParserPtr pp)
+static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBioseq& bioseq, ParserPtr pp)
 {
     char* p;
     char* q;
@@ -133,7 +133,7 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, DataBlkPtr dbp, CBioseq& 
     Int4  i;
     int   numerr;
 
-    p = StringSave(XMLFindTagValue(dbp->mOffset, xil, INSDSEQ_CONTIG));
+    p = StringSave(XMLFindTagValue(dbp.mOffset, xil, INSDSEQ_CONTIG));
     if (! p)
         return false;
 
@@ -184,7 +184,7 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, DataBlkPtr dbp, CBioseq& 
 }
 
 /**********************************************************/
-bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& bioseq)
+bool XMLGetInst(ParserPtr pp, const DataBlk& dbp, unsigned char* dnaconv, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
@@ -194,9 +194,9 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
     ibp = pp->entrylist[pp->curindx];
     for (auto xip = ibp->xip.begin(); xip != ibp->xip.end(); ++xip) {
         if (xip->tag == INSDSEQ_TOPOLOGY && ! topstr)
-            topstr = XMLGetTagValue(dbp->mOffset, *xip);
+            topstr = XMLGetTagValue(dbp.mOffset, *xip);
         else if (xip->tag == INSDSEQ_STRANDEDNESS && ! strandstr)
-            strandstr = XMLGetTagValue(dbp->mOffset, *xip);
+            strandstr = XMLGetTagValue(dbp.mOffset, *xip);
     }
 
     CSeq_inst& inst = bioseq.SetInst();
@@ -218,7 +218,7 @@ bool XMLGetInst(ParserPtr pp, DataBlkPtr dbp, unsigned char* dnaconv, CBioseq& b
         strandstr.reset();
     }
 
-    if (! GetSeqData(pp, *dbp, bioseq, 0, dnaconv, ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna))
+    if (! GetSeqData(pp, dbp, bioseq, 0, dnaconv, ibp->is_prot ? eSeq_code_type_iupacaa : eSeq_code_type_iupacna))
         return false;
 
     if (ibp->is_contig && ! XMLGetInstContig(ibp->xip, dbp, bioseq, pp))
@@ -594,7 +594,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 }
 
 /**********************************************************/
-static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* org_ref)
+static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, const DataBlk& entry, COrg_ref* org_ref)
 {
     IndexblkPtr ibp;
 
@@ -605,8 +605,8 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    molstr = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_MOLTYPE));
-    div    = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DIVISION));
+    molstr = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_MOLTYPE));
+    div    = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_DIVISION));
 
     if (StringEquN(div, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
@@ -629,7 +629,7 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, DataBlkPtr entry, COrg_ref* or
         mol_info->SetTech(CMolInfo::eTech_targeted);
 
     MemFree(div);
-    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, *entry, org_ref);
+    GetFlatBiomol(mol_info->SetBiomol(), mol_info->GetTech(), molstr, pp, entry, org_ref);
     if (mol_info->GetBiomol() == CMolInfo::eBiomol_unknown) // not set
         mol_info->ResetBiomol();
 
@@ -766,11 +766,9 @@ static void XMLGetDescrComment(char* offset)
 }
 
 /**********************************************************/
-static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
+static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
-
-    DataBlkPtr dbp;
 
     char*  crdate;
     char*  update;
@@ -802,7 +800,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
-    str = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_DEFINITION));
+    str = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_DEFINITION));
     string title;
 
     if (str) {
@@ -874,8 +872,8 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
      */
     /* pub should be before GBblock because we need patent ref
      */
-    TDataBlkList dbl = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_END);
-    for (dbp = dbl.begin(); dbp != dbl.end();) {
+    TDataBlkList dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_END);
+    for (auto dbp = dbl.begin(); dbp != dbl.end();) {
         auto dbpnext = dbp->mpNext;
 
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
@@ -889,8 +887,8 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         dbp = dbpnext;
     }
 
-    dbl = XMLBuildRefDataBlk(entry->mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
-    for (dbp = dbl.begin(); dbp != dbl.end();) {
+    dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
+    for (auto dbp = dbl.begin(); dbp != dbl.end();) {
         auto dbpnext = dbp->mpNext;
 
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
@@ -911,9 +909,9 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
     CRef<CGB_block>   gbb;
 
     if (pp->source == Parser::ESource::EMBL)
-        embl = XMLGetEMBLBlock(pp, entry->mOffset, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
+        embl = XMLGetEMBLBlock(pp, entry.mOffset, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
     else
-        gbb = XMLGetGBBlock(pp, entry->mOffset, *mol_info, bio_src);
+        gbb = XMLGetGBBlock(pp, entry.mOffset, *mol_info, bio_src);
 
     CRef<CUser_object> dbuop;
     if (! dr_ena.empty() || ! dr_biosample.empty())
@@ -962,7 +960,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    offset = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_PRIMARY));
+    offset = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_PRIMARY));
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
@@ -997,7 +995,7 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
 
     /* COMMENT data
      */
-    offset = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_COMMENT));
+    offset = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_COMMENT));
     if (offset) {
         bool           bad = false;
         TUserObjVector user_objs;
@@ -1061,11 +1059,11 @@ static void XMLGetDescr(ParserPtr pp, DataBlkPtr entry, CBioseq& bioseq)
         update = nullptr;
         crdate = nullptr;
     } else {
-        update = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_UPDATE_DATE));
+        update = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_UPDATE_DATE));
         if (update)
             std_upd_date = GetUpdateDate(update, pp->source);
 
-        crdate = StringSave(XMLFindTagValue(entry->mOffset, ibp->xip, INSDSEQ_CREATE_DATE));
+        crdate = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_CREATE_DATE));
         if (crdate)
             std_cre_date = GetUpdateDate(crdate, pp->source);
     }
@@ -1131,7 +1129,6 @@ bool XMLAscii(ParserPtr pp)
     bool        seq_long = false;
     IndexblkPtr ibp;
     IndexblkPtr tibp;
-    DataBlkPtr  dbp;
 
     /* set up sequence alphabets
      */
@@ -1184,12 +1181,12 @@ bool XMLAscii(ParserPtr pp)
         ebp->seq_entry->SetSeq(*bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        dbp          = new DataBlk();
+        DataBlk* dbp = new DataBlk();
         dbp->SetEntryData(ebp);
         dbp->mOffset = entry;
         dbp->len     = StringLen(entry);
 
-        if (! XMLGetInst(pp, dbp, ibp->is_prot ? protconv.get() : dnaconv.get(), *bioseq)) {
+        if (! XMLGetInst(pp, *dbp, ibp->is_prot ? protconv.get() : dnaconv.get(), *bioseq)) {
             ibp->drop = true;
             ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
             if (ibp->segnum == 0) {
@@ -1212,7 +1209,7 @@ bool XMLAscii(ParserPtr pp)
             continue;
         }
 
-        XMLGetDescr(pp, dbp, *bioseq);
+        XMLGetDescr(pp, *dbp, *bioseq);
 
         if (ibp->drop && ibp->segnum == 0) {
             ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
