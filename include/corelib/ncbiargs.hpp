@@ -894,10 +894,16 @@ public:
     /// not allowed (will be reported as an unknown argument). The alias will
     /// be printed in USAGE after the original argument name.
     /// @param alias
-    ///    New alias for a real argument.
+    ///   New alias for a real argument.
     /// @param arg_name
-    ///    The real argument's name.
+    ///   The real argument's name.
+    /// @note
+    ///   Aliases not intended to use with standard/special arguments like
+    ///   -h, -logfile, -conffile, -version and etc.
+    ///   They works with arguments defined in the current CArgDescriptions only.
+    ///
     void AddAlias(const string& alias, const string& arg_name);
+
     /// Add negated alias for a flag argument. Using the alias in the
     /// command line produces the same effect as using the original
     /// flag with the opposite value. If 'arg_name' does not describe
