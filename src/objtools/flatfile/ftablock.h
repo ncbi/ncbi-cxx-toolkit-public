@@ -345,8 +345,9 @@ public:
     bool           mDrop;
     DataBlk*       mpNext; // next in line
 };
-using DataBlkPtr = DataBlk*;
 using TDataBlkList = DataBlk::TList;
+using DataBlkIter  = DataBlk*;
+using DataBlkCIter = const DataBlk*;
 
 
 //  ============================================================================
@@ -362,7 +363,7 @@ using EntryBlkPtr = EntryBlk*;
 
 /**************************************************************************/
 
-void xFreeEntry(DataBlkPtr entry);
+void xFreeEntry(DataBlk* entry);
 
 END_NCBI_SCOPE
 

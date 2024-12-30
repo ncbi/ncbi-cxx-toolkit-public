@@ -128,7 +128,7 @@ void DataBlk::deleteData()
     mData.emplace<monostate>();
 }
 
-void xFreeEntry(DataBlkPtr entry)
+void xFreeEntry(DataBlk* entry)
 {
     entry->deleteData();
     delete entry;

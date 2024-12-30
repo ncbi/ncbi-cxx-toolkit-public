@@ -201,7 +201,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     bool end_of_file;
 
     IndexblkPtr entry;
-    DataBlkPtr  data;
     Int4        indx = 0;
     char*       p;
     char*       q;
@@ -394,9 +393,8 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
             entry->len = pp->ffbuf.get_offs() - entry->offset;
 
             if (fun) {
-                data = LoadEntry(pp, entry->offset, entry->len);
+                unique_ptr<DataBlk> data(LoadEntry(pp, entry->offset, entry->len));
                 (*fun)(entry, data->mOffset, static_cast<Int4>(data->len));
-                delete data;
             }
         } /* if, entry */
         else {
