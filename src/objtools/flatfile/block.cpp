@@ -140,7 +140,7 @@ EntryBlk::~EntryBlk()
 {
     if (chain.head) {
         delete chain.head;
-        chain = nullptr;
+        chain.head = nullptr;
     }
 }
 
@@ -262,15 +262,15 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
     for (const auto& it : ibl)
         ibpp.push_back(it.get());
 
-    if (pp->indx > 1)
+    if (ibl_size > 1)
         std::sort(ibpp.begin(), ibpp.end(), AccsCmp);
 
     for (ret = true, j = 0, k = 0; j < count; j++) {
-        if (k == pp->indx) {
+        if (k == ibl_size) {
             ret = QSNoSequenceRecordErr(pp->accver, *qsspp[j]);
             continue;
         }
-        for (; k < pp->indx; k++) {
+        for (; k < ibl_size; k++) {
             l = StringCmp(qsspp[j]->accession.c_str(), ibpp[k]->acnum);
             if (l < 0) {
                 ret = QSNoSequenceRecordErr(pp->accver, *qsspp[j]);

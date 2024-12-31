@@ -287,9 +287,8 @@ class DataBlk
 {
 public:
     struct TList {
-        DataBlk* head;
-        TList(DataBlk* p = nullptr) :
-            head(p) {}
+        DataBlk* head = nullptr;
+
         bool           empty() const { return head == nullptr; }
         DataBlk*       begin() { return head; }
         constexpr
@@ -301,11 +300,10 @@ public:
 
 public:
     DataBlk(
-        int      type_  = 0,
-        char*    offset = nullptr,
-        size_t   len_   = 0) :
+        int    type_  = 0,
+        char*  offset = nullptr,
+        size_t len_   = 0) :
         mType(type_),
-        mData(),
         mOffset(offset),
         len(len_),
         mDrop(false),
@@ -353,7 +351,7 @@ using DataBlkCIter = const DataBlk*;
 //  ============================================================================
 struct EntryBlk {
     //  ============================================================================
-    TDataBlkList              chain = nullptr; /* a header points to key-word
+    TDataBlkList              chain; /* a header points to key-word
                                            block information */
     CRef<objects::CSeq_entry> seq_entry;       /* points to sequence entry */
 

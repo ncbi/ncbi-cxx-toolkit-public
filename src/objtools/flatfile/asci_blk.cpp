@@ -398,7 +398,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
 
     while (bptr < eptr) {
         if (! dbp.hasData())
-            dbp.mData = TDataBlkList(nullptr);
+            dbp.mData = TDataBlkList();
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
@@ -821,7 +821,7 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
 
     if (GetSubNodeType(subkw, &bptr, eptr)) {
         if (! dbp.hasData())
-            dbp.mData = TDataBlkList(nullptr);
+            dbp.mData = TDataBlkList();
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), subtype, bptr, eptr - bptr);
     }
 }
@@ -850,7 +850,7 @@ void GetLenSubNode(DataBlk& dbp)
     offset = dbp.mOffset;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
-    n    = atoi(s);
+    n = atoi(s);
 
     DataBlkCIter ldbp = nullptr;
     for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ndbp = ndbp->mpNext) {
