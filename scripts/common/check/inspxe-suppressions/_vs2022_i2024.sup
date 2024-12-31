@@ -98,7 +98,38 @@ suppression = {
 		}
 	}
 }
-
+suppression = {
+	name = "ucrtbase.dll / _stdio_common_vfprintf"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=_stdio_common_vfprintf;
+		}
+	}
+}
+suppression = {
+	name = "ucrtbase.dll / _stdio_common_vfprintf_s"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=_stdio_common_vswprintf_s;
+		}
+	}
+}
+suppression = {
+	name = "ws2_32.dll / getsockopt"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=ws2_32.dll,func=getsockopt;
+		}
+	}
+}
 suppression = {
 	name = "ucrtbase.dll / stat64"
 	type = {invalid_memory_access}
@@ -132,6 +163,57 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "dbghelp.dll / SymLoadModuleEx"
+	type = {prob_mem_uninit,prob_mem_uninit_partial}
+	stacks = {
+		{
+			...;
+			func=SymLoadModuleEx,mod=dbghelp.dll;
+		}
+	}
+}
+suppression = {
+	name = "kernelbase.dll / GetModuleFileNameEx"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=kernelbase.dll,func=WideCharToMultiByte;
+			mod=kernelbase.dll,func=GetModuleBaseNameA;
+		}
+	}
+}
+suppression = {
+	name = "kernelbase.dll / GetModuleFileNameEx"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=kernelbase.dll,func=WideCharToMultiByte;
+			mod=kernelbase.dll,func=GetModuleFileNameExA;
+		}
+	}
+}
+suppression = {
+	name = "ntmarta.dll / SetNamedSecurityInfo"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlValidSid;
+			mod=ntmarta.dll,func=SetNamedSecurityInfoW;
+		}
+	}
+}
+
+
+
+
+
+
+
+
 
 suppression = {
 	name = "connect / s_CreateHttpConnector"
@@ -157,15 +239,11 @@ suppression = {
 			!!!;
 			src=ncbi_connutil.c,func=ConnNetInfo_CloneInternal;
 		}
-		allocation={
-			!!!;
-			src=ncbi_connutil.c,func=ConnNetInfo_CloneInternal;
-		}
 	}
 }
 
 suppression = {
-	name = "CCompressionStreambuf / zlib / inflate"
+	name = "Compression API / CCompressionStreambuf / zlib / inflate"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -413,6 +491,57 @@ suppression = {
 		allocation={
 			...;
 			mod=crypt32.dll,func=CertCloseStore;
+		}
+	}
+}
+suppression = {
+	name = "bdb / _db_close()"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=db.c,func=_db_close;
+		}
+	}
+}
+
+suppression = {
+	name = "dbapi / ctlib / ct_dyndesc"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			mod=libsybct64.dll,func=ct_dyndesc;
+		}
+	}
+}
+suppression = {
+	name = "dbapi / ctlib / memcmp"
+	type = {invalid_call}
+	stacks = {
+		{
+			...;
+			func=com_memmovefn_nt,mod=libsybcomn64.dll;
+		}
+	}
+}
+suppression = {
+	name = "dbapi / ctlib / ct_wakeup"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=libsybct64.dll,func=ct_wakeup;
+		}
+	}
+}
+suppression = {
+	name = "dbapi / freetds100 / tds_get_byte_ver100"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=tds_get_byte_ver100,src=read.c;
+			func=tds_process_tokens_ver100,src=token.c;
 		}
 	}
 }
