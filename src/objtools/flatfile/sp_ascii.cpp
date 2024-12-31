@@ -1329,22 +1329,23 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
         return nullptr;
 
     const auto& subblocks = dbp->GetSubBlocks();
-    for (dbp = subblocks.cbegin(); dbp != subblocks.cend(); dbp = dbp->mpNext)
-        if (dbp->mType == ParFlatSP_OH)
+    auto        subdbp    = subblocks.cbegin();
+    for (; subdbp != subblocks.cend(); subdbp = subdbp->mpNext)
+        if (subdbp->mType == ParFlatSP_OH)
             break;
-    if (dbp == subblocks.cend())
+    if (subdbp == subblocks.cend())
         return nullptr;
 
     vhp  = new ViralHost;
     tvhp = vhp;
 
-    line                       = StringNew(dbp->len + 1);
-    ch                         = dbp->mOffset[dbp->len - 1];
-    dbp->mOffset[dbp->len - 1] = '\0';
+    line                       = StringNew(subdbp->len + 1);
+    ch                         = subdbp->mOffset[subdbp->len - 1];
+    subdbp->mOffset[subdbp->len - 1] = '\0';
     line[0]                    = '\n';
     line[1]                    = '\0';
-    StringCat(line, dbp->mOffset);
-    dbp->mOffset[dbp->len - 1] = ch;
+    StringCat(line, subdbp->mOffset);
+    subdbp->mOffset[subdbp->len - 1] = ch;
 
     if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
         ch = '\0';

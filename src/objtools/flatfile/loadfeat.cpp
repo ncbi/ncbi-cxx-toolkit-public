@@ -598,8 +598,8 @@ static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
         if (fbp) {
             delete fbp;
             dbp->SetFeatData(nullptr);
-            dbp->mData = monostate();
         }
+        dbp->mData = monostate();
         if (format == Parser::EFormat::XML)
             dbp->SimpleDelete();
         dbp = dbpnext;
@@ -2811,7 +2811,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
     bool       got_pseudogene;
     bool       got_pseudo;
 
-    for (auto dbp = dbl.begin(); dbp; dbp = dbp->mpNext) {
+    for (auto dbp = dbl.begin(); dbp != dbl.end(); dbp = dbp->mpNext) {
         fbp = dbp->GetFeatData();
         if (! fbp)
             continue;
