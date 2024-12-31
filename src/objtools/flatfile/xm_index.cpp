@@ -1404,14 +1404,16 @@ bool XMLIndex(ParserPtr pp)
 /**********************************************************/
 TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
 {
+    TDataBlkList ret;
+
     if (! entry || xil.empty())
-        return nullptr;
+        return ret;
 
     auto xip = xil.begin();
     while (xip != xil.end() && xip->tag != INSDSEQ_REFERENCES)
         ++xip;
     if (xip == xil.end() || xip->subtags.empty())
-        return nullptr;
+        return ret;
 
     DataBlk*    dbp = nullptr;
     DataBlkIter tdbp;
@@ -1430,7 +1432,9 @@ TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
         tdbp->SetXmlData(txip->subtags);
         tdbp->mpNext  = nullptr;
     }
-    return TDataBlkList(dbp);
+
+    ret.head = dbp;
+    return ret;
 }
 
 /**********************************************************/
