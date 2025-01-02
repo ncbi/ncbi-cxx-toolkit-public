@@ -21865,7 +21865,7 @@
                         "method": "biodata",
                         "params": {
                             "bio_id": [
-                                "emb|CU329671|"
+                                "OZ154354.1"
                             ],
                             "include_data": "smart-tse",
                             "user_args": "resend_timeout=0"
@@ -21881,26 +21881,26 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "emb|CU329671.1|",
+                            "id": "emb|OZ154354.1|",
                             "type": 6
                         },
                         "other_ids": [
                             {
-                                "id": "gi|157310380",
+                                "id": "gi|2795066121",
                                 "type": 12
                             }
                         ],
                         "molecule_type": "dna",
-                        "length": 4539804,
+                        "length": 25579285,
                         "seq_state": 10,
                         "state": 10,
                         "blob_id": {
-                            "id": "2.68756500"
+                            "id": "2.68679008"
                         },
-                        "tax_id": 4896,
-                        "hash": 126390452,
-                        "date_changed": null,
-                        "gi": 157310380
+                        "tax_id": 9606,
+                        "hash": -630777483,
+                        "date_changed": "08/29/2024 18:01:00",
+                        "gi": 2795066121
                     }
                 },
                 {
@@ -21909,12 +21909,12 @@
                     "result": {
                         "reply": "BlobData",
                         "id": {
-                            "id": "2.68756500",
-                            "last_modified": 1731621394846
+                            "id2_chunk": 999999999,
+                            "id2_info": "25.137770141.100.1724941215"
                         },
-                        "length": 1972688,
-                        "hash": "6EFB1503046A319F",
-                        "preview": "eJzsu3tcE2f2Pz7JBBIgkA=="
+                        "length": 1091,
+                        "hash": "3A2F780A85FFAC24",
+                        "preview": "eJzt2T1wFGUcBvDLJYHcGQ=="
                     }
                 },
                 {
@@ -21923,24 +21923,50 @@
                     "result": {
                         "reply": "BlobInfo",
                         "id": {
-                            "id": "2.68756500",
-                            "last_modified": 1731621394846
+                            "id": "2.68679008",
+                            "last_modified": 1724953817990
                         },
                         "compression": "gzip",
                         "format": "asn.1",
-                        "storage_size": 1972688,
-                        "size": 4413386,
+                        "storage_size": 5603186,
+                        "size": 6401527,
                         "is_dead": false,
                         "is_suppressed": false,
                         "is_withdrawn": false,
                         "hup_release_date": "",
                         "owner": 4,
-                        "original_load_date": "11/14/2024 21:56:34",
-                        "class": "nuc-prot",
-                        "division": "PLN",
+                        "original_load_date": "08/29/2024 17:50:17",
+                        "class": "not-set",
+                        "division": "PRI",
+                        "username": "gbupdate",
+                        "id2_info": "25.137770141.100.1724941215",
+                        "n_chunks": 11
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "blob_1",
+                    "result": {
+                        "reply": "BlobInfo",
+                        "id": {
+                            "id2_chunk": 999999999,
+                            "id2_info": "25.137770141.100.1724941215"
+                        },
+                        "compression": "gzip",
+                        "format": "asn.1",
+                        "storage_size": 1091,
+                        "size": 10865,
+                        "is_dead": false,
+                        "is_suppressed": false,
+                        "is_withdrawn": false,
+                        "hup_release_date": "",
+                        "owner": 0,
+                        "original_load_date": "",
+                        "class": "not-set",
+                        "division": "",
                         "username": "gbupdate",
                         "id2_info": "",
-                        "n_chunks": 4
+                        "n_chunks": 1
                     }
                 },
                 {
