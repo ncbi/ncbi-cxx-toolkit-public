@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 
 NCBI_DEFINE_ERRCODE_X(Corelib_Env,        101,  5);
-NCBI_DEFINE_ERRCODE_X(Corelib_Config,     102, 23);
+NCBI_DEFINE_ERRCODE_X(Corelib_Config,     102, 25);
 NCBI_DEFINE_ERRCODE_X(Corelib_Blob,       103,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_Static,     104,  1);
 NCBI_DEFINE_ERRCODE_X(Corelib_System,     105, 13);

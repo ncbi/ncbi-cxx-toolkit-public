@@ -149,7 +149,7 @@ Int8 s_StringToInt8(const string& value)
 //  CArgValue::
 
 CArgValue::CArgValue(const string& name)
-    : m_Name(name), m_Ordinal(0), m_Flags(0)
+    : m_Name(name), m_Ordinal(0), m_Flags(0), m_Standard(false)
 {
     if ( !CArgDescriptions::VerifyName(m_Name, true) ) {
         NCBI_THROW(CArgException,eInvalidArg,
@@ -629,8 +629,19 @@ bool CArg_Ios::x_CreatePath(TFileFlags flags) const
     return ((flags & CArgDescriptions::fNoCreate)==0 || entry.Exists());
 }
 
-CNcbiIstream&  CArg_Ios::AsInputFile(  TFileFlags flags) const
+// Check methods on using with standard arguments.
+// Terminate app in Debug mode.
+#define CHECK_STANDARD_ARG(func) \
+    if (IsStandard()) { \
+        ERR_POST_X(24, Error << func << \
+            ": not allowed to use with a standard argument: " << \
+            GetName()); \
+        _ASSERT(!IsStandard()); \
+    }
+
+CNcbiIstream&  CArg_Ios::AsInputFile(TFileFlags flags) const
 {
+    CHECK_STANDARD_ARG("CArg_Ios::AsInputFile");
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
     CNcbiIstream *str = dynamic_cast<CNcbiIstream*>(m_Ios);
@@ -640,8 +651,9 @@ CNcbiIstream&  CArg_Ios::AsInputFile(  TFileFlags flags) const
     return CArg_String::AsInputFile(flags);
 }
 
-CNcbiOstream&  CArg_Ios::AsOutputFile( TFileFlags flags) const
+CNcbiOstream&  CArg_Ios::AsOutputFile(TFileFlags flags) const
 {
+    CHECK_STANDARD_ARG("CArg_Ios::AsOutputFile");
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
     CNcbiOstream *str = dynamic_cast<CNcbiOstream*>(m_Ios);
@@ -651,8 +663,9 @@ CNcbiOstream&  CArg_Ios::AsOutputFile( TFileFlags flags) const
     return CArg_String::AsOutputFile(flags);
 }
 
-CNcbiIostream& CArg_Ios::AsIOFile(     TFileFlags flags) const
+CNcbiIostream& CArg_Ios::AsIOFile(TFileFlags flags) const
 {
+    CHECK_STANDARD_ARG("CArg_Ios::AsIOFile");
     CFastMutexGuard LOCK(m_AccessMutex);
     x_Open(flags);
     CNcbiIostream *str = dynamic_cast<CNcbiIostream*>(m_Ios);
@@ -668,7 +681,7 @@ void CArg_Ios::CloseFile(void) const
     CFastMutexGuard LOCK(m_AccessMutex);
     if ( !m_Ios ) {
         ERR_POST_X(21, Warning << s_ArgExptMsg( GetName(),
-            "CArg_Ios::CloseFile: File was not opened", AsString()));
+            "CArg_Ios::CloseFile: file was not opened", AsString()));
         return;
     }
 
@@ -1226,6 +1239,10 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
     }
     } /* switch GetType() */
 
+    // Mark argument as standard/special
+    if (GetFlags() & CArgDescriptions::fStandard) {
+        arg_value->m_Standard = true;
+    }
 
     // Check against additional (user-defined) constraints, if any imposed
     if ( m_Constraint ) {
@@ -2232,20 +2249,21 @@ void CArgDescriptions::AddDefaultFileArguments(const string& default_config)
         AddOptionalKey
             (s_ArgLogFile+1, "File_Name",
                 "File to which the program log should be redirected",
-                CArgDescriptions::eOutputFile);
+                CArgDescriptions::eOutputFile, CArgDescriptions::fStandard);
     }
     if (!Exist(s_ArgCfgFile + 1) ) {
         if (default_config.empty()) {
             AddOptionalKey
                 (s_ArgCfgFile + 1, "File_Name",
                     "Program's configuration (registry) data file",
-                    CArgDescriptions::eInputFile);
+                    CArgDescriptions::eInputFile, CArgDescriptions::fStandard);
         } else {
             AddDefaultKey
                 (s_ArgCfgFile + 1, "File_Name",
                     "Program's configuration (registry) data file",
                     CArgDescriptions::eInputFile,
-                    default_config);
+                    default_config,
+                    CArgDescriptions::fStandard);
         }
     }
 }
@@ -2284,7 +2302,7 @@ void CArgDescriptions::AddStdArguments(THideStdArgs mask)
             AddOptionalKey
                 (s_ArgLogFile+1, "File_Name",
                     "File to which the program log should be redirected",
-                    CArgDescriptions::eOutputFile);
+                    CArgDescriptions::eOutputFile, CArgDescriptions::fStandard);
         }
     }
     if ((mask & fHideConffile) != 0) {
@@ -2296,7 +2314,7 @@ void CArgDescriptions::AddStdArguments(THideStdArgs mask)
             AddOptionalKey
                 (s_ArgCfgFile + 1, "File_Name",
                     "Program's configuration (registry) data file",
-                    CArgDescriptions::eInputFile);
+                    CArgDescriptions::eInputFile, CArgDescriptions::fStandard);
         }
     }
     if ((mask & fHideVersion) != 0) {
@@ -2307,7 +2325,8 @@ void CArgDescriptions::AddStdArguments(THideStdArgs mask)
         if (!Exist(s_ArgVersion + 1)) {
             AddFlag
                 (s_ArgVersion + 1,
-                    "Print version number;  ignore other arguments");
+                    "Print version number;  ignore other arguments",
+                    CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fStandard);
         }
     }
     if ((mask & fHideFullVersion) != 0) {
@@ -2324,17 +2343,20 @@ void CArgDescriptions::AddStdArguments(THideStdArgs mask)
         if (!Exist(s_ArgFullVersion + 1)) {
             AddFlag
                 (s_ArgFullVersion + 1,
-                    "Print extended version data;  ignore other arguments");
+                    "Print extended version data;  ignore other arguments",
+                    CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fStandard);
         }
         if (!Exist(s_ArgFullVersionXml + 1)) {
             AddFlag
                 (s_ArgFullVersionXml + 1,
-                    "Print extended version data in XML format;  ignore other arguments");
+                    "Print extended version data in XML format;  ignore other arguments",
+                    CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fStandard);
         }
         if (!Exist(s_ArgFullVersionJson + 1)) {
             AddFlag
                 (s_ArgFullVersionJson + 1,
-                    "Print extended version data in JSON format;  ignore other arguments");
+                    "Print extended version data in JSON format;  ignore other arguments",
+                    CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fStandard);
         }
     }
     if ((mask & fHideDryRun) != 0) {
@@ -2345,7 +2367,8 @@ void CArgDescriptions::AddStdArguments(THideStdArgs mask)
         if (!Exist(s_ArgDryRun + 1)) {
             AddFlag
                 (s_ArgDryRun + 1,
-                    "Dry run the application: do nothing, only test all preconditions");
+                    "Dry run the application: do nothing, only test all preconditions",
+                    CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fStandard);
         }
     }
 }
@@ -2559,7 +2582,6 @@ void CArgDescriptions::AddAlias(const string& alias,
 {
     unique_ptr<CArgDesc_Alias>arg
         (new CArgDesc_Alias(alias, arg_name, kEmptyStr));
-
     x_AddDesc(*arg);
     arg.release();
 }
@@ -2784,8 +2806,11 @@ void CArgDescriptions::x_PreCheck(void) const
         }
     }
 
-    // Check for the validity of default values.
-    // Also check for conflict between no-separator and regular names
+    // Check for:
+    // - validity of default values;
+    // - conflict between no-separator and regular names;
+    // - aliases pointing to standard/special arguments.
+
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
         CArgDesc& arg = **it;
 
@@ -2810,11 +2835,24 @@ void CArgDescriptions::x_PreCheck(void) const
             }
         }
 
-/*
-        if (dynamic_cast<CArgDescDefault*> (&arg) == 0) {
-            continue;
+        // Check aliases
+        if (s_IsAlias(arg)) {
+            TArgsCI it_aliased = m_Args.end();
+            string name_aliased = dynamic_cast<const CArgDesc_Alias&>(arg).GetAliasedName();
+            try {
+                it_aliased = x_Find(name_aliased);
+            }
+            catch (const CArgException&) {
+            }
+            if (it_aliased != m_Args.end()) {
+                CArgDesc& arg_aliased = **it_aliased;
+                if (arg_aliased.GetFlags() & CArgDescriptions::fStandard) {
+                    ERR_POST_X(25, Error << "CArgDescriptions::AddAlias: alias '" << name <<
+                        "' not allowed to use with a standard argument: " << name_aliased);
+                        _ASSERT((arg_aliased.GetFlags() & CArgDescriptions::fStandard) =-= 0);
+                }
+            }
         }
-*/
 
         try {
             arg.VerifyDefault();
@@ -4124,7 +4162,7 @@ void CCommandArgDescriptions::AddStdArguments(THideStdArgs mask)
         mask = mask | fHideLogfile | fHideConffile | fHideDryRun;
     }
     if (!m_HasHidden) {
-        for( const auto& t : m_Description) {
+        for (const auto& t : m_Description) {
             m_HasHidden = m_HasHidden || t.second->m_HasHidden;
         }
     }
