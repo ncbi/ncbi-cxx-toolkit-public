@@ -3546,19 +3546,16 @@ static TDataBlkList XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
             else if (xipfeat->tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
         }
-        DataBlk* p = new DataBlk;
-        if (! dbl.head) {
-            dbl.head = p;
+        if (dbl.empty()) {
+            dbp = dbl.emplace_front(0);
         } else {
-            dbp->mpNext = p;
+            dbp = dbl.emplace_after(dbp, 0);
         }
-        dbp = p;
         dbp->SetFeatData(fbp);
     }
 
-    dbp        = new DataBlk(XML_FEATURES);
-    dbp->mData = std::move(dbl);
-    ret.head   = dbp;
+    DataBlk* p = ret.emplace_front(XML_FEATURES);
+    p->mData   = std::move(dbl);
     return ret;
 }
 

@@ -296,6 +296,21 @@ public:
         const DataBlk* cbegin() const { return head; }
         constexpr
         const DataBlk* cend() const { return nullptr; }
+
+        DataBlk* emplace_front(int type, char* offset = nullptr, size_t len = 0)
+        {
+            DataBlk* p = new DataBlk(type, offset, len);
+            p->mpNext  = head;
+            head       = p;
+            return p;
+        }
+        static DataBlk* emplace_after(DataBlk* pos, int type, char* offset = nullptr, size_t len = 0)
+        {
+            DataBlk* p  = new DataBlk(type, offset, len);
+            p->mpNext   = pos->mpNext;
+            pos->mpNext = p;
+            return p;
+        }
     };
 
 public:

@@ -230,15 +230,14 @@ void ShrinkSpaces(string& line)
  **********************************************************/
 static void InsertDatablkVal(TDataBlkList& dbl, Int2 type, char* offset, size_t len)
 {
-    DataBlk* ldp = new DataBlk(type, offset, len);
     if (! dbl.empty()) {
         auto tail = dbl.begin();
         while (tail->mpNext != dbl.end()) {
             tail = tail->mpNext;
         }
-        tail->mpNext = ldp;
+        dbl.emplace_after(tail, type, offset, len);
     } else {
-        dbl.head = ldp;
+        dbl.emplace_front(type, offset, len);
     }
 }
 
