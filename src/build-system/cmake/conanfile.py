@@ -65,7 +65,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         else:
             print("NCBI artifactory is not found")
 
-        self._default_requires("abseil/[>=20230125.3 <=20230802.1]")
+        self._default_requires("abseil/[>=20230125.3 <=20240116.2]")
         self._optional_requires("aws-sdk-cpp/1.9.234")
         if self.settings.os == "Linux":
             self._default_requires("backward-cpp/1.6")
@@ -74,7 +74,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         if self.settings.os == "Linux":
             self._default_requires("cassandra-cpp-driver/[>=2.15.3 <=2.17.1]")
         self._default_requires("giflib/[>=5.2.1 <=5.2.2]")
-        self._default_requires("grpc/1.50.1")
+        self._default_requires("grpc/[>=1.50.1 <=1.67.1]")
         if self.settings.os == "Linux" or NCBIfound:
             self._default_requires("libdb/5.3.28")
         self._default_requires("libjpeg/9e")
@@ -88,7 +88,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libxslt/[>=1.1.34 <=1.1.42]")
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
-        self._optional_requires("opentelemetry-cpp/1.14.2")
+        self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.17.0]")
         self._default_requires("pcre/8.45")
         self._default_requires("pcre2/10.42")
         self._default_requires("protobuf/[>=3.21.12 <=5.27.0]")
@@ -148,6 +148,9 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 #boost/*:without_timer = True
         self.options["boost"+_s].without_type_erasure = True
         self.options["boost"+_s].without_wave = True
+
+        self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
+        self.options["opentelemetry-cpp"+_s].with_jaeger = False
 # hyphens make it tricky
         setattr(self.options["aws-sdk-cpp"], "text-to-speech", False), 
 
