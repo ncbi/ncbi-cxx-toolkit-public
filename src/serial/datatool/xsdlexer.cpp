@@ -236,7 +236,7 @@ TToken XSDLexer::LookupLexeme(void)
 TToken XSDLexer::LookupKeyword(void)
 {
     const char* token = CurrentTokenStart();
-    const char* token_ns = strchr(token, ':');
+    const char* token_ns = (const char*)memchr(token, ':', CurrentTokenLength());
     if (token_ns && (size_t)(token_ns - token) < CurrentTokenLength()) {
         token = ++token_ns;
     }
