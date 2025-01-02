@@ -2849,7 +2849,7 @@ void CArgDescriptions::x_PreCheck(void) const
                 if (arg_aliased.GetFlags() & CArgDescriptions::fStandard) {
                     ERR_POST_X(25, Error << "CArgDescriptions::AddAlias: alias '" << name <<
                         "' not allowed to use with a standard argument: " << name_aliased);
-                        _ASSERT((arg_aliased.GetFlags() & CArgDescriptions::fStandard) =-= 0);
+                        _ASSERT((arg_aliased.GetFlags() & CArgDescriptions::fStandard) == 0);
                 }
             }
         }
