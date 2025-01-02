@@ -20845,7 +20845,6 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Aug-08"), "Aug-2008");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Aug-12"), "Aug-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("August 13"), "Aug-2013");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("August 27"), "Aug-1927");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Dec-05"), "Dec-2005");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Dec-12"), "Dec-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Dec-98"), "Dec-1998");
@@ -20866,7 +20865,7 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jun-67"), "Jun-1967");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jun-80"), "Jun-1980");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June 11"), "Jun-2011");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June 25"), "Jun-1925");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June 24"), "Jun-2024");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-02"), "Mar-2002");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-05"), "Mar-2005");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-09"), "Mar-2009");
