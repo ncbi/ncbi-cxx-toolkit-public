@@ -270,12 +270,27 @@ public:
     typedef unsigned int TFileFlags;   ///< Bitwise OR of "EFileFlags"
 
     /// Get the argument as an input file stream.
+    /// @note
+    ///   This method is not allowed to use with standard/special arguments like 
+    ///   -logfile, -conffile and etc. 
+    ///   It works with arguments defined by user in the CArgDescriptions only.
+    ///
     virtual CNcbiIstream& AsInputFile (TFileFlags flags = 0) const = 0;
 
     /// Get the argument as an output file stream.
+    /// @note
+    ///   This method is not allowed to use with standard/special arguments like 
+    ///   -logfile, -conffile and etc. 
+    ///   It works with arguments defined by user in the CArgDescriptions only.
+    ///
     virtual CNcbiOstream& AsOutputFile(TFileFlags flags = 0) const = 0;
 
     /// Get the argument as a file stream.
+    /// @note
+    ///   This method is not allowed to use with standard/special arguments like 
+    ///   -logfile, -conffile and etc. 
+    ///   It works with arguments defined by user in the CArgDescriptions only.
+    ///
     virtual CNcbiIostream& AsIOFile(TFileFlags flags = 0) const = 0;
 
     /// Get the argument as a directory.
@@ -325,6 +340,13 @@ public:
     ///   If the argument is a flag: "false" or "true".
     const string& GetDefault(TArgValueFlags* flags = NULL) const;
 
+    /// Checks that this is a standard/special argument.
+    /// @internal
+    size_t IsStandard(void) const
+    {
+        return m_Standard;
+    }
+
 protected:
     friend class CArgs;
     friend class CArgDescDefault;
@@ -347,6 +369,7 @@ protected:
     size_t m_Ordinal;
     string m_Default;
     TArgValueFlags m_Flags;
+    bool   m_Standard;     ///> TRUE if standard/special argument
 };
 
 
@@ -671,7 +694,10 @@ public:
         ///                           if 'fname' equals '-',  read value from
         ///                           standard input (stdin) without any prompt
         ///   -key-verbatim value  -- read value from the command line, as is
-        fConfidential  = (1 << 13)
+        fConfidential  = (1 << 13),
+
+        /// Mark standard/special flag. For internal use only.
+        fStandard = (1 << 14)
     };
     typedef unsigned int TFlags;  ///< Bitwise OR of "EFlags"
 
@@ -900,7 +926,7 @@ public:
     /// @note
     ///   Aliases not intended to use with standard/special arguments like
     ///   -h, -logfile, -conffile, -version and etc.
-    ///   They works with arguments defined in the current CArgDescriptions only.
+    ///   It works with arguments defined by user in the CArgDescriptions only.
     ///
     void AddAlias(const string& alias, const string& arg_name);
 
