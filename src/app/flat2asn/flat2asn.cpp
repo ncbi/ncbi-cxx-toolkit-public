@@ -224,8 +224,6 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddDefaultKey("i", "InputFlatfile", "Input flatfile to parse", ncbi::CArgDescriptions::eString, "stdin");
 
     arg_descrs->AddOptionalKey("o", "OutputAsnFile", "Output ASN.1 file", ncbi::CArgDescriptions::eOutputFile);
-    //arg_descrs->AddOptionalKey("l", "LogFile", "Log file", ncbi::CArgDescriptions::eOutputFile);
-    arg_descrs->AddAlias("l", "logfile");
 
     arg_descrs->AddDefaultKey("a", "ParseRegardlessAccessionPrefix", "Parse all flatfile entries, regardless of accession prefix letter", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("D", "DebugMode", "Debug mode, output everything possible", ncbi::CArgDescriptions::eBoolean, "F");
@@ -293,7 +291,7 @@ void CFlat2AsnApp::Init()
 class CFlat2AsnListener : public CObjtoolsListener
 {
 public:
-    CFlat2AsnListener(const string& prefix, EDiagSev minSev=eDiagSevMin) 
+    CFlat2AsnListener(const string& prefix, EDiagSev minSev=eDiagSevMin)
         : m_Prefix(prefix), m_MinSev(minSev) {}
     ~CFlat2AsnListener() override {}
 
@@ -316,7 +314,7 @@ public:
         }
     }
 
-    void Dump(CNcbiOstream& ostr, const string& prefix, EDiagSev minSev) const 
+    void Dump(CNcbiOstream& ostr, const string& prefix, EDiagSev minSev) const
     {
         for (const auto& pMessage : m_Messages) {
             if (pMessage->GetSeverity() >= minSev) {
@@ -360,8 +358,8 @@ int CFlat2AsnApp::Run()
     if (messageListener.Count() > 0) {
         messageListener.Dump(*pLogStream);
         if (haveLogFile) {
-            messageListener.Dump(NcbiCerr, 
-                    "[" + CNcbiApplication::GetAppName() + "]", 
+            messageListener.Dump(NcbiCerr,
+                    "[" + CNcbiApplication::GetAppName() + "]",
                     eDiag_Warning);
         }
     }
