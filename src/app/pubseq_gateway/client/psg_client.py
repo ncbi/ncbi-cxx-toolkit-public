@@ -247,7 +247,7 @@ class SynthPsgClient(PsgClient):
             return
 
     def _report_error(self, data, prefix, messages):
-        request = self._sent[data.get('id')]
+        request = json.dumps(self._sent[data.get('id')])
         print(*prefix, end=": '", file=sys.stderr)
         print(*messages, sep="', '", end=f"' for request '{request}'\n", file=sys.stderr)
 
@@ -382,6 +382,21 @@ def get_ids(psg_client, bio_ids, /, max_blob_ids=1000, max_chunk_ids=1000):
 
 def get_all_named_annots(psg_client, named_annots, /, max_ids=1000):
     """Get all bio IDs for named annotations."""
+    primary_types = {
+             5: 'genbank',
+             6: 'embl',
+             7: 'pir',
+             8: 'swissprot',
+            10: 'other',
+            13: 'ddbj',
+            14: 'prf',
+            15: 'pdb',
+            16: 'tpg',
+            17: 'tpe',
+            18: 'tpd',
+            # 19: 'gpipe', # Some gpipe IDs are not primary
+        }
+
     ids = list()
 
     for (bio_id, na_ids) in named_annots:
@@ -397,7 +412,8 @@ def get_all_named_annots(psg_client, named_annots, /, max_ids=1000):
 
                 other_ids = reply.get('other_ids', [])
                 for other_id in other_ids:
-                    bio_ids.append(list(other_id.values()))
+                    if other_id.get('type') in primary_types:
+                        bio_ids.append(list(other_id.values()))
 
                 ids.append([bio_ids, na_ids])
 
