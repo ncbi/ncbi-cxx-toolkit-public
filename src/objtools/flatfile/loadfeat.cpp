@@ -592,19 +592,11 @@ extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& s
 /**********************************************************/
 static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
 {
-    for (auto dbp = dbl.begin(); dbp != dbl.end();) {
-        auto     dbpnext = dbp->mpNext;
-        FeatBlk* fbp     = dbp->GetFeatData();
-        if (fbp) {
-            delete fbp;
-            dbp->SetFeatData(nullptr);
-        }
-        dbp->mData = monostate();
-        if (format == Parser::EFormat::XML)
-            dbp->SimpleDelete();
-        dbp = dbpnext;
+    for (auto dbp = dbl.begin(); dbp != dbl.end(); dbp = dbp->mpNext) {
+        dbp->deleteData();
     }
-    dbl.head = nullptr;
+    if (format == Parser::EFormat::XML)
+        dbl.clear();
 }
 
 /**********************************************************
@@ -2647,29 +2639,24 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
 /**********************************************************/
 static void fta_remove_dup_feats(TDataBlkList& dbl)
 {
-    const FeatBlk* fbp1;
-    const FeatBlk* fbp2;
-
-    if (dbl.empty() || dbl.begin()->mpNext == dbl.end())
+    auto dbp = dbl.begin();
+    if (dbp == dbl.end() || dbp->mpNext == dbl.end())
         return;
 
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); dbp = dbp->mpNext) {
+    for (; dbp != dbl.end(); dbp = dbp->mpNext) {
         if (! dbp->hasData())
             continue;
 
-        fbp1 = dbp->GetFeatData();
+        const FeatBlk* fbp1 = dbp->GetFeatData();
 
         auto tdbpprev = dbp;
         for (auto tdbp = dbp->mpNext; tdbp != dbl.end();) {
-            auto tdbpnext = tdbp->mpNext;
             if (! tdbp->hasData()) {
-                tdbpprev->mpNext = tdbpnext;
-                tdbp->SimpleDelete();
-                tdbp = tdbpnext;
+                tdbp = dbl.erase_after(tdbpprev);
                 continue;
             }
 
-            fbp2 = tdbp->GetFeatData();
+            const FeatBlk* fbp2 = tdbp->GetFeatData();
 
             if (fbp1->location_isset() && fbp2->location_isset() &&
                 StringCmp(fbp1->location_get(), fbp2->location_get()) < 0)
@@ -2677,7 +2664,7 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
 
             if (! fta_feats_same(fbp1, fbp2)) {
                 tdbpprev = tdbp;
-                tdbp     = tdbpnext;
+                tdbp     = tdbp->mpNext;
                 continue;
             }
 
@@ -2689,10 +2676,8 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
             auto msg = ErrFormat("Duplicated feature \"%s\" at location \"%s\" removed.", fbp2->key_or("???"), _loc.c_str());
             ErrPostStr(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, msg);
 
-            delete fbp2;
-            tdbpprev->mpNext = tdbpnext;
-            tdbp->SimpleDelete();
-            tdbp = tdbpnext;
+            tdbp->deleteData();
+            tdbp = dbl.erase_after(tdbpprev);
         }
     }
 }
@@ -4823,17 +4808,15 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (seq_feats.empty()) {
         ibp->drop = true;
-        for (; dab != dab_end;) {
-            auto dabnext = dab->mpNext;
+        for (; dab != dab_end; dab = dab->mpNext) {
             if (dab->hasData()) {
                 TDataBlkList& dbl = std::get<TDataBlkList>(dab->mData);
                 FreeFeatBlk(dbl, pp->format);
                 dab->mData = monostate();
             }
-            if (pp->format == Parser::EFormat::XML)
-                dab->SimpleDelete();
-            dab = dabnext;
         }
+        if (pp->format == Parser::EFormat::XML)
+            temp_xml_chain.clear();
         xinstall_gbparse_range_func(nullptr, nullptr);
         return;
     }
@@ -4859,12 +4842,8 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
 
-    for (; dab != dab_end;) {
-        auto dabnext = dab->mpNext;
+    for (; dab != dab_end; dab = dab->mpNext) {
         if (dab->mType != type) {
-            if (pp->format == Parser::EFormat::XML)
-                dab->SimpleDelete();
-            dab = dabnext;
             continue;
         }
 
@@ -4947,10 +4926,9 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             }
         }
         FreeFeatBlk(dbl, pp->format);
-        if (pp->format == Parser::EFormat::XML)
-            dab->SimpleDelete();
-        dab = dabnext;
     }
+    if (pp->format == Parser::EFormat::XML)
+        temp_xml_chain.clear();
 
     if (! fta_perform_operon_checks(seq_feats, ibp)) {
         ibp->drop = true;

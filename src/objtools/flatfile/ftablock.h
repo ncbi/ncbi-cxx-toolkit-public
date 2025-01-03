@@ -311,6 +311,22 @@ public:
             pos->mpNext = p;
             return p;
         }
+        static DataBlk* erase_after(DataBlk* pos)
+        {
+            auto after  = pos->mpNext;
+            pos->mpNext = after->mpNext;
+            after->SimpleDelete();
+            return pos->mpNext;
+        }
+        void clear()
+        {
+            for (DataBlk* p = head; p != nullptr;) {
+                auto pnext = p->mpNext;
+                p->SimpleDelete();
+                p = pnext;
+            }
+            head = nullptr;
+        }
     };
 
 public:
