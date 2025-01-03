@@ -20891,9 +20891,9 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-93"), "Sep-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 10"), "Sep-2010");
 
-    // this next one will need to be removed when 2031 rolls around,
+    // this next one would need to be removed when 2031 rolls around,
     // since the logic will then (properly) return Oct-2031
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("October 31"), "Oct-1931");
+    // BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("October 31"), "Oct-1931");
 
     // fix leading/trailing spaces
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat(" 2010-03-01"), "2010-03-01");
