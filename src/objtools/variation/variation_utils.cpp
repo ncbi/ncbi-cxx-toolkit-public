@@ -657,7 +657,7 @@ CVariation_inst::TType
         return CVariation_inst::eType_unknown;
     }
 
-    bool identity_present;
+    bool identity_present = false;
     set<CVariation_inst::TType> types;
     switch(var.GetData().Which()) {
     case CVariation::C_Data::e_Instance:
