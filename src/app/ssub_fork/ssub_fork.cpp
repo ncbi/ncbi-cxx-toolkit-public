@@ -77,7 +77,7 @@ public:
 private:
     CObjectIStream* xInitInputStream() const; // Why CObjectIStream instead of NcbiIstream here?
 
-    CObjectOStream* xInitOutputStream(const string& output_stub, 
+    CObjectOStream* xInitOutputStream(const string& output_stub,
                                       const TSeqPos output_index,
                                       const TSeqPos pad_width,
                                       const string& output_extension,
@@ -87,28 +87,28 @@ private:
     CRef<CSerialObject> xGetInputObject() const;
 
     bool xTryReadInputFile(CRef<CSerialObject>& obj) const;
-    
+
     bool xTryProcessSeqEntries(const CObjectHelper& builder, TSeqEntryArray& seq_entry_array,
                                list<CRef<CSerialObject>>& output_array) const;
-   
+
     bool xTryProcessSeqSubmit(CRef<CSerialObject>& obj,
                               list<CRef<CSerialObject>>& output_array) const;
     bool xTryProcessSeqEntry(CRef<CSerialObject>& obj,
                              list<CRef<CSerialObject>>& output_array) const;
 
-    void xWrapSeqEntries(TSeqEntryArray& seq_entry_array, 
+    void xWrapSeqEntries(TSeqEntryArray& seq_entry_array,
                          const TSeqPos& bundle_size,
                          TSeqEntryArray& wrapped_entry_array) const;
 
     void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
                            TSeqEntryArray& seq_entry_array) const;
 
-    void xFlattenSeqEntry(CSeq_entry& seq_entry, 
+    void xFlattenSeqEntry(CSeq_entry& seq_entry,
                           const CSeq_descr& seq_descr,
                           TSeqEntryArray& seq_entry_array,
                           bool process_set_of_any_type = false) const;
 
-    void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const; 
+    void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const;
 
 
     string xGetFileExtension(const string& filename) const;
@@ -125,10 +125,10 @@ void CSeqSubSplitter::Init()
     // input
     {
         arg_desc->AddKey("i", "InputFile",
-                         "Filename for asn.1 input", 
+                         "Filename for asn.1 input",
                          CArgDescriptions::eInputFile);
     }
- 
+
     {
         arg_desc->AddDefaultKey("b",
                                 "BOOLEAN",
@@ -158,7 +158,7 @@ void CSeqSubSplitter::Init()
 
     }
 
-    { 
+    {
         arg_desc->AddDefaultKey("w",
                                 "BOOLEAN",
                                 "Wrap output Seq-entries within Seq-submits with Genbank set [T/F]",
@@ -166,12 +166,7 @@ void CSeqSubSplitter::Init()
                                 "F");
     }
 
-    // logfile alias 
-    { 
-        arg_desc->AddAlias("l", "logfile"); 
-    }
-
-    // parameters 
+    // parameters
     {
         arg_desc->AddDefaultKey("n",
                                 "POSINT",
@@ -195,7 +190,7 @@ void CSeqSubSplitter::Init()
                                &(*new CArgAllow_Strings,
                                  "0", "1", "2", "3"));
     }
-    
+
     // treat input as Seq-entry
     {
         arg_desc->AddFlag("e", "Treat input as Seq-entry");
@@ -251,9 +246,9 @@ int CSeqSubSplitter::Run()
     try {
         for (auto& it: output_array) {
             ++output_index;
-            ostr.reset(xInitOutputStream(output_stub, 
-                        output_index, 
-                        pad_width, 
+            ostr.reset(xInitOutputStream(output_stub,
+                        output_index,
+                        pad_width,
                         output_extension,
                         binary
                         ));
@@ -280,7 +275,7 @@ string CSeqSubSplitter::xGetFileExtension(const string& filename) const
        extension = arr.back();
    }
 
-   return extension; 
+   return extension;
 }
 
 
@@ -292,8 +287,8 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
         const bool binary) const
 {
     if (output_stub.empty()) {
-        NCBI_THROW(CSeqSubSplitException, 
-                   eEmptyOutputStub, 
+        NCBI_THROW(CSeqSubSplitException,
+                   eEmptyOutputStub,
                    "Output stub not specified");
     }
 
@@ -304,7 +299,7 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
 
         if (padded_index.size() < pad_width) {
             padded_index = padding.substr(0, pad_width - padded_index.size()) + padded_index;
-        } 
+        }
     }
 
     string filename = output_stub + "_" + padded_index + "." + output_extension;
@@ -316,8 +311,8 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
     CObjectOStream* pOstr = CObjectOStream::Open(filename, serial);
 
     if (!pOstr) {
-        NCBI_THROW(CSeqSubSplitException, 
-                   eOutputError, 
+        NCBI_THROW(CSeqSubSplitException,
+                   eOutputError,
                    "Unable to open output file:" + filename);
     }
     return pOstr;
@@ -340,7 +335,7 @@ bool CSeqSubSplitter::xTryReadInputFile(CRef<CSerialObject>& obj) const
 {
     unique_ptr<CObjectIStream> istr;
     istr.reset(xInitInputStream());
-    
+
     CRef<CSerialObject> input_obj = xGetInputObject();
 
     bool ret = true;
@@ -356,7 +351,7 @@ bool CSeqSubSplitter::xTryReadInputFile(CRef<CSerialObject>& obj) const
 }
 
 
-// I guess that I could make Comparison classes subclasses of CSeqSubSplitter 
+// I guess that I could make Comparison classes subclasses of CSeqSubSplitter
 template<class Derived>
 struct SCompare
 {
@@ -397,7 +392,7 @@ struct SLongestFirstCompare : public SCompare<SLongestFirstCompare>
 
 struct SShortestFirstCompare : public SCompare<SShortestFirstCompare>
 {
-    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const 
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const
     {
         if (!b1.IsSetInst() || !b2.IsSetInst()) {
             NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
@@ -416,11 +411,11 @@ struct SShortestFirstCompare : public SCompare<SShortestFirstCompare>
 struct SIdCompare : public SCompare<SIdCompare>
 {
 
-    CConstRef<CSeq_id> xGetGeneralId(const CBioseq& bioseq) const 
+    CConstRef<CSeq_id> xGetGeneralId(const CBioseq& bioseq) const
     {
         const CBioseq::TId& ids = bioseq.GetId();
 
-        ITERATE(CBioseq::TId, id_itr, ids) { 
+        ITERATE(CBioseq::TId, id_itr, ids) {
             CConstRef<CSeq_id> id = *id_itr;
 
             if (id && id->IsGeneral()) {
@@ -431,7 +426,7 @@ struct SIdCompare : public SCompare<SIdCompare>
         return CConstRef<CSeq_id>();
     }
 
-    CConstRef<CSeq_id> xGetId(const CBioseq& bioseq) const 
+    CConstRef<CSeq_id> xGetId(const CBioseq& bioseq) const
     {
         if (bioseq.GetLocalId()) {
            return CConstRef<CSeq_id>(bioseq.GetLocalId());
@@ -440,11 +435,11 @@ struct SIdCompare : public SCompare<SIdCompare>
     }
 
 
-    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const 
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const
     {
         if (!b1.IsSetId() || !b2.IsSetId()) {
-            NCBI_THROW(CSeqSubSplitException, 
-                       eInvalidSeqid, 
+            NCBI_THROW(CSeqSubSplitException,
+                       eInvalidSeqid,
                        "Bioseq id not set");
         }
 
@@ -452,14 +447,14 @@ struct SIdCompare : public SCompare<SIdCompare>
         CConstRef<CSeq_id> id2 = xGetId(b2);
 
         if (id1.IsNull() || id2.IsNull()) {
-            NCBI_THROW(CSeqSubSplitException, 
-                       eSeqIdError, 
+            NCBI_THROW(CSeqSubSplitException,
+                       eSeqIdError,
                        "Cannot access bioseq id");
         }
 
         if (id1->IsGeneral() != id2->IsGeneral()) {
-            NCBI_THROW(CSeqSubSplitException, 
-                       eSeqIdError, 
+            NCBI_THROW(CSeqSubSplitException,
+                       eSeqIdError,
                        "Inconsistent bioseq ids");
         }
 
@@ -469,7 +464,7 @@ struct SIdCompare : public SCompare<SIdCompare>
 
 
 
-void CSeqSubSplitter::xWrapSeqEntries(TSeqEntryArray& seq_entry_array, 
+void CSeqSubSplitter::xWrapSeqEntries(TSeqEntryArray& seq_entry_array,
                                       const TSeqPos& bundle_size,
                                       TSeqEntryArray& wrapped_entry_array) const
 {
@@ -478,7 +473,7 @@ void CSeqSubSplitter::xWrapSeqEntries(TSeqEntryArray& seq_entry_array,
         CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
         seq_entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
         for (TSeqPos i=0; i<bundle_size; ++i) {
-           seq_entry->SetSet().SetSeq_set().push_back(*seq_entry_it);   
+           seq_entry->SetSet().SetSeq_set().push_back(*seq_entry_it);
            ++seq_entry_it;
            if (seq_entry_it == seq_entry_array.end()) {
                break;
@@ -496,13 +491,13 @@ bool CSeqSubSplitter::xTryProcessSeqEntries(const CObjectHelper& helper, TSeqEnt
 
     TSeqPos bundle_size = args["n"].AsInteger();
     TSeqPos sort_order = args["r"].AsInteger();
-    bool wrap_entries = args["w"].AsBoolean(); // Wrap the output Seq-entries 
+    bool wrap_entries = args["w"].AsBoolean(); // Wrap the output Seq-entries
                                                // within a Seq-submit in a Genbank set
 
     switch(sort_order) {
         default:
-            NCBI_THROW(CSeqSubSplitException,  
-                       eInvalidSortOrder,      
+            NCBI_THROW(CSeqSubSplitException,
+                       eInvalidSortOrder,
                        "Unrecognized sort order: " + NStr::IntToString(sort_order));
         case 0:
             break;
@@ -515,7 +510,7 @@ bool CSeqSubSplitter::xTryProcessSeqEntries(const CObjectHelper& helper, TSeqEnt
         case 3:
             stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SIdCompare());
             break;
-    } 
+    }
 
     if (wrap_entries) { // wrap the entries inside a genbank set
         TSeqEntryArray wrapped_entry_array;
@@ -646,7 +641,7 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream() const
 {
     const CArgs& args = GetArgs();
     if (!args["i"]) {
-        NCBI_THROW(CSeqSubSplitException, 
+        NCBI_THROW(CSeqSubSplitException,
                    eInputError,
                    "Input file unspecified");
     }
@@ -659,7 +654,7 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream() const
     string infile_str = args["i"].AsString();
     CNcbiIstream* pInputStream = new CNcbiIfstream(infile_str.c_str(), ios::in | ios::binary);
 
-    if (pInputStream->fail()) 
+    if (pInputStream->fail())
     {
        NCBI_THROW(CSeqSubSplitException,
                   eInputError,
@@ -667,12 +662,12 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream() const
     }
 
 
-    CObjectIStream* p_istream = CObjectIStream::Open(serial, 
-                                                     *pInputStream, 
+    CObjectIStream* p_istream = CObjectIStream::Open(serial,
+                                                     *pInputStream,
                                                      eTakeOwnership);
-    
+
     if (!p_istream) {
-        NCBI_THROW(CSeqSubSplitException, 
+        NCBI_THROW(CSeqSubSplitException,
                    eInputError,
                    "Unable to open input file \"" + infile_str + "\"");
 
@@ -726,7 +721,7 @@ void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) con
         return;
     }
 
-    for (auto& descr: src.Get()) 
+    for (auto& descr: src.Get())
     {
         CSeqdesc::E_Choice choice = descr->Which();
         if (MultipleAllowed(choice)) {
@@ -746,12 +741,12 @@ void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) con
 
 
 void CSeqSubSplitter::xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
-                                        TSeqEntryArray& seq_entry_array) const 
+                                        TSeqEntryArray& seq_entry_array) const
 {
     NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, entries) {
         CSeq_entry& seq_entry = **it;
         CSeq_descr seq_descr;
-        xFlattenSeqEntry(seq_entry, seq_descr, seq_entry_array);     
+        xFlattenSeqEntry(seq_entry, seq_descr, seq_entry_array);
     }
 }
 
@@ -784,7 +779,7 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
 
         if (seq_set.IsSetAnnot()) {
 
-            string class_string = (seq_set.GetClass() == CBioseq_set::eClass_genbank) 
+            string class_string = (seq_set.GetClass() == CBioseq_set::eClass_genbank)
                                 ? "Genbank set" : "Pub-set";
 
             string err_msg = "Wrapper " + class_string + "has non-empty annotation.";
@@ -798,7 +793,7 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
         }
 
         if (entry.GetSet().IsSetDescr()) {
-            xMergeSeqDescr(entry.GetSet().GetDescr(), new_descr); 
+            xMergeSeqDescr(entry.GetSet().GetDescr(), new_descr);
         }
 
         NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
