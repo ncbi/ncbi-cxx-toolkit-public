@@ -1101,6 +1101,9 @@ string CArgDesc::PrintXml(CNcbiOstream& out) const
         if (flags & CArgDescriptions::fConfidential) {
             out << "<" << "confidential" << "/>";
         }
+        if (flags & CArgDescriptions::fStandard) {
+            out << "<" << "standard" << "/>";
+        }
         out << "</" << "flags" << ">" << endl;
     }
     const CArgDescDefault* def = dynamic_cast<const CArgDescDefault*>(this);
