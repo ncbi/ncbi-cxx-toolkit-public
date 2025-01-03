@@ -873,34 +873,26 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* pub should be before GBblock because we need patent ref
      */
     TDataBlkList dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_END);
-    for (auto dbp = dbl.begin(); dbp != dbl.end();) {
-        auto dbpnext = dbp->mpNext;
-
+    for (auto dbp = dbl.begin(); dbp != dbl.end(); dbp = dbp->mpNext) {
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
-
-        dbp->SimpleDelete();
-        dbp = dbpnext;
     }
+    dbl.clear();
 
     dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
-    for (auto dbp = dbl.begin(); dbp != dbl.end();) {
-        auto dbpnext = dbp->mpNext;
-
+    for (auto dbp = dbl.begin(); dbp != dbl.end(); dbp = dbp->mpNext) {
         CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
         }
-
-        dbp->SimpleDelete();
-        dbp = dbpnext;
     }
+    dbl.clear();
 
     TStringList dr_ena,
         dr_biosample;
