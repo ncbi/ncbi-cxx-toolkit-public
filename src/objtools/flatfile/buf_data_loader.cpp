@@ -355,7 +355,6 @@ static DataBlk* make_entry(char* entry_str)
 {
     DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
 
-    entry->mpNext  = nullptr; /* assume no segment at this time */
     entry->mOffset = entry_str;
     entry->len     = StringLen(entry->mOffset);
     entry->SetEntryData(new EntryBlk);

@@ -60,27 +60,10 @@ using QSStructList = std::forward_list<QSStruct>;
 /**********************************************************/
 DataBlk::~DataBlk()
 {
-    if (mSimpleDelete)
-        return;
-
-    int MAX_HEAD_RECURSION(100);
-
     mpQscore.clear();
     deleteData();
     if (mType == ParFlat_ENTRYNODE) {
         MemFree(mOffset);
-    }
-    auto p = mpNext;
-    for (int i = 0; p && i < MAX_HEAD_RECURSION; ++i) {
-        p = p->mpNext;
-    }
-    if (! p) {
-        delete mpNext;
-    } else {
-        auto pTail = p->mpNext;
-        p->mpNext  = nullptr;
-        delete mpNext;
-        delete pTail;
     }
 }
 
@@ -111,8 +94,7 @@ void DataBlk::deleteData()
         return;
     if (holds_alternative<TDataBlkList>(mData)) {
         auto& subblocks = std::get<TDataBlkList>(mData);
-        delete subblocks.head;
-        subblocks.head = nullptr;
+        subblocks.clear();
     } else if (holds_alternative<EntryBlk*>(mData)) {
         auto& p = std::get<EntryBlk*>(mData);
         delete p;
@@ -130,7 +112,6 @@ void DataBlk::deleteData()
 
 void xFreeEntry(DataBlk* entry)
 {
-    entry->deleteData();
     delete entry;
 }
 
@@ -138,9 +119,8 @@ void xFreeEntry(DataBlk* entry)
 
 EntryBlk::~EntryBlk()
 {
-    if (chain.head) {
-        delete chain.head;
-        chain.head = nullptr;
+    if (! chain.empty()) {
+        chain.clear();
     }
 }
 

@@ -451,7 +451,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
 
 #endif
 
-    for (auto subdbp = dbp.GetSubBlocks().cbegin(); subdbp != dbp.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+    for (auto subdbp = dbp.GetSubBlocks().cbegin(); subdbp != dbp.GetSubBlocks().cend(); ++subdbp) {
         /* process REFERENCE subkeywords
          */
         str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));

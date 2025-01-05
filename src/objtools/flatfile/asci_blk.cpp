@@ -230,15 +230,10 @@ void ShrinkSpaces(string& line)
  **********************************************************/
 static void InsertDatablkVal(TDataBlkList& dbl, Int2 type, char* offset, size_t len)
 {
-    if (! dbl.empty()) {
-        auto tail = dbl.begin();
-        while (tail->mpNext != dbl.end()) {
-            tail = tail->mpNext;
-        }
-        dbl.emplace_after(tail, type, offset, len);
-    } else {
-        dbl.emplace_front(type, offset, len);
-    }
+    auto tail = dbl.before_begin();
+    while (next(tail) != dbl.end())
+        ++tail;
+    dbl.emplace_after(tail, type, offset, len);
 }
 
 /**********************************************************
@@ -468,7 +463,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REFERENCE)
             continue;
@@ -486,7 +481,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         GetGenBankRefType(ref_blk, bases);
     }
 
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& feat_blk = *dbp;
         if (feat_blk.mType != ParFlat_FEATURES)
             continue;
@@ -747,7 +742,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
 void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
     auto& chain = TrackNodes(entry);
-    for (auto temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
+    for (auto temp = chain.begin(); temp != chain.end(); ++temp) {
         auto& os_blk = *temp;
         if (os_blk.mType != ParFlat_OS)
             continue;
@@ -757,7 +752,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(os_blk);
     }
 
-    for (auto temp = chain.begin(); temp != chain.end(); temp = temp->mpNext) {
+    for (auto temp = chain.begin(); temp != chain.end(); ++temp) {
         auto& ref_blk = *temp;
         if (ref_blk.mType != ParFlat_RN)
             continue;
@@ -775,11 +770,11 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
     }
 
     auto predbp = chain.begin();
-    auto curdbp = predbp->mpNext;
+    auto curdbp = next(predbp);
     while (curdbp != chain.end()) {
         if (curdbp->mType != ParFlat_FH) {
             predbp = curdbp;
-            curdbp = curdbp->mpNext;
+            ++curdbp;
             continue;
         }
 
@@ -788,15 +783,12 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
             GetLenSubNode(*curdbp);
 
             predbp = curdbp;
-            curdbp = curdbp->mpNext;
+            ++curdbp;
         } else /* report error, free this node */
         {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFeatData, "No feature data in the FH block (Embl)");
 
-            predbp->mpNext = curdbp->mpNext;
-            curdbp->mpNext = nullptr;
-            delete curdbp;
-            curdbp = predbp->mpNext;
+            curdbp = chain.erase_after(predbp);
         }
     }
 }
@@ -851,8 +843,8 @@ void GetLenSubNode(DataBlk& dbp)
         s++;
     n = atoi(s);
 
-    DataBlkCIter ldbp = nullptr;
-    for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ndbp = ndbp->mpNext) {
+    auto ldbp = subblocks.cend();
+    for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ++ndbp) {
         size_t l = ndbp->mOffset - offset;
         if (l > 0 && l < dbp.len) {
             dbp.len = l;
@@ -865,17 +857,17 @@ void GetLenSubNode(DataBlk& dbp)
         done = true;
     }
 
-    for (auto curdbp = subblocks.begin(); curdbp->mpNext != subblocks.end(); curdbp = curdbp->mpNext) {
+    for (auto curdbp = subblocks.begin(); next(curdbp) != subblocks.end(); ++curdbp) {
         offset = curdbp->mOffset;
-        ldbp   = nullptr;
-        for (auto ndbp = subblocks.begin(); ndbp != subblocks.end(); ndbp = ndbp->mpNext) {
+        ldbp   = subblocks.end();
+        for (auto ndbp = subblocks.begin(); ndbp != subblocks.end(); ++ndbp) {
             size_t l = ndbp->mOffset - offset;
             if (l > 0 && l < curdbp->len) {
                 curdbp->len = l;
                 ldbp        = ndbp;
             }
         }
-        if (ldbp != curdbp->mpNext && ldbp != subblocks.end() && ! done) {
+        if (! done && ldbp != next(curdbp) && ldbp != subblocks.end()) {
             ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
         }
     }
@@ -1048,7 +1040,7 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len
     const auto& sdb  = mdbp->GetSubBlocks();
     auto        sdbp = sdb.cbegin();
     while (sdbp != sdb.cend() && sdbp->mType != subtype)
-        sdbp = sdbp->mpNext;
+        ++sdbp;
     if (sdbp == sdb.cend())
         return nullptr;
 

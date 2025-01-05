@@ -1415,15 +1415,11 @@ TDataBlkList XMLBuildRefDataBlk(char* entry, const TXmlIndexList& xil, int type)
     if (xip == xil.end() || xip->subtags.empty())
         return ret;
 
-    DataBlkIter tdbp;
+    auto tdbp = ret.before_begin();
     for (auto txip = xip->subtags.begin(); txip != xip->subtags.end(); ++txip) {
         if (txip->type != type || txip->subtags.empty())
             continue;
-        if (ret.empty()) {
-            tdbp = ret.emplace_front(txip->type, entry);
-        } else {
-            tdbp = ret.emplace_after(tdbp, txip->type, entry);
-        }
+        tdbp = ret.emplace_after(tdbp, txip->type, entry);
         tdbp->SetXmlData(txip->subtags);
     }
 

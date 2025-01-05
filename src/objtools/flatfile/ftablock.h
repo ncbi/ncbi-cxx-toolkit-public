@@ -286,50 +286,6 @@ class DataBlk
 //  ============================================================================
 {
 public:
-    struct TList {
-        DataBlk* head = nullptr;
-
-        bool           empty() const { return head == nullptr; }
-        DataBlk*       begin() { return head; }
-        constexpr
-        DataBlk*       end() { return nullptr; }
-        const DataBlk* cbegin() const { return head; }
-        constexpr
-        const DataBlk* cend() const { return nullptr; }
-
-        DataBlk* emplace_front(int type, char* offset = nullptr, size_t len = 0)
-        {
-            DataBlk* p = new DataBlk(type, offset, len);
-            p->mpNext  = head;
-            head       = p;
-            return p;
-        }
-        static DataBlk* emplace_after(DataBlk* pos, int type, char* offset = nullptr, size_t len = 0)
-        {
-            DataBlk* p  = new DataBlk(type, offset, len);
-            p->mpNext   = pos->mpNext;
-            pos->mpNext = p;
-            return p;
-        }
-        static DataBlk* erase_after(DataBlk* pos)
-        {
-            auto after  = pos->mpNext;
-            pos->mpNext = after->mpNext;
-            after->SimpleDelete();
-            return pos->mpNext;
-        }
-        void clear()
-        {
-            for (DataBlk* p = head; p != nullptr;) {
-                auto pnext = p->mpNext;
-                p->SimpleDelete();
-                p = pnext;
-            }
-            head = nullptr;
-        }
-    };
-
-public:
     DataBlk(
         int    type_  = 0,
         char*  offset = nullptr,
@@ -337,20 +293,13 @@ public:
         mType(type_),
         mOffset(offset),
         len(len_),
-        mDrop(false),
-        mpNext(nullptr)
+        mDrop(false)
     {
     }
 
-    // static void operator delete(void* p);
     ~DataBlk();
 
-    bool mSimpleDelete = false;
-    void SimpleDelete()
-    {
-        this->mSimpleDelete = true;
-        delete this;
-    }
+    using TList = std::forward_list<DataBlk>;
 
     // accessors to mData
     TList&    GetSubBlocks() { return std::get<TList>(mData); }
@@ -372,11 +321,10 @@ public:
     size_t         len;      // lenght of data in bytes
     string         mpQscore; // points to quality score buffer
     bool           mDrop;
-    DataBlk*       mpNext; // next in line
 };
 using TDataBlkList = DataBlk::TList;
-using DataBlkIter  = DataBlk*;
-using DataBlkCIter = const DataBlk*;
+using DataBlkIter  = TDataBlkList::iterator;
+using DataBlkCIter = TDataBlkList::const_iterator;
 
 
 //  ============================================================================

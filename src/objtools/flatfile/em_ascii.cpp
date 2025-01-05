@@ -1750,7 +1750,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
@@ -1763,7 +1763,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
@@ -1999,7 +1999,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
     unsigned count = 0;
 
     const auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); ++dbp) {
         const auto& os_blk = *dbp;
         if (os_blk.mType != ParFlat_OS)
             continue;
@@ -2026,7 +2026,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); ++subdbp) {
             if (subdbp->mType == ParFlat_OG) {
                 GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
                 continue;
