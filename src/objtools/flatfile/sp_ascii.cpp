@@ -765,9 +765,9 @@ static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
     char* p;
     Int4  gmod = -1;
 
-    for (auto dbp = dbl.cbegin(); dbp != dbl.cend(); dbp = dbp->mpNext)
+    for (auto dbp = dbl.cbegin(); dbp != dbl.cend(); ++dbp)
         if (dbp->mType == ParFlatSP_OS) {
-            for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext)
+            for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp)
                 if (subdbp->mType == ParFlatSP_OG) {
                     p = subdbp->mOffset + ParFlat_COL_DATA_SP;
                     if (StringEquNI(p, "Plastid;", 8))
@@ -848,7 +848,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
     }
 
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlatSP_RN)
             continue;
@@ -1322,7 +1322,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
     char*        r;
     Char         ch;
 
-    for (; dbp != dbp_end; dbp = dbp->mpNext)
+    for (; dbp != dbp_end; ++dbp)
         if (dbp->mType == ParFlatSP_OS)
             break;
     if (dbp == dbp_end)
@@ -1330,7 +1330,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
 
     const auto& subblocks = dbp->GetSubBlocks();
     auto        subdbp    = subblocks.cbegin();
-    for (; subdbp != subblocks.cend(); subdbp = subdbp->mpNext)
+    for (; subdbp != subblocks.cend(); ++subdbp)
         if (subdbp->mType == ParFlatSP_OH)
             break;
     if (subdbp == subblocks.cend())
@@ -1431,11 +1431,11 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
     bool   got   = false;
     TTaxId taxid = ZERO_TAX_ID;
 
-    for (; dbp != dbp_end; dbp = dbp->mpNext) {
+    for (; dbp != dbp_end; ++dbp) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp) {
             if (subdbp->mType != ParFlatSP_OX)
                 continue;
             got  = true;
@@ -1496,11 +1496,11 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end
     line_OS = nullptr;
     line_OC = nullptr;
 
-    for (auto dbp = entry; dbp != end; dbp = dbp->mpNext) {
+    for (auto dbp = entry; dbp != end; ++dbp) {
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(*dbp, "OS   ");
-        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp) {
             if (subdbp->mType != ParFlatSP_OC)
                 continue;
             line_OC = GetLineOSorOC(*subdbp, "OC   ");
@@ -1537,12 +1537,12 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
     Int4  gmod = -1;
 
     const auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); ++dbp) {
         const auto& os_blk = *dbp;
         if (os_blk.mType != ParFlatSP_OS)
             continue;
 
-        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); subdbp = subdbp->mpNext) {
+        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); ++subdbp) {
             if (subdbp->mType != ParFlatSP_OG)
                 continue;
 
@@ -2644,7 +2644,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* Org-ref from ID lines
      */
-    for (auto dbp = chain.cbegin(); dbp != chain.cend(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.cbegin(); dbp != chain.cend(); ++dbp) {
         if (dbp->mType != ParFlatSP_ID)
             continue;
 
@@ -2748,7 +2748,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* RN data ==> pub
      */
-    for (auto dbp = chain.begin(); dbp != chain.end(); dbp = dbp->mpNext) {
+    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
         auto& ref_blk = *dbp;
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
