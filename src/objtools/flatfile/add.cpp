@@ -271,7 +271,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
 
     const auto& chain = TrackNodes(entry);
     auto        temp  = chain.cbegin();
-    for (; temp != chain.cend(); temp = temp->mpNext) {
+    for (; temp != chain.cend(); ++temp) {
         const auto& dblk = *temp;
         if (dblk.mType != type)
             continue;
@@ -279,7 +279,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         size_t len = 0;
 
         const auto& subblocks = dblk.GetSubBlocks();
-        for (auto dbp = subblocks.cbegin(); dbp != subblocks.cend(); dbp = dbp->mpNext)
+        for (auto dbp = subblocks.cbegin(); dbp != subblocks.cend(); ++dbp)
             len += dbp->len;
         if (len == 0)
             continue;
