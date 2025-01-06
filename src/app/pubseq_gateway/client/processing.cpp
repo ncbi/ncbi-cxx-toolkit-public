@@ -472,7 +472,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_AccVerHistory> acc_ver_history)
     Set("gi",           GI_TO(Int8, acc_ver_history->GetGi()));
     Set("date",         acc_ver_history->GetDate().AsString());
     Set("blob_id",      acc_ver_history->GetBlobId());
-    Set("chain",        acc_ver_history->GetChain());
+    Set("chain",        GI_TO(Int8, acc_ver_history->GetChain()));
 }
 
 void CJsonResponse::AddMessage(const SPSG_Message& message)
