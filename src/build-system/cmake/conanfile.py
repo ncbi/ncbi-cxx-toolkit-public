@@ -66,7 +66,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             print("NCBI artifactory is not found")
 
         self._default_requires("abseil/[>=20230125.3 <=20240116.2]")
-        self._optional_requires("aws-sdk-cpp/1.9.234")
+        self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.352]")
         if self.settings.os == "Linux":
             self._default_requires("backward-cpp/1.6")
         self._default_requires("boost/[>=1.82.0 <=1.86.0]")
