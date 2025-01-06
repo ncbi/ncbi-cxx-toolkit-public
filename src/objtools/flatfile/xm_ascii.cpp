@@ -873,8 +873,8 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* pub should be before GBblock because we need patent ref
      */
     TDataBlkList dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_END);
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
+    for (auto& dbp : dbl) {
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
@@ -884,8 +884,8 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     dbl.clear();
 
     dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        CRef<CPubdesc> pubdesc = DescrRefs(pp, *dbp, 0);
+    for (auto& dbp : dbl) {
+        CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);

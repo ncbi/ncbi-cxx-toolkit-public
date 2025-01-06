@@ -765,11 +765,11 @@ static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
     char* p;
     Int4  gmod = -1;
 
-    for (auto dbp = dbl.cbegin(); dbp != dbl.cend(); ++dbp)
-        if (dbp->mType == ParFlatSP_OS) {
-            for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp)
-                if (subdbp->mType == ParFlatSP_OG) {
-                    p = subdbp->mOffset + ParFlat_COL_DATA_SP;
+    for (const auto& dbp : dbl)
+        if (dbp.mType == ParFlatSP_OS) {
+            for (const auto& subdbp : dbp.GetSubBlocks())
+                if (subdbp.mType == ParFlatSP_OG) {
+                    p = subdbp.mOffset + ParFlat_COL_DATA_SP;
                     if (StringEquNI(p, "Plastid;", 8))
                         for (p += 8; *p == ' ';)
                             p++;
@@ -848,8 +848,7 @@ static void GetSprotSubBlock(ParserPtr pp, const DataBlk& entry)
     }
 
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlatSP_RN)
             continue;
 
@@ -1435,11 +1434,11 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
         if (dbp->mType != ParFlatSP_OS)
             continue;
 
-        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp) {
-            if (subdbp->mType != ParFlatSP_OX)
+        for (const auto& subdbp : dbp->GetSubBlocks()) {
+            if (subdbp.mType != ParFlatSP_OX)
                 continue;
             got  = true;
-            line = StringSave(string_view(subdbp->mOffset, subdbp->len - 1));
+            line = StringSave(string_view(subdbp.mOffset, subdbp.len - 1));
             p    = StringChr(line, '\n');
             if (p)
                 *p = '\0';
@@ -1500,10 +1499,10 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end
         if (dbp->mType != ParFlatSP_OS)
             continue;
         line_OS = GetLineOSorOC(*dbp, "OS   ");
-        for (auto subdbp = dbp->GetSubBlocks().cbegin(); subdbp != dbp->GetSubBlocks().cend(); ++subdbp) {
-            if (subdbp->mType != ParFlatSP_OC)
+        for (const auto& subdbp : dbp->GetSubBlocks()) {
+            if (subdbp.mType != ParFlatSP_OC)
                 continue;
-            line_OC = GetLineOSorOC(*subdbp, "OC   ");
+            line_OC = GetLineOSorOC(subdbp, "OC   ");
             break;
         }
         break;
@@ -1537,17 +1536,16 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
     Int4  gmod = -1;
 
     const auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.cbegin(); dbp != chain.cend(); ++dbp) {
-        const auto& os_blk = *dbp;
+    for (const auto& os_blk : chain) {
         if (os_blk.mType != ParFlatSP_OS)
             continue;
 
-        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); ++subdbp) {
-            if (subdbp->mType != ParFlatSP_OG)
+        for (const auto& subdbp : os_blk.GetSubBlocks()) {
+            if (subdbp.mType != ParFlatSP_OG)
                 continue;
 
-            offset = subdbp->mOffset + ParFlat_COL_DATA_SP;
-            eptr   = offset + subdbp->len;
+            offset = subdbp.mOffset + ParFlat_COL_DATA_SP;
+            eptr   = offset + subdbp.len;
             gmod   = StringMatchIcase(SP_organelle, offset);
         }
     }
@@ -2748,8 +2746,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     /* RN data ==> pub
      */
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
 

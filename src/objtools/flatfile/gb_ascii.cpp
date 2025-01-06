@@ -1156,8 +1156,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* pub should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
 
@@ -1169,8 +1168,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
 

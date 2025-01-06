@@ -996,9 +996,9 @@ TDataBlkList& TrackNodes(const DataBlk& entry)
 DataBlk* TrackNodeType(const DataBlk& entry, Int2 type)
 {
     auto& chain = TrackNodes(entry);
-    for (auto temp = chain.begin(); temp != chain.end(); ++temp)
-        if (temp->mType == type)
-            return temp.operator->();
+    for (auto& temp : chain)
+        if (temp.mType == type)
+            return &temp;
 
     return nullptr;
 }

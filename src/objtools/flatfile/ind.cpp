@@ -140,24 +140,24 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
         ind[j] = nullptr;
 
     n_rest = 0;
-    for (auto subdbp = dbp.GetSubBlocks().begin(); subdbp != dbp.GetSubBlocks().end(); ++subdbp) {
-        if (ind[subdbp->mType]) {
+    for (auto& subdbp : dbp.GetSubBlocks()) {
+        if (ind[subdbp.mType]) {
             if (n_rest >= 21) {
                 fprintf(stderr, "Too many rest\n");
                 exit(1);
             }
             n_rest++;
         } else
-            ind[subdbp->mType] = subdbp.operator->();
+            ind[subdbp.mType] = &subdbp;
 
-        i                                = StringLen(ref_tag[subdbp->mType]);
-        subdbp->mOffset[subdbp->len - 1] = '\0';
-        for (s = subdbp->mOffset + i; isspace((int)*s) != 0; s++)
+        i                                = StringLen(ref_tag[subdbp.mType]);
+        subdbp.mOffset[subdbp.len - 1] = '\0';
+        for (s = subdbp.mOffset + i; isspace((int)*s) != 0; s++)
             i++;
-        subdbp->mOffset += i;
-        subdbp->len -= (i + 1);
+        subdbp.mOffset += i;
+        subdbp.len -= (i + 1);
         sx = nullptr;
-        for (s = subdbp->mOffset; *s != '\0'; s++) {
+        for (s = subdbp.mOffset; *s != '\0'; s++) {
             if (*s != '\n')
                 continue;
 
@@ -174,11 +174,11 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
             sx = nullptr;
             *s = ' ';
             fta_StringCpy(s + 1, ss);
-            subdbp->len -= (ss - s - 1);
+            subdbp.len -= (ss - s - 1);
         }
         if (sx) {
             *sx         = '\0';
-            subdbp->len = sx - subdbp->mOffset;
+            subdbp.len = sx - subdbp.mOffset;
         }
     }
 }

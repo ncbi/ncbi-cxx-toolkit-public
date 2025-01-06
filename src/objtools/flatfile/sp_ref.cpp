@@ -451,17 +451,17 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
 
 #endif
 
-    for (auto subdbp = dbp.GetSubBlocks().cbegin(); subdbp != dbp.GetSubBlocks().cend(); ++subdbp) {
+    for (const auto& subdbp : dbp.GetSubBlocks()) {
         /* process REFERENCE subkeywords
          */
-        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp->mOffset, subdbp->len), col_data));
+        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp.mOffset, subdbp.len), col_data));
         size_t len = StringLen(str);
         while (len > 0 && str[len - 1] == ';') {
             str[len - 1] = '\0';
             len--;
         }
 
-        switch (subdbp->mType) {
+        switch (subdbp.mType) {
         case ParFlatSP_RP:
             prbp->comment = str;
             break;

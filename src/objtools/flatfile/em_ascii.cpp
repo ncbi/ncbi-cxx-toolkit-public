@@ -1750,8 +1750,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
 
@@ -1763,8 +1762,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_NO_TARGET)
             continue;
 
@@ -1999,8 +1997,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
     unsigned count = 0;
 
     const auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.cbegin(); dbp != chain.cend(); ++dbp) {
-        const auto& os_blk = *dbp;
+    for (const auto& os_blk : chain) {
         if (os_blk.mType != ParFlat_OS)
             continue;
         ++count;
@@ -2026,16 +2023,16 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
             taxname_str = taxname_str.substr(0, taxname_str.size() - 1);
         }
 
-        for (auto subdbp = os_blk.GetSubBlocks().cbegin(); subdbp != os_blk.GetSubBlocks().cend(); ++subdbp) {
-            if (subdbp->mType == ParFlat_OG) {
-                GetGenomeInfo(*bio_src, subdbp->mOffset + ParFlat_COL_DATA_EMBL);
+        for (const auto& subdbp : os_blk.GetSubBlocks()) {
+            if (subdbp.mType == ParFlat_OG) {
+                GetGenomeInfo(*bio_src, subdbp.mOffset + ParFlat_COL_DATA_EMBL);
                 continue;
             }
-            if (subdbp->mType != ParFlat_OC || ! subdbp->mOffset ||
-                subdbp->len < ParFlat_COL_DATA_EMBL)
+            if (subdbp.mType != ParFlat_OC || ! subdbp.mOffset ||
+                subdbp.len < ParFlat_COL_DATA_EMBL)
                 continue;
 
-            q = StringSave(string_view(subdbp->mOffset + ParFlat_COL_DATA_EMBL, subdbp->len - ParFlat_COL_DATA_EMBL));
+            q = StringSave(string_view(subdbp.mOffset + ParFlat_COL_DATA_EMBL, subdbp.len - ParFlat_COL_DATA_EMBL));
             for (p = q; p;) {
                 p = StringStr(p, "\nOC   ");
                 if (p)
