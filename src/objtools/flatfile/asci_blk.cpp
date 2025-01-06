@@ -463,8 +463,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
     }
 
     auto& chain = TrackNodes(entry);
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& ref_blk = *dbp;
+    for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REFERENCE)
             continue;
 
@@ -481,8 +480,7 @@ void GetGenBankSubBlock(const DataBlk& entry, size_t bases)
         GetGenBankRefType(ref_blk, bases);
     }
 
-    for (auto dbp = chain.begin(); dbp != chain.end(); ++dbp) {
-        auto& feat_blk = *dbp;
+    for (auto& feat_blk : chain) {
         if (feat_blk.mType != ParFlat_FEATURES)
             continue;
 
@@ -742,8 +740,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
 void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
 {
     auto& chain = TrackNodes(entry);
-    for (auto temp = chain.begin(); temp != chain.end(); ++temp) {
-        auto& os_blk = *temp;
+    for (auto& os_blk : chain) {
         if (os_blk.mType != ParFlat_OS)
             continue;
 
@@ -752,8 +749,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
         GetLenSubNode(os_blk);
     }
 
-    for (auto temp = chain.begin(); temp != chain.end(); ++temp) {
-        auto& ref_blk = *temp;
+    for (auto& ref_blk: chain) {
         if (ref_blk.mType != ParFlat_RN)
             continue;
 
