@@ -370,8 +370,8 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_en
     for (; dbp != dbp_end; ++dbp) {
         if (dbp->mType != type)
             continue;
-        for (auto tdbp = dbp->GetSubBlocks().cbegin(); tdbp != dbp->GetSubBlocks().cend(); ++tdbp) {
-            const FeatBlk* fbp = tdbp->GetFeatData();
+        for (const auto& tdbp : dbp->GetSubBlocks()) {
+            const FeatBlk* fbp = tdbp.GetFeatData();
             if (! fbp || fbp->key != "source")
                 continue;
             tsfbp->next = SourceFeatBlkNew();

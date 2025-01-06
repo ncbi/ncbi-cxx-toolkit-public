@@ -592,8 +592,8 @@ extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& s
 /**********************************************************/
 static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
 {
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        dbp->deleteData();
+    for (auto& dbp : dbl) {
+        dbp.deleteData();
     }
     if (format == Parser::EFormat::XML)
         dbl.clear();
@@ -1203,11 +1203,11 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 p++;
             ploc = CheckLocStr(string(p, ref_blk.mOffset + ref_blk.len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
-            for (auto subdbp = ref_blk.GetSubBlocks().cbegin(); subdbp != ref_blk.GetSubBlocks().cend(); ++subdbp) {
-                if (subdbp->mType != ParFlat_RP)
+            for (const auto& subdbp : ref_blk.GetSubBlocks()) {
+                if (subdbp.mType != ParFlat_RP)
                     continue;
 
-                for (p = subdbp->mOffset; *p != '\0' && isdigit(*p) == 0;)
+                for (p = subdbp.mOffset; *p != '\0' && isdigit(*p) == 0;)
                     p++;
                 if (StringChr(p, ',')) {
                     string s = "join(";
@@ -2700,10 +2700,8 @@ private:
 
 static void fta_check_multiple_locus_tag(TDataBlkList& dbl, bool* drop)
 {
-    FeatBlkPtr fbp;
-
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        fbp = dbp->GetFeatData();
+    for (const auto& dbp : dbl) {
+        const FeatBlk* fbp = dbp.GetFeatData();
         if (! fbp)
             continue;
 
@@ -2724,8 +2722,8 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
     PredIsGivenQual isOldLocusTag("old_locus_tag"),
         isLocusTag("locus_tag");
 
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        FeatBlkPtr fbp = dbp->GetFeatData();
+    for (const auto& dbp : dbl) {
+        const FeatBlk* fbp = dbp.GetFeatData();
         if (! fbp)
             continue;
         size_t olt = std::count_if(fbp->quals.begin(), fbp->quals.end(), isOldLocusTag);
@@ -2792,17 +2790,13 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
 /**********************************************************/
 static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 {
-    FeatBlkPtr fbp;
-    bool       got_pseudogene;
-    bool       got_pseudo;
-
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        fbp = dbp->GetFeatData();
+    for (auto& dbp : dbl) {
+        FeatBlkPtr fbp = dbp.GetFeatData();
         if (! fbp)
             continue;
 
-        got_pseudo     = false;
-        got_pseudogene = false;
+        bool got_pseudo     = false;
+        bool got_pseudogene = false;
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
             const string& qual_str = (*cur)->GetQual();
@@ -2856,17 +2850,13 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 /**********************************************************/
 static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
 {
-    FeatBlkPtr fbp;
-    Int4       com_count;
-    Int4       cit_count;
-
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        fbp = dbp->GetFeatData();
+    for (auto& dbp : dbl) {
+        FeatBlk* fbp = dbp.GetFeatData();
         if (! fbp)
             continue;
 
-        com_count = 0;
-        cit_count = 0;
+        Int4 com_count = 0;
+        Int4 cit_count = 0;
 
         for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
             const string& qual_str = (*cur)->GetQual();
@@ -2908,7 +2898,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
 
         auto msg = ErrFormat("Feature \"%s\" at \"%s\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key.c_str(), fbp->location_c_str());
         ErrPostStr(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, msg);
-        dbp->mDrop = true;
+        dbp.mDrop = true;
     }
 }
 
@@ -3198,10 +3188,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
         linkage_evidence_names.clear();
         asn_linkage_evidence.clear();
 
-        for (auto tdbp = dbp->GetSubBlocks().cbegin(); tdbp != dbp->GetSubBlocks().cend(); ++tdbp) {
+        for (const auto& tdbp : dbp->GetSubBlocks()) {
             if (ibp->drop)
                 break;
-            const FeatBlk* fbp = tdbp->GetFeatData();
+            const FeatBlk* fbp = tdbp.GetFeatData();
             if (! fbp || fbp->key.empty())
                 continue;
             if (fbp->key == "gap") {
@@ -3816,14 +3806,14 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
     if (ibp->is_mga)
         loc = "1.." + to_string(ibp->bases);
     num = 0;
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp, num++) {
+    for (auto& dbp : dbl) {
         fbp          = new FeatBlk;
         fbp->spindex = -1;
-        fbp->num     = num;
-        dbp->SetFeatData(fbp);
+        fbp->num     = num++;
+        dbp.SetFeatData(fbp);
 
-        bptr = dbp->mOffset;
-        eptr = bptr + dbp->len;
+        bptr = dbp.mOffset;
+        eptr = bptr + dbp.len;
 
         for (p = bptr; *p != '\n';)
             p++;
@@ -3851,7 +3841,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         if (*ptr1 == '\n') {
             if (ibp->is_mga == false) {
                 ErrPostStr(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location missing");
-                dbp->mDrop = true;
+                dbp.mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 continue;
             }
@@ -3889,7 +3879,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str(), "Feature dropped");
-            dbp->mDrop = true;
+            dbp.mDrop = true;
             retval     = GB_FEAT_ERR_DROP;
             continue;
         }
@@ -3937,7 +3927,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                 retval = ret;
 
             if (ret > GB_FEAT_ERR_REPAIRABLE && fbp->key != "ncRNA")
-                dbp->mDrop = true;
+                dbp.mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
             if (fbp->key != "mobile_element") {
                 auto   qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
@@ -3947,14 +3937,14 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                     auto msg = ErrFormat("lacks required /%s qualifier : feature has been dropped.", str.c_str());
                     ErrPostStr(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, msg);
                     if (! deb) {
-                        dbp->mDrop = true;
+                        dbp.mDrop = true;
                         retval     = GB_FEAT_ERR_DROP;
                     }
                 }
             }
         } else if (fbp->key == "misc_feature" && fbp->quals.empty()) {
             if (! deb) {
-                dbp->mDrop = true;
+                dbp.mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 ErrPostStr(SEV_WARNING, ERR_FEATURE_Dropped, "Empty 'misc_feature' dropped");
             } else
@@ -4087,11 +4077,11 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
     int        ret    = 0;
 
     num = 0;
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp, num++) {
-        if (! dbp->hasData())
+    for (auto& dbp : dbl) {
+        if (! dbp.hasData())
             continue;
-        fbp      = dbp->GetFeatData();
-        fbp->num = num;
+        fbp      = dbp.GetFeatData();
+        fbp->num = num++;
         FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
 
         if (fbp->key == "-") {
@@ -4123,7 +4113,7 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
                 keyindx = SpFeatKeyNameValid(fbp->key.c_str());
             if (keyindx < 0 && ! deb) {
                 ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key.c_str(), "Feature dropped");
-                dbp->mDrop = true;
+                dbp.mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 continue;
             }
@@ -4150,7 +4140,7 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
                 retval = ret;
 
             if (ret > GB_FEAT_ERR_REPAIRABLE && fbp->key != "ncRNA")
-                dbp->mDrop = true;
+                dbp.mDrop = true;
         } else if (subtype == CSeqFeatData::eSubtype_bad && ! CSeqFeatData::GetMandatoryQualifiers(subtype).empty()) {
             if (fbp->key != "mobile_element") {
                 auto   qual_idx = *CSeqFeatData::GetMandatoryQualifiers(subtype).begin();
@@ -4160,14 +4150,14 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
                     auto msg = ErrFormat("lacks required /%s qualifier : feature has been dropped.", str.c_str());
                     ErrPostStr(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing, msg);
                     if (! deb) {
-                        dbp->mDrop = true;
+                        dbp.mDrop = true;
                         retval     = GB_FEAT_ERR_DROP;
                     }
                 }
             }
         } else if (fbp->key == "misc_feature" && fbp->quals.empty()) {
             if (! deb) {
-                dbp->mDrop = true;
+                dbp.mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 ErrPostStr(SEV_WARNING, ERR_FEATURE_Dropped, "Empty 'misc_feature' dropped");
             } else
@@ -4385,8 +4375,8 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
     bool         other_class;
     Int4         count;
 
-    for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-        fbp = dbp->GetFeatData();
+    for (auto& dbp : dbl) {
+        fbp = dbp.GetFeatData();
         if (! fbp || fbp->key.empty())
             continue;
 
@@ -4754,11 +4744,13 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         fta_check_old_locus_tags(dbl, &ibp->drop);
         fta_check_compare_qual(dbl, ibp->is_tpa);
         i = 0;
-        for (auto tdbp = dbl.begin(); tdbp != dbl.end(); i++, ++tdbp)
-            fta_remove_dup_quals(tdbp->GetFeatData());
+        for (auto& tdbp : dbl) {
+            fta_remove_dup_quals(tdbp.GetFeatData());
+            ++i;
+        }
         fta_remove_dup_feats(dbl);
-        for (auto tdbp = dbl.begin(); tdbp != dbl.end(); ++tdbp)
-            fta_check_rpt_unit_range(tdbp->GetFeatData(), ibp->bases);
+        for (auto& tdbp : dbl)
+            fta_check_rpt_unit_range(tdbp.GetFeatData(), ibp->bases);
         fta_check_multiple_locus_tag(dbl, &ibp->drop);
         if (ibp->is_tpa || ibp->is_tsa || ibp->is_tls)
             fta_check_non_tpa_tsa_tls_locations(dbl, ibp);
@@ -4820,11 +4812,11 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
 
         TDataBlkList& dbl = std::get<TDataBlkList>(dab->mData);
-        for (auto dbp = dbl.begin(); dbp != dbl.end(); ++dbp) {
-            if (dbp->mDrop == true)
+        for (auto& dbp : dbl) {
+            if (dbp.mDrop == true)
                 continue;
 
-            FeatBlkPtr fbp = dbp->GetFeatData();
+            FeatBlkPtr fbp = dbp.GetFeatData();
             if (fbp->key == "source" ||
                 fbp->key == "assembly_gap" ||
                 (fbp->key == "gap" &&
@@ -5490,10 +5482,12 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         return;
     const auto& subblocks = dbp->GetSubBlocks();
     i = 0;
-    for (auto subdbp = subblocks.cbegin(); subdbp != subblocks.cend() && i < 2; ++subdbp) {
-        if (! subdbp->mOffset)
+    for (const auto& subdbp : subblocks) {
+        if (i > 1)
+            break;
+        if (! subdbp.mOffset)
             continue;
-        offset = subdbp->mOffset + ParFlat_COL_FEATKEY;
+        offset = subdbp.mOffset + ParFlat_COL_FEATKEY;
         if (StringEquN(offset, "CDS", 3))
             i++;
     }

@@ -279,8 +279,8 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
         size_t len = 0;
 
         const auto& subblocks = dblk.GetSubBlocks();
-        for (auto dbp = subblocks.cbegin(); dbp != subblocks.cend(); ++dbp)
-            len += dbp->len;
+        for (const auto& dbp : subblocks)
+            len += dbp.len;
         if (len == 0)
             continue;
 
