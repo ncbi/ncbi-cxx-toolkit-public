@@ -4268,8 +4268,11 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
 
     list<TGi> use_this_gi;   // Not used here, but needed for GetAlnScores.
 
-    seqSetInfo->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&seqSetInfo->master_covered_length,&seqSetInfo->flip);
-    seqSetInfo->percent_coverage = 100*seqSetInfo->master_covered_length/queryLength;
+    seqSetInfo->subjRange = CAlignFormatUtil::GetSeqAlignCoverageParams(aln,&seqSetInfo->master_covered_length,&seqSetInfo->flip);    
+    seqSetInfo->percent_coverage = (int)(0.5 + 100*seqSetInfo->master_covered_length/(double)queryLength);
+    if(seqSetInfo->percent_coverage > 100) {
+        seqSetInfo->percent_coverage = min(99, seqSetInfo->percent_coverage);                        
+    }                
 
     ITERATE(CSeq_align_set::Tdata, iter, aln.Get()) {
         int align_length = CAlignFormatUtil::GetAlignmentLength(**iter, do_translation);
