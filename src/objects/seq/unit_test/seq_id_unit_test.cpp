@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE(s_MTGiTest)
                    (TGi gi)
                    {
                        CSeq_id_Handle id1 = CSeq_id_Handle::GetGiHandle(gi);
-                       CSeq_id_Handle id2 = CSeq_id_Handle::GetGiHandle(gi+1);
+                       CSeq_id_Handle id2 = CSeq_id_Handle::GetGiHandle(gi+GI_FROM(int, 1));
                        for ( int i = 0; i < 1000000; ++i ) {
                            _VERIFY(id1.GetSeqId()->GetGi() == gi);
                            _VERIFY(id2.GetSeqId()->GetGi() == gi+GI_FROM(int, 1));
