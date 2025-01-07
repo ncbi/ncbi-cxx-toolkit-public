@@ -31,6 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include "app_config.hpp"
 #include <objtools/validator/valid_cmdargs.hpp>
 
@@ -38,10 +39,22 @@ using namespace ncbi;
 
 static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
 {
-    if (args["disable-huge"])
+    if (args["disable-huge"]) {
         return false;
-    if (args["huge"])
+    }
+    if (! args["i"]) {
+        return false;
+    }
+    string filename = args["i"].AsString();
+    if (NStr::IsBlank(filename)) {
+        return false;
+    }
+    if (! CFile(filename).IsFile(eFollowLinks)) {
+        return false;
+    }
+    if (args["huge"]) {
         return true;
+    }
     return cfg.GetBool("asnvalidate", "UseHugeFiles", true);
 }
 
