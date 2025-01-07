@@ -23,48 +23,44 @@
  *
  * ===========================================================================
  *
- * File Name: em_ascii.h
  *
- * Author: Alexey Dobronadezhdin
+ * Author: Justin Foley
  *
  * File Description:
+ *      Write hooks for flatfile parser
  *
  */
+#ifndef _FLAT2ASN_WRITER_HPP_
+#define _FLAT2ASN_WRITER_HPP_
 
-#ifndef EM_ASCII_H
-#define EM_ASCII_H
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include "mapped_input2asn.hpp" 
+#include <serial/objostr.hpp>
+#include <serial/objectio.hpp>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
 class CObjectOStream;
-
+class Parser;
 namespace objects {
-    class CEMBL_block;
-    class CMolInfo;
-    class CBioSource;
-    class CUser_object;
-    class CSeqdesc;
     class CSeq_entry;
-}
-
-class CEmbl2Asn : public CMappedInput2Asn
-{
-public:
-    using CMappedInput2Asn::CMappedInput2Asn; // inherit constructors
-    void PostTotals() override;
-private:
-    CRef<objects::CSeq_entry> xGetEntry() override;
+    class CBioseq_set;
+    class CSeq_submit;
 };
 
-using TStringList = std::list<std::string>;
+class CFlat2AsnWriter
+{
+public:
+    using FGetEntry = function<CRef<objects::CSeq_entry>(void)>;
 
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(Parser* pp, const char* entry, objects::CMolInfo& mol_info, string& gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
-
-void fta_build_ena_user_object(list<CRef<objects::CSeqdesc>>& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<objects::CUser_object>& dbuop);
+    CFlat2AsnWriter(CObjectOStream& objOstr)
+        : m_ObjOstr(objOstr) {}
+    void Write(const objects::CBioseq_set* pBioseqSet, FGetEntry getEntry);
+    void Write(const objects::CSeq_submit* pSubmit, FGetEntry getEntry);
+private:
+    CObjectOStream& m_ObjOstr;
+};
 
 END_NCBI_SCOPE
-#endif // EM_ASCII_H
+
+#endif

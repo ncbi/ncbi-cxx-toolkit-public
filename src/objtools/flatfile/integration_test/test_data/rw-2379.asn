@@ -1,0 +1,1798 @@
+Seq-submit ::= {
+  sub {
+    contact {
+    },
+    cit {
+      authors {
+        names str {
+          "FlyBase"
+        }
+      }
+    }
+  },
+  data entrys {
+    seq {
+      id {
+        patent {
+          seqid 1,
+          cit {
+            country "US",
+            id number "11911410",
+            doc-type "B2"
+          }
+        }
+      },
+      descr {
+        source {
+          org {
+            taxname "synthetic construct",
+            orgname {
+              lineage "Unclassified"
+            }
+          }
+        },
+        title "Sequence 1 from patent US 11911410 B2",
+        pub {
+          pub {
+            patent {
+              title "Nucleic acid oligomers and uses therefor",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Richard",
+                      initials "D."
+                    }
+                  },
+                  {
+                    name name {
+                      last "O'Byrne",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Croft",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Beard",
+                      initials "S."
+                    }
+                  }
+                },
+                affil str "REPLUCA PTY LTD; Brisbane, AU"
+              },
+              country "US",
+              doc-type "B2",
+              number "11911410",
+              date-issue std {
+                year 2024,
+                month 2,
+                day 27
+              }
+            }
+          },
+          reftype no-target
+        },
+        molinfo {
+          biomol other
+        },
+        genbank {
+          source "synthetic construct",
+          div "PAT"
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 20,
+        seq-data ncbi2na '52E25A1F97'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "DKLS478030",
+              location int {
+                from 0,
+                to 19,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 0,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 0,
+                to 1,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 1,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 1,
+                to 2,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 2,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 2,
+                to 3,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 3,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 3,
+                to 4,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 4,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "um"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 4,
+                to 5,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 5,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 5,
+                to 6,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 6,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 6,
+                to 7,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 7,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 7,
+                to 8,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 8,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 8,
+                to 9,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 9,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 9,
+                to 10,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 10,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 10,
+                to 11,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 11,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 11,
+                to 12,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 12,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 12,
+                to 13,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 13,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 13,
+                to 14,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 14,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "um"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 14,
+                to 15,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 15,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "um"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 15,
+                to 16,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 16,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 16,
+                to 17,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 17,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 17,
+                to 18,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 18,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 18,
+                to 19,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 19,
+                id patent {
+                  seqid 1,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "um"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        patent {
+          seqid 2,
+          cit {
+            country "US",
+            id number "11911410",
+            doc-type "B2"
+          }
+        }
+      },
+      descr {
+        source {
+          org {
+            taxname "synthetic construct",
+            orgname {
+              lineage "Unclassified"
+            }
+          }
+        },
+        title "Sequence 2 from patent US 11911410 B2",
+        pub {
+          pub {
+            patent {
+              title "Nucleic acid oligomers and uses therefor",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Richard",
+                      initials "D."
+                    }
+                  },
+                  {
+                    name name {
+                      last "O'Byrne",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Croft",
+                      initials "L."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Beard",
+                      initials "S."
+                    }
+                  }
+                },
+                affil str "REPLUCA PTY LTD; Brisbane, AU"
+              },
+              country "US",
+              doc-type "B2",
+              number "11911410",
+              date-issue std {
+                year 2024,
+                month 2,
+                day 27
+              }
+            }
+          },
+          reftype no-target
+        },
+        molinfo {
+          biomol other
+        },
+        genbank {
+          source "synthetic construct",
+          div "PAT"
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 20,
+        seq-data ncbi2na '48A492C61A'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "DKLS230778",
+              location int {
+                from 0,
+                to 19,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 0,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 0,
+                to 1,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 1,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 1,
+                to 2,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 2,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 2,
+                to 3,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 3,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 3,
+                to 4,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 4,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 4,
+                to 5,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 5,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 5,
+                to 6,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 6,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 6,
+                to 7,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 7,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 7,
+                to 8,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 8,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 8,
+                to 9,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 9,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 9,
+                to 10,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 10,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 10,
+                to 11,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 11,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 11,
+                to 12,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 12,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "um"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 12,
+                to 13,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 13,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 13,
+                to 14,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 14,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 14,
+                to 15,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 15,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 15,
+                to 16,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              comment "2-O-methyladenosine",
+              location pnt {
+                point 16,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "OTHER"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 16,
+                to 17,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 17,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "cm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 17,
+                to 18,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 18,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            },
+            {
+              data imp {
+                key "misc_feature"
+              },
+              comment "Phosphorothioate bond",
+              location int {
+                from 18,
+                to 19,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              }
+            },
+            {
+              data imp {
+                key "modified_base"
+              },
+              location pnt {
+                point 19,
+                id patent {
+                  seqid 2,
+                  cit {
+                    country "US",
+                    id number "11911410",
+                    doc-type "B2"
+                  }
+                }
+              },
+              qual {
+                {
+                  qual "mod_base",
+                  val "gm"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

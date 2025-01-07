@@ -43,6 +43,7 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/biblio/Auth_list.hpp>
+#include <serial/objostr.hpp>
 
 #include "index.h"
 #include "sprot.h"
@@ -69,6 +70,10 @@
 #include "buf_data_loader.h"
 #include "utilfun.h"
 #include "entry.h"
+#include "xm_ascii.h"
+
+#include "writer.hpp"
+
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -78,7 +83,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-extern bool XMLAscii(ParserPtr pp);
 extern void fta_init_gbdataloader();
 
 
@@ -318,6 +322,7 @@ static void CheckDupEntries(ParserPtr pp)
     }
 }
 
+
 static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 {
     CRef<CBioseq_set> bio_set(new CBioseq_set);
@@ -335,6 +340,115 @@ static CRef<CSerialObject> MakeBioseqSet(ParserPtr pp)
 
     return bio_set;
 }
+
+
+static unique_ptr<CMappedInput2Asn> s_GetInput2Asn(Parser& parser)
+{
+    switch (parser.format) {
+    case Parser::EFormat::GenBank:
+        return make_unique<CGenbank2Asn>(parser);
+
+    case Parser::EFormat::EMBL:
+        return make_unique<CEmbl2Asn>(parser);
+    
+    case Parser::EFormat::SPROT:
+        return make_unique<CSwissProt2Asn>(parser);
+
+    case Parser::EFormat::XML:
+        return make_unique<CXml2Asn>(parser);
+
+    default:
+        break;
+    }
+
+    return unique_ptr<CMappedInput2Asn>();
+}
+
+
+static void s_WriteSeqSubmit(Parser& parser, CObjectOStream& objOstr)
+{
+    auto pInput2Asn = s_GetInput2Asn(parser);
+
+    auto pFirstEntry = (*pInput2Asn)();
+
+    if (pFirstEntry) {
+        auto pSubmit = Ref(new CSeq_submit());
+    
+        auto& submitBlock = pSubmit->SetSub();
+    
+        submitBlock.SetCit().SetAuthors().SetNames().SetStr().push_back(parser.authors_str);
+
+        pSubmit->SetData().SetEntrys();
+
+        CFlat2AsnWriter writer(objOstr);
+        writer.Write(pSubmit, 
+            [&pFirstEntry, &pInput2Asn](){ 
+                if (pFirstEntry) {
+                    auto pResult = pFirstEntry;
+                    pFirstEntry.Reset();
+                    return pResult;
+                }
+                return (*pInput2Asn)(); 
+            }
+            ); 
+    } // if (pFirstEntry)
+
+    pInput2Asn->PostTotals();
+}
+
+
+static void s_WriteBioseqSet(Parser& parser, CObjectOStream& objOstr)
+{
+    auto pInput2Asn = s_GetInput2Asn(parser);
+
+    auto pFirstEntry = (*pInput2Asn)();
+
+    if (pFirstEntry) {
+
+        auto pBioseqSet = Ref(new CBioseq_set());
+        pBioseqSet->SetClass(CBioseq_set::eClass_genbank);
+
+        if (! parser.release_str.empty()) {
+            pBioseqSet->SetRelease(parser.release_str);
+        }
+
+        if (! parser.qamode) {
+            pBioseqSet->SetDate().SetToTime(CTime(CTime::eCurrent), CDate::ePrecision_day);
+        }
+
+        pBioseqSet->SetSeq_set();
+
+        CFlat2AsnWriter writer(objOstr);
+        writer.Write(pBioseqSet, 
+            [&pFirstEntry, &pInput2Asn](){ 
+                if (pFirstEntry) {
+                    auto pResult = pFirstEntry;
+                    pFirstEntry.Reset();
+                    return pResult;
+                }
+                return (*pInput2Asn)(); 
+            }
+            ); 
+    } // if (pFirstEntry)
+
+    pInput2Asn->PostTotals();
+}
+
+
+static bool s_WriteOutput(Parser& parser, CObjectOStream& objOstr)
+{
+    if (parser.output_format == Parser::EOutput::BioseqSet) {
+        s_WriteBioseqSet(parser, objOstr);
+    } 
+    else {
+        _ASSERT(parser.output_format == Parser::EOutput::Seqsubmit);
+        s_WriteSeqSubmit(parser, objOstr);
+    }
+
+    return true;
+}
+
+
 
 static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 {
@@ -429,6 +543,113 @@ static CRef<CSerialObject> CloseAll(ParserPtr pp)
     return ret;
 }
 
+static bool sParseFlatfile(ParserPtr pp, CObjectOStream& objOstr, bool already = false)
+{
+
+    // For now.
+    // In a perfect (future?) world, this would be a method of CFlatFileParser,
+    //  and the keywordparser would be a subsystem of CFlatFileParser itself, not of
+    //  its configuration.
+    pp->InitializeKeywordParser(pp->format);
+
+    if (pp->output_format == Parser::EOutput::BioseqSet)
+        SetReleaseStr(pp);
+    else if (pp->output_format == Parser::EOutput::Seqsubmit)
+        GetAuthorsStr(pp);
+
+    if (! already)
+        fta_init_servers(pp);
+
+    FtaInstallPrefix(PREFIX_LOCUS, "INDEXING");
+
+    bool good = FlatFileIndex(pp, nullptr);
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+
+    if (! good) {
+        if (! already)
+            fta_fini_servers(pp);
+        CloseFiles(pp);
+        return good;
+    }
+
+    fta_init_gbdataloader();
+    GetScope().AddDefaults();
+
+    if (pp->format == Parser::EFormat::SPROT) {
+        FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
+
+        good = s_WriteOutput(*pp, objOstr);
+
+        if (! already)
+            fta_fini_servers(pp);
+
+        CloseFiles(pp);
+
+        FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+        return good;
+    }
+
+    FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
+
+    // fta_entrez_fetch_enable(pp);
+
+    /* CompareData: group all the segments data together
+     */
+    if (pp->sort) {
+        std::sort(pp->entrylist.begin(), pp->entrylist.end(), (pp->accver ? CompareDataV : CompareData));
+    }
+
+    CkSegmentSet(pp); /* check for missing entries in segment set */
+
+    CheckDupEntries(pp);
+
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp->indx);
+
+    pp->pbp      = new ProtBlk;
+    pp->pbp->ibp = new InfoBioseq;
+
+    if (pp->num_drop > 0) {
+        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
+    }
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+    FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
+
+    const bool written = s_WriteOutput(*pp, objOstr);
+
+    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+
+    if (! already)
+        fta_fini_servers(pp);
+
+    GetScope().ResetDataAndHistory();
+
+
+    CloseFiles(pp);
+
+    return written;
+}
+
+static bool s_GetEntries(CMappedInput2Asn& input2Asn, TEntryList& entries)
+{
+    try {
+        CRef<CSeq_entry> entry;
+        while (entry = input2Asn()) {
+            entries.push_back(entry);
+        }
+        input2Asn.PostTotals();
+    }
+    catch (CException& e) {
+        ErrPostStr(SEV_FATAL, 0, 0, e.GetMsg());
+        return false;
+    }
+
+    return true;
+}
+
 
 static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already = false)
 {
@@ -462,10 +683,12 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     fta_init_gbdataloader();
     GetScope().AddDefaults();
 
+    auto pInput2Asn = s_GetInput2Asn(*pp);
+
     if (pp->format == Parser::EFormat::SPROT) {
         FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
-        good = SprotAscii(pp);
+        good = s_GetEntries(*pInput2Asn, pp->entries);
 
         if (! already)
             fta_fini_servers(pp);
@@ -479,10 +702,6 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     FtaInstallPrefix(PREFIX_LOCUS, "SET-UP");
 
-    // fta_entrez_fetch_enable(pp);
-
-    /* CompareData: group all the segments data together
-     */
     if (pp->sort) {
         std::sort(pp->entrylist.begin(), pp->entrylist.end(), (pp->accver ? CompareDataV : CompareData));
     }
@@ -502,14 +721,8 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
     FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
-
-    if (pp->format == Parser::EFormat::GenBank) {
-        good = GenBankAsciiOrig(pp);
-    } else if (pp->format == Parser::EFormat::EMBL) {
-        good = EmblAscii(pp);
-    } else if (pp->format == Parser::EFormat::XML) {
-        good = XMLAscii(pp);
-    }
+        
+    good = s_GetEntries(*pInput2Asn, pp->entries);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
@@ -518,11 +731,8 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     GetScope().ResetHistory();
 
-    // fta_entrez_fetch_disable(pp);
-
     ret = CloseAll(pp);
 
-    // TransTableFreeAll(); // TODO probably needs to be replaced with C++ functionality
     return good;
 }
 
@@ -718,6 +928,13 @@ CFlatFileParser::~CFlatFileParser()
 }
 
 
+
+bool CFlatFileParser::Parse(Parser& parseInfo, CObjectOStream& objOstr)
+{
+    return sParseFlatfile(&parseInfo, objOstr);
+}
+
+
 CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
 {
     CRef<CSerialObject> pResult;
@@ -727,6 +944,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo)
 
     return CRef<CSerialObject>();
 }
+
 
 static void s_ReportFatalError(const string& msg, IObjtoolsListener* pListener)
 {
@@ -824,10 +1042,12 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     GetScope().AddDefaults();
 
+    auto pInput2Asn = s_GetInput2Asn(pp);
+    
     if (pp.format == Parser::EFormat::SPROT) {
         FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
-        good = SprotAscii(&pp);
+        good = s_GetEntries(*pInput2Asn, pp.entries);
 
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 
@@ -885,18 +1105,10 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
     FtaInstallPrefix(PREFIX_LOCUS, "PARSING");
 
-    good = false;
-
     pp.pbp      = new ProtBlk;
     pp.pbp->ibp = new InfoBioseq;
 
-    if (pp.format == Parser::EFormat::GenBank) {
-        good = GenBankAsciiOrig(&pp);
-    } else if (pp.format == Parser::EFormat::EMBL) {
-        good = EmblAscii(&pp);
-    } else if (pp.format == Parser::EFormat::XML) {
-        good = XMLAscii(&pp);
-    }
+    good = s_GetEntries(*pInput2Asn, pp.entries);
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
 

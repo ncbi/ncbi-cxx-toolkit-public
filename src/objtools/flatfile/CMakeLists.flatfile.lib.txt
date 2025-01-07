@@ -31,6 +31,7 @@ NCBI_begin_lib(xflatfile)
     genref
     ind
     loadfeat
+    mapped_input2asn
     nucprot
     ref
     sp_ascii
@@ -38,6 +39,8 @@ NCBI_begin_lib(xflatfile)
     utilfeat
     utilref
     xm_ascii
+    writer
+
     buf_data_loader
 
     ftanet

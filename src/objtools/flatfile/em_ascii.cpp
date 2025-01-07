@@ -37,6 +37,7 @@
 
 #include "ftacpp.hpp"
 
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seqblock/EMBL_block.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/general/Date.hpp>
@@ -303,14 +304,17 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
     }
 }
 
+
 /**********************************************************/
-static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
+static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
 {
+    CRef<CSeq_entry> result;
+
     DealWithGenes(seq_entries, pp);
 
     if (seq_entries.empty()) {
         GetScope().ResetDataAndHistory();
-        return false;
+        return result;
     }
 
     fta_find_pub_explore(pp, seq_entries);
@@ -356,13 +360,13 @@ static bool OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& seq_entries)
     if (seq_long) {
         ErrPostEx(SEV_REJECT, ERR_ENTRY_LongSequence, "Sequence %s|%s is longer than limit %ld", pp->entrylist[pp->curindx]->locusname, pp->entrylist[pp->curindx]->acnum, pp->limit);
     } else {
-        pp->entries.splice(pp->entries.end(), seq_entries);
+        result = seq_entries.front();
     }
 
     seq_entries.clear();
     GetScope().ResetDataAndHistory();
 
-    return true;
+    return result;
 }
 
 static void SetXrefObjId(CEMBL_xref& xref, const string& str)
@@ -828,13 +832,13 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
 
 /**********************************************************
  *
- *   bool GetEmblInst(pp, entry, dnaconv):
+ *   bool s_GetEmblInst(pp, entry, dnaconv):
  *
  *      Fills in Seq-inst for an entry. Assumes Bioseq
  *   already allocated.
  *
  **********************************************************/
-static bool GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaconv)
+static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* const dnaconv)
 {
     EntryBlkPtr ebp;
     IndexblkPtr ibp;
@@ -1501,7 +1505,7 @@ static CRef<CUser_field> fta_create_user_field(const char* tag, TStringList& lst
 }
 
 /**********************************************************/
-void fta_build_ena_user_object(CSeq_descr::Tdata& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<CUser_object>& dbuop)
+void fta_build_ena_user_object(list<CRef<CSeqdesc>>& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<CUser_object>& dbuop)
 {
     bool got = false;
 
@@ -2126,271 +2130,199 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, const DataBlk& entry)
     ibp->division[3] = '\0';
 }
 
-/**********************************************************
- *
- *   bool EmblAscii(pp):
- *
- *      Return FALSE if allocate entry block failed.
- *
- **********************************************************/
-bool EmblAscii(ParserPtr pp)
+
+CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 {
-    Int2  curkw;
-    Int4  i;
-    Int4  imax;
-    Int4  total = 0;
-    char* ptr;
-    char* eptr;
-
-    EntryBlkPtr ebp;
-    TEntryList  seq_entries;
-    CSeq_loc    locs;
-
-    bool        reject_set;
-    bool        seq_long = false;
-    IndexblkPtr ibp;
-
-    auto dnaconv = GetDNAConv(); /* set up sequence alphabets */
-
-    for (imax = pp->indx, i = 0; i < imax; i++) {
-        pp->curindx = i;
-        ibp         = pp->entrylist[i];
-
-        err_install(ibp, pp->accver);
-        if (! ibp->drop) {
-            unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(
-                LoadEntry(pp, ibp->offset, ibp->len), &xFreeEntry);
-            // pEntry.reset(LoadEntry(pp, ibp->offset, ibp->len));
-            if (! pEntry) {
-                FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-                return false;
-            }
-            ebp   = pEntry->GetEntryData();
-            ptr   = pEntry->mOffset; /* points to beginning of the
-                                           memory line */
-            eptr  = ptr + pEntry->len;
-            curkw = ParFlat_ID;
-
-            // TODO: below is a potentially infinite cycle!!!!
-            while (curkw != ParFlatEM_END) {
-                /* ptr points to current keyword's memory line */
-                ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
-            }
-
-            if (ibp->embl_new_ID)
-                EmblGetDivisionNewID(ibp, *pEntry);
-            else
-                EmblGetDivision(ibp, *pEntry);
-
-            if (StringEqu(ibp->division, "TSA")) {
-                if (ibp->tsa_allowed == false)
-                    ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
-                ibp->is_tsa = true;
-            }
-
-            if (! CheckEmblContigEverywhere(ibp, pp->source)) {
-                // if (ibp->drop) {
-                ibp->drop = true;
-                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                continue;
-            }
-
-            if (ptr >= eptr) {
-                ibp->drop = true;
-                ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
-                if (pp->segment == false) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                }
-                continue;
-            }
-            GetEmblSubBlock(ibp->bases, pp->source, *pEntry);
-
-            CRef<CBioseq> bioseq = CreateEntryBioseq(pp);
-            AddNIDSeqId(*bioseq, *pEntry, ParFlat_NI, ParFlat_COL_DATA_EMBL, pp->source);
-
-            ebp->seq_entry.Reset(new CSeq_entry);
-            ebp->seq_entry->SetSeq(*bioseq);
-            GetScope().AddBioseq(*bioseq);
-
-            if (! pp->accver) {
-                GetReleaseInfo(*pEntry);
-            }
-            if (! GetEmblInst(pp, *pEntry, dnaconv.get())) {
-                ibp->drop = true;
-                ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
-                if (pp->segment == false) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                }
-                continue;
-            }
-
-            FakeEmblBioSources(*pEntry, *bioseq);
-            LoadFeat(pp, *pEntry, *bioseq);
-
-            if (! bioseq->IsSetAnnot() && ibp->drop) {
-                if (pp->segment == false) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                }
-                continue;
-            }
-
-            GetEmblDescr(pp, *pEntry, *bioseq);
-
-            if (ibp->drop) {
-                if (pp->segment == false) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                }
-                continue;
-            }
-
-            fta_set_molinfo_completeness(*bioseq, ibp);
-
-            if (ibp->is_tsa)
-                fta_tsa_tls_comment_dblink_check(*bioseq, true);
-
-            if (ibp->is_tls)
-                fta_tsa_tls_comment_dblink_check(*bioseq, false);
-
-            if (bioseq->GetInst().IsNa()) {
-                if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
-                    if (! ibp->gaps.empty())
-                        GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
-                    else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
-                             (ibp->is_pat && pp->source == Parser::ESource::DDBJ))
-                        SeqToDelta(*bioseq, ibp->htg);
-                } else if (! ibp->gaps.empty())
-                    AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
-            }
-
-            if (pEntry->mpQscore.empty() && pp->accver) {
-                if (pp->ff_get_qscore)
-                    pEntry->mpQscore = (*pp->ff_get_qscore)(ibp->acnum, ibp->vernum);
-                else if (pp->ff_get_qscore_pp)
-                    pEntry->mpQscore = (*pp->ff_get_qscore_pp)(ibp->acnum, ibp->vernum, pp);
-                if (pp->qsfd && ibp->qslength > 0)
-                    pEntry->mpQscore = GetQSFromFile(pp->qsfd, ibp);
-            }
-
-            if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
-                if (pp->ign_bad_qs == false) {
-                    ibp->drop = true;
-                    ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
-                    if (pp->segment == false) {
-                        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                    }
-                    continue;
-                }
-                ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
-            }
-
-            pEntry->mpQscore.clear();
-
-            /* add PatentSeqId if patent is found in reference
-             */
-            if (ibp->psip.NotEmpty()) {
-                CRef<CSeq_id> id(new CSeq_id);
-                id->SetPatent(*ibp->psip);
-                bioseq->SetId().push_back(id);
-                ibp->psip.Reset();
-            }
-
-            if (no_reference(*bioseq) && pp->debug == false) {
-                ibp->drop = true;
-                ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No reference for the entry, entry dropped");
-                if (pp->segment == false) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-                }
-                continue;
-            }
-
-            seq_entries.push_back(ebp->seq_entry);
-            ebp->seq_entry.Reset();
-
-            if (pp->segment == false) {
-                if (pp->limit != 0 && ibp->bases > (size_t)pp->limit) {
-                    if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2) {
-                        ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence, "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem", ibp->locusname, ibp->acnum, pp->limit);
-                    } else
-                        seq_long = true;
-                }
-
-                if (! OutputEmblAsn(seq_long, pp, seq_entries))
-                    ibp->drop = true;
-                else if (! ibp->drop)
-                    total++;
-                seq_long = false;
-            } else {
-                GetSeqExt(pp, locs);
-            }
-            GetScope().ResetHistory();
-        } /* if, not drop */
-
-        if (pp->segment == false) {
-            if (! ibp->drop) {
-                ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            } else {
-                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            }
-        }
-    } /* while, ascii block entries */
-
-    if (pp->segment) {
-        /* reject the whole set if any one entry was rejected
-         */
-        for (reject_set = false, i = 0; i < imax; i++) {
-            if (pp->entrylist[i]->drop) {
-                reject_set = true;
-                break;
-            }
-        }
-        if (pp->limit != 0 && ! reject_set) {
-            for (seq_long = false, i = 0; i < imax; i++) {
-                ibp = pp->entrylist[i];
-                if (ibp->bases > (size_t)pp->limit && ibp->htg != 1 &&
-                    ibp->htg != 2 && ibp->htg != 4) {
-                    seq_long = true;
-                    break;
-                }
-            }
-            if (! seq_long) {
-                for (i = 0; i < imax; i++) {
-                    ibp = pp->entrylist[i];
-                    if (ibp->bases > (size_t)pp->limit &&
-                        (ibp->htg == 1 || ibp->htg == 2 || ibp->htg == 4)) {
-                        ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence, "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem", ibp->locusname, ibp->acnum, pp->limit);
-                    }
-                }
-            }
-        }
-        if (! reject_set) {
-            // LCOV_EXCL_START
-            // Excluded per Mark's request on 12/14/2016
-            BuildBioSegHeader(pp, seq_entries, locs);
-            // LCOV_EXCL_STOP
-
-            if (! OutputEmblAsn(seq_long, pp, seq_entries))
-                reject_set = true;
-        }
-        if (! reject_set) {
-            for (i = 0; i < imax; i++) {
-                ibp = pp->entrylist[i];
-                ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            }
-            total = imax;
-        } else {
-            ErrPostStr(SEV_WARNING, ERR_SEGMENT_Rejected, "Reject the whole segmented set.");
-            for (i = 0; i < imax; i++) {
-                ibp = pp->entrylist[i];
-                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-            }
-        }
+    CRef<CSeq_entry> pResult;
+    if (mParser.curindx >= mParser.indx) {
+        return pResult;
     }
 
-    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+    bool        seq_long = false;
+    Int4        i        = mParser.curindx;
+    IndexblkPtr ibp      = mParser.entrylist[i];
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, "COMPLETED : SUCCEEDED = %d; SKIPPED = %d.", total, imax - total);
-    return true;
+    err_install(ibp, mParser.accver);
+    if (! ibp->drop) {
+        unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(
+            LoadEntry(&mParser, ibp->offset, ibp->len), &xFreeEntry);
+        if (! pEntry) {
+            FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+            NCBI_THROW(CException, eUnknown, "Unable to load entry");
+        }
+        auto  ebp   = pEntry->GetEntryData();
+        char* ptr   = pEntry->mOffset; /* points to beginning of the
+                                       memory line */
+        char* eptr  = ptr + pEntry->len;
+        Int2  curkw = ParFlat_ID;
+
+        // TODO: below is a potentially infinite cycle!!!!
+        while (curkw != ParFlatEM_END) {
+            /* ptr points to current keyword's memory line */
+            ptr = GetEmblBlock(ebp->chain, ptr, &curkw, mParser.format, eptr);
+        }
+
+        if (ibp->embl_new_ID)
+            EmblGetDivisionNewID(ibp, *pEntry);
+        else
+            EmblGetDivision(ibp, *pEntry);
+
+        if (StringEqu(ibp->division, "TSA")) {
+            if (ibp->tsa_allowed == false)
+                ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
+            ibp->is_tsa = true;
+        }
+
+        if (! CheckEmblContigEverywhere(ibp, mParser.source)) {
+            ibp->drop = true;
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+
+        if (ptr >= eptr) {
+            ibp->drop = true;
+            ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+        GetEmblSubBlock(ibp->bases, mParser.source, *pEntry);
+
+        CRef<CBioseq> bioseq = CreateEntryBioseq(&mParser);
+        AddNIDSeqId(*bioseq, *pEntry, ParFlat_NI, ParFlat_COL_DATA_EMBL, mParser.source);
+
+        ebp->seq_entry.Reset(new CSeq_entry);
+        ebp->seq_entry->SetSeq(*bioseq);
+        GetScope().AddBioseq(*bioseq);
+
+        if (! mParser.accver) {
+            GetReleaseInfo(*pEntry);
+        }
+        
+
+        if (! s_GetEmblInst(&mParser, *pEntry, GetDNAConvTable())) {
+            ibp->drop = true;
+            ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+
+        FakeEmblBioSources(*pEntry, *bioseq);
+        LoadFeat(&mParser, *pEntry, *bioseq);
+
+        if (! bioseq->IsSetAnnot() && ibp->drop) {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+
+        GetEmblDescr(&mParser, *pEntry, *bioseq);
+
+        if (ibp->drop) {
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+
+        fta_set_molinfo_completeness(*bioseq, ibp);
+
+        if (ibp->is_tsa)
+            fta_tsa_tls_comment_dblink_check(*bioseq, true);
+
+        if (ibp->is_tls)
+            fta_tsa_tls_comment_dblink_check(*bioseq, false);
+
+        if (bioseq->GetInst().IsNa()) {
+            if (bioseq->GetInst().GetRepr() == CSeq_inst::eRepr_raw) {
+                if (! ibp->gaps.empty())
+                    GapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
+                else if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2 ||
+                         (ibp->is_pat && mParser.source == Parser::ESource::DDBJ))
+                    SeqToDelta(*bioseq, ibp->htg);
+            } else if (! ibp->gaps.empty())
+                AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
+        }
+
+        if (pEntry->mpQscore.empty() && mParser.accver) {
+            if (mParser.ff_get_qscore)
+                pEntry->mpQscore = (*mParser.ff_get_qscore)(ibp->acnum, ibp->vernum);
+            else if (mParser.ff_get_qscore_pp)
+                pEntry->mpQscore = (*mParser.ff_get_qscore_pp)(ibp->acnum, ibp->vernum, &mParser);
+            if (mParser.qsfd && ibp->qslength > 0)
+                pEntry->mpQscore = GetQSFromFile(mParser.qsfd, ibp);
+        }
+
+        if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
+            if (mParser.ign_bad_qs == false) {
+                ibp->drop = true;
+                ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
+                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+                mParser.curindx++;
+                return pResult;
+            }
+            ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
+        }
+
+        pEntry->mpQscore.clear();
+
+        /* add PatentSeqId if patent is found in reference
+         */
+        if (ibp->psip.NotEmpty()) {
+            CRef<CSeq_id> id(new CSeq_id);
+            id->SetPatent(*ibp->psip);
+            bioseq->SetId().push_back(id);
+            ibp->psip.Reset();
+        }
+
+        if (no_reference(*bioseq) && mParser.debug == false) {
+            ibp->drop = true;
+            ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No reference for the entry, entry dropped");
+            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            mParser.curindx++;
+            return pResult;
+        }
+
+        TEntryList seq_entries;
+        seq_entries.push_back(ebp->seq_entry);
+        ebp->seq_entry.Reset();
+
+        if (mParser.limit != 0 && ibp->bases > (size_t)mParser.limit) {
+            if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2) {
+                ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence, "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem", ibp->locusname, ibp->acnum, mParser.limit);
+            } else
+                seq_long = true;
+        }
+
+        pResult = OutputEmblAsn(seq_long, &mParser, seq_entries);
+        if (! pResult) {
+            ibp->drop = true;
+        }
+        else if (! ibp->drop) {
+            mTotals.Succeeded++;
+        }
+        GetScope().ResetDataAndHistory();
+    } /* if, not drop */
+
+    if (! ibp->drop) {
+        ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"%s|%s\".", ibp->locusname, ibp->acnum);
+    } else {
+        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+    }
+
+    mParser.curindx++;
+    return pResult;
 }
+
+
+void CEmbl2Asn::PostTotals()
+{
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, 
+            "COMPLETED : SUCCEEDED = %d; SKIPPED = %d.", mTotals.Succeeded, mParser.indx-mTotals.Succeeded);
+
+}
+
 
 /**********************************************************/
 const char* GetEmblDiv(Uint1 num)

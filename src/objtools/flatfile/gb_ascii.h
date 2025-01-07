@@ -35,9 +35,32 @@
 #ifndef _GBASCII_
 #define _GBASCII_
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
+#include "mapped_input2asn.hpp" 
+
 BEGIN_NCBI_SCOPE
 
-bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr pp);
+class Parser;
+class CObjectOStream;
+class DataBlk;
+
+namespace objects {
+    class CBioseq;
+    class CSeq_entry;
+}
+
+class CGenbank2Asn : public CMappedInput2Asn
+{
+public:
+    using CMappedInput2Asn::CMappedInput2Asn; // inherit constructors
+    void PostTotals() override;
+private:
+    CRef<objects::CSeq_entry> xGetEntry() override;
+};
+
+
+bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, Parser* pp);
 
 /* routines for checking the feature location has join or order
  * among other segment
@@ -46,8 +69,6 @@ bool GetGenBankInstContig(const DataBlk& entry, objects::CBioseq& bsp, ParserPtr
 // Excluded per Mark's request on 12/14/2016
 void CheckFeatSeqLoc(TEntryList& seq_entries);
 // LCOV_EXCL_STOP
-bool GenBankAscii(ParserPtr pp);
-bool GenBankAsciiOrig(ParserPtr pp);
 
 END_NCBI_SCOPE
 

@@ -26,6 +26,7 @@ SRC     = \
     genref \
     ind \
     loadfeat \
+    mapped_input2asn \
     nucprot \
     ref \
     sp_ascii \
@@ -33,6 +34,7 @@ SRC     = \
     utilfeat \
     utilref \
     xm_ascii \
+    writer \
     buf_data_loader  \
     ftanet \
     ftamed \

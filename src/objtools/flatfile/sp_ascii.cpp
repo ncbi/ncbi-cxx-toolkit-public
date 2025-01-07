@@ -4805,59 +4805,49 @@ static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* pr
     }
 }
 
-/**********************************************************
- *
- *   bool SprotAscii(pp):
- *
- *      Return FALSE if allocate entry block failed.
- *
- *                                              3-23-93
- *
- **********************************************************/
-bool SprotAscii(ParserPtr pp)
+
+CRef<CSeq_entry> CSwissProt2Asn::xGetEntry()
 {
-    Int4        total;
-    Int4        i;
-    IndexblkPtr ibp;
-    Int4        imax;
-
-    auto protconv = GetProteinConv();
-
-    for (total = 0, i = 0, imax = pp->indx; i < imax; i++) {
-        pp->curindx = i;
-        ibp         = pp->entrylist[i];
-
-        err_install(ibp, pp->accver);
-
-        if (! ibp->drop) {
-            DataBlk* entry = LoadEntry(pp, ibp->offset, ibp->len);
-            if (! entry) {
-                FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
-                return false;
-            }
-
-            SpPrepareEntry(pp, *entry, protconv.get());
-
-            if (! ibp->drop) {
-                CRef<CSeq_entry>& cur_entry = entry->GetEntryData()->seq_entry;
-                pp->entries.push_back(cur_entry);
-
-                cur_entry.Reset();
-            }
-            // delete entry;
-        }
-        if (! ibp->drop) {
-            total++;
-            ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry \"%s|%s\" parsed successfully", ibp->locusname, ibp->acnum);
-        } else {
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry \"%s|%s\" skipped", ibp->locusname, ibp->acnum);
-        }
+    CRef<CSeq_entry> pResult;
+    if (mParser.curindx >= mParser.indx) {
+        return pResult;
     }
 
-    FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+    IndexblkPtr ibp = mParser.entrylist[mParser.curindx];
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, "Parsing completed, %d entr%s parsed", total, (total == 1) ? "y" : "ies");
-    return true;
+    err_install(ibp, mParser.accver);
+
+    if (! ibp->drop) {
+        auto entry = LoadEntry(&mParser, ibp->offset, ibp->len);
+        if (! entry) {
+            FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
+            NCBI_THROW(CException, eUnknown, "Unable to load entry");
+        }
+
+        SpPrepareEntry(&mParser, *entry, GetProtConvTable());
+
+        if (! ibp->drop) {
+            pResult = entry->GetEntryData()->seq_entry;
+        }
+
+        GetScope().ResetDataAndHistory();
+    }
+    if (! ibp->drop) {
+        mTotals.Succeeded++;
+        ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry \"%s|%s\" parsed successfully", ibp->locusname, ibp->acnum);
+    } else {
+        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry \"%s|%s\" skipped", ibp->locusname, ibp->acnum);
+    }
+    mParser.curindx++;
+    return pResult;
+}
+
+
+void CSwissProt2Asn::PostTotals()
+{   
+    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, 
+            "Parsing completed, %d entr%s parsed", 
+            mTotals.Succeeded, (mTotals.Succeeded == 1) ? "y" : "ies");
 }
 
 END_NCBI_SCOPE
