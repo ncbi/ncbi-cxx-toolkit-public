@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE(s_MTGiTest)
                        CSeq_id_Handle id2 = CSeq_id_Handle::GetGiHandle(gi+1);
                        for ( int i = 0; i < 1000000; ++i ) {
                            _VERIFY(id1.GetSeqId()->GetGi() == gi);
-                           _VERIFY(id2.GetSeqId()->GetGi() == gi+1);
+                           _VERIFY(id2.GetSeqId()->GetGi() == gi+GI_FROM(int, 1));
                        }
                    }, GI_FROM(int, i+1));
     }
