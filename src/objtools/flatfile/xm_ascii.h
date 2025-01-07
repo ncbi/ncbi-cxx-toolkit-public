@@ -23,35 +23,28 @@
  *
  * ===========================================================================
  *
- * File Name: em_ascii.h
  *
- * Author: Alexey Dobronadezhdin
+ * Author: Justin Foley
  *
  * File Description:
+ *      Parse INSDSEQ from blocks to asn.
  *
  */
 
-#ifndef EM_ASCII_H
-#define EM_ASCII_H
+#ifndef _XM_ASCII_H_
+#define _XM_ASCII_H_
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include "mapped_input2asn.hpp" 
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
 class CObjectOStream;
-
 namespace objects {
-    class CEMBL_block;
-    class CMolInfo;
-    class CBioSource;
-    class CUser_object;
-    class CSeqdesc;
     class CSeq_entry;
 }
 
-class CEmbl2Asn : public CMappedInput2Asn
+class CXml2Asn : public CMappedInput2Asn
 {
 public:
     using CMappedInput2Asn::CMappedInput2Asn; // inherit constructors
@@ -60,11 +53,5 @@ private:
     CRef<objects::CSeq_entry> xGetEntry() override;
 };
 
-using TStringList = std::list<std::string>;
-
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(Parser* pp, const char* entry, objects::CMolInfo& mol_info, string& gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
-
-void fta_build_ena_user_object(list<CRef<objects::CSeqdesc>>& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<objects::CUser_object>& dbuop);
-
 END_NCBI_SCOPE
-#endif // EM_ASCII_H
+#endif
