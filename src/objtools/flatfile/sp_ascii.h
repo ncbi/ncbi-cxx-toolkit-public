@@ -35,6 +35,11 @@
 #ifndef _SPASCII_
 #define _SPASCII_
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
+#include "mapped_input2asn.hpp"
+
+
 #define ParFlatSPSites   1
 #define ParFlatSPBonds   2
 #define ParFlatSPRegions 3
@@ -69,7 +74,21 @@ using SPFeatTypePtr = SPFeatType*;
  */
 BEGIN_NCBI_SCOPE
 
-bool SprotAscii(ParserPtr pp);
+class CObjectOStream;
+
+namespace objects {
+    class CSeq_entry;
+}
+
+class CSwissProt2Asn : public CMappedInput2Asn
+{
+public:
+    using CMappedInput2Asn::CMappedInput2Asn; // inherit constructors
+    void PostTotals() override;
+private:
+    CRef<objects::CSeq_entry> xGetEntry() override;
+};
+
 
 END_NCBI_SCOPE
 #endif

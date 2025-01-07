@@ -23,48 +23,49 @@
  *
  * ===========================================================================
  *
- * File Name: em_ascii.h
  *
- * Author: Alexey Dobronadezhdin
+ * Author: Justin Foley
  *
  * File Description:
+ *      Base class for generating ASN from mapped input
  *
  */
 
-#ifndef EM_ASCII_H
-#define EM_ASCII_H
+#ifndef _MAPPED_INPUT2ASN_HPP_
+#define _MAPPED_INPUT2ASN_HPP_
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include "mapped_input2asn.hpp" 
 
 BEGIN_NCBI_SCOPE
 
 class Parser;
 class CObjectOStream;
-
 namespace objects {
-    class CEMBL_block;
-    class CMolInfo;
-    class CBioSource;
-    class CUser_object;
-    class CSeqdesc;
     class CSeq_entry;
 }
 
-class CEmbl2Asn : public CMappedInput2Asn
+
+class CMappedInput2Asn
 {
 public:
-    using CMappedInput2Asn::CMappedInput2Asn; // inherit constructors
-    void PostTotals() override;
-private:
-    CRef<objects::CSeq_entry> xGetEntry() override;
+    CMappedInput2Asn(Parser& parser);
+    CRef<objects::CSeq_entry> operator()();
+    virtual ~CMappedInput2Asn(){}
+
+    virtual void PostTotals() = 0;
+protected:
+    virtual CRef<objects::CSeq_entry> xGetEntry() = 0;
+    struct STotals 
+    {
+        size_t Succeeded{0};
+        size_t Long{0};
+        size_t Dropped{0};
+    };
+
+    Parser& mParser;
+    STotals mTotals;
 };
 
-using TStringList = std::list<std::string>;
-
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(Parser* pp, const char* entry, objects::CMolInfo& mol_info, string& gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
-
-void fta_build_ena_user_object(list<CRef<objects::CSeqdesc>>& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<objects::CUser_object>& dbuop);
 
 END_NCBI_SCOPE
-#endif // EM_ASCII_H
+#endif

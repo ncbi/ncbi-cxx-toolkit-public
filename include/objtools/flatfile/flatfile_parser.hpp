@@ -45,6 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 class CSerialObject;
+class CObjectOStream;
 namespace objects
 {
     class IObjtoolsListener;
@@ -63,6 +64,7 @@ public:
     CRef<CSerialObject> Parse(Parser& parseInfo);
     CRef<CSerialObject> Parse(Parser& parseInfo, CNcbiIstream& istr);
     CRef<CSerialObject> Parse(Parser& parseInfo, const string& filename);
+    bool Parse(Parser& parseInfo, CObjectOStream& objOstr);
 
 private:
     objects::IObjtoolsListener* m_pMessageListener = nullptr;

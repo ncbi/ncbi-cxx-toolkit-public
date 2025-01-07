@@ -70,6 +70,9 @@ unique_ptr<unsigned char[]> GetDNAConv(void);
 unique_ptr<unsigned char[]> GetProteinConv(void);
 void                        GetSeqExt(ParserPtr pp, objects::CSeq_loc& seq_loc);
 
+unsigned char* const GetDNAConvTable();
+unsigned char* const GetProtConvTable();
+
 // LCOV_EXCL_START
 // Excluded per Mark's request on 12/14/2016
 void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const objects::CSeq_loc& seqloc);

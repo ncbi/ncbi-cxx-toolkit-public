@@ -348,8 +348,28 @@ int CFlat2AsnApp::Run()
         return 1;
     }
 
+
+
+    CNcbiOstream& ostream = args["o"] ? 
+        args["o"].AsOutputFile() : NcbiCout;
+
+    auto format = args["b"].AsBoolean() ?
+        eSerial_AsnBinary :
+        eSerial_AsnText;
+
+    unique_ptr<CObjectOStream> pObjOstr(CObjectOStream::Open(format,ostream));
+
     CFlatFileParser ffparser(&messageListener);
-    auto pSerialObject = ffparser.Parse(*pConfig);
+    CRef<CSerialObject> pSerialObject;
+    ffparser.Parse(*pConfig, *pObjOstr);
+/*
+    if ((pConfig->format != Parser::EFormat::XML && 
+         pConfig->format != Parser::EFormat::EMBL)) {
+        pSerialObject = ffparser.Parse(*pConfig);
+    } else {
+        ffparser.Parse(*pConfig, *pObjOstr);
+    }
+    */
     m_pFileMap.reset();
     if (m_DelInput) {
         CDirEntry(m_InputFile).Remove();
@@ -363,7 +383,6 @@ int CFlat2AsnApp::Run()
                     eDiag_Warning);
         }
     }
-
     if (pSerialObject) {
         CNcbiOstream* pOstream = args["o"] ?
             &args["o"].AsOutputFile() :
@@ -377,7 +396,8 @@ int CFlat2AsnApp::Run()
         return 0;
     }
 
-    return 1;
+    //return 1;
+   return 0;
 }
 
 int main(int argc, const char* argv[])

@@ -1771,7 +1771,6 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
  **********************************************************/
 unique_ptr<unsigned char[]> GetDNAConv(void)
 {
-
     unique_ptr<unsigned char[]> dnaconv(new unsigned char[255]());
     MemSet((char*)dnaconv.get(), (Uint1)1, (size_t)255);
 
@@ -1786,6 +1785,30 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
     }
 
     return dnaconv;
+}
+
+DEFINE_STATIC_MUTEX(s_DNAConvMutex);
+
+unsigned char* const GetDNAConvTable()
+{
+    static unique_ptr<unsigned char[]> dnaconv;
+    
+    if (! dnaconv.get()) {
+        CMutexGuard guard(s_DNAConvMutex);
+        if (! dnaconv.get()) {
+            dnaconv.reset(new unsigned char[255]());
+            MemSet((char*)dnaconv.get(), (Uint1)1, (size_t)255);
+            dnaconv[32] = 0; /* blank */
+            CSeqportUtil::TPair range = CSeqportUtil::GetCodeIndexFromTo(eSeq_code_type_iupacna);
+            for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i) {
+                const string& code = CSeqportUtil::GetCode(eSeq_code_type_iupacna, i);
+                dnaconv[static_cast<int>(code[0])] = code[0];
+                dnaconv[(int)tolower(code[0])]     = code[0];
+            }
+        }
+    }
+    
+    return dnaconv.get();
 }
 
 /**********************************************************
@@ -1816,6 +1839,31 @@ unique_ptr<unsigned char[]> GetProteinConv(void)
 
     return (protconv);
 }
+
+
+
+DEFINE_STATIC_MUTEX(s_ProtConvMutex);
+
+unsigned char* const GetProtConvTable()
+{
+    static unique_ptr<unsigned char[]> protconv;
+    if (! protconv.get()) {
+        CMutexGuard guard(s_ProtConvMutex);
+        if (! protconv.get()) {
+            protconv.reset(new unsigned char[255]());
+            MemSet((char*)protconv.get(), (Uint1)1, (size_t)255);
+            protconv[32]              = 0;
+            CSeqportUtil::TPair range = CSeqportUtil::GetCodeIndexFromTo(eSeq_code_type_iupacaa);
+            for (CSeqportUtil::TIndex i = range.first; i <= range.second; ++i) {
+                const string& code     = CSeqportUtil::GetCode(eSeq_code_type_iupacaa, i);
+                protconv[(int)code[0]] = code[0]; /* swiss-prot, pir uses upper case
+                                                     protein code */
+            }
+        }
+    }
+    return protconv.get();
+}
+
 
 /***********************************************************/
 static CSeq_descr::Tdata::const_iterator GetDescrByChoice(const CSeq_descr& descr, Uint1 choice)
