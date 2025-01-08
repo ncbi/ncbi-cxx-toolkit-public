@@ -71,6 +71,7 @@ class CSeqSubSplitter : public CNcbiApplication
 {
 
 public:
+    CSeqSubSplitter();
     void Init();
     int Run();
 
@@ -114,6 +115,10 @@ private:
     string xGetFileExtension(const string& filename) const;
 };
 
+CSeqSubSplitter::CSeqSubSplitter()
+{
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+}
 
 void CSeqSubSplitter::Init()
 {

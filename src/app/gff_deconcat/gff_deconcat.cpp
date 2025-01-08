@@ -65,6 +65,7 @@ public:
 class CGffDeconcatApp : public CNcbiApplication
 {
 public:
+    CGffDeconcatApp();
     void Init(void);
     int Run(void);
 
@@ -75,7 +76,7 @@ private:
     void xReadFile(CNcbiIstream& istr, string& header, TIdmap& id_map);
     void xProcessLine(const string& line, TIdmap& id_map);
     void xWriteFile(CNcbiOfstream& ostr,
-                    const string& header, 
+                    const string& header,
                     const list<string>& body);
     void xSetExtension(const string& input_filename);
 
@@ -83,6 +84,10 @@ private:
     string m_Extension;
 };
 
+CGffDeconcatApp::CGffDeconcatApp()
+{
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+}
 
 void CGffDeconcatApp::Init(void)
 {
@@ -90,7 +95,7 @@ void CGffDeconcatApp::Init(void)
 
 
     arg_desc->AddKey("i", "InputFile",
-                     "GFF input filename", 
+                     "GFF input filename",
                      CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey("dir",
@@ -112,7 +117,7 @@ void CGffDeconcatApp::xSetExtension(const string& input_filename)
             NStr::StringToDouble(trial_ext); // Extension cannot be numeric
         }
         catch(...) {
-            m_Extension = trial_ext;    
+            m_Extension = trial_ext;
             return;
         }
     }
@@ -137,9 +142,9 @@ int CGffDeconcatApp::Run(void)
 
         CDir output_dir(dirname);
         if (!output_dir.Exists()) {
-            string err_msg = dirname 
+            string err_msg = dirname
                            + " does not exist";
-            NCBI_THROW(CGffDeconcatException, 
+            NCBI_THROW(CGffDeconcatException,
                        eInvalidOutputDir,
                        err_msg);
         }
@@ -165,8 +170,8 @@ void CGffDeconcatApp::xProcessFile(CNcbiIstream& istr) {
     }
 
     for (const auto& key_val : id_map) {
-        string filename = output_dir + "/" 
-                        + key_val.first 
+        string filename = output_dir + "/"
+                        + key_val.first
                         + m_Extension;
 
         unique_ptr<CNcbiOfstream> ostr(new CNcbiOfstream(filename.c_str()));
@@ -181,7 +186,7 @@ void CGffDeconcatApp::xProcessLine(const string& line, TIdmap& id_map) {
     NStr::Split(line, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (columns.size() <= 1) {
         return;
-    }    
+    }
     id_map[columns[0]].push_back(line);
 }
 
@@ -194,10 +199,10 @@ void CGffDeconcatApp::xReadFile(CNcbiIstream& istr, string& header, TIdmap& id_m
     string line;
     while ( !lr.AtEOF() ) {
         line = *++lr;
-        if (NStr::IsBlank(line) || 
+        if (NStr::IsBlank(line) ||
             line[0] == '#') {
             if (line.size() > 2 &&
-                line[1] == '#' && 
+                line[1] == '#' &&
                 header.empty() ) {
                 header = line;
             }
@@ -209,9 +214,9 @@ void CGffDeconcatApp::xReadFile(CNcbiIstream& istr, string& header, TIdmap& id_m
 }
 
 
-void CGffDeconcatApp::xWriteFile(CNcbiOfstream& ostr, 
-                                 const string& header, 
-                                 const list<string>& body) 
+void CGffDeconcatApp::xWriteFile(CNcbiOfstream& ostr,
+                                 const string& header,
+                                 const list<string>& body)
 {
     if (!NStr::IsBlank(header)) {
        ostr << header << "\n";
