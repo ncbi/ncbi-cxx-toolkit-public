@@ -161,7 +161,7 @@ BOOST_AUTO_TEST_CASE(s_MTGiTest)
                            _VERIFY(id1.GetSeqId()->GetGi() == gi1);
                            _VERIFY(id2.GetSeqId()->GetGi() == gi2);
                        }
-                   }, GI_FROM(int, i+1), GI_FROM(int, i+2));
+                   }, GI_FROM(size_t, i+1), GI_FROM(size_t, i+2));
     }
     for ( size_t i = 0; i < NQ; ++i ) {
         tt[i].join();
