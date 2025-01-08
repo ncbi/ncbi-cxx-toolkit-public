@@ -1089,12 +1089,13 @@ bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_
     TSeqPos new_stop;
 
     // the last element of the mix or the single location MUST be converted into interval
-    // whethe it's whole or point, etc
+    // whether it's whole or point, etc
     if (last_interval->IsSetStrand() && last_interval->GetStrand() == eNa_strand_minus) {
         new_start = (cdregion ? cdregion->GetLocation().GetStart(eExtreme_Positional) :
               last_interval->GetStart(eExtreme_Positional)) - extension;
 
         new_stop = last_interval->GetStop(eExtreme_Positional);
+        last_interval->SetInt().SetStrand(eNa_strand_minus);
     }
     else {
         new_start = last_interval->GetStart(eExtreme_Positional);
