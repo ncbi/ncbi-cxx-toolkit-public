@@ -74,13 +74,6 @@ string location_to_string_or_unknown(const objects::CSeq_loc&);
 struct InfoBioseq
 //  ============================================================================
 {
-    InfoBioseq() {}
-
-    ~InfoBioseq()
-    {
-        ids.clear();
-    }
-
     TSeqIdList ids; // for this Bioseq
     string     mLocus;
     string     mAccNum;
@@ -257,8 +250,6 @@ struct FTAOperon
         mOperon(operon),
         mLocation(&location) {}
 
-    ~FTAOperon() {}
-
     string LocationStr() const
     {
         if (mLocStr.empty()) {
@@ -329,18 +320,14 @@ using DataBlkCIter = TDataBlkList::const_iterator;
 
 //  ============================================================================
 struct EntryBlk {
-    //  ============================================================================
+//  ============================================================================
     TDataBlkList              chain; /* a header points to key-word
                                            block information */
     CRef<objects::CSeq_entry> seq_entry;       /* points to sequence entry */
-
-    ~EntryBlk();
 };
 using EntryBlkPtr = EntryBlk*;
 
 /**************************************************************************/
-
-void xFreeEntry(DataBlk* entry);
 
 END_NCBI_SCOPE
 
