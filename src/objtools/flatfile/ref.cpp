@@ -1701,17 +1701,17 @@ static void XMLGetXrefs(char* entry, const TXmlIndexList& xil, TQualVector& qual
     if (! entry || xil.empty())
         return;
 
-    for (auto xip = xil.begin(); xip != xil.end(); ++xip) {
-        if (xip->subtags.empty())
+    for (const auto& xip : xil) {
+        if (xip.subtags.empty())
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
 
-        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); ++xipqual) {
-            if (xipqual->tag == INSDXREF_DBNAME)
-                qual->SetQual(*XMLGetTagValue(entry, *xipqual));
-            else if (xipqual->tag == INSDXREF_ID)
-                qual->SetVal(*XMLGetTagValue(entry, *xipqual));
+        for (const auto& xipqual : xip.subtags) {
+            if (xipqual.tag == INSDXREF_DBNAME)
+                qual->SetQual(*XMLGetTagValue(entry, xipqual));
+            else if (xipqual.tag == INSDXREF_ID)
+                qual->SetVal(*XMLGetTagValue(entry, xipqual));
         }
 
         if (qual->IsSetQual() && ! qual->GetQual().empty())
@@ -1908,9 +1908,9 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     MemFree(p);
 
     TQualVector xrefs;
-    for (auto xip = dbp.GetXmlData().begin(); xip != dbp.GetXmlData().end(); ++xip) {
-        if (xip->tag == INSDREFERENCE_XREF)
-            XMLGetXrefs(dbp.mOffset, xip->subtags, xrefs);
+    for (const auto& xip : dbp.GetXmlData()) {
+        if (xip.tag == INSDREFERENCE_XREF)
+            XMLGetXrefs(dbp.mOffset, xip.subtags, xrefs);
     }
 
     string doi;
