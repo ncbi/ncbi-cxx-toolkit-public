@@ -165,6 +165,9 @@ char CProteinAlignText::MatchChar(size_t i)
 {
     char m = SPACE_CHAR;
     if (m_translation[i] != SPACE_CHAR && m_protein[i] != SPACE_CHAR) {
+        if (m_protein[i] < 0) {
+            NCBI_THROW(CException, eUnknown, "Invalid character in protein");
+        }
         if(toupper(m_protein[i]) != 'X') {
             if (m_translation[i] == m_protein[i]) {
                 m = MATCH_CHAR;
