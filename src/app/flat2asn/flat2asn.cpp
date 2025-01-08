@@ -141,6 +141,7 @@ static bool InitConfig(const CArgs& args, Parser& config)
 class CFlat2AsnApp : public ncbi::CNcbiApplication
 {
 public:
+    CFlat2AsnApp();
     void Init() override;
     int Run() override;
 
@@ -151,6 +152,11 @@ private:
     bool m_DelInput=false;
     string m_InputFile;
 };
+
+CFlat2AsnApp::CFlat2AsnApp()
+{
+    SetVersion(CVersionInfo(2, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+}
 
 /**********************************************************/
 bool CFlat2AsnApp::x_OpenFiles(const CArgs& args, TConfig& config, IObjtoolsListener& listener)
@@ -350,7 +356,7 @@ int CFlat2AsnApp::Run()
 
 
 
-    CNcbiOstream& ostream = args["o"] ? 
+    CNcbiOstream& ostream = args["o"] ?
         args["o"].AsOutputFile() : NcbiCout;
 
     auto format = args["b"].AsBoolean() ?
@@ -363,7 +369,7 @@ int CFlat2AsnApp::Run()
     CRef<CSerialObject> pSerialObject;
     ffparser.Parse(*pConfig, *pObjOstr);
 /*
-    if ((pConfig->format != Parser::EFormat::XML && 
+    if ((pConfig->format != Parser::EFormat::XML &&
          pConfig->format != Parser::EFormat::EMBL)) {
         pSerialObject = ffparser.Parse(*pConfig);
     } else {

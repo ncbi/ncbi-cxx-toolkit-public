@@ -165,7 +165,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp()
 {
-    SetVersion(CVersionInfo(1, 0, 3));
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 // destructor
@@ -910,12 +910,12 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
         if ( m_OnlyNucs && ! bsh.IsNa() ) return nullptr;
         if ( m_OnlyProts && ! bsh.IsAa() ) return nullptr;
         return m_Os.get();
-    } 
-    
+    }
+
     if ( bsh.IsNa() ) {
         if ( m_On ) {
             return m_On.get();
-        } 
+        }
         CFastaOstreamEx* fasta_os = nullptr;
         if ( (is_genomic || ! closest_molinfo) && m_Og ) {
             fasta_os = m_Og.get();
@@ -934,14 +934,14 @@ CFastaOstreamEx* CAsn2FastaApp::x_GetFastaOstream(CBioseq_Handle& bsh)
             fasta_os = m_Or.get();
         }
         return fasta_os;
-    } 
-    
-    
+    }
+
+
     if ( bsh.IsAa() ) {
         if ( m_Op ) {
            return m_Op.get();
         }
-    } 
+    }
     else {
         if ( m_Ou ) {
             return m_Ou.get();
@@ -1054,7 +1054,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         CBioseq_Handle bsh = *bioseq_it;
         if (!bsh)
             continue;
-        
+
         CFeat_CI feat_it(bsh, sel);
         for ( ; feat_it; ++feat_it) {
             if (!feat_it->IsSetData() ||
@@ -1104,7 +1104,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         }
     }
 #endif
-    
+
     for (CBioseq_CI bioseq_it(seh); bioseq_it; ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         if (!bsh)
@@ -1165,9 +1165,9 @@ CObjectIStream* CAsn2FastaApp::x_OpenIStream(const string& ifname)
     // turning it into an object stream:
     CObjectIStream* pI = nullptr;
     if ( args["c"] ) {
-        CZipStreamDecompressor* pDecompressor = 
+        CZipStreamDecompressor* pDecompressor =
             new CZipStreamDecompressor( CZipCompression::fCheckFileHeader );
-        CCompressionIStream* pUnzipStream = 
+        CCompressionIStream* pUnzipStream =
             new CCompressionIStream( *pInputStream, pDecompressor, CCompressionIStream::fOwnProcessor );
         pI = CObjectIStream::Open( serial, *pUnzipStream, eTakeOwnership );
     }

@@ -124,7 +124,7 @@ const char * BIOSAMPLE_CHK_APP_VER = "1.0";
 class CBiosampleHandler
 {
 public:
-    CBiosampleHandler() : 
+    CBiosampleHandler() :
         m_ReportStream(0),
         m_UseDevServer(false)
         {}
@@ -281,9 +281,9 @@ private:
     string m_BioProjectAccession;
     string m_Owner;
     string m_Comment;
-    
+
     string m_BioSampleWebAPIKey;
-    
+
     size_t m_Processed;
     size_t m_Unprocessed;
 
@@ -292,21 +292,22 @@ private:
     vector<CRef<CSeqdesc> > m_Descriptors;
 
     CBiosampleHandler * m_Handler;
-    
+
     biosample_util::TBioSamples m_cache;
 };
 
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), 
+    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0),
     m_LogStream(0), m_Mode(e_report_diffs), m_ReturnCode(0),
-    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), 
+    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true),
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_BioSampleAccession(""), m_BioProjectAccession(""),
     m_Owner(""), m_Comment(""),
     m_Processed(0), m_Unprocessed(0), m_Handler(NULL)
 {
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
 }
 
 
@@ -334,7 +335,7 @@ void CBiosampleChkApp::Init(void)
     arg_desc->AddFlag("u", "Recurse");
     arg_desc->AddFlag("d", "Use development Biosample server");
 
-    arg_desc->AddDefaultKey("a", "a", 
+    arg_desc->AddDefaultKey("a", "a",
                             "ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit) or accession list (l)",
                             CArgDescriptions::eString,
                             "a");
@@ -362,7 +363,7 @@ void CBiosampleChkApp::Init(void)
         CArgDescriptions::eInteger, "1");
     CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_update_no);
     arg_desc->SetConstraint("m", constraint);
-    
+
     arg_desc->AddOptionalKey(
         "P", "Prefix", "StructuredCommentPrefix", CArgDescriptions::eString);
 
@@ -416,7 +417,7 @@ void CBiosampleChkApp::ProcessAsnInput (void)
     if (unhandled) {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
-    
+
 }
 
 
@@ -448,7 +449,7 @@ void CBiosampleChkApp::ProcessList (const string& fname)
                         id->GetLabel(&label);
                         *m_LogStream << "  (interpreted as " << label << ")" << endl;
                         m_Unprocessed++;
-                    }                
+                    }
                 }
             } catch (CException& e) {
                 *m_LogStream << e.GetMsg() << endl;
@@ -488,7 +489,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     bool need_to_close_report = false;
     bool need_to_close_asn = false;
 
-    if (!m_ReportStream && 
+    if (!m_ReportStream &&
         (m_Mode == e_report_diffs || m_Mode == e_update_with || m_Mode == e_update_no || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
          (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
         string path = fname;
@@ -526,7 +527,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
         case e_accessions:
             ProcessList (fname);
             break;
-        case e_files:    
+        case e_files:
             ProcessFileList (fname);
             break;
         case e_none:
@@ -538,7 +539,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
                 NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
             }
             ProcessAsnInput();
-            break;        
+            break;
     }
 
     if (m_Mode == e_report_diffs) {
@@ -555,7 +556,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
 
     // TODO! Must free diffs
     m_Diffs.clear();
-    
+
     if (need_to_close_report) {
         if (m_Mode == e_take_from_biosample) {
             PrintTable(m_Table);
@@ -673,7 +674,7 @@ int CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, const string& 
     if (!num_of_files)
     {
         NCBI_THROW(CException, eUnknown, "No input '" + file_mask + "' files found in directory '" + dir_name + "'");
-    }        
+    }
     return num_of_files;
 }
 
@@ -690,7 +691,7 @@ int CBiosampleChkApp::Run(void)
     m_BioSampleAccession = args["biosample"] ? args["biosample"].AsString() : "";
     m_BioProjectAccession = args["bioproject"] ? args["bioproject"].AsString() : "";
     m_Comment = args["comment"] ? args["comment"].AsString() : "";
-    
+
     string apikey_file = args["apikey_file"] ? args["apikey_file"].AsString() : "";
     if (!apikey_file.empty()) {
         ifstream is(apikey_file.c_str());
@@ -702,7 +703,7 @@ int CBiosampleChkApp::Run(void)
     }
 
     if (args["o"]) {
-        if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample 
+        if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample
             //|| m_Mode == e_take_from_biosample
             || (m_Handler != NULL && m_Handler->NeedsReportStream())) {
             m_ReportStream = &(args["o"].AsOutputFile());
@@ -734,7 +735,7 @@ int CBiosampleChkApp::Run(void)
                 m_Table->SetNum_rows(0);
             }
     }
-            
+
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
     m_StructuredCommentPrefix = args["P"] ? args["P"].AsString() : "";
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && !NStr::StartsWith(m_StructuredCommentPrefix, "##")) {
@@ -808,7 +809,7 @@ int CBiosampleChkApp::Run(void)
             }
         }
     }
-    
+
     if (m_Unprocessed > 0) {
         if (m_Mode != e_report_diffs) {
             *m_LogStream << m_Unprocessed << " results failed" << endl;
@@ -846,7 +847,7 @@ void CBiosampleChkApp::ReadClassMember
                 i >> *se;
 
                 CStopWatch sw(CStopWatch::eStart);
-                
+
                 m_Diffs.clear();
                 ProcessSeqEntry(se);
                 PrintResults(m_Diffs);
@@ -881,7 +882,7 @@ void CBiosampleChkApp::ProcessReleaseFile
     CObjectTypeInfo set_type = CType<CBioseq_set>();
     set_type.FindMember("seq-set").SetLocalReadHook(*m_In, this);
 
-    // Read the CBioseq_set, it will call the hook object each time we 
+    // Read the CBioseq_set, it will call the hook object each time we
     // encounter a Seq-entry
     *m_In >> *seqset;
 }
@@ -1088,7 +1089,7 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
 void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 {
     vector<string> unprocessed_ids;
-    biosample_util::TBiosampleFieldDiffList new_diffs = 
+    biosample_util::TBiosampleFieldDiffList new_diffs =
                   biosample_util::GetBioseqDiffs(bh,
                                        m_BioSampleAccession,
                                        m_Processed,
@@ -1183,7 +1184,7 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
                 try {
                     biosample_util::AddBioseqToTable(
                                   bh, *m_Table,
-                                  true, 
+                                  true,
                                   m_CompareStructuredComments,
                                   m_StructuredCommentPrefix);
                 } catch (CException& e) {
@@ -1267,7 +1268,7 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
     m_Owner = "";
     // get owner from Seq-submit to use if no pub is found
     if (ss->IsSetSub()) {
-        if (ss->GetSub().IsSetCit() 
+        if (ss->GetSub().IsSetCit()
             && ss->GetSub().GetCit().IsSetAuthors()
             && ss->GetSub().GetCit().GetAuthors().IsSetAffil()) {
             m_Owner = biosample_util::OwnerFromAffil(ss->GetSub().GetCit().GetAuthors().GetAffil());
@@ -1369,7 +1370,7 @@ unique_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const CArgs& args)
 unique_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
 {
     ESerialDataFormat format = eSerial_AsnText;
-    
+
     unique_ptr<CNcbiIstream> hold_stream(new CNcbiIfstream (fname.c_str(), ios::binary));
     CNcbiIstream* InputStream = hold_stream.get();
 
@@ -1391,7 +1392,7 @@ unique_ptr<CObjectIStream> CBiosampleChkApp::OpenFile(const string &fname)
         InputStream = hold_stream.get();
         formatGuess = CFormatGuess::Format(*InputStream);
     }
-    
+
     unique_ptr<CObjectIStream> objectStream;
     switch (formatGuess)
     {
