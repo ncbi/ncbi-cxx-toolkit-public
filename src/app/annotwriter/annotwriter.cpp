@@ -82,16 +82,16 @@ class TestCanceler: public ICanceled
 //  ============================================================================
 {
     static const unsigned int CALLS_UNTIL_CANCELLED = 25;
-    bool IsCanceled() const { 
+    bool IsCanceled() const {
         if (0 == ++mNumCalls % 100) {
-            cerr << "Iterations until cancelled: " 
+            cerr << "Iterations until cancelled: "
                  << (CALLS_UNTIL_CANCELLED - mNumCalls) << "\n";
         }
         return (mNumCalls > CALLS_UNTIL_CANCELLED);
     };
     static unsigned int mNumCalls;
 };
-unsigned int TestCanceler::mNumCalls = 0; 
+unsigned int TestCanceler::mNumCalls = 0;
 #endif
 
 //  ----------------------------------------------------------------------------
@@ -130,6 +130,7 @@ class CAnnotWriterApp : public CNcbiApplication
 //  ----------------------------------------------------------------------------
 {
 public:
+    CAnnotWriterApp();
     void Init() override;
     int Run() override;
 
@@ -142,7 +143,7 @@ private:
     CWriterBase* xInitWriter(
         const CArgs&,
         CNcbiOstream* );
-    
+
     bool xTryProcessInputId(
         const CArgs& );
 
@@ -182,7 +183,7 @@ private:
         CBioseq_Handle& bsh,
         bool skipHeaders);
 
-    unsigned int xGffFlags( 
+    unsigned int xGffFlags(
         const CArgs& );
 
     TSeqPos xGetFrom(
@@ -201,7 +202,7 @@ private:
         SAnnotSelector&);
 
     static void xReadObject(
-        CObjectIStream& istr, 
+        CObjectIStream& istr,
         CSerialObject& object); //throws
 
     bool m_Cleanup {false};
@@ -211,16 +212,21 @@ private:
     unique_ptr<CAnnotWriterLogger> m_pErrorHandler;
 };
 
+CAnnotWriterApp::CAnnotWriterApp()
+{
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+}
+
 //  ----------------------------------------------------------------------------
 void CAnnotWriterApp::Init()
 //  ----------------------------------------------------------------------------
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext("", "Convert ASN.1 to alternative file formats");
-    
+
     // input
     {{
-        arg_desc->AddOptionalKey( "i", "InputFile", 
+        arg_desc->AddOptionalKey( "i", "InputFile",
             "Input file name", CArgDescriptions::eInputFile );
         arg_desc->AddOptionalKey( "id", "InputID",
             "Input ID (accession or GI number)", CArgDescriptions::eString );
@@ -232,17 +238,17 @@ void CAnnotWriterApp::Init()
     // format
     {{
     arg_desc->AddDefaultKey(
-        "format", 
+        "format",
         "STRING",
         "Output format",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "gff3" );
     arg_desc->SetConstraint(
-        "format", 
-        &(*new CArgAllow_Strings, 
+        "format",
+        &(*new CArgAllow_Strings,
             "gvf",
             "gff3",
-            "gtf", 
+            "gtf",
             "wig", "wiggle",
             "bed",
             "bedgraph",
@@ -272,11 +278,11 @@ void CAnnotWriterApp::Init()
         CArgDescriptions::eString,
         "" );
     }}
-    
+
 
     // output
-    {{ 
-        arg_desc->AddOptionalKey( "o", "OutputFile", 
+    {{
+        arg_desc->AddOptionalKey( "o", "OutputFile",
             "Output file name", CArgDescriptions::eOutputFile );
         arg_desc->AddOptionalKey("from", "From",
             "Beginning of range", CArgDescriptions::eInteger );
@@ -293,8 +299,8 @@ void CAnnotWriterApp::Init()
             CArgDescriptions::eString,
             "nucs-only");
         arg_desc->SetConstraint(
-            "view", 
-            &(*new CArgAllow_Strings, 
+            "view",
+            &(*new CArgAllow_Strings,
                 "nucs-only",
                 "prots-only",
                 "all"));
@@ -343,7 +349,7 @@ void CAnnotWriterApp::Init()
         "GFF3 only: Use Flybase interpretation of the GFF3 spec",
         true );
     arg_desc->AddFlag(
-        "no-sort", 
+        "no-sort",
         "GFF3 alignments only: Do not sort alignments when fetching from ID",
         true);
     arg_desc->AddFlag(
@@ -399,7 +405,7 @@ int CAnnotWriterApp::Run()
         if (args["to"]) {
             m_pWriter->SetRange().SetTo(xGetTo(args));
         }
-        
+
         if (xTryProcessInputIdList(args)) {
             pOs->flush();
             return 0;
@@ -437,7 +443,7 @@ CNcbiOstream* CAnnotWriterApp::xInitOutputStream(
         }
         catch(CException& e) {
             CWriterMessage writerMessage(
-                "annotwriter: Unable to open output stream [" + 
+                "annotwriter: Unable to open output stream [" +
                     e.GetMsg() + "]", eDiag_Fatal);
             throw writerMessage;
         }
@@ -463,7 +469,7 @@ bool CAnnotWriterApp::xTryProcessInputId(
 {
     auto pScope = Ref(new CScope(*m_pObjMngr));
     pScope->AddDefaults();
-    
+
     CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
     CBioseq_Handle bsh = pScope->GetBioseqHandle(seqh);
     if (!bsh) {
@@ -473,13 +479,13 @@ bool CAnnotWriterApp::xTryProcessInputId(
     auto pEntry = Ref(new CSeq_entry());
     pEntry->Assign(*(bsh.GetTopLevelEntry().GetCompleteSeq_entry()));
     auto tseh = m_pScope->AddTopLevelSeqEntry(*pEntry);
-    
+
     bsh = m_pScope->GetBioseqHandle(seqh); // bsh now refers to local record
     auto result = xProcessBioseqHandle(bsh, skipHeaders);
     m_pScope->RemoveEntry(*pEntry);
 
     return result;
-}    
+}
 
 //  -----------------------------------------------------------------------------
 bool CAnnotWriterApp::xTryProcessInputIdList(
@@ -496,7 +502,7 @@ bool CAnnotWriterApp::xTryProcessInputIdList(
         xTryProcessInputId(inputId, skipHeaders);
     }
     return true;
-}    
+}
 
 
 //  -----------------------------------------------------------------------------
@@ -563,7 +569,7 @@ bool CAnnotWriterApp::xTryProcessInputFile(
 
 //  ----------------------------------------------------------------------------
 void CAnnotWriterApp::xReadObject(
-    CObjectIStream& istr, 
+    CObjectIStream& istr,
     CSerialObject& object)
 //  ----------------------------------------------------------------------------
 {
@@ -572,7 +578,7 @@ void CAnnotWriterApp::xReadObject(
     }
     catch (CException& e) {
         CWriterMessage writerMessage(
-            "annotwriter: Unable to extract object from input stream [" + 
+            "annotwriter: Unable to extract object from input stream [" +
                 e.GetMsg() + "]", eDiag_Fatal);
         throw writerMessage;
     }
@@ -727,7 +733,7 @@ bool CAnnotWriterApp::xProcessInputObject(
     if (!GetArgs()["skip-headers"]) {
         m_pWriter->WriteHeader();
     }
-    
+
     m_pWriter->WriteAlign( align, xAssemblyName(), xAssemblyAccession());
     m_pWriter->WriteFooter();
     return true;
@@ -757,7 +763,7 @@ bool CAnnotWriterApp::xProcessInputObject(
 
 
 //  -----------------------------------------------------------------------------
-CObjectIStream* CAnnotWriterApp::xInitInputStream( 
+CObjectIStream* CAnnotWriterApp::xInitInputStream(
     const CArgs& args,
     CFileContentInfo& contentInfo)
 //  -----------------------------------------------------------------------------
@@ -789,7 +795,7 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
         break;
     }
 
-    CObjectIStream* pI = CObjectIStream::Open( 
+    CObjectIStream* pI = CObjectIStream::Open(
         serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     if (!pI) {
         throw CWriterMessage(
@@ -840,7 +846,7 @@ unsigned int CAnnotWriterApp::xGffFlags(
     }
     if (args["generate-missing-transcripts"]) {
         eFlags |= CGff2Writer::fGenerateMissingTranscripts;
-    }    
+    }
     return eFlags;
 }
 
@@ -883,7 +889,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
     }
 
     const string strFormat = args["format"].AsString();
-    if (strFormat == "gff3") { 
+    if (strFormat == "gff3") {
         const bool sortAlignments = args["no-sort"] ? false : true;
         if (args["flybase"]) {
             CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs, sortAlignments);
@@ -903,7 +909,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
     }
-    if (strFormat == "gvf") { 
+    if (strFormat == "gvf") {
         CGvfWriter* pWriter = new CGvfWriter( *m_pScope, *pOs, xGffFlags(args));
         xTweakAnnotSelector(args, pWriter->SetAnnotSelector());
         return pWriter;
@@ -933,7 +939,7 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return pWriter;
     }
     throw CWriterMessage(
-        "annotwriter: No suitable writer for format \"" + strFormat + "\"", 
+        "annotwriter: No suitable writer for format \"" + strFormat + "\"",
         eDiag_Fatal);
 }
 

@@ -55,6 +55,7 @@ class CSrcChkApp : public CNcbiApplication
 //  ============================================================================
 {
 public:
+    CSrcChkApp();
     void Init();
     int Run();
 
@@ -81,6 +82,11 @@ private:
     CRef<CMessageListenerBase> m_pErrors;
 };
 
+CSrcChkApp::CSrcChkApp()
+{
+    SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
+}
+
 //  ----------------------------------------------------------------------------
 void CSrcChkApp::Init()
 //  ----------------------------------------------------------------------------
@@ -90,15 +96,15 @@ void CSrcChkApp::Init()
         GetArguments().GetProgramBasename(),
         "Extract Genbank source qualifiers",
         false);
-    
+
     // input
     {{
-        arg_desc->AddOptionalKey("i", "IDsFile", 
-            "IDs file name. Defaults to stdin", 
+        arg_desc->AddOptionalKey("i", "IDsFile",
+            "IDs file name. Defaults to stdin",
             CArgDescriptions::eInputFile );
 
-        arg_desc->AddOptionalKey("seq-entry", "SeqEntryFile", 
-            "File containing Seq-entry in ASN.1 format", 
+        arg_desc->AddOptionalKey("seq-entry", "SeqEntryFile",
+            "File containing Seq-entry in ASN.1 format",
             CArgDescriptions::eInputFile );
 
         arg_desc->SetDependency("seq-entry",
@@ -130,14 +136,14 @@ void CSrcChkApp::Init()
     }}
 
     {{
-        arg_desc->AddFlag("list-supported-fields", 
+        arg_desc->AddFlag("list-supported-fields",
                 "List in alphabetical order the fields that srcchk can display; ignore other arguments");
     }}
 
     // output
-    {{ 
-        arg_desc->AddOptionalKey("o", "OutputFile", 
-            "Output file name. Defaults to stdout", 
+    {{
+        arg_desc->AddOptionalKey("o", "OutputFile",
+            "Output file name. Defaults to stdout",
             CArgDescriptions::eOutputFile );
     }}
     {{
@@ -161,8 +167,8 @@ int CSrcChkApp::Run()
         sort(begin(sortedFields), end(sortedFields));
         for (const auto& field : sortedFields) {
             cout << field << "\n";
-        }        
-        return 0; 
+        }
+        return 0;
     }
 
 	CONNECT_Init(&GetConfig());
@@ -191,14 +197,14 @@ bool CSrcChkApp::xTryProcessIdFile(
 {
     CNcbiOstream* pOs = xInitOutputStream(args);
     if (0 == pOs) {
-        string error_msg = args["o"] ? 
+        string error_msg = args["o"] ?
                            "Unable to open output file \"" + args["o"].AsString() + "\"." :
                            "Unable to write to stdout.";
         CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
         m_pErrors->PutError(*pE);
         delete pE;
         return false;
-    }        
+    }
 
     const streamsize maxLineSize(100);
     char line[maxLineSize];
@@ -213,7 +219,7 @@ bool CSrcChkApp::xTryProcessIdFile(
         pIfstr = args["i"] ? &args["i"].AsInputFile() : &cin;
     }
     catch(const std::exception&) {
-        string error_msg = args["i"] ? 
+        string error_msg = args["i"] ?
                      "Unable to open ID file \"" + args["i"].AsString() + "\"." :
                      "Unable to read IDs from stdin.";
         CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
@@ -249,7 +255,7 @@ bool CSrcChkApp::xTryProcessIdFile(
         return false;
     }
     return true;
-}    
+}
 
 //  -----------------------------------------------------------------------------
 bool CSrcChkApp::xTryProcessSeqEntry(
@@ -261,14 +267,14 @@ bool CSrcChkApp::xTryProcessSeqEntry(
     }
     CNcbiOstream* pOs = xInitOutputStream(args);
     if (0 == pOs) {
-        string error_msg = args["o"] ? 
+        string error_msg = args["o"] ?
             "Unable to open output file \"" + args["o"].AsString() + "\"." :
             "Unable to write to stdout.";
         CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
         m_pErrors->PutError(*pE);
         delete pE;
         return false;
-    }        
+    }
 
     CSrcWriter::FIELDS desiredFields;
     if (!xGetDesiredFields(args, desiredFields)) {
@@ -299,8 +305,8 @@ bool CSrcChkApp::xTryProcessSeqEntry(
     }
 
     m_pWriter->WriteSeqEntry(*pSe, *m_pScope, *pOs);
-    return true; //!!! 
-} 
+    return true; //!!!
+}
 
 //  -----------------------------------------------------------------------------
 bool CSrcChkApp::xGetDesiredFields(
@@ -390,9 +396,9 @@ void CSrcChkApp::xDumpError(
     std::ostream& out)
 //  ---------------------------------------------------------------------------
 {
-    out << "srcchk " 
-        << error.SeverityStr().c_str() 
-        << ":  " 
+    out << "srcchk "
+        << error.SeverityStr().c_str()
+        << ":  "
         << error.ErrorMessage().c_str()
         << endl;
 }
