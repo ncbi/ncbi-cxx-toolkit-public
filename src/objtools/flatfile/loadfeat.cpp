@@ -3467,16 +3467,16 @@ static void XMLGetQuals(char* entry, const TXmlIndexList& xil, TQualVector& qual
     if (! entry || xil.empty())
         return;
 
-    for (auto xip = xil.begin(); xip != xil.end(); ++xip) {
-        if (xip->subtags.empty())
+    for (const auto& xip : xil) {
+        if (xip.subtags.empty())
             continue;
 
         CRef<CGb_qual> qual(new CGb_qual);
-        for (auto xipqual = xip->subtags.begin(); xipqual != xip->subtags.end(); ++xipqual) {
-            if (xipqual->tag == INSDQUALIFIER_NAME)
-                qual->SetQual(*XMLGetTagValue(entry, *xipqual));
-            else if (xipqual->tag == INSDQUALIFIER_VALUE)
-                qual->SetVal(*XMLGetTagValue(entry, *xipqual));
+        for (const auto& xipqual : xip.subtags) {
+            if (xipqual.tag == INSDQUALIFIER_NAME)
+                qual->SetQual(*XMLGetTagValue(entry, xipqual));
+            else if (xipqual.tag == INSDQUALIFIER_VALUE)
+                qual->SetVal(*XMLGetTagValue(entry, xipqual));
         }
 
         if (qual->GetQual() == "replace" && ! qual->IsSetVal()) {
@@ -3508,18 +3508,18 @@ static TDataBlkList XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
     auto         dbp = dbl.before_begin();
 
     const auto& subtags = xip->subtags;
-    for (xip = subtags.cbegin(); xip != subtags.cend(); ++xip) {
-        if (xip->subtags.empty())
+    for (const auto& xip : subtags) {
+        if (xip.subtags.empty())
             continue;
-        FeatBlkPtr fbp = new FeatBlk;
+        FeatBlk* fbp = new FeatBlk;
         fbp->spindex   = -1;
-        for (auto xipfeat = xip->subtags.begin(); xipfeat != xip->subtags.end(); ++xipfeat) {
-            if (xipfeat->tag == INSDFEATURE_KEY)
-                fbp->key = *XMLGetTagValue(entry, *xipfeat);
-            else if (xipfeat->tag == INSDFEATURE_LOCATION)
-                fbp->location_assign(*XMLGetTagValue(entry, *xipfeat));
-            else if (xipfeat->tag == INSDFEATURE_QUALS)
-                XMLGetQuals(entry, xipfeat->subtags, fbp->quals);
+        for (const auto& xipfeat : xip.subtags) {
+            if (xipfeat.tag == INSDFEATURE_KEY)
+                fbp->key = *XMLGetTagValue(entry, xipfeat);
+            else if (xipfeat.tag == INSDFEATURE_LOCATION)
+                fbp->location_assign(*XMLGetTagValue(entry, xipfeat));
+            else if (xipfeat.tag == INSDFEATURE_QUALS)
+                XMLGetQuals(entry, xipfeat.subtags, fbp->quals);
         }
         dbp = dbl.emplace_after(dbp, 0);
         dbp->SetFeatData(fbp);
