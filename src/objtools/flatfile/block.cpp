@@ -110,20 +110,6 @@ void DataBlk::deleteData()
     mData.emplace<monostate>();
 }
 
-void xFreeEntry(DataBlk* entry)
-{
-    delete entry;
-}
-
-/**********************************************************/
-
-EntryBlk::~EntryBlk()
-{
-    if (! chain.empty()) {
-        chain.clear();
-    }
-}
-
 /**********************************************************/
 static bool AccsCmp(const Indexblk* ibp1, const Indexblk* ibp2)
 {
@@ -166,7 +152,7 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
     size_t i;
     Int4   count;
     Int4   j;
-    Int4   k;
+    Uint4  k;
     Int4   l;
     Int2   m;
     Char   buf[1024];

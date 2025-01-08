@@ -1337,11 +1337,10 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    int                                        i = mParser.curindx;
-    unique_ptr<DataBlk, decltype(&xFreeEntry)> pEntry(nullptr, &xFreeEntry);
-    TEntryList                                 seq_entries;
-    bool                                       seq_long = false;
-    IndexblkPtr                                ibp      = mParser.entrylist[i];
+    int         i = mParser.curindx;
+    TEntryList  seq_entries;
+    bool        seq_long = false;
+    IndexblkPtr ibp      = mParser.entrylist[i];
 
     err_install(ibp, mParser.accver);
 
@@ -1353,7 +1352,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    pEntry.reset(LoadEntry(&mParser, ibp->offset, ibp->len));
+    unique_ptr<DataBlk> pEntry(LoadEntry(&mParser, ibp->offset, ibp->len));
     if (! pEntry) {
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
         NCBI_THROW(CException, eUnknown, "Unable to load entry");
