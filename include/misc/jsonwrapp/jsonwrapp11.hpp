@@ -2683,9 +2683,12 @@ inline std::string CJson_Schema::GetInvalidValueSchemaUri(void) const {
 inline std::string CJson_Schema::GetValidationError() const {
     std::string res;
     if (!IsValid()) {
+        rapidjson::StringBuffer sb1, sb2;
+        m_SchemaValidator.GetInvalidDocumentPointer().Stringify(sb1);
+        m_SchemaValidator.GetInvalidSchemaPointer().Stringify(sb2);
         res = "Invalid property \'"     + GetInvalidValueProperty()    +
-                "\' of value \'"        + GetInvalidValueDocumentUri() +
-                "\',  see schema at \'" + GetInvalidValueSchemaUri()   +
+                "\' of value \'"        + sb1.GetString()              +
+                "\',  see schema at \'" + sb2.GetString()              +
                 "\'";
     }
     return res;
