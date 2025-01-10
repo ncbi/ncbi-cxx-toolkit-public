@@ -39,8 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
-class CObjectOStream;
 
 namespace objects {
     class CEMBL_block;
@@ -48,7 +46,6 @@ namespace objects {
     class CBioSource;
     class CUser_object;
     class CSeqdesc;
-    class CSeq_entry;
 }
 
 class CEmbl2Asn : public CMappedInput2Asn
