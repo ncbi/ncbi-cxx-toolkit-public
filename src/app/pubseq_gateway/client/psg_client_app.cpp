@@ -47,15 +47,15 @@ struct SCommand
 {
     using TInit = function<void(CArgDescriptions&)>;
     using TRun = function<int(CPsgClientApp*, const CArgs&)>;
-    enum EFlags { eDefault, fHidden = 1 << 0, fParallel = 1 << 1 };
+    enum EFlags { eDefault, fHidden = 1 << 0, fParallel = 1 << 1, fNoApi = 1 << 2 };
 
     const string name;
     const string desc;
     TInit init;
     TRun run;
-    EFlags flags;
+    int flags;
 
-    SCommand(string n, string d, TInit i, TRun r, EFlags f) : name(n), desc(d), init(i), run(r), flags(f) {}
+    SCommand(string n, string d, TInit i, TRun r, int f) : name(n), desc(d), init(i), run(r), flags(f) {}
 };
 
 class CPsgClientApp : public CNcbiApplication
@@ -67,7 +67,7 @@ public:
 
 private:
     template <class TRequest>
-    static SCommand s_GetCommand(string name, string desc, SCommand::EFlags flags = SCommand::eDefault);
+    static SCommand s_GetCommand(string name, string desc, int flags = SCommand::eDefault);
 
     template <class TRequest>
     static void s_InitRequest(CArgDescriptions& arg_desc);
@@ -99,9 +99,9 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info", SCommand::fParallel),
             s_GetCommand<CPSG_Request_AccVerHistory> ("acc_ver_history", "Request accession version history"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
-            s_GetCommand<SInteractiveSchema>         ("interactive_schema", "Output JSON schema for JSON-RPC requests"),
+            s_GetCommand<SInteractiveSchema>         ("interactive_schema", "Output JSON schema for JSON-RPC requests", SCommand::fNoApi),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
-            s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
+            s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden | SCommand::fNoApi),
         })
 {
 }
@@ -116,7 +116,11 @@ void CPsgClientApp::Init()
     for (const auto& command : m_Commands) {
         unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
         arg_desc->SetUsageContext("", command.desc);
-        s_InitPsgOptions(*arg_desc);
+
+        if (~command.flags & SCommand::fNoApi) {
+            s_InitPsgOptions(*arg_desc);
+        }
+
         command.init(*arg_desc);
         const auto hidden = command.flags & SCommand::fHidden;
         const auto flags = hidden ? CCommandArgDescriptions::eHidden : CCommandArgDescriptions::eDefault;
@@ -134,7 +138,11 @@ int CPsgClientApp::Run()
     for (const auto& command : m_Commands) {
         if (command.name == name) {
             const bool parallel = command.flags & SCommand::fParallel;
-            s_SetPsgDefaults(args, parallel);
+
+            if (~command.flags & SCommand::fNoApi) {
+                s_SetPsgDefaults(args, parallel);
+            }
+
             return command.run(this, args);
         }
     }
@@ -651,7 +659,7 @@ int CPsgClientApp::RunRequest<SJsonCheck>(const CArgs& args)
 }
 
 template <class TRequest>
-SCommand CPsgClientApp::s_GetCommand(string name, string desc, SCommand::EFlags flags)
+SCommand CPsgClientApp::s_GetCommand(string name, string desc, int flags)
 {
     return { std::move(name), std::move(desc), s_InitRequest<TRequest>, s_RunRequest<TRequest>, flags };
 }
