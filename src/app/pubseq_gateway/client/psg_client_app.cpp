@@ -82,6 +82,7 @@ private:
 };
 
 struct SInteractive {};
+struct SInteractiveSchema {};
 struct SPerformance {};
 struct SJsonCheck {};
 
@@ -98,6 +99,7 @@ CPsgClientApp::CPsgClientApp() :
             s_GetCommand<CPSG_Request_IpgResolve>    ("ipg_resolve", "Request IPG info", SCommand::fParallel),
             s_GetCommand<CPSG_Request_AccVerHistory> ("acc_ver_history", "Request accession version history"),
             s_GetCommand<SInteractive>               ("interactive", "Interactive JSON-RPC mode", SCommand::fParallel),
+            s_GetCommand<SInteractiveSchema>         ("interactive_schema", "Output JSON schema for JSON-RPC requests"),
             s_GetCommand<SPerformance>               ("performance", "Performance testing", SCommand::fHidden),
             s_GetCommand<SJsonCheck>                 ("json_check",  "JSON document validate", SCommand::fHidden),
         })
@@ -297,6 +299,12 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
     arg_desc.SetDependency("preview-size", CArgDescriptions::eRequires, "data-limit");
+}
+
+template<>
+void CPsgClientApp::s_InitRequest<SInteractiveSchema>(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddDefaultKey("output-file", "FILENAME", "Output file to contain schema", CArgDescriptions::eOutputFile, "-");
 }
 
 template <>
@@ -616,6 +624,14 @@ int CPsgClientApp::RunRequest<SInteractive>(const CArgs& args)
     }
 
     return CProcessing::ParallelProcessing(params_builder);
+}
+
+template<>
+int CPsgClientApp::RunRequest<SInteractiveSchema>(const CArgs& args)
+{
+    SIoRedirector ior(cout, args["output-file"].AsOutputFile());
+    CProcessing::RequestSchema().Write(cout);
+    return 0;
 }
 
 template <>
