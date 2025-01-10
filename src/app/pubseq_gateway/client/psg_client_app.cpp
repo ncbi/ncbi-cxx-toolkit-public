@@ -312,8 +312,9 @@ void CPsgClientApp::s_InitRequest<SPerformance>(CArgDescriptions& arg_desc)
 template <>
 void CPsgClientApp::s_InitRequest<SJsonCheck>(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOptionalKey("schema-file", "FILENAME", "JSON-RPC schema file (built-in by default)", CArgDescriptions::eInputFile);
-    arg_desc.AddDefaultKey("input-file", "FILENAME", "JSON-RPC requests file (one per line)", CArgDescriptions::eInputFile, "-");
+    arg_desc.AddOptionalKey("schema-file", "FILENAME", "JSON schema file (default: schema for JSON-RPC requests)", CArgDescriptions::eInputFile);
+    arg_desc.AddDefaultKey("input-file", "FILENAME", "JSON file", CArgDescriptions::eInputFile, "-");
+    arg_desc.AddFlag("single-doc", "Treat input as a single JSON document (instead of one per line)");
 }
 
 void s_SetPsgDefaults(const CArgs& args, bool parallel)
@@ -628,8 +629,9 @@ template <>
 int CPsgClientApp::RunRequest<SJsonCheck>(const CArgs& args)
 {
     const auto& schema = args["schema-file"];
+    const auto single_doc = args["single-doc"].HasValue();
     SIoRedirector ior(cin, args["input-file"].AsInputFile());
-    return CProcessing::JsonCheck(schema.HasValue() ? &schema.AsInputFile() : nullptr);
+    return CProcessing::JsonCheck(schema.HasValue() ? &schema.AsInputFile() : nullptr, single_doc);
 }
 
 template <class TRequest>

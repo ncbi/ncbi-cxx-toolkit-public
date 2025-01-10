@@ -1363,10 +1363,10 @@ int CProcessing::Performance(const SPerformanceParams& params)
     return 0;
 }
 
-bool CProcessing::ReadLine(string& line, istream& is)
+bool CProcessing::ReadLine(string& line, istream& is, bool single_doc)
 {
     for (;;) {
-        if (!getline(is, line)) {
+        if (single_doc ? !getline(is, line, '\x00') : !getline(is, line)) {
             return false;
         } else if (!line.empty()) {
             return true;
@@ -1483,7 +1483,7 @@ void SInteractiveNewRequestStart::SExtra::Print(const string& prefix, CJson_Cons
     };
 }
 
-int CProcessing::JsonCheck(istream* schema_is)
+int CProcessing::JsonCheck(istream* schema_is, bool single_doc)
 {
     CJson_Document schema_doc;
 
@@ -1503,21 +1503,24 @@ int CProcessing::JsonCheck(istream* schema_is)
     string line;
     size_t line_no = 0;
     int rv = 0;
+    auto cout_prefix = [&](const auto p) -> auto& { cout << p; if (!single_doc) cout << " (" << line_no << ")"; return cout; };
 
-    while (ReadLine(line)) {
+    while (ReadLine(line, cin, single_doc)) {
         CJson_Document input_doc;
         ++line_no;
 
         if (!input_doc.ParseString(line)) {
-            cout << "Error on reading JSON document (" << line_no << "): " << input_doc.GetReadError() << endl;
+            cout_prefix("Error on reading JSON document") << ": " << input_doc.GetReadError() << endl;
             if (rv == 0) rv = -2;
         } else if (schema.Validate(input_doc)) {
-            cout << "JSON document (" << line_no << ") is valid" << endl;
+            cout_prefix("JSON document") << " is valid" << endl;
         } else {
-            cout << "Error on validating JSON document (" << line_no << "): " << schema.GetValidationError() << endl;
+            cout_prefix("Error on validating JSON document") << ": " << schema.GetValidationError() << endl;
             if (rv == 0) rv = -3;
         }
     }
+
+    if (single_doc) return rv;
 
     cout << line_no << " JSON document(s) have been checked" << endl;
     return rv;
