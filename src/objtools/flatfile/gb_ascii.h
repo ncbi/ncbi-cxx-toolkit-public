@@ -41,13 +41,10 @@
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
-class CObjectOStream;
 class DataBlk;
 
 namespace objects {
     class CBioseq;
-    class CSeq_entry;
 }
 
 class CGenbank2Asn : public CMappedInput2Asn
