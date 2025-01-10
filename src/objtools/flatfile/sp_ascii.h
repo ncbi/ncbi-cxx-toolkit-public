@@ -74,12 +74,6 @@ using SPFeatTypePtr = SPFeatType*;
  */
 BEGIN_NCBI_SCOPE
 
-class CObjectOStream;
-
-namespace objects {
-    class CSeq_entry;
-}
-
 class CSwissProt2Asn : public CMappedInput2Asn
 {
 public:

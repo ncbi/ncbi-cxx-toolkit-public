@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class Parser;
+struct Parser;
 class CObjectOStream;
 namespace objects {
     class CSeq_entry;
