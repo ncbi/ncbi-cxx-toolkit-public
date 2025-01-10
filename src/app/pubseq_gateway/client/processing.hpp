@@ -332,7 +332,7 @@ public:
     template <class TParams>
     static int ParallelProcessing(const TParams& params, istream& is = cin);
     static int Performance(const SPerformanceParams& params);
-    static int JsonCheck(istream* schema_is);
+    static int JsonCheck(istream* schema_is, bool single_doc);
 
     static CJson_Document RequestSchema();
 
@@ -340,7 +340,7 @@ private:
     template <class TCreateContext>
     static vector<shared_ptr<CPSG_Request>> ReadCommands(TCreateContext create_context, size_t report_progress_after = 0);
 
-    static bool ReadLine(string& line, istream& is = cin);
+    static bool ReadLine(string& line, istream& is = cin, bool single_doc = false);
     static CParallelProcessing<SBatchResolveParams> CreateParallelProcessing(const SBatchResolveParams& params);
     static CParallelProcessing<TIpgBatchResolveParams> CreateParallelProcessing(const TIpgBatchResolveParams& params);
     static CParallelProcessing<SInteractiveParams> CreateParallelProcessing(const SInteractiveParams& params);
