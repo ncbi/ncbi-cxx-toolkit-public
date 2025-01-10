@@ -18,6 +18,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import xml.etree.ElementTree as ET
@@ -766,6 +767,33 @@ class Processor:
         self._total = 0
         self._data = json.loads(''.join(filter(lambda l: l.lstrip()[:1] not in ['#', ''], args.input_file)))
 
+        if args.json_validate:
+            self._validate()
+
+    def _validate(self):
+        result = subprocess.run([args.binary, 'interactive_schema'], text=True, capture_output=True)
+        schema = json.loads(result.stdout)
+
+        # Remove old body
+        del schema['oneOf']
+
+        # Add definitions, overwrite anything else
+        for key, value in testcases_schema_addon().items():
+            if key == 'definitions':
+                schema[key].update(value)
+            else:
+                schema[key] = value
+
+        with tempfile.NamedTemporaryFile(mode='w+') as schema_file:
+            json.dump(schema, schema_file)
+            schema_file.seek(0)
+            cmd = [args.binary, 'json_check', '-schema-file', schema_file.name, '-single-doc']
+
+            try:
+                subprocess.run(cmd, input=json.dumps(self._data), check=True, text=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
+                sys.exit(f'"{args.input_file.name}" failed JSON schema validation:\n{e.stdout}')
+
     def _get_cond_filter(self, /, require=True):
         return lambda tags, cond: not (require or tags) or not cond or eval(cond)
 
@@ -1260,6 +1288,243 @@ def log2json_cmd(args):
     for i, m in enumerate(filter(None, map(match, sys.stdin)), start=1):
         print('{"jsonrpc": "2.0", "method": "raw", "params": {"abs_path_ref": "' + m[1] + '"}, "id": "raw_' + str(i) + '"}')
 
+def testcases_schema_addon():
+    return {
+            'definitions': {
+                'env': {
+                    '$id': '#env',
+                    'type': 'object'
+                },
+                'message': {
+                    '$id': '#message',
+                    'properties': {
+                        'severity': {
+                            'type': 'string'
+                        },
+                        'code': {
+                            'type': 'number'
+                        },
+                        'text': {
+                            'type': 'string'
+                        },
+                    },
+                    'additionalProperties': False,
+                    'required': [
+                        'severity',
+                        'code',
+                        'text'
+                    ]
+                },
+                'messages': {
+                    '$id': '#messages',
+                    'type': 'array',
+                    'items': {
+                        '$ref': '#/definitions/message'
+                    }
+                },
+                'reply': {
+                    '$id': '#reply',
+                    'type': 'object',
+                    'properties': {
+                        'status': {
+                            'type': 'string'
+                        },
+                        'messages': {
+                            '$ref': '#/definitions/messages'
+                        }
+                    },
+                    'additionalProperties': False,
+                    'required': [
+                        'status'
+                    ]
+                },
+                'reply_item': {
+                    '$id': '#reply_item',
+                    'type': 'object',
+                    'properties': {
+                        'reply': {
+                            'type': 'string'
+                        },
+                        'status': {
+                            'type': 'string'
+                        },
+                        'messages': {
+                            '$ref': '#/definitions/messages'
+                        }
+                    },
+                    'required': [
+                        'reply'
+                    ]
+                },
+                'requests': {
+                    '$id': '#requests',
+                    'type': 'array',
+                    'items': {
+                        'type': 'array',
+                        'items': {
+                            'oneOf': [
+                                {
+                                    '$ref': '#/definitions/biodata'
+                                },
+                                {
+                                    '$ref': '#/definitions/blob'
+                                },
+                                {
+                                    '$ref': '#/definitions/resolve'
+                                },
+                                {
+                                    '$ref': '#/definitions/named_annot'
+                                },
+                                {
+                                    '$ref': '#/definitions/chunk'
+                                },
+                                {
+                                    '$ref': '#/definitions/ipg_resolve'
+                                },
+                                {
+                                    '$ref': '#/definitions/raw'
+                                }
+                            ]
+                        }
+                    }
+                },
+                'response': {
+                    '$id': '#response',
+                    'type': 'array',
+                    'items': {
+                        'oneOf': [
+                            {
+                                '$ref': '#/definitions/response_item'
+                            },
+                            {
+                                'type': 'null'
+                            }
+                        ]
+                    }
+                },
+                'response_item': {
+                    '$id': '#response_item',
+                    'type': 'object',
+                    'properties': {
+                        'jsonrpc': {
+                            '$ref': '#/definitions/jsonrpc'
+                        },
+                        'id': {
+                            '$ref': '#/definitions/id'
+                        },
+                        'result': {
+                            'oneOf': [
+                                {
+                                    '$ref': '#/definitions/reply_item'
+                                },
+                                {
+                                    '$ref': '#/definitions/reply'
+                                },
+                                {
+                                    'type': 'null'
+                                }
+                            ]
+                        }
+                    },
+                    'required': [
+                        'jsonrpc',
+                        'id',
+                        'result'
+                    ]
+                },
+                'run': {
+                    '$id': '#run',
+                    'type': 'object',
+                    'properties': {
+                        'env': {
+                            '$ref': '#/definitions/env'
+                        },
+                        'exclude': {
+                            '$ref': '#/definitions/tags'
+                        },
+                        'require': {
+                            '$ref': '#/definitions/tags'
+                        },
+                        'sub-runs': {
+                            '$ref': '#/definitions/sub_runs'
+                        },
+                        'timeout': {
+                            '$ref': '#/definitions/timeout'
+                        },
+                        'user_args': {
+                            '$ref': '#/definitions/user_args'
+                        }
+                    },
+                    'additionalProperties': False
+                },
+                'sub_runs': {
+                    '$id': '#sub_runs',
+                    'type': 'array',
+                    'items': {
+                        'type': 'string'
+                    }
+                },
+                'tags': {
+                    '$id': '#tags',
+                    'type': 'array',
+                    'items': {
+                        'type': 'string'
+                    }
+                },
+                'testcase': {
+                    '$id': '#testcase',
+                    'type': 'object',
+                    'properties': {
+                        'description': {
+                            'type': 'string'
+                        },
+                        'env': {
+                            '$ref': '#/definitions/env'
+                        },
+                        'requests': {
+                            '$ref': '#/definitions/requests'
+                        },
+                        'response': {
+                            '$ref': '#/definitions/response'
+                        },
+                        'tags': {
+                            '$ref': '#/definitions/tags'
+                        },
+                        'timeout': {
+                            '$ref': '#/definitions/timeout'
+                        }
+                    },
+                    'additionalProperties': False,
+                    'required': [
+                        'requests'
+                    ]
+                },
+                'timeout': {
+                    '$id': '#timeout',
+                    'type': 'number'
+                }
+            },
+            'properties': {
+                'runs': {
+                    'type': 'object',
+                    'patternProperties': {
+                        '.*' : {
+                            '$ref': '#/definitions/run'
+                        }
+                    }
+                },
+                'testcases': {
+                    'type': 'object',
+                    'patternProperties': {
+                        '.*' : {
+                            '$ref': '#/definitions/testcase'
+                        }
+                    }
+                }
+            },
+            'additionalProperties': False
+        }
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
@@ -1299,6 +1564,7 @@ if __name__ == '__main__':
     parser_testcases.add_argument('-verbose', '-v', help='Verbose output (multiple are allowed)', action='count', default=0)
     parser_testcases.add_argument('-no-one-server-opt', help=argparse.SUPPRESS, dest='one_server', action='store_false')
     parser_testcases.add_argument('-no-testing-opt', help=argparse.SUPPRESS, dest='testing', action='store_false')
+    parser_testcases.add_argument('-no-json-validate', help=argparse.SUPPRESS, dest='json_validate', action='store_false')
 
     parser_generate = subparsers.add_parser('generate', help='Generate JSON-RPC requests for psg_client', description='Generate JSON-RPC requests for psg_client')
     parser_generate.set_defaults(func=generate_cmd)
