@@ -92,7 +92,8 @@ BOOST_AUTO_TEST_CASE(Test_HugeFileProcess)
 
 
 BOOST_AUTO_TEST_CASE(Test_RemoteSequences)
-{
+{   // RW-2308 - This test demonstrates why huge mode differs from traditional mode
+    // in an usual validator corner case
     string filename = "./huge_asn_test_files/AL592437.sqn";
     CRef<CHugeAsnReader> pReader;
     {
