@@ -46,7 +46,7 @@
 //
 //#define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
-
+#include <corelib/ncbistre.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -54,6 +54,8 @@
 #include <objtools/huge_asn/huge_asn_reader.hpp>
 #include <objtools/huge_asn/huge_asn_loader.hpp>
 #include <objtools/huge_asn/huge_file_process.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objmgr/feat_ci.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -86,5 +88,64 @@ BOOST_AUTO_TEST_CASE(Test_HugeFileProcess)
     pReader->GetNextBlob();
     pReader->FlattenGenbankSet();
     BOOST_CHECK_EQUAL(pReader->GetTopIds().size(),3);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RemoteSequences)
+{
+    string filename = "./huge_asn_test_files/AL592437.sqn";
+    CRef<CHugeAsnReader> pReader;
+    {
+        CHugeFileProcess process;
+        process.Open(filename);
+        pReader.Reset(&process.GetReader());
+    }
+    pReader->GetNextBlob();
+    pReader->FlattenGenbankSet();
+
+    { // Register Genbank data loader
+        CGBLoaderParams params;
+        CGBDataLoader::RegisterInObjectManager(
+                *(CObjectManager::GetInstance()), 
+                params,
+                CObjectManager::eDefault,
+                16000);
+    }
+
+    // Feature locations in the input file reference this Genbank record
+    // However, this record doesn't have any features.
+    auto pRemoteId = Ref(new CSeq_id());
+    pRemoteId->SetGi(17017835);
+
+    {   
+        // Register huge file data loader
+        edit::CHugeAsnDataLoader::RegisterInObjectManager(
+            *(CObjectManager::GetInstance()), filename, pReader.GetPointer(), CObjectManager::eNonDefault, 1); 
+
+
+        auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+        pScope->AddDefaults();
+        pScope->AddDataLoader(filename);
+
+        auto bsh = pScope->GetBioseqHandle(*pRemoteId);
+        CFeat_CI cit(bsh);
+        BOOST_CHECK(!cit); // No feature found
+    }
+
+    // In this case, CFeat_CI(bsh) returns a valid iterator.
+    {
+        auto pEntry = Ref(new CSeq_entry());
+        CNcbiIfstream ifstr(filename);
+        ifstr >> MSerial_AsnText >> *pEntry;
+
+        auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+        pScope->AddDefaults();
+        pScope->AddTopLevelSeqEntry(*pEntry);
+
+        // retrieve the bioseq handle for 17017835
+        auto bsh = pScope->GetBioseqHandle(*pRemoteId);
+        CFeat_CI cit(bsh);
+        BOOST_CHECK(cit); // Feature found
+    }
 }
 
