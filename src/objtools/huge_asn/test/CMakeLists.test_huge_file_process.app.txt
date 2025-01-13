@@ -3,7 +3,7 @@
 NCBI_begin_app(test_huge_file_process)
   NCBI_sources(test_huge_file_process)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(xhugeasn xobjwrite)
+  NCBI_uses_toolkit_libraries(xhugeasn xobjwrite ncbi_xreader ncbi_xloader_genbank)
   NCBI_set_test_assets(huge_asn_test_files)
   NCBI_add_test()
   NCBI_project_watchers(gotvyans foleyjp)

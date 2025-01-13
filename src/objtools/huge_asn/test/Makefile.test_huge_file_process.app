@@ -5,7 +5,7 @@
 APP = test_huge_file_process
 SRC = test_huge_file_process
 
-LIB = xhugeasn xobjread xlogging xutil test_boost $(SOBJMGR_LIBS)
+LIB = xhugeasn xobjread xlogging xutil test_boost $(SOBJMGR_LIBS) ncbi_xreader ncbi_xloader_genbank
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)

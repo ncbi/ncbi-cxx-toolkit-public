@@ -67,6 +67,9 @@ CRef<feature::CFeatTree> CGeneCache::GetFeatTreeFromCache(CBioseq_Handle bsh)
         // test: only keep the last one
         m_SeqTreeMap.clear();
         CFeat_CI f(bsh);
+        if (!f) {
+            return CRef<feature::CFeatTree>();
+        }
         CRef<feature::CFeatTree> tr(new feature::CFeatTree(f));
         m_SeqTreeMap[bsh] = tr;
         return tr;

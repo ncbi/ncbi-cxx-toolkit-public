@@ -5660,6 +5660,10 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial(const CMappedFeat& f
 
         // gene is ok if its partialness matches the overlapping coding region or mRNA
         CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        if (! tr) {
+            return false;
+        }
+
         vector<CMappedFeat> children = tr->GetChildren(feat);
         ITERATE(vector<CMappedFeat>, it, children) {
             if ((it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA || it->GetData().IsCdregion()) &&
@@ -5675,7 +5679,12 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial(const CMappedFeat& f
         TSeqPos mrna_start = feat.GetLocation().GetStart(eExtreme_Biological);
         TSeqPos mrna_stop = feat.GetLocation().GetStop(eExtreme_Biological);
 
-        vector<CMappedFeat> cds_children = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_CurrentHandle)->GetChildren(feat);
+        auto tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_CurrentHandle);
+        if (! tr) {
+            return false;
+        }
+
+        vector<CMappedFeat> cds_children = tr->GetChildren(feat);
         if (cds_children.size() > 0) {
             look_for_gene = false;
             for (auto it = cds_children.begin(); it != cds_children.end(); it++) {
@@ -5709,6 +5718,9 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial(const CMappedFeat& f
     } else if (feat.GetData().IsCdregion()) {
         // coding region is ok if same as mRNA AND partial at splice site or gap
         CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        if (! tr) {
+            return false;
+        }
         CMappedFeat mrna = tr->GetParent(feat, CSeqFeatData::eSubtype_mRNA);
         if (mrna) {
             const CSeq_loc& mrna_loc = mrna.GetLocation();
@@ -5724,6 +5736,9 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial(const CMappedFeat& f
         // exon is ok if its partialness and endpoint matches the mRNA endpoint
 #ifdef USE_FEAT_TREE_FOR_EXON
         CRef<feature::CFeatTree> tr = m_Imp.GetGeneCache().GetFeatTreeFromCache(feat.GetLocation(), *m_Scope);
+        if (! tr) {
+            return false;
+        }
         CMappedFeat mrna = tr->GetParent(feat, CSeqFeatData::eSubtype_mRNA);
         if (mrna) {
             const CSeq_loc& mrna_loc = mrna.GetLocation();
