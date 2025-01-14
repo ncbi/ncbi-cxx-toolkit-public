@@ -264,8 +264,10 @@ enum
 #define CS_PORT CS_PORT
 	CS_CLIENTCHARSET = 9301,
 #define CS_CLIENTCHARSET CS_CLIENTCHARSET
-	CS_DATABASE = 9302
+        CS_DATABASE = 9302,
 #define CS_DATABASE CS_DATABASE
+        CS_PRODUCT_NAME = 9304 /* 9303 assigned in upstream trunk */
+#define CS_PRODUCT_NAME CS_PRODUCT_NAME
 };
 
 /* Arbitrary precision math operators */
