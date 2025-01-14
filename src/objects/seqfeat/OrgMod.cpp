@@ -845,6 +845,34 @@ bool COrgMod::IsStrainValid(const string& strain)
 }
 
 
+const char* sm_BadIsolateValues[] = {
+    "yes",
+    "no",
+    "-",
+    "bacteria",
+    "sp.",
+    "sp",
+    "isolate",
+    "environmental",
+    "soil",
+    "clinical isolate",
+    "NA",
+    "whole organism",
+    "microbial"
+};
+
+bool COrgMod::IsIsolateValid(const string& isolate)
+{
+    size_t max = sizeof(sm_BadIsolateValues) / sizeof(const char*);
+    for (size_t i = 0; i < max; i++) {
+        if (NStr::EqualNocase(isolate, sm_BadIsolateValues[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 const char* sm_KnownHostWords[] = {
   "alfalfa",
   "almond",

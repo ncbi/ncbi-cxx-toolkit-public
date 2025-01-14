@@ -2012,6 +2012,11 @@ const CSeq_entry *ctx)
                 if (omd.IsSetSubname()) {
                     string str = omd.GetSubname();
                     isolate = str;
+                    if (!COrgMod::IsIsolateValid(str)) {
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrgModValueInvalid,
+                            "Orgmod.isolate should not be '" + str + "'",
+                            obj, ctx);
+                    }
                 }
                 if (has_isolate && check_multiple_isolates) {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MultipleIsolates,
