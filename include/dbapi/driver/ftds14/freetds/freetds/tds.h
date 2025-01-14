@@ -1053,6 +1053,7 @@ typedef struct tds_multiple
 /* forward declaration */
 typedef struct tds_context TDSCONTEXT;
 typedef int (*err_handler_t) (const TDSCONTEXT *, TDSSOCKET *, TDSMESSAGE *);
+typedef int (*int_handler_t) (void *);
 
 struct tds_context
 {

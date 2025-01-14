@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(ct14_timeout)
+  NCBI_sources(timeout common)
+  NCBI_add_test(test-ct14 ct14_timeout)
+NCBI_end_app()
+

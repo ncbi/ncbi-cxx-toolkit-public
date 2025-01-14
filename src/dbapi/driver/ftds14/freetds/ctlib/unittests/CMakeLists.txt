@@ -11,7 +11,7 @@ NCBI_add_app(
   get_send_data rpc_ct_param rpc_ct_setparam ct_diagclient
   ct_diagserver ct_diagall cs_config cancel blk_in blk_out ct_cursor
   ct_cursors ct_dynamic blk_in2 datafmt rpc_fail row_count all_types
-  long_binary will_convert variant
+  long_binary will_convert variant timeout
 )
 
 NCBI_project_watchers(ucko satskyse)
