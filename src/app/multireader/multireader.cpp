@@ -137,7 +137,7 @@ class CMultiReaderApp
 public:
     CMultiReaderApp(): m_uFormat(CFormatGuess::eUnknown), m_pErrors(nullptr)
     {
-        SetVersion(CVersionInfo(1, 0, 2));
+        SetVersion(CVersionInfo(1, NCBI_SC_VERSION_PROXY, NCBI_TEAMCITY_BUILD_NUMBER_PROXY));
     }
 
     // Create quick simple messages
