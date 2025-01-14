@@ -50,7 +50,9 @@ inline int close(int fd)
 #  include <unistd.h>
 #endif
 
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE) \
+    &&  ( !defined(CS_ENDPOINT)  ||  !defined(CS_INT_CANCEL) \
+          ||  !defined(CS_PRODUCT_NAME) )
 #  include "config.h"
 #  include <ctlib.h>
 #  ifndef tds_conn
@@ -59,6 +61,11 @@ inline int close(int fd)
 #    else
 #      define tds_conn(x) (x)
 #    endif
+#  endif
+#  ifndef CS_INT_CANCEL
+#    define CS_INT_CONTINUE TDS_INT_CONTINUE
+#    define CS_INT_CANCEL   TDS_INT_CANCEL
+#    define CS_INT_TIMEOUT  TDS_INT_TIMEOUT
 #  endif
 #endif
 
@@ -79,8 +86,15 @@ namespace NCBI_NS_FTDS_CTLIB
 CDBConnParams::EServerType 
 GetTDSServerType(CS_CONNECTION* conn)
 {
-    if (conn != NULL && conn->tds_socket != NULL) {
-        const char* product = tds_conn(conn->tds_socket)->product_name;
+    if (conn != NULL) {
+#ifdef CS_PRODUCT_NAME
+        char product[CS_MAX_NAME] = "";
+        ct_con_props(conn, CS_GET, CS_PRODUCT_NAME, product, sizeof(product),
+                     NULL);
+#else
+        const char* product = conn->tds_socket == NULL ? NULL :
+            tds_conn(conn->tds_socket)->product_name;
+#endif
 
         if (product != NULL && strlen(product) != 0) {
             if (strcmp(product, "sql server") == 0) {
@@ -638,11 +652,14 @@ CTL_Connection::CancelFinished(size_t was_timeout)
 I_ConnectionExtra::TSockHandle
 CTL_Connection::GetLowLevelHandle(void) const
 {
-#ifdef FTDS_IN_USE
-    return tds_conn(x_GetSybaseConn()->tds_socket)->s;
-#else
-    return impl::CConnection::GetLowLevelHandle();
+    int fd = impl::CConnection::GetLowLevelHandle();
+#ifdef CS_ENDPOINT
+    // Check(...)
+    ct_con_props(x_GetSybaseConn(), CS_GET, CS_ENDPOINT, &fd, CS_UNUSED, 0);
+#elif defined(FTDS_IN_USE)
+    fd = tds_conn(x_GetSybaseConn()->tds_socket)->s;
 #endif
+    return fd;
 }
 
 
@@ -1479,22 +1496,12 @@ bool CTL_Connection::x_IsLegacyBlobColumnType(const string& table_name,
 
 bool CTL_Connection::Abort()
 {
-#ifdef CS_ENDPOINT
-    int fd = -1;
-
-    if(Check(ct_con_props(x_GetSybaseConn(),
-                          CS_GET,
-                          CS_ENDPOINT,
-                          &fd,
-                          CS_UNUSED,
-                          0)) == CS_SUCCEED) {
-        if(fd >= 0) {
-            close(fd);
-            MarkClosed();
-            return true;
-        }
+    int fd = GetLowLevelHandle();
+    if (fd >= 0) {
+        close(fd);
+        MarkClosed();
+        return true;
     }
-#endif
 
     return false;
 }
@@ -1593,7 +1600,7 @@ int CTL_Connection::x_IntHandler(void* param)
     CS_CONNECTION*  con = static_cast<CS_CONNECTION*>(param);
     CS_INT          outlen;
     CTL_Connection* ctl_conn = NULL;
-    int             result = TDS_INT_CONTINUE;
+    int             result = CS_INT_CONTINUE;
     if (con != NULL
         &&  ct_con_props(con, CS_GET, CS_USERDATA, (void*) &ctl_conn,
                          (CS_INT) sizeof(ctl_conn), &outlen) == CS_SUCCEED
@@ -1609,7 +1616,7 @@ int CTL_Connection::x_IntHandler(void* param)
                 // 1 sec. It is memorized here to break the poll() loop later
                 // on in the CTLibContext::CTLIB_cterr_handler()
                 ctl_conn->SetCancelTimedOut(true);
-                return TDS_INT_CANCEL;
+                return CS_INT_CANCEL;
             }
         }
 
@@ -1624,16 +1631,16 @@ int CTL_Connection::x_IntHandler(void* param)
             max_timeout = ctl_conn->GetCTLibContext().GetLoginTimeout();
         }
         if (ctl_conn->m_AsyncCancelRequested) {
-            result = TDS_INT_CANCEL;
+            result = CS_INT_CANCEL;
         } else if (ctl_conn->m_OrigIntHandler != NULL) {
             LOCK.Release();
             result = (*ctl_conn->m_OrigIntHandler)(param);
         } else if (max_timeout > 0
                    &&  ctl_conn->m_TotalTimeout - ctl_conn->m_BaseTimeout
                        >= max_timeout) {
-            result = TDS_INT_CANCEL;
+            result = CS_INT_CANCEL;
         }
-        if (result == TDS_INT_CANCEL) {
+        if (result == CS_INT_CANCEL) {
             if (cmd != NULL) {
                 ctl_conn->m_AsyncCancelAllowed = false;
                 LOCK.Release();
@@ -1652,7 +1659,7 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
     CFastMutexGuard LOCK(ctl_conn->m_AsyncCancelMutex);
     ctl_conn->m_TotalTimeout = total_timeout; // for use by DeferTimeout
     if (ctl_conn->m_AsyncCancelRequested) {
-        return TDS_INT_CANCEL;
+        return CS_INT_CANCEL;
     } else if (ctl_conn->m_OrigTimeoutFunc != NULL  &&
                total_timeout - ctl_conn->m_BaseTimeout
                >= ctl_conn->m_OrigTimeout) {
@@ -1661,7 +1668,7 @@ int CTL_Connection::x_TimeoutFunc(void* param, unsigned int total_timeout)
         return (*ctl_conn->m_OrigTimeoutFunc)(ctl_conn->m_OrigTimeoutParam,
                                               total_timeout);
     } else {
-        return TDS_INT_CONTINUE;
+        return CS_INT_CONTINUE;
     }
 }
 #  endif
