@@ -54,7 +54,7 @@
 #  include <unistd.h>
 #endif
 
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE)  &&  !defined(CS_INTERRUPT_CB)
 #  include "config.h"
 #  include <ctlib.h>
 #endif
@@ -670,7 +670,13 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
 
     
 #if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+#  ifdef CS_INTERRUPT_CB
+    FIntHandler int_handler;
+    Check(ct_callback(CTLIB_GetContext(), NULL, CS_GET, CS_INTERRUPT_CB,
+                      &int_handler) == CS_SUCCEED);
+#  else
     FIntHandler& int_handler = m_Context->tds_ctx->int_handler;
+#  endif
     static FIntHandler s_DefaultIntHandler;
     if (int_handler == &CTL_Connection::x_IntHandler) {
         m_OrigIntHandler = s_DefaultIntHandler;
@@ -679,7 +685,12 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
             s_DefaultIntHandler = int_handler;
         }
         m_OrigIntHandler = int_handler;
+#  ifdef CS_INTERRUPT_CB
+        Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET, CS_INTERRUPT_CB,
+                          (CS_VOID*) int_handler) == CS_SUCCEED);
+#  else
         int_handler = &CTL_Connection::x_IntHandler;
+#  endif
     }
 #endif
 
@@ -994,7 +1005,14 @@ CTLibContext::x_Close(bool delete_conn)
                     }
 
 #if defined(FTDS_IN_USE)  &&  NCBI_FTDS_VERSION >= 95
+#  ifdef CS_INTERRUPT_CB
+                    Check(ct_callback(CTLIB_GetContext(), NULL, CS_SET,
+                                      CS_INTERRUPT_CB,
+                                      (CS_VOID*) m_OrigIntHandler)
+                          == CS_SUCCEED);
+#  else
                     m_Context->tds_ctx->int_handler = m_OrigIntHandler;
+#  endif
 #endif
 
                     Check(cs_ctx_drop(CTLIB_GetContext()));
