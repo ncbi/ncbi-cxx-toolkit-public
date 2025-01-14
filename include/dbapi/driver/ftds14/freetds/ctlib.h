@@ -29,18 +29,6 @@
  * Internal (not part of the exposed API) prototypes and such.
  */
 
-/* Forward declarations to fix "declared with greater visibility" warnings */
-struct _cs_dynamic;
-struct _cs_param;
-struct _csremote_proc;
-struct cs_diag_msg;
-struct cs_diag_msg_client;
-struct cs_diag_msg_svr;
-struct cs_servermsg_common1;
-struct cs_servermsg_large;
-struct cs_servermsg_small;
-union cs_servermsg_internal;
-
 #include <freetds/pushvis.h>
 
 #ifdef __cplusplus
@@ -73,7 +61,7 @@ struct cs_diag_msg_client
 	CS_CLIENTMSG clientmsg;
 };
 
-typedef struct cs_servermsg_small {
+typedef struct {
 	CS_MSGNUM msgnumber;
 	CS_INT state;
 	CS_INT severity;
@@ -89,7 +77,7 @@ typedef struct cs_servermsg_small {
 	CS_INT sqlstatelen;
 } CS_SERVERMSG_SMALL;
 
-typedef struct cs_servermsg_large {
+typedef struct {
 	CS_MSGNUM msgnumber;
 	CS_INT state;
 	CS_INT severity;
@@ -105,7 +93,7 @@ typedef struct cs_servermsg_large {
 	CS_INT sqlstatelen;
 } CS_SERVERMSG_LARGE;
 
-typedef struct cs_servermsg_common1 {
+typedef struct {
 	CS_MSGNUM msgnumber;
 	CS_INT state;
 	CS_INT severity;
@@ -120,7 +108,7 @@ typedef struct {
 	CS_INT sqlstatelen;
 } CS_SERVERMSG_COMMON2;
 
-typedef union cs_servermsg_internal
+typedef union
 {
 	CS_SERVERMSG_SMALL small;
 	CS_SERVERMSG_LARGE large;
