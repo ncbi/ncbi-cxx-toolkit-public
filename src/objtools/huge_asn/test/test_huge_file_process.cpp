@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoteSequences)
     // Feature locations in the input file reference this Genbank record
     // However, this record doesn't have any features.
     auto pRemoteId = Ref(new CSeq_id());
-    pRemoteId->SetGi(17017835);
+    pRemoteId->SetGi(GI_CONST(17017835));
 
     {   
         // Register huge file data loader
