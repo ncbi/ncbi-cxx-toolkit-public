@@ -121,10 +121,9 @@ void xinstall_gbparse_range_func(void* data, X_gbparse_rangefunc new_func)
 }
 
 /*------ xgbparse_point ()----*/
-static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
+static string xgb_unparse(TTokenConstIt head, TTokenConstIt end_it)
 {
     string temp;
-    auto   end_it = next(current);
     for (auto it = head; it != end_it; ++it) {
         switch (it->choice) {
         case ETokenType::eJoin:
@@ -179,24 +178,23 @@ static string xgbparse_point(TTokenConstIt head, TTokenConstIt current)
         default:
             break;
         }
-        temp += " ";
-        if (it == current)
-            break;
     }
 
     return temp;
 }
 
 
-static void xgbparse_error(string_view front, TTokenConstIt head, TTokenConstIt current)
+static void xgbparse_error(string_view front, TTokenConstIt head, TTokenConstIt end_it)
 {
-    string details = xgbparse_point(head, current);
+    string details = xgb_unparse(head, end_it);
     Err_func(front, details);
 }
 
 
 static void xgbparse_error(string_view front, const TTokens& tokens, TTokenConstIt current)
 {
+    if (current != end(tokens))
+        ++current;
     xgbparse_error(front, begin(tokens), current);
 }
 
