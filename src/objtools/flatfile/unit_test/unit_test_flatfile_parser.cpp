@@ -230,18 +230,27 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
         const auto& locMix = pLoc->GetMix();
         BOOST_CHECK_EQUAL(locMix.Get().size(), 5);
         auto locIt = locMix.Get().cbegin();
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetAccession(), "AAGH01005985");
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetVersion(), 1);
         BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 104);
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 1872);
         ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetAccession(), "AASW01000572");
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetVersion(), 1);
         BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 2063);
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 2611);
         ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetAccession(), "AAGH01005986");
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetVersion(), 1);
         BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 6);
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 8526);
         ++locIt;
+        BOOST_CHECK((*locIt)->GetId()->IsGeneral());
         BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 0);
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 337);
         ++locIt;
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetAccession(), "AAGH01005987");
+        BOOST_CHECK_EQUAL((*locIt)->GetId()->GetGenbank().GetVersion(), 1);
         BOOST_CHECK_EQUAL((*locIt)->GetStart(eExtreme_Positional), 0);
         BOOST_CHECK_EQUAL((*locIt)->GetStop(eExtreme_Positional), 1907);
     }
