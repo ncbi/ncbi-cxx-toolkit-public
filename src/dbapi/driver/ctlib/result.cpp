@@ -937,13 +937,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
             }
         }
 
-#ifdef FTDS_IN_USE
-        if (rc == CS_END_ITEM) {
-            IncCurrentItemNum();
-        }
-#else
-        IncCurrentItemNum(); // That won't work with the ftds driver
-#endif
+        IncCurrentItemNum();
 
         break;
     case CS_SUCCEED:
@@ -964,13 +958,25 @@ I_BlobDescriptor* CTL_RowResult::GetBlobDescriptor()
 }
 
 
+static
+bool s_IsBlob(const CS_DATAFMT& fmt)
+{
+    auto type = fmt.datatype;
+    return type == CS_TEXT_TYPE  ||  type == CS_IMAGE_TYPE;
+}
+
+
 I_BlobDescriptor* CTL_RowResult::GetBlobDescriptor(int item_num)
 {
     bool is_null = false;
 
-    if ((unsigned int) item_num >= GetDefineParams().GetNum()
+    if ((unsigned int) item_num > GetDefineParams().GetNum()
         ||  item_num < m_BindedCols) {
         return NULL;
+    } else if ((unsigned int) item_num == GetDefineParams().GetNum()
+               ||  (item_num > 0  &&  !s_IsBlob(m_ColFmt[item_num])
+                    &&  s_IsBlob(m_ColFmt[item_num-1]))) {
+        --item_num;
     }
 
     char dummy[4];
