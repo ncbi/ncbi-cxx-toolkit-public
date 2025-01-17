@@ -480,7 +480,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                                 if (status)
                                 {
                                      segOptions = SSegOptionsFree(segOptions);
-                                     sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                     snprintf(error_buffer, sizeof(error_buffer),"Error parsing filter string: %s", buffer);
                                      if (blast_message)
                                        Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
@@ -503,7 +503,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                                 if (status)
                                 {
                                      dustOptions = SDustOptionsFree(dustOptions);
-                                     sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                     snprintf(error_buffer,sizeof(error_buffer),"Error parsing filter string: %s", buffer);
                                      if (blast_message)
                                        Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
@@ -526,7 +526,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                              if (status)
                              {
                                   repeatOptions = SRepeatFilterOptionsFree(repeatOptions);
-                                  sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                                  snprintf(error_buffer,sizeof(error_buffer), "Error parsing filter string: %s", buffer);
                                   if (blast_message)
                                      Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                             error_buffer);
@@ -552,7 +552,7 @@ BlastFilteringOptionsFromString(EBlastProgramType program_number,
                         status = s_ParseWindowMaskerOptions(buffer, &dbname, &taxid);
                         if (status) {
                             winmaskOptions = SWindowMaskerOptionsFree(winmaskOptions);
-                            sprintf(error_buffer, "Error parsing filter string: %s", buffer);
+                            snprintf(error_buffer,sizeof(error_buffer), "Error parsing filter string: %s", buffer);
                             if (blast_message)
                                 Blast_MessageWrite(blast_message, eBlastSevError, kBlastMessageNoContext,
                                                    error_buffer);
