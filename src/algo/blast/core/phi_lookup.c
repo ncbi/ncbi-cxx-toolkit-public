@@ -441,7 +441,7 @@ SPHIPatternSearchBlkNew(char* pattern_in, Boolean is_dna, BlastScoreBlk* sbp,
       if (error_msg)
       {
           char message[1024];
-          sprintf(message, "Pattern is too long (%ld but only %ld supported)",
+          snprintf(message, sizeof(message), "Pattern is too long (%ld but only %ld supported)",
             (long) pattern_length, (long) PHI_MAX_PATTERN_LENGTH);
           Blast_MessageWrite(error_msg, eBlastSevWarning,
              kBlastMessageNoContext, message);

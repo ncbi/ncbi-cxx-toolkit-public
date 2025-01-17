@@ -300,11 +300,11 @@ s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    }
 
    if (status == -1) {
-       sprintf(buffer, "The combination %d for gap opening cost and %d for "
+       snprintf(buffer, sizeof(buffer), "The combination %d for gap opening cost and %d for "
                "gap extension is not supported in PHI-BLAST with matrix %s\n",
                options->gap_open, options->gap_extend, options->matrix);
    } else if (status == -2) {
-       sprintf(buffer, "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
+       snprintf(buffer, sizeof(buffer), "Matrix %s not allowed in PHI-BLAST\n", options->matrix);
    }
    if (status) 
        Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
@@ -374,7 +374,7 @@ Blast_ScoreBlkMatrixInit(EBlastProgramType program_number,
         } else {
             char buffer[50];
             sbp->read_in_matrix = FALSE;
-            sprintf(buffer, "blastn matrix:%ld %ld",
+            snprintf(buffer, sizeof(buffer), "blastn matrix:%ld %ld",
                     (long) sbp->reward, (long) sbp->penalty);
             sbp->name = strdup(buffer);
         }
@@ -1083,7 +1083,7 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
     if (num_patterns == 0)
     {
        char buffer[512]; 
-       sprintf(buffer, "The pattern %s was not found in the query.", pattern_blk->pattern);
+       snprintf(buffer, sizeof(buffer), "The pattern %s was not found in the query.", pattern_blk->pattern);
        if (blast_message)
            Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
        return -1;
@@ -1091,7 +1091,7 @@ Blast_SetPHIPatternInfo(EBlastProgramType            program,
     else if (num_patterns == INT4_MAX)
     {
        char buffer[512]; 
-       sprintf(buffer, "The pattern (%s) may not cover the entire query.", pattern_blk->pattern);
+       snprintf(buffer, sizeof(buffer),"The pattern (%s) may not cover the entire query.", pattern_blk->pattern);
        if (blast_message)
            Blast_MessageWrite(blast_message, eBlastSevWarning, kBlastMessageNoContext, buffer);
        return -1;

@@ -3350,7 +3350,7 @@ s_GetNuclValuesArray(Int4 reward, Int4 penalty, Int4* array_size,
         status = -1;
         if (error_return) {
             char buffer[256];
-            sprintf(buffer, "Substitution scores %d and %d are not supported",
+            snprintf(buffer, sizeof(buffer), "Substitution scores %d and %d are not supported",
                 reward, penalty);
             Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
         }
@@ -3505,9 +3505,9 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
       for (index=0; index<max_number_values; index++)
       {
          if (BLAST_Nint(values[index][2]) == INT2_MAX)
-            sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
+            snprintf(buffer, sizeof(buffer), "Gap existence and extension values of %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
          else
-            sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
+            snprintf(buffer, sizeof(buffer), "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
       }
    }
@@ -3541,13 +3541,13 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 
          vnp = head = BlastLoadMatrixValues(FALSE);
 
-         sprintf(buffer, "%s is not a supported matrix", matrix_name);
+         snprintf(buffer, sizeof(buffer), "%s is not a supported matrix", matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
 
          while (vnp)
          {
             matrix_info = vnp->ptr;
-            sprintf(buffer, "%s is a supported matrix", matrix_info->name);
+            snprintf(buffer, sizeof(buffer), "%s is a supported matrix", matrix_info->name);
             Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
             vnp = vnp->next;
          }
@@ -3556,7 +3556,7 @@ Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
       }
       else if (status == 2)
       {
-         sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
+         snprintf(buffer, sizeof(buffer), "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
          BlastKarlinReportAllowedValues(matrix_name, error_return);
       }
@@ -3663,19 +3663,19 @@ Blast_GumbelBlkCalc(Blast_GumbelBlk* gbp, Int4 gap_open,
 
          vnp = head = BlastLoadMatrixValues(FALSE);
 
-         sprintf(buffer, "%s is not a supported matrix", matrix_name);
+         snprintf(buffer, sizeof(buffer), "%s is not a supported matrix", matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
 
          while (vnp) {
             matrix_info = vnp->ptr;
-            sprintf(buffer, "%s is a supported matrix", matrix_info->name);
+            snprintf(buffer, sizeof(buffer), "%s is a supported matrix", matrix_info->name);
             Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
             vnp = vnp->next;
          }
 
          BlastMatrixValuesDestruct(head);
       } else if (status == 2) {
-         sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
+         snprintf(buffer, sizeof(buffer), "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
          Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
          BlastKarlinReportAllowedValues(matrix_name, error_return);
       }
@@ -3759,13 +3759,17 @@ Blast_GumbelBlkLoadFromTables(Blast_GumbelBlk* gbp, Int4 gap_open,
 char*
 BLAST_PrintMatrixMessage(const char *matrix_name, Boolean standard_only)
 {
-   char* buffer= (char *) calloc(1024, sizeof(char));
+#define BUF_SZ_1024 (1024)
+   int buffer_sz= BUF_SZ_1024 ;
+   int out_sz;
+   char* buffer= (char *) calloc( buffer_sz , sizeof(char)); // buffer_sz!
    char* ptr;
    MatrixInfo* matrix_info;
         ListNode* vnp,* head;
 
    ptr = buffer;
-        sprintf(ptr, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
+   out_sz = snprintf(ptr, (size_t)buffer_sz, "%s is not a supported matrix, supported matrices are:\n", matrix_name);
+   buffer_sz -= ( 1 + out_sz ); if ( buffer_sz < 0 ) buffer_sz = 0; // decrease out buffer size first, "+1" for null termination , once.
 
    ptr += strlen(ptr);
 
@@ -3774,7 +3778,8 @@ BLAST_PrintMatrixMessage(const char *matrix_name, Boolean standard_only)
         while (vnp)
         {
          matrix_info = vnp->ptr;
-         sprintf(ptr, "%s \n", matrix_info->name);
+         out_sz = snprintf(ptr,(size_t)buffer_sz, "%s \n", matrix_info->name);
+	 buffer_sz -= out_sz ; if ( buffer_sz < 0 ) buffer_sz = 0;
       ptr += strlen(ptr);
       vnp = vnp->next;
         }
@@ -3787,19 +3792,23 @@ char*
 BLAST_PrintAllowedValues(const char *matrix_name,
                          Int4 gap_open, Int4 gap_extend)
 {
+#define BUF_SZ_2048 (2048)
    array_of_8 *values = NULL;
    Boolean found_matrix=FALSE;
    char* buffer,* ptr;
    Int4 index, max_number_values=0;
    MatrixInfo* matrix_info;
    ListNode* vnp,* head;
+   int buffer_sz= BUF_SZ_2048 ;
+   int out_sz = 0;
 
-   ptr = buffer = (char *) calloc(2048, sizeof(char));
+   ptr = buffer = (char *) calloc((size_t)buffer_sz, sizeof(char));
 
-   sprintf(ptr, "Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n",
+   out_sz = snprintf(ptr, (size_t)buffer_sz,"Gap existence and extension values of %ld and %ld not supported for %s\nsupported values are:\n",
       (long) gap_open, (long) gap_extend, matrix_name);
 
-   ptr += strlen(ptr);
+   buffer_sz -= ( 1 + out_sz ); if ( buffer_sz < 0 ) buffer_sz = 0; // decrease out buffer size first, "+1" for null termination , once.
+   ptr += strlen(ptr);  // advance writing buffer position
 
    vnp = head = BlastLoadMatrixValues(FALSE);
    while (vnp)
@@ -3820,9 +3829,10 @@ BLAST_PrintAllowedValues(const char *matrix_name,
       for (index=0; index<max_number_values; index++)
       {
          if (BLAST_Nint(values[index][2]) == INT2_MAX)
-            sprintf(ptr, "%ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
+            out_sz = snprintf(ptr, (size_t)buffer_sz, "%ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]));
          else
-            sprintf(ptr, "%ld, %ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
+            out_sz = snprintf(ptr, (size_t)buffer_sz, "%ld, %ld, %ld\n", (long) BLAST_Nint(values[index][0]), (long) BLAST_Nint(values[index][1]), (long) BLAST_Nint(values[index][2]));
+	 buffer_sz -= out_sz ; if ( buffer_sz < 0 ) buffer_sz = 0; // decrease out buffer size first, "+1" for null termination , once.
          ptr += strlen(ptr);
       }
    }
@@ -3898,25 +3908,31 @@ Blast_KarlinBlkNuclGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open,
             if (gap_open >= gap_open_max && gap_extend >= gap_extend_max) {
                 Blast_KarlinBlkCopy(kbp, kbp_ungap);
             } else if (error_return) {
-                char buffer[8192];
+		int buffer_sz = 8192;
+		int out_sz;
+                char buffer[8192]; // buffer_sz
                 int i=0;
                 size_t len=0;
                 /* Unsupported gap costs combination. */
-                sprintf(buffer, "Gap existence and extension values %ld and %ld "
+                out_sz = snprintf(buffer, (size_t)buffer_sz,"Gap existence and extension values %ld and %ld "
                         "are not supported for substitution scores %ld and %ld\n",
                         (long) gap_open, (long) gap_extend, (long) reward, (long) penalty);
+		buffer_sz -= ( 1 + out_sz ); if ( buffer_sz < 0 ) buffer_sz = 0; // decrease out buffer size, "+1" for null termination , once.
                 for (i = 0; i < num_combinations; ++i)
                 {
                      len = strlen(buffer);
-                     sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n",
+                     out_sz = snprintf(buffer+len, (size_t)buffer_sz, "%ld and %ld are supported existence and extension values\n",
                         (long) normal[i][kGapOpenIndex],  (long) normal[i][kGapExtIndex]);
+		     buffer_sz -= out_sz ; if ( buffer_sz < 0 ) buffer_sz = 0;
                 }
                 len = strlen(buffer);
-                sprintf(buffer+len, "%ld and %ld are supported existence and extension values\n",
+                out_sz = snprintf(buffer+len, (size_t)buffer_sz, "%ld and %ld are supported existence and extension values\n",
                      (long) gap_open_max, (long) gap_extend_max);
+		buffer_sz -= out_sz ; if ( buffer_sz < 0 ) buffer_sz = 0;
                 len = strlen(buffer);
-                sprintf(buffer+len, "Any values more stringent than %ld and %ld are supported\n",
+                out_sz = snprintf(buffer+len, (size_t)buffer_sz, "Any values more stringent than %ld and %ld are supported\n",
                      (long) gap_open_max, (long) gap_extend_max);
+		buffer_sz -= out_sz ; if ( buffer_sz < 0 ) buffer_sz = 0;
                 Blast_MessageWrite(error_return, eBlastSevError, kBlastMessageNoContext, buffer);
                 sfree(normal);
                 sfree(linear);
