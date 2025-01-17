@@ -145,6 +145,9 @@ static string xgb_unparse(TTokenConstIt head, TTokenConstIt end_it)
             temp += "..";
             break;
         case ETokenType::eAccession:
+            temp += it->data;
+            temp += ":";
+            break;
         case ETokenType::eNumber:
         case ETokenType::eString:
             temp += it->data;
@@ -173,6 +176,9 @@ static string xgb_unparse(TTokenConstIt head, TTokenConstIt end_it)
             break;
         case ETokenType::eReplace:
             temp += "replace";
+            break;
+        case ETokenType::eGap:
+            temp += "gap";
             break;
         case ETokenType::eUnknown:
         default:
