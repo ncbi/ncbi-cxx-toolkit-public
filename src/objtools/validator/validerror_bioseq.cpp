@@ -35,7 +35,6 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbimisc.hpp>
-#include <util/compile_time.hpp>
 
 #include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/validator_context.hpp>
@@ -1985,9 +1984,9 @@ void CValidError_bioseq::x_ReportDuplicatePubLabels(
         return;
     }
 
-    static const char* kWarningPrefix =
+    static const char kWarningPrefix[] =
         "Multiple equivalent publications annotated on this sequence [";
-    static const size_t kWarningPrefixLen = CT_CONST_STR_LEN(kWarningPrefix);
+    static const size_t kWarningPrefixLen = sizeof(kWarningPrefix) - 1;
     static const string::size_type kMaxSummaryLen = 100;
 
     // TTempStringCount maps a CTempString to the number of times it appears

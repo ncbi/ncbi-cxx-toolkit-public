@@ -27,14 +27,13 @@
 #include <algo/structure/cd_utils/cuUtils.hpp>
 #include <algo/blast/core/blast_util.h>
 #include <math.h>
-#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
 
-static const char*  kResidues = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; //ncbieaa
-static const size_t kResiduesSize = CT_CONST_STR_LEN(kResidues);
+static const char   kResidues[] = "-ABCDEFGHIKLMNPQRSTVWXYZU*OJ"; //ncbieaa
+static const size_t kResiduesSize = sizeof(kResidues) - 1;
 
 unsigned char ColumnResidueProfile::getNcbiStdCode(char eaa)
 {
