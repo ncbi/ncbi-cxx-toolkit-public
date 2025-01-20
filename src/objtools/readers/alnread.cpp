@@ -77,8 +77,8 @@ GetScannerForFormat(
 bool
 ReadAlignmentFile(
     istream& istr,
-    bool gen_local_ids,
-    bool use_nexus_info,
+    bool /*gen_local_ids*/,
+    bool /*use_nexus_info*/,
     CSequenceInfo& sequenceInfo,
     SAlignmentFile& alignmentInfo,
     ILineErrorListener* pErrorListener)

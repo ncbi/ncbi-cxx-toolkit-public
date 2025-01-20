@@ -235,9 +235,9 @@ public:
 
     void
     PutProgress(
-        const string& msg,
+        const string& /*msg*/,
         const Uint8 bytesDone,
-        const Uint8 dummy)
+        const Uint8 /*dummy*/)
     {
         if (!m_multi_reader_app.ShowingProgress()) {
             return;
@@ -273,7 +273,7 @@ public:
     PutProgress(
         const string& msg,
         const Uint8 bytesDone,
-        const Uint8 dummy)
+        const Uint8 /*dummy*/)
     {
         if (!m_multi_reader_app.ShowingProgress()) {
             return;
@@ -935,9 +935,9 @@ void CMultiReaderApp::xProcessWiggle(
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessWiggleRaw(
-    const CArgs& args,
+    const CArgs& /*args*/,
     CNcbiIstream& istr,
-    CNcbiOstream& ostr)
+    CNcbiOstream& /*ostr*/)
 //  ----------------------------------------------------------------------------
 {
     CWiggleReader reader(m_iFlags);
@@ -993,9 +993,9 @@ bool CMultiReaderApp::xProcessBed(
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessBedRaw(
-    const CArgs& args,
+    const CArgs& /*args*/,
     CNcbiIstream& istr,
-    CNcbiOstream& ostr)
+    CNcbiOstream& /*ostr*/)
 //  ----------------------------------------------------------------------------
 {
     CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);

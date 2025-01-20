@@ -303,7 +303,7 @@ CVcfReader::xProcessMetaLine(
 void
 CVcfReader::xSetFileFormat(
     const string& line,
-    CSeq_annot& annot,
+    CSeq_annot& /*annot*/,
     bool& lineContainsVersion)
 //  ----------------------------------------------------------------------------
 {
@@ -329,7 +329,7 @@ CVcfReader::xSetFileFormat(
     try {
         mActualVersion = NStr::StringToDouble(versionStr);
     }
-    catch (std::exception except) {
+    catch (const std::exception&) {
         CReaderMessage warning(
             eDiag_Warning,
             m_uLineNumber,
@@ -363,7 +363,7 @@ CVcfReader::xSetFileFormat(
 bool
 CVcfReader::xProcessMetaLineInfo(
     const string& line,
-    CSeq_annot& annot)
+    CSeq_annot& /*annot*/)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##INFO=<";
@@ -431,7 +431,7 @@ CVcfReader::xProcessMetaLineInfo(
 bool
 CVcfReader::xProcessMetaLineFilter(
     const string& line,
-    CSeq_annot& annot)
+    CSeq_annot& /*annot*/)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FILTER=<";
@@ -479,7 +479,7 @@ CVcfReader::xProcessMetaLineFilter(
 bool
 CVcfReader::xProcessMetaLineFormat(
     const string& line,
-    CSeq_annot& annot)
+    CSeq_annot& /*annot*/)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FORMAT=<";
@@ -550,7 +550,7 @@ CVcfReader::xProcessMetaLineFormat(
 bool
 CVcfReader::xProcessHeaderLine(
     const string& line,
-    CSeq_annot& annot )
+    CSeq_annot& /*annot*/ )
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "#CHROM" ) ) {
@@ -794,8 +794,8 @@ s_AddDeleteDeltaItem(
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVariantDel(
-    const CVcfData& data,
-    unsigned int index,
+    const CVcfData& /*data*/,
+    unsigned int /*index*/,
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -1238,7 +1238,7 @@ CVcfReader::xProcessInfo(
 bool
 CVcfReader::xProcessTrackLine(
     const string& strLine,
-    CSeq_annot& current)
+    CSeq_annot& /*current*/)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsTrackLine(strLine)) {
