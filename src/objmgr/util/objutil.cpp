@@ -88,7 +88,7 @@ bool IsPartOfUrl(const string& sentence, size_t pos)
     if ( (pos < 1) || (sentence[ pos-1 ] != '/') ) {
         return false;
     }
-    
+
     //
     //  Find the start of the "word" that surrounds the given position:
     //
@@ -100,7 +100,7 @@ bool IsPartOfUrl(const string& sentence, size_t pos)
     else {
         ++left_edge;
     }
-    
+
     //
     //  If it's a URL, it better start with a protocol specifier we approve of:
     //
@@ -118,18 +118,18 @@ bool IsPartOfUrl(const string& sentence, size_t pos)
     if ( vProtocolSpecifiers.find( strMaybeUrl ) == vProtocolSpecifiers.end() ) {
         return false;
     }
-    
+
     ++pos;
     if ( string::npos == legal_path_chars.find( sentence[ pos ] ) ) {
         return false;
     }
-    
+
     for ( ++pos; sentence[ pos ] != 0; ++pos ) {
         if ( string::npos == legal_path_chars.find( sentence[ pos ] ) ) {
             return ( sentence[ pos ] == '/' );
         }
     }
-    
+
     return false; /* never found the terminating '/' */
 };
 
@@ -178,7 +178,7 @@ void ExpandTildes(string& s, ETildeStyle style)
             }
             start = tilde + 1;
             break;
-            
+
         case eTilde_newline:
             if ( tilde + 1 < length  &&  s[tilde + 1] == '~' ) {
                 result += '~';
@@ -213,7 +213,7 @@ void ExpandTildes(string& s, ETildeStyle style)
             }
             else if ( IsPartOfUrl( s, tilde ) ) {
                 result += '~';
-            } 
+            }
             else {
                 result += "\n";
             }
@@ -298,7 +298,7 @@ bool StripSpaces(string& str)
 
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
 {
-    
+
     // NB: this is likely a better solution; however, the C toolkit differs...
     //string::size_type pos = str.find_last_not_of(".,;:() ");
     // string::size_type pos = str.find_last_not_of(".,;: ");
@@ -444,7 +444,7 @@ string& CompressSpaces( string& str, const bool trim_beginning, const bool trim_
     string newstr; // result will end up here
     newstr.reserve( end_iter - start_iter );
 
-    // efficiency note: If the efficiency of unique_copy followed by transform becomes 
+    // efficiency note: If the efficiency of unique_copy followed by transform becomes
     // burdensome, we may have to replace these 2 calls with one raw loop that does
     // what those calls do ( a sloppier and more bug-prone ( but faster ), prospect)
 
@@ -457,7 +457,7 @@ string& CompressSpaces( string& str, const bool trim_beginning, const bool trim_
             newstr += ch;
             last_ch_was_printable = true;
         } else {
-            // unprintable chars become space, and they're only appended if the last char was 
+            // unprintable chars become space, and they're only appended if the last char was
             // printable
             if( last_ch_was_printable ) {
                 newstr += ' ';
@@ -604,14 +604,14 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         // allow one period at end
         if (isPeriod) {
             // check if we should put an ellipsis, or just a period
-            const bool putEllipsis = ( allow_ellipsis && (chars_in_junk >= 3) && 
+            const bool putEllipsis = ( allow_ellipsis && (chars_in_junk >= 3) &&
                 str[start_of_junk_pos+1] == '.' && str[start_of_junk_pos+2] == '.' );
 
             suffix = ( putEllipsis ? "..." : "." );
         } else if (isTilde ) {
             // allow tilde(s)
             // (This should work on single- AND double-tildes because
-            // we don't know whether or not tilde-expansion was called before this 
+            // we don't know whether or not tilde-expansion was called before this
             // point )
             if ( str[start_of_junk_pos] == '~' ) {
                 const bool doubleTilde = ( (chars_in_junk >= 2) && str[start_of_junk_pos+1] == '~' );
@@ -741,7 +741,7 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
               // found non-junk character.  Last junk character is just after this
               start_of_junk_pos = len;
               break;
-        }        
+        }
     }
 
     // check for ';' that's part of an HTML escape char like "&bgr;" and
@@ -789,7 +789,7 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
         else if (isTilde) {
             // allow tilde(s)
             // (This should work on single- AND double-tildes because
-            // we don't know whether or not tilde-expansion was called before this 
+            // we don't know whether or not tilde-expansion was called before this
             // point )
             if (str[start_of_junk_pos] == '~') {
                 const bool doubleTilde = ((chars_in_junk >= 2) && str[start_of_junk_pos + 1] == '~');
@@ -1001,7 +1001,7 @@ void CleanAndCompress (string& str)
             if ((it != end) && (*it == ')' || *it == ',') ) {
                 // this "if" protects against the case "(...bunch of spaces and tabs...)".
                 // Otherwise, the first '(' is unintentionally erased
-                if( *(new_str - 1) != '(' ) { 
+                if( *(new_str - 1) != '(' ) {
                     --new_str;
                 }
             }
@@ -1057,7 +1057,7 @@ void JoinString(string& to, const string& prefix, const string& str, bool noRedu
         to += str;
         return;
     }
-    
+
     size_t pos = NPOS;
     if (noRedundancy) {
         //for ( pos = NStr::Find(to, str); pos != NPOS; pos += str.length()) {
@@ -1066,7 +1066,7 @@ void JoinString(string& to, const string& prefix, const string& str, bool noRedu
             if (s_IsWholeWord(to, pos)) {
                 return;
             }
-        }        
+        }
     }
 
     //LOG_POST(Error << "adding: to=" << to << "  prefix=" << prefix << "  str=" << str);
@@ -1149,8 +1149,8 @@ static bool s_IsValidAccession(const string& acc)
         {{
             if ( (num_alpha == 1  &&  num_digits == 5)  ||
                  (num_alpha == 2  &&  num_digits == 6)  ||
-                 (num_alpha == 3  &&  num_digits == 5)  || 
-                 (num_alpha == 4  &&  num_digits == 8)  || 
+                 (num_alpha == 3  &&  num_digits == 5)  ||
+                 (num_alpha == 4  &&  num_digits == 8)  ||
                  (num_alpha == 4  &&  num_digits == 9) ) {
                 return true;
             }
@@ -1159,8 +1159,8 @@ static bool s_IsValidAccession(const string& acc)
 
     case 1:
         {{
-            if( num_alpha == 3 && num_digits == 6 && 
-                NStr::StartsWith(acc, "MAP_") ) 
+            if( num_alpha == 3 && num_digits == 6 &&
+                NStr::StartsWith(acc, "MAP_") )
             {
                 return true;
             }
@@ -1170,7 +1170,7 @@ static bool s_IsValidAccession(const string& acc)
                  (num_digits != 6  &&  num_digits != 8  &&  num_digits != 9) ) {
                 return false;
             }
-            
+
             char first_letter = acc[0];
             char second_letter = acc[1];
 
@@ -1269,7 +1269,7 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 
     const CDelta_ext::Tdata& segs = seq.GetInst_Ext().GetDelta().Get();
     temp.num_segs = segs.size();
-    
+
     size_t len = 0;
 
     CNcbiOstrstream text;
@@ -1289,16 +1289,16 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                 const CDelta_seq::TLoc& loc = (*curr)->GetLoc();
                 if ( loc.IsNull() ) {  // gap
                     ++temp.num_gaps;
-                    text << "* " << from << ' ' << len 
+                    text << "* " << from << ' ' << len
                          << " gap of unknown length~";
                 } else {  // count length
                     size_t tlen = sequence::GetLength(loc, &scope);
                     len += tlen;
                     temp.residues += tlen;
-                    text << "* " << setw(8) << from << ' ' << setw(8) << len 
+                    text << "* " << setw(8) << from << ' ' << setw(8) << len
                          << ": contig of " << tlen << " bp in length~";
                 }
-            }}  
+            }}
             break;
         case CDelta_seq::e_Literal:
             {{
@@ -1318,21 +1318,21 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
                         temp.residues += next_len;
                         ++next;
                     }
-                    text << "* " << setw(8) << from << ' ' << setw(8) << len 
+                    text << "* " << setw(8) << from << ' ' << setw(8) << len
                          << ": contig of " << lit_len << " bp in length~";
                 } else {
                     bool unk = false;
                     ++temp.num_gaps;
                     if ( lit.CanGetFuzz() ) {
                         const CSeq_literal::TFuzz& fuzz = lit.GetFuzz();
-                        if ( fuzz.IsLim()  &&  
+                        if ( fuzz.IsLim()  &&
                              fuzz.GetLim() == CInt_fuzz::eLim_unk ) {
                             unk = true;
                             ++temp.num_faked_gaps;
                             if ( from > len ) {
                                 text << "*                    gap of unknown length~";
                             } else {
-                                text << "* " << setw(8) << from << ' ' << setw(8) << len 
+                                text << "* " << setw(8) << from << ' ' << setw(8) << len
                                      << ": gap of unknown length~";
                             }
                         }
@@ -1363,7 +1363,7 @@ SAFE_CONST_STATIC_STRING(kTS_seq_pept_overlap, "sequenced peptide, ordered by ov
 
 const string& GetTechString(int tech)
 {
-    
+
     switch ( tech ) {
     case CMolInfo::eTech_concept_trans:
         return kTS_concept_trans.Get();
@@ -1502,8 +1502,8 @@ bool s_GetModelEvidance(const CBioseq_Handle& bsh, SModelEvidance& me)
             }
             if( moduop->HasField("Contig Span") ) {
                 ufp = &(moduop->GetField("Contig Span"));
-                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsInts() 
-                    && ufp->IsSetNum() && ufp->GetNum() == 2 && ufp->GetData().GetInts().size() == 2 ) 
+                if ( ufp.NotEmpty()  &&  ufp->IsSetData()  &&  ufp->GetData().IsInts()
+                    && ufp->IsSetNum() && ufp->GetNum() == 2 && ufp->GetData().GetInts().size() == 2 )
                 {
                     const CUser_field::C_Data::TInts & int_list = ufp->GetData().GetInts();
                     me.span.first  = int_list[0];
@@ -1730,7 +1730,7 @@ namespace {
         return true;
     }
 
-    // see if the '<' opens an HTML tag (currently we 
+    // see if the '<' opens an HTML tag (currently we
     // only check for a few kinds of tags )
     //  ============================================================================
     template<typename _T>
@@ -1749,7 +1749,7 @@ namespace {
             (sizeof(possible_tag_starts) / sizeof(possible_tag_starts[0]));
 
         // check every string it might start with
-        for (int possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx) {
+        for (size_t possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx) {
             const string expected_str = possible_tag_starts[possible_str_idx];
 
             string::size_type idx = 0;
@@ -1867,7 +1867,7 @@ void TryToSanitizeHtml(std::string &result, const CTempString& str)
     }
 }
 
-void 
+void
 TryToSanitizeHtmlList( std::list<std::string> &strs )
 {
     NON_CONST_ITERATE( std::list<std::string>, str_iter, strs ) {
@@ -1875,12 +1875,12 @@ TryToSanitizeHtmlList( std::list<std::string> &strs )
     }
 }
 
-bool 
+bool
 CommentHasSuspiciousHtml( const string &str )
 {
     // list is not complete, still need to take proper precautions
-    static const char* bad_html_strings[] = { 
-        "<script", "<object", "<applet", "<embed", "<form", 
+    static const char* bad_html_strings[] = {
+        "<script", "<object", "<applet", "<embed", "<form",
         "javascript:", "vbscript:"
     };
 
