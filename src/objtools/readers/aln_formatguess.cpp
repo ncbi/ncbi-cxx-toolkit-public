@@ -130,8 +130,8 @@ CAlnFormatGuesser::xSampleIsClustal(
     if (NStr::StartsWith(testLine, "clustal w")) {
         return true;
     }
-    int lineCount = 0;
-    int blockCount = 0;
+    size_t lineCount = 0;
+    size_t blockCount = 0;
     while (blockCount < 3) {
         string line;
         if (lineCount < sample.size()) {
@@ -172,7 +172,7 @@ CAlnFormatGuesser::xSampleIsFastaGap(
     //  all sample lines are space truncated
     //  there are at least one and most SAMPLE_SIZE sample lines
 
-    int i=0;
+    size_t i = 0;
     for ( ; i < sample.size(); ++i) {
         if (!NStr::StartsWith(sample[i], ";")) {
             break;
@@ -231,8 +231,8 @@ CAlnFormatGuesser::xSampleIsSequin(
     if (tokens.empty()) {
         return false;
     }
-    for (int index=0; index < tokens.size(); ++index) {
-        auto offset = NStr::StringToInt(tokens[index], NStr::fConvErr_NoThrow);
+    for (size_t index = 0; index < tokens.size(); ++index) {
+        auto offset = NStr::StringToUInt(tokens[index], NStr::fConvErr_NoThrow);
         if (offset != 10 + 10*index) {
             return false;
         }
@@ -251,7 +251,7 @@ CAlnFormatGuesser::xSampleIsMultAlign(
     //  all sample lines are space truncated
     //  there are at least one and most SAMPLE_SIZE sample lines
 
-    int lineIndex = 0;
+    size_t lineIndex = 0;
     if (NStr::StartsWith(sample[0], "//")) {
         ++lineIndex;
     }
@@ -291,7 +291,7 @@ CAlnFormatGuesser::xSampleIsMultAlign(
     }
     dataColumns.pop_front();
     string seqData = NStr::Join(dataColumns.begin(), dataColumns.end(), "");
-    auto dataSize = seqData.size();
+    int dataSize = seqData.size();
     return (dataSize == (endOffset - startOffset + 1));
 }
 

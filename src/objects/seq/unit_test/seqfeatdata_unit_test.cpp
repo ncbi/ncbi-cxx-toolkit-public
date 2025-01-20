@@ -2353,14 +2353,14 @@ BOOST_AUTO_TEST_CASE(Test_LegalQualsAny)
     size_t count = 0;
     auto all_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_any);
     BOOST_CHECK_EQUAL(all_quals.size(), numExpectedQuals);
-    for (auto b : all_quals)
+    for (NCBI_UNUSED auto b : all_quals)
         ++count;
     BOOST_CHECK_EQUAL(count, numExpectedQuals);
 
     auto empty_quals = CSeqFeatData::GetLegalQualifiers(CSeqFeatData::eSubtype_clone);
     BOOST_CHECK_EQUAL(empty_quals.size(), 0);
     count = 0;
-    for (auto b : empty_quals)
+    for (NCBI_UNUSED auto b : empty_quals)
         ++count;
     BOOST_CHECK_EQUAL(count, 0);
 

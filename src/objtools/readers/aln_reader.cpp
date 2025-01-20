@@ -317,9 +317,9 @@ void CAlnReader::Read(
 }
 
 void CAlnReader::Read(
-    bool guess,
+    bool /*guess*/,
     bool generate_local_ids,
-    ncbi::objects::ILineErrorListener* pErrorListener)
+    ncbi::objects::ILineErrorListener* /*pErrorListener*/)
 {
     // read the alignment stream
     SAlignmentFile alignmentInfo;
@@ -402,11 +402,11 @@ void CAlnReader::x_VerifyAlignmentInfo(
         m_Ids.push_back(ids);
     }
 
-    auto numDeflines = alignmentInfo.NumDeflines();
+    size_t numDeflines = alignmentInfo.NumDeflines();
     if (numDeflines) {
         if (numDeflines == m_Ids.size()) {
             m_DeflineInfo.resize(numDeflines);
-            for (int i=0;  i< numDeflines;  ++i) {
+            for (size_t i=0;  i< numDeflines;  ++i) {
                 m_DeflineInfo[i] = {
                     NStr::TruncateSpaces(
                     alignmentInfo.mDeflines[i].mData),
@@ -458,7 +458,7 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
     if (m_MiddleSections.size() == 0) {
         x_CalculateMiddleSections();
     }
-    if (row > m_MiddleSections.size()) {
+    if (row > (int)m_MiddleSections.size()) {
         return false;
     }
     if (pos < m_MiddleSections[row].first) {
@@ -482,11 +482,11 @@ bool CAlnReader::x_IsGap(TNumrow row, TSeqPos pos, const string& residue)
     }
 }
 
-CRef<CSeq_id> CAlnReader::GenerateID(const string& fasta_defline,
+CRef<CSeq_id> CAlnReader::GenerateID(const string& /*fasta_defline*/,
     const TSeqPos& index,
-    TFastaFlags fasta_flags)
+    TFastaFlags /*fasta_flags*/)
 {
-    _ASSERT(index < m_Dim);
+    _ASSERT((int)index < m_Dim);
     _ASSERT(!m_Ids[index].empty());
 
     return FindBestChoice(m_Ids[index], CSeq_id::BestRank);
@@ -500,11 +500,11 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
     ids.resize(m_Dim);
     m_Ids.resize(m_Dim);
 
-    for (auto i=0; i<m_Dim; ++i) {
+    for (int i=0; i<m_Dim; ++i) {
         // Reconstruct original defline string from results
         // returned by C code.
         string fasta_defline = m_IdStrings[i];
-        if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
+        if (i < (int)m_DeflineInfo.size() && !m_DeflineInfo[i].mData.empty()) {
             fasta_defline += " " + m_DeflineInfo[i].mData;
         }
             ids[i] = GenerateID(fasta_defline, i, fasta_flags);
@@ -514,7 +514,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 
 
     CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
-            ILineErrorListener* pErrorListener)
+            ILineErrorListener* /*pErrorListener*/)
     {
         if (m_Aln) {
             return m_Aln;
@@ -629,7 +629,7 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 
         lens.push_back(aln_stop - prev_aln_pos);
         //strands.resize(numseg * m_Dim, eNa_strand_plus);
-        _ASSERT(lens.size() == numseg);
+        _ASSERT((int)lens.size() == numseg);
         ds.SetNumseg(numseg);
 
 #if _DEBUG
@@ -745,7 +745,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
 
     auto& seq_set = m_Entry->SetSet().SetSeq_set();
 
-    typedef CDense_seg::TDim TNumrow;
+    //typedef CDense_seg::TDim TNumrow;
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
         const string& seq_str     = m_SeqVec[row_i];
         auto pSubEntry = Ref(new CSeq_entry());
