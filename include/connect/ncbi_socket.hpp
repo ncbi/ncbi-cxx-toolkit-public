@@ -272,7 +272,7 @@ public:
     ///        of eIO_Read and eIO_Write ones.
     ///
     /// @param  event
-    ///  either of eIO_Open, eIO_Read, eUI_Write, eIO_ReadWrite, or eIO_Close
+    ///  either of eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite, or eIO_Close
     /// @param timeout
     ///  new value to set (including special kInfiniteTimeout)
     /// @sa
