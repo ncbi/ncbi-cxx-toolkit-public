@@ -1665,11 +1665,8 @@ DISCREPANCY_CASE(CHECK_AUTHORITY, BIOSRC, eDisc | eOncaller, "Authority and Taxn
 // TRINOMIAL_SHOULD_HAVE_QUALIFIER
 
 static const pair<int, string> srcqual_keywords[] = {
-    { COrgMod::eSubtype_forma_specialis, " f. sp." } ,
-    { COrgMod::eSubtype_forma, " f." } ,
     { COrgMod::eSubtype_sub_species, " subsp." } ,
-    { COrgMod::eSubtype_variety, " var." } ,
-    { COrgMod::eSubtype_pathovar, " pv." }
+    { COrgMod::eSubtype_variety, " var." }
 };
 
 static const size_t srcqual_keywords_sz = ArraySize(srcqual_keywords);
