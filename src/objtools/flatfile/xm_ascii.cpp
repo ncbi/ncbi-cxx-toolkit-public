@@ -1098,14 +1098,6 @@ static void XMLGetDivision(const char* entry, IndexblkPtr ibp)
 }
 
 
-static void s_WriteEntry(const CSeq_entry& entry, CObjectOStream& objOstr)
-{
-    objOstr.BeginContainerElement(entry.GetThisTypeInfo());
-    objOstr.WriteObject(&entry, entry.GetThisTypeInfo());
-    objOstr.EndContainerElement();
-}
-
-
 CRef<CSeq_entry> CXml2Asn::xGetEntry()
 {
     CRef<CSeq_entry> result;

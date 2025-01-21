@@ -512,7 +512,7 @@ static bool s_GetEntries(CMappedInput2Asn& input2Asn, TEntryList& entries)
 {
     try {
         CRef<CSeq_entry> entry;
-        while (entry = input2Asn()) {
+        while ((entry = input2Asn())) {
             entries.push_back(entry);
         }
         input2Asn.PostTotals();
