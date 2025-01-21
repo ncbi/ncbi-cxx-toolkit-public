@@ -41,7 +41,6 @@
 BEGIN_NCBI_SCOPE
 
 class CObjectOStream;
-class Parser;
 namespace objects {
     class CSeq_entry;
     class CBioseq_set;
