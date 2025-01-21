@@ -4432,7 +4432,6 @@ CSeqFeatData::GetSetOfRegulatorySubtypes(void)
         eSubtype_CAAT_signal,
         eSubtype_enhancer,
         eSubtype_GC_signal,
-        eSubtype_LTR,
         eSubtype_misc_signal,
         eSubtype_polyA_signal,
         eSubtype_promoter,
