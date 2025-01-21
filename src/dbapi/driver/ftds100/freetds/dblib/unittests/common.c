@@ -157,22 +157,34 @@ read_login_info(int argc, char **argv)
 	
 #if !defined(__MINGW32__) && !defined(_MSC_VER)
 	/* process command line options (handy for manual testing) */
+	int  pwd_read = 0;
 	while ((ch = getopt(argc, (char**)argv, "U:P:S:D:f:v")) != -1) {
 		switch (ch) {
 		case 'U':
+			if (options.username)
+				free(options.username);
 			options.username = strdup(optarg);
 			break;
 		case 'P':
+			if (options.password)
+				free(options.password);
 			options.password = strdup(optarg);
 			break;
 		case 'S':
+			if (options.servername)
+				free(options.servername);
 			options.servername = strdup(optarg);
 			break;
 		case 'D':
+			if (options.database)
+				free(options.database);
 			options.database = strdup(optarg);
 			break;
 		case 'f': /* override default PWD file */
+			if (pwd_read)
+				free(PWD);
 			PWD = strdup(optarg);
+			pwd_read = 1;
 			break;
 		case 'v':
 			options.fverbose = 1; /* doesn't normally do anything */
@@ -279,7 +291,7 @@ read_login_info(int argc, char **argv)
 RETCODE 
 sql_cmd(DBPROCESS *dbproc)
 {
-	char line[2048], *p = line;
+	char line[2048], *p /* = line*/;
 	int i = 0;
 	RETCODE erc=SUCCEED;
 
