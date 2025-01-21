@@ -3932,6 +3932,9 @@ SubjectIndex* SubjectIndexNew(BLAST_SequenceBlk* subject, Int4 width,
 
     opt = calloc(1, sizeof(LookupTableOptions));
     if (!opt) {
+        if (ssr) {
+            free(ssr);
+        }
         s_SubjectIndexNewCleanup(sequence, seqloc, opt, query_opt, retval);
         return NULL;
     }
@@ -3939,6 +3942,9 @@ SubjectIndex* SubjectIndexNew(BLAST_SequenceBlk* subject, Int4 width,
 
     query_opt = calloc(1, sizeof(QuerySetUpOptions));
     if (!query_opt) {
+        if (ssr) {
+            free(ssr);
+        }
         s_SubjectIndexNewCleanup(sequence, seqloc, opt, query_opt, retval);
         return NULL;
     }
