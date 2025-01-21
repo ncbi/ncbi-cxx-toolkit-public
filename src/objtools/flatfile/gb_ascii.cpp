@@ -1373,7 +1373,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
     CheckContigEverywhere(ibp, mParser.source);
     if (ibp->drop) {
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
-        mTotals.Dropped;
+        mTotals.Dropped++;
         mParser.curindx++;
         return pResult;
     }
