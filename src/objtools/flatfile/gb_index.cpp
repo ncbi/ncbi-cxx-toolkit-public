@@ -80,100 +80,6 @@ vector<string> genbankKeywords = {
 };
 
 
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-/**********************************************************
- *
- *   static bool DelSegnum(str, segnum, len2):
- *
- *      Strip off segnum which has number of "len1" digits,
- *   then check if any tailing zero existed.
- *      Subroutine return:
- *   TRUE if
- *   - there is no tailing zero or
- *   - the number of the tailing zero is equal or greater
- *     than (len2-len1) (i.e. strip off len2-len1 of "0").
- *   FALSE and no change in the string "str" if
- *   - len2-len1 less than zero or
- *   - there is not enough "len1" digits at end of
- *     the string "str" or
- *   - there is not enough len2-len1 zero at end of
- *     the string "str".
- *
- *                                      February 25 1993
- *
- **********************************************************/
-static bool DelSegnum(IndexblkPtr entry, const char* segnum, size_t len2)
-{
-    char*       str;
-    const char* p;
-    char*       q;
-
-    if (! segnum)
-        return false;
-    size_t len1 = StringLen(segnum);
-    if (len2 < len1)
-        return false;
-
-    /* check, is there enough digits to delete
-     */
-    size_t tlen = len1;
-    str         = entry->blocusname;
-    size_t i    = StringLen(str);
-    for (; tlen > 0; tlen--) {
-        char c = str[--i];
-        if (! ('0' <= c && c <= '9'))
-            break;
-        if (i <= 0)
-            return false;
-    }
-
-    if (tlen > 0)
-        return false;
-
-    if (len2 > len1 && str[i] == '0') {
-        /* check, is there enough "0" appended
-         */
-        for (tlen = len2 - len1; tlen > 0 && str[i] == '0'; i--)
-            tlen--;
-
-        if (tlen != 0)
-            return false;
-    }
-
-    for (q = &str[i + 1], p = q; *p == '0';)
-        p++;
-
-    int j = atoi(segnum);
-    if (atoi(p) != j) {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in SEGMENT line = \"%d\". Entry dropped.", str, j);
-        entry->drop = true;
-    }
-
-    *q = '\0'; /* strip off "len" characters */
-    return true;
-}
-
-/**********************************************************/
-static void GetSegment(const char* str, IndexblkPtr entry)
-{
-    auto stoken = TokenString(str, ' ');
-
-    if (stoken->num >= 4) {
-        auto ptr2     = next(stoken->list.begin());
-        auto ptr4     = next(ptr2, 2);
-        entry->segnum = (Uint2)atoi(ptr2->c_str());
-
-        if (! DelSegnum(entry, ptr2->c_str(), StringLen(ptr4->c_str()))) {
-            ErrPostEx(SEV_ERROR, ERR_SEGMENT_BadLocusName, "Bad locus name %s in %d", entry->blocusname, entry->linenum);
-        }
-
-        entry->segtotal = (Uint2)atoi(ptr4->c_str());
-    } else {
-        ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at linenum %d", entry->linenum);
-    }
-}
-// LCOV_EXCL_STOP
 
 /**********************************************************/
 static bool gb_err_field(const char* str)
@@ -561,10 +467,10 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     }
                     break;
                 case ParFlat_SEGMENT:
-                    // LCOV_EXCL_START
-                    // Excluded per Mark's request on 12/14/2016
-                    GetSegment(finfo.str, entry);
-                    // LCOV_EXCL_STOP
+                    ErrPostEx(SEV_ERROR, ERR_SEGMENT, 
+                            "Error at linenum %d. Segmented sets are not supported.",
+                            entry->linenum);
+                    entry->drop = true;
                     break;
                 case ParFlat_USER:
                     if (pp->source != Parser::ESource::Flybase) {
@@ -676,11 +582,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         entry->drop = gb_err_field("FEATURES");
                     }
                 } // !Parser::EMode::Relaxed
-
-                if (entry->is_contig && entry->segnum != 0) {
-                    ErrPostStr(SEV_ERROR, ERR_FORMAT_ContigInSegset, "CONTIG data are not allowed for members of segmented sets, entry dropped.");
-                    entry->drop = true;
-                }
             }
             if (pp->accver) {
                 if (pp->mode == Parser::EMode::HTGSCON)

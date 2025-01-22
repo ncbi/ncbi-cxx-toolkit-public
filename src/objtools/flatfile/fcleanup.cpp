@@ -102,94 +102,6 @@ static bool IsEmptyMolInfo(const CMolInfo& mol_info)
               mol_info.IsSetTech() || mol_info.IsSetTechexp());
 }
 
-static void MoveAnnotToTop(CSeq_entry& seq_entry)
-{
-    if (! seq_entry.IsSet() || ! seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
-        return;
-
-    CBioseq_set* parts   = nullptr;
-    CBioseq_set& bio_set = seq_entry.SetSet();
-
-    for (auto& entry : bio_set.SetSeq_set()) {
-        if (entry->IsSet() && entry->GetSet().IsSetClass() && entry->GetSet().GetClass() == CBioseq_set::eClass_parts) {
-            parts = &entry->SetSet();
-            break;
-        }
-    }
-
-    if (parts && parts->IsSetAnnot()) {
-
-        CBioseq::TAnnot& annot = bio_set.SetSeq_set().front()->SetAnnot();
-        annot.splice(annot.end(), parts->SetAnnot());
-        parts->ResetAnnot();
-    }
-}
-
-static void MoveBiomolToTop(CSeq_entry& seq_entry)
-{
-    if (! seq_entry.IsSet() || ! seq_entry.GetSet().IsSetClass() || seq_entry.GetSet().GetClass() != CBioseq_set::eClass_segset)
-        return;
-
-    if (seq_entry.IsSetDescr()) {
-        for (const auto& desc : seq_entry.GetDescr().Get()) {
-            if (desc->IsMolinfo())
-                return;
-        }
-    }
-
-    CBioseq_set* parts   = nullptr;
-    CBioseq_set& bio_set = seq_entry.SetSet();
-
-    for (auto& entry : bio_set.SetSeq_set()) {
-        if (entry->IsSet() && entry->GetSet().IsSetClass() && entry->GetSet().GetClass() == CBioseq_set::eClass_parts) {
-            parts = &entry->SetSet();
-            break;
-        }
-    }
-
-    if (parts) {
-        CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
-        for (const auto& entry : parts->GetSeq_set()) {
-            if (! entry->IsSeq())
-                return;
-
-            const CBioseq& bioseq = entry->GetSeq();
-            if (bioseq.IsSetDescr()) {
-                for (const auto& desc : bioseq.GetDescr().Get()) {
-                    if (desc->IsMolinfo() && desc->GetMolinfo().IsSetBiomol()) {
-                        CMolInfo::TBiomol cur_biomol = desc->GetMolinfo().GetBiomol();
-                        if (biomol == CMolInfo::eBiomol_unknown)
-                            biomol = cur_biomol;
-                        else if (biomol != cur_biomol)
-                            return;
-                    }
-                }
-            }
-        }
-
-        if (biomol != CMolInfo::eBiomol_unknown) {
-            for (auto& entry : parts->SetSeq_set()) {
-                CBioseq& bioseq = entry->SetSeq();
-                if (bioseq.IsSetDescr()) {
-                    TSeqdescList& descrs = bioseq.SetDescr().Set();
-                    for (TSeqdescList::iterator desc = descrs.begin(); desc != descrs.end(); ++desc) {
-                        if ((*desc)->IsMolinfo()) {
-                            (*desc)->SetMolinfo().ResetBiomol();
-                            if (IsEmptyMolInfo((*desc)->GetMolinfo()))
-                                descrs.erase(desc);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            CRef<CSeqdesc> new_descr(new CSeqdesc);
-            new_descr->SetMolinfo().SetBiomol(biomol);
-
-            seq_entry.SetDescr().Set().push_back(new_descr);
-        }
-    }
-}
 
 static void LookForProductName(CSeq_feat& feat)
 {
@@ -511,13 +423,6 @@ void FinalCleanup(TEntryList& seq_entries)
             }
         }
         */
-
-        MoveBiomolToTop(*entry);
-        MoveAnnotToTop(*entry);
-        for (CTypeIterator<CSeq_entry> cur_entry(Begin(*entry)); cur_entry; ++cur_entry) {
-            MoveBiomolToTop(*cur_entry);
-            MoveAnnotToTop(*cur_entry);
-        }
 
         // for (CTypeIterator<CSeq_annot> annot(Begin(*entry)); annot; ++annot) {
         //     SortFeaturesByLocation(*annot);

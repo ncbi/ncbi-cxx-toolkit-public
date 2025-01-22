@@ -75,8 +75,6 @@
 #define ERR_LOCUS_NoLocusName              4,8
 
 #define ERR_SEGMENT                        5,0
-#define ERR_SEGMENT_BadLocusName           5,3
-#define ERR_SEGMENT_IncompSeg              5,4
 
 #define ERR_VERSION                        6,0
 #define ERR_VERSION_MissingVerNum          6,1

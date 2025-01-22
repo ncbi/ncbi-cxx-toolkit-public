@@ -173,9 +173,7 @@ struct Parser {
     bool            transl       = false;          /* if TRUE program replaces translation */
     bool            sort         = false;          /* if TRUE, program doesn't sort entries */
     bool            debug        = false;          /* output everthing */
-    bool            segment      = false;          /* treat the input file as segment in embl format */
     bool            no_code      = false;          /* no genetic code from server try to guess */
-    bool            seg_acc      = false;          /* use accession for segmented set Id */
     bool            convert      = false;          /* convert to new asn.1 spec (ver. 4.0) */
     const char**    accpref      = nullptr;        /* a list of allowable 2-letter
                                      prefixes in new format of accession

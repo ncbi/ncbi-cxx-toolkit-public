@@ -82,7 +82,7 @@ using InfoBioseqPtr = InfoBioseq*;
 
 struct ProtBlk {
     objects::CSeq_entry* biosep = nullptr; /* for the toppest level of the BioseqSet */
-    bool                 segset = false;   /* TRUE if a BioseqSet SeqEntry */
+    bool                 IsBioseqSet = false;   /* TRUE if a BioseqSet SeqEntry */
     TEntryList           entries;          /* a ProtRef SeqEntry list, link to above
                                    biosep */
     TSeqFeatList         feats;            /* a CodeRegionPtr list to link the BioseqSet
@@ -154,11 +154,6 @@ struct Indexblk {
     Char   locusname[200];  /* locus name */
     Char   division[4];     /* division code */
     size_t bases    = 0;    /* basepair length of the entry */
-    Uint2  segnum   = 0;    /* the number of the entry w/i a
-                                               segment set */
-    Uint2  segtotal = 0;    /* total number of members in
-                                               segmented set to which this
-                                               entry belongs */
     Char   blocusname[200]; /* base locus name s.t. w/o tailing
                                                number */
     size_t linenum = 0;     /* line number at which the entry
