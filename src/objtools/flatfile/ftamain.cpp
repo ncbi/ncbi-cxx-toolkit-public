@@ -86,92 +86,6 @@ USING_SCOPE(objects);
 extern void fta_init_gbdataloader();
 
 
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-// Must be restored to test parsing from string buffer
-/**********************************************************
- *
- *   static void CkSegmentSet(pp):
- *
- *      After building index block, before parsing ascii
- *   block.
- *      Report "WARN" message to the whole segment set
- *   if any one segment entry was missing, then treat
- *   the whole set to be the individual one, s.t. set each
- *   segment entry's segnum = segtotal = 0.
- *
- *                                              6-24-93
- *
- **********************************************************/
-static void CkSegmentSet(ParserPtr pp)
-{
-    Int4  i;
-    Int4  j;
-    Int4  bindx;
-    Int4  total;
-    char* locus;
-
-    bool flag;
-    bool drop;
-    bool notdrop;
-
-    for (i = 0; i < pp->indx;) {
-        if (pp->entrylist[i]->segtotal == 0) {
-            i++;
-            continue;
-        }
-
-        bindx = i;
-
-        total = pp->entrylist[bindx]->segtotal;
-        locus = pp->entrylist[bindx]->blocusname;
-
-        flag = (pp->entrylist[bindx]->segnum != 1);
-
-        for (i++; i < pp->indx &&
-                  StringEqu(pp->entrylist[i]->blocusname, locus);
-             i++) {
-            if (pp->entrylist[i - 1]->segnum + 1 != pp->entrylist[i]->segnum)
-                flag = true;
-        }
-        if (i - bindx != total)
-            flag = true;
-
-        if (flag) /* warning the whole segment set */
-        {
-            ErrPostEx(SEV_ERROR, ERR_SEGMENT_MissSegEntry, "%s|%s: Missing members of segmented set.", pp->entrylist[bindx]->locusname, pp->entrylist[bindx]->acnum);
-
-            for (j = bindx; j < i; j++) {
-                pp->curindx = j;
-
-                pp->entrylist[j]->segnum   = 0;
-                pp->entrylist[j]->segtotal = 0;
-
-                if (pp->debug == false)
-                    pp->entrylist[j]->drop = true;
-            }
-        }    /* if, flag */
-        else /* assign all drop = false if they have "mix ownership" */
-        {
-            for (j = bindx, drop = notdrop = false; j < i; j++) {
-                if (pp->entrylist[j]->drop)
-                    drop = true;
-                else
-                    notdrop = true;
-            }
-
-            if (drop && notdrop) /* mix ownership */
-            {
-                for (j = bindx; j < i; j++)
-                    pp->entrylist[j]->drop = false;
-                if (drop)
-                    pp->num_drop--;
-            }
-        }
-    }
-}
-// LCOV_EXCL_STOP
-
 /**********************************************************/
 static bool CompareAccs(const Indexblk* p1, const Indexblk* p2)
 {
@@ -195,37 +109,19 @@ static bool CompareAccsV(const Indexblk* p1, const Indexblk* p2)
  *      Group all the segments data together.
  *      To solve duplicated entries which have the same
  *   accession number but locusname changed.
- *      Sorted by blocusname, segtotal, segnum, acnum,
- *   offset.
+ *      Sorted by blocusname, acnum, offset.
  *
- *                                              3-9-93
  *
  **********************************************************/
 static bool CompareData(const Indexblk* p1, const Indexblk* p2)
 {
     int retval = StringCmp(p1->blocusname, p2->blocusname);
     if (retval == 0) {
-        if (p1->segtotal != 0 || p2->segtotal != 0) {
-            if (p1->segtotal == p2->segtotal) {
-                retval = p1->segnum - p2->segnum;
-
-                if (retval == 0) {
-                    retval = StringCmp(p1->acnum, p2->acnum);
-
-                    if (retval == 0)
-                        retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
-                }
-            } /* segtotal */
-            else
-                retval = p1->segtotal - p2->segtotal;
-        } else {
-            retval = StringCmp(p1->acnum, p2->acnum);
-
-            if (retval == 0)
-                retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+        retval = StringCmp(p1->acnum, p2->acnum);
+        if (retval == 0) {
+            retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
         }
     }
-
     return retval < 0;
 }
 
@@ -235,33 +131,14 @@ static bool CompareDataV(const Indexblk* p1, const Indexblk* p2)
     int retval = StringCmp(p1->blocusname, p2->blocusname);
 
     if (retval == 0) {
-        if (p1->segtotal != 0 || p2->segtotal != 0) {
-            if (p1->segtotal == p2->segtotal) {
-                retval = p1->segnum - p2->segnum;
-
-                if (retval == 0) {
-                    retval = StringCmp(p1->acnum, p2->acnum);
-
-                    if (retval == 0) {
-                        retval = p1->vernum - p2->vernum;
-                        if (retval == 0)
-                            retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
-                    }
-                }
-            } /* segtotal */
-            else
-                retval = p1->segtotal - p2->segtotal;
-        } else {
-            retval = StringCmp(p1->acnum, p2->acnum);
-
+        retval = StringCmp(p1->acnum, p2->acnum);
+        if (retval == 0) {
+            retval = p1->vernum - p2->vernum;
             if (retval == 0) {
-                retval = p1->vernum - p2->vernum;
-                if (retval == 0)
-                    retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
+                retval = p1->offset >= p2->offset ? static_cast<int>(p1->offset - p2->offset) : -1;
             }
         }
     }
-
     return retval < 0;
 }
 
@@ -602,8 +479,6 @@ static bool sParseFlatfile(ParserPtr pp, CObjectOStream& objOstr, bool already =
         std::sort(pp->entrylist.begin(), pp->entrylist.end(), (pp->accver ? CompareDataV : CompareData));
     }
 
-    CkSegmentSet(pp); /* check for missing entries in segment set */
-
     CheckDupEntries(pp);
 
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp->indx);
@@ -705,8 +580,6 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
     if (pp->sort) {
         std::sort(pp->entrylist.begin(), pp->entrylist.end(), (pp->accver ? CompareDataV : CompareData));
     }
-
-    CkSegmentSet(pp); /* check for missing entries in segment set */
 
     CheckDupEntries(pp);
 
@@ -1093,7 +966,6 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
         std::sort(pp.entrylist.begin(), pp.entrylist.end(), (pp.accver ? CompareDataV : CompareData));
     }
 
-    CkSegmentSet(&pp); /* check for missing entries in segment set */
     CheckDupEntries(&pp);
 
     ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp.indx);
@@ -1158,11 +1030,9 @@ void fta_init_pp(Parser& pp)
     pp.ign_toks     = false;
     pp.date         = false;
     pp.convert      = true;
-    pp.seg_acc      = false;
     pp.no_date      = false;
     pp.sort         = true;
     pp.debug        = false;
-    pp.segment      = false;
     pp.accver       = true;
     pp.histacc      = true;
     pp.transl       = false;

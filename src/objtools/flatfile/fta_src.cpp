@@ -3141,8 +3141,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqI
     acc        = ibp->acnum;
     size_t len = ibp->bases;
 
-    if (ibp->segnum < 2)
-        pp->errstat = 0;
+    pp->errstat = 0;
 
     sfbp = CollectSourceFeats(dbp, dbp_end, type);
     if (! sfbp) {
@@ -3280,7 +3279,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqI
         return;
     }
     i = CheckFocusInOrgs(sfbp, len, &pp->errstat);
-    if (pp->errstat != 0 && (ibp->segnum == 0 || pp->errstat == ibp->segtotal))
+    if (pp->errstat != 0)
         i = 1;
     if (i > 0) {
         sev = SEV_REJECT;

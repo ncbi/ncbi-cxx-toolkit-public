@@ -50,10 +50,9 @@
  *
  *      Take our translation when the only diff is start codon.
  *
- *      This program only assign 3 different level of Bioseqset:
+ *      This program only assign 2 different level of Bioseqset:
  *         class = nucprot, assign level = 1
- *         class = segset,  assign level = 2
- *         class = parts,   assign levle = 3
+ *         class = parts,   assign level = 3
  *
  */
 
@@ -274,7 +273,7 @@ static void ProtBlkInit(ProtBlkPtr pbp)
     pbp->biosep = nullptr;
 
     pbp->gcode.Reset();
-    pbp->segset = false;
+    pbp->IsBioseqSet = false;
     pbp->genome = 0;
 
     InfoBioseqPtr ibp = pbp->ibp;
@@ -294,9 +293,6 @@ static void AssignBioseqSetLevel(TEntryList& seq_entries)
             switch (bio_set->GetClass()) {
             case CBioseq_set::eClass_nuc_prot:
                 bio_set->SetLevel(1);
-                break;
-            case CBioseq_set::eClass_segset:
-                bio_set->SetLevel(2);
                 break;
             case CBioseq_set::eClass_parts:
                 bio_set->SetLevel(3);
@@ -2352,20 +2348,18 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
 
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
-            pbp->segset = true;
+            pbp->IsBioseqSet = true;
             pbp->biosep = entry;
             break;
         }
 
-        if (pbp->segset)
+        if (pbp->IsBioseqSet)
             break;
     }
 
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             const CSeq_id& first_id = *(*bioseq->GetId().begin());
-            if (IsSegBioseq(first_id))
-                continue;
 
             if (pp->source != Parser::ESource::USPTO)
                 CpSeqId(pbp->ibp, first_id);
@@ -2390,7 +2384,7 @@ static void FindCd(TEntryList& seq_entries, CScope& scope, ParserPtr pp, GeneRef
                     bioseq->ResetAnnot();
             }
 
-            if (! pbp->segset) {
+            if (! pbp->IsBioseqSet) {
                 pbp->biosep = entry;
             }
         }
@@ -2453,7 +2447,7 @@ void ExtractDescrs(TSeqdescList& descrs_from, TSeqdescList& descrs_to, CSeqdesc:
 static void GetBioseqSetDescr(ProtBlkPtr pbp, TSeqdescList& descrs)
 {
     TSeqdescList* descrs_from = nullptr;
-    if (pbp->segset) {
+    if (pbp->IsBioseqSet) {
         if (! pbp->biosep->GetSet().GetDescr().Get().empty())
             descrs_from = &pbp->biosep->SetSet().SetDescr().Set();
     } else {

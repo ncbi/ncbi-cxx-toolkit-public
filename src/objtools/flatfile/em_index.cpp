@@ -78,39 +78,6 @@ vector<string> checkedEmblKeywords = {
 };
 
 
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-/**********************************************************
- *
- *   static void EmblSegment(pp):
- *
- *                                              2-24-93
- *
- **********************************************************/
-static void EmblSegment(ParserPtr pp)
-{
-    size_t      i = 0;
-    int         j;
-    IndexblkPtr ibp;
-    char*       locus;
-
-    locus = StringSave(pp->entrylist[0]->locusname);
-
-    for (i = StringLen(locus); isdigit(locus[i - 1]) != 0 && i > 0; i--)
-        locus[i - 1] = '\0';
-
-    for (j = 0; j < pp->indx; j++) {
-        ibp           = pp->entrylist[j];
-        ibp->segnum   = static_cast<Uint2>(j + 1);
-        ibp->segtotal = pp->indx;
-
-        StringCpy(ibp->blocusname, locus);
-    }
-
-    MemFree(locus);
-}
-// LCOV_EXCL_STOP
-
 /**********************************************************/
 static bool em_err_field(const char* str)
 {
@@ -418,12 +385,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
     for (auto& it : ibl) {
         pp->entrylist.push_back(it.release());
     }
-
-    if (pp->segment)
-        // LCOV_EXCL_START
-        // Excluded per Mark's request on 12/14/2016
-        EmblSegment(pp);
-    // LCOV_EXCL_STOP
 
     return (end_of_file);
 }

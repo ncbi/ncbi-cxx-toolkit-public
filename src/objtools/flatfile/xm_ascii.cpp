@@ -99,12 +99,6 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 
     bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
 
-    if (condiv && ibp->segnum != 0) {
-        ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset, "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry dropped.", ibp->locusname, ibp->acnum);
-        ibp->drop = true;
-        return;
-    }
-
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
         ibp->drop = true;

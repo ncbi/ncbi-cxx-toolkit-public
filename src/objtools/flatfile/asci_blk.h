@@ -73,12 +73,7 @@ void                        GetSeqExt(ParserPtr pp, objects::CSeq_loc& seq_loc);
 unsigned char* const GetDNAConvTable();
 unsigned char* const GetProtConvTable();
 
-// LCOV_EXCL_START
-// Excluded per Mark's request on 12/14/2016
-void BuildBioSegHeader(ParserPtr pp, TEntryList& entries, const objects::CSeq_loc& seqloc);
-// LCOV_EXCL_STOP
 
-bool IsSegBioseq(const objects::CSeq_id& id);
 bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, string& div, int* tech, size_t bases, Parser::ESource source, bool& drop);
 void EntryCheckDivCode(TEntryList& seq_entries, ParserPtr pp);
 void AddNIDSeqId(objects::CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata, Parser::ESource source);

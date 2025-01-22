@@ -138,7 +138,6 @@ struct GeneList {
     CRef<CSeq_feat> feat;
 
     SeqlocInfoblkPtr slibp  = nullptr; /* the location, points to the value */
-    Int4             segnum = 0;       /* segment number */
     Uint1            leave  = 0;       /* TRUE for aka tRNAs */
 
     CRef<CSeq_loc> loc;
@@ -166,7 +165,6 @@ using GeneListPtr = GeneList*;
 struct CdssList {
     Int4      from;
     Int4      to;
-    Int4      segnum;
     CdssList* next;
 };
 
@@ -175,8 +173,6 @@ using CdssListPtr = CdssList*;
 struct GeneNode {
     bool         flag; /* TRUE, if a level has been found
                                            to put GeneRefPtr */
-    bool         seg;  /* TRUE, if this is a segment set
-                                           entries */
     CBioseq*     bioseq;
     CBioseq_set* bioseq_set;
 
@@ -184,7 +180,6 @@ struct GeneNode {
                                            the entries */
     TSeqFeatList feats;    /* a list which contains the
                                            GeneRefPtr only */
-    Int4         segindex; /* total segments in this set */
     bool         accver;   /* for ACCESSION.VERSION */
     bool         skipdiv;  /* skip BCT and SYN divisions */
     CdssListPtr  clp;
@@ -196,11 +191,9 @@ struct GeneNode {
 
     GeneNode() :
         flag(false),
-        seg(false),
         bioseq(nullptr),
         bioseq_set(nullptr),
         glp(nullptr),
-        segindex(0),
         accver(false),
         skipdiv(false),
         clp(nullptr),
@@ -419,11 +412,7 @@ static bool CompareGeneListName(const GeneListPtr& sp1, const GeneListPtr& sp2)
     SeqlocInfoblkPtr slip1 = sp1->slibp;
     SeqlocInfoblkPtr slip2 = sp2->slibp;
 
-    Int4 status = sp1->segnum - sp2->segnum;
-    if (status != 0)
-        return status < 0;
-
-    status = fta_cmp_locusyn(sp1, sp2);
+    Int4 status = fta_cmp_locusyn(sp1, sp2);
     if (status != 0)
         return status < 0;
 
@@ -461,9 +450,6 @@ static bool CompareGeneListName(const GeneListPtr& sp1, const GeneListPtr& sp2)
     slip1 = (*sp1)->slibp;
     slip2 = (*sp2)->slibp;
 
-    status = (*sp1)->segnum - (*sp2)->segnum;
-    if (status != 0)
-        return(status);
 
     status = fta_cmp_locusyn(*sp1, *sp2);
     if (status != 0)
@@ -696,7 +682,7 @@ static bool DoWeHaveGeneInBetween(GeneListPtr c, SeqlocInfoblkPtr second, GeneNo
         return false;
 
     for (glp = gnp->glp; glp; glp = glp->next) {
-        if (c->segnum != glp->segnum || ! glp->slibp)
+        if (! glp->slibp)
             continue;
 
         slp = glp->slibp;
@@ -726,7 +712,7 @@ static bool DoWeHaveCdssInBetween(GeneListPtr c, Int4 to, CdssListPtr clp)
     if (cloc->to >= to)
         return false;
     for (; clp; clp = clp->next)
-        if (c->segnum == clp->segnum && clp->from > cloc->to && clp->to < to)
+        if (clp->from > cloc->to && clp->to < to)
             break;
 
     return clp != nullptr;
@@ -1028,86 +1014,6 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
     }
 }
 
-/**********************************************************/
-static void MessWithSegGenes(GeneNodePtr gnp)
-{
-    GeneListPtr glp;
-    GeneListPtr tglp;
-    GeneListPtr next;
-    GeneListPtr prev;
-    MixLocPtr   mlp;
-    MixLocPtr   tmlp;
-    Int4        segnum;
-    Int4        i;
-    ENa_strand  strand;
-
-    for (glp = gnp->glp; glp && glp->segnum == 1; glp = glp->next) {
-        if (glp->loc || ! glp->mlp)
-            continue;
-        segnum = 1;
-        strand = glp->slibp->strand;
-        for (tglp = gnp->glp; tglp; tglp = tglp->next) {
-            if (tglp->loc || ! glp->mlp ||
-                fta_cmp_locusyn(glp, tglp) != 0)
-                continue;
-
-            i = tglp->segnum - segnum;
-            if (i < 0 || i > 1)
-                break;
-
-            if (tglp->slibp->strand != strand)
-                continue;
-
-            segnum = tglp->segnum;
-        }
-        if (segnum != gnp->segindex)
-            continue;
-
-        segnum = 0;
-        mlp    = nullptr;
-        for (tglp = gnp->glp; tglp; tglp = tglp->next) {
-            if (tglp->loc || tglp->segnum - segnum != 1 ||
-                ! tglp->mlp || fta_cmp_locusyn(glp, tglp) != 0)
-                continue;
-
-            if (tglp->slibp->strand != strand)
-                continue;
-            segnum++;
-            tmlp = EasySeqLocMerge(mlp, tglp->mlp, false);
-            MixLocFree(tglp->mlp);
-            MixLocFree(mlp);
-            mlp = tmlp;
-
-            if (segnum != gnp->segindex) {
-                tglp->mlp = nullptr;
-                if (tglp->pseudo)
-                    glp->pseudo = true;
-                if (tglp->allpseudo == false)
-                    glp->allpseudo = false;
-                fta_check_pseudogene(tglp, glp);
-                fta_add_wormbase(tglp, glp);
-                fta_add_olt(tglp, glp);
-                continue;
-            }
-            tglp->mlp = mlp;
-            break;
-        }
-    }
-    prev = nullptr;
-    for (tglp = gnp->glp; tglp; tglp = next) {
-        next = tglp->next;
-        if (tglp->mlp) {
-            prev = tglp;
-            continue;
-        }
-        if (! prev)
-            gnp->glp = tglp->next;
-        else
-            prev->next = tglp->next;
-        tglp->next = nullptr;
-        GeneListFree(tglp);
-    }
-}
 
 /**********************************************************/
 static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c, MixLocPtr mlp, Int4 from, Int4 to)
@@ -1613,8 +1519,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
     for (c = gnp->glp; c->next; c = c->next) {
         for (cn = c->next; cn; cn = cn->next) {
-            if (c->segnum == cn->segnum &&
-                c->feat.NotEmpty() && cn->feat.NotEmpty() &&
+            if (c->feat.NotEmpty() && cn->feat.NotEmpty() &&
                 c->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
                 cn->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
                 fta_cmp_locusyn(c, cn) == 0) {
@@ -1636,7 +1541,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
     for (c = gnp->glp; c->next;) {
         cn = c->next;
-        if (c->segnum != cn->segnum || fta_cmp_locusyn(c, cn) != 0 ||
+        if (fta_cmp_locusyn(c, cn) != 0 ||
             c->leave != 0 || cn->leave != 0 ||
             c->slibp->strand != cn->slibp->strand ||
             (gnp->simple_genes == false && DoWeHaveGeneInBetween(c, cn->slibp, gnp))) {
@@ -1661,7 +1566,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
         if (! gnp->simple_genes) {
             for (cp = gnp->glp; cp; cp = cp->next) {
-                if (cp->segnum != c->segnum || cp->leave == 1 || cp->circular)
+                if (cp->leave == 1 || cp->circular)
                     continue;
                 if (fta_cmp_locusyn(cp, c) == 0 ||
                     cp->slibp->strand != c->slibp->strand)
@@ -1707,8 +1612,6 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
             CircularSeqLocFormat(c);
     }
 
-    if (gnp->seg)
-        MessWithSegGenes(gnp);
 
     for (c = gnp->glp; c; c = c->next)
         if (c->loc.Empty() && c->mlp)
@@ -1720,7 +1623,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
         const CSeq_loc& loc = *c->loc;
         for (cn = gnp->glp; cn; cn = cn->next) {
-            if (cn->loc.Empty() || &loc == cn->loc || cn->segnum != c->segnum ||
+            if (cn->loc.Empty() || &loc == cn->loc ||
                 cn->slibp->strand != c->slibp->strand ||
                 fta_cmp_locusyn(cn, c) != 0)
                 continue;
@@ -2239,7 +2142,6 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
                 newglp->maploc = *qual;
             }
         }
-        newglp->segnum = gnp->segindex;
 
         GetGeneSyns(feat->GetQual(), gene, newglp->syn);
 
@@ -2274,7 +2176,7 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
 }
 
 /**********************************************************/
-static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp, Int4 segnum, const CSeq_id& id)
+static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp, const CSeq_id& id)
 {
     CdssListPtr      newclp;
     SeqlocInfoblkPtr slip;
@@ -2290,7 +2192,6 @@ static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp,
             continue;
 
         newclp         = new CdssList();
-        newclp->segnum = segnum;
         newclp->from   = slip->from;
         newclp->to     = slip->to;
         delete slip;
@@ -2320,9 +2221,6 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
         return;
     }
 
-    if (IsSegBioseq(*first_id))
-        return; /* process this bioseq */
-
     if (bioseq.GetInst().GetTopology() == CSeq_inst::eTopology_circular)
         gene_node->circular = true;
 
@@ -2335,12 +2233,10 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
 
         CRef<CSeq_id> id = CpSeqIdAcOnly(*first_id, gene_node->accver);
 
-        ++(gene_node->segindex); /* > 1, if segment set */
-
         SrchGene(annot->SetData().SetFtable(), gene_node, bioseq.GetLength(), *id);
 
         if (gene_node->skipdiv) {
-            gene_node->clp = SrchCdss(annot->SetData().SetFtable(), gene_node->clp, gene_node->segindex, *id);
+            gene_node->clp = SrchCdss(annot->SetData().SetFtable(), gene_node->clp, *id);
         }
 
         if (gene_node->glp && gene_node->flag == false) {
@@ -2621,16 +2517,6 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             FindGene(*bioseq, gnp);
         }
-
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
-            if (bio_set->GetClass() == CBioseq_set::eClass_parts) /* parts, the place to put GeneRefPtr */
-            {
-                gnp->bioseq_set = &(*bio_set);
-                gnp->flag       = true;
-                gnp->seg        = true;
-                break;
-            }
-        }
     }
 
     if (gnp->got_misc) {
@@ -2676,14 +2562,9 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
             GeneCheckForStrands(gnp->glp);
 
         if (! gnp->feats.empty()) {
-            CBioseq::TAnnot* annots = nullptr;
-            if (gnp->seg) {
-                annots = &gnp->bioseq_set->SetAnnot();
-            } else {
-                annots = &gnp->bioseq->SetAnnot();
-            }
+            auto& annots = gnp->bioseq->SetAnnot();
 
-            for (auto& cur_annot : *annots) {
+            for (auto& cur_annot : annots) {
                 if (! cur_annot->IsFtable())
                     continue;
 
@@ -2697,15 +2578,10 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
                 break;
             }
 
-            if (annots->empty()) {
+            if (annots.empty()) {
                 CRef<CSeq_annot> annot(new CSeq_annot);
                 annot->SetData().SetFtable().assign(gnp->feats.begin(), gnp->feats.end());
-
-                if (gnp->seg) {
-                    gnp->bioseq_set->SetAnnot().push_back(annot);
-                } else {
-                    gnp->bioseq->SetAnnot().push_back(annot);
-                }
+                gnp->bioseq->SetAnnot().push_back(annot);
 
                 gene_refs.first = annot->SetData().SetFtable().begin();
                 gene_refs.last  = annot->SetData().SetFtable().end();

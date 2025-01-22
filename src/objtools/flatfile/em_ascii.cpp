@@ -727,11 +727,6 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
     bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
 
     bool result = true;
-    if (condiv && ibp->segnum != 0) {
-        ErrPostEx(SEV_ERROR, ERR_DIVISION_ConDivInSegset, "Use of the CON division is not allowed for members of segmented set : %s|%s. Entry skipped.", ibp->locusname, ibp->acnum);
-        // ibp->drop = true;
-        result = false;
-    }
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
         ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
