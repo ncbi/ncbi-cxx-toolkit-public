@@ -201,89 +201,6 @@ unique_ptr<string> XMLFindTagValue(const char* entry, const TXmlIndexList& xil, 
     return {};
 }
 
-/**********************************************************/
-static bool XMLDelSegnum(IndexblkPtr ibp, const char* segnum, size_t len2)
-{
-    if (! segnum)
-        return false;
-    size_t len1 = StringLen(segnum);
-    if (len2 < len1)
-        return false;
-
-    /* check, is there enough digits to delete
-     */
-    size_t tlen = len1;
-    char*  str  = ibp->blocusname;
-    size_t i    = StringLen(str) - 1;
-    for (; tlen > 0 && str[i] >= '0' && str[i] <= '9'; i--)
-        tlen--;
-
-    if (tlen != 0)
-        return false;
-
-    if (len2 > len1 && str[i] == '0') {
-        /* check, is there enough "0" appended
-         */
-        for (tlen = len2 - len1; tlen > 0 && str[i] == '0'; i--)
-            tlen--;
-
-        if (tlen != 0)
-            return false;
-    }
-
-    char* p;
-    char* q;
-    for (q = &str[i + 1], p = q; *p == '0';)
-        p++;
-
-    i = atoi(segnum);
-    if (atoi(p) != (int)i) {
-        ErrPostEx(SEV_REJECT, ERR_SEGMENT_BadLocusName, "Segment suffix in locus name \"%s\" does not match number in <INSDSEQ_segment> line = \"%d\". Entry dropped.", str, i);
-        ibp->drop = true;
-    }
-
-    *q = '\0'; /* strip off "len" characters */
-    return true;
-}
-
-/**********************************************************/
-static void XMLGetSegment(const char* entry, IndexblkPtr ibp)
-{
-    const char* segnum;
-    const char* segtotal;
-
-    if (! entry || ! ibp || ibp->xip.empty())
-        return;
-
-    auto xip = ibp->xip.begin();
-    for (; xip != ibp->xip.end(); ++xip)
-        if (xip->tag == INSDSEQ_SEGMENT)
-            break;
-    if (xip == ibp->xip.end())
-        return;
-
-    auto buf = XMLGetTagValue(entry, *xip);
-    if (! buf)
-        return;
-
-    auto stoken = TokenString(buf->c_str(), ' ');
-
-    if (stoken->num >= 3) {
-        auto it1    = stoken->list.begin();
-        auto it3    = next(it1, 2);
-        segnum      = it1->c_str();
-        segtotal    = it3->c_str();
-        ibp->segnum = (Uint2)atoi(segnum);
-
-        if (! XMLDelSegnum(ibp, segnum, StringLen(segtotal))) {
-            ErrPostEx(SEV_ERROR, ERR_SEGMENT_BadLocusName, "Bad locus name \"%s\".", ibp->blocusname);
-        }
-
-        ibp->segtotal = (Uint2)atoi(segtotal);
-    } else {
-        ErrPostEx(SEV_ERROR, ERR_SEGMENT_IncompSeg, "Incomplete Segment information at line %d.", xip->start_line);
-    }
-}
 
 
 static bool s_HasInput(const Parser& config)
@@ -891,10 +808,6 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     }
     if (got_features == false)
         ret = XMLErrField(INSDSEQ_FEATURE_TABLE);
-    if (ibp->is_contig && ibp->segnum != 0) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_ContigInSegset, "%s data are not allowed for members of segmented sets. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_CONTIG));
-        ret = false;
-    }
 
     ibp->is_tpa_wgs_con = (ibp->is_contig && ibp->is_wgs && ibp->is_tpa);
 
@@ -1331,6 +1244,17 @@ static bool XMLIndexReferences(const char* entry, TXmlIndexList& xil, size_t bas
     return false;
 }
 
+
+static bool s_IsSegment(const IndexblkPtr& ibp)
+{
+    for (const auto& xip : ibp->xip) {
+        if (xip.tag == INSDSEQ_SEGMENT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**********************************************************/
 bool XMLIndex(ParserPtr pp)
 {
@@ -1372,7 +1296,13 @@ bool XMLIndex(ParserPtr pp)
             MemFree(entry);
             continue;
         }
-        XMLGetSegment(entry, ibp);
+
+        if (s_IsSegment(ibp)) {
+            ibp->drop = true;
+            MemFree(entry);
+            continue;
+        }
+
         if (XMLCheckRequiredTags(pp, ibp) == false) {
             ibp->drop = true;
             MemFree(entry);

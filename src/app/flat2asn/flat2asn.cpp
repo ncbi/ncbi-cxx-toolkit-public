@@ -88,7 +88,6 @@ static bool InitConfig(const CArgs& args, Parser& config)
 
     config.allow_uwsec = args["w"].AsBoolean();
     config.convert = true;
-    config.seg_acc = args["I"].AsBoolean();
     config.no_date = args["N"].AsBoolean();
     config.diff_lt = args["Y"].AsBoolean();
     config.xml_comp = args["X"].AsBoolean();
@@ -100,7 +99,6 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.sort = !args["S"].AsBoolean();
 
     config.debug = args["D"].AsBoolean();
-    config.segment = args["E"].AsBoolean();
     config.accver = args["V"].AsBoolean();
     config.histacc = !args["F"].AsBoolean();
 
@@ -254,12 +252,10 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddDefaultKey("b", "BinaryOutput", "ASN.1 output in binary format", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("v", "Verbose", "Display verbose error message on console", ncbi::CArgDescriptions::eBoolean, "F");
 
-    arg_descrs->AddDefaultKey("E", "EmblSegmentedSet", "Treat input EMBL flatfile as a segmented set", ncbi::CArgDescriptions::eBoolean, "F");
 
     arg_descrs->AddDefaultKey("N", "NoDates", "No update date or current date", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("S", "NoSort", "Don't sort the entries in flatfile", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("L", "ReplaceUpdateDate", "Replace update date from LOCUS line with current date", ncbi::CArgDescriptions::eBoolean, "F");
-    arg_descrs->AddDefaultKey("I", "UseAccession", "Use accession for segmented set id", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("V", "ParseAccessionVersion", "Parse with ACCESSION.VERSION identifiers", ncbi::CArgDescriptions::eBoolean, "T");
     arg_descrs->AddDefaultKey("F", "NoPopulate", "Do not populate Seq-inst.hist.replaces with secondary accessions", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("c", "IgnoreMultipleTokens", "Ignore multiple tokens in DDBJ's VERSION line", ncbi::CArgDescriptions::eBoolean, "F");
