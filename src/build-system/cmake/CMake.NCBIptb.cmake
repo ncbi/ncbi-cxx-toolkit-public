@@ -1855,7 +1855,7 @@ endif()
     endif()
 
     if ( NOT "${_ncbilib}" STREQUAL "" AND DEFINED NCBI_EXTERNAL_TREE_ROOT
-        AND NOT NCBI_PTBCFG_PACKAGING)
+        AND NOT NCBI_PTBCFG_PACKAGING AND NOT NCBI_PTBCFG_PACKAGED)
         set(_value "")
         foreach(_prj IN LISTS _ncbilib)
             get_property(_local GLOBAL PROPERTY NCBI_PTBPROP_LOCAL_${_prj})
