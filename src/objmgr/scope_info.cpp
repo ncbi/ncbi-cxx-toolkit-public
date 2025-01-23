@@ -489,13 +489,48 @@ CDataSource_ScopeInfo::GetTSE_Lock(const CTSE_Lock& lock)
 }
 
 
+inline bool CTSE_ScopeInfo::x_TSE_LockIsAssigned() const
+{
+    return m_TSE_LockAssignState == 2;
+}
+
+
+inline bool CTSE_ScopeInfo::x_TSE_LockIsNotAssigned() const
+{
+    return m_TSE_LockAssignState == 0;
+}
+
+
+inline bool CTSE_ScopeInfo::x_VerifyTSE_LockIsAssigned() const
+{
+    return x_TSE_LockIsAssigned() && GetTSE_Lock();
+}
+
+
+inline bool CTSE_ScopeInfo::x_VerifyTSE_LockIsAssigned(const CTSE_Lock& tse) const
+{
+    return tse && x_VerifyTSE_LockIsAssigned() && GetTSE_Lock() == tse;
+}
+
+
+inline bool CTSE_ScopeInfo::x_VerifyTSE_LockIsAssigned(const CTSE_Info& tse) const
+{
+    return x_VerifyTSE_LockIsAssigned() && &*GetTSE_Lock() == &tse;
+}
+
+
+inline bool CTSE_ScopeInfo::x_VerifyTSE_LockIsNotAssigned() const
+{
+    return x_TSE_LockIsNotAssigned() && !GetTSE_Lock();
+}
+
+
 void CDataSource_ScopeInfo::AttachTSE(CTSE_ScopeInfo& info,
                                       const CTSE_Lock& lock)
 {
     _ASSERT(m_CanBeUnloaded == info.CanBeUnloaded());
     _ASSERT(!info.m_DS_Info);
-    _ASSERT(!info.m_TSE_LockAssigned);
-    _ASSERT(!info.m_TSE_Lock);
+    _ASSERT(info.x_VerifyTSE_LockIsNotAssigned());
     _ASSERT(lock && &lock->GetDataSource() == &GetDataSource());
     {{
         TTSE_InfoMapMutex::TWriteLockGuard guard(m_TSE_InfoMapMutex);
@@ -583,7 +618,7 @@ void CDataSource_ScopeInfo::AcquireTSEUserLock(CTSE_ScopeInfo& tse)
         TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
         m_TSE_UnlockQueue.Erase(&tse);
     }}
-    if ( !tse.m_TSE_LockAssigned ) {
+    if ( tse.x_TSE_LockIsNotAssigned() ) {
         CDataSource_ScopeInfo* ds = tse.m_DS_Info;
         if ( !ds ) {
             --tse.m_UserLockCounter;
@@ -594,11 +629,11 @@ void CDataSource_ScopeInfo::AcquireTSEUserLock(CTSE_ScopeInfo& tse)
         CTSE_Lock lock = tse.m_UnloadedInfo->LockTSE();
         _ASSERT(lock);
         tse.SetTSE_Lock(lock);
+        _ASSERT(tse.x_TSE_LockIsAssigned());
         _ASSERT(tse.GetTSE_Lock() == lock);
         _ASSERT(tse.m_UserLockCounter > 0);
     }
-    _ASSERT(tse.m_TSE_LockAssigned);
-    _ASSERT(tse.m_TSE_Lock);
+    _ASSERT(tse.x_TSE_LockIsAssigned());
 }
 
 
@@ -610,7 +645,7 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
         // relocked already
         return;
     }
-    if ( !tse.m_TSE_LockAssigned ) {
+    if ( tse.x_TSE_LockIsNotAssigned() ) {
         // already unlocked
         return;
     }
@@ -845,7 +880,6 @@ SSeqMatch_Scope CDataSource_ScopeInfo::BestResolve(const CSeq_id_Handle& idh,
         _ASSERT(ret.m_Seq_id);
         _ASSERT(ret.m_Bioseq);
         _ASSERT(ret.m_TSE_Lock);
-        _ASSERT(ret.m_TSE_Lock->m_TSE_LockAssigned);
         _ASSERT(ret.m_Bioseq == ret.m_TSE_Lock->m_TSE_Lock->FindBioseq(ret.m_Seq_id));
     }
 #endif
@@ -1053,7 +1087,7 @@ CTSE_ScopeInfo::CTSE_ScopeInfo(CDataSource_ScopeInfo& ds_info,
       m_LoadIndex(load_index),
       m_TSE_LockCounter(0),
       m_UserLockCounter(0),
-      m_TSE_LockAssigned(false),
+      m_TSE_LockAssignState(0),
       m_UsedByTSE(0)
 {
     _ASSERT(lock);
@@ -1065,8 +1099,8 @@ CTSE_ScopeInfo::CTSE_ScopeInfo(CDataSource_ScopeInfo& ds_info,
         // permanent lock
         _TRACE_TSE_LOCK("CTSE_ScopeInfo("<<this<<") perm lock");
         ++m_TSE_LockCounter;
-        x_SetTSE_Lock(lock);
-        _ASSERT(m_TSE_Lock == lock);
+        SetTSE_Lock(lock);
+        _ASSERT(x_VerifyTSE_LockIsAssigned(lock));
     }
 }
 
@@ -1081,8 +1115,7 @@ CTSE_ScopeInfo::~CTSE_ScopeInfo(void)
     x_DetachDS();
     _TRACE_TSE_LOCK("CTSE_ScopeInfo("<<this<<") final: "<<m_TSE_LockCounter);
     _ASSERT(m_TSE_LockCounter == 0);
-    _ASSERT(!m_TSE_LockAssigned);
-    _ASSERT(!m_TSE_Lock);
+    _ASSERT(x_VerifyTSE_LockIsNotAssigned());
     _ASSERT(!m_UsedByTSE);
     _ASSERT(m_UsedTSE_Set.empty());
 }
@@ -1090,7 +1123,7 @@ CTSE_ScopeInfo::~CTSE_ScopeInfo(void)
 
 CTSE_ScopeInfo::TBlobOrder CTSE_ScopeInfo::GetBlobOrder(void) const
 {
-    if ( !m_TSE_LockAssigned ) {
+    if ( x_TSE_LockIsNotAssigned() ) {
         _ASSERT(m_UnloadedInfo.get());
         return m_UnloadedInfo->m_BlobOrder;
     }
@@ -1219,7 +1252,7 @@ void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
 
 bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
 {
-    return m_TSE_LockCounter > 0 && m_TSE_LockAssigned && &*m_TSE_Lock == &tse;
+    return m_TSE_LockCounter > 0 && x_VerifyTSE_LockIsAssigned(tse);
 }
 
 
@@ -1268,59 +1301,64 @@ bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
 }
 
 
-void CTSE_ScopeInfo::x_SetTSE_Lock(const CTSE_Lock& lock)
-{
-    _ASSERT(lock);
-    if ( !m_TSE_LockAssigned ) {
-        m_TSE_Lock = lock;
-        m_TSE_LockAssigned = true;
-        GetDSInfo().AddTSE_Lock(lock);
-    }
-    _ASSERT(m_TSE_Lock == lock);
-}
-
-
-void CTSE_ScopeInfo::x_ResetTSE_Lock(void)
-{
-    if ( m_TSE_LockAssigned ) {
-        CTSE_Lock lock;
-        m_TSE_LockAssigned = false;
-        lock.Swap(m_TSE_Lock);
-        GetDSInfo().RemoveTSE_Lock(lock);
-    }
-    _ASSERT(!m_TSE_Lock);
-}
-
-
 void CTSE_ScopeInfo::SetTSE_Lock(const CTSE_Lock& lock)
 {
     _ASSERT(lock);
-    if ( !m_TSE_LockAssigned ) {
+    if ( !x_TSE_LockIsAssigned() ) {
         CMutexGuard guard(m_TSE_LockMutex);
-        x_SetTSE_Lock(lock);
+        if ( !x_TSE_LockIsAssigned() ) {
+            _ASSERT(m_TSE_LockAssignState == 0);
+            _ASSERT(!m_TSE_Lock);
+            //LOG_POST("x_SetTSE_Lock: "<<CStackTrace());
+            m_TSE_LockAssignState = 1;
+            m_TSE_Lock = lock;
+            if ( IsAttached() ) {
+                GetDSInfo().AddTSE_Lock(lock);
+            }
+            m_TSE_LockAssignState = 2;
+        }
+        _ASSERT(m_TSE_LockAssignState == 2);
+        _ASSERT(m_TSE_Lock == lock);
     }
-    _ASSERT(m_TSE_Lock == lock);
+    _ASSERT(x_VerifyTSE_LockIsAssigned(lock));
 }
 
 
 void CTSE_ScopeInfo::ResetTSE_Lock(void)
 {
-    if ( m_TSE_LockAssigned ) {
+    if ( !x_TSE_LockIsNotAssigned() ) {
+        CTSE_Lock lock; // delete the OM TSE lock outside of mutex
         CMutexGuard guard(m_TSE_LockMutex);
-        x_ResetTSE_Lock();
+        if ( !x_TSE_LockIsNotAssigned() ) {
+            _ASSERT(m_TSE_LockAssignState == 2);
+            m_TSE_LockAssignState = 1;
+            lock.Swap(m_TSE_Lock);
+            if ( IsAttached() ) {
+                GetDSInfo().RemoveTSE_Lock(lock);
+            }
+            m_TSE_LockAssignState = 0;
+        }
+        _ASSERT(m_TSE_LockAssignState == 0);
+        _ASSERT(!m_TSE_Lock);
     }
-    _ASSERT(!m_TSE_Lock);
+    _ASSERT(x_TSE_LockIsNotAssigned());
 }
 
 
 void CTSE_ScopeInfo::DropTSE_Lock(void)
 {
-    if ( m_TSE_LockAssigned ) {
+    if ( !x_TSE_LockIsNotAssigned() ) {
         CMutexGuard guard(m_TSE_LockMutex);
-        m_TSE_LockAssigned = false;
-        m_TSE_Lock.Reset();
+        if ( !x_TSE_LockIsNotAssigned() ) {
+            _ASSERT(m_TSE_LockAssignState == 2);
+            m_TSE_LockAssignState = 1;
+            m_TSE_Lock.Reset();
+            m_TSE_LockAssignState = 0;
+        }
+        _ASSERT(m_TSE_LockAssignState == 0);
+        _ASSERT(!m_TSE_Lock);
     }
-    _ASSERT(!m_TSE_Lock);
+    _ASSERT(x_TSE_LockIsNotAssigned());
 }
 
 
@@ -1335,8 +1373,7 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     CTSE_Lock old_tse_lock;
     {{
         CMutexGuard guard(m_TSE_LockMutex);
-        _ASSERT(m_TSE_LockAssigned);
-        _ASSERT(m_TSE_Lock);
+        _ASSERT(x_VerifyTSE_LockIsAssigned());
         _ASSERT(&m_TSE_Lock->GetDataSource() == &GetDSInfo().GetDataSource());
         old_tse_lock = m_TSE_Lock;
     }}
@@ -1350,8 +1387,7 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     }}
 
     GetDSInfo().RemoveFromHistory(*this); // remove tse from old ds
-    _ASSERT(!m_TSE_LockAssigned);
-    _ASSERT(!m_TSE_Lock);
+    _ASSERT(x_VerifyTSE_LockIsNotAssigned());
     _ASSERT(!m_DS_Info);
     if ( CanBeUnloaded() ) {
         m_UnloadedInfo.reset(); // edit tse cannot be unloaded
@@ -1382,13 +1418,15 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
                 (TScopeInfoMap::value_type(new_obj, info)).second);
     }
     // restore bioseq info map
-    m_BioseqById.swap(old_bioseq_map);
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        m_BioseqById.swap(old_bioseq_map);
+    }}
 
     new_ds.AttachTSE(*this, new_tse_lock);
 
     _ASSERT(&GetDSInfo() == &new_ds);
-    _ASSERT(m_TSE_LockAssigned);
-    _ASSERT(m_TSE_Lock == new_tse_lock);
+    _ASSERT(x_VerifyTSE_LockIsAssigned(new_tse_lock));
     
     const_cast<CTSE_Info&>(*new_tse_lock).m_BaseTSE->m_ObjectCopyMap.clear();
 }
@@ -1425,7 +1463,7 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
         return;
     }
     ReleaseUsedTSEs();
-    if ( !m_TSE_LockAssigned ) {
+    if ( !x_TSE_LockIsAssigned() ) {
         return;
     }
     CMutexGuard guard(m_TSE_LockMutex);
@@ -1433,7 +1471,7 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
         // relocked already
         return;
     }
-    if ( !m_TSE_LockAssigned ) {
+    if ( !x_TSE_LockIsAssigned() ) {
         return;
     }
     {{
@@ -1449,7 +1487,7 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
         }
         m_ScopeInfoMap.clear();
     }}
-    x_ResetTSE_Lock();
+    ResetTSE_Lock();
 }
 
 
@@ -1472,13 +1510,16 @@ void CTSE_ScopeInfo::x_DetachDS(void)
         }
         m_ScopeInfoMap.clear();
     }}
-    m_TSE_LockAssigned = false;
+    m_TSE_LockAssignState = 0;
     m_TSE_Lock.Reset();
-    while ( !m_BioseqById.empty() ) {
-        CRef<CBioseq_ScopeInfo> bioseq = m_BioseqById.begin()->second;
-        bioseq->x_DetachTSE(this);
-        _ASSERT(m_BioseqById.empty()||m_BioseqById.begin()->second != bioseq);
-    }
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        while ( !m_BioseqById.empty() ) {
+            CRef<CBioseq_ScopeInfo> bioseq = m_BioseqById.begin()->second;
+            bioseq->x_DetachTSE(this);
+            _ASSERT(m_BioseqById.empty()||m_BioseqById.begin()->second != bioseq);
+        }
+    }}
     m_DS_Info = 0;
 }
 
@@ -1563,6 +1604,7 @@ void CTSE_ScopeInfo::RemoveFromHistory(const CTSE_Handle& tseh,
 
 bool CTSE_ScopeInfo::HasResolvedBioseq(const CSeq_id_Handle& id) const
 {
+    CMutexGuard guard2(m_ScopeInfoMapMutex);
     return m_BioseqById.find(id) != m_BioseqById.end();
 }
 
@@ -1670,8 +1712,7 @@ CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
     // this thread calls GetBioseqHandle()
     //CMutexGuard guard(m_TSE_LockMutex);
     CTSE_ScopeUserLock tse(this);
-    _ASSERT(m_TSE_LockAssigned);
-    _ASSERT(m_TSE_Lock);
+    _ASSERT(x_TSE_LockIsAssigned());
     if ( !info ) {
         // find CBioseq_ScopeInfo
         _ASSERT(bioseq);
@@ -1776,6 +1817,7 @@ CTSE_ScopeInfo::x_FindBioseqInfo(const TSeqIds& ids) const
 {
     if ( !ids.empty() ) {
         const CSeq_id_Handle& id = *ids.begin();
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
         for ( TBioseqById::const_iterator it(m_BioseqById.lower_bound(id));
               it != m_BioseqById.end() && it->first == id; ++it ) {
             if ( it->second->GetIds() == ids ) {
@@ -1796,6 +1838,7 @@ CRef<CBioseq_ScopeInfo> CTSE_ScopeInfo::x_CreateBioseqInfo(const TSeqIds& ids)
 void CTSE_ScopeInfo::x_IndexBioseq(const CSeq_id_Handle& id,
                                    CBioseq_ScopeInfo* info)
 {
+    CMutexGuard guard2(m_ScopeInfoMapMutex);
     m_BioseqById.insert(TBioseqById::value_type(id, Ref(info)));
 }
 
@@ -1803,6 +1846,7 @@ void CTSE_ScopeInfo::x_IndexBioseq(const CSeq_id_Handle& id,
 void CTSE_ScopeInfo::x_UnindexBioseq(const CSeq_id_Handle& id,
                                      const CBioseq_ScopeInfo* info)
 {
+    CMutexGuard guard2(m_ScopeInfoMapMutex);
     for ( TBioseqById::iterator it = m_BioseqById.lower_bound(id);
           it != m_BioseqById.end() && it->first == id; ++it ) {
         if ( it->second == info ) {
@@ -1977,11 +2021,14 @@ void CTSE_ScopeInfo::x_SaveRemoved(CScopeInfo_Base& info)
     _ASSERT(m_TSE_Lock);
     info.m_DetachedInfo.Reset(save); // save m_DetachedInfo
 #ifdef _DEBUG
-    ITERATE ( TBioseqById, it, m_BioseqById ) {
-        _ASSERT(!it->second->IsDetached());
-        _ASSERT(&it->second->x_GetTSE_ScopeInfo() == this);
-        _ASSERT(!it->second->HasObject() || it->second->GetObjectInfo_Base().BelongsToTSE_Info(*m_TSE_Lock));
-    }
+    {{
+        CMutexGuard guard2(m_ScopeInfoMapMutex);
+        ITERATE ( TBioseqById, it, m_BioseqById ) {
+            _ASSERT(!it->second->IsDetached());
+            _ASSERT(&it->second->x_GetTSE_ScopeInfo() == this);
+            _ASSERT(!it->second->HasObject() || it->second->GetObjectInfo_Base().BelongsToTSE_Info(*m_TSE_Lock));
+        }
+    }}
 #endif
     // post checks
     _ASSERT(info.IsDetached());
