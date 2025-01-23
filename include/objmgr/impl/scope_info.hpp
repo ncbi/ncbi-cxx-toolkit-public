@@ -449,8 +449,13 @@ protected:
     template<class TScopeInfo>
     CScopeInfo_Ref<TScopeInfo> x_GetScopeLock(const CTSE_Handle& tse,
                                               const typename TScopeInfo::TObjectInfo& info);
-    void x_SetTSE_Lock(const CTSE_Lock& lock);
-    void x_ResetTSE_Lock(void);
+
+    bool x_TSE_LockIsAssigned() const;
+    bool x_TSE_LockIsNotAssigned() const;
+    bool x_VerifyTSE_LockIsAssigned() const;
+    bool x_VerifyTSE_LockIsAssigned(const CTSE_Lock& tse) const;
+    bool x_VerifyTSE_LockIsAssigned(const CTSE_Info& tse) const;
+    bool x_VerifyTSE_LockIsNotAssigned() const;
     void x_DetachDS(void);
 
     friend class CTSE_ScopeInternalLocker;
@@ -499,7 +504,8 @@ private: // members
     mutable CMutex              m_TSE_LockMutex;
     mutable atomic<Int8>        m_TSE_LockCounter;
     mutable atomic<Int8>        m_UserLockCounter;
-    mutable atomic<bool>        m_TSE_LockAssigned;
+    // 0 - not assinged, 2 - assigned, 1 - in-between
+    mutable atomic<Int1>        m_TSE_LockAssignState;
     mutable CTSE_Lock           m_TSE_Lock;
     // Used by TSE support
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;
