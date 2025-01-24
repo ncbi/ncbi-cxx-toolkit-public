@@ -45,6 +45,7 @@
 
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
+#if defined(HAVE_PSG_CLIENT)
 BEGIN_NCBI_SCOPE
 
 template <>
@@ -426,5 +427,6 @@ NCBI_PARAM_ENUM_DECL(EPSG_PsgClientMode, PSG, internal_psg_client_mode);
 using TPSG_PsgClientMode = PSG_PARAM_VALUE_TYPE(PSG, internal_psg_client_mode);
 
 END_NCBI_SCOPE
+#endif
 
 #endif
