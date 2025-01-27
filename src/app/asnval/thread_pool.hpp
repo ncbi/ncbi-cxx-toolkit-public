@@ -376,7 +376,10 @@ public:
     }
 
     void request_stop() {
-        m_works.push_back(std::nullopt);
+        if (m_push_thread.valid())
+            m_works.push_back(std::nullopt);
+        else
+            m_product_queue.push_back({});
     }
 
 private:
