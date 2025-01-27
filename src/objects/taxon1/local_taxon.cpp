@@ -130,18 +130,25 @@ CLocalTaxon::TTaxid CLocalTaxon::GetParent(TTaxid taxid)
 
 string CLocalTaxon::GetRank(TTaxid taxid)
 {
+    if (taxid <= 0) {
+        return string();
+    }
+
     if (m_SqliteConn.get()) {
         x_Cache(taxid);
         return m_Nodes.find(taxid)->second.rank;
-    } else {
-        string rank_name;
-        auto node = m_TaxonConn->GetTreeIterator(taxid)->GetNode();
+    }
+
+    string rank_name;
+    auto it = m_TaxonConn->GetTreeIterator(taxid);
+    if (it) {
+        auto node = it->GetNode();
         if (node) {
             TTaxRank rank_id = node->GetRank();
             m_TaxonConn->GetRankName(rank_id, rank_name);
         }
-        return rank_name;
     }
+    return rank_name;
 }
 
 string CLocalTaxon::GetScientificName(TTaxid taxid)
