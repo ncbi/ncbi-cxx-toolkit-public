@@ -80,6 +80,12 @@ public:
     string GetScientificName(TTaxid taxid);
     short int GetGeneticCode(TTaxid taxid);
     CConstRef<objects::COrg_ref> GetOrgRef(TTaxid taxid);
+
+    // provided for compatibility with CTaxon1
+    CConstRef<objects::COrg_ref> GetOrgRef(TTaxid taxid,
+                                           bool& is_species,
+                                           bool& is_uncultured,
+                                           string& blast_name);
     void LookupMerge(objects::COrg_ref& org);
     list<string> GetSynonyms(TTaxId taxid);
 
