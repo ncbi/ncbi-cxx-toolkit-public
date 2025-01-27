@@ -119,6 +119,18 @@ class CNAnnotRecord {
         return *this;
     }
 
+    CNAnnotRecord& SetPutSat( int value)
+    {
+        m_PutDBSat = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetPutSatKey( int value)
+    {
+        m_PutDBSatKey = value;
+        return *this;
+    }
+
     CNAnnotRecord& SetSeqAnnotInfo(TAnnotInfo const& value)
     {
         m_SeqAnnotInfo = value;
@@ -204,6 +216,16 @@ class CNAnnotRecord {
         return m_State;
     }
 
+    int GetPutSat() const
+    {
+        return m_PutDBSat;
+    }
+
+    int GetPutSatKey() const
+    {
+        return m_PutDBSatKey;
+    }
+  
     string ToString() const;
 
  private:
@@ -219,6 +241,8 @@ class CNAnnotRecord {
     int16_t m_Version{0};
     int16_t m_SeqIdType{0};
     TState m_State{0};
+    int    m_PutDBSat{0};    // NAnnotGnn..emap.sat = sat_id of NAnnotP
+    int    m_PutDBSatKey{0}; // NAnnotGnn..emap.sat_key = NAnnotP..Entity.ent 
 };
 
 using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&, bool last)>;
