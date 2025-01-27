@@ -265,6 +265,25 @@ CConstRef<objects::COrg_ref> CLocalTaxon::GetOrgRef(TTaxid taxid)
     }
 }
 
+CConstRef<objects::COrg_ref> CLocalTaxon::GetOrgRef(TTaxid taxid,
+                                                    bool& is_species,
+                                                    bool& is_uncultured,
+                                                    string& blast_name)
+{
+    if (m_SqliteConn.get()) {
+        x_Cache(taxid, true);
+
+        // we fake some data here
+        TNodes::const_iterator it = m_Nodes.find(taxid);
+        is_species = (it->second.rank == "species");
+        is_uncultured = false;
+        blast_name = it->second.scientific_name;
+        return it->second.org_ref;
+    } else {
+        return m_TaxonConn->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+    }
+}
+
 CLocalTaxon::TTaxid CLocalTaxon::GetAncestorByRank(TTaxid taxid, const string &rank)
 {
     if (m_SqliteConn.get()) {
