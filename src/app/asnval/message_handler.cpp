@@ -209,17 +209,22 @@ void CAsyncMessageHandler::AddValidErrItem(CRef<CValidErrItem> pItem) {
 
 void CAsyncMessageHandler::Write() {
     while (true) {
-        unique_lock<mutex> lock(m_Mutex);
-        m_Cv.wait(lock, [this]()->bool
-                {
-                    return !m_Items.empty();
-                });
-        auto pItem = m_Items.front();
-        m_Items.pop();
-        if (!pItem) {
-            break;
+        CRef<CValidErrItem> pItem;
+        {
+            unique_lock<mutex> lock(m_Mutex);
+            m_Cv.wait(lock, [this]()->bool
+                    {
+                        return !m_Items.empty();
+                    });
+            pItem = m_Items.front();
+            m_Items.pop();
         }
-        (*m_pFormat)(*pItem);
+        m_Cv.notify_all();
+        if (pItem) {
+            (*m_pFormat)(*pItem);
+        }
+        else
+            break;
     }
 }
 
