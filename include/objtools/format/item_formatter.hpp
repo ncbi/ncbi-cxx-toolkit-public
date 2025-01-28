@@ -147,7 +147,7 @@ protected:
     virtual list<string>& Wrap(list<string>& l, const string& tag,
         const string& body, EPadContext where = ePara, bool htmlaware = false, int internalIndent = 0 ) const;
 
-    void x_FormatRefLocation(CNcbiOstrstream& os, const CSeq_loc& loc,
+    void x_FormatRefLocation(ostream& os, const CSeq_loc& loc,
         const string& to, const string& delim,
         CBioseqContext& ctx) const;
     void x_FormatRefJournal(const CReferenceItem& ref, string& journal,

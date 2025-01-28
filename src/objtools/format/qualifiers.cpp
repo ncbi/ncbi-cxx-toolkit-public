@@ -1198,7 +1198,7 @@ void s_HtmlizeLatLon( string &subname ) {
     }
 
     // now we can form the HTML
-    CNcbiOstrstream result;
+    ostringstream result;
     /*
     result << "<a href=\"" << strLinkBaseLatLon << "?lat="
         << lat
@@ -1213,7 +1213,7 @@ void s_HtmlizeLatLon( string &subname ) {
         << lon
         << "\">"
         << subname << "</a>";
-    subname = CNcbiOstrstreamToString(result);
+    subname = result.str();
 }
 
 void CFlatSubSourcePrimer::Format(
@@ -1661,7 +1661,7 @@ void CFlatModelEvQVal::Format
         }
     }
 
-    CNcbiOstrstream text;
+    ostringstream text;
     text << "Derived by automated computational analysis";
     if (method && ! NStr::IsBlank(*method)) {
          text << " using gene prediction method: " << *method;
@@ -1727,7 +1727,7 @@ void CFlatModelEvQVal::Format
         section_prefix = ", and ";
     }
 
-    x_AddFQ(q, name, CNcbiOstrstreamToString(text).operator std::string());
+    x_AddFQ(q, name, text.str());
 }
 
 

@@ -1225,7 +1225,7 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
         return;
     }
 
-    CNcbiOstrstream auth_line;
+    ostringstream auth_line;
     TStrList::const_iterator last = --(authors.end());
 
     string separator;
@@ -1246,7 +1246,7 @@ void CReferenceItem::FormatAuthors(const CAuth_list& alp, string& auth)
         --it;
     }
 
-    auth = CNcbiOstrstreamToString(auth_line);
+    auth = auth_line.str();
 
     if( auth.empty() ) {
         auth = ".";
@@ -1510,11 +1510,11 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
                                         const string & doi = (*it)->GetDoi().Get();
                                         if( NStr::StartsWith( doi, "10." ) ) {
                                             if( ctx.Config().DoHTML() && ! CommentHasSuspiciousHtml(doi) ) {
-                                                CNcbiOstrstream result;
+                                                ostringstream result;
                                                 result << "DOI: <a href=\""
                                                        << kDoiLink << doi << "\">"
                                                        << doi << "</a>";
-                                                l.push_back( CNcbiOstrstreamToString(result) );
+                                                l.push_back(result.str());
                                             } else {
                                                 l.push_back( "DOI: " + doi );
                                             }

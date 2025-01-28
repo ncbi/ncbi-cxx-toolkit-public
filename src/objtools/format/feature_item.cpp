@@ -6188,7 +6188,7 @@ static string s_GetSpecimenVoucherText(
 
     CInstInfoMap::TVoucherInfoRef voucher_info_ref = CInstInfoMap::GetInstitutionVoucherInfo( inst );
     if( voucher_info_ref ) {
-        CNcbiOstrstream text;
+        ostringstream text;
 
         string inst_full_name =   COrgMod::GetInstitutionFullName( inst );
         if (inst_full_name.empty()) {
@@ -6230,18 +6230,18 @@ static string s_GetSpecimenVoucherText(
             text << *voucher_info_ref->m_Suffix;
         }
         text << "\">" << id << "</a>";
-        return CNcbiOstrstreamToString(text);
+        return text.str();
     } else {
         // fall back on at least getting institution name
         const string &inst_full_name =  COrgMod::GetInstitutionFullName( inst );
         if( ! inst_full_name.empty() ) {
-            CNcbiOstrstream text;
+            ostringstream text;
 
             text << "<acronym title=\"" << NStr::Replace(inst_full_name, "\"", "&quot;") << "\" class=\"voucher\">"
                 << inst << "</acronym>"
                 << ":" << id;
 
-            return CNcbiOstrstreamToString(text);
+            return text.str();
         } else {
             // if all else fails, return the string we were initially given
             return strRawName;

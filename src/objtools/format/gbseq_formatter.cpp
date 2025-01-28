@@ -1390,7 +1390,7 @@ void CGBSeqFormatter::x_StrOStreamToTextOStream(IFlatTextOStream& text_os)
     // flush ObjectOutputStream to underlying strstream
     m_Out->Flush();
     // read text from strstream
-    NStr::Split((string)CNcbiOstrstreamToString(m_StrStream), "\n", l, NStr::fSplit_Tokenize);
+    NStr::Split(m_StrStream.str(), "\n", l, NStr::fSplit_Tokenize);
     // convert GBseq to INSDSeq
     if ( m_IsInsd ) {
         for (string& str : l) {

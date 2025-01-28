@@ -103,7 +103,7 @@ private:
 
     CRef<CGBSeq> m_GBSeq;
     unique_ptr<CObjectOStream> m_Out;
-    CNcbiOstrstream m_StrStream;
+    stringstream m_StrStream;
     bool m_IsInsd;
     bool m_DidFeatStart;
     bool m_DidJourStart;

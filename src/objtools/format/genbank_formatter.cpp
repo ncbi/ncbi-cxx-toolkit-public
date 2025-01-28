@@ -215,7 +215,7 @@ void s_PrintLocAsJavascriptArray(
 {
     CBioseq_Handle &bioseq_handle = ctx.GetHandle();
 
-    CNcbiOstrstream result; // will hold complete printed location
+    ostringstream result; // will hold complete printed location
     result << "[";
 
     // special case for when the location is just a point with "lim tr"
@@ -228,7 +228,7 @@ void s_PrintLocAsJavascriptArray(
         const TSeqPos point = loc.GetPnt().GetPoint();
         // Note the "+2"
         result << "[" << (point+1) << ", " << (point+2) << "]]";
-        text_os << (string)CNcbiOstrstreamToString(result);
+        text_os << result.str();
         return;
     }
 
@@ -267,7 +267,7 @@ void s_PrintLocAsJavascriptArray(
         is_first = false;
     }
     result << "]";
-    text_os << (string)CNcbiOstrstreamToString(result);
+    text_os << result.str();
 }
 
 static
@@ -285,12 +285,12 @@ string s_GetAccessionWithoutPeriod(
 
 static string s_get_anchor_html(const string & sAnchorName, CBioseqContext *ctx )
 {
-    CNcbiOstrstream result;
+    ostringstream result;
 
     result << "<a name=\"" << sAnchorName << "_"
         << ctx->GetAccession() << "\"></a>";
 
-    return (string)CNcbiOstrstreamToString(result);
+    return result.str();
 }
 
 void CGenbankFormatter::EndSection
@@ -371,7 +371,7 @@ void CGenbankFormatter::FormatLocus
     CBioseqContext& ctx = *locus.GetContext();
 
     list<string> l;
-    CNcbiOstrstream locus_line;
+    ostringstream locus_line;
 
     const char* units = "bp";
     if ( !ctx.IsProt() ) {
@@ -421,7 +421,7 @@ void CGenbankFormatter::FormatLocus
 
     const bool is_html = GetContext().GetConfig().DoHTML() ;
 
-    string locus_line_str = CNcbiOstrstreamToString(locus_line);
+    string locus_line_str = locus_line.str();
     if ( is_html ) {
         TryToSanitizeHtml( locus_line_str );
     }
@@ -511,7 +511,7 @@ void CGenbankFormatter::FormatVersion
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, version, orig_text_os);
 
     list<string> l;
-    CNcbiOstrstream version_line;
+    ostringstream version_line;
 
     if ( version.GetAccession().empty() ) {
         l.push_back("VERSION");
@@ -523,7 +523,7 @@ void CGenbankFormatter::FormatVersion
                 version_line << "  GI:" << version.GetGi();
             }
         }
-        string version_line_str = CNcbiOstrstreamToString(version_line);
+        string version_line_str = version_line.str();
         if( version.GetContext()->Config().DoHTML() ) {
             TryToSanitizeHtml( version_line_str );
         }
@@ -552,7 +552,7 @@ void CGenbankFormatter::FormatGenomeProject(
 
     if ( ! gp.GetProjectNumbers().empty() ) {
 
-        CNcbiOstrstream project_line;
+        ostringstream project_line;
         project_line << "Project: ";
 
         const bool is_html = GetContext().GetConfig().DoHTML();
@@ -571,7 +571,7 @@ void CGenbankFormatter::FormatGenomeProject(
             }
         }
 
-        string project_line_str = CNcbiOstrstreamToString(project_line);
+        string project_line_str = project_line.str();
         if( gp.GetContext()->Config().DoHTML() ) {
             TryToSanitizeHtml( project_line_str );
         }
@@ -675,11 +675,11 @@ void CGenbankFormatter::FormatSegment
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, seg, orig_text_os);
 
     list<string> l;
-    CNcbiOstrstream segment_line;
+    ostringstream segment_line;
 
     segment_line << seg.GetNum() << " of " << seg.GetCount();
 
-    Wrap(l, "SEGMENT", CNcbiOstrstreamToString(segment_line));
+    Wrap(l, "SEGMENT", segment_line.str());
     text_os.AddParagraph(l, seg.GetObject());
 
     text_os.Flush();
@@ -712,7 +712,7 @@ void CGenbankFormatter::x_FormatSourceLine
 (list<string>& l,
  const CSourceItem& source) const
 {
-    CNcbiOstrstream source_line;
+    ostringstream source_line;
 
     string prefix = source.IsUsingAnamorph() ? " (anamorph: " : " (";
 
@@ -720,7 +720,7 @@ void CGenbankFormatter::x_FormatSourceLine
     if ( !source.GetCommon().empty() ) {
         source_line << prefix << source.GetCommon() << ")";
     }
-    string line = CNcbiOstrstreamToString(source_line);
+    string line = source_line.str();
 
     if( source.GetContext()->Config().DoHTML() ) {
         TryToSanitizeHtml(line);
@@ -890,7 +890,7 @@ void CGenbankFormatter::x_Reference
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    CNcbiOstrstream ref_line;
+    ostringstream ref_line;
 
     int serial = ref.GetSerial();
     CPubdesc::TReftype reftype = ref.GetReftype();
@@ -914,7 +914,7 @@ void CGenbankFormatter::x_Reference
     } else {
         x_FormatRefLocation(ref_line, ref.GetLoc(), " to ", "; ", ctx);
     }
-    string ref_line_str = CNcbiOstrstreamToString(ref_line);
+    string ref_line_str = ref_line.str();
     if( ref.GetContext()->Config().DoHTML() ) {
         TryToSanitizeHtml( ref_line_str );
     }
@@ -1102,7 +1102,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
         return;
     }
 
-    CNcbiOstrstream result;
+    ostringstream result;
 
     // determine what sections we have.
 
@@ -1219,7 +1219,7 @@ CGenbankFormatter::x_LocusHtmlPrefix( string &first_line, CBioseqContext& ctx )
     result << "<pre class=\"genbank\">";
 
     result << first_line;
-    first_line = CNcbiOstrstreamToString(result);
+    first_line = result.str();
 }
 
 void
@@ -1235,7 +1235,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
     const int feat_type_count = ( m_FeatureKeyToLocMap[strKey]++ );
 
     // The span
-    CNcbiOstrstream pre_feature_html;
+    ostringstream pre_feature_html;
     pre_feature_html << "<span id=\"feature_" << ctx.GetAccession()
         << "_" << strKey << "_" << feat_type_count << "\" class=\"feature\">";
 
@@ -1260,7 +1260,7 @@ CGenbankFormatter::x_GetFeatureSpanAndScriptStart(
     s_PrintLocAsJavascriptArray( ctx, pre_feature_html, feat_loc );
     pre_feature_html << ");</script>";
 
-    string temp = CNcbiOstrstreamToString(pre_feature_html);
+    string temp = pre_feature_html.str();
     text_os.AddLine(temp, nullptr, IFlatTextOStream::eAddNewline_No);
 }
 
@@ -1701,7 +1701,7 @@ void CGenbankFormatter::FormatBasecount
 
     list<string> l;
 
-    CNcbiOstrstream bc_line;
+    ostringstream bc_line;
 
     bc_line.setf(IOS_BASE::right, IOS_BASE::adjustfield);
     bc_line
@@ -1712,7 +1712,7 @@ void CGenbankFormatter::FormatBasecount
     if ( bc.GetOther() > 0 ) {
         bc_line << setw(7) << bc.GetOther() << " others";
     }
-    Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(bc_line));
+    Wrap(l, "BASE COUNT", bc_line.str());
     text_os.AddParagraph(l, bc.GetObject());
 
     text_os.Flush();
@@ -2019,11 +2019,11 @@ void CGenbankFormatter::FormatSequence
                 }
 
                 // build gap size text and "Expand Ns" link
-                CNcbiOstrstream gap_link;
+                ostringstream gap_link;
                 GetContext().GetConfig().GetHTMLFormatter().FormatGapLink(gap_link, gap_size,
                                                                           seq.GetContext()->GetAccession(),
                                                                           seq.GetContext()->IsProt());
-                text_os.AddLine( (string)CNcbiOstrstreamToString(gap_link) );
+                text_os.AddLine(gap_link.str());
             } else {
                 // create a fake total so we stop before the next gap
                 TSeqPos fake_total = distance_until_next_significant_gap;

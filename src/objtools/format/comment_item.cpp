@@ -352,7 +352,7 @@ string CCommentItem::GetStringForTPA
         sort( histaccns.begin(), histaccns.end() );
         histaccns.erase( unique( histaccns.begin(), histaccns.end() ), histaccns.end() );
 
-        CNcbiOstrstream text;
+        stringstream text;
         text << tpa_string << ((histaccns.size() > 1) ? "entries " : "entry ");
 
         size_t size = histaccns.size();
@@ -366,7 +366,7 @@ string CCommentItem::GetStringForTPA
             }
         }
 
-        return CNcbiOstrstreamToString(text);
+        return text.str();
     }
 
     string id;
@@ -396,7 +396,7 @@ string CCommentItem::GetStringForTPA
         return kEmptyStr;
     }
 
-    CNcbiOstrstream text;
+    stringstream text;
     text << tpa_string << ((accessions.size() > 1) ? "entries " : "entry ");
 
     size_t size = accessions.size();
@@ -410,7 +410,7 @@ string CCommentItem::GetStringForTPA
         }
     }
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 
@@ -442,7 +442,7 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
         }
     }
 
-    CNcbiOstrstream text;
+    stringstream text;
     string pfx;
     if (uvc) {
         text << pfx << "Vector Explanation: " << *uvc;
@@ -457,7 +457,7 @@ string CCommentItem::GetStringForBankIt(const CUser_object& uo, bool dump_mode)
         pfx = "~";
     }
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 
@@ -521,7 +521,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
             }
 
             if ( ! accession.empty() ) {
-                CNcbiOstrstream oss;
+                stringstream oss;
 
                 // gi currently unused, but may be used in the future.
                 // If you uncomment this, don't forget to uncomment other
@@ -544,7 +544,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
                     oss << " (range: " << from << "-" << to << ")";
                 }
 
-                string new_piece = (string)(CNcbiOstrstreamToString(oss));
+                string new_piece = oss.str();
                 assembly_pieces.push_back( new_piece );
             } else if( ! name.empty() ) {
                 assembly_pieces.push_back( name );
@@ -553,7 +553,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
     }
 
     if( ! assembly_pieces.empty() ) {
-        CNcbiOstrstream oss;
+        ostringstream oss;
         oss << " The reference sequence was derived from ";
 
         size_t assembly_size = assembly_pieces.size();
@@ -565,7 +565,7 @@ void s_GetAssemblyInfo(const CBioseqContext& ctx, string& s, const CUser_object&
         }
         oss << '.';
 
-        s = (string)(CNcbiOstrstreamToString(oss));
+        s = oss.str();
     }
 }
 
@@ -693,7 +693,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
 
     string build_num = CGenomeAnnotComment::GetGenomeBuildNumber(bsh);
 
-    CNcbiOstrstream oss;
+    ostringstream oss;
     if (status == eRefTrackStatus_Pipeline) {
         oss << (is_html ? kRefSeqInformationLink : kRefSeqInformation) << ":";
     } else {
@@ -815,7 +815,7 @@ string CCommentItem::GetStringForRefTrack(const CBioseqContext& ctx, const CUser
         }
     }
 
-    return CNcbiOstrstreamToString(oss);
+    return oss.str();
 }
 
 // LCOV_EXCL_START
@@ -828,7 +828,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
     }
 
     // this holds the value we return if no issues arise
-    CNcbiOstrstream result_oss;
+    ostringstream result_oss;
 
     const static string kRefSeqCat = "RefSeq Category";
 
@@ -884,7 +884,7 @@ string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
         }
     }
 
-    return CNcbiOstrstreamToString(result_oss);
+    return result_oss.str();
 }
 // LCOV_EXCL_STOP
 
@@ -942,7 +942,7 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
         wgsname.substr(7, 2) : wgsname.substr(4, 2);
     */
 
-    CNcbiOstrstream text;
+    ostringstream text;
     text << "The " << *taxname
          << " whole genome shotgun (WGS) project has the project accession "
          << wgsaccn << ".  This version of the project (" << version
@@ -953,7 +953,7 @@ string CCommentItem::GetStringForWGS(CBioseqContext& ctx)
         text << " and consists of sequence " << *first << ".";
     }
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
@@ -1019,7 +1019,7 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
     SIZE_TYPE len = tsaname.find_first_of("0123456789");
     string version = tsaname.substr(len, 2);
 
-    CNcbiOstrstream text;
+    ostringstream text;
     text << "The " << *taxname
          << " transcriptome shotgun assembly (TSA) project has the project accession "
          << tsaaccn << ".  This version of the project (" << version
@@ -1030,7 +1030,7 @@ string CCommentItem::GetStringForTSA(CBioseqContext& ctx)
         text << " and consists of sequence " << *first << ".";
     }
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
@@ -1083,7 +1083,7 @@ string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
     SIZE_TYPE len = tlsname.find_first_of("0123456789");
     string version = tlsname.substr(len, 2);
 
-    CNcbiOstrstream text;
+    ostringstream text;
     text << "The " << *taxname
          << " targeted locus study (TLS) project has the project accession "
          << tlsaccn << ".  This version of the project (" << version
@@ -1094,7 +1094,7 @@ string CCommentItem::GetStringForTLS(CBioseqContext& ctx)
         text << " and consists of sequence " << *first << ".";
     }
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx)
@@ -1144,7 +1144,7 @@ string CCommentItem::GetStringForUnordered(CBioseqContext& ctx)
         GetDeltaSeqSummary(ctx.GetHandle(), summary);
     }
 
-    CNcbiOstrstream text;
+    ostringstream text;
 
     text << "* NOTE: This is a partial genome representation.";
     if ( summary.num_gaps > 0 ) {
@@ -1155,7 +1155,7 @@ string CCommentItem::GetStringForUnordered(CBioseqContext& ctx)
     }
     text << "~";
 
-    string comment = CNcbiOstrstreamToString(text);
+    string comment = text.str();
     ConvertQuotes(comment);
     ncbi::objects::AddPeriod(comment);
 
@@ -1172,7 +1172,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 
     CMolInfo::TTech tech = ctx.GetTech();
 
-    CNcbiOstrstream text;
+    ostringstream text;
 
     if ( tech == CMolInfo::eTech_htgs_0 ) {
         if ( summary.num_segs > 0 ) {
@@ -1223,7 +1223,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
         text << "Method: " << GetTechString(tech) << ".";
     }
 
-    string comment = CNcbiOstrstreamToString(text);
+    string comment = text.str();
     ConvertQuotes(comment);
     ncbi::objects::AddPeriod(comment);
 
@@ -1236,7 +1236,7 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
 
     const string *refseq = (bHtml ? &kRefSeqLink : &kRefSeq);
 
-    CNcbiOstrstream text;
+    ostringstream text;
 
     string me_name;
     ctx.Config().GetHTMLFormatter().FormatModelEvidence(me_name, me);
@@ -1292,7 +1292,7 @@ string CCommentItem::GetStringForModelEvidance(const CBioseqContext& ctx, const 
     text << ".~Also see:~"
         << "    " << documentation_str << " of NCBI's Annotation Process    ";
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 static bool s_GetEncodeValues
@@ -1360,7 +1360,7 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
         return kEmptyStr;
     }
 
-    CNcbiOstrstream str;
+    ostringstream str;
     str << "REFSEQ:  This record was provided by the ";
     if( bHtml ) {
         str << "<a href=\"" << kEncodeProjLink << "\">";
@@ -1378,7 +1378,7 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
             << " assembly of the human genome (NCBI build " << ncbi_annotation
             << ").";
     }
-    return CNcbiOstrstreamToString(str);
+    return str.str();
 }
 
 // static
@@ -1391,7 +1391,7 @@ string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
         return kEmptyStr;
     }
 
-    CNcbiOstrstream str;
+    ostringstream str;
 
     str << "These data are available through the dbGaP authorized access system. ";
     if( bHtml ) {
@@ -1412,7 +1412,7 @@ string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
     }
     str << "."; // always needs a period
 
-    return CNcbiOstrstreamToString(str);
+    return str.str();
 }
 
 string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
@@ -1433,7 +1433,7 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
     const TSeqPos uBioseqLength =
         GET_FIELD_OR_DEFAULT(ctx.GetHandle(), Inst_Length, 0);
 
-    CNcbiOstrstream str;
+    ostringstream str;
 
     // vecOfPoints elements are 1-based
     const CPacked_seqpnt::TPoints & vecOfPoints =
@@ -1495,7 +1495,7 @@ string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
                   eFragmentType_Normal ) );
     }
 
-    return CNcbiOstrstreamToString(str);
+    return str.str();
 }
 
 string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
@@ -1505,10 +1505,10 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
     const vector< string > & sBasemodURLs = ctx.GetBasemodURLs();
     int numBases = (int) sBasemodURLs.size();
 
-    CNcbiOstrstream str;
+    ostringstream str;
 
     if ( numBases < 1 ) {
-        return CNcbiOstrstreamToString(str);
+        return {};
     }
 
     if ( numBases == 1 ) {
@@ -1554,7 +1554,7 @@ string CCommentItem::GetStringForBaseMod(CBioseqContext& ctx)
         str << " available for this genome.";
     }
 
-    return CNcbiOstrstreamToString(str);
+    return str.str();
 }
 
 string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
@@ -1563,7 +1563,7 @@ string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
         return kEmptyStr;
     }
 
-    CNcbiOstrstream str;
+    ostringstream str;
 
     // this will be more complex if HTML links ever need to be added
     // or we have to cover nucs or whatever
@@ -1572,7 +1572,7 @@ string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
         << "sequence which may be annotated on many different RefSeq "
         << "genomes from the same, or different, species.";
 
-    return CNcbiOstrstreamToString(str);
+    return str.str();
 }
 
 /***************************************************************************/
@@ -1612,17 +1612,17 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         return data_str;
     }
 
-    CNcbiOstrstream result;
+    ostringstream result;
     if( label_str == "GOLD Stamp ID" && NStr::StartsWith(data_str, "Gi") ) {
         result << "<a href=\"http://genomesonline.org/cgi-bin/GOLD/bin/GOLDCards.cgi?goldstamp=" << data_str
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     }
     if ( label_str == "Annotation Software Version") {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/release_notes/#version"
                << data_str
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Annotation Name") &&
         ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) &&
         NStr::FindNoCase (pipeline, "NCBI Eukaryotic Genome Annotation Pipeline") != NPOS &&
@@ -1645,7 +1645,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                    << snd
                    << "\">" << data_str << "</a>";
         }
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Annotation Version") && ( NStr::Equal (provider, "NCBI") || NStr::Equal (provider, "NCBI RefSeq") ) && NStr::Equal (status, "Full annotation") && (! has_name) ) {
         string fst;
         string snd;
@@ -1654,7 +1654,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_euk/"
                << snd
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Source Identifier") && NStr::Equal (source, "EMBL-EBI") ) {
         string accn = data_str;
         size_t pos = NStr::Find(accn, ".");
@@ -1664,7 +1664,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         result << "<a href=\"https://www.ebi.ac.uk/interpro/entry/pfam/"
                << accn
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (source, "NCBI SPARCLE") ) {
         string fst;
         string snd;
@@ -1673,30 +1673,30 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/sparcle/archview.html?archid="
                << snd
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Category") &&
                 NStr::Equal (data_str, "Antimicrobial Resistance Allele") &&
                 NStr::Equal (source, "Bacterial Antimicrobial Resistance Reference Gene Database") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/bioproject/"
                << "313047"
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Accession") &&
                 NStr::Equal (source, "Bacterial Antimicrobial Resistance Reference Gene Database") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/nuccore/"
                << data_str
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "HMM") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
                << accession
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (category, "BlastRule") ) {
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/genome/annotation_prok/evidence/"
                << accession
                << "\">" << data_str << "</a>";
-        return CNcbiOstrstreamToString(result);
+        return result.str();
     } else {
         // normalize case: nothing to do
         return data_str;
@@ -2115,7 +2115,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
 
     const string *refseq = ( bHtml ? &kRefSeqLink : &kRefSeq );
 
-    CNcbiOstrstream text;
+    ostringstream text;
 
     text << "GENOME ANNOTATION " << *refseq << ": ";
     if ( ! m_GenomeBuildNumber.empty() ) {
@@ -2151,7 +2151,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext& ctx)
         break;
     }
 
-    string s = (string)(CNcbiOstrstreamToString(text));
+    string s = text.str();
     x_SetComment(s, ctx);
 }
 
@@ -2191,14 +2191,14 @@ string s_CreateHistCommentString
         }
     }
 
-    CNcbiOstrstream text;
+    ostringstream text;
 
     text << prefix << ((gis.size() > 1) ? " or before " : " ") << date
          << ' ' << suffix;
 
     if ( gis.empty() ) {
         text << " gi:?";
-        return CNcbiOstrstreamToString(text);
+        return text.str();
     }
 
     for ( size_t count = 0; count < gis.size(); ++count ) {
@@ -2220,7 +2220,7 @@ string s_CreateHistCommentString
     }
     text << '.' << '\n';
 
-    return CNcbiOstrstreamToString(text);
+    return text.str();
 }
 
 void CHistComment::x_GatherInfo(CBioseqContext& ctx)
@@ -2316,7 +2316,7 @@ static string s_GetOriginalID (CBioseqContext& ctx)
 
 void CLocalIdComment::x_GatherInfo(CBioseqContext& ctx)
 {
-    CNcbiOstrstream msg;
+    ostringstream msg;
 
     string orig_id = s_GetOriginalID (ctx);
     if (!NStr::EqualNocase(orig_id, "")) {
@@ -2342,7 +2342,7 @@ void CLocalIdComment::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    x_SetComment(CNcbiOstrstreamToString(msg));
+    x_SetComment(msg.str());
 }
 
 // --- CFileIdComment
@@ -2356,7 +2356,7 @@ CFileIdComment::CFileIdComment(const CObject_id& oid, CBioseqContext& ctx) :
 
 void CFileIdComment::x_GatherInfo(CBioseqContext&)
 {
-    CNcbiOstrstream msg;
+    ostringstream msg;
 
     switch ( m_Oid->Which() ) {
     case CObject_id::e_Id:
@@ -2372,7 +2372,7 @@ void CFileIdComment::x_GatherInfo(CBioseqContext&)
     default:
         break;
     }
-    x_SetComment(CNcbiOstrstreamToString(msg));
+    x_SetComment(msg.str());
 }
 
 

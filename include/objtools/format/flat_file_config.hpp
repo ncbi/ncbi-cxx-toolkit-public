@@ -84,14 +84,14 @@ public:
 
     virtual void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const = 0;
     virtual void FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const = 0;
-    virtual void FormatNucSearch(CNcbiOstream& os, const string& id) const = 0;
+    virtual void FormatNucSearch(ostream& os, const string& id) const = 0;
     virtual void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const = 0;
     virtual void FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const = 0;
     virtual void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const = 0;
     virtual void FormatModelEvidence(string& str, const SModelEvidance& me) const = 0;
     virtual void FormatTranscript(string& str, const string& name) const = 0;
-    virtual void FormatGeneralId(CNcbiOstream& os, const string& id) const = 0;
-    virtual void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const = 0;
+    virtual void FormatGeneralId(ostream& os, const string& id) const = 0;
+    virtual void FormatGapLink(ostream& os, TSeqPos gap_size, const string& id, bool is_prot) const = 0;
     virtual void FormatUniProtId(string& str, const string& prot_id) const = 0;
 };
 
@@ -102,14 +102,14 @@ public:
 
     void FormatProteinId(string& str, const CSeq_id& seq_id, const string& prot_id) const override;
     void FormatTranscriptId(string& str, const CSeq_id& seq_id, const string& nuc_id) const override;
-    void FormatNucSearch(CNcbiOstream& os, const string& id) const override;
+    void FormatNucSearch(ostream& os, const string& id) const override;
     void FormatNucId(string& str, const CSeq_id& seq_id, TIntId gi, const string& acc_id) const override;
     void FormatTaxid(string& str, const TTaxId taxid, const string& taxname) const override;
     void FormatLocation(string& str, const CSeq_loc& loc, TIntId gi, const string& visible_text) const override;
     void FormatModelEvidence(string& str, const SModelEvidance& me) const override;
     void FormatTranscript(string& str, const string& name) const override;
-    void FormatGeneralId(CNcbiOstream& os, const string& id) const override;
-    void FormatGapLink(CNcbiOstream& os, TSeqPos gap_size, const string& id, bool is_prot) const override;
+    void FormatGeneralId(ostream& os, const string& id) const override;
+    void FormatGapLink(ostream& os, TSeqPos gap_size, const string& id, bool is_prot) const override;
     void FormatUniProtId(string& str, const string& prot_id) const override;
 };
 
