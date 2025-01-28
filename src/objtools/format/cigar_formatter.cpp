@@ -159,7 +159,7 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
     if (m_TargetRow == m_RefRow) {
         return;
     }
-    CNcbiOstrstream cigar;
+    stringstream cigar;
     m_LastType = 0;
     TSeqPos last_count = 0;
 
@@ -342,11 +342,10 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
             last_frameshift = frameshift;
         }
     }
-    CNcbiOstrstream aln_out;
 
     AddSegment(cigar, m_LastType, last_count);
-    string cigar_string = CNcbiOstrstreamToString(cigar);
 
+    string cigar_string = cigar.str();
     AddRow(cigar_string);
 
     EndRow();

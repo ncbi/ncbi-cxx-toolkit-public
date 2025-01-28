@@ -206,26 +206,26 @@ CFlatSeqLoc::CFlatSeqLoc
 
     }
 
-    CNcbiOstrstream oss;
+    ostringstream oss;
     if (s_NeedsFlattening (loc)) {
         CConstRef<CSeq_loc> flat = s_FlattenLoc (loc);
         x_Add(*flat, oss, ctx, type, true, show_all_accns, add_join, suppress_accession);
     } else {
         x_Add(loc, oss, ctx, type, true, show_all_accns, add_join, suppress_accession);
     }
-    ((string)CNcbiOstrstreamToString(oss)).swap( m_String );
+    oss.str().swap( m_String );
 }
 
 
-bool CFlatSeqLoc::x_Add
-(const CSeq_loc& loc,
- CNcbiOstrstream& oss,
- CBioseqContext& ctx,
- TType type,
- bool show_comp,
- bool show_all_accns,
- bool add_join,
- bool suppress_accession)
+bool CFlatSeqLoc::x_Add(
+    const CSeq_loc& loc,
+    ostream& oss,
+    CBioseqContext& ctx,
+    TType type,
+    bool show_comp,
+    bool show_all_accns,
+    bool add_join,
+    bool suppress_accession)
 {
     CScope& scope = ctx.GetScope();
     const CBioseq_Handle& seq = ctx.GetHandle();
@@ -505,14 +505,14 @@ bool CFlatSeqLoc::x_FuzzToDisplayed(const CSeq_interval& si) const
 
 
 
-bool CFlatSeqLoc::x_Add
-(const CSeq_interval& si,
- CNcbiOstrstream& oss,
- CBioseqContext& ctx,
- TType type,
- bool show_comp,
- bool show_all_accns,
- bool suppress_accession)
+bool CFlatSeqLoc::x_Add(
+    const CSeq_interval& si,
+    ostream& oss,
+    CBioseqContext& ctx,
+    TType type,
+    bool show_comp,
+    bool show_all_accns,
+    bool suppress_accession)
 {
     bool do_html = ctx.Config().DoHTML();
 
@@ -551,14 +551,14 @@ bool CFlatSeqLoc::x_Add
 }
 
 
-bool CFlatSeqLoc::x_Add
-(const CSeq_point& pnt,
- CNcbiOstrstream& oss,
- CBioseqContext& ctx,
- TType type,
- bool show_comp,
- bool show_all_accns,
- bool suppress_accession)
+bool CFlatSeqLoc::x_Add(
+    const CSeq_point& pnt,
+    ostream& oss,
+    CBioseqContext& ctx,
+    TType type,
+    bool show_comp,
+    bool show_all_accns,
+    bool suppress_accession)
 {
     if ( !pnt.CanGetPoint() ) {
         return false;
@@ -585,15 +585,15 @@ bool CFlatSeqLoc::x_Add
 }
 
 
-bool CFlatSeqLoc::x_Add
-(TSeqPos pnt,
- const CInt_fuzz* fuzz,
- CNcbiOstrstream& oss,
- EHTML html,
- EForce force,
- ESource source,
- bool show_all_accns,
- bool suppress_accession)
+bool CFlatSeqLoc::x_Add(
+    TSeqPos pnt,
+    const CInt_fuzz* fuzz,
+    ostream& oss,
+    EHTML html,
+    EForce force,
+    ESource source,
+    bool show_all_accns,
+    bool suppress_accession)
 {
     // need to convert to 1-based coordinates
     pnt += 1;
@@ -683,13 +683,13 @@ bool CFlatSeqLoc::x_Add
 }
 
 
-void CFlatSeqLoc::x_AddID
-(const CSeq_id& id,
- CNcbiOstrstream& oss,
- CBioseqContext& ctx,
- TType type,
- bool show_all_accns,
- bool suppress_accession)
+void CFlatSeqLoc::x_AddID(
+    const CSeq_id& id,
+    ostream& oss,
+    CBioseqContext& ctx,
+    TType type,
+    bool show_all_accns,
+    bool suppress_accession)
 {
     const bool do_html = ( ctx.Config().DoHTML() && type == eType_assembly);
 

@@ -85,7 +85,7 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
 {
     const char * pchPrefix = "";
 
-    CNcbiOstrstream result;
+    ostringstream result;
     ITERATE( CUser_field_Base::C_Data::TStrs, str_iter, strs ) {
         const string &id = *str_iter;
         if( id.empty() ) {
@@ -108,7 +108,7 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
         pchPrefix = ", ";
     }
 
-    return CNcbiOstrstreamToString( result );
+    return result.str();
 }
 
 static string
@@ -116,7 +116,7 @@ s_JoinNumbers( const CUser_field_Base::C_Data::TInts & ints, const string & sepa
 {
     const char * pchPrefix = "";
 
-    CNcbiOstrstream result;
+    ostringstream result;
     ITERATE( CUser_field_Base::C_Data::TInts, int_iter, ints ) {
         if( *int_iter == 0 ) {
             continue;
@@ -125,7 +125,7 @@ s_JoinNumbers( const CUser_field_Base::C_Data::TInts & ints, const string & sepa
         result << *int_iter;
         pchPrefix = separator.c_str();
     }
-    return CNcbiOstrstreamToString( result );
+    return result.str();
 }
 
 namespace {

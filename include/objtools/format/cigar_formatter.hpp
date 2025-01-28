@@ -85,7 +85,7 @@ protected:
     virtual void StartRow(void) {}
     virtual void AddRow(const string& /*cigar*/) {}
     virtual void EndRow(void) {}
-    virtual void AddSegment(CNcbiOstream& cigar,
+    virtual void AddSegment(ostream& cigar,
                             char seg_type,
                             TSeqPos seg_len);
     // Force seq-id to the desired type (e.g. gi, acc.ver).

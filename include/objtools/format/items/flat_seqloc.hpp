@@ -104,20 +104,20 @@ private:
         eSource_Point
     };
 
-    bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_loc& loc, ostream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
         bool show_all_accns = false, bool join_whole_loc = false,
         bool suppress_accession = false);
-    bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_interval& si, ostream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
         bool show_all_accns = false, bool suppress_accession = false);
-    bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_point& pnt, ostream& oss,
         CBioseqContext& ctx, TType type, bool show_comp,
         bool show_all_accns = false, bool suppress_accession = false);
-    bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
+    bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, ostream& oss,
         EHTML html, EForce force = eForce_None, ESource source = eSource_Other,
         bool show_all_accns = false, bool suppress_accession = false);
-    void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
+    void x_AddID(const CSeq_id& id, ostream& oss,
         CBioseqContext& ctx, TType type,
         bool show_all_accns = false, bool suppress_accession = false);
 

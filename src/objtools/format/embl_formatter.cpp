@@ -101,7 +101,7 @@ void CEmblFormatter::FormatLocus
     const CBioseqContext& ctx = *locus.GetContext();
 
     list<string> l;
-    CNcbiOstrstream id_line;
+    ostringstream id_line;
 
     string hup = ctx.IsHup() ? " confidential" : " standard";
 
@@ -118,7 +118,7 @@ void CEmblFormatter::FormatLocus
         << locus.GetDivision() << "; "
         << locus.GetLength() << " BP.";
 
-    Wrap(l, GetWidth(), "ID", CNcbiOstrstreamToString(id_line));
+    Wrap(l, GetWidth(), "ID", id_line.str());
     text_os.AddParagraph(l);
 }
 
@@ -156,13 +156,13 @@ void CEmblFormatter::FormatVersion
     x_AddXX(text_os);
 
     list<string> l;
-    CNcbiOstrstream version_line;
+    ostringstream version_line;
 
     if ( version.GetGi() > ZERO_GI ) {
         version_line << "g" << version.GetGi();
     }
 
-    Wrap(l, "SV", CNcbiOstrstreamToString(version_line));
+    Wrap(l, "SV", version_line.str());
     text_os.AddParagraph(l);
 }
 
@@ -290,7 +290,7 @@ void CEmblFormatter::x_OrganismSource
  const CSourceItem& source) const
 {
     /*
-    CNcbiOstrstream source_line;
+    ostringstream source_line;
 
     string prefix = source.IsUsingAnamorph() ? " (anamorph: " : " (";
 
@@ -299,7 +299,7 @@ void CEmblFormatter::x_OrganismSource
         source_line << prefix << source.GetCommon() << ")";
     }
 
-    Wrap(l, GetWidth(), "SOURCE", CNcbiOstrstreamToString(source_line));
+    Wrap(l, GetWidth(), "SOURCE", source_line.str());
     */
 }
 
@@ -359,7 +359,7 @@ void CEmblFormatter::x_Reference
  const CReferenceItem& ref,
  CFlatContext& ctx)
 {
-    CNcbiOstrstream ref_line;
+    ostringstream ref_line;
 
     // print serial number
     ref_line << ref.GetSerial() << (ref.GetSerial() < 10 ? "  " : " ");
@@ -376,7 +376,7 @@ void CEmblFormatter::x_Reference
         x_FormatRefLocation(ref_line, *loc, " to ", "; ",
             ctx.IsProt(), ctx.GetScope());
     }
-    Wrap(l, GetWidth(), "REFERENCE", CNcbiOstrstreamToString(ref_line));
+    Wrap(l, GetWidth(), "REFERENCE", ref_line.str());
 }
 
 
@@ -529,7 +529,7 @@ void CEmblFormatter::FormatBasecount
     /*
     list<string> l;
 
-    CNcbiOstrstream bc_line;
+    ostringstream bc_line;
 
     bc_line
         << right << setw(7) << bc.GetA() << " a"
@@ -539,7 +539,7 @@ void CEmblFormatter::FormatBasecount
     if ( bc.GetOther() > 0 ) {
         bc_line << right << setw(7) << bc.GetOther() << " others";
     }
-    Wrap(l, "BASE COUNT", CNcbiOstrstreamToString(bc_line));
+    Wrap(l, "BASE COUNT", bc_line.str());
     text_os.AddParagraph(l);
     */
 }
@@ -555,7 +555,7 @@ void CEmblFormatter::FormatSequence
 {
     /*
     list<string> l;
-    CNcbiOstrstream seq_line;
+    ostringstream seq_line;
 
     const CSeqVector& vec = seq.GetSequence();
 
@@ -575,7 +575,7 @@ void CEmblFormatter::FormatSequence
     if ( seq.IsFirst() ) {
         l.push_back("ORIGIN      ");
     }
-    NStr::Split(CNcbiOstrstreamToString(seq_line), "\n", l);
+    NStr::Split(seq_line.str(), "\n", l);
     text_os.AddParagraph(l);
     */
 }

@@ -165,7 +165,7 @@ static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
     }
 
     // Add the suffix
-    CNcbiOstrstream locus;
+    ostringstream locus;
     locus << basename;
 
     size_t suffix_len = NStr::NumericToString(numsegs).length();
@@ -174,7 +174,7 @@ static void s_AddLocusSuffix(string &basename, CBioseqContext& ctx)
         locus << 'S';
     }
     locus << setfill('0') << setw(suffix_len) << ctx.GetPartNumber();
-    basename = CNcbiOstrstreamToString(locus);
+    basename = locus.str();
 }
 
 static string s_FastaGetOriginalID (CBioseqContext& ctx)

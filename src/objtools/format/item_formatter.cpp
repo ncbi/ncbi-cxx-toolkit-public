@@ -201,7 +201,7 @@ string  CFlatItemFormatter::x_FormatAccession
 (const CAccessionItem& acc,
  char separator) const
 {
-    CNcbiOstrstream acc_line;
+    ostringstream acc_line;
 
     CBioseqContext& ctx = *acc.GetContext();
 
@@ -223,7 +223,7 @@ string  CFlatItemFormatter::x_FormatAccession
         s_FormatSecondaryAccessions(acc_line, acc.GetExtraAccessions(), separator);
     }
 
-    return CNcbiOstrstreamToString(acc_line);
+    return acc_line.str();
 }
 
 
@@ -358,12 +358,12 @@ CFlatItemFormatter::End(
 };
 
 
-void CFlatItemFormatter::x_FormatRefLocation
-(CNcbiOstrstream& os,
- const CSeq_loc& loc,
- const string& to,
- const string& delim,
- CBioseqContext& ctx) const
+void CFlatItemFormatter::x_FormatRefLocation(
+    ostream&        os,
+    const CSeq_loc& loc,
+    const string&   to,
+    const string&   delim,
+    CBioseqContext& ctx) const
 {
     const string* delim_p = &kEmptyStr;
     CScope& scope = ctx.GetScope();
@@ -739,7 +739,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         return;
     }
 
-    CNcbiOstrstream jour;
+    ostringstream jour;
     jour << "(in) ";
     if (book.CanGetAuthors()) {
         const CCit_book::TAuthors& auth = book.GetAuthors();
@@ -793,7 +793,7 @@ static void s_FormatCitBookArt(const CReferenceItem& ref, string& journal, bool 
         }
     }
 
-    journal = CNcbiOstrstreamToString(jour);
+    journal = jour.str();
 }
 
 
@@ -806,7 +806,7 @@ static void s_FormatCitBook(const CReferenceItem& ref, string& journal)
 
     journal.erase();
 
-    CNcbiOstrstream jour;
+    ostringstream jour;
 
     string title = book.GetTitle().GetTitle();
     jour << "(in) " << NStr::ToUpper(title) << '.';
@@ -833,7 +833,7 @@ static void s_FormatCitBook(const CReferenceItem& ref, string& journal)
         jour << ", In press";
     }
 
-    journal = CNcbiOstrstreamToString(jour);
+    journal = jour.str();
 }
 
 
@@ -1120,7 +1120,7 @@ static void s_FormatPatent
         header = "Patent number ";
     }
 
-    CNcbiOstrstream jour;
+    ostringstream jour;
     jour << header;
 
     if (pat.IsSetCountry()  &&  !NStr::IsBlank(pat.GetCountry())) {
@@ -1279,7 +1279,7 @@ static void s_FormatPatent
         }
     }
 
-    journal = CNcbiOstrstreamToString(jour);
+    journal = jour.str();
     CleanAndCompress (journal, journal.c_str());
 }
 
@@ -1376,7 +1376,7 @@ static void s_FormatJournal
         return;
     }
 
-    CNcbiOstrstream jour;
+    ostringstream jour;
 
 //    if (ref.IsElectronic()  &&  !NStr::StartsWith(title, "(er")) {
 //        jour << "(er) ";
@@ -1439,7 +1439,7 @@ static void s_FormatJournal
         }
     }
 
-    journal = CNcbiOstrstreamToString(jour);
+    journal = jour.str();
 }
 
 
