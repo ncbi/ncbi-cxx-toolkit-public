@@ -1135,7 +1135,7 @@ bool CWriteUtil::GetStringForModelEvidence(
     }
 
     //CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
-    CNcbiOstrstream text;
+    ostringstream text;
     //text << "Derived by automated computational analysis";
     //if (!NStr::IsBlank(method)) {
     //    text << " using gene prediction method: " << method;
@@ -1200,7 +1200,7 @@ bool CWriteUtil::GetStringForModelEvidence(
 
         section_prefix = ", and ";
     }
-    mestr = CNcbiOstrstreamToString(text);
+    mestr = text.str();
     return true;
 }
 

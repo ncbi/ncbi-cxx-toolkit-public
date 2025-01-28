@@ -1628,9 +1628,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_InvalidResidue)
 static void WriteOutTemp(CRef<CSeq_entry> entry)
 {
     // construct a temp file name
-    CNcbiOstrstream oss;
+    ostringstream oss;
     oss << "test.asn";
-    string filename = CNcbiOstrstreamToString(oss);
+    string filename = oss.str();
     string fullPath = CDirEntry::MakePath(".", filename);
 
     // initialize a binary output stream

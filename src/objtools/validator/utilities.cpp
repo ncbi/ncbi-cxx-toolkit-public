@@ -991,9 +991,9 @@ string GetBioseqIdLabel(const CBioseq& sq)
     /* find first gi */
     for (auto id_it : id_list) {
         if (id_it->IsGi()) {
-            CNcbiOstrstream os;
+            ostringstream os;
             id_it->WriteAsFasta(os);
-            string s = CNcbiOstrstreamToString(os);
+            string s = os.str();
             content += s;
             num_ids_found ++;
             break;
@@ -1012,9 +1012,9 @@ string GetBioseqIdLabel(const CBioseq& sq)
             if (num_ids_found > 0) {
                 content += "|";
             }
-            CNcbiOstrstream os;
+            ostringstream os;
             id_it->WriteAsFasta(os);
-            string s = CNcbiOstrstreamToString(os);
+            string s = os.str();
             content += s;
             num_ids_found++;
             break;
@@ -1028,9 +1028,9 @@ string GetBioseqIdLabel(const CBioseq& sq)
                 if (num_ids_found > 0) {
                     content += "|";
                 }
-                CNcbiOstrstream os;
+                ostringstream os;
                 id_it->WriteAsFasta(os);
-                string s = CNcbiOstrstreamToString(os);
+                string s = os.str();
                 content += s;
                 num_ids_found++;
                 break;
@@ -1051,9 +1051,9 @@ string GetBioseqIdLabel(const CBioseq& sq)
             if (id_found) {
                 content += "|";
             }
-            CNcbiOstrstream os;
+            ostringstream os;
             id_it->WriteAsFasta(os);
-            string s = CNcbiOstrstreamToString(os);
+            string s = os.str();
             content += s;
             id_found = true;
         }

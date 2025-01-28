@@ -561,10 +561,10 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, FEAT, eDisc | eSubmitter | eSmart, "rRNA
             size_t rule_num = 0;
             for (auto rule : rules->Get()) {
                 if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(product)) {
-                    CNcbiOstrstream detailed_msg;
+                    ostringstream detailed_msg;
                     detailed_msg << "[n] rRNA product name[s] ";
                     s_SummarizeSuspectRule(detailed_msg, *rule);
-                    m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.SeqFeatObjRef(feat));
+                    m_Objs[kMsg][detailed_msg.str()].Ext().Add(*context.SeqFeatObjRef(feat));
                 }
                 rule_num++;
             }

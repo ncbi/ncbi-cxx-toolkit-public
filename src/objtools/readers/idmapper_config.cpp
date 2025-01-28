@@ -66,11 +66,11 @@ CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
 void CIdMapperConfig::Initialize(CNcbiIstream& istr)
 {
     string buffer;
-    {{
-         CNcbiOstrstream os;
+    {
+         ostringstream os;
          NcbiStreamCopy(os, istr);
-         buffer = string(CNcbiOstrstreamToString(os));
-     }}
+         buffer = os.str();
+    }
 
     CMemoryRegistry reg;
     try {

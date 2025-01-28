@@ -308,7 +308,7 @@ static void s_StartWrite(IMessageHandler& msgHandler) // Commence write if neces
 
 void CAsnvalThreadState::ReportReadFailure(const CException* p_exception, IMessageHandler& msgHandler)
 {
-    CNcbiOstrstream os;
+    ostringstream os;
     os << "Unable to read invalid ASN.1";
     m_ReadFailure = true;
 
@@ -328,7 +328,7 @@ void CAsnvalThreadState::ReportReadFailure(const CException* p_exception, IMessa
         }
     }
 
-    string errstr = CNcbiOstrstreamToString(os);
+    string errstr = os.str();
     // newlines don't play well with XML
     errstr = NStr::Replace(errstr, "\n", " * ");
     errstr = NStr::Replace(errstr, " *   ", " * ");

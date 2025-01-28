@@ -500,7 +500,7 @@ string CDiscrepancyObject::GetTextObjectDescription(const CBioseq& bs, CScope&)
 
 string CDiscrepancyObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
 {
-    CNcbiOstrstream result_strm;
+    ostringstream result_strm;
 
     CBioseq_set::EClass bioseq_set_class =
         GET_FIELD_OR_DEFAULT(bssh, Class, CBioseq_set::eClass_not_set);
@@ -555,7 +555,7 @@ string CDiscrepancyObject::GetTextObjectDescription(CBioseq_set_Handle bssh)
         }
     }
 
-    return string(CNcbiOstrstreamToString(result_strm));
+    return result_strm.str();
 }
 
 

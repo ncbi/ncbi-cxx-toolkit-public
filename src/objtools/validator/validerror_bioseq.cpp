@@ -734,14 +734,14 @@ void CValidError_bioseq::ValidateSeqIds(const CBioseq& seq)
         CBioseq::TId::const_iterator j;
         for (j = i, ++j; j != seq.GetId().end(); ++j) {
             if ((**i).Compare(**j) != CSeq_id::e_DIFF) {
-                CNcbiOstrstream os;
+                ostringstream os;
                 os << "Conflicting ids on a Bioseq: (";
                 (**i).WriteAsFasta(os);
                 os << " - ";
                 (**j).WriteAsFasta(os);
                 os << ")";
                 PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingIdsOnBioseq,
-                    CNcbiOstrstreamToString (os) /* os.str() */, seq);
+                    os.str(), seq);
             }
         }
 
