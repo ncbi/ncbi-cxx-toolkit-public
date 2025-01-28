@@ -208,7 +208,8 @@ const char* CEFetch_Sequence_Request::x_GetRetTypeName(void) const
 {
     static const char* s_SeqRetTypeName[] = {
         "", "native", "fasta", "gb", "gbc", "gbwithparts", "est", "gss",
-        "gp", "gpc", "seqid", "acc", "chr", "flt", "rsr", "brief", "docset"
+        "gp", "gpc", "seqid", "acc", "chr", "flt", "rsr", "brief", "docset",
+        "gi2acc"
     };
     return s_SeqRetTypeName[m_RetType];
 }

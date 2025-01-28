@@ -175,6 +175,7 @@ void CEUtilsApp::Init(void)
         // Sequence
         "native", "fasta", "gb", "gbc", "gbwithparts", "est", "gss",
         "gp", "gpc", "seqid", "acc", "chr", "flt", "rsr", "brief", "docset",
+        "gi2acc",
         // Search
         "count", "uilist"));
     arg_desc->AddOptionalKey("reldate", "RelDate", "Age of date in days",
@@ -685,6 +686,9 @@ CEFetch_Request* CEUtilsApp::x_CreateSeqRequest(const CArgs& args)
     }
     else if (rettype == "docset") {
         seq_req->SetRetType(CEFetch_Sequence_Request::eRetType_docset);
+    }
+    else if (rettype == "gi2acc") {
+        seq_req->SetRetType(CEFetch_Sequence_Request::eRetType_gi2acc);
     }
     else if ( !rettype.empty() ) {
         ERR_POST(Error << "Rettype " << rettype <<
