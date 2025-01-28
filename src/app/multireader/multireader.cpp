@@ -846,16 +846,16 @@ CMultiReaderApp::xProcessSingleFile(
         retCode = false;
     }
     catch(const CException& e) {
-        CNcbiOstrstream os;
+        ostringstream os;
         os << e.GetMsg();
-        CNcbiOstrstream osEx;
+        ostringstream osEx;
         e.ReportExtra(osEx);
         if (!IsOssEmpty(osEx)) {
-            os << " (" << CNcbiOstrstreamToString(osEx) << ')';
+            os << " (" << osEx.str() << ')';
         }
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(eDiag_Fatal,
-                "Reading aborted due to fatal error: " + CNcbiOstrstreamToString(os));
+                "Reading aborted due to fatal error: " + os.str());
         m_pErrors->PutError(*line_error_p);
         retCode = false;
     }

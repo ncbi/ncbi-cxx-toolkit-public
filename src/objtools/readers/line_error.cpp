@@ -109,7 +109,7 @@ CLineError::CLineError(const CLineError& rhs) :
 
 string ILineError::Message() const
 {
-    CNcbiOstrstream result;
+    ostringstream result;
     result << "On SeqId '" << SeqId() << "', line " << Line() << ", severity " << SeverityStr() << ": '"
            << ProblemStr() << "'";
     if (! FeatureName().empty()) {
@@ -127,7 +127,7 @@ string ILineError::Message() const
             result << ' ' << *line_it;
         }
     }
-    return (string)CNcbiOstrstreamToString(result);
+    return result.str();
 }
 
 

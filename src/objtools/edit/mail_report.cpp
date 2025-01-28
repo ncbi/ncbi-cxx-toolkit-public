@@ -155,13 +155,13 @@ void MakeMailReportPostReport(CSeq_table& table, CScope& scope)
 }
 
 
-void PrintReportLineHeader(CNcbiOstrstream& lines)
+void PrintReportLineHeader(ostringstream& lines)
 {
     lines << "Accession\tOld Name\tNew Name\n";
 }
 
 
-void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_t i, CScope* scope = nullptr)
+void ReportMailReportLine(ostringstream& lines, const CSeq_table& table, size_t i, CScope* scope = nullptr)
 {
     string id;
     if (scope)
@@ -185,7 +185,7 @@ void ReportMailReportLine(CNcbiOstrstream& lines, const CSeq_table& table, size_
 
 string GetReportFromMailReportTable(const CSeq_table& table, CScope* scope)
 {
-    CNcbiOstrstream lines;
+    ostringstream lines;
 
     lines << "Failed Lookups\n";
     PrintReportLineHeader(lines);
@@ -211,7 +211,7 @@ string GetReportFromMailReportTable(const CSeq_table& table, CScope* scope)
         }
     }
 
-    return string(CNcbiOstrstreamToString(lines));
+    return lines.str();
 }
 
 

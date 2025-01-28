@@ -101,10 +101,10 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 }
                 seq_length = bsh.GetBioseqLength();
             } else {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify defline: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(1, Error << msg);
                 NCBI_THROW(CException, eUnknown, msg);
             }
@@ -112,11 +112,11 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
             list<string> toks;
             NStr::Split(line, " \t", toks, NStr::fSplit_Tokenize);
             if (toks.size() != 5) {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": invalid number of tokens: "
                     << "found " << toks.size() << ", expected 5: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(2, Error << msg);
                 ++errs;
                 if (errs > 5) {
@@ -136,10 +136,10 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 start_pos -= 1;
             }
             catch (CException&) {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify start pos: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(3, Error << msg);
 
                 ++errs;
@@ -157,10 +157,10 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 stop_pos -= 1;
             }
             catch (CException&) {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify stop pos: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(4, Error << msg);
 
                 ++errs;
@@ -186,10 +186,10 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 }
             }
             catch (CException&) {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify frame: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(5, Error << msg);
 
                 ++errs;
@@ -206,10 +206,10 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
                 /*score =*/ NStr::StringToDouble(*it++);
             }
             catch (CException&) {
-                CNcbiOstrstream ostr;
+                ostringstream ostr;
                 ostr << "CGlimmerReader::ReadAnnot(): line "
                     << count << ": failed to identify score: " << line;
-                string msg = string(CNcbiOstrstreamToString(ostr));
+                string msg = ostr.str();
                 ERR_POST_X(6, Error << msg);
 
                 ++errs;
@@ -299,9 +299,9 @@ CRef<CSeq_entry> CGlimmerReader::Read(CNcbiIstream& istr, CScope& scope,
         inst.SetLength(inst.SetSeq_data().SetIupacaa().Set().size());
 
         /// create a readable seq-id
-        CNcbiOstrstream ostr;
+        ostringstream ostr;
         ostr << prefix << setw(7) << setfill('0') << ++count;
-        string id_str = string(CNcbiOstrstreamToString(ostr));
+        string id_str = ostr.str();
 
         CRef<CSeq_id> id(new CSeq_id(id_str));
         bioseq.SetId().push_back(id);

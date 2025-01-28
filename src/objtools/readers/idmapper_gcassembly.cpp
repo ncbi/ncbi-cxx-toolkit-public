@@ -281,12 +281,12 @@ void CIdMapperGCAssembly::x_AddAliasMappings(const CGC_Sequence& seq,
 
                 default:
                     _ASSERT(false);
-                    CNcbiOstrstream str;
+                    ostringstream str;
                     str << MSerial_AsnText << **it;
                     NCBI_THROW(CIdMapperException, eBadSeqId,
                         "Unhandled ID type in GC-Assembly: " +
                         NStr::PrintableString(
-                        (string)CNcbiOstrstreamToString(str),
+                        str.str(),
                         NStr::fNewLine_Quote));
                 }
             }

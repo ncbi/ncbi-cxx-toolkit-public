@@ -729,18 +729,18 @@ void CSingleFeatValidator::x_ValidateSeqFeatLoc()
 
     if (m_LocationBioseq) {
         // look for mismatch in capitalization for IDs
-        CNcbiOstrstream os;
+        ostringstream os;
         const CSeq_id *id = m_Feat.GetLocation().GetId();
         if (id) {
             id->WriteAsFasta(os);
-            string loc_id = CNcbiOstrstreamToString(os);
+            string loc_id = os.str();
             FOR_EACH_SEQID_ON_BIOSEQ(it, *(m_LocationBioseq.GetCompleteBioseq())) {
                 if ((*it)->IsGi() || (*it)->IsGibbsq() || (*it)->IsGibbmt()) {
                     continue;
                 }
-                CNcbiOstrstream os2;
+                ostringstream os2;
                 (*it)->WriteAsFasta(os2);
-                string bs_id = CNcbiOstrstreamToString(os2);
+                string bs_id = os2.str();
                 if (NStr::EqualNocase(loc_id, bs_id) && !NStr::EqualCase(loc_id, bs_id)) {
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_FeatureSeqIDCaseDifference,
                         "Sequence identifier in feature location differs in capitalization with identifier on Bioseq");

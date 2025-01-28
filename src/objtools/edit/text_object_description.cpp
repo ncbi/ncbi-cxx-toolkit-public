@@ -85,7 +85,7 @@ static CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq)
 
 static string GetTextObjectDescription(CBioseq_set_Handle bssh)
 {
-    CNcbiOstrstream result_strm;
+    ostringstream result_strm;
 
     CBioseq_set::EClass bioseq_set_class = bssh.IsSetClass() ? bssh.GetClass() : CBioseq_set::eClass_not_set;
     if (bioseq_set_class == CBioseq_set::eClass_segset || bioseq_set_class == CBioseq_set::eClass_nuc_prot) {
@@ -139,7 +139,7 @@ static string GetTextObjectDescription(CBioseq_set_Handle bssh)
         }
     }
 
-    return CNcbiOstrstreamToString(result_strm);
+    return result_strm.str();
 }
 
 

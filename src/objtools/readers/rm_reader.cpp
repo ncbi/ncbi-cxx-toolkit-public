@@ -685,7 +685,7 @@ CRef<CSeq_feat> CRepeatToFeat::operator()(const IRepeatRegion& repeat)
             // the possibility the annotation is remapped, the original
             // query identifier is preserved.
 
-            CNcbiOstrstream comment;
+            ostringstream comment;
             const char eq('='), sep(' ');
 
             comment << "source=RepeatMasker";
@@ -728,7 +728,7 @@ CRef<CSeq_feat> CRepeatToFeat::operator()(const IRepeatRegion& repeat)
                 comment << sep
                         << "rpt_length" << eq << extra.GetRptLength();
             }
-            feat->SetComment(CNcbiOstrstreamToString(comment));
+            feat->SetComment(comment.str());
         }
     }
 
