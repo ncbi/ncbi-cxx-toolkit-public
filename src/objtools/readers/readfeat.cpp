@@ -247,6 +247,7 @@ public:
         eQual_pseudogene,
         eQual_PubMed,
         eQual_rad_map,
+        eQual_recombination_class,
         eQual_region_name,
         eQual_regulatory_class,
         eQual_replace,
@@ -577,6 +578,7 @@ static const TQualKey qual_key_to_subtype [] = {
     {  "pseudo",               CFeatureTableReader_Imp::eQual_pseudo                },
     {  "pseudogene",           CFeatureTableReader_Imp::eQual_pseudogene            },
     {  "rad_map",              CFeatureTableReader_Imp::eQual_rad_map               },
+    {  "recombination_class",  CFeatureTableReader_Imp::eQual_recombination_class   },
     {  "region_name",          CFeatureTableReader_Imp::eQual_region_name           },
     {  "regulatory_class",     CFeatureTableReader_Imp::eQual_regulatory_class      },
     {  "replace",              CFeatureTableReader_Imp::eQual_replace               },
@@ -1191,9 +1193,6 @@ bool CFeatureTableReader_Imp::x_AddQualifierToGene (
         case eQual_locus_tag:
             grp.SetLocus_tag (val);
             return true;
-        case eQual_nomenclature:
-            /* !!! need to implement !!! */
-            return true;
         default:
             break;
     }
@@ -1715,22 +1714,12 @@ bool CFeatureTableReader_Imp::x_AddQualifierToImp (
     {
         if (qtype == eQual_regulatory_class) {
             if (val != "other") { // RW-374 "other" is a special case
-
                 const vector<string>& allowed_values =
                     CSeqFeatData::GetRegulatoryClassList();
                 if (find(allowed_values.cbegin(), allowed_values.cend(), val)
                     == allowed_values.cend()) {
                     return false;
                 }
-
-/*
-                const CSeqFeatData::ESubtype regulatory_class_subtype =
-                    CSeqFeatData::GetRegulatoryClass(val);
-                if( regulatory_class_subtype == CSeqFeatData::eSubtype_bad ) {
-                    // msg will be sent in caller x_AddQualifierToFeature
-                    return false;
-                }
-                */
             }
             // okay
             // (Note that at this time we don't validate
@@ -1740,6 +1729,13 @@ bool CFeatureTableReader_Imp::x_AddQualifierToImp (
             return true;
         }
     }
+
+    if (((subtype == CSeqFeatData::eSubtype_modified_base) &&
+        (qtype == eQual_mod_base)) ||
+        ((subtype == CSeqFeatData::eSubtype_misc_recomb) &&
+        (qtype == eQual_recombination_class))) {
+        return x_AddGBQualToFeature(sfp, qual, val);
+    } 
 
     switch (subtype) {
         case CSeqFeatData::eSubtype_variation:
@@ -2264,6 +2260,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
     // else type != CSeqFeatData::e_Biosrc
     string lqual = s_FixQualCapitalization(qual);
     TQualMap::const_iterator q_iter = sm_QualKeys.find (lqual.c_str ());
+
     if (q_iter != sm_QualKeys.end ()) {
         EQual qtype = q_iter->second;
         switch (featType) {
@@ -2483,11 +2480,6 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                         dblist.push_back (dbt);
                         return true;
                     }
-                    return true;
-                }
-            case eQual_nomenclature:
-                {
-                    /* !!! need to implement !!! */
                     return true;
                 }
             case eQual_go_component:
