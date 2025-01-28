@@ -55,7 +55,7 @@ USING_NCBI_SCOPE;
 
 
 template<class A, class B>
-static
+NCBI_NORETURN static
 void s_failed_assert_equal(const A& a, const B& b,
                            const char* aexpr, const char* bexpr,
                            const char* file, int line)

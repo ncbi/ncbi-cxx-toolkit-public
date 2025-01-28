@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_app(test_ncbidiag_perf)
+  NCBI_sources(test_ncbidiag_perf)
+  NCBI_requires(MT)
+  NCBI_add_definitions(NCBI_SHOW_FUNCTION_NAME)
+  NCBI_uses_toolkit_libraries(test_mt)
+  NCBI_add_test(test_ncbidiag_perf)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
