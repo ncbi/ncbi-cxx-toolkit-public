@@ -213,7 +213,8 @@ public:
         eRetType_flt,
         eRetType_rsr,
         eRetType_brief,
-        eRetType_docset
+        eRetType_docset,
+        eRetType_gi2acc
     };
 
     /// Output data type.
