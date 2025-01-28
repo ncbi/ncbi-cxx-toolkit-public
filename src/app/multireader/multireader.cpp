@@ -850,7 +850,7 @@ CMultiReaderApp::xProcessSingleFile(
         os << e.GetMsg();
         ostringstream osEx;
         e.ReportExtra(osEx);
-        if (!IsOssEmpty(osEx)) {
+        if (osEx.tellp() > 0) {
             os << " (" << osEx.str() << ')';
         }
         AutoPtr<ILineError> line_error_p =
