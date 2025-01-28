@@ -35,7 +35,11 @@
 
 #include "ncbi_comm.h"
 #include "ncbi_server_infop.h"
-#include <connect/impl/ncbi_servicep.h>
+#ifdef NCBI_CXX_TOOLKIT
+#  include <connect/impl/ncbi_servicep.h>
+#else
+#  include <connect/ncbi_service.h>
+#endif /*NCBI_CXX_TOOLKIT*/
 
 
 /* Order:
