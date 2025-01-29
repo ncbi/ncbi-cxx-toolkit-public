@@ -156,6 +156,47 @@ bool CSpliced_seg::IsConsistentBiologicalOrder(void) const
 }
 
 
+TSeqPos CSpliced_seg::InternalUnaligned(void) const
+{
+    TSeqPos internal_unaligned = 0;
+    if (IsSetProduct_strand()  && GetProduct_strand() == eNa_strand_minus) {
+        CSpliced_seg::TExons::const_reverse_iterator it = GetExons().rbegin();
+        CSpliced_seg::TExons::const_reverse_iterator prev = GetExons().rbegin();
+        CSpliced_seg::TExons::const_reverse_iterator end = GetExons().rend();
+        if (GetProduct_type() == CSpliced_seg::eProduct_type_transcript) {
+            for (++it;  it != end;  ++it, ++prev) {
+                internal_unaligned += (*it)->GetProduct_start().GetNucpos() -
+                                      (*prev)->GetProduct_end().GetNucpos() - 1;
+            }
+        } else {
+            for (++it;  it != end;  ++it, ++prev) {
+                TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
+                TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
+                internal_unaligned += curr_nuc - last_nuc - 1;
+            }
+        }
+    }
+    else {
+        CSpliced_seg::TExons::const_iterator it = GetExons().begin();
+        CSpliced_seg::TExons::const_iterator prev = GetExons().begin();
+        CSpliced_seg::TExons::const_iterator end = GetExons().end();
+        if (GetProduct_type() == CSpliced_seg::eProduct_type_transcript) {
+            for (++it;  it != end;  ++it, ++prev) {
+                internal_unaligned += (*it)->GetProduct_start().GetNucpos() -
+                                      (*prev)->GetProduct_end().GetNucpos() - 1;
+            }
+        } else {
+            for (++it;  it != end;  ++it, ++prev) {
+                TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
+                TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
+                internal_unaligned += curr_nuc - last_nuc - 1;
+            }
+        }
+    }
+    return internal_unaligned;
+}
+
+
 void CSpliced_seg::Validate(bool /*full_test*/) const
 {
     bool prot = GetProduct_type() == eProduct_type_protein;

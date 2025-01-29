@@ -352,57 +352,9 @@ public:
     virtual double Get(const CSeq_align& align, CScope* ) const
     {
         double score_value = 0;
-        switch (align.GetSegs().Which()) {
-        case CSeq_align::TSegs::e_Spliced:
-            {{
-                 const CSpliced_seg& seg = align.GetSegs().GetSpliced();
-                 if (seg.IsSetProduct_strand()  &&
-                     seg.GetProduct_strand() == eNa_strand_minus) {
-                     CSpliced_seg::TExons::const_reverse_iterator it =
-                         seg.GetExons().rbegin();
-                     CSpliced_seg::TExons::const_reverse_iterator prev =
-                         seg.GetExons().rbegin();
-                     CSpliced_seg::TExons::const_reverse_iterator end =
-                         seg.GetExons().rend();
-                     if (seg.GetProduct_type() ==
-                         CSpliced_seg::eProduct_type_transcript) {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             score_value += (*it)->GetProduct_start().GetNucpos() -
-                                 (*prev)->GetProduct_end().GetNucpos() - 1;
-                         }
-                     } else {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
-                             TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
-                             score_value += curr_nuc - last_nuc - 1;
-                         }
-                     }
-                 }
-                 else {
-                     CSpliced_seg::TExons::const_iterator it =
-                         seg.GetExons().begin();
-                     CSpliced_seg::TExons::const_iterator prev =
-                         seg.GetExons().begin();
-                     CSpliced_seg::TExons::const_iterator end =
-                         seg.GetExons().end();
-                     if (seg.GetProduct_type() ==
-                         CSpliced_seg::eProduct_type_transcript) {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             score_value += (*it)->GetProduct_start().GetNucpos() -
-                                 (*prev)->GetProduct_end().GetNucpos() - 1;
-                         }
-                     } else {
-                         for (++it;  it != end;  ++it, ++prev) {
-                             TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
-                             TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
-                             score_value += curr_nuc - last_nuc - 1;
-                         }
-                     }
-                 }
-             }}
-            break;
-
-        default:
+        if (align.GetSegs().IsSpliced()) {
+            score_value = align.GetSegs().GetSpliced().InternalUnaligned();
+        } else {
             NCBI_THROW(CSeqalignException, eNotImplemented,
                        "internal_unaligned not implemented for this "
                        "type of alignment");

@@ -72,6 +72,8 @@ public:
     }
     bool IsConsistentBiologicalOrder(void) const;
 
+    TSeqPos InternalUnaligned(void) const;
+
     /// GetSeqRange
     /// NB: In case the product-type is protein, these only return the
     /// amin part of Prot-pos.  The frame is ignored.
