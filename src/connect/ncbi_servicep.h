@@ -29,7 +29,7 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Private API to define server iterator and related API.
+ *   Private header to define server iterator and related API.
  *
  */
 
