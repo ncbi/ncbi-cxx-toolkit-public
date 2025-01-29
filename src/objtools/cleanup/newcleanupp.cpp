@@ -1623,6 +1623,9 @@ void CNewCleanup_imp::BiosourceBC (
                     if (! NStr::EqualNocase(country, tmp)) {
                         country = tmp;
                         ChangeMade(CCleanupChange::eCleanSubsource);
+                    } else if (CBioSource::IsStopWord(tmp)) {
+                        country = tmp;
+                        ChangeMade(CCleanupChange::eCleanSubsource);
                     }
                 }
             }
@@ -1683,6 +1686,9 @@ void CNewCleanup_imp::BiosourceBC (
                 } else {
                     string tmp = s_CleanUpNullTerms(coll_date);
                     if (! NStr::EqualNocase(coll_date, tmp)) {
+                        coll_date = tmp;
+                        ChangeMade(CCleanupChange::eCleanSubsource);
+                    } else if (CBioSource::IsStopWord(tmp)) {
                         coll_date = tmp;
                         ChangeMade(CCleanupChange::eCleanSubsource);
                     }
