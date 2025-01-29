@@ -34,6 +34,7 @@
  */
 
 #include "ncbi_comm.h"
+#include "ncbi_config.h"
 #include "ncbi_server_infop.h"
 #ifdef NCBI_CXX_TOOLKIT
 #  include <connect/impl/ncbi_servicep.h>
