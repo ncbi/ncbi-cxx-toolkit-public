@@ -616,16 +616,16 @@ static bool s_DropErrorItem(const CHugeFileValidator::TGlobalInfo& globalInfo,
 string g_GetHugeSetIdString(const CHugeAsnReader& reader)
 {
     const auto& biosets = reader.GetBiosets();
-    if (biosets.size() < 2) {
-        return "";
+    const auto& bioseqs = reader.GetBioseqs();
+    if (biosets.size() < 2 || bioseqs.size() < 1) {
+        return {};
     }
 
     if (auto it = next(biosets.begin());
         ! CHugeAsnReader::IsHugeSet(it->m_class)) {
-        return "";
+        return {};
     }
 
-    const auto& bioseqs     = reader.GetBioseqs();
     const auto& firstBioseq = bioseqs.begin();
     const auto& parentIt    = firstBioseq->m_parent_set;
     int         version;

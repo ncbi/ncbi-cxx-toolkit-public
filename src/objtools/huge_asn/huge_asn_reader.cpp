@@ -589,6 +589,9 @@ void CHugeAsnReader::FlattenGenbankSet()
     m_top_ids.clear();
     m_FlattenedIndex.clear();
 
+    if (m_bioseq_list.empty())
+        NCBI_THROW(CHugeFileException, eEmptySet, "No bioseqs in the blob");
+
     // single bioseq not contained in set
     if (m_bioseq_list.size() == 1 && m_bioseq_set_list.size() == 1) {
         m_bioseq_set_list.begin()->m_pos = m_bioseq_list.begin()->m_pos;

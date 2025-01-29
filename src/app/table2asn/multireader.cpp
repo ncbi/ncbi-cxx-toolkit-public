@@ -843,7 +843,9 @@ CRef<CSerialObject> CMultiReader::xApplyTemplate(CRef<CSerialObject> obj, bool m
     if (entry.NotEmpty()) // &&
     {
         if (submit.Empty())
-        if (entry->IsSet() && entry->GetSet().GetSeq_set().size() < 2 &&
+        if (entry->IsSet() &&
+            entry->GetSet().GetSeq_set().size() < 2 &&
+            entry->GetSet().GetSeq_set().front() &&
             entry->GetSet().GetSeq_set().front()->IsSeq())
         {
             CRef<CSeq_entry> seq = entry->SetSet().SetSeq_set().front();

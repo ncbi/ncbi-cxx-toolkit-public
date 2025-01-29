@@ -748,6 +748,13 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
                 ++m_Reported;
                 continue;
             }
+            if (e.GetErrCode() == edit::CHugeFileException::eEmptySet)
+            {
+                msgHandler.AddValidErrItem(eDiag_Critical, eErr_SEQ_PKG_NoBioseqFound, "No Bioseqs in this entire record.");
+                s_StartWrite(msgHandler);
+                ++m_Reported;
+                continue;
+            }
             throw;
         }
         catch (const CSerialException&) {
