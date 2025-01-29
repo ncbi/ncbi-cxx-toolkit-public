@@ -3848,6 +3848,29 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
         }
     }
 
+    if (align->GetSeqStart(0) > 0) {
+        align_info->AddField("5prime_unaligned", (int)align->GetSeqStart(0));
+    }
+    TSeqPos product_length = 0;
+    if (align->GetSegs().IsSpliced()) {
+        product_length = align->GetSegs().GetSpliced().CanGetPoly_a()
+                ? align->GetSegs().GetSpliced().GetPoly_a()
+                : align->GetSegs().GetSpliced().GetProduct_length();
+        int internal_unaligned = align->GetSegs().GetSpliced()
+                                                 .InternalUnaligned();
+        if (internal_unaligned > 0) {
+            align_info->AddField("internal_unaligned", internal_unaligned);
+        }
+    } else {
+        product_length = m_scope->GetSequenceLength(align->GetSeq_id(0));
+    }
+    if (product_length != kInvalidSeqPos &&
+        product_length > align->GetSeqStop(0) + 1)
+    {
+        align_info->AddField("3prime_unaligned",
+                             (int)(product_length - align->GetSeqStop(0) - 1));
+    }
+
     if (!rna_comment.empty()) {
         if (!rna_feat.IsSetComment()) {
             rna_feat.SetComment(rna_comment);
