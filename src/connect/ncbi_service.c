@@ -855,6 +855,31 @@ SERV_ITER SERV_OpenP(const char*         service,
 }
 
 
+SSERV_Info* SERV_GetInfoP(const char*         service,
+                          TSERV_Type          types,
+                          unsigned int        preferred_host,
+                          unsigned short      preferred_port,
+                          double              preference,
+                          const SConnNetInfo* net_info,
+                          SSERV_InfoCPtr      skip[],
+                          size_t              n_skip,
+                          int/*bool*/         external,
+                          const char*         arg,
+                          const char*         val,
+                          HOST_INFO*          host_info)
+{
+    SSERV_Info* info;
+    SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
+                            preferred_host, preferred_port, preference,
+                            net_info, skip, n_skip,
+                            external, arg, val,
+                            &info, host_info);
+    assert(!info  ||  iter);
+    SERV_Close(iter);
+    return info;
+}
+
+
 extern SSERV_Info* SERV_GetInfoSimple(const char* service)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service);
@@ -897,31 +922,6 @@ extern SSERV_Info* SERV_GetInfoEx(const char*         service,
                          net_info, skip, n_skip,
                          0/*not external*/, 0/*arg*/, 0/*val*/,
                          host_info);
-}
-
-
-SSERV_Info* SERV_GetInfoP(const char*         service,
-                          TSERV_Type          types,
-                          unsigned int        preferred_host,
-                          unsigned short      preferred_port,
-                          double              preference,
-                          const SConnNetInfo* net_info,
-                          SSERV_InfoCPtr      skip[],
-                          size_t              n_skip,
-                          int/*bool*/         external,
-                          const char*         arg,
-                          const char*         val,
-                          HOST_INFO*          host_info)
-{
-    SSERV_Info* info;
-    SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
-                            preferred_host, preferred_port, preference,
-                            net_info, skip, n_skip,
-                            external, arg, val,
-                            &info, host_info);
-    assert(!info  ||  iter);
-    SERV_Close(iter);
-    return info;
 }
 
 
