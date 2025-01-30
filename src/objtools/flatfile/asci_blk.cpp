@@ -830,6 +830,8 @@ void GetLenSubNode(DataBlk& dbp)
     Int2  n;
     bool  done = false;
 
+    if (holds_alternative<monostate>(dbp.mData))
+        return;
     TDataBlkList& subblocks = std::get<TDataBlkList>(dbp.mData);
     if (subblocks.empty())
         return;
