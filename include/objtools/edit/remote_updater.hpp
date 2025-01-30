@@ -61,11 +61,6 @@ class CTaxon3_reply;
 
 BEGIN_SCOPE(edit)
 
-enum class EPubmedSource
-{
-    eEUtils,
-};
-
 class CCachedTaxon3_impl;
 
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdaterMessage: public CObjEditMessage
@@ -100,16 +95,6 @@ public:
     CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
     // NCBI_DEPRECATED
     CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off);
-    NCBI_DEPRECATED
-    CRemoteUpdater(IObjtoolsListener* pMessageListener, EPubmedSource, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
-        CRemoteUpdater(pMessageListener, norm)
-    {
-    }
-    NCBI_DEPRECATED
-    CRemoteUpdater(FLogger logger, EPubmedSource, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off) :
-        CRemoteUpdater(logger, norm)
-    {
-    }
     ~CRemoteUpdater();
 
     void UpdatePubReferences(CSerialObject& obj);
