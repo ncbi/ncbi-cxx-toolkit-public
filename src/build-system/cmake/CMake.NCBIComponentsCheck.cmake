@@ -57,6 +57,12 @@ function(NCBI_get_component_config_locations _sub _type)
             set(_dirs ${_c}-${_ncbi_build_type}/${_type} ${_dirs})
         endforeach()
     endif()
+    if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        set(_dirs
+            ${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${_ncbi_build_typeMT}ASan/${_type}
+            ${NCBI_COMPILER}-${_ncbi_build_typeMT}ASan/${_type}
+            ${_dirs})
+    endif()
     set(${_sub} ${_dirs} PARENT_SCOPE)
 endfunction()
 
