@@ -824,7 +824,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " way that it allows outbound connections to the port range ["
             NCBI_AS_STRING(CONN_FWD_PORT_MIN) ".."
             NCBI_AS_STRING(CONN_FWD_PORT_MAX)
-            "] (inclusive) at the fixed NCBI addresse " NCBI_FWD_BEMD ".\n"
+            "] (inclusive) at the fixed NCBI address " NCBI_FWD_BEMD ".\n"
             "To set that up correctly, please have your network administrator"
             " read the following (if they have not already done so):"
             " " CONN_FWD_URL "\n";
