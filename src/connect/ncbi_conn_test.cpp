@@ -47,9 +47,7 @@
 
 #define NCBI_WWW       DEF_CONN_HOST
 #define NCBI_WWW_BEMD  "www.be-md.ncbi.nlm.nih.gov"
-#define NCBI_WWW_STVA  "www.st-va.ncbi.nlm.nih.gov"
 #define NCBI_FWD_BEMD  "130.14.29.112"
-#define NCBI_FWD_STVA  "165.112.7.12"
 
 
 BEGIN_NCBI_SCOPE
@@ -294,9 +292,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
           "www.google.com", 0        },
         // 2. NCBI servers, explicitly
         { eURL_Https,
-          NCBI_WWW_BEMD,    NCBI_WWW }, // NCBI main
-        { eURL_Https,
-          NCBI_WWW_STVA,    NCBI_WWW }  // NCBI colo
+          NCBI_WWW_BEMD,    NCBI_WWW }  // NCBI main
     };
 
     m_CheckPoint.clear();
@@ -828,15 +824,14 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             " way that it allows outbound connections to the port range ["
             NCBI_AS_STRING(CONN_FWD_PORT_MIN) ".."
             NCBI_AS_STRING(CONN_FWD_PORT_MAX)
-            "] (inclusive) at the two fixed NCBI addresses, "
-            NCBI_FWD_BEMD " and " NCBI_FWD_STVA ".\n"
+            "] (inclusive) at the fixed NCBI addresse " NCBI_FWD_BEMD ".\n"
             "To set that up correctly, please have your network administrator"
             " read the following (if they have not already done so):"
             " " CONN_FWD_URL "\n";
     } else {
         temp += "This is an obsolescent mode that requires keeping a wide port"
             " range [4444..4544] (inclusive) open to allow through connections"
-            " to the entire NCBI site (130.14.xxx.xxx/165.112.xxx.xxx) -- this"
+            " to the entire NCBI site (130.14.xxx.xxx) -- this"
             " mode was designed for unrestricted networks when firewall port"
             " blocking had not been an issue\n";
     }
