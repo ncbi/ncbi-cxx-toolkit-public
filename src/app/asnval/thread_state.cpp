@@ -739,18 +739,17 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
             if (!process.ReadNextBlob())
                 break;
 
+            if (process.GetReader().GetBioseqs().size() == 0) {
+                msgHandler.AddValidErrItem(eDiag_Error, eErr_SEQ_PKG_NoBioseqFound, "No Bioseqs in this entire record.");
+                s_StartWrite(msgHandler);
+                m_NumRecords++;
+                continue;
+            }
         }
         catch (const edit::CHugeFileException& e) {
             if (e.GetErrCode() == edit::CHugeFileException::eDuplicateSeqIds)
             {
                 msgHandler.AddValidErrItem(eDiag_Critical, eErr_GENERIC_DuplicateIDs, e.GetMsg());
-                s_StartWrite(msgHandler);
-                ++m_Reported;
-                continue;
-            }
-            if (e.GetErrCode() == edit::CHugeFileException::eEmptySet)
-            {
-                msgHandler.AddValidErrItem(eDiag_Critical, eErr_SEQ_PKG_NoBioseqFound, "No Bioseqs in this entire record.");
                 s_StartWrite(msgHandler);
                 ++m_Reported;
                 continue;

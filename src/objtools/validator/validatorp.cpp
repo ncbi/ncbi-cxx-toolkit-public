@@ -30,7 +30,7 @@
  *   .......
  *
  */
- 
+
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
@@ -176,7 +176,7 @@ CValidError_imp::CValidError_imp
     m_ErrRepository{errs},
     m_pContext{pContext}
 {
-    x_Init(options, pContext->CumulativeInferenceCount, pContext->NotJustLocalOrGeneral, pContext->HasRefSeq);
+    x_Init(options, pContext->CumulativeInferenceCount, pContext->NotJustLocalOrGeneral, pContext->IsRefSeq);
 }
 
 void CValidError_imp::x_Init(Uint4 options, size_t initialInferenceCount, bool notJustLocalOrGeneral, bool hasRefSeq)
@@ -193,7 +193,7 @@ CValidError_imp::~CValidError_imp()
 }
 
 
-CValidError_imp::TSuppressed& CValidError_imp::SetSuppressed() 
+CValidError_imp::TSuppressed& CValidError_imp::SetSuppressed()
 {
     return m_SuppressedErrors;
 }
@@ -1064,7 +1064,7 @@ void CValidError_imp::PostErr
     if (x_IsSuppressed(et)) {
         return;
     }
-    
+
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1151,7 +1151,7 @@ void CValidError_imp::PostErr
     if (x_IsSuppressed(et)) {
         return;
     }
-    
+
     // Adjust severity
     if (m_genomeSubmission && RaiseGenomeSeverity(et) && sv < eDiag_Error) {
         sv = eDiag_Error;
@@ -1396,7 +1396,7 @@ bool CValidError_imp::Validate
         }
     }
 
-    if (IsINSDInSep() && m_pEntryInfo->IsRefSeq()) {
+    if (IsINSDInSep() && IsRefSeq()) {
         // NOTE: We use m_IsRefSeq to indicate the actual presence of RefSeq IDs in
         // the record, rather than IsRefSeq(), which indicates *either* RefSeq IDs are
         // present *OR* the refseq flag has been used
@@ -1517,7 +1517,7 @@ bool CValidError_imp::Validate
                     if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                         // disable inference checking for remainder of run
                         m_IgnoreInferences = true;
-                        
+
                         // warn about too many inferences
                         PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
                                  "Skipping validation of remaining /inference qualifiers",
@@ -1546,7 +1546,7 @@ bool CValidError_imp::Validate
                             if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
                                 // disable inference checking for remainder of run
                                 m_IgnoreInferences = true;
-                                
+
                                 // warn about too many inferences
                                 PostErr (eDiag_Info, eErr_SEQ_FEAT_TooManyInferenceAccessions,
                                          "Skipping validation of remaining /inference qualifiers",
@@ -2096,7 +2096,7 @@ void CValidError_imp::ValidateDbxref
 void CValidError_imp::x_CheckPackedInt
 (const CPacked_seqint& packed_int,
   SLocCheck& lc,
- const CSerialObject& obj)
+ const CSerialObject& /*obj*/)
 {
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
         lc.int_cur = (*it);
@@ -3578,7 +3578,7 @@ bool CValidError_imp::IsGPS() const { return GetEntryInfo().IsGPS(); }
 bool CValidError_imp::IsGED() const { return GetEntryInfo().IsGED(); }
 bool CValidError_imp::IsPDB() const { return GetEntryInfo().IsPDB(); }
 bool CValidError_imp::IsPatent() const { return GetEntryInfo().IsPatent(); }
-bool CValidError_imp::IsRefSeq() const { return GetEntryInfo().IsRefSeq() || m_RefSeqConventions; }
+bool CValidError_imp::IsRefSeq() const { return GetEntryInfo().IsRefSeq() || m_RefSeqConventions || GetContext().IsRefSeq; }
 bool CValidError_imp::IsEmbl() const { return GetEntryInfo().IsEmbl(); }
 bool CValidError_imp::IsDdbj() const { return GetEntryInfo().IsDdbj(); }
 bool CValidError_imp::IsTPE() const { return GetEntryInfo().IsTPE(); }

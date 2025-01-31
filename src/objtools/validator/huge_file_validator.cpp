@@ -331,7 +331,7 @@ void CHugeFileValidator::ReportGlobalErrors(const TGlobalInfo& globalInfo, IVali
     }
 
     if (globalInfo.NoCitSubsFound) {
-        x_ReportMissingCitSubs(globalInfo.IsRefSeq, errors);
+        x_ReportMissingCitSubs(m_Reader.HasRefSeq(), errors);
     }
 
     if (! globalInfo.conflictingSerialNumbers.empty()) {
@@ -386,7 +386,7 @@ void CHugeFileValidator::ReportPostErrors(const SValidatorContext& context,
 }
 
 
-void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, SValidatorContext& context) const
+void CHugeFileValidator::UpdateValidatorContext(TGlobalInfo& globalInfo, SValidatorContext& context) const
 {
     if (m_Reader.GetBiosets().size() < 2) {
         return;
@@ -400,9 +400,12 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
     context.PreprocessHugeFile = true;
     context.HugeSetId          = g_GetHugeSetIdString(m_Reader);
 
+    globalInfo.IsPatent       = m_Reader.GetSeqIdTypes().test(CSeq_id::e_Patent);
+    globalInfo.IsPDB          = m_Reader.GetSeqIdTypes().test(CSeq_id::e_Pdb);
+    globalInfo.CurrIsGI       = m_Reader.GetSeqIdTypes().test(CSeq_id::e_Gi);
+
     context.IsPatent        = globalInfo.IsPatent;
     context.IsPDB           = globalInfo.IsPDB;
-    context.IsRefSeq        = globalInfo.IsRefSeq;
     context.NoBioSource     = globalInfo.NoBioSource;
     context.NoPubsFound     = globalInfo.NoPubsFound;
     context.NoCitSubsFound  = globalInfo.NoCitSubsFound;
@@ -416,7 +419,7 @@ void CHugeFileValidator::UpdateValidatorContext(const TGlobalInfo& globalInfo, S
         context.NotJustLocalOrGeneral = true;
     }
     if (m_Reader.HasRefSeq()) {
-        context.HasRefSeq = true;
+        context.IsRefSeq = true;
     }
 
     if (! context.IsIdInBlob) {
@@ -443,27 +446,6 @@ static void s_UpdateGlobalInfo(const CPubdesc& pub, CHugeFileValidator::TGlobalI
                 }
             }
         }
-    }
-}
-
-
-static void s_UpdateGlobalInfo(const CSeq_id& id, CHugeFileValidator::TGlobalInfo& globalInfo)
-{
-    switch (id.Which()) {
-    case CSeq_id::e_Patent:
-        globalInfo.IsPatent = true;
-        break;
-    case CSeq_id::e_Pdb:
-        globalInfo.IsPDB = true;
-        break;
-    case CSeq_id::e_Other:
-        globalInfo.IsRefSeq = true;
-        break;
-    case CSeq_id::e_Gi:
-        globalInfo.CurrIsGI = true;
-        break;
-    default:
-        break;
     }
 }
 
@@ -516,14 +498,6 @@ void CHugeFileValidator::RegisterReaderHooks(CObjectIStream& objStream, CHugeFil
     SetLocalReadHook(CType<CBioSource>(), objStream, [&m_GlobalInfo](CObjectIStream& in, const CObjectInfo& object) {
         object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
         m_GlobalInfo.NoBioSource = false;
-    });
-
-
-    SetLocalReadHook(CType<CSeq_id>(), objStream, [&m_GlobalInfo](CObjectIStream& in, const CObjectInfo& object) {
-        auto* pObject = object.GetObjectPtr();
-        object.GetTypeInfo()->DefaultReadData(in, pObject);
-        auto* pSeqId = CTypeConverter<CSeq_id>::SafeCast(pObject);
-        s_UpdateGlobalInfo(*pSeqId, m_GlobalInfo);
     });
 
 
