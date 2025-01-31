@@ -954,7 +954,7 @@ const char* SERV_CurrentName(SERV_ITER iter)
 }
 
 
-int/*bool*/ SERV_PenalizeEx(SERV_ITER iter, double fine, TNCBI_Time time)
+extern int/*bool*/ SERV_PenalizeEx(SERV_ITER iter, double fine, TNCBI_Time time)
 {
     assert(!iter  ||  iter->op);
     if (!iter  ||  !iter->op->Feedback  ||  !iter->last)

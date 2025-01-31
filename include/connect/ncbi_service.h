@@ -318,6 +318,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_Penalize
  );
 
 
+/* Same as SERV_Penalize() but can specify a penalty hold time.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SERV_PenalizeEx
+(SERV_ITER  iter,                    /* handle obtained via 'SERV_Open*' call*/
+ double     fine,                    /* fine from range [0=min..100=max] (%%)*/
+ TNCBI_Time time                     /* for how long to keep the penalty, sec*/
+ );
+
+
 /** Rerate the server returned last from SERV_GetNextInfo[Ex]().
  * @note This is an experimental API.
  * @param iter
