@@ -54,7 +54,6 @@ public:
     struct SGlobalInfo {
         bool IsPatent = false;
         bool IsPDB    = false;
-        bool IsRefSeq = false;
 
         bool NoBioSource    = true;
         bool NoPubsFound    = true;
@@ -66,16 +65,14 @@ public:
         int TpaNoHistYesGI = 0;
         int CumulativeInferenceCount = 0;
         bool NotJustLocalOrGeneral = false;
-        bool HasRefSeq = false;
         set<int> pubSerialNumbers;
         set<int> conflictingSerialNumbers;
         set<CMolInfo::TBiomol> biomols;
-        unsigned int numMisplacedFeats {0}; 
+        unsigned int numMisplacedFeats {0};
 
         void Clear() {
             IsPatent = false;
             IsPDB    = false;
-            IsRefSeq = false;
 
             NoBioSource    = true;
             NoPubsFound    = true;
@@ -87,7 +84,6 @@ public:
             TpaNoHistYesGI = 0;
             CumulativeInferenceCount = 0;
             NotJustLocalOrGeneral = false;
-            HasRefSeq = false;
             pubSerialNumbers.clear();
             conflictingSerialNumbers.clear();
             biomols.clear();
@@ -107,7 +103,7 @@ public:
 
     bool IsInBlob(const CSeq_id& id) const;
 
-    void UpdateValidatorContext(const TGlobalInfo& globalInfo, 
+    void UpdateValidatorContext(TGlobalInfo& globalInfo,
             SValidatorContext& context) const;
 
     void ReportGlobalErrors(const TGlobalInfo& globalInfo,
@@ -133,7 +129,7 @@ private:
     void x_ReportMissingBioSources(IValidError& errors) const;
 
     void x_ReportConflictingBiomols(IValidError& errors) const;
-    
+
     void x_PostMsg(EDiagSev severity,
                    EErrType errorType,
                    const string& message,
@@ -158,7 +154,7 @@ void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobal
 void NCBI_VALIDATOR_EXPORT g_PostprocessErrors(const CHugeFileValidator::TGlobalInfo& globalInfo,
         const string& genbankSetId,
         list<CRef<CValidErrItem>>& errors);
-        
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

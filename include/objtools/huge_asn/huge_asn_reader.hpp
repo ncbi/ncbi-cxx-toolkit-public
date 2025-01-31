@@ -44,6 +44,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objtools/edit/huge_file.hpp>
 #include <optional>
+#include <util/compile_time.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -148,6 +149,9 @@ public:
     bool HasLoneProteins() const;
     bool HasNestedGenbankSets() const;
 
+    using TSeqIdTypes = ct::const_bitset<CSeq_id::e_MaxChoice, CSeq_id::E_Choice>;
+    const TSeqIdTypes& GetSeqIdTypes() const { return m_seq_id_types; }
+
 protected:
     // temporary structure for indexing
     struct TBioseqInfoRec
@@ -197,8 +201,7 @@ protected:
     bool m_HasHugeSetAnnot{ false };
 private:
     CConstRef<CSubmit_block>  m_submit_block;
-    bool                      m_NotJustLocalOrGeneral;
-    bool                      m_HasRefSeq;
+    TSeqIdTypes               m_seq_id_types;
 
 // flattenization structures, readonly after flattenization, accept m_Current
     TBioseqIndex              m_bioseq_index;

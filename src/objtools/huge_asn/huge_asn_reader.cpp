@@ -73,8 +73,7 @@ void CHugeAsnReader::x_ResetIndex()
     m_bioseq_list.clear();
     m_bioseq_set_list.clear();
     m_submit_block.Reset();
-    m_NotJustLocalOrGeneral = false;
-    m_HasRefSeq = false;
+    m_seq_id_types = {};
 
 // flattenization structures, readonly after flattenization, accept m_Current
     m_bioseq_index.clear();
@@ -589,9 +588,6 @@ void CHugeAsnReader::FlattenGenbankSet()
     m_top_ids.clear();
     m_FlattenedIndex.clear();
 
-    if (m_bioseq_list.empty())
-        NCBI_THROW(CHugeFileException, eEmptySet, "No bioseqs in the blob");
-
     // single bioseq not contained in set
     if (m_bioseq_list.size() == 1 && m_bioseq_set_list.size() == 1) {
         m_bioseq_set_list.begin()->m_pos = m_bioseq_list.begin()->m_pos;
@@ -621,12 +617,7 @@ void CHugeAsnReader::FlattenGenbankSet()
         }
         auto last = --m_FlattenedSets.end();
         for (auto id: rec.m_ids) {
-            if (! id->IsLocal() && ! id->IsGeneral()) {
-                m_NotJustLocalOrGeneral = true;
-            }
-            if (id->IsOther()) {
-                m_HasRefSeq = true;
-            }
+            m_seq_id_types.set(id->Which());
             auto existingIndex = m_FlattenedIndex.find(id);
             if (existingIndex != m_FlattenedIndex.end()) {
                 x_ThrowDuplicateId(*(existingIndex->second), *last, *id);
@@ -704,12 +695,15 @@ CConstRef<CSubmit_block> CHugeAsnReader::GetSubmitBlock() const
 
 bool CHugeAsnReader::IsNotJustLocalOrGeneral() const
 {
-    return m_NotJustLocalOrGeneral;
+    TSeqIdTypes all = m_seq_id_types;
+    all.reset(CSeq_id::e_Local);
+    all.reset(CSeq_id::e_General);
+    return !all.empty();
 }
 
 bool CHugeAsnReader::HasRefSeq() const
 {
-    return m_HasRefSeq;
+    return m_seq_id_types.test(CSeq_id::e_Other);
 }
 
 CRef<CSeq_entry> CHugeAsnReader::GetNextSeqEntry()

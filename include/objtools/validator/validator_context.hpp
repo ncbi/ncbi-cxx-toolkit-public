@@ -68,7 +68,6 @@ struct NCBI_VALIDATOR_EXPORT SValidatorContext
     std::atomic<size_t> NumGeneXrefs{0};
     std::atomic<size_t> CumulativeInferenceCount{0};
     bool        NotJustLocalOrGeneral{false};
-    bool        HasRefSeq{false};
     once_flag   DescriptorsOnceFlag;
     once_flag   SubmitBlockOnceFlag;
     once_flag   WgsSetInSeqSubmitOnceFlag;
