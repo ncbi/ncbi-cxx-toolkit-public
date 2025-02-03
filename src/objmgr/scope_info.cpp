@@ -618,7 +618,7 @@ void CDataSource_ScopeInfo::AcquireTSEUserLock(CTSE_ScopeInfo& tse)
         TTSE_LockSetMutex::TWriteLockGuard tse_guard(m_TSE_UnlockQueueMutex);
         m_TSE_UnlockQueue.Erase(&tse);
     }}
-    if ( tse.x_TSE_LockIsNotAssigned() ) {
+    if ( !tse.x_TSE_LockIsAssigned() ) {
         CDataSource_ScopeInfo* ds = tse.m_DS_Info;
         if ( !ds ) {
             --tse.m_UserLockCounter;
@@ -1180,7 +1180,7 @@ void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 
 void CTSE_ScopeInfo::x_UserLockTSE(void)
 {
-    if ( ++m_UserLockCounter == 1 || !GetTSE_Lock() ) {
+    if ( ++m_UserLockCounter || !GetTSE_Lock() ) {
         //_ASSERT(CanBeUnloaded());
         if ( IsAttached() ) {
             // TODO: possible race - if the TSE becomes detached after the above check
