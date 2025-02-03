@@ -3293,7 +3293,9 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
             } else if (!NStr::IsBlank(qual)) {
               curr_feat_intervals_done = true;
-              x_ProcessQualifier(qual, qual_value, curr_feat_name, m_pCurrentFeat, flags);
+              if (!filter || !filter->DropQualifier(qual, curr_feat_name, *m_seq_id, x_GetLineNumber())) {
+                x_ProcessQualifier(qual, qual_value, curr_feat_name, m_pCurrentFeat, flags);
+              }
             }
             else if (!feat.empty()) {
 

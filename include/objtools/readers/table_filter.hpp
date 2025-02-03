@@ -62,6 +62,14 @@ public:
     /// Returns how we should treat the given feature name
     virtual EAction GetFeatAction(
         const string &feature_name ) const = 0;
+
+    virtual bool DropQualifier(const string& /* qual */,
+            const string& /* featureName */,
+            const CSeq_id& /* seqId */,
+            unsigned int /* lineNumber */
+            ) const {
+        return false;
+    }
 private:
     /// forbid copy
     ITableFilter(const ITableFilter &);

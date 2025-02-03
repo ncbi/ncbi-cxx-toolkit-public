@@ -48,7 +48,10 @@
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objtools/readers/message_listener.hpp>
+#include <objtools/readers/table_filter.hpp>
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <serial/serialutil.hpp>
 #include <util/line_reader.hpp>
@@ -106,4 +109,82 @@ BOOST_AUTO_TEST_CASE(Test_MessageLogging)
     const auto& thirdError = listener.GetError(2);
     BOOST_CHECK_EQUAL(thirdError.Problem(),
                       ILineError::eProblem_QualifierBadValue);
+}
+
+class CQualFilter : public ITableFilter
+{
+public:
+
+    CQualFilter(ILineErrorListener& listener) : m_Listener(listener) {}
+    virtual ~CQualFilter(){}
+
+    bool DropQualifier(const string&  qual,
+                       const string&  featName,
+                       const CSeq_id& seqId,
+                       unsigned int   lineNumber) const override
+    {
+        if ((qual == "mod_base") || (qual == "nomenclature")) {
+
+            string idString;
+            seqId.GetLabel(&idString, CSeq_id::eFasta);
+            unique_ptr<CObjReaderLineException> pErr (
+                    CObjReaderLineException::Create(
+                        eDiag_Warning, lineNumber, 
+                        "Dropping qualifier", 
+                        ILineError::eProblem_Unset, 
+                        idString, featName, qual, ""));
+
+            m_Listener.PutError(*pErr);
+            return true;
+        }
+        return false;
+    }
+
+    EAction GetFeatAction(const string& featName) const override
+    {
+        return eAction_Okay;
+    }
+
+private:
+    ILineErrorListener& m_Listener;
+
+};
+
+
+BOOST_AUTO_TEST_CASE(RW_2418) 
+{
+    string                  filename = "./5col_feature_table_files/rw-2415.tbl";
+    CNcbiIfstream           istream(filename);
+    CStreamLineReader       lineReader(istream);
+    CMessageListenerLenient listener;
+    CFeature_table_reader   tableReader(lineReader, &listener);
+
+    CQualFilter filter(listener);
+    auto pAnnot = tableReader.ReadSequinFeatureTable(0, &filter);
+    BOOST_CHECK(pAnnot && pAnnot->IsFtable() && (pAnnot->GetData().GetFtable().size()==1));
+    auto pFeat = pAnnot->GetData().GetFtable().front();
+    
+    BOOST_CHECK(!pFeat->IsSetQual()); // mod_base qual dropped from feature
+    pAnnot = tableReader.ReadSequinFeatureTable(0, &filter);
+
+    BOOST_CHECK(pAnnot && pAnnot->IsFtable() && (pAnnot->GetData().GetFtable().size()==1));
+    pFeat = pAnnot->GetData().GetFtable().front();
+
+    BOOST_CHECK(pFeat->IsSetQual());
+    BOOST_CHECK_EQUAL(pFeat->GetQual().size(), 1);
+    auto pQual = pFeat->GetQual().front();
+    BOOST_CHECK_EQUAL(pQual->GetQual(), "recombination_class");
+
+    BOOST_CHECK_EQUAL(listener.Count(), 2); 
+    const auto& firstError = listener.GetError(0);
+    BOOST_CHECK_EQUAL(firstError.SeqId(), "gb|PQ663009|");
+    BOOST_CHECK_EQUAL(firstError.FeatureName(), "modified_base");
+    BOOST_CHECK_EQUAL(firstError.QualifierName(), "mod_base"); 
+    BOOST_CHECK_EQUAL(firstError.Line(), 3); 
+
+    const auto& finalError = listener.GetError(1);
+    BOOST_CHECK_EQUAL(finalError.SeqId(), "gb|PP839438.1|");
+    BOOST_CHECK_EQUAL(finalError.FeatureName(), "misc_recomb");
+    BOOST_CHECK_EQUAL(finalError.QualifierName(), "nomenclature"); 
+    BOOST_CHECK_EQUAL(finalError.Line(), 8);
 }
