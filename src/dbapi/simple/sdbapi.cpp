@@ -1216,7 +1216,7 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     }
 
     params->SetParam("login_timeout", Get(eLoginTimeout,    eWithOverrides));
-    params->SetParam("io_timeout",    Get(eIOTimeout,       eWithOverrides));
+    params->SetParam("timeout",       Get(eIOTimeout,       eWithOverrides));
     x_FillBoolParam(params, "single_server", eExclusiveServer);
     x_FillBoolParam(params, "is_pooled",     eUseConnPool);
     if (params->GetParam("is_pooled") == "true") { // canonicalized above
