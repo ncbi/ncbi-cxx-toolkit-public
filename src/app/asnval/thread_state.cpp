@@ -740,7 +740,7 @@ void CAsnvalThreadState::ValidateOneHugeFile(edit::CHugeFileProcess& process, IM
                 break;
 
             if (process.GetReader().GetBioseqs().size() == 0) {
-                msgHandler.AddValidErrItem(eDiag_Error, eErr_SEQ_PKG_NoBioseqFound, "No Bioseqs in this entire record.");
+                msgHandler.AddValidErrItem(eDiag_Error, eErr_SEQ_PKG_NoBioseqFound, "No Bioseqs in this entire record. BIOSEQ-SET: genbank: (No Bioseqs)");
                 s_StartWrite(msgHandler);
                 m_NumRecords++;
                 continue;
