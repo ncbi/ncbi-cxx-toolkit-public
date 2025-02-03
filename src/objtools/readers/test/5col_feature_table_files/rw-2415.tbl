@@ -1,0 +1,8 @@
+>Feature gb|PQ663009|
+100	100	modified_base
+			mod_base	m6a
+>Feature gb|PP839438.1|
+2868	3891	misc_recomb
+14151	15147
+			recombination_class	hdr
+			nomenclature	dummy_val
