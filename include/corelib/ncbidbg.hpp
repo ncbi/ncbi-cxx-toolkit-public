@@ -52,6 +52,10 @@
 #  include <crtdbg.h>
 #endif
 
+#ifdef __clang_analyzer__
+#  include <cassert>
+#endif
+
 /** @addtogroup Debug
  *
  * @{
@@ -165,6 +169,11 @@ BEGIN_NCBI_SCOPE
 #define _ALWAYS_VERIFY(expr)   NCBI_ALWAYS_VERIFY(expr, "")
 #define _ALWAYS_TROUBLE        NCBI_ALWAYS_TROUBLE("")
 
+
+#ifdef __clang_analyzer__
+#  undef _ASSERT
+#  define _ASSERT(expr) assert(expr)
+#endif
 
 /// Which action to perform.
 ///
