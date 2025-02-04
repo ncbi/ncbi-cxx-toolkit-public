@@ -45,7 +45,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
 /// Use to give a feature filter to CFeature_table_reader
-class ITableFilter
+class NCBI_XOBJREAD_EXPORT ITableFilter
 //  ============================================================================
 {
 public:
