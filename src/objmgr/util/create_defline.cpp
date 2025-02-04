@@ -3959,7 +3959,7 @@ string CDeflineGenerator::GenerateDefline (
     }
 
     // adjust protein partial/organelle/taxname suffix, if necessary
-    if ( m_IsAA && ! m_MainTitle.empty() ) {
+    if ( m_IsAA && (! m_MainTitle.empty()) && (! (flags & fLeavePrefixSuffix)) ) {
         if (m_Idx) {
             x_AdjustProteinTitleSuffixIdx (bsh);
         } else {
@@ -4045,13 +4045,15 @@ string CDeflineGenerator::GenerateDefline (
         */
     }
 
-    // remove TPA or TSA prefix, will rely on other data in record to set
-    for (size_t i = 0; i < sizeof (s_tpaPrefixList) / sizeof (const char*); i++) {
-        string str = s_tpaPrefixList [i];
-        if (NStr::StartsWith (m_MainTitle, str, NStr::eNocase)) {
-            m_MainTitle.erase (0, str.length());
-            // strip leading spaces remaining after removal of old MAG before TPA or TSA prefixes
-            m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
+    if (! (flags & fLeavePrefixSuffix)) {
+        // remove TPA or TSA prefix, will rely on other data in record to set
+        for (size_t i = 0; i < sizeof (s_tpaPrefixList) / sizeof (const char*); i++) {
+            string str = s_tpaPrefixList [i];
+            if (NStr::StartsWith (m_MainTitle, str, NStr::eNocase)) {
+                m_MainTitle.erase (0, str.length());
+                // strip leading spaces remaining after removal of old MAG before TPA or TSA prefixes
+                m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
+            }
         }
     }
 
@@ -4067,18 +4069,20 @@ string CDeflineGenerator::GenerateDefline (
         decoded.erase (pos + 1);
     }
 
-    // calculate prefix
-    x_SetPrefix(prefix, bsh);
-
-    // calculate suffix
-    x_SetSuffix (suffix, bsh, appendComplete);
-
     string mag;
-    if (! m_MetaGenomeSource.empty()) {
-        if ( prefix.empty() ) {
-            mag = "MAG: ";
-        } else {
-            mag = "MAG ";
+    if (! (flags & fLeavePrefixSuffix)) {
+        // calculate prefix
+        x_SetPrefix(prefix, bsh);
+
+        // calculate suffix
+        x_SetSuffix (suffix, bsh, appendComplete);
+
+        if (! m_MetaGenomeSource.empty()) {
+            if ( prefix.empty() ) {
+                mag = "MAG: ";
+            } else {
+                mag = "MAG ";
+            }
         }
     }
 

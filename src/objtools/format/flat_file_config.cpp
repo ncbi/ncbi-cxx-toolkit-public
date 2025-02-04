@@ -601,7 +601,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          DENT "DoNotUseAutoDef      (262144) - suppress automatic defline generator\n"
          DENT "OldTpaDisplay        (542288) - old TPA display with PRIMARY block\n"
          DENT "DisableDefaultIndex (1048576) - disable SeqEntry indexer\n"
-         DENT "GeoLocNameCountry   (2097152) - use geo_loc_name instead of country",
+         DENT "GeoLocNameCountry   (2097152) - use geo_loc_name instead of country\n"
+         DENT "LeavePrefixSuffix   (4194304) - keep existing prefix and suffix",
 
                                  CArgDescriptions::eString, "");
 #undef DENT
