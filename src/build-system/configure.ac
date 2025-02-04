@@ -4830,6 +4830,7 @@ if test -z "$Z_LIBS"; then
    Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
    # Z_LIBS="-lz"
    Z_LIB="z"
+   AC_DEFINE(HAVE_LIBZ, 1, [Define to 1 if libz is available.])
    # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
    NCBI_PACKAGE(Z)
    NCBI_PACKAGE(LocalZ)
@@ -4851,6 +4852,7 @@ if test -z "$BZ2_LIBS"; then
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
    # BZ2_LIBS="-lbz2"
    BZ2_LIB="bz2"
+   AC_DEFINE(HAVE_LIBBZ2, 1, [Define to 1 if libbz2 is available.])
    AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
    NCBI_PACKAGE(BZ2)
    NCBI_PACKAGE(LocalBZ2)
@@ -4933,6 +4935,7 @@ if test -z "$PCRE_LIBS" -a -z "$PCRE2_LIBS"; then
       AC_DEFINE(HAVE_LIBPCRE2, 1, [Define to 1 if libpcre2 is available.])
       NCBI_PACKAGE(PCRE2)
    else
+      AC_DEFINE(HAVE_LIBPCRE, 1, [Define to 1 if libpcre is available.])
       NCBI_PACKAGE(PCRE)
    fi
    NCBI_PACKAGE(LocalPCRE)

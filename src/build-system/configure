@@ -18102,6 +18102,9 @@ $as_echo "$as_me: using local zlib copy in $zlocal" >&6;}
    Z_INCLUDE="-I\$(includedir)/$zlocal -I\$(includedir0)/$zlocal"
    # Z_LIBS="-lz"
    Z_LIB="z"
+
+$as_echo "#define HAVE_LIBZ 1" >>confdefs.h
+
    # AC_DEFINE(USE_LOCAL_ZLIB, 1, [Define to 1 if using a local copy of zlib.])
              WithPackages="$WithPackages${WithPackagesSep}Z"; WithPackagesSep=" "
              WithPackages="$WithPackages${WithPackagesSep}LocalZ"; WithPackagesSep=" "
@@ -18251,6 +18254,9 @@ $as_echo "$as_me: using local bzlib copy in $bzlocal" >&6;}
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
    # BZ2_LIBS="-lbz2"
    BZ2_LIB="bz2"
+
+$as_echo "#define HAVE_LIBBZ2 1" >>confdefs.h
+
 
 $as_echo "#define USE_LOCAL_BZLIB 1" >>confdefs.h
 
@@ -18879,6 +18885,9 @@ $as_echo "#define HAVE_LIBPCRE2 1" >>confdefs.h
 
                 WithPackages="$WithPackages${WithPackagesSep}PCRE2"; WithPackagesSep=" "
    else
+
+$as_echo "#define HAVE_LIBPCRE 1" >>confdefs.h
+
                 WithPackages="$WithPackages${WithPackagesSep}PCRE"; WithPackagesSep=" "
    fi
              WithPackages="$WithPackages${WithPackagesSep}LocalPCRE"; WithPackagesSep=" "
