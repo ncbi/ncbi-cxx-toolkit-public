@@ -3330,6 +3330,16 @@ void CScope_Impl::x_GetBioseqHandlesSorted(const TIds&     ids,
                 ret[i].m_Info.Reset(info);
             }
         }
+        else {
+            ret[i].m_Handle_Seq_id = ids[i];
+            CRef<CBioseq_ScopeInfo> info = id_info.second.m_Bioseq_Info;
+            if ( info->HasBioseq() ) {
+                ret[i].m_Info = info->GetLock(null);
+            }
+            else {
+                ret[i].m_Info.Reset(info);
+            }
+        }
     }
 }
 
