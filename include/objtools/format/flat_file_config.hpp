@@ -204,7 +204,8 @@ public:
         fDoNotUseAutoDef       = 1 << 18,
         fOldTpaDisplay         = 1 << 19,
         fDisableDefaultIndex   = 1 << 20,
-        fGeoLocNameCountry     = 1 << 21
+        fGeoLocNameCountry     = 1 << 21,
+        fLeavePrefixSuffix     = 1 << 22
     };
 
     enum EView {
@@ -635,7 +636,8 @@ public:
     bool DoNotUseAutoDef       (void) const;
     bool OldTpaDisplay         (void) const;
     bool DisableDefaultIndex   (void) const;
-    bool GeoLocNameCountry  (void) const;
+    bool GeoLocNameCountry     (void) const;
+    bool LeavePrefixSuffix     (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
@@ -658,7 +660,8 @@ public:
     CFlatFileConfig& SetDoNotUseAutoDef       (bool val = true);
     CFlatFileConfig& SetOldTpaDisplay         (bool val = true);
     CFlatFileConfig& SetDisableDefaultIndex   (bool val = true);
-    CFlatFileConfig& SetGeoLocNameCountry  (bool val = true);
+    CFlatFileConfig& SetGeoLocNameCountry     (bool val = true);
+    CFlatFileConfig& SetLeavePrefixSuffix     (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -867,6 +870,7 @@ CUSTOM_ARG_IMP(DoNotUseAutoDef)
 CUSTOM_ARG_IMP(OldTpaDisplay)
 CUSTOM_ARG_IMP(DisableDefaultIndex)
 CUSTOM_ARG_IMP(GeoLocNameCountry)
+CUSTOM_ARG_IMP(LeavePrefixSuffix)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET

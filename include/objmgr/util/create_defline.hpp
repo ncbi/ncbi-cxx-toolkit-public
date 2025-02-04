@@ -92,7 +92,8 @@ public:
         fShowModifiers     = 1 <<  6, ///< Show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
         fUseAutoDef        = 1 <<  7, ///< Run auto-def for nucleotides if user object is present
         fFastaFormat       = 1 <<  8, ///< Generate FASTA defline
-        fDoNotUseAutoDef   = 1 <<  9  ///< Disable internal call to  auto-def
+        fDoNotUseAutoDef   = 1 <<  9, ///< Disable internal call to  auto-def
+        fLeavePrefixSuffix = 1 << 10  ///< Do not remove and recreate prefix or suffix
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
