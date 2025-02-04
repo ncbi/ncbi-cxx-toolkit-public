@@ -27,7 +27,7 @@
 #include <ncbiconf.h>
 #include <common/ncbi_build_info.h>
 
-/* #undef NCBI_PRODUCTION_VER */
+#define NCBI_PRODUCTION_VER 20250122
 #define NCBI_DEVELOPMENT_VER 20241129
 
 #if defined(NCBI_PRODUCTION_VER)

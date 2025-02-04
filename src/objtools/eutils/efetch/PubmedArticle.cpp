@@ -328,14 +328,22 @@ static bool s_SetCommentCorrection(
     CCitRetract::EType type,
     const string& ref_type)
 {
-    for (auto ref : comments_corrections.GetCommentsCorrections()) {
+    for (const auto& ref : comments_corrections.GetCommentsCorrections()) {
         string attr_ref_type = CCommentsCorrections::C_Attlist::GetTypeInfo_enum_EAttlist_RefType()->
             FindName(ref->GetAttlist().GetRefType(), false);
         if (attr_ref_type == ref_type) {
             CRef<CCitRetract> citretract(new CCitRetract);
             string temp = utf8_to_string(ref->GetRefSource());
-            if (ref->IsSetNote()) temp += ". " + utf8_to_string(ref->GetNote());
-            if (ref->IsSetPMID()) temp += ". PMID: " + ref->GetPMID();
+            if (ref->IsSetNote()) {
+                if (temp.back() != '.')
+                    temp.push_back('.');
+                temp += " " + utf8_to_string(ref->GetNote());
+            }
+            if (ref->IsSetPMID()) {
+                if (temp.back() != '.')
+                    temp.push_back('.');
+                temp += " PMID: " + ref->GetPMID();
+            }
             citretract->SetType(type);
             citretract->SetExp(temp);
             imprint->SetRetract(*citretract);
