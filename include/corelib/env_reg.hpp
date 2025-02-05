@@ -115,6 +115,7 @@ protected:
                         TFlags flags, bool& found) const;
     bool x_HasEntry(const string& section, const string& name,
                     TFlags flags) const;
+    bool x_HasSection(const string& section, TFlags flags) const;
     const string& x_GetComment(const string& section, const string& name,
                                TFlags flags) const;
     void x_Enumerate(const string& section, list<string>& entries,

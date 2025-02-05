@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/env_reg.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbi_mask.hpp>
 #include <corelib/error_codes.hpp>
 #include <set>
 
@@ -157,9 +158,44 @@ bool CEnvironmentRegistry::x_HasEntry(const string& section,
                                       const string& name,
                                       TFlags flags) const
 {
+    if (name.empty()) {
+        return x_HasSection(section, flags);
+    }
     bool found = false;
     x_Get(section, name, flags, found);
     return found;
+}
+
+
+bool CEnvironmentRegistry::x_HasSection(const string& section, TFlags flags)
+    const
+{
+    static const char kLowercaseASCII[] = "abcdefghijklmnopqrstuvwxyz";
+    static const char kPattern[] = ".*";
+    NStr::ECase use_case
+        = (flags & fSectionCase) == 0 ? NStr::eNocase : NStr::eCase;
+    string section2, name;
+    for (const auto& mapper : m_PriorityMap) {
+        CMaskFileName masks;
+        for (int i = sizeof(kPattern) - 1;  i >= 0;  --i) {
+            string mask = mapper.second->RegToEnv(section, kPattern + i);
+            masks.Add(mask);
+            if (mask.find_first_of(kLowercaseASCII) != NPOS) {
+                NStr::ToUpper(mask);
+                masks.Add(mask);
+            }
+        }
+        list<string> l;
+        m_Env->Enumerate(l, mapper.second->GetPrefix());
+        for (const auto& env : l) {
+            if (masks.Match(env)
+                &&  mapper.second->EnvToReg(env, section2, name)
+                &&  NStr::Equal(section, section2, use_case)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
