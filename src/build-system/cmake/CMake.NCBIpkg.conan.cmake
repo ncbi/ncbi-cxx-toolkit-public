@@ -44,7 +44,7 @@ endif()
 macro(NCBIptb_setup)
     set(_listdir "${NCBI_TREE_CMAKECFG}")
     include(${_listdir}/CMake.NCBIComponents.cmake)
-    include_directories(${NCBITK_INC_ROOT} ${NCBI_INC_ROOT})
+    include_directories(${NCBI_INC_ROOT} ${NCBITK_INC_ROOT})
 
     include(${_listdir}/CMake.NCBIptb.datatool.cmake)
     include(${_listdir}/CMake.NCBIptb.grpc.cmake)
