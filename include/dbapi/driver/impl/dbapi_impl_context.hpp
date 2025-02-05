@@ -340,6 +340,9 @@ private:
     size_t          m_MaxBlobSize;
     EEncoding       m_ClientEncoding;
 
+
+    void x_ReadDBConfParams(const IRegistry& reg, const string& section_name,
+                            SDBConfParams* params);
     /// Return unused connection "conn" to the driver context for future
     /// reuse (if "conn_reusable" is TRUE) or utilization
     void x_Recycle(CConnection* conn, bool conn_reusable);

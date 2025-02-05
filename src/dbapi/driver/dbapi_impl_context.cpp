@@ -868,35 +868,9 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         return;
 
     const IRegistry& reg = app->GetConfig();
-    string section_name(service_name);
-    section_name.append(1, '.');
-    section_name.append("dbservice");
-    if (!reg.HasEntry(section_name, kEmptyStr))
-        return;
-
-    if (reg.HasEntry(section_name, "service", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fServerSet;
-        params->server = reg.Get(section_name, "service");
-    }
-    if (reg.HasEntry(section_name, "port", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPortSet;
-        params->port = reg.Get(section_name, "port");
-    }
-    if (reg.HasEntry(section_name, "database", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fDatabaseSet;
-        params->database = reg.Get(section_name, "database");
-    }
-    if (reg.HasEntry(section_name, "username", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fUsernameSet;
-        params->username = reg.Get(section_name, "username");
-    }
-    if (reg.HasEntry(section_name, "password_key", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPasswordKeySet;
-        params->password_key_id = reg.Get(section_name, "password_key");
-    }
-    if (reg.HasEntry(section_name, "password", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPasswordSet;
-        params->password = reg.Get(section_name, "password");
+    x_ReadDBConfParams(reg, "dbservice-defaults", params);
+    x_ReadDBConfParams(reg, service_name + ".dbservice", params);
+    if ((params->flags & SDBConfParams::fPasswordSet) != 0) {
         if (CNcbiEncrypt::IsEncrypted(params->password)) {
             try {
                 params->password = CNcbiEncrypt::Decrypt(params->password);
@@ -906,85 +880,119 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
                      << "Using unencrypted password for " + service_name);
         }
     }
+    if ((params->flags & SDBConfParams::fIsPooledSet) != 0
+        &&  params->pool_name.empty() ) {
+        params->pool_name = service_name + ".dbservice.pool";
+    }
+}
+
+void CDriverContext::x_ReadDBConfParams(const IRegistry& reg,
+                                        const string& section_name,
+                                        SDBConfParams* params)
+{
+    if (!reg.HasEntry(section_name, kEmptyStr))
+        return;
+
+    if (reg.HasEntry(section_name, "service", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fServerSet;
+        params->server = reg.Get(section_name, "service");
+    }
+    if (reg.HasEntry(section_name, "port", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fPortSet;
+        params->port = reg.Get(section_name, "port");
+    }
+    if (reg.HasEntry(section_name, "database", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fDatabaseSet;
+        params->database = reg.Get(section_name, "database");
+    }
+    if (reg.HasEntry(section_name, "username", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fUsernameSet;
+        params->username = reg.Get(section_name, "username");
+    }
+    if (reg.HasEntry(section_name, "password_key", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fPasswordKeySet;
+        params->password_key_id = reg.Get(section_name, "password_key");
+    }
+    if (reg.HasEntry(section_name, "password", IRegistry::fCountCleared)) {
+        params->flags |= SDBConfParams::fPasswordSet;
+        params->password = reg.Get(section_name, "password");
+    }
     if (reg.HasEntry(section_name, "password_file",
                      IRegistry::fCountCleared)) {
         // password and password_file are mutually exclusive, but only SDBAPI
         // actually honors the latter, so it will take care of throwing
         // exceptions as necessary.
-        params->flags += SDBConfParams::fPasswordFileSet;
+        params->flags |= SDBConfParams::fPasswordFileSet;
         params->password_file = reg.Get(section_name, "password_file");
     }
     if (reg.HasEntry(section_name, "login_timeout", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fLoginTimeoutSet;
+        params->flags |= SDBConfParams::fLoginTimeoutSet;
         params->login_timeout = reg.Get(section_name, "login_timeout");
     }
     if (reg.HasEntry(section_name, "io_timeout", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fIOTimeoutSet;
+        params->flags |= SDBConfParams::fIOTimeoutSet;
         params->io_timeout = reg.Get(section_name, "io_timeout");
     }
     if (reg.HasEntry(section_name, "cancel_timeout", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fCancelTimeoutSet;
+        params->flags |= SDBConfParams::fCancelTimeoutSet;
         params->cancel_timeout = reg.Get(section_name, "cancel_timeout");
     }
     if (reg.HasEntry(section_name, "exclusive_server", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fSingleServerSet;
+        params->flags |= SDBConfParams::fSingleServerSet;
         params->single_server = reg.Get(section_name, "exclusive_server");
     }
     if (reg.HasEntry(section_name, "use_conn_pool", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fIsPooledSet;
+        params->flags |= SDBConfParams::fIsPooledSet;
         params->is_pooled = reg.Get(section_name, "use_conn_pool");
-        params->pool_name = section_name;
-        params->pool_name.append(1, '.');
-        params->pool_name.append("pool");
     }
     if (reg.HasEntry(section_name, "conn_pool_name", IRegistry::fCountCleared)) {
-        // params->flags += SDBConfParams::fPoolNameSet;
+        // params->flags |= SDBConfParams::fPoolNameSet;
         params->pool_name = reg.Get(section_name, "conn_pool_name");
     }
     if (reg.HasEntry(section_name, "conn_pool_minsize", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolMinSizeSet;
+        params->flags |= SDBConfParams::fPoolMinSizeSet;
         params->pool_minsize = reg.Get(section_name, "conn_pool_minsize");
     }
     if (reg.HasEntry(section_name, "conn_pool_maxsize", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolMaxSizeSet;
+        params->flags |= SDBConfParams::fPoolMaxSizeSet;
         params->pool_maxsize = reg.Get(section_name, "conn_pool_maxsize");
     }
     if (reg.HasEntry(section_name, "conn_pool_idle_time",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolIdleTimeSet;
+        params->flags |= SDBConfParams::fPoolIdleTimeSet;
         params->pool_idle_time = reg.Get(section_name, "conn_pool_idle_time");
     }
     if (reg.HasEntry(section_name, "conn_pool_wait_time",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolWaitTimeSet;
+        params->flags |= SDBConfParams::fPoolWaitTimeSet;
         params->pool_wait_time = reg.Get(section_name, "conn_pool_wait_time");
     }
     if (reg.HasEntry(section_name, "conn_pool_allow_temp_overflow",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolAllowTempSet;
+        params->flags |= SDBConfParams::fPoolAllowTempSet;
         params->pool_allow_temp_overflow
             = reg.Get(section_name, "conn_pool_allow_temp_overflow");
     }
     if (reg.HasEntry(section_name, "continue_after_raiserror",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fContRaiserrorSet;
+        params->flags |= SDBConfParams::fContRaiserrorSet;
         params->continue_after_raiserror
             = reg.Get(section_name, "continue_after_raiserror");
     }
     if (reg.HasEntry(section_name, "conn_pool_max_conn_use",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fPoolMaxConnUseSet;
+        params->flags |= SDBConfParams::fPoolMaxConnUseSet;
         params->pool_max_conn_use
             = reg.Get(section_name, "conn_pool_max_conn_use");
     }
     if (reg.HasEntry(section_name, "log_minor_messages",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fLogMinorMsgsSet;
+        params->flags |= SDBConfParams::fLogMinorMsgsSet;
         params->log_minor_messages
             = reg.Get(section_name, "log_minor_messages");
     }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fArgsSet;
+        params->flags |= SDBConfParams::fArgsSet;
         params->args = reg.Get(section_name, "args");
     }
 }
