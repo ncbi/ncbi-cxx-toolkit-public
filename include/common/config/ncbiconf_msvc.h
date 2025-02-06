@@ -111,7 +111,9 @@ typedef   int   ssize_t;
 #define HAVE_ERRNO_H                    1
 #define HAVE_FCNTL_H                    1
 #define HAVE_FSTAT                      1
+#define HAVE_GETADDRINFO                1
 #define HAVE_GETHOSTNAME                1
+#define HAVE_GETNAMEINFO                1
 #define HAVE_INT64                      1
 #define HAVE_LOCALE_H                   1
 #define HAVE_MALLOC_H                   1

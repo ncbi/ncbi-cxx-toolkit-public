@@ -51,6 +51,8 @@
 #  define _WINSOCK_DEPRECATED_NO_WARNINGS  1
 #  define  WIN32_LEAN_AND_MEAN
 #  include <winsock2.h>
+#  include <ws2ipdef.h>
+#  include <ws2tcpip.h>
 #else /*NCBI_OS_UNIX*/
 #  include <sys/socket.h>
 #  include <sys/time.h>
@@ -232,7 +234,7 @@ typedef struct SOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     /* connection point */
-    unsigned int     host;      /* peer host (network byte order)            */
+    unsigned int    _host;      /* peer host (network byte order)            */
     unsigned short   port;      /* peer port (host byte order)               */
     unsigned short   myport;    /* this socket's port number, host byte order*/
 
@@ -270,6 +272,8 @@ typedef struct SOCK_tag {
 #endif /*!NCBI_OS_MSWIN*/
 
     SNcbiSSLctx*     sslctx;    /* secure session context if SSL's on, else 0*/
+
+    TNCBI_IPv6Addr   addr;      /* peer's host address                       */
 
     /* timeouts: all normalized */
     struct timeval   r_tv;      /* finite read  timeout value                */
@@ -379,15 +383,6 @@ const char* SOCK_StringToHostPortEx(const char*     str,
                                     unsigned int*   host,
                                     unsigned short* port,
                                     int/*bool*/     flag);
-
-/* Addtl socket API for internal use:  if flag != 0 and host != 0, then
- * surround the host IP with square brackets.
- */
-size_t SOCK_HostPortToStringEx(unsigned int   host,
-                               unsigned short port,
-                               char*          buf,
-                               size_t         size,
-                               int/*bool*/    flag);
 
 
 /* See: SOCK_SetupSSL[Ex] */
