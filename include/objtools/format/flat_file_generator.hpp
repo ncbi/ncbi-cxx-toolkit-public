@@ -39,7 +39,6 @@
 #include <objtools/format/item_ostream.hpp>
 #include <objtools/format/context.hpp>
 
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -53,6 +52,7 @@ class CSeq_loc;
 class CSeq_entry_Handle;
 class CBioseq_Handle;
 class CSeq_id;
+class CTrna_ext;
 
 
 struct NCBI_FORMAT_EXPORT multiout
@@ -114,6 +114,9 @@ public:
 
     static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
         const CFlatFileConfig& cfg, CRef<feature::CFeatTree> ftree = null);
+
+    static string GetFTableAnticodonText(const CTrna_ext& trna_ext, CBioseqContext& ctx);
+    static string GetFTableAnticodonText(const CSeq_feat& feat, CScope& scope);
 
     void x_GetLocation(const CSeq_entry_Handle& entry,
          TSeqPos from, TSeqPos to, ENa_strand strand, CSeq_loc& loc);
