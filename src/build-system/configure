@@ -691,6 +691,7 @@ H2O_STATIC_LIBS
 NGHTTP2_STATIC_LIBS
 CASSANDRA_STATIC_LIBS
 LIBSSH2_STATIC_LIBS
+LIBSSH_STATIC_LIBS
 LIBUV_STATIC_LIBS
 LMDB_STATIC_LIBS
 LMDB_LIB
@@ -968,6 +969,8 @@ CASSANDRA_LIBS
 CASSANDRA_INCLUDE
 LIBSSH2_LIBS
 LIBSSH2_INCLUDE
+LIBSSH_LIBS
+LIBSSH_INCLUDE
 LIBUV_LIBS
 LIBUV_INCLUDE
 LMDB_LIBS
@@ -1369,6 +1372,7 @@ with_gmock
 with_lapack
 with_lmdb
 with_libuv
+with_libssh
 with_libssh2
 with_cassandra
 with_nghttp2
@@ -1966,7 +1970,7 @@ oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o influxdb \
+libuv libssh libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
 thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry \
@@ -2045,7 +2049,8 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-liburing=* | --with-rocksdb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
+      | --with-libssh=* | --with-libssh2=* \
+      | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
       | --with-crc32c=* | --with-google-cloud=* \
@@ -2400,6 +2405,8 @@ Optional Packages:
  --without-lmdb          use internal copy of LMDB
  --with-libuv=DIR        use libuv installation in DIR
  --without-libuv         do not use libuv
+ --with-libssh=DIR       use libssh installation in DIR
+ --without-libssh        do not use libssh
  --with-libssh2=DIR      use libssh2 installation in DIR
  --without-libssh2       do not use libssh2
  --with-cassandra=DIR    use Datastax Cassandra driver installation in DIR
@@ -4064,6 +4071,11 @@ case "$with_3psw" in
             as_fn_error $? "incompatible options: --with-libuv but --without-3psw"
          else
             with_libuv=no
+         fi
+        if test "${with_libssh-no}" != "no"; then
+            as_fn_error $? "incompatible options: --with-libssh but --without-3psw"
+         else
+            with_libssh=no
          fi
         if test "${with_libssh2-no}" != "no"; then
             as_fn_error $? "incompatible options: --with-libssh2 but --without-3psw"
@@ -5844,6 +5856,18 @@ fi
 # Check whether --with-libuv was given.
 if test "${with_libuv+set}" = set; then :
   withval=$with_libuv;
+fi
+
+
+# Check whether --with-libssh was given.
+if test "${with_libssh+set}" = set; then :
+  withval=$with_libssh;
+fi
+
+
+# Check whether --with-libssh was given.
+if test "${with_libssh+set}" = set; then :
+  withval=$with_libssh;
 fi
 
 
@@ -33568,6 +33592,216 @@ else
     LIBUV_STATIC_LIBS=$LIBUV_LIBS
 fi
 
+# libssh
+case "$with_libssh" in
+   yes | no | '' ) ;;
+   *             ) LIBSSH_PATH=$with_libssh ;;
+esac
+if test -d "$LIBSSH_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $LIBSSH_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $LIBSSH_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LIBSSH_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$LIBSSH_PATH" in
+               /*) ;;
+               * ) LIBSSH_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) LIBSSH_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$LIBSSH_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH_PATH/$compiler_vpfx$DEBUG_SFX/lib" \
+            "$LIBSSH_PATH/$compiler_pfx$DEBUG_SFX/lib" \
+            "$LIBSSH_PATH/lib$bit64_sfx" "$LIBSSH_PATH/lib"; do
+      if test -d "$d"; then
+         LIBSSH_LIBDIR=$d
+         ncbi_fix_dir_tmp=`if cd $LIBSSH_LIBDIR; then { PWD=; unset PWD;}; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $LIBSSH_LIBDIR && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            LIBSSH_LIBDIR=$ncbi_fix_dir_tmp2
+         else
+            case "$LIBSSH_LIBDIR" in
+               /*) ;;
+               * ) LIBSSH_LIBDIR=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) LIBSSH_LIBDIR=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBSSH_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBSSH_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+if test "$with_libssh" != "no"; then
+    case "$LIBSSH_PATH:$with_libssh" in
+       *:yes | *: | $with_libssh* ) ;;
+       * ) LIBSSH_PATH=$with_libssh ;;
+    esac
+    if test "$LIBSSH_PATH" != /usr -a -d "$LIBSSH_PATH"; then
+       in_path=" in $LIBSSH_PATH"
+       if test -z "$LIBSSH_INCLUDE" -a -d "$LIBSSH_PATH/include"; then
+          LIBSSH_INCLUDE="-I$LIBSSH_PATH/include"
+       fi
+       if test -n "$LIBSSH_LIBPATH"; then
+          :
+       elif test -d "$LIBSSH_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBSSH_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBSSH_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$LIBSSH_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $LIBSSH_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $LIBSSH_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    LIBSSH_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       LIBSSH_LIBS="$LIBSSH_LIBPATH -lssh $OPENSSL_LIBS"
+    else
+       LIBSSH_INCLUDE=""
+       LIBSSH_LIBS="-lssh $OPENSSL_LIBS"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libssh$in_path" >&5
+$as_echo_n "checking for libssh$in_path... " >&6; }
+if ${ncbi_cv_lib_libssh+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $LIBSSH_INCLUDE $orig_CPPFLAGS"
+       LIBS="$LIBSSH_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <libssh/libssh.h>
+int
+main ()
+{
+return ssh_init();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_libssh=yes
+else
+  ncbi_cv_lib_libssh=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_libssh" >&5
+$as_echo "$ncbi_cv_lib_libssh" >&6; }
+    if test "$ncbi_cv_lib_libssh" = "no"; then
+       if test "${with_libssh:=no}" != no; then
+       as_fn_error $? "--with-libssh explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_libssh" = "no"; then
+    LIBSSH_PATH="No_LIBSSH"
+    LIBSSH_INCLUDE=
+    LIBSSH_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}LIBSSH"; WithPackagesSep=" "
+    LIBSSH_INCLUDE=" $LIBSSH_INCLUDE"
+
+$as_echo "#define HAVE_LIBSSH 1" >>confdefs.h
+
+ fi
+
+
+
+if test "$with_libssh" != no -a -f "$LIBSSH_LIBDIR/libssh-static.a"; then
+    LIBSSH_STATIC_LIBS="-L$LIBSSH_LIBDIR -lssh-static $OPENSSL_LIBS"
+else
+    LIBSSH_STATIC_LIBS=$LIBSSH_LIBS
+fi
+
 # libssh2
 case "$with_libssh2" in
    yes | no | '' ) ;;
@@ -37714,7 +37948,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI StrictEntrezID StrictTaxID BM64 GCC 
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -37820,6 +38054,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 

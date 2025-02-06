@@ -75,6 +75,7 @@ try_local() {
         test -d "$d/include/leveldb"       &&  : ${LEVELDB_PATH=$d}
         test -f "$d/include/elfutils/libdw.h"  &&  : ${LIBDW_PATH=$d}
         test -d "$d/include/librdkafka"    &&  : ${LIBRDKAFKA_PATH=$d}
+        test -d "$d/include/libssh"        &&  : ${LIBSSH_PATH=$d}
         test -f "$d/include/libssh2.h"     &&  : ${LIBSSH2_PATH=$d}
         test -f "$d/include/unwind.h"      &&  : ${LIBUNWIND_PATH=$d}
         test -f "$d/include/liburing.h"    &&  : ${LIBURING_PATH=$d}

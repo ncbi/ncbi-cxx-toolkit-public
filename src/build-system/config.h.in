@@ -545,6 +545,9 @@
 /* Define to 1 if libsqlite3 is available. */
 #undef HAVE_LIBSQLITE3
 
+/* Define to 1 if libssh is available. */
+#undef HAVE_LIBSSH
+
 /* Define to 1 if libssh2 is available. */
 #undef HAVE_LIBSSH2
 
