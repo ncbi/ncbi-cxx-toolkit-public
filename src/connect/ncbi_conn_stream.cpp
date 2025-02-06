@@ -101,7 +101,7 @@ CONN CConn_IOStream::GetCONN(void) const
 
 string CConn_IOStream::GetType(void) const
 {
-    CONN        conn = GET_CONN(m_CSb);
+    CONN        conn = GET_CONN(x_CSb);
     const char* type = conn ? CONN_GetType(conn) : 0;
     return type ? type : kEmptyStr;
 }
@@ -109,7 +109,7 @@ string CConn_IOStream::GetType(void) const
 
 string CConn_IOStream::GetDescription(void) const
 {
-    CONN         conn = GET_CONN(m_CSb);
+    CONN         conn = GET_CONN(x_CSb);
     TTempCharPtr text(conn ? CONN_Description(conn) : 0);
     return text ? text.get() : kEmptyStr;
 }
@@ -132,7 +132,7 @@ const STimeout* CConn_IOStream::GetTimeout(EIO_Event direction) const
 
 EIO_Status CConn_IOStream::Status(EIO_Event dir) const
 {
-    return m_CSb ? m_CSb->Status(dir) : eIO_NotSupported;
+    return x_CSb ? x_CSb->Status(dir) : eIO_NotSupported;
 }
 
 
@@ -196,8 +196,8 @@ EIO_Status CConn_IOStream::Close(void)
 
 void CConn_IOStream::x_Destroy(void)
 {
-    x_CSb.reset();
     m_CSb = 0;
+    x_CSb.reset();
 }
 
 
