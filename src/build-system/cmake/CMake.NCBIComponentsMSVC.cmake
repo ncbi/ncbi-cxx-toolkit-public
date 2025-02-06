@@ -81,7 +81,7 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
     set(NCBI_ThirdParty_Z          ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.12 CACHE PATH "Z root")
     set(NCBI_ThirdParty_ZSTD       ${NCBI_ThirdPartyBasePath}/zstd/${NCBI_ThirdPartyCompiler}/1.5.2 CACHE PATH "ZSTD root")
-    set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/3.2.9 CACHE PATH "VDB root")
+    set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/3.2.0 CACHE PATH "VDB root")
     set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
     set(NCBI_ThirdParty_VDB_ARCH x86_64/v143)
 
