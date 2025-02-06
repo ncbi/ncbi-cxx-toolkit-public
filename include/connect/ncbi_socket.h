@@ -2344,32 +2344,43 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
  );
 
 
-/** Get IPv4 loopback address.
+/** Get loopback address.
  * @return
- *  Loopback address (in network byte order).
+ *  "addr" filled with loopback address; NULL on error
  */
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6
+(TNCBI_IPv6Addr* addr
+ );
+
+
+/** Get IPv4 loopback address.
+* @return
+*  Loopback address (in network byte order)
+*/
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
 
 
-/** Get loopback address.
-* @return
-*  "addr" filled with loopback address.
-*/
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6(TNCBI_IPv6Addr* addr);
-
-
-/** Get (and cache for faster follow-up retrievals) IPv4 address of local host
+/** Get (and cache for faster follow-up retrievals) IP address of local host
+ * @param addr
+ *  a pointer to the storage area to fill in with the local host address
  * @param reget
  *  eOn      to forcibly re-cache and return the address;
- *  eDefault to re-cache only if unknown, return the [new] cached value;
+ *  eDefault to re-cache only if unknown, return the [newly] cached value;
  *  eOff     not to re-cache even if unknown, return whatever is available.
  * @return
- *  Local address (in network byte order).
+ *  "addr" if successful; NULL otherwise.
  * @sa
  *  SOCK_gethostname
  */
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6
+(TNCBI_IPv6Addr* addr,
+ ESwitch         reget
+ );
+
+
+/** Same as SOCK_GetLocalHostAddressIPv6() only strictly for IPv4 */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
-(ESwitch reget
+(ESwitch         reget
  );
 
 
@@ -2407,7 +2418,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPortIPv6
 (const char*     str,
  TNCBI_IPv6Addr* addr,
  unsigned short* port
-);
+ );
 
 
 /** Print numeric string "host:port" into a buffer provided, not to exceed
@@ -2441,7 +2452,7 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToStringIPv6
  unsigned short        port,
  char*                 buf,
  size_t                bufsize
-);
+ );
 
 
 

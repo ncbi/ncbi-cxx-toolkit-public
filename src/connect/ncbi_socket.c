@@ -1058,7 +1058,7 @@ static EIO_Status s_InitAPI_(int secure)
                        &" "[!*provider], provider, IO_StatusStr(status)));
         }
     } else {
-        static void* /*bool*/ s_Once = 0/*false*/;
+        static volatile void* /*bool*/ s_Once = 0/*false*/;
         if (CORE_Once(&s_Once)) {
             CORE_LOG(eLOG_Critical, "Secure Socket Layer (SSL) has not"
                      " been properly initialized in the NCBI Toolkit. "
@@ -1536,12 +1536,14 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 
 
 /* a non-standard helper */
-static int/*bool*/ s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwitch reget, ESwitch log)
+static TNCBI_IPv6Addr* s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwitch reget, ESwitch log)
 {
-    static void* /*bool*/ s_Once = 0/*false*/;
+    static volatile void* /*bool*/ s_Once = 0/*false*/;
     /* cached IP address of the local host */
     static TNCBI_IPv6Addr s_LocalHostAddress = { 0 };
     int/*bool*/ do_get;
+
+    assert(addr);
     if (reget == eOn)
         do_get = 1/*true*/;
     else if (reget != eOff) {
@@ -1560,7 +1562,7 @@ static int/*bool*/ s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwit
     if (!NcbiIsEmptyIPv6(&s_LocalHostAddress)) {
         *addr = s_LocalHostAddress;
         CORE_UNLOCK;
-        return 1/*success*/;
+        return addr;
     }
     CORE_UNLOCK;
     if (reget != eOff  &&  CORE_Once(&s_Once)) {
@@ -1574,9 +1576,9 @@ static int/*bool*/ s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwit
            SOCK_GetLoopbackAddressIPv6(addr);
         else
            NcbiIPv4ToIPv6(addr, SOCK_LOOPBACK, 0);
-        return 1/*success*/;
-    }
-    return 0/*failure*/;
+    } else
+        addr = 0/*failure*/;
+    return addr;
 }
 
 
@@ -1586,7 +1588,7 @@ static TNCBI_IPv6Addr* s_gethostbyname(TNCBI_IPv6Addr* addr,
                                        int/*bool*/     not_ip,
                                        ESwitch         log)
 {
-    static void* /*bool*/ s_Once = 0/*false*/;
+    static volatile void* /*bool*/ s_Once = 0/*false*/;
 
     assert(addr);
     if (host  &&  !*host)
@@ -1783,20 +1785,22 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
 static const char* s_gethostbyaddr(const TNCBI_IPv6Addr* addr, char* name,
                                    size_t namesize, ESwitch log)
 {
-    static void* /*bool*/ s_Once = 0/*false*/;
-    const char* retval = s_gethostbyaddr_(addr, s_IPVersion, name, namesize, log);
-    if (!s_Once  &&  retval
+    static volatile void* /*bool*/ s_Once = 0/*false*/;
+    const char* rv;
+    assert(addr);
+    rv = s_gethostbyaddr_(addr, s_IPVersion, name, namesize, log);
+    if (!s_Once  &&  rv
         &&  ((SOCK_IsLoopbackAddressIPv6(addr)
-              &&  strncasecmp(retval, "localhost", 9) != 0)  ||
+              &&  strncasecmp(rv, "localhost", 9) != 0)  ||
              (NcbiIsEmptyIPv6(addr)
-              &&  strncasecmp(retval, "localhost", 9) == 0))
+              &&  strncasecmp(rv, "localhost", 9) == 0))
         &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr] "
                      " Got \"%.*s\" for %s address", CONN_HOST_LEN,
-                     retval, NcbiIsEmptyIPv6(addr) ? "local host" : "loopback"));
+                     rv, NcbiIsEmptyIPv6(addr) ? "local host" : "loopback"));
     }
-    return retval;
+    return rv;
 }
 
 
@@ -9394,7 +9398,7 @@ extern const char* SOCK_gethostbyaddrIPv6Ex(const TNCBI_IPv6Addr* addr,
     assert(buf  &&  bufsize > 0);
 
     /* initialize internals */
-    if (s_InitAPI(0) != eIO_Success) {
+    if (!addr  ||  s_InitAPI(0) != eIO_Success) {
         *buf = '\0';
         return 0;
     }
@@ -9444,7 +9448,7 @@ extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 }
 
 
-extern int/*bool*/ SOCK_GetLocalHostAddressIPv6(TNCBI_IPv6Addr* addr, ESwitch reget)
+extern TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6(TNCBI_IPv6Addr* addr, ESwitch reget)
 {
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success)
@@ -9525,7 +9529,7 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
                 break;
         }
         assert(t > s);
-        if ((len = (size_t)(t - s)) > sizeof(x_buf) - 1) {
+        if ((len = (size_t)(t - s)) >= sizeof(x_buf)) {
             errno = SOCK_ENOSPC;
             return 0;
         }
