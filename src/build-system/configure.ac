@@ -102,7 +102,7 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, leveldb, liburing, rocksdb,
                      gmock, lapack,
-                     libuv, libssh2, cassandra, nghttp2, h2o, influxdb,
+                     libuv, libssh, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, crc32c, hiredis,
                      librdkafka, cppkafka, thrift,
                      opentracing, jaeger, opentelemetry],
@@ -595,6 +595,10 @@ AC_ARG_WITH(libuv,
    [ --with-libuv=DIR        use libuv installation in DIR])
 AC_ARG_WITH(libuv,
    [ --without-libuv         do not use libuv])
+AC_ARG_WITH(libssh,
+   [ --with-libssh=DIR       use libssh installation in DIR])
+AC_ARG_WITH(libssh,
+   [ --without-libssh        do not use libssh])
 AC_ARG_WITH(libssh2,
    [ --with-libssh2=DIR      use libssh2 installation in DIR])
 AC_ARG_WITH(libssh2,
@@ -747,7 +751,7 @@ oechem sge drmaa2 muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 \
 mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o influxdb \
+libuv libssh libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
 thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry \
@@ -828,7 +832,8 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* | --with-leveldb=* \
       | --with-liburing=* | --with-rocksdb=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
-      | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
+      | --with-libssh=* | --with-libssh2=* \
+      | --with-cassandra=* | --with-nghttp2=* \
       | --with-h2o=* | --with-influxdb=* | --with-libxlsxwriter=* \
       | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* \
       | --with-crc32c=* | --with-google-cloud=* \
@@ -8671,6 +8676,36 @@ else
     LIBUV_STATIC_LIBS=$LIBUV_LIBS
 fi
 
+# libssh
+case "$with_libssh" in
+   yes | no | '' ) ;;
+   *             ) LIBSSH_PATH=$with_libssh ;;
+esac
+if test -d "$LIBSSH_PATH"; then
+   NCBI_FIX_DIR(LIBSSH_PATH)
+   for d in "$LIBSSH_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx/lib" \
+            "$LIBSSH_PATH/$compiler_vpfx$DEBUG_SFX/lib" \
+            "$LIBSSH_PATH/$compiler_pfx$DEBUG_SFX/lib" \
+            "$LIBSSH_PATH/lib$bit64_sfx" "$LIBSSH_PATH/lib"; do
+      if test -d "$d"; then
+         LIBSSH_LIBDIR=$d
+         NCBI_FIX_DIR(LIBSSH_LIBDIR)
+         break
+      fi
+   done
+fi
+NCBI_RPATHIFY(LIBSSH_LIBPATH, $LIBSSH_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB_EX(libssh, LIBSSH, ssh,
+   [AC_LANG_PROGRAM([[@%:@include <libssh/libssh.h>]],
+      [[return ssh_init();]])],
+   [$OPENSSL_LIBS])
+if test "$with_libssh" != no -a -f "$LIBSSH_LIBDIR/libssh-static.a"; then
+    LIBSSH_STATIC_LIBS="-L$LIBSSH_LIBDIR -lssh-static $OPENSSL_LIBS"
+else
+    LIBSSH_STATIC_LIBS=$LIBSSH_LIBS
+fi
+
 # libssh2
 case "$with_libssh2" in
    yes | no | '' ) ;;
@@ -10151,6 +10186,7 @@ AC_SUBST(GMOCK_STATIC_LIBS)
 AC_SUBST(LMDB_LIB)
 AC_SUBST(LMDB_STATIC_LIBS)
 AC_SUBST(LIBUV_STATIC_LIBS)
+AC_SUBST(LIBSSH_STATIC_LIBS)
 AC_SUBST(LIBSSH2_STATIC_LIBS)
 AC_SUBST(CASSANDRA_STATIC_LIBS)
 AC_SUBST(NGHTTP2_STATIC_LIBS)

@@ -884,3 +884,8 @@ if( NOT NCBI_COMPONENT_Z_DISABLED)
     cmake_policy(POP)
 endif()
 NCBIcomponent_report(AWS_SDK)
+
+#############################################################################
+# LIBSSH
+NCBI_define_Xcomponent(NAME SSH LIB ssh)
+NCBIcomponent_report(SSH)

@@ -1038,6 +1038,9 @@
 /* Define to 1 if libsqlite3 is available. */
 #cmakedefine HAVE_LIBSQLITE3 1
 
+/* Define to 1 if libsqlite3 is available. */
+#cmakedefine HAVE_LIBSSH 1
+
 /* Define to 1 if the NCBI SSS DB library is available. */
 /* #undef HAVE_LIBSSSDB */
 
