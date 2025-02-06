@@ -234,7 +234,7 @@ typedef struct SOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     /* connection point */
-    unsigned int    _host;      /* peer host (network byte order)            */
+    unsigned int     host_;     /* no longer used, see "addr" below          */
     unsigned short   port;      /* peer port (host byte order)               */
     unsigned short   myport;    /* this socket's port number, host byte order*/
 
@@ -376,8 +376,8 @@ EIO_Status SOCK_CreateOnTopInternal(const void*       handle,
                                     TSOCK_Flags       flags);
 
 
-/* Addtl socket API for internal use:  if flag != 0 and host is nonexistent,
- * return it as INADDR_NONE (-1) rather than an error.
+/* Addtl socket API for internal use:  if flag != 0 and the host is
+ * nonexistent, the return it as INADDR_NONE (-1) rather than an error.
  */
 const char* SOCK_StringToHostPortEx(const char*     str,
                                     unsigned int*   host,

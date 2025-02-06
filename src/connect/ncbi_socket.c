@@ -852,7 +852,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
         infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,   _host),                \
+        infof(SOCK_struct,    host_),               \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
         infof(SOCK_struct,    err),                 \
@@ -878,7 +878,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
         infof(TRIGGER_struct, isset),               \
-        infof(SOCK_struct,   _host),                \
+        infof(SOCK_struct,    host_),               \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
         infof(SOCK_struct,    err),                 \
@@ -9559,7 +9559,7 @@ extern const char* SOCK_StringToHostPortIPv6(const char*     str,
                                              TNCBI_IPv6Addr* addr,
                                              unsigned short* port)
 {
-    return s_StringToHostPortIPv6Ex(str, addr, s_IPVersion, port, 0);
+    return s_StringToHostPortIPv6Ex(str, addr, s_IPVersion, port, 0/*false*/);
 }
 
 
