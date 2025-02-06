@@ -9520,7 +9520,7 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
     if (s) {
         size_t len;
         assert(!t);
-        for (t = s;  *t;  ++t) {
+        for (t = s;  *t  &&  *t != ':';  ++t) {
             if (isspace((unsigned char)(*t)))
                 break;
         }
