@@ -1058,7 +1058,7 @@ static EIO_Status s_InitAPI_(int secure)
                        &" "[!*provider], provider, IO_StatusStr(status)));
         }
     } else {
-        static volatile void* /*bool*/ s_Once = 0/*false*/;
+        static void* volatile /*bool*/ s_Once = 0/*false*/;
         if (CORE_Once(&s_Once)) {
             CORE_LOG(eLOG_Critical, "Secure Socket Layer (SSL) has not"
                      " been properly initialized in the NCBI Toolkit. "
@@ -1538,7 +1538,7 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 /* a non-standard helper */
 static TNCBI_IPv6Addr* s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwitch reget, ESwitch log)
 {
-    static volatile void* /*bool*/ s_Once = 0/*false*/;
+    static void* volatile /*bool*/ s_Once = 0/*false*/;
     /* cached IP address of the local host */
     static TNCBI_IPv6Addr s_LocalHostAddress = { 0 };
     int/*bool*/ do_get;
@@ -1588,7 +1588,7 @@ static TNCBI_IPv6Addr* s_gethostbyname(TNCBI_IPv6Addr* addr,
                                        int/*bool*/     not_ip,
                                        ESwitch         log)
 {
-    static volatile void* /*bool*/ s_Once = 0/*false*/;
+    static void* volatile /*bool*/ s_Once = 0/*false*/;
 
     assert(addr);
     if (host  &&  !*host)
@@ -1785,7 +1785,7 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
 static const char* s_gethostbyaddr(const TNCBI_IPv6Addr* addr, char* name,
                                    size_t namesize, ESwitch log)
 {
-    static volatile void* /*bool*/ s_Once = 0/*false*/;
+    static void* volatile /*bool*/ s_Once = 0/*false*/;
     const char* rv;
     assert(addr);
     rv = s_gethostbyaddr_(addr, s_IPVersion, name, namesize, log);
