@@ -9538,7 +9538,7 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
             NcbiIPv4ToIPv6(&temp, htonl(INADDR_NONE), family == AF_INET6 ? 96 : 0);
         }
     }
-    if (family != AF_UNSPEC) {
+    if (family != AF_UNSPEC  &&  !NcbiIsEmptyIPv6(&temp)) {
         int/*bool*/ ipv4 = NcbiIsIPv4(&temp);
         if ((ipv4  &&  family == AF_INET6)  ||  (!ipv4  &&  family == AF_INET))
             return str;
