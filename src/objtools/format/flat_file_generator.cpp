@@ -1327,8 +1327,6 @@ string CFlatFileGenerator::GetFTableAnticodonText(
     CBioseqContext ctx(CBioseqContext(bsh, *ffc));
 
     return CFlatFileGenerator::GetFTableAnticodonText(trna, ctx);
-
-    return kEmptyStr;
 }
 
 
@@ -1361,6 +1359,7 @@ void CFlatFileGenerator::x_GetLocation
         }
     }
 }
+
 
 // if the 'from' or 'to' flags are specified try to guess the bioseq.
 CBioseq_Handle CFlatFileGenerator::x_DeduceTarget(const CSeq_entry_Handle& entry)
