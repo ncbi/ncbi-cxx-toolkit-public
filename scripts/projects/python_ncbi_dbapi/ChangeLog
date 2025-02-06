@@ -1,5 +1,5 @@
 Version 1.26.2 (2025-02-06):
-* Add a Python 3.13 build alongside tohse for 3.9 and 3.11.
+* Add a Python 3.13 build alongside those for 3.9 and 3.11.
 
 Version 1.26.1 (2024-12-06):
 * Eliminate spurious output accidentally introduced when adding support
