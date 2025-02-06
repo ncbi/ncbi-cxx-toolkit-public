@@ -1819,13 +1819,12 @@ static EIO_Status s_ApproveCallback(const char*    host, const TNCBI_IPv6Addr* a
 
         *cp = '\0';
         memset(&info, 0, sizeof(info));
-        info.host = host;
+        info.host =  host;
         info.addr = *addr;
-        info.port = port;
-        info.side = side;
-        info.type = type;
+        info.port =  port;
+        info.side =  side;
+        info.type =  type;
         assert(!NcbiIsEmptyIPv6(addr)  &&  port);
-        assert(!host  ||  (*host  &&  !SOCK_isip(host)));
         assert(type == eSOCK_Socket  ||  type == eSOCK_Datagram);
 #ifdef _DEBUG
         if (type == eSOCK_Datagram  ||  side == eSOCK_Server)
@@ -6410,7 +6409,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
     if (!port)
         port = sock->port;
 
-    x_msgsize = NcbiIsEmptyIPv6(&addr) ? 1 : 0;
+    x_msgsize = !NcbiIsEmptyIPv6(&addr);
     if (!x_msgsize  ||  !port) {
         SOCK_HostPortToStringIPv6(&addr, port, w, sizeof(w)/2);
         CORE_LOGF_X(89, eLOG_Error,
