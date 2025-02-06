@@ -1323,7 +1323,7 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 #ifdef NCBI_OS_DARWIN
         if (strspn(host, ".0123456789") == len) {
             /* Darwin's inet_addr() does not care for integer overflows :-/ */
-            if (!SOCK_isip(hostname)) {
+            if (!SOCK_isip(host)) {
                 memset(addr, 0, sizeof(*addr));
                 goto out;
             }
