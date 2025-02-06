@@ -63,6 +63,8 @@
 #include <objtools/readers/gff3_reader.hpp>
 
 #include <objtools/readers/reader_message.hpp>
+#include <util/compile_time.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -155,7 +157,43 @@ CRef<CCode_break> s_StringToCodeBreak(
         pCodeBreak->SetLoc().SetInt().SetStrand(strand);
     }
 
-    int aacode = 'U'; //for now
+    MAKE_CONST_MAP(AminoAcidMap, ct::tagStrNocase, char,
+    {
+        {"Ala", 'A'},
+        {"Asx", 'B'},
+        {"Cys", 'C'},
+        {"Asp", 'D'},
+        {"Glu", 'E'},
+        {"Phe", 'F'},
+        {"Gly", 'G'},
+        {"His", 'H'},
+        {"Ile", 'I'},
+        {"Xle", 'J'},  
+        {"Lys", 'K'},
+        {"Leu", 'L'},
+        {"Met", 'M'},
+        {"Asn", 'N'},
+        {"Pyl", 'O'},
+        {"Pro", 'P'},
+        {"Gln", 'Q'},
+        {"Arg", 'R'},
+        {"Ser", 'S'},
+        {"Thr", 'T'},
+        {"Val", 'V'},
+        {"Trp", 'W'},
+        {"Sec", 'U'}, 
+        {"Xxx", 'X'},
+        {"Tyr", 'Y'},
+        {"Glx", 'Z'},
+        {"TERM", '*'}, 
+        {"OTHER", 'X'}
+    });
+
+//    int aacode = 'U'; //for now
+
+    auto it = AminoAcidMap.find(aaa);
+    char aacode = (it != AminoAcidMap.end()) ? it->second : 'X';
+
     pCodeBreak->SetAa().SetNcbieaa(aacode);
     return pCodeBreak;
 }

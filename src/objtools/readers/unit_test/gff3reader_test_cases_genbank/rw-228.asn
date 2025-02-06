@@ -954,7 +954,7 @@ Seq-annot ::= {
                 version 1
               }
             },
-            aa ncbieaa 85
+            aa ncbieaa 67
           }
         }
       },
@@ -1075,7 +1075,7 @@ Seq-annot ::= {
                 version 1
               }
             },
-            aa ncbieaa 85
+            aa ncbieaa 67
           }
         }
       },
