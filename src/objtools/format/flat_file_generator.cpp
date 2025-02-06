@@ -46,6 +46,7 @@
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/annot_ci.hpp>
+#include <objmgr/util/objutil.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -1241,6 +1242,93 @@ string CFlatFileGenerator::GetSeqFeatText
     string text;
     os.ToString(&text);
     return text;
+}
+
+
+string CFlatFileGenerator::GetFTableAnticodonText(
+        const CTrna_ext& trna_ext,
+        CBioseqContext& ctx)
+{
+    if (!trna_ext.IsSetAnticodon()) {
+        return kEmptyStr;
+    }
+
+    const auto& loc = trna_ext.GetAnticodon();
+    string pos = CFlatSeqLoc(loc, ctx).GetString();
+
+    string aa;
+    switch(trna_ext.GetAa().Which()) {
+    case CTrna_ext::C_Aa::e_Iupacaa:
+        aa = GetAAName(trna_ext.GetAa().GetIupacaa(), true);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbieaa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbieaa(), true);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbi8aa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbi8aa(), false);
+        break;
+    case CTrna_ext::C_Aa::e_Ncbistdaa:
+        aa = GetAAName(trna_ext.GetAa().GetNcbistdaa(), false);
+        break;
+    default:
+        break;
+    }
+
+    string seq("---");
+    try {
+        CSeqVector seq_vec(loc, ctx.GetScope(), CBioseq_Handle::eCoding_Iupac);
+        seq_vec.GetSeqData(0, 3, seq);
+        NStr::ToLower(seq);
+    }
+    catch(...)
+    {}
+
+    return "(pos:" + pos + ",aa:" + aa + ",seq:" + seq + ")";
+}
+
+
+string CFlatFileGenerator::GetFTableAnticodonText(
+        const CSeq_feat& feat,
+        CScope& scope)
+{
+    const CSeqFeatData& data = feat.GetData();
+    CSeqFeatData::E_Choice type = data.Which();
+
+    if (type != CSeqFeatData::e_Rna) {
+        return kEmptyStr;
+    }
+
+    const CRNA_ref& rna = data.GetRna();
+
+    if (! rna.IsSetType()) {
+        return kEmptyStr;
+    }
+
+    CRNA_ref::TType rna_type = rna.GetType();
+    if (rna_type != CRNA_ref::eType_tRNA) {
+        return kEmptyStr;
+    }
+
+    if (! rna.IsSetExt()) {
+        return kEmptyStr;
+    }
+
+    const CRNA_ref::C_Ext& ext = rna.GetExt();
+    if (ext.Which() != CRNA_ref::C_Ext::e_TRNA) {
+        return kEmptyStr;
+    }
+
+    const CTrna_ext& trna = ext.GetTRNA();
+
+    const CSeq_loc& loc = feat.GetLocation();
+    CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
+
+    CRef<CFlatFileContext> ffc(new CFlatFileContext(CFlatFileConfig()));
+    CBioseqContext ctx(CBioseqContext(bsh, *ffc));
+
+    return CFlatFileGenerator::GetFTableAnticodonText(trna, ctx);
+
+    return kEmptyStr;
 }
 
 
