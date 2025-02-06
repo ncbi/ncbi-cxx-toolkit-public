@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Dec 10 08:07:20 EST 2024
-; formally
+/* time_t value corresponding to Thu Feb  6 13:15:11 EST 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_specific_Timestamp = 1733836040UL;
+static const unsigned long kECNum_specific_Timestamp = 1738865711UL;
 static const char* const kECNum_specific[] = {
     "1.1.1.1\talcohol dehydrogenase",
     "1.1.1.2\talcohol dehydrogenase (NADP(+))",
@@ -740,7 +739,7 @@ static const char* const kECNum_specific[] = {
     "1.3.1.70\tDelta(14)-sterol reductase",
     "1.3.1.71\tDelta(24(24(1)))-sterol reductase",
     "1.3.1.72\tDelta(24)-sterol reductase",
-    "1.3.1.73\t1,2-dihydrovomilenine reductase",
+    "1.3.1.73\t1,2-dihydrovomilenine 19,20-reductase",
     "1.3.1.74\t2-alkenal reductase [NAD(P)(+)]",
     "1.3.1.75\t3,8-divinyl protochlorophyllide a 8-vinyl-reductase (NADPH)",
     "1.3.1.76\tprecorrin-2 dehydrogenase",
@@ -1550,6 +1549,7 @@ static const char* const kECNum_specific[] = {
     "1.14.13.250\tnitrosourea synthase",
     "1.14.13.251\tglycine betaine monooxygenase",
     "1.14.13.252\tputrescine N-hydroxylase",
+    "1.14.13.253\t3-demethoxyubiquinone 3-hydroxylase (NADH)",
     "1.14.13.n6\thexahomomethionine N-hydroxylase",
     "1.14.13.n7\t4-nitrophenol 2-hydroxylase",
     "1.14.14.1\tunspecific monooxygenase",
@@ -2504,7 +2504,7 @@ static const char* const kECNum_specific[] = {
     "2.3.1.42\tglycerone-phosphate O-acyltransferase",
     "2.3.1.43\tphosphatidylcholine--sterol O-acyltransferase",
     "2.3.1.44\tN-acetylneuraminate 4-O-acetyltransferase",
-    "2.3.1.45\tN-acetylneuraminate 7-O(or 9-O)-acetyltransferase",
+    "2.3.1.45\tN-acetylneuraminate 9-O-acetyltransferase",
     "2.3.1.46\thomoserine O-succinyltransferase",
     "2.3.1.47\t8-amino-7-oxononanoate synthase",
     "2.3.1.48\thistone acetyltransferase",
