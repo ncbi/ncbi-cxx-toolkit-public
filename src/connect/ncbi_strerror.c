@@ -315,7 +315,7 @@ static const char* s_StrErrorInternal(int error)
 #  if defined(HAVE_GETADDRINFO)  ||  defined(HAVE_GETNAMEINFO)
         { EAI_BASE, gai_strerror },
 #  endif /*HAVE_GETADDRINFO || HAVE_GETNAMEINFO*/
-        /* Last dummy entry - must present */
+        /* Last dummy entry - must be present */
         { 0,        0            }
     };
 #endif /*NCBI_OS_LINUX || NCBI_OS_CYGWIN*/
