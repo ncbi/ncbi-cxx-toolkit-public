@@ -61,7 +61,7 @@ static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
             return 0/*false*/;
     }
     memcpy(&word, addr->octet + i * sizeof(word), sizeof(word));
-    if    (word == 0x0000) {
+    if (word == 0x0000) {
         /* IPv4-compatible IPv6 */
         if (compat) {
             unsigned int temp;
@@ -132,15 +132,16 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
         memcpy(        &ipv4,            &addr->octet[12], size);
         break;
     default:
+        ipv4 = (unsigned int)(-1)/*failure*/;
         assert(0);
-        return (unsigned int)(-1)/*failure*/;
+        break;
     }
     return ipv4;
 }
 
 
-extern int/*bool*/ NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
-                                  unsigned int ipv4, size_t pfxlen)
+extern TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
+                                      unsigned int ipv4, size_t pfxlen)
 {
     static const size_t size = sizeof(ipv4);
     if (!addr)
@@ -177,7 +178,7 @@ extern int/*bool*/ NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
         assert(0);
         return 0/*failure*/;
     }
-    return 1/*success*/;
+    return addr;
 }
 
 
@@ -257,7 +258,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
     gap = 0;
     ipv4 = 0/*false*/;
     token[t = 0].ptr = str + n;
-    while (n <= len) {
+    do {
         assert(t <= maxt);
         if (n == len  ||  str[n] == ':') {
             token[t].len = (size_t)(&str[n] - token[t].ptr);
@@ -304,7 +305,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
             break;
         }
         n++;
-    }
+    } while (n <= len);
 
     assert(t <= maxt);
     if (t < maxt  &&  !gap)
