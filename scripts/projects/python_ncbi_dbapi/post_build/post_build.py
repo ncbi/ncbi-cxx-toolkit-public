@@ -37,8 +37,8 @@ if sys.platform.startswith('linux'):
         if os.path.isdir(tmp_dir):
             shutil.rmtree(tmp_dir)
         os.mkdir(tmp_dir)
-        if 0 != subprocess.call((py_bin_dir + '/pip', 'install', '-t', tmp_dir,
-                                 'packit')):
+        if 0 != subprocess.call((py_bin_dir + '/pip' + x,
+                                 'install', '-t', tmp_dir, 'packit')):
             raise RuntimeError('Error installing packit')
         for x in ('python_ncbi_dbapi.cpp', 'python_ncbi_dbapi.hpp',
                   'setup.py'):
