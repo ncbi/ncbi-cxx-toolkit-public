@@ -1729,7 +1729,7 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
         error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*NCBI_HAVE_GETHOSTBYADDR_R*/
 
-        if (ipv4  &&  NcbiIPv6ToIPv4(&addr, 0) == htonl(INADDR_NONE))
+        if (ipv4  &&  NcbiIPv6ToIPv4(addr, 0) == htonl(INADDR_NONE))
             he = 0;
         if (!he  ||  (len = strlen(he->h_name)) >= namesize) {
             if (he  ||  !s_AddrToString(name, namesize, addr, family, 0)) {
@@ -1756,7 +1756,7 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
                 log = eOn;
             if (log) {
                 const char* strerr = SOCK_STRERROR(error);
-                s_AddrToString(addrstr, sizeof(addrstr), addr, family, 0)
+                s_AddrToString(addrstr, sizeof(addrstr), addr, family, 0);
                 CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
                                     error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyaddr] "
