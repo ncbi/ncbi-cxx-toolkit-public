@@ -35,4 +35,6 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
                                    -fno-builtin-strspn
   parson.o:              CFLAGS += -fno-builtin-strncmp
  endif
+ ncbi_priv.o: \
+  CPPFLAGS := $(filter-out --ccache-skip -frewrite-includes,$(CPPFLAGS))
 endif
