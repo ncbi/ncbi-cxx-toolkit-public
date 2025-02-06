@@ -267,11 +267,9 @@ public:
 
     /// Set timeout for I/O in the specified direction.
     /// @note  Initially all timeouts are infinite by default;
-    /// @note  SetTimeout(..., kDefaultTimeout) has no effect;
-    /// @note  GetTimeout(eIO_ReadWrite) returns the least
-    ///        of eIO_Read and eIO_Write ones.
-    ///
-    /// @param  event
+    /// @note  SetTimeout(..., kDefaultTimeout) has no effect and results
+    ///        eIO_Success unconditionally.
+    /// @param event
     ///  either of eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite, or eIO_Close
     /// @param timeout
     ///  new value to set (including special kInfiniteTimeout)
@@ -281,6 +279,13 @@ public:
                                const STimeout* timeout);
 
     /// Get timeout for I/O in the specified direction.
+    /// @param event
+    ///  either of eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite, or eIO_Close
+    /// @return
+    ///  A timeout value set (or defaulted) in the "event" direction; or
+    ///  kDefaultTimeout for an unrecognized "event" value
+    /// @note  GetTimeout(eIO_ReadWrite) returns the least
+    ///        of eIO_Read and eIO_Write ones.
     /// @sa
     ///  CSocket::SetTimeout, SOCK_GetTimeout
     const STimeout* GetTimeout(EIO_Event event) const;
