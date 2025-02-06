@@ -1246,13 +1246,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     dbp->mpQscore.clear();
 
-    if (ibp->psip.NotEmpty()) {
-        CRef<CSeq_id> id(new CSeq_id);
-        id->SetPatent(*ibp->psip);
-        bioseq->SetId().push_back(id);
-        ibp->psip.Reset();
-    }
-
     // add PatentSeqId if patent is found in reference
     if (no_reference(*bioseq) && ! mParser.debug) {
         if (mParser.source == Parser::ESource::Flybase) {
