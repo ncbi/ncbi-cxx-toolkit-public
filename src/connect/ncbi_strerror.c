@@ -300,7 +300,7 @@ static const char* s_StrErrorInternal(int error)
                                 "No DNS data of requested type"},
 #  endif /*NO_DATA*/
 
-        /* Last dummy entry - must be present */
+        /* Last dummy entry - it must be present */
         {0, 0}
     };
 #if defined(NCBI_OS_LINUX)  ||  defined(NCBI_OS_CYGWIN)
