@@ -58,7 +58,8 @@ int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr);
 
 
 /** Return non-zero(true) if the address is a true IPv4 address (a mapped IPv4
- *  address);  return zero(false) otherwise.
+ *  address), which is equivalent of calling NcbiIsIPv4Ex(addr, 0);
+ *  return zero(false) otherwise.
  * @sa
  *  NcbiIsIPv4Ex, NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
@@ -67,11 +68,11 @@ int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
 
 /** Return non-zero(true) if the address is either a mapped IPv4 address or
- * (optionally) an IPv4-compatible IPv6 address;  return zero(false) otherwise.
+ *  (optionally) an IPv4-compatible IPv6 address;  return zero(false) otherwise.
  * @param compat
  *  non-zero causes IPv4-compatible IPv6 addresses to pass the test
  * @note
- *  NcbiIsIPv4Ex(, 0) is equivalent to NcbiIsIPv4()
+ *  NcbiIsIPv4Ex(addr, 0) is equivalent to NcbiIsIPv4(addr)
  * @sa
  *  NcbiIsIPv4, NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
@@ -95,8 +96,8 @@ unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen);
 
 
 /** Embed a passed network byte order IPv4 address into an IPv6 address using
- *  the specified prefix length (RFC6052).  Return zero when the specified
- *  prefix length is not valid, non-zero otherwise.  A special case (and the
+ *  the specified prefix length (RFC6052).  Return NULL when the specified
+ *  prefix length is not valid, else return "addr".  A special case (and the
  *  most anticipated common use-case) is to use prefix length 0, which first
  *  clears the passed IPv6 address, then embeds the IPv4 address as a mapped
  *  address using the prefix length of 96.
@@ -104,8 +105,8 @@ unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen);
  *  NcbiIsIPv4, NcbiIPv6ToIPv4
  */
 extern NCBI_XCONNECT_EXPORT
-int/*bool*/  NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
-                            unsigned int ipv4, size_t pfxlen);
+TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
+                               unsigned int ipv4, size_t pfxlen);
 
 
 /** Convert into a network byte order IPv4 address, the first "len" (or
