@@ -362,7 +362,11 @@ public:
 #if PY_MAJOR_VERSION >= 3
     operator int() const
     {
+#  if PY_VERSION_HEX >= 0x030D0000
+        return PyLong_AsInt(Get());
+#  else
         return _PyLong_AsInt(Get());
+#  endif
     }
     operator unsigned int() const
     {
@@ -765,7 +769,11 @@ public:
 #if PY_MAJOR_VERSION < 3
         if (g_PythonStrDefToUnicode) {
 #endif
+#if PY_VERSION_HEX >= 0x03030000
+            wstring str_uni(CUtf8::AsBasicString<wchar_t>(str));
+#else
             basic_string<Py_UNICODE> str_uni(CUtf8::AsBasicString<Py_UNICODE>(str));
+#endif
 #if PY_MAJOR_VERSION >= 3
             Set(PyUnicode_FromWideChar(str_uni.data(), str_uni.size()),
                 eTakeOwnership);
