@@ -196,8 +196,9 @@ EIO_Status CConn_IOStream::Close(void)
 
 void CConn_IOStream::x_Destroy(void)
 {
-    m_CSb = 0;
+    // This order!  Dtor must see the stream stil constructed if it was
     x_CSb.reset();
+    m_CSb = 0;
 }
 
 
