@@ -1057,7 +1057,8 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
         CRef<CSeq_id>        id(new CSeq_id);
         CRef<CPatent_seq_id> psip = MakeUsptoPatSeqId(acc);
         id->SetPatent(*psip);
-        return (res);
+        res->SetId().push_back(id);
+        return res;
     }
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = CSeq_id::e_Tpe;
