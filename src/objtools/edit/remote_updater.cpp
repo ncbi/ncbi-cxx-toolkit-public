@@ -310,7 +310,7 @@ protected:
     size_t                      m_cache_hits   = 0;
 };
 
-bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
+bool CPubmedUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
 {
     auto pub = s_GetPubFrompmid(m_pubmed.get(), id, m_MaxMlaAttempts, m_pMessageListener);
     if (! (pub && pub->IsMedline())) {
@@ -335,7 +335,7 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
     // authors come back in a weird format that we need
     // to convert to ISO
     if (new_pub->IsSetAuthors())
-        CRemoteUpdater::ConvertToStandardAuthors(new_pub->SetAuthors());
+        CPubmedUpdater::ConvertToStandardAuthors(new_pub->SetAuthors());
 
     arr.clear();
     CRef<CPub> new_pmid(new CPub);
@@ -345,7 +345,7 @@ bool CRemoteUpdater::xUpdatePubPMID(list<CRef<CPub>>& arr, TEntrezId id)
     return true;
 }
 
-void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
+void CPubmedUpdater::SetMaxMlaAttempts(int maxAttempts)
 {
     m_MaxMlaAttempts = maxAttempts;
 }
@@ -387,7 +387,7 @@ void CTaxonomyUpdater::xSetFromConfig()
     }
 }
 
-bool CRemoteUpdater::xSetFromConfig()
+bool CPubmedUpdater::xSetFromConfig()
 {
     CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
     if (app) {
@@ -469,16 +469,20 @@ CTaxonomyUpdater::CTaxonomyUpdater(FLogger logger) :
     xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(CTaxonomyUpdater::FLogger logger, CEUtilsUpdater::ENormalize norm) :
-    m_taxon(logger), m_pMessageListener(nullptr), m_pm_normalize(norm)
+CPubmedUpdater::CPubmedUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
+    m_pMessageListener(pMessageListener), m_pm_normalize(norm)
 {
     xSetFromConfig();
 }
 
-CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
-    m_taxon(pMessageListener), m_pMessageListener(pMessageListener), m_pm_normalize(norm)
+CRemoteUpdater::CRemoteUpdater(CTaxonomyUpdater::FLogger logger, CEUtilsUpdater::ENormalize norm) :
+    m_taxon(logger), m_pubmed(nullptr, norm)
 {
-    xSetFromConfig();
+}
+
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
+    m_taxon(pMessageListener), m_pubmed(pMessageListener, norm)
+{
 }
 
 CRemoteUpdater::~CRemoteUpdater()
@@ -494,10 +498,8 @@ void CTaxonomyUpdater::ClearCache()
     }
 }
 
-void CRemoteUpdater::ClearCache()
+void CPubmedUpdater::ClearCache()
 {
-    m_taxon.ClearCache();
-
     std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_pm_use_cache && m_pubmed) {
@@ -508,14 +510,14 @@ void CRemoteUpdater::ClearCache()
     }
 }
 
-void CRemoteUpdater::UpdatePubReferences(CSeq_entry_EditHandle& obj)
+void CPubmedUpdater::UpdatePubReferences(CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI it(obj); it; ++it) {
         xUpdatePubReferences(it->GetEditHandle().SetDescr());
     }
 }
 
-void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
+void CPubmedUpdater::UpdatePubReferences(CSerialObject& obj)
 {
     if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo())) {
         CSeq_entry* entry = static_cast<CSeq_entry*>(&obj);
@@ -536,7 +538,7 @@ void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
     }
 }
 
-void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
+void CPubmedUpdater::xUpdatePubReferences(CSeq_entry& entry)
 {
     if (entry.IsSet()) {
         for (auto& it : entry.SetSet().SetSeq_set()) {
@@ -550,7 +552,7 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
     xUpdatePubReferences(entry.SetDescr());
 }
 
-void CRemoteUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
+void CPubmedUpdater::xUpdatePubReferences(CSeq_descr& seq_descr)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
@@ -685,7 +687,7 @@ void CTaxonomyUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 }
 
 
-void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
+void CPubmedUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
 {
     if (! auth_list.IsSetNames()) {
         return;
@@ -714,7 +716,7 @@ void CRemoteUpdater::ConvertToStandardAuthors(CAuth_list& auth_list)
 }
 
 
-void CRemoteUpdater::PostProcessPubs(CSeq_entry& obj)
+void CPubmedUpdater::PostProcessPubs(CSeq_entry& obj)
 {
     if (obj.IsSet()) {
         for (CRef<CSeq_entry>& it : obj.SetSet().SetSeq_set()) {
@@ -729,7 +731,7 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry& obj)
     }
 }
 
-void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
+void CPubmedUpdater::PostProcessPubs(CPubdesc& pubdesc)
 {
     if (! pubdesc.IsSetPub())
         return;
@@ -741,7 +743,7 @@ void CRemoteUpdater::PostProcessPubs(CPubdesc& pubdesc)
     }
 }
 
-void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
+void CPubmedUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it) {
         for (CSeqdesc_CI desc_it(bioseq_it->GetEditHandle(), CSeqdesc::e_Pub); desc_it; ++desc_it) {
@@ -750,7 +752,7 @@ void CRemoteUpdater::PostProcessPubs(CSeq_entry_EditHandle& obj)
     }
 }
 
-void CRemoteUpdater::SetPubmedClient(CEUtilsUpdater* pubmedUpdater)
+void CPubmedUpdater::SetPubmedClient(CEUtilsUpdater* pubmedUpdater)
 {
     m_pubmed.reset(pubmedUpdater);
 }
@@ -774,10 +776,8 @@ void CTaxonomyUpdater::ReportStats(std::ostream& os)
     }
 }
 
-void CRemoteUpdater::ReportStats(std::ostream& os)
+void CPubmedUpdater::ReportStats(std::ostream& os)
 {
-    m_taxon.ReportStats(os);
-
     std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_pm_use_cache && m_pubmed) {

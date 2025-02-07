@@ -121,6 +121,64 @@ private:
     bool       m_Exponential = false;
 };
 
+class NCBI_XOBJEDIT_EXPORT CPubmedUpdater
+{
+public:
+    // With this constructor, failure to retrieve
+    // a publication for a PMID is logged with the supplied message listener.
+    // If no message listener is supplied, an exception is thrown.
+    CPubmedUpdater(IObjtoolsListener*, CEUtilsUpdater::ENormalize = CEUtilsUpdater::ENormalize::Off);
+
+    void UpdatePubReferences(CSerialObject& obj);
+    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
+    void SetMaxMlaAttempts(int max);
+    // Specify flavor of updated CPub: CMedline_entry or CCit_art
+    void SetPubReturnType(CPub::E_Choice t)
+    {
+        if (t == CPub::e_Medline || t == CPub::e_Article) {
+            m_pm_pub_type = t;
+        } else {
+            throw std::invalid_argument("invalid CPub choice");
+        }
+    }
+    void ClearCache();
+    static void ConvertToStandardAuthors(CAuth_list& auth_list);
+    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
+    static void PostProcessPubs(CSeq_entry& obj);
+    static void PostProcessPubs(CPubdesc& pubdesc);
+
+    void SetPubmedClient(CEUtilsUpdater*);
+    void ReportStats(std::ostream& str);
+    TPubInterceptor SetPubmedInterceptor(TPubInterceptor f)
+    {
+        TPubInterceptor old = m_pm_interceptor;
+        m_pm_interceptor = f;
+        return old;
+    }
+    void SetBaseURL(string url)
+    {
+        m_pm_url = url;
+    }
+
+private:
+    void xUpdatePubReferences(CSeq_entry& entry);
+    void xUpdatePubReferences(CSeq_descr& descr);
+    bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
+    bool xSetFromConfig();
+
+    IObjtoolsListener* m_pMessageListener = nullptr;
+
+    string                     m_pm_url;
+    unique_ptr<CEUtilsUpdater> m_pubmed;
+    bool                       m_pm_use_cache = true;
+    CEUtilsUpdater::ENormalize m_pm_normalize = CEUtilsUpdater::ENormalize::Off;
+    TPubInterceptor            m_pm_interceptor = nullptr;
+    CPub::E_Choice             m_pm_pub_type = CPub::e_Article;
+
+    std::mutex m_Mutex;
+    int m_MaxMlaAttempts = 3;
+};
+
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {
 public:
@@ -135,20 +193,27 @@ public:
     CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm = CEUtilsUpdater::ENormalize::Off);
     ~CRemoteUpdater();
 
-    void UpdatePubReferences(CSerialObject& obj);
-    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
-    void SetMaxMlaAttempts(int max);
+    CTaxonomyUpdater& GetTaxonomy() { return m_taxon; }
+    CPubmedUpdater&   GetPubmed() { return m_pubmed; };
+
+    void UpdatePubReferences(CSerialObject& obj)
+    {
+        return m_pubmed.UpdatePubReferences(obj);
+    }
+    void UpdatePubReferences(CSeq_entry_EditHandle& obj)
+    {
+        return m_pubmed.UpdatePubReferences(obj);
+    }
+    void SetMaxMlaAttempts(int max)
+    {
+        m_pubmed.SetMaxMlaAttempts(max);
+    }
     // Specify flavor of updated CPub: CMedline_entry or CCit_art
     void SetPubReturnType(CPub::E_Choice t)
     {
-        if (t == CPub::e_Medline || t == CPub::e_Article) {
-            m_pm_pub_type = t;
-        } else {
-            throw std::invalid_argument("invalid CPub choice");
-        }
+        m_pubmed.SetPubReturnType(t);
     }
 
-    CTaxonomyUpdater& GetTaxonomy() { return m_taxon; }
     CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list)
     {
         return m_taxon.SendOrgRefList(list);
@@ -166,47 +231,54 @@ public:
         m_taxon.SetTaxonTimeout(seconds, retries, exponential);
     }
 
-    void ClearCache();
-    static void ConvertToStandardAuthors(CAuth_list& auth_list);
-    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
-    static void PostProcessPubs(CSeq_entry& obj);
-    static void PostProcessPubs(CPubdesc& pubdesc);
+    static void ConvertToStandardAuthors(CAuth_list& auth_list)
+    {
+        return CPubmedUpdater::ConvertToStandardAuthors(auth_list);
+    }
+    static void PostProcessPubs(CSeq_entry_EditHandle& obj)
+    {
+        return CPubmedUpdater::PostProcessPubs(obj);
+    }
+    static void PostProcessPubs(CSeq_entry& obj)
+    {
+        return CPubmedUpdater::PostProcessPubs(obj);
+    }
+    static void PostProcessPubs(CPubdesc& pubdesc)
+    {
+        return CPubmedUpdater::PostProcessPubs(pubdesc);
+    }
 
-    void SetPubmedClient(CEUtilsUpdater*);
+    void SetPubmedClient(CEUtilsUpdater* f)
+    {
+        m_pubmed.SetPubmedClient(f);
+    }
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
-    void ReportStats(std::ostream& str);
+    void ClearCache()
+    {
+        m_taxon.ClearCache();
+        m_pubmed.ClearCache();
+    }
+
+    void ReportStats(std::ostream& os)
+    {
+        m_taxon.ReportStats(os);
+        m_pubmed.ReportStats(os);
+    }
     taxupdate_func_t GetUpdateFunc() const { return m_taxon.GetUpdateFunc(); }
+
     TPubInterceptor SetPubmedInterceptor(TPubInterceptor f)
     {
-        TPubInterceptor old = m_pm_interceptor;
-        m_pm_interceptor = f;
-        return old;
+        return m_pubmed.SetPubmedInterceptor(f);
     }
     void SetBaseURL(string url)
     {
-        m_pm_url = url;
+        m_pubmed.SetBaseURL(url);
     }
 
 private:
     CTaxonomyUpdater m_taxon;
-
-    void xUpdatePubReferences(CSeq_entry& entry);
-    void xUpdatePubReferences(CSeq_descr& descr);
-    bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
-    bool xSetFromConfig();
-
-    IObjtoolsListener* m_pMessageListener = nullptr;
-
-    string                     m_pm_url;
-    unique_ptr<CEUtilsUpdater> m_pubmed;
-    bool                       m_pm_use_cache = true;
-    CEUtilsUpdater::ENormalize m_pm_normalize = CEUtilsUpdater::ENormalize::Off;
-    TPubInterceptor            m_pm_interceptor = nullptr;
-    CPub::E_Choice             m_pm_pub_type = CPub::e_Article;
-
-    std::mutex m_Mutex;
-    int m_MaxMlaAttempts = 3;
+    CPubmedUpdater   m_pubmed;
 };
 
 END_SCOPE(edit)
