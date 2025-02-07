@@ -357,7 +357,7 @@ void CONN_TestConnector
  FILE*           data_file,
  TTestConnFlags  flags)
 {
-    static void* s_Once = 0;
+    static void* volatile s_Once = 0;
     char         buf[128];
     EIO_Status   status;
     CONN         conn;
