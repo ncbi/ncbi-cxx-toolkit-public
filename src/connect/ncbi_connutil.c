@@ -2724,9 +2724,9 @@ extern SOCK URL_Connect
  int/*bool*/     encode_args,
  TSOCK_Flags     flags)
 {
+    static void* volatile /*bool*/ s_Once = 0;
     static const char kHost[] = "Host: ";
     const char* x_hdr = user_hdr;
-    static void* s_Once = 0;
     char* x_args = 0;
     SOCK sock;
 
