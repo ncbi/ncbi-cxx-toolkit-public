@@ -40,8 +40,8 @@
 #  error "Unknown OS, must be either NCBI_OS_UNIX or NCBI_OS_MSWIN!"
 #endif /*supported platforms*/
 
-#include <connect/ncbi_socket.h>
 #include <connect/ncbi_buffer.h>
+#include <connect/ncbi_socket.h>
 
 
 /* Pull in a minimal set of platform-specific system headers here.
@@ -159,7 +159,7 @@ typedef struct TRIGGER_tag {
     unsigned int       id;      /* the internal ID (cf. "s_ID_Counter")      */
 
     union {
-        volatile void* ptr;     /* trigger state (UNIX only, otherwise MBZ)  */
+        void* volatile ptr;     /* trigger state (UNIX only, otherwise MBZ)  */
         int            int_[2]; /* pointer storage area w/proper alignment   */
     } isset;
 
@@ -336,7 +336,7 @@ typedef struct SOCK_tag {
  * sock->r_status |   sock->eof   |           (stream sockets only)
  * ---------------+---------------+--------------------------------------------
  * eIO_Closed     |       0       |  Socket shut down for reading
- * eIO_Closed     |       1       |  Read severely failed
+ * eIO_Closed     |       1       |  Read severely (often fatally) failed
  * not eIO_Closed |       0       |  Read completed with r_status error
  * not eIO_Closed |       1       |  Read hit EOF (and [maybe later] r_status)
  * ---------------+---------------+--------------------------------------------
@@ -401,6 +401,5 @@ int gettimeofday(struct timeval* tp, void* unused);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /*__cplusplus*/
-
 
 #endif /* CONNECT___NCBI_SOCKETP__H */

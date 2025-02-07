@@ -43,6 +43,7 @@
  *  SOCK_OSHandleSize
  *  SOCK_AllowSigPipeAPI
  *  SOCK_SetApproveHookAPI
+ *  SOCK_SetIPv6API
  *
  * Event trigger (handle TRIGGER):
  *
@@ -405,6 +406,20 @@ extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI
 (ESOCK_IOWaitSysAPI api
  );
 
+
+/** Select IPv6 as the underlying IP protocol.
+ * @param ipv6
+ *  eOn sets IPv6 throughout; eOff sets IPv4 throughout; eDefault allows both
+ * @return
+ *  Previous value of the IP selection
+ * @note
+ *  IPv4-specific functions (such as name resolution to IPv4 addresses) fail
+ *  when IPv6 is selected;  and conversely, IPv6-specific functions fail when
+ *  IPv4 is selected.  Default is to allow both (depending on the addresses),
+ *  but both IP versions are only fully functional on a dual-stack OS (which
+ *  has both IPv4 and IPv6 interfaces configured and running).
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetIPv6API(ESwitch ipv6);
 
 
 /******************************************************************************

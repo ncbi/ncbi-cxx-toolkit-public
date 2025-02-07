@@ -97,25 +97,31 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLogging(sock, eOn);
     n = strlen(s_S1) + 1;
     status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPeek);
-    assert(status >= eIO_Success);
-    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPlain);
     if (status == eIO_Closed)
-        CORE_LOG(eLOG_Fatal, "TC1:: connection closed");
+        CORE_LOG(eLOG_Fatal, "TC1::connection closed");
+    assert(status == eIO_Success);
+    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPersist);
 
     assert(status == eIO_Success  &&  n == n_io_done);
-    assert(strcmp(buf, s_S1) == 0);
+    assert(memcmp(buf, s_S1, n) == 0);
     assert(SOCK_Pushback(sock, buf, n_io_done) == eIO_Success);
     memset(buf, '\xFF', n_io_done);
     assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_ReadPlain)
            == eIO_Success);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
-    assert(strcmp(buf, s_S1) == 0);
+    assert(memcmp(buf, s_S1, n) == 0);
 
     SOCK_SetDataLogging(sock, eDefault);
 
     /* Send a very big binary blob */
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        if (!blob) {
+            CORE_LOG(eLOG_Fatal, "TC1::out of memory");
+            assert(0);
+            return;
+        }
+
         for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
             blob[n] = (unsigned char) n;
         for (n = 0;  n < N_SUB_BLOB;  ++n) {
@@ -123,6 +129,7 @@ static void TEST__client_1(SOCK sock)
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
+
         free(blob);
     }}
 
@@ -130,6 +137,11 @@ static void TEST__client_1(SOCK sock)
     /* (it must be bounced by the server) */
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        if (!blob) {
+            CORE_LOG(eLOG_Fatal, "TC1::out of memory");
+            assert(0);
+            return;
+        }
 
         SOCK_SetReadOnWrite(sock, eOn);
 
@@ -205,9 +217,9 @@ static void TEST__server_1(SOCK sock)
     /* Receive and send back a short string */
     SOCK_SetDataLogging(sock, eOn);
     n = strlen(s_C1) + 1;
-    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPlain);
+    status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPersist);
     assert(status == eIO_Success  &&  n == n_io_done);
-    assert(strcmp(buf, s_C1) == 0  ||  strcmp(buf, s_M1) == 0);
+    assert(memcmp(buf, s_C1, n) == 0  ||  memcmp(buf, s_M1, n) == 0);
 
     SOCK_SetDataLogging(sock, eDefault);
     SOCK_SetDataLoggingAPI(eOn);
@@ -221,6 +233,11 @@ static void TEST__server_1(SOCK sock)
 #define DO_LOG_SIZE    300
 #define DONT_LOG_SIZE  BIG_BLOB_SIZE - DO_LOG_SIZE
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        if (!blob) {
+            CORE_LOG(eLOG_Fatal, "TS1::out of memory");
+            assert(0);
+            return;
+        }
 
         status = SOCK_Read(sock,blob,DONT_LOG_SIZE,&n_io_done,eIO_ReadPersist);
         assert(status == eIO_Success  &&  n_io_done == DONT_LOG_SIZE);
@@ -233,12 +250,19 @@ static void TEST__server_1(SOCK sock)
 
         for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
             assert(blob[n] == (unsigned char) n);
+
         free(blob);
     }}
 
     /* Receive a very big binary blob, and write data back */
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
+        if (!blob) {
+            CORE_LOG(eLOG_Fatal, "TS1::out of memory");
+            assert(0);
+            return;
+        }
+
         for (n = 0;  n < N_SUB_BLOB;  ++n) {
             /*            X_SLEEP(1);*/
             status = SOCK_Read(sock, blob + n * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
@@ -250,6 +274,7 @@ static void TEST__server_1(SOCK sock)
         }
         for (n = 0;  n < BIG_BLOB_SIZE;  ++n)
             assert(blob[n] == (unsigned char)(BIG_BLOB_SIZE - n));
+
         free(blob);
     }}
 
@@ -293,9 +318,9 @@ static void TEST__client_2(SOCK sock)
 #define N_FIELD      1000
 #define N_REPEAT     10
 #define N_RECONNECT  3
-    EIO_Status status;
-    size_t     n_io, n_io_done, i;
-    char       buf[W_FIELD * N_FIELD + 1];
+    static char buf[W_FIELD * N_FIELD + 1];
+    size_t      n_io, n_io_done, i;
+    EIO_Status  status;
 
     CORE_LOGF(eLOG_Note,
               ("TEST__client_2(TC2) @:%hu",
@@ -728,7 +753,7 @@ static const char* s_ntoa(unsigned int host)
 
 static unsigned int TEST_gethostbyname(const char* name)
 {
-    char         buf[256];
+    char         buf[CONN_HOST_LEN + 1];
     unsigned int host;
 
     CORE_LOG(eLOG_Note, "------------");
@@ -750,6 +775,9 @@ static unsigned int TEST_gethostbyname(const char* name)
             CORE_LOGF(eLOG_Note,
                       ("SOCK_gethostbyaddr(0x%08X [%s]):  <not found>",
                        (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host)));
+            /* NB: Unknown IPs always get converted to bare notations */
+            assert(0);
+            return 0;
         }
     }
     return host;
@@ -759,7 +787,7 @@ static unsigned int TEST_gethostbyname(const char* name)
 static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
 {
     const char*  name;
-    char         buf[1024];
+    char         buf[CONN_HOST_LEN + 1];
 
     CORE_LOG(eLOG_Note, "------------");
 
@@ -775,7 +803,9 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
         CORE_LOGF(eLOG_Note,
                   ("SOCK_gethostbyaddr(0x%08X [%s]):  <not found>",
                    (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host)));
-        return 0/*false*/;
+        /* NB: Unknown IPs always get converted to bare notations */
+        assert(0);
+        return 0/*failure*/;
     }
 
     host = SOCK_gethostbyname(name);
@@ -783,7 +813,80 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
               ("SOCK_gethostbyname(\"%s\"):  0x%08X [%s]",
                name, (unsigned int) SOCK_NetToHostLong(host), s_ntoa(host)));
 
-    return 1/*true*/;
+    return 1/*success*/;
+}
+
+
+static TNCBI_IPv6Addr* TEST_gethostbynameIPv6(TNCBI_IPv6Addr* addr, const char* host)
+{
+    char        buf[CONN_HOST_LEN + 1];
+    char        addrstr[80];
+    int/*bool*/ fail;
+
+    assert(addr);
+    CORE_LOG(eLOG_Note, "------------");
+
+    fail = !SOCK_gethostbynameIPv6(addr, host);
+    NcbiAddrToString(addrstr, sizeof(addrstr), addr);
+    CORE_LOGF(eLOG_Note,
+        ("SOCK_gethostbynameIPv6(\"%s\"):  [%s]",
+            host, addrstr));
+    if ( !fail ) {
+        const char* name = SOCK_gethostbyaddrIPv6(addr, buf, sizeof(buf));
+        if ( name ) {
+            assert(name == buf);
+            assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
+            CORE_LOGF(eLOG_Note,
+                ("SOCK_gethostbyaddrIPv6(%s):  \"%s\"",
+                    addrstr, name));
+        } else {
+            CORE_LOGF(eLOG_Note,
+                ("SOCK_gethostbyaddrIPv6(%s):  <not found>",
+                    addrstr));
+            /* NB: Unknown IPs always get converted to bare notations */
+            assert(0);
+            addr = 0;
+        }
+    }
+
+    return addr;
+}
+
+
+static int/*bool*/ TEST_gethostbyaddrIPv6(const TNCBI_IPv6Addr* addr)
+{
+    const char*    host;
+    TNCBI_IPv6Addr temp;
+    int/*bool*/    fail;
+    char           addrstr[80];
+    char           buf[CONN_HOST_LEN + 1];
+
+    CORE_LOG(eLOG_Note, "------------");
+
+    host = SOCK_gethostbyaddrIPv6(addr, buf, sizeof(buf));
+    NcbiAddrToString(addrstr, sizeof(addrstr), addr);
+    if ( host ) {
+        assert(host == buf);
+        assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
+        CORE_LOGF(eLOG_Note,
+            ("SOCK_gethostbyaddrIPv6(%s):  \"%s\"",
+                addrstr, host));
+    } else {
+        CORE_LOGF(eLOG_Note,
+            ("SOCK_gethostbyaddrIPv6(%s):  <not found>",
+                addrstr));
+        /* NB: Unknown IPs always get converted to bare notations */
+        assert(0);
+        return 0/*failure*/;
+    }
+
+    fail = !SOCK_gethostbynameIPv6(&temp, host);
+    NcbiAddrToString(addrstr, sizeof(addrstr), &temp);
+    CORE_LOGF(eLOG_Note,
+        ("SOCK_gethostbynameIPv6(\"%s\"):  [%s]",
+            host, addrstr));
+
+    return !fail;
 }
 
 
@@ -811,6 +914,38 @@ static void TEST_gethostby(void)
     (void) TEST_gethostbyaddr(SOCK_gethostbyname("130.14.25.1"));
     (void) TEST_gethostbyaddr(SOCK_gethostbyname("234.234.234.234"));
     (void) TEST_gethostbyaddr(0xFFFFFFFF);
+
+    TNCBI_IPv6Addr addr, www;
+
+    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+
+    SOCK_SetIPv6API(eOn);
+    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+
+    SOCK_SetIPv6API(eOff);
+    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+
+    SOCK_SetIPv6API(eDefault);
+    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+
+    assert(NcbiIPToAddr(&addr, "2607:f220:41e:4290::110", 0));
+    assert(NcbiIPToAddr(&www, "130.14.29.110", 0));
+
+    (void) TEST_gethostbyaddrIPv6(&addr);
+    (void) TEST_gethostbyaddrIPv6(&www);
+
+    SOCK_SetIPv6API(eOn);
+    (void) TEST_gethostbyaddrIPv6(&addr);
+    (void) TEST_gethostbyaddrIPv6(&www);
+
+    SOCK_SetIPv6API(eOff);
+    (void) TEST_gethostbyaddrIPv6(&addr);
+    (void) TEST_gethostbyaddrIPv6(&www);
+
+    SOCK_SetIPv6API(eDefault);
+    (void) TEST_gethostbyaddrIPv6(&addr);
+    (void) TEST_gethostbyaddrIPv6(&www);
+
 
     CORE_LOG(eLOG_Note, "===============================");
 }

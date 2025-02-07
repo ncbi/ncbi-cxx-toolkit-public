@@ -819,7 +819,7 @@ static void x_ShowDataLayout(void)
         "\tsock:      %3u (%u)\n"
         "\tid:        %3u (%u)\n"
         "\tisset:     %3u (%u)\n"
-        "\t_host:     %3u (%u)\n"
+        "\thost_:     %3u (%u)\n"
         "\tport:      %3u (%u)\n"
         "\tmyport:    %3u (%u)\n"
         "\terr:       %3u (%u)\n"
@@ -1317,7 +1317,10 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
     }
     len = strlen(host);
 
-    CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", host));
+    CORE_TRACEF(("[SOCK::gethostbyname%s]  \"%s\"",
+                 family == AF_INET ? "(IPv4)" :
+                 family == AF_INET6 ? "(IPv6)" : "",
+                 host));
 
     if (family != AF_INET6) {
 #ifdef NCBI_OS_DARWIN
@@ -1527,7 +1530,9 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
     if (!SOCK_isipEx(host, 1/*full-quad*/)) {
         char addrstr[SOCK_ADDRSTRLEN];
         s_AddrToString(addrstr, sizeof(addrstr), addr, family, !parsed);
-        CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\" @ %s",
+        CORE_TRACEF(("[SOCK::gethostbyname%s]  \"%s\" @ %s",
+                     family == AF_INET ? "(IPv4)" :
+                     family == AF_INET6 ? "(IPv6)" : "",
                      host, addrstr));
     }
 #endif /*_DEBUG && !NDEBUG*/
@@ -1632,7 +1637,9 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
     } else
         empty = 0/*false*/;
 
-    CORE_TRACEF(("[SOCK::gethostbyaddr]  %s",
+    CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s",
+                 family == AF_INET ? "(IPv4)" :
+                 family == AF_INET6 ? "(IPv6)" : "",
                  (s_AddrToString(addrstr, sizeof(addrstr),
                                  addr, family, empty), addrstr)));
 
@@ -1774,10 +1781,19 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
     }
 
     assert(!name  ||  !NCBI_HasSpaces(name, strlen(name)));
-    CORE_TRACEF(("[SOCK::gethostbyaddr]  %s @ %s%s%s",
-                 (s_AddrToString(addrstr, sizeof(addrstr),
-                  addr, family, empty), addrstr),
-                 &"\""[!name], name ? name : "(unknown)", &"\""[!name]));
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+    {
+        TNCBI_IPv6Addr temp;
+        if (!NcbiIPToAddr(&temp, name, 0)) {
+            CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s @ %s%s%s",
+                         family == AF_INET ? "(IPv4)" :
+                         family == AF_INET6 ? "(IPv6)" : "",
+                         (s_AddrToString(addrstr, sizeof(addrstr),
+                                         addr, family, empty), addrstr),
+                         &"\""[!name], name ? name : "(unknown)", &"\""[!name]));
+        }
+    }
+#endif /*_DEBUG && !NDEBUG*/
     return name;
 }
 
@@ -1874,6 +1890,31 @@ extern void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook, void* data)
     CORE_UNLOCK;
 }
 
+
+extern ESwitch SOCK_SetIPv6API(ESwitch ipv6)
+{
+    int version = s_IPVersion;
+    switch (ipv6) {
+    case eOn:
+        s_IPVersion = AF_INET6;
+        break;
+    case eOff:
+        s_IPVersion = AF_INET;
+        break;
+    default:
+        s_IPVersion = AF_UNSPEC;
+        break;
+    }
+    switch (version) {
+    case AF_INET6:
+        return eOn;
+    case AF_INET:
+        return eOff;
+    default:
+        break;
+    }
+    return eDefault;
+}
 
 
 /******************************************************************************
@@ -6765,7 +6806,7 @@ extern EIO_Status TRIGGER_Set(TRIGGER trigger)
 
 #elif defined(NCBI_OS_UNIX)
 
-    if (CORE_Once((void**) &trigger->isset.ptr)) {
+    if (CORE_Once(&trigger->isset.ptr)) {
         if (write(trigger->out, "", 1) < 0  &&  errno != EAGAIN)
             return eIO_Unknown;
     }
@@ -9538,6 +9579,7 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
         if (!s_gethostbyname(&temp, x_buf, family, 1/*not-IP*/, s_Log)) {
             if (!flag)
                 return str;
+            /* NB: "temp" has been already cleared all out at this point */
             NcbiIPv4ToIPv6(&temp, htonl(INADDR_NONE), family == AF_INET6 ? 96 : 0);
         }
     }
