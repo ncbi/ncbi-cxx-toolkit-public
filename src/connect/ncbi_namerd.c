@@ -1133,7 +1133,7 @@ static char* x_Namespace(char* nspc, size_t size, const char* name)
         return 0/*failed*/;
     }
     if (*nspc) {
-        static void* s_Once = 0;
+        static void* volatile /*bool*/ s_Once = 0;
         if (CORE_Once(&s_Once)) {
             CORE_LOGF_X(eNSub_Message, eLOG_Warning,
                         ("[%s]  NAMERD " DEF_CONN_REG_SECTION

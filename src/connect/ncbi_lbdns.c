@@ -1643,7 +1643,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 {
     /* NB: This should never be called on a non-UNIX platform */
-    static void* /*bool*/ s_Once = 0/*false*/;
+    static void* volatile /*bool*/ s_Once = 0/*false*/;
     if (CORE_Once(&s_Once))
         CORE_LOG(eLOG_Critical, "LBDNS only available on UNIX platform(s)");
     return 0;
