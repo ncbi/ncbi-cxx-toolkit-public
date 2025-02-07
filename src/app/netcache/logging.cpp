@@ -450,6 +450,7 @@ s_AllocMainData(void)
     s_AddLogPrefix(NULL, s_MainData);
     s_AddToLog(s_MainData, "start         ");
     s_AddToLog(s_MainData, s_CmdLine);
+    NCBI_CLANG_ANALYZER_SUPPRESS
     *s_MainData->cur_ptr++ = '\n';
     s_MainData->cur_msg_ptr = s_MainData->cur_ptr;
 }
