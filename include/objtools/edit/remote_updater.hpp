@@ -83,6 +83,44 @@ public:
     using CException::CException;
 };
 
+class NCBI_XOBJEDIT_EXPORT CTaxonomyUpdater
+{
+public:
+
+    using FLogger = function<void(const string&)>;
+
+    CTaxonomyUpdater(IObjtoolsListener* pMessageListener);
+    // NCBI_DEPRECATED
+    CTaxonomyUpdater(FLogger logger);
+
+    CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
+
+    void UpdateOrgFromTaxon(CSeq_entry& entry);
+    void UpdateOrgFromTaxon(CSeqdesc& desc);
+    void SetTaxonTimeout(unsigned seconds = 20, unsigned retries = 5, bool exponential = false);
+
+    void ClearCache();
+    void ReportStats(std::ostream&);
+    taxupdate_func_t GetUpdateFunc() const { return m_taxon_update; }
+
+private:
+    void xUpdateOrgTaxname(COrg_ref& org);
+    void xSetFromConfig();
+    void xInitTaxCache();
+
+    IObjtoolsListener* m_pMessageListener = nullptr;
+    FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
+
+    unique_ptr<CCachedTaxon3_impl> m_taxClient;
+    taxupdate_func_t m_taxon_update;
+
+    std::mutex m_Mutex;
+    bool       m_TimeoutSet  = false;
+    unsigned   m_Timeout     = 20; // in seconds
+    unsigned   m_Attempts    = 5;
+    bool       m_Exponential = false;
+};
+
 class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {
 public:
@@ -110,11 +148,23 @@ public:
         }
     }
 
-    CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
-
-    void UpdateOrgFromTaxon(CSeq_entry& entry);
-    void UpdateOrgFromTaxon(CSeqdesc& desc);
-    void SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential);
+    CTaxonomyUpdater& GetTaxonomy() { return m_taxon; }
+    CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list)
+    {
+        return m_taxon.SendOrgRefList(list);
+    }
+    void UpdateOrgFromTaxon(CSeq_entry& entry)
+    {
+        m_taxon.UpdateOrgFromTaxon(entry);
+    }
+    void UpdateOrgFromTaxon(CSeqdesc& desc)
+    {
+        m_taxon.UpdateOrgFromTaxon(desc);
+    }
+    void SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential)
+    {
+        m_taxon.SetTaxonTimeout(seconds, retries, exponential);
+    }
 
     void ClearCache();
     static void ConvertToStandardAuthors(CAuth_list& auth_list);
@@ -126,7 +176,7 @@ public:
     // Use either shared singleton or individual instances
     NCBI_DEPRECATED static CRemoteUpdater& GetInstance();
     void ReportStats(std::ostream& str);
-    taxupdate_func_t GetUpdateFunc() const { return m_taxon_update; }
+    taxupdate_func_t GetUpdateFunc() const { return m_taxon.GetUpdateFunc(); }
     TPubInterceptor SetPubmedInterceptor(TPubInterceptor f)
     {
         TPubInterceptor old = m_pm_interceptor;
@@ -139,15 +189,14 @@ public:
     }
 
 private:
+    CTaxonomyUpdater m_taxon;
+
     void xUpdatePubReferences(CSeq_entry& entry);
     void xUpdatePubReferences(CSeq_descr& descr);
-    void xUpdateOrgTaxname(COrg_ref& org);
     bool xUpdatePubPMID(list<CRef<CPub>>& pubs, TEntrezId id);
     bool xSetFromConfig();
-    void xInitTaxCache();
 
     IObjtoolsListener* m_pMessageListener = nullptr;
-    FLogger m_logger = nullptr; // wrapper for compatibility between IObjtoolsListener and old FLogger
 
     string                     m_pm_url;
     unique_ptr<CEUtilsUpdater> m_pubmed;
@@ -156,16 +205,8 @@ private:
     TPubInterceptor            m_pm_interceptor = nullptr;
     CPub::E_Choice             m_pm_pub_type = CPub::e_Article;
 
-    unique_ptr<CCachedTaxon3_impl> m_taxClient;
-    taxupdate_func_t m_taxon_update;
-
     std::mutex m_Mutex;
     int m_MaxMlaAttempts = 3;
-
-    bool m_TaxonTimeoutSet = false;
-    unsigned m_TaxonTimeout = 20;   // in seconds
-    unsigned m_TaxonAttempts = 5;
-    bool m_TaxonExponential = false;
 };
 
 END_SCOPE(edit)

@@ -164,10 +164,10 @@ public:
 
     void ReportStats(std::ostream& str)
     {
-        str << "CRemoteUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
+        str << "CTaxonomyUpdater: cache_hits " << m_cache_hits << " out of " << m_num_requests << " requests\n";
     }
 
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, CTaxonomyUpdater::FLogger f_logger)
     {
         CRef<COrg_ref> result;
         CRef<CT3Reply> reply = GetOrgReply(org, f_logger);
@@ -177,7 +177,7 @@ public:
         return result;
     }
 
-    CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org, CRemoteUpdater::FLogger f_logger)
+    CRef<CT3Reply> GetOrgReply(const COrg_ref& in_org, CTaxonomyUpdater::FLogger f_logger)
     {
         m_num_requests++;
         std::ostringstream os;
@@ -216,7 +216,7 @@ public:
         return reply;
     }
 
-    CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& query, CRemoteUpdater::FLogger logger)
+    CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& query, CTaxonomyUpdater::FLogger logger)
     {
         CRef<CTaxon3_reply> result(new CTaxon3_reply);
         if ( kUseBulkTaxonQuery ) {
@@ -350,15 +350,15 @@ void CRemoteUpdater::SetMaxMlaAttempts(int maxAttempts)
     m_MaxMlaAttempts = maxAttempts;
 }
 
-void CRemoteUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential)
+void CTaxonomyUpdater::SetTaxonTimeout(unsigned seconds, unsigned retries, bool exponential)
 {
-    m_TaxonTimeoutSet  = true;
-    m_TaxonTimeout     = seconds;
-    m_TaxonAttempts    = retries;
-    m_TaxonExponential = exponential;
+    m_TimeoutSet  = true;
+    m_Timeout     = seconds;
+    m_Attempts    = retries;
+    m_Exponential = exponential;
 }
 
-bool CRemoteUpdater::xSetFromConfig()
+void CTaxonomyUpdater::xSetFromConfig()
 {
     // default update lambda function
     m_taxon_update = [this](const vector<CRef<COrg_ref>>& query) -> CRef<CTaxon3_reply>
@@ -369,6 +369,26 @@ bool CRemoteUpdater::xSetFromConfig()
         return copied;
     };
 
+    CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
+    if (app) {
+        const CNcbiRegistry& cfg = app->GetConfig();
+        if (cfg.HasEntry("RemoteTaxonomyUpdate")) {
+            const string sect = "RemoteTaxonomyUpdate";
+            int delay = cfg.GetInt(sect, "RetryDelay", 20);
+            if (delay < 0)
+                delay = 20;
+            int count = cfg.GetInt(sect, "RetryCount", 5);
+            if (count < 0)
+                count = 5;
+            bool exponential = cfg.GetBool(sect, "RetryExponentially", false);
+
+            SetTaxonTimeout(static_cast<unsigned>(delay), static_cast<unsigned>(count), exponential);
+        }
+    }
+}
+
+bool CRemoteUpdater::xSetFromConfig()
+{
     CNcbiApplicationAPI* app = CNcbiApplicationAPI::Instance();
     if (app) {
         const CNcbiRegistry& cfg = app->GetConfig();
@@ -383,19 +403,6 @@ bool CRemoteUpdater::xSetFromConfig()
             if (cfg.HasEntry(sect, "UseCache")) {
                 m_pm_use_cache = cfg.GetBool(sect, "UseCache", true);
             }
-        }
-
-        if (cfg.HasEntry("RemoteTaxonomyUpdate")) {
-            const string sect = "RemoteTaxonomyUpdate";
-            int delay = cfg.GetInt(sect, "RetryDelay", 20);
-            if (delay < 0)
-                delay = 20;
-            int count = cfg.GetInt(sect, "RetryCount", 5);
-            if (count < 0)
-                count = 5;
-            bool exponential = cfg.GetBool(sect, "RetryExponentially", false);
-
-            SetTaxonTimeout(static_cast<unsigned>(delay), static_cast<unsigned>(count), exponential);
             return true;
         }
     }
@@ -403,7 +410,7 @@ bool CRemoteUpdater::xSetFromConfig()
     return false;
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
+void CTaxonomyUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
 {
     if (desc.IsOrg()) {
         xUpdateOrgTaxname(desc.SetOrg());
@@ -412,18 +419,18 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeqdesc& desc)
     }
 }
 
-void CRemoteUpdater::xInitTaxCache()
+void CTaxonomyUpdater::xInitTaxCache()
 {
     if (! m_taxClient) {
         m_taxClient.reset(new CCachedTaxon3_impl);
-        if (m_TaxonTimeoutSet)
-            m_taxClient->InitWithTimeout(m_TaxonTimeout, m_TaxonAttempts, m_TaxonExponential);
+        if (m_TimeoutSet)
+            m_taxClient->InitWithTimeout(m_Timeout, m_Attempts, m_Exponential);
         else
             m_taxClient->Init();
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
+void CTaxonomyUpdater::xUpdateOrgTaxname(COrg_ref& org)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
@@ -445,14 +452,8 @@ CRemoteUpdater& CRemoteUpdater::GetInstance()
     return instance;
 }
 
-CRemoteUpdater::CRemoteUpdater(FLogger logger, CEUtilsUpdater::ENormalize norm) :
-    m_logger{ logger }, m_pm_normalize(norm)
-{
-    xSetFromConfig();
-}
-
-CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
-    m_pMessageListener(pMessageListener), m_pm_normalize(norm)
+CTaxonomyUpdater::CTaxonomyUpdater(IObjtoolsListener* pMessageListener) :
+    m_pMessageListener(pMessageListener)
 {
     if (m_pMessageListener) {
         m_logger = [this](const string& error_message) {
@@ -462,17 +463,42 @@ CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdat
     xSetFromConfig();
 }
 
+CTaxonomyUpdater::CTaxonomyUpdater(FLogger logger) :
+    m_logger(logger)
+{
+    xSetFromConfig();
+}
+
+CRemoteUpdater::CRemoteUpdater(CTaxonomyUpdater::FLogger logger, CEUtilsUpdater::ENormalize norm) :
+    m_taxon(logger), m_pMessageListener(nullptr), m_pm_normalize(norm)
+{
+    xSetFromConfig();
+}
+
+CRemoteUpdater::CRemoteUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
+    m_taxon(pMessageListener), m_pMessageListener(pMessageListener), m_pm_normalize(norm)
+{
+    xSetFromConfig();
+}
+
 CRemoteUpdater::~CRemoteUpdater()
 {
 }
 
-void CRemoteUpdater::ClearCache()
+void CTaxonomyUpdater::ClearCache()
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_taxClient) {
         m_taxClient->ClearCache();
     }
+}
+
+void CRemoteUpdater::ClearCache()
+{
+    m_taxon.ClearCache();
+
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_pm_use_cache && m_pubmed) {
         auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
@@ -618,7 +644,7 @@ namespace
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
+void CTaxonomyUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 {
     TOrgMap org_to_update;
 
@@ -630,8 +656,8 @@ void CRemoteUpdater::UpdateOrgFromTaxon(CSeq_entry& entry)
 
     if (! m_taxClient) {
         m_taxClient.reset(new CCachedTaxon3_impl);
-        if (m_TaxonTimeoutSet)
-            m_taxClient->InitWithTimeout(m_TaxonTimeout, m_TaxonAttempts, m_TaxonExponential);
+        if (m_TimeoutSet)
+            m_taxClient->InitWithTimeout(m_Timeout, m_Attempts, m_Exponential);
         else
             m_taxClient->Init();
     }
@@ -729,7 +755,7 @@ void CRemoteUpdater::SetPubmedClient(CEUtilsUpdater* pubmedUpdater)
     m_pubmed.reset(pubmedUpdater);
 }
 
-CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
+CConstRef<CTaxon3_reply> CTaxonomyUpdater::SendOrgRefList(const vector<CRef<COrg_ref>>& list)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
@@ -739,13 +765,20 @@ CConstRef<CTaxon3_reply> CRemoteUpdater::SendOrgRefList(const vector<CRef<COrg_r
     return reply;
 }
 
-void CRemoteUpdater::ReportStats(std::ostream& os)
+void CTaxonomyUpdater::ReportStats(std::ostream& os)
 {
     std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_taxClient) {
         m_taxClient->ReportStats(os);
     }
+}
+
+void CRemoteUpdater::ReportStats(std::ostream& os)
+{
+    m_taxon.ReportStats(os);
+
+    std::lock_guard<std::mutex> guard(m_Mutex);
 
     if (m_pm_use_cache && m_pubmed) {
         auto* upd = dynamic_cast<CEUtilsUpdaterWithCache*>(m_pubmed.get());
