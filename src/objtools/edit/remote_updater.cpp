@@ -469,6 +469,10 @@ CTaxonomyUpdater::CTaxonomyUpdater(FLogger logger) :
     xSetFromConfig();
 }
 
+CTaxonomyUpdater::~CTaxonomyUpdater()
+{
+}
+
 CPubmedUpdater::CPubmedUpdater(IObjtoolsListener* pMessageListener, CEUtilsUpdater::ENormalize norm) :
     m_pMessageListener(pMessageListener), m_pm_normalize(norm)
 {
