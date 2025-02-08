@@ -98,7 +98,7 @@ private:
     CValidatorThreadPool m_thread_pool2{8};
 
     unique_ptr<CAppConfig> mAppConfig;
-    unique_ptr<edit::CRemoteUpdater> mRemoteUpdater;
+    unique_ptr<edit::CTaxonomyUpdater> mTaxUpdater;
     atomic<size_t> m_NumFiles{0};
     string m_InputDir;
     string m_OutputDir;
@@ -132,7 +132,7 @@ static unique_ptr<CNcbiOstream> s_MakeOstream(const string& in_filename,
 
 CThreadExitData CAsnvalApp::xValidate(const string& filename, CNcbiOstream& ostr)
 {
-    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
+    CAsnvalThreadState mContext(*mAppConfig, mTaxUpdater->GetUpdateFunc());
     return  mContext.ValidateOneFile(filename, ostr);
 }
 
@@ -150,7 +150,7 @@ CThreadExitData CAsnvalApp::xValidateThreadSeparateOutputs(const string& filenam
 
 CThreadExitData CAsnvalApp::xValidateThreadSingleOutput(const string& filename, CAsyncMessageHandler& msgHandler)
 {
-    CAsnvalThreadState mContext(*mAppConfig, mRemoteUpdater->GetUpdateFunc());
+    CAsnvalThreadState mContext(*mAppConfig, mTaxUpdater->GetUpdateFunc());
     return mContext.ValidateOneFile(filename, msgHandler);
 }
 
@@ -442,7 +442,7 @@ int CAsnvalApp::Run()
         m_OutputDir = args["outdir"].AsString();
     }
 
-    mRemoteUpdater.reset(new edit::CRemoteUpdater(nullptr)); //m_logger));
+    mTaxUpdater.reset(new edit::CTaxonomyUpdater(nullptr)); //m_logger));
 
     CTime expires = GetFullVersion().GetBuildInfo().GetBuildTime();
     if (!expires.IsEmpty())

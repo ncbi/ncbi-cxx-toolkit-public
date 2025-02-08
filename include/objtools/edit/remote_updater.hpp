@@ -92,6 +92,7 @@ public:
     CTaxonomyUpdater(IObjtoolsListener* pMessageListener);
     // NCBI_DEPRECATED
     CTaxonomyUpdater(FLogger logger);
+    ~CTaxonomyUpdater();
 
     CConstRef<CTaxon3_reply> SendOrgRefList(const vector<CRef<COrg_ref>>& list);
 

@@ -126,7 +126,7 @@ private:
     bool x_ReportChanges(const string_view prefix, CCleanupChangeCore changes);
 
     // data
-    unique_ptr<edit::CRemoteUpdater> m_remote_updater;
+    unique_ptr<edit::CTaxonomyUpdater> m_tax_updater;
 
     unique_ptr<CObjectOStream> m_Out;    // output
     CRef<CObjectManager>       m_Objmgr; // Object Manager
@@ -658,7 +658,7 @@ int CCleanupApp::Run()
 
     CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
 
-    m_remote_updater.reset(new edit::CRemoteUpdater(nullptr));
+    m_tax_updater.reset(new edit::CTaxonomyUpdater(nullptr));
 
     // need to set output (-o) if specified, if not -o and not -outdir need to use standard output
     bool opened_output = false;
@@ -709,7 +709,7 @@ int CCleanupApp::Run()
         x_ReportChanges("ExtendedCleanup", m_state.m_changes);
 
 #ifdef THIS_IS_TRUNK_BUILD
-    m_remote_updater->ReportStats(std::cerr);
+    m_tax_updater->ReportStats(std::cerr);
 #endif
 
     return 0;
@@ -1011,7 +1011,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
     bool any_changes = false;
 
     if (args["T"]) {
-        validator::CTaxValidationAndCleanup tval(m_remote_updater->GetUpdateFunc());
+        validator::CTaxValidationAndCleanup tval(m_tax_updater->GetUpdateFunc());
         any_changes |= tval.DoTaxonomyUpdate(entry, true);
     }
 
