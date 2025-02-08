@@ -264,8 +264,7 @@ ANMR	c	Asian Network on Microbial Researches
 Ann	s	Annelid collection			
 ANPC	s	Alexander Napolov			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
-ANSP	s	Academy of Natural Sciences	ANSDU		
-ANSP	s	Academy of Natural Sciences of Drexel University	ANSDU		
+ANSP	s	Academy of Natural Sciences of Drexel University			
 ANSP:FISH	s	Academy of Natural Sciences of Drexel University, Ichthyology Collection			
 ANSP:HRP	s	Academy of Natural Sciences of Drexel University, Herpetology collection			
 ANSP:Malacology	s	Academy of Natural Sciences of Drexel University, Malacology Collection			
