@@ -1098,9 +1098,11 @@ CSrvDiagMsg::StopRequest(CRequestContext* ctx)
         s_AddLogPrefix(m_Thr, m_Data, ctx);
         s_AddToLog(m_Data, "request-stop  ");
         s_AddToLog(m_Data, ctx->GetRequestStatus());
+        NCBI_CLANG_ANALYZER_SUPPRESS
         *m_Data->cur_ptr++ = ' ';
         CTimeSpan span(ctx->GetRequestTimer().Elapsed());
         s_AddToLog(m_Data, (Int8)span.GetCompleteSeconds());
+        NCBI_CLANG_ANALYZER_SUPPRESS
         *m_Data->cur_ptr++ = '.';
         s_AddToLog(m_Data, span.GetNanoSecondsAfterSecond(), 9);
         *m_Data->cur_ptr++ = ' ';
