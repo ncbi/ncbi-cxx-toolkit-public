@@ -54,7 +54,7 @@ public:
                        IFormatter* formatter = nullptr);
 
     // NB: item must be allocated on the heap!
-    virtual void AddItem(CConstRef<IFlatItem> item);
+    void AddItem(CConstRef<IFlatItem> item) override;
 
 private:
     CRef<IFlatTextOStream>  m_TextOS;

@@ -50,7 +50,7 @@ class NCBI_FORMAT_EXPORT CGenbankGatherer : public CFlatGatherer
 public:
     CGenbankGatherer(void);
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
+    void x_DoSingleSection(CBioseqContext& ctx) const override;
 
 private:
     void x_GatherWGS(void) const;

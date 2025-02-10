@@ -47,27 +47,27 @@ class NCBI_FORMAT_EXPORT CEmblFormatter : public CFlatItemFormatter
 public:
     CEmblFormatter(void);
 
-    virtual SIZE_TYPE GetWidth(void) const { return 78; }
+    SIZE_TYPE GetWidth(void) const override { return 78; }
 
-    virtual void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os);
+    void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os) override;
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os);
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os);
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os);
-    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
-    virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os);
+    void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) override;
+    void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) override;
+    void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) override;
+    void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) override;
+    void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) override;
+    void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os) override;
+    void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) override;
+    void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os) override;
+    void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os) override;
+    void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) override;
+    void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) override;
+    void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) override;
+    void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) override;
+    void FormatDate(const CDateItem& date, IFlatTextOStream& text_os) override;
 
 private:
-    virtual string& Pad(const string& s, string& out, EPadContext where) const;
+    string& Pad(const string& s, string& out, EPadContext where) const override;
 
     void x_AddXX(IFlatTextOStream& text_os) const;
 

@@ -64,32 +64,32 @@ class NCBI_FORMAT_EXPORT CGBSeqFormatter : public CFlatItemFormatter
 {
 public:
     CGBSeqFormatter(bool isInsd=false);
-    ~CGBSeqFormatter(void);
+    ~CGBSeqFormatter() override;
 
-    virtual void Start       (IFlatTextOStream&);
-    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream&);
-    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream&);
-    virtual void End         (IFlatTextOStream&);
+    void Start(IFlatTextOStream&) override;
+    void StartSection(const CStartSectionItem&, IFlatTextOStream&) override;
+    void EndSection(const CEndSectionItem&, IFlatTextOStream&) override;
+    void End(IFlatTextOStream&) override;
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os);
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os);
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os);
-    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatPrimary(const CPrimaryItem& primary, IFlatTextOStream& text_os);
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os);
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
-    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
-    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
-    virtual void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os);
+    void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) override;
+    void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) override;
+    void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) override;
+    void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) override;
+    void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) override;
+    void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os) override;
+    void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) override;
+    void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os) override;
+    void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os) override;
+    void FormatPrimary(const CPrimaryItem& primary, IFlatTextOStream& text_os) override;
+    void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) override;
+    void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) override;
+    void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) override;
+    void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) override;
+    void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) override;
+    void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) override;
+    void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) override;
+    void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) override;
+    void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os) override;
     virtual void Reset(void);
 
 private:

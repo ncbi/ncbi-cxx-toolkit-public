@@ -144,8 +144,8 @@ protected:
               m_pCanceledCallback(pCanceledCallback)
         { }
 
-        virtual void SetFormatter(IFormatter* formatter);
-        virtual void AddItem (CConstRef<IFlatItem> item);
+        void SetFormatter(IFormatter* formatter) override;
+        void AddItem(CConstRef<IFlatItem> item) override;
 
     private:
         CRef<CFlatItemOStream> m_pUnderlying;
