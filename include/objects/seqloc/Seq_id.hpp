@@ -242,7 +242,7 @@ public:
         eSeqId_tpd               = e_Tpd,
         eSeqId_gpipe             = e_Gpipe,
         eSeqId_named_annot_track = e_Named_annot_track,
-        
+
         // Mask for Seq_id type; allow 8 bits to be safe
         eAcc_type_mask = 0xff,
 
@@ -399,11 +399,11 @@ public:
         eAcc_embl_con        = NCBI_ACC(embl, con,            nuc),  // AN
         eAcc_embl_wgs_nuc    = NCBI_ACC(embl, wgs,            nuc),  // CAAA
         eAcc_embl_wgs_prot   = NCBI_ACC(embl, wgs,            prot), // unused
-        eAcc_embl_wgsm_nuc   = NCBI_ACC(embl, wgs_master,     nuc), 
+        eAcc_embl_wgsm_nuc   = NCBI_ACC(embl, wgs_master,     nuc),
         eAcc_embl_wgsm_prot  = NCBI_ACC(embl, wgs_master,     prot),
         eAcc_embl_wgsv_nuc   = NCBI_ACC(embl, wgs_vdb_only,   nuc),
         eAcc_embl_wgsv_prot  = NCBI_ACC(embl, wgs_vdb_only,   prot),
-        eAcc_embl_wgsvm_nuc  = NCBI_ACC(embl, wgs_vdb_master, nuc), 
+        eAcc_embl_wgsvm_nuc  = NCBI_ACC(embl, wgs_vdb_master, nuc),
         eAcc_embl_wgsvm_prot = NCBI_ACC(embl, wgs_vdb_master, prot),
         eAcc_embl_mga        = NCBI_ACC(embl, mga,            nuc),  // unused
 
@@ -681,8 +681,8 @@ public:
     /// and certain punctuation characters (-_.:*# as of August 2010).
     static bool IsValidLocalID(const CTempString& s);
 
-    /// Perform rudimentary validation on potential local IDs, whose 
-    /// contents should not exceed fifty characters and are limited 
+    /// Perform rudimentary validation on potential local IDs, whose
+    /// contents should not exceed fifty characters and are limited
     /// to ASCII characters excluding >[]|\""
     static TErrorFlags CheckLocalID(const CTempString& s);
 
@@ -771,6 +771,8 @@ public:
     /// Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id)
         { return id ? id->TextScore() : kMax_Int; }
+    static int ConstScore(const CConstRef<CSeq_id>& id)
+        { return id ? id->TextScore() : kMax_Int; }
     static int BestRank(const CRef<CSeq_id>& id)
         { return id ? id->BestRankScore() : kMax_Int; }
     static int WorstRank(const CRef<CSeq_id>& id)
@@ -817,7 +819,7 @@ public:
     /// ComposeOSLT().
     /// @sa ComposeOSLT
     enum EComposeOSLTFlags {
-        fAllowLocalId      = (1 << 0),  ///< 
+        fAllowLocalId      = (1 << 0),  ///<
         fGpipeAddSecondary = (1 << 1)   ///< Add "ACC.VER(=1)" for a 2ndary id
     };
     typedef int TComposeOSLTFlags;
