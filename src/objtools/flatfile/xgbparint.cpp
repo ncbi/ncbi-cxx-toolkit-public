@@ -428,7 +428,7 @@ static int xgbparselex_ver(string_view linein, TTokens& tokens, bool accver)
             STokenInfo current_token;
             if (isdigit(line[current_col])) {
                 current_token.choice = ETokenType::eNumber;
-                CTempString tempString(line.c_str() + current_col, size_t(length - current_col));
+                string_view tempString(line.c_str() + current_col, size_t(length - current_col));
                 auto        not_digit_pos = tempString.find_first_not_of("0123456789");
                 auto        num_digits    = (not_digit_pos == string_view::npos) ? size_t(length - current_col) : not_digit_pos;
                 current_token.data        = string(line.c_str() + current_col, num_digits);
@@ -958,12 +958,13 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
 
 /*--------------- xgbint_ver ()--------------------*/
 /* sometimes returns points */
-static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
-                                 TTokenIt&         currentPt,
-                                 const TTokens&    tokens,
-                                 int&              numErrors,
-                                 const TSeqIdList& seq_ids,
-                                 bool              accver)
+static CRef<CSeq_loc> xgbint_ver(
+    bool&             keep_rawPt,
+    TTokenIt&         currentPt,
+    const TTokens&    tokens,
+    int&              numErrors,
+    const TSeqIdList& seq_ids,
+    bool              accver)
 {
     auto ret = Ref(new CSeq_loc());
 
@@ -988,7 +989,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
             new_id.Reset();
             keep_rawPt = true;
             ++numErrors;
-            return CRef<CSeq_loc>();
+            return {};
         }
 
     } else if (! seq_ids.empty()) {
@@ -1007,7 +1008,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++numErrors;
-            return CRef<CSeq_loc>();
+            return {};
         }
     }
 
@@ -1020,7 +1021,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                currentPt);
                 keep_rawPt = true;
                 ++numErrors;
-                return CRef<CSeq_loc>();
+                return {};
             }
             break;
         case ETokenType::eCaret:
@@ -1029,7 +1030,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++numErrors;
-            return CRef<CSeq_loc>();
+            return {};
         case ETokenType::eLt:
             if (new_id.NotEmpty()) {
                 xgbparse_error("duplicate \'<\'",
@@ -1037,7 +1038,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                currentPt);
                 keep_rawPt = true;
                 ++numErrors;
-                return CRef<CSeq_loc>();
+                return {};
             }
             break;
         case ETokenType::eGt:
@@ -1058,7 +1059,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
             xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, numErrors, tokens, currentPt);
 
             if (numErrors) {
-                return CRef<CSeq_loc>();
+                return {};
             }
 
             if (currentPt != end_it) {
@@ -1076,7 +1077,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                    currentPt);
                     keep_rawPt = true;
                     ++numErrors;
-                    return CRef<CSeq_loc>();
+                    return {};
                 case ETokenType::eComma:
                 case ETokenType::eRight: /* valid thing to leave on*/
                     /*--------------but have a point, not an interval----*/
@@ -1090,7 +1091,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                    currentPt);
                     keep_rawPt = true;
                     ++numErrors;
-                    return CRef<CSeq_loc>();
+                    return {};
                 case ETokenType::eCaret:
                     if (ret->GetInt().IsSetFuzz_from()) {
                         xgbparse_error("\'<\' then \'^\'",
@@ -1098,7 +1099,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                        currentPt);
                         keep_rawPt = true;
                         ++numErrors;
-                        return CRef<CSeq_loc>();
+                        return {};
                     }
 
                     ret->SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
@@ -1114,7 +1115,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                        currentPt);
                         keep_rawPt = true;
                         ++numErrors;
-                        return CRef<CSeq_loc>();
+                        return {};
                     }
                     /*--no break on purpose here ---*/
                     NCBI_FALLTHROUGH;
@@ -1129,7 +1130,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                                            currentPt);
                             keep_rawPt = true;
                             ++numErrors;
-                            return CRef<CSeq_loc>();
+                            return {};
                         }
                     }
 
@@ -1175,7 +1176,7 @@ static CRef<CSeq_loc> xgbint_ver(bool&             keep_rawPt,
                            currentPt);
             keep_rawPt = true;
             ++numErrors;
-            return CRef<CSeq_loc>();
+            return {};
         }
     }
 
@@ -1475,12 +1476,12 @@ CRef<CSeq_loc> xgbparseint_ver(string_view raw_intervals, bool& keep_rawPt, int&
 
     if (tokens.empty()) {
         numErrors = 1;
-        return CRef<CSeq_loc>();
+        return {};
     }
 
     if (numErrors) {
         keep_rawPt = true;
-        return CRef<CSeq_loc>();
+        return {};
     }
 
     CRef<CSeq_loc> ret;
