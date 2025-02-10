@@ -222,22 +222,26 @@ CAlignCleanup::CAlignCleanup(CScope& scope)
 
 void CAlignCleanup::Cleanup(const TAligns& aligns_in,
                             TAligns&       aligns_out,
-                            EMode          mode)
+                            EMode          mode,
+                            CSeq_align::TSegs::E_Choice output_seg_type)
 {
     TConstAligns const_aligns_in;
     copy(aligns_in.begin(), aligns_in.end(), back_inserter(const_aligns_in));
-    Cleanup(const_aligns_in, aligns_out, mode);
+    Cleanup(const_aligns_in, aligns_out, mode, output_seg_type);
 }
 
 void CAlignCleanup::Cleanup(const TConstAligns& aligns_in,
                             TAligns&            aligns_out,
-                            EMode               mode)
+                            EMode               mode,
+                            CSeq_align::TSegs::E_Choice output_seg_type)
 {
     size_t size = aligns_in.size();
     if (size == 0) {
         return;
     }
-    if (size == 1) {
+
+    if (size == 1  &&
+        aligns_in.front()->GetSegs().Which() == output_seg_type) {
         // short cut: just copy the alignment
         CRef<CSeq_align> align(new CSeq_align);
         align->Assign(*aligns_in.front());
@@ -247,18 +251,19 @@ void CAlignCleanup::Cleanup(const TConstAligns& aligns_in,
 
     switch (mode) {
     case eAlignVec:
-        x_Cleanup_AlignVec(aligns_in, aligns_out);
+        x_Cleanup_AlignVec(aligns_in, aligns_out, output_seg_type);
         break;
 
     case eAnchoredAlign:
-        x_Cleanup_AnchoredAln(aligns_in, aligns_out);
+        x_Cleanup_AnchoredAln(aligns_in, aligns_out, output_seg_type);
         break;
     }
 }
 
 
 void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
-                                          TAligns&            aligns_out)
+                                          TAligns&            aligns_out,
+                                          CSeq_align::TSegs::E_Choice output_seg_type)
 {
     CAlnContainer aln_container;
 
@@ -396,7 +401,7 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
     vector< CRef<CSeq_align> > ds_aligns;
     CreateSeqAlignFromEachPairwiseAln
         (out_anchored_aln.GetPairwiseAlns(), out_anchored_aln.GetAnchorRow(),
-         ds_aligns, CSeq_align::TSegs::e_Denseg);
+         ds_aligns, output_seg_type);
 
     NON_CONST_ITERATE (vector< CRef<CSeq_align> >, it, ds_aligns) {
         (*it)->SetType(CSeq_align::eType_partial);
@@ -414,8 +419,14 @@ void CAlignCleanup::x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
 
 
 void CAlignCleanup::x_Cleanup_AlignVec(const TConstAligns& aligns_in,
-                                       TAligns&            aligns_out)
+                                       TAligns&            aligns_out,
+                                       CSeq_align::TSegs::E_Choice output_seg_type)
 {
+    if (output_seg_type != CSeq_align::TSegs::e_Denseg) {
+        NCBI_THROW(CException, eUnknown,
+                   "AlignVec alignment merging only supports Denseg output");
+    }
+
     /// first, sort the alignments by the set of IDs they contain
     typedef set<CSeq_id_Handle> TIdSet;
     typedef map<TIdSet, list< CConstRef<CSeq_align> > > TAlignments;

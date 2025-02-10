@@ -66,10 +66,12 @@ public:
 
     void Cleanup(const TAligns& aligns_in,
                  TAligns&       aligns_out,
-                 EMode          mode = eDefault);
+                 EMode          mode = eDefault,
+                 CSeq_align::TSegs::E_Choice output_seg_type = CSeq_align::TSegs::e_Denseg);
     void Cleanup(const TConstAligns& aligns_in,
                  TAligns&            aligns_out,
-                 EMode               mode = eDefault);
+                 EMode               mode = eDefault,
+                 CSeq_align::TSegs::E_Choice output_seg_type = CSeq_align::TSegs::e_Denseg);
 
 //     // select best query pieces across all subjects
 //     void CleanupByQuery(const TAligns& aligns_in,
@@ -104,9 +106,11 @@ private:
     bool m_FillUnaligned;
 
     void x_Cleanup_AlignVec(const TConstAligns& aligns_in,
-                            TAligns&            aligns_out);
+                            TAligns&            aligns_out,
+                            CSeq_align::TSegs::E_Choice output_seg_type);
     void x_Cleanup_AnchoredAln(const TConstAligns& aligns_in,
-                               TAligns&            aligns_out);
+                               TAligns&            aligns_out,
+                               CSeq_align::TSegs::E_Choice output_seg_type);
 };
 
 
