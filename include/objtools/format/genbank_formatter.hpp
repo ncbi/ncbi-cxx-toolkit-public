@@ -73,36 +73,36 @@ class CSeq_loc;
 class NCBI_FORMAT_EXPORT CGenbankFormatter : public CFlatItemFormatter
 {
 public:
-    CGenbankFormatter(void);
+    CGenbankFormatter();
 
-    virtual SIZE_TYPE GetWidth(void) const { return 79; }
+    SIZE_TYPE GetWidth() const override { return 79; }
 
-    virtual void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os);
+    void EndSection(const CEndSectionItem&, IFlatTextOStream& text_os) override;
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os);
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os);
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os);
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os);
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os);
-    virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os);
-    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os);
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
-    virtual void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os);
-    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
-    virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
-    virtual void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os);
-    virtual void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&);
-    virtual void FormatHtmlAnchor(const CHtmlAnchorItem&, IFlatTextOStream&);
+    void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) override;
+    void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) override;
+    void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) override;
+    void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) override;
+    void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) override;
+    void FormatSource(const CSourceItem& source, IFlatTextOStream& text_os) override;
+    void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) override;
+    void FormatCache(const CCacheItem& csh, IFlatTextOStream& text_os) override;
+    void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os) override;
+    void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) override;
+    void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) override;
+    void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) override;
+    void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) override;
+    void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) override;
+    void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) override;
+    void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) override;
+    void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) override;
+    void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) override;
+    void FormatTSA(const CTSAItem& tsa, IFlatTextOStream& text_os) override;
+    void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) override;
+    void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) override;
+    void FormatGap(const CGapItem& gap, IFlatTextOStream& text_os) override;
+    void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) override;
+    void FormatHtmlAnchor(const CHtmlAnchorItem&, IFlatTextOStream&) override;
 
 private:
     // source

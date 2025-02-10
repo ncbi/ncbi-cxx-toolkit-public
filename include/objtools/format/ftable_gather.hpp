@@ -44,7 +44,7 @@ class NCBI_FORMAT_EXPORT CFtableGatherer : public CFlatGatherer
 public:
     CFtableGatherer(void);
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
+    void x_DoSingleSection(CBioseqContext& ctx) const override;
 };
 
 

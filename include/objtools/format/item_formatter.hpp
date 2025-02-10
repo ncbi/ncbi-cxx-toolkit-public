@@ -78,43 +78,41 @@ public:
     // virtual constructor
     static CFlatItemFormatter* New(CFlatFileConfig::TFormat format);
 
-    virtual ~CFlatItemFormatter(void);
-
+    ~CFlatItemFormatter() override;
 
     // control methods
-    virtual void Start       (IFlatTextOStream&);
-    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream&) {}
-    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream&)   {}
-    virtual void End         (IFlatTextOStream&);
+    void Start(IFlatTextOStream&) override;
+    void StartSection(const CStartSectionItem&, IFlatTextOStream&) override {}
+    void EndSection(const CEndSectionItem&, IFlatTextOStream&) override {}
+    void End(IFlatTextOStream&) override;
 
     // Format methods
     void Format(const IFlatItem& item, IFlatTextOStream& text_os);
-    virtual void FormatLocus     (const CLocusItem&, IFlatTextOStream&)       {}
-    virtual void FormatDefline   (const CDeflineItem&, IFlatTextOStream&)     {}
-    virtual void FormatAccession (const CAccessionItem&, IFlatTextOStream&)   {}
-    virtual void FormatVersion   (const CVersionItem&, IFlatTextOStream&)     {}
-    virtual void FormatSegment   (const CSegmentItem&, IFlatTextOStream&)     {}
-    virtual void FormatKeywords  (const CKeywordsItem&, IFlatTextOStream&)    {}
-    virtual void FormatSource    (const CSourceItem&, IFlatTextOStream&)      {}
-    virtual void FormatReference (const CReferenceItem&, IFlatTextOStream&)   {}
-    virtual void FormatCache     (const CCacheItem&, IFlatTextOStream&)       {}
-    virtual void FormatComment   (const CCommentItem&, IFlatTextOStream&)     {}
-    virtual void FormatBasecount (const CBaseCountItem&, IFlatTextOStream&)   {}
-    virtual void FormatSequence  (const CSequenceItem&, IFlatTextOStream&)    {}
-    virtual void FormatFeatHeader(const CFeatHeaderItem&, IFlatTextOStream&)  {}
-    virtual void FormatFeature   (const CFeatureItemBase&, IFlatTextOStream&) {}
-    virtual void FormatDate      (const CDateItem&, IFlatTextOStream&)        {}
-    virtual void FormatDBSource  (const CDBSourceItem&, IFlatTextOStream&)    {}
-    virtual void FormatPrimary   (const CPrimaryItem&, IFlatTextOStream&)     {}
-    virtual void FormatContig    (const CContigItem&, IFlatTextOStream&)      {}
-    virtual void FormatWGS       (const CWGSItem&, IFlatTextOStream&)         {}
-    virtual void FormatTSA       (const CTSAItem&, IFlatTextOStream&)         {}
-    virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
-    virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
-    virtual void FormatGap       (const CGapItem&, IFlatTextOStream&)         {}
-    virtual void FormatAlignment (const CAlignmentItem& , IFlatTextOStream&)  {}
-    virtual void FormatGenomeProject(
-                                  const CGenomeProjectItem&, IFlatTextOStream&) {}
+    void FormatLocus(const CLocusItem&, IFlatTextOStream&) override {}
+    void FormatDefline(const CDeflineItem&, IFlatTextOStream&) override {}
+    void FormatAccession(const CAccessionItem&, IFlatTextOStream&) override {}
+    void FormatVersion(const CVersionItem&, IFlatTextOStream&) override {}
+    void FormatSegment(const CSegmentItem&, IFlatTextOStream&) override {}
+    void FormatKeywords(const CKeywordsItem&, IFlatTextOStream&) override {}
+    void FormatSource(const CSourceItem&, IFlatTextOStream&) override {}
+    void FormatReference(const CReferenceItem&, IFlatTextOStream&) override {}
+    void FormatCache(const CCacheItem&, IFlatTextOStream&) override {}
+    void FormatComment(const CCommentItem&, IFlatTextOStream&) override {}
+    void FormatBasecount(const CBaseCountItem&, IFlatTextOStream&) override {}
+    void FormatSequence(const CSequenceItem&, IFlatTextOStream&) override {}
+    void FormatFeatHeader(const CFeatHeaderItem&, IFlatTextOStream&) override {}
+    void FormatFeature(const CFeatureItemBase&, IFlatTextOStream&) override {}
+    void FormatDate(const CDateItem&, IFlatTextOStream&) override {}
+    void FormatDBSource(const CDBSourceItem&, IFlatTextOStream&) override {}
+    void FormatPrimary(const CPrimaryItem&, IFlatTextOStream&) override {}
+    void FormatContig(const CContigItem&, IFlatTextOStream&) override {}
+    void FormatWGS(const CWGSItem&, IFlatTextOStream&) override {}
+    void FormatTSA(const CTSAItem&, IFlatTextOStream&) override {}
+    void FormatGenome(const CGenomeItem&, IFlatTextOStream&) override {}
+    void FormatOrigin(const COriginItem&, IFlatTextOStream&) override {}
+    void FormatGap(const CGapItem&, IFlatTextOStream&) override {}
+    void FormatAlignment(const CAlignmentItem&, IFlatTextOStream&) override {}
+    void FormatGenomeProject(const CGenomeProjectItem&, IFlatTextOStream&) override {}
 
     // Context
     void SetContext(CFlatFileContext& ctx);

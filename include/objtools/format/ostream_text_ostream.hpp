@@ -54,14 +54,14 @@ public:
     COStreamTextOStream(void);
     COStreamTextOStream(CNcbiOstream& os);
 
-    virtual void AddParagraph(const list<string>& text,
-                              const CSerialObject* obj = nullptr);
+    void AddParagraph(const list<string>& text,
+                      const CSerialObject* obj = nullptr) override;
 
-    virtual void AddLine( const CTempString& line,
-                          const CSerialObject* obj = nullptr,
-                          EAddNewline add_newline = eAddNewline_Yes );
+    void AddLine(const CTempString& line,
+                 const CSerialObject* obj = nullptr,
+                 EAddNewline add_newline = eAddNewline_Yes) override;
 
-    virtual void Flush( void );
+    void Flush() override;
 
 private:
     CNcbiOstream&   m_Ostream;

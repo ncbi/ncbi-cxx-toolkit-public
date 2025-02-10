@@ -47,7 +47,7 @@ class NCBI_FORMAT_EXPORT CEmblGatherer : public CFlatGatherer
 public:
     CEmblGatherer(void);
 
-    virtual void x_DoSingleSection(CBioseqContext& ctx) const;
+    void x_DoSingleSection(CBioseqContext& ctx) const override;
 };
 
 
