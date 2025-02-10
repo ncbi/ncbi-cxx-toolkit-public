@@ -490,6 +490,25 @@ void CGBSeqFormatter::FormatDefline
 //
 // Accession
 
+static bool s_IsSuccessor(const string& acc, const string& prev)
+{
+    if (acc.length() != prev.length()) {
+        return false;
+    }
+    size_t i;
+    for (i = 0; i < acc.length()  &&  !isdigit((unsigned char) acc[i]); ++i) {
+        if (acc[i] != prev[i]) {
+            return false;
+        }
+    }
+    if (i < acc.length()) {
+        if (NStr::StringToUInt(acc.substr(i)) == NStr::StringToUInt(prev.substr(i)) + 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CGBSeqFormatter::FormatAccession
 (const CAccessionItem& acc,
  IFlatTextOStream& text_os)
@@ -519,16 +538,58 @@ void CGBSeqFormatter::FormatAccession
         m_OtherSeqIDs = others;
     }
 
+    static const size_t kAccCutoff = 20;
+    static const size_t kBinCutoff = 5;
+
     bool hasExtras = false;
     string extras;
-    ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
-        extras.append( s_CombineStrings("      ", "GBSecondary-accn", CGBSecondary_accn(*it)));
-        hasExtras = true;
+
+    const CAccessionItem::TExtra_accessions& xtra = acc.GetExtraAccessions();
+
+    if (xtra.size() < kAccCutoff) {
+        ITERATE (CAccessionItem::TExtra_accessions, it, acc.GetExtraAccessions()) {
+            extras.append( s_CombineStrings("      ", "GBSecondary-accn", CGBSecondary_accn(*it)));
+            hasExtras = true;
+        }
+        if (hasExtras) {
+            m_SecondaryAccns = extras;
+        }
+        return;
+    }
+
+    _ASSERT(!xtra.empty());
+
+    typedef vector<string>      TAccBin;
+    typedef vector <TAccBin>    TAccBins;
+    TAccBins bins;
+    TAccBin* curr_bin = nullptr;
+
+    // populate the bins
+    CAccessionItem::TExtra_accessions::const_iterator prev = xtra.begin();
+    ITERATE (CAccessionItem::TExtra_accessions, it, xtra) {
+        if (!s_IsSuccessor(*it, *prev) || NStr::EndsWith( *prev, "000000" ) ) {
+            bins.push_back(TAccBin());
+            curr_bin = &bins.back();
+        }
+        curr_bin->push_back(*it);
+        prev = it;
+    }
+
+    ITERATE (TAccBins, bin_it, bins) {
+        if (bin_it->size() <= kBinCutoff) {
+            ITERATE (CAccessionItem::TExtra_accessions, it, *bin_it) {
+                extras.append( s_CombineStrings("      ", "GBSecondary-accn", CGBSecondary_accn(*it)));
+                hasExtras = true;
+            }
+        } else {
+            string rnge = bin_it->front() + "-" + bin_it->back();
+            extras.append( s_CombineStrings("      ", "GBSecondary-accn", rnge));
+            hasExtras = true;
+        }
     }
     if (hasExtras) {
         m_SecondaryAccns = extras;
     }
-
 }
 
 
@@ -953,14 +1014,12 @@ void CGBSeqFormatter::FormatFeature
         CConstRef<CSeq_id> best(&it.GetSeq_id());
         if ( best->IsGi() ) {
             CConstRef<CSynonymsSet> syns = scope.GetSynonyms(*best);
-            vector< CRef<CSeq_id> > ids;
-            ITERATE (CSynonymsSet, id_iter, *syns) {
-                CConstRef<CSeq_id> id =
-                    syns->GetSeq_id_Handle(id_iter).GetSeqId();
-                CRef<CSeq_id> sip(const_cast<CSeq_id*>(id.GetPointerOrNull()));
-                ids.push_back(sip);
+            list< CConstRef<CSeq_id> > ids;
+            for (auto& syn_id: *syns) {
+                ids.push_back(syn_id.GetSeqId());
             }
-            best.Reset(FindBestChoice(ids, CSeq_id::Score));
+            if (ids.size()>1)
+                best.Reset(FindBestChoice(ids, CSeq_id::ConstScore));
         }
         str.append( s_CombineStrings("            ", "GBInterval_accession", best->GetSeqIdString(true)));
 
