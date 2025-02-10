@@ -161,9 +161,29 @@ BOOST_AUTO_TEST_CASE(CheckParseInt)
     bool accver = true;
 
     CSeq_id::ParseIDs(seqIds, "X98106.1");
-    string intervals{"join(41880..42259,1..121)"};
-    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+    string intervals;
 
+    intervals = "1";
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(pLoc->IsPnt());
+    BOOST_CHECK_EQUAL(pLoc->GetPnt().GetPoint(), 0);
+
+    intervals = "1.";
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(! pLoc);
+
+    intervals = "1..";
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(! pLoc);
+
+    intervals = "1..2";
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
+    BOOST_CHECK(pLoc->IsInt());
+    BOOST_CHECK_EQUAL(pLoc->GetStart(eExtreme_Positional), 0);
+    BOOST_CHECK_EQUAL(pLoc->GetStop(eExtreme_Positional), 1);
+
+    intervals = "join(41880..42259,1..121)";
+    pLoc = xgbparseint_ver(intervals, keepRawPt, numErrsPt, seqIds, accver);
     BOOST_CHECK(pLoc->IsMix());
     {
         const auto& locMix = pLoc->GetMix();
