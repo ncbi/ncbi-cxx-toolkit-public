@@ -224,6 +224,10 @@ int CScoreBuilder::GetBlastScoreDenseg(CScope& scope,
     CAlnVec vec(ds, scope);
     CBioseq_Handle bsh1 = vec.GetBioseqHandle(0);
     CBioseq_Handle bsh2 = vec.GetBioseqHandle(1);
+    if ( !bsh1  ||  !bsh2 ) {
+        NCBI_THROW(CException, eUnknown,
+                   "one or more sequences are not retrievable");
+    }
     CSeqVector vec1(bsh1);
     CSeqVector vec2(bsh2);
     CSeq_inst::TMol mol1 = vec1.GetSequenceType();
@@ -336,6 +340,10 @@ int CScoreBuilder::GetBlastScoreStd(CScope& scope,
 {
     CSeq_id_Handle bsh1 = CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
     CSeq_id_Handle bsh2 = CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
+    if ( !bsh1  ||  !bsh2 ) {
+        NCBI_THROW(CException, eUnknown,
+                   "one or more sequences are not retrievable");
+    }
 
     CSeq_inst::TMol mol1 = scope.GetBioseqHandle(bsh1).GetSequenceType();
     CSeq_inst::TMol mol2 = scope.GetBioseqHandle(bsh2).GetSequenceType();
@@ -412,6 +420,12 @@ int CScoreBuilder::GetBlastScoreProtToNucl(CScope& scope,
     ENa_strand strand = align.GetSeqStrand(1);
     CBioseq_Handle prot_bsh = scope.GetBioseqHandle(prot_idh);
     CBioseq_Handle genomic_bsh = scope.GetBioseqHandle(genomic_idh);
+
+    if ( !prot_bsh  ||  !genomic_bsh ) {
+        NCBI_THROW(CException, eUnknown,
+                   "one or more sequences are not retrievable");
+    }
+
     CSeqVector prot_vec   (prot_bsh);
 
     int gcode = 1;
