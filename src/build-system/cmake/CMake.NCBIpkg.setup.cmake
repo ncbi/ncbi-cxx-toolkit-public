@@ -193,7 +193,6 @@ elseif(NCBI_PTBCFG_USECONAN)
     message("#############################################################################")
 
     if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-        set(CONAN_CMAKE_CXX_STANDARD 17)
         include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
         conan_basic_setup(NO_OUTPUT_DIRS KEEP_RPATHS)
     endif()
