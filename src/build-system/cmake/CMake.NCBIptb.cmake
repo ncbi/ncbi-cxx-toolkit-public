@@ -64,7 +64,9 @@
 ##      NCBI_set_pch_define( macro to define)
 ##
 ##      NCBI_uses_toolkit_libraries(  list of libraries)
+##      NCBI_link_libraries(  list of libraries) - synonym to NCBI_uses_toolkit_libraries
 ##      NCBI_optional_toolkit_libraries( COMP list of libraries) - if component COMP is found, use these libraries
+##      NCBI_optional_link_libraries( COMP list of libraries) - synonym to NCBI_optional_toolkit_libraries
 ##      NCBI_uses_external_libraries( list of libraries)
 ##      NCBI_custom_target_dependencies(list of toolkit libraries or apps)
 ##      NCBI_add_definitions(         list of compiler definitions)
@@ -561,11 +563,19 @@ macro(NCBI_set_guientry)
 endmacro()
 
 #############################################################################
+macro(NCBI_link_libraries)
+    NCBI_uses_toolkit_libraries(${ARGV})
+endmacro()
+
 macro(NCBI_uses_toolkit_libraries)
     set(NCBI_${NCBI_PROJECT}_NCBILIB ${NCBI_${NCBI_PROJECT}_NCBILIB} "${ARGV}")
 endmacro()
 
 #############################################################################
+macro(NCBI_optional_link_libraries)
+    NCBI_optional_toolkit_libraries(${ARGV})
+endmacro()
+
 macro(NCBI_optional_toolkit_libraries _comp)
     set( _found FALSE)
     if(NCBI_COMPONENT_${_comp}_FOUND OR NCBI_REQUIRE_${_comp}_FOUND)
