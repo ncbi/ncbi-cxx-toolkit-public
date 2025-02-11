@@ -87,7 +87,7 @@ EOF
 fi
 
 export CC CXX
-gccver=12.2.0
+gccver=13.2.0
 #if [ -x ${script_dir}/toolchains/cmkTool.sh ]; then
 if true; then
   export GCCVER="${gccver}"

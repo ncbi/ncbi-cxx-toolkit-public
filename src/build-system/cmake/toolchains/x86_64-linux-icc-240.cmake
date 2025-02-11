@@ -4,13 +4,13 @@
 #############################################################################
 ##
 ##  NCBI CMake wrapper
-##  ICC 21.0 toolchain
+##  ICC 24.0 toolchain
 
 set(NCBI_PTBCFG_FLAGS_DEFINED YES)
 include_guard(GLOBAL)
 
-set(CMAKE_C_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icx")
-set(CMAKE_CXX_COMPILER "/usr/local/intel/Compiler/21.0/compiler/latest/linux/bin/icpx")
+set(CMAKE_C_COMPILER "/usr/local/intel/Compiler/24.0/compiler/latest/bin/icx")
+set(CMAKE_CXX_COMPILER "/usr/local/intel/Compiler/24.0/compiler/latest/bin/icpx")
 
 set(CMAKE_C_FLAGS_INIT
     "-isystem /opt/ncbi/gcc/13.2.0/include/c++/13.2.0 \
@@ -33,8 +33,8 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO  "-g -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT
-    "-L/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
-    -Wl,-rpath,/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
+    "-L/usr/local/intel/Compiler/24.0/compiler/latest/lib \
+    -Wl,-rpath,/usr/local/intel/Compiler/24.0/compiler/latest/lib \
     -lintlc \
     -L/opt/ncbi/gcc/13.2.0/lib/gcc/x86_64-redhat-linux-gnu/13.2.0 \
     -B/opt/ncbi/gcc/13.2.0/lib/gcc/x86_64-redhat-linux-gnu/13.2.0 \
@@ -44,8 +44,8 @@ set(CMAKE_EXE_LINKER_FLAGS_INIT
 )
 
 set(CMAKE_SHARED_LINKER_FLAGS_INIT
-    "-L/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
-    -Wl,-rpath,/usr/local/intel/Compiler/21.0/compiler/latest/linux/compiler/lib/intel64 \
+    "-L/usr/local/intel/Compiler/24.0/compiler/latest/lib \
+    -Wl,-rpath,/usr/local/intel/Compiler/24.0/compiler/latest/lib \
     -lintlc \
     -L/opt/ncbi/gcc/13.2.0/lib/gcc/x86_64-redhat-linux-gnu/13.2.0 \
     -B/opt/ncbi/gcc/13.2.0/lib/gcc/x86_64-redhat-linux-gnu/13.2.0 \
