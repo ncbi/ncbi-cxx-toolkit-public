@@ -93,7 +93,10 @@ void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
     _ASSERT(local);
     init.m_Mutex.Reset();
     if ( local->ReferencedOnlyOnce() ) {
+#ifndef NCBI_USE_TSAN
+        // thread sanitizer cannot understand the logic of reusing mutexes
         m_MutexList.push_back(local);
+#endif
     }
     _ASSERT(!mutex);
 }
