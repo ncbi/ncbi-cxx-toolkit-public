@@ -7,6 +7,10 @@ shift
 if test "$GENBANK_LOADER_METHOD" = psg; then
     GENBANK_LOADER_PSG=1
 else
+    if test "$ONLY_PSG" = 1; then
+        echo "Skipping non-PSG test because ONLY_PSG=1"
+	exit
+    fi
     GENBANK_LOADER_PSG=0
 fi
 export GENBANK_LOADER_PSG
