@@ -73,13 +73,21 @@ public:
     virtual int Run(void);
     bool ProcessBlock(size_t pass,
                       const vector<CSeq_id_Handle>& ids,
-                      const vector<string>& reference) const;
+                      const vector<string>& reference,
+                      CRef<CScope> scope) const;
     CRef<CScope> MakeScope(void) const;
 
     typedef vector<CSeq_id_Handle> TIds;
 
     CRandom::TValue m_Seed;
     size_t m_RunCount;
+    enum EReuseScope {
+        eReuseScope_none,
+        eReuseScope_iteration,
+        eReuseScope_all
+    };
+    EReuseScope m_ReuseScope;
+    CRef<CScope> m_Scope;
     size_t m_RunSize;
     TIds m_Ids;
     vector<string> m_Reference;
@@ -140,8 +148,15 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eOutputFile);
     args.AddDefaultKey
         ("count", "Count",
-         "Number of iterations to run (default: 10)",
+         "Number of iterations to run",
          CArgDescriptions::eInteger, "10");
+    args.AddDefaultKey
+        ("reuse_scope", "ReuseScope",
+         "Re-use OM scope",
+         CArgDescriptions::eString, "none");
+    args.SetConstraint("reuse_scope",
+                       &(*new CArgAllow_Strings,
+                         "none", "iteration", "all"));
     string size_limit = "1000000";
     // ThreadSanitizer has a limit on number of mutexes held by a thread
 #ifdef NCBI_USE_TSAN
@@ -230,6 +245,13 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     m_Verify = args["verify"];
     m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
+    m_ReuseScope = eReuseScope_none;
+    if ( args["reuse_scope"].AsString() == "iteration" ) {
+        m_ReuseScope = eReuseScope_iteration;
+    }
+    else if ( args["reuse_scope"].AsString() == "all" ) {
+        m_ReuseScope = eReuseScope_all;
+    }
     m_RunSize = args["size"].AsInteger();
     if ( args["reference"] ) {
         CNcbiIstream& in = args["reference"].AsInputFile();
@@ -251,6 +273,9 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
         ITERATE ( vector<string>, i, names ) {
             other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
         }
+    }
+    if ( m_ReuseScope == eReuseScope_all ) {
+        m_Scope = MakeScope();
     }
     return true;
 }
@@ -278,12 +303,12 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 
 bool CTestApplication::ProcessBlock(size_t pass,
                                     const vector<CSeq_id_Handle>& ids,
-                                    const vector<string>& reference) const
+                                    const vector<string>& reference,
+                                    CRef<CScope> scope) const
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
     data->SetParams(ids, m_GetFlags);
     {{
-        CRef<CScope> scope = MakeScope();
         if ( m_Single ) {
             data->LoadSingle(*scope);
         }
@@ -298,8 +323,8 @@ bool CTestApplication::ProcessBlock(size_t pass,
         errors = data->GetErrors();
     }
     else if ( m_Verify ) {
-        CRef<CScope> scope = MakeScope();
-        data->LoadVerify(*scope);
+        CRef<CScope> verify_scope = MakeScope();
+        data->LoadVerify(*verify_scope);
         errors = data->GetErrors();
     }
     if ( m_Verbose ) {
@@ -325,6 +350,7 @@ bool CTestApplication::ProcessBlock(size_t pass,
 int CTestApplication::Run(void)
 {
     size_t error_count = 0;
+    CRef<CScope> scope = m_Scope;
     try {
         vector<CSeq_id_Handle> ids;
         vector<string> reference;
@@ -357,8 +383,14 @@ int CTestApplication::Run(void)
                     reference.push_back(data[i].second);
                 }
             }
-            if ( !ProcessBlock(run_i, ids, reference) ) {
+            if ( m_ReuseScope == eReuseScope_none || !scope ) {
+                scope = MakeScope();
+            }
+            if ( !ProcessBlock(run_i, ids, reference, scope) ) {
                 error_count += 1;
+            }
+            if ( m_ReuseScope == eReuseScope_none ) {
+                scope = null;
             }
         }
     }

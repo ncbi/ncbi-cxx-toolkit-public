@@ -76,10 +76,18 @@ public:
 
     typedef vector<CSeq_id_Handle> TIds;
     bool ProcessBlock(const TIds& ids,
-                      const vector<string>& reference) const;
+                      const vector<string>& reference,
+                      CRef<CScope> scope) const;
 
     CRandom::TValue m_Seed;
     size_t m_RunCount;
+    enum EReuseScope {
+        eReuseScope_none,
+        eReuseScope_iteration,
+        eReuseScope_all
+    };
+    EReuseScope m_ReuseScope;
+    CRef<CScope> m_Scope;
     size_t m_RunSize;
     TIds m_Ids;
     vector<string> m_Reference;
@@ -125,6 +133,13 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
         ("count", "Count",
          "Number of iterations to run",
          CArgDescriptions::eInteger, "10");
+    args.AddDefaultKey
+        ("reuse_scope", "ReuseScope",
+         "Re-use OM scope",
+         CArgDescriptions::eString, "none");
+    args.SetConstraint("reuse_scope",
+                       &(*new CArgAllow_Strings,
+                         "none", "iteration", "all"));
     string size_limit = "200";
     // ThreadSanitizer has a limit on number of mutexes held by a thread
 #ifdef NCBI_USE_TSAN
@@ -132,14 +147,14 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
 #endif
     args.AddDefaultKey
         ("size", "Size",
-         "Number of Seq-ids to process in a run",
+         "Limit number of Seq-ids to process in a run",
          CArgDescriptions::eInteger, size_limit);
     args.AddOptionalKey("other_loaders", "OtherLoaders",
                         "Extra data loaders as plugins (comma separated)",
                         CArgDescriptions::eString);
 
     args.SetUsageContext(GetArguments().GetProgramBasename(),
-                         "test_bulkinfo", false);
+                         "test_bulkinfo_mt", false);
     return true;
 }
 
@@ -222,6 +237,13 @@ bool CTestApplication::TestApp_Init(void)
     m_Verify = args["verify"];
     m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
+    m_ReuseScope = eReuseScope_none;
+    if ( args["reuse_scope"].AsString() == "iteration" ) {
+        m_ReuseScope = eReuseScope_iteration;
+    }
+    else if ( args["reuse_scope"].AsString() == "all" ) {
+        m_ReuseScope = eReuseScope_all;
+    }
     m_RunSize = args["size"].AsInteger();
     if ( args["reference"] ) {
         CNcbiIstream& in = args["reference"].AsInputFile();
@@ -243,6 +265,9 @@ bool CTestApplication::TestApp_Init(void)
         ITERATE ( vector<string>, i, names ) {
             other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
         }
+    }
+    if ( m_ReuseScope == eReuseScope_all ) {
+        m_Scope = MakeScope();
     }
     return true;
 }
@@ -283,6 +308,7 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 
 bool CTestApplication::Thread_Run(int thread_id)
 {
+    CRef<CScope> scope = m_Scope;
     try {
         vector<CSeq_id_Handle> ids;
         vector<string> reference;
@@ -313,8 +339,14 @@ bool CTestApplication::Thread_Run(int thread_id)
                     reference.push_back(data[i].second);
                 }
             }
-            if ( !ProcessBlock(ids, reference) ) {
+            if ( m_ReuseScope == eReuseScope_none || !scope ) {
+                scope = MakeScope();
+            }
+            if ( !ProcessBlock(ids, reference, scope) ) {
                 m_ErrorCount.Add(1);
+            }
+            if ( m_ReuseScope == eReuseScope_none ) {
+                scope = null;
             }
         }
         return true;
@@ -338,12 +370,12 @@ bool CTestApplication::Thread_Run(int thread_id)
 
 
 bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
-                                    const vector<string>& reference) const
+                                    const vector<string>& reference,
+                                    CRef<CScope> scope) const
 {
     AutoPtr<IBulkTester> data(IBulkTester::CreateTester(m_Type));
     data->SetParams(ids, m_GetFlags);
     {{
-        CRef<CScope> scope = MakeScope();
         if ( m_Single ) {
             data->LoadSingle(*scope);
         }
@@ -358,8 +390,8 @@ bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
         errors = data->GetErrors();
     }
     else if ( m_Verify ) {
-        CRef<CScope> scope = MakeScope();
-        data->LoadVerify(*scope);
+        CRef<CScope> verify_scope = MakeScope();
+        data->LoadVerify(*verify_scope);
         errors = data->GetErrors();
     }
     if ( m_Verbose ) {
