@@ -1770,17 +1770,16 @@ CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
                                int get_flag,
                                SSeqMatch_Scope& match)
 {
-    if ( get_flag != CScope::eGetBioseq_Resolved ) {
-        // Resolve only if the flag allows
-        CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool, CInitGuard::force);
-        if ( init || info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+    CInitGuard init(info.second.m_Bioseq_Info, m_MutexPool, CInitGuard::force);
+    if ( init || info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
+        if ( get_flag != CScope::eGetBioseq_Resolved ) {
+            // Resolve only if the flag allows
             x_ResolveSeq_id(info, get_flag, match);
         }
-    }
-    else if ( info.second.m_Bioseq_Info &&
-              info.second.m_Bioseq_Info->NeedsReResolve(m_BioseqChangeCounter) ) {
-        // outdated
-        return null;
+        else {
+            // outdated
+            return null;
+        }
     }
     return info.second.m_Bioseq_Info;
 }
