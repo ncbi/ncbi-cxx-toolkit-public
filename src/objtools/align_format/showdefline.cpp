@@ -495,7 +495,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
     }
 
     //get defline
-    sdl->defline = CDeflineGenerator().GenerateDefline(m_ScopeRef->GetBioseqHandle(*(sdl->id)));
+    sdl->defline = CDeflineGenerator().GenerateDefline(m_ScopeRef->GetBioseqHandle(*(sdl->id)), sequence::CDeflineGenerator::fLeavePrefixSuffix);
 	sdl->fullDefline = sdl->defline;
     if (!(bdl.empty())) {
         for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
