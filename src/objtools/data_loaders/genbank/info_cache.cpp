@@ -178,9 +178,14 @@ void CInfoManager::x_ReleaseLoadMutex(CRef<CLoadMutex>& mutex)
     _ASSERT(mutex);
     _ASSERT(!mutex->IsLoading());
     if ( mutex->ReferencedOnlyOnce() ) {
+#ifndef NCBI_USE_TSAN
+        // thread sanitizer cannot understand the logic of reusing mutexes
         m_LoadMutexPool.push_back(mutex);
+#endif
         mutex = null;
+#ifndef NCBI_USE_TSAN
         _ASSERT(!m_LoadMutexPool.back()->IsLoading());
+#endif
     }
 }
 
