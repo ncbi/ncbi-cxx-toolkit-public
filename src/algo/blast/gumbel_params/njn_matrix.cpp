@@ -42,20 +42,20 @@ USING_SCOPE(blast);
 USING_SCOPE(Njn);
 
    static const MatrixIO::Format FORMAT = MatrixIO::GENERAL;
-   static MatrixIO::Format format = MatrixIO::GENERAL;
+   static MatrixIO::Format s_MatrixIO_format = MatrixIO::GENERAL;
 
 
 MatrixIO::Format MatrixIO::getFormat ()
 {
-   return format;
+   return s_MatrixIO_format;
 }
 
 void MatrixIO::setFormat (Format format_)
 {
-   format = format_;
+   s_MatrixIO_format = format_;
 }
 
 MatrixIO::Format MatrixIO::clearFormat ()
 {
-   return format = MatrixIO::GENERAL;
+   return s_MatrixIO_format = MatrixIO::GENERAL;
 }
