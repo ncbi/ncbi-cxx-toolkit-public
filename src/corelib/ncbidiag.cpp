@@ -444,7 +444,6 @@ NCBI_PARAM_ENUM_ARRAY(CDiagContext::EDisabledAppLogEvents, Diag, Disabled_Applog
 };
 NCBI_PARAM_ENUM_DEF_EX(CDiagContext::EDisabledAppLogEvents, Diag, Disabled_Applog_Events,
     CDiagContext::eDisable_All, eParam_NoThread, DIAG_DISABLED_APPLOG_EVENTS);
-static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disabled_Applog_Events)> s_DisabledAppLogEvents;
 
 
 bool CDiagContext::GetDisabledAppLog(void)
@@ -455,6 +454,7 @@ bool CDiagContext::GetDisabledAppLog(void)
 
 CDiagContext::EDisabledAppLogEvents CDiagContext::GetDisabledAppLogEvents(void)
 {
+    static CSafeStatic<NCBI_PARAM_TYPE(Diag, Disabled_Applog_Events)> s_DisabledAppLogEvents;
     return s_DisabledAppLogEvents->Get();
 }
 
