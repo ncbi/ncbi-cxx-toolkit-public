@@ -50,7 +50,7 @@ USING_SCOPE(IoUtil);
 
 
    static const Format FORMAT = HUMAN;
-   static Format format = HUMAN;
+   static Format s_IoUtil_format = HUMAN;
 
    static const char TERMINATOR = '!';
    static char terminator = TERMINATOR;
@@ -58,17 +58,17 @@ USING_SCOPE(IoUtil);
 
 Format IoUtil::getFormat ()
 {
-   return format;
+   return s_IoUtil_format;
 }
 
 void IoUtil::setFormat (Format format_)
 {
-   format = format_;
+   s_IoUtil_format = format_;
 }
 
 Format IoUtil::clearFormat ()
 {
-   return format = FORMAT;
+   return s_IoUtil_format = FORMAT;
 }
 
 char IoUtil::getTerminator ()
