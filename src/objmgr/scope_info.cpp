@@ -734,8 +734,10 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
     _VERIFY(++tse.m_UserLockCounter > 0);
     // remove TSE lock completely
     {{
+        // release the TSE recursively outside of mutex
+        CTSE_ScopeInternalLock unlocked;
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
-        m_TSE_UnlockQueue.Erase(&tse);
+        m_TSE_UnlockQueue.Erase(&tse, &unlocked);
     }}
     if ( CanRemoveOnResetHistory() ||
          (drop_from_ds && GetDataSource().CanBeEdited()) ) {
@@ -1161,12 +1163,21 @@ const CTSE_ScopeInfo::TSeqIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
 /////////////////////////////////////////////////////////////////////////////
 // TSE locking support classes
 
+inline
 void CTSE_ScopeInfo::x_InternalLockTSE(void)
 {
     _VERIFY(++m_TSE_LockCounter > 0);
 }
 
 
+inline
+void CTSE_ScopeInfo::x_InternalRelockTSE(void)
+{
+    _VERIFY(++m_TSE_LockCounter > 1);
+}
+
+
+inline
 void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 {
     if ( --m_TSE_LockCounter == 0 ) {
@@ -1178,6 +1189,7 @@ void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 }
 
 
+inline
 void CTSE_ScopeInfo::x_UserLockTSE(void)
 {
     if ( ++m_UserLockCounter || !GetTSE_Lock() ) {
@@ -1199,6 +1211,14 @@ void CTSE_ScopeInfo::x_UserLockTSE(void)
 }
 
 
+inline
+void CTSE_ScopeInfo::x_UserRelockTSE(void)
+{
+    _VERIFY(++m_UserLockCounter > 1);
+}
+
+
+inline
 void CTSE_ScopeInfo::x_UserUnlockTSE(void)
 {
     if ( --m_UserLockCounter == 0 ) {
@@ -1214,6 +1234,13 @@ void CTSE_ScopeInternalLocker::Lock(CTSE_ScopeInfo* tse) const
 {
     CObjectCounterLocker::Lock(tse);
     tse->x_InternalLockTSE();
+}
+
+
+void CTSE_ScopeInternalLocker::Relock(CTSE_ScopeInfo* tse) const
+{
+    CObjectCounterLocker::Relock(tse);
+    tse->x_InternalRelockTSE();
 }
 
 
@@ -1239,6 +1266,14 @@ void CTSE_ScopeUserLocker::Lock(CTSE_ScopeInfo* tse) const
 }
 
 
+void CTSE_ScopeUserLocker::Relock(CTSE_ScopeInfo* tse) const
+{
+    CObjectCounterLocker::Relock(tse);
+    tse->x_InternalRelockTSE();
+    tse->x_UserRelockTSE();
+}
+
+
 void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
 {
     tse->x_UserUnlockTSE();
@@ -1250,6 +1285,7 @@ void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
 /////////////////////////////////////////////////////////////////////////////
 
 
+inline
 bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
 {
     return m_TSE_LockCounter > 0 && x_VerifyTSE_LockIsAssigned(tse);
@@ -1463,31 +1499,37 @@ void CTSE_ScopeInfo::ForgetTSE_Lock(void)
         return;
     }
     ReleaseUsedTSEs();
-    if ( !x_TSE_LockIsAssigned() ) {
-        return;
-    }
-    CMutexGuard guard(m_TSE_LockMutex);
-    if ( m_TSE_LockCounter > 0 ) {
-        // relocked already
-        return;
-    }
-    if ( !x_TSE_LockIsAssigned() ) {
-        return;
-    }
-    {{
-        CMutexGuard guard2(m_ScopeInfoMapMutex);
-        NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
-            _ASSERT(!it->second->m_TSE_HandleAssigned);
-            it->second->m_ObjectInfoAssigned = false;
-            it->second->m_ObjectInfo.Reset();
-            _ASSERT(!it->second->HasObject());
-            if ( it->second->IsTemporary() ) {
-                it->second->x_DetachTSE(this);
+    if ( !x_TSE_LockIsNotAssigned() ) {
+        CTSE_Lock lock; // delete the OM TSE lock outside of mutex
+        CMutexGuard guard(m_TSE_LockMutex);
+        if ( !x_TSE_LockIsNotAssigned() ) {
+            _ASSERT(m_TSE_LockAssignState == 2);
+            if ( m_TSE_LockCounter > 0 ) {
+                // relocked already
+                return;
             }
+            m_TSE_LockAssignState = 1;
+            {{
+                CMutexGuard guard2(m_ScopeInfoMapMutex);
+                NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
+                    _ASSERT(!it->second->m_TSE_HandleAssigned);
+                    it->second->m_ObjectInfoAssigned = false;
+                    it->second->m_ObjectInfo.Reset();
+                    _ASSERT(!it->second->HasObject());
+                    if ( it->second->IsTemporary() ) {
+                        it->second->x_DetachTSE(this);
+                    }
+                }
+                m_ScopeInfoMap.clear();
+            }}
+            lock.Swap(m_TSE_Lock);
+            if ( IsAttached() ) {
+                GetDSInfo().RemoveTSE_Lock(lock);
+            }
+            m_TSE_LockAssignState = 0;
         }
-        m_ScopeInfoMap.clear();
-    }}
-    ResetTSE_Lock();
+        _ASSERT(x_VerifyTSE_LockIsNotAssigned());
+    }
 }
 
 

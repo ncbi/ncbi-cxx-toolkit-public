@@ -115,7 +115,7 @@ public:
             _ASSERT(m_Queue.size() == m_Index.size());
             TIndexIter iter = m_Index.find(key);
             if ( iter != m_Index.end() ) {
-                ret = iter->second->second;
+                ret = std::move(iter->second->second);
                 m_Queue.erase(iter->second);
                 m_Index.erase(iter);
                 _ASSERT(m_Queue.size() == m_Index.size());
@@ -123,11 +123,15 @@ public:
 
             return ret;
         }
-    void Erase(const key_type& key)
+    void Erase(const key_type& key,
+               value_type* unlock_ptr = 0)
         {
             _ASSERT(m_Queue.size() == m_Index.size());
             TIndexIter iter = m_Index.find(key);
             if ( iter != m_Index.end() ) {
+                if ( unlock_ptr ) {
+                    *unlock_ptr = std::move(iter->second->second);
+                }
                 m_Queue.erase(iter->second);
                 m_Index.erase(iter);
                 _ASSERT(m_Queue.size() == m_Index.size());
@@ -149,7 +153,7 @@ public:
             if ( m_Index.size() > m_MaxSize ) {
                 _VERIFY(m_Index.erase(m_Queue.front().first) == 1);
                 if ( unlock_ptr ) {
-                    *unlock_ptr = m_Queue.front().second;
+                    *unlock_ptr = std::move(m_Queue.front().second);
                 }
                 m_Queue.pop_front();
                 _ASSERT(m_Queue.size() == m_Index.size());
@@ -171,7 +175,7 @@ public:
             while ( m_Index.size() > m_MaxSize ) {
                 _VERIFY(m_Index.erase(m_Queue.front().first) == 1);
                 if ( unlock_set ) {
-                    unlock_set->push_back(m_Queue.front().second);
+                    unlock_set->push_back(std::move(m_Queue.front().second));
                 }
                 m_Queue.pop_front();
                 _ASSERT(m_Queue.size() == m_Index.size());
@@ -182,7 +186,7 @@ public:
         {
             if ( unlock_set ) {
                 ITERATE ( typename TQueue, it, m_Queue ) {
-                    unlock_set->push_back(it->second);
+                    unlock_set->push_back(std::move(it->second));
                 }
             }
             m_Queue.clear();
@@ -465,8 +469,10 @@ protected:
     int x_GetDSLocksCount(void) const;
 
     void x_InternalLockTSE(void);
+    void x_InternalRelockTSE(void);
     void x_InternalUnlockTSE(void);
     void x_UserLockTSE(void);
+    void x_UserRelockTSE(void);
     void x_UserUnlockTSE(void);
     
     CRef<CBioseq_ScopeInfo> x_FindBioseqInfo(const TSeqIds& ids) const;

@@ -48,10 +48,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_ScopeInternalLocker : public CObjectCounterLocker
 public:
     void Lock(CTSE_ScopeInfo* tse) const;
     void Unlock(CTSE_ScopeInfo* tse) const;
-    void Relock(CTSE_ScopeInfo* tse) const
-        {
-            Lock(tse);
-        }
+    void Relock(CTSE_ScopeInfo* tse) const;
     void TransferLock(const CTSE_ScopeInfo* /*tse*/,
                       const CTSE_ScopeInternalLocker& /*old_locker*/) const
         {
@@ -64,10 +61,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_ScopeUserLocker : public CObjectCounterLocker
 public:
     void Lock(CTSE_ScopeInfo* tse) const;
     void Unlock(CTSE_ScopeInfo* tse) const;
-    void Relock(CTSE_ScopeInfo* tse) const
-        {
-            Lock(tse);
-        }
+    void Relock(CTSE_ScopeInfo* tse) const;
     void TransferLock(const CTSE_ScopeInfo* /*tse*/,
                       const CTSE_ScopeUserLocker& /*old_locker*/) const
         {
