@@ -76,6 +76,9 @@ public:
     // Try to find a root-level comment with the given heading.
     CRef<CGene_commentary> FindComment(const string& heading) const; 
 
+    // Extract all PMIDs.
+    void GetPubs(set<NCBI_NS_NCBI::TEntrezId>& pubs) const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CEntrezgene(const CEntrezgene& value);

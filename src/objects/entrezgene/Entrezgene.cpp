@@ -45,7 +45,10 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/pub/Pub.hpp>
 #include <serial/enumvalues.hpp>
+#include <serial/iterator.hpp>
+
 
 // generated classes
 
@@ -224,6 +227,18 @@ CRef<CGene_commentary> CEntrezgene::FindComment(const string& heading) const
     }
 
     return found_comment;
+}
+
+// Extract all PMIDs.
+
+void CEntrezgene::GetPubs(set<NCBI_NS_NCBI::TEntrezId>& pubs_out) const
+{
+    CTypeConstIterator<CPub> iter(*this);
+    for (const auto& pub : iter) {
+        if (pub.IsPmid()) {
+            pubs_out.insert(pub.GetPmid());
+        }
+    }
 }
 
 END_objects_SCOPE // namespace ncbi::objects::

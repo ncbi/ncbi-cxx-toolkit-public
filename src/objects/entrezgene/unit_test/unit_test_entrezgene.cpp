@@ -179,3 +179,13 @@ BOOST_AUTO_TEST_CASE(s_TestFindComment)
         }
     }
 }
+
+BOOST_AUTO_TEST_CASE(s_TestPubs)
+{
+    CEntrezgene eg_obj;
+    set<NCBI_NS_NCBI::TEntrezId> pubs;
+
+    s_GetObject("1", eg_obj);
+    eg_obj.GetPubs(pubs);
+    BOOST_CHECK_EQUAL(true, pubs.count(21591266) == 1);
+}
