@@ -65,6 +65,9 @@
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <lmcons.h>
+#  ifdef NCBI_OS_MSWIN
+#    define UTIL_LOCALTIME_MT_SAFE  1
+#  endif /*NCBI_OS_MSWIN*/
 #endif /*NCBI_OS_MSWIN || NCBI_OS_CYGWIN*/
 #if defined(PAGE_SIZE)  &&  !defined(NCBI_OS_CYGWIN)
 #  define NCBI_DEFAULT_PAGE_SIZE  PAGE_SIZE
@@ -466,9 +469,13 @@ extern char* LOG_ComposeMessage
 #  ifdef HAVE_LOCALTIME_R
         localtime_r(&now, &tm);
 #  else /*HAVE_LOCALTIME_R*/
+#    ifndef UTIL_LOCALTIME_MT_SAFE
         CORE_LOCK_WRITE;
+#    endif /*!UTIL_LOCALTIME_MT_SAFE*/
         tm = *localtime(&now);
+#    ifndef UTIL_LOCALTIME_MT_SAFE
         CORE_UNLOCK;
+#    endif /*UTIL_LOCALTIME_MT_SAFE*/
 #  endif/*HAVE_LOCALTIME_R*/
 #else /*NCBI_CXX_TOOLKIT*/
         Nlm_GetDayTime(&tm);

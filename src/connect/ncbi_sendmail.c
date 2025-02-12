@@ -42,6 +42,10 @@
 #define NCBI_USE_ERRCODE_X   Connect_SMTP
 
 
+#ifdef NCBI_OS_MSWIN
+#  define SENDMAIL_LOCALTIME_MT_SAFE  1
+#endif /*NCBI_OS_MSWIN*/
+
 #define MX_SENDMAIL_MAGIC  0xBA8ADEDA
 #define MX_CRLF            "\r\n"
 
@@ -574,9 +578,13 @@ extern const char* CORE_SendMailEx(const char*          to,
 #  ifdef HAVE_LOCALTIME_R
             localtime_r(&now, tmp);
 #  else
+#    ifndef SENDMAIL_LOCALTIME_MT_SAFE
             CORE_LOCK_WRITE;
+#    endif /*!SENDMAIL_LOCALTIME_MT_SAFE*/
             tm = *localtime(&now);
+#    ifndef SENDMAIL_LOCALTIME_MT_SAFE
             CORE_UNLOCK;
+#    endif /*!SENDMAIL_LOCALTIME_MT_SAFE*/
 #  endif /*HAVE_LOCALTIME_R*/
 #endif /*NCBI_OS_SOLARIS*/
             if (strftime(datefmt, sizeof(datefmt), kDateFmt, tmp)) {
