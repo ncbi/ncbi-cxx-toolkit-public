@@ -1013,6 +1013,9 @@ static void TEST_SOCK_isip(void)
     assert(TEST_isip("127.234.0xFFFF"));
     assert(TEST_gethostbyname("127.234.0xFFFF") ==
            TEST_gethostbyname("127.234.255.255"));
+    assert(TEST_isip("127.234.0xDEAD"));
+    assert(TEST_gethostbyname("127.234.0xDEAD") ==
+           TEST_gethostbyname("127.234.222.173")); 
 
     assert(TEST_isip("127.012344321"));
     assert(TEST_gethostbyname("127.012344321") ==
