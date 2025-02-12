@@ -628,10 +628,10 @@ static int/*tri-state*/ x_SetupSystemHttpProxy(SConnNetInfo* info)
 {
     static volatile int   s_ProxySet  = 0/*-1:err; 0:not yet set; 1:set*/;
     static EProxyType     s_ProxyMask = 0/*!=0 when set non-empty*/;
-    static char           s_ProxyHost[sizeof(info->http_proxy_host)];
-    static unsigned short s_ProxyPort;
-    static char           s_ProxyUser[sizeof(info->http_proxy_user)];
-    static char           s_ProxyPass[sizeof(info->http_proxy_pass)];
+    static char           s_ProxyHost[sizeof(info->http_proxy_host)] = { 0 };
+    static unsigned short s_ProxyPort = 0;
+    static char           s_ProxyUser[sizeof(info->http_proxy_user)] = { 0 };
+    static char           s_ProxyPass[sizeof(info->http_proxy_pass)] = { 0 };
     int rv;
 
     if (!info) {
@@ -3316,9 +3316,9 @@ extern char* MIME_ComposeContentTypeEx
     if (encoding >= eENCOD_Unknown)
         encoding  = eENCOD_Unknown;
 
-    x_type     = kMIME_Type    [type];
-    x_subtype  = kMIME_SubType [subtype];
-    x_encoding = kMIME_Encoding[encoding];
+    x_type     = kMIME_Type    [0 <= type  &&  type <= eMIME_T_Unknown ? type : eMIME_T_Unknown];
+    x_subtype  = kMIME_SubType [0 <= subtype  &&  subtype <= eMIME_Unknown ? subtype : eMIME_Unknown];
+    x_encoding = kMIME_Encoding[0 <= encoding  &&  encoding <= eENCOD_Unknown ? encoding : eENCOD_Unknown];
 
     if ( *x_encoding ) {
         assert(sizeof(kContentType) + strlen(x_type) + strlen(x_subtype)
