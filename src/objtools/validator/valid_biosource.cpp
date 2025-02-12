@@ -2118,6 +2118,11 @@ const CSeq_entry *ctx)
                 }
             }
         }
+        if (m_genomeSubmission && has_strain && has_isolate) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_HasStrainAndIsolate,
+                "Organism has both strain: '" + strain + "' and isolate: '" + isolate + "'",
+                obj, ctx);
+        }
 
         string err = COrgMod::CheckMultipleVouchers(vouchers);
         if (!err.empty()) PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_IdenticalInstitutionCode, err, obj, ctx);

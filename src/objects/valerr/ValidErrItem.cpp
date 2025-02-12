@@ -1016,6 +1016,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
     { "BadContigOrScaffoldChromosome",
         "Chromosome name should not contain contig or scaffold" }},
+    { eErr_SEQ_DESCR_HasStrainAndIsolate,
+    { "HasStrainAndIsolate",
+        "BioSource should not have both strain and isolate" }},
 
 
     /* SEQ_GENERIC */

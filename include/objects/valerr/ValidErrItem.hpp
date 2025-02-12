@@ -366,6 +366,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadNullCollectionDate,
     eErr_SEQ_DESCR_UnculturedGenome,
     eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
+    eErr_SEQ_DESCR_HasStrainAndIsolate,
     ERR_CODE_END(SEQ_DESCR),
 
 
