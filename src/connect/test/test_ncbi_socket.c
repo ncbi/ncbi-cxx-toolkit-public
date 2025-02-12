@@ -644,7 +644,7 @@ static void TEST__server(const char* sport)
         nport = 0;
         n = 0;
     }
-    status = LSOCK_CreateIPv6Ex(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn, eOn);
+    status = LSOCK_CreateEx(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
     if (status == eIO_Success  &&  !nport  &&  sport[n]) {
         FILE* fp;
         nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
