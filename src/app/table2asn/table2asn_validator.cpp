@@ -240,7 +240,7 @@ CTable2AsnValidator::~CTable2AsnValidator()
 void CTable2AsnValidator::Cleanup(CRef<CSeq_submit> submit, CSeq_entry_Handle& h_entry, const string& flags) const
 {
     if (flags.find('w') != string::npos) {
-        CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects, false, true);
+        CCleanup::WGSCleanup(h_entry, true, CCleanup::eClean_NoNcbiUserObjects, false);
     }
 
     // ignore 'e' flag, run ExtendedCleanup() uncoditionally - but only after 'x'
