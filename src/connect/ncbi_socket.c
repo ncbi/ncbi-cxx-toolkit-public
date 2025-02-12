@@ -178,23 +178,16 @@
 #endif /*ENOSPC*/
 
 
-#ifdef NCBI_COMPILER_MSVC
-#  define sys_gethostname(a, b)  gethostname(a, (int)(b))
-#else
-#  define sys_gethostname        gethostname
-#endif /*NCBI_COMPILER_MSVC*/
-
-
 #ifdef NCBI_MONKEY
 /* A hack - we assume that SOCK variable is named "sock" in the code.
    If the desired behavior is timeout, "sock" will be replaced with a
    connection to a non-responsive server */
-#  define send(a,b,c,d)                                                 \
-    (g_MONKEY_Send    ? g_MONKEY_Send(a,b,c,d,&sock) : send(a,b,c,d))
-#  define recv(a,b,c,d)                                                 \
-    (g_MONKEY_Recv    ? g_MONKEY_Recv(a,b,c,d,&sock) : recv(a,b,c,d))
-#  define connect(a,b,c)                                                \
-    (g_MONKEY_Connect ? g_MONKEY_Connect(a,b,c)      : connect(a,b,c))
+#  define send(a, b, c, d)                                              \
+    (g_MONKEY_Send    ? g_MONKEY_Send((a),(b),(c),(d),&sock) : send((a),(b),(c),(d)))
+#  define recv(a, b, c, d)                                              \
+    (g_MONKEY_Recv    ? g_MONKEY_Recv((a),(b),(c),(d),&sock) : recv((a),(b),(c),(d)))
+#  define connect(a, b, c)                                              \
+    (g_MONKEY_Connect ? g_MONKEY_Connect((a),(b),(c))        : connect((a),(b),(c)))
 #endif /*NCBI_MONKEY*/
 
 
@@ -210,20 +203,36 @@
  */
 #if   defined(NCBI_OS_MSWIN)
 
-#  define SOCK_GHBX_MT_SAFE   1  /* for gethostby...() */
-#  define SOCK_SEND_SLICE     (4 << 10)  /* 4K */
 #  define SOCK_INVALID        INVALID_SOCKET
 #  define SOCK_ERRNO          WSAGetLastError()
 #  define SOCK_NFDS(s)        0
 #  define SOCK_CLOSE(s)       closesocket(s)
-#  define SOCK_EVENTS         (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
+
 #  define WIN_INT_CAST        (int)
+#  define WIN_DWORD_CAST      (DWORD)
+
+#  define SOCK_GHBX_MT_SAFE   1  /* for gethostby...() */
+#  define SOCK_SEND_SLICE     (4 << 10)  /* 4K */
+
+#  define SOCK_EVENTS         (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
 #  ifndef   WSA_INVALID_EVENT
 #    define WSA_INVALID_EVENT ((WSAEVENT) 0)
 #  endif /*!WSA_INVALID_EVENT*/
 /* NCBI_OS_MSWIN */
 
 #elif defined(NCBI_OS_UNIX)
+
+#  define SOCK_INVALID        (-1)
+#  define SOCK_ERRNO          errno
+#  define SOCK_NFDS(s)        ((s) + 1)
+#  ifdef NCBI_OS_BEOS
+#    define SOCK_CLOSE(s)     closesocket(s)
+#  else
+#    define SOCK_CLOSE(s)     close(s)
+#  endif /*NCBI_OS_BEOS*/
+
+#  define WIN_INT_CAST        /*(no cast)*/
+#  define WIN_DWORD_CAST      /*(no cast)*/
 
 #  ifdef NCBI_OS_CYGWIN
      /* These do not work correctly as of cygwin 2.11.1 */
@@ -238,23 +247,14 @@
 #    endif /*HAVE_ACCEPT4*/
 #  endif /*NCBI_OS_CYGWIN*/
 
-#  define SOCK_INVALID        (-1)
-#  define SOCK_ERRNO          errno
-#  define SOCK_NFDS(s)        ((s) + 1)
-#  define WIN_INT_CAST        /* no cast */
-#  ifdef NCBI_OS_BEOS
-#    define SOCK_CLOSE(s)     closesocket(s)
-#  else
-#    define SOCK_CLOSE(s)     close(s)
-#  endif /*NCBI_OS_BEOS*/
 #  ifndef   INADDR_NONE
 #    define INADDR_NONE       ((unsigned int)(~0UL))
 #  endif /*!INADDR_NONE*/
-/* NCBI_OS_UNIX */
 
 #  if defined(TCP_NOPUSH)  &&  !defined(TCP_CORK)
 #    define TCP_CORK          TCP_NOPUSH  /* BSDism */
 #  endif /*TCP_NOPUSH && !TCP_CORK*/
+/* NCBI_OS_UNIX */
 
 #endif /*NCBI_OS*/
 
@@ -1239,7 +1239,7 @@ static int s_gethostname(char* name, size_t namesize, ESwitch log)
     CORE_TRACE("[SOCK::gethostname]");
 
     name[0] = name[namesize - 1] = '\0';
-    if (sys_gethostname(name, namesize) != 0) {
+    if (gethostname(name, WIN_INT_CAST namesize) != 0) {
         if (log) {
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
@@ -1669,11 +1669,6 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
     if (!empty) {
         int error = 0;
 #if defined(HAVE_GETNAMEINFO)
-#  ifdef NCBI_OS_MSWIN
-        DWORD  x_namesize = (DWORD) namesize;
-#  else
-        size_t x_namesize = namesize;
-#  endif /*NCBI_OS_MSWIN*/
         union {
             struct sockaddr     sa;
             struct sockaddr_in  in;
@@ -1691,8 +1686,11 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
         else
             memcpy(&u.in6.sin6_addr, addr, sizeof(u.in6.sin6_addr));
         if ((ipv4  &&  u.in.sin_addr.s_addr == htonl(INADDR_NONE))
-            ||  (error = getnameinfo(&u.sa, addrlen, name, x_namesize,
-                                     0, 0, NI_NAMEREQD)) != 0  ||  !*name) {
+            ||  (error = getnameinfo(&u.sa, addrlen, name, WIN_DWORD_CAST namesize,
+                                     0, 0, NI_NAMEREQD)) != 0
+            ||  !*name) {
+            if (error == EAI_NONAME)
+                error  = 0;
             if (!s_AddrToString(name, namesize, addr, family, 0)) {
 #  ifdef EAI_SYSTEM
                 if (error == EAI_SYSTEM)
@@ -1826,7 +1824,7 @@ static const char* s_gethostbyaddr(const TNCBI_IPv6Addr* addr, char* name,
 {
     static void* volatile /*bool*/ s_Once = 0/*false*/;
     const char* rv;
-    assert(addr);
+    assert(addr  &&  name  &&  namesize);
     rv = s_gethostbyaddr_(addr, s_IPVersion, name, namesize, log);
     if (!s_Once  &&  rv
         &&  ((SOCK_IsLoopbackAddressIPv6(addr)
@@ -3862,11 +3860,11 @@ static EIO_Status s_Send(SOCK        sock,
 
         /* blocked -- retry if unblocked before the timeout expires
          * (use stall protection if specified) */
-        if (error == SOCK_EWOULDBLOCK  ||  error == SOCK_EAGAIN
+        if (error == SOCK_EWOULDBLOCK
 #ifdef NCBI_OS_MSWIN
             ||  error == WSAENOBUFS
 #endif /*NCBI_OS_MSWIN*/
-            ) {
+            ||  error == SOCK_EAGAIN) {
             SSOCK_Poll            poll;
             EIO_Status            status;
             const struct timeval* timeout;
@@ -5613,7 +5611,8 @@ static EIO_Status s_CreateListening(const char*    path,
             family = AF_INET;
             break;
         default:
-            family = s_IPVersion == AF_UNSPEC ? AF_INET : s_IPVersion;
+            if ((family = s_IPVersion) == AF_UNSPEC)
+                family = AF_INET;
             break;
         }
         switch (family) {
@@ -5675,7 +5674,7 @@ static EIO_Status s_CreateListening(const char*    path,
          */
         BOOL excl = TRUE;
         if (setsockopt(fd, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
-                       (const char*) &excl, sizeof(excl)) != 0) {
+                       (char*) &excl, sizeof(excl)) != 0) {
             failed = "EXCLUSIVEADDRUSE";
         }
 #elif !defined(NCBI_OS_MSWIN)
@@ -6302,11 +6301,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
 #ifdef HAVE_SIN_LEN
         u.sa.sa_len = addrlen;
 #endif /*HAVE_SIN_LEN*/
-        x_read = recvfrom(sock->sock, x_msg,
-#ifdef NCBI_OS_MSWIN
-                          /*WINSOCK wants it weird*/ (int)
-#endif /*NCBI_OS_MSWIN*/
-                          x_msgsize, 0/*flags*/,
+        x_read = recvfrom(sock->sock, x_msg, WIN_INT_CAST x_msgsize, 0/*flags*/,
                           &u.sa, &addrlen);
 #ifdef NCBI_OS_MSWIN
         /* recvfrom() resets IO event recording */
@@ -6510,11 +6505,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
         int error;
         ssize_t x_written;
 
-        if ((x_written = sendto(sock->sock, x_msg,
-#ifdef NCBI_OS_MSWIN
-                                /*WINSOCK wants it weird*/ (int)
-#endif /*NCBI_OS_MSWIN*/
-                                x_msgsize, 0/*flags*/,
+        if ((x_written = sendto(sock->sock, x_msg, WIN_INT_CAST x_msgsize, 0/*flags*/,
                                 &u.sa, addrlen)) >= 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
@@ -8388,6 +8379,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     HANDLE       event;
 #endif /*NCBI_OS_MSWIN*/
     int          error;
+    int          family;
     SOCK         x_sock;
     unsigned int x_id = x_ID_Counter() * 1000;
 
@@ -8405,8 +8397,10 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     if (!(flags & fSOCK_KeepOnExec))
         type |= SOCK_CLOEXEC;
 #endif /*SOCK_CLOEXEC*/
+    if ((family = s_IPVersion) == AF_UNSPEC)
+        family = AF_INET;
     /* create new datagram socket */
-    if ((fd = socket(AF_INET, type, 0)) == SOCK_INVALID) {
+    if ((fd = socket(family, type, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(76, eLOG_Error,
                             error, strerr ? strerr : "",
@@ -8546,7 +8540,7 @@ extern EIO_Status DSOCK_BindIPv6(SOCK sock, unsigned short port, ESwitch ipv6)
         return eIO_InvalidArg;
     }
 
-    if ((ipv6 == eOn  &&  s_IPVersion == AF_INET)  ||
+    if ((ipv6 == eOn   &&  s_IPVersion == AF_INET)  ||
         (ipv6 == eOff  &&  s_IPVersion == AF_INET6)) {
        status = eIO_NotSupported;
        error = ENOTSUP;
@@ -8559,7 +8553,8 @@ extern EIO_Status DSOCK_BindIPv6(SOCK sock, unsigned short port, ESwitch ipv6)
             family = AF_INET;
             break;
         default:
-            family = s_IPVersion == AF_UNSPEC ? AF_INET : s_IPVersion;
+            if ((family = s_IPVersion) == AF_UNSPEC)
+                family = AF_INET;
             break;
         }
         assert(family == AF_INET  ||  family == AF_INET6);
@@ -8993,7 +8988,7 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
         int  bcast = !!broadcast;
 #  endif /*NCBI_OS_MSWIN*/
         if (setsockopt(sock->sock, SOL_SOCKET, SO_BROADCAST,
-                       (const char*) &bcast, sizeof(bcast)) != 0) {
+                       (char*) &bcast, sizeof(bcast)) != 0) {
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(102, eLOG_Error,
@@ -9069,8 +9064,7 @@ extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 
 extern int/*bool*/ SOCK_IsSecure(SOCK sock)
 {
-    return sock
-        &&  sock->sock != SOCK_INVALID  &&  sock->sslctx;
+    return sock  &&  sock->sock != SOCK_INVALID  &&  sock->sslctx;
 }
 
 
@@ -9293,14 +9287,16 @@ extern int/*bool*/ SOCK_isipEx(const char* str, int/*bool*/ fullquad)
 
     dots = 0;
     for (;;) {
-        char* e;
+        char* end;
         if (!isdigit((unsigned char)(*str)))
             return 0/*false*/;
         errno = 0;
-        val = strtoul(str, &e, 0);
-        if (errno  ||  str == e)
+        val = strtoul(str, &end, 0);
+        if (errno  ||  str == end)
             return 0/*false*/;
-        str = e;
+        if (fullquad  &&  *str == '0'  &&  (size_t)(end - str) > 1)
+            return 0/*false*/;
+        str = end;
         if (*str != '.')
             break;
         if (++dots > 3)
@@ -9443,7 +9439,8 @@ extern const char* SOCK_gethostbyaddrEx(unsigned int host,
 {
     TNCBI_IPv6Addr addr;
 
-    assert(buf  &&  bufsize > 0);
+    if (!buf  ||  !bufsize)
+        return 0;
 
     /* initialize internals */
     if (s_IPVersion == AF_INET6  ||  s_InitAPI(0) != eIO_Success) {
@@ -9469,7 +9466,8 @@ extern const char* SOCK_gethostbyaddrIPv6Ex(const TNCBI_IPv6Addr* addr,
                                             size_t                bufsize,
                                             ESwitch               log)
 {
-    assert(buf  &&  bufsize > 0);
+    if (!buf  ||  !bufsize)
+        return 0;
 
     /* initialize internals */
     if (!addr  ||  s_InitAPI(0) != eIO_Success) {

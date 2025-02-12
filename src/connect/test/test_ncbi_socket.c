@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(NCBI_OS_UNIX)
+#if   defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  define X_SLEEP(x)  /*((void) sleep(x))*/
 #elif defined(NCBI_OS_MSWIN)
@@ -45,18 +45,21 @@
 #  define X_SLEEP(x)  /*((void) Sleep(1000 * x))*/
 #else
 #  define X_SLEEP(x)  ((void) 0)
-#endif
+#endif /*NCBI_OS*/
 
 #include "test_assert.h"  /* This header must go last */
 
 /* OS must be specified in the command-line ("-D....") or in the conf. header
  */
-#if !defined(NCBI_OS_UNIX) && !defined(NCBI_OS_MSWIN)
+#if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
 #  error "Unknown OS, must be one of NCBI_OS_UNIX, NCBI_OS_MSWIN!"
-#endif
+#endif /*!NCBI_OS_UNIX && !NCBI_OS_MSWIN*/
 
 #define DEF_PORT      5555
 #define DEF_HOST      "localhost"
+
+#define _STR(x)       #x
+#define  STR(x)      _STR(x)
 
 #define TEST_BUFSIZE  8192
 
@@ -476,8 +479,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
     rc_to.sec  = (unsigned int) DEF_CONN_TIMEOUT;
     rc_to.usec = 123456;
 
-    /* goto */
- l_reconnect: /* reconnection loop */
+  reconnect: /* reconnection loop */
     SOCK_SetDataLogging(sock, eOn);
 
     status = SOCK_SetTimeout(sock, eIO_Read,  &r_to);
@@ -517,8 +519,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             if ((status = LSOCK_Accept(lsock, &rc_to, &sock)) != eIO_Success)
                 return;
             assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
-            /* !!! */
-            goto l_reconnect;
+            goto reconnect;
 
         case eIO_Timeout:
             CORE_LOGF(eLOG_Note,
@@ -602,7 +603,7 @@ static void TEST__client(const char*     server_host,
     else
         strcpy(tmo, "INFINITE");
     CORE_LOGF(eLOG_Note,
-              ("TEST__client(host = \"%s\", port = %hu, timeout = %s",
+              ("TEST__client(host = \"%s\", port = %hu, timeout = %s)",
                server_host, server_port, tmo));
 
     /* Connect to server */
@@ -656,14 +657,16 @@ static void TEST__server(const char* sport)
             status = eIO_Unknown;
     }
 
-    if (!LSOCK_GetListeningAddressString(lsock, full, sizeof(full)))
+    if (!LSOCK_GetListeningAddressString(lsock, full + 1, sizeof(full) - 2))
         sprintf(full, "port = %hu", nport);
+    else
+        full[0] = '"', strcat(full, "\"");
     CORE_LOGF(eLOG_Note, ("TEST__server(%s)", full));
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
-        char addr[128];
+        char addr[sizeof(full)];
         char port[10];
         SOCK sock;
 
@@ -906,6 +909,8 @@ static int/*bool*/ TEST_gethostbyaddrIPv6(const TNCBI_IPv6Addr* addr)
  */
 static void TEST_gethostby(void)
 {
+    const char* p;
+
     CORE_LOG(eLOG_Note, "===============================");
 
     assert( SOCK_HostToNetLong(0) == 0 );
@@ -929,8 +934,9 @@ static void TEST_gethostby(void)
 
     TNCBI_IPv6Addr addr, www;
 
+    /*SOCK_SetIPv6API(eDefault);*/
     (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
-
+ 
     SOCK_SetIPv6API(eOn);
     (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
 
@@ -940,9 +946,12 @@ static void TEST_gethostby(void)
     SOCK_SetIPv6API(eDefault);
     (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
 
-    assert(NcbiIPToAddr(&addr, "2607:f220:41e:4290::110", 0));
-    assert(NcbiIPToAddr(&www, "130.14.29.110", 0));
+    assert((p = NcbiIPToAddr(&addr, "2607:f220:41e:4290::110", 0))  &&  !*p);
+    assert(!NcbiIsEmptyIPv6(&addr)  &&  !NcbiIsIPv4(&addr));
+    assert((p = NcbiIPToAddr(&www, "130.14.29.110", 0))  &&  !*p);
+    assert(!NcbiIsEmptyIPv6(&www)  &&  NcbiIsIPv4(&www));
 
+    /*SOCK_SetIPv6API(eDefault);*/
     (void) TEST_gethostbyaddrIPv6(&addr);
     (void) TEST_gethostbyaddrIPv6(&www);
 
@@ -958,6 +967,7 @@ static void TEST_gethostby(void)
     (void) TEST_gethostbyaddrIPv6(&addr);
     (void) TEST_gethostbyaddrIPv6(&www);
 
+    /*SOCK_SetIPv6API(eDefault);*/
     (void) TEST_gethostbynameIPv6(&addr, "localhost");
 
     SOCK_SetIPv6API(eOn);
@@ -981,6 +991,19 @@ static int/*bool*/ TEST_isip(const char* ip)
     
     CORE_LOGF(eLOG_Note,
               ("SOCK_isip(\"%s\"):  %s", ip, retval ? "True" : "False"));
+
+    return retval;
+}
+
+
+static int/*bool*/ TEST_isipEx(const char* ip)
+{
+    int retval = SOCK_isipEx(ip, 1/*fullquad*/);
+
+    CORE_LOG(eLOG_Note, "------------");
+
+    CORE_LOGF(eLOG_Note,
+              ("SOCK_isipEx(\"%s\", 1):  %s", ip, retval ? "True" : "False"));
 
     return retval;
 }
@@ -1025,6 +1048,8 @@ static void TEST_SOCK_isip(void)
            TEST_gethostbyname("127.255.255.255"));
 
     assert(TEST_isip("0.0321.0xAB.123"));
+    assert(TEST_gethostbyname("0.0321.0xAB.123"));
+    assert(!TEST_isipEx("0.0321.0xAB.123"));
     assert(TEST_isip("255.255.255.255"));
 
     assert(!TEST_isip("a"));
@@ -1080,7 +1105,7 @@ static void TEST_OnTopSock(void)
  * Parse command-line options, initialize and cleanup API internals;
  * run client or server test
  */
-extern int main(int argc, const char* argv[])
+int main(int argc, const char* argv[])
 {
     /* Setup log stream */
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
@@ -1125,7 +1150,7 @@ extern int main(int argc, const char* argv[])
 
     case 2: {
         /*** SERVER ***/
-        TEST__server(argv[1]);
+        TEST__server(*argv[1] ? argv[1] : STR(DEF_PORT));
         verify(SOCK_ShutdownAPI() == eIO_Success);
         CORE_SetLOG(0);
         return 0;
@@ -1139,10 +1164,12 @@ extern int main(int argc, const char* argv[])
         STimeout     x_tmo;
 
         /* host */
-        host = argv[1];
+        host = *argv[1] ? argv[1] : DEF_HOST;
 
         /* port */
-        if (sscanf(argv[2], "%hu", &port) != 1)
+        if (!*argv[2])
+            port = DEF_PORT;
+        else if (sscanf(argv[2], "%hu", &port) != 1)
             break;
 
         /* timeout */
