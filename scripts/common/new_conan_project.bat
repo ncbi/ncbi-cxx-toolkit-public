@@ -18,7 +18,7 @@ set rep_sample=sample
 set prj_prj=CMakeLists.txt
 set prj_con=conanfile.py
 set ncbitk=ncbi-cxx-toolkit-core
-set tkversion=[^>=28]
+set tkversion=[^>=29]
 set readme=README.txt
 goto :RUN
 

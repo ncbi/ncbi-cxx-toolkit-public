@@ -18,7 +18,7 @@ rep_sample="sample"
 prj_prj="CMakeLists.txt"
 prj_con="conanfile.py"
 ncbitk="ncbi-cxx-toolkit-core"
-tkversion="[>=28]"
+tkversion="[>=29]"
 readme="README.txt"
 ############################################################################# 
 Usage()
