@@ -71,8 +71,8 @@ protected:
 
 private:
     // disable copy constructor and assignment
-    CPollable(const CPollable&);
-    CPollable& operator= (const CPollable&);
+    CPollable(const CPollable&) = delete;
+    CPollable& operator= (const CPollable&) = delete;
 };
 
 
@@ -413,7 +413,7 @@ public:
     ///
     /// @sa
     ///  SOCK_GetLocalPort
-    unsigned short GetLocalPort(ENH_ByteOrder byte_order,
+    unsigned short GetLocalPort(ENH_ByteOrder byte_order = eNH_HostByteOrder,
                                 bool trueport = false) const;
 
     /// Get socket remote port number.
@@ -499,14 +499,6 @@ public:
     ///  SOCK_SetReuseAddress
     void    SetReuseAddress(ESwitch reuse = eOff);
 
-    /// @note  See comments for SOCK_SetCork() in "ncbi_socket.h".
-    ///
-    /// @param on_off
-    ///
-    /// @sa
-    ///  SOCK_SetCork
-    void    SetCork(bool on_off = true);
-
     /// @note  See comments for SOCK_DisableOSSendDelay() in "ncbi_socket.h".
     ///
     /// @param on_off
@@ -514,6 +506,14 @@ public:
     /// @sa
     ///  SOCK_DisableOSSendDelay
     void    DisableOSSendDelay(bool on_off = true);
+
+    /// @note  See comments for SOCK_SetCork() in "ncbi_socket.h".
+    ///
+    /// @param on_off
+    ///
+    /// @sa
+    ///  SOCK_SetCork
+    void    SetCork(bool on_off = true);
 
     /// @note  Use CSocketAPI::SetDataLogging() to set the default value.
     ///
@@ -681,13 +681,13 @@ public:
 
 protected:
     /// @note  The call is not valid with datagram sockets.
-    EIO_Status Shutdown(EIO_Event how);
+    EIO_Status Shutdown(EIO_Event how) = delete;
 
     /// @note  The call is not valid with datagram sockets.
-    EIO_Status Reconnect(const STimeout* timeout);
+    EIO_Status Reconnect(const STimeout* timeout) = delete;
 
     /// @note  The call is not valid with datagram sockets.
-    EIO_Status Abort(void);
+    EIO_Status Abort(void) = delete;
 };
 
 
@@ -759,6 +759,17 @@ public:
     /// @note  Closes the undelying LSOCK only if it is owned by this object!
     EIO_Status Close(void);
 
+    /// Access to the system-specific socket handle
+    /// @param handle_buf
+    ///
+    /// @param handle_size
+    ///
+    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
+                                   EOwnership ownership = eNoOwnership) const;
+
+    /// Return port which the server listens on
+    unsigned short GetPort(ENH_ByteOrder byte_order = eNH_HostByteOrder) const;
+
     /// Get listening address.
     /// @note  Either of "host", "port" can be NULL to opt out
     ///        from obtaining the corresponding value;
@@ -801,17 +812,6 @@ public:
     ///  LSOCK_GetListeningAddressStringEx
     string GetListeningAddress(ESOCK_AddressFormat format = eSAF_Full) const;
 
-    /// Access to the system-specific socket handle
-    /// @param handle_buf
-    ///
-    /// @param handle_size
-    ///
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
-                                   EOwnership ownership = eNoOwnership) const;
-
-    /// Return port which the server listens on
-    unsigned short GetPort(ENH_ByteOrder byte_order = eNH_HostByteOrder) const;
-
     /// Specify if this "CListeningSocket" is to own the underlying "LSOCK"
     /// @param if_to_own
     ///
@@ -850,8 +850,9 @@ public:
     ///
     static EIO_Status Initialize   (void);
     static EIO_Status Shutdown     (void);
-    static void       AllowSigPipe (void);
     static size_t     OSHandleSize (void);
+    static void       AllowSigPipe (void);
+    static ESwitch    SetIPv6      (ESwitch ipv6);
     static EIO_Status CloseOSHandle(const void* handle, size_t handle_size);
 
     /// Utility
@@ -917,12 +918,16 @@ public:
     /// Return empty string on error
     static string         gethostname  (ESwitch log = eOff);
 
-    /// Return empty string on error
-    static string         gethostbyaddr(unsigned int  host,         ESwitch log = eOff);
-    static string         gethostbyaddr(const TNCBI_IPv6Addr* addr, ESwitch log = eOff);
     /// Return 0 on error
     static unsigned int   gethostbyname(const string& host, ESwitch log = eOff);
     static TNCBI_IPv6Addr gethostbyname(const string& host, TNCBI_IPv6Addr* addr, ESwitch log = eOff);
+    /// Return empty string on error
+    static string         gethostbyaddr(unsigned int  host,         ESwitch log = eOff);
+    static string         gethostbyaddr(const TNCBI_IPv6Addr* addr, ESwitch log = eOff);
+
+    /// Local host address in network byte order (cached for faster retrieval)
+    static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
+    static TNCBI_IPv6Addr GetLocalHostAddress(TNCBI_IPv6Addr* addr, ESwitch reget = eDefault);
 
     /// Loopback address gets returned in network byte order
     static unsigned int   GetLoopbackAddress(void);
@@ -930,13 +935,9 @@ public:
     int/*bool*/           IsLoopbackAddress(unsigned int);
     int/*bool*/           IsLoopbackAddress(const TNCBI_IPv6Addr* addr);
 
-    /// Local host address in network byte order (cached for faster retrieval)
-    static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
-    static TNCBI_IPv6Addr GetLocalHostAddress(TNCBI_IPv6Addr* addr, ESwitch reget = eDefault);
-
     /// See SOCK_HostPortToString[IPv6]()
-    static string         HostPortToString(unsigned int   host,
-                                           unsigned short port);
+    static string         HostPortToString(unsigned int          host,
+                                           unsigned short        port);
     static string         HostPortToString(const TNCBI_IPv6Addr* addr,
                                            unsigned short        port);
 
@@ -1105,17 +1106,17 @@ inline void CSocket::SetReuseAddress(ESwitch reuse)
 }
 
 
-inline void CSocket::SetCork(bool on_off)
-{
-    if ( m_Socket )
-        SOCK_SetCork(m_Socket, on_off);
-}
-
-
 inline void CSocket::DisableOSSendDelay(bool on_off)
 {
     if ( m_Socket )
         SOCK_DisableOSSendDelay(m_Socket, on_off);
+}
+
+
+inline void CSocket::SetCork(bool on_off)
+{
+    if ( m_Socket )
+        SOCK_SetCork(m_Socket, on_off);
 }
 
 
@@ -1191,7 +1192,6 @@ inline SOCK CSocket::GetSOCK(void) const
 /////////////////////////////////////////////////////////////////////////////
 ///  CDatagramSocket::
 ///
-
 
 inline CDatagramSocket::CDatagramSocket(TSOCK_Flags flags)
 {
@@ -1269,8 +1269,14 @@ inline CListeningSocket::CListeningSocket(unsigned short port,
 }
 
 
+inline EIO_Status CListeningSocket::GetStatus(void) const
+{
+    return m_Socket ? eIO_Success : eIO_Closed;
+}
+
+
 inline EIO_Status CListeningSocket::Listen(unsigned short port,
-                                           unsigned short backlog,                    
+                                           unsigned short backlog,
                                            TSOCK_Flags    flags,
                                            ESwitch        ipv6)
 {
@@ -1279,14 +1285,8 @@ inline EIO_Status CListeningSocket::Listen(unsigned short port,
 }
 
 
-inline EIO_Status CListeningSocket::GetStatus(void) const
-{
-    return m_Socket ? eIO_Success : eIO_Closed;
-}
-
-
-inline EIO_Status CListeningSocket::GetOSHandle(void*  handle_buf,
-                                                size_t handle_size,
+inline EIO_Status CListeningSocket::GetOSHandle(void*      handle_buf,
+                                                size_t     handle_size,
                                                 EOwnership ownership) const
 {
     return m_Socket
@@ -1332,15 +1332,21 @@ inline EIO_Status CSocketAPI::Shutdown(void)
 }
 
 
+inline size_t CSocketAPI::OSHandleSize(void)
+{
+    return SOCK_OSHandleSize();
+}
+
+
 inline void CSocketAPI::AllowSigPipe(void)
 {
     SOCK_AllowSigPipeAPI();
 }
 
 
-inline size_t CSocketAPI::OSHandleSize(void)
+inline ESwitch CSocketAPI::SetIPv6(ESwitch ipv6)
 {
-    return SOCK_OSHandleSize();
+    return SOCK_SetIPv6API(ipv6);
 }
 
 
@@ -1419,6 +1425,12 @@ inline unsigned short CSocketAPI::NetToHostShort(unsigned short value)
 }
 
 
+inline unsigned int CSocketAPI::GetLocalHostAddress(ESwitch reget)
+{
+    return SOCK_GetLocalHostAddress(reget);
+}
+
+
 inline unsigned int CSocketAPI::GetLoopbackAddress(void)
 {
     return SOCK_GetLoopbackAddress();
@@ -1435,13 +1447,6 @@ inline int/*bool*/ CSocketAPI::IsLoopbackAddress(const TNCBI_IPv6Addr* addr)
 {
     return SOCK_IsLoopbackAddressIPv6(addr);
 }
-
-
-inline unsigned int CSocketAPI::GetLocalHostAddress(ESwitch reget)
-{
-    return SOCK_GetLocalHostAddress(reget);
-}
-
 
 
 /////////////////////////////////////////////////////////////////////////////

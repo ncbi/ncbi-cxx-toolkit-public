@@ -59,7 +59,6 @@ CTrigger::~CTrigger()
 //  CSocket::
 //
 
-
 CSocket::CSocket(const string&   host,
                  unsigned short  port,
                  const STimeout* timeout,
@@ -560,7 +559,6 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 //  CDatagramSocket::
 //
 
-
 EIO_Status CDatagramSocket::Connect(const string& hostport)
 {
     const char*    end;
@@ -640,7 +638,6 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
 /////////////////////////////////////////////////////////////////////////////
 //  CListeningSocket::
 //
-
 
 CListeningSocket::~CListeningSocket()
 {
@@ -749,7 +746,6 @@ string CListeningSocket::GetListeningAddress(ESOCK_AddressFormat format) const
 /////////////////////////////////////////////////////////////////////////////
 //  CSocketAPI::
 //
-
 
 EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
                             const STimeout* timeout,
@@ -897,8 +893,8 @@ TNCBI_IPv6Addr CSocketAPI::GetLocalHostAddress(TNCBI_IPv6Addr* addr, ESwitch reg
 }
 
 
-string CSocketAPI::HostPortToString(unsigned int    host,
-                                    unsigned short  port)
+string CSocketAPI::HostPortToString(unsigned int   host,
+                                    unsigned short port)
 {
     char   buf[80];
     size_t len = SOCK_HostPortToString(host, port, buf, sizeof(buf));

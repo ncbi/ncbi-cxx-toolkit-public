@@ -42,8 +42,8 @@
  *  SOCK_ShutdownAPI
  *  SOCK_OSHandleSize
  *  SOCK_AllowSigPipeAPI
- *  SOCK_SetApproveHookAPI
  *  SOCK_SetIPv6API
+ *  SOCK_SetApproveHookAPI
  *
  * Event trigger (handle TRIGGER):
  *
@@ -71,6 +71,7 @@
  *  SOCK_Shutdown
  *  SOCK_Close[Ex]
  *  SOCK_Destroy
+ *  SOCK_GetOSHandle[Ex]
  *  SOCK_CloseOSHandle
  *  SOCK_Wait
  *  SOCK_Poll
@@ -86,11 +87,10 @@
  *  SOCK_GetRemotePort
  *  SOCK_GetPeerAddress[IPv6]
  *  SOCK_GetPeerAddressString[Ex]
- *  SOCK_GetOSHandle[Ex]
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
- *  SOCK_SetCork
  *  SOCK_DisableOSSendDelay
+ *  SOCK_SetCork
  *
  * Datagram Socket (handle SOCK):
  *
@@ -103,17 +103,6 @@
  *  DSOCK_WipeMsg
  *  DSOCK_SetBroadcast
  *  DSOCK_GetMessageCount
- *
- * Socket classification & statistics:
- *
- *  SOCK_IsDatagram
- *  SOCK_IsClientSide
- *  SOCK_IsServerSide
- *  SOCK_IsUNIX
- *  SOCK_IsSecure
- *  SOCK_GetPosition
- *  SOCK_GetCount
- *  SOCK_GetTotalCount
  *
  * Settings:
  *
@@ -128,22 +117,32 @@
  *  SOCK_SetDataLogging
  *  SOCK_SetErrHookAPI
  *
+ * Socket classification & statistics:
+ *
+ *  SOCK_IsDatagram
+ *  SOCK_IsClientSide
+ *  SOCK_IsServerSide
+ *  SOCK_IsUNIX
+ *  SOCK_IsSecure
+ *  SOCK_GetPosition
+ *  SOCK_GetCount
+ *  SOCK_GetTotalCount
+ *
  * Generic POLLABLE API:
  *
  *  POLLABLE_Poll
  *  POLLABLE_What
- *  POLLABLE_FromSOCK
- *  POLLABLE_FromLSOCK
  *  POLLABLE_FromTrigger
- *  POLLABLE_ToSOCK
- *  POLLABLE_ToLSOCK
+ *  POLLABLE_FromLSOCK
+ *  POLLABLE_FromSOCK
  *  POLLABLE_ToTrigger
+ *  POLLABLE_ToLSOCK
+ *  POLLABLE_ToSOCK
  *
  * Auxiliary:
  *
  *  SOCK_ntoa
  *  SOCK_isip[Ex]
- *  SOCK_IsLoopbackAddress[IPv6]
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -151,8 +150,10 @@
  *  SOCK_gethostname[Ex]
  *  SOCK_gethostbyname[IPv6][Ex]
  *  SOCK_gethostbyaddr[IPv6][Ex]
- *  SOCK_GetLoopbackAddress[IPv6]
  *  SOCK_GetLocalHostAddress[IPv6]
+ *  SOCK_GetLoopbackAddress[IPv6]
+ *  SOCK_IsLoopbackAddress[IPv6]
+ *
  *  SOCK_StringToHostPort[IPv6]
  *  SOCK_HostPortToString[IPv6]
  *
@@ -318,6 +319,21 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_OSHandleSize(void);
 extern NCBI_XCONNECT_EXPORT void SOCK_AllowSigPipeAPI(void);
 
 
+/** Select IPv6 as the underlying IP protocol.
+* @param ipv6
+*  eOn sets IPv6 throughout; eOff sets IPv4 throughout; eDefault allows both
+* @return
+*  Previous value of the IP selection
+* @note
+*  IPv4-specific functions (such as name resolution to IPv4 addresses) fail
+*  when IPv6 is selected;  and conversely, IPv6-specific functions fail when
+*  IPv4 is selected.  Default is to allow both (depending on the addresses),
+*  but both IP versions are only fully functional on a dual-stack OS (which
+*  has both IPv4 and IPv6 interfaces configured and running).
+*/
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetIPv6API(ESwitch ipv6);
+
+
 /** User-level connection approval hook.
  * The hook (when installed) gets called for any attempt to establish an
  * outgoing(eSOCK_Client) or incoming(eSOCK_Server) connection(eSOCK_Socket),
@@ -407,21 +423,6 @@ typedef enum {
 extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI
 (ESOCK_IOWaitSysAPI api
  );
-
-
-/** Select IPv6 as the underlying IP protocol.
- * @param ipv6
- *  eOn sets IPv6 throughout; eOff sets IPv4 throughout; eDefault allows both
- * @return
- *  Previous value of the IP selection
- * @note
- *  IPv4-specific functions (such as name resolution to IPv4 addresses) fail
- *  when IPv6 is selected;  and conversely, IPv6-specific functions fail when
- *  IPv4 is selected.  Default is to allow both (depending on the addresses),
- *  but both IP versions are only fully functional on a dual-stack OS (which
- *  has both IPv4 and IPv6 interfaces configured and running).
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetIPv6API(ESwitch ipv6);
 
 
 /******************************************************************************
@@ -988,6 +989,41 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_CloseEx
  );
 
 
+/** Get an OS-dependent native socket handle to use by platform-specific API.
+ * FYI:  on MS-Windows it will be "SOCKET", on other platforms -- "int".
+ * @param sock
+ *  [in]  socket handle
+ * @param handle_buf
+ *  [out] pointer to a memory area to put the OS handle at
+ * @param handle_size
+ *  [in]  the exact(!) size of the expected OS handle
+ * @param ownership
+ *  eTakeOwnership removes the handle from SOCK;  eNoOwnership retains it
+ * @note
+ *  If handle ownership is taken, all operations with this SOCK (except for
+ *  SOCK_Close[Ex]()) will fail.
+ * @sa
+ *  SOCK_OSHandleSize, SOCK_GetOSHandle, SOCK_CloseOSHandle, SOCK_CloseEx
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandleEx
+(SOCK       sock,
+ void*      handle_buf,
+ size_t     handle_size,
+ EOwnership ownership
+ );
+
+
+/** Same as SOCK_GetOSHandleEx(sock, handle_buf, handle_size, eNoOwnership).
+ * @sa
+ *  SOCK_GetOSHandleEx
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
+(SOCK   sock,
+ void*  handle_buf,
+ size_t handle_size
+ );
+
+
 /** Close socket OS handle (ungracefully aborting the connection if necessary).
  * The call retries repeatedly if interrupted by a singal (so no eIO_Interrupt
  * should be expected).  Return eIO_Success when the handle has been closed
@@ -1414,6 +1450,24 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPort
  );
 
 
+/** Get remote port of the socket (the port it is connected to).
+ * The call is provided as a counterpart for SOCK_GetLocalPort(), and is
+ * equivalent to calling SOCK_GetPeerAddress(sock, 0, &port, byte_order).
+ * @param sock
+ *  [in]  socket handle
+ * @param byte_order
+ *  [in]  byte order for port on return
+ * @return
+ *  Remote port number in requested byte order, or 0 in case of an error.
+ * @sa
+ *  SOCK_GetPeerAddress, SOCK_GetLocalPort
+ */
+extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
+(SOCK          sock,
+ ENH_ByteOrder byte_order
+ );
+
+
 /** Get host and port of the socket's peer (remote end).
  * @param sock
  *  [in]  socket handle
@@ -1458,24 +1512,6 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddressIPv6
  );
 
 
-/** Get remote port of the socket (the port it is connected to).
- * The call is provided as a counterpart for SOCK_GetLocalPort(), and is
- * equivalent to calling SOCK_GetPeerAddress(sock, 0, &port, byte_order).
- * @param sock
- *  [in]  socket handle
- * @param byte_order
- *  [in]  byte order for port on return
- * @return
- *  Remote port number in requested byte order, or 0 in case of an error.
- * @sa
- *  SOCK_GetPeerAddress, SOCK_GetLocalPort
- */
-extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
-(SOCK          sock,
- ENH_ByteOrder byte_order
- );
-
-
 /** Get textual representation of the socket's peer.
  * For INET domain sockets, the result is one of the forms
  * "aaa.bbb.ccc.ddd:ppppp" (IPv4) or "[a:b:c:d::e:f]:ppppp" (IPv6);
@@ -1506,41 +1542,6 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressString
 (SOCK   sock,
  char*  buf,
  size_t bufsize
- );
-
-
-/** Get an OS-dependent native socket handle to use by platform-specific API.
- * FYI:  on MS-Windows it will be "SOCKET", on other platforms -- "int".
- * @param sock
- *  [in]  socket handle
- * @param handle_buf
- *  [out] pointer to a memory area to put the OS handle at
- * @param handle_size
- *  [in]  the exact(!) size of the expected OS handle
- * @param ownership
- *  eTakeOwnership removes the handle from SOCK;  eNoOwnership retains it
- * @note
- *  If handle ownership is taken, all operations with this SOCK (except for
- *  SOCK_Close[Ex]()) will fail.
- * @sa
- *  SOCK_OSHandleSize, SOCK_GetOSHandle, SOCK_CloseOSHandle, SOCK_CloseEx
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandleEx
-(SOCK       sock,
- void*      handle_buf,
- size_t     handle_size,
- EOwnership ownership
- );
-
-
-/** Same as SOCK_GetOSHandleEx(sock, handle_buf, handle_size, eNoOwnership).
- * @sa
- *  SOCK_GetOSHandleEx
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_GetOSHandle
-(SOCK   sock,
- void*  handle_buf,
- size_t handle_size
  );
 
 
@@ -1577,24 +1578,6 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  );
 
 
-/** Control OS-defined send strategy by disabling/enabling the TCP layer to
- * send incomplete network frames (packets).  With the "cork" set on, data gets
- * always buffered until a complete hardware packet is full (or connection is
- * about to close), and only then is sent out to the wire.
- * @note The setting cancels the effects of SOCK_DisableOSSendDelay().
- * @param sock
- *  [in]  socket handle [stream socket only]
- * @param on_off
- *  [in]  1 to set the cork; 0 to remove the cork
- * @sa
- *  SOCK_Write, SOCK_DisableOSSendDelay
- */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
-(SOCK        sock,
- int/*bool*/ on_off
- );
-
-
 /** Control OS-defined send strategy by disabling/enabling the TCP Nagle
  * algorithm (which is on by default) that packs multiple requests into a
  * single packet and thus transfers the data in fewer transactions, miminizing
@@ -1615,6 +1598,24 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *  SOCK_Write, SOCK_SetCork
  */
 extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
+(SOCK        sock,
+ int/*bool*/ on_off
+ );
+
+
+/** Control OS-defined send strategy by disabling/enabling the TCP layer to
+ * send incomplete network frames (packets).  With the "cork" set on, data gets
+ * always buffered until a complete hardware packet is full (or connection is
+ * about to close), and only then is sent out to the wire.
+ * @note The setting cancels the effects of SOCK_DisableOSSendDelay().
+ * @param sock
+ *  [in]  socket handle [stream socket only]
+ * @param on_off
+ *  [in]  1 to set the cork; 0 to remove the cork
+ * @sa
+ *  SOCK_Write, SOCK_DisableOSSendDelay
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
 (SOCK        sock,
  int/*bool*/ on_off
  );
@@ -1742,29 +1743,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  );
 
 
-/** Send a datagram to a datagram socket.
- * @param sock
- *  [in]  SOCK from DSOCK_Create[Ex]()
- * @param host
- *  [in]  hostname or dotted IP
- * @param port
- *  [in]  port number, host byte order
- * @param data
- *  [in]  additional data to send
- * @param datalen
- *  [in]  size of additional data (bytes)
- * @sa
- *  SOCK_Write, SOCK_SetTimeout
- */
-extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
-(SOCK           sock,
- const char*    host,
- unsigned short port,
- const void*    data,
- size_t         datalen
- );
-
-
 /** Receive a datagram from a datagram socket.
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
@@ -1806,6 +1784,29 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
  );
 
 
+/** Send a datagram to a datagram socket.
+ * @param sock
+ *  [in]  SOCK from DSOCK_Create[Ex]()
+ * @param host
+ *  [in]  hostname or dotted IP
+ * @param port
+ *  [in]  port number, host byte order
+ * @param data
+ *  [in]  additional data to send
+ * @param datalen
+ *  [in]  size of additional data (bytes)
+ * @sa
+ *  SOCK_Write, SOCK_SetTimeout
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_SendMsg
+(SOCK           sock,
+ const char*    host,
+ unsigned short port,
+ const void*    data,
+ size_t         datalen
+ );
+
+
 /** Clear message froma datagram socket.
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
@@ -1842,6 +1843,149 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
 (SOCK      sock,
  EIO_Event direction
  );
+
+
+
+/******************************************************************************
+ *  I/O RESTART ON SIGNALS
+ */
+
+/** Control restartability of I/O interrupted by signals.
+ * By default I/O is restartable if interrupted.
+ * Pass "on_off" as eDefault to get the current setting.
+ * @param on_off
+ *  [in]  eOn to cancel I/O on signals;  eOff to restart
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetInterruptOnSignal
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
+(ESwitch on_off
+ );
+
+
+/** Control restartability of I/O interrupted by signals on a per-socket basis.
+ * eDefault causes the use of global API flag.
+ * @param sock
+ *  [in]  socket handle
+ * @param on_off
+ *  [in]  per-socket I/O restart behavior on signals
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
+(SOCK    sock,
+ ESwitch on_off
+ );
+
+
+
+/******************************************************************************
+ *  ADDRESS REUSE
+ */
+
+/** Control address reuse for socket addresses taken by the API.
+ * By default address is not marked for reuse in either SOCK or DSOCK,
+ * but is always reused for LSOCK (upon socket closure).
+ * Pass "on_off" as eDefault to get the current setting.
+ * @param on_off
+ *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetReuseAddress
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
+(ESwitch on_off
+ );
+
+
+/** Control reuse of socket addresses on per-socket basis
+ * Note: only a boolean parameter value is can be used here.
+ * @param sock
+ *  [in]  socket handle
+ * @param on_off
+ *  [in]  whether to reuse the address (true, non-zero) or not (false, zero)
+ * @sa
+ *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
+(SOCK        sock,
+ int/*bool*/ on_off
+ );
+
+
+
+/******************************************************************************
+ *  DATA LOGGING & ERROR REPORTING
+ *
+ * @note  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
+ *
+ * @sa
+ *  CORE_SetLOG
+ */
+
+/** By default data are not logged.
+ * @param log
+ *  To start logging the data, call this func with "log" == eOn.
+ *  To stop  logging the data, call this func with "log" == eOff.
+ *  To get current log switch, call this func with "log" == eDefault.
+ * @return
+ *  Prior (or current, if "log" is eDefault) setting
+ * @sa
+ *  SOCK_SetDataLogging
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
+(ESwitch log
+ );
+
+
+/** Control the data logging for socket "sock" individually.
+ * @param sock
+ *  [in]  socket handle
+ * @param log
+ *  [in]  requested data logging
+ *  To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
+ *  call this function with "log" == eDefault.
+ * @return
+ *  Prior setting
+ * @sa
+ *  SOCK_SetDataLoggingAPI, SOCK_Create, DSOCK_Create
+ */
+extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
+(SOCK    sock,
+ ESwitch log
+ );
+
+
+/** User-level error hook.
+ */
+
+typedef enum {
+    eSOCK_ErrInit = 1,      /**< Socket layer initialization error           */
+    eSOCK_ErrDns,           /**< DNS-related error (unresolvable hostname)   */
+    eSOCK_ErrIO             /**< I/O-related error                           */
+} ESOCK_ErrType;
+
+typedef struct {
+    ESOCK_ErrType  type;    /**< See ESOCK_ErrType                           */
+    SOCK           sock;    /**< Non-NULL when SOCK-related                  */
+    const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
+    unsigned short port;    /**< Port (host byte order), 0 for non-IP SOCK   */
+    EIO_Event      event;   /**< Meaningful only for the eSOCK_ErrIO type    */
+    EIO_Status     status;  /**< Status code about to be returned (if known) */
+} SSOCK_ErrInfo;
+
+
+typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info,
+                              void*                data);
+
+extern NCBI_XCONNECT_EXPORT
+void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
+                        void*         data);
 
 
 
@@ -1948,146 +2092,6 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
  );
 
 
-/******************************************************************************
- *  I/O RESTART ON SIGNALS
- */
-
-/** Control restartability of I/O interrupted by signals.
- * By default I/O is restartable if interrupted.
- * Pass "on_off" as eDefault to get the current setting.
- * @param on_off
- *  [in]  eOn to cancel I/O on signals;  eOff to restart
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetInterruptOnSignal
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignalAPI
-(ESwitch on_off
- );
-
-
-/** Control restartability of I/O interrupted by signals on a per-socket basis.
- * eDefault causes the use of global API flag.
- * @param sock
- *  [in]  socket handle
- * @param on_off
- *  [in]  per-socket I/O restart behavior on signals
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetInterruptOnSignalAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
-(SOCK    sock,
- ESwitch on_off
- );
-
-
-/******************************************************************************
- *  ADDRESS REUSE
- */
-
-/** Control address reuse for socket addresses taken by the API.
- * By default address is not marked for reuse in either SOCK or DSOCK,
- * but is always reused for LSOCK (upon socket closure).
- * Pass "on_off" as eDefault to get the current setting.
- * @param on_off
- *  [in]  whether to turn on (eOn), turn off (eOff) or get current (eDefault)
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetReuseAddress
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReuseAddressAPI
-(ESwitch on_off
- );
-
-
-/** Control reuse of socket addresses on per-socket basis
- * Note: only a boolean parameter value is can be used here.
- * @param sock
- *  [in]  socket handle
- * @param on_off
- *  [in]  whether to reuse the address (true, non-zero) or not (false, zero)
- * @sa
- *  SOCK_SetReuseAddressAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
-(SOCK        sock,
- int/*bool*/ on_off
- );
-
-
-/******************************************************************************
- *  DATA LOGGING & ERROR REPORTING
- *
- * @note  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
- *
- * @sa
- *  CORE_SetLOG
- */
-
-/** By default data are not logged.
- * @param log
- *  To start logging the data, call this func with "log" == eOn.
- *  To stop  logging the data, call this func with "log" == eOff.
- *  To get current log switch, call this func with "log" == eDefault.
- * @return
- *  Prior (or current, if "log" is eDefault) setting
- * @sa
- *  SOCK_SetDataLogging
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLoggingAPI
-(ESwitch log
- );
-
-
-/** Control the data logging for socket "sock" individually.
- * @param sock
- *  [in]  socket handle
- * @param log
- *  [in]  requested data logging
- *  To reset to the global default behavior (as set by SOCK_SetDataLoggingAPI),
- *  call this function with "log" == eDefault.
- * @return
- *  Prior setting
- * @sa
- *  SOCK_SetDataLoggingAPI, SOCK_Create, DSOCK_Create
- */
-extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
-(SOCK    sock,
- ESwitch log
- );
-
-
-/** User-level error hook.
- */
-
-typedef enum {
-    eSOCK_ErrInit = 1,      /**< Socket layer initialization error           */
-    eSOCK_ErrDns,           /**< DNS-related error (unresolvable hostname)   */
-    eSOCK_ErrIO             /**< I/O-related error                           */
-} ESOCK_ErrType;
-
-typedef struct {
-    ESOCK_ErrType  type;    /**< See ESOCK_ErrType                           */
-    SOCK           sock;    /**< Non-NULL when SOCK-related                  */
-    const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
-    unsigned short port;    /**< Port (host byte order), 0 for non-IP SOCK   */
-    EIO_Event      event;   /**< Meaningful only for the eSOCK_ErrIO type    */
-    EIO_Status     status;  /**< Status code about to be returned (if known) */
-} SSOCK_ErrInfo;
-
-
-typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info,
-                              void*                data);
-
-extern NCBI_XCONNECT_EXPORT
-void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
-                        void*         data);
-
-
 
 /******************************************************************************
  *  GENERIC POLLABLE INTERFACE (please see SOCK_Poll() above for explanations)
@@ -2138,12 +2142,12 @@ extern NCBI_XCONNECT_EXPORT ESOCK_Type POLLABLE_What(POLLABLE);
  * @return
  *  Return 0 if conversion cannot be made; otherwise the converted handle.
  */
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
-extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
 extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromTRIGGER(TRIGGER);
-extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
-extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromLSOCK  (LSOCK);
+extern NCBI_XCONNECT_EXPORT POLLABLE POLLABLE_FromSOCK   (SOCK);
 extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
+extern NCBI_XCONNECT_EXPORT LSOCK    POLLABLE_ToLSOCK  (POLLABLE);
+extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
 
 
 
@@ -2197,28 +2201,6 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 (const char* host
  );
-
-
-/** Check whether an address is a loopback one.
- * Return non-zero (true) if the IPv4 address (in network byte order) given
- * in the agrument, is a loopback one;  zero otherwise.
- * @sa
- *  SOCK_IsLoopbackAddressIPv6
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
-(unsigned int ip
- );
-
-
-/** Check whether an address is a loopback one.
-* Return non-zero (true) if the the address given in the agrument,
-* is a loopback one;  zero otherwise.
-* @sa
-*  SOCK_IsLoopbackAddress
-*/
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddressIPv6
-(const TNCBI_IPv6Addr* addr
-);
 
 
 /** See man for the BSDisms, htonl() and htons().
@@ -2421,22 +2403,6 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
  );
 
 
-/** Get loopback address.
- * @return
- *  "addr" filled with loopback address; NULL on error
- */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6
-(TNCBI_IPv6Addr* addr
- );
-
-
-/** Get IPv4 loopback address.
-* @return
-*  Loopback address (in network byte order)
-*/
-extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
-
-
 /** Get (and cache for faster follow-up retrievals) IP address of local host
  * @param addr
  *  a pointer to the storage area to fill in with the local host address
@@ -2459,6 +2425,44 @@ extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
 (ESwitch         reget
  );
+
+
+/** Get loopback address.
+ * @return
+ *  "addr" filled with loopback address; NULL on error
+ */
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6
+(TNCBI_IPv6Addr* addr
+ );
+
+
+/** Get IPv4 loopback address.
+* @return
+*  Loopback address (in network byte order)
+*/
+extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
+
+
+/** Check whether an address is a loopback one.
+ * Return non-zero (true) if the IPv4 address (in network byte order) given
+ * in the agrument, is a loopback one;  zero otherwise.
+ * @sa
+ *  SOCK_IsLoopbackAddressIPv6
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
+(unsigned int ip
+ );
+
+
+/** Check whether an address is a loopback one.
+* Return non-zero (true) if the the address given in the agrument,
+* is a loopback one;  zero otherwise.
+* @sa
+*  SOCK_IsLoopbackAddress
+*/
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddressIPv6
+(const TNCBI_IPv6Addr* addr
+);
 
 
 /** Read (skipping leading blanks) "[host][:port]" from a string stopping

@@ -413,15 +413,6 @@ static void s_ErrorCallback(const SSOCK_ErrInfo* info)
 }
 
 
-extern void SOCK_SetErrHookAPI(FSOCK_ErrHook hook, void* data)
-{
-    CORE_LOCK_WRITE;
-    s_ErrData = hook ? data : 0;
-    s_ErrHook = hook;
-    CORE_UNLOCK;
-}
-
-
 
 /******************************************************************************
  *  DATA LOGGING
@@ -1182,6 +1173,12 @@ extern EIO_Status SOCK_ShutdownAPI(void)
 }
 
 
+extern size_t SOCK_OSHandleSize(void)
+{
+    return sizeof(TSOCK_Handle);
+}
+
+
 extern void SOCK_AllowSigPipeAPI(void)
 {
 #ifdef NCBI_OS_UNIX
@@ -1191,9 +1188,38 @@ extern void SOCK_AllowSigPipeAPI(void)
 }
 
 
-extern size_t SOCK_OSHandleSize(void)
+extern ESwitch SOCK_SetIPv6API(ESwitch ipv6)
 {
-    return sizeof(TSOCK_Handle);
+    int version = s_IPVersion;
+    switch (ipv6) {
+    case eOn:
+        s_IPVersion = AF_INET6;
+        break;
+    case eOff:
+        s_IPVersion = AF_INET;
+        break;
+    default:
+        s_IPVersion = AF_UNSPEC;
+        break;
+    }
+    switch (version) {
+    case AF_INET6:
+        return eOn;
+    case AF_INET:
+        return eOff;
+    default:
+        break;
+    }
+    return eDefault;
+}
+
+
+extern void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook, void* data)
+{
+    CORE_LOCK_WRITE;
+    s_ApproveData = hook ? data : 0;
+    s_ApproveHook = hook;
+    CORE_UNLOCK;
 }
 
 
@@ -1900,41 +1926,6 @@ static EIO_Status s_ApproveCallback(const char*    host, const TNCBI_IPv6Addr* a
             status  = eIO_Unknown;
     }
     return status;
-}
-
-
-extern void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook, void* data)
-{
-    CORE_LOCK_WRITE;
-    s_ApproveData = hook ? data : 0;
-    s_ApproveHook = hook;
-    CORE_UNLOCK;
-}
-
-
-extern ESwitch SOCK_SetIPv6API(ESwitch ipv6)
-{
-    int version = s_IPVersion;
-    switch (ipv6) {
-    case eOn:
-        s_IPVersion = AF_INET6;
-        break;
-    case eOff:
-        s_IPVersion = AF_INET;
-        break;
-    default:
-        s_IPVersion = AF_UNSPEC;
-        break;
-    }
-    switch (version) {
-    case AF_INET6:
-        return eOn;
-    case AF_INET:
-        return eOff;
-    default:
-        break;
-    }
-    return eDefault;
 }
 
 
@@ -7322,13 +7313,6 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 }
 
 
-/* NB: aka SOCK_Destroy() */
-extern EIO_Status SOCK_Close(SOCK sock)
-{
-    return SOCK_CloseEx(sock, 1/*destroy*/);
-}
-
-
 extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
 {
     EIO_Status status;
@@ -7359,6 +7343,59 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
         free(sock);
     }
     return status;
+}
+
+
+/* NB: aka SOCK_Destroy() */
+extern EIO_Status SOCK_Close(SOCK sock)
+{
+    return SOCK_CloseEx(sock, 1/*destroy*/);
+}
+
+
+extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
+    void*      handle,
+    size_t     handle_size,
+    EOwnership ownership)
+{
+    EIO_Status   status;
+    TSOCK_Handle fd;
+
+    if (!handle  ||  handle_size != sizeof(sock->sock)) {
+        char _id[MAXIDLEN];
+        CORE_LOGF_X(73, eLOG_Error,
+            ("%s[SOCK::GetOSHandle] "
+                " Invalid handle%s %lu",
+                s_ID(sock, _id),
+                handle ? " size"                     : "",
+                handle ? (unsigned long) handle_size : 0UL));
+        assert(0);
+        return eIO_InvalidArg;
+    }
+    if (!sock) {
+        fd = SOCK_INVALID;
+        memcpy(handle, &fd, handle_size);
+        return eIO_InvalidArg;
+    }
+    fd = sock->sock;
+    memcpy(handle, &fd, handle_size);
+    if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
+        status = eIO_Closed;
+    else if (ownership != eTakeOwnership)
+        status = eIO_Success;
+    else {
+        sock->keep = 1/*true*/;
+        status = s_Close(sock, 0, fSOCK_KeepNone);
+    }
+    return status;
+}
+
+
+extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
+    void*  handle,
+    size_t handle_size)
+{
+    return SOCK_GetOSHandleEx(sock, handle, handle_size, eNoOwnership);
 }
 
 
@@ -8214,52 +8251,6 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
 }
 
 
-extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
-                                     void*      handle,
-                                     size_t     handle_size,
-                                     EOwnership ownership)
-{
-    EIO_Status   status;
-    TSOCK_Handle fd;
-
-    if (!handle  ||  handle_size != sizeof(sock->sock)) {
-        char _id[MAXIDLEN];
-        CORE_LOGF_X(73, eLOG_Error,
-                    ("%s[SOCK::GetOSHandle] "
-                     " Invalid handle%s %lu",
-                     s_ID(sock, _id),
-                     handle ? " size"                     : "",
-                     handle ? (unsigned long) handle_size : 0UL));
-        assert(0);
-        return eIO_InvalidArg;
-    }
-    if (!sock) {
-        fd = SOCK_INVALID;
-        memcpy(handle, &fd, handle_size);
-        return eIO_InvalidArg;
-    }
-    fd = sock->sock;
-    memcpy(handle, &fd, handle_size);
-    if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
-        status = eIO_Closed;
-    else if (ownership != eTakeOwnership)
-        status = eIO_Success;
-    else {
-        sock->keep = 1/*true*/;
-        status = s_Close(sock, 0, fSOCK_KeepNone);
-    }
-    return status;
-}
-
-
-extern EIO_Status SOCK_GetOSHandle(SOCK   sock,
-                                   void*  handle,
-                                   size_t handle_size)
-{
-    return SOCK_GetOSHandleEx(sock, handle, handle_size, eNoOwnership);
-}
-
-
 extern ESwitch SOCK_SetReadOnWriteAPI(ESwitch on_off)
 {
     ESwitch old = s_ReadOnWrite;
@@ -8277,48 +8268,6 @@ extern ESwitch SOCK_SetReadOnWrite(SOCK sock, ESwitch on_off)
         return old;
     }
     return eDefault;
-}
-
-
-/*ARGSUSED*/
-extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
-{
-    char _id[MAXIDLEN];
-
-    if (sock->sock == SOCK_INVALID) {
-        CORE_LOGF_X(158, eLOG_Warning,
-                    ("%s[SOCK::SetCork] "
-                     " Invalid socket",
-                     s_ID(sock, _id)));
-        return;
-    }
-    if (sock->type == eSOCK_Datagram) {
-        CORE_LOGF_X(159, eLOG_Error,
-                    ("%s[SOCK::SetCork] "
-                     " Datagram socket",
-                     s_ID(sock, _id)));
-        assert(0);
-        return;
-    }
-
-#if defined(TCP_CORK)  &&  !defined(NCBI_OS_CYGWIN)
-    if (setsockopt(sock->sock, IPPROTO_TCP, TCP_CORK,
-                   (char*) &on_off, sizeof(on_off)) != 0) {
-        int error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(error);
-        CORE_LOGF_ERRNO_EXX(160, eLOG_Warning,
-                            error, strerr ? strerr : "",
-                            ("%s[SOCK::SetCork] "
-                             " Failed setsockopt(%sTCP_CORK)",
-                             s_ID(sock, _id), on_off ? "" : "!"));
-        UTIL_ReleaseBuffer(strerr);
-    }
-#  ifdef TCP_NOPUSH
-    /* try to avoid 5 second delay on BSD systems (incl. Darwin) */
-    if (!on_off)
-        (void) send(sock->sock, _id/*dontcare*/, 0, 0);
-#  endif /*TCP_NOPUSH*/
-#endif /*TCP_CORK && !NCBI_OS_CYGWIN*/
 }
 
 
@@ -8355,7 +8304,53 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
                              s_ID(sock, _id), on_off ? "" : "!"));
         UTIL_ReleaseBuffer(strerr);
     }
+#else
+    (void) on_off;
 #endif /*TCP_NODELAY*/
+}
+
+
+/*ARGSUSED*/
+extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
+{
+    char _id[MAXIDLEN];
+
+    if (sock->sock == SOCK_INVALID) {
+        CORE_LOGF_X(158, eLOG_Warning,
+            ("%s[SOCK::SetCork] "
+                " Invalid socket",
+                s_ID(sock, _id)));
+        return;
+    }
+    if (sock->type == eSOCK_Datagram) {
+        CORE_LOGF_X(159, eLOG_Error,
+            ("%s[SOCK::SetCork] "
+                " Datagram socket",
+                s_ID(sock, _id)));
+        assert(0);
+        return;
+    }
+
+#if defined(TCP_CORK)  &&  !defined(NCBI_OS_CYGWIN)
+    if (setsockopt(sock->sock, IPPROTO_TCP, TCP_CORK,
+        (char*) &on_off, sizeof(on_off)) != 0) {
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
+        CORE_LOGF_ERRNO_EXX(160, eLOG_Warning,
+            error, strerr ? strerr : "",
+            ("%s[SOCK::SetCork] "
+                " Failed setsockopt(%sTCP_CORK)",
+                s_ID(sock, _id), on_off ? "" : "!"));
+        UTIL_ReleaseBuffer(strerr);
+    }
+#  ifdef TCP_NOPUSH
+    /* try to avoid 5 second delay on BSD systems (incl. Darwin) */
+    if (!on_off)
+        (void) send(sock->sock, _id/*dontcare*/, 0, 0);
+#  endif /*TCP_NOPUSH*/
+#else
+    (void) on_off;
+#endif /*TCP_CORK && !NCBI_OS_CYGWIN*/
 }
 
 
@@ -9026,6 +9021,80 @@ extern TNCBI_BigCount DSOCK_GetMessageCount(SOCK sock, EIO_Event direction)
 
 
 /******************************************************************************
+*  SOCKET SETTINGS
+*/
+
+
+extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
+{
+    ESwitch old = s_InterruptOnSignal;
+    if (on_off != eDefault)
+        s_InterruptOnSignal = on_off;
+    return old;
+}
+
+
+extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
+{
+    ESwitch old = (ESwitch) sock->i_on_sig;
+    sock->i_on_sig = on_off;
+    return old;
+}
+
+
+extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
+{
+    ESwitch old = s_ReuseAddress;
+    if (on_off != eDefault)
+        s_ReuseAddress = on_off;
+    return old;
+}
+
+
+extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
+{
+    if (sock->sock != SOCK_INVALID && !s_SetReuseAddress(sock->sock, on_off)) {
+        char _id[MAXIDLEN];
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
+        CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
+            error, strerr ? strerr : "",
+            ("%s[SOCK::SetReuseAddress] "
+                " Failed setsockopt(%sREUSEADDR)",
+                s_ID(sock, _id), on_off ? "" : "NO"));
+        UTIL_ReleaseBuffer(strerr);
+    }
+}
+
+
+extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
+{
+    ESwitch old = s_Log;
+    if (log != eDefault)
+        s_Log = log;
+    return old;
+}
+
+
+extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
+{
+    ESwitch old = (ESwitch) sock->log;
+    sock->log = log;
+    return old;
+}
+
+
+extern void SOCK_SetErrHookAPI(FSOCK_ErrHook hook, void* data)
+{
+    CORE_LOCK_WRITE;
+    s_ErrData = hook ? data : 0;
+    s_ErrHook = hook;
+    CORE_UNLOCK;
+}
+
+
+
+/******************************************************************************
  *  CLASSIFICATION & STATS
  */
 
@@ -9120,71 +9189,6 @@ extern TNCBI_BigCount SOCK_GetTotalCount(SOCK sock, EIO_Event direction)
         }
     }
     return 0;
-}
-
-
-
-/******************************************************************************
- *  SOCKET SETTINGS
- */
-
-
-extern ESwitch SOCK_SetInterruptOnSignalAPI(ESwitch on_off)
-{
-    ESwitch old = s_InterruptOnSignal;
-    if (on_off != eDefault)
-        s_InterruptOnSignal = on_off;
-    return old;
-}
-
-
-extern ESwitch SOCK_SetInterruptOnSignal(SOCK sock, ESwitch on_off)
-{
-    ESwitch old = (ESwitch) sock->i_on_sig;
-    sock->i_on_sig = on_off;
-    return old;
-}
-
-
-extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
-{
-    ESwitch old = s_ReuseAddress;
-    if (on_off != eDefault)
-        s_ReuseAddress = on_off;
-    return old;
-}
-
-
-extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
-{
-    if (sock->sock != SOCK_INVALID && !s_SetReuseAddress(sock->sock, on_off)) {
-        char _id[MAXIDLEN];
-        int error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(error);
-        CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
-                            error, strerr ? strerr : "",
-                            ("%s[SOCK::SetReuseAddress] "
-                             " Failed setsockopt(%sREUSEADDR)",
-                             s_ID(sock, _id), on_off ? "" : "NO"));
-        UTIL_ReleaseBuffer(strerr);
-    }
-}
-
-
-extern ESwitch SOCK_SetDataLoggingAPI(ESwitch log)
-{
-    ESwitch old = s_Log;
-    if (log != eDefault)
-        s_Log = log;
-    return old;
-}
-
-
-extern ESwitch SOCK_SetDataLogging(SOCK sock, ESwitch log)
-{
-    ESwitch old = (ESwitch) sock->log;
-    sock->log = log;
-    return old;
 }
 
 
@@ -9314,41 +9318,6 @@ extern int/*bool*/ SOCK_isipEx(const char* str, int/*bool*/ fullquad)
 extern int/*bool*/ SOCK_isip(const char* str)
 {
     return SOCK_isipEx(str, 0/*nofullquad*/);
-}
-
-
-extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
-{
-    if (ip == htonl(INADDR_LOOPBACK)) 
-        return 1/*true*/;
-    /* 127/8 */
-    if (ip) {
-        unsigned int addr = ntohl(ip);
-#if defined(IN_CLASSA) && defined(IN_CLASSA_NET) && defined(IN_CLASSA_NSHIFT)
-        return IN_CLASSA(addr)
-            &&  (addr & IN_CLASSA_NET) == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT);
-#else
-        return !((addr & 0xFF000000) ^ (INADDR_LOOPBACK-1));
-#endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
-    }
-    return 0/*false*/;
-}
-
-
-extern int/*bool*/ SOCK_IsLoopbackAddressIPv6(const TNCBI_IPv6Addr* addr)
-{
-    size_t n;
-    if (!addr)
-        return 0/*false*/;
-    if (NcbiIsIPv4(addr))
-        return SOCK_IsLoopbackAddress(NcbiIPv6ToIPv4(addr, 0));
-    if (addr->octet[sizeof(addr->octet)/sizeof(addr->octet[0]) - 1] != 1)
-        return 0/*false*/;
-    for (n = 0;  n < sizeof(addr->octet)/sizeof(addr->octet[0]) - 1;  ++n) {
-        if (addr->octet[n])
-            return 0/*false*/;
-    }
-    return 1/*true*/;
 }
 
 
@@ -9487,25 +9456,6 @@ extern const char* SOCK_gethostbyaddrIPv6(const TNCBI_IPv6Addr* addr,
 }
 
 
-extern unsigned int SOCK_GetLoopbackAddress(void)
-{
-    return s_IPVersion == AF_INET6 ? 0 : SOCK_LOOPBACK;
-}
-
-
-extern TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6(TNCBI_IPv6Addr* loop)
-{
-    if (loop) {
-        if (s_IPVersion != AF_INET) {
-            memset(loop, 0, sizeof(*loop));
-            loop->octet[sizeof(loop->octet) - 1]  = 1;
-        } else
-            NcbiIPv4ToIPv6(loop, SOCK_LOOPBACK, 0);
-    }
-    return loop;
-}
-
-
 extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 {
     TNCBI_IPv6Addr addr;
@@ -9527,6 +9477,60 @@ extern TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6(TNCBI_IPv6Addr* addr, ESwitc
         return 0;
 
     return s_getlocalhostaddress(addr, s_IPVersion, reget, s_Log);
+}
+
+
+extern unsigned int SOCK_GetLoopbackAddress(void)
+{
+    return s_IPVersion == AF_INET6 ? 0 : SOCK_LOOPBACK;
+}
+
+
+extern TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6(TNCBI_IPv6Addr* loop)
+{
+    if (loop) {
+        if (s_IPVersion != AF_INET) {
+            memset(loop, 0, sizeof(*loop));
+            loop->octet[sizeof(loop->octet) - 1]  = 1;
+        } else
+            NcbiIPv4ToIPv6(loop, SOCK_LOOPBACK, 0);
+    }
+    return loop;
+}
+
+
+extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
+{
+    if (ip == htonl(INADDR_LOOPBACK)) 
+        return 1/*true*/;
+    /* 127/8 */
+    if (ip) {
+        unsigned int addr = ntohl(ip);
+#if defined(IN_CLASSA) && defined(IN_CLASSA_NET) && defined(IN_CLASSA_NSHIFT)
+        return IN_CLASSA(addr)
+            &&  (addr & IN_CLASSA_NET) == (IN_LOOPBACKNET << IN_CLASSA_NSHIFT);
+#else
+        return !((addr & 0xFF000000) ^ (INADDR_LOOPBACK-1));
+#endif /*IN_CLASSA && IN_CLASSA_NET && IN_CLASSA_NSHIFT*/
+    }
+    return 0/*false*/;
+}
+
+
+extern int/*bool*/ SOCK_IsLoopbackAddressIPv6(const TNCBI_IPv6Addr* addr)
+{
+    size_t n;
+    if (!addr)
+        return 0/*false*/;
+    if (NcbiIsIPv4(addr))
+        return SOCK_IsLoopbackAddress(NcbiIPv6ToIPv4(addr, 0));
+    if (addr->octet[sizeof(addr->octet)/sizeof(addr->octet[0]) - 1] != 1)
+        return 0/*false*/;
+    for (n = 0;  n < sizeof(addr->octet)/sizeof(addr->octet[0]) - 1;  ++n) {
+        if (addr->octet[n])
+            return 0/*false*/;
+    }
+    return 1/*true*/;
 }
 
 
