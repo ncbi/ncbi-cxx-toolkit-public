@@ -59,6 +59,10 @@ int main(int argc, const char *argv[])
 }
 #else
 
+#ifdef NCBI_OS_MSWIN
+#  define TEST_GMTIME_MT_SAFE  1
+#endif /*NCBI_OS_MSWIN*/
+
 #ifdef _MSC_VER
 #define unsetenv(n)     _putenv_s(n,"")
 #define setenv(n,v,w)   _putenv_s(n,v)
@@ -198,13 +202,17 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
         /* Calculate new expiration time. */
         time_t      tt_exp = time(0) + ss;
         struct tm   tm_exp;
+#ifndef TEST_GMTIME_MT_SAFE
         CORE_LOCK_WRITE;
+#endif /*!TEST_GMTIME_MT_SAFE*/
         tm_exp = *gmtime(&tt_exp);
+#ifndef TEST_GMTIME_MT_SAFE
         CORE_UNLOCK;
+#endif /*!TEST_GMTIME_MT_SAFE*/
 
         /* Output the expiration time. */
         if ( ! *mock_body_adj_p)
-            *mock_body_adj_p = strdup(mock_body);
+            verify(*mock_body_adj_p = strdup(mock_body));
         char* cp2 = *mock_body_adj_p + (exp - mock_body) + prfx_len;
         if (strftime(cp2, notz_len + 1, "%Y-%m-%dT%H:%M:%S", &tm_exp)
             != notz_len)
