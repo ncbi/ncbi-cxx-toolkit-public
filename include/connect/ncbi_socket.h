@@ -1477,7 +1477,8 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
 
 
 /** Get textual representation of the socket's peer.
- * For INET domain sockets, the result is of the form "aaa.bbb.ccc.ddd:ppppp";
+ * For INET domain sockets, the result is one of the forms
+ * "aaa.bbb.ccc.ddd:ppppp" (IPv4) or "[a:b:c:d::e:f]:ppppp" (IPv6);
  * for UNIX domain socket, the result is the name of the socket's file.
  * @param sock
  *  [in]  socket handle

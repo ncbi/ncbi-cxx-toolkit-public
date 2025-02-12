@@ -8671,16 +8671,6 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
 
     if (host  &&  !*host)
         host = 0;
-    if (!host)
-        memset(&addr, 0, sizeof(addr));
-    else if (!s_gethostbyname(&addr, host, s_IPVersion, 0, (ESwitch) sock->log)) {
-        CORE_LOGF_X(83, eLOG_Error,
-                    ("%s[DSOCK::Connect] "
-                        " Failed SOCK_gethostbyname(\"%.*s\")",
-                        s_ID(sock, _id), CONN_HOST_LEN, host));
-        return eIO_Unknown;
-    } else if (NcbiIsEmptyIPv6(&addr))
-        host = 0;
     if (!host != !port) {
         if (port) {
             assert(!host);
@@ -8694,6 +8684,16 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
                      addrstr, port ? "host" : "port"));
         return eIO_InvalidArg;
     }
+    if (!host)
+        memset(&addr, 0, sizeof(addr));
+    else if (!s_gethostbyname(&addr, host, s_IPVersion, 0, (ESwitch) sock->log)) {
+        CORE_LOGF_X(83, eLOG_Error,
+            ("%s[DSOCK::Connect] "
+                " Failed SOCK_gethostbyname(\"%.*s\")",
+                s_ID(sock, _id), CONN_HOST_LEN, host));
+        return eIO_Unknown;
+    } else if (NcbiIsEmptyIPv6(&addr))
+        host = 0;
 
     /* connect (non-empty address) or drop association (on empty address) */
     if (host/*  &&  port*/) {
@@ -9523,7 +9523,7 @@ extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 extern TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6(TNCBI_IPv6Addr* addr, ESwitch reget)
 {
     /* initialize internals */
-    if (s_InitAPI(0) != eIO_Success)
+    if (!addr  ||  s_InitAPI(0) != eIO_Success)
         return 0;
 
     return s_getlocalhostaddress(addr, s_IPVersion, reget, s_Log);

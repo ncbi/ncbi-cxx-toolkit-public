@@ -36,7 +36,7 @@
 #include <connect/ncbi_socket_unix.hpp>
 #include <limits.h>                     // for PATH_MAX
 #if defined(NCBI_OS_MSWIN)  &&  !defined(PATH_MAX)
-#  define PATH_MAX 512                  // will actually use less than 32 chars
+#  define PATH_MAX 512                  // will actually use less than 64 chars
 #endif // NCBI_OS_MSWIN && !PATH_MAX
 
 
@@ -83,17 +83,17 @@ CSocket::CSocket(const string&   hostport,
       r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
 {
     const char*    end;
-    unsigned int x_host;
+    TNCBI_IPv6Addr addr;
     unsigned short port;
-    char           host[16/*sizeof("255.255.255.255")*/];
+    char           host[128];
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0/*kInfiniteTimeout*/;
-    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))
-        ||  *end  ||  !x_host  ||  !port
-        ||  SOCK_ntoa(x_host, host, sizeof(host)) != 0) {
+    if (!(end = SOCK_StringToHostPortIPv6(hostport.c_str(), &addr, &port))
+        ||  *end  ||  NcbiIsEmptyIPv6(&addr)  ||  !port
+        ||  !SOCK_HostPortToStringIPv6(&addr, 0, host, sizeof(host))) {
         m_Socket = 0;
     } else
         SOCK_CreateEx(host, port, o_timeout, &m_Socket, 0, 0, flags);
@@ -107,17 +107,37 @@ CSocket::CSocket(unsigned int    host,
     : m_IsOwned(eTakeOwnership),
       r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
 {
-    char x_host[16/*sizeof("255.255.255.255")*/];
+    char addr[16/*sizeof("255.255.255.255")*/];
     if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
         o_timeout  = 0/*kInfiniteTimeout*/;
-    if (SOCK_ntoa(host, x_host, sizeof(x_host)) != 0)
+    if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
         m_Socket = 0;
     else
-        SOCK_CreateEx(x_host, port, o_timeout, &m_Socket, 0, 0, flags);
+        SOCK_CreateEx(addr, port, o_timeout, &m_Socket, 0, 0, flags);
+}
 
+
+CSocket::CSocket(const TNCBI_IPv6Addr* addr,
+                 unsigned short        port,
+                 const STimeout*       timeout,
+                 TSOCK_Flags           flags)
+    : m_IsOwned(eTakeOwnership),
+      r_timeout(0/*kInfiniteTimeout*/), w_timeout(0), c_timeout(0)
+{
+    char host[128];
+    if (timeout  &&  timeout != kDefaultTimeout) {
+        oo_timeout = *timeout;
+        o_timeout  = &oo_timeout;
+    } else
+        o_timeout  = 0/*kInfiniteTimeout*/;
+    if (!addr  ||  NcbiIsEmptyIPv6(addr)
+        ||  !SOCK_HostPortToStringIPv6(addr, 0, host, sizeof(host))) {
+        m_Socket = 0;
+    } else
+        SOCK_CreateEx(host, port, o_timeout, &m_Socket, 0, 0, flags);
 }
 
 
@@ -177,9 +197,9 @@ EIO_Status CSocket::Connect(const string&   hostport,
                             TSOCK_Flags     flags)
 {
     const char*    end;
-    unsigned int x_host;
+    TNCBI_IPv6Addr addr;
     unsigned short port;
-    char           host[16/*sizeof("255.255.255.255")*/];
+    char           host[128];
     if ( m_Socket ) {
         if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
             return eIO_Unknown;
@@ -195,15 +215,86 @@ EIO_Status CSocket::Connect(const string&   hostport,
             o_timeout = 0/*kInfiniteTimeout*/;
     }
     EIO_Status status;
-    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))
-        ||  *end  ||  !x_host  ||  !port
-        ||  SOCK_ntoa(x_host, host, sizeof(host)) != 0) {
+    if (!(end = SOCK_StringToHostPortIPv6(hostport.c_str(), &addr, &port))
+        ||  *end  ||  NcbiIsEmptyIPv6(&addr)  ||  !port
+        ||  !SOCK_HostPortToStringIPv6(&addr, 0, host, sizeof(host))) {
         status = eIO_Unknown;
         m_Socket = 0;
-    } else {
-        status = SOCK_CreateEx(host, port, o_timeout,
-                               &m_Socket, 0, 0, flags);
+    } else
+        status = SOCK_CreateEx(host, port, o_timeout, &m_Socket, 0, 0, flags);
+    if (status == eIO_Success) {
+        SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);
+    } else
+        assert(!m_Socket);
+    return status;
+}
+
+
+EIO_Status CSocket::Connect(unsigned int    host,
+                            unsigned short  port,
+                            const STimeout* timeout,
+                            TSOCK_Flags     flags)
+{
+    char addr[16/*sizeof("255.255.255.255")*/];
+    if ( m_Socket ) {
+        if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
+            return eIO_Unknown;
+        if (m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
     }
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
+            o_timeout = &oo_timeout;
+        } else
+            o_timeout = 0/*kInfiniteTimeout*/;
+    }
+    EIO_Status status;
+    if (SOCK_ntoa(host, addr, sizeof(addr)) != 0) {
+        status = eIO_Unknown;
+        m_Socket = 0;
+    } else
+        status = SOCK_CreateEx(addr, port, o_timeout, &m_Socket, 0, 0, flags);
+    if (status == eIO_Success) {
+        SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
+        SOCK_SetTimeout(m_Socket, eIO_Close, c_timeout);
+    } else
+        assert(!m_Socket);
+    return status;
+}
+
+
+EIO_Status CSocket::Connect(const TNCBI_IPv6Addr* addr,
+                            unsigned short        port,
+                            const STimeout*       timeout,
+                            TSOCK_Flags           flags)
+{
+    char host[128];
+    if ( m_Socket ) {
+        if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
+            return eIO_Unknown;
+        if (m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
+    }
+    if (timeout != kDefaultTimeout) {
+        if ( timeout ) {
+            if (&oo_timeout != timeout)
+                oo_timeout = *timeout;
+            o_timeout = &oo_timeout;
+        } else
+            o_timeout = 0/*kInfiniteTimeout*/;
+    }
+    EIO_Status status;
+    if (!addr  ||  NcbiIsEmptyIPv6(addr)
+        ||  !SOCK_HostPortToStringIPv6(addr, 0, host, sizeof(host))) {
+        status = eIO_Unknown;
+        m_Socket = 0;
+    } else
+        status = SOCK_CreateEx(host, port, o_timeout, &m_Socket, 0, 0, flags);
     if (status == eIO_Success) {
         SOCK_SetTimeout(m_Socket, eIO_Read,  r_timeout);
         SOCK_SetTimeout(m_Socket, eIO_Write, w_timeout);
@@ -400,11 +491,25 @@ void CSocket::GetPeerAddress(unsigned int*   host,
 }
 
 
+void CSocket::GetPeerAddress(TNCBI_IPv6Addr* addr,
+                             unsigned short* port,
+                             ENH_ByteOrder   byte_order) const
+{
+    if ( !m_Socket ) {
+        if ( addr )
+            memset(addr, 0, sizeof(*addr));
+        if ( port )
+            *port = 0;
+    } else
+        SOCK_GetPeerAddressIPv6(m_Socket, addr, port, byte_order);
+}
+
+
 string CSocket::GetPeerAddress(ESOCK_AddressFormat format) const
 {
     char buf[PATH_MAX + 1];
-    if (m_Socket  &&
-        SOCK_GetPeerAddressStringEx(m_Socket, buf, sizeof(buf), format) != 0) {
+    if (m_Socket
+        &&  SOCK_GetPeerAddressStringEx(m_Socket, buf, sizeof(buf), format)) {
         return string(buf);
     }
     return "";
@@ -456,31 +561,51 @@ void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 //
 
 
+EIO_Status CDatagramSocket::Connect(const string& hostport)
+{
+    const char*    end;
+    TNCBI_IPv6Addr addr;
+    unsigned short port;
+    char           host[128];
+    if (!m_Socket)
+        return eIO_Closed;
+    if (hostport.empty()) {
+        *host = '\0';
+        port = 0;
+    } else if (!(end = SOCK_StringToHostPortIPv6(hostport.c_str(), &addr, &port))  ||  *end) {
+        return eIO_Unknown;
+    } else if (NcbiIsEmptyIPv6(&addr)) {
+        *host = '\0';
+    } else if (!SOCK_HostPortToStringIPv6(&addr, 0, host, sizeof(host))) {
+        return eIO_Unknown;
+    }
+    return DSOCK_Connect(m_Socket, host, port);
+}
+
+
 EIO_Status CDatagramSocket::Connect(unsigned int   host,
                                     unsigned short port)
 {
     char addr[16/*sizeof("255.255.255.255")*/];
+    if (!m_Socket)
+        return eIO_Closed;
     if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
         return eIO_Unknown;
-    return m_Socket
-        ? DSOCK_Connect(m_Socket, host ? addr : 0, port)
-        : eIO_Closed;
+    return DSOCK_Connect(m_Socket, host ? addr : 0, port);
 }
 
 
-EIO_Status CDatagramSocket::Connect(const string& hostport)
+EIO_Status CDatagramSocket::Connect(const TNCBI_IPv6Addr* addr,
+                                    unsigned short        port)
 {
-    const char*    end;
-    unsigned int x_host;
-    unsigned short port;
-    char           host[16/*sizeof("255.255.255.255")*/];
+    char host[128];
     if (!m_Socket)
         return eIO_Closed;
-    if (!(end = SOCK_StringToHostPort(hostport.c_str(), &x_host, &port))  ||
-        *end  ||  (x_host  &&  SOCK_ntoa(x_host, host, sizeof(host)) != 0)) {
+    if (addr  &&  NcbiIsEmptyIPv6(addr))
+        addr = 0;
+    if (addr  &&  !SOCK_HostPortToStringIPv6(addr, 0, host, sizeof(host)))
         return eIO_Unknown;
-    }
-    return DSOCK_Connect(m_Socket, x_host ? host : 0, port);
+    return DSOCK_Connect(m_Socket, addr ? host : 0, port);
 }
 
 
@@ -501,11 +626,11 @@ EIO_Status CDatagramSocket::Recv(void*           buf,
         return eIO_Closed;
     }
 
-    unsigned int addr;
-    EIO_Status status = DSOCK_RecvMsg(m_Socket, buf, buflen, maxmsglen,
-                                      msglen, &addr, sender_port);
+    TNCBI_IPv6Addr addr;
+    EIO_Status status = DSOCK_RecvMsgIPv6(m_Socket, buf, buflen, maxmsglen,
+                                          msglen, &addr, sender_port);
     if ( sender_host )
-        *sender_host = CSocketAPI::ntoa(addr);
+        *sender_host = CSocketAPI::ntoa(&addr);
 
     return status;
 }
@@ -581,6 +706,45 @@ EIO_Status CListeningSocket::Close(void)
 }
 
 
+void CListeningSocket::GetListeningAddress(unsigned int*   host,
+                                           unsigned short* port,
+                                           ENH_ByteOrder   byte_order) const
+{
+    if ( !m_Socket ) {
+        if ( host )
+            *host = 0;
+        if ( port )
+            *port = 0;
+    } else
+        LSOCK_GetListeningAddress(m_Socket, host, port, byte_order);
+}
+
+
+void CListeningSocket::GetListeningAddress(TNCBI_IPv6Addr* addr,
+                                           unsigned short* port,
+                                           ENH_ByteOrder   byte_order) const
+{
+    if ( !m_Socket ) {
+        if ( addr )
+            memset(addr, 0, sizeof(*addr));
+        if ( port )
+            *port = 0;
+    } else
+        LSOCK_GetListeningAddressIPv6(m_Socket, addr, port, byte_order);
+}
+
+
+string CListeningSocket::GetListeningAddress(ESOCK_AddressFormat format) const
+{
+    char buf[PATH_MAX + 1];
+    if (m_Socket
+        &&  LSOCK_GetListeningAddressStringEx(m_Socket, buf, sizeof(buf), format)) {
+        return string(buf);
+    }
+    return "";
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CSocketAPI::
@@ -649,44 +813,104 @@ EIO_Status CSocketAPI::Poll(vector<SPoll>&  polls,
 }
 
 
-string       CSocketAPI::ntoa(unsigned int host)
+string CSocketAPI::ntoa(unsigned int host)
 {
     char addr[16/*sizeof("255.255.255.255")*/];
     if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
-        *addr = 0;
+        *addr = '\0';
     return string(addr);
 }
 
 
-string       CSocketAPI::gethostname(ESwitch log)
+string CSocketAPI::ntoa(const TNCBI_IPv6Addr* addr)
+{
+    char host[128];
+    if (!addr  ||  !SOCK_HostPortToStringIPv6(addr, 0, host, sizeof(host)))
+        *host = '\0';
+    return string(host);
+}
+
+
+string CSocketAPI::gethostname(ESwitch log)
 {
     char hostname[256];
     if (SOCK_gethostnameEx(hostname, sizeof(hostname), log) != 0)
-        *hostname = 0;
+        *hostname = '\0';
     return string(hostname);
 }
 
 
-string       CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
+string CSocketAPI::gethostbyaddr(unsigned int host, ESwitch log)
 {
     char hostname[256];
     if (!SOCK_gethostbyaddrEx(host, hostname, sizeof(hostname), log))
-        *hostname = 0;
+        *hostname = '\0';
     return string(hostname);
 }
 
 
-unsigned int CSocketAPI::gethostbyname(const string& host, ESwitch log)
+string CSocketAPI::gethostbyaddr(const TNCBI_IPv6Addr* addr, ESwitch log)
 {
-    return SOCK_gethostbynameEx(host == kEmptyStr ? 0 : host.c_str(), log);
+    char hostname[256];
+    if (!SOCK_gethostbyaddrIPv6Ex(addr, hostname, sizeof(hostname), log))
+        *hostname = '\0';
+    return string(hostname);
 }
 
 
-string    CSocketAPI::HostPortToString(unsigned int    host,
-                                       unsigned short  port)
+unsigned int   CSocketAPI::gethostbyname(const string& host, ESwitch log)
+{
+    return SOCK_gethostbynameEx(host.c_str(), log);
+}
+
+
+TNCBI_IPv6Addr CSocketAPI::gethostbyname(const string& host, TNCBI_IPv6Addr* addr, ESwitch log)
+{
+    if (!SOCK_gethostbynameIPv6Ex(addr, host.c_str(), log)) {
+        TNCBI_IPv6Addr temp;
+        memset(&temp, 0, sizeof(temp));
+        return temp;
+    }
+    return *addr;
+}
+
+
+TNCBI_IPv6Addr CSocketAPI::GetLoopbackAddress(TNCBI_IPv6Addr* addr)
+{
+    if (!SOCK_GetLoopbackAddressIPv6(addr)) {
+        TNCBI_IPv6Addr temp;
+        memset(&temp, 0, sizeof(temp));
+        return temp;
+    }
+    return *addr;
+}
+
+
+TNCBI_IPv6Addr CSocketAPI::GetLocalHostAddress(TNCBI_IPv6Addr* addr, ESwitch reget)
+{
+    if (!SOCK_GetLocalHostAddressIPv6(addr, reget)) {
+        TNCBI_IPv6Addr temp;
+        memset(&temp, 0, sizeof(temp));
+        return temp;
+    }
+    return *addr;
+}
+
+
+string CSocketAPI::HostPortToString(unsigned int    host,
+                                    unsigned short  port)
 {
     char   buf[80];
     size_t len = SOCK_HostPortToString(host, port, buf, sizeof(buf));
+    return string(buf, len);
+}
+
+
+string CSocketAPI::HostPortToString(const TNCBI_IPv6Addr* addr,
+                                    unsigned short        port)
+{
+    char   buf[128];
+    size_t len = SOCK_HostPortToStringIPv6(addr, port, buf, sizeof(buf));
     return string(buf, len);
 }
 
@@ -697,6 +921,16 @@ SIZE_TYPE CSocketAPI::StringToHostPort(const string&   str,
 {
     const char* s = str.c_str();
     const char* e = SOCK_StringToHostPort(s, host, port);
+    return e ? (SIZE_TYPE)(e - s) : NPOS;
+}
+
+
+SIZE_TYPE CSocketAPI::StringToHostPort(const string&   str,
+                                       TNCBI_IPv6Addr* addr,
+                                       unsigned short* port)
+{
+    const char* s = str.c_str();
+    const char* e = SOCK_StringToHostPortIPv6(s, addr, port);
     return e ? (SIZE_TYPE)(e - s) : NPOS;
 }
 
