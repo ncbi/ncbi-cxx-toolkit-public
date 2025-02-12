@@ -60,6 +60,8 @@
  *  LSOCK_Close
  *  LSOCK_GetOSHandle[Ex]
  *  LSOCK_GetPort
+ *  LSOCK_GetListeningAddress[IPv6]
+ *  LSOCK_GetListeningAddressString[Ex]
  *
  * I/O Socket (handle SOCK):
  *
@@ -82,7 +84,7 @@
  *  SOCK_Abort
  *  SOCK_GetLocalPort[Ex]
  *  SOCK_GetRemotePort
- *  SOCK_GetPeerAddress
+ *  SOCK_GetPeerAddress[IPv6]
  *  SOCK_GetPeerAddressString[Ex]
  *  SOCK_GetOSHandle[Ex]
  *  SOCK_SetReadOnWriteAPI
@@ -519,6 +521,14 @@ typedef enum {
 typedef unsigned int TSOCK_Flags;  /**< bitwise "OR" of ESOCK_Flags */
 
 
+/* Address format string flags */
+typedef enum {
+    eSAF_Full = 0,  /**< address in full, native form                      */
+    eSAF_Port,      /**< only numeric port if INET socket, empty otherwise */
+    eSAF_IP         /**< only numeric IP if INET socket,   empty otherwise */
+} ESOCK_AddressFormat;
+
+
 
 /******************************************************************************
  *  LISTENING SOCKET [SERVER-side]
@@ -687,6 +697,41 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandle
 extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
 (LSOCK         lsock,
  ENH_ByteOrder byte_order
+ );
+
+
+/* @sa SOCK_GetPeerAddress */
+extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress
+(LSOCK           lsock,
+ unsigned int*   host,
+ unsigned short* port,
+ ENH_ByteOrder   byte_order
+ );
+
+
+/* @sa SOCK_GetPeerAddressIPv6 */
+extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddressIPv6
+(LSOCK           lsock,
+ TNCBI_IPv6Addr* addr,
+ unsigned short* port,
+ ENH_ByteOrder   byte_order
+ );
+
+
+/* @sa SOCK_GetPeerAddressStringEx */
+extern NCBI_XCONNECT_EXPORT char* LSOCK_GetListeningAddressStringEx
+(LSOCK               lsock,
+ char*               buf,
+ size_t              bufsize,
+ ESOCK_AddressFormat format
+ );
+
+
+/** Equivalent to LSOCK_GetListeningAddressStringEx(.,.,.,eSAF_Full) */
+extern NCBI_XCONNECT_EXPORT char* LSOCK_GetListeningAddressString
+(LSOCK  lsock,
+ char*  buf,
+ size_t bufsize
  );
 
 
@@ -1353,7 +1398,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetLocalPortEx
 /** Get local port of the socket.
  * The returned port number is also cached within "sock" so any further
  * inquires for the local port do not cause any system calls to occur.
- * The call is exactly equavalent to SOCK_GetLocalPortEx(sock, 0, byte_order).
+ * The call is exactly equivalent to SOCK_GetLocalPortEx(sock, 0, byte_order).
  * @param sock
  *  [in]  socket handle
  * @param byte_order
@@ -1391,6 +1436,28 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
  );
 
 
+/** Get host and port of the socket's peer (remote end).
+ * @param sock
+ *  [in]  socket handle
+ * @param addr
+ *  [out] the peer's address (can be NULL, then not filled in)
+ * @param port
+ *  [out] the peer's port (can be NULL, then not filled in)
+ * @param byte_order
+ *  [in]  byte order for either host or port, or both, on return
+ * @return
+ *  Host/port addresses in requested byte order, or 0 in case of an error.
+ * @sa
+ *  SOCK_GetLocalPort
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddressIPv6
+(SOCK            sock,
+ TNCBI_IPv6Addr* addr,
+ unsigned short* port,
+ ENH_ByteOrder   byte_order
+ );
+
+
 /** Get remote port of the socket (the port it is connected to).
  * The call is provided as a counterpart for SOCK_GetLocalPort(), and is
  * equivalent to calling SOCK_GetPeerAddress(sock, 0, &port, byte_order).
@@ -1423,14 +1490,8 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_GetRemotePort
  * @return
  *  On success, return its "buf" argument; return 0 on error.
  * @sa
- *  SOCK_HostPortToString
+ *  SOCK_HostPortToString, ESOCK_AddressFormat
  */
-typedef enum {
-    eSAF_Full = 0,  /**< address in full, native form                      */
-    eSAF_Port,      /**< only numeric port if INET socket, empty otherwise */
-    eSAF_IP         /**< only numeric IP if INET socket,   empty otherwise */
-} ESOCK_AddressFormat;
-
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
 (SOCK                sock,
  char*               buf,

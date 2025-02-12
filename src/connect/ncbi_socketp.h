@@ -191,8 +191,8 @@ typedef struct LSOCK_tag {
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
-    unsigned short   away;      /* MSWIN: run-away connect warning counter   */
     unsigned short   port;      /* port on which listening (host byte order) */
+    unsigned short   away;      /* MSWIN: run-away connect warning counter   */
 
     int              err;       /* Last OS error                             */
 
@@ -220,6 +220,8 @@ typedef struct LSOCK_tag {
 #endif /*!NCBI_OS_MSWIN*/
 
     void*            context;   /* per-server session/credentials (not impl) */
+
+    TNCBI_IPv6Addr   addr;      /* address the socket is listening on        */
 
 #ifdef NCBI_OS_UNIX
     char             path[1];   /* must go last                              */

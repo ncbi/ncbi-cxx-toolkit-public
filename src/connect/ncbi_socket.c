@@ -451,6 +451,31 @@ static const char* s_CP(const TNCBI_IPv6Addr* addr, unsigned short port,
 }
 
 
+static const char* s_CPListening(const TNCBI_IPv6Addr* addr, unsigned short port,
+                                 char* buf, size_t bufsize)
+{
+    int/*bool*/ ipv4 = NcbiIsIPv4(addr);
+    size_t len = NcbiIsEmptyIPv6(addr) ? 0
+        : SOCK_HostPortToStringIPv6(addr, ipv4 ? 0 : port, buf + (!port  &&  !ipv4), bufsize - 8);
+    if (!ipv4) {
+        if (!len) {
+            strcpy(buf + 1, "::");
+            len = 2;
+        } else if (port)
+            return buf;
+        len++;
+        *buf = '[';
+        buf[len++] = ']';
+    }
+    if (port)
+        sprintf(buf + len, ":%hu", port);
+    else
+        strcpy(buf + len, ":?");
+    return buf;
+}
+
+
+
 static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
 {
     char addr[10 + SOCK_HOSTPORTSTRLEN];
@@ -494,14 +519,11 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
         break;
     case eSOCK_Listening:
 #ifdef NCBI_OS_UNIX
-        if (!sock->myport)
+        if (!sock->port)
             cp = ((LSOCK) sock)->path;
         else
 #endif /*NCBI_OS_UNIX*/
-        {
-            sprintf(addr, ":%hu", sock->myport);
-            cp = addr;
-        }
+            cp = s_CPListening(&sock->addr, sock->port, addr, sizeof(addr));
         sname = "LSOCK";
         break;
     default:
@@ -519,6 +541,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
     n = (int)(len > sizeof(addr) - 1 ? sizeof(addr) - 1 : len);
     sprintf(buf, "%s#%u[%s]%s%s%.*s: ", sname, sock->id, fd,
             &"@"[!n], (size_t) n < len ? "..." : "", n, cp + len - n);
+    assert(strlen(buf) < MAXIDLEN);
     return buf;
 }
 
@@ -714,25 +737,25 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
 
     case eIO_Close:
         n = sprintf(head, "%" NCBI_BIGCOUNT_FORMAT_SPEC " byte%s",
-                    sock->n_written, &"s"[sock->n_written == 1]);
-        if (sock->type == eSOCK_Datagram  ||
-            sock->n_out != sock->n_written) {
-            sprintf(head + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
-                    sock->n_out,
-                    sock->type == eSOCK_Datagram ? "msg" : "total byte",
-                    &"s"[sock->n_out == 1]);
-        }
-        n = sprintf(tail, "%" NCBI_BIGCOUNT_FORMAT_SPEC " byte%s",
                     sock->n_read, &"s"[sock->n_read == 1]);
         if (sock->type == eSOCK_Datagram  ||
             sock->n_in != sock->n_read) {
-            sprintf(tail + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
+            sprintf(head + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
                     sock->n_in,
                     sock->type == eSOCK_Datagram ? "msg" : "total byte",
                     &"s"[sock->n_in == 1]);
         }
+        n = sprintf(tail, "%" NCBI_BIGCOUNT_FORMAT_SPEC " byte%s",
+                    sock->n_written, &"s"[sock->n_written == 1]);
+        if (sock->type == eSOCK_Datagram  ||
+            sock->n_out != sock->n_written) {
+            sprintf(tail + n, "/%" NCBI_BIGCOUNT_FORMAT_SPEC " %s%s",
+                    sock->n_out,
+                    sock->type == eSOCK_Datagram ? "msg" : "total byte",
+                    &"s"[sock->n_out == 1]);
+        }
         CORE_LOGF_X(113, level,
-                    ("%s%s (out: %s, in: %s)", s_ID(sock, _id),
+                    ("%s%s (in: %s, out: %s)", s_ID(sock, _id),
                      ptr ? (const char*) ptr :
                      sock->keep ? "Leaving" : "Closing",
                      head, tail));
@@ -936,11 +959,13 @@ static EIO_Status s_Init(void)
     assert(sizeof(TRIGGER_Handle)        == sizeof(TSOCK_Handle));
     assert(offsetof(TRIGGER_struct, err) == offsetof(SOCK_struct,  err));
     assert(offsetof(TRIGGER_struct, err) == offsetof(LSOCK_struct, err));
+    assert(offsetof(SOCK_struct, port)   == offsetof(LSOCK_struct, port));
     assert(offsetof(SOCK_struct, sslctx) == offsetof(LSOCK_struct, context));
 #  ifdef NCBI_OS_MSWIN
-    assert(offsetof(LSOCK_struct, event) == offsetof(SOCK_struct,  event));
+    assert(offsetof(SOCK_struct, event)  == offsetof(LSOCK_struct, event));
     assert(WSA_INVALID_EVENT == 0);
 #  endif /*NCBI_OS_MSWIN*/
+    assert(offsetof(SOCK_struct, addr)   == offsetof(LSOCK_struct, addr));
 #endif /*_DEBUG && !NDEBUG*/
 
 #if   defined(NCBI_OS_MSWIN)
@@ -1338,7 +1363,13 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
         }
     }
 
-    parsed = NCBI_HasSpaces(host, len) ? 0 : NcbiStringToAddr(addr, host, len);
+    memset(addr, 0, sizeof(*addr));
+    if (NCBI_HasSpaces(host, len)) {
+        memset(addr, 0, sizeof(*addr));
+        goto out;
+    }
+
+    parsed = NcbiStringToAddr(addr, host, len);
     if (parsed  &&  !*parsed) {
         /* fully parsed address string */
         if (family == AF_INET6) {
@@ -1349,63 +1380,55 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
                 parsed = 0;
         } else if (family == AF_INET)
             parsed = 0;
-        if (!parsed) {
+        if (!parsed)
             memset(addr, 0, sizeof(*addr));
-            goto out;
-        }
+        goto out;
     } else
         memset(addr, 0, sizeof(*addr));
 
-    if (NcbiIsEmptyIPv6(addr)) {
+    {{
         int error;
 #if defined(HAVE_GETADDRINFO)
         struct addrinfo hints, *out = 0;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = family;
         if ((error = getaddrinfo(host, 0, &hints, &out)) == 0  &&  out) {
+            union {
+                struct sockaddr*     sa;
+                struct sockaddr_in*  in;
+                struct sockaddr_in6* in6;
+            } u;
             ipv4 = 0;
-            if (self  &&  out->ai_next  &&  family != AF_INET6) {
+            if (family != AF_INET6) {
+                /* favor IPv4 over IPv6 in this case to maintain backward compatibility */
                 struct addrinfo* tmp = out;
                 char* addrs[32];
                 size_t n = 0;
                 do {
-                    struct sockaddr_in* sin
-                        = (struct sockaddr_in*) tmp->ai_addr;
-                    if (sin->sin_family == AF_INET)
-                        addrs[n++] = (char*) &sin->sin_addr;
-                    else if (!n)
-                        break;
+                    u.sa = tmp->ai_addr;
+                    if (u.sa->sa_family == AF_INET) {
+                        addrs[n++] = (char*) &u.in->sin_addr;
+                        if (!self)
+                            break;
+                    }
                     if (!(tmp = tmp->ai_next))
                         break;
                 } while (n < sizeof(addrs) / sizeof(addrs[0]) - 1);
                 if (n) {
                     addrs[n] = 0;
-                    memcpy(&ipv4, x_ChooseSelfIP(addrs), sizeof(ipv4));
+                    memcpy(&ipv4, self ? x_ChooseSelfIP(addrs) : addrs[0], sizeof(ipv4));
                     NcbiIPv4ToIPv6(addr, ipv4, 0);
+                    assert(ipv4);
                     ipv4 = 1;
                 }
             }
             if (!ipv4) {
-                union {
-                    struct sockaddr*     sa;
-                    struct sockaddr_in*  in;
-                    struct sockaddr_in6* in6;
-                } u;
                 u.sa = out->ai_addr;
-                switch (u.sa->sa_family) {
-                case AF_INET:
-                    ipv4 = u.in->sin_addr.s_addr;
-                    NcbiIPv4ToIPv6(addr, ipv4, 0);
-                    assert(family == AF_INET  ||  family == AF_UNSPEC);
-                    break;
-                case AF_INET6:
+                if (u.sa->sa_family == AF_INET6) {
                     memcpy(addr, &u.in6->sin6_addr, sizeof(*addr));
                     assert(family == AF_INET6  ||  family == AF_UNSPEC);
-                    break;
-                default:
+                } else
                     assert(0);
-                    break;
-                }
             }
         } else {
             if (log) {
@@ -1522,7 +1545,7 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
             }
         }
 #endif /*HAVE_GETADDRINFO*/
-    }
+    }}
 
   out:
     parsed = NcbiIsEmptyIPv6(addr) ? 0 : host;
@@ -5543,6 +5566,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*NCBI_OS_UNIX*/
     TSOCK_Handle    fd;
     const char*     cp;
+    TNCBI_IPv6Addr  addr;
     int             type;
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
@@ -5569,14 +5593,15 @@ static EIO_Status s_CreateListening(const char*    path,
                          (unsigned long) sizeof(u.un.sun_path)));
             return eIO_InvalidArg;
         }
-        addrlen = sizeof(u.un);
         family = AF_UNIX;
+        addrlen = sizeof(u.un);
+        memset(&addr, 0, sizeof(addr));
 #else
         return eIO_NotSupported;
 #endif /*NCBI_OS_UNIX*/
     } else {
         pathlen = 0/*dummy*/;
-        if ((ipv6 == eOn  &&  s_IPVersion == AF_INET)  ||
+        if ((ipv6 == eOn   &&  s_IPVersion == AF_INET)  ||
             (ipv6 == eOff  &&  s_IPVersion == AF_INET6)) {
             return eIO_NotSupported;
         }
@@ -5591,8 +5616,21 @@ static EIO_Status s_CreateListening(const char*    path,
             family = s_IPVersion == AF_UNSPEC ? AF_INET : s_IPVersion;
             break;
         }
-        assert(family == AF_INET  ||  family == AF_INET6);
-        addrlen = family == AF_INET6 ? sizeof(u.in6) : sizeof(u.in);
+        switch (family) {
+        case AF_INET:
+            NcbiIPv4ToIPv6(&addr, flags & fSOCK_BindLocal ? SOCK_LOOPBACK : htonl(INADDR_ANY), 0);
+            addrlen = sizeof(u.in);
+            break;
+        case AF_INET6:
+            if (flags & fSOCK_BindLocal)
+                SOCK_GetLoopbackAddressIPv6(&addr);
+            else
+                memset(&addr, 0, sizeof(addr));
+            addrlen = sizeof(u.in6);
+            break;
+        default:
+            return eIO_NotSupported;
+        }
     }
 
     /* initialize internals */
@@ -5615,14 +5653,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*SOCK_CLOEXEC*/
     if ((fd = socket(family, type, 0)) == SOCK_INVALID){
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-        if (!path) {
-            if (port)
-                sprintf(_id, ":%hu", port);
-            else
-                strcpy (_id, ":?");
-            cp = _id;
-        } else
-            cp = path;
+        cp = path ? path : s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(34, eLOG_Error,
                             error, strerr ? strerr : "",
                             ("LSOCK#%u[?]@%s: [LSOCK::Create] "
@@ -5664,15 +5695,12 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*NCBI_OS_MSWIN...*/
         if (failed) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-            if (port)
-                sprintf(_id, ":%hu", port);
-            else
-                strcpy (_id, ":?");
+            cp = s_CPListening(&addr, port, _id, sizeof(_id));
             CORE_LOGF_ERRNO_EXX(35, eLOG_Error,
                                 error, strerr ? strerr : "",
                                 ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                                  " Failed setsockopt(%s)", x_id,
-                                 (unsigned int) fd, _id, failed));
+                                 (unsigned int) fd, cp, failed));
             UTIL_ReleaseBuffer(strerr);
             SOCK_CLOSE(fd);
             return eIO_Unknown;
@@ -5693,14 +5721,14 @@ static EIO_Status s_CreateListening(const char*    path,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        if (family == AF_INET) {
+        if (NcbiIsIPv4(&addr)) {
+            assert(family == AF_INET);
+            u.in.sin_addr.s_addr = NcbiIPv6ToIPv4(&addr, 0);
             u.in.sin_port        = htons(port);
-            u.in.sin_addr.s_addr =
-                flags & fSOCK_BindLocal ? SOCK_LOOPBACK : htonl(INADDR_ANY);
         } else {
+            assert(family == AF_INET6);
             u.in6.sin6_port      = htons(port);
-            if (flags & fSOCK_BindLocal)
-                SOCK_GetLoopbackAddressIPv6((TNCBI_IPv6Addr*) &u.in6.sin6_addr);
+            memcpy(&u.in6.sin6_addr, &addr, sizeof(u.in6.sin6_addr));
         }
 #ifdef NCBI_OS_UNIX
         m = 0/*dummy*/;
@@ -5714,23 +5742,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #endif /*NCBI_OS_UNIX*/
     if (error) {
         const char* strerr = SOCK_STRERROR(error);
-        if (!path) {
-            TNCBI_IPv6Addr addr;
-            if (!(flags & fSOCK_BindLocal))
-                memset(&addr, 0, sizeof(addr));
-            else if (family == AF_INET)
-                NcbiIPv4ToIPv6(&addr, u.in.sin_addr.s_addr, 0);
-            else
-                memcpy(&addr, &u.in6.sin6_addr, sizeof(addr));
-            if (!port) {
-                strcpy(s_AddrToString(_id, sizeof(_id),
-                                      &addr, family, !(flags & fSOCK_BindLocal)),
-                       ":?");
-            } else
-                SOCK_HostPortToStringIPv6(&addr, port, _id, sizeof(_id));
-            cp = _id;
-        } else
-            cp = path;
+        cp = path ? path : s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(36, error != SOCK_EADDRINUSE
                             ? eLOG_Error : eLOG_Trace,
                             error, strerr ? strerr : "",
@@ -5756,14 +5768,15 @@ static EIO_Status s_CreateListening(const char*    path,
         assert(u.sa.sa_family == AF_INET  ||  u.sa.sa_family == AF_INET6);
         error = getsockname(fd, &u.sa, &addrlen) != 0 ? SOCK_ERRNO : 0;
         if (error  ||  u.sa.sa_family != family
-            ||  (family == AF_INET  &&  !(port = ntohs(u.in.sin_port)))
+            ||  (family == AF_INET   &&  !(port = ntohs(u.in.sin_port)))
             ||  (family == AF_INET6  &&  !(port = ntohs(u.in6.sin6_port)))) {
             const char* strerr = SOCK_STRERROR(error);
+            cp = s_CPListening(&addr, port, _id, sizeof(_id));
             CORE_LOGF_ERRNO_EXX(150, eLOG_Error,
                                 error, strerr ? strerr : "",
-                                ("LSOCK#%u[%u]@:?: [LSOCK::Create] "
+                                ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                                  " Cannot obtain free listening port",
-                                 x_id, (unsigned int) fd));
+                                 x_id, (unsigned int) fd, cp));
             UTIL_ReleaseBuffer(strerr);
             SOCK_CLOSE(fd);
             return eIO_Closed;
@@ -5777,11 +5790,12 @@ static EIO_Status s_CreateListening(const char*    path,
         DWORD err = GetLastError();
         const char* strerr = s_WinStrerror(err);
         assert(!path);
+        cp = s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(118, eLOG_Error,
                             err, strerr ? strerr : "",
-                            ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
+                            ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed to create IO event",
-                             x_id, (unsigned int) fd, port));
+                             x_id, (unsigned int) fd, cp));
         UTIL_ReleaseBufferOnHeap(strerr);
         SOCK_CLOSE(fd);
         return eIO_Unknown;
@@ -5790,11 +5804,12 @@ static EIO_Status s_CreateListening(const char*    path,
     if (WSAEventSelect(fd, event, FD_CLOSE/*X*/ | FD_ACCEPT/*A*/) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         assert(!path);
+        cp = s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
                             error, strerr ? strerr : "",
-                            ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
+                            ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed to bind IO event",
-                             x_id, (unsigned int) fd, port));
+                             x_id, (unsigned int) fd, cp));
         UTIL_ReleaseBuffer(strerr);
         SOCK_CLOSE(fd);
         WSACloseEvent(event);
@@ -5804,11 +5819,7 @@ static EIO_Status s_CreateListening(const char*    path,
     /* set non-blocking mode */
     if (!s_SetNonblock(fd, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-        if (!path) {
-            sprintf(_id, ":%hu", port);
-            cp = _id;
-        } else
-            cp = path;
+        cp = path ? path : s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(38, eLOG_Error,
                             error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
@@ -5823,11 +5834,7 @@ static EIO_Status s_CreateListening(const char*    path,
     /* listen */
     if (listen(fd, backlog) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-        if (!path) {
-            sprintf(_id, ":%hu", port);
-            cp = _id;
-        } else
-            cp = path;
+        cp = path ? path : s_CPListening(&addr, port, _id, sizeof(_id));
         CORE_LOGF_ERRNO_EXX(37, eLOG_Error,
                             error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
@@ -5863,6 +5870,7 @@ static EIO_Status s_CreateListening(const char*    path,
 #elif defined(NCBI_OS_MSWIN)
     x_lsock->event    = event;
 #endif /*NCBI_OS*/
+    x_lsock->addr     = addr;
 
 #ifndef SOCK_CLOEXEC
     if (!(flags & fSOCK_KeepOnExec)  &&  !s_SetCloexec(fd, 1/*true*/)) {
@@ -6174,7 +6182,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*!HAVE_ACCEPT4*/
 
     /* statistics & logging */
-    if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  s_Log == eOn))
+    if (x_sock->log == eOn  ||  (x_sock->log == eDefault  &&  (s_Log == eOn  ||  lsock->log == eOn)))
         s_DoLog(eLOG_Note, x_sock, eIO_Open, 0, 0, 0);
 
     *sock = x_sock;
@@ -6930,7 +6938,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
                                LSOCK*         lsock)
 {
     *lsock = 0;
-    return s_CreateListening(0, port, backlog, lsock, fSOCK_LogDefault, eOff);
+    return s_CreateListening(0, port, backlog, lsock, fSOCK_LogDefault, eDefault);
 }
 
 
@@ -6940,7 +6948,7 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
                                  TSOCK_Flags    flags)
 {
     *lsock = 0;
-    return s_CreateListening(0, port, backlog, lsock, flags, eOff);
+    return s_CreateListening(0, port, backlog, lsock, flags, eDefault);
 }
 
 
@@ -7061,6 +7069,40 @@ extern unsigned short LSOCK_GetPort(LSOCK         lsock,
     unsigned short port;
     port = lsock  &&  lsock->sock != SOCK_INVALID ? lsock->port : 0;
     return byte_order == eNH_HostByteOrder ? port : htons(port);
+}
+
+
+extern void LSOCK_GetListeningAddress(LSOCK           lsock,
+                                      unsigned int*   host,
+                                      unsigned short* port,
+                                      ENH_ByteOrder   byte_order)
+{
+    SOCK_GetPeerAddress((SOCK) lsock, host, port, byte_order);
+}
+
+
+extern void LSOCK_GetListeningAddressIPv6(LSOCK           lsock,
+                                          TNCBI_IPv6Addr* addr,
+                                          unsigned short* port,
+                                          ENH_ByteOrder   byte_order)
+{
+    SOCK_GetPeerAddressIPv6((SOCK) lsock, addr, port, byte_order);
+}
+
+
+extern char* LSOCK_GetListeningAddressStringEx(LSOCK               lsock,
+                                               char*               buf,
+                                               size_t              bufsize,
+                                               ESOCK_AddressFormat format)
+{
+    return SOCK_GetPeerAddressStringEx((SOCK) lsock, buf, bufsize, format);
+}
+
+
+/** Equivalent to LSOCK_GetListeningAddressStringEx(.,.,.,eSAF_Full) */
+extern char* LSOCK_GetListeningAddressString(LSOCK lsock, char* buf, size_t bufsize)
+{
+    return LSOCK_GetListeningAddressStringEx(lsock, buf, bufsize, eSAF_Full);
 }
 
 
@@ -8064,7 +8106,7 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned short* port,
                                 ENH_ByteOrder   byte_order)
 {
-    if (!sock) {
+    if (!sock  ||  sock->sock == SOCK_INVALID) {
         if ( host )
             *host = 0;
         if ( port )
@@ -8074,11 +8116,11 @@ extern void SOCK_GetPeerAddress(SOCK            sock,
     if ( host ) {
         unsigned int x_host = NcbiIPv6ToIPv4(&sock->addr, 0);
         *host = byte_order == eNH_HostByteOrder
-            ? ntohl(x_host)     :       x_host;
+            ? ntohl(x_host) : x_host;
     }
     if ( port ) {
         *port = byte_order == eNH_HostByteOrder
-            ?       sock->port  : ntohs(sock->port);
+            ? sock->port : ntohs(sock->port);
     }
 }
 
@@ -8088,7 +8130,7 @@ extern void SOCK_GetPeerAddressIPv6(SOCK            sock,
                                     unsigned short* port,
                                     ENH_ByteOrder   byte_order)
 {
-    if (!sock) {
+    if (!sock  ||  sock->sock == SOCK_INVALID) {
         if ( addr )
             memset(addr, 0, sizeof(*addr));
         if ( port )
@@ -8127,21 +8169,24 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
                                          size_t              bufsize,
                                          ESOCK_AddressFormat format)
 {
+#ifdef NCBI_OS_UNIX
+    const char* path = sock->type & eSOCK_Socket ? sock->path : ((LSOCK) sock)->path;
+#endif /*NCBI_OS_UNIX*/
     char   port[10];
     size_t len;
 
     if (!buf  ||  !bufsize)
         return 0/*error*/;
-    if (!sock) {
+    if (!sock  ||  sock->sock == SOCK_INVALID) {
         *buf = '\0';
         return 0/*error*/;
     }
     switch (format) {
     case eSAF_Full:
 #ifdef NCBI_OS_UNIX
-        if (sock->path[0]) {
-            if ((len = strlen(sock->path)) < bufsize)
-                memcpy(buf, sock->path, len + 1);
+        if (path[0]) {
+            if ((len = strlen(path)) < bufsize)
+                memcpy(buf, path, len + 1);
             else
                 return 0/*error*/;
         } else
@@ -8151,7 +8196,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
         break;
     case eSAF_Port:
 #ifdef NCBI_OS_UNIX
-        if (sock->path[0]) 
+        if (path[0]) 
             *buf = '\0';
         else
 #endif /*NCBI_OS_UNIX*/
@@ -8162,7 +8207,7 @@ extern char* SOCK_GetPeerAddressStringEx(SOCK                sock,
         break;
     case eSAF_IP:
 #ifdef NCBI_OS_UNIX
-        if (sock->path[0]) 
+        if (path[0]) 
             *buf = '\0';
         else
 #endif /*NCBI_OS_UNIX*/
@@ -8588,19 +8633,7 @@ extern EIO_Status DSOCK_BindIPv6(SOCK sock, unsigned short port, ESwitch ipv6)
 
 extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 {
-    ESwitch ipv6;
-    switch (s_IPVersion) {
-    case AF_INET:
-        ipv6 = eOff;
-        break;
-    case AF_INET6:
-        ipv6 = eOn;
-        break;
-    default:
-        ipv6 = eDefault;
-        break;
-    }
-    return DSOCK_BindIPv6(sock, port, ipv6);
+    return DSOCK_BindIPv6(sock, port, eDefault);
 }
 
 
@@ -9539,7 +9572,10 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
         q = t;
         s = 0;
     } else if ((q = strchr(s, ':')) == s) {
-        memset(&temp, 0, sizeof(temp));
+        if (family == AF_INET)
+            NcbiIPv4ToIPv6(&temp, 0, 0);
+        else
+            memset(&temp, 0, sizeof(temp));
         s = 0;
     }
 
@@ -9585,6 +9621,7 @@ static const char* s_StringToHostPortIPv6Ex(const char*     str,
     }
     if (family != AF_UNSPEC  &&  !NcbiIsEmptyIPv6(&temp)) {
         int/*bool*/ ipv4 = NcbiIsIPv4(&temp);
+        assert(family == AF_INET  ||  family == AF_INET6);
         if ((ipv4  &&  family == AF_INET6)  ||  (!ipv4  &&  family == AF_INET))
             return str;
     }
@@ -9637,18 +9674,23 @@ static size_t s_HostPortToStringIPv6(const TNCBI_IPv6Addr* addr,
 
     if (!buf  ||  !size)
         return 0;
-    if (addr  &&  !NcbiIsEmptyIPv6(addr)) {
-        int/*bool*/ ipv4 = (NcbiIsIPv4(addr)  &&  family != AF_INET6)  ||  !port;
-        char* end = s_AddrToString(x_buf + !ipv4, sizeof(x_buf) - !ipv4, addr, family, 0);
-        if (!end) {
-            *buf = '\0';
-            return 0;
-        }
-        if (!ipv4) {
-            *x_buf = '[';
-            *end++ = ']';
-        }
-        x_len = (size_t)(end - x_buf);
+    if (addr) {
+        int/*bool*/ ipv4 = NcbiIsIPv4(addr);
+        if (!NcbiIsEmptyIPv6(addr)  ||  (!ipv4  &&  family != AF_INET)) {
+            ipv4 = (ipv4  &&  family != AF_INET6)  ||  !port;
+            char* end = s_AddrToString(x_buf + !ipv4, sizeof(x_buf) - !ipv4, addr, family, 0);
+            if (!end) {
+                *buf = '\0';
+                return 0;
+            }
+            if (!ipv4) {
+                *x_buf = '[';
+                *end++ = ']';
+            }
+            x_len = (size_t)(end - x_buf);
+            assert(x_len < sizeof(x_buf) - 6);
+        } else
+            x_len = 0;
     } else
         x_len = 0;
     if (port  ||  !x_len)
@@ -9662,6 +9704,7 @@ static size_t s_HostPortToStringIPv6(const TNCBI_IPv6Addr* addr,
         return 0;
     }
     memcpy(buf, x_buf, x_len + 1);
+    assert(x_len);
     return x_len;
 }
 

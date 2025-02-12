@@ -67,7 +67,6 @@
  */
 
 static const char s_C1[] = "C1";
-static const char s_M1[] = "M1";
 static const char s_S1[] = "S1";
 
 #define N_SUB_BLOB     10
@@ -86,17 +85,14 @@ static void TEST__client_1(SOCK sock)
 
     /* Send a short string */
     SOCK_SetDataLoggingAPI(eOn);
-    {{
-        const char* x_C1 = s_C1;
-        n = strlen(x_C1) + 1;
-        status = SOCK_Write(sock, x_C1, n, &n_io_done, eIO_WritePersist);
-    }}
+    n = sizeof(s_C1);
+    status = SOCK_Write(sock, s_C1, n, &n_io_done, eIO_WritePersist);
     assert(status == eIO_Success  &&  n == n_io_done);
 
     /* Read the string back (it must be bounced by the server) */
     SOCK_SetDataLoggingAPI(eOff);
     SOCK_SetDataLogging(sock, eOn);
-    n = strlen(s_S1) + 1;
+    n = sizeof(s_S1);
     status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPeek);
     if (status == eIO_Closed)
         CORE_LOG(eLOG_Fatal, "TC1::connection closed");
@@ -220,14 +216,14 @@ static void TEST__server_1(SOCK sock)
 
     /* Receive and send back a short string */
     SOCK_SetDataLogging(sock, eOn);
-    n = strlen(s_C1) + 1;
+    n = sizeof(s_C1);
     status = SOCK_Read(sock, buf, n, &n_io_done, eIO_ReadPersist);
     assert(status == eIO_Success  &&  n == n_io_done);
-    assert(memcmp(buf, s_C1, n) == 0  ||  memcmp(buf, s_M1, n) == 0);
+    assert(memcmp(buf, s_C1, n) == 0);
 
     SOCK_SetDataLogging(sock, eDefault);
     SOCK_SetDataLoggingAPI(eOn);
-    n = strlen(s_S1) + 1;
+    n = sizeof(s_S1);
     status = SOCK_Write(sock, s_S1, n, &n_io_done, eIO_WritePersist);
     assert(status == eIO_Success  &&  n == n_io_done);
     SOCK_SetDataLoggingAPI(eOff);
@@ -641,13 +637,14 @@ static void TEST__server(const char* sport)
     unsigned short nport;
     LSOCK          lsock;
     EIO_Status     status;
+    char           full[128];
 
     /* Create listening socket */
     if (sscanf(sport, "%hu%n", &nport, &n) < 1  ||  sport[n]) {
         nport = 0;
         n = 0;
     }
-    status = LSOCK_CreateEx(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn);
+    status = LSOCK_CreateIPv6Ex(nport, N_RECONNECT * 10, &lsock, fSOCK_LogOn, eOn);
     if (status == eIO_Success  &&  !nport  &&  sport[n]) {
         FILE* fp;
         nport = LSOCK_GetPort(lsock, eNH_HostByteOrder);
@@ -659,13 +656,14 @@ static void TEST__server(const char* sport)
             status = eIO_Unknown;
     }
 
-    CORE_LOGF(eLOG_Note, ("TEST__server(port = %hu)", nport));
+    if (!LSOCK_GetListeningAddressString(lsock, full, sizeof(full)))
+        sprintf(full, "port = %hu", nport);
+    CORE_LOGF(eLOG_Note, ("TEST__server(%s)", full));
     assert(status == eIO_Success);
 
     /* Accept connections from clients and run test sessions */
     for (;;) {
-        char full[80];
-        char addr[80];
+        char addr[128];
         char port[10];
         SOCK sock;
 
@@ -675,6 +673,13 @@ static void TEST__server(const char* sport)
         assert(SOCK_GetPeerAddressString  (sock, full,sizeof(full)));
         assert(SOCK_GetPeerAddressStringEx(sock, addr,sizeof(addr),eSAF_IP));
         assert(SOCK_GetPeerAddressStringEx(sock, port,sizeof(port),eSAF_Port));
+        if (*full == '[') {
+            size_t len = strlen(addr);
+            memmove(addr + 1, addr, len++);
+            *addr = '[';
+            addr[len++] = ']';
+            addr[len] = '\0';
+        }
         assert(strcmp(full, strcat(strcat(addr, ":"), port)) == 0);
 
         /* Test the simplest randezvous(plain request-reply)
@@ -953,6 +958,16 @@ static void TEST_gethostby(void)
     (void) TEST_gethostbyaddrIPv6(&addr);
     (void) TEST_gethostbyaddrIPv6(&www);
 
+    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+
+    SOCK_SetIPv6API(eOn);
+    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+
+    SOCK_SetIPv6API(eOff);
+    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+
+    SOCK_SetIPv6API(eDefault);
+    (void) TEST_gethostbynameIPv6(&addr, "localhost");
 
     CORE_LOG(eLOG_Note, "===============================");
 }
