@@ -527,6 +527,7 @@ const CSeq_entry *ctx)
     const bool hasTaxname = orgref.IsSetTaxname();
 
     bool isInfluenzaOrSars2 = false;
+    bool isMetagenome = false;
 
     // look at uncultured required modifiers
     if (hasTaxname) {
@@ -559,7 +560,15 @@ const CSeq_entry *ctx)
             }
         } else if (NStr::EqualNocase(taxname, "Severe acute respiratory syndrome coronavirus 2")) {
             isInfluenzaOrSars2 = true;
+        } else if (NStr::EqualNocase(taxname, "metagenome")) {
+            isMetagenome = true;
         }
+    }
+
+    if (m_genomeSubmission && isMetagenome) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyIsMetagenome,
+            "Metagenome is not a legal organism name",
+            obj, ctx);
     }
 
     // validate legal locations.

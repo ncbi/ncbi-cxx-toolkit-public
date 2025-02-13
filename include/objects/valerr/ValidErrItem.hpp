@@ -367,6 +367,7 @@ enum EErrType {
     eErr_SEQ_DESCR_UnculturedGenome,
     eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
     eErr_SEQ_DESCR_HasStrainAndIsolate,
+    eErr_SEQ_DESCR_TaxonomyIsMetagenome,
     ERR_CODE_END(SEQ_DESCR),
 
 

@@ -1019,6 +1019,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_HasStrainAndIsolate,
     { "HasStrainAndIsolate",
         "BioSource should not have both strain and isolate" }},
+    { eErr_SEQ_DESCR_TaxonomyIsMetagenome,
+    { "TaxonomyIsMetagenome",
+        "Taxonomy name should not be metagenome" }},
 
 
     /* SEQ_GENERIC */
