@@ -48,8 +48,8 @@ typedef struct {
 } TNCBI_IPv6Addr;
 
 
-/** Return non-zero if the address is empty (either as IPv6 or IPv4);  return
- *  zero otherwise.
+/** Return non-zero if the address is empty (either as NULL or IPv6 or IPv4);
+*   return zero otherwise.
  * @sa
  *  NcbiIsIPv4
  */
@@ -59,7 +59,7 @@ int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr);
 
 /** Return non-zero(true) if the address is a true IPv4 address (a mapped IPv4
  *  address), which is equivalent of calling NcbiIsIPv4Ex(addr, 0);
- *  return zero(false) otherwise.
+ *  return zero(false) otherwise (including for NULL).
  * @sa
  *  NcbiIsIPv4Ex, NcbiIPv4ToIPv6, NcbiIPv6ToIPv4
  */
@@ -68,7 +68,8 @@ int/*bool*/  NcbiIsIPv4    (const TNCBI_IPv6Addr* addr);
 
 
 /** Return non-zero(true) if the address is either a mapped IPv4 address or
- *  (optionally) an IPv4-compatible IPv6 address;  return zero(false) otherwise.
+ *  (optionally) an IPv4-compatible IPv6 address;
+ *  return zero(false) otherwise (including for NULL).
  * @param compat
  *  non-zero causes IPv4-compatible IPv6 addresses to pass the test
  * @note

@@ -54,35 +54,33 @@ static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
     /* RFC 4291 2.1, 3
        NB: 2.5.5.1 and 2.5.5.2 - both obsoleted by RFC 6052 2.1 */
     unsigned short word;
-    size_t i;
-    for (i = 0;  i < 5;  ++i) {
-        memcpy(&word, addr->octet + i * sizeof(word), sizeof(word));
-        if (word)
-            return 0/*false*/;
-    }
-    memcpy(&word, addr->octet + i * sizeof(word), sizeof(word));
-    if (word == 0x0000) {
-        /* IPv4-compatible IPv6 */
-        if (compat) {
-            unsigned int temp;
-            memcpy(&temp, addr->octet + sizeof(addr->octet) - sizeof(temp),
-                   sizeof(temp));
-            if (SOCK_NetToHostLong(temp) & 0xFF000000)
-                return 1/*true*/;
-        }
+    unsigned int   temp;
+    if (memcchr(addr->octet, 0, 10 * sizeof(addr->octet[0])))
         return 0/*false*/;
-    }
-    /* mapped IPv4 */
-    return word == 0xFFFF ? 1/*true*/ : 0/*false*/;
+    memcpy(&word, &addr->octet[10], sizeof(word));
+    if (word == 0xFFFF)
+        return 1/*true: mapped IPv4 */;
+    if (word != 0x0000  ||  !compat)
+        return 0/*false*/;
+    /* IPv4-compatible IPv6 */
+    memcpy(&temp, &addr->octet[12], sizeof(temp));
+    return SOCK_NetToHostLong(temp) & 0xFF000000 ? 1/*true*/ : 0/*false*/;
 }
 
 
 extern int/*bool*/ NcbiIsEmptyIPv6(const TNCBI_IPv6Addr* addr)
 {
-    return !addr
-        ||  !memcchr(addr->octet, 0, sizeof(addr->octet))
-        ||  (x_NcbiIsIPv4(addr, 0/*mapped*/)  &&  !NcbiIPv6ToIPv4(addr, 0))
-        ? 1/*true*/ : 0/*false*/;
+    unsigned short word;
+    unsigned int   temp;
+    if (!addr)
+        return 1/*true*/;
+    if (memcchr(addr->octet, 0, 10 * sizeof(addr->octet[0])))
+        return 0/*false*/;
+    memcpy(&word, &addr->octet[10], sizeof(word));
+    if (word != 0x0000  &&  word != 0xFFFF)
+        return 0/*false*/;
+    memcpy(&temp, &addr->octet[12], sizeof(temp));
+    return !temp;
 }
 
 
@@ -103,7 +101,7 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
     unsigned int ipv4;
     static const size_t size = sizeof(ipv4);
     if (!addr)
-        return 0;
+        return (unsigned int)(-1L)/*bad*/;
     if (pfxlen == 0) {
         if (!x_NcbiIsIPv4(addr, 1/*compat*/))
             return 0;
@@ -132,7 +130,7 @@ extern unsigned int NcbiIPv6ToIPv4(const TNCBI_IPv6Addr* addr, size_t pfxlen)
         memcpy(        &ipv4,            &addr->octet[12], size);
         break;
     default:
-        ipv4 = (unsigned int)(-1)/*failure*/;
+        ipv4 = (unsigned int)(-1L)/*failure*/;
         assert(0);
         break;
     }
