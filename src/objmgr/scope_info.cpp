@@ -1125,17 +1125,13 @@ CTSE_ScopeInfo::~CTSE_ScopeInfo(void)
 
 CTSE_ScopeInfo::TBlobOrder CTSE_ScopeInfo::GetBlobOrder(void) const
 {
-    if ( x_TSE_LockIsNotAssigned() ) {
+    if ( CanBeUnloaded() ) {
         _ASSERT(m_UnloadedInfo.get());
         return m_UnloadedInfo->m_BlobOrder;
     }
     else {
         _ASSERT(m_TSE_Lock);
-        TBlobOrder order = m_TSE_Lock->GetBlobOrder();
-        if ( m_UnloadedInfo && m_UnloadedInfo->m_BlobOrder != order ) {
-            m_UnloadedInfo->m_BlobOrder = order;
-        }
-        return order;
+        return m_TSE_Lock->GetBlobOrder();
     }
 }
 
