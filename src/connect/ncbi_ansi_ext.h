@@ -225,6 +225,8 @@ double   NCBI_simple_atof(const char* s, char** e);
  *  to be '\0'-terminated;  that is, all "n" positions will be checked.
  *  @note If "n" is 0, then "s" is not getting accessed (and can be anything,
  *  including NULL), and the return value is always 0(false).
+ *
+ * NB: does not belong to this module per-se but needs a private header...
  */
 NCBI_XCONNECT_EXPORT
 int/*bool*/ NCBI_HasSpaces(const char* s, size_t n);
