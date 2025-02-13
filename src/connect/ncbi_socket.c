@@ -1360,16 +1360,18 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 
     assert(addr  &&  (!host  ||  *host));
     if (!host) {
-        if (s_gethostname(buf, sizeof(buf), log) != 0)
+        if (s_gethostname(buf, sizeof(buf), log) != 0) {
+            memset(addr, 0, sizeof(*addr));
             return 0;
+        }
         not_ip = 1/*true*/;
+        assert(*buf);
         host = buf;
-        assert(*host);
     }
     len = strlen(host);
 
     CORE_TRACEF(("[SOCK::gethostbyname%s]  \"%s\"",
-                 family == AF_INET ? "(IPv4)" :
+                 family == AF_INET  ? "(IPv4)" :
                  family == AF_INET6 ? "(IPv6)" : "",
                  host));
 
@@ -1385,14 +1387,13 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 #endif /*NCBI_OS_DARWIN*/
         if (!not_ip  &&  (ipv4 = inet_addr(host)) != htonl(INADDR_NONE)) {
             NcbiIPv4ToIPv6(addr, ipv4, 0);
-            goto out;
+            goto done;
         }
     }
 
-    memset(addr, 0, sizeof(*addr));
     if (NCBI_HasSpaces(host, len)) {
         memset(addr, 0, sizeof(*addr));
-        goto out;
+        goto done;
     }
 
     parsed = NcbiStringToAddr(addr, host, len);
@@ -1408,10 +1409,10 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
             parsed = 0;
         if (!parsed)
             memset(addr, 0, sizeof(*addr));
-        goto out;
-    } else
-        memset(addr, 0, sizeof(*addr));
+        goto done;
+    }
 
+    assert(NcbiIsEmptyIPv6(addr));
     {{
         int error;
 #if defined(HAVE_GETADDRINFO)
@@ -1420,15 +1421,15 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
         hints.ai_family = family;
         if ((error = getaddrinfo(host, 0, &hints, &out)) == 0  &&  out) {
             union {
-                struct sockaddr*     sa;
-                struct sockaddr_in*  in;
-                struct sockaddr_in6* in6;
+                const struct sockaddr*     sa;
+                const struct sockaddr_in*  in;
+                const struct sockaddr_in6* in6;
             } u;
             ipv4 = 0;
             if (family != AF_INET6) {
                 /* favor IPv4 over IPv6 in this case to maintain backward compatibility */
-                struct addrinfo* tmp = out;
-                char* addrs[32];
+                const struct addrinfo* tmp = out;
+                char* addrs[33];
                 size_t n = 0;
                 do {
                     u.sa = tmp->ai_addr;
@@ -1441,20 +1442,39 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
                         break;
                 } while (n < sizeof(addrs) / sizeof(addrs[0]) - 1);
                 if (n) {
-                    addrs[n] = 0;
-                    memcpy(&ipv4, self ? x_ChooseSelfIP(addrs) : addrs[0], sizeof(ipv4));
+                    memcpy(&ipv4, self
+                           ? (addrs[n] = 0, x_ChooseSelfIP(addrs))
+                           : addrs[0], sizeof(ipv4));
                     NcbiIPv4ToIPv6(addr, ipv4, 0);
                     assert(ipv4);
-                    ipv4 = 1;
                 }
             }
             if (!ipv4) {
-                u.sa = out->ai_addr;
+                const struct addrinfo* tmp = out;
+                if (self) {
+                    do {
+                        u.sa = tmp->ai_addr;
+                        if (u.sa->sa_family == AF_INET6) {
+                            const TNCBI_IPv6Addr* temp
+                                = (const TNCBI_IPv6Addr*) &u.in6->sin6_addr;
+                            /* skip specials (like loopback,
+                               multicast and link-local) */
+                            if ((temp->octet[0] & 0xE0)  &&
+                                (temp->octet[0] ^ 0xE0)) {
+                                break;
+                            }
+                        }
+                        tmp = tmp->ai_next;
+                    } while (tmp);
+                    if (!tmp)
+                        tmp = out;
+                }
+                u.sa = tmp->ai_addr;
                 if (u.sa->sa_family == AF_INET6) {
                     memcpy(addr, &u.in6->sin6_addr, sizeof(*addr));
-                    assert(family == AF_INET6  ||  family == AF_UNSPEC);
-                } else
-                    assert(0);
+                    assert(!NcbiIsEmptyIPv6(addr));
+                }
+                assert(family == AF_INET6  ||  family == AF_UNSPEC);
             }
         } else {
             if (log) {
@@ -1573,14 +1593,14 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 #endif /*HAVE_GETADDRINFO*/
     }}
 
-  out:
+  done:
     parsed = NcbiIsEmptyIPv6(addr) ? 0 : host;
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(host, 1/*full-quad*/)) {
         char addrstr[SOCK_ADDRSTRLEN];
         s_AddrToString(addrstr, sizeof(addrstr), addr, family, !parsed);
         CORE_TRACEF(("[SOCK::gethostbyname%s]  \"%s\" @ %s",
-                     family == AF_INET ? "(IPv4)" :
+                     family == AF_INET  ? "(IPv4)" :
                      family == AF_INET6 ? "(IPv6)" : "",
                      host, addrstr));
     }
@@ -1592,37 +1612,55 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 /* a non-standard helper */
 static TNCBI_IPv6Addr* s_getlocalhostaddress(TNCBI_IPv6Addr* addr, int family, ESwitch reget, ESwitch log)
 {
+    /* Cached IP addresses of the local host [0]=IPv4, [1]=IPv6 */
+    static volatile struct {
+        TNCBI_IPv6Addr addr;
+        int/*bool*/    isset;
+    } s_LocalHostAddress[2] = { 0 };
     static void* volatile /*bool*/ s_Once = 0/*false*/;
-    /* cached IP address of the local host */
-    static TNCBI_IPv6Addr s_LocalHostAddress = { 0 };
-    int/*bool*/ do_get;
+    int/*bool*/ empty;
+    int n;
 
     assert(addr);
-    if (reget == eOn)
-        do_get = 1/*true*/;
-    else if (reget != eOff) {
-        CORE_LOCK_READ;
-        do_get = NcbiIsEmptyIPv6(&s_LocalHostAddress);
-        CORE_UNLOCK;
-    } else
-        do_get = 0/*false*/;
-    if (do_get) {
+    n = !(family != AF_INET6);
+    if (reget != eOn) {
+        int i, m = family == AF_UNSPEC ? 2 : 1;
+        for (i = 0;  i < m;  ++i) {
+            int isset;
+            CORE_LOCK_READ;
+            isset = s_LocalHostAddress[n].isset;
+            *addr = s_LocalHostAddress[n].addr;
+            CORE_UNLOCK;
+            if (!(i | isset)) {
+                assert(NcbiIsEmptyIPv6(addr));
+                reget = eOn;
+                break;
+            }
+            if (!(empty = NcbiIsEmptyIPv6(addr)))
+                return addr;
+            if (!(m & 1))
+                n ^= 1;
+        }
+    }
+    if (reget != eOff) {
+        if (!(empty = !s_gethostbyname_(addr, 0, family, 0, 1/*self*/, log))) {
+            assert(!NcbiIsEmptyIPv6(addr));
+            n = !NcbiIsIPv4(addr);
+        }
         CORE_LOCK_WRITE;
-        if (!s_gethostbyname_(&s_LocalHostAddress, 0, family, 0, 1/*self*/, log))
-            memset(&s_LocalHostAddress, 0, sizeof(s_LocalHostAddress));
+        s_LocalHostAddress[n].addr = *addr;
+        s_LocalHostAddress[n].isset = 1;
         CORE_UNLOCK;
     }
-    CORE_LOCK_READ;
-    if (!NcbiIsEmptyIPv6(&s_LocalHostAddress)) {
-        *addr = s_LocalHostAddress;
-        CORE_UNLOCK;
+    if (!empty)
         return addr;
-    }
-    CORE_UNLOCK;
+    assert(NcbiIsEmptyIPv6(addr));
     if (reget != eOff  &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(9, reget == eDefault ? eLOG_Warning : eLOG_Error,
-                    ("[SOCK::GetLocalHostAddress] "
+                    ("[SOCK::GetLocalHostAddress%s] "
                      " Cannot obtain local host address%s",
+                     family == AF_INET  ? "(IPv4)" :
+                     family == AF_INET6 ? "(IPv6)" : "",
                      reget == eDefault ? ", using loopback instead" : ""));
     }
     if (reget == eDefault) {
@@ -1656,6 +1694,7 @@ static TNCBI_IPv6Addr* s_gethostbyname(TNCBI_IPv6Addr* addr,
             info.host = host;
             s_ErrorCallback(&info);
         }
+        assert(NcbiIsEmptyIPv6(addr));
         addr = 0;
     } else if (!s_Once  &&  !host
                &&  SOCK_IsLoopbackAddressIPv6(addr)  &&  CORE_Once(&s_Once)) {
@@ -1678,16 +1717,14 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
     int/*bool*/ empty;
 
     if (NcbiIsEmptyIPv6(addr)) {
-        if (s_getlocalhostaddress(&localhost, family, eDefault, log)) {
-            addr = &localhost;
-            empty = NcbiIsEmptyIPv6(addr);
-        } else
-            empty = 1/*true*/;
+        /* NB: this also includes the case of "addr" == NULL */
+        empty = !s_getlocalhostaddress(&localhost, family, eDefault, log);
+        addr = &localhost;
     } else
         empty = 0/*false*/;
 
     CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s",
-                 family == AF_INET ? "(IPv4)" :
+                 family == AF_INET  ? "(IPv4)" :
                  family == AF_INET6 ? "(IPv6)" : "",
                  (s_AddrToString(addrstr, sizeof(addrstr),
                                  addr, family, empty), addrstr)));
@@ -1715,9 +1752,9 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
             ||  (error = getnameinfo(&u.sa, addrlen, name, WIN_DWORD_CAST namesize,
                                      0, 0, NI_NAMEREQD)) != 0
             ||  !*name) {
-            if (error == EAI_NONAME)
-                error  = 0;
             if (!s_AddrToString(name, namesize, addr, family, 0)) {
+                if (error == EAI_NONAME)
+                    error  = 0;
 #  ifdef EAI_SYSTEM
                 if (error == EAI_SYSTEM)
                     error  = SOCK_ERRNO;
@@ -1827,13 +1864,13 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr, int family,
         name = 0;
     }
 
-    assert(!name  ||  !NCBI_HasSpaces(name, strlen(name)));
+    assert(!name  ||  (*name  &&  !NCBI_HasSpaces(name, strlen(name))));
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     {
         TNCBI_IPv6Addr temp;
         if (!NcbiIPToAddr(&temp, name, 0)) {
             CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s @ %s%s%s",
-                         family == AF_INET ? "(IPv4)" :
+                         family == AF_INET  ? "(IPv4)" :
                          family == AF_INET6 ? "(IPv6)" : "",
                          (s_AddrToString(addrstr, sizeof(addrstr),
                                          addr, family, empty), addrstr),
@@ -1850,7 +1887,7 @@ static const char* s_gethostbyaddr(const TNCBI_IPv6Addr* addr, char* name,
 {
     static void* volatile /*bool*/ s_Once = 0/*false*/;
     const char* rv;
-    assert(addr  &&  name  &&  namesize);
+    assert(name  &&  namesize);
     rv = s_gethostbyaddr_(addr, s_IPVersion, name, namesize, log);
     if (!s_Once  &&  rv
         &&  ((SOCK_IsLoopbackAddressIPv6(addr)
@@ -9439,7 +9476,7 @@ extern const char* SOCK_gethostbyaddrIPv6Ex(const TNCBI_IPv6Addr* addr,
         return 0;
 
     /* initialize internals */
-    if (!addr  ||  s_InitAPI(0) != eIO_Success) {
+    if (s_InitAPI(0) != eIO_Success) {
         *buf = '\0';
         return 0;
     }
@@ -9490,7 +9527,7 @@ extern TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6(TNCBI_IPv6Addr* loop)
 {
     if (loop) {
         if (s_IPVersion != AF_INET) {
-            memset(loop, 0, sizeof(*loop));
+            memset(loop->octet, 0, sizeof(loop->octet) - 1);
             loop->octet[sizeof(loop->octet) - 1]  = 1;
         } else
             NcbiIPv4ToIPv6(loop, SOCK_LOOPBACK, 0);
@@ -9501,7 +9538,7 @@ extern TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6(TNCBI_IPv6Addr* loop)
 
 extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
 {
-    if (ip == htonl(INADDR_LOOPBACK)) 
+    if (ip == SOCK_LOOPBACK)
         return 1/*true*/;
     /* 127/8 */
     if (ip) {
@@ -9519,18 +9556,13 @@ extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
 
 extern int/*bool*/ SOCK_IsLoopbackAddressIPv6(const TNCBI_IPv6Addr* addr)
 {
-    size_t n;
     if (!addr)
         return 0/*false*/;
     if (NcbiIsIPv4(addr))
         return SOCK_IsLoopbackAddress(NcbiIPv6ToIPv4(addr, 0));
-    if (addr->octet[sizeof(addr->octet)/sizeof(addr->octet[0]) - 1] != 1)
+    if (addr->octet[sizeof(addr->octet) - 1] != 1)
         return 0/*false*/;
-    for (n = 0;  n < sizeof(addr->octet)/sizeof(addr->octet[0]) - 1;  ++n) {
-        if (addr->octet[n])
-            return 0/*false*/;
-    }
-    return 1/*true*/;
+    return !memcchr(addr->octet, 0, sizeof(addr->octet) - 1);
 }
 
 
@@ -9679,13 +9711,13 @@ static size_t s_HostPortToStringIPv6(const TNCBI_IPv6Addr* addr,
     if (addr) {
         int/*bool*/ ipv4 = NcbiIsIPv4(addr);
         if (!NcbiIsEmptyIPv6(addr)  ||  (!ipv4  &&  family != AF_INET)) {
-            ipv4 = (ipv4  &&  family != AF_INET6)  ||  !port;
-            char* end = s_AddrToString(x_buf + !ipv4, sizeof(x_buf) - !ipv4, addr, family, 0);
+            int/*bool*/ bare = (ipv4  &&  family != AF_INET6)  ||  !port;
+            char* end = s_AddrToString(x_buf + !bare, sizeof(x_buf) - !bare, addr, family, 0);
             if (!end) {
                 *buf = '\0';
                 return 0;
             }
-            if (!ipv4) {
+            if (!bare) {
                 *x_buf = '[';
                 *end++ = ']';
             }
