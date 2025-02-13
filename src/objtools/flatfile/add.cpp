@@ -1441,7 +1441,7 @@ char* StringRStr(char* where, const char* what)
 }
 
 /**********************************************************/
-CRef<CSeq_loc> fta_get_seqloc_int_whole(CSeq_id& seq_id, size_t len)
+CRef<CSeq_loc> fta_get_seqloc_int_whole(const CSeq_id& seq_id, size_t len)
 {
     CRef<CSeq_loc> ret;
 
@@ -1453,7 +1453,7 @@ CRef<CSeq_loc> fta_get_seqloc_int_whole(CSeq_id& seq_id, size_t len)
 
     interval.SetFrom(0);
     interval.SetTo(static_cast<TSeqPos>(len) - 1);
-    interval.SetId(seq_id);
+    interval.SetId().Assign(seq_id);
 
     return ret;
 }

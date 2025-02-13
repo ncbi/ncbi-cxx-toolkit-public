@@ -2484,7 +2484,7 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
 }
 
 /**********************************************************/
-static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_refs)
+static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_refs)
 {
     IndexblkPtr ibp;
     GeneNodePtr gnp;
@@ -2513,11 +2513,11 @@ static void CheckGene(TEntryList& seq_entries, ParserPtr pp, GeneRefFeats& gene_
     else
         gnp->skipdiv = false;
 
-    for (auto& entry : seq_entries) {
+    if (entry) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             FindGene(*bioseq, gnp);
         }
-    }
+    }   
 
     if (gnp->got_misc) {
         MiscFeatsWithoutGene(gnp);
@@ -2747,7 +2747,7 @@ static void FixAnnot(CBioseq::TAnnot& annots, const char* acnum, GeneRefFeats& g
  *               remove misc_feat 'gene'
  *
  **********************************************************/
-static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& gene_refs)
+static void GeneQuals(CSeq_entry& entry, const char* acnum, GeneRefFeats& gene_refs)
 {
     TSeqLocInfoList llocs;
     if (gene_refs.valid) {
@@ -2763,16 +2763,14 @@ static void GeneQuals(TEntryList& seq_entries, const char* acnum, GeneRefFeats& 
         }
     }
 
-    for (auto& entry : seq_entries) {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*entry)); bio_set; ++bio_set) {
-            if (bio_set->IsSetAnnot())
-                FixAnnot(bio_set->SetAnnot(), acnum, gene_refs, llocs);
-        }
+    for (CTypeIterator<CBioseq_set> bio_set(Begin(entry)); bio_set; ++bio_set) {
+        if (bio_set->IsSetAnnot())
+            FixAnnot(bio_set->SetAnnot(), acnum, gene_refs, llocs);
+    }
 
-        for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
-            if (bioseq->IsSetAnnot())
-                FixAnnot(bioseq->SetAnnot(), acnum, gene_refs, llocs);
-        }
+    for (CTypeIterator<CBioseq> bioseq(Begin(entry)); bioseq; ++bioseq) {
+        if (bioseq->IsSetAnnot())
+            FixAnnot(bioseq->SetAnnot(), acnum, gene_refs, llocs);
     }
 }
 
@@ -2830,21 +2828,17 @@ static void fta_fix_labels(CBioseq& bioseq, const std::set<string>& genes)
 }
 
 /**********************************************************/
-void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
+void DealWithGenes(CRef<CSeq_entry>& pEntry, ParserPtr pp)
 {
     if (pp->source == Parser::ESource::Flybase) {
         std::set<string> genes;
-        for (const auto& entry : seq_entries) {
-            for (CBioseq_CI bioseq(GetScope(), *entry); bioseq; ++bioseq) {
-                fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);
-            }
+        for (CBioseq_CI bioseq(GetScope(), *pEntry); bioseq; ++bioseq) {
+            fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);
         }
 
         if (! genes.empty()) {
-            for (auto& entry : seq_entries) {
-                for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
-                    fta_fix_labels(*bioseq, genes);
-                }
+            for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq) {
+                fta_fix_labels(*bioseq, genes);
             }
         }
     }
@@ -2853,7 +2847,8 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
      */
     GeneRefFeats gene_refs;
     gene_refs.valid = false;
-    CheckGene(seq_entries, pp, gene_refs);
+
+    CheckGene(pEntry, pp, gene_refs);
 
     if (gene_refs.valid) {
         for (TSeqFeatList::iterator feat = gene_refs.first; feat != gene_refs.last; ++feat) {
@@ -2881,12 +2876,11 @@ void DealWithGenes(TEntryList& seq_entries, ParserPtr pp)
         }
     }
 
-    ProcNucProt(pp, seq_entries, gene_refs);
+    ProcNucProt(pp, pEntry, gene_refs, GetScope());
 
-    /* remove /gene if they can be mapped to GenRef
-     */
-    if (! seq_entries.empty())
-        GeneQuals(seq_entries, pp->entrylist[pp->curindx]->acnum, gene_refs);
+    if (pEntry) {
+        GeneQuals(*pEntry, pp->entrylist[pp->curindx]->acnum, gene_refs);
+    }
 }
 
 END_NCBI_SCOPE

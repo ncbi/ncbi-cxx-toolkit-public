@@ -310,9 +310,9 @@ static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& s
 {
     CRef<CSeq_entry> result;
 
-    DealWithGenes(seq_entries, pp);
+    DealWithGenes(seq_entries.front(), pp);
 
-    if (seq_entries.empty()) {
+    if (seq_entries.front().Empty()) {
         GetScope().ResetDataAndHistory();
         return result;
     }
@@ -2188,7 +2188,6 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
         ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
-        GetScope().AddBioseq(*bioseq);
 
         if (! mParser.accver) {
             GetReleaseInfo(*pEntry);
@@ -2203,7 +2202,10 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
             return pResult;
         }
 
+
         FakeEmblBioSources(*pEntry, *bioseq);
+        GetScope().AddBioseq(*bioseq);
+
         LoadFeat(&mParser, *pEntry, *bioseq);
 
         if (! bioseq->IsSetAnnot() && ibp->drop) {

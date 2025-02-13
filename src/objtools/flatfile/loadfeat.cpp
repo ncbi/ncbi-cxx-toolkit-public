@@ -587,7 +587,7 @@ FeatBlk* DataBlk::GetFeatData() const
 }
 
 extern Int2            SpFeatKeyNameValid(const Char* keystr);
-extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids);
+extern CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid);
 
 /**********************************************************/
 static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
@@ -910,13 +910,21 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-bool GetSeqLocation(CSeq_feat& feat, const char* location, TSeqIdList& ids, bool* hard_err, ParserPtr pp, const string& name)
+bool GetSeqLocation(CSeq_feat& feat, const char* location, 
+        const CSeq_id& seqid, bool* hard_err, ParserPtr pp, const string& name)
 {
     bool locmap = true;
     int  num_errs;
 
     *hard_err = false;
     num_errs  = 0;
+
+    TSeqIdList ids;
+    {
+        auto pId = Ref(new CSeq_id());
+        pId->Assign(seqid);
+        ids.push_back(pId);
+    }
 
     CRef<CSeq_loc> loc = xgbparseint_ver(location, locmap, num_errs, ids, pp->accver);
 
@@ -930,8 +938,7 @@ bool GetSeqLocation(CSeq_feat& feat, const char* location, TSeqIdList& ids, bool
 
     if (num_errs > 0) {
         feat.ResetLocation();
-        CSeq_loc& cur_loc = feat.SetLocation();
-        cur_loc.SetWhole(*(*ids.begin()));
+        feat.SetLocation().SetWhole().Assign(seqid);
         *hard_err = true;
     } else if (! feat.GetLocation().IsEmpty()) {
         if (feat.GetLocation().IsMix()) {
@@ -1145,7 +1152,7 @@ static void fta_strip_aa(char* str)
  *                                              5-26-93
  *
  **********************************************************/
-static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, TSeqIdList& seqids, Int4 col_data, IndexblkPtr ibp)
+static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, const CSeq_id& seqid, Int4 col_data, IndexblkPtr ibp)
 {
     DataBlkIter dbp, dbp_end;
 
@@ -1231,7 +1238,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         pp->buf.reset();
 
-        GetSeqLocation(*feat, location, seqids, &err, pp, "pub");
+        GetSeqLocation(*feat, location, seqid, &err, pp, "pub");
 
         if (err) {
             ErrPostStr(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "Unparsable reference location. Entry dropped.");
@@ -1395,7 +1402,7 @@ static CRef<CSeq_loc> GetTrnaAnticodon(const CSeq_feat& feat, char* qval, const 
         return ret;
     }
 
-    range = sequence::GetLength(*ret, &GetScope());
+    range = sequence::GetLength(*ret, nullptr); // RW-2427 - shouldn't need a scope to determine anticodon length
     if (range != 3) {
         string loc = location_to_string_or_unknown(feat.GetLocation());
         if (range == 4) {
@@ -2368,7 +2375,7 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
  *   qualifier to be a Imp-feat.
  *
  **********************************************************/
-static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
+static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid)
 {
     const char** b;
 
@@ -2384,7 +2391,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seq
         DelCharBtwData(loc);
         pp->buf = fbp->key + " : " + loc;
         feat.Reset(new CSeq_feat);
-        locmap = GetSeqLocation(*feat, loc, seqids, &err, pp, fbp->key);
+        locmap = GetSeqLocation(*feat, loc, seqid, &err, pp, fbp->key);
         pp->buf.reset();
     }
     if (err) {
@@ -4655,6 +4662,23 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     ibp->drop = true;
 }
 
+
+
+
+static void s_RemoveSourceDescriptors(CSeq_descr& descrs)
+{
+    auto& descrList = descrs.Set();
+    auto it = descrList.begin();
+    while (it != descrList.end()) {
+        if ((*it)->IsSource()) {
+            it = descrList.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
 /**********************************************************
  *
  *   SeqAnnotPtr LoadFeat(pp, entry, bsp):
@@ -4677,7 +4701,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     CRef<CSeq_id> seq_id =
         MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum);
     if (pp->source == Parser::ESource::USPTO) {
-        pat_seq_id                  = new CSeq_id;
+        pat_seq_id                  = Ref(new CSeq_id());
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);
         pat_seq_id->SetPatent(*pat_id);
     }
@@ -4690,8 +4714,8 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
     }
 
-    TSeqIdList ids;
-    ids.push_back(seq_id);
+  //  TSeqIdList ids;
+  //  ids.push_back(seq_id);
 
     if (pp->format == Parser::EFormat::GenBank) {
         col_data = ParFlat_COL_DATA;
@@ -4768,7 +4792,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     TSeqFeatList seq_feats;
     if (! ibp->drop)
-        ParseSourceFeat(pp, dab, dab_end, ids, type, bioseq, seq_feats);
+        ParseSourceFeat(pp, dab, dab_end, *seq_id, type, bioseq, seq_feats);
 
     if (seq_feats.empty()) {
         ibp->drop = true;
@@ -4788,20 +4812,13 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (! ibp->submitter_seqid.empty())
         fta_create_wgs_seqid(bioseq, ibp, pp->source);
 
-    CSeq_descr::Tdata& descr_list = bioseq.SetDescr().Set();
-    for (CSeq_descr::Tdata::iterator descr = descr_list.begin(); descr != descr_list.end();) {
-        if (! (*descr)->IsSource()) {
-            ++descr;
-            continue;
-        }
+    // Remove existing source descriptors - is this actually necessary?
+    s_RemoveSourceDescriptors(bioseq.SetDescr());
 
-        descr = descr_list.erase(descr);
-    }
-
+    // add new source descriptor
     CRef<CSeqdesc> descr_src(new CSeqdesc);
     descr_src->SetSource(seq_feats.front()->SetData().SetBiosrc());
-
-    descr_list.push_back(descr_src);
+    bioseq.SetDescr().Set().push_back(descr_src);
     seq_feats.pop_front();
 
     fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
@@ -4826,9 +4843,9 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             fta_sort_quals(fbp, pp->qamode);
             CRef<CSeq_feat> feat;
             if (fbp->spindex < 0)
-                feat = ProcFeatBlk(pp, fbp, ids);
+                feat = ProcFeatBlk(pp, fbp, *seq_id);
             else
-                feat = SpProcFeatBlk(pp, fbp, ids);
+                feat = SpProcFeatBlk(pp, fbp, *seq_id);
             if (feat.Empty()) {
                 if (fbp->key == "CDS") {
                     auto msg = ErrFormat("CDS feature has unparsable location. Entry dropped. Location = [%s].", fbp->location_c_str());
@@ -4926,7 +4943,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         return;
     }
 
-    SeqFeatPub(pp, entry, seq_feats, ids, col_data, ibp);
+    SeqFeatPub(pp, entry, seq_feats, *seq_id, col_data, ibp);
     if (seq_feats.empty() && ibp->drop) {
         xinstall_gbparse_range_func(nullptr, nullptr);
         return;

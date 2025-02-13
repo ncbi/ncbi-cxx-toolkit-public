@@ -2188,7 +2188,7 @@ static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bo
 }
 
 /**********************************************************/
-static void PropogateSuppliedLineage(CBioseq&         bioseq,
+static void PropagateSuppliedLineage(const CBioseq& bioseq,
                                      SourceFeatBlkPtr sfbp,
                                      Uint1            taxserver)
 {
@@ -3121,7 +3121,8 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 }
 
 /**********************************************************/
-void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqIdList& seqids, Int2 type, CBioseq& bioseq, TSeqFeatList& seq_feats)
+void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const CSeq_id& seqid, Int2 type, 
+        const CBioseq& bioseq, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
@@ -3209,7 +3210,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqI
         return;
     }
 
-    PropogateSuppliedLineage(bioseq, sfbp, pp->taxserver);
+    PropagateSuppliedLineage(bioseq, sfbp, pp->taxserver);
 
     mmp = new MinMax;
     i   = CheckSourceFeatCoverage(sfbp, mmp, len);
@@ -3347,7 +3348,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, TSeqI
 
         pp->buf.reset();
 
-        GetSeqLocation(*feat, tsfbp->location, seqids, &err, pp, "source");
+        GetSeqLocation(*feat, tsfbp->location, seqid, &err, pp, "source");
 
         if (err) {
             ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "/source|%s| range check detects problems. Entry dropped.", tsfbp->location);
