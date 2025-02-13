@@ -1965,13 +1965,32 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 
 void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
 {
-    if (!m_Loader) return;
-    try {
-        m_Loader->GetCDDAnnots(id_sets, loaded, ret);
-    }
-    catch ( CLoaderException& exc ) {
-        exc.SetFailedCall(s_FormatCall("GetCDDAnnots", id_sets));
-        throw;
+#ifdef NCBI_USE_TSAN
+    const size_t limit_cdds_request = 15;
+#else
+    const size_t limit_cdds_request = 200;
+#endif
+    _ASSERT(id_sets.size() == loaded.size());
+    _ASSERT(id_sets.size() == ret.size());
+    size_t current_size = min(limit_cdds_request, id_sets.size());
+    for (size_t current_start = 0; current_start < id_sets.size(); current_start += current_size) {
+        if (current_size > id_sets.size() - current_start) current_size = id_sets.size() - current_start;
+        TSeqIdSets current_id_sets(current_size);
+        size_t current_end = current_start + current_size;
+        TLoaded current_loaded(current_id_sets.size());
+        TCDD_Locks current_ret(current_id_sets.size());
+        copy(id_sets.begin() + current_start, id_sets.begin() + current_end, current_id_sets.begin());
+        copy(loaded.begin() + current_start, loaded.begin() + current_end, current_loaded.begin());
+        copy(ret.begin() + current_start, ret.begin() + current_end, current_ret.begin());
+        try {
+            m_Loader->GetCDDAnnots(current_id_sets, current_loaded, current_ret);
+            copy(current_loaded.begin(), current_loaded.end(), loaded.begin() + current_start);
+            copy(current_ret.begin(), current_ret.end(), ret.begin() + current_start);
+        }
+        catch ( CLoaderException& exc ) {
+            exc.SetFailedCall(s_FormatCall("GetCDDAnnots", current_id_sets));
+            throw;
+        }
     }
 }
 
