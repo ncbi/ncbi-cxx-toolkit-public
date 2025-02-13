@@ -852,34 +852,99 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
         align_range = TSeqRange(spliced_seg.GetExons().back()->GetGenomic_start(),
                                 spliced_seg.GetExons().front()->GetGenomic_end());
     }
-    bool cross_the_origin = range.GetFrom() > range.GetTo() || align_range.GetFrom() > align_range.GetTo();
+
+    bool cross_the_origin = range.GetFrom() > range.GetTo();
+    if ( !cross_the_origin ) {
+        auto it = spliced_seg.GetExons().begin();
+        auto next = it;
+        for (++next;  next != spliced_seg.GetExons().end();  ++it, ++next) {
+            if (plus_strand) {
+                if ((*it)->GetGenomic_end() > (*next)->GetGenomic_start()) {
+                    cross_the_origin = true;
+                    break;
+                }
+            }
+            else {
+                if ((*it)->GetGenomic_start() < (*next)->GetGenomic_end()) {
+                    cross_the_origin = true;
+                    break;
+                }
+            }
+        }
+    }
+
     TSeqPos genomic_size = 0;
     if (cross_the_origin) {
         genomic_size = m_scope->GetSequenceLength(spliced_seg.GetGenomic_id());
 
-
-        if (range.GetFrom() > range.GetTo()) {
+        // first, adjust the expected range
+        if (range.GetFrom() >= range.GetTo()) {
             range.SetTo(range.GetTo() + genomic_size);
-        }
-        if (align_range.GetFrom() > align_range.GetTo()) {
-            align_range.SetTo(align_range.GetTo() + genomic_size);
         }
 
         if (range.GetTo() < align_range.GetFrom()) {
             range.SetFrom(range.GetFrom() + genomic_size);
             range.SetTo(range.GetTo() + genomic_size);
         }
-        if (align_range.GetTo() < range.GetFrom()) {
+
+        // second, test our alignment
+        // we expect that our alignment will intersect this range, though not
+        // every exon will
+        if (spliced_seg.GetExons().size() == 1) {
+            // one exon; the range should intersect
+            if ( !align_range.IntersectingWith(range) ) {
+                for (auto& it : spliced_seg.SetExons()) {
+                    it->SetGenomic_start(it->GetGenomic_start() + genomic_size);
+                    it->SetGenomic_end(it->GetGenomic_end() + genomic_size);
+                }
             align_range.SetFrom(align_range.GetFrom() + genomic_size);
             align_range.SetTo(align_range.GetTo() + genomic_size);
         }
+        }
+        else {
+            auto s_CrossesOrigin = [](const CSpliced_exon& e1,
+                                      const CSpliced_exon& e2,
+                                      bool plus) -> bool
+            {
+                if (plus) {
+                    return e2.GetGenomic_start() < e1.GetGenomic_end();
+                }
+                else {
+                    return e2.GetGenomic_end() > e1.GetGenomic_start();
+                }
+            };
 
-        TSeqPos outside_point = min(range.GetFrom(), align_range.GetFrom());
-        NON_CONST_ITERATE(CSpliced_seg::TExons, exon_it, spliced_seg.SetExons()) {
-            CSpliced_exon& exon = **exon_it;
-            if (exon.GetGenomic_start() < outside_point) {
-                exon.SetGenomic_start() += genomic_size;
-                exon.SetGenomic_end() += genomic_size;
+            // test for the cross point
+            // we adjust only after the cross point
+            // (or before the cross point, for a negative strand
+            auto it = spliced_seg.SetExons().begin();
+            auto next = it;
+            for (++next;  next != spliced_seg.SetExons().end();  ++next, ++it) {
+                // we assume that 'it' is ok
+                // we adjust 'next'
+                if (s_CrossesOrigin(**it, **next, plus_strand)) {
+                    auto adj_start = next;
+                    auto adj_end = spliced_seg.SetExons().end();
+
+                    if ( !plus_strand ) {
+                        adj_start = spliced_seg.SetExons().begin();
+                        adj_end = it;
+                        ++adj_end;
+            }
+
+                    // we adjust the whole range [adj_start..adj_end)
+                    for ( ;  adj_start != adj_end;  ++adj_start) {
+                        (*adj_start)->SetGenomic_start
+                            ((*adj_start)->GetGenomic_start() + genomic_size);
+                        (*adj_start)->SetGenomic_end
+                            ((*adj_start)->GetGenomic_end() + genomic_size);
+
+                        align_range.SetTo
+                            (std::max(align_range.GetTo(),
+                                      (*adj_start)->GetGenomic_end()));
+        }
+                    break;
+    }
             }
         }
     }
@@ -890,6 +955,9 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     }
     if (range.GetTo() < align_range.GetFrom() ||
         align_range.GetTo() < range.GetFrom()) {
+        cerr << "range = " << range << endl;
+        cerr << "align_range = " << align_range << endl;
+        cerr << MSerial_AsnText << spliced_seg;
         NCBI_USER_THROW("alignmentrange and requested range don't overlap");
     }
 
