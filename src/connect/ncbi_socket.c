@@ -1381,7 +1381,7 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
             /* Darwin's inet_addr() does not care for integer overflows :-/ */
             if (!SOCK_isip(host)) {
                 memset(addr, 0, sizeof(*addr));
-                goto out;
+                goto done;
             }
         }
 #endif /*NCBI_OS_DARWIN*/
