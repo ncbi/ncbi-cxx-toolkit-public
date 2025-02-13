@@ -342,14 +342,14 @@ CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(void)
 CLDS2_Database::SLDS2_DbConnection&
 CLDS2_Database::x_GetDbConnection(void) const
 {
-    CRef<TDbConnectionsTls> tls = m_DbConn; // Keep reference.
-    if ( !m_DbConn ) {
+    CRef<TDbConnectionsTls> tls;
+    {{
         CFastMutexGuard guard(m_DbInitMutex);
         if ( !m_DbConn ) {
             m_DbConn.Reset(new TDbConnectionsTls);
         }
         tls = m_DbConn;
-    }
+    }}
     SLDS2_DbConnection* db_conn = tls->GetValue();
     if ( !db_conn ) {
         unique_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
