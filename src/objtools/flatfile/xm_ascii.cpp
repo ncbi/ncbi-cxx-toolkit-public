@@ -1147,7 +1147,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     CRef<CBioseq> bioseq = CreateEntryBioseq(&mParser);
     ebp->seq_entry.Reset(new CSeq_entry);
     ebp->seq_entry->SetSeq(*bioseq);
-    GetScope().AddBioseq(*bioseq);
 
     unique_ptr<DataBlk> dbp(new DataBlk());
     dbp->SetEntryData(ebp);
@@ -1160,19 +1159,20 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
         MemFree(entry);
         mTotals.Dropped++;
-        //    continue;
         mParser.curindx++;
         return result;
     }
 
     XMLFakeBioSources(ibp->xip, dbp->mOffset, *bioseq, mParser.source);
-    LoadFeat(&mParser, *dbp, *bioseq);
+ 
+    GetScope().AddBioseq(*bioseq);
+
+    LoadFeat(&mParser, *dbp, *bioseq); // uses scope to validate locations
 
     if (! bioseq->IsSetAnnot() && ibp->drop) {
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
         MemFree(entry);
         mTotals.Dropped++;
-        // continue;
         mParser.curindx++;
         return result;
     }
@@ -1185,7 +1185,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         mTotals.Dropped++;
         mParser.curindx++;
         return result;
-        //     continue;
     }
 
     fta_set_molinfo_completeness(*bioseq, ibp);
@@ -1263,23 +1262,18 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
             mTotals.Dropped++;
             mParser.curindx++;
             return result;
-            // continue;
         }
     }
-
-    TEntryList seq_entries;
-    seq_entries.push_back(ebp->seq_entry);
-    ebp->seq_entry.Reset();
 
     if (mParser.source == Parser::ESource::USPTO) {
         GeneRefFeats gene_refs;
         gene_refs.valid = false;
-        ProcNucProt(&mParser, seq_entries, gene_refs);
+        ProcNucProt(&mParser, ebp->seq_entry, gene_refs, GetScope());
     } else {
-        DealWithGenes(seq_entries, &mParser);
+        DealWithGenes(ebp->seq_entry, &mParser);
     }
 
-    if (seq_entries.empty()) {
+    if (ebp->seq_entry.Empty()) {
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
         mTotals.Dropped++;
         MemFree(entry);
@@ -1287,6 +1281,10 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         mParser.curindx++;
         return result;
     }
+
+    TEntryList seq_entries;
+    seq_entries.push_back(ebp->seq_entry);
+    ebp->seq_entry.Reset();
 
     fta_find_pub_explore(&mParser, seq_entries);
 

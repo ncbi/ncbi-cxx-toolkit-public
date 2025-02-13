@@ -1332,7 +1332,6 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
     }
 
     int         i = mParser.curindx;
-    TEntryList  seq_entries;
     bool        seq_long = false;
     IndexblkPtr ibp      = mParser.entrylist[i];
 
@@ -1391,7 +1390,6 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
     CRef<CBioseq> bioseq = CreateEntryBioseq(&mParser);
     ebp->seq_entry.Reset(new CSeq_entry);
     ebp->seq_entry->SetSeq(*bioseq);
-    GetScope().AddBioseq(*bioseq);
 
     AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, mParser.source);
 
@@ -1410,6 +1408,8 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
     }
 
     FakeGenBankBioSources(*pEntry, *bioseq);
+    
+    GetScope().AddBioseq(*bioseq);
     LoadFeat(&mParser, *pEntry, *bioseq);
 
     if (! bioseq->IsSetAnnot() && ibp->drop) {
@@ -1511,21 +1511,23 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         }
     }
 
-    seq_entries.push_back(ebp->seq_entry);
-    ebp->seq_entry.Reset();
 
-    DealWithGenes(seq_entries, &mParser);
+    DealWithGenes(ebp->seq_entry, &mParser);
 
-    if (seq_entries.empty()) {
+    if (ebp->seq_entry.Empty()) {
         ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
         mTotals.Dropped++;
         mParser.curindx++;
         return pResult;
     }
 
-    if (mParser.source == Parser::ESource::Flybase && ! seq_entries.empty())
-        fta_get_user_object(*(*seq_entries.begin()), *pEntry);
+    if (mParser.source == Parser::ESource::Flybase) {
+        fta_get_user_object(*(ebp->seq_entry), *pEntry);
+    }
 
+    TEntryList  seq_entries;
+    seq_entries.push_back(ebp->seq_entry);
+    ebp->seq_entry.Reset();
 
     fta_find_pub_explore(&mParser, seq_entries);
 

@@ -3439,7 +3439,7 @@ Int2 SpFeatKeyNameValid(const Char* keystr)
 }
 
 /**********************************************************/
-CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
+CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid)
 {
     string descrip;
     char*  loc;
@@ -3494,7 +3494,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, TSeqIdList& seqids)
                 *loc++ = *p;
         *loc = '\0';
         pp->buf = fbp->key + " : " + fbp->location_get();
-        GetSeqLocation(*feat, fbp->location, seqids, &err, pp, fbp->key);
+        GetSeqLocation(*feat, fbp->location, seqid, &err, pp, fbp->key);
         pp->buf.reset();
     }
     if (err) {

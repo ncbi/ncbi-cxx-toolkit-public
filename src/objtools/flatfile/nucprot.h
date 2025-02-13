@@ -71,8 +71,13 @@ struct GeneRefFeats {
     }
 };
 
+namespace objects {
+    class CScope;
+}
+
 void CheckDupDates(TEntryList& seq_entries);
-void ProcNucProt(ParserPtr pp, TEntryList& seq_entries, GeneRefFeats& gene_refs);
+void ProcNucProt(ParserPtr pp, CRef<objects::CSeq_entry>& pEntry, 
+        GeneRefFeats& gene_refs, objects::CScope& scope);
 void ExtractDescrs(TSeqdescList& descrs_from, TSeqdescList& descrs_to, objects::CSeqdesc::E_Choice choice);
 
 END_NCBI_SCOPE

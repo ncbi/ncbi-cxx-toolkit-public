@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(objects::CSeq_id& seq_id, size_t len);
+CRef<objects::CSeq_loc> fta_get_seqloc_int_whole(const objects::CSeq_id& seq_id, size_t len);
 
 string tata_save(string_view);
 
