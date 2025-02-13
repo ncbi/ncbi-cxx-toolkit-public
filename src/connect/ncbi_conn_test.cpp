@@ -441,7 +441,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream http("/Service/index.html",
-                          net_info.get(), kEmptyStr/*user_hdr*/, s_GoodHeader,
+                          net_info.get(), "Host: " NCBI_WWW, s_GoodHeader,
                           auxdata, s_Adjust, s_Cleanup, fHTTP_AdjustOnRedirect,
                           m_Timeout);
     http.SetCanceledCallback(m_Canceled);
