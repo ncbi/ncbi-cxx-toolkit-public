@@ -546,9 +546,6 @@ int CVDBMgr::SetDebugLevel(int new_level)
 
 string CVDBMgr::FindAccPath(const string& acc) const
 {
-    if ( !m_Resolver ) {
-        m_Resolver = CVResolver(CVFSManager(*this));
-    }
     return m_Resolver.Resolve(acc);
 }
 
@@ -1050,6 +1047,7 @@ void CVDBMgr::x_Init(void)
     if ( NCBI_PARAM_TYPE(VDB, DISABLE_PAGEMAP_THREAD)().Get() ) {
         VDBManagerDisablePagemapThread(*this);
     }
+    m_Resolver = CVResolver(vfs_mgr);
 }
 
 
