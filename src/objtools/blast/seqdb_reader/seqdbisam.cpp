@@ -1148,16 +1148,17 @@ CSeqDBIsam::CSeqDBIsam(CSeqDBAtlas  & atlas,
                     file_ext_char,
                     m_IndexFname,
                     m_DataFname);
-
-    if (! (CFile(m_IndexFname).Exists() &&
-           CFile(m_DataFname).Exists()) ) {
-
+    try {
+    	m_IndexLease.Init(m_IndexFname);
+    	m_DataLease.Init(m_DataFname);
+    } catch (CException & e){
+    	m_IndexLease.Clear();
+    	m_DataLease.Clear();
         string msg("Error: Could not open input file (");
         msg += m_IndexFname + "/" + m_DataFname + ")";
         NCBI_THROW(CSeqDBException, eFileErr, msg);
+
     }
-    m_IndexLease.Init(m_IndexFname);
-    m_DataLease.Init(m_DataFname);
     if(m_Type == eNumeric) {
         m_PageSize = DEFAULT_NISAM_SIZE;
     } else {
