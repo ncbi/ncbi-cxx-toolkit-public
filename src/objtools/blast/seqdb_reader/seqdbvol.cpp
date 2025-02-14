@@ -162,9 +162,12 @@ CSeqDBVol::x_OpenGiFile(void) const{
     if (m_IsamGi.NotEmpty()) {
     	m_IsamGi->AddReference();
     }
-    else if (CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
-			   m_Idx->GetNumOIDs() != 0) {
+    else if (m_Idx->GetNumOIDs() != 0) {
+    	try {
         m_IsamGi = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 'n', eGiId);
+    	} catch(CException & e) {
+    		m_IsamGi.Reset();
+    	}
     }
 }
 
@@ -373,6 +376,15 @@ s_SeqDBMapNA2ToNA4Setup(TTable& translated)
     }
 }
 
+class CNA2ToNA4MapTable
+{
+public:
+	CNA2ToNA4MapTable () {
+		s_SeqDBMapNA2ToNA4Setup(storage);
+	}
+	TTable storage;
+};
+
 /// Convert sequence data from NA2 to NA4 format
 ///
 /// This uses a translation table to convert nucleotide data.  The
@@ -390,11 +402,8 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
                    vector<char> & buf4bit,
                    int            base_length)
 {
-    static CSafeStatic<TTable> expanded_storage;
-    TTable& expanded = expanded_storage.Get();
-    if (expanded.empty()) {
-        s_SeqDBMapNA2ToNA4Setup(expanded);
-    }
+    static CSafeStatic<CNA2ToNA4MapTable> t;
+    TTable& expanded = t.Get().storage;
 
     int estimated_length = (base_length + 1)/2;
     int bytes = 0;
@@ -446,8 +455,6 @@ s_SeqDBMapNA2ToNA8Setup(TTable& translated)
     // Builds a table; each two bit slice holds 0,1,2 or 3.  These are
     // converted to whole bytes containing 1,2,4, or 8, respectively.
 
-    translated.reserve(1024);
-
     for(int i = 0; i<256; i++) {
         int p1 = (i >> 6) & 0x3;
         int p2 = (i >> 4) & 0x3;
@@ -461,6 +468,14 @@ s_SeqDBMapNA2ToNA8Setup(TTable& translated)
     }
 }
 
+class CNA2ToNA8MapTable
+{
+public:
+	CNA2ToNA8MapTable () {
+		s_SeqDBMapNA2ToNA8Setup(storage);
+	}
+	TTable storage;
+};
 /// Convert sequence data from NA2 to NA8 format
 ///
 /// This uses a translation table to convert nucleotide data.  The
@@ -488,11 +503,8 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     // data and is maintained to point at the next unused byte of
     // input data.
 
-    static CSafeStatic<TTable> expanded_storage;
-    TTable& expanded = expanded_storage.Get();
-    if (expanded.empty()) {
-        s_SeqDBMapNA2ToNA8Setup(expanded);
-    }
+    static CSafeStatic<CNA2ToNA8MapTable> t;
+    TTable& expanded = t.Get().storage;
 
     int pos = range.begin;
 
