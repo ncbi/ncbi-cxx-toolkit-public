@@ -1751,12 +1751,15 @@ bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& 
     while (under) {
         // ignore genes
         if (under->GetData().IsGene()) {
-            inner_gene.Reset(under->GetSeq_feat());
+            sequence::ECompare loc_cmp = sequence::Compare(gene.GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
+            if (loc_cmp == sequence::eContains) {
+                inner_gene.Reset(under->GetSeq_feat());
+            }
         } else {
             bool check_outer_gene = true;
             if (inner_gene) {
                 sequence::ECompare loc_cmp = sequence::Compare(inner_gene->GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
-                if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContains) {
+                if (loc_cmp == sequence::eContains) {
                     // do not consider lengths of inner features in calculating outer gene partials
                     check_outer_gene = false;
                 }
