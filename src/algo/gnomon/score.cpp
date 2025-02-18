@@ -343,7 +343,8 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         }
     }
 
-    const int RepeatMargin = 75;
+    array<set<int>, 2> repeats;
+    const int RepeatMargin = 25;
     for(int rpta = 0; rpta < len; ) {
         while(rpta < len && isupper(sequence[rpta]))
             ++rpta;
@@ -351,13 +352,17 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
         while(rptb+1 < len && islower(sequence[rptb+1]))
             ++rptb;
         if(rptb-rpta+1 > 2*RepeatMargin) {
-            for(TSignedSeqPos i = rpta+RepeatMargin; i <= rptb-RepeatMargin; ++i) {  // masking repeats
+            for(TSignedSeqPos i = rpta+RepeatMargin; i <= rptb-RepeatMargin; ++i) { // trim repeats
+		repeats[ePlus].insert(i);
+		repeats[eMinus].insert(i);
+		/*		
                 m_laststop[ePlus][0][i] = i;
                 m_laststop[ePlus][1][i] = i;
                 m_laststop[ePlus][2][i] = i;
                 m_laststop[eMinus][0][i] = i;
                 m_laststop[eMinus][1][i] = i;
                 m_laststop[eMinus][2][i] = i;
+		*/
             }
         }
         rpta = rptb+1;
@@ -540,6 +545,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_laststop[strand][0][i] = -1;
                 m_laststop[strand][1][i] = -1;
                 m_laststop[strand][2][i] = -1;
+		repeats[strand].erase(i);
             }
         }
 
@@ -585,9 +591,13 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
             m_notinintron[eMinus][pnt] = pnt;
         }
 
+	const int RepeatFreeMargin = 75;
         // restricting prediction to MaxCdsLimits if not infinite
         if(align.GetCdsInfo().MaxCdsLimits().NotEmpty()) {
+	    bool left_open = (align.ConfirmedStart() && align.Strand() == ePlus) ? false : true;
+	    bool right_open = (align.ConfirmedStart() && align.Strand() == eMinus) ? false : true;
             if(TSignedSeqRange::GetWholeFrom() < align.GetCdsInfo().MaxCdsLimits().GetFrom()) {
+		left_open = false;
                 m_notinexon[ePlus][0][limits.GetFrom()] = limits.GetFrom();
                 m_notinexon[ePlus][1][limits.GetFrom()] = limits.GetFrom();
                 m_notinexon[ePlus][2][limits.GetFrom()] = limits.GetFrom();
@@ -598,6 +608,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_notinintron[eMinus][limits.GetFrom()] = limits.GetFrom();
             }
             if(align.GetCdsInfo().MaxCdsLimits().GetTo() < TSignedSeqRange::GetWholeTo()) {
+		right_open = false;
                 m_notinexon[ePlus][0][limits.GetTo()] = limits.GetTo();
                 m_notinexon[ePlus][1][limits.GetTo()] = limits.GetTo();
                 m_notinexon[ePlus][2][limits.GetTo()] = limits.GetTo();
@@ -607,8 +618,24 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool leftwall, bool right
                 m_notinexon[eMinus][2][limits.GetTo()] = limits.GetTo();
                 m_notinintron[eMinus][limits.GetTo()] = limits.GetTo();
             }
+	    if(left_open) {
+		for(int i = max(0, limits.GetFrom()-RepeatFreeMargin); i < limits.GetFrom(); ++i)
+		    repeats[align.Strand()].erase(i);
+	    }
+	    if(right_open) {
+		for(int i = limits.GetTo()+1; i <= min(limits.GetTo()+RepeatFreeMargin, len-1); ++i)
+		    repeats[align.Strand()].erase(i);
+	    }
         }
     }
+
+    for(int strand = 0; strand < 2; ++strand) {  // mask repeats
+	for(int i : repeats[strand]) {
+	    m_laststop[strand][0][i] = i;
+	    m_laststop[strand][1][i] = i;
+	    m_laststop[strand][2][i] = i;
+	}
+    }    
     
     for(TSignedSeqPos i = 1; i < len; ++i)
         m_protnum[i] += m_protnum[i-1];
