@@ -47,8 +47,11 @@
 // #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Trna_ext.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/table_filter.hpp>
 #include <objtools/readers/read_util.hpp>
@@ -187,4 +190,23 @@ BOOST_AUTO_TEST_CASE(RW_2418)
     BOOST_CHECK_EQUAL(finalError.FeatureName(), "misc_recomb");
     BOOST_CHECK_EQUAL(finalError.QualifierName(), "nomenclature"); 
     BOOST_CHECK_EQUAL(finalError.Line(), 8);
+}
+
+
+BOOST_AUTO_TEST_CASE(RW_2430)
+{
+    auto seqid = Ref(new CSeq_id());
+    seqid->SetLocal().SetStr("nucSeqId");
+    const string extString{"(pos:complement(1017930..1017932),aa:Glu, seq:ttc)"};
+
+    auto trnaExt = CFeature_table_reader::ParseTrnaExtString(extString, *seqid);
+
+    BOOST_CHECK(trnaExt->IsSetAnticodon());
+    BOOST_CHECK_EQUAL(trnaExt->GetAnticodon().GetStrand(), eNa_strand_minus);
+    BOOST_CHECK(trnaExt->GetAnticodon().IsInt());
+    BOOST_CHECK_EQUAL(trnaExt->GetAnticodon().GetInt().GetFrom(), 1017929);
+    BOOST_CHECK_EQUAL(trnaExt->GetAnticodon().GetInt().GetTo(), 1017931);
+
+    BOOST_CHECK(trnaExt->IsSetAa() && trnaExt->GetAa().IsNcbieaa());
+    BOOST_CHECK_EQUAL(trnaExt->GetAa().GetNcbieaa(), 69);
 }
