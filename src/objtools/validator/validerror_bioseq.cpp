@@ -4780,6 +4780,10 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             } else {
                 (linkevarray[linktype])++;
             }
+            if (m_Imp.IsGenomeSubmission() && linktype == 4) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
+                    "Seq-gap type should not be within-clone for genome submission", seq);
+            }
         }
         if (linkevarray[8] > 0 && linkcount > linkevarray[8]) {
             PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapBadLinkage,
