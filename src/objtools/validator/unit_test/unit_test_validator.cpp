@@ -810,6 +810,38 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_ValidError_Format1)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    string s;
+
+    feat->SetId().SetLocal().SetStr("good1");
+    s = CValidErrorFormat::GetFeatureIdLabel(*feat);
+    BOOST_CHECK_EQUAL(s, "good1");
+    feat->SetId().SetGeneral().SetDb("a");
+    feat->SetId().SetGeneral().SetTag().SetStr("good2");
+    s = CValidErrorFormat::GetFeatureIdLabel(*feat);
+    BOOST_CHECK_EQUAL(s, "a:good2");
+
+    feat->Reset();
+    CRef<CFeat_id> id0(new CFeat_id());
+    id0->SetLocal().SetStr();
+    feat->SetIds().push_back(id0);
+    CRef<CFeat_id> id1(new CFeat_id());
+    id1->SetLocal().SetStr("good1");
+    feat->SetIds().push_back(id1);
+    CRef<CFeat_id> id2(new CFeat_id());
+    id2->SetGeneral().SetDb("a");
+    id2->SetGeneral().SetTag().SetStr("good2");
+    feat->SetIds().push_back(id2);
+    s = CValidErrorFormat::GetFeatureIdLabel(*feat);
+    BOOST_CHECK_EQUAL(s, "good1");
+    feat->SetIds().reverse();
+    s = CValidErrorFormat::GetFeatureIdLabel(*feat);
+    BOOST_CHECK_EQUAL(s, "a:good2");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GB_6395)
 {
     // prepare entry
