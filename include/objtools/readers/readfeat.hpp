@@ -43,6 +43,9 @@
 #include <memory> // for auto_ptr<>
 
 #include <util/line_reader.hpp>
+#include <functional>
+
+
 
 BEGIN_NCBI_SCOPE
 
@@ -52,6 +55,8 @@ class CFeatureTableReader_Imp;
 class ILineErrorListener;
 class ITableFilter;
 class CSeq_entry;
+class CTrna_ext;
+class CSeq_id;
 
 // public interface for (single instance) feature table reader
 
@@ -176,6 +181,11 @@ public:
         const CTempString& line_arg,
         CTempStringEx& out_seqid,
         CTempStringEx& out_annotname );
+
+
+    static CRef<CTrna_ext> ParseTrnaExtString(const string& ext, 
+            const CSeq_id& seqid,
+            function<void(const string& msg)>* fpReportError=nullptr);
 
 private:
     static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader,

@@ -340,6 +340,13 @@ public:
         return m_pMessageListener;
     }
 
+    
+    static bool ParseTrnaExtString(CTrna_ext & ext_trna, 
+            const string & str, 
+            const CSeq_id& seqid,
+            function<void(const string& msg)>* fpReportError = nullptr
+            );
+
 private:
 
     unsigned int x_GetLineNumber() const;
@@ -454,1039 +461,1058 @@ private:
 
     string x_TrnaToAaString(const string& val);
 
-    bool x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str);
-    SIZE_TYPE x_MatchingParenPos( const string &str, SIZE_TYPE open_paren_pos );
 
-    long x_StringToLongNoThrow (
-        CTempString strToConvert,
-        CTempString strFeatureName,
-        CTempString strQualifierName,
-        // user can override the default problem types that are set on error
-        ILineError::EProblem eProblem = ILineError::eProblem_Unset
-    );
+        long x_StringToLongNoThrow (
+            CTempString strToConvert,
+            CTempString strFeatureName,
+            CTempString strQualifierName,
+            // user can override the default problem types that are set on error
+            ILineError::EProblem eProblem = ILineError::eProblem_Unset
+        );
 
-    bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
-                         const TFlags flags,
-                         ITableFilter *filter);
+        bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
+                             const TFlags flags,
+                             ITableFilter *filter);
 
-    void  x_ProcessMsg (
-        ILineError::EProblem eProblem,
-        EDiagSev eSeverity,
-        const std::string & strFeatureName = kEmptyStr,
-        const std::string & strQualifierName = kEmptyStr,
-        const std::string & strQualifierValue = kEmptyStr,
-        const std::string & strErrorMessage = kEmptyStr,
-        const ILineError::TVecOfLines & vecOfOtherLines =
-            ILineError::TVecOfLines() );
+        void  x_ProcessMsg (
+            ILineError::EProblem eProblem,
+            EDiagSev eSeverity,
+            const std::string & strFeatureName = kEmptyStr,
+            const std::string & strQualifierName = kEmptyStr,
+            const std::string & strQualifierValue = kEmptyStr,
+            const std::string & strErrorMessage = kEmptyStr,
+            const ILineError::TVecOfLines & vecOfOtherLines =
+                ILineError::TVecOfLines() );
 
-    void  x_ProcessMsg(
-        int line_num,
-        ILineError::EProblem eProblem,
-        EDiagSev eSeverity,
-        const std::string & strFeatureName = kEmptyStr,
-        const std::string & strQualifierName = kEmptyStr,
-        const std::string & strQualifierValue = kEmptyStr,
-        const std::string & strErrorMessage = kEmptyStr,
-        const ILineError::TVecOfLines & vecOfOtherLines =
-        ILineError::TVecOfLines());
+        void  x_ProcessMsg(
+            int line_num,
+            ILineError::EProblem eProblem,
+            EDiagSev eSeverity,
+            const std::string & strFeatureName = kEmptyStr,
+            const std::string & strQualifierName = kEmptyStr,
+            const std::string & strQualifierValue = kEmptyStr,
+            const std::string & strErrorMessage = kEmptyStr,
+            const ILineError::TVecOfLines & vecOfOtherLines =
+            ILineError::TVecOfLines());
 
-    void x_TokenizeStrict( const CTempString &line, vector<string> &out_tokens );
-    void x_TokenizeLenient( const CTempString &line, vector<string> &out_tokens );
-    void x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable);
-    void x_ResetFeat(CRef<CSeq_feat>& feat, bool & curr_feat_intervals_done);
-    void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
-    void x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const;
+        void x_TokenizeStrict( const CTempString &line, vector<string> &out_tokens );
+        void x_TokenizeLenient( const CTempString &line, vector<string> &out_tokens );
+        void x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable);
+        void x_ResetFeat(CRef<CSeq_feat>& feat, bool & curr_feat_intervals_done);
+        void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
+        void x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const;
 
-    CRef<CSeq_feat> m_pCurrentFeat;
-    bool m_need_check_strand;
-    string m_real_seqid;
-    CRef<CSeq_id> m_seq_id;
-    ILineReader* m_reader;
-    unsigned int m_LineNumber;
-    ILineErrorListener* m_pMessageListener;
-    unordered_set<string> m_ProcessedTranscriptIds;
-    unordered_set<string> m_ProcessedProteinIds;
-    TFlags m_Flags{0};
-};
+        CRef<CSeq_feat> m_pCurrentFeat;
+        bool m_need_check_strand;
+        string m_real_seqid;
+        CRef<CSeq_id> m_seq_id;
+        ILineReader* m_reader;
+        unsigned int m_LineNumber;
+        ILineErrorListener* m_pMessageListener;
+        unordered_set<string> m_ProcessedTranscriptIds;
+        unordered_set<string> m_ProcessedProteinIds;
+        TFlags m_Flags{0};
+    };
 
 
-typedef SStaticPair<const char *, CFeatureTableReader_Imp::EQual> TQualKey;
+    typedef SStaticPair<const char *, CFeatureTableReader_Imp::EQual> TQualKey;
 
-static const TQualKey qual_key_to_subtype [] = {
-    {  "EC_number",            CFeatureTableReader_Imp::eQual_EC_number             },
-    {  "PCR_conditions",       CFeatureTableReader_Imp::eQual_PCR_conditions        },
-    {  "PubMed",               CFeatureTableReader_Imp::eQual_PubMed                },
-    {  "STS",                  CFeatureTableReader_Imp::eQual_STS                   },
-    {  "allele",               CFeatureTableReader_Imp::eQual_allele                },
-    {  "anticodon",            CFeatureTableReader_Imp::eQual_anticodon             },
-    {  "bac_ends",             CFeatureTableReader_Imp::eQual_bac_ends              },
-    {  "bond_type",            CFeatureTableReader_Imp::eQual_bond_type             },
-    {  "bound_moiety",         CFeatureTableReader_Imp::eQual_bound_moiety          },
-    {  "chrcnt",               CFeatureTableReader_Imp::eQual_chrcnt                },
-    {  "citation",             CFeatureTableReader_Imp::eQual_citation              },
-    {  "clone",                CFeatureTableReader_Imp::eQual_clone                 },
-    {  "clone_id",             CFeatureTableReader_Imp::eQual_clone_id              },
-    {  "codon_recognized",     CFeatureTableReader_Imp::eQual_codon_recognized      },
-    {  "codon_start",          CFeatureTableReader_Imp::eQual_codon_start           },
-    {  "codons_recognized",    CFeatureTableReader_Imp::eQual_codon_recognized      },
-    {  "compare",              CFeatureTableReader_Imp::eQual_compare               },
-    {  "cons_splice",          CFeatureTableReader_Imp::eQual_cons_splice           },
-    {  "ctgcnt",               CFeatureTableReader_Imp::eQual_ctgcnt                },
-    {  "cyt_map",              CFeatureTableReader_Imp::eQual_cyt_map               },
-    {  "db_xref",              CFeatureTableReader_Imp::eQual_db_xref               },
-    {  "direction",            CFeatureTableReader_Imp::eQual_direction             },
-    {  "estimated_length",     CFeatureTableReader_Imp::eQual_estimated_length      },
-    {  "evidence",             CFeatureTableReader_Imp::eQual_evidence              },
-    {  "exception",            CFeatureTableReader_Imp::eQual_exception             },
-    {  "experiment",           CFeatureTableReader_Imp::eQual_experiment            },
-    {  "frequency",            CFeatureTableReader_Imp::eQual_frequency             },
-    {  "function",             CFeatureTableReader_Imp::eQual_function              },
-    {  "gap_type",             CFeatureTableReader_Imp::eQual_gap_type              },
-    {  "gen_map",              CFeatureTableReader_Imp::eQual_gen_map               },
-    {  "gene",                 CFeatureTableReader_Imp::eQual_gene                  },
-    {  "gene_desc",            CFeatureTableReader_Imp::eQual_gene_desc             },
-    {  "gene_syn",             CFeatureTableReader_Imp::eQual_gene_syn              },
-    {  "gene_synonym",         CFeatureTableReader_Imp::eQual_gene_syn              },
-    {  "go_component",         CFeatureTableReader_Imp::eQual_go_component          },
-    {  "go_function",          CFeatureTableReader_Imp::eQual_go_function           },
-    {  "go_process",           CFeatureTableReader_Imp::eQual_go_process            },
-    {  "heterogen",            CFeatureTableReader_Imp::eQual_heterogen             },
-    {  "inference",            CFeatureTableReader_Imp::eQual_inference             },
-    {  "insertion_seq",        CFeatureTableReader_Imp::eQual_insertion_seq         },
-    {  "label",                CFeatureTableReader_Imp::eQual_label                 },
-    {  "linkage_evidence",     CFeatureTableReader_Imp::eQual_linkage_evidence      },
-    {  "loccnt",               CFeatureTableReader_Imp::eQual_loccnt                },
-    {  "locus_tag",            CFeatureTableReader_Imp::eQual_locus_tag             },
-    {  "macronuclear",         CFeatureTableReader_Imp::eQual_macronuclear          },
-    {  "map",                  CFeatureTableReader_Imp::eQual_map                   },
-    {  "method",               CFeatureTableReader_Imp::eQual_method                },
-    {  "mobile_element_type",  CFeatureTableReader_Imp::eQual_mobile_element_type   },
-    {  "mod_base",             CFeatureTableReader_Imp::eQual_mod_base              },
-    {  "ncRNA_class",          CFeatureTableReader_Imp::eQual_ncRNA_class           },
-    {  "nomenclature",         CFeatureTableReader_Imp::eQual_nomenclature          },
-    {  "note",                 CFeatureTableReader_Imp::eQual_note                  },
-    {  "number",               CFeatureTableReader_Imp::eQual_number                },
-    {  "old_locus_tag",        CFeatureTableReader_Imp::eQual_old_locus_tag         },
-    {  "operon",               CFeatureTableReader_Imp::eQual_operon                },
-    {  "organism",             CFeatureTableReader_Imp::eQual_organism              },
-    {  "partial",              CFeatureTableReader_Imp::eQual_partial               },
-    {  "phenotype",            CFeatureTableReader_Imp::eQual_phenotype             },
-    {  "product",              CFeatureTableReader_Imp::eQual_product               },
-    {  "prot_desc",            CFeatureTableReader_Imp::eQual_prot_desc             },
-    {  "prot_note",            CFeatureTableReader_Imp::eQual_prot_note             },
-    {  "protein_id",           CFeatureTableReader_Imp::eQual_protein_id            },
-    {  "pseudo",               CFeatureTableReader_Imp::eQual_pseudo                },
-    {  "pseudogene",           CFeatureTableReader_Imp::eQual_pseudogene            },
-    {  "rad_map",              CFeatureTableReader_Imp::eQual_rad_map               },
-    {  "recombination_class",  CFeatureTableReader_Imp::eQual_recombination_class   },
-    {  "region_name",          CFeatureTableReader_Imp::eQual_region_name           },
-    {  "regulatory_class",     CFeatureTableReader_Imp::eQual_regulatory_class      },
-    {  "replace",              CFeatureTableReader_Imp::eQual_replace               },
-    {  "ribosomal_slippage",   CFeatureTableReader_Imp::eQual_ribosomal_slippage    },
-    {  "rpt_family",           CFeatureTableReader_Imp::eQual_rpt_family            },
-    {  "rpt_type",             CFeatureTableReader_Imp::eQual_rpt_type              },
-    {  "rpt_unit",             CFeatureTableReader_Imp::eQual_rpt_unit              },
-    {  "rpt_unit_range",       CFeatureTableReader_Imp::eQual_rpt_unit_range        },
-    {  "rpt_unit_seq",         CFeatureTableReader_Imp::eQual_rpt_unit_seq          },
-    {  "satellite",            CFeatureTableReader_Imp::eQual_satellite             },
-    {  "sec_str_type",         CFeatureTableReader_Imp::eQual_sec_str_type          },
-    {  "secondary_accession",  CFeatureTableReader_Imp::eQual_secondary_accession   },
-    {  "secondary_accessions", CFeatureTableReader_Imp::eQual_secondary_accession   },
-    {  "sequence",             CFeatureTableReader_Imp::eQual_sequence              },
-    {  "site_type",            CFeatureTableReader_Imp::eQual_site_type             },
-    {  "snp_class",            CFeatureTableReader_Imp::eQual_snp_class             },
-    {  "snp_gtype",            CFeatureTableReader_Imp::eQual_snp_gtype             },
-    {  "snp_het",              CFeatureTableReader_Imp::eQual_snp_het               },
-    {  "snp_het_se",           CFeatureTableReader_Imp::eQual_snp_het_se            },
-    {  "snp_linkout",          CFeatureTableReader_Imp::eQual_snp_linkout           },
-    {  "snp_maxrate",          CFeatureTableReader_Imp::eQual_snp_maxrate           },
-    {  "snp_valid",            CFeatureTableReader_Imp::eQual_snp_valid             },
-    {  "standard_name",        CFeatureTableReader_Imp::eQual_standard_name         },
-    {  "sts_aliases",          CFeatureTableReader_Imp::eQual_sts_aliases           },
-    {  "sts_dsegs",            CFeatureTableReader_Imp::eQual_sts_dsegs             },
-    {  "tag_peptide",          CFeatureTableReader_Imp::eQual_tag_peptide           },
-    {  "trans_splicing",       CFeatureTableReader_Imp::eQual_trans_splicing        },
-    {  "transcript_id",        CFeatureTableReader_Imp::eQual_transcript_id         },
-    {  "transcription",        CFeatureTableReader_Imp::eQual_transcription         },
-    {  "transl_except",        CFeatureTableReader_Imp::eQual_transl_except         },
-    {  "transl_table",         CFeatureTableReader_Imp::eQual_transl_table          },
-    {  "translation",          CFeatureTableReader_Imp::eQual_translation           },
-    {  "transposon",           CFeatureTableReader_Imp::eQual_transposon            },
-    {  "usedin",               CFeatureTableReader_Imp::eQual_usedin                },
-    {  "weight",               CFeatureTableReader_Imp::eQual_weight                }
-};
+    static const TQualKey qual_key_to_subtype [] = {
+        {  "EC_number",            CFeatureTableReader_Imp::eQual_EC_number             },
+        {  "PCR_conditions",       CFeatureTableReader_Imp::eQual_PCR_conditions        },
+        {  "PubMed",               CFeatureTableReader_Imp::eQual_PubMed                },
+        {  "STS",                  CFeatureTableReader_Imp::eQual_STS                   },
+        {  "allele",               CFeatureTableReader_Imp::eQual_allele                },
+        {  "anticodon",            CFeatureTableReader_Imp::eQual_anticodon             },
+        {  "bac_ends",             CFeatureTableReader_Imp::eQual_bac_ends              },
+        {  "bond_type",            CFeatureTableReader_Imp::eQual_bond_type             },
+        {  "bound_moiety",         CFeatureTableReader_Imp::eQual_bound_moiety          },
+        {  "chrcnt",               CFeatureTableReader_Imp::eQual_chrcnt                },
+        {  "citation",             CFeatureTableReader_Imp::eQual_citation              },
+        {  "clone",                CFeatureTableReader_Imp::eQual_clone                 },
+        {  "clone_id",             CFeatureTableReader_Imp::eQual_clone_id              },
+        {  "codon_recognized",     CFeatureTableReader_Imp::eQual_codon_recognized      },
+        {  "codon_start",          CFeatureTableReader_Imp::eQual_codon_start           },
+        {  "codons_recognized",    CFeatureTableReader_Imp::eQual_codon_recognized      },
+        {  "compare",              CFeatureTableReader_Imp::eQual_compare               },
+        {  "cons_splice",          CFeatureTableReader_Imp::eQual_cons_splice           },
+        {  "ctgcnt",               CFeatureTableReader_Imp::eQual_ctgcnt                },
+        {  "cyt_map",              CFeatureTableReader_Imp::eQual_cyt_map               },
+        {  "db_xref",              CFeatureTableReader_Imp::eQual_db_xref               },
+        {  "direction",            CFeatureTableReader_Imp::eQual_direction             },
+        {  "estimated_length",     CFeatureTableReader_Imp::eQual_estimated_length      },
+        {  "evidence",             CFeatureTableReader_Imp::eQual_evidence              },
+        {  "exception",            CFeatureTableReader_Imp::eQual_exception             },
+        {  "experiment",           CFeatureTableReader_Imp::eQual_experiment            },
+        {  "frequency",            CFeatureTableReader_Imp::eQual_frequency             },
+        {  "function",             CFeatureTableReader_Imp::eQual_function              },
+        {  "gap_type",             CFeatureTableReader_Imp::eQual_gap_type              },
+        {  "gen_map",              CFeatureTableReader_Imp::eQual_gen_map               },
+        {  "gene",                 CFeatureTableReader_Imp::eQual_gene                  },
+        {  "gene_desc",            CFeatureTableReader_Imp::eQual_gene_desc             },
+        {  "gene_syn",             CFeatureTableReader_Imp::eQual_gene_syn              },
+        {  "gene_synonym",         CFeatureTableReader_Imp::eQual_gene_syn              },
+        {  "go_component",         CFeatureTableReader_Imp::eQual_go_component          },
+        {  "go_function",          CFeatureTableReader_Imp::eQual_go_function           },
+        {  "go_process",           CFeatureTableReader_Imp::eQual_go_process            },
+        {  "heterogen",            CFeatureTableReader_Imp::eQual_heterogen             },
+        {  "inference",            CFeatureTableReader_Imp::eQual_inference             },
+        {  "insertion_seq",        CFeatureTableReader_Imp::eQual_insertion_seq         },
+        {  "label",                CFeatureTableReader_Imp::eQual_label                 },
+        {  "linkage_evidence",     CFeatureTableReader_Imp::eQual_linkage_evidence      },
+        {  "loccnt",               CFeatureTableReader_Imp::eQual_loccnt                },
+        {  "locus_tag",            CFeatureTableReader_Imp::eQual_locus_tag             },
+        {  "macronuclear",         CFeatureTableReader_Imp::eQual_macronuclear          },
+        {  "map",                  CFeatureTableReader_Imp::eQual_map                   },
+        {  "method",               CFeatureTableReader_Imp::eQual_method                },
+        {  "mobile_element_type",  CFeatureTableReader_Imp::eQual_mobile_element_type   },
+        {  "mod_base",             CFeatureTableReader_Imp::eQual_mod_base              },
+        {  "ncRNA_class",          CFeatureTableReader_Imp::eQual_ncRNA_class           },
+        {  "nomenclature",         CFeatureTableReader_Imp::eQual_nomenclature          },
+        {  "note",                 CFeatureTableReader_Imp::eQual_note                  },
+        {  "number",               CFeatureTableReader_Imp::eQual_number                },
+        {  "old_locus_tag",        CFeatureTableReader_Imp::eQual_old_locus_tag         },
+        {  "operon",               CFeatureTableReader_Imp::eQual_operon                },
+        {  "organism",             CFeatureTableReader_Imp::eQual_organism              },
+        {  "partial",              CFeatureTableReader_Imp::eQual_partial               },
+        {  "phenotype",            CFeatureTableReader_Imp::eQual_phenotype             },
+        {  "product",              CFeatureTableReader_Imp::eQual_product               },
+        {  "prot_desc",            CFeatureTableReader_Imp::eQual_prot_desc             },
+        {  "prot_note",            CFeatureTableReader_Imp::eQual_prot_note             },
+        {  "protein_id",           CFeatureTableReader_Imp::eQual_protein_id            },
+        {  "pseudo",               CFeatureTableReader_Imp::eQual_pseudo                },
+        {  "pseudogene",           CFeatureTableReader_Imp::eQual_pseudogene            },
+        {  "rad_map",              CFeatureTableReader_Imp::eQual_rad_map               },
+        {  "recombination_class",  CFeatureTableReader_Imp::eQual_recombination_class   },
+        {  "region_name",          CFeatureTableReader_Imp::eQual_region_name           },
+        {  "regulatory_class",     CFeatureTableReader_Imp::eQual_regulatory_class      },
+        {  "replace",              CFeatureTableReader_Imp::eQual_replace               },
+        {  "ribosomal_slippage",   CFeatureTableReader_Imp::eQual_ribosomal_slippage    },
+        {  "rpt_family",           CFeatureTableReader_Imp::eQual_rpt_family            },
+        {  "rpt_type",             CFeatureTableReader_Imp::eQual_rpt_type              },
+        {  "rpt_unit",             CFeatureTableReader_Imp::eQual_rpt_unit              },
+        {  "rpt_unit_range",       CFeatureTableReader_Imp::eQual_rpt_unit_range        },
+        {  "rpt_unit_seq",         CFeatureTableReader_Imp::eQual_rpt_unit_seq          },
+        {  "satellite",            CFeatureTableReader_Imp::eQual_satellite             },
+        {  "sec_str_type",         CFeatureTableReader_Imp::eQual_sec_str_type          },
+        {  "secondary_accession",  CFeatureTableReader_Imp::eQual_secondary_accession   },
+        {  "secondary_accessions", CFeatureTableReader_Imp::eQual_secondary_accession   },
+        {  "sequence",             CFeatureTableReader_Imp::eQual_sequence              },
+        {  "site_type",            CFeatureTableReader_Imp::eQual_site_type             },
+        {  "snp_class",            CFeatureTableReader_Imp::eQual_snp_class             },
+        {  "snp_gtype",            CFeatureTableReader_Imp::eQual_snp_gtype             },
+        {  "snp_het",              CFeatureTableReader_Imp::eQual_snp_het               },
+        {  "snp_het_se",           CFeatureTableReader_Imp::eQual_snp_het_se            },
+        {  "snp_linkout",          CFeatureTableReader_Imp::eQual_snp_linkout           },
+        {  "snp_maxrate",          CFeatureTableReader_Imp::eQual_snp_maxrate           },
+        {  "snp_valid",            CFeatureTableReader_Imp::eQual_snp_valid             },
+        {  "standard_name",        CFeatureTableReader_Imp::eQual_standard_name         },
+        {  "sts_aliases",          CFeatureTableReader_Imp::eQual_sts_aliases           },
+        {  "sts_dsegs",            CFeatureTableReader_Imp::eQual_sts_dsegs             },
+        {  "tag_peptide",          CFeatureTableReader_Imp::eQual_tag_peptide           },
+        {  "trans_splicing",       CFeatureTableReader_Imp::eQual_trans_splicing        },
+        {  "transcript_id",        CFeatureTableReader_Imp::eQual_transcript_id         },
+        {  "transcription",        CFeatureTableReader_Imp::eQual_transcription         },
+        {  "transl_except",        CFeatureTableReader_Imp::eQual_transl_except         },
+        {  "transl_table",         CFeatureTableReader_Imp::eQual_transl_table          },
+        {  "translation",          CFeatureTableReader_Imp::eQual_translation           },
+        {  "transposon",           CFeatureTableReader_Imp::eQual_transposon            },
+        {  "usedin",               CFeatureTableReader_Imp::eQual_usedin                },
+        {  "weight",               CFeatureTableReader_Imp::eQual_weight                }
+    };
 
-typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EQual, PCase_CStr> TQualMap;
-DEFINE_STATIC_ARRAY_MAP(TQualMap, sm_QualKeys, qual_key_to_subtype);
-
-
-typedef SStaticPair<const char *, CFeatureTableReader_Imp::EOrgRef> TOrgRefKey;
-
-static const TOrgRefKey orgref_key_to_subtype [] = {
-    {  "div",        CFeatureTableReader_Imp::eOrgRef_div        },
-    {  "gcode",      CFeatureTableReader_Imp::eOrgRef_gcode      },
-    {  "lineage",    CFeatureTableReader_Imp::eOrgRef_lineage    },
-    {  "mgcode",     CFeatureTableReader_Imp::eOrgRef_mgcode     },
-    {  "organelle",  CFeatureTableReader_Imp::eOrgRef_organelle  },
-    {  "organism",   CFeatureTableReader_Imp::eOrgRef_organism   }
-};
-
-typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EOrgRef, PCase_CStr> TOrgRefMap;
-DEFINE_STATIC_ARRAY_MAP(TOrgRefMap, sm_OrgRefKeys, orgref_key_to_subtype);
+    typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EQual, PCase_CStr> TQualMap;
+    DEFINE_STATIC_ARRAY_MAP(TQualMap, sm_QualKeys, qual_key_to_subtype);
 
 
-typedef SStaticPair<const char *, CBioSource::EGenome> TGenomeKey;
+    typedef SStaticPair<const char *, CFeatureTableReader_Imp::EOrgRef> TOrgRefKey;
 
-static const TGenomeKey genome_key_to_subtype [] = {
-    {  "apicoplast",                CBioSource::eGenome_apicoplast        },
-    {  "chloroplast",               CBioSource::eGenome_chloroplast       },
-    {  "chromatophore",             CBioSource::eGenome_chromatophore     },
-    {  "chromoplast",               CBioSource::eGenome_chromoplast       },
-    {  "chromosome",                CBioSource::eGenome_chromosome        },
-    {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
-    {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
-    {  "extrachrom",                CBioSource::eGenome_extrachrom        },
-    {  "genomic",                   CBioSource::eGenome_genomic           },
-    {  "hydrogenosome",             CBioSource::eGenome_hydrogenosome     },
-    {  "insertion_seq",             CBioSource::eGenome_insertion_seq     },
-    {  "kinetoplast",               CBioSource::eGenome_kinetoplast       },
-    {  "leucoplast",                CBioSource::eGenome_leucoplast        },
-    {  "macronuclear",              CBioSource::eGenome_macronuclear      },
-    {  "mitochondrion",             CBioSource::eGenome_mitochondrion     },
-    {  "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast       },
-    {  "nucleomorph",               CBioSource::eGenome_nucleomorph       },
-    {  "plasmid",                   CBioSource::eGenome_plasmid           },
-    {  "plastid",                   CBioSource::eGenome_plastid           },
-    {  "plastid:apicoplast",        CBioSource::eGenome_apicoplast        },
-    {  "plastid:chloroplast",       CBioSource::eGenome_chloroplast       },
-    {  "plastid:chromoplast",       CBioSource::eGenome_chromoplast       },
-    {  "plastid:cyanelle",          CBioSource::eGenome_cyanelle          },
-    {  "plastid:leucoplast",        CBioSource::eGenome_leucoplast        },
-    {  "plastid:proplastid",        CBioSource::eGenome_proplastid        },
-    {  "proplastid",                CBioSource::eGenome_proplastid        },
-    {  "proviral",                  CBioSource::eGenome_proviral          },
-    {  "transposon",                CBioSource::eGenome_transposon        },
-    {  "unknown",                   CBioSource::eGenome_unknown           },
-    {  "virion",                    CBioSource::eGenome_virion            }
-};
+    static const TOrgRefKey orgref_key_to_subtype [] = {
+        {  "div",        CFeatureTableReader_Imp::eOrgRef_div        },
+        {  "gcode",      CFeatureTableReader_Imp::eOrgRef_gcode      },
+        {  "lineage",    CFeatureTableReader_Imp::eOrgRef_lineage    },
+        {  "mgcode",     CFeatureTableReader_Imp::eOrgRef_mgcode     },
+        {  "organelle",  CFeatureTableReader_Imp::eOrgRef_organelle  },
+        {  "organism",   CFeatureTableReader_Imp::eOrgRef_organism   }
+    };
 
-typedef CStaticPairArrayMap <const char*, CBioSource::EGenome, PCase_CStr> TGenomeMap;
-DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
+    typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EOrgRef, PCase_CStr> TOrgRefMap;
+    DEFINE_STATIC_ARRAY_MAP(TOrgRefMap, sm_OrgRefKeys, orgref_key_to_subtype);
 
 
-typedef SStaticPair<const char *, CSubSource::ESubtype> TSubSrcKey;
+    typedef SStaticPair<const char *, CBioSource::EGenome> TGenomeKey;
 
-static const TSubSrcKey subsrc_key_to_subtype [] = {
-    {  "altitude",             CSubSource::eSubtype_altitude               },
-    {  "cell_line",            CSubSource::eSubtype_cell_line              },
-    {  "cell_type",            CSubSource::eSubtype_cell_type              },
-    {  "chromosome",           CSubSource::eSubtype_chromosome             },
-    {  "clone",                CSubSource::eSubtype_clone                  },
-    {  "clone_lib",            CSubSource::eSubtype_clone_lib              },
-    {  "collected_by",         CSubSource::eSubtype_collected_by           },
-    {  "collection_date",      CSubSource::eSubtype_collection_date        },
-    {  "country",              CSubSource::eSubtype_country                },
-    {  "dev_stage",            CSubSource::eSubtype_dev_stage              },
-    {  "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name  },
-    {  "environmental_sample", CSubSource::eSubtype_environmental_sample   },
-    {  "frequency",            CSubSource::eSubtype_frequency              },
-    {  "fwd_primer_name",      CSubSource::eSubtype_fwd_primer_name        },
-    {  "fwd_primer_seq",       CSubSource::eSubtype_fwd_primer_seq         },
-    {  "genotype",             CSubSource::eSubtype_genotype               },
-    {  "geo_loc_name",         CSubSource::eSubtype_country                },
-    {  "germline",             CSubSource::eSubtype_germline               },
-    {  "haplotype",            CSubSource::eSubtype_haplotype              },
-    {  "identified_by",        CSubSource::eSubtype_identified_by          },
-    {  "insertion_seq",        CSubSource::eSubtype_insertion_seq_name     },
-    {  "isolation_source",     CSubSource::eSubtype_isolation_source       },
-    {  "lab_host",             CSubSource::eSubtype_lab_host               },
-    {  "lat_lon",              CSubSource::eSubtype_lat_lon                },
-    {  "map",                  CSubSource::eSubtype_map                    },
-    {  "metagenomic",          CSubSource::eSubtype_metagenomic            },
-    {  "plasmid",              CSubSource::eSubtype_plasmid_name           },
-    {  "plastid",              CSubSource::eSubtype_plastid_name           },
-    {  "pop_variant",          CSubSource::eSubtype_pop_variant            },
-    {  "rearranged",           CSubSource::eSubtype_rearranged             },
-    {  "rev_primer_name",      CSubSource::eSubtype_rev_primer_name        },
-    {  "rev_primer_seq",       CSubSource::eSubtype_rev_primer_seq         },
-    {  "segment",              CSubSource::eSubtype_segment                },
-    {  "sex",                  CSubSource::eSubtype_sex                    },
-    {  "subclone",             CSubSource::eSubtype_subclone               },
-    {  "tissue_lib ",          CSubSource::eSubtype_tissue_lib             },
-    {  "tissue_type",          CSubSource::eSubtype_tissue_type            },
-    {  "transgenic",           CSubSource::eSubtype_transgenic             },
-    {  "transposon",           CSubSource::eSubtype_transposon_name        }
-};
+    static const TGenomeKey genome_key_to_subtype [] = {
+        {  "apicoplast",                CBioSource::eGenome_apicoplast        },
+        {  "chloroplast",               CBioSource::eGenome_chloroplast       },
+        {  "chromatophore",             CBioSource::eGenome_chromatophore     },
+        {  "chromoplast",               CBioSource::eGenome_chromoplast       },
+        {  "chromosome",                CBioSource::eGenome_chromosome        },
+        {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
+        {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
+        {  "extrachrom",                CBioSource::eGenome_extrachrom        },
+        {  "genomic",                   CBioSource::eGenome_genomic           },
+        {  "hydrogenosome",             CBioSource::eGenome_hydrogenosome     },
+        {  "insertion_seq",             CBioSource::eGenome_insertion_seq     },
+        {  "kinetoplast",               CBioSource::eGenome_kinetoplast       },
+        {  "leucoplast",                CBioSource::eGenome_leucoplast        },
+        {  "macronuclear",              CBioSource::eGenome_macronuclear      },
+        {  "mitochondrion",             CBioSource::eGenome_mitochondrion     },
+        {  "mitochondrion:kinetoplast", CBioSource::eGenome_kinetoplast       },
+        {  "nucleomorph",               CBioSource::eGenome_nucleomorph       },
+        {  "plasmid",                   CBioSource::eGenome_plasmid           },
+        {  "plastid",                   CBioSource::eGenome_plastid           },
+        {  "plastid:apicoplast",        CBioSource::eGenome_apicoplast        },
+        {  "plastid:chloroplast",       CBioSource::eGenome_chloroplast       },
+        {  "plastid:chromoplast",       CBioSource::eGenome_chromoplast       },
+        {  "plastid:cyanelle",          CBioSource::eGenome_cyanelle          },
+        {  "plastid:leucoplast",        CBioSource::eGenome_leucoplast        },
+        {  "plastid:proplastid",        CBioSource::eGenome_proplastid        },
+        {  "proplastid",                CBioSource::eGenome_proplastid        },
+        {  "proviral",                  CBioSource::eGenome_proviral          },
+        {  "transposon",                CBioSource::eGenome_transposon        },
+        {  "unknown",                   CBioSource::eGenome_unknown           },
+        {  "virion",                    CBioSource::eGenome_virion            }
+    };
 
-typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
-DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
-
-// case-insensitive version of sm_SubSrcKeys
-typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PNocase_CStr> TSubSrcNoCaseMap;
-DEFINE_STATIC_ARRAY_MAP(
-    TSubSrcNoCaseMap, sm_SubSrcNoCaseKeys, subsrc_key_to_subtype);
-
-typedef SStaticPair<const char *, COrgMod::ESubtype> TOrgModKey;
-
-static const TOrgModKey orgmod_key_to_subtype [] = {
-    {  "acronym",            COrgMod::eSubtype_acronym             },
-    {  "anamorph",           COrgMod::eSubtype_anamorph            },
-    {  "authority",          COrgMod::eSubtype_authority           },
-    {  "bio_material",       COrgMod::eSubtype_bio_material        },
-    {  "biotype",            COrgMod::eSubtype_biotype             },
-    {  "biovar",             COrgMod::eSubtype_biovar              },
-    {  "breed",              COrgMod::eSubtype_breed               },
-    {  "chemovar",           COrgMod::eSubtype_chemovar            },
-    {  "common",             COrgMod::eSubtype_common              },
-    {  "cultivar",           COrgMod::eSubtype_cultivar            },
-    {  "culture_collection", COrgMod::eSubtype_culture_collection  },
-    {  "dosage",             COrgMod::eSubtype_dosage              },
-    {  "ecotype",            COrgMod::eSubtype_ecotype             },
-    {  "forma",              COrgMod::eSubtype_forma               },
-    {  "forma_specialis",    COrgMod::eSubtype_forma_specialis     },
-    {  "gb_acronym",         COrgMod::eSubtype_gb_acronym          },
-    {  "gb_anamorph",        COrgMod::eSubtype_gb_anamorph         },
-    {  "gb_synonym",         COrgMod::eSubtype_gb_synonym          },
-    {  "group",              COrgMod::eSubtype_group               },
-    {  "isolate",            COrgMod::eSubtype_isolate             },
-    {  "metagenome_source",  COrgMod::eSubtype_metagenome_source   },
-    {  "nat_host",           COrgMod::eSubtype_nat_host            },
-    {  "natural_host",       COrgMod::eSubtype_nat_host            },
-    {  "old_lineage",        COrgMod::eSubtype_old_lineage         },
-    {  "old_name",           COrgMod::eSubtype_old_name            },
-    {  "pathovar",           COrgMod::eSubtype_pathovar            },
-    {  "serogroup",          COrgMod::eSubtype_serogroup           },
-    {  "serotype",           COrgMod::eSubtype_serotype            },
-    {  "serovar",            COrgMod::eSubtype_serovar             },
-    {  "spec_host",          COrgMod::eSubtype_nat_host            },
-    {  "specific_host",      COrgMod::eSubtype_nat_host            },
-    {  "specimen_voucher",   COrgMod::eSubtype_specimen_voucher    },
-    {  "strain",             COrgMod::eSubtype_strain              },
-    {  "sub_species",        COrgMod::eSubtype_sub_species         },
-    {  "subgroup",           COrgMod::eSubtype_subgroup            },
-    {  "substrain",          COrgMod::eSubtype_substrain           },
-    {  "subtype",            COrgMod::eSubtype_subtype             },
-    {  "synonym",            COrgMod::eSubtype_synonym             },
-    {  "teleomorph",         COrgMod::eSubtype_teleomorph          },
-    {  "type",               COrgMod::eSubtype_type                },
-    {  "type_material",      COrgMod::eSubtype_type_material       },
-    {  "variety",            COrgMod::eSubtype_variety             }
-};
-
-typedef CStaticPairArrayMap <const char*, COrgMod::ESubtype, PCase_CStr> TOrgModMap;
-DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sm_OrgModKeys, orgmod_key_to_subtype);
-
-static const map<const char*, int, PNocase_CStr> sm_TrnaKeys
-{
-    {  "Ala",            'A'  },
-    {  "Alanine",        'A'  },
-    {  "Arg",            'R'  },
-    {  "Arginine",       'R'  },
-    {  "Asn",            'N'  },
-    {  "Asp",            'D'  },
-    {  "Asp or Asn",     'B'  },
-    {  "Asparagine",     'N'  },
-    {  "Aspartate",      'D'  },
-    {  "Aspartic Acid",  'D'  },
-    {  "Asx",            'B'  },
-    {  "Cys",            'C'  },
-    {  "Cysteine",       'C'  },
-    {  "Gln",            'Q'  },
-    {  "Glu",            'E'  },
-    {  "Glu or Gln",     'Z'  },
-    {  "Glutamate",      'E'  },
-    {  "Glutamic Acid",  'E'  },
-    {  "Glutamine",      'Q'  },
-    {  "Glx",            'Z'  },
-    {  "Gly",            'G'  },
-    {  "Glycine",        'G'  },
-    {  "His",            'H'  },
-    {  "Histidine",      'H'  },
-    {  "Ile",            'I'  },
-    {  "Ile2",           'I'  },
-    {  "Isoleucine",     'I'  },
-    {  "Leu",            'L'  },
-    {  "Leu or Ile",     'J'  },
-    {  "Leucine",        'L'  },
-    {  "Lys",            'K'  },
-    {  "Lysine",         'K'  },
-    {  "Met",            'M'  },
-    {  "Methionine",     'M'  },
-    {  "OTHER",          'X'  },
-    {  "Phe",            'F'  },
-    {  "Phenylalanine",  'F'  },
-    {  "Pro",            'P'  },
-    {  "Proline",        'P'  },
-    {  "Pyl",            'O'  },
-    {  "Pyrrolysine",    'O'  },
-    {  "Sec",            'U'  },
-    {  "Selenocysteine", 'U'  },
-    {  "Ser",            'S'  },
-    {  "Serine",         'S'  },
-    {  "TERM",           '*'  },
-    {  "Ter",            '*'  },
-    {  "Termination",    '*'  },
-    {  "Thr",            'T'  },
-    {  "Threonine",      'T'  },
-    {  "Trp",            'W'  },
-    {  "Tryptophan",     'W'  },
-    {  "Tyr",            'Y'  },
-    {  "Tyrosine",       'Y'  },
-    {  "Val",            'V'  },
-    {  "Valine",         'V'  },
-    {  "Xle",            'J'  },
-    {  "Xxx",            'X'  },
-    {  "Undet",          'X'  },
-    {  "fMet",           'M'  },
-    {  "iMet",           'M'  }
-};
+    typedef CStaticPairArrayMap <const char*, CBioSource::EGenome, PCase_CStr> TGenomeMap;
+    DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
 
-static
-set<const char*, PCase_CStr>
-sc_SingleKeys {
-    "environmental_sample",
-    "germline",
-    "metagenomic",
-    "partial",
-    "pseudo",
-    "rearranged",
-    "ribosomal_slippage",
-    "trans_splicing",
-    "transgenic",
-    "replace" // RW-882
-};
+    typedef SStaticPair<const char *, CSubSource::ESubtype> TSubSrcKey;
 
-// constructor
-CFeatureTableReader_Imp::CFeatureTableReader_Imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
-    : m_reader(reader), m_LineNumber(line_num), m_pMessageListener(pMessageListener)
-{
-}
+    static const TSubSrcKey subsrc_key_to_subtype [] = {
+        {  "altitude",             CSubSource::eSubtype_altitude               },
+        {  "cell_line",            CSubSource::eSubtype_cell_line              },
+        {  "cell_type",            CSubSource::eSubtype_cell_type              },
+        {  "chromosome",           CSubSource::eSubtype_chromosome             },
+        {  "clone",                CSubSource::eSubtype_clone                  },
+        {  "clone_lib",            CSubSource::eSubtype_clone_lib              },
+        {  "collected_by",         CSubSource::eSubtype_collected_by           },
+        {  "collection_date",      CSubSource::eSubtype_collection_date        },
+        {  "country",              CSubSource::eSubtype_country                },
+        {  "dev_stage",            CSubSource::eSubtype_dev_stage              },
+        {  "endogenous_virus",     CSubSource::eSubtype_endogenous_virus_name  },
+        {  "environmental_sample", CSubSource::eSubtype_environmental_sample   },
+        {  "frequency",            CSubSource::eSubtype_frequency              },
+        {  "fwd_primer_name",      CSubSource::eSubtype_fwd_primer_name        },
+        {  "fwd_primer_seq",       CSubSource::eSubtype_fwd_primer_seq         },
+        {  "genotype",             CSubSource::eSubtype_genotype               },
+        {  "geo_loc_name",         CSubSource::eSubtype_country                },
+        {  "germline",             CSubSource::eSubtype_germline               },
+        {  "haplotype",            CSubSource::eSubtype_haplotype              },
+        {  "identified_by",        CSubSource::eSubtype_identified_by          },
+        {  "insertion_seq",        CSubSource::eSubtype_insertion_seq_name     },
+        {  "isolation_source",     CSubSource::eSubtype_isolation_source       },
+        {  "lab_host",             CSubSource::eSubtype_lab_host               },
+        {  "lat_lon",              CSubSource::eSubtype_lat_lon                },
+        {  "map",                  CSubSource::eSubtype_map                    },
+        {  "metagenomic",          CSubSource::eSubtype_metagenomic            },
+        {  "plasmid",              CSubSource::eSubtype_plasmid_name           },
+        {  "plastid",              CSubSource::eSubtype_plastid_name           },
+        {  "pop_variant",          CSubSource::eSubtype_pop_variant            },
+        {  "rearranged",           CSubSource::eSubtype_rearranged             },
+        {  "rev_primer_name",      CSubSource::eSubtype_rev_primer_name        },
+        {  "rev_primer_seq",       CSubSource::eSubtype_rev_primer_seq         },
+        {  "segment",              CSubSource::eSubtype_segment                },
+        {  "sex",                  CSubSource::eSubtype_sex                    },
+        {  "subclone",             CSubSource::eSubtype_subclone               },
+        {  "tissue_lib",           CSubSource::eSubtype_tissue_lib             },
+        {  "tissue_type",          CSubSource::eSubtype_tissue_type            },
+        {  "transgenic",           CSubSource::eSubtype_transgenic             },
+        {  "transposon",           CSubSource::eSubtype_transposon_name        }
+    };
 
-// destructor
-CFeatureTableReader_Imp::~CFeatureTableReader_Imp(void)
-{
-}
+    typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PCase_CStr> TSubSrcMap;
+    DEFINE_STATIC_ARRAY_MAP(TSubSrcMap, sm_SubSrcKeys, subsrc_key_to_subtype);
+
+    // case-insensitive version of sm_SubSrcKeys
+    typedef CStaticPairArrayMap <const char*, CSubSource::ESubtype, PNocase_CStr> TSubSrcNoCaseMap;
+    DEFINE_STATIC_ARRAY_MAP(
+        TSubSrcNoCaseMap, sm_SubSrcNoCaseKeys, subsrc_key_to_subtype);
+
+    typedef SStaticPair<const char *, COrgMod::ESubtype> TOrgModKey;
+
+    static const TOrgModKey orgmod_key_to_subtype [] = {
+        {  "acronym",            COrgMod::eSubtype_acronym             },
+        {  "anamorph",           COrgMod::eSubtype_anamorph            },
+        {  "authority",          COrgMod::eSubtype_authority           },
+        {  "bio_material",       COrgMod::eSubtype_bio_material        },
+        {  "biotype",            COrgMod::eSubtype_biotype             },
+        {  "biovar",             COrgMod::eSubtype_biovar              },
+        {  "breed",              COrgMod::eSubtype_breed               },
+        {  "chemovar",           COrgMod::eSubtype_chemovar            },
+        {  "common",             COrgMod::eSubtype_common              },
+        {  "cultivar",           COrgMod::eSubtype_cultivar            },
+        {  "culture_collection", COrgMod::eSubtype_culture_collection  },
+        {  "dosage",             COrgMod::eSubtype_dosage              },
+        {  "ecotype",            COrgMod::eSubtype_ecotype             },
+        {  "forma",              COrgMod::eSubtype_forma               },
+        {  "forma_specialis",    COrgMod::eSubtype_forma_specialis     },
+        {  "gb_acronym",         COrgMod::eSubtype_gb_acronym          },
+        {  "gb_anamorph",        COrgMod::eSubtype_gb_anamorph         },
+        {  "gb_synonym",         COrgMod::eSubtype_gb_synonym          },
+        {  "group",              COrgMod::eSubtype_group               },
+        {  "isolate",            COrgMod::eSubtype_isolate             },
+        {  "metagenome_source",  COrgMod::eSubtype_metagenome_source   },
+        {  "nat_host",           COrgMod::eSubtype_nat_host            },
+        {  "natural_host",       COrgMod::eSubtype_nat_host            },
+        {  "old_lineage",        COrgMod::eSubtype_old_lineage         },
+        {  "old_name",           COrgMod::eSubtype_old_name            },
+        {  "pathovar",           COrgMod::eSubtype_pathovar            },
+        {  "serogroup",          COrgMod::eSubtype_serogroup           },
+        {  "serotype",           COrgMod::eSubtype_serotype            },
+        {  "serovar",            COrgMod::eSubtype_serovar             },
+        {  "spec_host",          COrgMod::eSubtype_nat_host            },
+        {  "specific_host",      COrgMod::eSubtype_nat_host            },
+        {  "specimen_voucher",   COrgMod::eSubtype_specimen_voucher    },
+        {  "strain",             COrgMod::eSubtype_strain              },
+        {  "sub_species",        COrgMod::eSubtype_sub_species         },
+        {  "subgroup",           COrgMod::eSubtype_subgroup            },
+        {  "substrain",          COrgMod::eSubtype_substrain           },
+        {  "subtype",            COrgMod::eSubtype_subtype             },
+        {  "synonym",            COrgMod::eSubtype_synonym             },
+        {  "teleomorph",         COrgMod::eSubtype_teleomorph          },
+        {  "type",               COrgMod::eSubtype_type                },
+        {  "type_material",      COrgMod::eSubtype_type_material       },
+        {  "variety",            COrgMod::eSubtype_variety             }
+    };
+
+    typedef CStaticPairArrayMap <const char*, COrgMod::ESubtype, PCase_CStr> TOrgModMap;
+    DEFINE_STATIC_ARRAY_MAP(TOrgModMap, sm_OrgModKeys, orgmod_key_to_subtype);
+
+    static const map<const char*, int, PNocase_CStr> sm_TrnaKeys
+    {
+        {  "Ala",            'A'  },
+        {  "Alanine",        'A'  },
+        {  "Arg",            'R'  },
+        {  "Arginine",       'R'  },
+        {  "Asn",            'N'  },
+        {  "Asp",            'D'  },
+        {  "Asp or Asn",     'B'  },
+        {  "Asparagine",     'N'  },
+        {  "Aspartate",      'D'  },
+        {  "Aspartic Acid",  'D'  },
+        {  "Asx",            'B'  },
+        {  "Cys",            'C'  },
+        {  "Cysteine",       'C'  },
+        {  "Gln",            'Q'  },
+        {  "Glu",            'E'  },
+        {  "Glu or Gln",     'Z'  },
+        {  "Glutamate",      'E'  },
+        {  "Glutamic Acid",  'E'  },
+        {  "Glutamine",      'Q'  },
+        {  "Glx",            'Z'  },
+        {  "Gly",            'G'  },
+        {  "Glycine",        'G'  },
+        {  "His",            'H'  },
+        {  "Histidine",      'H'  },
+        {  "Ile",            'I'  },
+        {  "Ile2",           'I'  },
+        {  "Isoleucine",     'I'  },
+        {  "Leu",            'L'  },
+        {  "Leu or Ile",     'J'  },
+        {  "Leucine",        'L'  },
+        {  "Lys",            'K'  },
+        {  "Lysine",         'K'  },
+        {  "Met",            'M'  },
+        {  "Methionine",     'M'  },
+        {  "OTHER",          'X'  },
+        {  "Phe",            'F'  },
+        {  "Phenylalanine",  'F'  },
+        {  "Pro",            'P'  },
+        {  "Proline",        'P'  },
+        {  "Pyl",            'O'  },
+        {  "Pyrrolysine",    'O'  },
+        {  "Sec",            'U'  },
+        {  "Selenocysteine", 'U'  },
+        {  "Ser",            'S'  },
+        {  "Serine",         'S'  },
+        {  "TERM",           '*'  },
+        {  "Ter",            '*'  },
+        {  "Termination",    '*'  },
+        {  "Thr",            'T'  },
+        {  "Threonine",      'T'  },
+        {  "Trp",            'W'  },
+        {  "Tryptophan",     'W'  },
+        {  "Tyr",            'Y'  },
+        {  "Tyrosine",       'Y'  },
+        {  "Val",            'V'  },
+        {  "Valine",         'V'  },
+        {  "Xle",            'J'  },
+        {  "Xxx",            'X'  },
+        {  "Undet",          'X'  },
+        {  "fMet",           'M'  },
+        {  "iMet",           'M'  }
+    };
 
 
-bool CFeatureTableReader_Imp::x_TryToParseOffset(
-    const CTempString & sLine, Int4 & out_offset )
-{
-    // offset strings are of the form [offset=SOME_NUMBER], but here we try
-    // to be as forgiving of whitespace as possible.
+    static
+    set<const char*, PCase_CStr>
+    sc_SingleKeys {
+        "environmental_sample",
+        "germline",
+        "metagenomic",
+        "partial",
+        "pseudo",
+        "rearranged",
+        "ribosomal_slippage",
+        "trans_splicing",
+        "transgenic",
+        "replace" // RW-882
+    };
 
-    CTempString sKey;
-    CTempString sValue;
-    if( ! NStr::SplitInTwo(sLine, "=", sKey, sValue) ) {
-        // "=" not found
-        return false;
+    // constructor
+    CFeatureTableReader_Imp::CFeatureTableReader_Imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
+        : m_reader(reader), m_LineNumber(line_num), m_pMessageListener(pMessageListener)
+    {
     }
 
-    // check key
-    NStr::TruncateSpacesInPlace(sKey);
-    if( NStr::StartsWith(sKey, "[") ) {
-        sKey = sKey.substr(1); // remove initial "["
-    }
-    NStr::TruncateSpacesInPlace(sKey, NStr::eTrunc_Begin);
-    if( ! NStr::EqualNocase(sKey, "offset") ) {
-        // key is not offset
-        return false;
+    // destructor
+    CFeatureTableReader_Imp::~CFeatureTableReader_Imp(void)
+    {
     }
 
-    // check value
-    NStr::TruncateSpacesInPlace(sValue);
-    if( ! NStr::EndsWith(sValue, "]") ) {
-        // no closing bracket
-        return false;
+
+    bool CFeatureTableReader_Imp::x_TryToParseOffset(
+        const CTempString & sLine, Int4 & out_offset )
+    {
+        // offset strings are of the form [offset=SOME_NUMBER], but here we try
+        // to be as forgiving of whitespace as possible.
+
+        CTempString sKey;
+        CTempString sValue;
+        if( ! NStr::SplitInTwo(sLine, "=", sKey, sValue) ) {
+            // "=" not found
+            return false;
+        }
+
+        // check key
+        NStr::TruncateSpacesInPlace(sKey);
+        if( NStr::StartsWith(sKey, "[") ) {
+            sKey = sKey.substr(1); // remove initial "["
+        }
+        NStr::TruncateSpacesInPlace(sKey, NStr::eTrunc_Begin);
+        if( ! NStr::EqualNocase(sKey, "offset") ) {
+            // key is not offset
+            return false;
+        }
+
+        // check value
+        NStr::TruncateSpacesInPlace(sValue);
+        if( ! NStr::EndsWith(sValue, "]") ) {
+            // no closing bracket
+            return false;
+        }
+        // remove closing bracket
+        sValue = sValue.substr(0, (sValue.length() - 1) );
+        NStr::TruncateSpacesInPlace(sValue, NStr::eTrunc_End);
+        // is it a number?
+        try {
+            Int4 new_offset = NStr::StringToInt(sValue);
+        //    if( new_offset < 0 ) {
+        //        return false;
+        //    }
+            out_offset = new_offset;
+            return true;
+        } catch ( CStringException & ) {
+            return false;
+        }
     }
-    // remove closing bracket
-    sValue = sValue.substr(0, (sValue.length() - 1) );
-    NStr::TruncateSpacesInPlace(sValue, NStr::eTrunc_End);
-    // is it a number?
-    try {
-        Int4 new_offset = NStr::StringToInt(sValue);
-    //    if( new_offset < 0 ) {
-    //        return false;
-    //    }
-        out_offset = new_offset;
+
+    bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
+        const CTempString& line,
+        SFeatLocInfo& loc_info,
+        string& featP,
+        string& qualP,
+        string& valP,
+        Int4 offset
+    )
+
+    {
+        SIZE_TYPE      numtkns;
+        bool           isminus = false;
+        bool           ispoint = false;
+        size_t         len;
+        bool           partial5 = false;
+        bool           partial3 = false;
+        Int4           startv = -1;
+        Int4           stopv = -1;
+        Int4           swp;
+        string         start, stop, feat, qual, val, stnd;
+        vector<string> tkns;
+
+
+        if (line.empty ()) return false;
+
+        /* offset and other instructions encoded in brackets */
+        if (NStr::StartsWith (line, '[')) return false;
+
+        tkns.clear ();
+        x_TokenizeLenient(line, tkns);
+        numtkns = tkns.size ();
+
+        if (numtkns > 0) {
+            start = NStr::TruncateSpaces(tkns[0]);
+        }
+        if (numtkns > 1) {
+            stop = NStr::TruncateSpaces(tkns[1]);
+        }
+        if (numtkns > 2) {
+            feat = NStr::TruncateSpaces(tkns[2]);
+        }
+        if (numtkns > 3) {
+            qual = NStr::TruncateSpaces(tkns[3]);
+        }
+        if (numtkns > 4) {
+            val = NStr::TruncateSpaces(tkns[4]);
+            // trim enclosing double-quotes
+            if( val.length() >= 2 && val[0] == '"' && val[val.length()-1] == '"' ) {
+                val = val.substr(1, val.length() - 2);
+            }
+        }
+        if (numtkns > 5) {
+            stnd = NStr::TruncateSpaces(tkns[5]);
+        }
+
+        bool has_start = false;
+        if (! start.empty ()) {
+            if (start [0] == '<') {
+                partial5 = true;
+                start.erase (0, 1);
+            }
+            len = start.length ();
+            if (len > 1 && start [len - 1] == '^') {
+              ispoint = true;
+              start [len - 1] = '\0';
+            }
+            startv = x_StringToLongNoThrow(start, feat, qual,
+                ILineError::eProblem_BadFeatureInterval);
+            has_start = true;
+        }
+
+        bool has_stop = false;
+        if (! stop.empty ()) {
+            if (stop [0] == '>') {
+                partial3 = true;
+                stop.erase (0, 1);
+            }
+            stopv = x_StringToLongNoThrow (stop, feat, qual,
+                ILineError::eProblem_BadFeatureInterval);
+            has_stop = true;
+        }
+
+        if ( startv <= 0 || stopv <= 0 ) {
+            startv = -1;
+            stopv = -1;
+        } else {
+            startv--;
+            stopv--;
+            if (! stnd.empty ()) {
+                if (stnd == "minus" || stnd == "-" || stnd == "complement") {
+                    if (start < stop) {
+                        swp = startv;
+                        startv = stopv;
+                        stopv = swp;
+                    }
+                    isminus = true;
+                }
+            }
+        }
+
+        if (startv >= 0) {
+            startv += offset;
+        }
+        if (stopv >= 0) {
+            stopv += offset;
+        }
+
+        if ((has_start && startv < 0) || (has_stop && stopv < 0)) {
+            x_ProcessMsg(
+                ILineError::eProblem_FeatureBadStartAndOrStop,
+                eDiag_Error,
+                feat);
+        }
+
+        loc_info.start_pos = ( startv < 0 ? -1 : startv);
+        loc_info.stop_pos = ( stopv < 0 ? -1 : stopv);
+
+        loc_info.is_5p_partial = partial5;
+        loc_info.is_3p_partial = partial3;
+        loc_info.is_point = ispoint;
+        loc_info.is_minus_strand = isminus;
+        featP = feat;
+        qualP = qual;
+        valP = val;
+
         return true;
-    } catch ( CStringException & ) {
-        return false;
-    }
-}
-
-bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
-    const CTempString& line,
-    SFeatLocInfo& loc_info,
-    string& featP,
-    string& qualP,
-    string& valP,
-    Int4 offset
-)
-
-{
-    SIZE_TYPE      numtkns;
-    bool           isminus = false;
-    bool           ispoint = false;
-    size_t         len;
-    bool           partial5 = false;
-    bool           partial3 = false;
-    Int4           startv = -1;
-    Int4           stopv = -1;
-    Int4           swp;
-    string         start, stop, feat, qual, val, stnd;
-    vector<string> tkns;
-
-
-    if (line.empty ()) return false;
-
-    /* offset and other instructions encoded in brackets */
-    if (NStr::StartsWith (line, '[')) return false;
-
-    tkns.clear ();
-    x_TokenizeLenient(line, tkns);
-    numtkns = tkns.size ();
-
-    if (numtkns > 0) {
-        start = NStr::TruncateSpaces(tkns[0]);
-    }
-    if (numtkns > 1) {
-        stop = NStr::TruncateSpaces(tkns[1]);
-    }
-    if (numtkns > 2) {
-        feat = NStr::TruncateSpaces(tkns[2]);
-    }
-    if (numtkns > 3) {
-        qual = NStr::TruncateSpaces(tkns[3]);
-    }
-    if (numtkns > 4) {
-        val = NStr::TruncateSpaces(tkns[4]);
-        // trim enclosing double-quotes
-        if( val.length() >= 2 && val[0] == '"' && val[val.length()-1] == '"' ) {
-            val = val.substr(1, val.length() - 2);
-        }
-    }
-    if (numtkns > 5) {
-        stnd = NStr::TruncateSpaces(tkns[5]);
     }
 
-    bool has_start = false;
-    if (! start.empty ()) {
-        if (start [0] == '<') {
-            partial5 = true;
-            start.erase (0, 1);
-        }
-        len = start.length ();
-        if (len > 1 && start [len - 1] == '^') {
-          ispoint = true;
-          start [len - 1] = '\0';
-        }
-        startv = x_StringToLongNoThrow(start, feat, qual,
-            ILineError::eProblem_BadFeatureInterval);
-        has_start = true;
-    }
 
-    bool has_stop = false;
-    if (! stop.empty ()) {
-        if (stop [0] == '>') {
-            partial3 = true;
-            stop.erase (0, 1);
-        }
-        stopv = x_StringToLongNoThrow (stop, feat, qual,
-            ILineError::eProblem_BadFeatureInterval);
-        has_stop = true;
-    }
+    void CFeatureTableReader_Imp::x_TokenizeStrict(
+        const CTempString &line,
+        vector<string> &out_tokens )
+    {
+        out_tokens.clear();
 
-    if ( startv <= 0 || stopv <= 0 ) {
-        startv = -1;
-        stopv = -1;
-    } else {
-        startv--;
-        stopv--;
-        if (! stnd.empty ()) {
-            if (stnd == "minus" || stnd == "-" || stnd == "complement") {
-                if (start < stop) {
-                    swp = startv;
-                    startv = stopv;
-                    stopv = swp;
-                }
-                isminus = true;
+        // each token has spaces before it and a tab or end-of-line after it
+        string::size_type startPosOfNextRoundOfTokenization = 0;
+        while ( startPosOfNextRoundOfTokenization < line.size() ) {
+            auto posAfterSpaces = line.find_first_not_of( " ", startPosOfNextRoundOfTokenization );
+            if( posAfterSpaces == string::npos ) {
+                return;
             }
+
+            string::size_type posOfTab = line.find( '\t', posAfterSpaces );
+            if( posOfTab == string::npos ) {
+                posOfTab = line.length();
+            }
+
+            // The next token is between the spaces and the tab (or end of string)
+            out_tokens.push_back(kEmptyStr);
+            string &new_token = out_tokens.back();
+            copy( line.begin() + posAfterSpaces, line.begin() + posOfTab, back_inserter(new_token) );
+            NStr::TruncateSpacesInPlace( new_token );
+
+            startPosOfNextRoundOfTokenization = ( posOfTab + 1 );
         }
     }
 
-    if (startv >= 0) {
-        startv += offset;
-    }
-    if (stopv >= 0) {
-        stopv += offset;
-    }
+    // since some compilers won't let me use isspace for find_if
+    class CIsSpace {
+    public:
+        bool operator()( char c ) { return isspace(c); }
+    };
 
-    if ((has_start && startv < 0) || (has_stop && stopv < 0)) {
-        x_ProcessMsg(
-            ILineError::eProblem_FeatureBadStartAndOrStop,
-            eDiag_Error,
-            feat);
-    }
+    class CIsNotSpace {
+    public:
+        bool operator()( char c ) { return ! isspace(c); }
+    };
 
-    loc_info.start_pos = ( startv < 0 ? -1 : startv);
-    loc_info.stop_pos = ( stopv < 0 ? -1 : stopv);
+    void CFeatureTableReader_Imp::x_TokenizeLenient(
+        const CTempString &line,
+        vector<string> &out_tokens )
+    {
+        out_tokens.clear();
 
-    loc_info.is_5p_partial = partial5;
-    loc_info.is_3p_partial = partial3;
-    loc_info.is_point = ispoint;
-    loc_info.is_minus_strand = isminus;
-    featP = feat;
-    qualP = qual;
-    valP = val;
-
-    return true;
-}
-
-
-void CFeatureTableReader_Imp::x_TokenizeStrict(
-    const CTempString &line,
-    vector<string> &out_tokens )
-{
-    out_tokens.clear();
-
-    // each token has spaces before it and a tab or end-of-line after it
-    string::size_type startPosOfNextRoundOfTokenization = 0;
-    while ( startPosOfNextRoundOfTokenization < line.size() ) {
-        auto posAfterSpaces = line.find_first_not_of( " ", startPosOfNextRoundOfTokenization );
-        if( posAfterSpaces == string::npos ) {
+        if( line.empty() ) {
             return;
         }
 
-        string::size_type posOfTab = line.find( '\t', posAfterSpaces );
-        if( posOfTab == string::npos ) {
-            posOfTab = line.length();
-        }
+        // if it starts with whitespace, it must be a qual line, else it's a feature line
+        if( isspace(line[0]) ) {
+            // In regex form, we're doing something like this:
+            // \s+(\S+)(\s+(\S.*))?
+            // Where the first is the qual, and the rest is the val
+            auto start_of_qual = find_if( line.begin(), line.end(), CIsNotSpace() );
+            if( start_of_qual == line.end() ) {
+                return;
+            }
+            auto start_of_whitespace_after_qual = find_if( start_of_qual, line.end(), CIsSpace() );
+            auto start_of_val = find_if( start_of_whitespace_after_qual, line.end(), CIsNotSpace() );
 
-        // The next token is between the spaces and the tab (or end of string)
-        out_tokens.push_back(kEmptyStr);
-        string &new_token = out_tokens.back();
-        copy( line.begin() + posAfterSpaces, line.begin() + posOfTab, back_inserter(new_token) );
-        NStr::TruncateSpacesInPlace( new_token );
-
-        startPosOfNextRoundOfTokenization = ( posOfTab + 1 );
-    }
-}
-
-// since some compilers won't let me use isspace for find_if
-class CIsSpace {
-public:
-    bool operator()( char c ) { return isspace(c); }
-};
-
-class CIsNotSpace {
-public:
-    bool operator()( char c ) { return ! isspace(c); }
-};
-
-void CFeatureTableReader_Imp::x_TokenizeLenient(
-    const CTempString &line,
-    vector<string> &out_tokens )
-{
-    out_tokens.clear();
-
-    if( line.empty() ) {
-        return;
-    }
-
-    // if it starts with whitespace, it must be a qual line, else it's a feature line
-    if( isspace(line[0]) ) {
-        // In regex form, we're doing something like this:
-        // \s+(\S+)(\s+(\S.*))?
-        // Where the first is the qual, and the rest is the val
-        auto start_of_qual = find_if( line.begin(), line.end(), CIsNotSpace() );
-        if( start_of_qual == line.end() ) {
-            return;
-        }
-        auto start_of_whitespace_after_qual = find_if( start_of_qual, line.end(), CIsSpace() );
-        auto start_of_val = find_if( start_of_whitespace_after_qual, line.end(), CIsNotSpace() );
-
-        // first 3 are empty
-        out_tokens.push_back(kEmptyStr);
-        out_tokens.push_back(kEmptyStr);
-        out_tokens.push_back(kEmptyStr);
-
-        // then qual
-        out_tokens.push_back(kEmptyStr);
-        string &qual = out_tokens.back();
-        copy( start_of_qual, start_of_whitespace_after_qual, back_inserter(qual) );
-
-        // then val
-        if( start_of_val != line.end() ) {
+            // first 3 are empty
             out_tokens.push_back(kEmptyStr);
-            string &val = out_tokens.back();
-            copy( start_of_val, line.end(), back_inserter(val) );
-            NStr::TruncateSpacesInPlace( val );
-        }
-
-    } else {
-        // parse a feature line
-
-        // Since we're being lenient, we consider it to be 3 ( or 6 ) parts separated by whitespace
-        auto first_column_start = line.begin();
-        auto first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
-        auto second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
-        auto second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
-        auto third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
-        auto third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
-        // columns 4 and 5 are unused on feature lines
-        auto sixth_column_start = find_if( third_whitespace, line.end(), CIsNotSpace() );
-        auto sixth_whitespace = find_if( sixth_column_start, line.end(), CIsSpace() );
-
-        out_tokens.push_back(kEmptyStr);
-        string &first = out_tokens.back();
-        copy( first_column_start, first_whitespace, back_inserter(first) );
-
-        out_tokens.push_back(kEmptyStr);
-        string &second = out_tokens.back();
-        copy( second_column_start, second_whitespace, back_inserter(second) );
-
-        out_tokens.push_back(kEmptyStr);
-        string &third = out_tokens.back();
-        copy( third_column_start, third_whitespace, back_inserter(third) );
-
-        if( sixth_column_start != line.end() ) {
-            // columns 4 and 5 are unused
             out_tokens.push_back(kEmptyStr);
             out_tokens.push_back(kEmptyStr);
 
+            // then qual
             out_tokens.push_back(kEmptyStr);
-            string &sixth = out_tokens.back();
-            copy( sixth_column_start, sixth_whitespace, back_inserter(sixth) );
+            string &qual = out_tokens.back();
+            copy( start_of_qual, start_of_whitespace_after_qual, back_inserter(qual) );
+
+            // then val
+            if( start_of_val != line.end() ) {
+                out_tokens.push_back(kEmptyStr);
+                string &val = out_tokens.back();
+                copy( start_of_val, line.end(), back_inserter(val) );
+                NStr::TruncateSpacesInPlace( val );
+            }
+
+        } else {
+            // parse a feature line
+
+            // Since we're being lenient, we consider it to be 3 ( or 6 ) parts separated by whitespace
+            auto first_column_start = line.begin();
+            auto first_whitespace = find_if( first_column_start, line.end(), CIsSpace() );
+            auto second_column_start = find_if( first_whitespace, line.end(), CIsNotSpace() );
+            auto second_whitespace = find_if( second_column_start, line.end(), CIsSpace() );
+            auto third_column_start = find_if( second_whitespace, line.end(), CIsNotSpace() );
+            auto third_whitespace = find_if( third_column_start, line.end(), CIsSpace() );
+            // columns 4 and 5 are unused on feature lines
+            auto sixth_column_start = find_if( third_whitespace, line.end(), CIsNotSpace() );
+            auto sixth_whitespace = find_if( sixth_column_start, line.end(), CIsSpace() );
+
+            out_tokens.push_back(kEmptyStr);
+            string &first = out_tokens.back();
+            copy( first_column_start, first_whitespace, back_inserter(first) );
+
+            out_tokens.push_back(kEmptyStr);
+            string &second = out_tokens.back();
+            copy( second_column_start, second_whitespace, back_inserter(second) );
+
+            out_tokens.push_back(kEmptyStr);
+            string &third = out_tokens.back();
+            copy( third_column_start, third_whitespace, back_inserter(third) );
+
+            if( sixth_column_start != line.end() ) {
+                // columns 4 and 5 are unused
+                out_tokens.push_back(kEmptyStr);
+                out_tokens.push_back(kEmptyStr);
+
+                out_tokens.push_back(kEmptyStr);
+                string &sixth = out_tokens.back();
+                copy( sixth_column_start, sixth_whitespace, back_inserter(sixth) );
+            }
         }
     }
-}
 
 
-bool CFeatureTableReader_Imp::x_AddQualifierToGene (
-    CSeqFeatData& sfdata,
-    EQual qtype,
-    const string& val
-)
+    bool CFeatureTableReader_Imp::x_AddQualifierToGene (
+        CSeqFeatData& sfdata,
+        EQual qtype,
+        const string& val
+    )
 
-{
-    CGene_ref& grp = sfdata.SetGene ();
-    switch (qtype) {
-        case eQual_gene:
-            grp.SetLocus (val);
-            return true;
-        case eQual_allele:
-            grp.SetAllele (val);
-            return true;
-        case eQual_gene_desc:
-            grp.SetDesc (val);
-            return true;
-        case eQual_gene_syn:
-            {
-                CGene_ref::TSyn& syn = grp.SetSyn ();
-                syn.push_back (val);
+    {
+        CGene_ref& grp = sfdata.SetGene ();
+        switch (qtype) {
+            case eQual_gene:
+                grp.SetLocus (val);
                 return true;
-            }
-        case eQual_map:
-            grp.SetMaploc (val);
-            return true;
-        case eQual_locus_tag:
-            grp.SetLocus_tag (val);
-            return true;
-        default:
-            break;
-    }
-    return false;
-}
-
-
-bool CFeatureTableReader_Imp::x_AddQualifierToCdregion (
-    CRef<CSeq_feat> sfp,
-    CSeqFeatData& sfdata,
-    EQual qtype, const string& val
-)
-
-{
-    CCdregion& crp = sfdata.SetCdregion ();
-    switch (qtype) {
-        case eQual_codon_start:
-            {
-                int frame = x_StringToLongNoThrow (val, kCdsFeatName, "codon_start");
-                switch (frame) {
-                    case 0:
-                        crp.SetFrame (CCdregion::eFrame_not_set);
-                        break;
-                    case 1:
-                        crp.SetFrame (CCdregion::eFrame_one);
-                        break;
-                    case 2:
-                        crp.SetFrame (CCdregion::eFrame_two);
-                        break;
-                    case 3:
-                        crp.SetFrame (CCdregion::eFrame_three);
-                        break;
-                    default:
-                        break;
-                }
+            case eQual_allele:
+                grp.SetAllele (val);
                 return true;
-            }
-        case eQual_EC_number:
-            {
-                CProt_ref& prp = sfp->SetProtXref ();
-                CProt_ref::TEc& ec = prp.SetEc ();
-                ec.push_back (val);
+            case eQual_gene_desc:
+                grp.SetDesc (val);
                 return true;
-            }
-        case eQual_function:
-            {
-                CProt_ref& prp = sfp->SetProtXref ();
-                CProt_ref::TActivity& fun = prp.SetActivity ();
-                fun.push_back (val);
-                return true;
-            }
-        case eQual_product:
-            {
-                CProt_ref& prp = sfp->SetProtXref ();
-                CProt_ref::TName& prod = prp.SetName ();
-                prod.push_back (val);
-                return true;
-            }
-        case eQual_prot_desc:
-            {
-                CProt_ref& prp = sfp->SetProtXref ();
-                prp.SetDesc (val);
-                return true;
-            }
-        case eQual_prot_note:
-            return x_AddGBQualToFeature(sfp, "prot_note", val);
-        case eQual_transl_except:
-            // add as GBQual, let cleanup convert to code_break
-            return x_AddGBQualToFeature(sfp, "transl_except", val);
-        case eQual_translation:
-            // we should accept, but ignore this qual on CDSs.
-            // so, do nothing but return success
-            return true;
-        case eQual_transl_table:
-            // set genetic code directly, or add qualifier and let cleanup convert?
-            try {
-                int num = NStr::StringToLong(val);
-                CGen_code_table::GetTransTable(num); // throws if bad num
-                CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E());
-                code->SetId(num);
-                crp.SetCode().Set().push_back(code);
-                return true;
-            } catch( CStringException ) {
-                // if val is not a number, add qualifier directly and
-                // let cleanup convert?
-                return x_AddGBQualToFeature(sfp, "transl_table", val);
-            } catch( ... ) {
-                // invalid genome code table so don't even try to make
-                // the transl_table qual
-                x_ProcessMsg(
-                    ILineError::eProblem_QualifierBadValue, eDiag_Error,
-                    kCdsFeatName, "transl_table", val);
-                return true;
-            }
-            break;
-
-        default:
-            break;
-    }
-    return false;
-}
-
-
-bool CFeatureTableReader_Imp::x_StringIsJustQuotes (
-    const string& str
-)
-
-{
-    ITERATE (string, it, str) {
-      char ch = *it;
-      if (ch > ' ' && ch != '"' && ch != '\'') return false;
-    }
-
-    return true;
-}
-
-static bool
-s_LineIndicatesOrder( const CTempString & line )
-{
-    // basically, this is true if the line starts with "order" (whitespaces disregarded)
-
-    const static char* kOrder = "ORDER";
-
-    // find first non-whitespace character
-    string::size_type pos = 0;
-    for( ; pos < line.length() && isspace(line[pos]); ++pos) {
-        // nothing to do here
-    }
-
-    // line is all whitespace
-    if( pos >= line.length() ) {
-        return false;
-    }
-
-    // check if starts with "order" after whitespace
-    return ( 0 == NStr::CompareNocase( line, pos, strlen(kOrder), kOrder ) );
-}
-
-// Turns a "join" location into an "order" by putting nulls between it
-// Returns an unset CRef if the loc doesn't need nulls (e.g. if it's just an interval)
-static CRef<CSeq_loc>
-s_LocationJoinToOrder( const CSeq_loc & loc )
-{
-    // create result we're returning
-    CRef<CSeq_loc> result( new CSeq_loc );
-    CSeq_loc_mix::Tdata & mix_pieces  = result->SetMix().Set();
-
-    // keep this around for whenever we need a "null" piece
-    CRef<CSeq_loc> loc_piece_null( new CSeq_loc );
-    loc_piece_null->SetNull();
-
-    // push pieces of source, with NULLs between
-    CSeq_loc_CI loc_iter( loc );
-    for( ; loc_iter; ++loc_iter ) {
-        if( ! mix_pieces.empty() ) {
-            mix_pieces.push_back( loc_piece_null );
-        }
-        CRef<CSeq_loc> new_piece( new CSeq_loc );
-        new_piece->Assign( loc_iter.GetEmbeddingSeq_loc() );
-        mix_pieces.push_back( new_piece );
-    }
-
-    // Only wrap in "mix" if there was more than one piece
-    if( mix_pieces.size() > 1 ) {
-        return result;
-    } else {
-        return CRef<CSeq_loc>();
-    }
-}
-
-
-string CFeatureTableReader_Imp::x_TrnaToAaString(
-    const string& val
-)
-{
-    CTempString value(val);
-
-    if (NStr::StartsWith(value, "tRNA-")) {
-        value.assign(value, strlen("tRNA-"), CTempString::npos);
-    }
-
-    CTempString::size_type pos = value.find_first_of("-,;:()=\'_~");
-    if (pos != CTempString::npos) {
-        value.erase(pos);
-        NStr::TruncateSpacesInPlace(value);
-    }
-
-    return string(value);
-}
-
-
-bool
-CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str)
-{
-    if (NStr::IsBlank (str)) return false;
-
-    string normalized_string = str;
-    normalized_string.erase(
-            remove_if(begin(normalized_string),
-                      end(normalized_string),
-                      [](char c) { return isspace(c);}),
-            end(normalized_string));
-
-    if ( NStr::StartsWith(normalized_string, "(pos:") ) {
-        // find position of closing paren
-        string::size_type pos_end = x_MatchingParenPos( normalized_string, 0 );
-        if (pos_end != string::npos) {
-            string pos_str = normalized_string.substr (5, pos_end - 5);
-            string::size_type aa_start = NStr::FindNoCase(pos_str, "aa:");
-            if (aa_start != string::npos) {
-                auto seq_start = NStr::FindNoCase(pos_str, ",seq:");
-                if (seq_start != string::npos &&
-                    seq_start < aa_start+3) {
-                    return false;
-                }
-
-                size_t aa_length = (seq_start == NPOS) ?
-                                pos_str.size() - (aa_start+3) :
-                                seq_start - (aa_start+3);
-
-                string abbrev = pos_str.substr (aa_start + 3, aa_length);
-                //TTrnaMap::const_iterator
-                auto t_iter = sm_TrnaKeys.find (abbrev.c_str ());
-                if (t_iter == sm_TrnaKeys.end ()) {
-                    // unable to parse
-                    return false;
-                }
-                CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
-                aa->SetNcbieaa (t_iter->second);
-                ext_trna.SetAa(*aa);
-                pos_str = pos_str.substr (0, aa_start);
-                NStr::TruncateSpacesInPlace (pos_str);
-                if (NStr::EndsWith (pos_str, ",")) {
-                    pos_str = pos_str.substr (0, pos_str.length() - 1);
-                }
-            }
-            CGetSeqLocFromStringHelper helper;
-            CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, m_seq_id, & helper);
-            if (! anticodon) {
-                ext_trna.ResetAa();
-                return false;
-            } else {
-                switch( anticodon->GetStrand() ) {
-                case eNa_strand_unknown:
-                case eNa_strand_plus:
-                case eNa_strand_minus:
-                    ext_trna.SetAnticodon(*anticodon);
+            case eQual_gene_syn:
+                {
+                    CGene_ref::TSyn& syn = grp.SetSyn ();
+                    syn.push_back (val);
                     return true;
-                default:
-                    ext_trna.ResetAa();
-                    return false;
                 }
+            case eQual_map:
+                grp.SetMaploc (val);
+                return true;
+            case eQual_locus_tag:
+                grp.SetLocus_tag (val);
+                return true;
+            default:
+                break;
+        }
+        return false;
+    }
+
+
+    bool CFeatureTableReader_Imp::x_AddQualifierToCdregion (
+        CRef<CSeq_feat> sfp,
+        CSeqFeatData& sfdata,
+        EQual qtype, const string& val
+    )
+
+    {
+        CCdregion& crp = sfdata.SetCdregion ();
+        switch (qtype) {
+            case eQual_codon_start:
+                {
+                    int frame = x_StringToLongNoThrow (val, kCdsFeatName, "codon_start");
+                    switch (frame) {
+                        case 0:
+                            crp.SetFrame (CCdregion::eFrame_not_set);
+                            break;
+                        case 1:
+                            crp.SetFrame (CCdregion::eFrame_one);
+                            break;
+                        case 2:
+                            crp.SetFrame (CCdregion::eFrame_two);
+                            break;
+                        case 3:
+                            crp.SetFrame (CCdregion::eFrame_three);
+                            break;
+                        default:
+                            break;
+                    }
+                    return true;
+                }
+            case eQual_EC_number:
+                {
+                    CProt_ref& prp = sfp->SetProtXref ();
+                    CProt_ref::TEc& ec = prp.SetEc ();
+                    ec.push_back (val);
+                    return true;
+                }
+            case eQual_function:
+                {
+                    CProt_ref& prp = sfp->SetProtXref ();
+                    CProt_ref::TActivity& fun = prp.SetActivity ();
+                    fun.push_back (val);
+                    return true;
+                }
+            case eQual_product:
+                {
+                    CProt_ref& prp = sfp->SetProtXref ();
+                    CProt_ref::TName& prod = prp.SetName ();
+                    prod.push_back (val);
+                    return true;
+                }
+            case eQual_prot_desc:
+                {
+                    CProt_ref& prp = sfp->SetProtXref ();
+                    prp.SetDesc (val);
+                    return true;
+                }
+            case eQual_prot_note:
+                return x_AddGBQualToFeature(sfp, "prot_note", val);
+            case eQual_transl_except:
+                // add as GBQual, let cleanup convert to code_break
+                return x_AddGBQualToFeature(sfp, "transl_except", val);
+            case eQual_translation:
+                // we should accept, but ignore this qual on CDSs.
+                // so, do nothing but return success
+                return true;
+            case eQual_transl_table:
+                // set genetic code directly, or add qualifier and let cleanup convert?
+                try {
+                    int num = NStr::StringToLong(val);
+                    CGen_code_table::GetTransTable(num); // throws if bad num
+                    CRef<CGenetic_code::C_E> code(new CGenetic_code::C_E());
+                    code->SetId(num);
+                    crp.SetCode().Set().push_back(code);
+                    return true;
+                } catch( CStringException ) {
+                    // if val is not a number, add qualifier directly and
+                    // let cleanup convert?
+                    return x_AddGBQualToFeature(sfp, "transl_table", val);
+                } catch( ... ) {
+                    // invalid genome code table so don't even try to make
+                    // the transl_table qual
+                    x_ProcessMsg(
+                        ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                        kCdsFeatName, "transl_table", val);
+                    return true;
+                }
+                break;
+
+            default:
+                break;
+        }
+        return false;
+    }
+
+
+    bool CFeatureTableReader_Imp::x_StringIsJustQuotes (
+        const string& str
+    )
+
+    {
+        ITERATE (string, it, str) {
+          char ch = *it;
+          if (ch > ' ' && ch != '"' && ch != '\'') return false;
+        }
+
+        return true;
+    }
+
+    static bool
+    s_LineIndicatesOrder( const CTempString & line )
+    {
+        // basically, this is true if the line starts with "order" (whitespaces disregarded)
+
+        const static char* kOrder = "ORDER";
+
+        // find first non-whitespace character
+        string::size_type pos = 0;
+        for( ; pos < line.length() && isspace(line[pos]); ++pos) {
+            // nothing to do here
+        }
+
+        // line is all whitespace
+        if( pos >= line.length() ) {
+            return false;
+        }
+
+        // check if starts with "order" after whitespace
+        return ( 0 == NStr::CompareNocase( line, pos, strlen(kOrder), kOrder ) );
+    }
+
+    // Turns a "join" location into an "order" by putting nulls between it
+    // Returns an unset CRef if the loc doesn't need nulls (e.g. if it's just an interval)
+    static CRef<CSeq_loc>
+    s_LocationJoinToOrder( const CSeq_loc & loc )
+    {
+        // create result we're returning
+        CRef<CSeq_loc> result( new CSeq_loc );
+        CSeq_loc_mix::Tdata & mix_pieces  = result->SetMix().Set();
+
+        // keep this around for whenever we need a "null" piece
+        CRef<CSeq_loc> loc_piece_null( new CSeq_loc );
+        loc_piece_null->SetNull();
+
+        // push pieces of source, with NULLs between
+        CSeq_loc_CI loc_iter( loc );
+        for( ; loc_iter; ++loc_iter ) {
+            if( ! mix_pieces.empty() ) {
+                mix_pieces.push_back( loc_piece_null );
+            }
+            CRef<CSeq_loc> new_piece( new CSeq_loc );
+            new_piece->Assign( loc_iter.GetEmbeddingSeq_loc() );
+            mix_pieces.push_back( new_piece );
+        }
+
+        // Only wrap in "mix" if there was more than one piece
+        if( mix_pieces.size() > 1 ) {
+            return result;
+        } else {
+            return CRef<CSeq_loc>();
+        }
+    }
+
+
+    string CFeatureTableReader_Imp::x_TrnaToAaString(
+        const string& val
+    )
+    {
+        CTempString value(val);
+
+        if (NStr::StartsWith(value, "tRNA-")) {
+            value.assign(value, strlen("tRNA-"), CTempString::npos);
+        }
+
+        CTempString::size_type pos = value.find_first_of("-,;:()=\'_~");
+        if (pos != CTempString::npos) {
+            value.erase(pos);
+            NStr::TruncateSpacesInPlace(value);
+        }
+
+        return string(value);
+    }
+
+
+
+    static SIZE_TYPE s_MatchingParenPos(
+        const string &str, SIZE_TYPE open_paren_pos )
+    {
+        _ASSERT( str[open_paren_pos] == '(' );
+        _ASSERT( open_paren_pos < str.length() );
+
+        // nesting level. start at 1 since we know there's an open paren
+        int level = 1;
+
+        SIZE_TYPE pos = open_paren_pos + 1;
+        for( ; pos < str.length(); ++pos ) {
+            switch( str[pos] ) {
+                case '(':
+                    // nesting deeper
+                    ++level;
+                    break;
+                case ')':
+                    // closed a level of nesting
+                    --level;
+                    if( 0 == level ) {
+                        // reached the top: we're closing the initial paren,
+                        // so we return our position
+                        return pos;
+                    }
+                    break;
+                default:
+                    // ignore other characters.
+                    // maybe in the future we'll handle ignoring parens in quotes or
+                    // things like that.
+                    break;
             }
         }
+        return NPOS;
     }
 
-    return false;
-}
 
+    bool
+    CFeatureTableReader_Imp::ParseTrnaExtString(CTrna_ext & ext_trna, 
+            const string & str, 
+            const CSeq_id& seqid,
+            function<void(const string& msg)>* fpReportError 
+            )
+    {
+        if (NStr::IsBlank (str)) return false;
 
-SIZE_TYPE CFeatureTableReader_Imp::x_MatchingParenPos(
-    const string &str, SIZE_TYPE open_paren_pos )
-{
-    _ASSERT( str[open_paren_pos] == '(' );
-    _ASSERT( open_paren_pos < str.length() );
+        string normalized_string = str;
+        normalized_string.erase(
+                remove_if(begin(normalized_string),
+                          end(normalized_string),
+                          [](char c) { return isspace(c);}),
+                end(normalized_string));
 
-    // nesting level. start at 1 since we know there's an open paren
-    int level = 1;
+        if ( NStr::StartsWith(normalized_string, "(pos:") ) {
+            // find position of closing paren
+            string::size_type pos_end = s_MatchingParenPos( normalized_string, 0 );
+            if (pos_end != string::npos) {
+                string pos_str = normalized_string.substr (5, pos_end - 5);
+                string::size_type aa_start = NStr::FindNoCase(pos_str, "aa:");
+                if (aa_start != string::npos) {
+                    auto seq_start = NStr::FindNoCase(pos_str, ",seq:");
+                    if (seq_start != string::npos &&
+                        seq_start < aa_start+3) {
+                        if (fpReportError) {
+                            (*fpReportError)("Unable to resolve amino acid");
+                        }
+                        return false;
+                    }
 
-    SIZE_TYPE pos = open_paren_pos + 1;
-    for( ; pos < str.length(); ++pos ) {
-        switch( str[pos] ) {
-            case '(':
-                // nesting deeper
-                ++level;
-                break;
-            case ')':
-                // closed a level of nesting
-                --level;
-                if( 0 == level ) {
-                    // reached the top: we're closing the initial paren,
-                    // so we return our position
-                    return pos;
+                    size_t aa_length = (seq_start == NPOS) ?
+                                    pos_str.size() - (aa_start+3) :
+                                    seq_start - (aa_start+3);
+
+                    string abbrev = pos_str.substr (aa_start + 3, aa_length);
+                    //TTrnaMap::const_iterator
+                    auto t_iter = sm_TrnaKeys.find (abbrev.c_str ());
+                    if (t_iter == sm_TrnaKeys.end ()) {
+                        if (fpReportError) {
+                            (*fpReportError)("Unrecognized amino acid : " + abbrev);
+                        }
+                        return false;
+                    }
+                    CRef<CTrna_ext::TAa> aa(new CTrna_ext::TAa);
+                    aa->SetNcbieaa (t_iter->second);
+                    ext_trna.SetAa(*aa);
+                    pos_str = pos_str.substr (0, aa_start);
+                    NStr::TruncateSpacesInPlace (pos_str);
+                    if (NStr::EndsWith (pos_str, ",")) {
+                        pos_str = pos_str.substr (0, pos_str.length() - 1);
+                    }
                 }
-                break;
-            default:
-                // ignore other characters.
-                // maybe in the future we'll handle ignoring parens in quotes or
-                // things like that.
-                break;
+                CGetSeqLocFromStringHelper helper;
+                CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, &seqid, & helper);
+                if (! anticodon) {
+                    ext_trna.ResetAa();
+                    if (fpReportError) {
+                        (*fpReportError)("Failed to resolve anticodon location");
+                    }
+                    return false;
+                } else {
+                    switch( anticodon->GetStrand() ) {
+                    case eNa_strand_unknown:
+                    case eNa_strand_plus:
+                    case eNa_strand_minus:
+                        ext_trna.SetAnticodon(*anticodon);
+                        return true;
+                    default:
+                        if (fpReportError) {
+                            (*fpReportError)("Invalid anticodon strand");
+                        }
+                        ext_trna.ResetAa();
+                        return false;
+                    }
+                }
+            } else if (fpReportError) {
+                (*fpReportError)("Unmatched parentheses");
+            }
+        } else if (fpReportError) {
+            (*fpReportError)("Anticodon string does not start with '(pos:'");
         }
+
+        return false;
     }
-    return NPOS;
-}
+
 
 long CFeatureTableReader_Imp::x_StringToLongNoThrow (
     CTempString strToConvert,
@@ -1626,9 +1652,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToRna (
                     break;
                 case eQual_anticodon:
                     {
-                        CRNA_ref::TExt& tex = rrp.SetExt ();
-                        CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
-                        if( ! x_ParseTrnaExtString(ext_trna, val) ) {
+                        if( ! ParseTrnaExtString(rrp.SetExt().SetTRNA(), val, *m_seq_id) ) {
                             x_ProcessMsg(
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,
                                 "tRNA", "anticodon", val );
@@ -1638,14 +1662,9 @@ bool CFeatureTableReader_Imp::x_AddQualifierToRna (
                     break;
                 case eQual_codon_recognized:
                     {
-                        //const auto codon_index = CGen_code_table::CodonToIndex(val);
-                        //if (codon_index >= 0) {
-                            CRNA_ref::TExt& tex = rrp.SetExt ();
-                            CRNA_ref::C_Ext::TTRNA & ext_trna = tex.SetTRNA();
-                            if (!x_AddCodons(val, ext_trna)) {
-                                return false;
-                            }
-                        //}
+                        if (!x_AddCodons(val, rrp.SetExt().SetTRNA())) {
+                            return false;
+                        }
                         return true;
                     }
                     break;
@@ -3705,6 +3724,18 @@ CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
 {
     CFeatureTableReader_Imp impl(nullptr, line_number, pMessageListener);
     return impl.CreateSeqFeat (feat, location, flags, (seq_id ? *seq_id : string() ), filter);
+}
+
+
+
+CRef<CTrna_ext> CFeature_table_reader::ParseTrnaExtString(const string& ext, const CSeq_id& seqid,
+        function<void(const string& msg)>* fpReportError)
+{
+    auto result = Ref(new CTrna_ext());
+    if (CFeatureTableReader_Imp::ParseTrnaExtString(*result, ext, seqid, fpReportError)) {
+        return result;
+    }
+    return CRef<CTrna_ext>();
 }
 
 
