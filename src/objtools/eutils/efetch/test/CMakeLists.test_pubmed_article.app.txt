@@ -5,6 +5,7 @@ NCBI_begin_app(test_pubmed_article)
   NCBI_set_test_assets(data)
   NCBI_sources(test_pubmed_article)
   NCBI_uses_toolkit_libraries(efetch pubmed medline biblio general xser xutil xncbi)
+  NCBI_requires(-Cygwin)
   NCBI_project_watchers(grichenk)
 
   NCBI_add_test(test_pubmed_article -f data/pubmed11748933.xml -set)
