@@ -1178,7 +1178,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
 {
     LOG_POST("Checking VDB WGS nuc-prot set by GI");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2209563628));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2209563615));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
@@ -1218,8 +1218,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt1)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(total_count, 9);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 13u);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 13u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 2u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 2u);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
     string data;
@@ -1231,7 +1231,7 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
 {
     LOG_POST("Checking VDB WGS nuc-prot set by acc");
     CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAI1044389"));
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("KAI1044376"));
     BOOST_REQUIRE(bh);
     int desc_mask = 0;
     map<string, int> user_count;
@@ -1271,8 +1271,8 @@ BOOST_AUTO_TEST_CASE(CheckWGSProt2)
     BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
     BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
     BOOST_CHECK_EQUAL(total_count, 9);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 13u);
-    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 13u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh).GetSize(), 2u);
+    BOOST_CHECK_EQUAL(CFeat_CI(bh, SAnnotSelector().SetResolveAll()).GetSize(), 2u);
     TSeqPos len = bh.GetBioseqLength();
     BOOST_CHECK(bh.GetSeqVector().CanGetRange(0, len));
     string data;
