@@ -1965,6 +1965,7 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 
 void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
 {
+    if (!m_Loader) return;
 #ifdef NCBI_USE_TSAN
     const size_t limit_cdds_request = 15;
 #else
