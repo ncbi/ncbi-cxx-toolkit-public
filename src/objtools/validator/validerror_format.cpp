@@ -599,7 +599,7 @@ static string s_GetFeatureIdLabel (const CObject_id& object_id)
 }
 
 
-string CValidErrorFormat::GetFeatureIdLabel (const CFeat_id& feat_id)
+string CValidErrorFormat::GetFeatureIdLabel(const CFeat_id& feat_id)
 {
     string feature_id;
     if (feat_id.IsLocal()) {
@@ -610,7 +610,7 @@ string CValidErrorFormat::GetFeatureIdLabel (const CFeat_id& feat_id)
         }
         feature_id += ":";
         if (feat_id.GetGeneral().IsSetTag()) {
-            feature_id += s_GetFeatureIdLabel (feat_id.GetGeneral().GetTag());
+            feature_id += s_GetFeatureIdLabel(feat_id.GetGeneral().GetTag());
         }
     }
     return feature_id;
@@ -623,9 +623,9 @@ string CValidErrorFormat::GetFeatureIdLabel(const CSeq_feat& ft)
     if (ft.IsSetId()) {
         feature_id = CValidErrorFormat::GetFeatureIdLabel(ft.GetId());
     } else if (ft.IsSetIds()) {
-        ITERATE(CSeq_feat::TIds, id_it, ft.GetIds()) {
-            feature_id = CValidErrorFormat::GetFeatureIdLabel((**id_it));
-            if (!NStr::IsBlank(feature_id)) {
+        for (const auto& id_it : ft.GetIds()) {
+            feature_id = CValidErrorFormat::GetFeatureIdLabel(*id_it);
+            if (! NStr::IsBlank(feature_id)) {
                 break;
             }
         }
