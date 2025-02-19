@@ -35,11 +35,19 @@
  * ---------------------------------------------------------------------------
  */
 
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbistl.hpp>
 #include <connect/ncbi_socket_unix.h>
+#include <cstring>
+#include <string>
+
+#ifdef NCBI_DEPRECATED
+#  define NCBI_XSOCK_DEPRECATED  NCBI_DEPRECATED
+#else
+#  define NCBI_XSOCK_DEPRECATED
+#endif // NCBI_DEPRECATED
 
 
-/** @addtogroup Sockets
+ /** @addtogroup Sockets
  *
  * @{
  */
@@ -114,6 +122,78 @@ protected:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+///  CNCBI_Addr::
+///
+/// IPv4/IPv6 address container / converter
+///
+
+class CNCBI_IPAddr
+{
+public:
+    CNCBI_IPAddr(void)
+    {
+        Clear();
+    }
+
+    // "ipv4" is in network byte order
+    CNCBI_IPAddr(unsigned int ipv4)
+    {
+        NcbiIPv4ToIPv6(&m_IPAddr, ipv4, 0);
+    }
+
+    CNCBI_IPAddr(const TNCBI_IPv6Addr& ipv6)
+    {
+        m_IPAddr = ipv6;
+    }
+
+    operator unsigned int  (void) const
+    {
+        return NcbiIPv6ToIPv4(&m_IPAddr, 0);
+    }
+
+    operator TNCBI_IPv6Addr(void) const
+    {
+        return m_IPAddr;
+    }
+
+    operator bool(void) const
+    {
+        return !IsEmpty();
+    }
+
+    bool operator !(void) const
+    {
+        return IsEmpty();
+    }
+
+    void Clear(void)
+    {
+        memset(&m_IPAddr, 0, sizeof(m_IPAddr));
+    }
+
+    bool IsEmpty(void) const
+    {
+        return NcbiIsEmptyIPv6(&m_IPAddr);
+    }
+
+    const TNCBI_IPv6Addr& GetAddr(void) const
+    {
+        return  m_IPAddr;
+    }
+
+    TNCBI_IPv6Addr* GetAddrPtr(void)
+    {
+        return &m_IPAddr;
+    }
+
+private:
+    TNCBI_IPv6Addr  m_IPAddr;
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 ///  CSocket::
 ///
 /// @note  For documentation see SOCK_***() functions in "ncbi_socket.h".
@@ -161,26 +241,9 @@ public:
             const STimeout* timeout = kInfiniteTimeout,
             TSOCK_Flags     flags   = fSOCK_LogDefault);
 
-    /// Variant of the above, which takes a binary IPv4 host
-    /// address in network byte order
-    /// @param host
-    ///  network byte order
-    /// @param port
-    ///  host byte order
-    /// @param timeout
-    ///  maximal time to wait for connection to be established
-    /// @param flags
-    ///  additional socket properties (including logging)
-    /// @sa
-    ///   CSocket::Connect, SOCK_Create
-    CSocket(unsigned int    host,
-            unsigned short  port,
-            const STimeout* timeout = kInfiniteTimeout,
-            TSOCK_Flags     flags   = fSOCK_LogDefault);
-
     /// Variant of the above, which takes an arbitrary IP address
     /// @param addr
-    ///  any IP address (IPv6/IPv4)
+    ///  an IP address (IPv4/IPv6)
     /// @param port
     ///  host byte order
     /// @param timeout
@@ -189,10 +252,10 @@ public:
     ///  additional socket properties (including logging)
     /// @sa
     ///   CSocket::Connect, SOCK_Create
-    CSocket(const TNCBI_IPv6Addr* addr,
-            unsigned short        port,
-            const STimeout*       timeout = kInfiniteTimeout,
-            TSOCK_Flags           flags   = fSOCK_LogDefault);
+    CSocket(const CNCBI_IPAddr& addr,
+            unsigned short      port,
+            const STimeout*     timeout = kInfiniteTimeout,
+            TSOCK_Flags         flags   = fSOCK_LogDefault);
 
     /// Call Close(), then self-destruct
     virtual ~CSocket(void);
@@ -245,26 +308,9 @@ public:
                        const STimeout* timeout = kDefaultTimeout,
                        TSOCK_Flags     flags   = fSOCK_LogDefault);
 
-    /// Variant of the above, which takes a binary IPv4 host
-    /// address in network byte order
-    /// @param host
-    ///  network byte order
-    /// @param port
-    ///  host byte order
-    /// @param timeout
-    ///  maximal time to wait for connection to be established
-    /// @param flags
-    ///  additional socket properties (including logging)
-    /// @sa
-    ///   CSocket::Connect, SOCK_Create
-    EIO_Status Connect(unsigned int    host,
-                       unsigned short  port,
-                       const STimeout* timeout = kInfiniteTimeout,
-                       TSOCK_Flags     flags   = fSOCK_LogDefault);
-
     /// Variant of the above, which takes an arbitrary IP address
     /// @param addr
-    ///  any IP address (IPv6/IPv4)
+    ///  an IP address (IPv4/IPv6)
     /// @param port
     ///  host byte order
     /// @param timeout
@@ -273,10 +319,10 @@ public:
     ///  additional socket properties (including logging)
     /// @sa
     ///   CSocket::Connect, SOCK_Create
-    EIO_Status Connect(const TNCBI_IPv6Addr* addr,
-                       unsigned short        port,
-                       const STimeout*       timeout = kInfiniteTimeout,
-                       TSOCK_Flags           flags   = fSOCK_LogDefault);
+    EIO_Status Connect(const CNCBI_IPAddr& addr,
+                       unsigned short      port,
+                       const STimeout*     timeout = kInfiniteTimeout,
+                       TSOCK_Flags         flags   = fSOCK_LogDefault);
 
     /// Reconnect to the same address.
     /// @note  The socket must not be closed by the time this call is made;
@@ -297,7 +343,7 @@ public:
     EIO_Status Shutdown(EIO_Event how);
 
     /// Close socket.
-    /// @note  Closes the undelying SOCK only if it is owned by this "CSocket"!
+    /// @note  Closes the underlying SOCK only if it is owned by this "CSocket"!
     /// @sa
     ///  SOCK_CloseEx
     EIO_Status Close(void);
@@ -437,12 +483,13 @@ public:
     ///
     /// @sa
     ///  SOCK_GetPeerAddress
+    NCBI_XSOCK_DEPRECATED
     void GetPeerAddress(unsigned int*   host,
                         unsigned short* port,
                         ENH_ByteOrder   byte_order) const;
 
     /// Get peer address.
-    /// @note  Either of "host", "port" can be NULL to opt out
+    /// @note  Either of "addr", "port" can be NULL to opt out
     ///        from obtaining the corresponding value;
     /// @note  "byte_order" applies to "port" only
     ///
@@ -454,7 +501,7 @@ public:
     ///
     /// @sa
     ///  SOCK_GetPeerAddressIPv6
-    void GetPeerAddress(TNCBI_IPv6Addr* addr,
+    void GetPeerAddress(CNCBI_IPAddr*   addr,
                         unsigned short* port,
                         ENH_ByteOrder   byte_order = eNH_HostByteOrder) const;
 
@@ -472,7 +519,8 @@ public:
     ///
     /// @sa
     ///  SOCK_GetOSHandleEx, CSocketAPI::OSHandleSize, SOCK_GetOSHandleSize
-    virtual EIO_Status GetOSHandle(void*  handle_buf, size_t handle_size,
+    virtual EIO_Status GetOSHandle(void*      handle_buf,
+                                   size_t     handle_size,
                                    EOwnership ownership = eNoOwnership) const;
 
     /// @note  Use CSocketAPI::SetReadOnWrite() to set the default value.
@@ -497,7 +545,7 @@ public:
     ///
     /// @sa
     ///  SOCK_SetReuseAddress
-    void    SetReuseAddress(ESwitch reuse = eOff);
+    void    SetReuseAddress(ESwitch reuse = eOn);
 
     /// @note  See comments for SOCK_DisableOSSendDelay() in "ncbi_socket.h".
     ///
@@ -607,13 +655,15 @@ public:
 
     /// @param port
     ///  port is in host byte order
-    EIO_Status Bind(unsigned short port, ESwitch ipv6 = eDefault);
+    EIO_Status Bind(unsigned short port,
+                    ESwitch        ipv6 = eDefault);
   
     /// @param host
     ///  host name or IP address as a string
     /// @param port
     ///  "port" is in host byte order
-    EIO_Status Connect(const string& host, unsigned short port);
+    EIO_Status Connect(const string&  host,
+                       unsigned short port);
 
     /// @param hostport
     ///   "host:port" as a string (no-port and no-host accepted, such as ":0")
@@ -623,13 +673,15 @@ public:
     ///  "host" is in network byte order
     /// @param port
     ///  "port" is in host byte order
-    EIO_Status Connect(unsigned int host, unsigned short port);
+    EIO_Status Connect(unsigned int   host,
+                       unsigned short port);
 
     /// @param host
     ///  "addr" is an arbitrary IP address (IPv4/IPv6)
     /// @param port
     ///  "port" is in host byte order
-    EIO_Status Connect(const TNCBI_IPv6Addr* addr, unsigned short port);
+    EIO_Status Connect(const CNCBI_IPAddr& addr,
+                       unsigned short      port);
 
     /// @param timeout
     ///
@@ -759,37 +811,11 @@ public:
     /// @note  Closes the undelying LSOCK only if it is owned by this object!
     EIO_Status Close(void);
 
-    /// Access to the system-specific socket handle
-    /// @param handle_buf
-    ///
-    /// @param handle_size
-    ///
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
-                                   EOwnership ownership = eNoOwnership) const;
-
     /// Return port which the server listens on
     unsigned short GetPort(ENH_ByteOrder byte_order = eNH_HostByteOrder) const;
 
     /// Get listening address.
-    /// @note  Either of "host", "port" can be NULL to opt out
-    ///        from obtaining the corresponding value;
-    /// @note  Both "*host" and "*port" come out in the same
-    ///        byte order as requested by the last argument.
-    ///
-    /// @param host
-    ///  returned in requested byte order [can be NULL not to obtain]
-    /// @param port
-    ///  returned in requested byte order [can be NULL not to obtain]
-    /// @param byte_order
-    ///
-    /// @sa
-    ///  LSOCK_GetListeningAddress
-    void GetListeningAddress(unsigned int*   host,
-                             unsigned short* port,
-                             ENH_ByteOrder   byte_order) const;
-
-    /// Get listening address.
-    /// @note  Either of "host", "port" can be NULL to opt out
+    /// @note  Either of "addr", "port" can be NULL to opt out
     ///        from obtaining the corresponding value;
     /// @note  "byte_order" applies to "port" only
     ///
@@ -801,7 +827,7 @@ public:
     ///
     /// @sa
     ///  LSOCK_GetListeningAddressIPv6
-    void GetListeningAddress(TNCBI_IPv6Addr* addr,
+    void GetListeningAddress(CNCBI_IPAddr*   addr,
                              unsigned short* port,
                              ENH_ByteOrder   byte_order = eNH_HostByteOrder) const;
 
@@ -811,6 +837,15 @@ public:
     /// @sa
     ///  LSOCK_GetListeningAddressStringEx
     string GetListeningAddress(ESOCK_AddressFormat format = eSAF_Full) const;
+
+    /// Access to the system-specific socket handle
+    /// @param handle_buf
+    ///
+    /// @param handle_size
+    ///
+    virtual EIO_Status GetOSHandle(void*      handle_buf,
+                                   size_t     handle_size,
+                                   EOwnership ownership = eNoOwnership) const;
 
     /// Specify if this "CListeningSocket" is to own the underlying "LSOCK"
     /// @param if_to_own
@@ -853,7 +888,8 @@ public:
     static size_t     OSHandleSize (void);
     static void       AllowSigPipe (void);
     static ESwitch    SetIPv6      (ESwitch ipv6);
-    static EIO_Status CloseOSHandle(const void* handle, size_t handle_size);
+    static EIO_Status CloseOSHandle(const void* handle,
+                                    size_t      handle_size);
 
     /// Utility
     ///
@@ -904,10 +940,12 @@ public:
                            const STimeout* timeout,
                            size_t*         n_ready = 0);
 
-    /// BSD-like API.  NB: when int, "host" must be in network byte order
+    /// BSD-like API.
 
-    static string ntoa(unsigned int  host);
-    static string ntoa(const TNCBI_IPv6Addr* addr);
+    /// Convert to "dot" or "colon" notation (IPv4 or IPv6)
+    static string ntoa(const CNCBI_IPAddr& addr);
+
+    /// For IPv4 only
     static bool   isip(const string& host, bool fullquad = false);
 
     static unsigned int   HostToNetLong (unsigned int   value);
@@ -918,36 +956,35 @@ public:
     /// Return empty string on error
     static string         gethostname  (ESwitch log = eOff);
 
-    /// Return 0 on error
-    static unsigned int   gethostbyname(const string& host, ESwitch log = eOff);
-    static TNCBI_IPv6Addr gethostbyname(const string& host, TNCBI_IPv6Addr* addr, ESwitch log = eOff);
+    /// Return 0 or empty address on error
+    static CNCBI_IPAddr   gethostbyname(const string& host,
+                                        ESwitch log = eOff);
+
     /// Return empty string on error
-    static string         gethostbyaddr(unsigned int  host,         ESwitch log = eOff);
-    static string         gethostbyaddr(const TNCBI_IPv6Addr* addr, ESwitch log = eOff);
+    static string         gethostbyaddr(const CNCBI_IPAddr& addr,
+                                        ESwitch log = eOff);
 
     /// Local host address in network byte order (cached for faster retrieval)
-    static unsigned int   GetLocalHostAddress(ESwitch reget = eDefault);
-    static TNCBI_IPv6Addr GetLocalHostAddress(TNCBI_IPv6Addr* addr, ESwitch reget = eDefault);
+    static CNCBI_IPAddr   GetLocalHostAddress(ESwitch reget = eDefault);
 
-    /// Loopback address gets returned in network byte order
-    static unsigned int   GetLoopbackAddress(void);
-    static TNCBI_IPv6Addr GetLoopbackAddress(TNCBI_IPv6Addr* addr);
-    int/*bool*/           IsLoopbackAddress(unsigned int);
-    int/*bool*/           IsLoopbackAddress(const TNCBI_IPv6Addr* addr);
+    /// Loopback address is in network byte order (when "unsigned int")
+    static CNCBI_IPAddr   GetLoopbackAddress (void);
+    static unsigned int   GetLoopbackAddress4(void);
+    static TNCBI_IPv6Addr GetLoopbackAddress6(void);
+    static int/*bool*/    IsLoopbackAddress(const CNCBI_IPAddr& addr);
 
-    /// See SOCK_HostPortToString[IPv6]()
-    static string         HostPortToString(unsigned int          host,
-                                           unsigned short        port);
-    static string         HostPortToString(const TNCBI_IPv6Addr* addr,
-                                           unsigned short        port);
+    /// See SOCK_HostPortToString[IPv6](), return empty when failed
+    static string         HostPortToString(const CNCBI_IPAddr& addr,
+                                           unsigned short      port);
 
-    /// Return number of characters parsed (0 if cannot detect "host:port"),
-    /// and NPOS on error.  See SOCK_StringToHostPort[IPv6]
-    static SIZE_TYPE      StringToHostPort(const string&   str,
+    /// Return number of characters parsed (0 if cannot detect "host:port"), and
+    /// string::npos on error ("host" too long).  See SOCK_StringToHostPort[6]
+    NCBI_XSOCK_DEPRECATED
+    static size_t         StringToHostPort(const string&   str,
                                            unsigned int*   host,
                                            unsigned short* port);
-    static SIZE_TYPE      StringToHostPort(const string&   str,
-                                           TNCBI_IPv6Addr* addr,
+    static size_t         StringToHostPort(const string&   str,
+                                           CNCBI_IPAddr*   addr,
                                            unsigned short* port);
 };
 
@@ -1201,7 +1238,7 @@ inline CDatagramSocket::CDatagramSocket(TSOCK_Flags flags)
 
 inline EIO_Status CDatagramSocket::Bind(unsigned short port, ESwitch ipv6)
 {
-    return m_Socket ? DSOCK_BindIPv6(m_Socket, port, ipv6) : eIO_Closed;
+    return m_Socket ? DSOCK_Bind6(m_Socket, port, ipv6) : eIO_Closed;
 }
 
 
@@ -1265,7 +1302,7 @@ inline CListeningSocket::CListeningSocket(unsigned short port,
                                           ESwitch        ipv6)
     : m_IsOwned(eTakeOwnership)
 {
-    LSOCK_CreateIPv6Ex(port, backlog, &m_Socket, flags, ipv6);
+    LSOCK_CreateEx6(port, backlog, &m_Socket, flags, ipv6);
 }
 
 
@@ -1281,7 +1318,13 @@ inline EIO_Status CListeningSocket::Listen(unsigned short port,
                                            ESwitch        ipv6)
 {
     return m_Socket
-        ? eIO_Unknown : LSOCK_CreateIPv6Ex(port, backlog, &m_Socket, flags, ipv6);
+        ? eIO_Unknown : LSOCK_CreateEx6(port, backlog, &m_Socket, flags, ipv6);
+}
+
+
+inline unsigned short CListeningSocket::GetPort(ENH_ByteOrder byte_order) const
+{
+    return m_Socket ? LSOCK_GetPort(m_Socket, byte_order) : 0;
 }
 
 
@@ -1292,12 +1335,6 @@ inline EIO_Status CListeningSocket::GetOSHandle(void*      handle_buf,
     return m_Socket
         ? LSOCK_GetOSHandleEx(m_Socket, handle_buf, handle_size, ownership)
         : eIO_Closed;
-}
-
-
-inline unsigned short CListeningSocket::GetPort(ENH_ByteOrder byte_order) const
-{
-    return m_Socket ? LSOCK_GetPort(m_Socket, byte_order) : 0;
 }
 
 
@@ -1425,27 +1462,15 @@ inline unsigned short CSocketAPI::NetToHostShort(unsigned short value)
 }
 
 
-inline unsigned int CSocketAPI::GetLocalHostAddress(ESwitch reget)
-{
-    return SOCK_GetLocalHostAddress(reget);
-}
-
-
-inline unsigned int CSocketAPI::GetLoopbackAddress(void)
+inline unsigned int CSocketAPI::GetLoopbackAddress4(void)
 {
     return SOCK_GetLoopbackAddress();
 }
 
 
-inline int/*bool*/ CSocketAPI::IsLoopbackAddress(unsigned int ip)
+inline int/*bool*/ CSocketAPI::IsLoopbackAddress(const CNCBI_IPAddr& addr)
 {
-    return SOCK_IsLoopbackAddress(ip);
-}
-
-
-inline int/*bool*/ CSocketAPI::IsLoopbackAddress(const TNCBI_IPv6Addr* addr)
-{
-    return SOCK_IsLoopbackAddressIPv6(addr);
+    return SOCK_IsLoopbackAddress6(&addr.GetAddr());
 }
 
 
