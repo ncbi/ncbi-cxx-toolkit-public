@@ -55,12 +55,12 @@
  *
  * Listening socket (handle LSOCK):
  *
- *  LSOCK_Create[IPv6][Ex]
+ *  LSOCK_Create[Ex][6]
  *  LSOCK_Accept[Ex]
  *  LSOCK_Close
  *  LSOCK_GetOSHandle[Ex]
  *  LSOCK_GetPort
- *  LSOCK_GetListeningAddress[IPv6]
+ *  LSOCK_GetListeningAddress[6]
  *  LSOCK_GetListeningAddressString[Ex]
  *
  * I/O Socket (handle SOCK):
@@ -85,7 +85,7 @@
  *  SOCK_Abort
  *  SOCK_GetLocalPort[Ex]
  *  SOCK_GetRemotePort
- *  SOCK_GetPeerAddress[IPv6]
+ *  SOCK_GetPeerAddress[6]
  *  SOCK_GetPeerAddressString[Ex]
  *  SOCK_SetReadOnWriteAPI
  *  SOCK_SetReadOnWrite
@@ -95,10 +95,10 @@
  * Datagram Socket (handle SOCK):
  *
  *  DSOCK_Create[Ex]
- *  DSOCK_Bind[IPv6]
+ *  DSOCK_Bind[6]
  *  DSOCK_Connect
  *  DSOCK_WaitMsg
- *  DSOCK_RecvMsg[IPv6]
+ *  DSOCK_RecvMsg[6]
  *  DSOCK_SendMsg
  *  DSOCK_WipeMsg
  *  DSOCK_SetBroadcast
@@ -148,14 +148,14 @@
  *  SOCK_NetToHostShort
  *  SOCK_NetToHostLong
  *  SOCK_gethostname[Ex]
- *  SOCK_gethostbyname[IPv6][Ex]
- *  SOCK_gethostbyaddr[IPv6][Ex]
- *  SOCK_GetLocalHostAddress[IPv6]
- *  SOCK_GetLoopbackAddress[IPv6]
- *  SOCK_IsLoopbackAddress[IPv6]
+ *  SOCK_gethostbyname[Ex][6]
+ *  SOCK_gethostbyaddr[Ex][6]
+ *  SOCK_GetLocalHostAddress[6]
+ *  SOCK_GetLoopbackAddress[6]
+ *  SOCK_IsLoopbackAddress[6]
  *
- *  SOCK_StringToHostPort[IPv6]
- *  SOCK_HostPortToString[IPv6]
+ *  SOCK_StringToHostPort[6]
+ *  SOCK_HostPortToString[6]
  *
  * Utility:
  *
@@ -171,6 +171,12 @@
 
 #include <connect/ncbi_core.h>
 #include <connect/ncbi_ipv6.h>
+
+#ifdef NCBI_DEPRECATED
+#  define NCBI_SOCK_DEPRECATED NCBI_DEPRECATED
+#else
+#  define NCBI_SOCK_DEPRECATED
+#endif /*NCBI_DEPRECATED*/
 
 
 /** @addtogroup Sockets
@@ -376,6 +382,7 @@ typedef struct {
 typedef EIO_Status (*FSOCK_ApproveHook)(const SSOCK_ApproveInfo* info,
                                         void*                    data);
 
+
 /** The hook is installed when non-NULL, and de-installed otherwise. */
 extern NCBI_XCONNECT_EXPORT
 void SOCK_SetApproveHookAPI(FSOCK_ApproveHook hook,  /**< the hook function  */
@@ -407,6 +414,7 @@ typedef enum {
     eSOCK_IOWaitSysAPISelect  /**< always use select()                       */
 } ESOCK_IOWaitSysAPI;
 
+
 /** This is a helper call that can improve I/O performance (ignored for MSVC).
  * @param api
  *  [in]  Default behavior is to wait for I/O such a way that accomodates the
@@ -423,6 +431,7 @@ typedef enum {
 extern NCBI_XCONNECT_EXPORT ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI
 (ESOCK_IOWaitSysAPI api
  );
+
 
 
 /******************************************************************************
@@ -550,9 +559,9 @@ typedef enum {
  * @param ipv6
  *  [in]  eOff to use IPv4, eOn to use IPv6, eDefault to allow system default
  * @sa
- *  LSOCK_CreateIPv6, LSOCK_Close, LSOCK_GetPort
+ *  LSOCK_Create6, LSOCK_Close, LSOCK_GetPort
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateIPv6Ex
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx6
 (unsigned short port,
  unsigned short backlog,
  LSOCK*         lsock,
@@ -562,7 +571,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateIPv6Ex
 
 
 /** [SERVER-side]  Create and initialize the server-side(listening) socket
- * Same as LSOCK_CreateIPv6() called with its "flags" argument provided as
+ * Same as LSOCK_CreateEx6() called with its "flags" argument provided as
  * fSOCK_LogDefault.
  * @param port
  *  [in]  the port to listen at
@@ -575,9 +584,9 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateIPv6Ex
  * @param ipv6
  *  [in]  eOff to use IPv4, eOn to use IPv6, eDefault to allow system default
  * @sa
- *  LSOCK_CreateIPv6Ex, LSOCK_Close
+ *  LSOCK_CreateEx6, LSOCK_Close
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateIPv6
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create6
 (unsigned short port,
  unsigned short backlog,
  LSOCK*         lsock,
@@ -585,7 +594,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateIPv6
  );
 
 
-/** Same as LSOCK_CreateIPv6Ex(,,,, eOff) */
+/** Same as LSOCK_CreateEx6(,,,, eOff) */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
 (unsigned short port,
  unsigned short backlog,
@@ -594,7 +603,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
  );
 
 
-/** Same as LSOCK_CreateIPv6(,,, eOff) or LSOCK_CreateEx(,,, eDefault) */
+/** Same as LSOCK_Create6(,,, eOff) or LSOCK_CreateEx(,,, eDefault) */
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 (unsigned short port,
  unsigned short backlog,
@@ -672,6 +681,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_GetOSHandleEx
  EOwnership owndership
  );
 
+
 /** Same as LSOCK_GetOSHandleEx(lsock, handle_buf, handle_size, eNoOwnership).
  * @sa
  *  LSOCK_GetOSHandleEx
@@ -710,8 +720,8 @@ extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress
  );
 
 
-/* @sa SOCK_GetPeerAddressIPv6 */
-extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddressIPv6
+/* @sa SOCK_GetPeerAddress6 */
+extern NCBI_XCONNECT_EXPORT void LSOCK_GetListeningAddress6
 (LSOCK           lsock,
  TNCBI_IPv6Addr* addr,
  unsigned short* port,
@@ -1504,7 +1514,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress
  * @sa
  *  SOCK_GetLocalPort
  */
-extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddressIPv6
+extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddress6
 (SOCK            sock,
  TNCBI_IPv6Addr* addr,
  unsigned short* port,
@@ -1527,7 +1537,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_GetPeerAddressIPv6
  * @return
  *  On success, return its "buf" argument; return 0 on error.
  * @sa
- *  SOCK_HostPortToString, ESOCK_AddressFormat
+ *  SOCK_HostPortToString6, ESOCK_AddressFormat
  */
 extern NCBI_XCONNECT_EXPORT char* SOCK_GetPeerAddressStringEx
 (SOCK                sock,
@@ -1664,7 +1674,6 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetCork
  *  buffers correspondingly.
  */
 
-
 /** Create a datagram socket.
  * @param sock
  *  [out] socket created
@@ -1702,14 +1711,14 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Create
  * @sa
  *  SOCK_SetReuseAddress, SOCK_GetLocalPort
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_BindIPv6
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind6
 (SOCK           sock,
  unsigned short port,
  ESwitch        ipv6
  );
 
 
-/** Same as DSOCK_BindIPv6(,, eOff) */
+/** Same as DSOCK_Bind6(,, eOff) */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_Bind
 (SOCK           sock,
  unsigned short port
@@ -1761,7 +1770,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_WaitMsg
  * @sa
  *  SOCK_Read, SOCK_SetTimeout
  */
-extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsgIPv6
+extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg6
 (SOCK            sock,
  void*           buf,
  size_t          bufsize,
@@ -1772,7 +1781,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsgIPv6
  );
 
 
-/** Same as DSOCK_RecvMsgIPv6() but only suitable for IPv4 sender address */
+/** Same as DSOCK_RecvMsg6() but only suitable for IPv4 sender address */
 extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 (SOCK            sock,
  void*           buf,
@@ -1970,6 +1979,7 @@ typedef enum {
     eSOCK_ErrIO             /**< I/O-related error                           */
 } ESOCK_ErrType;
 
+
 typedef struct {
     ESOCK_ErrType  type;    /**< See ESOCK_ErrType                           */
     SOCK           sock;    /**< Non-NULL when SOCK-related                  */
@@ -1992,7 +2002,6 @@ void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
 /******************************************************************************
  *  TYPE & STATISTICS INFORMATION FOR [D]SOCK SOCKETS
  */
-
 
 /** Check whether a socket is a datagram one.
  * @param sock
@@ -2097,16 +2106,17 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
  *  GENERIC POLLABLE INTERFACE (please see SOCK_Poll() above for explanations)
  */
 
-
 /*fwdecl; opaque*/
 struct SPOLLABLE_tag;
 typedef struct SPOLLABLE_tag* POLLABLE;
+
 
 typedef struct {
     POLLABLE  poll;
     EIO_Event event;
     EIO_Event revent;
 } SPOLLABLE_Poll;
+
 
 /** Poll for I/O readiness.
  * @param n
@@ -2154,7 +2164,6 @@ extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
 /******************************************************************************
  *  AUXILIARY NETWORK-SPECIFIC FUNCTIONS (added for the portability reasons)
  */
-
 
 /** Convert IP address to a string in dotted notation.
  * @param addr
@@ -2225,14 +2234,10 @@ extern NCBI_XCONNECT_EXPORT unsigned short SOCK_HostToNetShort
 
 
 /* Deprecated:  Use SOCK_{Host|Net}To{Net|Host}{Long|Short}() instead */
-#ifndef NCBI_DEPRECATED
-#  define NCBI_SOCK_DEPRECATED
-#else
-#  define NCBI_SOCK_DEPRECATED NCBI_DEPRECATED
-#endif
 extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
 unsigned int   SOCK_htonl(unsigned int);
 #define        SOCK_ntohl SOCK_htonl
+
 extern NCBI_XCONNECT_EXPORT NCBI_SOCK_DEPRECATED
 unsigned short SOCK_htons(unsigned short);
 #define        SOCK_ntohs SOCK_htons
@@ -2281,20 +2286,20 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  *  "addr" when successful and NULL when an error occurred
  * @note Both "::" and "0.0.0.0" result in an error (NULL returned)
  * @sa
- *  SOCK_gethostbynameIPv6, SOCK_gethostname, NcbiStringToIPv4
+ *  SOCK_gethostbyname6, SOCK_gethostname, NcbiStringToIPv4
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbynameIPv6Ex
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbynameEx6
 (TNCBI_IPv6Addr* addr,
  const char*     hostname,
  ESwitch         log
  );
 
 
-/** Same as SOCK_gethostbynameIPv6Ex(,,<current API data logging>)
+/** Same as SOCK_gethostbynameEx6(,,<current API data logging>)
  * @sa
- *  SOCK_gethostbynameIPv6Ex, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbynameEx6, SOCK_SetDataLoggingAPI
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbynameIPv6
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbyname6
 (TNCBI_IPv6Addr* addr,
  const char*     hostname
  );
@@ -2331,63 +2336,65 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  );
 
 
-/** Take an Internet host address (IPv6 or IPv4) or 0 for current host, and
- * fill out the provided buffer with the name, which the address corresponds to
- * (in case of multiple names the primary name is used).
+/** Take an Internet address (IPv6 or IPv4) [or 0 (or empty) for current host],
+ * and fill in the provided buffer with a name, which the address corresponds
+ * to (in case of multiple names the primary name is used).
+ * If no name is found in DNS, a text representation of "addr" gets returned.
  * @param addr
- *  [in]  host address (NULL means current host) in network byte order
- * @param name
+ *  [in]  host address (NULL/empty means current host) in network byte order
+ * @param buf
  *  [out] buffer to store the name to
- * @param namelen
+ * @param buflen
  *  [in]  size (bytes) of the buffer above
  * @param log
  *  [in]  whether to log failures
  * @return
- *  Value 0 means error;  success is denoted by the 'name' argument returned.
- *  Note that on error the name gets emptied (name[0] == '\0').
+ *  Value 0 means error;  success is denoted by the 'buf' argument returned.
+ *  Note that on error the name gets emptied (buf[0] == '\0').
  * @sa
- *  SOCK_gethostbyaddr, SOCK_gethostname
+ *  SOCK_gethostbyaddr6, SOCK_gethostname
  */
-extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrIPv6Ex
+extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx6
 (const TNCBI_IPv6Addr* addr,
- char*                 name,
- size_t                namelen,
+ char*                 buf,
+ size_t                buflen,
  ESwitch               log
  );
 
 
-/** Same as SOCK_gethostbyaddrIPv6Ex(,,<current API data logging>)
+/** Same as SOCK_gethostbyaddrEx6(,,<current API data logging>)
  * @sa
- *  SOCK_gethostbyaddrIPv6Ex, SOCK_gethostnameEx, SOCK_SetDataLoggingAPI
+ *  SOCK_gethostbyaddrEx6, SOCK_gethostnameEx6, SOCK_SetDataLoggingAPI
  */
-extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrIPv6
+extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr6
 (const TNCBI_IPv6Addr* addr,
- char*                 name,
- size_t                namelen
+ char*                 buf,
+ size_t                buflen
  );
 
 
-/** Take IPv4 host address (in network byte order) or 0 for current host, and
- * fill out the provided buffer with the name, which the address corresponds to
+/** Take an IPv4 address (in network byte order) [or 0 for current host], and
+ * fill in the provided buffer with a name, which the address corresponds to
  * (in case of multiple names the primary name is used).
+ * If no name is found in DNS, a text representation of "addr" gets returned.
  * @param addr
  *  [in]  IPv4 host address (0 means current host) in network byte order
- * @param name
- *  [out] buffer to store the name to
- * @param namelen
+ * @param buf
+ *  [out] buffer to store the name in
+ * @param buflen
  *  [in]  size (bytes) of the buffer above
  * @param log
  *  [in]  whether to log failures
  * @return
- *  Value 0 means error;  success is denoted by the 'name' argument returned.
- *  Note that on error the name gets emptied (name[0] == '\0').
+ *  Value 0 means error;  success is denoted by the 'buf' argument returned.
+ *  Note that on error the name gets emptied (buf[0] == '\0').
  * @sa
  *  SOCK_gethostbyaddr, SOCK_gethostname
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
 (unsigned int addr,
- char*        name,
- size_t       namelen,
+ char*        buf,
+ size_t       buflen,
  ESwitch      log
  );
 
@@ -2398,8 +2405,8 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
 (unsigned int addr,
- char*        name,
- size_t       namelen
+ char*        buf,
+ size_t       buflen
  );
 
 
@@ -2413,15 +2420,15 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
  * @return
  *  "addr" if successful; NULL otherwise.
  * @sa
- *  SOCK_gethostname
+ *  SOCK_gethostname6
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLocalHostAddressIPv6
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLocalHostAddress6
 (TNCBI_IPv6Addr* addr,
  ESwitch         reget
  );
 
 
-/** Same as SOCK_GetLocalHostAddressIPv6() only strictly for IPv4 */
+/** Same as SOCK_GetLocalHostAddress6() only strictly for IPv4 */
 extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
 (ESwitch         reget
  );
@@ -2431,7 +2438,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLocalHostAddress
  * @return
  *  "addr" filled with loopback address; NULL on error
  */
-extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddressIPv6
+extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_GetLoopbackAddress6
 (TNCBI_IPv6Addr* addr
  );
 
@@ -2447,7 +2454,7 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_GetLoopbackAddress(void);
  * Return non-zero (true) if the IPv4 address (in network byte order) given
  * in the agrument, is a loopback one;  zero otherwise.
  * @sa
- *  SOCK_IsLoopbackAddressIPv6
+ *  SOCK_IsLoopbackAddress6
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
 (unsigned int ip
@@ -2460,7 +2467,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress
 * @sa
 *  SOCK_IsLoopbackAddress
 */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddressIPv6
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress6
 (const TNCBI_IPv6Addr* addr
 );
 
@@ -2495,7 +2502,7 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
 /* If an IPv6 address is followed by a port, the address must be enclosed in
  * square brackets.
  */
-extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPortIPv6
+extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort6
 (const char*     str,
  TNCBI_IPv6Addr* addr,
  unsigned short* port
@@ -2527,8 +2534,15 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  size_t         bufsize
  );
 
-
-extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToStringIPv6
+/** IPv6-aware version of SOCK_HostPortToString, which can handle both
+ * IPv4 and IPv6.  IPv6 address, which is followed by a port, gets
+ * enclosed into square brackets.  No brackets are used for IPv4 or
+ * for IPv6 address, which is not followed by a port ("port"==0).
+ * An empty IPv6 "addr" with zero "port" gets output as "::" if API
+ * was not set to IPv4-only mode.  Otherwise, the result is ":0".
+ * NULL "addr" suppresses the host part output, unconditionally.
+ */
+extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString6
 (const TNCBI_IPv6Addr* addr,
  unsigned short        port,
  char*                 buf,
