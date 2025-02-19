@@ -115,8 +115,8 @@ TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
  *  notation.  Return a non-zero string pointer to the first non-converted
  *  character (which is neither a digit nor a dot);  return 0 if conversion
  *  failed and no IPv4 address had been found.
- * @note Unlike SOCK_gethostbyname[Ex], this call can handle correctly both
- *  "0.0.0.0" and "255.255.255.255".
+ * @note
+ *  Unlike SOCK_gethostbyname[Ex], this call can handle "0.0.0.0" correctly.
  * @sa
  *  NcbiIPToAddr, NcbiIPv4ToIPv6, NcbiStringToAddr,
  *  SOCK_StringToHostPort, SOCK_gethostbyname[Ex]
