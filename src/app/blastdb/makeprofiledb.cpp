@@ -271,7 +271,6 @@ private:
     vector<string> x_CreateDeltaList(void);
     void x_UpdateFreqRatios(CRPS_DbInfo & rpsDbInfo, const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size);
     void x_UpdateDelta(CRPS_DbInfo & rpsDbInfo, vector<string> & smpFilenames);
-    bool x_IsUpdateFreqRatios(const CPssm & p);
     void x_MakeVol(Int4 vol, vector<string> & smps);
 
     int x_Run(void);
@@ -305,7 +304,6 @@ private:
 	double m_ObsrvThreshold;
 	bool m_ExcludeInvalid;
 
-	int m_UpdateFreqRatios;
 	bool m_UseModelThreshold;
 
 	vector<string> m_VolNames;
@@ -321,7 +319,7 @@ CMakeProfileDBApp::CMakeProfileDBApp(void)
                   m_binary_scoremat(false), m_MaxSmpFilesPerVol(0), m_NumOfVols(0), m_DbVer(eBDB_Version5),
                   m_Taxids(new CTaxIdSet()), m_UserTaxIds(false), m_Done(false),
                   m_ObsrvThreshold(0), m_ExcludeInvalid(false),
-                  m_UpdateFreqRatios(eUndefined), m_UseModelThreshold(true)
+                  m_UseModelThreshold(true)
 {
 	CRef<CVersion> version(new CVersion());
 	version->SetVersionInfo(new CBlastVersion());
@@ -635,14 +633,8 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 			string err = filename + " has invalid alphabet size";
 			NCBI_THROW(CInputException, eInvalidInput,  err);
 		}
-
-		// First time around
-		if(eUndefined == m_UpdateFreqRatios)
-		{
-			m_UpdateFreqRatios = x_IsUpdateFreqRatios(pssm);
-		}
-
-		if(m_UpdateFreqRatios && (!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios()))
+                
+		if(!pssm.IsSetIntermediateData()|| !pssm.GetIntermediateData().IsSetFreqRatios())
 		{
 			string err = filename + " contains no frequency ratios.\n" +
 					     "Please use a recent version of psiblast to regenerate PSSM files\n" ;
@@ -684,15 +676,6 @@ CMakeProfileDBApp::x_CheckInputScoremat(const CPssmWithParameters & pssm_w_param
 	}
 
 	return sm;
-}
-
-bool CMakeProfileDBApp::x_IsUpdateFreqRatios(const CPssm & p)
-{
-	if(op_delta == m_op_mode) {
-		return eFalse;
-	}
-
-	return eTrue;
 }
 
 void CMakeProfileDBApp::x_InitOutputDb(CRPS_DbInfo & rpsDbInfo)
@@ -1034,9 +1017,6 @@ void CMakeProfileDBApp::x_RPSUpdateStatistics(CRPS_DbInfo & rpsDbInfo, CPssmWith
  }
 void CMakeProfileDBApp::x_UpdateFreqRatios(CRPS_DbInfo & rpsDbInfo, const CPssmWithParameters & pssm_p, Int4 seq_index, Int4 seq_size)
  {
-	if (!m_UpdateFreqRatios)
-		return;
-
 	 const CPssm & pssm = pssm_p.GetPssm();
 	 // Update .freq file
 	 Int4 i = 0;
@@ -1319,12 +1299,6 @@ void CMakeProfileDBApp::x_RPS_DbClose(CRPS_DbInfo & rpsDbInfo)
     	rpsDbInfo.blocks_file.flush();
     	rpsDbInfo.blocks_file.close();
     }
-    else if(!m_UpdateFreqRatios)
-    {
-    	string freq_str = rpsDbInfo.db_name + ".freq";
-	 	CFile(freq_str).Remove();
-    }
-
 }
 
 void CMakeProfileDBApp::Init(void)
