@@ -191,6 +191,30 @@ private:
     TNCBI_IPv6Addr  m_IPAddr;
 };
 
+NCBI_DEPRECATED
+inline bool operator==(const CNCBI_IPAddr& lhs, unsigned int rhs)
+{
+    return unsigned int(lhs) == rhs;
+}
+
+NCBI_DEPRECATED
+inline bool operator!=(const CNCBI_IPAddr& lhs, unsigned int rhs)
+{
+    return unsigned int(lhs) != rhs;
+}
+
+NCBI_DEPRECATED
+inline bool operator==(unsigned int lhs, const CNCBI_IPAddr& rhs)
+{
+    return lhs == unsigned int(rhs);
+}
+
+NCBI_DEPRECATED
+inline bool operator!=(unsigned int lhs, const CNCBI_IPAddr& rhs)
+{
+    return lhs == unsigned int(rhs);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
