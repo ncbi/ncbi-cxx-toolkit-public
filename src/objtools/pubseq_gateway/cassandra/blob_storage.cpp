@@ -187,7 +187,7 @@ string GetAddressString(string const& host, bool is_host)
 {
     if (is_host && !CSocketAPI::isip(host, false)) {
         auto addr = CSocketAPI::gethostbyname(host);
-        if (addr == 0) {
+        if (!addr) {
             return "";
         }
         return CSocketAPI::HostPortToString(addr, 0);
