@@ -1538,13 +1538,13 @@ extern CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         return new CConn_ServiceStream(url, fSERV_Any, net_info.get());
 
     if (net_info  &&  !NCBI_HasSpaces(url.c_str(), len)) {
-        unsigned int   host;
+        CNCBI_IPAddr   addr;
         unsigned short port;
         SIZE_TYPE      pos = NStr::Find(url, ":");
         if (0 < pos  &&  pos < len - 1
             &&  url[pos - 1] != '/'  &&  (pos == 1  ||  url[pos - 2] != '/')
-            &&  CSocketAPI::StringToHostPort(url, &host, &port) == len
-            &&  host  &&  port) {
+            &&  CSocketAPI::StringToHostPort(url, &addr, &port) == len
+            &&  addr  &&  port) {
             net_info->req_method = eReqMethod_Connect;
         }
     }

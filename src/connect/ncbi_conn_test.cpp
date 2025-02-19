@@ -371,7 +371,7 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     if (status == eIO_Success  &&  http.size() == n)
         status  = eIO_Timeout;
 
-    PostCheck(eNone, 0/*main*/, status, kEmptyStr);
+    PostCheck(eNone, 0/*main*/, status, status == eIO_Success ? "PASSED" : kEmptyStr);
 
     return status;
 }
@@ -386,7 +386,7 @@ EIO_Status CConnTest::DnsOkay(string* reason)
     PreCheck(eDns, step/*main*/,
              "Checking whether NCBI is known to DNS");
 
-    if (CSocketAPI::gethostbyname(NCBI_WWW) == 0) {
+    if (!CSocketAPI::gethostbyname(NCBI_WWW, eOn)) {
         status = eIO_Unknown;
         PreCheck(eDns, ++step/*sub*/,
                  "Unable to resolve " NCBI_WWW "\n"
@@ -398,7 +398,7 @@ EIO_Status CConnTest::DnsOkay(string* reason)
         } else {
             PreCheck(eDns, ++step/*sub*/,
                      "Resolving \"" + string(net_info->http_proxy_host) + '"');
-            if (CSocketAPI::gethostbyname(net_info->http_proxy_host) == 0) {
+            if (!CSocketAPI::gethostbyname(net_info->http_proxy_host, eOn)) {
                 result = "Unable to resolve proxy host \""
                     + string(net_info->http_proxy_host) + '"';
                 // status = eIO_Unknown;
@@ -775,7 +775,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info,
         else
             continue;
         CFWConnPoint cp;
-        if (!CSocketAPI::StringToHostPort(hostport, &cp.host, &cp.port))
+        if (!CSocketAPI::StringToHostPort(hostport, &cp.addr, &cp.port))
             continue;
         if (!fb  &&
             (( m_Firewall  &&  !(CONN_FWD_PORT_MIN <= cp.port
@@ -975,7 +975,7 @@ EIO_Status CConnTest::GetFWConnections(string* reason)
             if (cp->port < CONN_FWD_PORT_MIN  ||  CONN_FWD_PORT_MAX < cp->port)
                 firewall = false;
             if (cp->status != eIO_Success) {
-                temp = CSocketAPI::HostPortToString(cp->host, cp->port)
+                temp = CSocketAPI::HostPortToString(cp->addr, cp->port)
                     + " is not operational, ";
                 if (!m_Firewall  ||  m_FwdFB.empty()) {
                     status = cp->status;
@@ -1063,7 +1063,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
             if (cp->status != eIO_Success)
                 cp->status  = eIO_Unknown;
             else if (status == eIO_Success  ||  n) {
-                SOCK_ntoa(cp->host, net_info->host, sizeof(net_info->host));
+                strcpy(net_info->host, CSocketAPI::ntoa(cp->addr).c_str());
                 net_info->port = cp->port;
                 fw.reset(new CConn_SocketStream(*net_info.get(),
                                                 "\r\n"/*data*/, 2/*size*/,
@@ -1153,7 +1153,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 continue;
 
             PreCheck(eFirewallConnections, ++m, "Connectivity at "
-                     + CSocketAPI::HostPortToString(cp->host, cp->port));
+                     + CSocketAPI::HostPortToString(cp->addr, cp->port));
 
             size_t k;
             switch (cp->status) {

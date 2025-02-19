@@ -322,7 +322,7 @@ int main(int argc, const char* argv[])
                  << NcbiFlush;
         for (int n = 0;  n < 120;  ++n) {
             if (_kbhit()) {
-                _getch();
+                (void) _getch();
                 break;
             }
             SleepMilliSec(500);

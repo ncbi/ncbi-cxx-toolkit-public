@@ -134,8 +134,8 @@ protected:
     /// Auxiliary class to hold FWDaemon CP(connection point) information and
     /// its current status.
     struct CFWConnPoint {
-        unsigned int   host;  ///< Network byte order
-        unsigned short port;  ///< Host byte order
+        CNCBI_IPAddr   addr;
+        unsigned short port;
         EIO_Status   status;  ///< Check result
 
         bool operator < (const CFWConnPoint& p) const
