@@ -39,6 +39,7 @@
 #include <connect/ncbi_socket_unix.h>
 #include <cstring>
 #include <string>
+#include <vector>
 
 #ifdef NCBI_DEPRECATED
 #  define NCBI_XSOCK_DEPRECATED  NCBI_DEPRECATED
