@@ -353,23 +353,6 @@ BOOST_AUTO_TEST_CASE(TestCountZeroes_ct)
 
 }
 
-BOOST_AUTO_TEST_CASE(Test_ct_range)
-{
-    ct::range r1(1, 5);
-    auto it = r1.begin();
-    BOOST_CHECK_EQUAL(*it, 1);
-    ++it;
-    BOOST_CHECK_EQUAL(*it, 2);
-    auto expected = { 1, 2, 3, 4, 5};
-    auto it_exp = expected.begin();
-
-    for (auto rec: r1)
-    {
-        BOOST_CHECK_EQUAL(rec, *it_exp);
-        ++it_exp;
-    }
-}
-
 BOOST_AUTO_TEST_CASE(Test_char_set)
 {
     ct::const_bitset<256, uint8_t> cs { 'o', 't'};
@@ -403,10 +386,10 @@ BOOST_AUTO_TEST_CASE(TestConstBitset)
                 {4, 5}}        //second
     };
 
-    constexpr bitset t10{ "010101" };
+    constexpr bitset t10 = bitset::from_string( "010101" );
 
-    bitset t11 ( bitset::range{1, 5} );
-    constexpr bitset t12 { bitset::range{2, 20} };
+    bitset t11 ( bitset::set_range(1, 5) );
+    constexpr bitset t12 { bitset::set_range(2, 20) };
     constexpr bitset t13 = 5;
 
     BOOST_CHECK(t1.test(10));
@@ -460,7 +443,7 @@ BOOST_AUTO_TEST_CASE(TestConstBitsetEnumClass)
     BOOST_CHECK(b1.test(ENumbers::one));
     BOOST_CHECK(!b1.test(ENumbers::two));
     std::cout << "b1: " << b1 << std::endl;
-    constexpr ebitset b2 { ebitset::range{ENumbers::one, ENumbers::many} };
+    constexpr ebitset b2 { ebitset::set_range(ENumbers::one, ENumbers::many) };
     std::cout << "b2: " << b2 << std::endl;
 
     b1 += ENumbers::two;
@@ -787,7 +770,7 @@ void ReportSortedList(const char* prefix, const _Ty& input)
 BOOST_AUTO_TEST_CASE(TestConstSorter)
 {
     //constexpr int data[] = { 100, 90, 50, 90, 1 };
-    constexpr ct_const_array<int, 5> data{ { 100, 90, 50, 90, 1 } };
+    constexpr std::array<int, 5> data{ { 100, 90, 50, 90, 1 } };
 
     using deduce1 = ct::DeduceType<int>;
     using traits = ct::simple_sort_traits<deduce1>;
