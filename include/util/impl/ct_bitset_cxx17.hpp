@@ -34,74 +34,18 @@
  *
  */
 
+#include <cstdint>
+#include <cstddef>
 
 namespace compile_time_bits
 {
-    template<typename _Ty, typename u_type = uint64_t> //typename real_underlying_type<_Ty>::type >
-    class range: private std::pair<u_type, u_type>
-    {
-    public:
-        using _MyBase = std::pair<u_type, u_type>;
-        class const_iterator
-        {
-        public:
-            friend class range;
-            constexpr const_iterator() = default;
-
-            constexpr _Ty operator*()  noexcept { return static_cast<_Ty>(m_value); }
-            constexpr _Ty operator->() noexcept { return static_cast<_Ty>(m_value); }
-
-            constexpr bool operator==(const const_iterator& o) const
-            {
-                return m_value == o.m_value;
-            }
-            constexpr bool operator!=(const const_iterator& o) const
-            {
-                return m_value != o.m_value;
-            }
-            constexpr const_iterator& operator++()
-            {
-                ++m_value;
-                return *this;
-            }
-            constexpr const_iterator operator++(int)
-            {
-                const_iterator _this(*this);
-                operator++();
-                return _this;
-            }
-        private:
-            constexpr const_iterator(u_type v) : m_value{v} {}
-
-        private:
-            u_type m_value{};
-        };
-
-        constexpr range() = default;
-        constexpr range(_Ty _first, _Ty _last) : _MyBase{static_cast<u_type>(_first), static_cast<u_type>(_last)}
-        {
-
-        }
-
-        using iterator = const_iterator;
-
-        constexpr const_iterator cbegin() const noexcept { return const_iterator(_MyBase::first); }
-        constexpr const_iterator cend()   const noexcept { return const_iterator(_MyBase::second + 1); }
-        constexpr const_iterator begin()  const noexcept { return cbegin(); }
-        constexpr const_iterator end()    const noexcept { return cend(); }
-    };
-
-    // template deduction rules by constructor
-    template<typename _Ty>
-    range(_Ty, _Ty) -> range<_Ty>;
-
     // this helper packs set of bits into an array usefull for initialisation of bitset
     // using C++17
 
     template<class _Ty, size_t _Size, class u_type>
     struct bitset_traits
     {
-        using array_t = const_array<_Ty, _Size>;
+        using array_t = std::array<_Ty, _Size>;
 
         static constexpr size_t width = 8 * sizeof(_Ty);
         static constexpr size_t max_width = 8 * sizeof(_Ty) * _Size;
@@ -145,13 +89,13 @@ namespace compile_time_bits
         }
 
         template<size_t N>
-        static constexpr array_t set_bits(const const_array<char, N>& in)
+        static constexpr array_t set_bits(const std::array<char, N>& in)
         {
             return set_bits(in.begin(), in.end());
         }
 
         template<size_t N>
-        static constexpr array_t set_bits(const const_array<bool, N>& in)
+        static constexpr array_t set_bits(const std::array<bool, N>& in)
         {
             return set_bits(in.begin(), in.end());
         }
@@ -161,7 +105,10 @@ namespace compile_time_bits
         {
             array_t arr{};
 
-            for (auto it: range(from, to))
+            auto _from = to_real_underlying(from);
+            auto _to = to_real_underlying(to);
+
+            for (auto it = _from; it<= _to; ++it)
             {
                 ct_set(arr, it);
             }
@@ -231,8 +178,8 @@ namespace compile_time_bits
 
         static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
         static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
-        using _Array_t = const_array<_Ty, _Words>;
-        using traits = bitset_traits<_Ty, _Words, int>;
+        using _Array_t = std::array<_Ty, _Words>;
+        using traits = bitset_traits<_Ty, _Words, T>;
 
         constexpr const_bitset() = default;
 
@@ -245,27 +192,19 @@ namespace compile_time_bits
         {}
 
         template<size_t N>
-        explicit constexpr const_bitset(char const (&_init)[N])
-            :const_bitset(std::to_array(_init))
-        {}
+        constexpr static const_bitset from_string(char const (&_init)[N])
+        {
+            return const_bitset(traits::set_bits(std::to_array(_init)));
+        }
 
         template<size_t N>
-        explicit constexpr const_bitset(const const_array<char, N> &_init)
+        explicit constexpr const_bitset(const std::array<bool, N> &_init)
             :const_bitset(traits::set_bits(_init))
-        {}
-
-        struct range: std::pair<T, T>
-        {
-            using std::pair<T, T>::pair;
-        };
-
-        explicit constexpr const_bitset(const range& _range)
-            :const_bitset(traits::set_range(_range.first, _range.second))
         {}
 
         static constexpr const_bitset set_range(T _from, T _to)
         {
-            return const_bitset(range{ _from, _to });
+            return const_bitset(traits::set_range( _from, _to ));
         }
 
         static constexpr size_t capacity() { return _Bits; }

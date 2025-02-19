@@ -519,7 +519,7 @@ CTempString CSeqFeatData::SubtypeValueToName(CSeqFeatData::ESubtype eSubtype)
     return it->second;
 }
 
-bool CSeqFeatData::CanHaveGene(CSeqFeatData::ESubtype subtype) 
+bool CSeqFeatData::CanHaveGene(CSeqFeatData::ESubtype subtype)
 {
     switch(subtype) {
     case eSubtype_assembly_gap:
@@ -772,7 +772,7 @@ void CSeqFeatData::s_InitSubtypesTable(void)
         const SSubtypeInfo& info = s_subtype_info[i];
         _ASSERT(info.m_Type == GetTypeFromSubtype(info.m_Subtype));
     }
-#endif    
+#endif
 }
 
 const CSeqFeatData::TSubTypeQualifiersMap& CSeqFeatData::s_GetLegalQualMap() noexcept
@@ -3194,11 +3194,11 @@ namespace
 
     template<typename _Ty, size_t _Width>
     class  TPairsMatrix
-    {    
+    {
     public:
         static constexpr size_t width = _Width;
         using TBitset = ct::const_bitset<width, _Ty>;
-        using table_t = ct_const_array<TBitset, width>;
+        using table_t = std::array<TBitset, width>;
 
         using init_t = std::pair<_Ty, _Ty>;
         using non_empty_pair = std::pair<_Ty, TBitset>;
@@ -3206,14 +3206,14 @@ namespace
         template<size_t N>
         constexpr TPairsMatrix(const init_t(&init)[N])
         {
-            using row_t = ct_const_array<char, width>;
-            using init_matrix_t = ct_const_array<row_t, width>;
+            using row_t = std::array<bool, width>;
+            using init_matrix_t = std::array<row_t, width>;
 
             init_matrix_t matrix{};
             for (const auto& rec : init)
             {
-                matrix[rec.first][rec.second] = '1';
-                matrix[rec.second][rec.first] = '1';
+                matrix[rec.first][rec.second] = true;
+                matrix[rec.second][rec.first] = true;
             }
             m_table = assemble_table(matrix, std::make_index_sequence<width>{});
             size_t last = 0;
@@ -3231,7 +3231,7 @@ namespace
         }
 
         template<size_t N>
-        static bool Check(const ct_const_array<non_empty_pair, N>& in, _Ty v1, _Ty v2)
+        static bool Check(const std::array<non_empty_pair, N>& in, _Ty v1, _Ty v2)
         {
             auto it = std::lower_bound(in.begin(), in.end(), v1, [](auto left, auto right)
             {
@@ -3249,7 +3249,7 @@ namespace
         }
         // returns ordered collection of non_empty bitsets, suitable for binary search
         template<size_t N>
-        constexpr auto select_bitsets() const 
+        constexpr auto select_bitsets() const
         {
             return select_bitsets(std::make_index_sequence<N>{});
         }
@@ -3272,13 +3272,13 @@ namespace
         }
         template<size_t...Ints>
         constexpr auto select_bitsets(std::index_sequence<Ints...>) const
-            -> ct_const_array<non_empty_pair, sizeof...(Ints) >
+            -> std::array<non_empty_pair, sizeof...(Ints) >
         {
             return { { make_row<Ints>() ... } };
         }
 
         table_t m_table{};
-        ct_const_array<size_t, width> m_non_empty_indices{};
+        std::array<size_t, width> m_non_empty_indices{};
         size_t  m_non_empty_count{ 0 };
     };
     using CAssembleSubTypePairs = TPairsMatrix<CSeqFeatData::ESubtype, CSeqFeatData::eSubtype_max>;
@@ -3828,7 +3828,7 @@ const string & CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
             _ASSERT( regulatory_subtypes_set.size() == p_new_map->size() );
 
             // override for special cases
-            typedef SStaticPair<ESubtype, const char *> TSubtypeNameElem; 
+            typedef SStaticPair<ESubtype, const char *> TSubtypeNameElem;
             static const TSubtypeNameElem sc_subtype_name_map[] = {
                 { CSeqFeatData::eSubtype_polyA_signal, "polyA_signal_sequence"},
                 { CSeqFeatData::eSubtype_RBS, "ribosome_binding_site"},
@@ -3840,7 +3840,7 @@ const string & CSeqFeatData::GetRegulatoryClass(ESubtype subtype)
             ITERATE_0_IDX(special_case_idx, ArraySize(sc_subtype_name_map)) {
                 const TSubtypeNameElem & subtype_name_elem =
                     sc_subtype_name_map[special_case_idx];
-                
+
                 (*p_new_map)[subtype_name_elem.first] =
                     subtype_name_elem.second;
             }
@@ -4238,9 +4238,9 @@ void CFeatList::x_Init()
                            sc_ConfigItemInit[i].m_StorageKey);
         _VERIFY(m_FeatTypes.insert(item).second);
     }
-    
+
     for (const SImportEntry* iep = kImportTable; iep < kImportTableEnd; ++iep) {
-        CFeatListItem item(CSeqFeatData::GetTypeFromSubtype(iep->m_Subtype), 
+        CFeatListItem item(CSeqFeatData::GetTypeFromSubtype(iep->m_Subtype),
                            iep->m_Subtype, iep->m_Name, iep->m_Name);
         _VERIFY(m_FeatTypes.insert(item).second);
     }
@@ -4424,7 +4424,7 @@ CSeqFeatData::ESite CSiteList::GetSiteType(string str) const
     }
 }
 
-const CSeqFeatData::TSubtypeSet & 
+const CSeqFeatData::TSubtypeSet &
 CSeqFeatData::GetSetOfRegulatorySubtypes(void)
 {
     static ESubtype const regulatory_subtypes [] = {
@@ -4636,10 +4636,10 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
         }
     }
 
-   
 
-    if (qual_type == CSeqFeatData::eQual_map 
-        && feat_subtype != CSeqFeatData::eSubtype_repeat_region 
+
+    if (qual_type == CSeqFeatData::eQual_map
+        && feat_subtype != CSeqFeatData::eSubtype_repeat_region
         && feat_subtype != CSeqFeatData::eSubtype_gap) {
       return false;
     }
@@ -4647,7 +4647,7 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
         && feat_subtype != CSeqFeatData::eSubtype_operon) {
         return false;
     }
-    return true;    
+    return true;
 }
 
 

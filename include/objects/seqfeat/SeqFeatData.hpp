@@ -34,34 +34,34 @@
  *   'seqfeat.asn'.
  *
  * NOTE TO DEVELOPERS:
- *   The Seq-feat structure in 'seqfeat.asn' is subtyped into various 
- *   more specialized structures by the content of the Seqfeat::data 
- *   item. Depending on what is in the data item, other fields in 
- *   Seq-feat (the ones marked optional in the ASN) are allowed or 
- *   prohibited from being present. This file lists the possible 
- *   subtypes of Seq-feat, along with the qualifiers that can occur 
+ *   The Seq-feat structure in 'seqfeat.asn' is subtyped into various
+ *   more specialized structures by the content of the Seqfeat::data
+ *   item. Depending on what is in the data item, other fields in
+ *   Seq-feat (the ones marked optional in the ASN) are allowed or
+ *   prohibited from being present. This file lists the possible
+ *   subtypes of Seq-feat, along with the qualifiers that can occur
  *   within the Seq-feat structure.
  *
  * WHEN EDITING THE LIST OF QUALIFIERS (i.e. the EQualifier enum):
  * - add or remove the qualifier to the various lists that define which
- *   qualifiers are legal for a given subtype 
+ *   qualifiers are legal for a given subtype
  *   (in src/objects/seqfeat/SeqFeatData.cpp),
  * - add or remove the qualifier to the list of qualifiers known by the
- *   flatfile generator 
+ *   flatfile generator
  *   (in include/objtools/format/items/flat_qual_slots.hpp),
- * - add or remove processing code in the flat-file generator 
- *   (src/objtools/format/feature_item.cpp). This may well necessitate 
- *   the addition or removal of a class that knows how to format the 
- *   new qualifier for display; look at the code for a similar 
+ * - add or remove processing code in the flat-file generator
+ *   (src/objtools/format/feature_item.cpp). This may well necessitate
+ *   the addition or removal of a class that knows how to format the
+ *   new qualifier for display; look at the code for a similar
  *   established qualifier for an idea of what needs to be done
  *   (check WHEN EDITING THE LIST OF QUALIFIERS comment in that file
  *   for additional hints),
- * - add or remove the qualifier to the list of qualifiers known to 
- *   the feature table reader (in src/objtools/readers/readfeat.cpp); 
- *   it's an independent project with its own book-keeping concerning 
+ * - add or remove the qualifier to the list of qualifiers known to
+ *   the feature table reader (in src/objtools/readers/readfeat.cpp);
+ *   it's an independent project with its own book-keeping concerning
  *   qualifiers, but needs to be kept in sync,
- * - make sure corresponding code gets added to the validator 
- *   (in src/objtools/validator/...) which is another project with an 
+ * - make sure corresponding code gets added to the validator
+ *   (in src/objtools/validator/...) which is another project with an
  *   independent qualifier list that nonetheless needs to stay in sync,
  * - (additional subitems to be added as I become aware of them).
  *
@@ -238,7 +238,7 @@ public:
         eSubtype_any                = 255
     };
     ESubtype GetSubtype(void) const;
-    
+
     /// Call after changes that could affect the subtype
     void InvalidateSubtype(void) const;
 
@@ -290,10 +290,10 @@ public:
     DEFINE_NCBI_SEQFEATDATA_SETTERS(Biosrc)
     DEFINE_NCBI_SEQFEATDATA_SETTERS(Clone)
     DEFINE_NCBI_SEQFEATDATA_SETTERS(Variation)
-        
+
 #undef DEFINE_NCBI_SEQFEATDATA_SETTERS
 #undef DEFINE_NCBI_SEQFEATDATA_VAL_SETTERS
-        
+
     /// Override Assign() to incorporate cache invalidation.
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
@@ -319,7 +319,7 @@ public:
     static bool CanHaveGene(ESubtype subtype);
 
     /// List of available qualifiers for feature keys.
-    /// For more information see: 
+    /// For more information see:
     ///   The DDBJ/EMBL/GenBank Feature Table: Definition
     ///   (http://www.ncbi.nlm.nih.gov/projects/collab/FT/index.html)
     enum EQualifier
@@ -481,7 +481,7 @@ public:
     /// Get the list of all mandatory qualifiers for the feature.
     const TQualifiers& GetMandatoryQualifiers(void) const;
     static const TQualifiers& GetMandatoryQualifiers(ESubtype subtype);
-    
+
     /// Convert a qualifier from an enumerated value to a string representation
     /// or empty if not found.
     static CTempString GetQualifierAsString(EQualifier qual);
@@ -521,8 +521,6 @@ public:
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual);
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type);
 
-    static void s_InitXrefAllowedSubtypesTable(void);
-    static void s_InitXrefProhibitedSubtypesTable(void);
     static bool AllowXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
     static bool ProhibitXref(CSeqFeatData::ESubtype subtype1, CSeqFeatData::ESubtype subtype2);
 
@@ -605,14 +603,14 @@ public:
         , m_Subtype(subtype)
         , m_Description(desc)
         , m_StorageKey(key) {}
-        
+
     bool operator<(const CFeatListItem& rhs) const;
-    
+
     int         GetType() const;
     int         GetSubtype() const;
     string      GetDescription() const;
     string      GetStoragekey() const;
-    
+
 private:
     int         m_Type = 0;         ///< Feature type, or e_not_set for default values.
     int         m_Subtype = 0;      ///< Feature subtype or eSubtype_any for default values.
@@ -650,62 +648,62 @@ class NCBI_SEQFEAT_EXPORT CFeatList
 {
 private:
     typedef set<CFeatListItem>    TFeatTypeContainer;
-    
+
 public:
-    
+
     CFeatList();
     ~CFeatList();
-    
+
     bool    TypeValid(int type, int subtype) const;
-    
+
     /// can get all static information for one type/subtype.
     bool    GetItem(int type, int subtype, CFeatListItem& config_item) const;
     bool    GetItemBySubtype(int subtype,  CFeatListItem& config_item) const;
-    
+
     bool    GetItemByDescription(const string& desc, CFeatListItem& config_item) const;
     bool    GetItemByKey(const string& key, CFeatListItem& config_item) const;
-    
+
     /// Get the displayable description of this type of feature.
     string      GetDescription(int type, int subtype) const;
-    
+
     /// Get the feature's type and subtype from its description.
     /// return true on success, false if type and subtype are not valid.
     bool        GetTypeSubType(const string& desc, int& type, int& subtype) const;
-    
+
     /// Get the key used to store this type of feature.
     string      GetStoragekey(int type, int subtype) const;
     /// Get the key used to store this type of feature by only subtype.
     string      GetStoragekey(int subtype) const;
-    
+
     /// Get hierarchy of keys above this subtype, starting with "Master"
     /// example, eSubtype_gene, will return {"Master", "Gene"}
     /// but eSubtype_allele will return {"Master", "Import", "allele"}
     vector<string>  GetStoragekeys(int subtype) const;
-    
+
     /// return a list of all the feature descriptions for a menu or other control.
     /// if hierarchical is true use in an Fl_Menu_ descendant to make hierarchical menus.
     void    GetDescriptions(
                             vector<string> &descs,          ///> output, list of description strings.
                             bool hierarchical = false       ///> make descriptions hierachical, separated by '/'.
                             ) const;
-    
+
     // Iteratable list of key values (type/subtype).
     // can iterate through all values including defaults or with only
     // real Feature types/subtypes.
     typedef TFeatTypeContainer::const_iterator const_iterator;
-    
+
     size_t          size() const;
     const_iterator  begin() const;
     const_iterator  end() const;
 private:
         /// initialize our container of feature types and descriptions.
         void    x_Init(void);
-    
+
     TFeatTypeContainer    m_FeatTypes;    ///> all valid types and subtypes.
-    
+
     typedef map<int, CFeatListItem>   TSubtypeMap;
     TSubtypeMap    m_FeatTypeMap; ///> indexed by subtype only.
-    
+
 };
 
 
@@ -737,30 +735,30 @@ public:
 
 private:
     typedef CStaticPairArrayMap<const char*, CSeqFeatData::EBond, PNocase_CStr> TBondMap;
-    
+
 public:
-    
+
     CBondList();
     ~CBondList();
-    
+
     bool    IsBondName (string str) const;
     bool    IsBondName (string str, CSeqFeatData::EBond& bond_type) const;
     CSeqFeatData::EBond GetBondType (string str) const;
-            
+
     // Iteratable list of key values (type/subtype).
     // can iterate through all values including defaults or with only
     // real Feature types/subtypes.
     typedef TBondMap::const_iterator const_iterator;
-    
+
     size_t          size() const;
     const_iterator  begin() const;
     const_iterator  end() const;
 private:
         /// initialize our container of feature types and descriptions.
         void    x_Init(void);
-    
+
     DECLARE_CLASS_STATIC_ARRAY_MAP(TBondMap, sm_BondKeys);
-    
+
 };
 
 
@@ -792,30 +790,30 @@ public:
 
 private:
     typedef CStaticPairArrayMap<const char*, CSeqFeatData::ESite, PNocase_CStr> TSiteMap;
-    
+
 public:
-    
+
     CSiteList();
     ~CSiteList();
-    
+
     bool    IsSiteName (string str) const;
     bool    IsSiteName (string str, CSeqFeatData::ESite& site_type) const;
     CSeqFeatData::ESite GetSiteType (string str) const;
-            
+
     // Iteratable list of key values (type/subtype).
     // can iterate through all values including defaults or with only
     // real Feature types/subtypes.
     typedef TSiteMap::const_iterator const_iterator;
-    
+
     size_t          size() const;
     const_iterator  begin() const;
     const_iterator  end() const;
 private:
         /// initialize our container of feature types and descriptions.
         void    x_Init(void);
-    
+
     DECLARE_CLASS_STATIC_ARRAY_MAP(TSiteMap, sm_SiteKeys);
-    
+
 };
 
 
