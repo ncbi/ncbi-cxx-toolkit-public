@@ -93,7 +93,7 @@ char*      strdup(const char* str);
  *  deallocated by free() when no longer needed.  Return NULL if the memory
  *  allocation failed.
  *  @note "str" is ignored (and, thus, may be NULL) when "n" is passed as 0,
- *  which results in creating an empty string ("") upon return.
+ *  which results in creating an empty dynamically allocated string ("").
  */
 NCBI_XCONNECT_EXPORT
 char*      strndup(const char* str, size_t n);
@@ -140,14 +140,14 @@ int        strncasecmp(const char* s1, const char* s2, size_t n);
 #define  strupr         NCBI_strupr
 #define  strlwr         NCBI_strlwr
 
-/** Convert a string to all uppercase, then return pointer to the altered
- *  string.  Because the conversion is made in place, the returned pointer is
+/** Convert a string to all uppercase, then return a pointer to the altered
+ *  string.  Because the conversion is done in place, the returned pointer is
  *  the same as the passed one.
  */
 char*    strupr(char* s);
 
-/** Convert a string to all lowercase, then return pointer to the altered
- *  string.  Because the conversion is made in place, the returned pointer is
+/** Convert a string to all lowercase, then return a pointer to the altered
+ *  string.  Because the conversion is done in place, the returned pointer is
  *  the same as the passed one.
  */
 char*    strlwr(char* s);
