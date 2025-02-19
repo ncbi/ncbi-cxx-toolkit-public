@@ -212,7 +212,7 @@ inline bool operator==(unsigned int lhs, const CNCBI_IPAddr& rhs)
 NCBI_DEPRECATED
 inline bool operator!=(unsigned int lhs, const CNCBI_IPAddr& rhs)
 {
-    return lhs == unsigned int(rhs);
+    return lhs != unsigned int(rhs);
 }
 
 
