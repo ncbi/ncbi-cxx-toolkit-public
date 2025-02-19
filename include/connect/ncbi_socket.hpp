@@ -947,7 +947,15 @@ public:
     static string ntoa(const CNCBI_IPAddr& addr);
 
     /// For IPv4 only
-    static bool   isip(const string& host, bool fullquad = false);
+    NCBI_DEPRECATED
+    static bool   isip(const string& host,
+                       bool fullquad = false);
+    enum EIP_StringKind {
+        eIP_Historic = 0,       ///< Accept old-fashioned notations
+        eIP_FullQuad            ///< Accept full-quad notations only
+    };
+    static bool   isip(const string& host,
+                       EIP_StringKind kind = eIP_Historic);
 
     static unsigned int   HostToNetLong (unsigned int   value);
     static unsigned int   NetToHostLong (unsigned int   value);
@@ -1436,6 +1444,12 @@ inline ESwitch CSocketAPI::SetDataLogging(ESwitch log)
 inline bool CSocketAPI::isip(const string& host, bool fullquad)
 {
     return SOCK_isipEx(host.c_str(), fullquad ? 1 : 0) ? true : false;
+}
+
+
+inline bool CSocketAPI::isip(const string& host, CSocketAPI::EIP_StringKind kind)
+{
+    return SOCK_isipEx(host.c_str(), kind == eIP_FullQuad) ? true : false;
 }
 
 
