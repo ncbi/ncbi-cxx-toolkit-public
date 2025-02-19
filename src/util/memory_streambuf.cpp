@@ -172,7 +172,7 @@ streamsize CMemory_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize n)
         size = bmax;
     setg(pos, pos, pos + size);
 #else
-    gbump(n);
+    gbump(int(n));
 #endif // NCBI_OS_MSWIN
 
     return n;
