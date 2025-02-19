@@ -832,7 +832,7 @@ static int/*bool*/ TEST_gethostbyaddr(unsigned int host)
 }
 
 
-static TNCBI_IPv6Addr* TEST_gethostbynameIPv6(TNCBI_IPv6Addr* addr, const char* host)
+static TNCBI_IPv6Addr* TEST_gethostbyname6(TNCBI_IPv6Addr* addr, const char* host)
 {
     char        buf[CONN_HOST_LEN + 1];
     char        addrstr[80];
@@ -841,22 +841,22 @@ static TNCBI_IPv6Addr* TEST_gethostbynameIPv6(TNCBI_IPv6Addr* addr, const char* 
     assert(addr);
     CORE_LOG(eLOG_Note, "------------");
 
-    fail = !SOCK_gethostbynameIPv6(addr, host);
+    fail = !SOCK_gethostbyname6(addr, host);
     NcbiAddrToString(addrstr, sizeof(addrstr), addr);
     CORE_LOGF(eLOG_Note,
-        ("SOCK_gethostbynameIPv6(\"%s\"):  [%s]",
+        ("SOCK_gethostbyname6(\"%s\"):  [%s]",
             host, addrstr));
     if ( !fail ) {
-        const char* name = SOCK_gethostbyaddrIPv6(addr, buf, sizeof(buf));
+        const char* name = SOCK_gethostbyaddr6(addr, buf, sizeof(buf));
         if ( name ) {
             assert(name == buf);
             assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
             CORE_LOGF(eLOG_Note,
-                ("SOCK_gethostbyaddrIPv6(%s):  \"%s\"",
+                ("SOCK_gethostbyaddr6(%s):  \"%s\"",
                     addrstr, name));
         } else {
             CORE_LOGF(eLOG_Note,
-                ("SOCK_gethostbyaddrIPv6(%s):  <not found>",
+                ("SOCK_gethostbyaddr6(%s):  <not found>",
                     addrstr));
             /* NB: Unknown IPs always get converted to bare notations */
             assert(0);
@@ -868,7 +868,7 @@ static TNCBI_IPv6Addr* TEST_gethostbynameIPv6(TNCBI_IPv6Addr* addr, const char* 
 }
 
 
-static int/*bool*/ TEST_gethostbyaddrIPv6(const TNCBI_IPv6Addr* addr)
+static int/*bool*/ TEST_gethostbyaddr6(const TNCBI_IPv6Addr* addr)
 {
     const char*    host;
     TNCBI_IPv6Addr temp;
@@ -878,27 +878,27 @@ static int/*bool*/ TEST_gethostbyaddrIPv6(const TNCBI_IPv6Addr* addr)
 
     CORE_LOG(eLOG_Note, "------------");
 
-    host = SOCK_gethostbyaddrIPv6(addr, buf, sizeof(buf));
+    host = SOCK_gethostbyaddr6(addr, buf, sizeof(buf));
     NcbiAddrToString(addrstr, sizeof(addrstr), addr);
     if ( host ) {
         assert(host == buf);
         assert(0 < strlen(buf)  &&  strlen(buf) < sizeof(buf));
         CORE_LOGF(eLOG_Note,
-            ("SOCK_gethostbyaddrIPv6(%s):  \"%s\"",
+            ("SOCK_gethostbyaddr6(%s):  \"%s\"",
                 addrstr, host));
     } else {
         CORE_LOGF(eLOG_Note,
-            ("SOCK_gethostbyaddrIPv6(%s):  <not found>",
+            ("SOCK_gethostbyaddr6(%s):  <not found>",
                 addrstr));
         /* NB: Unknown IPs always get converted to bare notations */
         assert(0);
         return 0/*failure*/;
     }
 
-    fail = !SOCK_gethostbynameIPv6(&temp, host);
+    fail = !SOCK_gethostbyname6(&temp, host);
     NcbiAddrToString(addrstr, sizeof(addrstr), &temp);
     CORE_LOGF(eLOG_Note,
-        ("SOCK_gethostbynameIPv6(\"%s\"):  [%s]",
+        ("SOCK_gethostbyname6(\"%s\"):  [%s]",
             host, addrstr));
 
     return !fail;
@@ -935,16 +935,16 @@ static void TEST_gethostby(void)
     TNCBI_IPv6Addr addr, www;
 
     /*SOCK_SetIPv6API(eDefault);*/
-    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+    (void) TEST_gethostbyname6(&addr, "www.ncbi.nlm.nih.gov");
  
     SOCK_SetIPv6API(eOn);
-    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+    (void) TEST_gethostbyname6(&addr, "www.ncbi.nlm.nih.gov");
 
     SOCK_SetIPv6API(eOff);
-    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+    (void) TEST_gethostbyname6(&addr, "www.ncbi.nlm.nih.gov");
 
     SOCK_SetIPv6API(eDefault);
-    (void) TEST_gethostbynameIPv6(&addr, "www.ncbi.nlm.nih.gov");
+    (void) TEST_gethostbyname6(&addr, "www.ncbi.nlm.nih.gov");
 
     assert((p = NcbiIPToAddr(&addr, "2607:f220:41e:4290::110", 0))  &&  !*p);
     assert(!NcbiIsEmptyIPv6(&addr)  &&  !NcbiIsIPv4(&addr));
@@ -952,32 +952,32 @@ static void TEST_gethostby(void)
     assert(!NcbiIsEmptyIPv6(&www)  &&  NcbiIsIPv4(&www));
 
     /*SOCK_SetIPv6API(eDefault);*/
-    (void) TEST_gethostbyaddrIPv6(&addr);
-    (void) TEST_gethostbyaddrIPv6(&www);
+    (void) TEST_gethostbyaddr6(&addr);
+    (void) TEST_gethostbyaddr6(&www);
 
     SOCK_SetIPv6API(eOn);
-    (void) TEST_gethostbyaddrIPv6(&addr);
-    (void) TEST_gethostbyaddrIPv6(&www);
+    (void) TEST_gethostbyaddr6(&addr);
+    (void) TEST_gethostbyaddr6(&www);
 
     SOCK_SetIPv6API(eOff);
-    (void) TEST_gethostbyaddrIPv6(&addr);
-    (void) TEST_gethostbyaddrIPv6(&www);
+    (void) TEST_gethostbyaddr6(&addr);
+    (void) TEST_gethostbyaddr6(&www);
 
     SOCK_SetIPv6API(eDefault);
-    (void) TEST_gethostbyaddrIPv6(&addr);
-    (void) TEST_gethostbyaddrIPv6(&www);
+    (void) TEST_gethostbyaddr6(&addr);
+    (void) TEST_gethostbyaddr6(&www);
 
     /*SOCK_SetIPv6API(eDefault);*/
-    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+    (void) TEST_gethostbyname6(&addr, "localhost");
 
     SOCK_SetIPv6API(eOn);
-    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+    (void) TEST_gethostbyname6(&addr, "localhost");
 
     SOCK_SetIPv6API(eOff);
-    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+    (void) TEST_gethostbyname6(&addr, "localhost");
 
     SOCK_SetIPv6API(eDefault);
-    (void) TEST_gethostbynameIPv6(&addr, "localhost");
+    (void) TEST_gethostbyname6(&addr, "localhost");
 
     CORE_LOG(eLOG_Note, "===============================");
 }
