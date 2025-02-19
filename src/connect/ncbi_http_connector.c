@@ -731,17 +731,24 @@ static char* x_HostPort(size_t reserve, const char* host, unsigned short xport)
 {
     size_t hostlen = strlen(host), portlen;
     char*  hostport, port[16];
+    size_t/*bool*/ brackets;
  
     if (!xport) {
         portlen = 1;
         port[0] = '\0';
     } else
         portlen = (size_t) sprintf(port, ":%hu", xport) + 1;
-    hostport = (char*) malloc(reserve + hostlen + portlen);
+    brackets = memchr(host, ':', hostlen) ? 2 : 0;
+    hostport = (char*) malloc(reserve + hostlen + brackets + portlen);
     if (hostport) {
-        memcpy(hostport + reserve, host, hostlen);
-        hostlen        += reserve;
-        memcpy(hostport + hostlen, port, portlen);
+        char* ptr = hostport + reserve;
+        if (brackets)
+            *ptr++ = '[';
+        memcpy(ptr, host, hostlen);
+        ptr += hostlen;
+        if (brackets)
+            *ptr++ = ']';
+        memcpy(ptr, port, portlen);
     }
     return hostport;
 }
