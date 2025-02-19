@@ -2875,6 +2875,7 @@ static EIO_Status s_Poll_(size_t                n,
         }
         assert(scanned <= ready);
         assert(x_ready >= ready);
+        (void) x_ready;
     }
 
     if (x_polls != xx_polls)
@@ -3346,6 +3347,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 lev = IPPROTO_IP;
                 opt = IP_MTU;
 #  else
+                lev = opt = 0;
                 x_m = 0;
 #  endif /*IPPROTO_IP && IP_MTU*/
             } else {
@@ -3353,6 +3355,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 lev = IPPROTO_IPV6; /* Argh! enum on Win */
                 opt = IPV6_MTU;
 #  else
+                lev = opt = 0;
                 x_m = 0;
 #  endif /*(NCBI_OS_MSWIN || IPPROTO_IPV6) && IPV6_MTU*/
             }
@@ -6230,6 +6233,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
             port = ntohs(u.in6.sin6_port);
             break;
         default:
+            port = 0;
             assert(0);
             break;
         }
