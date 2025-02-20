@@ -1075,6 +1075,57 @@ bool CValidError_imp::x_DowngradeForMissingAffil(const CCit_sub& cs)
     return false;
 }
 
+
+void CValidError_imp::ValidateBadNameStd (
+    const CName_std& nstd,
+    const CSerialObject& obj,
+    const CSeq_entry* ctx
+)
+
+{
+    if (nstd.IsSetFirst()) {
+        string first = nstd.GetFirst();
+        if (NStr::CompareNocase(first, "First Name") == 0 ||
+            NStr::CompareNocase(first, "Last Name") == 0 ||
+            NStr::CompareNocase(first, "FirstName") == 0 ||
+            NStr::CompareNocase(first, "LastName") == 0 ||
+            NStr::CompareNocase(first, "-") == 0) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_BadFirstName,
+                "Bad author first name: '" + first + "'", obj, ctx);
+        }
+    }
+    if (nstd.IsSetLast()) {
+        string last = nstd.GetLast();
+        if (NStr::CompareNocase(last, "First Name") == 0 ||
+            NStr::CompareNocase(last, "Last Name") == 0 ||
+            NStr::CompareNocase(last, "FirstName") == 0 ||
+            NStr::CompareNocase(last, "LastName") == 0 ||
+            NStr::CompareNocase(last, "-") == 0) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_BadLastName,
+                "Bad author last name: '" + last + "'", obj, ctx);
+        }
+    }
+}
+
+
+void CValidError_imp::ValidateBadAffil (
+    const CAffil::TStd& astd,
+    const CSerialObject& obj,
+    const CSeq_entry* ctx
+)
+
+{
+    if (astd.IsSetSub()) {
+        string sub = astd.GetSub();
+        if (NStr::FindNoCase(sub, "Please Select") != string::npos ||
+            NStr::FindNoCase(sub, "PleaseSelect") != string::npos) {
+            PostObjErr(eDiag_Error, eErr_GENERIC_BadAffilState,
+                "Bad affiliation: '" + sub + "'", obj, ctx);
+        }
+    }
+}
+
+
 void CValidError_imp::ValidateCitSub(
     const CCit_sub&      cs,
     const CSerialObject& obj,
@@ -1086,6 +1137,18 @@ void CValidError_imp::ValidateCitSub(
     if ( cs.CanGetAuthors() ) {
         const CAuth_list& authors = cs.GetAuthors();
         has_name = HasName(authors);
+
+        if ( IsGenomeSubmission() && authors.CanGetNames() ) {
+            const CAuth_list::TNames& names = authors.GetNames();
+            if ( names.Which() == CAuth_list::TNames::e_Std ) {
+                ITERATE ( list< CRef< CAuthor > >, auth, names.GetStd() ) {
+                    const CPerson_id& pid = (*auth)->GetName();
+                    if ( pid.IsName() ) {
+                        ValidateBadNameStd( pid.GetName(), obj, ctx);
+                    }
+                }
+            }
+        }
 
         if ( authors.CanGetAffil() ) {
             const CAffil& affil = authors.GetAffil();
@@ -1108,6 +1171,9 @@ void CValidError_imp::ValidateCitSub(
                     HAS_VALUE(Phone)    ||  HAS_VALUE(Postal_code)) {
                     has_affil = true;
                     ValidateSubAffil(std, obj, ctx);
+                    if ( IsGenomeSubmission() ) {
+                        ValidateBadAffil(std, obj, ctx);
+                    }
                 }
             }
 #undef HAS_VALUE

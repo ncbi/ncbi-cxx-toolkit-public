@@ -255,6 +255,8 @@ public:
     bool biosource = false, const CSeq_entry *ctx = nullptr);
     void ValidateDbxref(TDbtags& xref_list, const CSerialObject& obj,
     bool biosource = false, const CSeq_entry *ctx = nullptr);
+    void ValidateBadNameStd ( const CName_std& nstd, const CSerialObject& obj, const CSeq_entry* ctx = nullptr );
+    void ValidateBadAffil ( const CAffil::TStd& astd, const CSerialObject& obj, const CSeq_entry* ctx = nullptr );
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = nullptr);
     void ValidateTaxonomy(const CSeq_entry& se);
     void ValidateOrgRefs(CTaxValidationAndCleanup& tval);

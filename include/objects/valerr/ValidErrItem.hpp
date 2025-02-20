@@ -410,6 +410,9 @@ enum EErrType {
     eErr_GENERIC_MissingPubRequirement,
     eErr_GENERIC_BadSubmissionAuthorName,
     eErr_GENERIC_BarcodeMissingGeoLocName,
+    eErr_GENERIC_BadFirstName,
+    eErr_GENERIC_BadLastName,
+    eErr_GENERIC_BadAffilState,
     ERR_CODE_END(GENERIC),
 
     ERR_CODE_BEGIN(SEQ_PKG) = 3000,
