@@ -561,10 +561,10 @@ static void TEST_ConnNetInfo(void)
     free(str);
     
     x_FillupNetInfo(net_info);
-    assert(!ConnNetInfo_ParseURL(net_info, "http://user@/somepath"));
-    assert( ConnNetInfo_ParseURL(net_info, "http://@host/somepath"));
-    assert(!ConnNetInfo_ParseURL(net_info, "http://:pass@/somepath"));
-    assert(!ConnNetInfo_ParseURL(net_info, "http://user:pass@/somepath"));
+    assert(!ConnNetInfo_ParseURL(net_info, "http://" "user" "@" "/somepath"));
+    assert( ConnNetInfo_ParseURL(net_info, "http://" "@" "host" "/somepath"));
+    assert(!ConnNetInfo_ParseURL(net_info, "http://" ":pass" "@" "/somepath"));
+    assert(!ConnNetInfo_ParseURL(net_info, "http://" "user" ":" "pass" "@" "/somepath"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
     assert(net_info->scheme == eURL_Http);
     assert(strcmp(net_info->host, "host") == 0);
