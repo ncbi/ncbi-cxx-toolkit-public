@@ -1036,7 +1036,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     }
 
     for (const string& key : keywords) {
-        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+        fta_keywords_check(key, &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
@@ -2371,7 +2371,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         XMLGetKeywords(entry, ibp->xip, embl->SetKeywords());
 
     for (const string& key : embl->GetKeywords()) {
-        fta_keywords_check(key.c_str(), &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
+        fta_keywords_check(key, &est_kwd, &sts_kwd, &gss_kwd, &htc_kwd, &fli_kwd, &wgs_kwd, &tpa_kwd, &env_kwd, &mga_kwd, &tsa_kwd, &tls_kwd);
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
