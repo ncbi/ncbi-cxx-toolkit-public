@@ -48,8 +48,26 @@ USING_SCOPE(objects);
 CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
                                  const std::string& strContext,
                                  bool bInvert,
+                                 ILineErrorListener* pErrors) 
+    : CIdMapperConfig(istr, strContext, bInvert, true, pErrors) // localOnly == true
+{
+}
+
+
+CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
+                                 bool bInvert,
                                  ILineErrorListener* pErrors)
-    : CIdMapper(strContext, bInvert, pErrors)
+    : CIdMapperConfig(strContext, bInvert, true, pErrors) // localOnly == true
+{
+}
+
+
+CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
+                                 const std::string& strContext,
+                                 bool bInvert,
+                                 bool localOnly,
+                                 ILineErrorListener* pErrors)
+    : CIdMapperConfig(strContext, bInvert, localOnly, pErrors)
 {
     Initialize(istr);
 }
@@ -57,11 +75,11 @@ CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
 
 CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
                                  bool bInvert,
+                                 bool localOnly,
                                  ILineErrorListener* pErrors)
-    : CIdMapper(strContext, bInvert, pErrors)
+    : CIdMapper(strContext, bInvert, pErrors), m_LocalOnly(localOnly)
 {
 }
-
 
 void CIdMapperConfig::Initialize(CNcbiIstream& istr)
 {
@@ -235,8 +253,13 @@ CIdMapperConfig::SourceHandle(
     const string& strId )
 //  ============================================================================
 {
-    CSeq_id source( CSeq_id::e_Local, strId );
-    return CSeq_id_Handle::GetHandle( source );
+    CRef<CSeq_id> pSource;
+    if (m_LocalOnly) {
+        pSource = Ref(new CSeq_id(CSeq_id::e_Local, strId));
+    } else {
+        pSource = Ref(new CSeq_id(strId, CSeq_id::fParse_AnyRaw | CSeq_id::fParse_AnyLocal));
+    }
+    return CSeq_id_Handle::GetHandle(*pSource);
 };
 
 //  ============================================================================
