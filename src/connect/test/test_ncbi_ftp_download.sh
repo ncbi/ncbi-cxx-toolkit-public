@@ -23,9 +23,9 @@ rm -f $log
 trap 'echo "`date`."' 0 1 2 3 15
 
 if [ "`echo $FEATURES | grep -c -E '(^| )NCBICRYPT( |$)'`" != "1" ]; then
-  n=5
+  n=4
 else
-  n=6
+  n=5
 fi
 
 case "`expr '(' $$ / 10 ')' '%' $n`" in
@@ -40,18 +40,12 @@ case "`expr '(' $$ / 10 ')' '%' $n`" in
     url='ftp://ftp.freebsd.org/'
     ;;
   3)
-    url='ftp://ftp.hp.com/pub/ls-gFLR.txt.gz'
-    # use features and only passive FTP mode (active is disabled there)
-    :    ${CONN_USEFEAT:=1}  ${CONN_REQ_METHOD:=POST}
-    export CONN_USEFEAT        CONN_REQ_METHOD
-    ;;
-  4)
     url='ftp://ftp.gnu.org/find.txt.gz'
     # use features
     :    ${CONN_USEFEAT:=1}
     export CONN_USEFEAT
     ;;
-  5)
+  4)
     url='ftp://ftp-ext.ncbi.nlm.nih.gov/'
     ;;
 esac
@@ -67,13 +61,6 @@ $CHECK_EXEC test_ncbi_ftp_download $url >$log 2>&1
 exit_code=$?
 
 if [ "$exit_code" != "0" ]; then
-  if echo "$url" | grep -q 'ftp.hp.com'  &&  egrep -qs '500 OOPS:|:21: Aborting \(out: 0 bytes, in: 0 bytes\)' "$log" ; then
-    # ftp.hp.com is known to often malfunction with the following error:
-    # "500 OOPS: failed to open vsftpd log file:/opt/webhost/logs/vsftpd/vsftpd.log"
-    # and also to drop the control connection right away
-    echo "NCBI_UNITTEST_SKIPPED"
-    exit
-  fi
   outlog "$log"
 fi
 
