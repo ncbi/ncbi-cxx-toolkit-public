@@ -1651,10 +1651,13 @@ CMultiReaderApp::xSetMapper(
     if (strBuild.empty() && strMapFile.empty()) {
         return;
     }
+
+
     if (!strMapFile.empty()) {
+        const bool localOnly=false;
         CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile);
         m_pMapper.reset(
-            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors.get()));
+            new CIdMapperConfig(*pMapFile, strBuild, false, localOnly, m_pErrors.get()));
     }
     else {
         m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors.get()));

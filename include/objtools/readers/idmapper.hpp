@@ -248,6 +248,19 @@ public:
                     bool bInvert = false,
                     ILineErrorListener* pErrors = 0);
 
+
+    CIdMapperConfig(CNcbiIstream& istr,
+                    const std::string& strContext,
+                    bool bInvert,
+                    bool localOnly,
+                    ILineErrorListener* pErrors);
+
+    CIdMapperConfig(const std::string& strContext,
+                    bool bInvert,
+                    bool localOnly,
+                    ILineErrorListener* pErrors);
+
+
     void Initialize(CNcbiIstream& istr);
     static void DescribeContexts(CNcbiIstream& istr,
                                  list<SMappingContext>& contexts);
@@ -262,6 +275,8 @@ protected:
     CSeq_id_Handle SourceHandle(const std::string& );
 
     CSeq_id_Handle TargetHandle(const std::string& );
+
+    bool m_LocalOnly = true;
 };
 
 
