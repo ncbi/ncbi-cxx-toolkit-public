@@ -1145,7 +1145,16 @@ static const TErrTypStrs sc_ErrStrs[] = {
 "A submission author name field is invalid." } },
     { eErr_GENERIC_BarcodeMissingGeoLocName,
     { "BarcodeMissingGeoLocName",
-    "Barcode sequence is missing geo_loc_name." } },
+"Barcode sequence is missing geo_loc_name." } },
+    { eErr_GENERIC_BadFirstName,
+    { "BadFirstName",
+"Bad author first name" } },
+    { eErr_GENERIC_BadLastName,
+    { "BadLastName",
+"Bad author last name" } },
+    { eErr_GENERIC_BadAffilState,
+    { "BadAffilState",
+"Bad affiliation state" } },
 
 /* SEQ_PKG */
 
