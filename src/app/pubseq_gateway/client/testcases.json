@@ -27507,7 +27507,7 @@
                             {
                                 "severity": "Warning",
                                 "code": 340,
-                                "text": "Cassandra-get processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                                "text": "Cassandra-get processor: HUP retrieval is allowed (explicitly set to 'yes') but auth token is missing"
                             }
                         ]
                     }
@@ -27593,7 +27593,7 @@
                             {
                                 "severity": "Warning",
                                 "code": 340,
-                                "text": "Cassandra-get processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                                "text": "Cassandra-get processor: HUP retrieval is allowed (explicitly set to 'yes') but auth token is missing"
                             }
                         ]
                     }
@@ -27649,7 +27649,7 @@
                             {
                                 "severity": "Warning",
                                 "code": 340,
-                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (explicitly set to 'yes') but auth token is missing"
                             }
                         ]
                     }
@@ -27705,7 +27705,7 @@
                             {
                                 "severity": "Warning",
                                 "code": 340,
-                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (implicitly) but auth token is missing"
+                                "text": "Cassandra-getblob processor: HUP retrieval is allowed (explicitly set to 'yes') but auth token is missing"
                             }
                         ]
                     }
