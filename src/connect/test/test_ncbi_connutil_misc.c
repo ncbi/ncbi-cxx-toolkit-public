@@ -259,6 +259,21 @@ static void TEST_Misc(void)
 }
 
 
+static void x_FillupNetInfo(SConnNetInfo* net_info)
+{
+    net_info->scheme = eURL_Unspec;
+    memset(net_info->host, 'h', sizeof(net_info->host));
+    net_info->host[CONN_HOST_LEN] = '\0';
+    net_info->port = 9999;
+    memset(net_info->user, 'u', sizeof(net_info->user));
+    net_info->user[CONN_USER_LEN] = '\0';
+    memset(net_info->pass, 'p', sizeof(net_info->pass));
+    net_info->pass[CONN_PASS_LEN] = '\0';
+    memset(net_info->path, 'x', sizeof(net_info->path));
+    net_info->path[CONN_PATH_LEN] = '\0';
+}
+
+
 static void TEST_ConnNetInfo(void)
 {
     size_t n;
@@ -422,6 +437,147 @@ static void TEST_ConnNetInfo(void)
     assert(net_info->path[0] == '\0');
     assert(net_info->path    == ConnNetInfo_GetArgs(net_info));
 
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "http://130.14.29.110/Service/index.html"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Http);
+    assert(strcmp(net_info->host, "130.14.29.110") == 0);
+    assert(net_info->port == 0);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/Service/index.html") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "http://130.14.29.110/Service/index.html") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);   
+    assert(ConnNetInfo_ParseURL(net_info, "https://130.14.29.110:8080/Service/index.html"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Https);
+    assert(strcmp(net_info->host, "130.14.29.110") == 0);
+    assert(net_info->port == 8080);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/Service/index.html") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "https://130.14.29.110:8080/Service/index.html") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "ftp://[130.14.29.110]:8888/Service/index.html"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Ftp);
+    assert(strcmp(net_info->host, "130.14.29.110") == 0);
+    assert(net_info->port == 8888);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/Service/index.html") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "ftp://130.14.29.110:8888/Service/index.html") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "130.14.29.110:8080"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Unspec);
+    assert(strcmp(net_info->host, "130.14.29.110") == 0);
+    assert(net_info->port == 8080);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "//130.14.29.110:8080/") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "[130.14.29.110]:8888/"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Unspec);
+    assert(strcmp(net_info->host, "130.14.29.110") == 0);
+    assert(net_info->port == 8888);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "//130.14.29.110:8888/") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(!ConnNetInfo_ParseURL(net_info, "ftp://2607:f220:41e:4290::110/Service/index.html"));
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "http://[2607:f220:41e:4290::110]/Service/index.html"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Http);
+    assert(strcmp(net_info->host, "2607:f220:41e:4290::110") == 0);
+    assert(net_info->port == 0);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/Service/index.html") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "http://[2607:f220:41e:4290::110]/Service/index.html") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "https://[2607:f220:41e:4290::110]:4444/Service/index.html"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Https);
+    assert(strcmp(net_info->host, "2607:f220:41e:4290::110") == 0);
+    assert(net_info->port == 4444);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/Service/index.html") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "https://[2607:f220:41e:4290::110]:4444/Service/index.html") == 0);
+    free(str);
+
+    x_FillupNetInfo(net_info);
+    assert(ConnNetInfo_ParseURL(net_info, "[2607:f220:41e:4290::110]:4444"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Unspec);
+    assert(strcmp(net_info->host, "2607:f220:41e:4290::110") == 0);
+    assert(net_info->port == 4444);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "//[2607:f220:41e:4290::110]:4444/") == 0);
+    free(str);
+    
+    x_FillupNetInfo(net_info);
+    assert(!ConnNetInfo_ParseURL(net_info, "http://user@/somepath"));
+    assert( ConnNetInfo_ParseURL(net_info, "http://@host/somepath"));
+    assert(!ConnNetInfo_ParseURL(net_info, "http://:pass@/somepath"));
+    assert(!ConnNetInfo_ParseURL(net_info, "http://user:pass@/somepath"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+    assert(net_info->scheme == eURL_Http);
+    assert(strcmp(net_info->host, "host") == 0);
+    assert(net_info->port == 0);
+    assert(!*net_info->user);
+    assert(!*net_info->pass);
+    assert(strcmp(net_info->path, "/somepath") == 0);
+
+    str = ConnNetInfo_URL(net_info);
+    assert(str);
+    assert(strcmp(str, "http://host/somepath") == 0);
+    free(str);
+    
     ConnNetInfo_SetUserHeader(net_info, "");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
     assert(!net_info->http_user_header);

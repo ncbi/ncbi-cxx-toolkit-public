@@ -48,9 +48,6 @@
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
 
 
-static const char kDigits[] = "0123456789";
-
-
 const STimeout g_NcbiDefConnTimeout = {
     (unsigned int)
       DEF_CONN_TIMEOUT,
@@ -876,8 +873,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     /* port # */
     REG_VALUE(REG_CONN_PORT, str, DEF_CONN_PORT);
     errno = 0;
-    if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0  &&  !errno
-        &&  !*e  &&  val < (1 << 16)) {
+    if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0
+        &&  !errno  &&  !*e  &&  val < (1 << 16)) {
         info->port = (unsigned short) val;
     } else
         info->port = 0/*default*/;
@@ -1300,15 +1297,62 @@ extern void ConnNetInfo_DeleteUserHeader(SConnNetInfo* info,
 }
 
 
+/* Assumes no spaces in "str" (of size "len");  must consume entire input */
+static const char* x_ParseHostPort(const char* str, size_t len,
+                                   size_t* hostlen, long* port)
+{
+    const char* ptr;
+    long  x_port;
+    char* end;
+
+    if (!len)
+        return 0/*failure*/;
+    if (*str == '[') {
+        TNCBI_IPv6Addr temp;
+        if (!(ptr = (char*) memchr(++str, ']', --len))  ||  ptr == str)
+            return 0/*failure*/;
+        if ((*hostlen = (size_t)(ptr - str)) > CONN_HOST_LEN)
+            return 0/*failure*/;
+        if (!(end = (char*) NcbiIPToAddr(&temp, str, *hostlen)))
+            return 0/*failure*/;
+        if (ptr++ != end)
+            return 0/*failure*/;
+        if (ptr == str + len)
+            return str;
+        if (*ptr++ != ':')
+            return 0/*failure*/;
+    } else if (!(ptr = (char*) memchr(str, ':', len))) {
+        *hostlen = len;
+        return str;
+    } else {
+        *hostlen = (size_t)(ptr - str);
+        ptr++;
+    }
+
+    if (ptr >= str + len)
+        return 0/*failure*/;
+    if (*ptr == '0'  ||  !isdigit((unsigned char)(*ptr)))
+        return 0/*failure*/;
+    errno = 0;
+    x_port = strtol(ptr, &end, 10);
+    if (errno  ||  end != str + len)
+        return 0/*failure*/;
+    if (!x_port  ||  (x_port ^ (x_port & 0xFFFF)))
+        return 0/*failure*/;
+    *port = x_port;
+    return str;
+}
+
+
 extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 {
     /* URL elements and their parsed lengths as passed */
     const char *user,   *pass,   *host,   *path,   *args;
     size_t     userlen, passlen, hostlen, pathlen, argslen;
+    long port = -1L/*unassigned*/;
     EURLScheme scheme;
     const char* s;
     size_t len;
-    long port;
     char* p;
 
     if (!s_InfoIsValid(info)  ||  !url)
@@ -1319,36 +1363,23 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
     if ((info->req_method & ~eReqMethod_v1) == eReqMethod_Connect) {
         len = strlen(url);
-        s = (const char*) memchr(url, ':', len);
-        if (s) {
-            if (!isdigit((unsigned char) s[1])  ||  s[1] == '0')
-                return 0/*failure*/;
-            len  = (size_t)(s - url);
-        }
-        if (len >= sizeof(info->host))
-            return 0/*failure*/;
         if (NCBI_HasSpaces(url, len))
-            return 0/*false*/;
-        if (s) {
-            errno = 0;
-            port = strtol(++s, &p, 10);
-            if (errno  ||  s == p  ||  *p)
-                return 0/*failure*/;
-            if (!port  ||  port ^ (port & 0xFFFF))
-                return 0/*failure*/;
+            return 0/*failure*/;
+        if (!(host = x_ParseHostPort(url, len, &hostlen, &port)))
+            return 0/*failure*/;
+        if (hostlen) {
+            assert(hostlen < sizeof(info->host));
+            memcpy(info->host, host, hostlen);
+            info->host[hostlen] = '\0';
+        }
+        if (port != -1L)
             info->port = (unsigned short) port;
-        }
-        if (len) {
-            memcpy(info->host, url, len);
-            info->host[len] = '\0';
-        }
         return 1/*success*/;
     }
 
-    /* "scheme://user:pass@host:port" first [any optional] */
+    /* "scheme://user:pass@host:port" */
     if ((s = strstr(url, "//")) != 0) {
         /* the authority portion is present */
-        port = -1L/*unassigned*/;
         if (s != url) {
             if (*--s != ':')
                 return 0/*failure*/;
@@ -1386,29 +1417,21 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                     pass    = s++;
                     passlen = (size_t)(host - s);
                 }
+                if (userlen >= sizeof(info->user) ||
+                    passlen >= sizeof(info->pass)) {
+                    return 0/*failure*/;
+                }
             }
-
-            /* port, if any */
-            if ((s = (const char*) memchr(host, ':', hostlen)) != 0) {
-                hostlen = (size_t)(s - host);
-                if (!hostlen  ||  !isdigit((unsigned char)s[1])  ||  s[1]=='0')
-                    return 0/*failure*/;
-                errno = 0;
-                port = strtol(++s, &p, 10);
-                if (errno  ||  s == p  ||  p != path)
-                    return 0/*failure*/;
-                if (!port  ||  port ^ (port & 0xFFFF))
-                    return 0/*failure*/;
-            } else
-                port = 0/*default*/;
-
-            if (userlen >= sizeof(info->user)  ||
-                passlen >= sizeof(info->pass)  ||
-                hostlen >= sizeof(info->host)) {
+            if (!(host = x_ParseHostPort(host, hostlen, &hostlen, &port)))
                 return 0/*failure*/;
-            }
+            if (!hostlen)
+                return 0/*failure*/;
+            assert(hostlen < sizeof(info->host));
+            if (port == -1L)
+                port  = 0/*default*/;
         }
     } else {
+        long x_port = 0;
         /* the authority portion is not present */
         s = (const char*) strchr(url, ':');
         if (s  &&  s != url  &&
@@ -1419,20 +1442,16 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
             scheme  = (EURLScheme) info->scheme;
         /* Check for special case: host:port[/path[...]] (see CXX-11455) */
         if (s  &&  s != url
-            &&  *++s != '0'  &&  (hostlen/*NB:portlen*/ = strspn(s, kDigits))
-            &&  memchr("/?#", s[hostlen/*NB:portlen*/], 4)
-            &&  (errno = 0, (port = strtol(s, &p, 10)) != 0)  &&  !errno
-            &&  p == s + hostlen  &&  !(port ^ (port & 0xFFFF))
-            &&  !NCBI_HasSpaces(url, hostlen = (size_t)(--s - url))) {
+            &&  !NCBI_HasSpaces(url, len = strcspn(url, "/?#"))
+            &&  (host = x_ParseHostPort(url, len, &hostlen, &x_port))
+            &&  hostlen  &&  x_port) {
             user = pass = "";
-            host = url;
-            assert(hostlen);
-            path = p;
+            path = url + len;
+            port = x_port;
         } else {
             user = pass = 0;
             host = 0;
             hostlen = 0;
-            port = -1L/*unassigned*/;
             path = url;
         }
         userlen = passlen = 0;
@@ -1516,19 +1535,19 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         p[pathlen] = '\0';
     if (path)
         memcpy(p, path, pathlen);
-    if (user  &&  (*user  ||  host)) {
-        assert(pass);
-        memcpy(info->user, user, userlen);
-        info->user[userlen] = '\0';
-        memcpy(info->pass, pass, passlen);
-        info->pass[passlen] = '\0';
-    }
     if (port >= 0  ||  scheme == eURL_File)
         info->port = (unsigned short)(port < 0 ? 0 : port);
     if (host) {
-        assert(!hostlen  ||  !NCBI_HasSpaces(host, hostlen));
+        assert(!NCBI_HasSpaces(host, hostlen));
         memcpy(info->host, host, hostlen);
         info->host[hostlen] = '\0';
+    }
+    if (user  &&  (*user  ||  host)) {
+        assert(pass);
+        memcpy(info->pass, pass, passlen);
+        info->pass[passlen] = '\0';
+        memcpy(info->user, user, userlen);
+        info->user[userlen] = '\0';
     }
     info->scheme = scheme;
     return 1/*success*/;
@@ -2401,34 +2420,37 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     const char* scheme;
     size_t      schlen;
     const char* path;
+    int/*bool*/ bare;
     size_t      len;
     char*       url;
 
     if (!s_InfoIsValid(info))
         return 0/*failed*/;
 
-    req_method = info->req_method & (TReqMethod)(~eReqMethod_v1);
     if (!(scheme = x_Scheme((EURLScheme) info->scheme, 0)))
         return 0/*failed*/;
 
+    len = strlen(info->host);
+    bare = !memchr(info->host, ':', len);
+    req_method = info->req_method & (TReqMethod)(~eReqMethod_v1);
     if (req_method == eReqMethod_Connect) {
         scheme = "";
         schlen = 0;
         path = 0;
-        len = 0;
     } else {
-        schlen = strlen(scheme);
         path = info->path;
-        len = schlen + 4/*"://",'/'*/ + strlen(path);
+        schlen = strlen(scheme);
+        len += schlen + 4/*"://",'/'*/ + strlen(path);
     }
-    len += strlen(info->host) + 7/*:port\0*/;
+    len += (bare ? 0 : 2/*[]*/) + 7/*:port\0*/;
 
     url = (char*) malloc(len);
     if (url) {
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len = schlen;
         len += sprintf(url + len,
-                       &"://%s"[schlen ? 0 : path ? 1 : 3], info->host);
+                       &"://%s%s%s"[schlen ? 0 : path ? 1 : 3],
+                       &"["[bare], info->host, &"]"[bare]);
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len,
