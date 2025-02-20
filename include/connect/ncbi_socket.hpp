@@ -157,7 +157,7 @@ public:
         return m_IPAddr;
     }
 
-    operator bool(void) const
+    explicit operator bool(void) const
     {
         return !IsEmpty();
     }
