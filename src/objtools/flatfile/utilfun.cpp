@@ -530,11 +530,11 @@ Int2 StringMatchIcase(const Char** array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArrayString(const char** array, const char* text)
+Int2 MatchArrayString(const char** array, string_view text)
 {
     Int2 i;
 
-    if (! text)
+    if (text.empty())
         return (-1);
 
     for (i = 0; *array; i++, array++) {
@@ -546,19 +546,14 @@ Int2 MatchArrayString(const char** array, const char* text)
 }
 
 /**********************************************************/
-Int2 MatchArrayIString(const Char** array, const Char* text)
+Int2 MatchArrayIString(const Char** array, string_view text)
 {
     Int2 i;
 
-    if (! text)
+    if (text.empty())
         return (-1);
 
     for (i = 0; *array; i++, array++) {
-        // If string from an array is empty its length == 0 and would be equval to any other string
-        // The next 'if' statement will avoid that behavior
-        if (text[0] != 0 && *array[0] == 0)
-            continue;
-
         if (NStr::EqualNocase(*array, text))
             return i;
     }
@@ -1041,7 +1036,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
             continue;
 
         const char* p = key.c_str();
-        i             = MatchArrayIString(ParFlat_TPA_kw_array, p);
+        i             = MatchArrayIString(ParFlat_TPA_kw_array, key);
         if (i == 0)
             kwd_tpa = true;
         else if (i == 1 || i == 2)
@@ -1111,7 +1106,7 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     for (const string& key : kwds) {
         if (key.empty())
             continue;
-        i = MatchArrayIString(ParFlat_TSA_kw_array, key.c_str());
+        i = MatchArrayIString(ParFlat_TSA_kw_array, key);
         if (i == 0)
             kwd_tsa = true;
         else if (i == 1)
@@ -1145,7 +1140,7 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     for (const string& key : kwds) {
         if (key.empty())
             continue;
-        i = MatchArrayIString(ParFlat_TLS_kw_array, key.c_str());
+        i = MatchArrayIString(ParFlat_TLS_kw_array, key);
         if (i == 0)
             kwd_tls = true;
         else if (i == 1)
@@ -1166,32 +1161,32 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
 }
 
 /**********************************************************/
-bool fta_is_tpa_keyword(const char* str)
+bool fta_is_tpa_keyword(string_view str)
 {
-    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TPA_kw_array, str) < 0)
+    if (str.empty() || MatchArrayIString(ParFlat_TPA_kw_array, str) < 0)
         return false;
 
     return true;
 }
 
 /**********************************************************/
-bool fta_is_tsa_keyword(const char* str)
+bool fta_is_tsa_keyword(string_view str)
 {
-    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
+    if (str.empty() || MatchArrayIString(ParFlat_TSA_kw_array, str) < 0)
         return false;
     return true;
 }
 
 /**********************************************************/
-bool fta_is_tls_keyword(const char* str)
+bool fta_is_tls_keyword(string_view str)
 {
-    if (! str || *str == '\0' || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
+    if (str.empty() || MatchArrayIString(ParFlat_TLS_kw_array, str) < 0)
         return false;
     return true;
 }
 
 /**********************************************************/
-void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk)
+void fta_keywords_check(string_view str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk)
 {
     if (estk && MatchArrayString(ParFlat_EST_kw_array, str) != -1)
         *estk = true;
@@ -1251,7 +1246,7 @@ void fta_remove_keywords(CMolInfo::TTech tech, TKeywordList& kwds)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayString(b, key->c_str()) != -1) {
+        if (key->empty() || MatchArrayString(b, *key) != -1) {
             key = kwds.erase(key);
         } else
             ++key;
@@ -1265,7 +1260,7 @@ void fta_remove_tpa_keywords(TKeywordList& kwds)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayIString(ParFlat_TPA_kw_array_to_remove, key->c_str()) != -1) {
+        if (key->empty() || MatchArrayIString(ParFlat_TPA_kw_array_to_remove, *key) != -1) {
             key = kwds.erase(key);
         } else
             ++key;
@@ -1279,7 +1274,7 @@ void fta_remove_tsa_keywords(TKeywordList& kwds, Parser::ESource source)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayIString(ParFlat_TSA_kw_array, key->c_str()) != -1 ||
+        if (key->empty() || MatchArrayIString(ParFlat_TSA_kw_array, *key) != -1 ||
             (source == Parser::ESource::EMBL && NStr::EqualNocase(*key, "Transcript Shotgun Assembly"))) {
             key = kwds.erase(key);
         } else
@@ -1294,7 +1289,7 @@ void fta_remove_tls_keywords(TKeywordList& kwds, Parser::ESource source)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayIString(ParFlat_TLS_kw_array, key->c_str()) != -1 ||
+        if (key->empty() || MatchArrayIString(ParFlat_TLS_kw_array, *key) != -1 ||
             (source == Parser::ESource::EMBL && NStr::EqualNocase(*key, "Targeted Locus Study"))) {
             key = kwds.erase(key);
         } else
@@ -1309,7 +1304,7 @@ void fta_remove_env_keywords(TKeywordList& kwds)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayIString(ParFlat_ENV_kw_array, key->c_str()) != -1) {
+        if (key->empty() || MatchArrayIString(ParFlat_ENV_kw_array, *key) != -1) {
             key = kwds.erase(key);
         } else
             ++key;
@@ -1323,7 +1318,7 @@ void fta_remove_mag_keywords(TKeywordList& kwds)
         return;
 
     for (TKeywordList::iterator key = kwds.begin(); key != kwds.end();) {
-        if (key->empty() || MatchArrayIString(ParFlat_MAG_kw_array, key->c_str()) != -1) {
+        if (key->empty() || MatchArrayIString(ParFlat_MAG_kw_array, *key) != -1) {
             key = kwds.erase(key);
         } else
             ++key;
@@ -1346,7 +1341,7 @@ void xCheckEstStsGssTpaKeywords(
     }
     for (auto keyword : keywordList) {
         fta_keywords_check(
-            keyword.c_str(), &entry->EST, &entry->STS, &entry->GSS, &entry->HTC, nullptr, nullptr, (tpa_check ? &entry->is_tpa : nullptr), nullptr, nullptr, nullptr, nullptr);
+            keyword, &entry->EST, &entry->STS, &entry->GSS, &entry->HTC, nullptr, nullptr, (tpa_check ? &entry->is_tpa : nullptr), nullptr, nullptr, nullptr, nullptr);
         if (NStr::EqualNocase(keyword, "TPA:assembly")) {
             entry->specialist_db = true;
             entry->assembly      = true;
@@ -1453,8 +1448,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
     bool got = false;
     if (! kwds.empty() && NStr::EqualNocase(kwds.front(), "MGA")) {
         for (TKeywordList::const_iterator key = kwds.begin(); key != kwds.end(); ++key) {
-            if (MatchArrayIString(ParFlat_MGA_more_kw_array,
-                                  key->c_str()) < 0)
+            if (MatchArrayIString(ParFlat_MGA_more_kw_array, *key) < 0)
                 continue;
             got    = true;
             key_it = key;

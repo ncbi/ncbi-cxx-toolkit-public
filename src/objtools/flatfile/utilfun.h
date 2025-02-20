@@ -80,8 +80,8 @@ char* StringIStr(const Char* where, const Char* what);
 /* Return array position of the string in the array_string.
  * Return -1 if no match.
  */
-Int2 MatchArrayString(const Char** array, const Char* text);
-Int2 MatchArrayIString(const Char** array, const Char* text);
+Int2 MatchArrayString(const Char** array, string_view text);
+Int2 MatchArrayIString(const Char** array, string_view text);
 
 /* Return array position of the string in the array_string if any
  * array_string is in the substring of "text".
@@ -131,16 +131,16 @@ TDataBlkList&    TrackNodes(const DataBlk& entry);
 DataBlk*         TrackNodeType(const DataBlk& entry, Int2 type);
 const Section* xTrackNodeType(const Entry&, int type);
 ValNode*         ConstructValNode(objects::CSeq_id::E_Choice choice, const char* data);
-bool             fta_is_tpa_keyword(const char* str);
+bool             fta_is_tpa_keyword(string_view str);
 bool             fta_tpa_keywords_check(const TKeywordList& kwds);
-bool             fta_is_tsa_keyword(const char* str);
-bool             fta_is_tls_keyword(const char* str);
+bool             fta_is_tsa_keyword(string_view str);
+bool             fta_is_tls_keyword(string_view str);
 bool             fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool             fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source);
 bool             fta_check_mga_keywords(objects::CMolInfo& mol_info, const TKeywordList& kwds);
 void             fta_StringCpy(char* dst, const char* src);
 
-void fta_keywords_check(const char* str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk);
+void fta_keywords_check(string_view str, bool* estk, bool* stsk, bool* gssk, bool* htck, bool* flik, bool* wgsk, bool* tpak, bool* envk, bool* mgak, bool* tsak, bool* tlsk);
 
 void fta_remove_keywords(int tech, TKeywordList& kwds);
 void fta_remove_tpa_keywords(TKeywordList& kwds);

@@ -741,7 +741,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     string tail = line.substr(colon + 1);
     line        = line.substr(0, colon);
 
-    if (MatchArrayIString(DbxrefObsolete, line.c_str()) > -1) {
+    if (MatchArrayIString(DbxrefObsolete, line) > -1) {
         auto msg = ErrFormat("/db_xref type \"%s\" is obsolete.", line.c_str());
         ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteDbXref, msg);
 
@@ -774,16 +774,16 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     Int4        intid = 0;
 
     const Char* p = tail.c_str();
-    if (MatchArrayIString(DbxrefTagAny, line.c_str()) > -1) {
+    if (MatchArrayIString(DbxrefTagAny, line) > -1) {
         for (strid = p; *p >= '0' && *p <= '9';)
             p++;
         if (*p == '\0' && *strid != '0') {
             intid = atoi(strid);
             strid = nullptr;
         }
-    } else if (MatchArrayIString(DbxrefTagStr, line.c_str()) > -1 ||
+    } else if (MatchArrayIString(DbxrefTagStr, line) > -1 ||
                (source == Parser::ESource::EMBL &&
-                MatchArrayIString(EMBLDbxrefTagStr, line.c_str()) > -1)) {
+                MatchArrayIString(EMBLDbxrefTagStr, line) > -1)) {
         for (strid = p; *p >= '0' && *p <= '9';)
             p++;
         if (*p == '\0') {
@@ -794,7 +794,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
                 strid = nullptr;
             }
         }
-    } else if (MatchArrayIString(DbxrefTagInt, line.c_str()) > -1) {
+    } else if (MatchArrayIString(DbxrefTagInt, line) > -1) {
         const Char* q = p;
         for (; *q == '0';)
             q++;
@@ -1865,7 +1865,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
     CRef<CRNA_ref> rna_ref(new CRNA_ref);
 
-    type = MatchArrayString(ParFlat_RNA_array, imp_feat.GetKey().c_str());
+    type = MatchArrayString(ParFlat_RNA_array, imp_feat.GetKey());
     if (type < 0)
         type = 255;
     else
@@ -2834,7 +2834,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
                 continue;
             }
 
-            if (MatchArrayString(PseudoGeneValues, val_str.c_str()) >= 0) {
+            if (MatchArrayString(PseudoGeneValues, val_str) >= 0) {
                 ++cur;
                 continue;
             }
@@ -4218,7 +4218,7 @@ static bool fta_check_ncrna(const CSeq_feat& feat)
             break;
         }
 
-        if (MatchArrayString(ncRNA_class_values, qual->GetVal().c_str()) < 0) {
+        if (MatchArrayString(ncRNA_class_values, qual->GetVal()) < 0) {
             string loc = location_to_string_or_unknown(feat.GetLocation());
             string msg = ErrFormat("Feature \"ncRNA\" at location \"%s\" has an invalid /ncRNA_class qualifier: \"%s\".", loc.empty() ? "unknown" : loc.c_str(), qual->GetVal().c_str());
             ErrPostStr(SEV_REJECT, ERR_FEATURE_ncRNA_class, msg);

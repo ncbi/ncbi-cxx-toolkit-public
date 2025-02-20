@@ -1458,7 +1458,7 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
                 p++;
 
             buf += p;
-            if (fta_is_tpa_keyword(buf.c_str())) {
+            if (fta_is_tpa_keyword(buf)) {
                 for (string::iterator p = buf.begin() + 4; p != buf.end(); ++p) {
                     if (*p >= 'A' && *p <= 'Z')
                         *p |= 040;
