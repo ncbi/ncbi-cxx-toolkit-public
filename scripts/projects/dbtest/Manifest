@@ -27,10 +27,11 @@ TAG_PRE_COMMIT: tagprecommit/create_version.py $local $version
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux64-Centos        : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
+Linux64-Alma          : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 FreeBSD64             : plain : Clang.sh  --without-debug --without-mt --with-static --with-flat-makefile
-IntelMAC              : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile --without-gcrypt --without-pcre
-Win64_19              : plain : static 64 ReleaseDLL
+# Needs to be replaced with ArmMAC
+# IntelMAC              : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile --without-gcrypt --without-pcre
+Win64                 : plain : static 64 ReleaseDLL
 Linux64-Ubuntu        : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 Linux64-Ubuntu-Public : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile
 
