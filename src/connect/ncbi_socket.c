@@ -1505,7 +1505,7 @@ static const char* s_StringToHostPort(const char*     str,
             return str;
         errno = 0;
         i = strtol(++q, &e, 10);
-        if (errno  ||  q == e  ||  i ^ (i & 0xFFFF)
+        if (errno  ||  q == e  ||  (i ^ (i & 0xFFFF))
             ||  (*e  &&  !isspace((unsigned char)(*e)))) {
             return str;
         }
