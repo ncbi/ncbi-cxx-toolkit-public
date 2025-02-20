@@ -212,7 +212,7 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
 
         /* Output the expiration time. */
         if ( ! *mock_body_adj_p)
-            verify(*mock_body_adj_p = strdup(mock_body));
+            verify((*mock_body_adj_p = strdup(mock_body)));
         char* cp2 = *mock_body_adj_p + (exp - mock_body) + prfx_len;
         if (strftime(cp2, notz_len + 1, "%Y-%m-%dT%H:%M:%S", &tm_exp)
             != notz_len)
