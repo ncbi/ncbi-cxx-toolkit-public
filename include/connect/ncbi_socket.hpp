@@ -194,25 +194,25 @@ private:
 NCBI_DEPRECATED
 inline bool operator==(const CNCBI_IPAddr& lhs, unsigned int rhs)
 {
-    return unsigned int(lhs) == rhs;
+    return unsigned(lhs) == rhs;
 }
 
 NCBI_DEPRECATED
 inline bool operator!=(const CNCBI_IPAddr& lhs, unsigned int rhs)
 {
-    return unsigned int(lhs) != rhs;
+    return unsigned(lhs) != rhs;
 }
 
 NCBI_DEPRECATED
 inline bool operator==(unsigned int lhs, const CNCBI_IPAddr& rhs)
 {
-    return lhs == unsigned int(rhs);
+    return lhs == unsigned(rhs);
 }
 
 NCBI_DEPRECATED
 inline bool operator!=(unsigned int lhs, const CNCBI_IPAddr& rhs)
 {
-    return lhs != unsigned int(rhs);
+    return lhs != unsigned(rhs);
 }
 
 
