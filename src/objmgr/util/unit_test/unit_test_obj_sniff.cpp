@@ -69,8 +69,10 @@ BOOST_AUTO_TEST_CASE(Test_Text_Object1)
         BOOST_REQUIRE(f.Exists());
         CDirEntry::TMode user=0, group=0, other=0;
         CDirEntry::TSpecialModeBits special = 0;
+        Int8 len = f.GetLength();
         f.GetMode(&user, &group, &other, &special);
         NcbiCout << "File " << file_name
+             << " size= " << len
              << " user_mode= " << user
              << " group_mode= " << group
              << " other_mode= " << other
