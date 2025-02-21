@@ -1255,3 +1255,106 @@ BOOST_AUTO_TEST_CASE(Test_large_bitsets)
     BOOST_CHECK(is_last);
     }
 }
+
+BOOST_AUTO_TEST_CASE(Test_bitset_operators)
+{
+    using charset = ct::const_bitset<256, char>;
+    static constexpr auto escaped_no_range = charset::set_range(1, 31) + charset('%', ';', '=', '%', '=', '&', char(0x7F));
+    static constexpr auto escaped_range_value = escaped_no_range + charset( ',' );
+
+    BOOST_CHECK_EQUAL(escaped_no_range.size(), 36);
+    BOOST_CHECK_EQUAL(escaped_range_value.size(), 37);
+}
+
+BOOST_AUTO_TEST_CASE(Test_bitset_operators2)
+{
+    using charset = ct::const_bitset<256, char>;
+    static constexpr auto escaped_no_range = charset::set_range(1, 31) + charset{'%', ';', '=', '%', '=', '&', char(0x7F)};
+    static constexpr auto escaped_range_value = escaped_no_range + charset{ ',' };
+
+    BOOST_CHECK_EQUAL(escaped_no_range.size(), 36);
+    BOOST_CHECK_EQUAL(escaped_range_value.size(), 37);
+}
+
+#if __cpp_inline_variables >= 201606L
+
+template<typename _bs_type>
+void PrintBitset(std::string prefix, const _bs_type& bs)
+{
+    std::cout << "Test_cNTTP_templates " << prefix << ": ";
+    for (auto it: bs) {
+        std::cout << it << " ";
+    }
+    std::cout << "\n";
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_cNTTP_templates)
+{
+    enum class Values { one, two, three, four };
+    using enum Values;
+
+    bool has4 = ct::inline_bitset<1, 2, 3>.test(4);
+    bool has1 = ct::inline_bitset<1, 2, 3>.test(1);
+
+    bool has_one = ct::inline_bitset<one, two, three>.test(one);
+    bool has_four = ct::inline_bitset<one, two, three>.test(four);
+
+    BOOST_CHECK(has1);
+    BOOST_CHECK(!has4);
+    BOOST_CHECK(has_one);
+    BOOST_CHECK(!has_four);
+
+    auto bs1 = ct::inline_bitset<1, 2, 3>;
+    auto bs2 = ct::inline_bitset<100, 200, 300>;
+    auto bs3 = ct::inline_bitset<2, 4, 5>;
+
+    auto bs_plus = bs1 + bs2;
+    auto bs_minus = bs1 - bs3;
+
+    BOOST_CHECK(bs1.size() == 3);
+    BOOST_CHECK(bs1.test(1));
+    BOOST_CHECK(bs1.test(2));
+    BOOST_CHECK(bs1.test(3));
+    BOOST_CHECK(!bs1.test(4));
+
+    BOOST_CHECK(bs2.size() == 3);
+    BOOST_CHECK(bs2.test(100));
+    BOOST_CHECK(bs2.test(200));
+    BOOST_CHECK(bs2.test(300));
+    BOOST_CHECK(!bs2.test(4));
+
+    BOOST_CHECK(bs3.size() == 3);
+    BOOST_CHECK(bs3.test(2));
+    BOOST_CHECK(bs3.test(4));
+    BOOST_CHECK(bs3.test(5));
+    BOOST_CHECK(!bs3.test(1));
+
+
+    BOOST_CHECK(bs_plus.size() == 6);
+    BOOST_CHECK(bs_plus.test(1));
+    BOOST_CHECK(bs_plus.test(2));
+    BOOST_CHECK(bs_plus.test(3));
+    BOOST_CHECK(!bs_plus.test(4));
+    BOOST_CHECK(bs_plus.test(100));
+    BOOST_CHECK(bs_plus.test(200));
+    BOOST_CHECK(bs_plus.test(300));
+    BOOST_CHECK(!bs_plus.test(301));
+
+    BOOST_CHECK(bs_minus.size() == 2);
+    BOOST_CHECK(bs_minus.test(1));
+    BOOST_CHECK(!bs_minus.test(2));
+    BOOST_CHECK(bs_minus.test(3));
+    BOOST_CHECK(!bs_minus.test(4));
+    BOOST_CHECK(!bs_minus.test(5));
+
+    PrintBitset("bs1", bs1);
+    PrintBitset("bs2", bs2);
+    PrintBitset("bs3", bs3);
+
+    PrintBitset("bs_plus", bs_plus);
+    PrintBitset("bs_minus", bs_minus);
+
+}
+
+#endif

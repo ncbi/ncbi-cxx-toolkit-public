@@ -65,8 +65,8 @@ namespace compile_time_bits
             }
         }
 
-        template<typename _Other>
-        static constexpr array_t set_bits(std::initializer_list<_Other> args)
+        template<typename _Container>
+        static constexpr array_t set_bits(const _Container& args)
         {
             array_t arr{};
             for (auto value: args) {
@@ -74,7 +74,6 @@ namespace compile_time_bits
             }
             return arr;
         }
-
         template<typename _Iterator>
         static constexpr array_t set_bits(_Iterator begin, _Iterator end)
         {
@@ -89,19 +88,19 @@ namespace compile_time_bits
         }
 
         template<size_t N>
-        static constexpr array_t set_bits(const std::array<char, N>& in)
+        static constexpr array_t from_string(const std::array<char, N>& in)
         {
             return set_bits(in.begin(), in.end());
         }
 
         template<size_t N>
-        static constexpr array_t set_bits(const std::array<bool, N>& in)
+        static constexpr array_t from_bool(const std::array<bool, N>& in)
         {
             return set_bits(in.begin(), in.end());
         }
 
         template<typename T>
-        static constexpr array_t set_range(T from, T to)
+        static constexpr array_t from_range(T from, T to)
         {
             array_t arr{};
 
@@ -163,12 +162,8 @@ namespace compile_time_bits
         return count;
     }
 
-}
-
-namespace compile_time_bits
-{
-    // partially backported std::bitset until it's constexpr version becomes available
-    template<size_t _Bits, class T>
+    // compile time initialized bitset with iterators
+    template<size_t _MaxBits, class T>
     class const_bitset
     {
     public:
@@ -176,6 +171,7 @@ namespace compile_time_bits
 
         using _Ty = uint64_t;
 
+        static constexpr size_t _Bits = _MaxBits;
         static constexpr size_t _Bitsperword = 8 * sizeof(_Ty);
         static constexpr size_t _Words = (_Bits + _Bitsperword - 1) / _Bitsperword;
         using _Array_t = std::array<_Ty, _Words>;
@@ -183,28 +179,37 @@ namespace compile_time_bits
 
         constexpr const_bitset() = default;
 
+        template<size_t, typename>
+        friend class const_bitset;
+
         constexpr const_bitset(std::initializer_list<T> _init)
             :const_bitset(traits::set_bits(_init))
         {}
 
-        constexpr const_bitset(T _init)
-            :const_bitset(traits::set_bits({_init}))
+        template<typename...TArgs>
+        constexpr const_bitset(T _first, TArgs&&... _extra)
+            :const_bitset{{_first, _extra...}}
         {}
 
         template<size_t N>
-        constexpr static const_bitset from_string(char const (&_init)[N])
+        constexpr const_bitset(const std::array<T, N>& _init)
+            :const_bitset(traits::set_bits(_init))
+        {}
+
+        template<size_t N>
+        static constexpr auto from_string(char const (&_init)[N])
         {
-            return const_bitset(traits::set_bits(std::to_array(_init)));
+            return const_bitset(traits::from_string(std::to_array( _init)));
         }
 
         template<size_t N>
-        explicit constexpr const_bitset(const std::array<bool, N> &_init)
-            :const_bitset(traits::set_bits(_init))
+        constexpr const_bitset(const std::array<bool, N> &_init)
+            :const_bitset(traits::from_bool(_init))
         {}
 
         static constexpr const_bitset set_range(T _from, T _to)
         {
-            return const_bitset(traits::set_range( _from, _to ));
+            return const_bitset(traits::from_range( _from, _to ));
         }
 
         static constexpr size_t capacity() { return _Bits; }
@@ -244,18 +249,50 @@ namespace compile_time_bits
             return *this;
         }
 
-        const_bitset& operator +=(const const_bitset& _Other)
+        constexpr const_bitset& operator +=(const const_bitset& _Other)
         {
             for (size_t i=0; i<_Array.size(); i++)
                 _Array[i] |= _Other._Array[i];
             return *this;
         }
 
-        const_bitset& operator -=(const const_bitset& _Other)
+        constexpr const_bitset& operator -=(const const_bitset& _Other)
         {
             for (size_t i=0; i<_Array.size(); i++)
                 _Array[i] &= (~_Other._Array[i]);
             return *this;
+        }
+
+        template<size_t _MaxBits2>
+        constexpr
+        auto operator+ (const const_bitset<_MaxBits2, T>& _Other) const
+        {
+            constexpr size_t new_N = std::max(_MaxBits, _MaxBits2);
+            using new_type = const_bitset<new_N, T>;
+
+            typename new_type::_Array_t arr;
+            for (size_t i=0; i<arr.size(); i++) {
+                auto l = i < _Array.size() ? _Array[i] : 0;
+                auto r = i < _Other._Array.size() ? _Other._Array[i] : 0;
+                arr[i] = l | r;
+            }
+            return new_type{arr};
+        }
+
+        template<size_t _MaxBits2>
+        constexpr
+        auto operator- (const const_bitset<_MaxBits2, T>& _Other) const
+        {
+            constexpr size_t new_N = std::max(_MaxBits, _MaxBits2);
+            using new_type = const_bitset<new_N, T>;
+
+            typename new_type::_Array_t arr;
+            for (size_t i=0; i<arr.size(); i++) {
+                auto l = i < _Array.size() ? _Array[i] : 0;
+                auto r = i < _Other._Array.size() ? _Other._Array[i] : 0;
+                arr[i] = l & (~ r);
+            }
+            return new_type{arr};
         }
 
         bool reset(T _v)
@@ -307,13 +344,14 @@ namespace compile_time_bits
         class const_iterator
         {
         public:
-            using difference_type = size_t;
+            using difference_type = std::ptrdiff_t;
             using value_type = T;
             using pointer = const T*;
             using reference = const T&;
             using iterator_category = std::forward_iterator_tag;
 
             constexpr const_iterator() = default;
+
             friend class const_bitset;
 
             constexpr bool operator==(const const_iterator& o) const
@@ -402,6 +440,10 @@ namespace compile_time_bits
             _Ty m_current{0};
         };
 
+        #ifdef __cpp_concepts
+        static_assert(std::input_iterator<const_iterator>);
+        #endif
+
         using iterator = const_iterator;
 
         constexpr const_iterator cbegin() const noexcept { return const_iterator(this, std::true_type{}); }
@@ -439,7 +481,24 @@ namespace compile_time_bits
         }
 
     };
-}
+
+} // namespace compile_time_bits
+
+#if __cpp_inline_variables >= 201606L
+
+namespace ct
+{
+
+template<auto arg0, auto...args>
+constexpr auto inline_bitset = compile_time_bits::const_bitset<
+        static_cast<size_t>(std::max({arg0, args...})) + 1,
+        std::decay_t<decltype(arg0)>>
+    {arg0, args...};
+
+};
+
+
+#endif
 
 
 #endif
