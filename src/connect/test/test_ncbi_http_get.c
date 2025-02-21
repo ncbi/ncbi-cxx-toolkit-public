@@ -393,6 +393,27 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    ConnNetInfo_GetValue(0, "IP", blk, 32, 0);
+    if (*blk) {
+        int v;
+        if (sscanf(blk, "%d", &v) != 1)
+            CORE_LOGF(eLOG_Fatal, ("Cannot parse IP version %s", blk));
+        switch (v) {
+        case 4:
+            SOCK_SetIPv6API(eOff);
+            break;
+        case 6:
+            SOCK_SetIPv6API(eOn);
+            break;
+        case 0:
+            SOCK_SetIPv6API(eDefault);
+            break;
+        default:
+            CORE_LOGF(eLOG_Fatal, ("Unknown IP version %d", v));
+            break;
+        }
+    }
+
     ConnNetInfo_GetValue(0, "HTTP11", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk))
         net_info->http_version = 1;
