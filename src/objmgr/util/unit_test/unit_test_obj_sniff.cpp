@@ -64,21 +64,6 @@ USING_SCOPE(objects);
 BOOST_AUTO_TEST_CASE(Test_Text_Object1)
 {
     string file_name = "test_data/object1.asn";
-    {
-        CFile f(file_name);
-        BOOST_REQUIRE(f.Exists());
-        CDirEntry::TMode user=0, group=0, other=0;
-        CDirEntry::TSpecialModeBits special = 0;
-        Int8 len = f.GetLength();
-        f.GetMode(&user, &group, &other, &special);
-        NcbiCout << "File " << file_name
-             << " size= " << len
-             << " user_mode= " << user
-             << " group_mode= " << group
-             << " other_mode= " << other
-             << " special_mode= " << special
-             << NcbiEndl;
-    }
     ifstream file_in(file_name.c_str());
     BOOST_REQUIRE(file_in);
     AutoPtr<CObjectIStream> in(CObjectIStream::Open(eSerial_AsnText, file_in));
