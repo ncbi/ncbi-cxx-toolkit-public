@@ -974,12 +974,17 @@ public:
     NCBI_DEPRECATED
     static bool   isip(const string& host,
                        bool fullquad = false);
+    /// Broader string classificator
     enum EIP_StringKind {
-        eIP_Historic = 0,       ///< Accept old-fashioned notations
-        eIP_FullQuad            ///< Accept full-quad notations only
+        eIP_HistoricIPv4 = 0,       ///< Accept old-fashioned IPv4 notations
+        eIP_FullQuadIPv4,           ///< Accept full-quad IPv4 notations only
+        eIP_IPv6,                   ///< Accept IPv6 notations
+        eIP_Any                     ///< Any IPv4 or IPv6 notations
     };
+    /// @sa
+    ///  SOCK_isipEx, SOCK_isip6, SOCK_IsAddress
     static bool   isip(const string& host,
-                       EIP_StringKind kind = eIP_Historic);
+                       EIP_StringKind kind = eIP_HistoricIPv4);
 
     static unsigned int   HostToNetLong (unsigned int   value);
     static unsigned int   NetToHostLong (unsigned int   value);
@@ -1004,7 +1009,7 @@ public:
     static CNCBI_IPAddr   GetLoopbackAddress (void);
     static unsigned int   GetLoopbackAddress4(void);
     static TNCBI_IPv6Addr GetLoopbackAddress6(void);
-    static int/*bool*/    IsLoopbackAddress(const CNCBI_IPAddr& addr);
+    static bool           IsLoopbackAddress(const CNCBI_IPAddr& addr);
 
     /// See SOCK_HostPortToString[IPv6](), return empty when failed
     static string         HostPortToString(const CNCBI_IPAddr& addr,
@@ -1471,12 +1476,6 @@ inline bool CSocketAPI::isip(const string& host, bool fullquad)
 }
 
 
-inline bool CSocketAPI::isip(const string& host, CSocketAPI::EIP_StringKind kind)
-{
-    return SOCK_isipEx(host.c_str(), kind == eIP_FullQuad) ? true : false;
-}
-
-
 inline unsigned int CSocketAPI::HostToNetLong(unsigned int value)
 {
     return SOCK_HostToNetLong(value);
@@ -1507,9 +1506,9 @@ inline unsigned int CSocketAPI::GetLoopbackAddress4(void)
 }
 
 
-inline int/*bool*/ CSocketAPI::IsLoopbackAddress(const CNCBI_IPAddr& addr)
+inline bool CSocketAPI::IsLoopbackAddress(const CNCBI_IPAddr& addr)
 {
-    return SOCK_IsLoopbackAddress6(&addr.GetAddr());
+    return SOCK_IsLoopbackAddress6(&addr.GetAddr()) ? true : false;
 }
 
 

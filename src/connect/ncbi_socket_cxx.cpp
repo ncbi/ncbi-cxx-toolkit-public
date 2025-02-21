@@ -775,6 +775,25 @@ CNCBI_IPAddr CSocketAPI::gethostbyname(const string& host, ESwitch log)
 }
 
 
+bool CSocketAPI::isip(const string& host, CSocketAPI::EIP_StringKind kind)
+{
+    switch (kind) {
+    case eIP_HistoricIPv4:
+    case eIP_FullQuadIPv4:
+       return SOCK_isipEx(host.c_str(),
+                          kind == eIP_FullQuadIPv4 ? 1 : 0) ? true : false;
+    case eIP_IPv6:
+        return SOCK_isip6(host.c_str()) ? true : false;
+    case eIP_Any:
+        return SOCK_IsAddress(host.c_str()) ? true : false;
+    default:
+        assert(0);
+        break;
+    }
+    return false;
+}
+
+
 CNCBI_IPAddr CSocketAPI::GetLoopbackAddress(void)
 {
     TNCBI_IPv6Addr addr;

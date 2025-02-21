@@ -768,8 +768,8 @@ static const char* x_SetHttpHostTag(SConnNetInfo* net_info)
             char*  v = tag + sizeof(kHttpHostTag)-1;
             int    b = *v == '[';
             char*  c = strchr(v, b ? ']' : ':');
-            size_t s = c ? (size_t)(c - v) : strlen(v);
-            memmove(tag, v + b, s - b);
+            size_t s = (c ? (size_t)(c - v) : strlen(v)) - b;
+            memmove(tag, v + b, s);
             tag[s] = '\0';
         } else {
             free(tag);

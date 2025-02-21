@@ -1409,16 +1409,13 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr,
 
     assert(!buf  ||  (*buf  &&  !NCBI_HasSpaces(buf, strlen(buf))));
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
-    {
-        TNCBI_IPv6Addr temp;
-        if (!NcbiIPToAddr(&temp, buf, 0)) {
-            CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s @ %s%s%s",
-                         family == AF_INET  ? "(IPv4)" :
-                         family == AF_INET6 ? "(IPv6)" : "",
-                         (s_AddrToString(addrstr, sizeof(addrstr),
-                                         addr, family, empty), addrstr),
-                         &"\""[!buf], buf ? buf : "(none)", &"\""[!buf]));
-        }
+    if (!SOCK_IsAddress(buf)) {
+        CORE_TRACEF(("[SOCK::gethostbyaddr%s]  %s @ %s%s%s",
+                        family == AF_INET  ? "(IPv4)" :
+                        family == AF_INET6 ? "(IPv6)" : "",
+                        (s_AddrToString(addrstr, sizeof(addrstr),
+                                        addr, family, empty), addrstr),
+                        &"\""[!buf], buf ? buf : "(none)", &"\""[!buf]));
     }
 #endif /*_DEBUG && !NDEBUG*/
     return buf;
@@ -4939,15 +4936,7 @@ static EIO_Status s_Connect_(SOCK            sock,
             u.in6.sin6_port      = htons(sock->port);
         }
         if (s_ApproveHook) {
-            const char* parsed;
-            if (host  &&  *host) {
-                TNCBI_IPv6Addr temp;
-                parsed = NcbiIPToAddr(&temp, host, 0);
-                if (parsed  &&  *parsed)
-                    parsed = 0;
-            } else
-                parsed = 0;
-            status = s_ApproveCallback(parsed ? host : 0,
+            status = s_ApproveCallback(SOCK_IsAddress(host) ? 0 : host,
                                        &sock->addr, sock->port,
                                        eSOCK_Client, eSOCK_Socket, sock);
             if (status != eIO_Success)
@@ -5248,12 +5237,10 @@ static EIO_Status s_Create(const char*       hostpath,
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + size)))
         return eIO_Unknown;
     if (flags & fSOCK_Secure) {
-        TNCBI_IPv6Addr temp;
         SNcbiSSLctx* sslctx;
         const char* host;
         if (init  &&  init->host  &&  *init->host
-            &&  (!(host = NcbiIPToAddr(&temp, init->host, 0))  ||  *host)) {
-            /* cannot be fully parsed as an IP address */
+            &&  !SOCK_IsAddress(init->host)) {
             host = init->host;
             assert(*host);
         } else
@@ -5585,7 +5572,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         const char* host;
         if (!oldctx->sess  &&  init) {
             cred = init->cred;
-            host = SOCK_isip(init->host) ? 0 : init->host;
+            host = SOCK_IsAddress(init->host) ? 0 : init->host;
             if (host  &&  !*host)
                 host = 0;
         } else {
@@ -5602,7 +5589,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         x_sock->sslctx->host = host ? strdup(host) : 0;
         sslctx = x_sock->sslctx;
     } else if (sslctx) {
-        const char* host = init  &&  !SOCK_isip(init->host) ? init->host : 0;
+        const char* host = init  &&  !SOCK_IsAddress(init->host) ? init->host : 0;
         x_sock->sslctx = sslctx;
         x_sock->sslctx->sock = x_sock;
         x_sock->sslctx->cred = init ? init->cred : 0;
@@ -9580,6 +9567,20 @@ extern int/*bool*/ SOCK_isipEx(const char* str,
 extern int/*bool*/ SOCK_isip(const char* str)
 {
     return SOCK_isipEx(str, 0/*nofullquad*/);
+}
+
+
+extern int/*bool*/ SOCK_isip6(const char* str)
+{
+    TNCBI_IPv6Addr temp;
+    const char* end = NcbiStringToIPv6(&temp, str, 0);
+    return end  &&  !*end;
+}
+
+
+extern int/*bool*/ SOCK_IsAddress(const char* str)
+{
+    return SOCK_isip(str)  ||  SOCK_isip6(str);
 }
 
 

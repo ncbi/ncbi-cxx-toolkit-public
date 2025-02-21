@@ -142,7 +142,7 @@
  * Auxiliary:
  *
  *  SOCK_ntoa
- *  SOCK_isip[Ex]
+ *  SOCK_isip[Ex][6]
  *  SOCK_HostToNetShort
  *  SOCK_HostToNetLong
  *  SOCK_NetToHostShort
@@ -2184,7 +2184,7 @@ extern NCBI_XCONNECT_EXPORT int SOCK_ntoa
  );
 
 
-/** Check whether a given string represents a valid IPv4 address.
+/** Check whether a given string represents a valid bare IPv4 address.
  * @param host
  *  [in]  '\0'-terminated string to check against being a plain IPv4 address
  * @param fullquad
@@ -2210,6 +2210,32 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isipEx
 extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip
 (const char* host
  );
+
+
+/** Check whether a given string represents a valid bare IPv6 address.
+ * @param host
+ *  [in]  '\0'-terminated string to check against being a plain IPv6 address
+ * @return
+ *  Non-zero (true) if given string is an IPv6 address, zero (false) otherwise.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_isip6
+(const char* host
+ );
+
+
+/** Check whether a given string represents a bare IP address.
+* @param host
+*  [in]  '\0'-terminated string to check against being a bare address
+* @return
+*  Non-zero (true) if given string is an IPv6 address, zero (false) otherwise.
+* @note
+*  Equivalent to "SOCK_isip(host) || SOCK_isip6(host)".
+* @sa
+*  SOCK_isip, SOCK_isip6
+*/
+extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsAddress
+(const char* host
+);
 
 
 /** See man for the BSDisms, htonl() and htons().
