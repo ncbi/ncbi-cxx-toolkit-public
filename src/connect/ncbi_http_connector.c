@@ -766,9 +766,10 @@ static const char* x_SetHttpHostTag(SConnNetInfo* net_info)
         memcpy(tag, kHttpHostTag, sizeof(kHttpHostTag)-1);
         if (ConnNetInfo_PreOverrideUserHeader(net_info, tag)) {
             char*  v = tag + sizeof(kHttpHostTag)-1;
-            char*  c = strchr(v, ':');
+            int    b = *v == '[';
+            char*  c = strchr(v, b ? ']' : ':');
             size_t s = c ? (size_t)(c - v) : strlen(v);
-            memmove(tag, v, s);
+            memmove(tag, v + b, s - b);
             tag[s] = '\0';
         } else {
             free(tag);
@@ -2788,9 +2789,12 @@ static const char* x_FixupUserHeader(SConnNetInfo* net_info,
                 has_ref = 1/*true*/;
             } else if (strncasecmp(s, &"\nHost:"[first], 6 - !!first) == 0) {
                 if (!vhost) {
+                    int/*bool*/ bare;
                     vhost = s + 6 - !!first;
                     vhost = vhost + strspn(vhost, "\t ");
-                    vhost = strndup(vhost, strcspn(vhost, ":\r\n"));
+                    if (!(bare = (*vhost != '[')))
+                        ++vhost;
+                    vhost = strndup(vhost, strcspn(vhost, &"]:\r\n"[bare]));
                 }
             } else if (strncasecmp(s, &"\nCAF"[first], 4 - !!first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - !!first] == ':')) {

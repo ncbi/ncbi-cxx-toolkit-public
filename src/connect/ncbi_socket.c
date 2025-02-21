@@ -5248,14 +5248,22 @@ static EIO_Status s_Create(const char*       hostpath,
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + size)))
         return eIO_Unknown;
     if (flags & fSOCK_Secure) {
+        TNCBI_IPv6Addr temp;
         SNcbiSSLctx* sslctx;
-        const char* host = init  &&  !SOCK_isip(init->host) ? init->host : 0;
+        const char* host;
+        if (init  &&  init->host  &&  *init->host
+            &&  (!(host = NcbiIPToAddr(&temp, init->host, 0))  ||  *host)) {
+            /* cannot be fully parsed as an IP address */
+            host = init->host;
+            assert(*host);
+        } else
+            host = 0;
         if (!(sslctx = (SNcbiSSLctx*) calloc(1, sizeof(*sslctx)))) {
             free(x_sock);
             return eIO_Unknown;
         }
-        sslctx->host = host  &&  *host ? strdup(host) : 0;
-        sslctx->cred = init ? init->cred : 0;
+        sslctx->host = host ? strdup(host) : 0;
+        sslctx->cred = init ? init->cred   : 0;
         x_sock->sslctx = sslctx;
     }
     x_sock->sock      = SOCK_INVALID;
