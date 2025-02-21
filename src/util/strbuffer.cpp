@@ -464,7 +464,8 @@ char CIStreamBuffer::FillBufferNoEOF(const char* pos)
 
 bool CIStreamBuffer::TryToFillBuffer(void)
 {
-    return FillBuffer(m_CurrentPos, true) < m_DataEndPos;
+    const char* pos = FillBuffer(m_CurrentPos, true);
+    return pos < m_DataEndPos;
 }
 
 
