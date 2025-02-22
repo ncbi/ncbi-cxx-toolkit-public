@@ -270,7 +270,7 @@ namespace compile_time_bits
             constexpr size_t new_N = std::max(_MaxBits, _MaxBits2);
             using new_type = const_bitset<new_N, T>;
 
-            typename new_type::_Array_t arr;
+            typename new_type::_Array_t arr{};
             for (size_t i=0; i<arr.size(); i++) {
                 auto l = i < _Array.size() ? _Array[i] : 0;
                 auto r = i < _Other._Array.size() ? _Other._Array[i] : 0;
@@ -286,7 +286,7 @@ namespace compile_time_bits
             constexpr size_t new_N = std::max(_MaxBits, _MaxBits2);
             using new_type = const_bitset<new_N, T>;
 
-            typename new_type::_Array_t arr;
+            typename new_type::_Array_t arr{};
             for (size_t i=0; i<arr.size(); i++) {
                 auto l = i < _Array.size() ? _Array[i] : 0;
                 auto r = i < _Other._Array.size() ? _Other._Array[i] : 0;
