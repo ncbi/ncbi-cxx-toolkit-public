@@ -148,6 +148,7 @@ public:
         m_IPAddr = ipv6;
     }
 
+    // returned ipv4 is in network byte order
     operator unsigned int  (void) const
     {
         return NcbiIPv6ToIPv4(&m_IPAddr, 0);
@@ -192,28 +193,28 @@ private:
     TNCBI_IPv6Addr  m_IPAddr;
 };
 
-NCBI_DEPRECATED
+NCBI_XSOCK_DEPRECATED
 inline bool operator==(const CNCBI_IPAddr& lhs, unsigned int rhs)
 {
-    return unsigned(lhs) == rhs;
+    return unsigned(lhs) == rhs/*network byte order*/;
 }
 
-NCBI_DEPRECATED
+NCBI_XSOCK_DEPRECATED
 inline bool operator!=(const CNCBI_IPAddr& lhs, unsigned int rhs)
 {
-    return unsigned(lhs) != rhs;
+    return unsigned(lhs) != rhs/*network byte order*/;
 }
 
-NCBI_DEPRECATED
+NCBI_XSOCK_DEPRECATED
 inline bool operator==(unsigned int lhs, const CNCBI_IPAddr& rhs)
 {
-    return lhs == unsigned(rhs);
+    return lhs/*network byte order*/ == unsigned(rhs);
 }
 
-NCBI_DEPRECATED
+NCBI_XSOCK_DEPRECATED
 inline bool operator!=(unsigned int lhs, const CNCBI_IPAddr& rhs)
 {
-    return lhs != unsigned(rhs);
+    return lhs/*network byte order*/ != unsigned(rhs);
 }
 
 
@@ -943,11 +944,11 @@ public:
     ///
     static ESwitch SetDataLogging(ESwitch log);
 
-    /// Polling structure
+    /// The polling structure
     /// m_Event can be either of eIO_Open, eIO_Read, eIO_Write, eIO_ReadWrite
     struct SPoll {
         CPollable* m_Pollable;  ///< [in]  object pointer (or NULL not to poll)
-        EIO_Event  m_Event;     ///< [in]  event inqury (or eIO_Open for none)
+        EIO_Event  m_Event;     ///< [in]  event inquiry (or eIO_Open for none)
         EIO_Event  m_REvent;    ///< [out] event ready (eIO_Open if not ready)
 
         SPoll(CPollable* pollable = 0, EIO_Event event = eIO_Open)
@@ -974,14 +975,14 @@ public:
     static string ntoa(const CNCBI_IPAddr& addr);
 
     /// For IPv4 only
-    NCBI_DEPRECATED
+    NCBI_XSOCK_DEPRECATED
     static bool   isip(const string& host,
                        bool fullquad = false);
     /// Broader string classificator
     enum EIP_StringKind {
         eIP_HistoricIPv4 = 0,       ///< Accept old-fashioned IPv4 notations
         eIP_FullQuadIPv4,           ///< Accept full-quad IPv4 notations only
-        eIP_IPv6,                   ///< Accept IPv6 notations
+        eIP_IPv6,                   ///< Accept IPv6 notations only
         eIP_Any                     ///< Any IPv4 or IPv6 notations
     };
     /// @sa
@@ -1014,7 +1015,7 @@ public:
     static TNCBI_IPv6Addr GetLoopbackAddress6(void);
     static bool           IsLoopbackAddress(const CNCBI_IPAddr& addr);
 
-    /// See SOCK_HostPortToString[IPv6](), return empty when failed
+    /// See SOCK_HostPortToString[6], return empty when failed
     static string         HostPortToString(const CNCBI_IPAddr& addr,
                                            unsigned short      port);
 
