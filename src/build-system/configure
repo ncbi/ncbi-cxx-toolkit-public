@@ -10581,7 +10581,7 @@ if test "x$ac_cv_have_decl__LIBCPP_VERSION" = x""yes; then :
 fi
 
 
-modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+modern_cxx_stds="-std=gnu++20 -std=gnu++17 -std=gnu++1z"
 modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x"
 modern_c_stds="$modern_c_stds -std=gnu99 -std=gnu9x"
 
