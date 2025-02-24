@@ -106,8 +106,9 @@ public:
     EIO_Status Reset(void);
 
     /// Access to the system-specific handle.
-    virtual EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
-                                   EOwnership ownership = eNoOwnership) const;
+    virtual
+    EIO_Status GetOSHandle(void* handle_buf, size_t handle_size,
+                           EOwnership ownership = eNoOwnership) const;
 
     /// Access to the underlying "TRIGGER".
     TRIGGER GetTRIGGER(void) const;
@@ -544,9 +545,10 @@ public:
     ///
     /// @sa
     ///  SOCK_GetOSHandleEx, CSocketAPI::OSHandleSize, SOCK_GetOSHandleSize
-    virtual EIO_Status GetOSHandle(void*      handle_buf,
-                                   size_t     handle_size,
-                                   EOwnership ownership = eNoOwnership) const;
+    virtual
+    EIO_Status GetOSHandle(void*      handle_buf,
+                           size_t     handle_size,
+                           EOwnership ownership = eNoOwnership) const;
 
     /// @note  Use CSocketAPI::SetReadOnWrite() to set the default value.
     ///
@@ -868,9 +870,10 @@ public:
     ///
     /// @param handle_size
     ///
-    virtual EIO_Status GetOSHandle(void*      handle_buf,
-                                   size_t     handle_size,
-                                   EOwnership ownership = eNoOwnership) const;
+    virtual
+    EIO_Status GetOSHandle(void*      handle_buf,
+                           size_t     handle_size,
+                           EOwnership ownership = eNoOwnership) const;
 
     /// Specify if this "CListeningSocket" is to own the underlying "LSOCK"
     /// @param if_to_own
