@@ -32,6 +32,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
     get_filename_component(_basename ${DT_DATASPEC} NAME_WE)
     get_filename_component(_ext      ${DT_DATASPEC} EXT)
     file(RELATIVE_PATH     _relpath  ${NCBI_SRC_ROOT} ${_path})
+    set(_codeversion  ${_path}/${_specname}.codever)
 
     set(_specfiles  ${DT_DATASPEC})
     set(_pb_srcfiles "")
@@ -61,6 +62,15 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         return()
     endif()
 
+    if(NCBI_PROTOC_APP_VERSION)
+        if(EXISTS "${_codeversion}")
+            file(READ "${_codeversion}" _ver)
+            if(NOT "${NCBI_PROTOC_APP_VERSION}" STREQUAL "${_ver}")
+                file(REMOVE ${_codeversion} ${_pb_srcfiles} ${_gr_srcfiles})
+            endif()
+        endif()
+    endif()
+
     if(WIN32)
         set(_source "call")
         set(_iferror "if errorlevel 1 exit /b 1")
@@ -83,6 +93,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         if(NCBI_PATH_CONANGEN)
             string(APPEND _script "${_source} ${NCBI_DIR_CONANGEN}/${NCBI_NAME_CONANGEN}\n")
         endif()
+        string(APPEND _script "${_app} --version > \"${_codeversion}\"\n")
         string(APPEND _script "${_app} --cpp_out=. -I. ${_relpath}/${_specname}\n")
         string(APPEND _script "${_iferror}\n")
         if(NCBI_PATH_CONANGEN)
@@ -100,7 +111,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         file(COPY ${CMAKE_CURRENT_BINARY_DIR}/${_subdir}/${_cmdname} DESTINATION ${CMAKE_CURRENT_BINARY_DIR} FILE_PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ)
         file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/${_subdir})
         add_custom_command(
-            OUTPUT ${_pb_srcfiles} ${_pb_incfiles}
+            OUTPUT ${_pb_srcfiles} ${_pb_incfiles} ${_codeversion}
             COMMAND "${CMAKE_CURRENT_BINARY_DIR}/${_cmdname}"
             WORKING_DIRECTORY ${NCBI_SRC_ROOT}
             COMMENT "Generate PROTOC C++ classes from ${DT_DATASPEC}"
@@ -111,6 +122,7 @@ function(NCBI_internal_process_proto_dataspec _variable _access _value)
         if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
             file(APPEND ${NCBI_GENERATESRC_GRPC} "echo ${NCBI_SRC_ROOT}/${_relpath}/${_basename}${_ext}\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "cd ${NCBI_SRC_ROOT}\n")
+            file(APPEND ${NCBI_GENERATESRC_GRPC} "${_app} --version > \"${_codeversion}\"\n")
             file(APPEND ${NCBI_GENERATESRC_GRPC} "${_app} --cpp_out=. -I. ${_relpath}/${_basename}${_ext}\n")
             if(WIN32)
                 file(APPEND ${NCBI_GENERATESRC_GRPC} "if errorlevel 1 (set GENERATESRC_RESULT=1)\n")
