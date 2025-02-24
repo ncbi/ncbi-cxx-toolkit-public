@@ -772,6 +772,24 @@ CConstRef<CBioseq_Info> CTSE_Info::FindBioseq(const CSeq_id_Handle& id) const
 }
 
 
+map<size_t, CConstRef<CBioseq_Info>>
+CTSE_Info::FindBioseqBulk(const map<size_t, CSeq_id_Handle>& ids) const
+{
+    map<size_t, CConstRef<CBioseq_Info>> ret;
+    x_GetRecords(ids, true);
+    {{
+        CFastMutexGuard guard(m_BioseqsMutex);
+        for ( auto& [ i, id ] : ids ) {
+            TBioseqs::const_iterator it = m_Bioseqs.find(id);
+            if ( it != m_Bioseqs.end() ) {
+                ret[i] = it->second;
+            }
+        }
+    }}
+    return ret;
+}
+
+
 CConstRef<CBioseq_Info>
 CTSE_Info::FindMatchingBioseq(const CSeq_id_Handle& id) const
 {
@@ -849,6 +867,14 @@ void CTSE_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 {
     if ( m_Split ) {
         m_Split->x_GetRecords(id, bioseq);
+    }
+}
+
+
+void CTSE_Info::x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool bioseq) const
+{
+    if ( m_Split ) {
+        m_Split->x_GetRecords(ids, bioseq);
     }
 }
 

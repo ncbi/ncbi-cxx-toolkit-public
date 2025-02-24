@@ -354,6 +354,7 @@ public:
     // find bioseq with exactly the same id
     bool ContainsBioseq(const CSeq_id_Handle& id) const;
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& id) const;
+    map<size_t, CConstRef<CBioseq_Info>> FindBioseqBulk(const map<size_t, CSeq_id_Handle>& ids) const;
 
     // find bioseq with matching id
     // returns matching Seq-id handle
@@ -393,6 +394,7 @@ public:
     virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
     void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
+    void x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool bioseq) const;
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
 

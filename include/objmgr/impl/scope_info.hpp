@@ -281,6 +281,8 @@ public:
 
     SSeqMatch_Scope BestResolve(const CSeq_id_Handle& idh, int get_flag);
     SSeqMatch_Scope Resolve(const CSeq_id_Handle& idh, CTSE_ScopeInfo& tse);
+    map<size_t, SSeqMatch_Scope> ResolveBulk(const map<size_t, CSeq_id_Handle>& ids,
+                                             CTSE_ScopeInfo& tse);
 
     void AttachTSE(CTSE_ScopeInfo& tse, const CTSE_Lock& lock);
 
@@ -448,6 +450,7 @@ public:
     void DropTSE_Lock(void);
 
     SSeqMatch_Scope Resolve(const CSeq_id_Handle& id);
+    map<size_t, SSeqMatch_Scope> ResolveBulk(const map<size_t, CSeq_id_Handle>& ids);
 
 protected:
     template<class TScopeInfo>

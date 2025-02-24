@@ -465,15 +465,35 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
         CMutexGuard guard(m_SeqIdToChunksMutex);
         for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
               iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-            chunk_ids.push_back(iter->second);
+            if ( bioseq || GetChunk(iter->second).ContainsBioseq(id) ) {
+                chunk_ids.push_back(iter->second);
+            }
         }
     }}
-    for ( auto& chunk_id : chunk_ids ) {
-        const CTSE_Chunk_Info& chunk = GetChunk(chunk_id);
-        if ( !chunk.IsLoaded() ) {
-            chunk.x_GetRecords(id, bioseq);
-        }
+    LoadChunks(chunk_ids);
+}
+
+
+// load requests
+void CTSE_Split_Info::x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool bioseq) const
+{
+    if ( bioseq && !ContainsBioseqs() ) {
+        // shortcut - this TSE doesn't contain any Bioseqs
+        return;
     }
+    vector<TChunkId> chunk_ids;
+    {{
+        CMutexGuard guard(m_SeqIdToChunksMutex);
+        for ( auto& [ i, id ] : ids ) {
+            for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
+                  iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
+                if ( bioseq || GetChunk(iter->second).ContainsBioseq(id) ) {
+                    chunk_ids.push_back(iter->second);
+                }
+            }
+        }
+    }}
+    LoadChunks(chunk_ids);
 }
 
 

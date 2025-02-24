@@ -600,6 +600,27 @@ CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 }
 
 
+CScope::TBioseqHandles CScope::GetBioseqHandlesFromTSE(const TIds& ids,
+                                                       const CTSE_Handle& tse)
+{
+    return m_Impl->GetBioseqHandlesFromTSE(ids, tse);
+}
+
+
+CScope::TBioseqHandles CScope::GetBioseqHandlesFromTSE(const TIds& ids,
+                                                       const CBioseq_Handle& bh)
+{
+    return GetBioseqHandlesFromTSE(ids, bh.GetTSE_Handle());
+}
+
+
+CScope::TBioseqHandles CScope::GetBioseqHandlesFromTSE(const TIds& ids,
+                                                       const CSeq_entry_Handle& seh)
+{
+    return GetBioseqHandlesFromTSE(ids, seh.GetTSE_Handle());
+}
+
+
 void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
     //ERR_POST_X_ONCE(7, Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");

@@ -82,12 +82,13 @@ public:
     CRandom::TValue m_Seed;
     size_t m_RunCount;
     enum EReuseScope {
-        eReuseScope_none,
-        eReuseScope_iteration,
-        eReuseScope_all
+        eReuseScope_none, // separate scope for each Seq-id scan
+        eReuseScope_iteration, // separate scope for each processing thread
+        eReuseScope_all, // global scope for all processing threads
+        eReuseScope_split // distribute above variants over processing threads
     };
     EReuseScope m_ReuseScope;
-    CRef<CScope> m_Scope;
+    CRef<CScope> m_GlobalScope;
     size_t m_RunSize;
     TIds m_Ids;
     vector<string> m_Reference;
@@ -136,10 +137,10 @@ bool CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.AddDefaultKey
         ("reuse_scope", "ReuseScope",
          "Re-use OM scope",
-         CArgDescriptions::eString, "none");
+         CArgDescriptions::eString, "split");
     args.SetConstraint("reuse_scope",
                        &(*new CArgAllow_Strings,
-                         "none", "iteration", "all"));
+                         "none", "iteration", "all", "split"));
     string size_limit = "200";
     // ThreadSanitizer has a limit on number of mutexes held by a thread
 #ifdef NCBI_USE_TSAN
@@ -237,8 +238,11 @@ bool CTestApplication::TestApp_Init(void)
     m_Verify = args["verify"];
     m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
-    m_ReuseScope = eReuseScope_none;
-    if ( args["reuse_scope"].AsString() == "iteration" ) {
+    m_ReuseScope = eReuseScope_split;
+    if ( args["reuse_scope"].AsString() == "none" ) {
+        m_ReuseScope = eReuseScope_none;
+    }
+    else if ( args["reuse_scope"].AsString() == "iteration" ) {
         m_ReuseScope = eReuseScope_iteration;
     }
     else if ( args["reuse_scope"].AsString() == "all" ) {
@@ -266,8 +270,8 @@ bool CTestApplication::TestApp_Init(void)
             other_loaders.push_back(pOm->RegisterDataLoader(0, *i)->GetName());
         }
     }
-    if ( m_ReuseScope == eReuseScope_all ) {
-        m_Scope = MakeScope();
+    if ( m_ReuseScope == eReuseScope_all || m_ReuseScope == eReuseScope_split ) {
+        m_GlobalScope = MakeScope(); // global scope is needed
     }
     return true;
 }
@@ -308,12 +312,33 @@ CRef<CScope> CTestApplication::MakeScope(void) const
 
 bool CTestApplication::Thread_Run(int thread_id)
 {
-    CRef<CScope> scope = m_Scope;
+    CRandom random(m_Seed+thread_id);
+    EReuseScope reuse_scope = m_ReuseScope;
+    if ( reuse_scope == eReuseScope_split ) {
+        // assign each thread specific behavior
+        switch ( random.GetRand(0, 2) ) {
+        default:
+            reuse_scope = eReuseScope_none;
+            LOG_POST("Test thread "<<thread_id<<" selected single scope for each iteration");
+            break;
+        case 1:
+            reuse_scope = eReuseScope_iteration;
+            LOG_POST("Test thread "<<thread_id<<" selected single scope for all iterations");
+            break;
+        case 2:
+            reuse_scope = eReuseScope_all;
+            LOG_POST("Test thread "<<thread_id<<" selected global scope");
+            break;
+        }
+    }
+    CRef<CScope> scope;
+    if ( reuse_scope == eReuseScope_all ) {
+        scope = m_GlobalScope;
+    }
     try {
         vector<CSeq_id_Handle> ids;
         vector<string> reference;
         vector<pair<CSeq_id_Handle, string> > data;
-        CRandom random(m_Seed+thread_id);
         for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
             size_t size = min(m_RunSize, m_Ids.size());
             data.clear();
@@ -339,14 +364,11 @@ bool CTestApplication::Thread_Run(int thread_id)
                     reference.push_back(data[i].second);
                 }
             }
-            if ( m_ReuseScope == eReuseScope_none || !scope ) {
+            if ( reuse_scope == eReuseScope_none || !scope ) {
                 scope = MakeScope();
             }
             if ( !ProcessBlock(ids, reference, scope) ) {
                 m_ErrorCount.Add(1);
-            }
-            if ( m_ReuseScope == eReuseScope_none ) {
-                scope = null;
             }
         }
         return true;

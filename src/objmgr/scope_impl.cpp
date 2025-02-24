@@ -1854,6 +1854,51 @@ CBioseq_Handle CScope_Impl::x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
 }
 
 
+void CScope_Impl::x_GetBioseqHandlesFromTSE(const TIds& ids,
+                                            TBioseqHandles& ret,
+                                            const CTSE_Handle& tse)
+{
+    TConfReadLockGuard rguard(m_ConfLock);
+    CTSE_ScopeInfo& tse_info = tse.x_GetScopeInfo();
+    map<size_t, CSeq_id_Handle> new_matching_ids;
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        const CSeq_id_Handle& id = ids[i];
+        if ( !id ) {
+            // null Seq-id handles are allowed and result to null bioseq handle
+            continue;
+        }
+        // check if this sequence was resolved already and belong to the TSE
+        SSeqMatch_Scope match;
+        CRef<CBioseq_ScopeInfo> info =
+            x_FindBioseq_Info(id, CScope::eGetBioseq_Loaded, match);
+        if ( !info || !info->HasBioseq() ||
+             &info->x_GetTSE_ScopeInfo() != &tse_info ) {
+            info.Reset();
+        }
+        if ( info ) {
+            // use already resolved sequence
+            ret[i] = CBioseq_Handle(id, *info);
+        }
+        else if ( CSeq_id_Handle match_id = tse_info.ContainsMatchingBioseq(id) ) {
+            // save the sequence for bulk resolution
+            new_matching_ids[i] = match_id;
+        }
+    }
+    if ( !new_matching_ids.empty() ) {
+        // bulk-resolve remaining sequences
+        auto matches = tse_info.ResolveBulk(new_matching_ids);
+        for ( auto& m : matches ) {
+            size_t i = m.first;
+            const CSeq_id_Handle& id = ids[i];
+            SSeqMatch_Scope& match = m.second;
+            auto info = tse_info.GetBioseqInfo(match);
+            _ASSERT(info && info->HasBioseq());
+            ret[i] = CBioseq_Handle(id, *info);
+        }
+    }
+}
+
+
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
                                             int get_flag)
 {
@@ -2003,6 +2048,18 @@ CScope_Impl::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
     CBioseq_Handle ret;
     if ( tse ) {
         ret = x_GetBioseqHandleFromTSE(id, tse);
+    }
+    return ret;
+}
+
+
+CScope::TBioseqHandles
+CScope_Impl::GetBioseqHandlesFromTSE(const TIds& ids,
+                                     const CTSE_Handle& tse)
+{
+    TBioseqHandles ret(ids.size());
+    if ( tse ) {
+        x_GetBioseqHandlesFromTSE(ids, ret, tse);
     }
     return ret;
 }

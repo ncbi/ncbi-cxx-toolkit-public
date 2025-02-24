@@ -146,6 +146,7 @@ public:
 
     // loading requests
     void x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const;
+    void x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool bioseq) const;
     void x_LoadChunk(TChunkId chunk_id) const;
     void x_LoadChunks(const TChunkIds& chunk_ids) const;
     void x_AddChunksForGetRecords(vector<CConstRef<CTSE_Chunk_Info>>& chunks,

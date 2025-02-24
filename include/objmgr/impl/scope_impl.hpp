@@ -346,6 +346,8 @@ public:
     // Get a set of bioseq handles
     typedef vector<CBioseq_Handle> TBioseqHandles;
     TBioseqHandles GetBioseqHandles(const TIds& ids);
+    TBioseqHandles GetBioseqHandlesFromTSE(const TIds& ids,
+                                           const CTSE_Handle& tse);
 
     typedef vector<CTSE_Handle> TCDD_Entries;
     TCDD_Entries GetCDDAnnots(const TIds& idhs);
@@ -492,6 +494,9 @@ private:
 
     CBioseq_Handle x_GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                             const CTSE_Handle& tse);
+    void x_GetBioseqHandlesFromTSE(const TIds& ids,
+                                   TBioseqHandles& ret,
+                                   const CTSE_Handle& tse);
     void x_UpdateHandleSeq_id(CBioseq_Handle& bh);
 
     // guarded

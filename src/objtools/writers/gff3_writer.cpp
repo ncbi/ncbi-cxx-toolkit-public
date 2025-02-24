@@ -1420,12 +1420,55 @@ bool CGff3Writer::xWriteProteinSequence(
     return true;
 }
 
+void sx_CollectProductIds(CGffFeatureContext& fc,
+                          CScope::TIds& product_ids,
+                          const CMappedFeat& root = CMappedFeat())
+{
+    for ( auto& f : fc.FeatTree().GetChildren(root) ) {
+        if ( f.IsSetProduct() ) {
+            if ( auto prod_id = f.GetProduct().GetId() ) {
+                product_ids.push_back(CSeq_id_Handle::GetHandle(*prod_id));
+            }
+        }
+        sx_CollectProductIds(fc, product_ids, f);
+    }
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureContext(
     CGffFeatureContext& fc)
 //  ----------------------------------------------------------------------------
 {
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
+#if 1 // pre-load features on all local protein products of CDs
+    CScope::TBioseqHandles pre_load_prots; // save bioseqs during processing to avoid GC
+    CScope::TCDD_Entries pre_load_cdd_annots; // save annots during processing to avoid GC
+    CFeat_CI pre_load_features; // save features during processing to avoid GC
+    if ( fc.BioseqHandle() ) { // do that only if root bioseq handle is available
+        CScope::TIds product_ids;
+        sx_CollectProductIds(fc, product_ids);
+        // bulk load protein sequences
+        auto bhs = m_pScope->GetBioseqHandlesFromTSE(product_ids, fc.BioseqHandle());
+        
+        // select local proteins and create seq map to load features
+        CRef<CSeq_loc> all_prot_loc(new CSeq_loc); // collected combined location
+        for ( auto& bh : bhs ) {
+            if ( bh && bh.IsProtein() ) {
+                CRef<CSeq_loc> loc(new CSeq_loc);
+                loc->SetWhole(const_cast<CSeq_id&>(*bh.GetSeqId()));
+                all_prot_loc->SetMix().Set().push_back(loc);
+                pre_load_prots.push_back(bh);
+            }
+        }
+        if ( !pre_load_prots.empty() ) {
+            // bulk load cdd annots 
+            pre_load_cdd_annots = m_pScope->GetCDDAnnots(pre_load_prots);
+            // bulk load other features
+            pre_load_features = CFeat_CI(*m_pScope, *all_prot_loc);
+        }
+    }
+#endif
     std::sort(vRoots.begin(), vRoots.end(), CWriteUtil::CompareFeatures);
     for (auto pit = vRoots.begin(); pit != vRoots.end(); ++pit) {
         CMappedFeat mRoot = *pit;

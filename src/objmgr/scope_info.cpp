@@ -898,6 +898,27 @@ SSeqMatch_Scope CDataSource_ScopeInfo::Resolve(const CSeq_id_Handle& idh,
 }
 
 
+map<size_t, SSeqMatch_Scope>
+CDataSource_ScopeInfo::ResolveBulk(const map<size_t, CSeq_id_Handle>& ids,
+                                   CTSE_ScopeInfo& tse)
+{
+    map<size_t, SSeqMatch_Scope> ret;
+    map<size_t, CConstRef<CBioseq_Info>> bioseqs = tse.GetTSE_Lock()->FindBioseqBulk(ids);
+    for ( auto& [ i, idh ] : ids ) {
+        SSeqMatch_Scope match;
+        match.m_Seq_id = idh;
+        match.m_TSE_Lock = CTSE_ScopeUserLock(&tse);
+        _ASSERT(match.m_Seq_id);
+        _ASSERT(match.m_TSE_Lock);
+        match.m_Bioseq = bioseqs[i];
+        _ASSERT(match.m_Bioseq);
+        _ASSERT(match.m_Bioseq == match.m_TSE_Lock->m_TSE_Lock->FindBioseq(match.m_Seq_id));
+        ret[i] = match;
+    }
+    return ret;
+}
+
+
 SSeqMatch_Scope CDataSource_ScopeInfo::x_GetSeqMatch(const CSeq_id_Handle& idh)
 {
     SSeqMatch_Scope ret = x_FindBestTSE(idh);
@@ -2119,6 +2140,13 @@ void CTSE_ScopeInfo::x_RestoreAdded(CScopeInfo_Base& parent,
 SSeqMatch_Scope CTSE_ScopeInfo::Resolve(const CSeq_id_Handle& id)
 {
     return GetDSInfo().Resolve(id, *this);
+}
+
+
+map<size_t, SSeqMatch_Scope>
+CTSE_ScopeInfo::ResolveBulk(const map<size_t, CSeq_id_Handle>& ids)
+{
+    return GetDSInfo().ResolveBulk(ids, *this);
 }
 
 

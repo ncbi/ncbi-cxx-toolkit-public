@@ -227,6 +227,14 @@ public:
     CBioseq_Handle GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                           const CSeq_entry_Handle& seh);
 
+    /// Bulk get bioseq handles for sequence withing one TSE
+    TBioseqHandles GetBioseqHandlesFromTSE(const TIds& ids,
+                                           const CTSE_Handle& tse);
+    TBioseqHandles GetBioseqHandlesFromTSE(const TIds& ids,
+                                           const CBioseq_Handle& bh);
+    TBioseqHandles GetBioseqHandlesFromTSE(const TIds& ids,
+                                           const CSeq_entry_Handle& seh);
+
 
     // CScope contents modification methods
 
