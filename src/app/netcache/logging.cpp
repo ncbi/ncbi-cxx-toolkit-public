@@ -34,6 +34,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbireg.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include "logging.hpp"
 #include "threads_man.hpp"
