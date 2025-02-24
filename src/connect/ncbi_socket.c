@@ -1281,6 +1281,8 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr,
             struct sockaddr_in6 in6;
         } u;
         int ipv4 = NcbiIsIPv4(addr);
+        TSOCK_socklen_t x_bufsize = bufsize > CONN_HOST_LEN
+            ? CONN_HOST_LEN + 1 : (TSOCK_socklen_t) bufsize;
         TSOCK_socklen_t addrlen = ipv4 ? sizeof(u.in) : sizeof(u.in6);
         memset(&u, 0, addrlen);
         u.sa.sa_family = ipv4 ? AF_INET : AF_INET6;
@@ -1292,7 +1294,8 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr,
         else
             memcpy(&u.in6.sin6_addr, addr, sizeof(u.in6.sin6_addr));
         if ((ipv4  &&  u.in.sin_addr.s_addr == htonl(INADDR_NONE))
-            ||  (error = getnameinfo(&u.sa, addrlen, buf, WIN_DWORD_CAST bufsize,
+            ||  (error = getnameinfo(&u.sa, addrlen,
+                                     buf, WIN_DWORD_CAST x_bufsize,
                                      0, 0, NI_NAMEREQD)) != 0
             ||  !*buf) {
             if (!s_AddrToString(buf, bufsize, addr, family, 0)) {
@@ -5218,6 +5221,26 @@ static EIO_Status s_Connect(SOCK            sock,
 }
 
 
+/* NB: a sped-up version of !SOCK_IsAddress(), basically */
+static int/*bool*/ s_VHostOk(const char* vhost)
+{
+    TNCBI_IPv6Addr temp;
+    const char*    end;
+    size_t         len;
+
+    if (!vhost  ||  !*vhost)
+        return 0;
+    if (NCBI_HasSpaces(vhost, len = strlen(vhost)))
+        return 0/*false*/;
+    if (SOCK_isip(vhost))
+        return 0/*false*/;
+    end = NcbiStringToIPv6(&temp, vhost, len);
+    if (end  &&  !*end)
+        return 0/*false*/;
+    return 1/*true*/;
+}
+
+
 static EIO_Status s_Create(const char*       hostpath,
                            unsigned short    port,
                            const STimeout*   timeout,
@@ -5238,9 +5261,8 @@ static EIO_Status s_Create(const char*       hostpath,
         return eIO_Unknown;
     if (flags & fSOCK_Secure) {
         SNcbiSSLctx* sslctx;
-        const char* host;
-        if (init  &&  init->host  &&  *init->host
-            &&  !SOCK_IsAddress(init->host)) {
+        const char*  host;
+        if (init  &&  s_VHostOk(init->host)) {
             host = init->host;
             assert(*host);
         } else
@@ -5249,8 +5271,8 @@ static EIO_Status s_Create(const char*       hostpath,
             free(x_sock);
             return eIO_Unknown;
         }
-        sslctx->host = host ? strdup(host) : 0;
         sslctx->cred = init ? init->cred   : 0;
+        sslctx->host = host ? strdup(host) : 0;
         x_sock->sslctx = sslctx;
     }
     x_sock->sock      = SOCK_INVALID;
@@ -5572,9 +5594,8 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         const char* host;
         if (!oldctx->sess  &&  init) {
             cred = init->cred;
-            host = SOCK_IsAddress(init->host) ? 0 : init->host;
-            if (host  &&  !*host)
-                host = 0;
+            host = s_VHostOk(init->host) ? init->host : 0;
+            assert(!host  ||  *host);
         } else {
             cred = oldctx->cred;
             host = oldctx->host;
@@ -5589,11 +5610,12 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         x_sock->sslctx->host = host ? strdup(host) : 0;
         sslctx = x_sock->sslctx;
     } else if (sslctx) {
-        const char* host = init  &&  !SOCK_IsAddress(init->host) ? init->host : 0;
+        const char* host = init  &&  s_VHostOk(init->host) ? init->host : 0;
+        assert(!host  ||  *host);
         x_sock->sslctx = sslctx;
         x_sock->sslctx->sock = x_sock;
-        x_sock->sslctx->cred = init ? init->cred : 0;
-        x_sock->sslctx->host = host  &&  *host ? strdup(host) : 0;
+        x_sock->sslctx->cred = init ? init->cred   : 0;
+        x_sock->sslctx->host = host ? strdup(host) : 0;
     }
 
     if (sslctx) {
@@ -9573,7 +9595,10 @@ extern int/*bool*/ SOCK_isip(const char* str)
 extern int/*bool*/ SOCK_isip6(const char* str)
 {
     TNCBI_IPv6Addr temp;
-    const char* end = NcbiStringToIPv6(&temp, str, 0);
+    const char*    end;
+    if (!str  ||  isspace((unsigned char)(*str)))
+        return 0;
+    end = NcbiStringToIPv6(&temp, str, 0);
     return end  &&  !*end;
 }
 
