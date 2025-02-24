@@ -281,6 +281,15 @@ if(EXISTS ${NCBI_TREE_ROOT}/CMake.CustomComponents.cmake)
 endif()
 
 #############################################################################
+# NCBI_PROTOC_APP_VERSION
+if(EXISTS "${NCBI_PROTOC_APP}")
+    execute_process(
+        COMMAND ${NCBI_PROTOC_APP} --version
+        OUTPUT_VARIABLE NCBI_PROTOC_APP_VERSION
+    )
+endif()
+
+#############################################################################
 # NCBI_PYTHON_EXECUTABLE
 if(NOT NCBI_PYTHON_EXECUTABLE)
     if(NOT "$ENV{VIRTUAL_ENV}" STREQUAL "")
