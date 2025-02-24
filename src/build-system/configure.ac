@@ -2209,7 +2209,7 @@ esac
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [@%:@include <iosfwd>])
 
-modern_cxx_stds="-std=gnu++17 -std=gnu++1z"
+modern_cxx_stds="-std=gnu++20 -std=gnu++17 -std=gnu++1z"
 modern_c_stds="-std=gnu18 -std=gnu17 -std=gnu11 -std=gnu1x"
 modern_c_stds="$modern_c_stds -std=gnu99 -std=gnu9x"
 
