@@ -731,7 +731,7 @@ static char* x_HostPort(size_t reserve, const char* host, unsigned short xport)
 {
     size_t hostlen = strlen(host), portlen;
     char*  hostport, port[16];
-    size_t/*bool*/ brackets;
+    size_t brackets;
  
     if (!xport) {
         portlen = 1;
@@ -764,17 +764,11 @@ static const char* x_SetHttpHostTag(SConnNetInfo* net_info)
     tag = x_HostPort(sizeof(kHttpHostTag)-1, net_info->host, port);
     if (tag) {
         memcpy(tag, kHttpHostTag, sizeof(kHttpHostTag)-1);
-        if (ConnNetInfo_PreOverrideUserHeader(net_info, tag)) {
-            char*  v = tag + sizeof(kHttpHostTag)-1;
-            int    b = *v == '[';
-            char*  c = strchr(v, b ? ']' : ':');
-            size_t s = (c ? (size_t)(c - v) : strlen(v)) - b;
-            memmove(tag, v + b, s);
-            tag[s] = '\0';
-        } else {
+        if (!ConnNetInfo_PreOverrideUserHeader(net_info, tag)) {
             free(tag);
             tag = 0;
-        }        
+        } else
+            strcpy(tag, net_info->host);
     }
     return tag;
 }
@@ -2779,38 +2773,34 @@ static const char* x_FixupUserHeader(SConnNetInfo* net_info,
                                      int  /*bool*/ has_ref,
                                      int* /*bool*/ has_sid)
 {
-    const char* vhost = 0, *s;
+    const char* vhost = 0, *s = net_info->http_user_header;
  
-    if ((s = net_info->http_user_header) != 0) {
+    if (s) {
         int/*bool*/ first = 1/*true*/;
         while (*s) {
             if (has_ref < 0/*unset*/
-                &&  strncasecmp(s, &"\nReferer:"[first], 9 - !!first) == 0) {
+                &&  strncasecmp(s, &"\nReferer:"[first], 9 - first) == 0) {
                 has_ref = 1/*true*/;
-            } else if (strncasecmp(s, &"\nHost:"[first], 6 - !!first) == 0) {
-                if (!vhost) {
-                    int/*bool*/ bare;
-                    vhost = s + 6 - !!first;
-                    vhost = vhost + strspn(vhost, "\t ");
-                    if (!(bare = (*vhost != '[')))
-                        ++vhost;
-                    vhost = strndup(vhost, strcspn(vhost, &"]:\r\n"[bare]));
-                }
-            } else if (strncasecmp(s, &"\nCAF"[first], 4 - !!first) == 0
-                       &&  (s[4 - first] == '-'  ||  s[4 - !!first] == ':')) {
-                char* caftag = strndup(s + !first, strcspn(s + !first, ":"));
-                if (caftag) {
-                    size_t cafoff = (size_t)(s - net_info->http_user_header);
-                    ConnNetInfo_DeleteUserHeader(net_info, caftag);
-                    free(caftag);
-                    if (!(s = net_info->http_user_header)  ||  !*(s += cafoff))
-                        break;
-                    first = !cafoff;
-                    continue;
-                }
+            } else if (!vhost
+                &&  strncasecmp(s, &"\nHost:"[first], 6 - first) == 0) {
+                int/*bool*/ bare;
+                vhost = s + (6 - first);
+                vhost += strspn(vhost, "\t ");
+                if (!(bare = (*vhost != '[')))
+                    ++vhost;
+                vhost = strndup(vhost,
+                                strcspn(vhost, bare ? ":\r\n" : "]\r\n" ));
+            } else if (strncasecmp(s, &"\nCAF"[first], 4 - first) == 0
+                       &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
+                size_t cafoff = (size_t)(s - net_info->http_user_header);
+                ConnNetInfo_DeleteUserHeader(net_info, s + !first);
+                if (!(s = net_info->http_user_header)  ||  !*(s += cafoff))
+                    break;
+                first = !cafoff;
+                continue;
             } else if (!*has_sid
                        &&  strncasecmp(s, &"\n" HTTP_NCBI_SID[first],
-                                       sizeof(HTTP_NCBI_SID) - !!first) == 0) {
+                                       sizeof(HTTP_NCBI_SID) - first) == 0) {
                 *has_sid = 1/*true*/;
             }
             if (!(s = strchr(++s, '\n')))
@@ -2824,21 +2814,20 @@ static const char* x_FixupUserHeader(SConnNetInfo* net_info,
         sprintf(buf, "User-Agent: %.80s", s);
         ConnNetInfo_ExtendUserHeader(net_info, buf);
     }
-    if ((s = net_info->http_referer) != 0) {
-        char* ref;
-        if (has_ref <= 0  &&  *s) {
+    s = net_info->http_referer;
+    if (s) {
+        if (*s  &&  has_ref <= 0) {
             size_t len = strlen(s);
-            if ((ref = (char*) realloc((char*) s, 10 + len)) != 0) {
+            char* ref = (char*) realloc((void*) s, 10 + len);
+            if (ref) {
                 memmove(ref + 9, ref, len + 1);
                 memcpy(ref, "Referer: ", 9);
                 ConnNetInfo_AppendUserHeader(net_info, ref);
-            } else
-                ref = (char*) s;
-        } else
-            ref = (char*) s;
+                s = ref;
+            }
+        }
         net_info->http_referer = 0;
-        assert(ref);
-        free(ref);
+        free((void*) s);
     }
     if (net_info->external)
         ConnNetInfo_OverrideUserHeader(net_info, NCBI_EXTERNAL ": Y");
