@@ -189,7 +189,11 @@ CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 
     CSeq_id_Handle idh;
     CConstRef<CSeq_id> origid;
-    const bool is_numeric = (NStr::StringToNumeric(s) != -1);
+
+    const bool is_numeric = 
+        !s.empty()
+     && std::all_of(s.begin(), s.end(), [](unsigned char c) { return std::isdigit(c); });
+
     if (is_numeric) {
         CRef<CSeq_id> sid(new CSeq_id());
         // ensure numeric chromosome names are stored as "local str" not "local id"
