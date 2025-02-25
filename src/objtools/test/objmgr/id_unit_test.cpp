@@ -2800,6 +2800,34 @@ BOOST_AUTO_TEST_CASE(TestFallback8)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestPirMatching)
+{
+    LOG_POST("Checking PIR/PRF accession to name matching");
+    CRef<CScope> scope = s_InitScope();
+    if ( 1 ) {
+        string id_str = "pir|C24693";
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id_str);
+        BOOST_CHECK_EQUAL(idh.Which(), CSeq_id::e_Pir);
+        auto bsh = scope->GetBioseqHandle(idh);
+        BOOST_CHECK(bsh);
+    }
+    if ( 0 ) { // prf|accession aren't resolved by servers
+        string id_str = "prf|2210278A";
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id_str);
+        BOOST_CHECK_EQUAL(idh.Which(), CSeq_id::e_Pir);
+        auto bsh = scope->GetBioseqHandle(idh);
+        BOOST_CHECK(bsh);
+    }
+    if ( 0 ) { // prf|accession aren't resolved by servers
+        string id_str = "prf|2211422D";
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id_str);
+        BOOST_CHECK_EQUAL(idh.Which(), CSeq_id::e_Pir);
+        auto bsh = scope->GetBioseqHandle(idh);
+        BOOST_CHECK(bsh);
+    }
+}
+
+
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
     arg_descrs->AddFlag("psg",
