@@ -46,6 +46,10 @@ GPIPE OPTIONS
   --gpipe-prod-mem-debug  for memory leaks/bugs (not dll; debug with sanitizers)
   --gpipe-prod-max-debug  for limited cases given slow performance (not dll; max debug)
 
+  For special cases:
+
+  --gpipe-deps            for dependencies only (e.g. Toolkit) without internal/gpipe
+
   NOTE: GPipe settings override several Toolkit defaults, such as
         compilation warnings, --with-components, --with-features.
 
@@ -179,6 +183,18 @@ configure_ext_ParseArgs()
       _ext_CXXFLAGS="$_ext_CXXFLAGS -fsanitize=address -DNCBI_USE_LSAN"
       ;;
 
+    "--gpipe-deps")
+      GPIPE_MODE=prod
+      BUILD_TYPE="Release"
+      BUILD_SHARED_LIBS="ON"
+      PROJECT_FEATURES="${PROJECT_FEATURES};Int8GI"
+      PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
+      : "${BUILD_ROOT:=../Release}"
+      configure_common_gpipe
+      PROJECT_LIST=${tree_root}/scripts/projects/ncbi_gpipe_deps.lst
+      _ext_EXE_LINKER_FLAGS="${_ext_EXE_LINKER_FLAGS:-}${_ext_EXE_LINKER_FLAGS:+ }-lSegFault"
+      ;;
+
     *) 
       _ext_unknown="${_ext_unknown} $1"
       ;; 
@@ -194,7 +210,6 @@ configure_ext_PreCMake()
   "") echo "WARNING: Configuring without choosing a predefined GPipe setting."
       configure_ext_Usage
       ;;
-  *) ;;
   esac
 
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(Quote "${_ext_CFLAGS}") -DCMAKE_CXX_FLAGS=$(Quote "${_ext_CXXFLAGS}") -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${_ext_EXE_LINKER_FLAGS}")"
