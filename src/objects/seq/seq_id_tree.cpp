@@ -1354,29 +1354,38 @@ CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
 
 void CSeq_id_Textseq_Tree::x_FindMatchByName(TSeq_id_MatchList& id_list,
                                              const string& name,
-                                             const CTextseq_id* tid) const
+                                             const CTextseq_id* tid,
+                                             EAllowFields allow_fields) const
 {
     for ( TStringMapCI vit = m_ByName.find(name);
           vit != m_ByName.end() && NStr::EqualNocase(vit->first, name);
           ++vit ) {
-        if ( tid ) {
+        if ( tid || allow_fields != eAnyFields ) {
             CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
             const CTextseq_id& tst = x_Get(*tst_id);
-            // name.rel should match
-            if ( tst.IsSetAccession() && tid->IsSetAccession() ) {
-                // both accessions are set.
-                // if they are the same - match will be found by accession,
-                // otherwise accessions are different and there is no match.
-                continue;
-            }
-            if ( tid->IsSetRelease() ) {
-                if ( tst.IsSetRelease()  ||
-                     !(m_Type == CSeq_id::e_Swissprot &&
-                       x_IsDefaultSwissprotRelease(tid->GetRelease())) ) {
-                    if ( !tst.IsSetRelease() ||
-                         tst.GetRelease() != tid->GetRelease() ) {
-                        continue;
+            if ( tid ) {
+                // name.rel should match
+                if ( tst.IsSetAccession() && tid->IsSetAccession() ) {
+                    // both accessions are set.
+                    // if they are the same - match will be found by accession,
+                    // otherwise accessions are different and there is no match.
+                    continue;
+                }
+                if ( tid->IsSetRelease() ) {
+                    if ( tst.IsSetRelease()  ||
+                         !(m_Type == CSeq_id::e_Swissprot &&
+                           x_IsDefaultSwissprotRelease(tid->GetRelease())) ) {
+                        if ( !tst.IsSetRelease() ||
+                             tst.GetRelease() != tid->GetRelease() ) {
+                            continue;
+                        }
                     }
+                }
+            }
+            if ( allow_fields == eOnlyName ) {
+                // only name field is allowed
+                if ( tst.IsSetAccession() || tst.IsSetVersion() || tst.IsSetRelease() ) {
+                    continue;
                 }
             }
         }
@@ -1475,7 +1484,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
              !m_ByName.empty() ) {
             string acc;
             info->RestoreAccession(acc, id.GetPacked(), 0); // case doesn't matter
-            x_FindMatchByName(id_list, acc);
+            x_FindMatchByName(id_list, acc, nullptr, eOnlyName);
         }
     }
     else {
@@ -1494,7 +1503,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
              tid->IsSetAccession() &&
              !tid->IsSetVersion() && !tid->IsSetName() && !tid->IsSetRelease() &&
              !m_ByName.empty() ) {
-            x_FindMatchByName(id_list, tid->GetAccession());
+            x_FindMatchByName(id_list, tid->GetAccession(), nullptr, eOnlyName);
         }
     }
 }
@@ -1860,7 +1869,7 @@ static bool sx_ParseLocalStrId(const string& str, CObject_id::TId& id)
     }
     else if ( value > 0 ) {
         // non-zero positive value
-        if ( str[0] == '0' || str[0] == '+' ) {
+        if ( first_char == '0' || first_char == '+' ) {
             // redundant '+' or leading zeroes are not allowed
             return false;
         }
@@ -1870,7 +1879,7 @@ static bool sx_ParseLocalStrId(const string& str, CObject_id::TId& id)
     }
     else {
         // non-zero negative value
-        if ( str[0] != '-' || str[1] == '0' ) {
+        if ( first_char != '-' || str[1] == '0' ) {
             // leading zeroes are not allowed
             return false;
         }
