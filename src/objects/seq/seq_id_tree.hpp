@@ -554,9 +554,14 @@ private:
         }
         x_FindMatchByAcc(id_list, acc, ver_ptr);
     }
+    enum EAllowFields {
+        eAnyFields,
+        eOnlyName
+    };
     void x_FindMatchByName(TSeq_id_MatchList& id_list,
                            const string& name,
-                           const CTextseq_id* tid = 0) const;
+                           const CTextseq_id* tid = nullptr,
+                           EAllowFields allow_fields = eAnyFields) const;
 
     void x_FindRevMatchByAccPacked(TSeq_id_MatchList& id_list,
                                    const string& acc,
