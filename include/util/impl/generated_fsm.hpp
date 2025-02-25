@@ -104,7 +104,17 @@ public:
 #else
     using hits_iterator = const index_type*;
 #endif
-    virtual range<hits_iterator> get_hits(index_type state) const = 0;
+
+    typedef range<hits_iterator> (*get_hits_func_type) (const CCompiledFSM* self, index_type state);
+    get_hits_func_type m_get_hits = nullptr;
+
+    range<hits_iterator> get_hits(index_type state) const
+    {
+        if (m_get_hits)
+            return m_get_hits(this, state);
+        else
+            return {};
+    }
 };
 
 template<typename _THits2>
@@ -122,11 +132,19 @@ public:
         CCompiledFSM::m_hits1 = hits1;
         CCompiledFSM::m_states = states;
         CCompiledFSM::m_rules_asn1 = rules_asn1;
+        CCompiledFSM::m_get_hits = s_get_hits;
     }
 
     ct::const_vector<typename _THits2::value_type> m_hits2;
 
-    range<hits_iterator> get_hits(index_type state) const override
+private:
+    static range<hits_iterator> s_get_hits(const CCompiledFSM* self, index_type state)
+    {
+        const TCompiledFSMImpl* _this = static_cast<const TCompiledFSMImpl*>(self);
+        return _this->s_get_hits(state);
+    }
+
+    range<hits_iterator> s_get_hits(index_type state) const
     {
         auto it = std::lower_bound(m_hits1.begin(), m_hits1.end(), state);
 #ifdef _DEBUG

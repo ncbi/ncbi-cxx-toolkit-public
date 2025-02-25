@@ -53,14 +53,14 @@ class CStaticRules
 {
 protected:
     string_view m_suffix;
-    std::function<const CCompiledFSM*(void)> m_fsm_getter;
+    const CCompiledFSM* m_compiled_fsm = nullptr;
     bool s_Initialized = false;
     string  s_FileName;
     CRef<CSuspect_rule_set> s_Rules;
     std::mutex mutex;
 public:
-    CStaticRules(string_view suffix, decltype(m_fsm_getter) fsm_getter)
-    : m_suffix{suffix}, m_fsm_getter(fsm_getter) {}
+    CStaticRules(string_view suffix, const CCompiledFSM* fsm)
+    : m_suffix{suffix}, m_compiled_fsm{fsm} {}
 
     CConstRef<CSuspect_rule_set> InitializeRules(const string& name)
     {
@@ -81,12 +81,11 @@ public:
         }
         if (!s_Rules->IsSet()) {
             //LOG_POST("Falling back on built-in data for " + m_suffix);
-            auto p_fsm = m_fsm_getter();
-            unique_ptr<CObjectIStream> istr (CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, (const char*)p_fsm->m_rules_asn1.data(), p_fsm->m_rules_asn1.size()));
+            unique_ptr<CObjectIStream> istr (CObjectIStream::CreateFromBuffer(eSerial_AsnBinary, (const char*)m_compiled_fsm->m_rules_asn1.data(), m_compiled_fsm->m_rules_asn1.size()));
             //auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
             //_ASSERT(types.size() == 1 && *types.begin() == CSuspect_rule_set::GetTypeInfo());
             *istr >> *s_Rules;
-            s_Rules->SetPrecompiledData(p_fsm);
+            s_Rules->SetPrecompiledData(m_compiled_fsm);
         }
 
         s_Initialized = true;
@@ -94,35 +93,28 @@ public:
     }
 };
 
-const CCompiledFSM* xGetOrganellesFSM()
-{
-#include "organelle_products.inc"
-
-    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
-    return &s_FSM;
-}
-
-const CCompiledFSM* xGetProductRulesFSM()
-{
-#include "product_rules.inc"
-    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
-    return &s_FSM;
-}
-
 }
 
 BEGIN_SCOPE(NDiscrepancy)
 
 CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name)
 {
-    static CStaticRules rules("organelle products", xGetOrganellesFSM);
+    #include "organelle_products.inc"
+    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
+
+    static CStaticRules rules("organelle products", &s_FSM);
+
     return rules.InitializeRules(name);
 }
 
 
 CConstRef<CSuspect_rule_set> GetProductRules(const string& name)
 {
-    static CStaticRules rules("1suspect product rules", xGetProductRulesFSM);
+    #include "product_rules.inc"
+    static constexpr TLocalFSM s_FSM{s_compact, s_hits_init_1, s_hits_init_2, s_states, s_rules};
+
+    static CStaticRules rules("suspect product rules", &s_FSM);
+
     return rules.InitializeRules(name);
 }
 

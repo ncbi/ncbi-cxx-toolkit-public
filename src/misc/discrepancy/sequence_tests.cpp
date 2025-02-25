@@ -1650,12 +1650,12 @@ DISCREPANCY_CASE(UNWANTED_SET_WRAPPER, FEAT, eOncaller, "Set wrapper on microsat
 // FLATFILE_FIND
 struct SpellFixData
 {
-    const char* m_misspell;
-    const char* m_correct;
-    bool m_whole_word;
+    const char* m_misspell = nullptr;
+    const char* m_correct  = nullptr;
+    bool m_whole_word      = false;
 };
 
-static SpellFixData kSpellFixes[] = {
+static constexpr auto kSpellFixes = std::to_array<SpellFixData>({
     { "Agricultutral", "agricultural", false },
     { "Bacilllus", "Bacillus", false },
     { "Enviromental", "Environmental", false },
@@ -1738,11 +1738,9 @@ static SpellFixData kSpellFixes[] = {
     { "haemagglutination", nullptr, false },
     { "heam", nullptr, false },
     { "mithocon", nullptr, false },
-};
+});
 
-static const size_t kSpellFixesSize = ArraySize(kSpellFixes);
-static const string kFixable = "Fixable";
-static const string kNonFixable = "Non-fixable";
+static constexpr size_t kSpellFixesSize = kSpellFixes.size();
 
 
 static void FindFlatfileText(const char* str, bool *result)
@@ -1759,10 +1757,10 @@ static void FindFlatfileText(const char* str, bool *result)
 /// multipattern.exe -i FLATFILE_FIND.txt > FLATFILE_FIND.inc
 void UnitTest_FLATFILE_FIND()
 {
-    bool Found[kSpellFixesSize];
+    bool Found[kSpellFixes.size()];
     string error = "String not found: ";
-    for (size_t i = 0; i < kSpellFixesSize; i++) {
-        fill(Found, Found + kSpellFixesSize, 0);
+    for (size_t i = 0; i < kSpellFixes.size(); i++) {
+        std::fill(Found, Found + kSpellFixesSize, 0);
         FindFlatfileText(kSpellFixes[i].m_misspell, Found);
         if (!Found[i]) {
             error += kSpellFixes[i].m_misspell;
@@ -1778,6 +1776,9 @@ DISCREPANCY_CASE1(FLATFILE_FIND, SEQUENCE, eOncaller, "Flatfile representation o
     "FLATFILE_FIND_ONCALLER_FIXABLE"
     )
 {
+    static const string kFixable = "Fixable";
+    static const string kNonFixable = "Non-fixable";
+
     bool Found[kSpellFixesSize];
     for (auto& desc : context.GetAllSeqdesc()) {
         fill(Found, Found + kSpellFixesSize, 0);
