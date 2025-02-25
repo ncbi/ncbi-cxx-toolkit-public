@@ -281,6 +281,13 @@ bool CGtfReader::xUpdateAnnotCds(
 }
 
 
+bool CGtfReader::xIsCommentLine(
+        const CTempString& line)
+{
+    return (line.empty() || line[0] == '#');
+}
+
+
 //  ----------------------------------------------------------------------------
 void CGtfReader::xPropagateQualToParent(
         const CGtfReadRecord& record,

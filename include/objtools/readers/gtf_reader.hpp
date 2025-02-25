@@ -262,6 +262,8 @@ private:
         const string& parentType,
         CSeq_annot& annot);
 
+    bool xIsCommentLine(const CTempString& line) override;
+
 protected:
     void xPostProcessAnnot(
         CSeq_annot&) override;
