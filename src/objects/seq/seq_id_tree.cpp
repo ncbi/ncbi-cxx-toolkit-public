@@ -1429,7 +1429,8 @@ bool CSeq_id_Textseq_Tree::HaveMatch(const CSeq_id_Handle& ) const
 void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
-    bool mine = x_Check(id.Which());
+    auto type = id.Which();
+    bool mine = x_Check(type);
     if ( mine ) {
         id_list.insert(id);
     }
@@ -1467,6 +1468,15 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                 }
             }
         }
+        // special case for PIR and PRF ids - matching accesstion to name
+        // the id should have only accession and no other fields (version, name, release)
+        if ( (type == CSeq_id::e_Pir || type == CSeq_id::e_Prf) &&
+             !info->IsSetVersion() && // packed id doesn't have name or release already
+             !m_ByName.empty() ) {
+            string acc;
+            info->RestoreAccession(acc, id.GetPacked(), 0); // case doesn't matter
+            x_FindMatchByName(id_list, acc);
+        }
     }
     else {
         CConstRef<CSeq_id> tid_id = id.GetSeqId();
@@ -1477,6 +1487,14 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
         }
         if ( tid->IsSetName() ) {
             x_FindMatchByName(id_list, tid->GetName(), tid);
+        }
+        // special case for PIR and PRF ids - matching accesstion to name
+        // the id should have only accession and no other fields (version, name, release)
+        if ( (type == CSeq_id::e_Pir || type == CSeq_id::e_Prf) &&
+             tid->IsSetAccession() &&
+             !tid->IsSetVersion() && !tid->IsSetName() && !tid->IsSetRelease() &&
+             !m_ByName.empty() ) {
+            x_FindMatchByName(id_list, tid->GetAccession());
         }
     }
 }
@@ -1817,6 +1835,14 @@ static inline bool sx_AllDigits(const string& s)
 
 static bool sx_ParseLocalStrId(const string& str, CObject_id::TId& id)
 {
+    if ( str.empty() ) {
+        return false;
+    }
+    char first_char = str[0];
+    if ( first_char != '-' && (first_char < '0' || first_char > '9') ) {
+        // not a number
+        return false;
+    }
     CObject_id::TId value = NStr::StringToNumeric<CObject_id::TId>(str, NStr::fConvErr_NoThrow);
     if ( !value ) {
         if ( errno ) {
