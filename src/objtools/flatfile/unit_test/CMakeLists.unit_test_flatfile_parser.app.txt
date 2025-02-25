@@ -2,7 +2,7 @@
 
 NCBI_begin_app(unit_test_flatfile_parser)
   NCBI_sources(unit_test_flatfile_parser)
-  NCBI_requires(Boost.Test.Included)
+  NCBI_requires(Boost.Test.Included -Cygwin)
   NCBI_uses_toolkit_libraries(xflatfile)
 #  NCBI_add_test()
   NCBI_project_watchers(foleyjp)

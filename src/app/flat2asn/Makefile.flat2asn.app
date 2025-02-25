@@ -11,5 +11,6 @@ LIB = xflatfile xlogging taxon1 $(XFORMAT_LIBS) $(EUTILS_LIBS) $(SEQ_LIBS) pub m
 
 LIBS = $(DATA_LOADERS_UTIL_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
+REQUIRES = -Cygwin
 
 WATCHERS = foleyjp

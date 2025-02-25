@@ -51,8 +51,9 @@ DLL_LIB = xlogging
 
 ASN_DEP = genome_collection submit taxon1
 
+REQUIRES = -Cygwin
+
 USES_LIBRARIES = xlogging
 
 WATCHERS = gotvyans foleyjp
-
 
