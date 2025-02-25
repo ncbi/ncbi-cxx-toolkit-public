@@ -53,6 +53,8 @@ NCBI_begin_lib(xflatfile)
     keyword_parse
   )
 
+  NCBI_requires(-Cygwin)
+
   NCBI_uses_toolkit_libraries(
     xcleanup
     xlogging

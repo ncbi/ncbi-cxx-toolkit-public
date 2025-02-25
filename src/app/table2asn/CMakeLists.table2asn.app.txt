@@ -7,6 +7,7 @@ NCBI_begin_app(table2asn)
     table2asn_huge async_token utils
     annot_match annot_match_5col
   )
+  NCBI_requires(-Cygwin)
   NCBI_uses_toolkit_libraries(
     data_loaders_util prosplign xdiscrepancy xflatfile
     xmlwrapp xvalidate xobjwrite
