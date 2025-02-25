@@ -2280,8 +2280,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 ++k0;
             }
 
-            size_t k1 (segments.size() - 1);
-            while(k1 >= k0) {
+            long int k1 (segments.size() - 1);
+            while(k1 >= (int)k0) {
 
                 TSegment& s (segments[k1]);
                 if(s.m_exon) {
