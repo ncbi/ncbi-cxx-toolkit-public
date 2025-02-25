@@ -2022,5 +2022,49 @@ DISCREPANCY_CASE(CHROMOSOME_PRESENT, SEQ_SET, eSubmitter | eSmart, "Chromosome p
 }
 
 
+// ORGANELLE_PRESENT
+
+DISCREPANCY_CASE(ORGANELLE_PRESENT, SEQ_SET, eSubmitter | eSmart, "Discrepancy present")
+{
+    const CBioseq_set& set = context.CurrentBioseq_set();
+    if (set.IsSetSeq_set()) {
+        for (const auto& se : set.GetSeq_set()) {
+            if (!se->IsSetDescr()) {
+                continue;
+            }
+
+            for (const auto& descr : se->GetDescr().Get()) {
+                if (!descr->IsSource()) {
+                    continue;
+                }
+                const CBioSource& bio_src = descr->GetSource();
+
+                CBioSource::EGenome Location = CBioSource::eGenome_unknown;
+                if (bio_src.IsSetGenome()) {
+                    Location = static_cast<CBioSource::EGenome>(bio_src.GetGenome());
+                }
+                switch ( Location ) {
+                    case CBioSource::eGenome_mitochondrion:
+                    case CBioSource::eGenome_chloroplast:
+                    case CBioSource::eGenome_apicoplast:
+                    case CBioSource::eGenome_chromoplast:
+                    case CBioSource::eGenome_chromatophore:
+                    case CBioSource::eGenome_cyanelle:
+                    case CBioSource::eGenome_hydrogenosome:
+                    case CBioSource::eGenome_kinetoplast:
+                    case CBioSource::eGenome_leucoplast:
+                    case CBioSource::eGenome_nucleomorph:
+                    case CBioSource::eGenome_plastid:
+                        m_Objs["one or more organelles are present"];
+                        break;
+                    default:
+                         break;
+                }
+            }
+        }
+    }
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
