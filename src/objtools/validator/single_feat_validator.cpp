@@ -4018,7 +4018,7 @@ static string s_GetGeneRefFields(const CGene_ref& gene, int field)
         return gene.GetAllele();
     }
     if (field == 3 && gene.CanGetDesc()) {
-        return gene.GetLocus();
+        return gene.GetDesc();
     }
     if (field == 4 && gene.CanGetLocus_tag()) {
         return gene.GetLocus_tag();
