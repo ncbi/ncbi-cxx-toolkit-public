@@ -4,6 +4,7 @@
 #include <corelib/ncbistl.hpp>
 #include <stdio.h>
 #include <stdarg.h>
+#include <format>
 
 USING_NCBI_SCOPE;
 
