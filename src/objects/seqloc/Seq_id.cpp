@@ -3446,10 +3446,14 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
         // name field.
         // For PIR, if name is empty, id is allowed to be placed in the accession field;
         // For PRF only name is allowed!
+        // 2025/02/26 : CXX-13933 Dropping distinction between the 2 types. 
+        // The typical case when PIR/PRF Seq-id may contain accession instead of name is when
+        // client parses a FASTA-style Seq-id string and accidentally omits an extra '|' in that string.
+        // This function would then correct that mistake.
         const CTextseq_id* tsid = GetTextseq_Id();
         if (tsid->CanGetName())
             primary_id = tsid->GetName();
-        else if (seqid_type == e_Pir && tsid->CanGetAccession())
+        else if (tsid->CanGetAccession())
             primary_id = tsid->GetAccession();
         break;
     }
