@@ -954,6 +954,15 @@ void CThread::SetCurrentThreadName(const CTempString& name)
 {
     prctl(PR_SET_NAME, (unsigned long)name.data(), 0, 0, 0);
 }
+#elif defined(NCBI_POSIX_THREADS)
+void CThread::SetCurrentThreadName(const CTempString& name)
+{
+# if defined(NCBI_OS_DARWIN)
+    pthread_setname_np(name.data());
+# else
+    pthread_setname_np(pthread_self(), name.data());
+# endif
+}
 #else
 void CThread::SetCurrentThreadName(const CTempString&)
 {
