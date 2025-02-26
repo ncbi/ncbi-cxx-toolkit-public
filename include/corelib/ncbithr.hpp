@@ -613,7 +613,7 @@ public:
     static unsigned int GetThreadsCount();
 
     /// Set name for the current thread.
-    /// This works only on Linux, no-op on other platforms
+    /// This works on most POSIX platforms, no-op on other platforms
     static void SetCurrentThreadName(const CTempString&);
 
     /// Initialize main thread's TID.
