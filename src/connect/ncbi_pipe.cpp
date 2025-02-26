@@ -1269,6 +1269,16 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         ::fcntl(status_pipe[1], F_SETFD, 
                 ::fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
 
+        // Prepare program arguments
+        size_t i;
+        const char** argv = new const char*[args.size() + 2];
+        AutoPtr< const char*, ArrayDeleter<const char*> > argv_ptr(argv);
+        argv[i = 0] = cmd.c_str();
+        for (auto&& arg : args) {
+            argv[++i] = arg.c_str();
+        }
+        argv[++i] = 0;
+
         // Fork off a child process
         switch (m_Pid = ::fork()) {
         case (TPid)(-1):
@@ -1335,16 +1345,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             if (IS_SET(create_flags, CPipe::fSigPipe_Restore)) {
                 ::signal(SIGPIPE, SIG_DFL);
             }
-
-            // Prepare program arguments
-            size_t i;
-            const char** argv = new const char*[args.size() + 2];
-            AutoPtr< const char*, ArrayDeleter<const char*> > argv_ptr(argv);
-            argv[i = 0] = cmd.c_str();
-            for (auto&& arg : args) {
-                argv[++i] = arg.c_str();
-            }
-            argv[++i] = 0;
 
             // Change current working directory if specified
             if (!current_dir.empty()  &&  current_dir != ".") {
