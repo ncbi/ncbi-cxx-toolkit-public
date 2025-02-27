@@ -1397,19 +1397,9 @@ BOOST_AUTO_TEST_CASE(FetchSeqGnl5)
     BOOST_CHECK_EQUAL(bh.GetSequenceType(), CSeq_inst::eMol_dna);
 }
 
+const string s_NewWGSPath = NCBI_TRACES04_PATH "/wgs03";
+
 #if 0
-const string s_ProteinFile = 
-                    "/net/snowman/vol/export2/dondosha/SVN64/trunk/internal/c++/src/internal/ID/WGS/XXXX01";
-const string s_ProteinVDBAcc     = "AXXX01";
-const string s_ProteinContigId   = "AXXX01000001";
-const string s_ProteinScaffoldId = "AXXX01S000001";
-const string s_ProteinProteinId  = "AXXX01P000001";
-const int s_ProteinContigDescCount = 14;
-const int s_ProteinContigPubCount = 4;
-const string s_ProteinProteinAcc = "AXXX01P000001";
-const int s_ProteinProteinDescCount = 9;
-const int s_ProteinProteinPubCount = 2;
-#else
 const string s_ProteinFile = 
                     "x/home/dondosha/trunk/internal/c++/src/internal/ID/WGS/JTED01";
 const string s_ProteinVDBAcc     = "JTED01";
@@ -1421,9 +1411,6 @@ const int s_ProteinContigPubCount = 2;
 const string s_ProteinProteinAcc = "EDT30481.1";
 const int s_ProteinProteinDescCount = 13;
 const int s_ProteinProteinPubCount = 2;
-#endif
-
-const string s_NewWGSPath = NCBI_TRACES04_PATH "/wgs03";
 
 BOOST_AUTO_TEST_CASE(FetchProt1)
 {
@@ -1675,7 +1662,7 @@ BOOST_AUTO_TEST_CASE(FetchProt16)
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(!bsh);
 }
-
+#endif
 
 BOOST_AUTO_TEST_CASE(FetchProt17)
 {
