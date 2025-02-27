@@ -1514,7 +1514,8 @@ bool CTbl2AsnApp::LoadAnnotMap(const string& pathname, TAdditionalFiles& files)
         return false;
     }
 
-    m_reader->LoadIndexedAnnot(files.m_indexed_annots, pathname);
+    files.m_indexed_annots = m_reader->LoadIndexedAnnot(pathname);
+
     return true;
 }
 
