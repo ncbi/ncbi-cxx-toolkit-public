@@ -229,8 +229,8 @@ CSeqDBImpl::~CSeqDBImpl()
 void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
 {
     CHECK_MARKER();
+    m_Atlas.Lock(locked);
     if (! m_OidListSetup) {
-        m_Atlas.Lock(locked);
 
         CRef<CSeqDB_FilterTree> ft = m_Aliases.GetFilterTree();
         if (m_OIDList.Empty()) {
@@ -258,8 +258,8 @@ void CSeqDBImpl::x_GetOidList(CSeqDBLockHold & locked)
         }
         //DebugDumpText(cerr, "CSeqDBImpl after m_OIDList initialization", 10);
         //ft->Print();
-        m_Atlas.Unlock(locked);
     }
+    m_Atlas.Unlock(locked);
 }
 
 bool CSeqDBImpl::CheckOrFindOID(int & next_oid)
@@ -307,14 +307,13 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
 
-    int cacheID = (m_NumThreads) ? x_GetCacheID(locked) : 0;
-
-    m_Atlas.Lock(locked);
+    int cacheID = (m_NumThreads) ? x_GetCacheID() : 0;
 
     if (! m_OidListSetup) {
         x_GetOidList(locked);
     }
 
+   	m_Atlas.Lock(locked);
     if (! state_obj) {
         state_obj = & m_NextChunkOID;
     }
@@ -629,14 +628,12 @@ CSeqDBImpl::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_seq_id, boo
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
-void CSeqDBImpl::RetSequence(const char ** buffer) const
+void CSeqDBImpl::RetSequence(const char ** buffer)
 {
     CHECK_MARKER();
 
-    CSeqDBLockHold locked(m_Atlas);
-
     if (m_NumThreads) {
-        int cacheID = x_GetCacheID(locked);
+        int cacheID = x_GetCacheID();
         (m_CachedSeqs[cacheID]->checked_out)--;
         *buffer = 0;
         return;
@@ -715,12 +712,11 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
-int CSeqDBImpl::GetSequence(int oid, const char ** buffer) const
+int CSeqDBImpl::GetSequence(int oid, const char ** buffer)
 {
     CHECK_MARKER();
-    CSeqDBLockHold locked(m_Atlas);
     if (m_NumThreads) {
-        int cacheID = x_GetCacheID(locked);
+        int cacheID = x_GetCacheID();
         return x_GetSeqBuffer(m_CachedSeqs[cacheID], oid, buffer);
     }
 
@@ -2562,7 +2558,7 @@ void CSeqDBImpl::GetMaskData(int                       oid,
     //int seq_length = 0;
 }
 #endif
-
+/// Call this api in main thread before and after multi-threading
 void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -2595,26 +2591,34 @@ void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
     m_NumThreads = num_threads;
 }
 
-int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
+
+
+int CSeqDBImpl::x_SetCacheID(int threadID)
 {
-    int threadID = CThread::GetSelf();
+    std::unique_lock lock(m_CacheIDMutex);
+    m_CacheID[threadID] = m_NextCacheID++;
 
-    if (m_NextCacheID < 0)
-        return m_CacheID[threadID];
-
-    int retval;
-    m_Atlas.Lock(locked);
-
-    if (m_CacheID.find(threadID) == m_CacheID.end()) {
-        m_CacheID[threadID] = m_NextCacheID++;
-    }
-    retval = m_CacheID[threadID];
     if (m_NextCacheID == m_NumThreads) {
         m_NextCacheID = -1;
     }
+    return m_CacheID[threadID];
+}
 
-    m_Atlas.Unlock(locked);
-    return retval;
+int CSeqDBImpl::x_GetCacheID()
+{
+    int threadID = CThread::GetSelf();
+
+    if (m_NextCacheID < 0) {
+       return m_CacheID[threadID];
+    }
+
+    {
+    	std::shared_lock lock(m_CacheIDMutex);
+        if (m_CacheID.find(threadID) != m_CacheID.end()) {
+        	return m_CacheID[threadID];
+        }
+    }
+    return x_SetCacheID(threadID);
 }
 
 void CSeqDBImpl::SetVolsMemBit(int mbit)

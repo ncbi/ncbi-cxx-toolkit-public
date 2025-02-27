@@ -568,36 +568,11 @@ public:
     /// Release any memory leases temporarily held here.
     void UnLease()
     {
-        //Verify();
-        x_ClrHdr();
-        x_ClrSeq();
-        x_ClrAmb();
     }
     
     string GetLMDBFileName()const {return m_LMDBFile;}
 
-    /// Verify the integrity of this object and subobjects.
-    /*
-    void Verify()
-    {
-        m_HdrLease.Verify();
-        m_SeqLease.Verify();
-        m_AmbLease.Verify();
-    }
-    */
 private:
-
-    /// A memory lease used by the header section of this file.
-    mutable CSeqDBFileMemMap m_HdrLease;
-    //mutable CMemoryFile *m_MmappedHdrIndex;
-    
-    /// A memory lease used by the sequence section of this file.
-    mutable CSeqDBFileMemMap m_SeqLease;
-    //mutable CMemoryFile* m_MmappedSeqIndex;
-    
-    /// A memory lease used by the ambiguity section of this file.
-    mutable CSeqDBFileMemMap m_AmbLease;
-    //mutable CMemoryFile *m_MmappedAmbIndex;
 
     // Swapped data from .[pn]in file
     
@@ -625,36 +600,19 @@ private:
     // 1. Do not constitute true object state.
     // 2. Are modified only under lock (CSeqDBRawFile::m_Atlas.m_Lock).
     
-    /// Return header data (assumes locked).
-    void x_ClrHdr() const
-    {
-       m_HdrLease.Clear();      
-    }
-    
-    /// Return sequence data (assumes locked).
-    void x_ClrSeq() const
-    {
-        m_SeqLease.Clear();
-    }
-    
-    /// Return ambiguity data (assumes locked).
-    void x_ClrAmb() const
-    {
-        m_AmbLease.Clear();        
-    }
     
     /// Get header data (assumes locked).
     Uint4 * x_GetHdr() const
     {
         
-        return (Uint4*) m_HdrLease.GetFileDataPtr(m_FileName, m_OffHdr);        
+        return (Uint4*) m_Lease.GetFileDataPtr(m_FileName, m_OffHdr);
     }
     
     /// Get sequence data (assumes locked).
     Uint4 * x_GetSeq() const
     {
         
-        return (Uint4*) m_SeqLease.GetFileDataPtr(m_FileName, m_OffSeq);        
+        return (Uint4*) m_Lease.GetFileDataPtr(m_FileName, m_OffSeq);
     }
     
     /// Get ambiguity data (assumes locked).
@@ -662,7 +620,7 @@ private:
     {
         _ASSERT(x_GetSeqType() == 'n');
         
-        return (Uint4*) m_AmbLease.GetFileDataPtr(m_FileName, m_OffAmb);        
+        return (Uint4*) m_Lease.GetFileDataPtr(m_FileName, m_OffAmb);
     }
     
         
@@ -693,7 +651,6 @@ private:
 bool
 CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     if ('n' == x_GetSeqType()) {
         start = SeqDB_GetStdOrd(& x_GetAmb()[oid]);
         end   = SeqDB_GetStdOrd(& x_GetSeq()[oid+1]);
@@ -707,7 +664,6 @@ CSeqDBIdxFile::GetAmbStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetHdr()[oid]);
     end   = SeqDB_GetStdOrd(& x_GetHdr()[oid+1]);
 }
@@ -715,7 +671,6 @@ CSeqDBIdxFile::GetHdrStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
     
     if ('p' == x_GetSeqType()) {
@@ -728,7 +683,6 @@ CSeqDBIdxFile::GetSeqStartEnd(int oid, TIndx & start, TIndx & end) const
 void
 CSeqDBIdxFile::GetSeqStart(int oid, TIndx & start) const
 {
-    if(!m_Lease.IsMapped()) m_Lease.Init(m_FileName);
     start = SeqDB_GetStdOrd(& x_GetSeq()[oid]);
 }
 
