@@ -34,6 +34,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include "pubseq_gateway_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 #include "psgs_request.hpp"
 #include "psgs_reply.hpp"
 
@@ -120,6 +121,55 @@ SBioseqResolution::AdjustAccession(shared_ptr<CPSGS_Request>  request,
     return m_AccessionAdjustmentResult;
 }
 
+
+bool
+SBioseqResolution::AdjustName(shared_ptr<CPSGS_Request>  request,
+                              shared_ptr<CPSGS_Reply>  reply)
+{
+    if (m_AdjustNameTried) {
+        return m_NameWasAdjusted;
+    }
+    m_AdjustNameTried = true;
+
+    auto    seq_id_type = m_BioseqInfo.GetSeqIdType();
+    if (seq_id_type != CSeq_id::e_Pir && seq_id_type != CSeq_id::e_Prf) {
+        if (request->NeedTrace()) {
+            reply->SendTrace("No need to adjust BIOSEQ_INFO 'name' field (not PIR and not PRF)",
+                             request->GetStartTimestamp());
+        }
+
+        m_NameWasAdjusted = false;
+        return m_NameWasAdjusted;
+    }
+
+    string  orig_accession = m_BioseqInfo.GetAccession();
+    string  orig_name = m_BioseqInfo.GetName();
+
+    if (orig_accession.empty()) {
+        PSG_ERROR("BIOSEQ_INFO info record 'accession' field is empty. "
+                  "The 'name' field adjustment is impossible.");
+        m_NameWasAdjusted = false;
+        return m_NameWasAdjusted;
+    }
+
+    if (!orig_name.empty()) {
+        string      type_as_str = "PIR";
+        if (seq_id_type == CSeq_id::e_Prf) {
+            type_as_str = "PRF";
+        }
+        PSG_WARNING("Non-empty 'name' field (value: " + orig_name +
+                    ") in BIOSEQ_INFO " + type_as_str +
+                    " record ('accession' field value: " + orig_accession + ")");
+    }
+
+    m_BioseqInfo.SetName(orig_accession);
+    m_BioseqInfo.SetAccession("");
+
+    // At least accession field was reset so there were some changes (though
+    // the name field could have been the same as accession)
+    m_NameWasAdjusted = true;
+    return m_NameWasAdjusted;
+}
 
 
 static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";

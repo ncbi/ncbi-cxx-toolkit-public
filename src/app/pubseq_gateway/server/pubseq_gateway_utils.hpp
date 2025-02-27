@@ -89,7 +89,9 @@ struct SBioseqResolution
         m_ResolutionResult(ePSGS_NotResolved),
         m_CassQueryCount(0),
         m_AdjustmentTried(false),
-        m_AccessionAdjustmentResult(ePSGS_NotRequired)
+        m_AccessionAdjustmentResult(ePSGS_NotRequired),
+        m_AdjustNameTried(false),
+        m_NameWasAdjusted(false)
     {}
 
     SBioseqResolution(const SBioseqResolution &) = default;
@@ -112,6 +114,9 @@ struct SBioseqResolution
         m_AccessionAdjustmentResult = ePSGS_NotRequired;
         m_AdjustmentError.clear();
 
+        m_AdjustNameTried = false;
+        m_NameWasAdjusted = false;
+
         m_OriginalAccession.clear();
         m_OriginalSeqIdType = -1;
     }
@@ -119,6 +124,9 @@ struct SBioseqResolution
     EPSGS_AccessionAdjustmentResult
     AdjustAccession(shared_ptr<CPSGS_Request>  request,
                     shared_ptr<CPSGS_Reply>  reply);
+    bool
+    AdjustName(shared_ptr<CPSGS_Request>  request,
+               shared_ptr<CPSGS_Reply>  reply);
 
     EPSGS_ResolutionResult          m_ResolutionResult;
     size_t                          m_CassQueryCount;
@@ -131,6 +139,8 @@ struct SBioseqResolution
     bool                            m_AdjustmentTried;
     EPSGS_AccessionAdjustmentResult m_AccessionAdjustmentResult;
     string                          m_AdjustmentError;
+    bool                            m_AdjustNameTried;
+    bool                            m_NameWasAdjusted;
 
     void SetBioseqInfo(const CBioseqInfoRecord &  record)
     {

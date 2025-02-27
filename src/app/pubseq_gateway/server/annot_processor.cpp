@@ -326,8 +326,17 @@ CPSGS_AnnotProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
 
 
     if (bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB ||
-        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache)
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache) {
         AdjustBioseqAccession(bioseq_resolution);
+    }
+
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache) {
+        bioseq_resolution.AdjustName(IPSGS_Processor::m_Request,
+                                     IPSGS_Processor::m_Reply);
+    }
 
     size_t  item_id = IPSGS_Processor::m_Reply->GetItemId();
     auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
