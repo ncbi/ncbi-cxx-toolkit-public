@@ -45,6 +45,7 @@
 #include <objtools/blast/seqdb_reader/impl/seqdbcol.hpp>
 #include "seqdbgimask.hpp"
 #include "seqdblmdbset.hpp"
+#include <shared_mutex>
 
 BEGIN_NCBI_SCOPE
 
@@ -348,7 +349,7 @@ public:
     /// @return
     ///   The return value is the sequence length (in base pairs or
     ///   residues).  In case of an error, an exception is thrown.
-    int GetSequence(int oid, const char ** buffer) const;
+    int GetSequence(int oid, const char ** buffer);
 
     /// Get a pointer to a range of sequence data with ambiguities.
     ///
@@ -402,7 +403,7 @@ public:
     ///
     /// @param buffer
     ///   A pointer to the sequence data to release.
-    void RetSequence(const char ** buffer) const;
+    void RetSequence(const char ** buffer);
 
     /// Returns any resources associated with the sequence.
     ///
@@ -1084,6 +1085,11 @@ public:
 
     void GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids);
 
+    /// Assign Cache ID to Thread
+    /// For split db multi-threaded search, each thread needs to call this api
+    /// once before preliminary stage
+    void SetCacheID();
+
 private:
     CLASS_MARKER_FIELD("IMPL")
 
@@ -1269,9 +1275,10 @@ private:
     ///   The lock hold object for this thread.
     /// @return
     ///   The mapped local cache ID
-    int x_GetCacheID(CSeqDBLockHold &locked) const;
+    int x_GetCacheID();
 
-    
+    int x_SetCacheID(int threadID);
+
     void x_GetTaxIdsForSeqId(const CSeq_id & seq_id, int oid, CBlast_def_line::TTaxIds & taxid_set);
 
     /// Memory management layer guard (RIIA) object.
@@ -1337,7 +1344,7 @@ private:
     char m_SeqType;
 
     /// True if OID list setup is done (or was not required).
-    mutable bool m_OidListSetup;
+    std::atomic<bool> m_OidListSetup;
 
     /// The User GI list for the entire CSeqDB object.
     mutable CRef<CSeqDBGiList> m_UserGiList;
@@ -1388,8 +1395,9 @@ private:
     int m_NumThreads;
 
     /// mapping thread ID to storage ID
+    mutable std::shared_mutex m_CacheIDMutex;
     mutable std::map<int, int> m_CacheID;
-    mutable int m_NextCacheID;
+    std::atomic<int> m_NextCacheID;
 
     /// Structure to keep sequence retrieval results
     struct SSeqRes {

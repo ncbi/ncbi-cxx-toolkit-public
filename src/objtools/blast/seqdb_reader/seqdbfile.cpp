@@ -136,9 +136,6 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                              char             prot_nucl)
                              
     : CSeqDBExtFile(atlas, dbname + ".-in", prot_nucl),
-      m_HdrLease     (atlas),
-      m_SeqLease      (atlas),
-      m_AmbLease      (atlas),
       m_NumOIDs       (0),
       m_VolLen        (0),
       m_MaxLen        (0),

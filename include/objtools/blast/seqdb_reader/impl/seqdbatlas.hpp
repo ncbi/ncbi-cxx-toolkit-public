@@ -674,8 +674,7 @@ public:
     CSeqDBFileMemMap(class CSeqDBAtlas & atlas, const string & filename)
         : m_Atlas(atlas),
           m_DataPtr (NULL),
-          m_MappedFile( NULL),
-          m_Mapped(false)
+          m_MappedFile( NULL)
     {
         Init(filename);
     }
@@ -683,8 +682,7 @@ public:
     CSeqDBFileMemMap(class CSeqDBAtlas & atlas)
         : m_Atlas(atlas),
           m_DataPtr (NULL),
-          m_MappedFile( NULL),
-          m_Mapped(false)
+          m_MappedFile( NULL)
     {
         
     }
@@ -700,48 +698,43 @@ public:
     /// @param filename
     ///   file to memory map    
     void Init(const string & filename) {
+    	CFastMutexGuard mtx_gurad(m_Mtx);
         if(!m_MappedFile || m_Filename != filename)
         {
-        	Clear();
-            x_Init(filename);
+            if(m_MappedFile) {
+            	m_MappedFile = m_Atlas.ReturnMemoryFile(m_Filename);
+            	m_DataPtr = NULL;
+            }
+            m_Filename = filename;
+                    try {
+                        m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
+                    }
+                    catch (const std::exception& e) {
+                    	string err_msg = e.what();
+                    	if (err_msg.find("Too many open files") == std::string::npos ) {
+                    		NCBI_THROW(CSeqDBException, eFileErr, e.what());
+                    	}
+                    	else {
+                    		NCBI_THROW(CSeqDBException, eOpenFileErr, e.what());
+                    	}
+                    }
+
+                    m_DataPtr = (char *)(m_MappedFile->GetPtr());
         }
     }
 
-    //m_Filename is set
-    void x_Init(const string & filename)
-    {
-    	CFastMutexGuard mtx_gurad(m_Mtx);
-        m_Filename = filename;
-        try {
-            m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
-            m_Mapped = true;
-        }
-        catch (const std::exception& e) {
-        	string err_msg = e.what();
-        	if (err_msg.find("Too many open files") == std::string::npos ) {
-        		NCBI_THROW(CSeqDBException, eFileErr, e.what());
-        	}
-        	else {
-        		NCBI_THROW(CSeqDBException, eOpenFileErr, e.what());
-        	}
-        }
-
-        m_DataPtr = (char *)(m_MappedFile->GetPtr());
-    }
-
-    
     /// Clears the memory mapobject.
     ///    
     void Clear()
     {
     	CFastMutexGuard mtx_gurad(m_Mtx);
-        if(m_MappedFile && m_Mapped ) {
+        if(m_MappedFile ) {
         	m_MappedFile = m_Atlas.ReturnMemoryFile(m_Filename);
-            m_Mapped = false;
+        	m_DataPtr = NULL;
         }        
     }
 
-    bool IsMapped(){return m_Mapped;}
+    bool IsMapped(){return (m_MappedFile != NULL);}
 
     /// Get a pointer to the specified offset.
     ///
@@ -754,9 +747,7 @@ public:
     ///   A pointer to the data at the requested location.       
     const char *GetFileDataPtr(const string   & fname,TIndx offset)                    
     {
-        if(!m_MappedFile || m_Filename != fname) {
-            Init(fname);                        
-        }
+        Init(fname);
 
         return(const char *)(m_DataPtr + offset);    
     }
@@ -777,7 +768,6 @@ private:
 
     CMemoryFile *m_MappedFile;
 
-    bool m_Mapped;
 };
 
 

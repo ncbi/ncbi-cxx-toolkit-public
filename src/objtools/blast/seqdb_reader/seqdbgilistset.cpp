@@ -131,7 +131,7 @@ public:
             (int(m_GisOids.size() * sizeof(m_GisOids[0])) +
              int(m_TisOids.size() * sizeof(m_TisOids[0])));
 
-        atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
+        //atlas.RegisterExternal(m_VectorMemory, vector_size, locked);
         // TODO m_VectorMemory for seqid_list
     }
 
