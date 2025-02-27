@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 #include <util/regexp/ctre/ctre.hpp>
+#include <util/compile_time.hpp>
 
 #include <corelib/test_boost.hpp>
 #include <cassert>
@@ -65,3 +66,78 @@ BOOST_AUTO_TEST_CASE(test_ctre_2)
     BOOST_CHECK(ctre::search<suspicious_id_re>("lg other"));
 }
 
+
+// This test requires C++ 20 semantics, which is expected to be default
+//#if __cplusplus > 201703L
+static bool check_suspicious_id(std::string_view id)
+{
+    auto result = ctre::search<"chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bnw_|\\bnz_|\\bnm_|\\bnc_|\\bac_|cp\\d\\d\\d\\d\\d\\d|^x$|^y$|^z$|^w$|^mt$|^pltd$|^chl$">
+        (id);
+
+    return result;
+}
+
+BOOST_AUTO_TEST_CASE(test_ctre_3)
+{
+    BOOST_CHECK(!check_suspicious_id("AAA"));
+    BOOST_CHECK(check_suspicious_id("begin chromosome end"));
+    BOOST_CHECK(check_suspicious_id("chr other"));
+    BOOST_CHECK(check_suspicious_id("lg other"));
+}
+//#endif
+
+
+namespace detail
+{
+
+    typedef bool (*ctre_func_type)(std::string_view);
+    template<ctll::fixed_string re_string, typename... Modifiers>
+    struct ctre_fixed_function
+    {
+        static constexpr bool search_func(std::string_view s)
+        {
+            auto res = ctre::search<re_string, Modifiers...>(s);
+            return res;
+        }
+        static constexpr bool match_func(std::string_view s)
+        {
+            auto res = ctre::match<re_string, Modifiers...>(s);
+            return res;
+        }
+    };
+
+
+}
+
+template<ctll::fixed_string re_string>
+constexpr detail::ctre_func_type operator""_re()
+{
+    return &detail::ctre_fixed_function<re_string>::search_func;
+}
+
+BOOST_AUTO_TEST_CASE(test_ctre_4)
+{
+    //constexpr auto re_func = "AAA"_re;
+
+    using map_type1 = ct::const_map<ct::tagStrNocase, std::pair<int, detail::ctre_func_type>>;
+
+    constexpr auto map1 = map_type1::construct({
+        {"S1", {3, "AAA"_re} },
+        {"S2", {4, "BBB"_re} },
+        {"S3", {5, "CCC"_re} },
+        {"S4", {6, "DDD"_re} },
+
+    });
+
+    auto res = "AAA"_re("AAA");
+    BOOST_CHECK(res);
+
+    auto it = map1.find("S1");
+    res = it->second.second("AAA");
+    BOOST_CHECK(res);
+
+    it = map1.find("S2");
+    res = it->second.second("AAA");
+    BOOST_CHECK(!res);
+
+}
