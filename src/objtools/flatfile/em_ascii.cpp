@@ -1990,9 +1990,6 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 /**********************************************************/
 static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 {
-    char* p;
-    char* q;
-
     unsigned count = 0;
 
     const auto& chain = TrackNodes(entry);
@@ -2031,37 +2028,22 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
                 subdbp.len < ParFlat_COL_DATA_EMBL)
                 continue;
 
-            q = StringSave(string_view(subdbp.mOffset + ParFlat_COL_DATA_EMBL, subdbp.len - ParFlat_COL_DATA_EMBL));
-            for (p = q; p;) {
-                p = StringStr(p, "\nOC   ");
-                if (p)
-                    fta_StringCpy(p, p + 5);
-            }
-            for (p = q; *p != '\0';)
-                p++;
-            if (p == q) {
-                MemFree(q);
-                continue;
-            }
-            for (p--;; p--) {
-                if (*p != ' ' && *p != '\t' && *p != '\n' && *p != '.' &&
-                    *p != ';') {
-                    p++;
+            string lineage(subdbp.mOffset + ParFlat_COL_DATA_EMBL, subdbp.len - ParFlat_COL_DATA_EMBL);
+            while (! lineage.empty()) {
+                auto it = lineage.find("\nOC   ");
+                if (it == string::npos)
                     break;
-                }
-                if (p == q)
+                lineage.erase(it, 5);
+            }
+            while (! lineage.empty()) {
+                char c = lineage.back();
+                if (c != ' ' && c != '\t' && c != '\n' && c != '.' && c != ';')
                     break;
+                lineage.pop_back();
             }
-            if (p == q) {
-                MemFree(q);
-                continue;
+            if (! lineage.empty() && ! org_ref->IsSetOrgname()) {
+                org_ref->SetOrgname().SetLineage(lineage);
             }
-            *p = '\0';
-
-            if (! org_ref->IsSetOrgname()) {
-                org_ref->SetOrgname().SetLineage(q);
-            }
-            MemFree(q);
         }
 
         CRef<CSeqdesc> descr(new CSeqdesc);
