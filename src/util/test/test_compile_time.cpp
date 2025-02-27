@@ -36,18 +36,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistl.hpp>
 
-#if 0
-#define DEBUG_MAKE_CONST_MAP(name)                                                          \
-    BOOST_CHECK(name.get_alignment() == 0);
-
-#define DEBUG_MAKE_TWOWAY_CONST_MAP(name)                                                   \
-    BOOST_CHECK(name.first.get_alignment() == 0 && name.second.get_alignment()==0);
-
-#define DEBUG_MAKE_CONST_SET(name)                                                          \
-    BOOST_CHECK(name.get_alignment() == 0);
-
-#endif
-
 #include <util/compile_time.hpp>
 #include <array>
 #include <tuple>
@@ -275,8 +263,8 @@ static constexpr bool check_linear(_Iterator it, _Iterator end)
     return true;
 }
 
-template<typename...TArgs>
-constexpr bool check_linear(const ct::const_set_map_base<TArgs...>& cont)
+template<typename _MapType>
+constexpr bool check_linear(const _MapType& cont)
 {
     return check_linear(cont.begin(), cont.end());
 }
@@ -462,8 +450,8 @@ BOOST_AUTO_TEST_CASE(TestTypeDeducing)
     using Tuple2 = std::tuple<int, const char*, bitset1>;
 
     using Pair2_exp = std::pair<int, ct::ct_string>;
-    using Tuple1_exp = ct_const_tuple<int, ct::ct_string, int>;
-    using Tuple2_exp = ct_const_tuple<int, ct::ct_string, bitset1>;
+    using Tuple1_exp = std::tuple<int, ct::ct_string, int>;
+    using Tuple2_exp = std::tuple<int, ct::ct_string, bitset1>;
 
     using tcmap1=ct::const_map<ct::tagStrCase, bitset1>;
     using tcmap2=ct::const_map<ct::tagStrCase, Pair1>;
@@ -752,6 +740,15 @@ BOOST_AUTO_TEST_CASE(TestConstMap3)
         std::cout << rec.second << std::endl;
     }
 
+    auto it1_1 = cm1.first.find(cEnum::one);
+    BOOST_CHECK_EQUAL(it1_1->second, "One");
+    auto it1_2 = cm1.first.find(cEnum::three);
+    BOOST_CHECK_EQUAL(it1_2->second, "Three");
+
+    auto it2_1 = cm1.second.find("One");
+    BOOST_CHECK(it2_1->second == cEnum::one);
+    auto it2_2 = cm1.second.find("Many");
+    BOOST_CHECK(it2_2->second == cEnum::many);
 }
 
 
@@ -1023,7 +1020,7 @@ BOOST_AUTO_TEST_CASE(TestMultiMap)
 
 BOOST_AUTO_TEST_CASE(TestPresortedMap)
 {
-    using TMMap1 = ct::const_map_presorted<int, ct::tagStrNocase>;
+    using TMMap1 = ct::const_map<int, ct::tagStrNocase>;
     static constexpr TMMap1::init_type s_presorted [] =
     {
         {0,  "zero"},
@@ -1038,11 +1035,14 @@ BOOST_AUTO_TEST_CASE(TestPresortedMap)
         {1,  "one"},
         {3,  "three"},
     };
-    constexpr auto c_map1 = TMMap1::construct(s_presorted);
-    constexpr auto c_map2 = TMMap1::construct(s_presorted_bad);
-    static_assert(TMMap1::is_presorted);
+    constexpr auto c_map1 = TMMap1::presorted(s_presorted);
+    constexpr auto c_map2 = TMMap1::presorted(s_presorted_bad);
+    constexpr auto c_map3 = TMMap1::construct(s_presorted_bad);
+    static_assert(decltype(c_map1)::backend_type::is_presorted::value);
+    static_assert(!decltype(c_map3)::backend_type::is_presorted::value);
     static_assert( check_order(c_map1));
     static_assert(!check_order(c_map2));
+    static_assert( check_order(c_map3));
 
     //ReportMapKeys(c_map1);
 
@@ -1071,7 +1071,7 @@ BOOST_AUTO_TEST_CASE(TestLinearMap1)
     static constexpr TMMap1 c_map2 = c_map1;
 
     ReportMapKeys(c_map2);
-    static_assert(!TMMap1::is_presorted);
+    static_assert(!decltype(c_map2)::backend_type::is_presorted::value);
     static_assert(check_linear(c_map1));
     static_assert(check_linear(c_map2));
 
@@ -1112,7 +1112,7 @@ BOOST_AUTO_TEST_CASE(TestLinearMap2)
         {ENumbers::three, "three"},
     });
 
-    static_assert(!TMMap1::is_presorted);
+    //static_assert(!TMMap1::is_presorted::value);
     static_assert( check_linear(c_map1));
     static_assert(!check_linear(c_map2));
     static_assert(!check_linear(c_map3));
@@ -1166,7 +1166,7 @@ BOOST_AUTO_TEST_CASE(TestConstructors)
 
     auto a1 = type1::construct({1, 2, 3});
     auto a2 = type2::construct({{"1"}, {"2"}, {"3"}});
-    //auto a2_bis = type2::construct({"1", "2", "3"}); // this is not working for all compilers
+    auto a2_bis = type2::construct({"1", "2", "3"}); // this is not working for all compilers
     auto a3 = type3::construct({
         {"a", "a1"},
         {"b", "b1"},
@@ -1175,12 +1175,122 @@ BOOST_AUTO_TEST_CASE(TestConstructors)
 
     type1 a1_c = a1;
     type2 a2_c = a2;
+    type2 a2_bis_c = a2_bis;
     type3 a3_c = a3;
 
-    BOOST_CHECK(a1.size() == a1_c.size());
-    BOOST_CHECK(a2.size() == a2_c.size());
-    BOOST_CHECK(a3.size() == a3_c.size());
+    auto it1 = a1_c.find(1);
+    BOOST_CHECK_NE(it1, a1_c.end());
+    auto it2 = a1_c.find(10);
+    BOOST_CHECK_EQUAL(it2, a1_c.end());
+
+    BOOST_CHECK_EQUAL(a1.size(), a1_c.size());
+    BOOST_CHECK_EQUAL(a2.size(), a2_c.size());
+    BOOST_CHECK_EQUAL(a2_bis_c.size(), a2_bis.size());
+    BOOST_CHECK_EQUAL(a3.size(), a3_c.size());
+    BOOST_CHECK_EQUAL(std::size(a1), std::size(a1_c));
 }
+
+#if 0
+namespace
+{
+    struct BadHash
+    {
+        BadHash() = default;
+
+        //constexpr
+        BadHash(const std::string_view& o) :
+            //m_hash {o.size()}
+            m_hash {std::hash<std::string_view>{}(o)}
+        {
+        }
+        operator size_t() const { return m_hash; }
+
+        size_t m_hash = 0;
+
+        //constexpr
+        bool operator<(const BadHash& o) const
+        {
+            return m_hash < o.m_hash;
+        }
+    };
+    struct DeduceBadHash
+    {
+        using case_tag   = ct::tagStrCase;
+        using init_type  = ct::ct_basic_string<char>; //CHashString<case_tag>;
+        using value_type = typename init_type::sv;
+        using hash_type  = BadHash;
+        using hash_compare   = std::less<hash_type>;
+        using value_compare  = std::less<case_tag>;
+    };
+
+
+}
+
+BOOST_AUTO_TEST_CASE(TestBadHash)
+{
+    using set_type1 = ct::const_unordered_set<DeduceBadHash>;
+
+    auto set1 = set_type1::construct( {"AA", "DDD", "AAA", "EEEE", "BB", "CC"} );
+
+    size_t hhh = BadHash("AAA");
+
+    ///auto c1 = std::less<void>{}(std::string_view("AA"), std::string_view("AA"));
+    ///auto c2 = std::less<void>{}(std::string_view("AA"), std::string_view("BB"));
+    //auto c3 = std::less<void>{}(std::string_view("BB"), std::string_view("AA"));
+
+    auto i1 = set1.find("CCC");
+    BOOST_CHECK_EQUAL(i1, set1.end());
+
+    auto i2 = set1.find("AA");
+    BOOST_CHECK_NE(i2, set1.end());
+
+    auto i3 = set1.find("BB");
+    BOOST_CHECK_NE(i3, set1.end());
+
+    auto i4 = set1.find("CC");
+    BOOST_CHECK_NE(i4, set1.end());
+
+
+}
+
+namespace
+{
+    template<typename _Ty, size_t _N>
+    struct DeduceConstSetType
+    {
+        using basic_type = ct::const_set<std::decay_t<_Ty>>;
+        using init_array = std::array<typename basic_type::init_type, _N>;
+        using real_type = std::invoke_result_t<decltype(basic_type::template from_array<_N>), init_array>;
+    };
+
+    template<typename _Tttt, typename _MyBase>
+    class const_set_auto: public _MyBase
+    {
+    public:
+        template<typename...TInitArgs>
+        const_set_auto(TInitArgs&&...init_args)
+            : _MyBase(_MyBase::backend_type::construct(std::to_array({init_args...})))
+        {
+        }
+
+    };
+
+    template<typename _First,
+        typename..._Extra,
+        typename _Deduced = DeduceConstSetType<_First, 1 + sizeof...(_Extra)>
+        >
+    const_set_auto(_First&&, _Extra&&...) -> const_set_auto<int, typename _Deduced::real_type>;
+
+}
+
+BOOST_AUTO_TEST_CASE(TestConstSetDeduction)
+{
+    auto set1 = const_set_auto{1, 2};
+    auto set2 = const_set_auto(1, 2);
+    auto set3 = const_set_auto("1", "2");
+}
+
+#endif
 
 #ifdef CT_MSVC_TUPLE_BUG
 namespace experimental
@@ -1358,3 +1468,318 @@ BOOST_AUTO_TEST_CASE(Test_cNTTP_templates)
 }
 
 #endif
+
+namespace compile_time_bits
+{
+
+
+template<typename...TArgs>
+struct const_table_traits
+{
+    static constexpr size_t width = sizeof...(TArgs);
+    using _TupleType = std::tuple<TArgs...>;
+    using tuple_type = DeduceType<_TupleType>;
+
+    using init_type   = typename tuple_type::init_type;
+    using value_type  = typename tuple_type::value_type;
+
+    template<size_t I>
+    using column_type = DeduceType<std::tuple_element_t<I, _TupleType>>;
+
+    template<size_t I>
+    using can_index_column = std::integral_constant<bool, !std::is_void_v<typename column_type<I>::hash_type>>;
+};
+
+template<typename _TableTraits, size_t _ColIndex>
+struct const_table_column_traits
+{
+    static constexpr size_t m_col = _ColIndex;
+    using init_type    = typename _TableTraits::init_type;
+    using value_type   = typename _TableTraits::value_type;
+
+    using hashed_key_type = typename _TableTraits::template column_type<_ColIndex>;
+
+    using hash_type     = typename hashed_key_type::hash_type;
+    using key_type      = typename hashed_key_type::value_type;
+    using init_key_type = typename hashed_key_type::init_type;
+
+    static constexpr hash_type get_init_hash(const init_type& v)
+    {
+        return std::get<_ColIndex>(v);
+    }
+    static constexpr const key_type& get_key(const value_type& v)
+    {
+        return std::get<_ColIndex>(v);
+    }
+    static constexpr const key_type& get_key(const key_type& v)
+    {
+        return v;
+    }
+
+};
+
+
+template<typename _IndexTraits, typename _IndexType>
+class binary_search_index
+{
+public:
+    using value_type = typename _IndexTraits::value_type;
+    using const_iterator = indexed_iterator<value_type, _IndexType>;
+
+    constexpr binary_search_index() = default;
+    constexpr binary_search_index(const value_type* values, const _IndexType* index, size_t _size)
+        : m_values{values}, m_index{index}, m_size{_size}
+    {};
+
+    using search_core = binary_search_traits<_IndexTraits, const_iterator>;
+
+    using intermediate   = typename search_core::intermediate;
+
+    using size_type = size_t;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    constexpr size_type      size()     const noexcept { return m_size; }
+    constexpr size_type      max_size() const noexcept { return size(); }
+    constexpr size_type      capacity() const noexcept { return size(); }
+    constexpr bool           empty()    const noexcept { return size() == 0; }
+    constexpr const_iterator begin()    const noexcept { return x_begin(); }
+    constexpr const_iterator cbegin()   const noexcept { return begin(); }
+    constexpr const_iterator end()      const noexcept { return begin() + size(); }
+    constexpr const_iterator cend()     const noexcept { return end(); }
+    constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
+    constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
+    constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
+    constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
+
+    const_iterator lower_bound(intermediate _key) const
+    {
+        return search_core::lower_bound(*this, _key);
+    }
+    const_iterator upper_bound(intermediate _key) const
+    {
+        return search_core::upper_bound(*this, _key);
+    }
+    std::pair<const_iterator, const_iterator>
+        equal_range(intermediate _key) const
+    {
+        return search_core::equal_range(*this, _key);
+    }
+    const_iterator find(intermediate _key) const
+    {
+        return search_core::find(*this, _key);
+    }
+
+private:
+    constexpr const_iterator x_begin() const
+    {
+        return const_iterator(m_values, m_index);
+    }
+    const value_type* m_values = nullptr;
+    const _IndexType* m_index  = nullptr;
+    size_t m_size              = 0;
+};
+
+
+template<typename _TableTraits, typename _IndexType, typename _Backend = void>
+class const_table_impl
+{
+public:
+    template<typename _Other>
+    using recast_backend = const_table_impl<_TableTraits, _IndexType, _Other>;
+
+    using backend_type = std::conditional_t<std::is_void<_Backend>::value,
+        std::false_type,
+        _Backend>;
+
+    using init_type = typename _TableTraits::init_type;
+    using value_type = typename _TableTraits::value_type;
+
+    using size_type       = std::size_t;
+    using difference_type = std::ptrdiff_t;
+    using reference       = const value_type&;
+    using const_reference = const value_type&;
+    using pointer         = const value_type*;
+    using const_pointer   = const value_type*;
+    using iterator        = const value_type*;
+    using const_iterator  = const value_type*;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    constexpr size_type      size()     const noexcept { return get_array().size(); }
+    constexpr size_type      max_size() const noexcept { return size(); }
+    constexpr size_type      capacity() const noexcept { return get_array().capacity(); }
+    constexpr bool           empty()    const noexcept { return size() == 0; }
+    constexpr const_iterator begin()    const noexcept { return get_array().data(); }
+    constexpr const_iterator cbegin()   const noexcept { return begin(); }
+    constexpr const_iterator end()      const noexcept { return begin() + size(); }
+    constexpr const_iterator cend()     const noexcept { return end(); }
+    constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
+    constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
+    constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
+    constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
+
+
+    template<size_t _I,
+        typename = std::enable_if_t<_TableTraits::template can_index_column<_I>::value>>
+    auto get_index() const
+    {
+        using _IndexTraits = const_table_column_traits<_TableTraits, _I>;
+        const _IndexType* _index_ptr = std::get<_I>(get_indices()).data();
+        const_pointer _data_ptr  = get_array().data();
+        using _SearchCore = binary_search_index<_IndexTraits, _IndexType>;
+        return _SearchCore(_data_ptr, _index_ptr, size());
+    }
+
+    constexpr const_table_impl() = default;
+
+    template<typename _Other, typename = std::enable_if_t<
+                std::is_constructible_v<backend_type, _Other> > >
+    constexpr const_table_impl(_Other&& be): m_backend{std::forward<_Other>(be)}
+    {
+    }
+    template<size_t N>
+    static constexpr auto make_backend(const std::array<init_type, N>& init)
+    {
+        auto indices = make_all_indices(init, std::make_index_sequence<_TableTraits::width>{});
+        return std::make_tuple(init, indices);
+    }
+
+private:
+
+    constexpr auto& get_array() const
+    {
+        return std::get<0>(m_backend);
+    }
+    constexpr auto& get_indices() const
+    {
+        return std::get<1>(m_backend);
+    }
+
+    template<typename _O, size_t N, typename _Array, size_t ... Is>
+    static constexpr auto x_reduce_array(const _Array& src, std::index_sequence<Is...>)
+    {
+        return std::array<_O, N>{ static_cast<_O>(src[Is]) ... };
+    }
+
+    template<size_t _I, typename _Array>
+    static constexpr auto make_index(const _Array& init)
+    {
+        if constexpr ( _TableTraits::template can_index_column<_I>::value ) {
+            using I_index_traits = const_table_column_traits<_TableTraits, _I>;
+            using sorter = TInsertSorter<I_index_traits, tag_DuplicatesYes>;
+            auto sorted = sorter::make_indices(init);
+
+            constexpr size_t N = array_size<_Array>::value;
+            return x_reduce_array<_IndexType, N>(sorted.second, std::make_index_sequence<N>{});
+        } else {
+            return std::false_type{};
+        }
+    }
+
+    template<typename _Array, size_t ... Is>
+    static constexpr auto make_all_indices(const _Array& init, std::index_sequence<Is...>)
+    {
+        return std::make_tuple(make_index<Is, _Array>(init)...);
+    }
+
+    backend_type m_backend;
+};
+
+};
+
+namespace compile_time {
+
+using namespace compile_time_bits;
+
+template<typename...TArgs>
+class const_table
+{
+public:
+    using table_traits = const_table_traits<TArgs...>;
+    using init_type = typename table_traits::init_type;
+
+    template<size_t N>
+    static constexpr auto construct(init_type const (&init)[N])
+    {
+        return construct(std::to_array(init));
+    }
+    template<size_t N>
+    constexpr
+    static auto construct(const std::array<init_type, N>& init)
+    {
+        using _IndexType = typename DeduceIndexSize<N>::type;
+        using _Impl = const_table_impl<table_traits, _IndexType>;
+        auto backend = _Impl::make_backend(init);
+        using _RealImpl = typename _Impl::template recast_backend<decltype(backend)>;
+        return _RealImpl{backend};
+    }
+
+};
+
+};
+
+BOOST_AUTO_TEST_CASE(Test_index_table)
+{
+    using index_type1 = compile_time::const_table<int, int, char*, std::pair<int, int>, int >;
+
+    //static constexpr
+    auto ind1 = index_type1::construct({
+        { 100, 70, "cc", {1, 1}, 0 },
+        { 200, 60, "bb", {1, 1}, 0 },
+        { 300, 50, "aa", {1, 1}, 0 },
+        { 400, 40, "xx", {1, 1}, 0 },
+        { 500, 30, "ee", {1, 1}, 0 },
+        { 600, 20, "oo", {1, 1}, 0 },
+        { 700, 10, "ii", {1, 1}, 0 },
+    });
+
+    compile_time_bits::DeduceIndexSize<1>::type v1 = 1000;
+    //compile_time_bits::DeduceIndexSize<256>::type v256 = 256*256;
+    //compile_time_bits::DeduceIndexSize<1024>::type v1024 = 1024;
+    //compile_time_bits::DeduceIndexSize<1000000>::type v10000000 = 1000000;
+    auto i0 = ind1.get_index<0>();
+    auto i1 = ind1.get_index<1>();
+    auto i2 = ind1.get_index<2>();
+    //auto i3 = ind1.get_index<3>();
+
+
+    //ind1.size();
+
+    auto it = i0.begin();
+    ++it;
+    //auto it2 = i0.end();
+    //i0.size();
+
+    for (auto val_rec: i2) {
+        std::cout << std::get<0>(val_rec) << "\n";
+    }
+    for (auto& ref_rec: i0) {
+        std::cout << std::get<0>(ref_rec) << "\n";
+    }
+
+    //it = i0.find(0);
+    auto it2_1 = i2.lower_bound("aa");
+    auto v2_1 = *it2_1;
+    auto& v2_2 = *it2_1;
+    auto& v2_3 = *it2_1;
+    BOOST_CHECK_EQUAL(&v2_2, &v2_3);
+    BOOST_CHECK_EQUAL(std::get<2>(v2_1), std::get<2>(v2_3));
+
+    auto it1_1 = ind1.begin() + 2;
+    auto& v1_1 = *it1_1;
+    BOOST_CHECK_EQUAL(&v2_2, &v1_1);
+
+    auto& v3_1 = *ind1.get_index<2>().find("cc");
+    auto& v3_2 = *ind1.get_index<2>().find("cc");
+    BOOST_CHECK_EQUAL(&v3_1, &v3_2);
+
+    //auto iiii = 3 + it2_1;
+    //auto it2_2 = i2.lower_bound("ii");
+    //auto it2_3 = i2.upper_bound("ii");
+    //auto it2_4 = i2.find("aaa");
+    //auto it2_5 = i2.find("aa");
+
+    std::cerr << sizeof(ind1) << std::endl;
+    //std::cerr << std::get<0>(ind1) << std::endl;
+
+}

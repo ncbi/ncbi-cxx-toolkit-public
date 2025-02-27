@@ -43,94 +43,53 @@ namespace ct
 {
     using namespace compile_time_bits;
 
-    template<typename _Key, typename _Ty, typename _Traits, typename _Multi=tag_DuplicatesNo, typename _Backend = void>
-    class const_map_impl: public const_set_map_base<_Traits, _Backend, _Multi>
+    template<typename...TArgs>
+    class const_map_impl: public const_set_map_base<const_map_impl, TArgs...>
     { // ordered or unordered compile time map
     public:
-        using _MyBase = const_set_map_base<_Traits, _Backend, _Multi>;
-        using _MyType = const_map_impl<_Key, _Ty, _Traits, _Multi, _Backend>;
+        using _MyBase = const_set_map_base<const_map_impl, TArgs...>;
 
-        using init_type       = typename _Traits::init_type;
-        using intermediate    = typename _MyBase::intermediate;
-
-        using value_type      = typename _MyBase::value_type;
-        using key_type        = typename value_type::first_type;
-        using mapped_type     = typename value_type::second_type;
+        using value_type  = typename _MyBase::value_type;
+        using key_type    = typename value_type::first_type;
+        using mapped_type = typename value_type::second_type;
 
         using _MyBase::_MyBase;
 
-        const mapped_type& at(intermediate _key) const
+        const mapped_type& at(typename _MyBase::intermediate key) const
         {
-            auto it = _MyBase::find(_key);
+            auto it = _MyBase::find(key);
             if (it == _MyBase::end())
                 throw std::out_of_range("invalid const_map<K, T> key");
 
             return it->second;
         }
 
-        const mapped_type& operator[](intermediate _key) const
+        const mapped_type& operator[](typename _MyBase::intermediate key) const
         {
-            return at(_key);
+            return at(key);
         }
 
-        template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
-        static constexpr auto construct(typename _Enabled::type const (&init)[N])
-        {
-            return construct(std::to_array(init));
-        }
-        template<size_t N, typename _Enabled = std::enable_if<!_MyBase::is_presorted, init_type>>
-        static constexpr auto construct(const const_array<typename _Enabled::type, N>& init)
-        {
-            auto backend=_MyBase::make_backend(init);
-            return const_map_impl<_Key, _Ty, _Traits, _Multi, decltype(backend)>{backend};
-        }
-        template<typename _Enabled = std::enable_if<_MyBase::is_presorted, _MyType>>
-        static constexpr typename _Enabled::type construct(const const_vector<init_type>& init)
-        {
-            auto backend=_MyBase::presorted(init);
-            return const_map_impl<_Key, _Ty, _Traits, _Multi, decltype(backend)>{backend};
-        }
-    protected:
     };
 
     template<typename _Key, typename _Ty>
-    using const_map = const_map_impl<_Key, _Ty, straight_map_traits<_Key, _Ty>, tag_DuplicatesNo, void>;
+    using const_map = const_map_impl<straight_map_traits<_Key, _Ty>, tag_DuplicatesNo>;
 
     template<typename _Key, typename _Ty>
-    using const_multi_map = const_map_impl<_Key, _Ty, straight_map_traits<_Key, _Ty>, tag_DuplicatesYes, void>;
+    using const_multi_map = const_map_impl<straight_map_traits<_Key, _Ty>, tag_DuplicatesYes>;
 
-    template<typename _Key, typename _Ty>
-    using const_map_presorted = const_map_impl<_Key, _Ty,
-        straight_map_traits<_Key, _Ty>,
-        tag_DuplicatesNo,
-        presorted_backend<const_vector<typename straight_map_traits<_Key, _Ty>::value_type>>>;
-
-    template<typename _Ty, typename _Backend=void>
-    class const_set: public const_set_map_base<simple_sort_traits<_Ty>, _Backend>
+    template<typename...TArgs>
+    class const_set_impl: public const_set_map_base<const_set_impl, TArgs...>
     {
     public:
-        using _MyBase = const_set_map_base<simple_sort_traits<_Ty>, _Backend>;
-        using _MyType = const_set<_Ty, _Backend>;
-
-        using init_type      = typename _MyBase::init_type;
-
-        using value_type      = typename _MyBase::value_type;
-        using key_type        = value_type;
+        using _MyBase    = const_set_map_base<const_set_impl, TArgs...>;
+        using value_type = typename _MyBase::value_type;
+        using key_type   = value_type;
 
         using _MyBase::_MyBase;
-
-        template<size_t N>
-        static constexpr auto construct(init_type const (&init)[N])
-        {
-            return construct(std::to_array(init));
-        }
-        template<size_t N>
-        static constexpr auto construct(const const_array<init_type, N>& init)
-        {
-            auto backend=_MyBase::make_backend(init);
-            return const_set<_Ty, decltype(backend)>{backend};
-        }
     };
+
+    template<typename _Ty>
+    using const_set = const_set_impl<simple_sort_traits<_Ty>>;
 
     template<typename T1, typename T2>
     struct const_map_twoway
@@ -140,10 +99,10 @@ namespace ct
 
         using straight_traits = straight_map_traits<type1, type2>;
         using reverse_traits  = reverse_map_traits<type1, type2>;
-        using init_type = typename straight_traits::init_type;
+        using init_type       = typename straight_traits::init_type;
 
-        using map_type1 = const_map_impl<T1, T2, straight_traits, tag_DuplicatesNo>;
-        using map_type2 = const_map_impl<T2, T1, reverse_traits,  tag_DuplicatesNo>;
+        using map_type1 = const_map_impl<straight_traits, tag_DuplicatesNo>;
+        using map_type2 = const_map_impl<reverse_traits,  tag_DuplicatesNo>;
 
         template<size_t N>
         static constexpr auto construct(init_type const (&init)[N])
@@ -151,7 +110,7 @@ namespace ct
             return construct(std::to_array(init));
         }
         template<size_t N>
-        static constexpr auto construct(const const_array<init_type, N>& init)
+        static constexpr auto construct(const std::array<init_type, N>& init)
         {
             return std::make_pair(
                 map_type1::construct(init),
@@ -160,14 +119,7 @@ namespace ct
         }
     };
 
-    template<typename _Ty>
-    using const_unordered_set = const_set<DeduceHashedType<_Ty>>;
 
-    template<typename _Key, typename _Ty>
-    using const_unordered_map = const_map<DeduceHashedType<_Key>, _Ty>;
-
-    template<typename T1, typename T2>
-    using const_unordered_map_twoway = const_map_twoway<DeduceHashedType<T1>, DeduceHashedType<T2>>;
 
     template<typename _Init, typename _Elem=array_elem_t<_Init>>
     constexpr auto sort(_Init&& init)
@@ -178,50 +130,17 @@ namespace ct
 
 }
 
-#ifdef const_array
-#   undef const_array
-#endif
-#ifdef const_tuple
-#   undef const_tuple
-#endif
-
-// user can define some specific debug instructions
-#ifndef DEBUG_MAKE_CONST_MAP
-#   define DEBUG_MAKE_CONST_MAP(name)
-#endif
-#ifndef DEBUG_MAKE_TWOWAY_CONST_MAP
-#   define DEBUG_MAKE_TWOWAY_CONST_MAP(name)
-#endif
-#ifndef DEBUG_MAKE_CONST_SET
-#   define DEBUG_MAKE_CONST_SET(name)
-#endif
-
 // Some compilers (Clang < 3.9, GCC-7) still cannot deduce template parameter N for aggregate initialiazed arrays
 // so we have to use two step initialization. This doesn't impact neither of compile time, run time or memory footprint
 //
 
 #define MAKE_CONST_MAP(name, type1, type2, ...)                                                                             \
-    static constexpr auto name = ct::const_map<type1, type2>::construct(__VA_ARGS__);                                       \
-    DEBUG_MAKE_CONST_MAP(name)
+    static constexpr auto name = ct::const_map<type1, type2>::construct(__VA_ARGS__);
 
 #define MAKE_TWOWAY_CONST_MAP(name, type1, type2, ...)                                                                      \
-    static constexpr auto name = ct::const_map_twoway<type1, type2>::construct(__VA_ARGS__);                                \
-    DEBUG_MAKE_TWOWAY_CONST_MAP(name)
+    static constexpr auto name = ct::const_map_twoway<type1, type2>::construct(__VA_ARGS__);
 
 #define MAKE_CONST_SET(name, type, ...)                                                                                     \
-    static constexpr ct::const_set<type>::init_type name ## _init [] = __VA_ARGS__;                                         \
-    static constexpr auto name = ct::const_set<type>::construct(name ## _init);                                             \
-    DEBUG_MAKE_CONST_SET(name)
-
-#define MAKE_CONST_SET1(name, type, ...)                                                                                    \
-    static constexpr auto name = ct::const_set<type>::construct(__VA_ARGS__);                                               \
-    DEBUG_MAKE_CONST_SET(name)
-
-#ifdef CT_USE_STD_MAP
-#    define MAKE_CONST_MAP_COMPAT(name, type1, type2, ...) static const std::map<type1, type2> name = __VA_ARGS__;
-#else
-#    define MAKE_CONST_MAP_COMPAT MAKE_CONST_MAP
-#endif
-
+    static constexpr auto name = ct::const_set<type>::construct(__VA_ARGS__);
 
 #endif

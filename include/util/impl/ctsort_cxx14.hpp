@@ -77,7 +77,7 @@ namespace compile_time_bits
         template<typename _Init>
         static constexpr auto make_indices(_Init&& input) noexcept
         { // this will produce the index of elements sorted by rules provided in sort_traits
-            const_array<size_type, array_size<_Init>::value> indices{};
+            std::array<size_type, array_size<_Init>::value> indices{};
             auto real_size = insert_sort_indices(indices, input);
             return std::make_pair(real_size, indices);
         }
@@ -222,7 +222,7 @@ namespace compile_time_bits
 
         template<typename _Input, typename _Indices, size_type... I>
         static constexpr auto construct_hashes(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
-            -> const_array<hash_type, sizeof...(I)>
+            -> std::array<hash_type, sizeof...(I)>
         {   // only 'realsize' elements are collected, the leftover is padded with the last element
             size_type real_size = indices.first;
             return { sort_traits::get_init_hash(input[indices.second[I < real_size ? I : real_size - 1]]) ...};
@@ -230,7 +230,7 @@ namespace compile_time_bits
 
         template<typename _Input, typename _Indices, size_type... I>
         static constexpr auto construct_values(const _Input& input, const _Indices& indices, std::index_sequence<I...>) noexcept
-            -> const_array<value_type, sizeof...(I)>
+            -> std::array<value_type, sizeof...(I)>
         {   // only 'realsize' elements are collected, the leftover is padded with the last element
             auto real_size = indices.first;
             return { sort_traits::construct(input[indices.second[I < real_size ? I : real_size - 1]]) ...};

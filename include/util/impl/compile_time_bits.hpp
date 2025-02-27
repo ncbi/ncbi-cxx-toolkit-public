@@ -41,7 +41,7 @@
 #include <stdexcept>
 #include <array>
 #include <algorithm>
-#include <corelib/ncbistd.hpp>
+#include <corelib/impl/std_backport.hpp>
 
 
 // forward declarations to avoid unnecessary includes
@@ -50,18 +50,6 @@ namespace ncbi
     class CTempString;
     class CTempStringEx;
 }
-
-// on some compilers tuple are undeveloped for constexpr
-#if defined(NCBI_COMPILER_ICC) || (defined(NCBI_COMPILER_MSVC) && NCBI_COMPILER_VERSION<=1916)
-#   define ct_const_tuple compile_time_bits::const_tuple
-#   include "const_tuple.hpp"
-#else
-#   define ct_const_tuple std::tuple
-#   define const_tuple std::tuple
-#endif
-
-#define ct_const_array std::array
-#define const_array std::array
 
 #include "ct_string_cxx17.hpp"
 
@@ -188,8 +176,8 @@ namespace compile_time_bits
     template<typename..._Types>
     struct DeduceType<std::tuple<_Types...>>
     {
-        using value_type = const_tuple<typename DeduceType<_Types>::value_type...>;
-        using init_type  = const_tuple<typename DeduceType<_Types>::init_type...>;
+        using value_type = std::tuple<typename DeduceType<_Types>::value_type...>;
+        using init_type  = std::tuple<typename DeduceType<_Types>::init_type...>;
         using hash_type  = void;
     };
 
@@ -202,8 +190,37 @@ namespace compile_time_bits
             _Self>> : _Self {};
 
 
-    template<typename T>
-    struct DeduceHashedType: DeduceType<T> {};
+    template<typename _Ty, typename = _Ty>
+    struct DeduceHashedType: DeduceType<_Ty> {};
+
+    template<size_t, typename...>
+    struct DeduceIndexSizeImpl;
+
+    template<size_t N>
+    struct DeduceIndexSizeImpl<N>
+    {
+        using type = void;
+    };
+
+    template<size_t N, typename _First, typename...TArgs>
+    struct DeduceIndexSizeImpl<N, _First, TArgs...>
+    {
+        static constexpr auto max_value = std::numeric_limits<_First>::max();
+
+        using type = std::conditional_t<  (N<max_value), _First,
+            typename DeduceIndexSizeImpl<N, TArgs...>::type>;
+    };
+
+    template<size_t size>
+    struct DeduceIndexSize
+    {
+        using type = DeduceIndexSizeImpl<size, uint8_t, uint16_t, uint32_t, uint64_t>::type;
+
+        static_assert(!std::is_void_v<type>, "Failed to determine data type");
+
+    };
+
+
 
 }
 
@@ -377,18 +394,13 @@ namespace compile_time_bits
     public:
         constexpr simple_backend() = default;
 
-        using index_type = typename _ArrayType::value_type;
-
         constexpr simple_backend(const std::pair<_SizeType, _ArrayType>& init)
             : m_array { std::get<1>(init) },
               m_realsize { std::get<0>(init) }
         {}
 
-        static constexpr auto capacity = array_size<_ArrayType>::value;
-        constexpr auto realsize()   const noexcept { return m_realsize; }
-        constexpr auto indexsize()  const noexcept { return m_realsize; }
-        constexpr auto get_values() const noexcept { return m_array.data(); }
-        constexpr auto get_index()  const noexcept { return m_array.data(); }
+        constexpr auto  realsize()   const noexcept { return m_realsize; }
+        constexpr auto& get_values() const noexcept { return m_array; }
     private:
         _ArrayType  m_array;
         std::size_t m_realsize{0};
@@ -398,11 +410,12 @@ namespace compile_time_bits
     class simple_backend<std::tuple<_SizeType, _ArrayType, _IndexType>>
     {
     public:
+        using can_use_fast_index = std::true_type;
         using value_type = typename _ArrayType::value_type;
         using index_type = typename _IndexType::value_type;
         using tuple_type = std::tuple<_SizeType, _ArrayType, _IndexType>;
 
-        static constexpr auto capacity = array_size<_ArrayType>::value;
+        //static constexpr auto capacity = array_size<_ArrayType>::value;
 
         constexpr simple_backend() = default;
 
@@ -412,10 +425,9 @@ namespace compile_time_bits
               m_realsize { std::get<0>(init) }
         {}
 
-        constexpr auto realsize()   const noexcept { return m_realsize; }
-        constexpr auto indexsize()  const noexcept { return m_realsize; }
-        constexpr auto get_values() const noexcept { return m_array.data(); }
-        constexpr auto get_index()  const noexcept { return m_index.data(); }
+        constexpr auto  realsize()   const noexcept { return m_realsize; }
+        constexpr auto& get_values() const noexcept { return m_array; }
+        constexpr auto& get_index()  const noexcept { return m_index; }
     private:
         _IndexType m_index{}; // index is first because it can be aligned
         _ArrayType m_array{};
@@ -427,16 +439,14 @@ namespace compile_time_bits
     {
     public:
         using value_type = typename _ArrayType::value_type;
-        using index_type = typename _ArrayType::value_type;
 
         constexpr presorted_backend() = default;
         constexpr presorted_backend(const _ArrayType& _Other)
             : m_vec{_Other}
         {}
 
-        constexpr auto get_values() const noexcept { return m_vec.data(); }
-        constexpr auto get_index()  const noexcept { return m_vec.data(); }
-        constexpr size_t realsize() const noexcept { return m_vec.size(); }
+        constexpr auto  realsize()   const noexcept { return m_vec.size(); }
+        constexpr auto& get_values() const noexcept { return m_vec; }
 
     private:
         _ArrayType m_vec;
@@ -451,24 +461,223 @@ namespace compile_time_bits
 
         using index_type = _IndexType;
         using value_type = _ValueType;
+        using can_use_fast_index = std::integral_constant<bool, !std::is_same_v<index_type, value_type>>;
 
-        template<typename _ArrayType>
-        constexpr portable_backend(const simple_backend<_ArrayType>& _Other)
-            : m_values { _Other.get_values(), _Other.realsize() },
-              m_index  { _Other.get_index(),  _Other.realsize() }
+        template<typename...TArgs>
+        constexpr portable_backend(const simple_backend<std::tuple<TArgs...>>& _Other)
+            : m_values { _Other.get_values().data(), _Other.realsize() },
+              m_index  { _Other.get_index().data(),  _Other.realsize() }
+        {}
+        template<typename...TArgs>
+        constexpr portable_backend(const simple_backend<std::pair<TArgs...>>& _Other)
+            : m_values { _Other.get_values().data(), _Other.realsize() },
+              m_index  { _Other.get_values().data(), _Other.realsize() }
+        {}
+        template<typename...TArgs>
+        constexpr portable_backend(const presorted_backend<TArgs...>& _Other)
+            : m_values { _Other.get_values() },
+              m_index  { _Other.get_values() }
         {}
 
-        constexpr auto get_values() const noexcept { return m_values.data(); }
-        constexpr auto get_index()  const noexcept { return m_index.data(); }
-        constexpr size_t realsize() const noexcept { return m_values.size(); }
+        constexpr auto  realsize()   const noexcept { return m_values.size(); }
+        constexpr auto& get_values() const noexcept { return m_values; }
+        constexpr auto& get_index()  const noexcept { return m_index; }
+
+        constexpr auto begin() const { return m_values.begin(); }
+        constexpr auto end()   const { return m_values.end(); }
+        constexpr auto size()  const { return m_values.size(); }
+
     private:
         const_vector<value_type> m_values;
         const_vector<index_type> m_index;
     };
 
+    template<typename _Backend, typename = void>
+    struct can_use_fast_index: std::false_type {};
 
-    template<typename _Traits, typename _Backend, typename _Duplicates = tag_DuplicatesNo>
-    class const_set_map_base
+    template<typename _Backend>
+    struct can_use_fast_index<_Backend, std::enable_if_t<_Backend::can_use_fast_index::value>>: std::true_type {};
+
+    template<typename _IndexTraits, typename _Iterator>
+    class binary_search_traits
+    {
+    public:
+        using const_iterator = _Iterator;
+        using iterator = const_iterator;
+
+        //static_assert(std::input_iterator<const_iterator>);
+        //static_assert(std::forward_iterator<const_iterator>);
+        //static_assert(std::bidirectional_iterator<const_iterator>);
+        //static_assert(std::random_access_iterator<const_iterator>);
+        #ifdef __cpp_concepts
+        static_assert(std::contiguous_iterator<const_iterator>);
+
+        //static_assert(std::input_or_output_iterator<const_iterator>);
+        static_assert(std::indirectly_readable<const_iterator>);
+        #endif
+
+        using key_compare  = typename _IndexTraits::hashed_key_type::value_compare;
+
+        struct value_compare
+        {
+            constexpr bool operator()( const typename _IndexTraits::value_type& l, const typename _IndexTraits::value_type& r ) const
+            {
+                return key_compare{}(_IndexTraits::get_key(l), _IndexTraits::get_key(r));
+            }
+        };
+
+        using intermediate = typename _IndexTraits::key_type;
+
+        template<typename _BE, bool _CanIndex = can_use_fast_index<_BE>::value>
+        static const_iterator lower_bound(const _BE& be, intermediate _key)
+        {
+            init_key_type key{_key};
+            SearchKey hash{key};
+            if constexpr (_CanIndex) {
+                auto _begin = be.get_index().begin();
+                auto it = std::lower_bound(_begin, _begin + be.size(), hash, hash_compare_op{});
+                auto offset = std::distance(_begin, it);
+                return be.begin() + offset;
+            } else {
+                return std::lower_bound(be.begin(), be.end(), hash, hash_compare_op{});
+            }
+        }
+
+        template<typename _BE, bool _CanIndex = can_use_fast_index<_BE>::value>
+        static const_iterator upper_bound(const _BE& be, intermediate _key)
+        {
+            init_key_type key{_key};
+            SearchKey hash{key};
+            if constexpr (_CanIndex) {
+                auto _begin = be.get_index().begin();
+                auto it = std::upper_bound(_begin, _begin + be.size(), hash, hash_compare_op{});
+                auto offset = std::distance(_begin, it);
+                return be.begin() + offset;
+            } else {
+                return std::upper_bound(be.begin(), be.end(), hash, hash_compare_op{});
+            }
+        }
+
+        template<typename _BE, bool _CanIndex = can_use_fast_index<_BE>::value>
+        static std::pair<const_iterator, const_iterator>
+            equal_range(const _BE& be, intermediate _key)
+        {
+            init_key_type key{_key};
+            SearchKey hash{key};
+            if constexpr (_CanIndex) {
+                auto _begin = be.get_index().begin();
+                auto _range = std::equal_range(_begin, _begin + be.size(), hash, hash_compare_op{});
+                return std::make_pair(
+                    be.begin() + std::distance(_begin, _range.first),
+                    be.begin() + std::distance(_begin, _range.second));
+            } else {
+                return std::equal_range(be.begin(), be.end(), hash, hash_compare_op{});
+            }
+        }
+
+        template<typename _BE, bool _CanIndex = can_use_fast_index<_BE>::value>
+        static const_iterator find(const _BE& be, intermediate _key)
+        {
+            init_key_type key{_key};
+            SearchKey hash{key};
+            if constexpr (_CanIndex) {
+                auto _begin = be.get_index().begin();
+                auto it = std::lower_bound(_begin, _begin + be.size(), hash, hash_compare_op{});
+                auto dist = std::distance(_begin, it);
+                auto ret_it = be.begin() + dist;
+
+                if (( dist >= std::ptrdiff_t(be.size()))
+                        || key_compare{}(_key, _IndexTraits::get_key(*ret_it))) {
+                    ret_it = be.end();
+                }
+                return ret_it;
+            } else {
+                auto it = std::lower_bound(be.begin(), be.end(), hash, hash_compare_op{});
+                if (it == be.end() || key_compare{}(_key, _IndexTraits::get_key(*it))) {
+                    return be.end();
+                } else {
+                        return it;
+                }
+            }
+        }
+
+
+    private:
+        using init_key_type = typename _IndexTraits::init_key_type;
+
+        struct SearchKey
+        {
+            typename _IndexTraits::hash_type hash;
+            typename _IndexTraits::hashed_key_type::hash_compare m_hash_compare = {};
+        };
+
+        struct hash_compare_op
+        {
+            template<typename _TL>
+            bool operator()(const _TL & l, const SearchKey& r ) const
+            {
+                return r.m_hash_compare(_IndexTraits::get_key(l), r.hash);
+            }
+            template<typename _TR>
+            bool operator()(const SearchKey& l, const _TR & r ) const
+            {
+                return l.m_hash_compare(l.hash, _IndexTraits::get_key(r));
+            }
+        };
+    };
+    template<typename _Traits, typename _Duplicates, typename _Backend>
+    struct const_set_map_backend
+    {
+
+        using sorter_type  = TInsertSorter<_Traits, _Duplicates>;
+        using is_presorted = std::is_same<_Backend, presorted_backend<const_vector<typename _Traits::value_type>>>;
+
+        using index_type   = std::conditional_t<
+                                    sorter_type::can_index && !is_presorted::value,
+                                    typename _Traits::hash_type,
+                                    typename _Traits::value_type>;
+
+        using portable = portable_backend<index_type, typename _Traits::value_type>;
+        using backend_type = std::conditional_t<std::is_void<_Backend>::value,
+                                    portable,
+                                    _Backend>;
+
+        template<typename _ArrayType>
+        static constexpr auto construct(const _ArrayType& init)
+        {
+            auto proxy = sorter_type::sort(init);
+            return simple_backend<decltype(proxy)>(proxy);
+        }
+
+        constexpr
+            std::conditional_t<std::is_void_v<_Backend>, const backend_type&, portable>
+                get_portable() const
+        {
+            return m_backend;
+        }
+
+        constexpr const_set_map_backend() =  default;
+        constexpr const_set_map_backend(const backend_type& _o) : m_backend{_o} {}
+
+        template<typename _Other,
+            typename = std::enable_if_t<
+                std::is_constructible_v<backend_type, typename const_set_map_backend<_Traits, _Duplicates, _Other>::backend_type >>>
+        constexpr const_set_map_backend(const const_set_map_backend<_Traits, _Duplicates, _Other>& _other)
+            : m_backend {_other.m_backend}
+        {
+        }
+
+        backend_type m_backend;
+    };
+
+    struct const_set_map_base_base
+    {
+    };
+
+    template<
+        template<typename...> typename _RealType,
+        typename _Traits, typename _Duplicates = tag_DuplicatesNo, typename _Backend = void>
+    class const_set_map_base: public const_set_map_base_base
     {
     public:
         // standard definitions
@@ -485,149 +694,242 @@ namespace compile_time_bits
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
         // non-standard definitions
-        using traits_type     = _Traits;
-        friend class const_set_map_base<_Traits, void, _Duplicates>;
 
-        using hash_type       = typename _Traits::hash_type;
-        using intermediate    = typename _Traits::key_type;
-        using init_key_type   = typename _Traits::init_key_type;
-        using init_type       = typename _Traits::init_type;
-        using sorter_type     = TInsertSorter<_Traits, _Duplicates>;
+        friend class const_set_map_base<_RealType, _Traits, _Duplicates, void>;
 
-        static constexpr bool can_index = sorter_type::can_index;
+        template<typename _Other>
+        using recast_backend = _RealType<_Traits, _Duplicates, _Other>;
 
-        using index_type      = std::conditional_t<
-                                    can_index,
-                                    hash_type,
-                                    typename _Traits::value_type>;
-
-        using backend_type    = std::conditional_t<std::is_void<_Backend>::value,
-                                    portable_backend<index_type, value_type>,
-                                    _Backend>;
+        using init_type    = typename _Traits::init_type;
+        using backend_type = const_set_map_backend<_Traits, _Duplicates, _Backend>;
+        using search_core  = binary_search_traits<_Traits, const_iterator>;
+        using intermediate = typename search_core::intermediate;
 
         // standard methods
 
-        constexpr size_type      size()     const noexcept { return m_backend.realsize(); }
+        constexpr size_type      size()     const noexcept { return m_backend.m_backend.realsize(); }
         constexpr size_type      max_size() const noexcept { return size(); }
-        constexpr size_type      capacity() const noexcept { return m_backend.capacity(); }
+        constexpr size_type      capacity() const noexcept { return m_backend.m_backend.capacity(); }
         constexpr bool           empty()    const noexcept { return size() == 0; }
-        constexpr const_iterator begin()    const noexcept { return m_backend.get_values(); }
+        constexpr const_iterator begin()    const noexcept { return m_backend.m_backend.get_values().data(); }
         constexpr const_iterator cbegin()   const noexcept { return begin(); }
-        constexpr const_iterator end()      const noexcept { return begin() + m_backend.realsize(); }
+        constexpr const_iterator end()      const noexcept { return begin() + size(); }
         constexpr const_iterator cend()     const noexcept { return end(); }
         constexpr const_reverse_iterator rbegin()  const noexcept { return const_reverse_iterator{ end() }; }
         constexpr const_reverse_iterator rcbegin() const noexcept { return rbegin(); }
         constexpr const_reverse_iterator rend()    const noexcept { return const_reverse_iterator{ begin() }; }
         constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
 
-        using key_compare = typename _Traits::hashed_key_type::value_compare;
+        using key_compare   = typename search_core::key_compare;
+        using value_compare = typename search_core::value_compare;
 
-        struct value_compare
+        const_iterator lower_bound(intermediate key) const
         {
-            constexpr bool operator()( const value_type& l, const value_type& r ) const
-            {
-                return key_compare{}(_Traits::get_key(l), _Traits::get_key(r));
-            }
-        };
-
-        struct hash_compare
-        {
-            template<typename _TL, typename _TR>
-            constexpr bool operator()(const _TL & l, const _TR & r ) const
-            {
-                return typename _Traits::hashed_key_type::hash_compare{}(_Traits::get_key(l), _Traits::get_key(r));
-            }
-        };
-
-        const_iterator lower_bound(intermediate _key) const
-        {
-            init_key_type key{_key};
-            hash_type hash{key};
-            auto it = std::lower_bound(m_backend.get_index(), m_backend.get_index()+m_backend.realsize(), hash, hash_compare{});
-            auto offset = std::distance(m_backend.get_index(), it);
-            return begin() + offset;
+            return search_core::lower_bound(m_backend.get_portable(), key);
         }
-        const_iterator upper_bound(intermediate _key) const
+        const_iterator upper_bound(intermediate key) const
         {
-            init_key_type key{_key};
-            hash_type hash{key};
-            auto it = std::upper_bound(m_backend.get_index(), m_backend.get_index()+m_backend.realsize(), hash, hash_compare{});
-            auto offset = std::distance(m_backend.get_index(), it);
-            return begin() + offset;
+            return search_core::upper_bound(m_backend.get_portable(), key);
         }
         std::pair<const_iterator, const_iterator>
-            equal_range(intermediate _key) const
+            equal_range(intermediate key) const
         {
-            init_key_type key{_key};
-            hash_type hash{key};
-            auto _range = std::equal_range(m_backend.get_index(), m_backend.get_index()+m_backend.realsize(), hash, hash_compare{});
-            return std::make_pair(
-                begin() + std::distance(m_backend.get_index(), _range.first),
-                begin() + std::distance(m_backend.get_index(), _range.second));
+            return search_core::equal_range(m_backend.get_portable(), key);
+        }
+        const_iterator find(intermediate key) const
+        {
+            return search_core::find(m_backend.get_portable(), key);
         }
 
-        const_iterator find(intermediate _key) const
+        constexpr const_set_map_base() = default;
+
+        constexpr const_set_map_base(const backend_type::backend_type& backend)
+            : m_backend{ backend }
         {
-            auto it = lower_bound(_key);
-            if (it == end() || key_compare{}(_key, _Traits::get_key(*it)))
-                return end();
-            else
-                return it;
         }
+
+        template<
+            typename _Container,
+            typename = std::enable_if_t<
+                std::is_void_v<_Backend> &&
+                std::is_constructible_v<backend_type, typename _Container::backend_type> &&
+                std::is_base_of<const_set_map_base_base, _Container>::value
+            >>
+        constexpr const_set_map_base(const _Container& _other)
+            : m_backend{ _other.m_backend.m_backend }
+        {
+        }
+
+        // non-standard methods
 
         size_t get_alignment() const
         { // debug method for unit tests
             return std::uintptr_t(m_backend.get_index()) % std::hardware_constructive_interference_size;
         }
 
-        // debug method for unit tests
-        const auto& get_backend() const noexcept { return m_backend; }
+        constexpr auto& get_backend() const noexcept { return m_backend; }
 
-        static constexpr bool is_presorted = std::is_same_v<presorted_backend<const_vector<typename _Traits::value_type>>, backend_type>;
+        template<size_t N>
+        static constexpr auto construct(init_type const (&init)[N])
+        {
+            return from_array(std::to_array(init));
+        }
 
-        constexpr const_set_map_base() = default;
+        template<size_t N>
+        static constexpr auto construct(const std::array<init_type, N>& init)
+        {
+            return from_array(init);
+        }
 
-        constexpr const_set_map_base(const backend_type& backend)
-            : m_backend{ backend }
-        {}
-
-        template<
-            typename _Other,
-            typename _NotUsed = std::enable_if_t<
-                std::is_void<_Backend>::value &&
-                std::is_constructible<backend_type, typename _Other::backend_type
-                    >::value>
-            >
-        constexpr const_set_map_base(const _Other& _other)
-            : m_backend{ _other.m_backend }
-        {}
+        static constexpr auto presorted(const const_vector<init_type>& init)
+        {
+            presorted_backend be{init};
+            return recast_backend<decltype(be)>{be};
+        }
 
     protected:
-
-        template<typename _ArrayType>
-        static constexpr auto make_backend(const _ArrayType& init)
+        template<size_t N>
+        static constexpr auto from_array(const std::array<init_type, N>& init)
         {
-            auto proxy = sorter_type::sort(init);
-            using backend_type = simple_backend<decltype(proxy)>;
-            return backend_type{proxy};
+            auto be = backend_type::construct(init);
+            return recast_backend<decltype(be)>{be};
         }
 
-        template<typename _ArrayType>
-        static constexpr auto presorted(const _ArrayType& init)
-        {
-            using backend_type = presorted_backend<_ArrayType>;
-            return backend_type{init};
-        }
-
+    private:
         backend_type m_backend;
     };
 
 }
 
+// bits for compile time table with multiple indices for searching
+namespace compile_time_bits
+{
+
+    template<typename _ValueType, typename _IndexType>
+    class indexed_iterator
+    {
+    public:
+        // standard mandadory definitions
+        using difference_type   = std::ptrdiff_t;
+        using value_type        = std::decay_t<_ValueType>;
+        using pointer           = const value_type*;
+        using reference         = const value_type&;
+        using const_pointer     = const value_type*;
+        using const_reference   = const value_type&;
+
+    #ifdef __cpp_concepts
+        using iterator_category = std::contiguous_iterator_tag;
+    #else
+        using iterator_category = std::random_access_iterator_tag;
+    #endif
+
+        constexpr indexed_iterator() = default;
+        constexpr explicit indexed_iterator(const _ValueType* be, const _IndexType* index)
+            : m_pos { index },
+              m_values { be }
+        {}
+
+        const_reference operator*()  const noexcept { return x_get_row();     }
+        const_pointer   operator->() const noexcept { return & (x_get_row()); }
+
+        constexpr bool operator==(const indexed_iterator& other) const
+        {
+            return (m_pos == other.m_pos) && (m_values == other.m_values);
+        }
+        constexpr bool operator!=(const indexed_iterator& other) const
+        {
+            return !((m_pos == other.m_pos) && (m_values == other.m_values));
+        }
+        indexed_iterator& operator++()
+        {
+            ++m_pos;
+            return *this;
+        }
+        indexed_iterator operator++(int)
+        {
+            indexed_iterator _this(*this);
+            operator++();
+            return _this;
+        }
+        indexed_iterator& operator--()
+        {
+            --m_pos;
+            return *this;
+        }
+        indexed_iterator operator--(int)
+        {
+            indexed_iterator _this(*this);
+            operator--();
+            return _this;
+        }
+        indexed_iterator& operator-=(difference_type off)
+        {
+            m_pos -= off;
+            return *this;
+        }
+        indexed_iterator& operator+=(difference_type off)
+        {
+            m_pos += off;
+            return *this;
+        }
+        indexed_iterator operator+(difference_type off) const {
+            indexed_iterator _this{*this};
+            _this += off;
+            return _this;
+        }
+        indexed_iterator operator-(difference_type off) const {
+            indexed_iterator _this{*this};
+            _this -= off;
+            return _this;
+        }
+        difference_type operator-(indexed_iterator other) const
+        {
+            return m_pos - other.m_pos;
+        }
+
+        bool operator<(indexed_iterator other) const
+        {
+            return (m_values == other.m_values) && (m_pos < other.m_pos);
+        }
+        bool operator>(indexed_iterator other) const
+        {
+            return (m_values == other.m_values) && (m_pos > other.m_pos);
+        }
+        bool operator<=(indexed_iterator other) const
+        {
+            return (m_values == other.m_values) && (m_pos <= other.m_pos);
+        }
+        bool operator>=(indexed_iterator other) const
+        {
+            return (m_values == other.m_values) && (m_pos >= other.m_pos);
+        }
+        const_reference operator[](difference_type off) const {
+            auto it = indexed_iterator(m_pos + off, m_values);
+            return *it;
+        }
+
+    private:
+        auto& x_get_row() const {
+            auto pos = *m_pos;
+            return m_values[pos];
+        }
+        const std::decay_t<_IndexType>* m_pos = nullptr;
+        const value_type* m_values = nullptr;
+    };
+
+    template<typename...TArgs>
+    auto operator+(std::ptrdiff_t off, const indexed_iterator<TArgs...>& other)
+    {
+        return other + off;
+    }
+
+}
+
 namespace std
 {
-    template<typename...TArgs>
-    constexpr size_t size(const compile_time_bits::const_set_map_base<TArgs...>& _container)
+    template<typename _Container, typename = std::enable_if_t<
+        std::is_base_of<compile_time_bits::const_set_map_base_base, std::decay_t<_Container>>::value>>
+    constexpr size_t size(_Container&& _container)
     {
         return _container.size();
     }
