@@ -54,7 +54,7 @@ public:
 
     void AddAnnots(IIndexedFeatureReader* reader, CBioseq& bioseq) const;
 
-    void LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, const string& filename);
+    std::unique_ptr<IIndexedFeatureReader> LoadIndexedAnnot(const string& filename);
     void GetIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, TAnnots& annots);
 
     void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc) const;

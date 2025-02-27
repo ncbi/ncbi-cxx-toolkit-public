@@ -1020,8 +1020,10 @@ CMultiReader::~CMultiReader()
 {
 }
 
-void CMultiReader::LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& reader, const string& filename)
+unique_ptr<IIndexedFeatureReader> CMultiReader::LoadIndexedAnnot(const string& filename)
 {
+    unique_ptr<IIndexedFeatureReader> reader;
+
     auto hugefile = std::make_unique<objects::edit::CHugeFile>();
     hugefile->OpenPlain(filename);
 
@@ -1057,10 +1059,10 @@ void CMultiReader::LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& read
     TAnnots annots;
     auto* in = hugefile->m_stream.get();
 
+    bool hasAnnots{false};
     switch (uFormat) {
     case CFormatGuess::eFiveColFeatureTable: {
         auto reader5col = std::make_unique<CFast5colReader>();
-        //auto reader5col = std::make_unique<CWholeFileAnnotation>();
         long reader_flags =
             CFeature_table_reader::fLeaveProteinIds |
             CFeature_table_reader::fCreateGenesFromCDSs |
@@ -1069,6 +1071,7 @@ void CMultiReader::LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& read
 
         reader5col->Init(m_context.m_genome_center_id, reader_flags, m_context.m_logger);
         reader5col->Open(std::move(hugefile));
+        hasAnnots = (reader5col->size()>0); 
         reader = std::move(reader5col);
     } break;
     case CFormatGuess::eTextASN: {
@@ -1104,12 +1107,21 @@ void CMultiReader::LoadIndexedAnnot(std::unique_ptr<IIndexedFeatureReader>& read
             "Annotation file format not recognized. Run format validator on your annotation file", 1);
     }
 
+
     if (!reader.get() && !annots.empty()) {
         auto whole_file = std::make_unique<CWholeFileAnnotation>();
         whole_file->Init(m_context.m_genome_center_id, 0);
         whole_file->AddAnnots(annots);
         reader = std::move(whole_file);
+        hasAnnots = true;
     }
+
+    if (! hasAnnots) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+                "Unable to load annotations from "+ filename, 0);
+    }
+
+    return reader;
 }
 
 void CMultiReader::AddAnnots(IIndexedFeatureReader* reader, CBioseq& bioseq) const
