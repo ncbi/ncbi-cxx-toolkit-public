@@ -267,6 +267,32 @@ DISCREPANCY_CASE(BIOPROJECT_ID, SEQUENCE, eOncaller, "Sequences with BioProject 
 }
 
 
+// SEQUENCE_READ_ARCHIVE
+
+DISCREPANCY_CASE(SEQUENCE_READ_ARCHIVE, SEQUENCE, eSubmitter | eSmart, "Sequences with Sequence Read Archive IDs")
+{
+    const CBioseq& bioseq = context.CurrentBioseq();
+    if (bioseq.CanGetInst() && bioseq.GetInst().IsNa()) {
+        for (const auto& desc : context.GetAllSeqdesc()) {
+            if (desc.IsUser()) {
+                const CUser_object& user = desc.GetUser();
+                if (user.IsSetData() && user.IsSetType() && user.GetType().IsStr() && user.GetType().GetStr() == "DBLink") {
+                    for (const auto& user_field : user.GetData()) {
+                        if (user_field->IsSetLabel() && user_field->GetLabel().IsStr() && user_field->GetLabel().GetStr() == "Sequence Read Archive" && user_field->IsSetData() && user_field->GetData().IsStrs()) {
+                            const CUser_field::C_Data::TStrs& strs = user_field->GetData().GetStrs();
+                            if (!strs.empty() && !strs[0].empty()) {
+                                m_Objs["[n] sequence[s] contain[S] Sequence Read Archive IDs"].Add(*context.BioseqObjRef());
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 // MISSING_DEFLINES
 
 DISCREPANCY_CASE(MISSING_DEFLINES, SEQUENCE, eAll, "Missing definition lines")
