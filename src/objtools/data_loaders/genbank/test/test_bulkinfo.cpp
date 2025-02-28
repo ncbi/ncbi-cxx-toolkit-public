@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <util/random_gen.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -136,6 +137,9 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
          CArgDescriptions::eInputFile);
     IBulkTester::AddArgs(args);
     args.AddFlag("verbose", "Verbose results");
+    args.AddOptionalKey("seed", "RandomSeed",
+                        "Force random seed",
+                        CArgDescriptions::eInteger);
     args.AddFlag("sort", "Sort requests");
     args.AddFlag("single", "Use single id queries (non-bulk)");
     args.AddFlag("verify", "Run extra test to verify returned values");
@@ -241,10 +245,17 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
     m_Type = IBulkTester::ParseType(args);
     m_GetFlags = IBulkTester::ParseGetFlags(args);
     m_Verbose = args["verbose"];
+    if ( args["seed"] ) {
+        m_Seed = args["seed"].AsInteger();
+    }
+    else {
+        m_Seed = CNcbiTest::GetRandomSeed();
+        NcbiCout << "Randomization seed value: "<<m_Seed
+                 << NcbiEndl;
+    }
     m_Sort = args["sort"];
     m_Single = args["single"];
     m_Verify = args["verify"];
-    m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
     m_ReuseScope = eReuseScope_split;
     if ( args["reuse_scope"].AsString() == "none" ) {
@@ -360,7 +371,7 @@ int CTestApplication::Run(void)
         switch ( random.GetRand(0, 1) ) {
         default:
             reuse_scope = eReuseScope_none;
-            LOG_POST("Test selected single scope for each iteration");
+            LOG_POST("Test selected separate scope for each iteration");
             break;
         case 1:
             reuse_scope = eReuseScope_iteration;

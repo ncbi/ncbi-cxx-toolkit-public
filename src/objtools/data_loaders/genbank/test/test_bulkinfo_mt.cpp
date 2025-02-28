@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/test_mt.hpp>
+#include <corelib/ncbi_test.hpp>
 #include <util/random_gen.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -233,10 +234,15 @@ bool CTestApplication::TestApp_Init(void)
     m_Type = IBulkTester::ParseType(args);
     m_GetFlags = IBulkTester::ParseGetFlags(args);
     m_Verbose = args["verbose"];
+    if ( args["seed"] ) {
+        m_Seed = args["seed"].AsInteger();
+    }
+    else {
+        m_Seed = CNcbiTest::GetRandomSeed();
+    }
     m_Sort = args["sort"];
     m_Single = args["single"];
     m_Verify = args["verify"];
-    m_Seed = 0;
     m_RunCount = args["count"].AsInteger();
     m_ReuseScope = eReuseScope_split;
     if ( args["reuse_scope"].AsString() == "none" ) {
@@ -319,7 +325,7 @@ bool CTestApplication::Thread_Run(int thread_id)
         switch ( random.GetRand(0, 2) ) {
         default:
             reuse_scope = eReuseScope_none;
-            LOG_POST("Test thread "<<thread_id<<" selected single scope for each iteration");
+            LOG_POST("Test thread "<<thread_id<<" selected separate scope for each iteration");
             break;
         case 1:
             reuse_scope = eReuseScope_iteration;
