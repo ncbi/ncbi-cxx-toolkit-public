@@ -1107,7 +1107,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
             PSG_WARNING("The client connection has been closed. "
                         "There were 0 processors in progress (out of " +
                         to_string(total_procs) +
-                        " so no processors will be canceled.");
+                        ") so no processors will be canceled.");
         }
     }
 
