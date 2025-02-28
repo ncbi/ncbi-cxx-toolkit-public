@@ -4,3 +4,6 @@ APP_PROJ = run_with_lock
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
+
+# Must appear *after* including Makefile.meta to be effective
+APP_NOCOPY =
