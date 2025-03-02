@@ -4816,12 +4816,16 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     s_RemoveSourceDescriptors(bioseq.SetDescr());
 
     // add new source descriptor
-    CRef<CSeqdesc> descr_src(new CSeqdesc);
-    descr_src->SetSource(seq_feats.front()->SetData().SetBiosrc());
-    bioseq.SetDescr().Set().push_back(descr_src);
-    seq_feats.pop_front();
+    if(ibp->biodrop == false || pp->source != Parser::ESource::USPTO ||
+       pp->format != Parser::EFormat::XML || pp->taxserver == 0)
+    {
+        CRef<CSeqdesc> descr_src(new CSeqdesc);
+        descr_src->SetSource(seq_feats.front()->SetData().SetBiosrc());
+        bioseq.SetDescr().Set().push_back(descr_src);
 
-    fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
+        fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
+    }
+    seq_feats.pop_front();
 
     for (; dab != dab_end; ++dab) {
         if (dab->mType != type) {
