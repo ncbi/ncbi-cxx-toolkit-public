@@ -226,6 +226,8 @@ struct Indexblk {
     bool         experimental  = false; /* TRUE for TPA:experimental in
                                                    KEYWORDS line */
     string       submitter_seqid;
+    bool         biodrop;               /* TRUE if Biosource will be dropped
+                                           due to failed taxonomy lookup */
     Parser*      ppp = nullptr;
 
     Indexblk();
