@@ -288,6 +288,7 @@ static void XMLPerformIndex(ParserPtr pp)
             ibp          = new Indexblk;
             ibp->offset  = count - start_len;
             ibp->linenum = line;
+            ibp->biodrop = false;
             xip          = ibp->xip.before_begin();
 
             tibnp = ibl.emplace_after(tibnp, ibp);
