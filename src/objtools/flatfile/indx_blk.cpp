@@ -801,6 +801,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
     entry->is_tsa  = false;
     entry->is_tls  = false;
     entry->is_pat  = false;
+    entry->biodrop = false;
 
     auto stoken = TokenString(finfo.str, ' ');
 
