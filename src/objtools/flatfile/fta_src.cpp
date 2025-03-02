@@ -3333,6 +3333,8 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
         SourceFeatBlkSetFree(sfbp);
         return;
     }
+    if(sfbp->lookup == false)
+        ibp->biodrop = true;
 
     if (sfbp->focus)
         sfbp->bio_src->SetIs_focus();
