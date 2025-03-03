@@ -636,12 +636,12 @@ static void x_PreFork(void)
     CORE_LOCK_WRITE;
 }
 
-static void x_PostParentFork(void)
+static void x_PostForkParent(void)
 {
     CORE_UNLOCK;
 }
 
-static void x_PostChildFork(void)
+static void x_PostForkChild(void)
 {
     if (!g_CORE_SkipPostForkChildUnlock)
         CORE_UNLOCK;
@@ -744,7 +744,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
         if (x_set  &&  atexit(s_Fini) != 0)
             err |= 1;
 #ifdef NCBI_POSIX_THREADS
-        if (pthread_atfork(x_PreFork, x_PostParentFork, x_PostChildFork) != 0)
+        if (pthread_atfork(x_PreFork, x_PostForkParent, x_PostForkChild) != 0)
             err |= 2;
 #endif // NCBI_POSIX_THREADS
         if (err) {
