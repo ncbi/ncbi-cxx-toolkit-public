@@ -1114,7 +1114,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         if (len) {
             // Copy the directory name into the buffer
             memmove(buf, path, len);
-            // Add slash if needed
+            // Add a slash if needed
             if (buf[len - 1] != '/') {
                 buf[len++]    = '/';
             }
