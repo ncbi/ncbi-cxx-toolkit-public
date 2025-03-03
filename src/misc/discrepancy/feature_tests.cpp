@@ -2154,20 +2154,10 @@ DISCREPANCY_CASE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS, SEQUENCE, eDisc | eSub
             if (feat.IsSetData() && feat.GetData().IsCdregion() && !context.IsPseudo(feat)) {
                 CConstRef<CSeq_feat> mRNA = sequence::GetmRNAforCDS(feat, context.GetScope());
                 if (mRNA && (!mRNA->IsSetQual() || !IsmRnaQualsPresent(mRNA->GetQual()))) {
-                    m_Objs.Add(*context.SeqFeatObjRef(feat)).Fatal();
+                    m_Objs["no protein_id and transcript_id present"].Fatal().Add(*context.SeqFeatObjRef(feat));
                 }
             }
         }
-    }
-}
-
-
-DISCREPANCY_SUMMARIZE(MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS)
-{
-    if (!m_Objs.empty()) {
-        CReportNode out;
-        out["no protein_id and transcript_id present"];
-        m_ReportItems = out.Export(*this)->GetSubitems();
     }
 }
 
