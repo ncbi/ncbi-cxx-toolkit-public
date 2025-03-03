@@ -1133,7 +1133,6 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         if ((error = errno) == ENOEXEC) {
             return s_ExecShell(buf, argv, envp, *env);
         }
-        assert(error);
         switch (error) {
         case EACCES:
             // Access denied.  Memorize this fact and try next path element.
@@ -1143,6 +1142,9 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         case ENOTDIR:
             // Try next path element
             break;
+        case 0:
+            assert(0);
+            /*FALLTHRU*/
         default:
             // We found an executable file, but could not execute it
             return -1;
