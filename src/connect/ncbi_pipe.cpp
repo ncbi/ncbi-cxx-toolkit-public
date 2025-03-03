@@ -1048,7 +1048,7 @@ static int s_ExecShell(const char* command,
     size_t i;
     for (i = 0;  argv[i];  ++i);
     ++i; // last NULL element
-    _ASSERT(i > 1);
+    assert(i > 1);
 
     // Figure out the shell first
     string xshell = xenv.Get("SHELL");
@@ -1101,7 +1101,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
     // Get the PATH environment variable
     const string& xpath = env->Get("PATH");
     const char* path = xpath.empty() ? kDefaultPath : xpath.c_str();
-    _ASSERT(path[0]); // NB: strlen(path) >= 1
+    assert(path[0]); // NB: strlen(path) >= 1
 
     size_t file_len = strlen(file) + 1/*'\0'*/;
     char* buf = new char[strlen(path) + 1/*'/'*/ + file_len];
@@ -1133,7 +1133,7 @@ static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
         if ((error = errno) == ENOEXEC) {
             return s_ExecShell(buf, argv, envp, *env);
         }
-        _ASSERT(error);
+        assert(error);
         switch (error) {
         case EACCES:
             // Access denied.  Memorize this fact and try next path element.
@@ -1279,9 +1279,14 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         argv[++i] = 0;
 
+        CORE_LOCK_WRITE;
+        g_CORE_SkipPostForkChildUnlock = 1/*true*/;
+
         // Fork off a child process
         switch (m_Pid = ::fork()) {
         case (TPid)(-1):
+            g_CORE_SkipPostForkChildUnlock = 9/*false*/;
+            CORE_UNLOCK;
             PIPE_THROW(errno,
                        "Failed fork()");
             /*NOTREACHED*/
@@ -1364,6 +1369,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
             // *** CHILD PROCESS DOES NOT CONTINUE BEYOND THIS LINE ***
         }
+
+        g_CORE_SkipPostForkChildUnlock = 0/*false*/;
+        CORE_UNLOCK;
 
         // Close unused pipes' ends
         if (!IS_SET(create_flags, CPipe::fStdIn_Close)) {
