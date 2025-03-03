@@ -53,6 +53,7 @@ FNcbiGetAppName     g_CORE_GetAppName        = 0;
 FNcbiGetReferer     g_CORE_GetReferer        = 0;
 FNcbiGetRequestID   g_CORE_GetRequestID      = 0;
 FNcbiGetRequestDtab g_CORE_GetRequestDtab    = 0;
+int/*bool*/         g_CORE_SkipPostForkChildUnlock = 0/*false*/;
 
 #ifdef NCBI_MONKEY
 FMonkeySend         g_MONKEY_Send            = 0;
