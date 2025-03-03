@@ -1287,7 +1287,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         // Fork off a child process
         switch (m_Pid = ::fork()) {
         case (TPid)(-1):
-            g_CORE_SkipPostForkChildUnlock = 9/*false*/;
+            g_CORE_SkipPostForkChildUnlock = 0/*false*/;
             CORE_UNLOCK;
             PIPE_THROW(errno,
                        "Failed fork()");
