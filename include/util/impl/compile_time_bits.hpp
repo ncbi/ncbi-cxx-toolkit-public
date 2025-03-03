@@ -214,7 +214,7 @@ namespace compile_time_bits
     template<size_t size>
     struct DeduceIndexSize
     {
-        using type = DeduceIndexSizeImpl<size, uint8_t, uint16_t, uint32_t, uint64_t>::type;
+        using type = typename DeduceIndexSizeImpl<size, uint8_t, uint16_t, uint32_t, uint64_t>::type;
 
         static_assert(!std::is_void_v<type>, "Failed to determine data type");
 
@@ -743,7 +743,7 @@ namespace compile_time_bits
 
         constexpr const_set_map_base() = default;
 
-        constexpr const_set_map_base(const backend_type::backend_type& backend)
+        constexpr const_set_map_base(const typename backend_type::backend_type& backend)
             : m_backend{ backend }
         {
         }
