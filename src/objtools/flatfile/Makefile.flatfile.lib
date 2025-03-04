@@ -47,13 +47,13 @@ SRC     = \
 
 LIB     = xflatfile
 
-DLL_LIB = xlogging 
+DLL_LIB = xlogging xcleanup
 
 ASN_DEP = genome_collection submit taxon1
 
 REQUIRES = -Cygwin
 
-USES_LIBRARIES = xlogging
+USES_LIBRARIES = xlogging xcleanup
 
 WATCHERS = gotvyans foleyjp
 
