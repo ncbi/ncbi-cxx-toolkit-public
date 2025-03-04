@@ -489,6 +489,7 @@ EDiagSev ErrCToCxxSeverity(int c_severity)
 }
 
 /**********************************************************/
+NCBI_UNUSED
 string ErrFormat(const char* fmt, ...)
 {
     va_list args;
@@ -603,8 +604,8 @@ void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str)
         return;
     }
 
-    if (str.size() > 1024)
-        str = str.substr(0, 1024);
+    if (str.size() > 1023)
+        str = str.substr(0, 1023);
     s_ReportError(sev, lev1, lev2, str);
 }
 
