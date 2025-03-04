@@ -82,8 +82,7 @@ NCBI_DEPRECATED void SetCdsPhase_Force(
 
     void SetGeneId(
         const std::string& geneId) { m_strGeneId = geneId; };
-    void SetTranscriptId(
-        const std::string& transcriptId) { m_strTranscriptId = transcriptId; };
+    void SetTranscriptId(const std::string& transcriptId);
     void SetExonNumber(
         unsigned int exonNumber)
     {
@@ -99,7 +98,7 @@ NCBI_DEPRECATED void SetCdsPhase_Force(
     string StrStructibutes() const;
 
     string GeneId() const { return m_strGeneId; };
-    string TranscriptId() const { return m_strTranscriptId; };
+    string TranscriptId() const;
 
     feature::CFeatTree& FeatTree() { return m_fc.FeatTree(); };
 
