@@ -3752,11 +3752,11 @@ static void fta_check_satellite(char* str, bool* drop)
     if (p)
         *p = ':';
     if (i < 0) {
-        auto msg = ErrFormat("/satellite qualifier \"%s\" does not begin with a valid satellite type.", str);
+        auto msg = format("/satellite qualifier \"{}\" does not begin with a valid satellite type.", str);
         ErrPostStr(SEV_REJECT, ERR_FEATURE_InvalidSatelliteType, msg);
         *drop = true;
     } else if (p && p[1] == '\0') {
-        auto msg = ErrFormat("/satellite qualifier \"%s\" does not include a class or identifier after the satellite type.", str);
+        auto msg = format("/satellite qualifier \"{}\" does not include a class or identifier after the satellite type.", str);
         ErrPostStr(SEV_REJECT, ERR_FEATURE_NoSatelliteClassOrIdentifier, msg);
         *drop = true;
     }
