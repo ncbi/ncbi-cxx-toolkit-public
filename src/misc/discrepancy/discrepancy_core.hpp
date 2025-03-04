@@ -381,6 +381,7 @@ public:
     bool HasLineage(const CBioSource* biosrc, const string& lineage) const;
     static bool IsOrganelle(const CBioSource* biosrc);
     bool IsEukaryotic(const CBioSource* biosrc) const;
+    bool IsProkaryotic(const CBioSource* biosrc) const;
     bool IsBacterial(const CBioSource* biosrc) const;
     bool IsViral(const CBioSource* biosrc) const;
     const CSeqSummary& GetSeqSummary() { return *m_CurrentNode->m_BioseqSummary; }
