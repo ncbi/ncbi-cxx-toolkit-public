@@ -34,7 +34,7 @@ elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017")
     endif()
 else()
 #    message(WARNING "Generator ${CMAKE_GENERATOR} not tested")
-    set(NCBI_ThirdPartyCompiler vs2019.64)
+    set(NCBI_ThirdPartyCompiler vs2022.64)
 endif()
 
 #############################################################################
