@@ -150,6 +150,18 @@ bool CDiscrepancyContext::IsEukaryotic(const CBioSource* biosrc) const
 }
 
 
+bool CDiscrepancyContext::IsProkaryotic(const CBioSource* biosrc) const
+{
+    if (biosrc && biosrc->IsSetLineage()) {
+        string lineage = biosrc->GetLineage();
+        if (NStr::FindNoCase(lineage, "Bacteria") != NPOS || NStr::FindNoCase(lineage, "Archaea") != NPOS) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CDiscrepancyContext::IsBacterial(const CBioSource* biosrc) const
 {
     return biosrc ? HasLineage(biosrc, "Bacteria") : false;

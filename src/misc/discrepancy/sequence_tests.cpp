@@ -992,6 +992,36 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
 }
 
 
+// ASSEMBLY_NAME_IN_GENOME_ASSEMBLY
+
+DISCREPANCY_CASE(ASSEMBLY_NAME_IN_GENOME_ASSEMBLY, SEQUENCE, eDisc | eSubmitter | eSmart, "Assembly name in genome assembly structured comments")
+{
+    const CSeqdesc* biosrc = context.GetBiosource();
+    if (biosrc && context.IsProkaryotic(&biosrc->GetSource())) {
+        for (auto& desc : context.GetAllSeqdesc()) {
+            if (!desc.IsUser()) {
+                continue;
+            }
+            const CUser_object& usr = desc.GetUser();
+            if (usr.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
+                continue;
+            }
+            string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
+            if (! NStr::EqualNocase(prefix, "Genome-Assembly-Data")) {
+                continue;
+            }
+            if (!usr.IsSetData() || usr.GetData().size() == 0) {
+                continue;
+            }
+            CConstRef<CUser_field> fld = usr.GetFieldRef("Assembly Name", ".", NStr::eNocase);
+            if (fld) {
+                m_Objs["[n] Assembly Name[s] in Genome Assembly Structured Comment"].Add(*context.BioseqObjRef());
+            }
+        }
+    }
+}
+
+
 // MISSING_STRUCTURED_COMMENT
 
 DISCREPANCY_CASE(MISSING_STRUCTURED_COMMENT, SEQUENCE, eDisc | eTSA, "Structured comment not included")
