@@ -55,7 +55,10 @@ BEGIN_NCBI_SCOPE
 
 static const SIZE_TYPE kParIndent = 4;
 
-static const char kTest[] = "test";
+static const char kTestService[] = "test";
+static const char kEchoService[] = "ECHO";
+static const char kBounceService[] = "Bounce";
+
 static const char kCanceled[] = "Check canceled";
 
 static const char kFWSign[] =
@@ -592,7 +595,7 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
              "Checking whether NCBI dispatcher is okay");
 
     AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0, m_DebugPrintout));
-    if (ConnNetInfo_SetupStandardArgs(net_info.get(), kTest))
+    if (ConnNetInfo_SetupStandardArgs(net_info.get(), kTestService))
         net_info->scheme = eURL_Https;
 
     int okay = 0;
@@ -645,45 +648,45 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
 
 EIO_Status CConnTest::ServiceOkay(string* reason)
 {
-    static const char kService[] = "bounce";
+    static const char kBounceTest[] = "NcbiBounceTest";
 
     PreCheck(eStatelessService, 0/*main*/,
              "Checking whether NCBI services operational");
 
-    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(kService,
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(kBounceService,
                                                       m_DebugPrintout));
     if (net_info)
         net_info->lb_disable = 1/*no local LB to use even if available*/;
 
-    CConn_ServiceStream svc(kService, fSERV_Stateless, net_info.get(),
+    CConn_ServiceStream svc(kBounceService, fSERV_Stateless, net_info.get(),
                             0/*extra*/, m_Timeout);
     svc.SetCanceledCallback(m_Canceled);
 
-    svc << kTest << NcbiEndl;
+    svc << kBounceTest << NcbiEndl;
     string temp;
     svc >> temp;
     bool responded = temp.size() > 0 ? true : false;
-    EIO_Status status = ConnStatus(NStr::Compare(temp, kTest) != 0, &svc);
+    EIO_Status status = ConnStatus(NStr::Compare(temp, kBounceTest) != 0, &svc);
 
     if (status == eIO_Interrupt)
         temp = kCanceled;
     else if (status == eIO_Success)
         temp = "OK";
     else {
-        char* str = net_info ? SERV_ServiceName(kService) : 0;
-        if (str  &&  NStr::CompareNocase(str, kService) == 0) {
+        char* str = net_info ? SERV_ServiceName(kBounceService) : 0;
+        if (str  &&  NStr::CompareNocase(str, kBounceService) == 0) {
             free(str);
             str = 0;
         }
         string mapper;
-        SERV_ITER iter = SERV_OpenSimple(kService);
+        SERV_ITER iter = SERV_OpenSimple(kBounceService);
         const char* x_mapper = SERV_MapperName(iter);
         if (x_mapper)
             mapper = x_mapper;
         if (!iter  ||  !SERV_GetNextInfo(iter)) {
             // Service not found
             SERV_Close(iter);
-            iter = SERV_OpenSimple(kTest);
+            iter = SERV_OpenSimple(kTestService);
             if (!iter  ||  !SERV_GetNextInfo(iter)
                 ||  NStr::CompareNocase(SERV_MapperName(iter), "DISPD") != 0) {
                 // Make sure there will be a mapper error printed
@@ -691,7 +694,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
                 temp.clear();
                 iter = 0;
             } else {
-                // kTest service can be located but not kService
+                // kTestService can be located but not kBounceService
                 temp = str ? "Substituted service" : "Service";
                 temp += " cannot be located";
             }
@@ -703,7 +706,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
         if (!temp.empty()) {
             if (str) {
                 temp += "; please remove [";
-                string upper(kService);
+                string upper(kBounceService);
                 temp += NStr::ToUpper(upper);
                 temp += "]" REG_CONN_SERVICE_NAME "=\"";
                 temp += str;
@@ -1325,12 +1328,10 @@ static inline size_t rnd(size_t minimal, size_t maximal)
 
 EIO_Status CConnTest::StatefulOkay(string* reason)
 {
-    static const char kEcho[] = "ECHO";
-
     PreCheck(eStatefulService, 0/*main*/,
              "Checking reachability of a stateful service");
 
-    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(kEcho, m_DebugPrintout));
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(kEchoService, m_DebugPrintout));
 
     CTime  time(CTime::eCurrent, CTime::eLocal);
     time_t seed = time.GetTimeT();
@@ -1346,7 +1347,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     memset(&send[size <<= 3], 0, 8);
     send[size += 8] = '\0';
 
-    CConn_ServiceStream echo(kEcho, fSERV_Any, net_info.get(),
+    CConn_ServiceStream echo(kEchoService, fSERV_Any, net_info.get(),
                              0/*xtra*/, m_Timeout);
     echo.SetCanceledCallback(m_Canceled);
 
@@ -1383,12 +1384,12 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
     else if (status == eIO_Success)
         temp = "OK (RTT "+NStr::NumericToString(ud(seed,time.GetTimeT()))+')';
     else {
-        char* str = SERV_ServiceName(kEcho);
-        if (str  &&  NStr::CompareNocase(str, kEcho) != 0) {
+        char* str = SERV_ServiceName(kEchoService);
+        if (str  &&  NStr::CompareNocase(str, kEchoService) != 0) {
             temp = n ? "Unrecognized" : "No";
             temp += " response received from substituted service;"
                 " please remove [";
-            string upper(kEcho);
+            string upper(kEchoService);
             temp += NStr::ToUpper(upper);
             temp += "]" REG_CONN_SERVICE_NAME "=\"";
             temp += str;
@@ -1411,7 +1412,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
                     " preventing this stateful service from operating"
                     " properly; try to remove [";
                 if (!m_Stateless) {
-                    string upper(kEcho);
+                    string upper(kEchoService);
                     temp += NStr::ToUpper(upper);
                     temp += "]"
                         DEF_CONN_REG_SECTION "_" REG_CONN_STATELESS "\n";
@@ -1420,7 +1421,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
             } else if (!str) {
                 SERV_ITER iter = 0;
                 if (status != eIO_Timeout
-                    &&  (!(iter = SERV_OpenSimple(kEcho))
+                    &&  (!(iter = SERV_OpenSimple(kEchoService))
                          ||  !SERV_GetNextInfo(iter))) {
                     temp += "The service is currently unavailable;"
                         " you may want to contact " + HELP_EMAIL + '\n';
