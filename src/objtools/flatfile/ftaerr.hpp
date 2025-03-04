@@ -76,7 +76,6 @@ bool   ErrSetLog(const char* logfile);
 void   ErrLogPrintStr(const char* str);
 ErrSev ErrSetLogLevel(ErrSev sev);
 ErrSev ErrSetMessageLevel(ErrSev sev);
-string ErrFormat(const char* fmt, ...);
 void   Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
 void   Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str);
 void   Nlm_ErrSetContext(const char* module, const char* fname, int line);
