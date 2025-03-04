@@ -23,8 +23,10 @@ regroup_runpaths = $(call regrouped_runpaths,$(1)) $(call non_runpaths,$(1))
 endif
 
 # Requirements checking
-XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XAPP_LIB) $(XDLL_LIBS)))
-include $(wildcard $(XREQLIB:%=$(status_dir)/.%.disabled))
+XREQLIB_=$(XAPP_LIB) $(XDLL_LIBS) $(ASN_DEP) $(USES_LIBRARIES)
+XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XREQLIB_)))
+# The order doesn't matter, but sort cleans up duplicates.
+include $(wildcard $(sort $(XREQLIB:%=$(status_dir)/.%.disabled)))
 requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 
 mark-as-disabled:
