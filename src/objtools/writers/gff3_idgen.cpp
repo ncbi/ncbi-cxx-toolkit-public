@@ -222,6 +222,12 @@ string CGffIdGenerator::xGetIdForRna(
     //try to use orig_transcript_id
     auto origTranscriptId = mf.GetNamedQual("orig_transcript_id");
     if (!origTranscriptId.empty()) {
+        if (NStr::StartsWith(origTranscriptId, "gnl")) {
+            auto pos = origTranscriptId.find_last_of('|');
+            if (pos != string::npos) {
+                return (commonPrefix + origTranscriptId.substr(pos+1));
+            }
+        }
         return (commonPrefix + origTranscriptId);
     }
 
@@ -261,6 +267,15 @@ string CGffIdGenerator::xGetIdForCds(
     auto origTranscriptId = mf.GetNamedQual("orig_protein_id");
     if (!origTranscriptId.empty()) {
         return (commonPrefix + origTranscriptId);
+    }
+
+    if (auto idHandle = mf.GetProductId(); idHandle) {
+        auto pId = idHandle.GetSeqId();
+        if (pId->IsGeneral() && pId->GetGeneral().IsSetTag()) {
+            const auto& tag = pId->GetGeneral().GetTag();
+            const string& tagStr = tag.IsStr() ? tag.GetStr() : to_string(tag.GetId());
+            return (commonPrefix + tagStr);
+        } 
     }
 
     //try to inherit from gene

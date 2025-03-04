@@ -61,6 +61,28 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+
+static string s_ProcessTranscriptId(const string& transcriptId)
+{
+    if (NStr::StartsWith(transcriptId, "gnl|")) {
+        auto pos = transcriptId.find_last_of('|');
+        if (pos != string::npos) {
+            return transcriptId.substr(pos+1);
+        } 
+    }
+    return transcriptId;
+}
+
+
+void CGtfRecord::SetTranscriptId(const string& transcriptId) {
+    m_strTranscriptId = s_ProcessTranscriptId(transcriptId);
+}
+
+string CGtfRecord::TranscriptId() const { return m_strTranscriptId; }
+
+
+
 //  ----------------------------------------------------------------------------
 bool CGtfRecord::MakeChildRecord(
     const CGtfRecord& parent,
