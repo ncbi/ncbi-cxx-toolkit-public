@@ -235,10 +235,10 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
      BOOST_REQUIRE(handle2.State_NoData());
      BOOST_REQUIRE_EQUAL(INVALID_TAX_ID, scope.GetTaxId(seqid2));
 
-     CSeq_id seqid3(CSeq_id::e_Genbank, "AZT36267"); // by accession 
+     CSeq_id seqid3(CSeq_id::e_Genbank, "KJT71719"); // by accession 
      CBioseq_Handle handle3 = scope.GetBioseqHandle(seqid3);
      BOOST_REQUIRE(handle3);
-     BOOST_REQUIRE_EQUAL("AZT36267", handle3.GetSeqId()->GetSeqIdString());
+     BOOST_REQUIRE_EQUAL("KJT71719", handle3.GetSeqId()->GetSeqIdString());
      CConstRef<CBioseq> bioseq3 = handle3.GetCompleteBioseq();
      string defline = "";
      if (bioseq3->IsSetDescr()) {
@@ -250,7 +250,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
           }
      }
      // Finds beginning of EGA25625 title.
-     BOOST_REQUIRE(defline.find("metal ABC transporter") == 0);
+     BOOST_REQUIRE(defline.find("Manganese ABC transporter") == 0);
 }
 
 // Motivated by WB-1712
