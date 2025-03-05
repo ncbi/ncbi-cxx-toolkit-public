@@ -358,6 +358,9 @@ CFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         arg_desc.AddOptionalKey(kArgWindowMaskerDatabase, "window_masker_db",
                 "Enable WindowMasker filtering using this repeats database.",
                 CArgDescriptions::eString);
+        arg_desc.SetDependency(kArgWindowMaskerDatabase,
+                               CArgDescriptions::eExcludes,
+                               kArgRemote);
 
         arg_desc.AddDefaultKey(kArgLookupTableMaskingOnly, "soft_masking",
                         "Apply filtering locations as soft masks",
