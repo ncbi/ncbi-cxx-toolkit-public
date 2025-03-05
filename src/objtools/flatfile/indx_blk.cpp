@@ -1296,198 +1296,8 @@ bool IsSPROTAccession(const char* acc)
     return true;
 }
 
-#if 0
-static bool sCheckAccession(const list<string>& tokens,
-                            Parser::ESource source,
-                            Parser::EMode mode,
-                            const char* priacc, int skip)
-{
-    bool        badac;
-    bool        res = true;
-    bool        iswgs;
-    Char        acnum[200];
-    Int4        accformat;
-    Int4        priformat;
-    Int4        count;
-    size_t        i;
 
-    if (! priacc || mode == Parser::EMode::Relaxed)
-        return true;
-
-    auto it = tokens.begin();
-    if (skip) {
-        advance(it, skip);
-    }
-
-    priformat = IsNewAccessFormat(priacc);
-    if((priformat == 3 || priformat == 4 || priformat == 8) &&
-       fta_if_master_wgs_accession(priacc, priformat) == false)
-        iswgs = true;
-    else
-        iswgs = false;
-
-    count = 0;
-    for(; it != tokens.end(); ++it)
-    {
-        StringCpy(acnum, it->c_str());
-        if(acnum[0] == '-' && acnum[1] == '\0')
-            continue;
-
-        if(skip == 2 && count == 0)
-            accformat = priformat;
-        else
-            accformat = IsNewAccessFormat(acnum);
-
-        size_t len = StringLen(acnum);
-        if(acnum[len-1] == ';')
-        {
-            len--;
-            acnum[len] = '\0';
-        }
-        badac = false;
-        if(accformat == 1)
-        {
-            if(len != 8 && len != 10)
-                badac = true;
-            else
-            {
-                for(i = 2; i < 8 && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 2)
-        {
-            if(len != 9 && len != 12)
-                badac = true;
-            else
-            {
-                for(i = 3; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 3)
-        {
-            if(len < 12 || len > 14)
-                badac = true;
-            else
-            {
-                for(i = 4; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 8)
-        {
-            if(len < 15 || len > 17)
-                badac = true;
-            else
-            {
-                for(i = 6; i < len && !badac; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 4)
-        {
-            if(len < 15 || len > 17)
-                badac = true;
-            else
-            {
-                for(i = 7; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 5)
-        {
-            if(len != 12)
-                badac = true;
-            else
-            {
-                for(i = 5; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 6)
-        {
-            if(len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
-               acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
-               acnum[4] < 'A' || acnum[4] > 'Z')
-                badac = true;
-            else
-            {
-                for(i = 5; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 7)
-        {
-            if(len < 13 || len > 15)
-                badac = true;
-            else
-            {
-                for(i = 7; i < len && badac == false; i++)
-                    if(acnum[i] < '0' || acnum[i] > '9')
-                        badac = true;
-            }
-        }
-        else if(accformat == 0)
-        {
-            if(len != 6 && len != 10)
-                badac = true;
-            else if(acnum[0] >= 'A' && acnum[0] <= 'Z')
-            {
-                if(source == Parser::ESource::SPROT)
-                {
-                    if(!IsSPROTAccession(acnum))
-                        badac = true;
-                }
-                else if(len == 10)
-                {
-                    badac = true;
-                }
-                else
-                {
-                    for(i = 1; i < 6 && badac == false; i++)
-                        if(acnum[i] < '0' || acnum[i] > '9')
-                            badac = true;
-                }
-            }
-            else
-                badac = true;
-        }
-        else
-            badac = true;
-
-        if(badac)
-        {
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum,
-                      "Bad accession #, %s for this entry", acnum);
-            res = false;
-            count++;
-            continue;
-        }
-
-        if(skip == 2 && count == 0 && !iswgs &&
-           (accformat == 3 || accformat == 4 || accformat == 8))
-        {
-            ErrPostStr(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri,
-                      "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
-            res = false;
-        }
-        count++;
-    }
-
-    return(res);
-}
-#endif
-
-
-inline bool sNotAllDigits(const char* first, const char* last)
+static inline bool sNotAllDigits(const char* first, const char* last)
 {
     return any_of(first, last, [](char c) { return ! isdigit(c); });
 }
@@ -1505,7 +1315,7 @@ inline bool sNotAllDigits(const char* first, const char* last)
  *
  **********************************************************/
 static bool CheckAccession(
-    TokenStatBlkPtr stoken,
+    TokenStatBlkPtr tokens,
     Parser::ESource source,
     Parser::EMode   mode,
     const char*     priacc,
@@ -1522,9 +1332,9 @@ static bool CheckAccession(
     if (! priacc || mode == Parser::EMode::Relaxed)
         return true;
 
-    auto tbp = stoken->list.begin();
+    auto tbp = tokens->list.begin();
     if (skip > 0)
-        ++tbp;
+        ++tbp; // advance(it, skip)
     priformat = IsNewAccessFormat(priacc);
     if ((priformat == 3 || priformat == 4 || priformat == 8) &&
         fta_if_master_wgs_accession(priacc, priformat) == false)
@@ -1533,7 +1343,7 @@ static bool CheckAccession(
         iswgs = false;
 
     count = 0;
-    for (; tbp != stoken->list.end(); ++tbp) {
+    for (; tbp != tokens->list.end(); ++tbp) {
         StringCpy(acnum, tbp->c_str());
         if (acnum[0] == '-' && acnum[1] == '\0')
             continue;
@@ -1783,11 +1593,11 @@ static void IsTLSAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
         if (fta_if_wgs_acc(ibp->acnum) == 11)
             ibp->is_tls = true;
 }
-/*
-static bool sIsAccPrefixChar(char c)  {
-    return (c >= 'A'  && c <= 'Z');
+
+static inline bool sIsAccPrefixChar(char c)  {
+    return (c >= 'A' && c <= 'Z');
 }
-*/
+
 /**********************************************************
  *
  *   bool GetAccession(pp, str, entry, skip):
@@ -1800,149 +1610,9 @@ static bool sIsAccPrefixChar(char c)  {
  *                                              3-4-93
  *
  **********************************************************/
-/*
-bool GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, unsigned skip)
-{
-    string       accession;
-    list<string> tokens;
-    bool         get = true;
-
-    if ((skip != 2 && parseInfo.source == Parser::ESource::Flybase) ||
-        parserInfo.source == Parser::ESource::USPTO)
-        return true;
-
-    NStr::Split(str, " ;", tokens, NStr::fSplit_Tokenize);
-
-
-    if (skip != 2) {
-        get = ParseAccessionRange(tokens, skip);
-        if (get)
-            get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, skip);
-        if (! get)
-            entry->drop = true;
-
-        if (tokens.size() > skip && skip < 2) { // Not sure about the logic
-            auto it = tokens.begin();
-            if (skip > 0)
-                it = next(it, skip);
-            move(it, tokens.end(), entry->secondary_accessions.end());
-        }
-        return get;
-    }
-
-    // skip == 2
-    entry->is_tpa = false;
-    if (tokens.size() < 2) {
-        if (parseInfo.mode != Parser::EMode::Relaxed) {
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
-            entry->drop = true;
-        }
-        return false;
-    }
-
-
-    accession = *next(tokens.begin());
-    sDelNonDigitTail(accession);
-
-    StringCpy(entry->acnum, accession.c_str());
-
-    if (parseInfo.format != Parser::EFormat::XML) {
-        string temp = accession;
-        if (parseInfo.accver && entry->vernum > 0) {
-            temp += "." + NStr::NumericToString(entry->vernum);
-        }
-        if (temp.empty()) {
-            if (entry->locusname[0] != '\0') {
-                temp = entry->locusname;
-            } else {
-                temp = "???";
-            }
-        }
-        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str());
-    }
-
-    if (parseInfo.source == Parser::ESource::Flybase) {
-        return true;
-    }
-
-    if (accession.size() < 2) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", accession.c_str());
-        entry->drop = true;
-        return false;
-    }
-
-    if (sIsAccPrefixChar(accession[0]) && sIsAccPrefixChar(accession[1])) {
-        if (parseInfo.accpref && ! IsValidAccessPrefix(accession.c_str(), parseInfo.accpref)) {
-            get = false;
-        }
-
-        if (sIsAccPrefixChar(accession[2]) && sIsAccPrefixChar(accession[3])) {
-            if (sIsAccPrefixChar(accession[4])) {
-                accession = accession.substr(0, 5);
-            } else {
-                accession = accession.substr(0, 4);
-            }
-        } else if (accession[2] == '_') {
-            accession = accession.substr(0, 3);
-        } else {
-            accession = accession.substr(0, 2);
-        }
-    } else {
-        if (parseInfo.acprefix && ! StringChr(parseInfo.acprefix, accession[0])) {
-            get = false;
-        }
-        accession = accession.substr(0, 1);
-    }
-
-    if (get) {
-        if (tokens.size() > 2) {
-            get = ParseAccessionRange(tokens, 2);
-            if (get) {
-                get = sCheckAccession(tokens, parseInfo.source, parseInfo.mode, entry->acnum, 2);
-            }
-        }
-    } else {
-        string sourceName = sourceNames.at(parseInfo.source);
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [%s] for this source: %s", accession.c_str(), sourceName.c_str());
-    }
-
-    entry->secondary_accessions.clear(); // Is this necessary?
-    move(next(tokens.begin(), 2), tokens.end(), entry->secondary_accessions.begin());
-
-    if (! entry->is_pat) {
-        entry->is_pat = IsPatentedAccPrefix(parseInfo, accession.c_str());
-    }
-    entry->is_tpa = IsTPAAccPrefix(parseInfo, accession.c_str());
-    entry->is_wgs = IsWGSAccPrefix(parseInfo, accession.c_str());
-    IsTSAAccPrefix(parseInfo, accession.c_str(), entry);
-    IsTLSAccPrefix(parseInfo, accession.c_str(), entry);
-
-    auto i = IsNewAccessFormat(entry->acnum);
-    if (i == 3 || i == 8) {
-        entry->is_wgs = true;
-        entry->wgs_and_gi |= 02;
-    } else if (i == 5) {
-        char* p = entry->acnum;
-        if (parseInfo.source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
-            ! StringEqu(p + 5, "0000000")) {
-            string sourceName = sourceNames.at(parseInfo.source);
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"%s\" for this source: %s", p, sourceName.c_str());
-            get = false;
-        }
-        entry->is_mga = true;
-    }
-
-    if (! get)
-        entry->drop = true;
-
-    return get;
-}
-*/
-
-
 bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned skip)
 {
-    Char   acc[200];
+    Char   acc[200]; // string
     bool   get = true;
 
     if ((skip != 2 && pp->source == Parser::ESource::Flybase) ||
@@ -1950,24 +1620,24 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         return true;
 
     string line(str);
-    auto stoken = TokenString(line.c_str(), ';');
+    auto   tokens = TokenString(line.c_str(), ';');
 
     if (skip != 2) {
-        get = ParseAccessionRange(stoken.get(), skip);
+        get = ParseAccessionRange(tokens.get(), skip);
         if (get)
-            get = CheckAccession(stoken.get(), pp->source, pp->mode, entry->acnum, skip);
+            get = CheckAccession(tokens.get(), pp->source, pp->mode, entry->acnum, skip);
         if (! get)
             entry->drop = true;
 
-        if (skip == 1 && ! stoken->list.empty()) {
-            stoken->list.pop_front();
+        if (skip == 1 && ! tokens->list.empty()) {
+            tokens->list.pop_front();
             skip = 0;
         }
-        if (skip == 0 && ! stoken->list.empty()) {
+        if (skip == 0 && ! tokens->list.empty()) {
             auto tail = entry->secaccs.before_begin();
             for (; next(tail) != entry->secaccs.end();)
                 ++tail;
-            entry->secaccs.splice_after(tail, stoken->list);
+            entry->secaccs.splice_after(tail, tokens->list);
         }
 
         return (get);
@@ -1975,7 +1645,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
 
     entry->is_tpa = false;
     acc[0]        = '\0';
-    if (stoken->num < 2) {
+    if (tokens->num < 2) {
         if (pp->mode != Parser::EMode::Relaxed) {
             ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
             entry->drop = true;
@@ -1983,7 +1653,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         return false;
     }
 
-    StringCpy(acc, next(stoken->list.begin())->c_str()); /* get first accession */
+    StringCpy(acc, next(tokens->list.begin())->c_str()); /* get first accession */
 
     if (pp->mode != Parser::EMode::Relaxed) {
         DelNoneDigitTail(acc);
@@ -2019,11 +1689,11 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     }
 
     if (pp->mode != Parser::EMode::Relaxed) {
-        if (acc[0] >= 'A' && acc[0] <= 'Z' && acc[1] >= 'A' && acc[1] <= 'Z') {
+        if (sIsAccPrefixChar(acc[0]) && sIsAccPrefixChar(acc[1])) {
             if (pp->accpref && ! IsValidAccessPrefix(acc, pp->accpref))
                 get = false;
-            if (acc[2] >= 'A' && acc[2] <= 'Z' && acc[3] >= 'A' && acc[3] <= 'Z') {
-                if (acc[4] >= 'A' && acc[4] <= 'Z') {
+            if (sIsAccPrefixChar(acc[2]) && sIsAccPrefixChar(acc[3])) {
+                if (sIsAccPrefixChar(acc[4])) {
                     acc[5] = '\0';
                 } else {
                     acc[4] = '\0';
@@ -2036,27 +1706,27 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         } else {
             /* Processing of accession numbers in old format */
             /* check valid prefix accession number */
-            if (pp->acprefix && ! StringChr(pp->acprefix, *acc))
+            if (pp->acprefix && ! StringChr(pp->acprefix, acc[0]))
                 get = false;
             acc[1] = '\0';
         }
     }
 
     if (get) {
-        if (stoken->num > 2)
-            get = ParseAccessionRange(stoken.get(), 2);
+        if (tokens->num > 2)
+            get = ParseAccessionRange(tokens.get(), 2);
         if (get) {
-            get = CheckAccession(stoken.get(), pp->source, pp->mode, entry->acnum, 2);
+            get = CheckAccession(tokens.get(), pp->source, pp->mode, entry->acnum, 2);
         }
     } else {
         string sourceName = sourceNames.at(pp->source);
         ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [%s] for this source: %s", acc, sourceName.c_str());
     }
 
-    stoken->list.pop_front();
-    stoken->list.pop_front();
-    entry->secaccs = std::move(stoken->list);
-    stoken.reset();
+    tokens->list.pop_front();
+    tokens->list.pop_front();
+    entry->secaccs = std::move(tokens->list);
+    tokens.reset();
 
     if (! entry->is_pat)
         entry->is_pat = IsPatentedAccPrefix(*pp, acc);
@@ -2083,7 +1753,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     if (! get)
         entry->drop = true;
 
-    return (get);
+    return get;
 }
 
 /**********************************************************/

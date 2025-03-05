@@ -257,85 +257,10 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
     ret.swap(hist);
 }
 
-static bool sIsPrefixChar(char c)
+static inline bool sIsPrefixChar(char c)
 {
     return ('A' <= c && c <= 'Z') || c == '_';
 }
-/**********************************************************/
-bool ParseAccessionRange(list<string>& tokens, unsigned skip)
-{
-    bool bad = false;
-
-    if (tokens.empty()) {
-        return true;
-    }
-
-    if (tokens.size() <= skip + 1) {
-        return true;
-    }
-
-
-    auto it = tokens.begin();
-    if (skip) {
-        advance(it, skip);
-    }
-
-    for (; it != tokens.end(); ++it) {
-        const auto& token = *it;
-        if (token.empty()) {
-            continue;
-        }
-
-        CTempString first, last;
-        if (! NStr::SplitInTwo(token, "-", first, last)) {
-            continue;
-        }
-        if (first.size() != last.size()) {
-            bad = true;
-            break;
-        }
-
-        auto first_it =
-            find_if_not(begin(first), end(first), sIsPrefixChar);
-
-        if (first_it == first.end()) {
-            bad = true;
-            break;
-        }
-
-
-        auto last_it =
-            find_if_not(begin(last), end(last), sIsPrefixChar);
-        if (last_it == last.end()) {
-            bad = true;
-            break;
-        }
-
-        auto prefixLength = distance(first.begin(), first_it);
-        if (prefixLength != distance(last.begin(), last_it) ||
-            ! NStr::EqualCase(first, 0, prefixLength, last.substr(0, prefixLength))) {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", token.c_str());
-            break;
-        }
-
-        auto num1 = NStr::StringToInt(first.substr(prefixLength));
-        auto num2 = NStr::StringToInt(last.substr(prefixLength));
-
-        if (num2 <= num1) {
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", token.c_str());
-        }
-
-        *it = first;
-        it  = tokens.insert(it, "-");
-        it  = tokens.insert(it, last);
-    }
-
-    if (bad) {
-        ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", it->c_str());
-    }
-    return false;
-}
-
 
 inline bool IsLeadPrefixChar(char c)
 {
@@ -346,7 +271,7 @@ inline bool IsDigit(char c)
     return ('0' <= c && c <= '9');
 }
 /**********************************************************/
-bool ParseAccessionRange(TokenStatBlkPtr tsbp, unsigned skip)
+bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
 {
     auto& tokens = tsbp->list;
     if (tokens.empty())
