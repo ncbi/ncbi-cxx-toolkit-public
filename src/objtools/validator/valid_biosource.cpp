@@ -2128,7 +2128,7 @@ const CSeq_entry *ctx)
             }
         }
         if (m_genomeSubmission && has_strain && has_isolate) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_HasStrainAndIsolate,
+            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_HasStrainAndIsolate,
                 "Organism has both strain: '" + strain + "' and isolate: '" + isolate + "'",
                 obj, ctx);
         }
