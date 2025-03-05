@@ -61,8 +61,13 @@ enum ECassSchemaType {
 
 enum class ECassSatInfoFlags : Int4
 {
-    // Requires WebCookie verification befor blob access
+    // Requires WebCookie verification before blob access
     eSecureSat = 1,
+
+    // Sat where data modifications are not allowed (like SatOLDXX)
+    // Used for IdBlobSync maintenance activity only.
+    // Restricted to DOMAIN=MAINTENANCE
+    eFrozenSat = 2,
 };
 
 struct SBlobStorageConstants
@@ -76,7 +81,7 @@ class CSatInfoSchema;
 struct SSatInfoEntry final
 {
     friend CSatInfoSchema;
- public:
+public:
     static constexpr int32_t kInvalidSat{-100};
 
     SSatInfoEntry() = default;
@@ -115,6 +120,14 @@ struct SSatInfoEntry final
         return flags & static_cast<Int4>(ECassSatInfoFlags::eSecureSat);
     }
 
+    /// Are satellite data modifications disabled (like for SatOLDXX)
+    ///
+    /// @return bool
+    bool IsFrozenSat() const
+    {
+        return flags & static_cast<Int4>(ECassSatInfoFlags::eFrozenSat);
+    }
+
     /// Get string representation for debug
     ///
     /// @return
@@ -141,7 +154,7 @@ struct SSatInfoEntry final
     ///   Connection for public satellites
     shared_ptr<CCassConnection> GetConnection() const;
 
- private:
+private:
     // Connection to access secure satellite
     shared_ptr<CCassConnection> m_SecureConnection;
 
