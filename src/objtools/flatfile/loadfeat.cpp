@@ -3736,26 +3736,18 @@ static void ParseQualifiers(
 
 
 /**********************************************************/
-static void fta_check_satellite(char* str, bool* drop)
+static void fta_check_satellite(string_view str, bool* drop)
 {
-    char* p;
-    Int2  i;
-
-    if (! str || *str == '\0')
+    if (str.empty())
         return;
 
-    p = StringChr(str, ':');
-    if (p)
-        *p = '\0';
-
-    i = MatchArrayString(SatelliteValues, str);
-    if (p)
-        *p = ':';
+    auto n = str.find(':');
+    Int2 i = MatchArrayString(SatelliteValues, str.substr(0, n));
     if (i < 0) {
         auto msg = format("/satellite qualifier \"{}\" does not begin with a valid satellite type.", str);
         ErrPostStr(SEV_REJECT, ERR_FEATURE_InvalidSatelliteType, msg);
         *drop = true;
-    } else if (p && p[1] == '\0') {
+    } else if (n != string_view::npos && n + 1 >= str.size()) {
         auto msg = format("/satellite qualifier \"{}\" does not include a class or identifier after the satellite type.", str);
         ErrPostStr(SEV_REJECT, ERR_FEATURE_NoSatelliteClassOrIdentifier, msg);
         *drop = true;
