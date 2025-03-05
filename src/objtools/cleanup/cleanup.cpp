@@ -1078,7 +1078,11 @@ bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_
     if (new_loc->IsMix()) {
         last_interval = new_loc->SetMix().SetLastLoc();
     }
-    else
+    else if (new_loc->IsPacked_int()) {
+        last_interval = Ref(new CSeq_loc());
+        last_interval->SetInt(*(new_loc->SetPacked_int().Set().back()));
+    }
+    else     
     {
         last_interval = new_loc;
     }
