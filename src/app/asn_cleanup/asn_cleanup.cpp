@@ -644,8 +644,7 @@ int CCleanupApp::Run()
     } else {
         if (args["basic"]) {
             m_do_basic = true;
-        }
-        if (! args["nocleanup"]) {
+        } else if (! args["nocleanup"]) {
             m_do_extended = true;
         }
     }
