@@ -92,7 +92,7 @@ SSocketAddress::SHost::SHost(const string& h, EName n) :
 {
 }
 
-unsigned short SSocketAddress::SPort::GetPort(CTempString p)
+unsigned short SSocketAddress::SPort::x_GetPort(CTempString p)
 {
     try {
         return NStr::StringToNumeric<unsigned short>(p);
