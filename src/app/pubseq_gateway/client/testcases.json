@@ -27756,7 +27756,7 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "prf|1603356CL|",
+                            "id": "prf||1603356CL",
                             "type": 14
                         },
                         "other_ids": [
@@ -27815,7 +27815,7 @@
                     "result": {
                         "reply": "BioseqInfo",
                         "canonical_id": {
-                            "id": "pir|PC4424|",
+                            "id": "pir||PC4424",
                             "type": 7
                         },
                         "other_ids": [
