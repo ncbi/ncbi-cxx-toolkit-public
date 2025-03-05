@@ -260,6 +260,7 @@ TEST_F(CSatInfoProviderTest, SecureSat) {
     ASSERT_TRUE(sat5.has_value());
 
     EXPECT_FALSE(sat4->IsSecureSat());
+    EXPECT_FALSE(sat4->IsFrozenSat());
     ASSERT_NE(nullptr, sat4->connection);
     EXPECT_EQ("DC1", sat4.value().connection->GetDatacenterName());
 
