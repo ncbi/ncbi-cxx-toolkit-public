@@ -92,6 +92,15 @@ SSocketAddress::SHost::SHost(const string& h, EName n) :
 {
 }
 
+unsigned short SSocketAddress::SPort::GetPort(CTempString p)
+{
+    try {
+        return NStr::StringToNumeric<unsigned short>(p);
+    } catch (CStringException& ex) {
+        NCBI_RETHROW_FMT(ex, CCoreException, eInvalidArg, "Cannot use '" << p << "' as a port");
+    }
+}
+
 string SSocketAddress::GetHostName() const
 {
     return m_Name ? m_Name.value() : SSocketAddressImpl::GetInstance().GetName(host);

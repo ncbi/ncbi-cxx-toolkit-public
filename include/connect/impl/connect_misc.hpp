@@ -69,8 +69,11 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
     {
         unsigned short port;
         SPort(unsigned short p) : port(p) {}
-        SPort(const string& p)  : port(NStr::StringToNumeric<unsigned short>(p)) {}
-        SPort(CTempString p)    : port(NStr::StringToNumeric<unsigned short>(p)) {}
+        SPort(const string& p)  : port(GetPort(p)) {}
+        SPort(CTempString p)    : port(GetPort(p)) {}
+
+    private:
+        static unsigned short GetPort(CTempString p);
     };
 
     SSocketAddress(SHost h, SPort p) : host(h.host), port(p.port), m_Name(h.name) {}
