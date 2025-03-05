@@ -2355,15 +2355,15 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                 return true;
             case eQual_exception:
                 sfp->SetExcept (true);
-                sfp->SetExcept_text (val);
+                sfp->AddExceptText (val);
                 return true;
             case eQual_ribosomal_slippage:
                 sfp->SetExcept (true);
-                sfp->SetExcept_text (qual);
+                sfp->AddExceptText (qual);
                 return true;
             case eQual_trans_splicing:
                 sfp->SetExcept (true);
-                sfp->SetExcept_text (qual);
+                sfp->AddExceptText (qual);
                 return true;
             case eQual_evidence:
                 if (val == "experimental") {
