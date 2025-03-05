@@ -62,7 +62,6 @@ bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlk& finfo, const
 
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo);
 bool        GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned skip);
-// bool        GetAccession(const Parser& parseInfo, const CTempString& str, IndexblkPtr entry, unsigned skip);
 
 void CloseFiles(ParserPtr pp);
 void MsgSkipTitleFail(const Char* flatfile, FinfoBlk& finfo);

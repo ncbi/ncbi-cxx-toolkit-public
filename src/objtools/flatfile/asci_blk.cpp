@@ -54,7 +54,6 @@
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/seq/Pubdesc.hpp>
@@ -1231,45 +1230,19 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 }
 
 /**********************************************************/
-static void fta_fix_secondaries(TokenBlkList& secs)
+static void fta_fix_secondaries(TokenBlkList& secondaries)
 {
-    auto it1 = secs.begin();
-    if (it1 == secs.end() || it1->empty())
+    auto it1 = secondaries.begin();
+    if (it1 == secondaries.end() || it1->empty())
         return;
     auto it2 = next(it1);
-    if (it2 == secs.end() || *it2 != "-" || fta_if_wgs_acc(*it1) != 0)
+    if (it2 == secondaries.end() || *it2 != "-" || fta_if_wgs_acc(*it1) != 0)
         return;
 
-    auto tbp = secs.insert_after(it1, *it1);
+    auto tbp    = secondaries.insert_after(it1, *it1);
     tbp->back() = '1';
 }
 
-
-/**********************************************************/
-/*
-static void fta_fix_secondaries(list<string>& secondaries)
-{
-    if (secondaries.size() < 2) {
-        return;
-    }
-
-    auto it = secondaries.begin();
-    const auto& first = *it;
-    const auto& second = *next(it);
-
-    if (first.empty()||
-        second.empty() ||
-        fta_if_wgs_acc(second) != 0 ||
-        second != "-") {
-        return;
-    }
-
-    string newSecondary = *it;
-    newSecondary.back() = '1';
-    ++it;
-    secondaries.insert(it, newSecondary);
-}
-*/
 
 /**********************************************************
  *
