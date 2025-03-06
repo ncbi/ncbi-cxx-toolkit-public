@@ -65,7 +65,7 @@ struct NCBI_XCONNECT_EXPORT SSocketAddress
         SHost(const string& h, EName n = EName::eResolved);
     };
 
-    struct SPort
+    struct NCBI_XCONNECT_EXPORT SPort
     {
         unsigned short port;
         SPort(unsigned short p) : port(p) {}
