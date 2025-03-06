@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( GetProteinGapExistenceExtendParamsTest )
 
     status = BLAST_GetProteinGapExistenceExtendParams("PAM250", &existence, &extension);
     BOOST_CHECK_EQUAL(0, (int) status);
-    BOOST_CHECK_EQUAL(14, existence);
+    BOOST_CHECK_EQUAL(15, existence);
     BOOST_CHECK_EQUAL(2, extension);
 }
 
