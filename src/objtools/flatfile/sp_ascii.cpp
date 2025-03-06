@@ -3537,7 +3537,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
     Uint1 type;
 
     for (temp = spfip; temp; temp = temp->next) {
-        FtaInstallPrefix(PREFIX_FEATURE, temp->key.c_str(), temp->from.c_str());
+        FtaInstallPrefix(PREFIX_FEATURE, temp->key, temp->from);
 
         if (NStr::EqualNocase("VARSPLIC", temp->key)) {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");

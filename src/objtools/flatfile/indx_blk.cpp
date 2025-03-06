@@ -841,8 +841,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             if (! ptr->empty() && ptr->back() == ';')
                 ptr->pop_back();
 
-            FtaInstallPrefix(PREFIX_LOCUS, ptr->c_str());
-            FtaInstallPrefix(PREFIX_ACCESSION, ptr->c_str());
+            FtaInstallPrefix(PREFIX_LOCUS, *ptr);
+            FtaInstallPrefix(PREFIX_ACCESSION, *ptr);
 
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
                 ErrPostStr(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
@@ -1674,7 +1674,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
             else
                 temp = "???";
         }
-        FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str());
+        FtaInstallPrefix(PREFIX_ACCESSION, temp);
     }
 
     if (pp->source == Parser::ESource::Flybase) {

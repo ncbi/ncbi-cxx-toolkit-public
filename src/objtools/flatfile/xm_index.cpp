@@ -448,7 +448,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             auto buf = XMLGetTagValue(entry, xip);
             XMLParseVersion(ibp, buf ? buf.get() : nullptr);
             if (buf) {
-                FtaInstallPrefix(PREFIX_ACCESSION, buf->c_str());
+                FtaInstallPrefix(PREFIX_ACCESSION, *buf);
             }
             break;
         }

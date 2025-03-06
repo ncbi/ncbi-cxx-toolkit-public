@@ -3816,9 +3816,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 
         for (p = bptr; *p != '\n';)
             p++;
-        *p = '\0';
-        FtaInstallPrefix(PREFIX_FEATURE, "Parsing FT line: ", bptr);
-        *p   = '\n';
+        FtaInstallPrefix(PREFIX_FEATURE, "Parsing FT line: ", string_view(bptr, p - bptr));
         ptr1 = bptr + ParFlat_COL_FEATKEY;
         if (*ptr1 == ' ') {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Empty featkey");
@@ -3867,7 +3865,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
             fbp->location_assign(loc);
         }
 
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location_get());
         if (fbp->key == "allele" || fbp->key == "mutation") {
             auto msg = std::format("Obsolete feature \"{}\" found. Replaced with \"variation\".", fbp->key);
             ErrPostStr(SEV_ERROR, ERR_FEATURE_ObsoleteFeature, msg);
@@ -4077,7 +4075,7 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
             continue;
         fbp      = dbp.GetFeatData();
         fbp->num = num++;
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key.c_str(), fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location_get());
 
         if (fbp->key == "-") {
             ErrPostStr(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");

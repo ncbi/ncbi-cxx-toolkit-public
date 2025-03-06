@@ -80,7 +80,7 @@ void   Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
 void   Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str);
 void   Nlm_ErrSetContext(const char* module, const char* fname, int line);
 
-void FtaInstallPrefix(int prefix, const char* name, const char* location = nullptr);
+void FtaInstallPrefix(int prefix, string_view name, string_view location = {});
 void FtaDeletePrefix(int prefix);
 
 /*
