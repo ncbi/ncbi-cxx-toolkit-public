@@ -1,6 +1,10 @@
-Contemporary docs are in the [C++ Toolkit Book](https://ncbi.github.io/cxx-toolkit/).
+# NCBI C++ Toolkit
 
-In particular: [C++ Toolkit build instructions (with CMake)](https://ncbi.github.io/cxx-toolkit/pages/ch_cmconfig).
+### Download
+[Public Access to the Source Code via GitHub](https://ncbi.github.io/cxx-toolkit/pages/ch_getcode_svn#ch_getcode_svn.external)
 
+### Documentation
+[The NCBI C++ Toolkit Book](https://ncbi.github.io/cxx-toolkit/) 
 
-_EXPERIMENTAL_:  There is also a [C++ Toolkit Conan package](https://github.com/ncbi/ncbi-cxx-toolkit-conan).
+### Contact
+email: cpp-group@ncbi.nlm.nih.gov
