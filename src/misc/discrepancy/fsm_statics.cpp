@@ -39,24 +39,50 @@
 #include <misc/discrepancy/discrepancy.hpp>
 #include <util/multipattern_search.hpp>
 #include <util/impl/generated_fsm.hpp>
+#include <serial/objostr.hpp>
+#include <cstring>
 
-BEGIN_NCBI_SCOPE
+//////////////////////////////////////////////////////////////////////////
+namespace {
 
+USING_SCOPE(ncbi);
 USING_SCOPE(objects);
 USING_SCOPE(FSM);
 
-//////////////////////////////////////////////////////////////////////////
+static bool xCompareAsnBlobs(const CCompiledFSM* compiled_fsm, CRef<CSerialObject> obj)
+{
+    if (compiled_fsm->m_rules_asn1.data() == nullptr || compiled_fsm->m_rules_asn1.size() == 0 || obj.Empty())
+        return false;
 
-namespace {
+    std::ostringstream ostring;
+    std::unique_ptr<CObjectOStream> ostream(CObjectOStream::Open(eSerial_AsnBinary, ostring));
+    *ostream << *obj;
+
+
+    std::string_view view;
+#if __cplusplus > 201703L
+    view = ostring.view();
+#else
+    std::string serialized = ostring.str();
+    view = serialized;
+#endif
+
+    if (view.size() != compiled_fsm->m_rules_asn1.size())
+        return false;
+
+    auto cmp = std::memcmp(view.data(), compiled_fsm->m_rules_asn1.data(), compiled_fsm->m_rules_asn1.size());
+
+    return cmp == 0;
+}
 
 class CStaticRules
 {
 protected:
     string_view m_suffix;
     const CCompiledFSM* m_compiled_fsm = nullptr;
-    bool s_Initialized = false;
-    string  s_FileName;
-    CRef<CSuspect_rule_set> s_Rules;
+    bool m_Initialized = false;
+    string  m_FileName;
+    CRef<CSuspect_rule_set> m_Rules;
     std::mutex mutex;
 public:
     CStaticRules(string_view suffix, const CCompiledFSM* fsm)
@@ -66,18 +92,26 @@ public:
     {
         std::lock_guard<std::mutex> g{mutex};
 
-        if (s_Initialized && name == s_FileName) {
-            return s_Rules;
+        if (m_Initialized && name == m_FileName) {
+            return m_Rules;
         }
-        s_Rules.Reset(new CSuspect_rule_set());
-        s_FileName = name;
+
+        auto s_Rules = Ref(new CSuspect_rule_set);
 
         if (!name.empty()) {
+            s_Rules = Ref(new CSuspect_rule_set());
             LOG_POST("Reading from " + name + " for " + m_suffix);
 
             unique_ptr<CObjectIStream> istr (CObjectIStream::Open(eSerial_AsnText, name));
             *istr >> *s_Rules;
-            s_Rules->SetPrecompiledData(nullptr);
+            //if (m_compiled_fsm && m_compiled_fsm->m_rules_asn1.data())
+            if (xCompareAsnBlobs(m_compiled_fsm, s_Rules)) {
+                LOG_POST("Content of " + name + " is the same as built-in.");
+                s_Rules = Ref(new CSuspect_rule_set);
+            } else {
+                s_Rules->SetPrecompiledData(nullptr);
+                m_Rules = s_Rules;
+            }
         }
         if (!s_Rules->IsSet()) {
             //LOG_POST("Falling back on built-in data for " + m_suffix);
@@ -85,15 +119,23 @@ public:
             //auto types = istr->GuessDataType({CSuspect_rule_set::GetTypeInfo()});
             //_ASSERT(types.size() == 1 && *types.begin() == CSuspect_rule_set::GetTypeInfo());
             *istr >> *s_Rules;
+            //s_Rules->SetPrecompiledData(nullptr);
             s_Rules->SetPrecompiledData(m_compiled_fsm);
+            m_Rules = s_Rules;
         }
 
-        s_Initialized = true;
-        return s_Rules;
+        m_FileName = name;
+        m_Initialized = true;
+        return m_Rules;
     }
 };
 
 }
+
+BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
+USING_SCOPE(FSM);
 
 BEGIN_SCOPE(NDiscrepancy)
 
