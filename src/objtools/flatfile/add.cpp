@@ -2116,7 +2116,7 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_view location, string_view name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     Int4 i;
 
@@ -2127,7 +2127,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const ch
         return;
     }
 
-    if (! name && id.IsGeneral()) {
+    if (name.empty() && id.IsGeneral()) {
         const CDbtag& tag = id.GetGeneral();
         if (tag.GetDb() == "SeqLit" || tag.GetDb() == "UnkSeqLit")
             return;
@@ -2137,7 +2137,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const ch
         ! id.IsSwissprot() && ! id.IsOther() && ! id.IsDdbj() && ! id.IsPrf() &&
         ! id.IsTpg() && ! id.IsTpe() && ! id.IsTpd()) {
 
-        if (! name)
+        if (name.empty())
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty or unsupported Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
         else
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty or unsupported Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
@@ -2147,7 +2147,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const ch
 
     const CTextseq_id* text_id = id.GetTextseq_Id();
     if (! text_id || ! text_id->IsSetAccession()) {
-        if (! name)
+        if (name.empty())
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
         else
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
@@ -2185,7 +2185,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const ch
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(accession);
         id.SetPatent(*pat_id);
     } else {
-        if (! name)
+        if (name.empty())
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Invalid accession found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
         else
             ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Invalid accession found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
@@ -2249,7 +2249,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, const ch
 }
 
 /**********************************************************/
-static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, const char* location, const char* name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
+static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, string_view location, string_view name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
     for (auto& loc : locs) {
         if (loc->IsEmpty()) {
@@ -2287,7 +2287,7 @@ static void fta_do_fix_seq_loc_id(TSeqLocList& locs, IndexblkPtr ibp, const char
 }
 
 /**********************************************************/
-Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, const char* location, const char* name, bool iscon)
+Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, string_view name, bool iscon)
 {
     SeqLocIds   sli;
     const Char* p = nullptr;
@@ -2314,7 +2314,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, const char* location, c
     }
 
     if (tpa > 0 && non_tpa > 0) {
-        if (! name)
+        if (name.empty())
             ErrPostStr(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, format("The CONTIG/CO line with location \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", location));
         else
             ErrPostStr(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, format("The \"{}\" feature at \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", name, location));
@@ -2330,12 +2330,12 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, const char* location, c
             sev = SEV_WARNING;
             p   = "";
         }
-        if (! name) {
+        if (name.empty()) {
             string label;
             if (sli.badslp)
                 sli.badslp->GetLabel(&label);
 
-            ErrPostStr(sev, ERR_LOCATION_CrossDatabaseFeatLoc, format("The CONTIG/CO line refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval : \"{}\".{}", label.empty() ? location : label.c_str(), p));
+            ErrPostStr(sev, ERR_LOCATION_CrossDatabaseFeatLoc, format("The CONTIG/CO line refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval : \"{}\".{}", label.empty() ? location : label, p));
         } else
             ErrPostStr(sev, ERR_LOCATION_CrossDatabaseFeatLoc, format("The \"{}\" feature at \"{}\" refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval.{}", name, location, p));
     }

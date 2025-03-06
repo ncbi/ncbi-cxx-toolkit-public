@@ -177,7 +177,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
 
     TSeqLocList locs;
     locs.push_back(loc);
-    i = fta_fix_seq_loc_id(locs, pp, p, nullptr, true);
+    i = fta_fix_seq_loc_id(locs, pp, p, {}, true);
 
     if (i > 999)
         fta_create_far_fetch_policy_user_object(bsp, i);
