@@ -163,6 +163,18 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
     char                buf[64];
     long                len;
 
+    // PIR and PRF seq id is moved from the 'accession' field to the 'name'
+    // field so if canonical id is requested and the 'accession' field is empty
+    // then include the 'name' field
+    auto    seq_id_type = bioseq_info.GetSeqIdType();
+    if (seq_id_type == CSeq_id::e_Prf || seq_id_type == CSeq_id::e_Pir) {
+        if (include_data_flags & SPSGS_ResolveRequest::fPSGS_CanonicalId) {
+            if (bioseq_info.GetAccession().empty()) {
+                include_data_flags |= SPSGS_ResolveRequest::fPSGS_Name;
+            }
+        }
+    }
+
     json.append(1, '{');
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_CanonicalId) {
         len = PSGToString(bioseq_info.GetVersion(), buf);
