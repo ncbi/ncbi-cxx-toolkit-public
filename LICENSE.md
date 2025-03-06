@@ -1,3 +1,0 @@
-
-[LICENSE](doc/public/LICENSE)
-
