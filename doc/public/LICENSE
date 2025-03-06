@@ -62,7 +62,7 @@ License:  Unrestricted [at top of file]
 Location: src/build-system/config.{guess,sub}
 Authors:  FSF
 License:  Unrestricted when distributed with the Toolkit;
-          standalone, GNU General Public License [gpl.txt]
+          standalone, GNU General Public License [[doc/public/gpl.txt]
 
 Location: src/build-system/m4/ax_check_gnu_make.m4
 Authors:  John Darrington and Enrico M. Crisostomo
@@ -75,6 +75,7 @@ License:  Permissive [at top of file]
 Location: src/build-system/m4/ax_prog_cc_for_build.m4
 Author:   Paolo Bonzini
 License:  Permissive [at top of file]
+
 
 Location: src/connect/mbedtls
 Authors:  ARM Ltd.
