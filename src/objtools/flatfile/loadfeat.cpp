@@ -910,8 +910,8 @@ static void FilterDb_xref(CSeq_feat& feat, Parser::ESource source)
         feat.ResetDbxref();
 }
 
-bool GetSeqLocation(CSeq_feat& feat, const char* location, 
-        const CSeq_id& seqid, bool* hard_err, ParserPtr pp, const string& name)
+bool GetSeqLocation(CSeq_feat& feat, string_view location, 
+        const CSeq_id& seqid, bool* hard_err, ParserPtr pp, string_view name)
 {
     bool locmap = true;
     int  num_errs;
@@ -931,7 +931,7 @@ bool GetSeqLocation(CSeq_feat& feat, const char* location,
     if (loc.NotEmpty()) {
         TSeqLocList locs;
         locs.push_back(loc);
-        fta_fix_seq_loc_id(locs, pp, location, name.c_str(), false);
+        fta_fix_seq_loc_id(locs, pp, location, name, false);
 
         feat.SetLocation(*loc);
     }
