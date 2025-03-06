@@ -66,7 +66,8 @@ function(define_multipatern_inc_target up_target current_list_file compiler modu
         add_custom_command(
             OUTPUT ${_target_dir}/${_inc_file}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${_target_dir_int}
-            COMMAND ${_compiler} -o ${_target_dir_int}/${_inc_file} -i ${_prt_file} ${more_args} 
+            COMMAND ${_compiler} -o ${_target_dir_int}/${_inc_file} -i ${_prt_file} ${more_args}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/${_inc_file} ${_target_dir}/${_inc_file}
             WORKING_DIRECTORY ${_source_dir}
             COMMENT "Running ${compiler} for ${_prt_file}"
             DEPENDS ${current_list_file} ${_source_dir}/${_prt_file} ${_compiler} ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
