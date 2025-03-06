@@ -375,7 +375,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_BB, "https://beetlebase.org/cgi-bin/cmap/feature_search?features=" },
     { CDbtag::eDbtagType_BEETLEBASE, "https://www.beetlebase.org/cgi-bin/report.cgi?name=" },
     { CDbtag::eDbtagType_BGD, "http://bovinegenome.org/genepages/btau40/genes/" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_BoLD, "http://www.boldsystems.org/connectivity/specimenlookup.php?processid=" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_BoLD, "https://portal.boldsystems.org/record/" },
     { CDbtag::eDbtagType_CCDS, "https://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=" },
     { CDbtag::eDbtagType_CDD, "https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
     { CDbtag::eDbtagType_CGNC, "http://birdgenenames.org/cgnc/GeneReport?id=" }, // https not available tested 7/13/2016
@@ -627,6 +627,10 @@ string CDbtag::GetUrl(const string & genus,
 
     case eDbtagType_BEI:
         tag += ".aspx";
+        break;
+
+    case CDbtag::eDbtagType_BoLD:
+        tag = NStr::Replace(tag, ".", "#");
         break;
 
     case CDbtag::eDbtagType_Fungorum:
