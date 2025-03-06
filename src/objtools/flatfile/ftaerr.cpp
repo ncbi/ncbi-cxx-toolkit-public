@@ -318,9 +318,9 @@ void FtaErrFini(void)
 
 
 /**********************************************************/
-void FtaInstallPrefix(int prefix, const char* name, const char* location)
+void FtaInstallPrefix(int prefix, string_view name, string_view location)
 {
-    if (! name || *name == '\0')
+    if (name.empty())
         return;
 
     if ((prefix & PREFIX_ACCESSION) == PREFIX_ACCESSION) {
@@ -330,15 +330,11 @@ void FtaInstallPrefix(int prefix, const char* name, const char* location)
         bmp->prefix_locus = name;
     }
     if ((prefix & PREFIX_FEATURE) == PREFIX_FEATURE) {
-        char tmp[160];
-        strcpy(tmp, "FEAT=");
-        strncat(tmp, name, 20);
-        tmp[24] = '\0';
-        strcat(tmp, "[");
-        strncat(tmp, location, 127);
-        tmp[152] = '\0';
-        strcat(tmp, "]");
-        bmp->prefix_feature = tmp;
+        if (name.size() > 20)
+            name = name.substr(0, 20);
+        if (location.size() > 127)
+            location = location.substr(0, 127);
+        bmp->prefix_feature = format("FEAT={}[{}]", name, location);
     }
 }
 

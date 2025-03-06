@@ -298,17 +298,16 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
 /**********************************************************/
 void err_install(const Indexblk* ibp, bool accver)
 {
-    string temp;
-
     FtaInstallPrefix(PREFIX_LOCUS, ibp->locusname);
-    temp = ibp->acnum;
+
+    string temp = ibp->acnum;
     if (accver && ibp->vernum > 0) {
         temp += '.';
         temp += to_string(ibp->vernum);
     }
     if (temp.empty())
         temp = ibp->locusname;
-    FtaInstallPrefix(PREFIX_ACCESSION, temp.c_str());
+    FtaInstallPrefix(PREFIX_ACCESSION, temp);
 }
 
 /**********************************************************/
