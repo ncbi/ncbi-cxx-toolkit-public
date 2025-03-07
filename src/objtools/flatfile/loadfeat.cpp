@@ -3547,14 +3547,11 @@ static TDataBlkList XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
  *                                              5-28-93
  *
  **********************************************************/
-static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
+static void MergeNoteQual(TQualVector& quals)
 {
-    char* p;
-    char* q;
-
     size_t size = 0;
 
-    for (auto& cur : fbp->quals) {
+    for (auto& cur : quals) {
         if (! cur->IsSetQual() || ! cur->IsSetVal())
             continue;
 
@@ -3565,36 +3562,35 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
             continue;
 
         size += 2;
-        vector<Char> buf(cur_val.size() + 1);
+        string buf;
+        buf.reserve(cur_val.size());
 
-        const char* cp = cur_val.c_str();
-        for (q = &buf[0]; *cp != '\0'; ++cp) {
-            *q++ = *cp;
+        for (const char* cp = cur_val.c_str(); *cp != '\0'; ++cp) {
+            buf.push_back(*cp);
             if (*cp == ';' && (cp[1] == ' ' || cp[1] == ';')) {
                 for (++cp; *cp == ' ' || *cp == ';';)
                     ++cp;
                 if (*cp != '\0')
-                    *q++ = ' ';
+                    buf.push_back(' ');
                 --cp;
             }
         }
 
-        *q = '\0';
-        cur->SetVal(&buf[0]);
+        cur->SetVal(buf);
 
         size += cur->GetVal().size();
-        for (cp = cur->GetVal().c_str(); *cp != '\0'; ++cp)
-            if (*cp == '~')
+        for (char c : cur->GetVal())
+            if (c == '~')
                 ++size;
     }
 
     if (size == 0)
-        return (fbp);
+        return;
 
-    char* note = StringNew(size - 1);
-    p          = note;
+    string note;
+    note.reserve(size - 1);
 
-    for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end();) {
+    for (TQualVector::iterator cur = quals.begin(); cur != quals.end();) {
         if (! (*cur)->IsSetQual() || ! (*cur)->IsSetVal()) {
             ++cur;
             continue;
@@ -3611,28 +3607,26 @@ static FeatBlkPtr MergeNoteQual(FeatBlkPtr fbp)
         if (! cur_val.empty()) {
             /* sometime we get note qual w/o value
              */
-            if (p > note) {
-                *p++ = ';';
-                *p++ = '~';
+            if (! note.empty()) {
+                note.push_back(';');
+                note.push_back('~');
             }
 
-            for (const char* cq = cur_val.c_str(); *cq != '\0'; *p++ = *cq++)
-                if (*cq == '~')
-                    *p++ = '~';
+            for (char c : cur_val) {
+                if (c == '~')
+                    note.push_back('~');
+                note.push_back(c);
+            }
         }
 
-        cur = fbp->quals.erase(cur);
+        cur = quals.erase(cur);
     }
-    *p = '\0';
 
     CRef<CGb_qual> qual_new(new CGb_qual);
     qual_new->SetQual("note");
     qual_new->SetVal(note);
-    MemFree(note);
 
-    fbp->quals.push_back(qual_new);
-
-    return (fbp);
+    quals.push_back(qual_new);
 }
 
 /**********************************************************/
@@ -3908,7 +3902,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                 }
             }
 
-            fbp = MergeNoteQual(fbp); /* allow more than one
+            MergeNoteQual(fbp->quals); /* allow more than one
                                            notes w/i a key */
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
@@ -4115,7 +4109,7 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
 
         if (! fbp->quals.empty()) {
             XMLCheckQualifiers(fbp);
-            fbp = MergeNoteQual(fbp); /* allow more than one
+            MergeNoteQual(fbp->quals); /* allow more than one
                                            notes w/i a key */
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
