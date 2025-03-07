@@ -130,6 +130,14 @@ bool CPSGS_Reply::GetExceedSoftLimitFlag(void) const
 }
 
 
+uint16_t CPSGS_Reply::GetConnCntAtOpen(void) const
+{
+    if (m_Reply)
+        return m_Reply->GetConnCntAtOpen();
+    return 0;
+}
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);

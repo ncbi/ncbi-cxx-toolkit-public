@@ -155,6 +155,7 @@ public:
     }
 
     bool GetExceedSoftLimitFlag(void) const;
+    uint16_t GetConnCntAtOpen(void) const;
 
 public:
     // PSG protocol facilities

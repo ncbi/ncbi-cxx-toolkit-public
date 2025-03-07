@@ -2237,17 +2237,21 @@ bool CPubseqGatewayApp::x_IsShuttingDownForZEndPoints(shared_ptr<CPSGS_Reply>  r
 }
 
 
-static string   kConnectionAboveSoftLimitMsg = "The connection exceeds the soft limit";
-
 bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  reply,
                                                      const psg_time_point_t &  create_timestamp)
 {
     if (reply->GetExceedSoftLimitFlag()) {
-        x_SendMessageAndCompletionChunks(reply, create_timestamp, kConnectionAboveSoftLimitMsg,
+        string  msg = "Number of client connections (" +
+                      to_string(reply->GetConnCntAtOpen()) +
+                      ") is getting too high, "
+                      "close to the hard limit (" +
+                      to_string(m_Settings.m_TcpMaxConn) + ")";
+
+        x_SendMessageAndCompletionChunks(reply, create_timestamp, msg,
                                          CRequestStatus::e503_ServiceUnavailable,
                                          ePSGS_ConnectionExceedsSoftLimit,
                                          eDiag_Error);
-        PSG_WARNING(kConnectionAboveSoftLimitMsg);
+        PSG_WARNING(msg);
         return true;
     }
     return false;
@@ -2258,9 +2262,15 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
                                                                   bool  verbose)
 {
     if (reply->GetExceedSoftLimitFlag()) {
+        string  msg = "Number of client connections (" +
+                      to_string(reply->GetConnCntAtOpen()) +
+                      ") is getting too high, "
+                      "close to the hard limit (" +
+                      to_string(m_Settings.m_TcpMaxConn) + ")";
+
         if (verbose) {
             CJsonNode   final_json_node = CJsonNode::NewObjectNode();
-            final_json_node.SetString("message", kConnectionAboveSoftLimitMsg);
+            final_json_node.SetString("message", msg);
             final_json_node.SetByKey("checks", CJsonNode::NewArrayNode());
 
             string      content = final_json_node.Repr(CJsonNode::fStandardJson);
@@ -2276,7 +2286,7 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
                                  reply, nullptr);
         }
 
-        PSG_WARNING(kConnectionAboveSoftLimitMsg);
+        PSG_WARNING(msg);
         return true;
     }
     return false;

@@ -94,6 +94,14 @@ bool CHttpReply::GetExceedSoftLimitFlag(void) const
 }
 
 
+uint16_t CHttpReply::GetConnCntAtOpen(void) const
+{
+    if (m_HttpConn)
+        return m_HttpConn->GetConnCntAtOpen();
+    return 0;
+}
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;

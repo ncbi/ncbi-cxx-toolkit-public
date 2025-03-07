@@ -606,7 +606,8 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     CHttpConnection *   http_conn = & get<1>(*it);
 
-    http_conn->SetExceedSoftLimitFlag(m_daemon->DoesConnectionExceedSoftLimit());
+    http_conn->SetExceedSoftLimitFlag(m_daemon->DoesConnectionExceedSoftLimit(),
+                                      m_daemon->NumOfConnections());
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                http_conn, s_OnClientClosed);
 }

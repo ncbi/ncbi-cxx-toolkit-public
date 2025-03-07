@@ -309,6 +309,7 @@ public:
     { return static_pointer_cast<CCassDataCallbackReceiver>(m_DataReady); }
 
     bool GetExceedSoftLimitFlag(void) const;
+    uint16_t GetConnCntAtOpen(void) const;
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

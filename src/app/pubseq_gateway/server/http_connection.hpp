@@ -45,6 +45,7 @@ public:
                     size_t  http_max_running) :
         m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
         m_ExceedSoftLimitFlag(false),
+        m_ConnCntAtOpen(0),
         m_IsClosed(false), m_ScheduledMaintainTimer{0}
     {}
 
@@ -90,9 +91,10 @@ public:
         x_MaintainFinished();
     }
 
-    void SetExceedSoftLimitFlag(bool  value)
+    void SetExceedSoftLimitFlag(bool  value, uint16_t  current_conn_cnt)
     {
         m_ExceedSoftLimitFlag = value;
+        m_ConnCntAtOpen = current_conn_cnt;
     }
 
     bool GetExceedSoftLimitFlag(void) const
@@ -100,10 +102,18 @@ public:
         return m_ExceedSoftLimitFlag;
     }
 
+    uint16_t GetConnCntAtOpen(void) const
+    {
+        return m_ConnCntAtOpen;
+    }
+
 private:
     size_t                          m_HttpMaxBacklog;
     size_t                          m_HttpMaxRunning;
     bool                            m_ExceedSoftLimitFlag;
+
+    // Number of connections at the moment a new one has opened
+    uint16_t                        m_ConnCntAtOpen;
 
     volatile bool                   m_IsClosed;
     uv_timer_t                      m_ScheduledMaintainTimer;
