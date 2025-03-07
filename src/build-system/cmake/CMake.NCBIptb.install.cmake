@@ -323,8 +323,8 @@ function(NCBI_internal_install_root _variable _access)
     endif()
 
 # install licenses
-    if (NCBI_PTBCFG_PACKAGING AND EXISTS ${NCBI_TREE_ROOT}/doc/public/LICENSE)
-        install( FILES ${NCBI_TREE_ROOT}/doc/public/LICENSE DESTINATION licenses)
+    if (NCBI_PTBCFG_PACKAGING AND EXISTS ${NCBI_TREE_ROOT}/LICENSE)
+        install( FILES ${NCBI_TREE_ROOT}/LICENSE DESTINATION licenses)
     endif()
 # install headers
     if (NOT "$ENV{NCBIPTB_INSTALL_BARE}")
