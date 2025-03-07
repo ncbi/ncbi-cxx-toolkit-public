@@ -4805,6 +4805,21 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
         fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
     }
+    else
+    {
+        const CBioSource &bio = seq_feats.front()->GetData().GetBiosrc();
+        if(bio.IsSetOrg())
+        {
+            string taxname = bio.GetOrg().GetTaxname();
+            if(!taxname.empty())
+                ErrPostEx(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
+                          "BioSource descriptor completely dropped because \"%s\" is not present in the NCBI taxonomy database.",
+                          taxname.c_str());
+            else
+                ErrPostEx(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
+                          "BioSource descriptor completely dropped because provided organism is not present in the NCBI taxonomy database.");
+        }
+    }
     seq_feats.pop_front();
 
     for (; dab != dab_end; ++dab) {
