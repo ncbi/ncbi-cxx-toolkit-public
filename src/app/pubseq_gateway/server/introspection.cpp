@@ -1041,6 +1041,24 @@ CJsonNode  GetIdAccessionVersionHistoryRequestNode(void)
 }
 
 
+CJsonNode  GetIdGetSatMappingRequestNode(void)
+{
+    CJsonNode   getsatmapping(CJsonNode::NewObjectNode());
+    getsatmapping.SetString(kDescription,
+        "Provides the cassandra sat to keyspace mapping information");
+
+    getsatmapping.SetByKey("parameters", CJsonNode::NewObjectNode());
+
+    CJsonNode   id_sat_mapping_reply(CJsonNode::NewObjectNode());
+    id_sat_mapping_reply.SetString(kDescription,
+        "The HTTP body is a JSON dictionary with "
+        "the cassandra sat to keyspace mapping information.");
+    getsatmapping.SetByKey("reply", id_sat_mapping_reply);
+
+    return getsatmapping;
+}
+
+
 CJsonNode  GetAdminConfigRequestNode(void)
 {
     CJsonNode   admin_config(CJsonNode::NewObjectNode());
@@ -1491,6 +1509,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ID/resolve", GetIdResolveRequestNode());
     requests_node.SetByKey("ID/get_na", GetIdGetNaRequestNode());
     requests_node.SetByKey("ID/get_acc_ver_history", GetIdAccessionVersionHistoryRequestNode());
+    requests_node.SetByKey("ID/get_sat_mapping", GetIdGetSatMappingRequestNode());
     requests_node.SetByKey("IPG/resolve", GetIpgResolveRequestNode());
     requests_node.SetByKey("ADMIN/config", GetAdminConfigRequestNode());
     requests_node.SetByKey("ADMIN/info", GetAdminInfoRequestNode());

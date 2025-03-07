@@ -2114,6 +2114,82 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
 }
 
 
+int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
+                                       shared_ptr<CPSGS_Reply>  reply)
+{
+    auto                    now = psg_clock_t::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+
+    if (x_IsShuttingDown(reply, now)) {
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    if (x_IsConnectionAboveSoftLimit(reply, now)) {
+        x_PrintRequestStop(context,
+                           CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e503_ServiceUnavailable,
+                           reply->GetBytesSent());
+        return 0;
+    }
+
+    try {
+        string      json;
+        char        buf[64];
+        long        len;
+        bool        some = false;
+
+        shared_ptr<CSatInfoSchema>  current_schema = m_CassSchemaProvider->GetSchema();
+        int32_t                     max_sat = current_schema->GetMaxBlobKeyspaceSat();
+
+        json.append(1, '{');
+        for (int32_t    sat_n = 0; sat_n <= max_sat; ++sat_n) {
+            optional<SSatInfoEntry>     entry = current_schema->GetBlobKeyspace(sat_n);
+            if (entry.has_value()) {
+                if (some)   json.append(1,',');
+                else        some = true;
+
+                len = PSGToString(sat_n, buf);
+
+                json.append(1, '"')
+                    .append(buf, len)
+                    .append(1, '"')
+                    .append(1,':')
+                    .append(1,'"')
+                    .append(entry->keyspace)
+                    .append(1,'"');
+            }
+        }
+        json.append(1, '}');
+
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(json.size());
+        reply->SendOk(json.data(), json.size(), false);
+
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok, reply->GetBytesSent());
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_SatMappingRequest);
+    } catch (const exception &  exc) {
+        x_Finish500(reply, now, ePSGS_GetSatMappingError,
+                    "Exception when handling a get sat mapping request: " +
+                    string(exc.what()));
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    } catch (...) {
+        x_Finish500(reply, now, ePSGS_GetSatMappingError,
+                    "Unknown exception when handling a get sat mapping request");
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    }
+
+    return 0;
+}
+
 
 static string  kShuttingDownMsg = "The server is in process of shutting down";
 

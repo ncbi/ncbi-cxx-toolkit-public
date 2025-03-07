@@ -63,6 +63,7 @@ class CPSGSCounters
             ePSGS_TSEChunkSplitVersionCacheMatched,
             ePSGS_TSEChunkSplitVersionCacheNotMatched,
             ePSGS_AdminRequest,
+            ePSGS_SatMappingRequest,
             ePSGS_ResolveRequest,
             ePSGS_GetBlobBySeqIdRequest,
             ePSGS_GetBlobBySatSatKeyRequest,

@@ -119,7 +119,9 @@ enum EPSGS_PubseqGatewayErrorCode {
     ePSGS_ID2ChunkErrorAfterFallbackRequested   = 349,
     ePSGS_ID2InfoParseErrorFallback             = 350,
 
-    ePSGS_ConnectionExceedsSoftLimit            = 351
+    ePSGS_ConnectionExceedsSoftLimit            = 351,
+
+    ePSGS_GetSatMappingError                    = 352
 };
 
 

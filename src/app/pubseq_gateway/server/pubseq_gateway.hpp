@@ -164,6 +164,7 @@ public:
     int OnStatistics(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnDispatcherStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnTestIO(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnGetSatMapping(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
 
     virtual int Run(void);
 

@@ -141,6 +141,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "AdminRequestCount", "Administrative requests counter",
             "Number of time a client requested administrative functionality");
+    m_Counters[ePSGS_SatMappingRequest] =
+        new SCounterInfo(
+            "GetSatMappingRequestCount", "Get sat mapping request counter",
+            "Number of times a client requested sat mapping");
     m_Counters[ePSGS_ResolveRequest] =
         new SCounterInfo(
             "ResolveRequestCount", "Resolve requests counter",

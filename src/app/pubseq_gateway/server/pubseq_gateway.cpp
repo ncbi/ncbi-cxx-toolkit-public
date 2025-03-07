@@ -620,6 +620,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnDispatcherStatus(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ID/get_sat_mapping",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnGetSatMapping(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/favicon.ico",
             [/*this*/](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
