@@ -4796,28 +4796,23 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     s_RemoveSourceDescriptors(bioseq.SetDescr());
 
     // add new source descriptor
-    if(ibp->biodrop == false || pp->source != Parser::ESource::USPTO ||
-       pp->format != Parser::EFormat::XML || pp->taxserver == 0)
-    {
+    if (ibp->biodrop == false || pp->source != Parser::ESource::USPTO ||
+        pp->format != Parser::EFormat::XML || pp->taxserver == 0) {
         CRef<CSeqdesc> descr_src(new CSeqdesc);
         descr_src->SetSource(seq_feats.front()->SetData().SetBiosrc());
         bioseq.SetDescr().Set().push_back(descr_src);
 
         fta_get_gcode_from_biosource(descr_src->GetSource(), ibp);
-    }
-    else
-    {
-        const CBioSource &bio = seq_feats.front()->GetData().GetBiosrc();
-        if(bio.IsSetOrg())
-        {
+    } else {
+        const CBioSource& bio = seq_feats.front()->GetData().GetBiosrc();
+        if (bio.IsSetOrg()) {
             string taxname = bio.GetOrg().GetTaxname();
-            if(!taxname.empty())
-                ErrPostEx(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
-                          "BioSource descriptor completely dropped because \"%s\" is not present in the NCBI taxonomy database.",
-                          taxname.c_str());
+            if (! taxname.empty())
+                ErrPostStr(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
+                           format("BioSource descriptor completely dropped because \"{}\" is not present in the NCBI taxonomy database.", taxname));
             else
-                ErrPostEx(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
-                          "BioSource descriptor completely dropped because provided organism is not present in the NCBI taxonomy database.");
+                ErrPostStr(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
+                           "BioSource descriptor completely dropped because provided organism is not present in the NCBI taxonomy database.");
         }
     }
     seq_feats.pop_front();
