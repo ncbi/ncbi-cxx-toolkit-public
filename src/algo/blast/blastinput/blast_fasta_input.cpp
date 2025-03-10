@@ -224,12 +224,40 @@ private:
             m_QueryScopeSource.Reset(new CBlastScopeSource(m_DLConfig));
             m_BioseqMaker.Reset
                 (new CBlastBioseqMaker(m_QueryScopeSource->NewScope()));
+        }        
+        try {
+             x_ValidateMoleculeType(id);
+         }
+         catch (const CInputException &e) {
+            bool isProtein = m_BioseqMaker->IsProtein(id);
+            if (!isProtein && m_ReadProteins)
+            {
+                 // If accession mismatch, handle pir accessions.
+                // There is a handful of protein accessions that are the same as
+                // for nuleotice sequences. Try adding "pir|" to the accession.
+                if (e.GetErrCode() == CInputException::eSequenceMismatch) {                     
+                    string new_id("pir|" + id->GetSeqIdString(false));                 
+                    id.Reset(new CSeq_id(new_id, CSeq_id::fParse_AnyRaw));
+                    try {
+                         x_ValidateMoleculeType(id);
+                    }
+                    catch (const CInputException& e) {
+                         // If a CInputException was throw, the accession is not pir,
+                        // but still valid nucleotide accession.
+                        NCBI_THROW(CInputException, eSequenceMismatch,
+                                "GI/accession/sequence mismatch: protein input required but nucleotide provided");
+                    }
+                }
+                else {
+                     throw;
+                }
+            }
+            else {
+                throw;
+           }
         }
-
-        x_ValidateMoleculeType(id);
         return m_BioseqMaker->CreateBioseqFromId(id, m_RetrieveSeqData);
     }
-
 };
 
 /// Stream line reader that converts gaps to Ns before returning each line
