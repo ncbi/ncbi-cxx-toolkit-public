@@ -1086,8 +1086,8 @@ public:
     void GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids);
 
     /// Assign Cache ID to Thread
-    /// For split db multi-threaded search, each thread needs to call this api
-    /// once before preliminary stage
+    /// For multi-threaded mode split by database, each thread needs to call
+    /// this API once before the preliminary stage
     void SetCacheID();
 
 private:
