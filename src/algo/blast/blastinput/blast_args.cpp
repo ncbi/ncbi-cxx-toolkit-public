@@ -2749,30 +2749,40 @@ CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 }
 
 
-static void s_ValidateCustomDelim(string custom_fmt_spec,string customDelim)
+static void s_ValidateCustomDelim(const string& customFmtSpec,const string& customDelim)
 {
     bool error = false;
     string checkfield;
-    custom_fmt_spec = NStr::TruncateSpaces(custom_fmt_spec);
+    auto custom_fmt_spec = NStr::TruncateSpaces(customFmtSpec);
     if(custom_fmt_spec.empty()) return;
 
     //Check if delim is already used
+    const string kFieldsWithCommaSeparator = "ssciname sblastname scomname"; // sep = ','
     const string kFieldsWithSemicolSeparator = "sallseqid staxids sscinames scomnames sblastnames sskingdoms";//sep = ";"
     const string kFramesField = "frames"; //sep = "/"
-    const string kAllTitlesField ="salltitles"; //sep = "<>""    
+    const string kAllTitlesField ="salltitles"; //sep = "<>""
 
     if(customDelim == ";") {
         vector <string> tokens;
-        NStr::Split(kFieldsWithSemicolSeparator," ", tokens);   
+        NStr::Split(kFieldsWithSemicolSeparator," ", tokens);
         for(size_t i = 0; i < tokens.size(); i++)   {
             if(NStr::Find(custom_fmt_spec,tokens[i]) != NPOS) {
                 checkfield = tokens[i];
-                error = true;                
+                error = true;
                 break;
             }
         }
-    }
-    else {
+    } else if (customDelim == ",") {
+        vector<string> tokens;
+        NStr::Split(kFieldsWithCommaSeparator, " ", tokens);
+        for (const auto& token: tokens) {
+            if (NStr::Find(custom_fmt_spec, token) != NPOS) {
+                checkfield = token;
+                error = true;
+                break;
+            }
+        }
+    } else {
         if(customDelim == "/") {
             checkfield = kFramesField;
         }
@@ -2783,11 +2793,11 @@ static void s_ValidateCustomDelim(string custom_fmt_spec,string customDelim)
             error = true;
         }
     }
-    
-    if(error) {                
+
+    if(error) {
         string msg("Your custom record separator (" + customDelim + ") is also used by the format specifier (" + checkfield +
                                                                 ") to separate multiple entries. Please use a different record separator (delim keyword).");
-        NCBI_THROW(CInputException, eInvalidInput, msg);                                                                
+        NCBI_THROW(CInputException, eInvalidInput, msg);
     }
 }
 
@@ -2801,14 +2811,14 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
     if (args[kArgOutputFormat]) {
         string fmt_choice =
             NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
-        string::size_type pos;                            
+        string::size_type pos;
         if ( (pos = fmt_choice.find_first_of(' ')) != string::npos) {
             custom_fmt_spec.assign(fmt_choice, pos+1,
                                    fmt_choice.size()-(pos+1));
             fmt_choice.erase(pos);
-        }       
-        if(!custom_fmt_spec.empty()) {            
-            if(NStr::StartsWith(custom_fmt_spec, "delim")) {                
+        }
+        if(!custom_fmt_spec.empty()) {
+            if(NStr::StartsWith(custom_fmt_spec, "delim")) {
                 vector <string> tokens;
                 NStr::Split(custom_fmt_spec," ",tokens);
                 if(tokens.size() > 0) {
@@ -2817,13 +2827,14 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
                     if(!isValid) {
                         string msg("Delimiter format is invalid. Valid format is delim=<delimiter value>");
                         NCBI_THROW(CInputException, eInvalidInput, msg);
-                    }                    
+                    }
                     else {
-                        custom_fmt_spec = NStr::Replace(custom_fmt_spec,tokens[0],"");                                                
-                    }                  
-                }                 
-            }                        
-        }        
+                        custom_fmt_spec = NStr::Replace(custom_fmt_spec,tokens[0],"");
+                        custom_fmt_spec = NStr::TruncateSpaces(custom_fmt_spec);
+                    }
+                }
+            }
+        }
         int val = 0;
         try { val = NStr::StringToInt(fmt_choice); }
         catch (const CStringException&) {   // probably a conversion error
@@ -2847,7 +2858,20 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
                fmt_type == eSAM) ) {
                custom_fmt_spec.clear();
         }
-    }    
+        if (custom_delim.empty()) {
+            switch (fmt_type) {
+                case eTabular: 
+                case eTabularWithComments: 
+                    custom_delim = '\t';
+                    break;
+                case eCommaSeparatedValues:
+                    custom_delim = ',';
+                    break;
+                default: // ignore all other cases
+                    break;
+            }
+        }
+    }
 }
 
 
