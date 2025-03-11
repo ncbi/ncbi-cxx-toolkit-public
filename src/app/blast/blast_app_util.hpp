@@ -183,27 +183,20 @@ string RegisterOMDataLoader(CRef<CSeqDB> db_handle);
         exit_code = BLAST_INPUT_ERROR;                                      \
     }                                                                       \
     catch (const CSeqDBException& e) {                                      \
-		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {              \
+		if (e.GetErrCode() == CSeqDBException::eTooManyOpenFiles) {         \
 			string err_msg =                                                \
                 "Too many open files, please raise the open file limit";    \
         	LOG_POST(Error << "BLAST Database error: " << err_msg);         \
-            exit_code = BLAST_ENGINE_ERROR;                                 \
+            exit_code = BLAST_DATABASE_ERROR;                               \
 		}                                                                   \
-    else if (e.GetErrCode() == CSeqDBException::eFileErr){                  \
-        string err_msg = "Database memory map file error";                  \
-        string ex_msg = e.GetMsg();                                         \
-        if (!ex_msg.empty()) {                                              \
-            unsigned pos = ex_msg.find("in search path");                   \
-            if (pos != string::npos) {                                      \
-                ex_msg = ex_msg.substr(0, pos - 1);                         \
-            }                                                               \
-            err_msg += ": " + ex_msg;                                       \
-            err_msg += ". Please verify the spelling of the BLAST database and its molecule type.";\
-        }                                                                   \
-        LOG_POST(Error << "BLAST Database error: " << err_msg);             \
-        exit_code = BLAST_ENGINE_ERROR;                                     \
-    }                                                                   \
-    else {                                                              \
+		else if (e.GetErrCode() == CSeqDBException::eMemoryMappingFailure){ \
+			string err_msg = "Database memory map file error";              \
+            if (!e.GetMsg().empty())                                        \
+                err_msg += " - " + e.GetMsg();                              \
+        	LOG_POST(Error << "BLAST Database error: " << err_msg);         \
+            exit_code = BLAST_DATABASE_ERROR;                               \
+		}                                                                   \
+        else {                                                              \
         	LOG_POST(Error << "BLAST Database error: " << e.GetMsg());      \
         	exit_code = BLAST_DATABASE_ERROR;                               \
         }                                                                   \
