@@ -1494,8 +1494,13 @@ BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list,
         	if(hsp->num_ident == 0)
         		hsp->num_ident = -1;
         }
-	// Pass in empty list until removed.
-        s_AddScoresToSeqAlign(seqalign, hsp, emptyList, query_length);
+        if  (Blast_QueryIsTranslated(program)) {
+        	s_AddScoresToSeqAlign(seqalign, hsp, emptyList, query_length/3);
+        }
+        else {
+        	// Pass in empty list until removed.
+        	s_AddScoresToSeqAlign(seqalign, hsp, emptyList, query_length);
+        }
 	
 	s_AddUserObjectToSeqAlign(seqalign, seqid_list);
         sa_vector.push_back(seqalign);
