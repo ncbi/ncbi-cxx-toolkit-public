@@ -129,8 +129,6 @@ CTaxDBFileInfo::CTaxDBFileInfo()
       m_DataFileSize(0),
       m_MissingDB(false)
 {
-	try {
-
     // It is reasonable for this database to not exist.
     m_IndexFN =  SeqDB_ResolveDbPath("taxdb.bti");
 
@@ -203,16 +201,6 @@ CTaxDBFileInfo::CTaxDBFileInfo()
     m_DataPtr = (char *) (m_DataFileMap->GetPtr());
     m_DataFileSize = m_DataFileMap->GetSize();
     m_IndexPtr = (CSeqDBTaxId*) magic_num_ptr;
-	}
-    catch (const std::exception& e) {
-    	string err_msg = e.what();
-    	if (err_msg.find("Too many open files") == std::string::npos ) {
-    		NCBI_THROW(CSeqDBException, eFileErr, e.what());
-    	}
-    	else {
-    		NCBI_THROW(CSeqDBException, eOpenFileErr, e.what());
-    	}
-	}
 }
 
 CTaxDBFileInfo::~CTaxDBFileInfo()
