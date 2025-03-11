@@ -155,6 +155,7 @@ public:
     }
 
     bool GetExceedSoftLimitFlag(void) const;
+    void ResetExceedSoftLimitFlag(void);
     uint16_t GetConnCntAtOpen(void) const;
 
 public:

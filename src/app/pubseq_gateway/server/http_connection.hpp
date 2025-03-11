@@ -102,6 +102,11 @@ public:
         return m_ExceedSoftLimitFlag;
     }
 
+    void ResetExceedSoftLimitFlag(void)
+    {
+        m_ExceedSoftLimitFlag = false;
+    }
+
     uint16_t GetConnCntAtOpen(void) const
     {
         return m_ConnCntAtOpen;

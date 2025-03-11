@@ -2247,7 +2247,9 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
 
         size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
         if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
-            // The number of connections dropped so can continue as usual
+            // The number of connections dropped so can continue as usual.
+            // Also, the connection soft limit flag should be reset
+            reply->ResetExceedSoftLimitFlag();
             return false;
         }
 
@@ -2281,7 +2283,9 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
 
         size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
         if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
-            // The number of connections dropped so can continue as usual
+            // The number of connections dropped so can continue as usual.
+            // Also, the connection soft limit flag should be reset
+            reply->ResetExceedSoftLimitFlag();
             return false;
         }
 

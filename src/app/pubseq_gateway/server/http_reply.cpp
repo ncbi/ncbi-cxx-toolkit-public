@@ -94,6 +94,13 @@ bool CHttpReply::GetExceedSoftLimitFlag(void) const
 }
 
 
+void CHttpReply::ResetExceedSoftLimitFlag(void)
+{
+    if (m_HttpConn)
+        return m_HttpConn->ResetExceedSoftLimitFlag();
+}
+
+
 uint16_t CHttpReply::GetConnCntAtOpen(void) const
 {
     if (m_HttpConn)

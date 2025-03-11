@@ -130,6 +130,13 @@ bool CPSGS_Reply::GetExceedSoftLimitFlag(void) const
 }
 
 
+void CPSGS_Reply::ResetExceedSoftLimitFlag(void)
+{
+    if (m_Reply)
+        return m_Reply->ResetExceedSoftLimitFlag();
+}
+
+
 uint16_t CPSGS_Reply::GetConnCntAtOpen(void) const
 {
     if (m_Reply)
