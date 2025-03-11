@@ -175,7 +175,7 @@ void Blast_PerrorEx(Blast_Message* *msg,
 
 /** Database file error */
 #define BLASTERR_DB_MEMORY_MAP				        400
-#define BLASTERR_DB_OPEN_FILES      				401
+#define BLASTERR_DB_TOO_MANY_OPEN_FILES  			401
 
 
 #ifdef __cplusplus
