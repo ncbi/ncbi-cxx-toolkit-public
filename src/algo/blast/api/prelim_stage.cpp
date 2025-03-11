@@ -190,10 +190,10 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     if (retv) {
     	  Int2 err_code = (Int2) retv;
     	  if (err_code == BLASTERR_DB_MEMORY_MAP) {
-    		  NCBI_THROW(CSeqDBException, eFileErr, BlastErrorCode2String(err_code));
+    		  NCBI_THROW(CSeqDBException, eMemoryMappingFailure, BlastErrorCode2String(err_code));
     	  }
-    	  else if (err_code == BLASTERR_DB_OPEN_FILES) {
-    		  NCBI_THROW(CSeqDBException, eOpenFileErr, BlastErrorCode2String(err_code));
+    	  else if (err_code == BLASTERR_DB_TOO_MANY_OPEN_FILES) {
+    		  NCBI_THROW(CSeqDBException, eTooManyOpenFiles, BlastErrorCode2String(err_code));
     	  }
     	  else {
     		  NCBI_THROW(CBlastException, eCoreBlastError, BlastErrorCode2String(err_code));
