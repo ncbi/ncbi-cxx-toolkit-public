@@ -36,21 +36,15 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-constexpr const unsigned int CCassQueryList::kDfltMaxQuery;
-constexpr const uint64_t CCassQueryList::kReadyPushWaitTimeout;
-constexpr const uint64_t CCassQueryList::kReadyPopWaitTimeout;
-constexpr const size_t CCassQueryList::kNotifyQueueLen;
-constexpr const unsigned int CCassQueryList::kResetRelaxTime;
-
-
 /** CCassQueryList::CQryNotification */
 
-CCassQueryList::CQryNotification::CQryNotification(shared_ptr<CCassQueryList> query_list, size_t index)  :
-    m_query_list(query_list),
-    m_index(index)
+CCassQueryList::CQryNotification::CQryNotification(shared_ptr<CCassQueryList> query_list, size_t index)
+    : m_query_list(query_list)
+    , m_index(index)
 {}
 
-void CCassQueryList::CQryNotification::OnData() {
+void CCassQueryList::CQryNotification::OnData()
+{
     shared_ptr<CCassQueryList> ql = m_query_list.lock();
     if (ql) {
         while (!ql->m_ready.push_wait(m_index, kReadyPushWaitTimeout)) {
@@ -62,7 +56,8 @@ void CCassQueryList::CQryNotification::OnData() {
 
 /** CCassQueryList */
 
-shared_ptr<CCassQueryList> CCassQueryList::Create(shared_ptr<CCassConnection> cass_conn) noexcept {
+shared_ptr<CCassQueryList> CCassQueryList::Create(shared_ptr<CCassConnection> cass_conn) noexcept
+{
     struct CCassQueryListAccess : public CCassQueryList {};
     shared_ptr<CCassQueryList> rv = make_shared<CCassQueryListAccess>();
     rv->m_self_weak = rv;
@@ -71,7 +66,8 @@ shared_ptr<CCassQueryList> CCassQueryList::Create(shared_ptr<CCassConnection> ca
     return rv;
 }
 
-CCassQueryList::~CCassQueryList() {
+CCassQueryList::~CCassQueryList()
+{
     m_notification_arr.clear();
     if (!m_query_arr.empty() || !m_pending_arr.empty()) {
         if (NumberOfActiveQueries() > 0) {
@@ -87,7 +83,8 @@ CCassQueryList::~CCassQueryList() {
     }
 }
 
-CCassQueryList& CCassQueryList::SetMaxQueries(size_t max_queries) {
+CCassQueryList& CCassQueryList::SetMaxQueries(size_t max_queries)
+{
     m_max_queries = max_queries;
     if (m_notification_arr.size() < m_max_queries) {
         m_notification_arr.reserve(m_max_queries);
@@ -99,53 +96,65 @@ CCassQueryList& CCassQueryList::SetMaxQueries(size_t max_queries) {
     return *this;
 }
 
-string CCassQueryList::GetKeyspace() const {
+string CCassQueryList::GetKeyspace() const
+{
     return m_keyspace;
 }
 
-CCassQueryList& CCassQueryList::SetKeyspace(const string& keyspace) {
+CCassQueryList& CCassQueryList::SetKeyspace(const string& keyspace)
+{
     m_keyspace = keyspace;
     return *this;
 }
 
-CCassQueryList& CCassQueryList::SetTickCB(TCassQueryListTickCB cb) {
+CCassQueryList& CCassQueryList::SetTickCB(TCassQueryListTickCB cb)
+{
     m_tick_cb = cb;
     return *this;
 }
 
-size_t CCassQueryList::GetMaxQueries() const {
+size_t CCassQueryList::GetMaxQueries() const
+{
     return m_max_queries;
 }
 
-bool CCassQueryList::HasError() const {
+bool CCassQueryList::HasError() const
+{
     return m_has_error;
 }
 
-void CCassQueryList::Tick() {
-    if (m_tick_cb)
+void CCassQueryList::Tick()
+{
+    if (m_tick_cb) {
         m_tick_cb();
+    }
 }
 
-size_t CCassQueryList::NumberOfActiveQueries() const {
-    size_t rv = 0;
+size_t CCassQueryList::NumberOfActiveQueries() const
+{
+    size_t rv{0};
     for (const auto& slot : m_query_arr) {
-        if (slot.m_state != ssAvailable && slot.m_state != ssReleasing)
+        if (slot.m_state != ssAvailable && slot.m_state != ssReleasing) {
             ++rv;
+        }
     }
     return rv;
 }
 
-size_t CCassQueryList::NumberOfBusySlots() const {
+size_t CCassQueryList::NumberOfBusySlots() const
+{
     return m_attached_slots;
 }
 
-size_t CCassQueryList::NumberOfPendingSlots() const {
+size_t CCassQueryList::NumberOfPendingSlots() const
+{
     return m_pending_arr.size();
 }
 
 const char* kSQrySlotStateStr[] = {"ssAvailable", "ssAttached", "ssReadingRow", "ssReseting", "ssReleasing"};
 
-string CCassQueryList::ToString() const {
+string CCassQueryList::ToString() const
+{
     stringstream ss;
     for (size_t i = 0; i < m_query_arr.size(); ++i) {
         const SQrySlot& slot = m_query_arr[i];
@@ -154,16 +163,20 @@ string CCassQueryList::ToString() const {
     return ss.str();
 }
 
-void CCassQueryList::CheckAccess() {
-    thread::id exp{};
-    if (!m_owning_thread.compare_exchange_strong(exp, this_thread::get_id())) {
+void CCassQueryList::CheckAccess()
+{
+    // WARNING! m_owning_thread is empty on creation. First thread calling CheckAccess() will claim ownership
+    // All calls after first will not exchange value in m_owning_thread and are subject to internal if() test
+    thread::id expected_empty{};
+    if (!m_owning_thread.compare_exchange_strong(expected_empty, this_thread::get_id())) {
         if (m_owning_thread != this_thread::get_id()) {
             NCBI_THROW(CCassandraException, eSeqFailed, "CCassQueryList is a single-thread object");
         }
     }
 }
 
-void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int retry_count, bool post_async) {
+void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int retry_count, bool post_async)
+{
     CheckAccess();
     SQrySlot* slot;
     do {
@@ -176,7 +189,8 @@ void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int re
                 m_query_arr.push_back({nullptr, nullptr, m_query_arr.size(), 0, ssAvailable});
             }
             slot = &m_query_arr[index];
-        } else {
+        }
+        else {
             slot = CheckSlots(false, !post_async);
         }
         if (post_async && !slot) {
@@ -186,15 +200,12 @@ void CCassQueryList::Execute(unique_ptr<ICassQueryListConsumer> consumer, int re
         }
     }
     while (!slot);
-
     AttachSlot(slot, {std::move(consumer), retry_count});
 }
 
 bool CCassQueryList::HasEmptySlot()
 {
-    if (m_query_arr.empty())
-        return true;
-    return CheckSlots(false, false) != nullptr;
+    return m_query_arr.empty() || CheckSlots(false, false) != nullptr;
 }
 
 void CCassQueryList::Yield(bool wait)
@@ -209,10 +220,12 @@ void CCassQueryList::Yield(bool wait)
             }
             while (!m_pending_arr.empty()) {
                 SQrySlot *slot = CheckSlots(false, false);
-                if (slot && !m_pending_arr.empty())
+                if (slot && !m_pending_arr.empty()) {
                     CheckPending(slot);
-                else
+                }
+                else {
                     break;
+                }
             }
         }
         catch (...) {
@@ -228,8 +241,9 @@ void CCassQueryList::DetachSlot(SQrySlot* slot)
     assert(slot->m_state != ssAvailable);
     if (slot->m_state != ssAvailable) {
         slot->m_consumer = nullptr;
-        if (slot->m_qry)
+        if (slot->m_qry) {
             slot->m_qry->Close();
+        }
         --m_attached_slots;
         slot->m_state = ssAvailable;
     }
@@ -245,10 +259,10 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot)
     slot->m_retry_count = pending_slot.m_retry_count;
     assert(slot->m_consumer == nullptr);
     slot->m_consumer = std::move(pending_slot.m_consumer);
-
     if (!slot->m_qry) {
         slot->m_qry = m_cass_conn->NewQuery();
-    } else {
+    }
+    else {
         slot->m_qry->Close();
     }
     assert(slot->m_index < m_notification_arr.size());
@@ -265,7 +279,8 @@ void CCassQueryList::AttachSlot(SQrySlot* slot, SPendingSlot&& pending_slot)
     Tick();
 }
 
-void CCassQueryList::CheckPending(SQrySlot* slot) {
+void CCassQueryList::CheckPending(SQrySlot* slot)
+{
     assert(slot->m_state == ssAvailable);    
     if (!m_pending_arr.empty()) {
         SPendingSlot pending_slot = std::move(m_pending_arr.back());
@@ -274,8 +289,9 @@ void CCassQueryList::CheckPending(SQrySlot* slot) {
     }
 }
 
-void CCassQueryList::Release(SQrySlot* slot) {
-    bool release = true;
+void CCassQueryList::Release(SQrySlot* slot)
+{
+    bool release{true};
     assert(slot->m_state != ssReleasing);
     assert(slot->m_state != ssAvailable);
     slot->m_state = ssReleasing;
@@ -288,15 +304,17 @@ void CCassQueryList::Release(SQrySlot* slot) {
     if (release) {
         DetachSlot(slot);
         CheckPending(slot);
-    } else {
+    }
+    else {
         assert(slot->m_qry);
         assert(slot->m_qry->IsActive());
         slot->m_state = ssAttached;
     }
 }
 
-void CCassQueryList::ReadRows(SQrySlot* slot) {
-    bool do_continue = true;
+void CCassQueryList::ReadRows(SQrySlot* slot)
+{
+    bool do_continue{true};
     assert(slot->m_state == ssAttached);
     while (do_continue && slot->m_state == ssAttached) {
         do_continue = false;
@@ -317,12 +335,15 @@ void CCassQueryList::ReadRows(SQrySlot* slot) {
                     try {
                         if (slot->m_consumer) {
                             do_continue = slot->m_consumer->ProcessRow(slot->m_qry, *this, slot->m_index);
-                        } else {
+                        }
+                        else {
                             do_continue = true;
                         }
                         if (slot->m_state == ssReadingRow) {
                             slot->m_state = ssAttached;
-                        } else { // slot re-populated with different consumer
+                        }
+                        // slot re-populated with different consumer
+                        else {
                             do_continue = false;
                             break;
                         }
@@ -347,7 +368,8 @@ void CCassQueryList::ReadRows(SQrySlot* slot) {
     }
 }
 
-shared_ptr<CCassQuery> CCassQueryList::Extract(size_t slot_index) {
+shared_ptr<CCassQuery> CCassQueryList::Extract(size_t slot_index)
+{
     if (slot_index < m_query_arr.size()) {
         auto& slot = m_query_arr[slot_index];
         shared_ptr<CCassQuery> rv = slot.m_qry;
@@ -358,9 +380,10 @@ shared_ptr<CCassQuery> CCassQueryList::Extract(size_t slot_index) {
     return nullptr;
 }
 
-void CCassQueryList::Cancel(ICassQueryListConsumer* consumer, const exception* e) {
+void CCassQueryList::Cancel(ICassQueryListConsumer* consumer, const exception* e)
+{
     CheckAccess();
-    bool found = false;
+    bool found{false};
     for (size_t i = 0; i < m_query_arr.size(); ++i) {
         auto slot = &m_query_arr[i];
         if (slot->m_state != ssAvailable && slot->m_consumer.get() == consumer) {
@@ -387,7 +410,8 @@ void CCassQueryList::Cancel(ICassQueryListConsumer* consumer, const exception* e
     }
 }
 
-void CCassQueryList::Cancel(const exception* e) {
+void CCassQueryList::Cancel(const exception* e)
+{
     CheckAccess();
     m_pending_arr.clear();
     for (size_t i = 0; i < m_query_arr.size(); ++i) {
@@ -406,9 +430,10 @@ void CCassQueryList::Cancel(const exception* e) {
     m_pending_arr.clear();
 }
 
-void CCassQueryList::Finalize() {
+void CCassQueryList::Finalize()
+{
     CheckAccess();
-    bool any;
+    bool any{false};
     do {
         any = false;
         while (!m_pending_arr.empty()) {
@@ -434,7 +459,8 @@ void CCassQueryList::Finalize() {
     m_query_arr.clear();
 }
 
-CCassQueryList::SQrySlot* CCassQueryList::CheckSlots(bool discard, bool wait) {
+CCassQueryList::SQrySlot* CCassQueryList::CheckSlots(bool discard, bool wait)
+{
     if (discard) {
         while (!m_query_arr.empty()) {
             size_t index;
@@ -447,13 +473,13 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlots(bool discard, bool wait) {
             if (index == 0 && m_query_arr[index].m_qry == nullptr) {
                 return nullptr;
             }
-
             SQrySlot *slot = CheckSlot(index, discard);
             if (slot) {
                 return slot;
             }
         }
-    } else {
+    }
+    else {
         for (size_t index = 0; index < m_query_arr.size(); ++index) {
             SQrySlot *slot = &m_query_arr[index];
             if (slot->m_state == ssAvailable) {
@@ -465,25 +491,28 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlots(bool discard, bool wait) {
     return nullptr;
 }
 
-CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) {
+CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard)
+{
     assert(index < m_query_arr.size());
     if (index >= m_query_arr.size()) {
         return nullptr;
     }
     SQrySlot *slot = &m_query_arr[index];
     if (slot->m_qry) {
-        bool need_restart = false;
+        bool need_restart{false};
         string ex_msg;
         try {
             if (slot->m_qry->IsActive()) {
                 switch (slot->m_qry->WaitAsync(0)) {
                     case ar_done:
-                        if (slot->m_state != ssReleasing)
+                        if (slot->m_state != ssReleasing) {
                             Release(slot);
+                        }
                         break;
                     case ar_dataready:
-                        if (slot->m_state == ssAttached)
+                        if (slot->m_state == ssAttached) {
                             ReadRows(slot);
+                        }
                         break;
                     default:;
                 }
@@ -556,4 +585,3 @@ CCassQueryList::SQrySlot* CCassQueryList::CheckSlot(size_t index, bool discard) 
 }
 
 END_IDBLOB_SCOPE
-

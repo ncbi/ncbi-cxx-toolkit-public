@@ -1,4 +1,3 @@
-
 #ifndef CASS_QUERY_LIST__HPP
 #define CASS_QUERY_LIST__HPP
 
@@ -24,7 +23,8 @@ public:
     ICassQueryListConsumer& operator=(ICassQueryListConsumer&&) = delete;
     virtual ~ICassQueryListConsumer() = default;
     virtual bool Start(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
-    virtual bool Finish(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*query_idx*/) {
+    virtual bool Finish(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*query_idx*/)
+    {
         return true;
     }
     virtual bool ProcessRow(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t query_idx) = 0;
@@ -34,11 +34,12 @@ public:
 
 class CCassQueryList {
 public:
-    static constexpr const unsigned int kDfltMaxQuery = 128;
-    static constexpr const uint64_t kReadyPushWaitTimeout = 500000;
-    static constexpr const uint64_t kReadyPopWaitTimeout = 500;
-    static constexpr const size_t kNotifyQueueLen = 2048;
-    static constexpr const unsigned int kResetRelaxTime = 10;
+    static constexpr unsigned int kDfltMaxQuery{128};
+    static constexpr uint64_t kReadyPushWaitTimeout{500000};
+    static constexpr uint64_t kReadyPopWaitTimeout{500};
+    static constexpr size_t kNotifyQueueLen{2048};
+    static constexpr unsigned int kResetRelaxTime{10};
+
     static shared_ptr<CCassQueryList> Create(shared_ptr<CCassConnection> cass_conn) noexcept;
     virtual ~CCassQueryList();
 
@@ -61,12 +62,9 @@ public:
     void Yield(bool wait);
     shared_ptr<CCassQuery> Extract(size_t slot_index);
 protected:
-    CCassQueryList() :
-        m_has_error(false),
-        m_max_queries(kDfltMaxQuery),
-        m_yield_in_progress(false),
-        m_attached_slots(0),
-        m_owning_thread{}
+    CCassQueryList()
+        : m_yield_in_progress(false)
+        , m_attached_slots(0)
     {}
 private:
     enum SQrySlotState {
@@ -84,7 +82,8 @@ private:
         int m_retry_count;
         SQrySlotState m_state;
     };
-    class CQryNotification : public CCassDataCallbackReceiver {
+    class CQryNotification : public CCassDataCallbackReceiver
+    {
     public:
         CQryNotification(shared_ptr<CCassQueryList> query_list, size_t index);
         virtual void OnData() override;
@@ -111,25 +110,29 @@ private:
     shared_ptr<CCassConnection> m_cass_conn;
     vector<SQrySlot> m_query_arr;
     mpmc_bounded_queue_w<size_t, kNotifyQueueLen> m_ready;
-    bool m_has_error;
-    size_t m_max_queries;
+    bool m_has_error{false};
+    size_t m_max_queries{kDfltMaxQuery};
     vector<SPendingSlot> m_pending_arr;
     vector<shared_ptr<CQryNotification>> m_notification_arr;
     TCassQueryListTickCB m_tick_cb;
     atomic_bool m_yield_in_progress;
     string m_keyspace;
     atomic_size_t m_attached_slots;
+
+    // WARNING! Empty on creation. First thread calling CheckAccess() will claim ownership
     atomic<thread::id> m_owning_thread;
 };
 
-class CCassOneExecConsumer : public ICassQueryListConsumer {
+class CCassOneExecConsumer
+    : public ICassQueryListConsumer
+{
 public:
-    CCassOneExecConsumer(function<bool(CCassQuery& query, CCassQueryList& list)> cb, function<void(CCassQuery& query, CCassQueryList& list, bool succeeded)> finish_cb = nullptr) :
-        m_cb(cb),
-        m_finish_cb(finish_cb),
-        m_is_failed(false),
-        m_is_started(false),
-        m_is_finished(false)
+    CCassOneExecConsumer(
+        function<bool(CCassQuery& query, CCassQueryList& list)> cb,
+        function<void(CCassQuery& query, CCassQueryList& list, bool succeeded)> finish_cb = nullptr
+    )
+        : m_cb(cb)
+        , m_finish_cb(finish_cb)
     {}
     CCassOneExecConsumer(const CCassOneExecConsumer&) = delete;
     CCassOneExecConsumer(CCassOneExecConsumer&&) = delete;
@@ -141,31 +144,37 @@ public:
         m_is_started = true;
         return m_cb(*query, list);
     }
-    bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override {
+    bool Finish(shared_ptr<CCassQuery> query, CCassQueryList& list, size_t /*qry_index*/) override
+    {
         assert(m_is_started);
         assert(!m_is_finished);
         m_is_finished = true;
-        if (m_finish_cb)
+        if (m_finish_cb) {
             m_finish_cb(*query, list, !m_is_failed);
+        }
         return true;
     }
-    bool ProcessRow(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override {
+    bool ProcessRow(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override
+    {
         assert(false);
         return true;
     }
-    void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override {
-    }
-    void Failed(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/, const exception*) override {
+    void Reset(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/) override
+    {}
+    void Failed(shared_ptr<CCassQuery>, CCassQueryList&, size_t /*qry_index*/, const exception*) override
+    {
         m_is_failed = true;
     }
+
 private:
     function<bool(CCassQuery& query, CCassQueryList& list)> m_cb;
     function<void(CCassQuery& query, CCassQueryList& list, bool succeeded)> m_finish_cb;
-    bool m_is_failed;
-    bool m_is_started;
-    bool m_is_finished;
+
+    bool m_is_failed{false};
+    bool m_is_started{false};
+    bool m_is_finished{false};
 };
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // CASS_QUERY_LIST__HPP
