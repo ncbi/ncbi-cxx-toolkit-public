@@ -74,9 +74,9 @@ endif()
 set(NCBI_ThirdParty_XERCES        ${NCBI_TOOLS_ROOT}/xerces-3.1.2 CACHE PATH "XERCES root")
 set(NCBI_ThirdParty_GRPC          ${NCBI_TOOLS_ROOT}/grpc-1.50.2-ncbi1 CACHE PATH "GRPC root")
 set(NCBI_ThirdParty_Abseil        ${NCBI_ThirdParty_GRPC})
-set(NCBI_ThirdParty_Abseil        ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_Boring        ${NCBI_ThirdParty_GRPC})
 set(NCBI_ThirdParty_PROTOBUF      ${NCBI_TOOLS_ROOT}/grpc-1.50.2-ncbi1 CACHE PATH "PROTOBUF root")
+set(NCBI_ThirdParty_GFlags        ${NCBI_TOOLS_ROOT}/grpc-1.28.1-ncbi1 CACHE PATH "GFlags root")
 set(NCBI_ThirdParty_XALAN         ${NCBI_TOOLS_ROOT}/xalan-1.11 CACHE PATH "XALAN root")
 set(NCBI_ThirdParty_GPG           ${NCBI_TOOLS_ROOT}/libgpg-error-1.6 CACHE PATH "GPG root")
 set(NCBI_ThirdParty_GCRYPT        ${NCBI_TOOLS_ROOT}/libgcrypt-1.4.3 CACHE PATH "GCRYPT root")
@@ -85,6 +85,7 @@ set(NCBI_ThirdParty_SGE           "/netmnt/gridengine/current/drmaa" CACHE PATH 
 set(NCBI_ThirdParty_MONGOCXX      ${NCBI_TOOLS_ROOT}/mongodb-3.7.0 CACHE PATH "MONGOCXX root")
 set(NCBI_ThirdParty_MONGOC        ${NCBI_TOOLS_ROOT}/mongo-c-driver-1.23.2 CACHE PATH "MONGOC root")
 set(NCBI_ThirdParty_LEVELDB       ${NCBI_TOOLS_ROOT}/leveldb-1.21 CACHE PATH "LEVELDB root")
+set(NCBI_ThirdParty_URing         ${NCBI_TOOLS_ROOT}/liburing-2.4 CACHE PATH "URing root")
 set(NCBI_ThirdParty_ROCKSDB       ${NCBI_TOOLS_ROOT}/rocksdb-8.3.2 CACHE PATH "ROCKSDB root")
 set(NCBI_ThirdParty_wxWidgets     ${NCBI_TOOLS_ROOT}/wxWidgets-3.2.1-ncbi1 CACHE PATH "wxWidgets root")
 set(NCBI_ThirdParty_PNG           ${NCBI_ThirdParty_wxWidgets} CACHE PATH "PNG root")
@@ -682,6 +683,10 @@ endif()
 NCBI_define_Xcomponent(NAME Abseil CMAKE_PACKAGE absl
   CMAKE_LIB strings bad_variant_access any base bits city)
 
+# Explicitly cover GFlags (from an older installation), for the
+# potential sake of RocksDB
+NCBI_define_Xcomponent(NAME GFlags CMAKE_PACKAGE gflags CMAKE_LIB gflags)
+
 #############################################################################
 # XALAN
 NCBI_define_Xcomponent(NAME XALAN PACKAGE XalanC LIB xalan-c xalanMsg)
@@ -748,8 +753,18 @@ NCBI_define_Xcomponent(NAME LEVELDB LIB leveldb)
 NCBIcomponent_report(LEVELDB)
 
 #############################################################################
+# URing
+NCBI_define_Xcomponent(NAME URing MODULE liburing LIB uring)
+if(pkgcfg_lib_URing_uring AND NOT TARGET uring::uring)
+    add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
+    set_target_properties(uring::uring PROPERTIES
+      IMPORTED_LOCATION ${pkgcfg_lib_URing_uring})
+endif()
+NCBIcomponent_report(URing)
+
+#############################################################################
 # ROCKSDB
-NCBI_define_Xcomponent(NAME ROCKSDB LIB rocksdb)
+NCBI_define_Xcomponent(NAME ROCKSDB CMAKE_PACKAGE RocksDB CMAKE_LIB rocksdb)
 NCBIcomponent_report(ROCKSDB)
 
 #############################################################################
