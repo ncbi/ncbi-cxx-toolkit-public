@@ -90,22 +90,10 @@ public:
         eTaxidErr,
 
 		/// Too many open files
-		eOpenFileErr
-    };
+		eTooManyOpenFiles,
 
-    /// Get a message describing the situation leading to the throw.
-    virtual const char* GetErrCodeString() const override
-    {
-        switch ( GetErrCode() ) {
-        case eArgErr:  return "eArgErr";
-        case eFileErr: return "eFileErr";
-        case eMemErr: return "eMemErr";
-        case eVersionErr: return "eVersionErr";
-        case eTaxidErr: return "eTaxidErr";
-        case eOpenFileErr: return "eOpenFileErr";
-        default:       return CException::GetErrCodeString();
-        }
-    }
+        eMemoryMappingFailure
+    };
 
     /// Include standard NCBI exception behavior.
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
