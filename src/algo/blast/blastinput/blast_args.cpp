@@ -2867,6 +2867,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
                     custom_delim = '\t';
                     break;
                 case eCommaSeparatedValues:
+                case eCommaSeparatedValuesWithHeader:
                     custom_delim = ',';
                     break;
                 default: // ignore all other cases
