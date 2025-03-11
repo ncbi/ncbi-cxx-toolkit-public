@@ -706,20 +706,20 @@ public:
             	m_DataPtr = NULL;
             }
             m_Filename = filename;
-                    try {
-                        m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
-                    }
-                    catch (const std::exception& e) {
-                    	string err_msg = e.what();
-                    	if (err_msg.find("Too many open files") == std::string::npos ) {
-                    		NCBI_THROW(CSeqDBException, eFileErr, e.what());
-                    	}
-                    	else {
-                    		NCBI_THROW(CSeqDBException, eOpenFileErr, e.what());
-                    	}
-                    }
+            try {
+                m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
+            }
+            catch (const CFileException& e) {
+                if (e.GetErrCode() == CFileException::eMemoryMap &&
+                    NStr::Find(e.GetMsg(), "Too many open files") != NPOS) {
+                    NCBI_THROW(CSeqDBException, eTooManyOpenFiles, e.GetMsg());
+                }
+                else {
+                    NCBI_THROW(CSeqDBException, eMemoryMappingFailure, e.GetMsg());
+                }
+            }
 
-                    m_DataPtr = (char *)(m_MappedFile->GetPtr());
+            m_DataPtr = (char *)(m_MappedFile->GetPtr());
         }
     }
 
