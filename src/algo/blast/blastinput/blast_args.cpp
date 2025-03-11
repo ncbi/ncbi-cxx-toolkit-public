@@ -3336,7 +3336,7 @@ CHspFilteringArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetDependency(kArgBestHitScoreEdge,
                            CArgDescriptions::eExcludes,
                            kArgCullingLimit);
-    arg_desc.AddFlag(kArgSubjectBestHit, "Turn on best hit per subject sequence", true);
+    arg_desc.AddFlag(kArgSubjectBestHit, "Return only the best HSP for each non overlapping query region", true);
 
     arg_desc.SetCurrentGroup("");
 }
