@@ -1102,14 +1102,22 @@ void CBlastTabularInfo::Print()
     m_Ostream << "\n";
 }
 
-void CBlastTabularInfo::x_PrintFieldNames()
+void CBlastTabularInfo::PrintFieldNames(bool is_csv /* = false */)
 {
-    m_Ostream << "# Fields: ";
+    if (!is_csv) {
+      m_Ostream << "# Fields: ";
+    }
 
     ITERATE(list<ETabularField>, iter, m_FieldsToShow) {
-        if (iter != m_FieldsToShow.begin())
-            m_Ostream << ", ";
-
+        if (iter != m_FieldsToShow.begin()) {
+            if (is_csv) {
+                m_Ostream << m_FieldDelimiter;
+            }
+            else {
+                m_Ostream << ", ";
+            }
+        }
+            
         switch (*iter) {
         case eQuerySeqId:
             m_Ostream << "query id"; break;
@@ -1228,14 +1236,15 @@ CBlastTabularInfo::PrintHeader(const string& program_version,
        const string& rid /* = kEmptyStr */,
        unsigned int iteration /* = numeric_limits<unsigned int>::max() */,
        const CSeq_align_set* align_set /* = 0 */,
-       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */)
+       CConstRef<CBioseq> subj_bioseq /* = CConstRef<CBioseq>() */,
+       bool is_csv /* = false */)
 {
     x_PrintQueryAndDbNames(program_version, bioseq, dbname, rid, iteration, subj_bioseq);
     // Print number of alignments found, but only if it has been set.
     if (align_set) {
        int num_hits = align_set->Get().size();
        if (num_hits != 0) {
-           x_PrintFieldNames();
+           PrintFieldNames(is_csv);
        }
        m_Ostream << "# " << num_hits << " hits found" << "\n";
     }
@@ -1495,7 +1504,7 @@ CIgBlastTabularInfo::PrintHeader(const CConstRef<blast::CIgBlastOptions>& ig_opt
        m_Ostream <<  "# Hit table (the first field indicates the chain type of the hit)" << endl;
        int num_hits = align_set->Get().size();
        if (num_hits != 0) {
-           x_PrintFieldNames();
+           PrintFieldNames();
        }
        m_Ostream << "# " << num_hits << " hits found" << "\n";
     } else {
