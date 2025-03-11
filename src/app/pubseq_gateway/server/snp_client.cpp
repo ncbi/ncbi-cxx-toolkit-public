@@ -701,7 +701,7 @@ bool CSNPClient::HaveValidSeq_id(const SPSGS_AnnotRequest& request) const
 }
 
 
-const unsigned int kRefSeqAccFlags = CSeq_id::e_Other | CSeq_id::fAcc_nuc;
+const unsigned int kRefSeqAccFlags = CSeq_id::eSeqId_other | CSeq_id::fAcc_nuc;
 
 bool CSNPClient::IsValidSeqId(const CSeq_id_Handle& idh) const
 {
