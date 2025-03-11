@@ -76,7 +76,11 @@ enum EPSGS_AlertType {
     ePSGS_ConfigTcpMaxConn = 28,
     ePSGS_MyNCBIResolveDNS = 29,
     ePSGS_MyNCBITest = 30,
-    ePSGS_MyNCBIUvLoop = 31
+    ePSGS_MyNCBIUvLoop = 31,
+    ePSGS_ConfigTcpMaxConnAlertLimit = 32,
+    ePSGS_TcpConnHardLimitExceeded = 33,
+    ePSGS_TcpConnSoftLimitExceeded = 34,
+    ePSGS_TcpConnAlertLimitExceeded = 35
 };
 
 enum EPSGS_AlertAckResult {

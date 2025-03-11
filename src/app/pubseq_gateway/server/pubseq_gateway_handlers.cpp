@@ -2241,19 +2241,32 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
                                                      const psg_time_point_t &  create_timestamp)
 {
     if (reply->GetExceedSoftLimitFlag()) {
-        string  msg = "Number of client connections (" +
+        // Check the limit against the current number of connections. There is
+        // a chance that now the number of connections became less than at the
+        // time of establishing the connection
+
+        size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
+        if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
+            // The number of connections dropped so can continue as usual
+            return false;
+        }
+
+        string  msg = "Too many client connections (currently: " +
+                      to_string(current_conn_num) +
+                      "; at the time of establishing: " +
                       to_string(reply->GetConnCntAtOpen()) +
-                      ") is getting too high, "
-                      "close to the hard limit (" +
-                      to_string(m_Settings.m_TcpMaxConn) + ")";
+                      "), it is over the limit (" +
+                      to_string(m_Settings.m_TcpMaxConnSoftLimit) + ")";
 
         x_SendMessageAndCompletionChunks(reply, create_timestamp, msg,
                                          CRequestStatus::e503_ServiceUnavailable,
                                          ePSGS_ConnectionExceedsSoftLimit,
                                          eDiag_Error);
-        PSG_WARNING(msg);
+        m_Alerts.Register(ePSGS_TcpConnSoftLimitExceeded, msg);
+        PSG_ERROR(msg);
         return true;
     }
+
     return false;
 }
 
@@ -2262,11 +2275,22 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
                                                                   bool  verbose)
 {
     if (reply->GetExceedSoftLimitFlag()) {
-        string  msg = "Number of client connections (" +
+        // Check the limit against the current number of connections. There is
+        // a chance that now the number of connections became less than at the
+        // time of establishing the connection
+
+        size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
+        if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
+            // The number of connections dropped so can continue as usual
+            return false;
+        }
+
+        string  msg = "Too many client connections (currently: " +
+                      to_string(current_conn_num) +
+                      "; at the time of establishing: " +
                       to_string(reply->GetConnCntAtOpen()) +
-                      ") is getting too high, "
-                      "close to the hard limit (" +
-                      to_string(m_Settings.m_TcpMaxConn) + ")";
+                      "), it is over the limit (" +
+                      to_string(m_Settings.m_TcpMaxConnSoftLimit) + ")";
 
         if (verbose) {
             CJsonNode   final_json_node = CJsonNode::NewObjectNode();

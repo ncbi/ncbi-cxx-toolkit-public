@@ -176,6 +176,7 @@ private:
     unsigned short                  m_backlog;
     unsigned short                  m_max_connections;
     size_t                          m_MaxConnSoftLimit;
+    size_t                          m_MaxConnAlertLimit;
     CTcpWorkersList *               m_workers;
     std::atomic_uint_fast16_t       m_connection_count;
 
@@ -200,7 +201,18 @@ private:
 
     bool ClientConnected(void);
     bool ClientDisconnected(void);
-    bool DoesConnectionExceedSoftLimit(void);
+
+    bool DoesConnectionExceedSoftLimit(void) const
+    { return m_connection_count > m_MaxConnSoftLimit; }
+
+    bool DoesConnectionExceedAlertLimit(void) const
+    { return m_connection_count > m_MaxConnAlertLimit; }
+
+    uint16_t GetMaxAlertConnections(void) const
+    { return m_MaxConnAlertLimit; }
+
+
+
 
 protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
@@ -209,13 +221,15 @@ public:
     CTcpDaemon(const std::string &  Address, unsigned short  Port,
                unsigned short  NumWorkers, unsigned short  BackLog,
                unsigned short  MaxConnections,
-               size_t  MaxConnectionsSoftLimit) :
+               size_t  MaxConnectionsSoftLimit,
+               size_t  MaxConnectionsAlertLimit) :
         m_address(Address),
         m_port(Port),
         m_num_workers(NumWorkers),
         m_backlog(BackLog),
         m_max_connections(MaxConnections),
         m_MaxConnSoftLimit(MaxConnectionsSoftLimit),
+        m_MaxConnAlertLimit(MaxConnectionsAlertLimit),
         m_workers(nullptr),
         m_connection_count(0)
     {}
@@ -226,13 +240,9 @@ public:
     bool OnRequest(CHttpProto **  http_proto);
     uint16_t NumOfConnections(void) const;
     unsigned short GetMaxConnections(void) const
-    {
-        return m_max_connections;
-    }
+    { return m_max_connections; }
     size_t GetMaxConnectionsSoftLimit(void) const
-    {
-        return m_MaxConnSoftLimit;
-    }
+    { return m_MaxConnSoftLimit; }
 
     void Run(CHttpDaemon &  http_daemon,
              std::function<void(CTcpDaemon &  daemon)>

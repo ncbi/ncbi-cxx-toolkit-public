@@ -71,7 +71,8 @@ public:
                 const std::string &  tcp_address, unsigned short  tcp_port,
                 unsigned short  tcp_workers, unsigned short  tcp_backlog,
                 unsigned short  tcp_max_connections,
-                size_t  tcp_max_connections_soft_limit);
+                size_t  tcp_max_connections_soft_limit,
+                size_t  tcp_max_connections_alert_limit);
     ~CHttpDaemon();
 
     void Run(std::function<void(CTcpDaemon &)> on_watch_dog = nullptr);

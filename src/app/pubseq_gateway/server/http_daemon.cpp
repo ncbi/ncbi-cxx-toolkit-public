@@ -57,7 +57,8 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
                          unsigned short  tcp_workers,
                          unsigned short  tcp_backlog,
                          unsigned short  tcp_max_connections,
-                         size_t  tcp_max_connections_soft_limit) :
+                         size_t  tcp_max_connections_soft_limit,
+                         size_t  tcp_max_connections_alert_limit) :
     m_HttpCfg({0}),
     m_HttpCfgInitialized(false),
     m_Handlers(handlers)
@@ -66,7 +67,8 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
         new CTcpDaemon(tcp_address, tcp_port,
                        tcp_workers, tcp_backlog,
                        tcp_max_connections,
-                       tcp_max_connections_soft_limit));
+                       tcp_max_connections_soft_limit,
+                       tcp_max_connections_alert_limit));
 
     h2o_config_init(&m_HttpCfg);
     m_HttpCfg.server_name = h2o_iovec_init(H2O_STRLIT("PSG/" NCBI_PACKAGE_VERSION " h2o/" H2O_VERSION));

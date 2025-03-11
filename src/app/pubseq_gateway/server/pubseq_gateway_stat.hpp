@@ -102,6 +102,7 @@ class CPSGSCounters
             ePSGS_NonProtocolRequests,
             ePSGS_NoProcessorInstantiated,
             ePSGS_AcceptFailure,
+            ePSGS_NumConnAlertLimitExceeded,
             ePSGS_FrameworkUnknownError,
             ePSGS_NoRequestStop,
             ePSGS_NoWebCubbyUserCookie,

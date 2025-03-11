@@ -78,6 +78,22 @@ void CancelAllProcessors(void)
     app->CancelAllProcessors();
 }
 
+CRef<CRequestContext>
+CreateErrorRequestContextHelper(uv_tcp_t *  tcp)
+{
+    string      client_ip;
+    in_port_t   client_port = 0;
+
+    struct sockaddr     sock_addr;
+    int                 sock_addr_size = sizeof(sock_addr);
+    if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
+        client_ip = GetIPAddress(&sock_addr);
+        client_port = GetPort(&sock_addr);
+    }
+
+    return CreateErrorRequestContext(client_ip, client_port);
+}
+
 
 void CTcpWorkersList::s_WorkerExecute(void *  _worker)
 {
@@ -512,18 +528,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     int         err_code = uv_tcp_init(m_internal->m_loop.Handle(), tcp);
 
     if (err_code != 0) {
-        string      client_ip;
-        in_port_t   client_port = 0;
-
-        struct sockaddr     sock_addr;
-        int                 sock_addr_size = sizeof(sock_addr);
-        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
-            client_ip = GetIPAddress(&sock_addr);
-            client_port = GetPort(&sock_addr);
-        }
-
-        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
-                                                                    client_port);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -543,17 +548,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
     if (err_code != 0) {
-        string      client_ip;
-        in_port_t   client_port = 0;
-
-        struct sockaddr     sock_addr;
-        int                 sock_addr_size = sizeof(sock_addr);
-        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
-            client_ip = GetIPAddress(&sock_addr);
-            client_port = GetPort(&sock_addr);
-        }
-        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
-                                                                    client_port);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
 
         PSG_ERROR("TCP connection accept failed; uv_accept() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -571,25 +566,16 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     bool b = m_daemon->ClientConnected();
     if (!b) {
-        string      client_ip;
-        in_port_t   client_port = 0;
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
 
-        struct sockaddr     sock_addr;
-        int                 sock_addr_size = sizeof(sock_addr);
-        if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
-            client_ip = GetIPAddress(&sock_addr);
-            client_port = GetPort(&sock_addr);
-        }
-
-        CRef<CRequestContext>   context = CreateErrorRequestContext(client_ip,
-                                                                    client_port);
-
-        PSG_ERROR("TCP Connection accept failed; "
-                  "too many connections (maximum: " <<
-                  m_daemon->GetMaxConnections() << ")");
+        string      err_msg = "TCP Connection accept failed; "
+                              "too many connections (maximum: " +
+                              to_string(m_daemon->GetMaxConnections()) + ")";
+        PSG_ERROR(err_msg);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
+        app->GetAlerts().Register(ePSGS_TcpConnHardLimitExceeded, err_msg);
 
         DismissErrorRequestContext(context,
                                    CRequestStatus::e503_ServiceUnavailable, 0);
@@ -606,7 +592,29 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     CHttpConnection *   http_conn = & get<1>(*it);
 
-    http_conn->SetExceedSoftLimitFlag(m_daemon->DoesConnectionExceedSoftLimit(),
+    bool    exceed_alert_limit = m_daemon->DoesConnectionExceedAlertLimit();
+    bool    exceed_soft_limit = m_daemon->DoesConnectionExceedSoftLimit();
+
+    if (exceed_alert_limit && ! exceed_soft_limit) {
+        // The only connection alert limit is exceeded. A server alert should
+        // be triggered and a log message should be produced
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
+        string      warn_msg = "Number of client connections (" +
+                               to_string(m_daemon->NumOfConnections()) +
+                               ") is getting too high, "
+                               "exceeds the alert threshold (" +
+                               to_string(m_daemon->GetMaxAlertConnections()) + ")";
+
+        PSG_WARNING(warn_msg);
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnAlertLimitExceeded);
+        app->GetCounters().IncrementRequestStopCounter(100);
+        app->GetAlerts().Register(ePSGS_TcpConnAlertLimitExceeded, warn_msg);
+
+        DismissErrorRequestContext(context, CRequestStatus::e100_Continue, 0);
+    }
+
+    http_conn->SetExceedSoftLimitFlag(exceed_soft_limit,
                                       m_daemon->NumOfConnections());
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                http_conn, s_OnClientClosed);
@@ -658,12 +666,6 @@ bool CTcpDaemon::ClientDisconnected(void)
 {
     uint16_t n = --m_connection_count;
     return n < m_max_connections;
-}
-
-
-bool CTcpDaemon::DoesConnectionExceedSoftLimit(void)
-{
-    return m_connection_count > m_MaxConnSoftLimit;
 }
 
 

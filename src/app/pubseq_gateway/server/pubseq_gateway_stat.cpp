@@ -63,6 +63,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "AcceptFailure", "TCP socket accept failure",
             "The number of times a TCP accept failed");
+    m_Counters[ePSGS_NumConnAlertLimitExceeded] =
+        new SCounterInfo(
+            "NumConnAlertLimitExceeded", "Number of connections exceeded alert limit counter",
+            "The number of times a new connection established when a connection alert limit is already reached.");
     m_Counters[ePSGS_FrameworkUnknownError] =
         new SCounterInfo(
             "FrameworkUnknownError", "Framework unknown error counter",

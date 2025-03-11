@@ -64,6 +64,8 @@ const unsigned int      kListenerBacklogDefault = 256;
 const unsigned short    kTcpMaxConnDefault = 4096;
 const size_t            kTcpConnHardSoftDiffDefault = 256;
 const size_t            kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
+const size_t            kTcpConnSoftAlertDiffDefault = 512;
+const size_t            kTcpMaxConnAlertLimitDefault = kTcpMaxConnSoftLimitDefault - kTcpConnSoftAlertDiffDefault;
 const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 2;
 const string            kDefaultRootKeyspace = "sat_info3";
@@ -137,6 +139,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_ListenerBacklog(kListenerBacklogDefault),
     m_TcpMaxConn(kTcpMaxConnDefault),
     m_TcpMaxConnSoftLimit(kTcpMaxConnSoftLimitDefault),
+    m_TcpMaxConnAlertLimit(kTcpMaxConnAlertLimitDefault),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
@@ -255,6 +258,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                    kTcpMaxConnDefault);
     m_TcpMaxConnSoftLimit = registry.GetInt(kServerSection, "maxconnsoftlimit",
                                             kTcpMaxConnSoftLimitDefault);
+    m_TcpMaxConnAlertLimit = registry.GetInt(kServerSection, "maxconnalertlimit",
+                                             kTcpMaxConnAlertLimitDefault);
     m_TimeoutMs = registry.GetInt(kServerSection, "optimeout",
                                   kTimeoutDefault);
     m_MaxRetries = registry.GetInt(kServerSection, "maxretries",
@@ -306,7 +311,6 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
         m_TcpMaxConnSoftLimit = kTcpMaxConnSoftLimitDefault;
     }
 
-
     if (m_TcpMaxConn < m_TcpMaxConnSoftLimit) {
         m_TcpMaxConn = m_TcpMaxConnSoftLimit + kTcpConnHardSoftDiffDefault;
         string      err_msg = "Inconsistent configuration of the [SERVER]/maxconn value. "
@@ -325,6 +329,30 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                               "Resetting to " +
                               to_string(m_TcpMaxConn);
         alerts.Register(ePSGS_ConfigTcpMaxConn, err_msg);
+        PSG_ERROR(err_msg);
+    }
+
+    if (m_TcpMaxConnAlertLimit == 0) {
+        string  err_msg = "Invalid [SERVER]/maxconnalertlimit value. "
+                          "It must be > 0. Resetting to the default value (" +
+                          to_string(kTcpMaxConnAlertLimitDefault) + ")";
+        alerts.Register(ePSGS_ConfigTcpMaxConnAlertLimit, err_msg);
+        PSG_ERROR(err_msg);
+        m_TcpMaxConnAlertLimit = kTcpMaxConnAlertLimitDefault;
+    }
+
+    if (m_TcpMaxConnSoftLimit < m_TcpMaxConnAlertLimit) {
+        if (m_TcpMaxConnSoftLimit <= kTcpConnSoftAlertDiffDefault) {
+            m_TcpMaxConnAlertLimit = 1;
+        } else {
+            m_TcpMaxConnAlertLimit = m_TcpMaxConnSoftLimit - kTcpConnSoftAlertDiffDefault;
+        }
+
+        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconnalertlimit value. "
+                              "It must be <= [SERVER]/maxconnsoftlimit value. "
+                              "Resetting to " +
+                              to_string(m_TcpMaxConnAlertLimit);
+        alerts.Register(ePSGS_ConfigTcpMaxConnAlertLimit, err_msg);
         PSG_ERROR(err_msg);
     }
 }
