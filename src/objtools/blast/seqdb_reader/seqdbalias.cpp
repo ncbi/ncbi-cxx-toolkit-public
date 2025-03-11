@@ -311,7 +311,9 @@ void CSeqDBAliasNode::x_ResolveNames(char prot_nucl, CSeqDBLockHold & locked)
             ostringstream oss;
             oss << "No alias or index file found for " << p_or_n
                 << " database [" << m_DBList[i].GetBasePathS()
-                << "] in search path [" << search_path << "]";
+                << "] in search path [" << search_path << "]. "
+                << "Please verify the spelling of the BLAST "
+                << "database and its molecule type.";
             
             string msg(oss.str());
             
