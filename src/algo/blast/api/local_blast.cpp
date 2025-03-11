@@ -229,24 +229,29 @@ CLocalBlast::Run()
 	try {
 	    m_PrelimSearch->SetNumberOfThreads(GetNumberOfThreads());
 	    m_InternalData = m_PrelimSearch->Run();
-	} catch( CIndexedDbException & ) {
+	} catch( CIndexedDbException & e) {
+        _TRACE(e.GetMsg());
 	    throw;
 	} catch (CBlastException & e) {
+        _TRACE(e.GetMsg());
 		if(e.GetErrCode() == CBlastException::eCoreBlastError) {
 			throw;
 		}
 	}
 	catch (CSeqDBException & e) {
-		if (e.GetErrCode() == CSeqDBException::eOpenFileErr) {
-			string err_msg = BlastErrorCode2String(BLASTERR_DB_OPEN_FILES);
+		if (e.GetErrCode() == CSeqDBException::eTooManyOpenFiles) {
+            _TRACE(e.GetMsg());  
+			string err_msg = BlastErrorCode2String(BLASTERR_DB_TOO_MANY_OPEN_FILES);
 			NCBI_THROW(CBlastException, eCoreBlastError, err_msg);
 		}
 		else {
+            _TRACE(e.GetMsg());  
 			string err_msg = BlastErrorCode2String(BLASTERR_DB_MEMORY_MAP);
 			NCBI_THROW(CBlastException, eCoreBlastError, err_msg);
 		}
 	}
     catch (std::exception & e) {
+        _TRACE(e.what());  
     	NCBI_THROW(CBlastException, eSystem, e.what());
     }
 
