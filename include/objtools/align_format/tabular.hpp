@@ -146,6 +146,7 @@ public:
     /// @param iteration Iteration number (for PSI-BLAST), use default
     /// parameter value when not applicable [in]
     /// @param align_set All alignments for this query [in]
+    /// @param is_csv Is a CSV format requested [in]
     void PrintHeader(const string& program, 
                              const objects::CBioseq& bioseq, 
                              const string& dbname, 
@@ -154,7 +155,8 @@ public:
                                 numeric_limits<unsigned int>::max(),
                              const objects::CSeq_align_set* align_set=0,
                              CConstRef<objects::CBioseq> subj_bioseq
-                                = CConstRef<objects::CBioseq>()); 
+                                = CConstRef<objects::CBioseq>(),
+                             bool is_csv = false); 
 
      /// Prints number of queries processed.
      /// @param num_queries number of queries processed [in]
@@ -188,6 +190,10 @@ public:
     /// @param query range [in]
     void SetQueryRange(TSeqRange & q_range) { m_QueryRange = q_range;}
 
+    /// Print the names of all supported fields
+    /// @param is_csv Is a csv format requested [in]
+    void PrintFieldNames(bool is_csv = false);
+    
 protected:
     bool x_IsFieldRequested(ETabularField field);
     /// Add a field to the list of fields to show, if it is not yet present in
@@ -207,8 +213,6 @@ protected:
     /// Set the tabular fields delimiter.
     /// @param delim Which delimiter to use
     void x_SetFieldDelimiter(EFieldDelimiter delim, string customDelim = "");
-    /// Print the names of all supported fields
-    void x_PrintFieldNames(void);
     /// Print the value of a given field
     /// @param field Which field to show? [in]
     void x_PrintField(ETabularField field);

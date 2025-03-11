@@ -347,6 +347,16 @@ CBlastFormat::GetDbTotalLength()
 void 
 CBlastFormat::PrintProlog()
 {
+    if (m_FormatType == CFormattingArgs::eCommaSeparatedValuesWithHeader) {
+        const CBlastTabularInfo::EFieldDelimiter kDelim = CBlastTabularInfo::eComma;
+        CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
+        if(!m_CustomDelim.empty()) {
+            tabinfo.SetCustomDelim(m_CustomDelim);
+        }
+        tabinfo.PrintFieldNames(true);
+        return;
+    }
+    
     // no header for some output types
     if (m_FormatType >= CFormattingArgs::eXml) {
     	if(m_FormatType == CFormattingArgs::eXml2_S) {
@@ -761,9 +771,12 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
     // (plus a header)
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
-        m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
-        const CBlastTabularInfo::EFieldDelimiter kDelim = 
-            (m_FormatType == CFormattingArgs::eCommaSeparatedValues
+        m_FormatType == CFormattingArgs::eCommaSeparatedValues ||
+        m_FormatType == CFormattingArgs::eCommaSeparatedValuesWithHeader) {
+
+      const CBlastTabularInfo::EFieldDelimiter kDelim = 
+            ((m_FormatType == CFormattingArgs::eCommaSeparatedValues ||
+              m_FormatType == CFormattingArgs::eCommaSeparatedValuesWithHeader)
              ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
         
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
@@ -1440,7 +1453,8 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
 
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
-        m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
+        m_FormatType == CFormattingArgs::eCommaSeparatedValues ||
+        m_FormatType == CFormattingArgs::eCommaSeparatedValuesWithHeader) {
         x_PrintTabularReport(results, itr_num);
         return;
     }
@@ -2034,7 +2048,8 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
-        m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
+        m_FormatType == CFormattingArgs::eCommaSeparatedValues ||
+        m_FormatType == CFormattingArgs::eCommaSeparatedValuesWithHeader) {
         ITERATE(CSearchResultSet, result, result_set) {
            x_PrintTabularReport(**result, itr_num);
         }

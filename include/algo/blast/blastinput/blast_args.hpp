@@ -1063,6 +1063,8 @@ public:
         
         ///igblast AIRR rearrangement, 19
         eAirrRearrangement,
+        /// Comma-separated values with a header
+        eCommaSeparatedValuesWithHeader,
 
         /// unaligned reads in magicblast
         eFasta,

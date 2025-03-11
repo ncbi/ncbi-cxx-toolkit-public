@@ -2601,10 +2601,11 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription += ",\n 17 = Sequence Alignment/Map (SAM)";
     }
-    kOutputFormatDescription += ",\n 18 = Organism Report\n\n";
+    kOutputFormatDescription += ",\n 18 = Organism Report";
+    kOutputFormatDescription += ",\n 20 = Comma-separated values with header lines\n\n";    
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
-                "Options 6, 7, 10 and 17 "
+                "Options 6, 7, 10, 17 and 20 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers,\n"
                 "or in the case of options 6, 7, and 10, by a token specified\n"
@@ -2615,7 +2616,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     }
     else {
     	kOutputFormatDescription +=
-    			"Options 6, 7 and 10 "
+    			"Options 6, 7, 10 and 20 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers,\n"
                 "or by a token specified by the delim keyword.\n"
@@ -2855,6 +2856,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
         if ( !(fmt_type == eTabular ||
                fmt_type == eTabularWithComments ||
                fmt_type == eCommaSeparatedValues ||
+               fmt_type == eCommaSeparatedValuesWithHeader ||
                fmt_type == eSAM) ) {
                custom_fmt_spec.clear();
         }
