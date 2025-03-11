@@ -87,21 +87,6 @@ public:
         eSystem             ///< System exception
     };
 
-    /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const override {
-        switch ( GetErrCode() ) {
-        case eCoreBlastError:       return "eCoreBlastError";
-        case eInvalidOptions:       return "eInvalidOptions";
-        case eInvalidArgument:      return "eInvalidArgument";
-        case eNotSupported:         return "eNotSupported";
-        case eInvalidCharacter:     return "eInvalidCharacter";
-        case eSeqSrcInit:           return "eSeqSrcInit";
-        case eRpsInit:              return "eRpsInit";
-        case eSystem:               return "eSystem";
-        default:                    return CException::GetErrCodeString();
-        }
-    }
-
 #ifndef SKIP_DOXYGEN_PROCESSING
     NCBI_EXCEPTION_DEFAULT(CBlastException,CException);
 #endif /* SKIP_DOXYGEN_PROCESSING */
