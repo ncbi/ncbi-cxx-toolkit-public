@@ -39,7 +39,6 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 #include <functional>
-#include <string>
 #include <memory>
 #include <vector>
 
@@ -49,27 +48,15 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskFindChunk
     : public CCassBlobWaiter
 {
-  //static const size_t kMaxChunksAhead = 4;
     enum EBlobInserterState {
         eInit = 0,
-        eWaitingForPropsFetch,
-        eFinishedPropsFetch,
-        eBeforeLoadingChunks,
-        eLoadingChunks,
-        eFind_ID2_Chunk,
-        eWaitingForID2ChunkID,
-        eIsID2ChunkPacked,
         eWaitingForID2ChunkPacked,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
 public:
-  
-    static const CBlobRecord::TTimestamp kAnyModified = -1;
-
-    using TFindID2ChunkIDCallback = function< void( bool& found, int& chunk_id, bool& packed)>;
-
+    using TFindID2ChunkIDCallback = function< void(bool& found, int& chunk_id, bool& packed)>;
     CCassBlobTaskFindChunk(
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
@@ -78,7 +65,7 @@ public:
         TDataErrorCallback data_error_cb
     );
 
-    virtual ~CCassBlobTaskFindChunk()
+    ~CCassBlobTaskFindChunk() override
     {
         for (auto & it : m_QueryArr) {
             if (it.query) {
@@ -98,9 +85,7 @@ public:
     void x_IsID2ChunkPacked_Query();
     bool x_IsID2ChunkPacked_Wait();
 
-    TFindID2ChunkIDCallback m_FindID2ChunkIDCallback{ nullptr};
-  
-  //size_t m_ActiveQueries{0};
+    TFindID2ChunkIDCallback m_FindID2ChunkIDCallback{nullptr};
 
     CBlobRecord::TSatKey m_id2_ent;
     CBlobRecord::TSatKey m_need_old;
