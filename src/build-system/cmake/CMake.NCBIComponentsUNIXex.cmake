@@ -259,10 +259,10 @@ NCBIcomponent_report(UUID)
 ##############################################################################
 # CURL
 NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
-if(pkgcfg_lib_CURL_curl AND NOT TARGET CURL::libcurl)
+if(NCBI_COMPONENT_CURL_FOUND AND NOT TARGET CURL::libcurl)
     add_library(CURL::libcurl UNKNOWN IMPORTED GLOBAL)
     set_target_properties(CURL::libcurl PROPERTIES
-      IMPORTED_LOCATION ${pkgcfg_lib_CURL_curl})
+      IMPORTED_LOCATION ${NCBI_COMPONENT_CURL_LIBS})
 endif()
 NCBIcomponent_report(CURL)
 
@@ -755,10 +755,10 @@ NCBIcomponent_report(LEVELDB)
 #############################################################################
 # URing
 NCBI_define_Xcomponent(NAME URing MODULE liburing LIB uring)
-if(pkgcfg_lib_URing_uring AND NOT TARGET uring::uring)
+if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
     add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
     set_target_properties(uring::uring PROPERTIES
-      IMPORTED_LOCATION ${pkgcfg_lib_URing_uring})
+      IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS})
 endif()
 NCBIcomponent_report(URing)
 
