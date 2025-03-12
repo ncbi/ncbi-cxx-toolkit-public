@@ -33,7 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/find_chunk.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -75,12 +74,12 @@ void CCassBlobTaskFindChunk::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver
            "CCassBlobTaskFindChunk: DataReadyCB can't be assigned "
            "after the loading process has started");
     }
-    CCassBlobWaiter::SetDataReadyCB3(callback);
+    CCassBlobWaiter::SetDataReadyCB3(std::move(callback));
 }
 
 void CCassBlobTaskFindChunk::Wait1()
 {
-    bool b_need_repeat;
+    bool b_need_repeat{false};
     do
     {
         b_need_repeat = false;

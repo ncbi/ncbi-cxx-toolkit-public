@@ -39,7 +39,6 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 #include <functional>
-#include <string>
 #include <memory>
 #include <vector>
 
@@ -49,37 +48,18 @@ USING_NCBI_SCOPE;
 class CCassBlobTaskLoadBlob
     : public CCassBlobWaiter
 {
-    static const size_t kMaxChunksAhead = 4;
+    static constexpr size_t kMaxChunksAhead{4};
     enum EBlobInserterState {
         eInit = 0,
         eWaitingForPropsFetch,
         eFinishedPropsFetch,
         eBeforeLoadingChunks,
         eLoadingChunks,
-        eFind_ID2_Chunk,
-        eWaitingForID2ChunkID,
-        eIsID2ChunkPacked,
-        eWaitingForID2ChunkPacked,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
 public:
-  
-    struct SFind_chunk_id
-    {
-        int16_t m_Sat;
-        CBlobRecord::TSatKey m_Sat_key;
-        CBlobRecord::TSatKey m_Chunk;
-        CBlobRecord::TSatKey m_Need_old;
-        int  m_ID2_chunk_id;
-        bool m_Found;
-        bool m_Packed;
-
-        SFind_chunk_id() : m_Sat( 0), m_Sat_key( 0), m_Chunk( 0), m_Need_old( 0),
-                           m_ID2_chunk_id( 0), m_Found( false), m_Packed( false)
-        {}
-    };
 
     enum EBlobTaskMode
     {
@@ -87,13 +67,11 @@ public:
         eBlobTaskModeDefault
     };
 
+    static constexpr CBlobRecord::TTimestamp kAnyModified{-1};
 
-    static const CBlobRecord::TTimestamp kAnyModified = -1;
-
-    using TBlobPropsCallback      = function< void( CBlobRecord const & blob, bool isFound)>;
-    using TBlobChunkCallbackEx    = function< void( CBlobRecord const & blob,  const unsigned char * data,
-                                                  unsigned int size, int chunk_no)>;
-    using TFindID2ChunkIDCallback = function< void( bool& found, int& chunk_id, bool& packed)>;
+    using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
+    using TBlobChunkCallbackEx = function<void(CBlobRecord const & blob, const unsigned char * data,
+                                               unsigned int size, int chunk_no)>;
 
     static void InitBlobChunkDataQuery(CCassQuery* query, string const& keyspace, CBlobRecord const& blob, int32_t chunk_no);
 
@@ -121,19 +99,8 @@ public:
         bool load_chunks,
         TDataErrorCallback data_error_cb
     );
-
-    CCassBlobTaskLoadBlob
-    (
-        shared_ptr<CCassConnection> conn,
-        const string & keyspace,
-        CBlobRecord::TSatKey sat,
-        CBlobRecord::TSatKey sat_key,
-        CBlobRecord::TSatKey chunk,
-        CBlobRecord::TSatKey need_old,
-        TDataErrorCallback data_error_cb
-    );
   
-    virtual ~CCassBlobTaskLoadBlob()
+    ~CCassBlobTaskLoadBlob() override
     {
         for (auto & it : m_QueryArr) {
             if (it.query) {
@@ -168,7 +135,6 @@ public:
     void SetChunkCallback(TBlobChunkCallbackEx callback);
     void SetPropsCallback(TBlobPropsCallback callback);
     void SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback);
-    void SetFindID2ChunkIDCallback( TFindID2ChunkIDCallback callback);
 
     // Required to test variable timeouts.
     // Prepared statements interfere with testing process.
@@ -185,17 +151,12 @@ public:
     void x_CheckChunksFinished(bool& need_repeat);
     void x_RequestChunksAhead();
     void x_RequestChunk(CCassQuery& qry, int32_t chunk_no);
-    void x_FindID2ChunkID_Query();
-    bool x_FindID2ChunkID_Wait();  
-    void x_IsID2ChunkPacked_Query();
-    bool x_IsID2ChunkPacked_Wait();
 
-    TBlobChunkCallbackEx    m_ChunkCallback{nullptr};
-    TBlobPropsCallback      m_PropsCallback{nullptr};
-    TFindID2ChunkIDCallback m_FindID2ChunkIDCallback{ nullptr};
+    TBlobChunkCallbackEx m_ChunkCallback{nullptr};
+    TBlobPropsCallback m_PropsCallback{nullptr};
   
     unique_ptr<CBlobRecord> m_Blob;
-    CBlobRecord::TTimestamp m_Modified{-1};
+    CBlobRecord::TTimestamp m_Modified{kAnyModified};
     bool m_LoadChunks{false};
     bool m_PropsFound{false};
     vector<bool> m_ProcessedChunks;
@@ -204,7 +165,6 @@ public:
     bool m_ExplicitBlob{false};
     bool m_UsePrepared{true};
     EBlobTaskMode m_Mode;
-    SFind_chunk_id m_FindChunk;
 };
 
 END_IDBLOB_SCOPE
