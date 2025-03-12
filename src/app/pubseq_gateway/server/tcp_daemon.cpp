@@ -121,7 +121,7 @@ void CTcpWorkersList::Start(struct uv_export_t *  exp,
 
     for (unsigned int  i = 0; i < nworkers; ++i) {
         m_workers.emplace_back(new CTcpWorker(i + 1, exp,
-                                              m_daemon, this, http_daemon));
+                                              m_daemon, http_daemon));
     }
 
     for (auto &  it: m_workers) {

@@ -119,7 +119,6 @@ struct CTcpWorker
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_connected_list;
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_free_list;
     struct uv_export_t *                                m_exp;
-    CTcpWorkersList *                                   m_guard;
     CTcpDaemon *                                        m_daemon;
     std::string                                         m_last_error;
     CHttpDaemon &                                       m_HttpDaemon;
@@ -128,7 +127,6 @@ struct CTcpWorker
 
     CTcpWorker(unsigned int  id, struct uv_export_t *  exp,
                CTcpDaemon *  daemon,
-               CTcpWorkersList *  guard,
                CHttpDaemon &  http_daemon) :
         m_id(id),
         m_thread(0),
@@ -141,7 +139,6 @@ struct CTcpWorker
         m_joined(false),
         m_error(0),
         m_exp(exp),
-        m_guard(guard),
         m_daemon(daemon),
         m_HttpDaemon(http_daemon),
         m_protocol(m_HttpDaemon)
