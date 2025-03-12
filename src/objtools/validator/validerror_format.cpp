@@ -741,7 +741,7 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
 
     // Try and create a label from a CProt_ref in the feat product and
     // return if found
-    if (feat.IsSetProduct()  &&  scope) {
+    if (feat.IsSetProduct() && scope) {
         try {
             const CSeq_id& id = GetId(feat.GetProduct(), scope);
             CBioseq_Handle hnd = scope->GetBioseqHandle(id);
@@ -750,8 +750,7 @@ static string s_GetCdregionContentLabel (const CSeq_feat& feat, CRef<CScope> sco
 
                 // Now look for a CProt_ref feature in seq and
                 // if found call GetLabel() on the CProt_ref
-                CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq);
-                for (;it; ++it) {
+                for (CTypeConstIterator<CSeqFeatData> it = ConstBegin(seq); it; ++it) {
                     if (it->IsProt()) {
                         it->GetProt().GetLabel(&content);
                         return content;
@@ -836,40 +835,23 @@ string CValidErrorFormat::GetFeatureBioseqLabel(const CSeq_feat& ft, CRef<CScope
 {
     string desc;
     // Append label for bioseq of feature location
-    if (!suppress_context && scope) {
-        bool find_failed = false;
+    if (! suppress_context && scope) {
         try {
             CBioseq_Handle hnd;
             try {
                 hnd = scope->GetBioseqHandle(ft.GetLocation());
-            } catch (CException&) {
+            } catch (const CException&) {
                 CSeq_loc_CI li(ft.GetLocation());
-                while (li && !hnd) {
+                while (li && ! hnd) {
                     hnd = scope->GetBioseqHandle(li.GetSeq_id());
                     ++li;
                 }
             }
             if (hnd) {
-                desc += CValidErrorFormat::GetBioseqLabel(hnd);
-            }
-        } catch (CObjMgrException& ex) {
-            if (ex.GetErrCode() == CObjMgrException::eFindFailed) {
-                find_failed = true;
+                desc = CValidErrorFormat::GetBioseqLabel(hnd);
             }
         } catch (const CException&) {
         } catch (const std::exception&) {
-        };
-        if (find_failed) {
-            try {
-                CSeq_loc_CI li(ft.GetLocation());
-                CBioseq_Handle hnd = scope->GetBioseqHandle(li.GetSeq_id());
-                if (hnd) {
-                    desc += CValidErrorFormat::GetBioseqLabel(hnd);
-                }
-
-            } catch (const CException&) {
-            } catch (const std::exception&) {
-            };
         }
     }
     return desc;
