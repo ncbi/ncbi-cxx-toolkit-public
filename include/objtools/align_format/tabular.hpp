@@ -193,6 +193,9 @@ public:
     /// Print the names of all supported fields
     /// @param is_csv Is a csv format requested [in]
     void PrintFieldNames(bool is_csv = false);
+
+    /// Print field specifiers of all requested fields
+    void PrintFieldSpecs(void);
     
 protected:
     bool x_IsFieldRequested(ETabularField field);
