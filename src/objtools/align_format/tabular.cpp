@@ -1228,6 +1228,33 @@ void CBlastTabularInfo::PrintFieldNames(bool is_csv /* = false */)
     m_Ostream << "\n";
 }
 
+
+void CBlastTabularInfo::PrintFieldSpecs(void)
+{
+    for (auto& it: m_FieldsToShow) {
+        if (it != m_FieldsToShow.front()) {
+            m_Ostream << m_FieldDelimiter;
+        }
+        // sc_FormatSpecifiers is ordered by field, but the ordering is not
+        // enforced. First assume that sc_FormatSpecifiers is ordered.
+        if (sc_FormatSpecifiers[it].field == it) {
+            m_Ostream << sc_FormatSpecifiers[it].name;
+        }
+        else {
+            // If the array element is not in the expected location, then
+            // search we need to search for it.
+            for (size_t i=0; i < kNumTabularOutputFormatSpecifiers;i++) {
+                if (sc_FormatSpecifiers[i].field == it) {
+                    m_Ostream << sc_FormatSpecifiers[i].name;
+                    break;
+                }
+            }
+        }
+    }
+    m_Ostream << "\n";
+}
+
+
 /// @todo FIXME add means to specify masked database (SB-343)
 void 
 CBlastTabularInfo::PrintHeader(const string& program_version, 

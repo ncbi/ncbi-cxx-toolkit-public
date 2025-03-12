@@ -353,7 +353,7 @@ CBlastFormat::PrintProlog()
         if(!m_CustomDelim.empty()) {
             tabinfo.SetCustomDelim(m_CustomDelim);
         }
-        tabinfo.PrintFieldNames(true);
+        tabinfo.PrintFieldSpecs();
         return;
     }
     
