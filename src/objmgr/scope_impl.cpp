@@ -2079,7 +2079,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc, int get_flag)
 
     // Find at least one bioseq handle
     ITERATE(TSeq_idSet, id, ids) {
-        bh = GetBioseqHandle(*ids.begin(), get_flag);
+        bh = GetBioseqHandle(*id, get_flag);
         if ( bh ) {
             break;
         }
