@@ -66,8 +66,10 @@ pair<set<TSeqPos>, set<TSeqPos> > CInternalStopFinder::FindStartsStops(const CSe
     }
     return make_pair(starts, stops);
 }
-pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CSeq_align& align, int padding,
-                                                                        set<TSignedSeqRange>* gaps)
+
+pair<TStarts, set<TSeqRange> >
+CInternalStopFinder::FindStartStopRanges(const CSeq_align& align, int padding,
+                                         set<TSignedSeqRange>* gaps)
 {
     CBioseq_Handle bsh = scope.GetBioseqHandle(align.GetSeq_id(1));
     int genomic_length = bsh.GetBioseqLength();
@@ -77,21 +79,12 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
     pair<bool, bool> trim_by_contig(false, false);
     {{
         if (padding > 0) {
-            // PGAP-10539:
-            // Note: For a negative strand cross-origin alignment, PGAP
-            // presents the exons in order of the protein coordinate space.
-            // Thus, the calls to toolkit APIs produce unexpected results:
-            // - CSeq_loc::CreateRowSeq_loc() produces a Seq-loc with inervals reversed
-            // - CSeq_loc::GetStart(eExtreme_Positional) and
-            //   CSeq_loc::GetStop(eExtreme_Positional) then produce values in
-            //   the middle of the range
-            //
-            // We correct this by just using the total range, which gives the
-            // expected values
             CRef<CSeq_loc> loc = align.CreateRowSeq_loc(1);
-            TSeqRange r = loc->GetTotalRange();
-            int start = r.GetFrom();
-            int stop = r.GetTo();
+            int start = loc->GetStart(eExtreme_Positional);
+            int stop = loc->GetStop(eExtreme_Positional);
+
+            //cerr << "row Seq-loc: " << MSerial_AsnText << *loc;
+            //cerr << "start..stop: " << start << ".." << stop << endl;
 
             bool is_circular = (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular);
 
@@ -99,6 +92,8 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 //prevent self overlap
                 padding = min(padding, ((stop > start ? genomic_length : 0) - (stop - start +1))/2);
             }
+
+            //cerr << "start=" << start << "  stop=" << stop << "  is-circular=" << is_circular << "  padding=" << padding << "  genomic-length=" << genomic_length << endl;
             
             start -= padding;
             stop += padding;
@@ -117,11 +112,13 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
                 stop = is_circular ? stop - genomic_length : genomic_length-1;
             }
             padded_align = generator.AdjustAlignment(align, TSeqRange(start, stop));
+            //cerr << "padded range = " << start << ".." << stop << endl;
             //cerr << MSerial_AsnText << *padded_align;
         }
 
+        //cerr << "padded alignment: " << MSerial_AsnText << *padded_align;
         clean_align = generator.CleanAlignment(*padded_align);
-        //cerr << MSerial_AsnText << *clean_align;
+        //cerr << "cleaned alignment: " << MSerial_AsnText << *clean_align;
     }}
 
     CSeq_loc_Mapper mapper(*clean_align, 1);
@@ -133,7 +130,8 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
     const bool is_protein = (spl.GetProduct_type() == CSpliced_seg::eProduct_type_protein);
 
     string seq = GetCDSNucleotideSequence(*clean_align);
-    if (seq.size()%3 != 0) {
+    if (seq.size() % 3 != 0) {
+        //cerr << "seq-size = " << seq.size() << endl;
         cerr << "original align: " << MSerial_AsnText << align << endl;
         cerr << "padded align: " << MSerial_AsnText << *padded_align << endl;
         cerr << "clean align: " << MSerial_AsnText << *clean_align << endl;
