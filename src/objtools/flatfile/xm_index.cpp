@@ -392,7 +392,7 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
     if (ibp->vernum > 0)
         return;
 
-    FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
+    FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
     ibp->drop = true;
 }
 
@@ -845,7 +845,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
         }
         if (c > 126 || (c < 32 && c != 10)) {
             if (err)
-                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line %d, decimal value %d, replaced by #.", ibp->linenum, c);
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, c);
             *p++ = '#';
         } else
             *p++ = (Char)c;
@@ -1271,13 +1271,13 @@ bool XMLIndex(ParserPtr pp)
     for (auto ibpp = pp->entrylist.begin(); ibpp != pp->entrylist.end(); ++ibpp, pp->curindx++) {
         ibp = *ibpp;
         if (ibp->len == 0) {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line {}. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
         entry = XMLLoadEntry(pp, true);
         if (! entry) {
-            FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line %d. Entry dropped.", ibp->linenum);
+            FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line {}. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
