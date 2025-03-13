@@ -23,7 +23,7 @@ APP: project_tree_builder
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux64-Centos    : plain : GCC.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
+Linux64-Alma    : plain : GCC.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
 Linux64-Ubuntu    : plain : GCC.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
