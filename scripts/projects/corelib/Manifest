@@ -23,9 +23,9 @@ APP: test_diag_parser test_hash test_tempstr
 # COPY: $libdir/libxncbi.a  $installdir/lib/
 POSTBUILD: echo FAKE postbuild COMMAND for $platform
 
-Linux64-Centos  : icc       : ICC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Linux64-Centos  : icc_mtdll : ICC.sh       --without-debug --with-mt --with-dll --without-runpath --with-flat-makefile
-Linux64-Centos  : gcc       : GCC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Alma  : icc       : ICC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+Linux64-Alma  : icc_mtdll : ICC.sh       --without-debug --with-mt --with-dll --without-runpath --with-flat-makefile
+Linux64-Alma  : gcc       : GCC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 FreeBSD64  : plain     : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
