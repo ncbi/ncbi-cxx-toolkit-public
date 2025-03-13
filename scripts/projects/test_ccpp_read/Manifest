@@ -20,7 +20,7 @@ APP: test_ccpp_read
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux64-Centos        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
+Linux64-Alma        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
 #IntelMAC              : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile --without-downloaded-vdb
 
 Win64_19   : static-64 : static 64  ReleaseDLL
