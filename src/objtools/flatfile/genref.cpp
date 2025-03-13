@@ -759,7 +759,7 @@ static void AddGeneFeat(GeneListPtr glp, const string& maploc, TSeqFeatList& fea
 
     if (! glp->wormbase.empty()) {
         if (glp->wormbase.size() > 1)
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_MultipleWBGeneXrefs, "Multiple WormBase WBGene /db_xref qualifiers found for feature with Gene Symbol \"%s\" and Locus Tag \"%s\".", (glp->locus.empty()) ? "NONE" : glp->locus.c_str(), (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str());
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_MultipleWBGeneXrefs, "Multiple WormBase WBGene /db_xref qualifiers found for feature with Gene Symbol \"{}\" and Locus Tag \"{}\".", (glp->locus.empty()) ? "NONE" : glp->locus, (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag);
 
         for (TWormbaseSet::const_iterator it = glp->wormbase.begin(); it != glp->wormbase.end(); ++it) {
             if (it->empty())
@@ -776,7 +776,7 @@ static void AddGeneFeat(GeneListPtr glp, const string& maploc, TSeqFeatList& fea
 
     if (! glp->olt.empty()) {
         if (glp->olt.size() > 1)
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_MultipleOldLocusTags, "Multiple /old_locus_tag qualifiers found for feature with Gene Symbol \"%s\" and Locus Tag \"%s\".", (glp->locus.empty()) ? "NONE" : glp->locus.c_str(), (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str());
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_MultipleOldLocusTags, "Multiple /old_locus_tag qualifiers found for feature with Gene Symbol \"{}\" and Locus Tag \"{}\".", (glp->locus.empty()) ? "NONE" : glp->locus, (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag);
 
         for (TLocusTagSet::const_iterator it = glp->olt.begin(); it != glp->olt.end(); ++it) {
             if (it->empty())
@@ -990,7 +990,7 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
             tglp->pseudogene[0] = '\0';
             glp->pseudogene[0]  = '\0';
         } else if (tglp->pseudogene != glp->pseudogene) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_InconsistentPseudogene, "All /pseudogene qualifiers for a given Gene and/or Locus-Tag should be uniform. But pseudogenes \"%s\" vs. \"%s\" exist for the features with Gene Symbol \"%s\" and Locus Tag \"%s\".", (glp->locus.empty()) ? "NONE" : glp->locus.c_str(), (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag.c_str(), tglp->pseudogene.c_str(), glp->pseudogene.c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_InconsistentPseudogene, "All /pseudogene qualifiers for a given Gene and/or Locus-Tag should be uniform. But pseudogenes \"{}\" vs. \"{}\" exist for the features with Gene Symbol \"{}\" and Locus Tag \"{}\".", (glp->locus.empty()) ? "NONE" : glp->locus, (glp->locus_tag.empty()) ? "NONE" : glp->locus_tag, tglp->pseudogene, glp->pseudogene);
             tglp->pseudogene[0] = '\0';
             glp->pseudogene[0]  = '\0';
         }
@@ -1523,7 +1523,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
                 c->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
                 cn->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
                 fta_cmp_locusyn(c, cn) == 0) {
-                ErrPostEx(SEV_WARNING, ERR_GENEREF_NoUniqMaploc, "Two different cdregions for one gene %s\"%s\".", (c->locus.empty()) ? "with locus_tag " : "", (c->locus.empty()) ? c->locus_tag.c_str() : c->locus.c_str());
+                FtaErrPost(SEV_WARNING, ERR_GENEREF_NoUniqMaploc, "Two different cdregions for one gene {}\"{}\".", (c->locus.empty()) ? "with locus_tag " : "", (c->locus.empty()) ? c->locus_tag : c->locus);
             }
         }
     }
@@ -1680,7 +1680,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
             if (maploc.empty()) {
                 maploc = cn->maploc;
             } else if (! NStr::EqualNocase(maploc, cn->maploc)) {
-                ErrPostEx(SEV_WARNING, ERR_GENEREF_NoUniqMaploc, "Different maplocs in the gene %s\"%s\".", (c->locus.empty()) ? "with locus_tag " : "", (c->locus.empty()) ? c->locus_tag.c_str() : c->locus.c_str());
+                FtaErrPost(SEV_WARNING, ERR_GENEREF_NoUniqMaploc, "Different maplocs in the gene {}\"{}\".", (c->locus.empty()) ? "with locus_tag " : "", (c->locus.empty()) ? c->locus_tag : c->locus);
             }
         }
         for (cn = c; cn; cn = cn->next) {
@@ -2273,7 +2273,7 @@ static void GeneCheckForStrands(const GeneListPtr _glp)
                 got = true;
         }
         if (got) {
-            ErrPostEx(SEV_WARNING, ERR_GENEREF_BothStrands, "Gene name %s\"%s\" has been used for features on both strands.", (glp->locus.empty()) ? "with locus_tag " : "", (glp->locus.empty()) ? glp->locus_tag.c_str() : glp->locus.c_str());
+            FtaErrPost(SEV_WARNING, ERR_GENEREF_BothStrands, "Gene name {}\"{}\" has been used for features on both strands.", (glp->locus.empty()) ? "with locus_tag " : "", (glp->locus.empty()) ? glp->locus_tag : glp->locus);
         }
         glp = tglp;
     }
@@ -2319,7 +2319,7 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
                 continue;
 
             for (glp = glpstart;; glp = glp->next) {
-                ErrPostEx(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"%s\"+\"%s\" : %s feature at %s : \"%s\"+\"%s\" : %s feature at %s. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus.c_str(), (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag.c_str(), glp->fname.c_str(), glp->location.c_str(), (tglp->locus.empty()) ? "(NULL)" : tglp->locus.c_str(), (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag.c_str(), tglp->fname.c_str(), tglp->location.c_str());
+                FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
                 if (glp == glpstop)
                     break;
             }
@@ -2455,28 +2455,28 @@ static bool GeneLocusCheck(const TSeqFeatList& feats, bool diff_lt)
             GetLocationStr((*feat_next)->GetLocation(), loc2_str);
 
             if (diff_lt == false) {
-                ErrPostEx(SEV_REJECT,
+                FtaErrPost(SEV_REJECT,
                           ERR_FEATURE_MultipleGenesDifferentLocusTags,
-                          "Multiple instances of the \"%s\" gene encountered: \"%s\"+\"%s\" : gene feature at \"%s\" : \"%s\"+\"%s\" : gene feature at \"%s\". Entry dropped.",
-                          gene_ref1.GetLocus().c_str(),
-                          gene_ref1.GetLocus().c_str(),
-                          gene_ref1.GetLocus_tag().c_str(),
-                          loc1_str.c_str(),
-                          gene_ref2.GetLocus().c_str(),
-                          gene_ref2.GetLocus_tag().c_str(),
-                          loc2_str.c_str());
+                          "Multiple instances of the \"{}\" gene encountered: \"{}\"+\"{}\" : gene feature at \"{}\" : \"{}\"+\"{}\" : gene feature at \"{}\". Entry dropped.",
+                          gene_ref1.GetLocus(),
+                          gene_ref1.GetLocus(),
+                          gene_ref1.GetLocus_tag(),
+                          loc1_str,
+                          gene_ref2.GetLocus(),
+                          gene_ref2.GetLocus_tag(),
+                          loc2_str);
                 ret = false;
             } else
-                ErrPostEx(SEV_WARNING,
+                FtaErrPost(SEV_WARNING,
                           ERR_FEATURE_MultipleGenesDifferentLocusTags,
-                          "Multiple instances of the \"%s\" gene encountered: \"%s\"+\"%s\" : gene feature at \"%s\" : \"%s\"+\"%s\" : gene feature at \"%s\".",
-                          gene_ref1.GetLocus().c_str(),
-                          gene_ref1.GetLocus().c_str(),
-                          gene_ref1.GetLocus_tag().c_str(),
-                          loc1_str.c_str(),
-                          gene_ref2.GetLocus().c_str(),
-                          gene_ref2.GetLocus_tag().c_str(),
-                          loc2_str.c_str());
+                          "Multiple instances of the \"{}\" gene encountered: \"{}\"+\"{}\" : gene feature at \"{}\" : \"{}\"+\"{}\" : gene feature at \"{}\".",
+                          gene_ref1.GetLocus(),
+                          gene_ref1.GetLocus(),
+                          gene_ref1.GetLocus_tag(),
+                          loc1_str,
+                          gene_ref2.GetLocus(),
+                          gene_ref2.GetLocus_tag(),
+                          loc2_str);
         }
     }
 

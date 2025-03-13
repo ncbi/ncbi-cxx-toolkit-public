@@ -140,7 +140,7 @@ void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
     if (p && (StringEquNI(p, "Publication Status", 18) ||
               StringEquNI(p, "Publication_Status", 18) ||
               StringEquNI(p, "Publication-Status", 18)))
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"%s\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"{}\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
 }
 
 /**********************************************************/
@@ -388,19 +388,19 @@ void fta_init_servers(ParserPtr pp)
     if (pp->taxserver != 0) {
         pp->taxserver = fta_init_tax_server();
         if (pp->taxserver == 2) {
-            ErrPostStr(SEV_WARNING, ERR_SERVER_Failed, "TaxArchInit call failed.");
+            FtaErrPost(SEV_WARNING, ERR_SERVER_Failed, "TaxArchInit call failed.");
         }
     } else {
-        ErrPostStr(SEV_WARNING, ERR_SERVER_NoTaxLookup, "No taxonomy lookup will be performed.");
+        FtaErrPost(SEV_WARNING, ERR_SERVER_NoTaxLookup, "No taxonomy lookup will be performed.");
     }
 
     if (pp->medserver != 0) {
         pp->medserver = fta_init_med_server(pp->normalize);
         if (pp->medserver == 2) {
-            ErrPostStr(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
+            FtaErrPost(SEV_ERROR, ERR_SERVER_Failed, "MedArchInit call failed.");
         }
     } else {
-        ErrPostStr(SEV_WARNING, ERR_SERVER_NoPubMedLookup, "No medline lookup will be performed.");
+        FtaErrPost(SEV_WARNING, ERR_SERVER_NoPubMedLookup, "No medline lookup will be performed.");
     }
 }
 
@@ -456,13 +456,13 @@ void fta_entrez_fetch_enable(ParserPtr pp)
         pp->entrez_fetch = fta_init_pubseq();
         if(pp->entrez_fetch == 2)
         {
-            ErrPostStr(SEV_WARNING, ERR_SERVER_Failed,
+            FtaErrPost(SEV_WARNING, ERR_SERVER_Failed,
                       "Failed to connect to PUBSEQ OS.");
         }
     }
     else
     {
-        ErrPostStr(SEV_WARNING, ERR_SERVER_NotUsed,
+        FtaErrPost(SEV_WARNING, ERR_SERVER_NotUsed,
                   "No PUBSEQ Bioseq fetch will be performed.");
     }
 }
@@ -537,7 +537,7 @@ static void fta_check_pub_ids(TPubList& pub_list)
             continue;
         }
 
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded, "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : %s %d.", (*pub)->IsMuid() ? "MUID" : "PMID", (*pub)->GetMuid());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded, "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : {} {}.", (*pub)->IsMuid() ? "MUID" : "PMID", (*pub)->GetMuid());
 
         pub = pub_list.erase(pub);
     }
@@ -597,7 +597,7 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
     if (oldpmid > ZERO_ENTREZ_ID) {
         new_cit_art = FetchPubPmId(oldpmid);
         if (new_cit_art.Empty()) {
-            ErrPostEx(SEV_REJECT, ERR_REFERENCE_InvalidPmid, "MedArch failed to find a Cit-art for reference with pmid \"%d\".", oldpmid);
+            FtaErrPost(SEV_REJECT, ERR_REFERENCE_InvalidPmid, "MedArch failed to find a Cit-art for reference with pmid \"{}\".", oldpmid);
             ibp->drop = true;
         } else {
             if (new_cit_art->IsSetIds()) {
@@ -611,14 +611,14 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
             }
 
             if (pmid == ZERO_ENTREZ_ID) {
-                ErrPostStr(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
+                FtaErrPost(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
                 ibp->drop = true;
             } else if (pmid != oldpmid) {
-                ErrPostEx(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"%d\" used for lookup does not match pmid \"%d\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);
+                FtaErrPost(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"{}\" used for lookup does not match pmid \"{}\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);
                 ibp->drop = true;
             }
             if (muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid) {
-                ErrPostEx(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch, "Reference has supplied Medline UI \"%d\" but it does not match muid \"%d\" in the Cit-art returned by MedArch.", oldmuid, muid);
+                FtaErrPost(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch, "Reference has supplied Medline UI \"{}\" but it does not match muid \"{}\" in the Cit-art returned by MedArch.", oldmuid, muid);
             }
         }
     }
@@ -782,9 +782,9 @@ static void new_synonym(COrg_ref& org_ref, COrg_ref& tax_org_ref)
 
         if (!found)
         {
-            ErrPostEx(SEV_INFO, ERR_ORGANISM_NewSynonym,
-                      "New synonym: %s for [%s].",
-                      org_syn.c_str(), org_ref.GetTaxname().c_str());
+            FtaErrPost(SEV_INFO, ERR_ORGANISM_NewSynonym,
+                      "New synonym: {} for [{}].",
+                      org_syn, org_ref.GetTaxname());
         }
     }
 }
@@ -822,16 +822,16 @@ static CRef<COrg_ref> fta_get_orgref_byid(ParserPtr pp, bool* drop, TTaxId taxid
     CRef<COrg_ref> ret;
     if (taxdata.Empty()) {
         if (connection_failed) {
-            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, apparently because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
+            FtaErrPost(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid {}, apparently because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
             *drop = true;
         } else {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid %d].", TAX_ID_TO(int, taxid));
+            FtaErrPost(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxname not found: [taxid {}].", TAX_ID_TO(int, taxid));
         }
         return ret;
     }
 
     if (taxdata->GetIs_species_level() != 1 && ! isoh) {
-        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level: [taxid %d].", TAX_ID_TO(int, taxid));
+        FtaErrPost(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level: [taxid {}].", TAX_ID_TO(int, taxid));
     }
 
     ret.Reset(new COrg_ref);
@@ -856,14 +856,14 @@ CRef<COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, bool* drop, bool 
         pp->taxserver = fta_init_tax_server();
 
     if (pp->taxserver == 2) {
-        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid %d, because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
+        FtaErrPost(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for taxid {}, because the server is down. Cannot generate ASN.1 for this entry.", TAX_ID_TO(int, taxid));
         *drop = true;
         return ret;
     }
 
     ret = fta_get_orgref_byid(pp, drop, taxid, isoh);
     if (ret.NotEmpty()) {
-        ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxname _was_ found for taxid %d", TAX_ID_TO(int, taxid));
+        FtaErrPost(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxname _was_ found for taxid {}", TAX_ID_TO(int, taxid));
     }
 
     return ret;
@@ -898,7 +898,7 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, bool* drop, COrg_ref& org_re
             return ret;
 
         if (connection_failed) {
-            ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", apparently because the server is down. Cannot generate ASN.1 for this entry.", pn);
+            FtaErrPost(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"{}\", apparently because the server is down. Cannot generate ASN.1 for this entry.", pn);
             *drop = true;
         } else if (taxon.GetTaxIdByOrgRef(org_ref) < ZERO_TAX_ID) {
             if ((pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) &&
@@ -910,16 +910,16 @@ static CRef<COrg_ref> fta_replace_org(ParserPtr pp, bool* drop, COrg_ref& org_re
                     return ret;
                 }
             }
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxIdNotUnique, "Not an unique Taxonomic Id for [%s].", pn);
+            FtaErrPost(SEV_ERROR, ERR_ORGANISM_TaxIdNotUnique, "Not an unique Taxonomic Id for [{}].", pn);
         } else {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxon Id not found for [%s].", pn);
+            FtaErrPost(SEV_ERROR, ERR_ORGANISM_TaxNameNotFound, "Taxon Id not found for [{}].", pn);
         }
         return ret;
     }
 
     if (taxdata->GetIs_species_level() != 1 && (ibp->is_pat == false ||
                                                 (pp->source != Parser::ESource::EMBL && pp->source != Parser::ESource::DDBJ))) {
-        ErrPostEx(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level for [%s].", pn);
+        FtaErrPost(SEV_WARNING, ERR_ORGANISM_TaxIdNotSpecLevel, "Taxarch hit is not on species level for [{}].", pn);
     }
 
     ret.Reset(new COrg_ref);
@@ -974,7 +974,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, bool* drop, char* organelle
 
     string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : "";
     if (pp->taxserver == 2) {
-        ErrPostEx(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"%s\", because the server is down. Cannot generate ASN.1 for this entry.", taxname.c_str());
+        FtaErrPost(SEV_FATAL, ERR_SERVER_TaxServerDown, "Taxonomy lookup failed for \"{}\", because the server is down. Cannot generate ASN.1 for this entry.", taxname);
         *drop = true;
     } else {
         merge = 1;
@@ -987,7 +987,7 @@ void fta_fix_orgref(ParserPtr pp, COrg_ref& org_ref, bool* drop, char* organelle
         }
 
         if (new_org_ref.NotEmpty()) {
-            ErrPostEx(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxon Id _was_ found for [%s]", taxname.c_str());
+            FtaErrPost(SEV_INFO, ERR_SERVER_TaxNameWasFound, "Taxon Id _was_ found for [{}]", taxname);
 
             org_ref.Assign(*new_org_ref);
         }
@@ -1037,14 +1037,14 @@ Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
     // if (pp->entrez_fetch == 2)
     //     pp->entrez_fetch = fta_init_pubseq();
     if (pp->entrez_fetch == 2) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"{}\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }
 
     TGi gi = fta_get_gi_for_seq_id(id);
     if (gi < ZERO_GI) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"{}\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }
@@ -1057,7 +1057,7 @@ Int4 fta_is_con_div(ParserPtr pp, const CSeq_id& id, const Char* acc)
 
     if (! s_pubseq->GetIdGiClass(gi, id_gi) || ! s_pubseq->GetIdBlobClass(id_gi, id_blob) ||
         id_blob.div[0] == '\0') {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"%s\". Entry dropped.", acc);
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, "Failed to determine division code for secondary accession \"{}\". Entry dropped.", acc);
         pp->entrylist[pp->curindx]->drop = true;
         return (-1);
     }

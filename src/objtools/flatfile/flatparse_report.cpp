@@ -39,29 +39,6 @@
 
 BEGIN_NCBI_SCOPE
 
-//  ----------------------------------------------------------------------------
-CFlatParseReport::ErrMessageLookup CFlatParseReport::mMessageTemplates = {
-    //  ----------------------------------------------------------------------------
-    { ErrCode(ERR_QUALIFIER_EmbeddedQual),
-      "Qualifier /%s contains embedded qualifier /%s. "
-      "Feature \"%s\", location \"%s\"." },
-    { ErrCode(ERR_QUALIFIER_EmptyQual),
-      "Qualifier /%s should have a data value. Qualifier has been dropped. "
-      "Feature \"%s\", location \"%s\"." },
-    { ErrCode(ERR_QUALIFIER_NoTextAfterEqualSign),
-      "Qualifier /%s has not text after the equal sign. Interpreted as empty value." },
-    { ErrCode(ERR_QUALIFIER_ShouldNotHaveValue),
-      "Qualifier /%s should not have data value. Qualifier value has been dropped. "
-      "Feature \"%s\", location \"%s\"." },
-    { ErrCode(ERR_QUALIFIER_UnbalancedQuotes),
-      "Qualifier /%s value has unbalanced quotes. Qualifier has been dropped." },
-    { ErrCode(ERR_FORMAT_UnexpectedData),
-      "Encountered unexpected data while looking for qualifier key. Data has been dropped." },
-    { ErrCode(ERR_QUALIFIER_UnknownQualifier),
-      "Qualifier key /%s is not recognized. Qualifier has been dropped. "
-      "Feature \"%s\", location \"%s\"." },
-};
-
 
 //  ----------------------------------------------------------------------------
 void CFlatParseReport::ContainsEmbeddedQualifier(
@@ -72,14 +49,15 @@ void CFlatParseReport::ContainsEmbeddedQualifier(
     bool          inNote)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         inNote ? SEV_INFO : SEV_WARNING,
         ERR_QUALIFIER_EmbeddedQual,
-        sMessageTemplateFor(ERR_QUALIFIER_EmbeddedQual),
-        qualKey.c_str(),
-        firstEmbedded.c_str(),
-        featKey.empty() ? "Unknown" : featKey.c_str(),
-        featLocation.empty() ? "Empty" : featLocation.c_str());
+        "Qualifier /{} contains embedded qualifier /{}. " 
+        "Feature \"{}\", location \"{}\".",
+        qualKey,
+        firstEmbedded,
+        featKey.empty() ? "Unknown" : featKey,
+        featLocation.empty() ? "Empty" : featLocation);
 }
 
 
@@ -90,13 +68,14 @@ void CFlatParseReport::NoTextAfterEqualSign(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_INFO,
         ERR_QUALIFIER_NoTextAfterEqualSign,
-        sMessageTemplateFor(ERR_QUALIFIER_NoTextAfterEqualSign),
-        qualKey.c_str(),
-        featKey.empty() ? "Unknown" : featKey.c_str(),
-        featLocation.empty() ? "Empty" : featLocation.c_str());
+       "Qualifier /{} has not text after the equal sign. Interpreted as empty value. "
+        "Feature \"{}\", location \"{}\".",
+        qualKey,
+        featKey.empty() ? "Unknown" : featKey,
+        featLocation.empty() ? "Empty" : featLocation);
 }
 
 
@@ -105,11 +84,11 @@ void CFlatParseReport::UnbalancedQuotes(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_ERROR,
         ERR_QUALIFIER_UnbalancedQuotes,
-        sMessageTemplateFor(ERR_QUALIFIER_UnbalancedQuotes),
-        qualKey.c_str());
+        "Qualifier /{} value has unbalanced quotes. Qualifier has been dropped.",
+        qualKey);
 }
 
 
@@ -120,13 +99,14 @@ void CFlatParseReport::QualShouldHaveValue(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_ERROR,
         ERR_QUALIFIER_EmptyQual,
-        sMessageTemplateFor(ERR_QUALIFIER_EmptyQual),
-        qualKey.c_str(),
-        featKey.empty() ? "Unknown" : featKey.c_str(),
-        featLocation.empty() ? "Empty" : featLocation.c_str());
+        "Qualifier /{} should have a data value. Qualifier has been dropped. "
+        "Feature \"{}\", location \"{}\"." ,
+        qualKey,
+        featKey.empty() ? "Unknown" : featKey,
+        featLocation.empty() ? "Empty" : featLocation);
 }
 
 
@@ -137,13 +117,14 @@ void CFlatParseReport::UnknownQualifierKey(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_ERROR,
         ERR_QUALIFIER_UnknownQualifier,
-        sMessageTemplateFor(ERR_QUALIFIER_UnknownQualifier),
-        qualKey.c_str(),
-        featKey.empty() ? "Unknown" : featKey.c_str(),
-        featLocation.empty() ? "Empty" : featLocation.c_str());
+        "Qualifier key /{} is not recognized. Qualifier has been dropped. "
+        "Feature \"{}\", location \"{}\".",
+        qualKey,
+        featKey.empty() ? "Unknown" : featKey,
+        featLocation.empty() ? "Empty" : featLocation);
 }
 
 
@@ -154,13 +135,14 @@ void CFlatParseReport::QualShouldNotHaveValue(
     const string& qualKey)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_WARNING,
         ERR_QUALIFIER_ShouldNotHaveValue,
-        sMessageTemplateFor(ERR_QUALIFIER_ShouldNotHaveValue),
-        qualKey.c_str(),
-        featKey.empty() ? "Unknown" : featKey.c_str(),
-        featLocation.empty() ? "Empty" : featLocation.c_str());
+        "Qualifier /{} should not have data value. Qualifier value has been dropped. "
+        "Feature \"{}\", location \"{}\".",
+        qualKey,
+        featKey.empty() ? "Unknown" : featKey,
+        featLocation.empty() ? "Empty" : featLocation);
 }
 
 
@@ -170,22 +152,12 @@ void CFlatParseReport::UnexpectedData(
     const string& featLocation)
 //  ----------------------------------------------------------------------------
 {
-    ErrPostEx(
+    FtaErrPost(
         SEV_ERROR,
         ERR_FORMAT_UnexpectedData,
-        sMessageTemplateFor(ERR_FORMAT_UnexpectedData));
+       "Encountered unexpected data while looking for qualifier key. "
+       "Data has been dropped.");
 }
 
-
-//  ----------------------------------------------------------------------------
-const char* CFlatParseReport::sMessageTemplateFor(
-    int major,
-    int minor)
-//  ----------------------------------------------------------------------------
-{
-    auto messageIt = mMessageTemplates.find(ErrCode(major, minor));
-    _ASSERT(messageIt != mMessageTemplates.end()); // update message list!
-    return messageIt->second;
-}
 
 END_NCBI_SCOPE

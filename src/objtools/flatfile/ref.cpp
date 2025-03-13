@@ -176,7 +176,7 @@ static CRef<CDate> get_lanl_date(char* s)
     day  = atoi(s + 5);
     year = atoi(s + 8);
     if (year < 1900 || year > 1994) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal year: %d", year);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal year: {}", year);
     }
 
     date->SetStd().SetYear(year);
@@ -184,7 +184,7 @@ static CRef<CDate> get_lanl_date(char* s)
     date->SetStd().SetDay(day);
 
     if (XDateCheck(date->GetStd()) != 0) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal date: %s", s);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal date: {}", s);
         date.Reset();
     }
 
@@ -402,7 +402,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         *p = '\0';
 
     if (ibp->is_pat && ibp->psip.NotEmpty()) {
-        ErrPostStr(SEV_ERROR, ERR_FORMAT_MultiplePatRefs, "Too many patent references for patent sequence; ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MultiplePatRefs, "Too many patent references for patent sequence; ignoring all but the first.");
     }
 
     if (pp->source == Parser::ESource::USPTO)
@@ -411,7 +411,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         q          = (pp->format == Parser::EFormat::EMBL) ? (char*)"Patent number" : (char*)"Patent:";
         size_t len = StringLen(q);
         if (! StringEquNI(q, bptr, len)) {
-            ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"%s\"", temp);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"{}\"", temp);
             MemFree(temp);
             return cit_pat;
         }
@@ -424,7 +424,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         if (*s != ' ')
             q = s;
     if (country == q) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No Patent Document Country: \"%s\"", temp);
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No Patent Document Country: \"{}\"", temp);
         MemFree(temp);
         return cit_pat;
     }
@@ -440,7 +440,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
             *q++ = *s;
 
     if (number == s) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No Patent Document Number: \"%s\"", temp);
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No Patent Document Number: \"{}\"", temp);
         MemFree(temp);
         return cit_pat;
     }
@@ -461,7 +461,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     if (! type) {
         sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
-        ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse, "No Patent Document Type: \"%s\"", temp);
+        FtaErrPost(sev, ERR_REFERENCE_Fail_to_parse, "No Patent Document Type: \"{}\"", temp);
     }
 
     for (app = s, q = s; *s >= '0' && *s <= '9';)
@@ -469,7 +469,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     if (*s != '\0' && *s != ',' && *s != '.' && *s != ' ' && *s != ';' &&
         *s != '\n') {
         sev = (ibp->is_pat ? SEV_ERROR : SEV_WARNING);
-        ErrPostEx(sev, ERR_REFERENCE_Fail_to_parse, "No number of sequence in patent: \"%s\"", temp);
+        FtaErrPost(sev, ERR_REFERENCE_Fail_to_parse, "No number of sequence in patent: \"{}\"", temp);
         app = nullptr;
         s   = q;
     } else if (*s != '\0')
@@ -482,7 +482,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     }
 
     if (std_date.Empty()) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"%s\"", temp);
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Illegal format: \"{}\"", temp);
         MemFree(temp);
         return cit_pat;
     }
@@ -817,7 +817,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     tit = buf;
     if (*tit == '\0') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No journal title.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No journal title.");
         return cit_art;
     }
 
@@ -866,7 +866,7 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
 
     if (date.Empty()) {
         if (is_er == 0)
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No date in journal reference");
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No date in journal reference");
 
         cit_art.Reset();
         return cit_art;
@@ -897,12 +897,12 @@ static CRef<CCit_art> get_art(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
      */
     if (pre == CImprint::ePrepub_in_press) {
         if (has_muid) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress, "Reference flagged as In-press, but Medline UID exists, In-press ignored: %s", buf);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_InvalidInPress, "Reference flagged as In-press, but Medline UID exists, In-press ignored: {}", buf);
             imp.ResetPrepub();
         }
 
         if (imp.IsSetPages() && imp.IsSetVolume() && imp.IsSetDate()) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvalidInPress, "Reference flagged as In-press, but citation is complete, In-press ignored: %s", buf);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_InvalidInPress, "Reference flagged as In-press, but citation is complete, In-press ignored: {}", buf);
             imp.ResetPrepub();
         }
     }
@@ -1035,7 +1035,7 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
             if (book_auth_list.NotEmpty())
                 cit_book.SetAuthors(*book_auth_list);
         } else {
-            ErrPostEx(SEV_ERROR, ERR_REFERENCE_UnusualBookFormat, "Cannot parse unusually formatted book reference (generating Cit-gen instead): %s", p);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_UnusualBookFormat, "Cannot parse unusually formatted book reference (generating Cit-gen instead): {}", p);
             if (tbptr)
                 MemFree(tbptr);
 
@@ -1099,8 +1099,8 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
 
         CRef<CDate> date = get_date(s);
         if (date.Empty()) {
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No date in book reference");
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference, "Book format error (cit-gen created): %s", p);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No date in book reference");
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "Book format error (cit-gen created): {}", p);
             if (tbptr)
                 MemFree(tbptr);
 
@@ -1158,7 +1158,7 @@ static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<C
     }
 
     if (! book.GetImp().IsSetDate()) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse thesis: missing date");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse thesis: missing date");
 
         cit_let.Reset();
         return cit_let;
@@ -1170,7 +1170,7 @@ static CRef<CCit_let> get_thesis(char* bptr, CRef<CAuth_list>& auth_list, CRef<C
     if (title.NotEmpty())
         book.SetTitle().Set().push_back(title);
     else {
-        ErrPostStr(SEV_WARNING, ERR_REFERENCE_Thesis, "Missing thesis title");
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Thesis, "Missing thesis title");
 
         CRef<CTitle::C_E> empty_title(new CTitle::C_E);
         empty_title->SetName("");
@@ -1206,7 +1206,7 @@ static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, C
         s++;
 
     if (*s != '(') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse book: missing date");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse book: missing date");
         return cit_book;
     }
 
@@ -1235,7 +1235,7 @@ static CRef<CCit_book> get_whole_book(char* bptr, CRef<CAuth_list>& auth_list, C
     }
 
     if (auth_list.Empty() || ! auth_list->IsSetNames()) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse thesis: missing thesis author");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse thesis: missing thesis author");
         cit_book.Reset();
         return cit_book;
     }
@@ -1264,7 +1264,7 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     for (s = bptr; *s != '(' && *s != '\0';)
         s++;
     if (*s == '\0') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse submission: missing date");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse submission: missing date");
         return ret;
     }
 
@@ -1324,11 +1324,11 @@ static CRef<CCit_sub> get_sub(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
     }
 
     if (*s == '\0') {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : %s", bptr);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : {}", bptr);
     }
 
     if (auth_list.Empty() || ! auth_list->IsSetNames()) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Direct submission: missing author (cit-gen created)");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Direct submission: missing author (cit-gen created)");
 
         ret.Reset();
         return ret;
@@ -1362,7 +1362,7 @@ static CRef<CCit_sub> get_sub_gsdb(char* bptr, CRef<CAuth_list>& auth_list, CRef
     for (s = bptr; *s != '(' && *s != '\0';)
         s++;
     if (*s == '\0') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse submission: missing date");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Fail to parse submission: missing date");
         return cit_sub;
     }
 
@@ -1374,7 +1374,7 @@ static CRef<CCit_sub> get_sub_gsdb(char* bptr, CRef<CAuth_list>& auth_list, CRef
     date->SetStd(*std_date);
 
     if (auth_list.Empty() || ! auth_list->IsSetNames()) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Direct submission: missing author (cit-gen created)");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "Direct submission: missing author (cit-gen created)");
         return cit_sub;
     }
 
@@ -1394,10 +1394,10 @@ static CRef<CCit_sub> get_sub_gsdb(char* bptr, CRef<CAuth_list>& auth_list, CRef
         if (*s != '\0') {
             auth_list->SetAffil().SetStr(NStr::Sanitize(s));
         } else {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : %s", bptr);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : {}", bptr);
         }
     } else {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : %s", bptr);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_NoContactInfo, "Missing contact info : {}", bptr);
     }
 
     return cit_sub;
@@ -1541,7 +1541,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
 
         ret->SetSub(*cit_sub);
     } else if (StringEquN("Published in GSDB", p, 17)) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_GsdbRefDropped, "A published-in-gsdb reference was encountered and has been dropped [%s]", bptr);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_GsdbRefDropped, "A published-in-gsdb reference was encountered and has been dropped [{}]", bptr);
         retval = ParFlat_SUBMITTED;
 
         CRef<CCit_sub> cit_sub = get_sub_gsdb(bptr, auth_list, title, pp);
@@ -1612,7 +1612,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
             CRef<CCit_art> new_art = get_art(pp, bptr, auth_list, title, pre, has_muid, &all_zeros, er);
             if (new_art.Empty()) {
                 if (! all_zeros && ! StringEquN(bptr, "(er)", 4) && er == 0)
-                    ErrPostEx(SEV_WARNING, ERR_REFERENCE_Illegalreference, "Journal format error (cit-gen created): %s", bptr);
+                    FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "Journal format error (cit-gen created): {}", bptr);
 
                 ret->SetGen(*get_error(bptr, auth_list, title));
             } else
@@ -1787,7 +1787,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     if (p && isdigit((int)*p) != 0) {
         desc->SetPub().Set().push_back(get_num(p));
     } else {
-        ErrPostStr(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
     }
 
     if (p)
@@ -1866,13 +1866,13 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     is_online = false;
     p         = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
     if (! p) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
         desc.Reset();
         return desc;
     }
 
     if (*p == '\0' || *p == ';') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
         MemFree(p);
         desc.Reset();
         return desc;
@@ -1963,7 +1963,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
         if (*p >= '0' && *p <= '9')
             desc->SetPub().Set().push_back(get_num(p));
         else
-            ErrPostStr(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
         ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::GenBank);
     } else {
         /* This branch works when this function is called in context of GBDIFF
@@ -1976,7 +1976,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
         }
 
         if (*p < '0' || *p > '9')
-            ErrPostStr(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
     }
 
     has_muid = false;
@@ -2036,7 +2036,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
     }
 
     if (! ind[ParFlat_JOURNAL]) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
 
         desc.Reset();
         return desc;
@@ -2044,7 +2044,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
 
     p = ind[ParFlat_JOURNAL]->mOffset;
     if (*p == '\0' || *p == ';') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
 
         desc.Reset();
         return desc;
@@ -2119,7 +2119,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
     if (*p >= '0' && *p <= '9')
         desc->SetPub().Set().push_back(get_num(p));
     else
-        ErrPostStr(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Illegalreference, "No reference number.");
 
     ind_subdbp(dbp, ind, MAXKW, Parser::EFormat::EMBL);
 
@@ -2203,7 +2203,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
     }
 
     if (! ind[ParFlat_RL]) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference, "No JOURNAL line, reference dropped.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Illegalreference, "No JOURNAL line, reference dropped.");
 
         desc.Reset();
         return desc;
@@ -2211,7 +2211,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
 
     p = ind[ParFlat_RL]->mOffset;
     if (*p == '\0' || *p == ';') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference, "JOURNAL line is empty, reference dropped.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Illegalreference, "JOURNAL line is empty, reference dropped.");
 
         desc.Reset();
         return desc;
@@ -2292,7 +2292,7 @@ static void fta_check_long_last_name(const CAuth_list& authors, bool soft_report
              * in the ASN.1.
              */
             sev = (soft_report ? SEV_WARNING : SEV_ERROR);
-            ErrPostEx(sev, ERR_REFERENCE_LongAuthorName, "Last name of author exceeds 30 characters in length. A format error in the reference data might have caused the author name to be parsed incorrectly. Name is \"%s\".", name.GetLast().c_str());
+            FtaErrPost(sev, ERR_REFERENCE_LongAuthorName, "Last name of author exceeds 30 characters in length. A format error in the reference data might have caused the author name to be parsed incorrectly. Name is \"{}\".", name.GetLast());
         }
     }
 }
@@ -2446,15 +2446,15 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data)
 
     if (no_auth) {
         if (pp->source == Parser::ESource::EMBL)
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_MissingAuthors, "Reference has no author names.");
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_MissingAuthors, "Reference has no author names.");
         else {
-            ErrPostStr(SEV_REJECT, ERR_REFERENCE_MissingAuthors, "Reference has no author names. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_REFERENCE_MissingAuthors, "Reference has no author names. Entry dropped.");
             pp->entrylist[pp->curindx]->drop = true;
         }
     }
 
     if (rej) {
-        ErrPostStr(SEV_REJECT, ERR_REFERENCE_InvalidMuid, "Use of Medline ID in INSDSeq format is not alowed. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_REFERENCE_InvalidMuid, "Use of Medline ID in INSDSeq format is not alowed. Entry dropped.");
         pp->entrylist[pp->curindx]->drop = true;
     }
 

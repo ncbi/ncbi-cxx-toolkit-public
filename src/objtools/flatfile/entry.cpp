@@ -228,7 +228,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
 
     if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostStr(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
+        FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
         return nullptr;
@@ -242,7 +242,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
             *q = 10;
         }
         if (*q > 126 || (*q < 32 && *q != 10)) {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value %d, replaced by # ", (int)*q);
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value {}, replaced by # ", (int)*q);
             *q = '#';
         }
 
@@ -277,7 +277,7 @@ EntryPtr LoadEntryGenbank(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
             if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
-                ErrPostStr(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
         if (was) {
@@ -311,7 +311,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
 
     if ((size_t)entry->len != len) /* hardware problem */
     {
-        ErrPostStr(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
+        FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
         MemFree(entry->mOffset);
         delete entry;
         return nullptr;
@@ -341,7 +341,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             *q = 10;
         }
         if (*q > 126 || (*q < 32 && *q != 10)) {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value %d, replaced by # ", (int)*q);
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value {}, replaced by # ", (int)*q);
             *q = '#';
         }
 
@@ -376,7 +376,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
         if (q + 3 < eptr && q[3] == '.') {
             q[3] = ' ';
             if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
-                ErrPostStr(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
         if (was) {

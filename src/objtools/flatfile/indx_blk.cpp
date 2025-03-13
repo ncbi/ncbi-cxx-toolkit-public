@@ -391,7 +391,7 @@ static bool CheckLocus(const char* locus, Parser::ESource source)
             source == Parser::ESource::Refseq)
             continue;
 
-        ErrPostEx(SEV_ERROR, ERR_LOCUS_BadLocusName, "Bad locusname, <%s> for this entry", locus);
+        FtaErrPost(SEV_ERROR, ERR_LOCUS_BadLocusName, "Bad locusname, <{}> for this entry", locus);
         break;
     }
 
@@ -437,7 +437,7 @@ static bool CheckLocusSP(const char* locus)
     }
 
     if (*p != '\0' || x == 0 || y == 0) {
-        ErrPostEx(SEV_ERROR, ERR_LOCUS_BadLocusName, "Bad locusname, <%s> for this entry", locus);
+        FtaErrPost(SEV_ERROR, ERR_LOCUS_BadLocusName, "Bad locusname, <{}> for this entry", locus);
         return true;
     }
 
@@ -550,18 +550,18 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
         ! StringEquN(offset + lcp->bp, "rc", 2) &&
         ! StringEquN(offset + lcp->bp, "aa", 2)) {
         i = lcp->bp + 1;
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "bp/rc string unrecognized in column %d-%d: %s", i, i + 1, offset + lcp->bp);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "bp/rc string unrecognized in column {}-{}: {}", i, i + 1, offset + lcp->bp);
         ret = false;
     }
     if (CheckSTRAND(offset + lcp->strand) == -1) {
         i = lcp->strand + 1;
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Strand unrecognized in column %d-%d : %s", i, i + 2, offset + lcp->strand);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Strand unrecognized in column {}-{} : {}", i, i + 2, offset + lcp->strand);
     }
 
     p = offset + lcp->molecule;
     if (is_mga) {
         if (! StringEquNI(p, "mRNA", 4) && ! StringEquN(p, "RNA", 3)) {
-            ErrPostEx(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"%s\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"{}\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
     } else if (StringMatchIcase(ParFlat_NA_array, p) < 0) {
@@ -569,7 +569,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
             i = lcp->molecule + 1;
             if (source != Parser::ESource::DDBJ ||
                 StringMatchIcase(ParFlat_NA_array_DDBJ, p) < 0) {
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Molecule unrecognized in column %d-%d: %s", i, i + 5, p);
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Molecule unrecognized in column {}-{}: {}", i, i + 5, p);
                 ret = false;
             }
         }
@@ -577,21 +577,21 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
     if (CheckTPG(offset + lcp->topology) == -1) {
         i = lcp->topology + 1;
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Topology unrecognized in column %d-%d: %s", i, i + 7, offset + lcp->topology);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Topology unrecognized in column {}-{}: {}", i, i + 7, offset + lcp->topology);
         ret = false;
     }
     if (CheckDIV(offset + lcp->div) == -1) {
         i = lcp->div + 1;
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Division code unrecognized in column %d-%d: %s", i, i + 2, offset + lcp->div);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Division code unrecognized in column {}-{}: {}", i, i + 2, offset + lcp->div);
         ret = (source == Parser::ESource::LANL);
     }
     MemCpy(date, offset + lcp->date, 11);
     date[11] = '\0';
     if (StringEquN(date, "NODATE", 6)) {
-        ErrPostStr(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
     } else if (! CkDateFormat(date)) {
         i = lcp->date + 1;
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Date should be in column %d-%d, and format dd-mmm-yyyy: %s", i, i + 10, date);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "Date should be in column {}-{}, and format dd-mmm-yyyy: {}", i, i + 10, date);
         ret = false;
     }
 
@@ -655,7 +655,7 @@ static bool fta_check_embl_moltype(char* str)
         return true;
     }
 
-    ErrPostEx(SEV_REJECT, ERR_FORMAT_InvalidIDlineMolType, "Invalid moltype value \"%s\" provided in ID line of EMBL record.", p);
+    FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidIDlineMolType, "Invalid moltype value \"{}\" provided in ID line of EMBL record.", p);
     *q = ';';
     return false;
 }
@@ -846,7 +846,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             FtaInstallPrefix(PREFIX_ACCESSION, *ptr);
 
             if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
                 badlocus = true;
             } else if (fta_check_embl_moltype(finfo.str) == false)
                 badlocus = true;
@@ -874,14 +874,14 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         }
     } else if (pp->mode != Parser::EMode::Relaxed) {
         badlocus = true;
-        ErrPostStr(SEV_ERROR, ERR_LOCUS_NoLocusName, "No locus name for this entry");
+        FtaErrPost(SEV_ERROR, ERR_LOCUS_NoLocusName, "No locus name for this entry");
     }
 
     if (badlocus) {
         p = StringChr(finfo.str, '\n');
         if (p)
             *p = '\0';
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"%s\".", finfo.str);
+        FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped. LOCUS line = \"{}\".", finfo.str);
         if (p)
             *p = '\n';
         delete entry;
@@ -1397,7 +1397,7 @@ static bool CheckAccession(
             badac = true;
 
         if (badac) {
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Bad accession #, %s for this entry", acnum);
+            FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Bad accession #, {} for this entry", acnum);
             res = false;
             count++;
             continue;
@@ -1405,7 +1405,7 @@ static bool CheckAccession(
 
         if (skip == 2 && count == 0 && ! iswgs &&
             (accformat == 3 || accformat == 4 || accformat == 8)) {
-            ErrPostStr(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri, "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
+            FtaErrPost(SEV_REJECT, ERR_ACCESSION_WGSProjectAccIsPri, "This record has a WGS 'project' accession as its primary accession number. WGS project-accessions are only expected to be used as secondary accession numbers.");
             res = false;
         }
         count++;
@@ -1648,7 +1648,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     acc[0]        = '\0';
     if (tokens->num < 2) {
         if (pp->mode != Parser::EMode::Relaxed) {
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
+            FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line {}", (long int)entry->linenum);
             entry->drop = true;
         }
         return false;
@@ -1684,7 +1684,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
 
     if ((StringLen(acc) < 2) &&
         pp->mode != Parser::EMode::Relaxed) {
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [%s] for this entry.", acc);
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [{}] for this entry.", acc);
         entry->drop = true;
         return false;
     }
@@ -1721,7 +1721,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         }
     } else {
         string sourceName = sourceNames.at(pp->source);
-        ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [%s] for this source: %s", acc, sourceName.c_str());
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [{}] for this source: {}", acc, sourceName);
     }
 
     tokens->list.pop_front();
@@ -1745,7 +1745,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         if (pp->source != Parser::ESource::DDBJ || *p != 'A' || StringLen(p) != 12 ||
             ! StringEqu(p + 5, "0000000")) {
             string sourceName = sourceNames.at(pp->source);
-            ErrPostEx(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"%s\" for this source: %s", p, sourceName.c_str());
+            FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession \"{}\" for this source: {}", p, sourceName);
             get = false;
         }
         entry->is_mga = true;
@@ -1827,7 +1827,7 @@ void CloseFiles(ParserPtr pp)
  **********************************************************/
 void MsgSkipTitleFail(const char* flatfile, FinfoBlk& finfo)
 {
-    ErrPostEx(SEV_ERROR, ERR_ENTRY_Begin, "No valid beginning of entry found in %s file", flatfile);
+    FtaErrPost(SEV_ERROR, ERR_ENTRY_Begin, "No valid beginning of entry found in {} file", flatfile);
 
     // delete finfo;
 }

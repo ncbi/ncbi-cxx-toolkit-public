@@ -171,7 +171,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
                     retval = GB_FEAT_ERR_REPAIRABLE;
                 }
                 if (error_msgs) {
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qs);
+                    FtaErrPost(SEV_ERROR, ERR_FEATURE_QualWrongThisFeat, qs);
                 }
                 if (perform_corrections) {
                     cur = quals.erase(cur);
@@ -198,7 +198,7 @@ int XGBFeatKeyQualValid(CSeqFeatData::ESubtype subtype, TQualVector& quals, bool
             if (! fqual) {
                 if (error_msgs) {
                     string str = CSeqFeatData::GetQualifierAsString(cur_type);
-                    ErrPostStr(SEV_ERROR, ERR_FEATURE_MissManQual, str);
+                    FtaErrPost(SEV_ERROR, ERR_FEATURE_MissManQual, str);
                 }
 
                 if (perform_corrections)
@@ -249,7 +249,7 @@ static int SplitMultiValQual(TQualVector& quals)
             continue;
         }
 
-        ErrPostEx(SEV_WARNING, ERR_QUALIFIER_MultiValue, "Splited qualifier %s", qual_str.c_str());
+        FtaErrPost(SEV_WARNING, ERR_QUALIFIER_MultiValue, "Splited qualifier {}", qual_str);
 
         cur->SetVal(val_str.substr(0, sep_pos));
 
@@ -497,7 +497,7 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
                 retval = GB_FEAT_ERR_REPAIRABLE;
             }
             if (error_msgs) {
-                ErrPostStr(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qs);
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_UnknownSpelling, qs);
             }
             if (perform_corrections) {
                 cur = quals.erase(cur);
@@ -604,8 +604,8 @@ static int GBQualSemanticValid(TQualVector& quals, bool error_msgs, bool perform
             case eClass_none:
                 if ((*cur)->IsSetVal() && ! (*cur)->GetVal().empty()) {
                     if (error_msgs) {
-                        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Xtratext, "/%s=%s", qual_str.c_str(), (*cur)->GetVal().c_str());
-                    }
+                        FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Xtratext, "/{}={}", qual_str, (*cur)->GetVal());
+                    } 
                     retval = GB_FEAT_ERR_REPAIRABLE;
                     if (perform_corrections) {
                         (*cur)->ResetVal();
@@ -660,13 +660,13 @@ static int CkQualPosSeqaa(CGb_qual& cur, bool error_msgs, string& aa, const Char
             return retval; /* successful, format ok return */
         } else {
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AA, "Extra text after end /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AA, "Extra text after end /{}={}", cur.GetQual(), cur.GetVal());
             }
             retval = GB_FEAT_ERR_DROP;
         }
     } else {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AA, "Bad aa abbreviation<%s>, /%s=%s", aa.c_str(), cur.GetQual().c_str(), cur.GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AA, "Bad aa abbreviation<{}>, /{}={}", aa, cur.GetQual(), cur.GetVal());
         }
         retval = GB_FEAT_ERR_DROP;
     }
@@ -719,21 +719,21 @@ static int CkQualPosaa(CGb_qual& cur, bool error_msgs)
                     }
                 } /* if, aa: */ else {
                     if (error_msgs) {
-                        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AA, "Missing aa: /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                        FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AA, "Missing aa: /{}={}", cur.GetQual(), cur.GetVal());
                     }
                     retval = GB_FEAT_ERR_DROP;
                 }
             }
         } else {
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_SeqPosComma, "Missing \',\' /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_SeqPosComma, "Missing \',\' /{}={}", cur.GetQual(), cur.GetVal());
                 /* ) match */
             }
             retval = GB_FEAT_ERR_DROP;
         }
     } /* if, (pos: */ else {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Pos, "Missing (pos: /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Pos, "Missing (pos: /{}={}", cur.GetQual(), cur.GetVal());
             /* ) match */
         }
         retval = GB_FEAT_ERR_DROP;
@@ -843,7 +843,7 @@ static int CkQualText(CGb_qual& cur,
     if (! cur.IsSetVal()) {
         if (from_note) {
             if (error_msgs) {
-                ErrPostStr(SEV_ERROR, ERR_QUALIFIER_EmptyNote, "/note with no text ");
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_EmptyNote, "/note with no text ");
             }
             return GB_FEAT_ERR_DROP;
         } else {
@@ -883,8 +883,8 @@ static int CkQualText(CGb_qual& cur,
     for (s = value; *s != '\0'; s++) {
         if (!IS_WHITESP(*s) && !IS_ALPHANUM(*s) && *s != '\"') {
             if (error_msgs){
-                ErrPostEx(SEV_WARNING, ERR_QUALIFIER_IllegalCharacter,
-                "illegal char [%c] used in qualifier %s", s, gbqp ->qual);
+                FtaErrPost(SEV_WARNING, ERR_QUALIFIER_IllegalCharacter,
+                "illegal char [{}] used in qualifier {}", s, gbqp ->qual);
             }
             return (retval > GB_FEAT_ERR_REPAIRABLE) ? retval : GB_FEAT_ERR_REPAIRABLE;
         }
@@ -934,13 +934,13 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
                 }
             } /* if, aa: */ else {
                 if (error_msgs) {
-                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AA, "Missing aa: /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                    FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AA, "Missing aa: /{}={}", cur.GetQual(), cur.GetVal());
                 }
                 retval = GB_FEAT_ERR_DROP;
             }
         } else {
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_SeqPosComma, "Missing \',\' /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_SeqPosComma, "Missing \',\' /{}={}", cur.GetQual(), cur.GetVal());
                 /* ) match */
             }
             retval = GB_FEAT_ERR_DROP;
@@ -949,7 +949,7 @@ static int CkQualSeqaa(CGb_qual& cur, bool error_msgs)
 
 
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Seq, "Missing (seq: /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Seq, "Missing (seq: /{}={}", cur.GetQual(), cur.GetVal());
             /* ) match */
         }
         retval = GB_FEAT_ERR_DROP;
@@ -974,7 +974,7 @@ static int CkQualMatchToken(CGb_qual& cur, bool error_msgs, const Char* array_st
 
     if (! cur.IsSetVal()) {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "NULL value for (%s)", cur.GetQual().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "NULL value for ({})", cur.GetQual());
         }
         return GB_FEAT_ERR_DROP;
     }
@@ -999,13 +999,13 @@ static int CkQualMatchToken(CGb_qual& cur, bool error_msgs, const Char* array_st
 
         if (! found) {
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "Value not in list of legal values /%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "Value not in list of legal values /{}={}", cur.GetQual(), cur.GetVal());
             }
             retval = GB_FEAT_ERR_DROP;
         }
     } else {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Too_many_tokens, "/%s=%s", cur.GetQual().c_str(), cur.GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Too_many_tokens, "/{}={}", cur.GetQual(), cur.GetVal());
         }
         retval = GB_FEAT_ERR_DROP;
     }
@@ -1038,7 +1038,7 @@ static int CkQualEcnum(CGb_qual& cur, bool error_msgs, bool perform_corrections)
         for (; *str != '\0' && *str != '\"'; str++)
             if (! isdigit(*str) && *str != '.' && *str != '-' && *str != 'n') {
                 if (error_msgs) {
-                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_BadECnum, "At <%c>(%d) /%s=%s", *str, (int)*str, cur.GetQual().c_str(), cur.GetVal().c_str());
+                    FtaErrPost(SEV_ERROR, ERR_QUALIFIER_BadECnum, "At <{}>({}) /{}={}", *str, (int)*str, cur.GetQual(), cur.GetVal());
                 }
                 retval = GB_FEAT_ERR_DROP;
                 break;
@@ -1129,7 +1129,7 @@ static int CkQualSite(CGb_qual& cur, bool error_msgs)
 
     if (! ok) {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Cons_splice, "%s /%s=%s", bptr, cur.GetQual().c_str(), cur.GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Cons_splice, "{} /{}={}", bptr, cur.GetQual(), cur.GetVal());
         }
         retval = GB_FEAT_ERR_DROP;
     }
@@ -1170,7 +1170,7 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
         }
     if (! token_there) {
         if (error_msgs) {
-            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "Missing value /%s=...", cur.GetQual().c_str());
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "Missing value /{}=...", cur.GetQual());
         }
         retval = GB_FEAT_ERR_DROP;
     } else {
@@ -1228,14 +1228,14 @@ static int CkQualTokenType(CGb_qual& cur, bool error_msgs, Uint1 type)
                 }
 #endif
                 if (error_msgs) {
-                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "%s=%s, at %s", cur.GetQual().c_str(), cur.GetVal().c_str(), str);
+                    FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidDataFormat, "{}={}, at {}", cur.GetQual(), cur.GetVal(), str);
                 }
                 retval = GB_FEAT_ERR_DROP;
             }
         } else {
             /*-- more than a single token found ---*/
             if (error_msgs) {
-                ErrPostEx(SEV_ERROR, ERR_QUALIFIER_Xtratext, "extra text found /%s=%s, at %s", cur.GetQual().c_str(), cur.GetVal().c_str(), str);
+                FtaErrPost(SEV_ERROR, ERR_QUALIFIER_Xtratext, "extra text found /{}={}, at {}", cur.GetQual(), cur.GetVal(), str);
             }
             retval = GB_FEAT_ERR_DROP;
         }

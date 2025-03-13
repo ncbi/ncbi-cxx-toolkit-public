@@ -125,7 +125,7 @@ string CpTheQualValue(const TQualVector& qlist, const Char* qual)
 
         const string& val = cur->GetVal();
         if (val == "\"\"") {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual {} : {}", qual, val);
             break;
         }
 
@@ -154,7 +154,7 @@ optional<string> GetTheQualValue(TQualVector& qlist, const Char* qual)
 
         const string& val = (*cur)->GetVal();
         if (val == "\"\"") {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual %s : %s", qual, val.c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownQualSpelling, "Empty qual {} : {}", qual, val);
             break;
         }
 
@@ -216,7 +216,7 @@ Uint1 GetQualValueAa(const char* qval, bool checkseq)
         p++;
 
     if (checkseq && ! StringStr(p, "seq:"))
-        ErrPostEx(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"%s\" lacks a 'seq' field for the sequence of the anticodon.", qval);
+        FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"{}\" lacks a 'seq' field for the sequence of the anticodon.", qval);
 
     return CCleanup::ValidAminoAcid(string_view(str, p - str));
 }

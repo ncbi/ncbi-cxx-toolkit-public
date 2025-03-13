@@ -565,27 +565,6 @@ static void s_ReportError(ErrSev sev, int lev1, int lev2, string_view msg)
                 textStream.str());
 }
 
-/**********************************************************/
-void Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...)
-{
-    if (! bmp)
-        FtaErrInit();
-
-    if (! fec.fname || fec.line < 0) {
-        fec.module = nullptr;
-        fec.fname  = nullptr;
-        fec.line   = -1;
-        return;
-    }
-
-    va_list args;
-    char    fpiBuffer[1024];
-    va_start(args, fmt);
-    vsnprintf(fpiBuffer, 1024, fmt, args);
-    va_end(args);
-
-    s_ReportError(sev, lev1, lev2, fpiBuffer);
-}
 
 /**********************************************************/
 void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str)
@@ -604,6 +583,7 @@ void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str)
         str = str.substr(0, 1023);
     s_ReportError(sev, lev1, lev2, str);
 }
+
 
 /**********************************************************/
 

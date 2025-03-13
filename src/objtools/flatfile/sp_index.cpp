@@ -71,7 +71,7 @@ vector<string> swissProtKeywords = {
 /**********************************************************/
 static bool sp_err_field(const char* name)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Missing %s line, entry dropped", name);
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "Missing {} line, entry dropped", name);
     return true;
 }
 
@@ -152,10 +152,10 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             while (! end_of_file &&
                    ! StringEquN(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size())) {
                 if (StringEquN(finfo.str, "RM", 2)) {
-                    ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped %s", finfo.str);
+                    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped {}", finfo.str);
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
-                    ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
+                    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                     entry->drop = true;
                     break;
                 }
@@ -194,7 +194,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             if (! entry->drop) {
                 if (after_AC == false) {
-                    ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "Missing AC (accession #) line, entry dropped");
+                    FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "Missing AC (accession #) line, entry dropped");
                     entry->drop = true;
                 }
 

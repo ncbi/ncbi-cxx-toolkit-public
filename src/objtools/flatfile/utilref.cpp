@@ -140,7 +140,7 @@ void get_auth_from_toks(ValNodePtr token, ERefFormat format, CRef<CAuth_list>& a
         CRef<CAuthor> author = get_std_auth(p, format);
 
         if (author.Empty()) {
-            ErrPostStr(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, p);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalAuthorName, p);
             continue;
         }
         if (author->GetName().GetName().IsSetLast() &&
@@ -278,9 +278,9 @@ void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
 
     if (len > 4 && StringEquN(eptr - 4, "et al", 5)) {
         if (! jour)
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "%s", pt);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "{}", pt);
         else
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "%s : %s", pt, jour);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "{} : {}", pt, jour);
     }
 
     token = get_tokens(pt, delimiter);
@@ -457,7 +457,7 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
 
     if (p == pages || p[1] == '\0') {
         if (er == 0)
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegPageRange, "Incorrect pages range provided: \"%s\".", pages);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegPageRange, "Incorrect pages range provided: \"{}\".", pages);
         return (-1);
     }
 
@@ -476,18 +476,18 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
         lps = atoi(p + 1);
 
         if (lps - fps >= MAX_PAGE) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_LargePageRange, "Total pages exceed %d: %s: %s", MAX_PAGE, pages, title);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_LargePageRange, "Total pages exceed {}: {}: {}", MAX_PAGE, pages, title);
         } else if (fps > lps) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvertPageRange, "Page numbers may be inverted, %s: %s", pages, title);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_InvertPageRange, "Page numbers may be inverted, {}: {}", pages, title);
         }
     } else {
         i = check_mix_pages_range(pages);
         if (i == -1) {
             if (er > 0 && (er & 01) != 01)
                 return (-1);
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnusualPageNumber, "Pages numbers are not digits, letter+digits, or digits_letter: \"%s\": \"%s\".", pages, title);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnusualPageNumber, "Pages numbers are not digits, letter+digits, or digits_letter: \"{}\": \"{}\".", pages, title);
         } else if (i == 1) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_InvertPageRange, "Page numbers may be inverted, %s: %s", pages, title);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_InvertPageRange, "Page numbers may be inverted, {}: {}", pages, title);
         }
     }
     return (0);
@@ -505,13 +505,13 @@ CRef<CDate> get_date(const Char* year)
     CRef<CDate> ret;
 
     if (! year || *year == '\0') {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_IllegalDate, "No year in reference.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "No year in reference.");
         return ret;
     }
 
     if (year[0] < '0' || year[0] > '9' || year[1] < '0' || year[1] > '9' ||
         year[2] < '0' || year[2] > '9' || year[3] < '0' || year[3] > '9') {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: \"%s\".", year);
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: \"{}\".", year);
         return ret;
     }
 
@@ -523,12 +523,12 @@ CRef<CDate> get_date(const Char* year)
     Int4 i = NStr::StringToInt(year_str, NStr::fAllowTrailingSymbols);
 
     if (i < 1900) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_YearPrecedes1900, "Reference's year is extremely far in past: \"%s\".", year_str.c_str());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_YearPrecedes1900, "Reference's year is extremely far in past: \"{}\".", year_str);
         return ret;
     } else if (i < 1950) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_YearPrecedes1950, "Reference's year is too far in past: \"%s\".", year_str.c_str());
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_YearPrecedes1950, "Reference's year is too far in past: \"{}\".", year_str);
     } else if (i > tm->tm_year + 1900 + 2) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_ImpendingYear, "Reference's year is too far in future: \"%s\"", year_str.c_str());
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_ImpendingYear, "Reference's year is too far in future: \"{}\"", year_str);
     }
 
     ret.Reset(new CDate);

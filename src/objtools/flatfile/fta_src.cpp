@@ -777,7 +777,7 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
             if (cur->GetQual() != "partial")
                 continue;
 
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_PartialQualifier, "Source feature location has /partial qualifier. Qualifier has been ignored: \"%s\".", sfbp->location ? sfbp->location : "?empty?");
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_PartialQualifier, "Source feature location has /partial qualifier. Qualifier has been ignored: \"{}\".", sfbp->location ? sfbp->location : "?empty?");
             break;
         }
 
@@ -792,7 +792,7 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
                  *p == ':' || *p == ',' || *p == '.') &&
                 (*q == '\0' || *q == '(' || *q == ')' || *q == ',' ||
                  *q == ':' || *q == '.')) {
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_UnusualLocation, "Source feature has an unusual location: \"%s\".", sfbp->location ? sfbp->location : "?empty?");
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_UnusualLocation, "Source feature has an unusual location: \"{}\".", sfbp->location ? sfbp->location : "?empty?");
                 break;
             }
         }
@@ -818,10 +818,10 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
             }
         }
         if (partial) {
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_PartialLocation, "Source feature location is partial; partiality flags have been ignored: \"%s\".", sfbp->location ? sfbp->location : "?empty?");
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_PartialLocation, "Source feature location is partial; partiality flags have been ignored: \"{}\".", sfbp->location ? sfbp->location : "?empty?");
         }
         if (invalid || count != 0) {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_InvalidLocation, "Invalid location for source feature at \"%s\". Entry dropped.", sfbp->location ? sfbp->location : "?empty?");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_InvalidLocation, "Invalid location for source feature at \"{}\". Entry dropped.", sfbp->location ? sfbp->location : "?empty?");
             ret = false;
         }
     }
@@ -1098,7 +1098,7 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
                 p[50] = '\0';
             } else
                 ch = '\0';
-            ErrPostEx(SEV_REJECT, ERR_DIVISION_TransgenicNotSYN_TGN, "Source feature located at \"%s\" has a /transgenic qualifier, but this record is not in the SYN or TGN division.", p ? p : "unknown");
+            FtaErrPost(SEV_REJECT, ERR_DIVISION_TransgenicNotSYN_TGN, "Source feature located at \"{}\" has a /transgenic qualifier, but this record is not in the SYN or TGN division.", p ? p : "unknown");
             if (ch != '\0')
                 p[50] = ch;
             ret = false;
@@ -1109,7 +1109,7 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
     }
 
     if (syntgndiv == 2 && ! got)
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_TGNnotTransgenic, "This record uses the TGN division code, but there is no full-length /transgenic source feature.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_TGNnotTransgenic, "This record uses the TGN division code, but there is no full-length /transgenic source feature.");
     return (ret);
 }
 
@@ -1621,7 +1621,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
 
     if (! sfbp->next) {
         if (! sfbp->full) {
-            ErrPostStr(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
+            FtaErrPost(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
         }
         return (sfbp);
     }
@@ -1707,7 +1707,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
     }
 
     SourceFeatBlkSetFree(sfbp);
-    ErrPostStr(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
+    FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
     return nullptr;
 }
 
@@ -1791,7 +1791,7 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
                 p = StringSave(val_ptr);
             if (StringLen(p) > 50)
                 p[50] = '\0';
-            ErrPostEx(SEV_WARNING, ERR_SOURCE_UnwantedQualifiers, "Unwanted qualifier on source feature: %s=%s", cur_qual.c_str(), p);
+            FtaErrPost(SEV_WARNING, ERR_SOURCE_UnwantedQualifiers, "Unwanted qualifier on source feature: {}={}", cur_qual, p);
             MemFree(p);
         }
 
@@ -1863,7 +1863,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
         source != Parser::ESource::EMBL && source != Parser::ESource::LANL &&
         source != Parser::ESource::Refseq) {
         *p = ':';
-        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref=%s\" for source \"%s\".", &val_buf[0], q);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref={}\" for source \"{}\".", &val_buf[0], q);
         return tag;
     }
 
@@ -1873,7 +1873,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
     }
 
     if (*b) {
-        ErrPostEx(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref, "/db_xref type \"%s\" is obsolete.", &val_buf[0]);
+        FtaErrPost(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref, "/db_xref type \"{}\" is obsolete.", &val_buf[0]);
         if (NStr::CompareNocase(&val_buf[0], "IFO") == 0) {
             string line("NBRC:");
             line.append(p + 1);
@@ -1912,7 +1912,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
 
     if (! *b) {
         *p = ':';
-        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref=%s\" for source \"%s\".", &val_buf[0], q);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref={}\" for source \"{}\".", &val_buf[0], q);
         return tag;
     }
 
@@ -1972,7 +1972,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     if (bio.GetOrg().CanGetTaxname() &&
                         ! bio.GetOrg().GetTaxname().empty())
                         taxname = bio.GetOrg().GetTaxname().c_str();
-                    ErrPostEx(SEV_ERROR, ERR_ORGANISM_SynOrgNameNotSYNdivision, "The NCBI Taxonomy DB believes that organism name \"%s\" is reserved for synthetic sequences, but this record is not in the SYN division.", taxname ? taxname : "not_specified");
+                    FtaErrPost(SEV_ERROR, ERR_ORGANISM_SynOrgNameNotSYNdivision, "The NCBI Taxonomy DB believes that organism name \"{}\" is reserved for synthetic sequences, but this record is not in the SYN division.", taxname ? taxname : "not_specified");
                 }
             }
         }
@@ -2007,7 +2007,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                 const char* p = StringChr(val_ptr, ':');
                 if (p) {
                     if (StringChr(p + 1, ':')) {
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleQualMultToks, "More than 2 tokens found in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_OrganelleQualMultToks, "More than 2 tokens found in /organelle qualifier: \"{}\". Entry dropped.", val_ptr);
                         dropped = true;
                         break;
                     }
@@ -2015,7 +2015,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     string_view val_str(val_ptr, p - val_ptr);
                     i = StringMatchIcase(OrganelleFirstToken, val_str);
                     if (i < 0) {
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"{}\". Entry dropped.", val_ptr);
                         dropped = true;
                         break;
                     }
@@ -2027,7 +2027,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                 } else {
                     i = StringMatchIcase(OrganelleFirstToken, val_ptr);
                     if (i < 0) {
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"%s\". Entry dropped.", val_ptr);
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_OrganelleIllegalClass, "Illegal class in /organelle qualifier: \"{}\". Entry dropped.", val_ptr);
                         dropped = true;
                         break;
                     }
@@ -2053,7 +2053,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             for (p = tco; *p == ' ' || *p == '\t';)
                 p++;
             if (*p == '\0') {
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Empty country name in /country qualifier : \"%s\".", val_ptr);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Empty country name in /country qualifier : \"{}\".", val_ptr);
             } else {
                 for (q = p + 1; *q != '\0';)
                     q++;
@@ -2066,9 +2066,9 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     valid_country = CCountries::WasValid(p);
 
                     if (! valid_country)
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Country \"%s\" from /country qualifier \"%s\" is not a valid country name.", tco, val_ptr);
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Country \"{}\" from /country qualifier \"{}\" is not a valid country name.", tco, val_ptr);
                     else
-                        ErrPostEx(SEV_WARNING, ERR_SOURCE_FormerCountry, "Country \"%s\" from /country qualifier \"%s\" is a former country name which is no longer valid.", tco, val_ptr);
+                        FtaErrPost(SEV_WARNING, ERR_SOURCE_FormerCountry, "Country \"{}\" from /country qualifier \"{}\" is a former country name which is no longer valid.", tco, val_ptr);
                 }
             }
 
@@ -2152,7 +2152,7 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
         }
 
         if (! tsfbp) {
-            ErrPostEx(SEV_ERROR, ERR_ORGANISM_NoSourceFeatMatch, "Organism name \"%s\" from OS/ORGANISM line does not exist in this record's source features.", taxname.c_str());
+            FtaErrPost(SEV_ERROR, ERR_ORGANISM_NoSourceFeatMatch, "Organism name \"{}\" from OS/ORGANISM line does not exist in this record's source features.", taxname);
         }
     }
 }
@@ -2177,7 +2177,7 @@ static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bo
                 sev = SEV_WARNING;
             else
                 sev = SEV_REJECT;
-            ErrPostEx(sev, ERR_SERVER_NoLineageFromTaxon, "Taxonomy lookup for organism name \"%s\" yielded an Org-ref that has no lineage.", sfbp->name);
+            FtaErrPost(sev, ERR_SERVER_NoLineageFromTaxon, "Taxonomy lookup for organism name \"{}\" yielded an Org-ref that has no lineage.", sfbp->name);
             if (sev == SEV_REJECT)
                 break;
         }
@@ -2240,14 +2240,14 @@ static void PropagateSuppliedLineage(const CBioseq& bioseq,
         }
 
         if (! found) {
-            ErrPostEx((taxserver == 0) ? SEV_INFO : SEV_WARNING,
+            FtaErrPost((taxserver == 0) ? SEV_INFO : SEV_WARNING,
                       ERR_ORGANISM_UnclassifiedLineage,
                       "Taxonomy lookup for organism name \"%s\" failed, and no matching organism exists in OS/ORGANISM lines, so lineage has been set to \"Unclassified\".",
                       taxname.c_str());
             p = "Unclassified";
         } else {
             if (lineage.empty()) {
-                ErrPostEx((taxserver == 0) ? SEV_INFO : SEV_WARNING,
+                FtaErrPost((taxserver == 0) ? SEV_INFO : SEV_WARNING,
                           ERR_ORGANISM_UnclassifiedLineage,
                           "Taxonomy lookup for organism name \"%s\" failed, and the matching organism from OS/ORGANISM lines has no lineage, so lineage has been set to \"Unclassified\".",
                           taxname.c_str());
@@ -2305,7 +2305,7 @@ static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, string& moltype)
                 ch    = p[50];
                 p[50] = '\0';
             }
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_MissingMolType, "Source feature at \"%s\" lacks a /mol_type qualifier.", p ? p : "<empty>");
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingMolType, "Source feature at \"{}\" lacks a /mol_type qualifier.", p ? p : "<empty>");
             if (ch != '\0')
                 p[50] = ch;
         } else if (ret && ! StringEqu(name, tsfbp->moltype))
@@ -2366,16 +2366,16 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
                 location[50] = '\0';
             } else
                 ch = '\0';
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_InconsistentEnvSampQual, "Inconsistent /environmental_sample qualifier usage. Source feature at location \"%s\" lacks the qualifier.", location ? location : "unknown");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_InconsistentEnvSampQual, "Inconsistent /environmental_sample qualifier usage. Source feature at location \"{}\" lacks the qualifier.", location ? location : "unknown");
             if (ch != '\0')
                 location[50] = ch;
             return false;
         }
     } else if (NStr::CompareNocase(ibp->division, "ENV") == 0) {
         if (source == Parser::ESource::EMBL)
-            ErrPostStr(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier. It will not be placed in the ENV division until the qualifier is added.");
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier. It will not be placed in the ENV division until the qualifier is added.");
         else {
-            ErrPostStr(SEV_REJECT, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier.");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_MissingEnvSampQual, "This ENV division record has source features that lack the /environmental_sample qualifier.");
             return false;
         }
     }
@@ -2731,38 +2731,38 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                 prev = -2;
 
             if (bad_start) {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "Unknown text found at the beginning of /PCR_primers qualifier: \"%s\". Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "Unknown text found at the beginning of /PCR_primers qualifier: \"{}\". Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
 
             if (comma) {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_PCRprimerEmbeddedComma, "Encountered embedded comma within /PCR_primers qualifier's field value: \"%s\". Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_PCRprimerEmbeddedComma, "Encountered embedded comma within /PCR_primers qualifier's field value: \"{}\". Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
 
             if (prev == -1) {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "Encountered incorrect order of \"forward\" and \"reversed\" sequences within /PCR_primers qualifier: \"%s\". Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "Encountered incorrect order of \"forward\" and \"reversed\" sequences within /PCR_primers qualifier: \"{}\". Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
 
             if (prev == -2) {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingPCRprimerSeq, "/PCR_primers qualifier \"%s\" is missing or has an empty required fwd_seq or rev_seq fields (or both). Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MissingPCRprimerSeq, "/PCR_primers qualifier \"{}\" is missing or has an empty required fwd_seq or rev_seq fields (or both). Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
 
             if (empty) {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "/PCR_primers qualifier \"%s\" has an empty field value. Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidPCRprimer, "/PCR_primers qualifier \"{}\" has an empty field value. Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
 
             if (! tppp->fwd_seq || tppp->fwd_seq[0] == '\0' ||
                 ! tppp->rev_seq || tppp->rev_seq[0] == '\0') {
-                ErrPostEx(SEV_REJECT, ERR_QUALIFIER_MissingPCRprimerSeq, "/PCR_primers qualifier \"%s\" is missing or has an empty required fwd_seq or rev_seq fields (or both). Entry dropped.", &val_buf[0]);
+                FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MissingPCRprimerSeq, "/PCR_primers qualifier \"{}\" is missing or has an empty required fwd_seq or rev_seq fields (or both). Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
             }
@@ -2825,7 +2825,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                 p = StringSave(sfbp->location);
                 if (p && StringLen(p) > 50)
                     p[50] = '\0';
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidCollectionDate, "/collection_date \"%s\" for source feature at \"%s\" has too many components.", val, p ? p : "unknown location");
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCollectionDate, "/collection_date \"{}\" for source feature at \"{}\" has too many components.", val, p ? p : "unknown location");
                 if (p)
                     MemFree(p);
                 continue;
@@ -3004,7 +3004,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                     q = "has too many hour and minute delimiters";
                 else
                     q = "has not yet occured";
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidCollectionDate, "/collection_date \"%s\" for source feature at \"%s\" %s.", val, p ? p : "unknown location", q);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCollectionDate, "/collection_date \"{}\" for source feature at \"{}\" {}.", val, p ? p : "unknown location", q);
                 if (p)
                     MemFree(p);
 
@@ -3073,9 +3073,9 @@ static void CheckMetagenome(CBioSource& bio)
         sub->SetName("");
         bio.SetSubtype().push_back(sub);
     } else if (! metalin)
-        ErrPostEx(SEV_ERROR, ERR_ORGANISM_LineageLacksMetagenome, "Organism name \"%s\" contains \"metagenome\" but the lineage lacks the \"metagenomes\" classification.", taxname);
+        FtaErrPost(SEV_ERROR, ERR_ORGANISM_LineageLacksMetagenome, "Organism name \"{}\" contains \"metagenome\" but the lineage lacks the \"metagenomes\" classification.", taxname);
     else
-        ErrPostEx(SEV_ERROR, ERR_ORGANISM_OrgNameLacksMetagenome, "Lineage includes the \"metagenomes\" classification but organism name \"%s\" lacks \"metagenome\".", taxname);
+        FtaErrPost(SEV_ERROR, ERR_ORGANISM_OrgNameLacksMetagenome, "Lineage includes the \"metagenomes\" classification but organism name \"{}\" lacks \"metagenome\".", taxname);
 }
 
 /**********************************************************/
@@ -3098,14 +3098,14 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 
         count_qual++;
         if (tsfbp->submitter_seqid[0] == '\0') {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_MultipleSubmitterSeqids, "Multiple /submitter_seqid qualifiers were encountered within source feature at location \"%s\". Entry dropped.", tsfbp->location ? tsfbp->location : "?empty?");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_MultipleSubmitterSeqids, "Multiple /submitter_seqid qualifiers were encountered within source feature at location \"{}\". Entry dropped.", tsfbp->location ? tsfbp->location : "?empty?");
             break;
         }
 
         if (! ssid)
             ssid = tsfbp->submitter_seqid;
         else if (! StringEqu(ssid, tsfbp->submitter_seqid)) {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_DifferentSubmitterSeqids, "Different /submitter_seqid qualifiers were encountered amongst source features: \"%s\" and \"%s\" at least. Entry dropped.", ssid, tsfbp->submitter_seqid);
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_DifferentSubmitterSeqids, "Different /submitter_seqid qualifiers were encountered amongst source features: \"{}\" and \"{}\" at least. Entry dropped.", ssid, tsfbp->submitter_seqid);
             break;
         }
     }
@@ -3116,7 +3116,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
     if (count_feat == count_qual)
         return (true);
 
-    ErrPostStr(SEV_REJECT, ERR_SOURCE_LackingSubmitterSeqids, "One ore more source features are lacking /submitter_seqid qualifiers provided in others. Entry dropped.");
+    FtaErrPost(SEV_REJECT, ERR_SOURCE_LackingSubmitterSeqids, "One ore more source features are lacking /submitter_seqid qualifiers provided in others. Entry dropped.");
     return (false);
 }
 
@@ -3146,7 +3146,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
 
     sfbp = CollectSourceFeats(dbp, dbp_end, type);
     if (! sfbp) {
-        ErrPostStr(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
         return;
     }
 
@@ -3160,13 +3160,13 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
 
     res = CheckSourceFeatLocAccs(sfbp, acc);
     if (res) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_BadLocation, "Source feature location points to another record: \"%s\". Entry dropped.", res);
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_BadLocation, "Source feature location points to another record: \"{}\". Entry dropped.", res);
         SourceFeatBlkSetFree(sfbp);
         return;
     }
 
     if (! SourceFeatStructFillIn(ibp, sfbp, use_what)) {
-        ErrPostStr(SEV_REJECT, ERR_SOURCE_MultipleMolTypes, "Multiple /mol_type qualifiers were encountered within source feature. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_MultipleMolTypes, "Multiple /mol_type qualifiers were encountered within source feature. Entry dropped.");
         SourceFeatBlkSetFree(sfbp);
         return;
     }
@@ -3178,14 +3178,14 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
     }
 
     if (! CheckMoltypeConsistency(sfbp, ibp->moltype)) {
-        ErrPostStr(SEV_REJECT, ERR_SOURCE_InconsistentMolType, "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_InconsistentMolType, "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
         SourceFeatBlkSetFree(sfbp);
         return;
     }
 
     res = CheckSourceFeatFocusAndTransposon(sfbp);
     if (res) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_FocusAndTransposonNotAllowed, "/transposon (or /insertion_seq) qualifiers should not be used in conjunction with /focus. Source feature at \"%s\". Entry dropped.", res);
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_FocusAndTransposonNotAllowed, "/transposon (or /insertion_seq) qualifiers should not be used in conjunction with /focus. Source feature at \"{}\". Entry dropped.", res);
         SourceFeatBlkSetFree(sfbp);
         return;
     }
@@ -3193,9 +3193,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
     res = CheckSourceFeatOrgs(sfbp, &i);
     if (res) {
         if (i == 1) {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_NoOrganismQual, "/organism qualifier contains only organell/genome name. No genus/species present. Source feature at \"%s\". Entry dropped.", res);
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_NoOrganismQual, "/organism qualifier contains only organell/genome name. No genus/species present. Source feature at \"{}\". Entry dropped.", res);
         } else {
-            ErrPostEx(SEV_REJECT, ERR_SOURCE_OrganismIncomplete, "Required /organism qualifier is containing genome info only at \"%s\". Entry dropped.", res);
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_OrganismIncomplete, "Required /organism qualifier is containing genome info only at \"{}\". Entry dropped.", res);
         }
         SourceFeatBlkSetFree(sfbp);
         return;
@@ -3216,9 +3216,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
     i   = CheckSourceFeatCoverage(sfbp, mmp, len);
     if (i != 0) {
         if (i == 1) {
-            ErrPostStr(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
         } else {
-            ErrPostStr(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
         }
         SourceFeatBlkSetFree(sfbp);
         MinMaxFree(mmp);
@@ -3249,20 +3249,20 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
             sev = SEV_WARNING;
         else
             sev = SEV_ERROR;
-        ErrPostStr(sev, ERR_SOURCE_TransSingleOrgName, "Use of /transgenic requires at least two source features with differences among /organism, /strain, /organelle, and /isolate, between the host and foreign organisms.");
+        FtaErrPost(sev, ERR_SOURCE_TransSingleOrgName, "Use of /transgenic requires at least two source features with differences among /organism, /strain, /organelle, and /isolate, between the host and foreign organisms.");
     } else if (i > 0) {
         sev = SEV_REJECT;
         if (i == 1) {
-            ErrPostStr(sev, ERR_SOURCE_TransgenicTooShort, "Source feature with /transgenic qualifier does not span the entire sequence. Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_TransgenicTooShort, "Source feature with /transgenic qualifier does not span the entire sequence. Entry dropped.");
         } else if (i == 2) {
-            ErrPostStr(sev, ERR_SOURCE_FocusAndTransgenicQuals, "Both /focus and /transgenic qualifiers exist; these quals are mutually exclusive. Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_FocusAndTransgenicQuals, "Both /focus and /transgenic qualifiers exist; these quals are mutually exclusive. Entry dropped.");
         } else if (i == 3) {
-            ErrPostStr(sev, ERR_SOURCE_MultipleTransgenicQuals, "Multiple source features have /transgenic qualifiers. Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_MultipleTransgenicQuals, "Multiple source features have /transgenic qualifiers. Entry dropped.");
         } else {
             already = true;
             if (! need_focus)
                 sev = SEV_ERROR;
-            ErrPostEx(sev, ERR_SOURCE_FocusQualMissing, "Multiple organism names exist, but no source feature has a /focus qualifier.%s", (sev == SEV_ERROR) ? "" : " Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_FocusQualMissing, "Multiple organism names exist, but no source feature has a /focus qualifier.{}", (sev == SEV_ERROR) ? "" : " Entry dropped.");
         }
 
         if (sev == SEV_REJECT) {
@@ -3274,7 +3274,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
 
     res = CheckWholeSourcesVersusFocused(sfbp);
     if (res) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_FocusQualNotFullLength, "/focus qualifier should be used for the full-length source feature, not on source feature at \"%s\".", res);
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_FocusQualNotFullLength, "/focus qualifier should be used for the full-length source feature, not on source feature at \"{}\".", res);
         SourceFeatBlkSetFree(sfbp);
         MinMaxFree(mmp);
         return;
@@ -3285,14 +3285,14 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
     if (i > 0) {
         sev = SEV_REJECT;
         if (i == 1) {
-            ErrPostStr(sev, ERR_SOURCE_FocusQualNotNeeded, "/focus qualifier present, but only one organism name exists. Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_FocusQualNotNeeded, "/focus qualifier present, but only one organism name exists. Entry dropped.");
         } else if (i == 2) {
-            ErrPostStr(sev, ERR_SOURCE_MultipleOrganismWithFocus, "/focus qualifiers exist on source features with differing organism names. Entry dropped.");
+            FtaErrPost(sev, ERR_SOURCE_MultipleOrganismWithFocus, "/focus qualifiers exist on source features with differing organism names. Entry dropped.");
         } else {
             if (! need_focus)
                 sev = SEV_ERROR;
             if (! already)
-                ErrPostEx(sev, ERR_SOURCE_FocusQualMissing, "Multiple organism names exist, but no source feature has a /focus qualifier.%s", (sev == SEV_ERROR) ? "" : " Entry dropped.");
+                FtaErrPost(sev, ERR_SOURCE_FocusQualMissing, "Multiple organism names exist, but no source feature has a /focus qualifier.{}", (sev == SEV_ERROR) ? "" : " Entry dropped.");
         }
 
         if (sev == SEV_REJECT) {
@@ -3304,7 +3304,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
     res = CheckSourceOverlap(mmp->next, len);
     MinMaxFree(mmp);
     if (res) {
-        ErrPostEx(SEV_REJECT, ERR_SOURCE_MultiOrgOverlap, "Overlapping source features have different organism names %s. Entry dropped.", res);
+        FtaErrPost(SEV_REJECT, ERR_SOURCE_MultiOrgOverlap, "Overlapping source features have different organism names {}. Entry dropped.", res);
         SourceFeatBlkSetFree(sfbp);
         MemFree(res);
         return;
@@ -3312,13 +3312,13 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
 
     res = CheckForUnusualFullLengthOrgs(sfbp);
     if (res) {
-        ErrPostEx(SEV_WARNING, ERR_SOURCE_UnusualOrgName, "Unusual organism name \"%s\" encountered for full-length source feature.", res);
+        FtaErrPost(SEV_WARNING, ERR_SOURCE_UnusualOrgName, "Unusual organism name \"{}\" encountered for full-length source feature.", res);
     }
 
     for (tsfbp = sfbp, i = 0; tsfbp; tsfbp = tsfbp->next)
         i++;
     if (i > BIOSOURCES_THRESHOLD) {
-        ErrPostEx(SEV_WARNING, ERR_SOURCE_ManySourceFeats, "This record has more than %d source features.", BIOSOURCES_THRESHOLD);
+        FtaErrPost(SEV_WARNING, ERR_SOURCE_ManySourceFeats, "This record has more than {} source features.", BIOSOURCES_THRESHOLD);
     }
 
     if (! ParsePcrPrimers(sfbp)) {
@@ -3353,7 +3353,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
         GetSeqLocation(*feat, tsfbp->location, seqid, &err, pp, "source");
 
         if (err) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "/source|%s| range check detects problems. Entry dropped.", tsfbp->location);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "/source|{}| range check detects problems. Entry dropped.", tsfbp->location);
             break;
         }
 

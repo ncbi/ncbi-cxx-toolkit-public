@@ -298,7 +298,7 @@ static void XMLPerformIndex(ParserPtr pp)
         }
         if (! within) {
             if (StringEqu(s, INSDSEQ_END))
-                ErrPostEx(SEV_ERROR, ERR_FORMAT_UnexpectedEnd, "Unexpected end tag \"%s\" of XML record found at line %d.", s, line);
+                FtaErrPost(SEV_ERROR, ERR_FORMAT_UnexpectedEnd, "Unexpected end tag \"{}\" of XML record found at line {}.", s, line);
             continue;
         }
         if (StringEqu(s, INSDSEQ_END)) {
@@ -354,14 +354,14 @@ static void XMLPerformIndex(ParserPtr pp)
 static void XMLParseVersion(IndexblkPtr ibp, const string* line)
 {
     if (! line) {
-        ErrPostStr(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
+        FtaErrPost(SEV_FATAL, ERR_VERSION_BadVersionLine, "Empty <INSDSeq_accession-version> line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
     for (char c : *line) {
         if (c == ' ' || c == '\t') {
-            ErrPostEx(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+            FtaErrPost(SEV_FATAL, ERR_VERSION_BadVersionLine, "Incorrect <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
             ibp->drop = true;
             return;
         }
@@ -369,12 +369,12 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
 
     auto q = line->rfind('.');
     if (q == string::npos) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+        FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing version number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
         ibp->drop = true;
         return;
     }
     if (ibp->acnum != line->substr(0, q)) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"%s\" vs \"%s\". Entry dropped.", line->c_str(), ibp->acnum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in <INSDSeq_accession-version> and <INSDSeq_primary-accession> lines don't match: \"{}\" vs \"{}\". Entry dropped.", *line, ibp->acnum);
         ibp->drop = true;
         return;
     }
@@ -383,7 +383,7 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
     for (auto p = line->begin() + q; p < line->end(); ++p) {
         char ch = *p;
         if (! (ch >= '0' && ch <= '9')) {
-            ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"%s\". Entry dropped.", line->c_str());
+            FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in <INSDSeq_accession-version> line: \"{}\". Entry dropped.", *line);
             ibp->drop = true;
             return;
         }
@@ -392,7 +392,7 @@ static void XMLParseVersion(IndexblkPtr ibp, const string* line)
     if (ibp->vernum > 0)
         return;
 
-    ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
+    FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"{}.{}\" is not a positive integer. Entry dropped.", ibp->vernum, ibp->acnum, ibp->vernum);
     ibp->drop = true;
 }
 
@@ -510,15 +510,15 @@ static bool XMLTagCheck(const TXmlIndexList& xil, XmlKwordBlkPtr xkbp)
     bool ret = true;
     for (auto txip = xil.begin(); txip != xil.end(); ++txip) {
         if (txip->start == 0) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->end_line);
             ret = false;
         }
         if (txip->end == 0) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"%s\" at line %d.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", XMLStringByTag(xkbp, txip->tag), txip->start_line);
             ret = false;
         }
         if (auto const nxt = next(txip); nxt != xil.end() && txip->order >= nxt->order) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"%s\" at line %d is out of order.", XMLStringByTag(xkbp, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "XML tag \"{}\" at line {} is out of order.", XMLStringByTag(xkbp, nxt->tag), (nxt->start > 0) ? nxt->start_line : nxt->end_line);
             ret = false;
         }
     }
@@ -532,11 +532,11 @@ static bool XMLSameTagsCheck(const TXmlIndexList& xil, const char* name)
 
     for (const auto& txip : xil) {
         if (txip.start == 0) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"%s\" at line %d.", name, txip.end_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingStartTag, "XML record's missing start tag for \"{}\" at line {}.", name, txip.end_line);
             ret = false;
         }
         if (txip.end == 0) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"%s\" at line %d.", name, txip.start_line);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLMissingEndTag, "XML record's missing end tag for \"{}\" at line {}.", name, txip.start_line);
             ret = false;
         }
     }
@@ -644,7 +644,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDSECONDARY_ACCN);
     if (xip->subtags.empty()) {
         auto p = XMLStringByTag(xmkwl, INSDSEQ_SECONDARY_ACCESSIONS);
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", p);
         ibp->drop = true;
         return false;
     }
@@ -686,7 +686,7 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDKEYWORD);
     if (xip->subtags.empty()) {
         const char* p = XMLStringByTag(xmkwl, INSDSEQ_KEYWORDS);
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", p);
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", p);
         ibp->drop = true;
         return false;
     }
@@ -715,7 +715,7 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
 /**********************************************************/
 static bool XMLErrField(Int4 tag)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s data in XML format file. Entry dropped.", XMLStringByTag(xmkwl, tag));
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "No {} data in XML format file. Entry dropped.", XMLStringByTag(xmkwl, tag));
     return false;
 }
 
@@ -785,14 +785,14 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     if (got_definition == false)
         ret = XMLErrField(INSDSEQ_DEFINITION);
     if (got_accession == false) {
-        ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession number for this record. Entry dropped.");
+        FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession number for this record. Entry dropped.");
         ret = false;
     }
     if (got_version == false) {
         if (pp->accver != false)
             ret = XMLErrField(INSDSEQ_ACCESSION_VERSION);
     } else if (pp->source == Parser::ESource::USPTO) {
-        ErrPostEx(SEV_REJECT, ERR_ENTRY_InvalidLineType, "Line type %s is not allowed for USPTO records. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
+        FtaErrPost(SEV_REJECT, ERR_ENTRY_InvalidLineType, "Line type {} is not allowed for USPTO records. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
         ret = false;
     }
     if (got_source == false)
@@ -805,7 +805,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
          ! StringEquN(ibp->acnum, "NW_", 3)))
         ret = XMLErrField(INSDSEQ_REFERENCES);
     if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false) {
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type %s is allowed for TPA or TSA records only. Continue anyway.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
+        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type {} is allowed for TPA or TSA records only. Continue anyway.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));
     }
     if (got_features == false)
         ret = XMLErrField(INSDSEQ_FEATURE_TABLE);
@@ -845,7 +845,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
         }
         if (c > 126 || (c < 32 && c != 10)) {
             if (err)
-                ErrPostEx(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line %d, decimal value %d, replaced by #.", ibp->linenum, c);
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line %d, decimal value %d, replaced by #.", ibp->linenum, c);
             *p++ = '#';
         } else
             *p++ = (Char)c;
@@ -965,12 +965,12 @@ static bool XMLCheckRequiredFeatTags(const TXmlIndexList& xil)
     }
 
     if (! got_key) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing %s data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_KEY));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing {} data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_KEY));
         ret = false;
     }
 
     if (! got_location) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing %s data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_LOCATION));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "Feature table is missing {} data in XML format file.", XMLStringByTag(xmfeatkwl, INSDFEATURE_LOCATION));
         ret = false;
     }
     return (ret);
@@ -997,17 +997,17 @@ static bool XMLCheckRequiredIntTags(const TXmlIndexList& xil)
     }
 
     if (! got_accession) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Feature's interval block is missing %s data in XML format file.", XMLStringByTag(xmintkwl, INSDINTERVAL_ACCESSION));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "Feature's interval block is missing {} data in XML format file.", XMLStringByTag(xmintkwl, INSDINTERVAL_ACCESSION));
         ret = false;
     }
 
     if (got_point) {
         if (got_from || got_to) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "%s tag cannot co-exist with %s or %s or both in XML format.", XMLStringByTag(xmintkwl, INSDINTERVAL_POINT), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO));
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "{} tag cannot co-exist with {} or {} or both in XML format.", XMLStringByTag(xmintkwl, INSDINTERVAL_POINT), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO));
             ret = false;
         }
     } else if (got_from == false || got_to == false) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "%s must contain either both of %s and %s, or %s.", XMLStringByTag(xmsubkwl, INSDINTERVAL), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO), XMLStringByTag(xmintkwl, INSDINTERVAL_POINT));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLInvalidINSDInterval, "{} must contain either both of {} and {}, or {}.", XMLStringByTag(xmsubkwl, INSDINTERVAL), XMLStringByTag(xmintkwl, INSDINTERVAL_FROM), XMLStringByTag(xmintkwl, INSDINTERVAL_TO), XMLStringByTag(xmintkwl, INSDINTERVAL_POINT));
         ret = false;
     }
 
@@ -1022,7 +1022,7 @@ static bool XMLCheckRequiredQualTags(const TXmlIndexList& xil)
             return true;
     }
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "Qualifier block is missing %s data in XML format file.", XMLStringByTag(xmqualkwl, INSDQUALIFIER_NAME));
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "Qualifier block is missing {} data in XML format file.", XMLStringByTag(xmqualkwl, INSDQUALIFIER_NAME));
     return false;
 }
 
@@ -1043,7 +1043,7 @@ static bool XMLIndexFeatures(const char* entry, TXmlIndexList& xil)
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDFEATURE);
     if (xip->subtags.empty()) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
         return false;
     }
 
@@ -1079,7 +1079,7 @@ static bool XMLIndexFeatures(const char* entry, TXmlIndexList& xil)
     if (xipfeat == xip->subtags.end())
         return true;
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_FEATURE_TABLE));
     return false;
 }
 
@@ -1098,12 +1098,12 @@ static bool XMLCheckRequiredRefTags(const TXmlIndexList& xil)
     }
 
     if (! got_reference) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_REFERENCE));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "{} block is missing {} data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_REFERENCE));
         ret = false;
     }
 
     if (! got_journal) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_JOURNAL));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "{} block is missing {} data in XML format file.", XMLStringByTag(xmsubkwl, INSDREFERENCE), XMLStringByTag(xmrefkwl, INSDREFERENCE_JOURNAL));
         ret = false;
     }
     return (ret);
@@ -1161,12 +1161,12 @@ static bool XMLCheckRequiredXrefTags(const TXmlIndexList& xil)
     }
 
     if (! got_dbname) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_DBNAME));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "{} block is missing {} data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_DBNAME));
         ret = false;
     }
 
     if (! got_id) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "%s block is missing %s data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_ID));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "{} block is missing {} data in XML format file.", XMLStringByTag(xmsubkwl, INSDXREF), XMLStringByTag(xmrefkwl, INSDXREF_ID));
         ret = false;
     }
     return (ret);
@@ -1188,7 +1188,7 @@ static bool XMLIndexReferences(const char* entry, TXmlIndexList& xil, size_t bas
 
     xip->subtags = XMLIndexSameSubTags(entry, *xip, INSDREFERENCE);
     if (xip->subtags.empty()) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
         return false;
     }
 
@@ -1241,7 +1241,7 @@ static bool XMLIndexReferences(const char* entry, TXmlIndexList& xil, size_t bas
     if (xipref == xip->subtags.end())
         return true;
 
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"%s\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted \"{}\" XML block. Entry dropped.", XMLStringByTag(xmkwl, INSDSEQ_REFERENCES));
     return false;
 }
 
@@ -1271,13 +1271,13 @@ bool XMLIndex(ParserPtr pp)
     for (auto ibpp = pp->entrylist.begin(); ibpp != pp->entrylist.end(); ++ibpp, pp->curindx++) {
         ibp = *ibpp;
         if (ibp->len == 0) {
-            ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end tag of XML record, which starts at line %d. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
         entry = XMLLoadEntry(pp, true);
         if (! entry) {
-            ErrPostEx(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line %d. Entry dropped.", ibp->linenum);
+            FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "Failed ro read entry from file, which starts at line %d. Entry dropped.", ibp->linenum);
             ibp->drop = true;
             continue;
         }
@@ -1288,7 +1288,7 @@ bool XMLIndex(ParserPtr pp)
             continue;
         }
         if (XMLTagCheck(ibp->xip, xmkwl) == false) {
-            ErrPostStr(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_XMLFormatError, "Incorrectly formatted XML record. Entry dropped.");
             ibp->drop = true;
             MemFree(entry);
             continue;

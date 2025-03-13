@@ -239,7 +239,7 @@ bool no_reference(const CBioseq& bioseq)
 
             const CImp_feat& imp = feat->GetData().GetImp();
             if (imp.GetKey() == "Site-ref") {
-                ErrPostStr(SEV_ERROR, ERR_REFERENCE_Illegalreference, "The entry has only 'sites' references");
+                FtaErrPost(SEV_ERROR, ERR_REFERENCE_Illegalreference, "The entry has only 'sites' references");
                 return false;
             }
         }
@@ -347,7 +347,9 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
 
         CSeq_literal& literal = (*delta)->SetLiteral();
         if (literal.GetLength() != static_cast<Uint4>(gfp->to - gfp->from + 1)) {
-            ErrPostStr(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, format("The lengths of the CONTIG/CO line gaps disagrees with the lengths of assembly_gap features. First assembly_gap with a mismatch is at \"{}..{}\".", gfp->from, gfp->to));
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, 
+                    "The lengths of the CONTIG/CO line gaps disagrees with the lengths of assembly_gap features. First assembly_gap with a mismatch is at \"{}..{}\".", 
+                    gfp->from, gfp->to);
             *drop = true;
             break;
         }
@@ -361,7 +363,9 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
         return;
 
     if (delta == deltas.end() && gfp != gf.end()) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, format("The number of the assembly_gap features exceeds the number of CONTIG/CO line gaps. First extra assembly_gap is at \"{}..{}\".", gfp->from, gfp->to));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, 
+                "The number of the assembly_gap features exceeds the number of CONTIG/CO line gaps. First extra assembly_gap is at \"{}..{}\".", 
+                gfp->from, gfp->to);
         *drop = true;
     } else if (delta != deltas.end() && gfp == gf.end()) {
         for (; delta != deltas.end(); ++delta) {
@@ -372,7 +376,7 @@ void AssemblyGapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
         if (delta == deltas.end())
             return;
 
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the CONTIG/CO line gaps exceeds the number of assembly_gap features.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_ContigVersusAssemblyGapMissmatch, "The number of the CONTIG/CO line gaps exceeds the number of assembly_gap features.");
         *drop = true;
     }
 }
@@ -402,7 +406,9 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
                 if (*p != 'N')
                     break;
             if (i == nxt->from && nxt->from > tgfp->to + 1) {
-                ErrPostStr(SEV_ERROR, ERR_FEATURE_AllNsBetweenGaps, format("A run of all-N sequence exists between the gap features located at \"{}..{}\" and \"{}..{}\".", tgfp->from, tgfp->to, nxt->from, nxt->to));
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_AllNsBetweenGaps, 
+                        "A run of all-N sequence exists between the gap features located at \"{}..{}\" and \"{}..{}\".", 
+                        tgfp->from, tgfp->to, nxt->from, nxt->to);
                 tgfp->rightNs      = true;
                 nxt->leftNs = true;
             }
@@ -415,7 +421,9 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
                 if (*p != 'N')
                     break;
             if (i == 10) {
-                ErrPostStr(SEV_WARNING, ERR_FEATURE_NsAbutGap, format("A run of N's greater or equal than 10 abuts the gap feature at \"{}..{}\" : possible problem with the boundaries of the gap.", tgfp->from, tgfp->to));
+                FtaErrPost(SEV_WARNING, ERR_FEATURE_NsAbutGap, 
+                        "A run of N's greater or equal than 10 abuts the gap feature at \"{}..{}\" : possible problem with the boundaries of the gap.", 
+                        tgfp->from, tgfp->to);
             }
         }
 
@@ -424,7 +432,9 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
                 if (*p != 'N')
                     break;
             if (i == 10) {
-                ErrPostStr(SEV_WARNING, ERR_FEATURE_NsAbutGap, format("A run of N's greater or equal than 10 abuts the gap feature at \"{}..{}\" : possible problem with the boundaries of the gap.", tgfp->from, tgfp->to));
+                FtaErrPost(SEV_WARNING, ERR_FEATURE_NsAbutGap, 
+                        "A run of N's greater or equal than 10 abuts the gap feature at \"{}..{}\" : possible problem with the boundaries of the gap.", 
+                        tgfp->from, tgfp->to);
             }
         }
 
@@ -432,7 +442,9 @@ void GapsToDelta(CBioseq& bioseq, TGapFeatsList& gf, bool* drop)
             if (*p != 'N')
                 break;
         if (i < tgfp->to) {
-            ErrPostStr(SEV_REJECT, ERR_FEATURE_InvalidGapSequence, format("The sequence data associated with the gap feature at \"{}..{}\" contains basepairs other than N.", tgfp->from, tgfp->to));
+            FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidGapSequence, 
+                    "The sequence data associated with the gap feature at \"{}..{}\" contains basepairs other than N.", 
+                    tgfp->from, tgfp->to);
             *drop = true;
         }
 
@@ -579,7 +591,7 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
     }
 
     if (bioseq.GetInst().GetRepr() != CSeq_inst::eRepr_delta && tech == 1) {
-        ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGWithoutGaps, "This Phase 1 HTG sequence has no runs of 100 "
+        FtaErrPost(SEV_WARNING, ERR_SEQUENCE_HTGWithoutGaps, "This Phase 1 HTG sequence has no runs of 100 "
                                                              "or more N's to indicate gaps between component contigs. "
                                                              "This could be an error, or perhaps sequencing is finished "
                                                              "and this record should not be Phase 1.");
@@ -587,12 +599,12 @@ void SeqToDelta(CBioseq& bioseq, Int2 tech)
 
     if (bioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
         if (tech == 4) /* Phase 0 */
-            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGPhaseZeroHasGap, "A Phase 0 HTG record usually consists of several reads "
+            FtaErrPost(SEV_WARNING, ERR_SEQUENCE_HTGPhaseZeroHasGap, "A Phase 0 HTG record usually consists of several reads "
                                                                      "for one contig, and hence gaps are not expected. But "
                                                                      "this record does have one (ore more) gaps, hence it "
                                                                      "may require review.");
         if (gotcha == 1)
-            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_HTGPossibleShortGap, "This sequence has one or more runs "
+            FtaErrPost(SEV_WARNING, ERR_SEQUENCE_HTGPossibleShortGap, "This sequence has one or more runs "
                                                                       "of at least 20 N's. They could indicate gaps, "
                                                                       "but have not been treated that way because "
                                                                       "they are below the minimum of 100 N's.");
@@ -866,7 +878,9 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
         try {
             IsConOrScaffold = s_IsConOrScaffold(secondaryBsh);
         } catch (...) {
-            ErrPostStr(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, format("Failed to determine division code for secondary accession \"{}\". Entry dropped.", accessionString));
+            FtaErrPost(SEV_ERROR, ERR_ACCESSION_CannotGetDivForSecondary, 
+                    "Failed to determine division code for secondary accession \"{}\". Entry dropped.",
+                    accessionString);
             continue;
         }
 
@@ -961,7 +975,7 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, CMolInfo& mol_info)
         }
 
         if (errpost) {
-            ErrPostStr(SEV_ERROR, ERR_KEYWORD_MultipleHTGPhases, "This entry has multiple HTG-related keywords, for differing HTG phases. Ignoring all but the first.");
+            FtaErrPost(SEV_ERROR, ERR_KEYWORD_MultipleHTGPhases, "This entry has multiple HTG-related keywords, for differing HTG phases. Ignoring all but the first.");
         }
 
         if (delnode)
@@ -1001,16 +1015,24 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
 
         if (i1 < 3000 && j * 10 > i1) {
             if (tpa)
-                ErrPostStr(SEV_ERROR, ERR_TPA_SpanLengthDiff, format("Span \"{}..{}\" of this TPA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2));
+                FtaErrPost(SEV_ERROR, ERR_TPA_SpanLengthDiff, 
+                        "Span \"{}..{}\" of this TPA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", 
+                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
             else
-                ErrPostStr(SEV_ERROR, ERR_TSA_SpanLengthDiff, format("Span \"{}..{}\" of this TSA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2));
+                FtaErrPost(SEV_ERROR, ERR_TSA_SpanLengthDiff, 
+                        "Span \"{}..{}\" of this TSA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", 
+                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
         }
 
         if (i1 >= 3000 && j > 300) {
             if (tpa)
-                ErrPostStr(SEV_ERROR, ERR_TPA_SpanDiffOver300bp, format("Span \"{}..{}\" of this TPA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2));
+                FtaErrPost(SEV_ERROR, ERR_TPA_SpanDiffOver300bp, 
+                        "Span \"{}..{}\" of this TPA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", 
+                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
             else
-                ErrPostStr(SEV_ERROR, ERR_TSA_SpanDiffOver300bp, format("Span \"{}..{}\" of this TSA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2));
+                FtaErrPost(SEV_ERROR, ERR_TSA_SpanDiffOver300bp, 
+                        "Span \"{}..{}\" of this TSA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", 
+                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
         }
 
         if (tftbp->from1 <= tftsp->to + 1) {
@@ -1027,23 +1049,23 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
 
     if (ftsp->from - 1 > 50) {
         if (tpa)
-            ErrPostStr(SEV_ERROR, ERR_TPA_IncompleteCoverage, format("This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1));
+            FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1);
         else
-            ErrPostStr(SEV_ERROR, ERR_TSA_IncompleteCoverage, format("This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1));
+            FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1);
     }
 
     for (; ftsp; ftsp = tftsp) {
         tftsp = ftsp->next;
         if (tftsp && tftsp->from - ftsp->to - 1 > 50) {
             if (tpa)
-                ErrPostStr(SEV_ERROR, ERR_TPA_IncompleteCoverage, format("This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1));
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
             else
-                ErrPostStr(SEV_ERROR, ERR_TSA_IncompleteCoverage, format("This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1));
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
         } else if (! tftsp && length - ftsp->to > 50) {
             if (tpa)
-                ErrPostStr(SEV_ERROR, ERR_TPA_IncompleteCoverage, format("This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length));
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
             else
-                ErrPostStr(SEV_ERROR, ERR_TSA_IncompleteCoverage, format("This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length));
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
         }
 
         delete ftsp;
@@ -1296,19 +1318,19 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     if (bad_line || bad_interval || bad_accession) {
         if (bad_interval) {
             if (tpa)
-                ErrPostStr(SEV_REJECT, ERR_TPA_InvalidPrimarySpan, "Intervals from primary records on which a TPA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimarySpan, "Intervals from primary records on which a TPA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
             else
-                ErrPostStr(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
         } else if (bad_accession) {
             if (tpa)
-                ErrPostStr(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, format("\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession));
+                FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
             else
-                ErrPostStr(SEV_REJECT, ERR_TSA_InvalidPrimarySeqId, format("\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession));
+                FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
         } else {
             if (tpa)
-                ErrPostStr(SEV_REJECT, ERR_TPA_InvalidPrimaryBlock, "Supplied PRIMARY block for TPA record is incorrect. Cannot parse. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimaryBlock, "Supplied PRIMARY block for TPA record is incorrect. Cannot parse. Entry dropped.");
             else
-                ErrPostStr(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
         }
 
         if (ftbp)
@@ -1484,7 +1506,7 @@ static void fta_validate_assembly(char* name)
     }
 
     if (bad_format)
-        ErrPostStr(SEV_WARNING, ERR_DBLINK_InvalidIdentifier, format("\"{}\" is not a validly formatted identifier for the Assembly resource.", name));
+        FtaErrPost(SEV_WARNING, ERR_DBLINK_InvalidIdentifier, "\"{}\" is not a validly formatted identifier for the Assembly resource.", name);
 }
 
 /**********************************************************/
@@ -1508,7 +1530,7 @@ static bool fta_validate_bioproject(char* name, Parser::ESource source)
     }
 
     if (bad_format) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, format("BioProject accession number is not validly formatted: \"{}\". Entry dropped.", name));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", name);
         return false;
     }
 
@@ -1517,7 +1539,7 @@ static bool fta_validate_bioproject(char* name, Parser::ESource source)
          (name[3] != 'N' || name[4] != 'A')) ||
         (source == Parser::ESource::EMBL && name[3] != 'E' &&
          (name[3] != 'N' || name[4] != 'A')))
-        ErrPostStr(SEV_WARNING, ERR_FORMAT_WrongBioProjectPrefix, format("BioProject accession number does not agree with this record's database of origin: \"{}\".", name));
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_WrongBioProjectPrefix, "BioProject accession number does not agree with this record's database of origin: \"{}\".", name);
 
     return true;
 }
@@ -1534,7 +1556,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     Char       ch;
 
     if (! str || *str == '\0') {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -1545,7 +1567,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
     for (p = str; *p == ' ';)
         p++;
     if (*p == '\0') {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -1568,7 +1590,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
             for (r = q; *r >= '0' && *r <= '9';)
                 r++;
             if (*r != '\0') {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, format("BioProject accession number is not validly formatted: \"{}\". Entry dropped.", q));
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", q);
                 bad = true;
             }
         } else if (fta_validate_bioproject(q, source) == false)
@@ -1631,7 +1653,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
     if (! StringEquN(str, name, len)) {
         if (format == Parser::EFormat::GenBank) {
-            ErrPostStr(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped."); // str
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped."); // str
             MemFree(str);
             *drop = true;
             return;
@@ -1738,7 +1760,7 @@ bool fta_if_valid_sra(const Char* id, bool dblink)
     }
 
     if (dblink)
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Incorrectly formatted DBLINK Sequence Read Archive value: \"{}\". Entry dropped.", id));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Incorrectly formatted DBLINK Sequence Read Archive value: \"{}\". Entry dropped.", id);
 
     return false;
 }
@@ -1761,7 +1783,7 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
     }
 
     if (dblink)
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Incorrectly formatted DBLINK BioSample value: \"{}\". Entry dropped.", id));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Incorrectly formatted DBLINK BioSample value: \"{}\". Entry dropped.", id);
 
     return false;
 }
@@ -1789,7 +1811,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     Char  ch;
 
     if (! str || *str == '\0') {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
         return nullptr;
     }
 
@@ -1830,7 +1852,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                         ! StringEqu(p, "BioProject:") &&
                         ! StringEqu(p, "Sequence Read Archive:") &&
                         ! StringEqu(p, "Trace Assembly Archive:")) {
-                        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Invalid DBLINK tag encountered: \"{}\". Entry dropped.", p));
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Invalid DBLINK tag encountered: \"{}\". Entry dropped.", p);
                         bad = true;
                         break;
                     }
@@ -1841,14 +1863,14 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     assembly   = StringEqu(p, "Assembly:");
 
                     if (tvnp->data && StringChr(tvnp->data, ':')) {
-                        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data));
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
                         bad = true;
                         break;
                     }
 
                     for (uvnp = vnp->next; uvnp; uvnp = uvnp->next)
                         if (StringEqu(uvnp->data, p)) {
-                            ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Multiple DBLINK tags found: \"{}\". Entry dropped.", p));
+                            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", p);
                             bad = true;
                             break;
                         }
@@ -1876,7 +1898,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                 r--;
             while (*r == ' ' || *r == '\n')
                 r++;
-            ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Too many delimiters/fields for DBLINK line: \"{}\". Entry dropped.", r));
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Too many delimiters/fields for DBLINK line: \"{}\". Entry dropped.", r);
             *p  = ch;
             bad = true;
             break;
@@ -1893,7 +1915,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                 if (! uvnp->data || ! StringEqu(uvnp->data, q))
                     continue;
 
-                ErrPostStr(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, format("Duplicate identifier \"{}\" from \"{}\" link removed.", q, tagvnp->data));
+                FtaErrPost(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"{}\" from \"{}\" link removed.", q, tagvnp->data);
                 break;
             }
 
@@ -1919,7 +1941,7 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
     }
 
     if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, format("Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
         bad = true;
     }
 
@@ -1987,7 +2009,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             while (*str >= '0' && *str <= '9')
                 str++;
         if (*str != '\0') {
-            ErrPostStr(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, format("Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", tvnp->data));
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", tvnp->data);
             continue;
         }
 
@@ -2137,9 +2159,9 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_v
         ! id.IsTpg() && ! id.IsTpe() && ! id.IsTpd()) {
 
         if (name.empty())
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty or unsupported Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location);
         else
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty or unsupported Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty or unsupported Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location);
         ibp->drop = true;
         return;
     }
@@ -2147,9 +2169,9 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_v
     const CTextseq_id* text_id = id.GetTextseq_Id();
     if (! text_id || ! text_id->IsSetAccession()) {
         if (name.empty())
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in CONTIG/CO line at location: \"{}\". Entry skipped.", location);
         else
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Empty Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Empty Seq-id found in feature \"{}\" at location \"{}\". Entry skipped.", name, location);
         ibp->drop = true;
         return;
     }
@@ -2185,9 +2207,9 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_v
         id.SetPatent(*pat_id);
     } else {
         if (name.empty())
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Invalid accession found in CONTIG/CO line at location: \"{}\". Entry skipped.", location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in CONTIG/CO line at location: \"{}\". Entry skipped.", location);
         else
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_SeqIdProblem, format("Invalid accession found in feature \"{}\" at location \"{}\". Entry skipped.", name, location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_SeqIdProblem, "Invalid accession found in feature \"{}\" at location \"{}\". Entry skipped.", name, location);
         ibp->drop = true;
         return;
     }
@@ -2314,9 +2336,9 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 
     if (tpa > 0 && non_tpa > 0) {
         if (name.empty())
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, format("The CONTIG/CO line with location \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The CONTIG/CO line with location \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", location);
         else
-            ErrPostStr(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, format("The \"{}\" feature at \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", name, location));
+            FtaErrPost(SEV_REJECT, ERR_LOCATION_TpaAndNonTpa, "The \"{}\" feature at \"{}\" refers to intervals on both primary and third-party sequence records. Entry skipped.", name, location);
         ibp->drop = true;
     }
 
@@ -2334,14 +2356,14 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
             if (sli.badslp)
                 sli.badslp->GetLabel(&label);
 
-            ErrPostStr(sev, ERR_LOCATION_CrossDatabaseFeatLoc, format("The CONTIG/CO line refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval : \"{}\".{}", label.empty() ? location : label, p));
+            FtaErrPost(sev, ERR_LOCATION_CrossDatabaseFeatLoc, "The CONTIG/CO line refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval : \"{}\".{}", label.empty() ? location : label, p);
         } else
-            ErrPostStr(sev, ERR_LOCATION_CrossDatabaseFeatLoc, format("The \"{}\" feature at \"{}\" refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval.{}", name, location, p));
+            FtaErrPost(sev, ERR_LOCATION_CrossDatabaseFeatLoc, "The \"{}\" feature at \"{}\" refers to intervals on records from two or more INSDC databases. This is not allowed without review and approval.{}", name, location, p);
     }
 
     if (iscon) {
         if (sli.wgscont && sli.wgsscaf)
-            ErrPostStr(SEV_ERROR, ERR_LOCATION_ContigAndScaffold, format("The CONTIG/CO line with location \"{}\" refers to intervals on both WGS contig and WGS scaffold records.", location));
+            FtaErrPost(SEV_ERROR, ERR_LOCATION_ContigAndScaffold, "The CONTIG/CO line with location \"{}\" refers to intervals on both WGS contig and WGS scaffold records.", location);
 
         if (sli.wgsacc) {
             if (sli.wgscont && ! StringEquN(sli.wgscont, sli.wgsacc, 4))
@@ -2357,7 +2379,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
                 StringNCpy(msgb, p, 4);
                 msga[4] = msgb[4] = 0;
 
-                ErrPostStr(SEV_WARNING, ERR_SEQUENCE_MultipleWGSProjects, format("This CON/scaffold record is assembled from the contigs of multiple WGS projects. First pair of WGS project codes is \"{}\" and \"{}\".", msgb, msga));
+                FtaErrPost(SEV_WARNING, ERR_SEQUENCE_MultipleWGSProjects, "This CON/scaffold record is assembled from the contigs of multiple WGS projects. First pair of WGS project codes is \"{}\" and \"{}\".", msgb, msga);
             }
         }
 
@@ -2376,7 +2398,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
                 StringNCpy(msg, p, 4);
                 msg[4] = 0;
 
-                ErrPostStr(SEV_WARNING, ERR_ACCESSION_WGSPrefixMismatch, format("This WGS CON/scaffold record is assembled from the contigs of different WGS projects. First differing WGS project code is \"{}\".", msg));
+                FtaErrPost(SEV_WARNING, ERR_ACCESSION_WGSPrefixMismatch, "This WGS CON/scaffold record is assembled from the contigs of different WGS projects. First differing WGS project code is \"{}\".", msg);
             }
         }
     }
@@ -2600,7 +2622,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                 r = vnp->data;
                 if (StringEqu(r + 2, tag + 2)) {
                     if (*r != ' ') {
-                        ErrPostStr(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, format("More than one structured comment with the same tag \"{}\" found.", tag + 2));
+                        FtaErrPost(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, "More than one structured comment with the same tag \"{}\" found.", tag + 2);
                         *r = ' ';
                     }
                     break;
@@ -2619,7 +2641,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         }
 
         if (! SrchTheStr(p + 8, q, "::")) {
-            ErrPostStr(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
+            FtaErrPost(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             MemFree(tag);
             p += 8;
             continue;
@@ -2643,7 +2665,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
     }
 
     if (bad) {
-        ErrPostStr(SEV_REJECT, ERR_COMMENT_InvalidStructuredComment, format("Incorrectly formatted structured comment with tag \"{}\" encountered. Entry dropped.", tag + 2));
+        FtaErrPost(SEV_REJECT, ERR_COMMENT_InvalidStructuredComment, "Incorrectly formatted structured comment with tag \"{}\" encountered. Entry dropped.", tag + 2);
         MemFree(tag);
     }
 
@@ -2737,14 +2759,14 @@ void fta_tsa_tls_comment_dblink_check(const CBioseq& bioseq,
 
     if (! is_tsa) {
         if (! got_comment)
-            ErrPostStr(SEV_WARNING, ERR_ENTRY_TLSLacksStructuredComment, "This TLS record lacks an expected structured comment.");
+            FtaErrPost(SEV_WARNING, ERR_ENTRY_TLSLacksStructuredComment, "This TLS record lacks an expected structured comment.");
         if (! got_dblink)
-            ErrPostStr(SEV_WARNING, ERR_ENTRY_TLSLacksBioProjectLink, "This TLS record lacks an expected BioProject or Project link.");
+            FtaErrPost(SEV_WARNING, ERR_ENTRY_TLSLacksBioProjectLink, "This TLS record lacks an expected BioProject or Project link.");
     } else {
         if (! got_comment)
-            ErrPostStr(SEV_WARNING, ERR_ENTRY_TSALacksStructuredComment, "This TSA record lacks an expected structured comment.");
+            FtaErrPost(SEV_WARNING, ERR_ENTRY_TSALacksStructuredComment, "This TSA record lacks an expected structured comment.");
         if (! got_dblink)
-            ErrPostStr(SEV_WARNING, ERR_ENTRY_TSALacksBioProjectLink, "This TSA record lacks an expected BioProject or Project link.");
+            FtaErrPost(SEV_WARNING, ERR_ENTRY_TSALacksBioProjectLink, "This TSA record lacks an expected BioProject or Project link.");
     }
 }
 
@@ -2779,7 +2801,7 @@ void fta_create_far_fetch_policy_user_object(CBioseq& bsp, Int4 num)
     if (num < 1000)
         return;
 
-    ErrPostStr(SEV_INFO, ERR_SEQUENCE_HasManyComponents, format("An OnlyNearFeatures FeatureFetchPolicy User-object has been added to this record because it is constructed from {} components, which exceeds the threshold of 999 for User-object creation.", num));
+    FtaErrPost(SEV_INFO, ERR_SEQUENCE_HasManyComponents, "An OnlyNearFeatures FeatureFetchPolicy User-object has been added to this record because it is constructed from {} components, which exceeds the threshold of 999 for User-object creation.", num);
 
     CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser().SetType().SetStr("FeatureFetchPolicy");

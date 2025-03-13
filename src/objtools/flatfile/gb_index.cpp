@@ -84,7 +84,7 @@ vector<string> genbankKeywords = {
 /**********************************************************/
 static bool gb_err_field(const char* str)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s data in GenBank format file, entry dropped", str);
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "No {} data in GenBank format file, entry dropped", str);
     return true;
 }
 
@@ -111,7 +111,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     if (! q) {
         if (mode != Parser::EMode::Relaxed) {
             *p = ch1;
-            ErrPostEx(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in VERSION line: \"%s\".", line);
+            FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in VERSION line: \"{}\".", line);
             entry->drop = true;
         }
         return;
@@ -122,7 +122,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     if (*r != '\0') {
         if (mode != Parser::EMode::Relaxed) {
             *p = ch1;
-            ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in VERSION line: \"%s\".", line);
+            FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in VERSION line: \"{}\".", line);
             entry->drop = true;
         }
         return;
@@ -133,7 +133,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         *q = ch;
         *p = ch1;
         if (mode != Parser::EMode::Relaxed) {
-            ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
+            FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in VERSION and ACCESSION lines don't match: \"{}\" vs \"{}\".", line, entry->acnum);
             entry->drop = true;
         }
         return;
@@ -143,7 +143,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
 
     if (entry->vernum < 1) {
         *p = ch1;
-        ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;
         return;
     }
@@ -154,7 +154,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
 
     if (source == Parser::ESource::DDBJ) {
         if (*p != '\0' && ! ign_toks) {
-            ErrPostEx(SEV_ERROR, ERR_VERSION_BadVersionLine, "DDBJ's VERSION line has too many tokens: \"%s\".", line);
+            FtaErrPost(SEV_ERROR, ERR_VERSION_BadVersionLine, "DDBJ's VERSION line has too many tokens: \"{}\".", line);
         }
         return;
     }
@@ -163,7 +163,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         return;
 
     if (! StringEquN(p, "GI:", 3)) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"%s\".", line);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_IncorrectGIInVersion, "Incorrect GI entry in VERSION line: \"{}\".", line);
         entry->drop = true;
         return;
     }
@@ -171,7 +171,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
     for (q = p; *q >= '0' && *q <= '9';)
         q++;
     if (*q != '\0') {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitGI, "Incorrect GI number in VERSION line: \"%s\".", line);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitGI, "Incorrect GI number in VERSION line: \"{}\".", line);
         entry->drop = true;
     }
 }
@@ -323,7 +323,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 switch (currentKeyword) {
                 case ParFlat_LOCUS:
                     if (after_LOCUS) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines LOCUS in one entry");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines LOCUS in one entry");
                         entry->drop = true;
                     } else {
                         after_LOCUS = true;
@@ -332,7 +332,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_COMMENT:
                     if (after_COMMENT) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple COMMENT lines in one entry");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple COMMENT lines in one entry");
                         entry->drop = true;
                     } else
                         after_COMMENT = true;
@@ -345,7 +345,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     if (pp->accver == false)
                         break;
                     if (after_VERSION) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple VERSION lines in one entry");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "Multiple VERSION lines in one entry");
                         entry->drop = true;
                         break;
                     }
@@ -383,10 +383,10 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_DEFINITION:
                     if (after_DEFNTN) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'DEFINITION'");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'DEFINITION'");
                         entry->drop = true;
                     } else if (after_LOCUS == false) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "DEFINITION field out of order");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "DEFINITION field out of order");
                         entry->drop = true;
                     } else
                         after_DEFNTN = true;
@@ -394,10 +394,10 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_SOURCE:
                     if (after_SOURCE) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'SOURCE'");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'SOURCE'");
                         entry->drop = true;
                     } else if (after_LOCUS == false || after_DEFNTN == false) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "SOURCE field out of order");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "SOURCE field out of order");
                         entry->drop = true;
                     } else
                         after_SOURCE = true;
@@ -408,31 +408,31 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_CONTIG:
                     if (entry->is_contig) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than one line CONTIG in one entry");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than one line CONTIG in one entry");
                         entry->drop = true;
                     } else
                         entry->is_contig = true;
                     break;
                 case ParFlat_MGA:
                     if (entry->is_mga == false) {
-                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"MGA\" is allowed for CAGE records only. Entry dropped.");
                         entry->drop = true;
                     }
                     if (fta_check_mga_line(finfo.str + ParFlat_COL_DATA, entry) == false) {
-                        ErrPostStr(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectMGALine, "Incorrect range of accessions supplied in MGA line of CAGE record. Entry dropped.");
                         entry->drop = true;
                     }
                     after_MGA = true;
                     break;
                 case ParFlat_FEATURES:
                     if (after_FEAT) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'FEATURES'");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'FEATURES'");
                         entry->drop = true;
                     } else if (pp->mode != Parser::EMode::Relaxed &&
                                (after_LOCUS == false ||
                                 after_DEFNTN == false ||
                                 after_SOURCE == false)) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "FEATURES field out of order");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "FEATURES field out of order");
                         entry->drop = true;
                     } else
                         after_FEAT = true;
@@ -440,7 +440,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     break;
                 case ParFlat_ORIGIN:
                     if (after_ORIGIN) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'ORIGIN'");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "More than two lines 'ORIGIN'");
                         entry->drop = true;
                     } else if (
                         pp->mode != Parser::EMode::Relaxed &&
@@ -448,7 +448,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                          after_DEFNTN == false ||
                          after_SOURCE == false ||
                          after_FEAT == false)) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "ORIGIN field out of order");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_LineTypeOrder, "ORIGIN field out of order");
                         entry->drop = true;
                     } else {
                         after_ORIGIN  = true;
@@ -467,14 +467,14 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     }
                     break;
                 case ParFlat_SEGMENT:
-                    ErrPostEx(SEV_ERROR, ERR_SEGMENT, 
+                    FtaErrPost(SEV_ERROR, ERR_SEGMENT, 
                             "Error at linenum %d. Segmented sets are not supported.",
                             entry->linenum);
                     entry->drop = true;
                     break;
                 case ParFlat_USER:
                     if (pp->source != Parser::ESource::Flybase) {
-                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
                         entry->drop = true;
                     }
                     break;
@@ -482,7 +482,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     if (entry->is_tpa == false &&
                         entry->tsa_allowed == false &&
                         pp->source != Parser::ESource::Refseq) {
-                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"PRIMARY\" is allowed for TPA or TSA records only. Continue anyway.");
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"PRIMARY\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                     break;
                 case ParFlat_KEYWORDS:
@@ -611,7 +611,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
             if (acwflag == false &&
                 pp->mode != Parser::EMode::Relaxed) {
-                ErrPostEx(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line %ld", (long int)entry->linenum);
+                FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line {}", (long int)entry->linenum);
             }
 
             if (dbl) {

@@ -342,7 +342,7 @@ static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& s
         fta_set_strandedness(seq_entries);
 
     if (fta_EntryCheckGBBlock(seq_entries)) {
-        ErrPostStr(SEV_WARNING, ERR_ENTRY_GBBlock_not_Empty, "Attention: GBBlock is not empty");
+        FtaErrPost(SEV_WARNING, ERR_ENTRY_GBBlock_not_Empty, "Attention: GBBlock is not empty");
     }
 
     if (pp->qamode) {
@@ -358,7 +358,7 @@ static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& s
     CheckDupDates(seq_entries);
 
     if (seq_long) {
-        ErrPostEx(SEV_REJECT, ERR_ENTRY_LongSequence, "Sequence %s|%s is longer than limit %ld", pp->entrylist[pp->curindx]->locusname, pp->entrylist[pp->curindx]->acnum, pp->limit);
+        FtaErrPost(SEV_REJECT, ERR_ENTRY_LongSequence, "Sequence {}|{} is longer than limit {}", pp->entrylist[pp->curindx]->locusname, pp->entrylist[pp->curindx]->acnum, pp->limit);
     } else {
         result = seq_entries.front();
     }
@@ -470,7 +470,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             }
 
             if (! *b)
-                ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"%s\".", name.c_str());
+                FtaErrPost(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"{}\".", name);
             else if (NStr::EqualNocase(*b, "UNIPROT/SWISS-PROT")) {
                 name = "UniProtKB/Swiss-Prot";
             } else if (NStr::EqualNocase(*b, "UNIPROT/TREMBL")) {
@@ -516,9 +516,9 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                         *q = '\0';
                 }
                 if (many_biosample)
-                    ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Multiple BioSample ids provided in the same DR line: \"%s\".", drline);
+                    FtaErrPost(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Multiple BioSample ids provided in the same DR line: \"{}\".", drline);
                 if (! valid_biosample)
-                    ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Invalid BioSample id(s) provided in DR line: \"%s\".", drline);
+                    FtaErrPost(SEV_REJECT, ERR_DRXREF_InvalidBioSample, "Invalid BioSample id(s) provided in DR line: \"{}\".", drline);
                 *drop = true;
                 if (q)
                     *q = '\n';
@@ -532,7 +532,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                 }
 
                 if (found) {
-                    ErrPostEx(SEV_WARNING, ERR_DRXREF_DuplicatedBioSamples, "Duplicated BioSample ids found within DR lines contents: \"%s\".", id.c_str());
+                    FtaErrPost(SEV_WARNING, ERR_DRXREF_DuplicatedBioSamples, "Duplicated BioSample ids found within DR lines contents: \"{}\".", id);
                 } else {
                     dr_biosample.push_back(id);
                 }
@@ -547,7 +547,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                     if (q)
                         *q = '\0';
                 }
-                ErrPostEx(SEV_REJECT, ERR_DRXREF_InvalidSRA, "Multiple possible SRA ids provided in the same DR line: \"%s\".", drline);
+                FtaErrPost(SEV_REJECT, ERR_DRXREF_InvalidSRA, "Multiple possible SRA ids provided in the same DR line: \"{}\".", drline);
                 *drop = true;
                 if (q)
                     *q = '\n';
@@ -561,7 +561,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                 }
 
                 if (found) {
-                    ErrPostEx(SEV_WARNING, ERR_DRXREF_DuplicatedSRA, "Duplicated Sequence Read Archive ids found within DR lines contents: \"%s\".", id.c_str());
+                    FtaErrPost(SEV_WARNING, ERR_DRXREF_DuplicatedSRA, "Duplicated Sequence Read Archive ids found within DR lines contents: \"{}\".", id);
                 } else {
                     dr_ena.push_back(id);
                 }
@@ -729,25 +729,25 @@ static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource sou
     bool result = true;
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
-        ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
         // ibp->drop = true;
         result = false;
     } else if (! condiv && ibp->is_contig && ibp->origin == false) {
-        ErrPostEx(SEV_WARNING, ERR_DIVISION_MappedtoCON, "Division [%s] mapped to CON based on the existence of CONTIG line.", ibp->division);
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_MappedtoCON, "Division [{}] mapped to CON based on the existence of CONTIG line.", ibp->division);
     } else if (ibp->is_contig && ibp->origin) {
         if (source == Parser::ESource::EMBL || source == Parser::ESource::DDBJ) {
-            ErrPostStr(SEV_INFO, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
+            FtaErrPost(SEV_INFO, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data are both present. Ignoring sequence data.");
         } else {
-            ErrPostStr(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data may not both be present in a sequence record.");
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_ContigWithSequenceData, "The CONTIG/CO linetype and sequence data may not both be present in a sequence record.");
             // ibp->drop = true;
             result = false;
         }
     } else if (condiv && ! ibp->is_contig && ! ibp->origin) {
-        ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingContigFeature, "No CONTIG data in GenBank format file, entry dropped.");
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingContigFeature, "No CONTIG data in GenBank format file, entry dropped.");
         // ibp->drop = true;
         result = false;
     } else if (condiv && ! ibp->is_contig && ibp->origin) {
-        ErrPostStr(SEV_WARNING, ERR_DIVISION_ConDivLacksContig, "Division is CON, but CONTIG data have not been found.");
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_ConDivLacksContig, "Division is CON, but CONTIG data have not been found.");
     }
     return result;
 }
@@ -795,7 +795,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
             (q[0] == ',' && q[1] == ')'))
             break;
     if (*q != '\0') {
-        ErrPostStr(SEV_REJECT, ERR_LOCATION_ContigHasNull, "The join() statement for this record's contig line contains one or more comma-delimited components which are null.");
+        FtaErrPost(SEV_REJECT, ERR_LOCATION_ContigHasNull, "The join() statement for this record's contig line contains one or more comma-delimited components which are null.");
         MemFree(p);
         return false;
     }
@@ -889,7 +889,7 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
         ! StringStr(p, "DNA") && ! StringStr(p, "RNA") &&
         (pp->source != Parser::ESource::EMBL || (! StringStr(p, "xxx") &&
                                                  ! StringStr(p, "XXX")))) {
-        ErrPostEx(SEV_WARNING, ERR_LOCUS_WrongTopology, "Other than circular topology found in EMBL, \"%s\", assign default topology", p);
+        FtaErrPost(SEV_WARNING, ERR_LOCUS_WrongTopology, "Other than circular topology found in EMBL, \"{}\", assign default topology", p);
     }
 
     /* the "p" must be the mol-type
@@ -1040,7 +1040,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_ENV_NoMatchingQualifier, "This record utilizes the ENV keyword, but there are no /environmental_sample qualifiers among its source features.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_ENV_NoMatchingQualifier, "This record utilizes the ENV keyword, but there are no /environmental_sample qualifiers among its source features.");
         return ret;
     }
 
@@ -1048,7 +1048,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (div < 0) {
         ch      = bptr[3];
         bptr[3] = '\0';
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"%s\" found in Embl flatfile. Record rejected.", bptr);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", bptr);
         bptr[3] = ch;
         return ret;
     }
@@ -1075,12 +1075,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (ibp->is_tpa &&
         (StringEqu(p, "EST") || StringEqu(p, "GSS") ||
          StringEqu(p, "PAT") || StringEqu(p, "HTG"))) {
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"%s\" is not legal for TPA records. Entry dropped.", p);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"{}\" is not legal for TPA records. Entry dropped.", p);
         return ret;
     }
 
     if (ibp->is_tsa && ! StringEqu(p, "TSA")) {
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"%s\" is not legal for TSA records. Entry dropped.", p);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"{}\" is not legal for TSA records. Entry dropped.", p);
         return ret;
     }
 
@@ -1089,7 +1089,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (div == 19) /* HTG */
     {
         if (! HasHtg(embl->GetKeywords())) {
-            ErrPostStr(SEV_ERROR, ERR_DIVISION_MissingHTGKeywords, "Division is HTG, but entry lacks HTG-related keywords. Entry dropped.");
+            FtaErrPost(SEV_ERROR, ERR_DIVISION_MissingHTGKeywords, "Division is HTG, but entry lacks HTG-related keywords. Entry dropped.");
             return ret;
         }
         tempdiv = StringSave("HTG");
@@ -1128,53 +1128,53 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         i++;
     if (mga_kwd) {
         if (ibp->is_mga == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeCAGE, "This is apparently _not_ a CAGE record, but the special keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeCAGE, "This is apparently _not_ a CAGE record, but the special keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_mga) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_NoGeneExpressionKeywords, "This is apparently a CAGE or 5'-SAGE record, but it lacks the required keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_NoGeneExpressionKeywords, "This is apparently a CAGE or 5'-SAGE record, but it lacks the required keywords. Entry dropped.");
         return ret;
     }
     if (tpa_kwd) {
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tpa) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA\" and/or \"Third Party Annotation\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA\" and/or \"Third Party Annotation\" keywords. Entry dropped.");
         return ret;
     }
 
     if (tsa_kwd) {
         if (ibp->is_tsa == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tsa) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords. Entry dropped.");
         return ret;
     }
     if (tls_kwd) {
         if (ibp->is_tls == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS\" and/or \"Targeted Locus Study\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS\" and/or \"Targeted Locus Study\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tls) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS\" and/or \"Targeted Locus Study\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS\" and/or \"Targeted Locus Study\" keywords. Entry dropped.");
         return ret;
     }
     if (i > 1) {
         if (i == 2 && ibp->htg > 0 && env_kwd)
-            ErrPostStr(SEV_WARNING, ERR_KEYWORD_HTGPlusENV, "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_HTGPlusENV, "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
         else if ((i == 2 && wgs_kwd && tpa_kwd) ||
                  (i == 2 && tsa_kwd && tpa_kwd)) {
         } else if (i != 2 || env_kwd == false ||
                    (est_kwd == false && gss_kwd == false && wgs_kwd == false)) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
             return ret;
         }
     }
@@ -1183,7 +1183,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         i--;
     if (ibp->is_contig && i > 0 &&
         wgs_kwd == false && tpa_kwd == false && env_kwd == false) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_IllegalForCON, "This CON record should not have HTG, EST, GSS, STS, HTC, FLI_CDNA, CAGE, TSA or TLS special keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_IllegalForCON, "This CON record should not have HTG, EST, GSS, STS, HTC, FLI_CDNA, CAGE, TSA or TLS special keywords. Entry dropped.");
         return ret;
     }
 
@@ -1199,13 +1199,13 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         string kw = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA_EMBL);
 
         if (! est_kwd && kw.find("EST") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw.c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword {} has substring EST, but no official EST keywords found", kw);
         }
         if (! sts_kwd && kw.find("STS") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw.c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword {} has substring STS, but no official STS keywords found", kw);
         }
         if (! gss_kwd && kw.find("GSS") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw.c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword {} has substring GSS, but no official GSS keywords found", kw);
         }
     }
 
@@ -1230,11 +1230,11 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     bool has_htc    = HasHtc(embl->GetKeywords());
 
     if (is_htc_div && ! has_htc) {
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
     if (! is_htc_div && has_htc) {
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
@@ -1260,7 +1260,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
             p += 12;
 
         if (! StringEquN(p, "RNA", 3)) {
-            ErrPostStr(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
+            FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
             return ret;
         }
     }
@@ -1683,19 +1683,19 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
             StringEquN(str.c_str(), "TPA:", 4)) {
-            ErrPostStr(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
         if (ibp->is_tsa == false && StringEquN(str.c_str(), "TSA:", 4)) {
-            ErrPostStr(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
         if (ibp->is_tls == false && StringEquN(str.c_str(), "TLS:", 4)) {
-            ErrPostStr(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
@@ -1728,20 +1728,20 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (ibp->is_tpa &&
         (title.empty() || ! s_HasTPAPrefix(title))) {
-        ErrPostStr(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
     if (ibp->is_tsa && ! ibp->is_tpa &&
         (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
-        ErrPostStr(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
     if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
-        ErrPostStr(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
@@ -1858,12 +1858,12 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
-                ErrPostEx(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:%s record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
+                FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:{} record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
                 ibp->drop = true;
                 return;
             }
         } else if (ibp->specialist_db == false) {
-            ErrPostStr(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA record lacks required AH/PRIMARY linetype. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA record lacks required AH/PRIMARY linetype. Entry dropped.");
             ibp->drop = true;
             return;
         }
@@ -1982,7 +1982,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             string crdate_str, update_str;
             std_creation_date->GetDate(&crdate_str, "%2M-%2D-%4Y");
             std_update_date->GetDate(&crdate_str, "%2M-%2D-%4Y");
-            ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"%s\" precedes create-date \"%s\".", update_str.c_str(), crdate_str.c_str());
+            FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"{}\" precedes create-date \"{}\".", update_str, crdate_str);
         }
     }
 }
@@ -2052,7 +2052,7 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (count == 0) {
-        ErrPostStr(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in Embl format file");
+        FtaErrPost(SEV_WARNING, ERR_ORGANISM_NoOrganism, "No Organism data in Embl format file");
         return;
     }
 }
@@ -2145,21 +2145,21 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
         if (StringEqu(ibp->division, "TSA")) {
             if (ibp->tsa_allowed == false)
-                ErrPostEx(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"%s\" is not expected to have a TSA division code.", ibp->acnum);
+                FtaErrPost(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"{}\" is not expected to have a TSA division code.", ibp->acnum);
             ibp->is_tsa = true;
         }
 
         if (! CheckEmblContigEverywhere(ibp, mParser.source)) {
             ibp->drop = true;
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
 
         if (ptr >= eptr) {
             ibp->drop = true;
-            ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
@@ -2178,8 +2178,8 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
         if (! s_GetEmblInst(&mParser, *pEntry, GetDNAConvTable())) {
             ibp->drop = true;
-            ErrPostStr(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
@@ -2191,7 +2191,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
         LoadFeat(&mParser, *pEntry, *bioseq);
 
         if (! bioseq->IsSetAnnot() && ibp->drop) {
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
@@ -2199,7 +2199,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
         GetEmblDescr(&mParser, *pEntry, *bioseq);
 
         if (ibp->drop) {
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
@@ -2235,12 +2235,12 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
         if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
             if (mParser.ign_bad_qs == false) {
                 ibp->drop = true;
-                ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
-                ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
+                FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
                 mParser.curindx++;
                 return pResult;
             }
-            ErrPostStr(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
         }
 
         pEntry->mpQscore.clear();
@@ -2256,8 +2256,8 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
         if (no_reference(*bioseq) && mParser.debug == false) {
             ibp->drop = true;
-            ErrPostStr(SEV_ERROR, ERR_REFERENCE_No_references, "No reference for the entry, entry dropped");
-            ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No reference for the entry, entry dropped");
+            FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
             mParser.curindx++;
             return pResult;
         }
@@ -2268,7 +2268,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
         if (mParser.limit != 0 && ibp->bases > (size_t)mParser.limit) {
             if (ibp->htg == 4 || ibp->htg == 1 || ibp->htg == 2) {
-                ErrPostEx(SEV_WARNING, ERR_ENTRY_LongHTGSSequence, "HTGS Phase 0/1/2 sequence %s|%s exceeds length limit %ld: entry has been processed regardless of this problem", ibp->locusname, ibp->acnum, mParser.limit);
+                FtaErrPost(SEV_WARNING, ERR_ENTRY_LongHTGSSequence, "HTGS Phase 0/1/2 sequence {}|{} exceeds length limit {}: entry has been processed regardless of this problem", ibp->locusname, ibp->acnum, mParser.limit);
             } else
                 seq_long = true;
         }
@@ -2284,9 +2284,9 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
     } /* if, not drop */
 
     if (! ibp->drop) {
-        ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"%s|%s\".", ibp->locusname, ibp->acnum);
+        FtaErrPost(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry parsed successfully: \"{}|{}\".", ibp->locusname, ibp->acnum);
     } else {
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"%s|%s\".", ibp->locusname, ibp->acnum);
+        FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
     }
 
     mParser.curindx++;
@@ -2296,7 +2296,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
 void CEmbl2Asn::PostTotals()
 {
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, 
+    FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingComplete, 
             "COMPLETED : SUCCEEDED = %d; SKIPPED = %d.", mTotals.Succeeded, mParser.indx-mTotals.Succeeded);
 
 }
@@ -2357,7 +2357,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     }
 
     if (ibp->env_sample_qual == false && env_kwd) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_ENV_NoMatchingQualifier, "This record utilizes the ENV keyword, but there are no /environmental_sample qualifiers among its source features.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_ENV_NoMatchingQualifier, "This record utilizes the ENV keyword, but there are no /environmental_sample qualifiers among its source features.");
         return ret;
     }
 
@@ -2369,7 +2369,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         StringCpy(dataclass, bptr);
     }
     if (div < 0) {
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"%s\" found in Embl flatfile. Record rejected.", bptr);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_UnknownDivCode, "Unknown division code \"{}\" found in Embl flatfile. Record rejected.", bptr);
         if (bptr)
             MemFree(bptr);
         return ret;
@@ -2400,12 +2400,12 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     if (ibp->is_tpa &&
         (StringEqu(p, "EST") || StringEqu(p, "GSS") ||
          StringEqu(p, "PAT") || StringEqu(p, "HTG"))) {
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"%s\" is not legal for TPA records. Entry dropped.", p);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_BadTPADivcode, "Division code \"{}\" is not legal for TPA records. Entry dropped.", p);
         return ret;
     }
 
     if (ibp->is_tsa && ! StringEqu(p, "TSA")) {
-        ErrPostEx(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"%s\" is not legal for TSA records. Entry dropped.", p);
+        FtaErrPost(SEV_REJECT, ERR_DIVISION_BadTSADivcode, "Division code \"{}\" is not legal for TSA records. Entry dropped.", p);
         return ret;
     }
 
@@ -2414,7 +2414,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     if (div == 19) /* HTG */
     {
         if (! HasHtg(embl->GetKeywords())) {
-            ErrPostStr(SEV_ERROR, ERR_DIVISION_MissingHTGKeywords, "Division is HTG, but entry lacks HTG-related keywords. Entry dropped.");
+            FtaErrPost(SEV_ERROR, ERR_DIVISION_MissingHTGKeywords, "Division is HTG, but entry lacks HTG-related keywords. Entry dropped.");
             return ret;
         }
         tempdiv = StringSave("HTG");
@@ -2453,54 +2453,54 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         i++;
     if (mga_kwd) {
         if (ibp->is_mga == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeCAGE, "This is apparently _not_ a CAGE record, but the special keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeCAGE, "This is apparently _not_ a CAGE record, but the special keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_mga) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_NoGeneExpressionKeywords, "This is apparently a CAGE or 5'-SAGE record, but it lacks the required keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_NoGeneExpressionKeywords, "This is apparently a CAGE or 5'-SAGE record, but it lacks the required keywords. Entry dropped.");
         return ret;
     }
 
     if (tpa_kwd) {
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA\" and/or \"Third Party Annotation\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tpa) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA\" and/or \"Third Party Annotation\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA\" and/or \"Third Party Annotation\" keywords. Entry dropped.");
         return ret;
     }
 
     if (tsa_kwd) {
         if (ibp->is_tsa == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA\" and/or \"Transcriptome Shotgun Assembly\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tsa) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TPA\" and/or \"Transcriptome Shotgun Assembly\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TPA\" and/or \"Transcriptome Shotgun Assembly\" keywords. Entry dropped.");
         return ret;
     }
 
     if (tls_kwd) {
         if (ibp->is_tls == false) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS\" and/or \"Targeted Locus Study\" keywords are present. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS\" and/or \"Targeted Locus Study\" keywords are present. Entry dropped.");
             return ret;
         }
         i++;
     } else if (ibp->is_tls) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS\" and/or \"Targeted Locus Study\" keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS\" and/or \"Targeted Locus Study\" keywords. Entry dropped.");
         return ret;
     }
 
     if (i > 1) {
         if (i == 2 && ibp->htg > 0 && env_kwd)
-            ErrPostStr(SEV_WARNING, ERR_KEYWORD_HTGPlusENV, "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_HTGPlusENV, "This HTG record also has the ENV keyword, which is an unusual combination. Confirmation that isolation and cloning steps actually occured might be appropriate.");
         else if (i != 2 || env_kwd == false ||
                  (est_kwd == false && gss_kwd == false && wgs_kwd == false)) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ConflictingKeywords, "This record contains more than one of the special keywords used to indicate that a sequence is an HTG, EST, GSS, STS, HTC, WGS, ENV, FLI_CDNA, TPA, CAGE, TSA or TLS sequence.");
             return ret;
         }
     }
@@ -2509,7 +2509,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         i--;
     if (ibp->is_contig && i > 0 &&
         wgs_kwd == false && tpa_kwd == false && env_kwd == false) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_IllegalForCON, "This CON record should not have HTG, EST, GSS, STS, HTC, FLI_CDNA, CAGE, TSA or TLS special keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_IllegalForCON, "This CON record should not have HTG, EST, GSS, STS, HTC, FLI_CDNA, CAGE, TSA or TLS special keywords. Entry dropped.");
         return ret;
     }
 
@@ -2521,13 +2521,13 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
 
     if (auto kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';')) {
         if (! est_kwd && kw->find("EST") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword %s has substring EST, but no official EST keywords found", kw->c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword {} has substring EST, but no official EST keywords found", *kw);
         }
         if (! sts_kwd && kw->find("STS") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword %s has substring STS, but no official STS keywords found", kw->c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword {} has substring STS, but no official STS keywords found", *kw);
         }
         if (! gss_kwd && kw->find("GSS") != string::npos) {
-            ErrPostEx(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword %s has substring GSS, but no official GSS keywords found", kw->c_str());
+            FtaErrPost(SEV_WARNING, ERR_KEYWORD_GSSSubstring, "Keyword {} has substring GSS, but no official GSS keywords found", *kw);
         }
     }
     if (! ibp->is_contig) {
@@ -2551,11 +2551,11 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     bool has_htc    = HasHtc(embl->GetKeywords());
 
     if (is_htc_div && ! has_htc) {
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_MissingHTCKeyword, "This record is in the HTC division, but lacks the required HTC keyword.");
         return ret;
     }
     if (! is_htc_div && has_htc) {
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_InvalidHTCKeyword, "This record has the special HTC keyword, but is not in HTC division. If this record has graduated out of HTC, then the keyword should be removed.");
         return ret;
     }
 
@@ -2571,7 +2571,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
                 p = r + 12;
 
             if (! StringEquN(p, "RNA", 3)) {
-                ErrPostStr(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
+                FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
                 MemFree(r);
                 return ret;
             }

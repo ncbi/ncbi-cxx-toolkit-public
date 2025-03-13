@@ -635,7 +635,7 @@ static CRef<CDate> MakeDatePtr(const char* str, Parser::ESource source)
         if (XDateCheck(*std_date) != 0) {
             StringNCpy(msg, str, 10);
             msg[10] = '\0';
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal date: %s", msg);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal date: {}", msg);
         }
     }
 
@@ -708,7 +708,7 @@ static void MakeChainPDBSeqId(CSP_block_Base::TSeqref& refs, const char* mol, ch
     }
 
     if (bad) {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_InvalidPDBCrossRef, "PDB cross-reference \"%s\" contains one or more chain identifiers that are more than a single character in length.", fourth);
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_InvalidPDBCrossRef, "PDB cross-reference \"{}\" contains one or more chain identifiers that are more than a single character in length.", fourth);
         if (! got)
             fta_create_pdb_seq_id(refs, mol, 0);
     }
@@ -890,7 +890,7 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
     StripECO(str_);
 
     if (str_.find("(GENE NAME") != string::npos) {
-        ErrPostStr(SEV_WARNING, ERR_GENENAME_DELineGeneName, "Old format, found gene_name in the DE data line");
+        FtaErrPost(SEV_WARNING, ERR_GENENAME_DELineGeneName, "Old format, found gene_name in the DE data line");
     }
 
     ShrinkSpaces(str_);
@@ -1355,7 +1355,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
             ch       = line[21];
             line[21] = '\0';
         }
-        ErrPostEx(SEV_ERROR, ERR_SOURCE_UnknownOHType, "Unknown beginning of OH block: \"%s[...]\".", line + 1);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_UnknownOHType, "Unknown beginning of OH block: \"{}[...]\".", line + 1);
         if (ch != '\0')
             line[21] = ch;
         if (p)
@@ -1380,7 +1380,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
                 r++;
             *p = '\0';
             if (r != p) {
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID in OH line : \"%s\".", q);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID in OH line : \"{}\".", q);
                 tvhp->taxid = ZERO_TAX_ID;
             } else
                 tvhp->taxid = TAX_ID_FROM(int, atoi(q));
@@ -1404,7 +1404,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
         } else {
             if (r)
                 *r = '\0';
-            ErrPostEx(SEV_ERROR, ERR_SOURCE_IncorrectOHLine, "Incorrect OH line content skipped: \"%s\".", q);
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_IncorrectOHLine, "Incorrect OH line content skipped: \"{}\".", q);
             if (r)
                 *r = '\n';
             p = q;
@@ -1416,7 +1416,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
     delete vhp;
 
     if (! tvhp)
-        ErrPostStr(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
+        FtaErrPost(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
 
     return (tvhp);
 }
@@ -1445,7 +1445,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             if (! StringEquNI(line, "OX   NCBI_TaxID=", 16)) {
                 if (StringLen(line) > 20)
                     line[20] = '\0';
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_UnknownOXType, "Unknown beginning of OX line: \"%s\".", line);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_UnknownOXType, "Unknown beginning of OX line: \"{}\".", line);
                 MemFree(line);
                 break;
             }
@@ -1455,7 +1455,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
                 for (q = p; *q == ' ';)
                     q++;
                 if (*q != '\0') {
-                    ErrPostEx(SEV_ERROR, ERR_FORMAT_UnexpectedData, "Encountered unexpected data while parsing OX line: \"%s\" : Ignored.", p);
+                    FtaErrPost(SEV_ERROR, ERR_FORMAT_UnexpectedData, "Encountered unexpected data while parsing OX line: \"{}\" : Ignored.", p);
                 }
             }
             for (p = line + 16; *p == ' ';)
@@ -1469,7 +1469,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             if (*q == ' ' || *q == '\0')
                 taxid = TAX_ID_FROM(int, atoi(p));
             if (taxid <= ZERO_TAX_ID || (*q != ' ' && *q != '\0')) {
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID on OX line : \"%s\" : Ignored.", p);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID on OX line : \"{}\" : Ignored.", p);
             }
             MemFree(line);
             break;
@@ -1478,7 +1478,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
     }
 
     if (got && taxid <= ZERO_TAX_ID)
-        ErrPostStr(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxID found on OX line : will use organism names for lookup instead.");
+        FtaErrPost(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxID found on OX line : will use organism names for lookup instead.");
 
     return (taxid);
 }
@@ -1566,7 +1566,7 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
         if (ptr > str) {
             plasms.push_back(string(str, ptr));
         } else
-            ErrPostStr(SEV_ERROR, ERR_SOURCE_MissingPlasmidName, "Plasmid name is missing from OG line of SwissProt record.");
+            FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingPlasmidName, "Plasmid name is missing from OG line of SwissProt record.");
         offset = ptr;
     }
 }
@@ -1622,7 +1622,7 @@ static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
         return sid;
 
     if (str[0] == '-') {
-        ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Not annotated CDS [ACC:%s, PID:%s]", acc, str);
+        FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Not annotated CDS [ACC:{}, PID:{}]", acc, str);
         return sid;
     }
     errno = 0; /* clear errors, the error flag from stdlib */
@@ -1630,7 +1630,7 @@ static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
     if ((lID == 0 && str + 1 == end) || (lID == LLONG_MAX && errno == ERANGE)) {
         /* Bad or too large number
          */
-        ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Invalid PID value [ACC:%s, PID:%s]", acc, str);
+        FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Invalid PID value [ACC:{}, PID:{}]", acc, str);
         return sid;
     }
 
@@ -1645,7 +1645,7 @@ static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
         sid.Reset(new CSeq_id);
         sid->SetGeneral(*tag);
     } else {
-        ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Unrecognized PID data base type [ACC:%s, PID:%s]", acc, str);
+        FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Unrecognized PID data base type [ACC:{}, PID:{}]", acc, str);
     }
     return sid;
 }
@@ -1680,7 +1680,7 @@ static bool AddToList(ValNodePtr* head, char* str)
                 continue;
             *d = '\0';
             if (StringEqu(data, str)) {
-                ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Same protein accessions with different versions found in DR line [PID1:%s.%s; PID2:%s.%s].", data, d + 1, str, dot + 1);
+                FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Same protein accessions with different versions found in DR line [PID1:{}.{}; PID2:{}.{}].", data, d + 1, str, dot + 1);
             }
             *d = '.';
         }
@@ -1720,8 +1720,8 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
                 if (! got && cur_id.GetChain() == 32) {
                     got = true;
                     /* Commented out until the proper handling of PDB chain contents
-                    ErrPostEx(SEV_WARNING, ERR_FORMAT_DuplicateCrossRef,
-                              "Duplicate PDB cross reference removed, mol = \"%s\", chain = \"%d\".",
+                    FtaErrPost(SEV_WARNING, ERR_FORMAT_DuplicateCrossRef,
+                              "Duplicate PDB cross reference removed, mol = \"{}\", chain = \"{}\".",
                               psip1->mol, (int) psip1->chain);
 */
                 }
@@ -1733,8 +1733,8 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 
             next_ref = refs.erase(next_ref);
             /* Commented out until the proper handling of PDB chain contents
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_DuplicateCrossRef,
-                      "Duplicate PDB cross reference removed, mol = \"%s\", chain = \"%d\".",
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_DuplicateCrossRef,
+                      "Duplicate PDB cross reference removed, mol = \"{}\", chain = \"{}\".",
                       psip2->mol, (int) psip2->chain);
 */
         }
@@ -1768,7 +1768,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
             if (vnp->next->choice != vnpn->next->choice &&
                 StringEqu(p, vnpn->data)) {
                 if (GetProtAccOwner(q ? CTempString(p, q - p) : CTempString(p)) > CSeq_id::e_not_set)
-                    ErrPostEx(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"%s\" associated with \"%s\" and \"%s\".", vnpn->data, n, vnpn->next->data);
+                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", vnpn->data, n, vnpn->next->data);
             }
         }
     }
@@ -1905,7 +1905,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         token5 = GetDRToken(&ptr);
         if (! token1 || ! token2 || ! token3 ||
             (StringEqu(token2, "-") && StringEqu(token3, "-"))) {
-            ErrPostStr(SEV_ERROR, ERR_SPROT_DRLine, "Badly formatted DR line. Skipped.");
+            FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Badly formatted DR line. Skipped.");
             continue;
         }
 
@@ -1920,9 +1920,9 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 if (NStr::CompareNocase(*b, token1) == 0)
                     break;
             if (! *b)
-                ErrPostEx(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"%s\".", token1);
+                FtaErrPost(SEV_WARNING, ERR_DRXREF_UnknownDBname, "Encountered a new/unknown database name in DR line: \"{}\".", token1);
             else
-                ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Obsolete database name found in DR line: \"%s\".", token1);
+                FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Obsolete database name found in DR line: \"{}\".", token1);
         }
 
         if (NStr::CompareNocase(token1, "PDB") == 0) {
@@ -1940,7 +1940,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             p = StringChr(token2, '.');
             ntype = GetNucAccOwner(p ? CTempString(token2, p - token2) : CTempString(token2));
             if (ntype == CSeq_id::e_not_set) {
-                ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"%s\". Skipped...", token2);
+                FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
                 CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
                                               p ? (Int2) atoi(p + 1) : 0));
@@ -1962,7 +1962,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                         p = nullptr;
                 }
                 if (! p || ptype == CSeq_id::e_not_set) {
-                    ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession is used in DR line [ACC:%s; PID:%s]. Skipped...", token2, token3);
+                    FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession is used in DR line [ACC:{}; PID:{}]. Skipped...", token2, token3);
                     continue;
                 }
             } else
@@ -2004,7 +2004,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             }
 
             if (! AddToList(&ens_prot_list, token3)) {
-                ErrPostEx(SEV_WARNING, ERR_SPROT_DRLine, "Duplicated protein id \"%s\" in \"%s\" DR line.", token3, token1);
+                FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Duplicated protein id \"{}\" in \"{}\" DR line.", token3, token1);
             } else {
                 CRef<CDbtag> tag = MakeStrDbtag(token1, token3);
                 if (tag.NotEmpty())
@@ -2034,7 +2034,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 p = nullptr;
 
             if (! p) {
-                ErrPostEx(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession.version is used in RefSeq DR line: \"%s\". Skipped...", token2);
+                FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect protein accession.version is used in RefSeq DR line: \"{}\". Skipped...", token2);
                 continue;
             }
 
@@ -2092,7 +2092,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     MemFree(str);
 
     if (pdbold && pdbnew) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_MixedPDBXrefs, "Both old and new types of PDB cross-references exist on this record. Only one style is allowed.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_MixedPDBXrefs, "Both old and new types of PDB cross-references exist on this record. Only one style is allowed.");
         *drop = true;
     }
 
@@ -2215,34 +2215,34 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
 
     ret = true;
     if (first == 0) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"%s\" DT line.", (new_style ? "integrated into" : "Created"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"{}\" DT line.", (new_style ? "integrated into" : "Created"));
         ret = false;
     } else if (first > 1) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"%s\" DT lines are present.", (new_style ? "integrated into" : "Created"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"{}\" DT lines are present.", (new_style ? "integrated into" : "Created"));
         ret = false;
     } else if (second == 0) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"%s\" DT line.", (new_style ? "sequence version" : "Last sequence update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"{}\" DT line.", (new_style ? "sequence version" : "Last sequence update"));
         ret = false;
     } else if (second > 1) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"%s\" DT lines are present.", (new_style ? "sequence version" : "Last sequence update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"{}\" DT lines are present.", (new_style ? "sequence version" : "Last sequence update"));
         ret = false;
     } else if (third == 0) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"%s\" DT line.", (new_style ? "entry version" : "Last annotation update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"{}\" DT line.", (new_style ? "entry version" : "Last annotation update"));
         ret = false;
     } else if (third > 1) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"%s\" DT lines are present.", (new_style ? "entry version" : "Last annotation update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Multiple \"{}\" DT lines are present.", (new_style ? "entry version" : "Last annotation update"));
         ret = false;
     } else if (std_crdate.Empty()) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect create date in \"%s\" DT line.", (new_style ? "integrated into" : "Created"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect create date in \"{}\" DT line.", (new_style ? "integrated into" : "Created"));
         ret = false;
     } else if (std_sequpd.Empty()) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect update date in \"%s\" DT line.", (new_style ? "sequence version" : "Last sequence update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect update date in \"{}\" DT line.", (new_style ? "sequence version" : "Last sequence update"));
         ret = false;
     } else if (std_annotupd.Empty()) {
-        ErrPostEx(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect update date in \"%s\" DT line.", (new_style ? "entry version" : "Last annotation update"));
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing or incorrect update date in \"{}\" DT line.", (new_style ? "entry version" : "Last annotation update"));
         ret = false;
     } else if (ver_num && *ver_num < 1) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_Date, "Invalidly formatted sequence version DT line is present.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Invalidly formatted sequence version DT line is present.");
         ret = false;
     }
 
@@ -2286,7 +2286,7 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         spb->SetClass(CSP_block::eClass_prelim);
     } else {
         spb->SetClass(CSP_block::eClass_not_set);
-        ErrPostStr(SEV_WARNING, ERR_DATACLASS_UnKnownClass, "Not a standard/reviewed or preliminary/unreviewed class in SWISS-PROT");
+        FtaErrPost(SEV_WARNING, ERR_DATACLASS_UnKnownClass, "Not a standard/reviewed or preliminary/unreviewed class in SWISS-PROT");
     }
 
     GetSequenceOfKeywords(entry, ParFlatSP_KW, ParFlat_COL_DATA_SP, spb->SetKeywords());
@@ -2461,7 +2461,7 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
     }
 
     if (count == 0 && cla != 2) /* not PRELIMINARY or UNREVIEWED */
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_MissingCopyright, "The expected copyright notice for UniProt/Swiss-Prot entry %s was not found.", acc);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_MissingCopyright, "The expected copyright notice for UniProt/Swiss-Prot entry {} was not found.", acc);
 
     if (len < 1) {
         *eptr = ch;
@@ -2634,7 +2634,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         upd_date.GetDate(&upd_date_str);
         spb->GetCreated().GetDate(&create_date_str);
 
-        ErrPostEx(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"%s\" precedes create-date \"%s\".", upd_date_str.c_str(), create_date_str.c_str());
+        FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Update-date \"{}\" precedes create-date \"{}\".", upd_date_str, create_date_str);
     }
 
     auto& chain = TrackNodes(entry);
@@ -2652,7 +2652,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         if (taxid > ZERO_TAX_ID) {
             CRef<COrg_ref> org_ref = fta_fix_orgref_byid(pp, taxid, &ibp->drop, false);
             if (org_ref.Empty())
-                ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "NCBI TaxID lookup for %d failed : will use organism name for lookup instead.", TAX_ID_TO(int, taxid));
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "NCBI TaxID lookup for {} failed : will use organism name for lookup instead.", TAX_ID_TO(int, taxid));
             else {
                 bio_src.Reset(new CBioSource);
 
@@ -2674,7 +2674,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
             } else if (org_ref->IsSetTaxname()) {
                 if (! bio_src->IsSetOrg() || ! bio_src->GetOrg().IsSetTaxname() ||
                     NStr::CompareNocase(org_ref->GetTaxname().c_str(), bio_src->GetOrg().GetTaxname().c_str()) != 0)
-                    ErrPostEx(SEV_ERROR, ERR_SOURCE_OrgNameVsTaxIDMissMatch, "Organism name \"%s\" from OS line does not match the organism name \"%s\" obtained by lookup of NCBI TaxID.", org_ref->GetTaxname().c_str(), bio_src->GetOrg().GetTaxname().c_str());
+                    FtaErrPost(SEV_ERROR, ERR_SOURCE_OrgNameVsTaxIDMissMatch, "Organism name \"{}\" from OS line does not match the organism name \"{}\" obtained by lookup of NCBI TaxID.", org_ref->GetTaxname(), bio_src->GetOrg().GetTaxname());
             }
         }
 
@@ -2702,9 +2702,9 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
                 CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &drop, true);
                 if (org_ref_cur.Empty()) {
                     if (! drop)
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"%d\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"{}\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
                     else
-                        ErrPostEx(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"%d\" failed.", TAX_ID_TO(int, tvhp->taxid));
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"{}\" failed.", TAX_ID_TO(int, tvhp->taxid));
                 } else {
                     vector<Char> org_taxname;
                     if (org_ref_cur->IsSetTaxname()) {
@@ -2715,9 +2715,9 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
                     org_taxname.push_back(0);
 
                     if (! IfOHTaxIdMatchOHName(&org_taxname[0], tvhp->name))
-                        ErrPostEx(SEV_WARNING,
+                        FtaErrPost(SEV_WARNING,
                                   ERR_SOURCE_HostNameVsTaxIDMissMatch,
-                                  "OH-line HostName \"%s\" does not match NCBI organism name \"%s\" obtained by lookup of NCBI TaxID \"%d\".",
+                                  "OH-line HostName \"{}\" does not match NCBI organism name \"{}\" obtained by lookup of NCBI TaxID \"{}\".",
                                   tvhp->name,
                                   &org_taxname[0],
                                   TAX_ID_TO(int, tvhp->taxid));
@@ -2842,7 +2842,7 @@ static void fta_remove_dup_spfeats(SPFeatInputPtr spfip)
                 continue;
             }
             fipprev->next = fip->next;
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"%s\" at location \"%s..%s\" removed.", fip->key.empty() ? "???" : fip->key.c_str(), fip->from.empty() ? "???" : fip->from.c_str(), fip->to.empty() ? "???" : fip->to.c_str());
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"{}\" at location \"{}..{}\" removed.", fip->key.empty() ? "???" : fip->key, fip->from.empty() ? "???" : fip->from, fip->to.empty() ? "???" : fip->to);
             FreeSPFeatInput(fip);
         }
     }
@@ -3023,9 +3023,9 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 *p = '\0';
             }
             if (bptr == ptr1)
-                ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"%s\" at feature \"%s\". Feature dropped.", location, temp->key.c_str());
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp->key);
             else
-                ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Empty location at feature \"%s\". Feature dropped.", temp->key.c_str());
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Empty location at feature \"{}\". Feature dropped.", temp->key);
             if (p)
                 *p = ch;
             temp->from.assign("-1");
@@ -3076,7 +3076,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 ch = *p;
                 *p = '\0';
             }
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"%s\" at feature \"%s\". Feature dropped.", location, temp->key.c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp->key);
             if (p)
                 *p = ch;
             temp->from.assign("-1");
@@ -3113,7 +3113,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                     p = StringChr(bptr, '\n');
                     if (p)
                         *p = '\0';
-                    ErrPostEx(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "/evidence qualifier does not have expected \"ECO:\" prefix : \"%s\".", bptr);
+                    FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence, "/evidence qualifier does not have expected \"ECO:\" prefix : \"{}\".", bptr);
                     if (p)
                         *p = '\n';
                 }
@@ -3126,7 +3126,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                     if (*p == '=' && p[1] == '\"') {
                         *p      = '\0';
                         badqual = true;
-                        ErrPostEx(SEV_ERROR, ERR_FEATURE_InvalidQualifier, "Qualifier %s is invalid for the feature \"%s\" at \"%s..%s\".", bptr, temp->key.c_str(), temp->from.c_str(), temp->to.c_str());
+                        FtaErrPost(SEV_ERROR, ERR_FEATURE_InvalidQualifier, "Qualifier {} is invalid for the feature \"{}\" at \"{}..{}\".", bptr, temp->key, temp->from, temp->to);
                         *p = '=';
                     }
                 }
@@ -3169,7 +3169,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         }
 
         if (badqual) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "Invalid qualifier(s) found within the feature \"%s\" at \"%s..%s\". Feature dropped.", temp->key.c_str(), temp->from.c_str(), temp->to.c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Invalid qualifier(s) found within the feature \"{}\" at \"{}..{}\". Feature dropped.", temp->key, temp->from, temp->to);
             FreeSPFeatInputSet(temp);
             continue;
         }
@@ -3189,8 +3189,8 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         if (*q == '<' || *q == '>')
             q++;
         if ((*p != '?' && atoi(p) > (Int4)seqlen) || (*q != '?' && atoi(q) > (Int4)seqlen)) {
-            ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature=%s, length=%d, from=%s, to=%s", temp->key.c_str(), seqlen, temp->from.c_str(), temp->to.c_str());
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature=%s, length=%d, from=%s, to=%s", temp->key.c_str(), seqlen, temp->from.c_str(), temp->to.c_str());
+            FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
             FreeSPFeatInputSet(temp);
             continue;
         }
@@ -3376,8 +3376,8 @@ static bool SPFeatNoExp(ParserPtr pp, SPFeatInputPtr spfip)
         StringCombine(spfip->descrip, ".", nullptr);
     }
 
-    ErrPostEx(SEV_WARNING, ERR_FEATURE_OldNonExp,
-              "Old Non-experimental feature description, %s",
+    FtaErrPost(SEV_WARNING, ERR_FEATURE_OldNonExp,
+              "Old Non-experimental feature description, {}",
               ParFlat_SPFeatNoExpW[indx]);
 
     return true;
@@ -3451,7 +3451,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
     descrip.assign(CpTheQualValue(fbp->quals, "note"));
 
     if (NStr::EqualNocase(fbp->key, "VARSPLIC")) {
-        ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
+        FtaErrPost(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
         fbp->key = "VAR_SEQ";
     }
 
@@ -3481,7 +3481,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
     } else {
         if (type != ParFlatSPInitMet && type != ParFlatSPNonTer &&
             type != ParFlatSPNonCons) {
-            ErrPostEx(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"%s\" with unknown type dropped.", fbp->key.c_str());
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"{}\" with unknown type dropped.", fbp->key);
         }
         feat->Reset();
         return (null);
@@ -3499,13 +3499,13 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
     }
     if (err) {
         if (! pp->debug) {
-            ErrPostEx(SEV_ERROR, ERR_FEATURE_Dropped, "%s|%s| range check detects problems", fbp->key.c_str(), fbp->location_c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "{}|{}| range check detects problems", fbp->key, fbp->location_c_str());
             if (! descrip.empty())
                 descrip.clear();
             feat->Reset();
             return (null);
         }
-        ErrPostEx(SEV_WARNING, ERR_LOCATION_FailedCheck, "%s|%s| range check detects problems", fbp->key.c_str(), fbp->location_c_str());
+        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "{}|{}| range check detects problems", fbp->key, fbp->location_c_str());
     }
 
     if (SeqLocHaveFuzz(feat->GetLocation()))
@@ -3540,7 +3540,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
         FtaInstallPrefix(PREFIX_FEATURE, temp->key, temp->from);
 
         if (NStr::EqualNocase("VARSPLIC", temp->key)) {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
             temp->key = "VAR_SEQ";
         }
 
@@ -3554,7 +3554,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 
         indx = SpFeatKeyNameValid(temp->key.c_str());
         if (indx == -1) {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_UnknownFeatKey, "dropping");
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_UnknownFeatKey, "dropping");
             FtaDeletePrefix(PREFIX_FEATURE);
             continue;
         }
@@ -3587,7 +3587,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
         } else {
             if (type != ParFlatSPInitMet && type != ParFlatSPNonTer &&
                 type != ParFlatSPNonCons) {
-                ErrPostEx(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"%s\" with unknown type dropped.", temp->key.c_str());
+                FtaErrPost(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"{}\" with unknown type dropped.", temp->key);
             }
             FtaDeletePrefix(PREFIX_FEATURE);
             continue;
@@ -3688,7 +3688,7 @@ static void CkGeneNameSP(char* gname)
                *p == '\'' || *p == '`' || *p == '/' || *p == '(' || *p == ')'))
             break;
     if (*p != '\0')
-        ErrPostEx(SEV_WARNING, ERR_GENENAME_IllegalGeneName, "gene_name contains unusual characters, %s, in SWISS-PROT", gname);
+        FtaErrPost(SEV_WARNING, ERR_GENENAME_IllegalGeneName, "gene_name contains unusual characters, {}, in SWISS-PROT", gname);
 }
 
 /**********************************************************
@@ -3894,7 +3894,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             *q++ = '\0';
         if (StringEquNI(p, "Name=", 5)) {
             if (name) {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Name=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
@@ -3903,7 +3903,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
                 name = StringSave(p);
         } else if (StringEquNI(p, "Synonyms=", 9)) {
             if (syns) {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"Synonyms=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
@@ -3912,7 +3912,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
                 syns = StringSave(p);
         } else if (StringEquNI(p, "OrderedLocusNames=", 18)) {
             if (ltags) {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"OrderedLocusNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
@@ -3921,7 +3921,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
                 ltags = StringSave(p);
         } else if (StringEquNI(p, "ORFNames=", 9)) {
             if (orfs) {
-                ErrPostStr(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_ExcessGeneFields, "Field \"ORFNames=\" occurs multiple times within a GN line. Entry dropped.");
                 ibp->drop = true;
                 break;
             }
@@ -3937,7 +3937,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
                 continue;
 
             if (! name && syns) {
-                ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingGeneName, "Encountered a gene with synonyms \"%s\" that lacks a gene symbol.", syns);
+                FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingGeneName, "Encountered a gene with synonyms \"{}\" that lacks a gene symbol.", syns);
             }
 
             SPGetOneGeneRefNew(pp, feats, seqlen, name, syns, ltags, orfs);
@@ -3947,7 +3947,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
             ltags = nullptr;
             orfs  = nullptr;
         } else {
-            ErrPostEx(SEV_REJECT, ERR_FORMAT_UnknownGeneField, "Field \"%s\" is not a legal field for the GN linetype. Entry dropped.", p);
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_UnknownGeneField, "Field \"{}\" is not a legal field for the GN linetype. Entry dropped.", p);
             ibp->drop = true;
             break;
         }
@@ -4078,7 +4078,7 @@ static void SPValidateEcnum(string& ecnum)
     }
 
     if (count != 4 || *p != '\0') {
-        ErrPostEx(SEV_ERROR, ERR_FORMAT_InvalidECNumber, "Invalid EC number provided in SwissProt DE line: \"%s\". Preserve it anyway.", ecnum.c_str());
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_InvalidECNumber, "Invalid EC number provided in SwissProt DE line: \"{}\". Preserve it anyway.", ecnum);
     } else
         ecnum = buf;
     MemFree(buf);
@@ -4134,20 +4134,20 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, bool* drop, bool is_trembl)
     }
 
     if (rcount > 1) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_MultipleRecName, "This UniProt record has multiple RecName protein-name categories, but only one is allowed. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_MultipleRecName, "This UniProt record has multiple RecName protein-name categories, but only one is allowed. Entry dropped.");
         *drop = true;
     } else if (rcount == 0 && ! is_trembl) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_MissingRecName, "This UniProt/Swiss-Prot record lacks required RecName protein-name categorie. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_MissingRecName, "This UniProt/Swiss-Prot record lacks required RecName protein-name categorie. Entry dropped.");
         *drop = true;
     }
 
     if (scount > 0 && ! is_trembl) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_SwissProtHasSubName, "This UniProt/Swiss-Prot record includes a SubName protein-name category, which should be used only for UniProt/TrEMBL. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_SwissProtHasSubName, "This UniProt/Swiss-Prot record includes a SubName protein-name category, which should be used only for UniProt/TrEMBL. Entry dropped.");
         *drop = true;
     }
 
     if (fcount == 0 && rcount > 0) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_MissingFullRecName, "This UniProt record lacks a Full name in the RecName protein-name category.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_MissingFullRecName, "This UniProt record lacks a Full name in the RecName protein-name category.");
         *drop = true;
     }
 }
@@ -4282,7 +4282,7 @@ static void SPGetPEValue(const DataBlk& entry, CSeq_feat& feat)
         *q = '\0';
 
     if (MatchArrayIString(PE_values, p) < 0)
-        ErrPostEx(SEV_ERROR, ERR_SPROT_PELine, "Unrecognized value is encountered in PE (Protein Existence) line: \"%s\".", p);
+        FtaErrPost(SEV_ERROR, ERR_SPROT_PELine, "Unrecognized value is encountered in PE (Protein Existence) line: \"{}\".", p);
 
     CRef<CGb_qual> qual(new CGb_qual);
     qual->SetQual("UniProtKB_evidence");
@@ -4354,7 +4354,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
 
     if (StringEquNI(str, "Contains: ", 10) ||
         StringEquNI(str, "Includes: ", 10)) {
-        ErrPostStr(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
         ibp->drop = true;
     }
 
@@ -4389,7 +4389,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
             if (! ecnum.empty())
                 prot.SetEc().push_back(ecnum);
         } else {
-            ErrPostStr(SEV_WARNING, ERR_FORMAT_ECNumberNotPresent, "Empty EC number provided in SwissProt DE line.");
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_ECNumberNotPresent, "Empty EC number provided in SwissProt DE line.");
         }
 
         if (symb == ')') {
@@ -4560,12 +4560,12 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
         return;
 
     if (spfip) {
-        ErrPostStr(SEV_ERROR, ERR_FEATURE_Invalid_INIT_MET, "Either incorrect or more than one INIT_MET feature provided.");
+        FtaErrPost(SEV_ERROR, ERR_FEATURE_Invalid_INIT_MET, "Either incorrect or more than one INIT_MET feature provided.");
         return;
     }
 
     if (! temp->descrip.empty()) {
-        ErrPostEx(SEV_WARNING, ERR_FEATURE_ExpectEmptyComment, "%s:%d-%d has description: %s", temp->key.c_str(), from, to, temp->descrip.c_str());
+        FtaErrPost(SEV_WARNING, ERR_FEATURE_ExpectEmptyComment, "{}:{}-{} has description: {}", temp->key, from, to, temp->descrip);
     }
 
 
@@ -4582,7 +4582,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
         sequence.insert(sequence.begin(), 'M');
         bioseq.SetInst().SetLength(static_cast<TSeqPos>(sequence.size()));
     } else if (sequence.empty() || sequence[0] != 'M')
-        ErrPostStr(SEV_ERROR, ERR_FEATURE_MissingInitMet, "The required Init Met is missing from the sequence.");
+        FtaErrPost(SEV_ERROR, ERR_FEATURE_MissingInitMet, "The required Init Met is missing from the sequence.");
 }
 
 /**********************************************************
@@ -4630,7 +4630,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
 
         from = NStr::StringToInt(temp->from);
         if (from != NStr::StringToInt(temp->to)) {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_UnEqualEndPoint, "NON_TER has unequal endpoints");
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_UnEqualEndPoint, "NON_TER has unequal endpoints");
             continue;
         }
 
@@ -4641,7 +4641,7 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
             spfbp->nonter  = true;
             spfbp->noright = true;
         } else {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_NotSeqEndPoint, "NON_TER is not at a sequence endpoint.");
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_NotSeqEndPoint, "NON_TER is not at a sequence endpoint.");
         }
     }
 
@@ -4650,12 +4650,12 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
 
     if (segm && mol_info->GetCompleteness() != 2) {
         mol_info->SetCompleteness(CMolInfo::eCompleteness_partial);
-        ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFragment, "Found NON_CONS in FT line but no FRAGMENT in DE line.");
+        FtaErrPost(SEV_WARNING, ERR_FEATURE_NoFragment, "Found NON_CONS in FT line but no FRAGMENT in DE line.");
     } else if (spfbp->nonter && mol_info->GetCompleteness() != CMolInfo::eCompleteness_partial) {
         mol_info->SetCompleteness(CMolInfo::eCompleteness_partial);
-        ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFragment, "Found NON_TER in FT line but no FRAGMENT in DE line.");
+        FtaErrPost(SEV_WARNING, ERR_FEATURE_NoFragment, "Found NON_TER in FT line but no FRAGMENT in DE line.");
     } else if (! spfbp->nonter && mol_info->GetCompleteness() == CMolInfo::eCompleteness_partial && ! segm) {
-        ErrPostStr(SEV_WARNING, ERR_FEATURE_PartialNoNonTerNonCons, "Entry is partial but has no NON_TER or NON_CONS features.");
+        FtaErrPost(SEV_WARNING, ERR_FEATURE_PartialNoNonTerNonCons, "Entry is partial but has no NON_TER or NON_CONS features.");
     } else if (mol_info->GetCompleteness() != 2) {
         if (bioseq.GetInst().IsSetSeq_data()) {
             const CSeq_data& data     = bioseq.GetInst().GetSeq_data();
@@ -4834,9 +4834,9 @@ CRef<CSeq_entry> CSwissProt2Asn::xGetEntry()
     }
     if (! ibp->drop) {
         mTotals.Succeeded++;
-        ErrPostEx(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry \"%s|%s\" parsed successfully", ibp->locusname, ibp->acnum);
+        FtaErrPost(SEV_INFO, ERR_ENTRY_Parsed, "OK - entry \"{}|{}\" parsed successfully", ibp->locusname, ibp->acnum);
     } else {
-        ErrPostEx(SEV_ERROR, ERR_ENTRY_Skipped, "Entry \"%s|%s\" skipped", ibp->locusname, ibp->acnum);
+        FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry \"{}|{}\" skipped", ibp->locusname, ibp->acnum);
     }
     mParser.curindx++;
     return pResult;
@@ -4845,8 +4845,8 @@ CRef<CSeq_entry> CSwissProt2Asn::xGetEntry()
 
 void CSwissProt2Asn::PostTotals()
 {   
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingComplete, 
-            "Parsing completed, %d entr%s parsed", 
+    FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingComplete, 
+            "Parsing completed, {} entr{} parsed", 
             mTotals.Succeeded, (mTotals.Succeeded == 1) ? "y" : "ies");
 }
 

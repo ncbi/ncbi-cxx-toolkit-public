@@ -178,22 +178,22 @@ static void CheckDupEntries(ParserPtr pp)
                 /* 2 after 1 take 2 remove 1
                  */
                 first->drop = true;
-                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", first->acnum, first->locusname);
+                FtaErrPost(SEV_WARNING, ERR_ENTRY_Repeated, "{} ({}) skipped in favor of another entry with a later update date", first->acnum, first->locusname);
             } else if (dtm == CDate::eCompare_same) {
                 if (first->offset > second->offset) {
                     /* 1 larger than 2 take 1 remove 2
                      */
                     second->drop = true;
-                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", second->acnum, second->locusname);
+                    FtaErrPost(SEV_WARNING, ERR_ENTRY_Repeated, "{} ({}) skipped in favor of another entry located at a larger byte offset", second->acnum, second->locusname);
                 } else /* take 2 remove 1 */
                 {
                     first->drop = true;
-                    ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry located at a larger byte offset", first->acnum, first->locusname);
+                    FtaErrPost(SEV_WARNING, ERR_ENTRY_Repeated, "{} ({}) skipped in favor of another entry located at a larger byte offset", first->acnum, first->locusname);
                 }
             } else /* take 1 remove 2 */
             {
                 second->drop = true;
-                ErrPostEx(SEV_WARNING, ERR_ENTRY_Repeated, "%s (%s) skipped in favor of another entry with a later update date", second->acnum, second->locusname);
+                FtaErrPost(SEV_WARNING, ERR_ENTRY_Repeated, "{} ({}) skipped in favor of another entry with a later update date", second->acnum, second->locusname);
             }
         }
     }
@@ -481,13 +481,13 @@ static bool sParseFlatfile(ParserPtr pp, CObjectOStream& objOstr, bool already =
 
     CheckDupEntries(pp);
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp->indx);
+    FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing {} entries", (size_t)pp->indx);
 
     pp->pbp      = new ProtBlk;
     pp->pbp->ibp = new InfoBioseq;
 
     if (pp->num_drop > 0) {
-        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
+        FtaErrPost(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "{} invalid accession{} skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
@@ -518,7 +518,7 @@ static bool s_GetEntries(CMappedInput2Asn& input2Asn, TEntryList& entries)
         input2Asn.PostTotals();
     }
     catch (CException& e) {
-        ErrPostStr(SEV_FATAL, 0, 0, e.GetMsg());
+        FtaErrPost(SEV_FATAL, 0, 0, e.GetMsg());
         return false;
     }
 
@@ -583,13 +583,13 @@ static bool sParseFlatfile(CRef<CSerialObject>& ret, ParserPtr pp, bool already 
 
     CheckDupEntries(pp);
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp->indx);
+    FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing {} entries", (size_t)pp->indx);
 
     pp->pbp      = new ProtBlk;
     pp->pbp->ibp = new InfoBioseq;
 
     if (pp->num_drop > 0) {
-        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
+        FtaErrPost(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "{} invalid accession{} skipped", (size_t)pp->num_drop, (pp->num_drop == 1) ? "" : "s");
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
@@ -644,7 +644,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.seqtype  = CSeq_id::e_Genbank;
         pp.acprefix = nullptr;
         if (pp.format != Parser::EFormat::GenBank) {
-            ErrPostStr(SEV_FATAL, 0, 0, "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
+            FtaErrPost(SEV_FATAL, 0, 0, "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
     } else if (NStr::EqualNocase(source, "REFSEQ")) {
@@ -652,7 +652,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.seqtype  = CSeq_id::e_Other;
         pp.acprefix = nullptr;
         if (pp.format != Parser::EFormat::GenBank) {
-            ErrPostStr(SEV_FATAL, 0, 0, "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
+            FtaErrPost(SEV_FATAL, 0, 0, "Source \"REFSEQ\" requires format \"GENBANK\" only. Cannot parse.");
             return false;
         }
     } else if (NStr::EqualNocase(source, "NCBI")) {
@@ -668,7 +668,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
              */
             if (pp.format != Parser::EFormat::EMBL && pp.format != Parser::EFormat::GenBank &&
                 pp.format != Parser::EFormat::XML) {
-                ErrPostStr(SEV_FATAL, 0, 0, "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
+                FtaErrPost(SEV_FATAL, 0, 0, "Source \"NCBI\" requires format \"GENBANK\" or \"EMBL\".");
                 return false;
             }
 
@@ -679,7 +679,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         }
     } else if (NStr::EqualNocase(source, "USPTO")) {
         if (pp.format != Parser::EFormat::XML) {
-            ErrPostStr(SEV_FATAL, 0, 0, "Source \"USPTO\" requires format \"XML\" only.");
+            FtaErrPost(SEV_FATAL, 0, 0, "Source \"USPTO\" requires format \"XML\" only.");
             return (false);
         }
 
@@ -688,7 +688,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.source   = Parser::ESource::USPTO;
         pp.accver   = false;
     } else {
-        ErrPostEx(SEV_FATAL, 0, 0, "Sorry, %s is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source.c_str());
+        FtaErrPost(SEV_FATAL, 0, 0, "Sorry, {} is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source);
         return false;
     }
 
@@ -725,7 +725,7 @@ void Flat2AsnCheck(char* ffentry, char* source, char* format, bool accver, Parse
     else if (NStr::EqualNocase(format, "xml"))
         form = Parser::EFormat::XML;
     else {
-        ErrPostStr(SEV_ERROR, 0, 0, "Unknown format of flat entry");
+        FtaErrPost(SEV_ERROR, 0, 0, "Unknown format of flat entry");
         return;
     }
 
@@ -968,10 +968,10 @@ TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 
     CheckDupEntries(&pp);
 
-    ErrPostEx(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing %ld entries", (size_t)pp.indx);
+    FtaErrPost(SEV_INFO, ERR_ENTRY_ParsingSetup, "Parsing {} entries", (size_t)pp.indx);
 
     if (pp.num_drop > 0) {
-        ErrPostEx(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "%ld invalid accession%s skipped", (size_t)pp.num_drop, (pp.num_drop == 1) ? "" : "s");
+        FtaErrPost(SEV_WARNING, ERR_ACCESSION_InvalidAccessNum, "{} invalid accession{} skipped", (size_t)pp.num_drop, (pp.num_drop == 1) ? "" : "s");
     }
 
     FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
@@ -1018,7 +1018,7 @@ bool fta_set_format_source(Parser& pp, const string& format, const string& sourc
     else if (format == "xml")
         pp.format = Parser::EFormat::XML;
     else {
-        ErrPostStr(SEV_FATAL, 0, 0, "Sorry, the format is not available yet ==> available format embl, genbank, prf, sprot, xml.");
+        FtaErrPost(SEV_FATAL, 0, 0, "Sorry, the format is not available yet ==> available format embl, genbank, prf, sprot, xml.");
         return false;
     }
 
