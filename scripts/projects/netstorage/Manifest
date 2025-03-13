@@ -20,7 +20,7 @@ APP: netstorage_gc
 ETC: src/app/netstorage/utils/netstorage_gc.ini
 APP: test_netstorage
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
+DEFAULT_CONFIGURATIONS: Linux64-Alma:O2g
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -29,9 +29,9 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:O2g
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos : Release : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile
-Linux64-Centos : Debug   : GCC.sh 7.3.0 --with-debug    --with-mt --with-flat-makefile
-Linux64-Centos : O2g     : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile --with-symbols
+Linux64-Alma : Release : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile
+Linux64-Alma : Debug   : GCC.sh 7.3.0 --with-debug    --with-mt --with-flat-makefile
+Linux64-Alma : O2g     : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile --with-symbols
 
 USE_COMPONENTS
 
