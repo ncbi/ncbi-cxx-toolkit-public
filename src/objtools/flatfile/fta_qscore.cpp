@@ -301,7 +301,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
     if (NStr::CompareNocase(def_title, "Phrap Quality") != 0 &&
         NStr::CompareNocase(def_title, "Gap4") != 0 &&
         NStr::CompareNocase(def_title, "Phred Quality") != 0) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_BadTitle, "Unrecognized title for quality score data : >%s< : should be 'Phrap Quality', 'Gap4', or 'Phred Quality'.", def_title);
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_BadTitle, "Unrecognized title for quality score data : >{}< : should be 'Phrap Quality', 'Gap4', or 'Phred Quality'.", def_title);
         return (-35);
     }
 
@@ -648,14 +648,14 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
 
     CSeq_graph& big_graph = *(*graphs.begin());
     if (! big_graph.GetGraph().IsByte()) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_NonByteGraph, "Seq-graph to be split does not contain byte qscore values : cannot be processed.");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_NonByteGraph, "Seq-graph to be split does not contain byte qscore values : cannot be processed.");
         return;
     }
 
     CByte_graph::TValues scores_str(big_graph.GetGraph().GetByte().GetValues().begin(),
                                     big_graph.GetGraph().GetByte().GetValues().end());
     if (scores_str.empty()) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_MissingByteStore, "Seq-graph to be split has a NULL ByteStore for the qscore values : cannot be processed.");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_MissingByteStore, "Seq-graph to be split has a NULL ByteStore for the qscore values : cannot be processed.");
         return;
     }
 
@@ -674,13 +674,13 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         min_score = QS_MAX_VALID_SCORE;
 
         if (delta->IsLoc()) {
-            ErrPostStr(SEV_ERROR, ERR_QSCORE_NonLiteralDelta, "Cannot process Delta-seq bioseqs with Seq-loc components.");
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_NonLiteralDelta, "Cannot process Delta-seq bioseqs with Seq-loc components.");
             problem = true;
             break;
         }
 
         if (! delta->IsLiteral()) {
-            ErrPostStr(SEV_ERROR, ERR_QSCORE_UnknownDelta, "Encountered Delta-seq component of unknown type.");
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_UnknownDelta, "Encountered Delta-seq component of unknown type.");
             problem = true;
             break;
         }
@@ -688,7 +688,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         const CSeq_literal& literal = delta->GetLiteral();
 
         if (! literal.IsSetLength() || literal.GetLength() < 1) {
-            ErrPostStr(SEV_ERROR, ERR_QSCORE_ZeroLengthLiteral, "Encountered Delta-seq Seq-literal component with length of zero (or less) : cannot be processed.");
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_ZeroLengthLiteral, "Encountered Delta-seq Seq-literal component with length of zero (or less) : cannot be processed.");
             problem = true;
             break;
         }
@@ -725,10 +725,10 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
 
             if (is_gap && byte != 0) {
                 if (nonzero_gap < 10) {
-                    ErrPostEx(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Encountered non-zero score value %i within Delta-seq gap at position %ld of bioseq", byte, curr_pos);
+                    FtaErrPost(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Encountered non-zero score value {} within Delta-seq gap at position {} of bioseq", byte, curr_pos);
                     nonzero_gap++;
                 } else if (nonzero_gap == 10) {
-                    ErrPostStr(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Exceeded reporting threshold (10) for non-zero score values in Delta-seq gaps : no further messages will be generated");
+                    FtaErrPost(SEV_WARNING, ERR_QSCORE_NonZeroInGap, "Exceeded reporting threshold (10) for non-zero score values in Delta-seq gaps : no further messages will be generated");
                     nonzero_gap++;
                 }
             }
@@ -793,7 +793,7 @@ static void Split_Qscore_SeqGraph_By_DeltaSeq(CSeq_annot::C_Data::TGraph& graphs
         graphs.swap(new_graphs);
 
     if (curr_pos != bioseq.GetLength()) {
-        ErrPostEx(SEV_WARNING, ERR_QSCORE_OutOfScores, "Exhausted available score data in Seq-graph being split at location %ld : total length of Delta-seq bioseq is %ld .", curr_pos, bioseq.GetLength());
+        FtaErrPost(SEV_WARNING, ERR_QSCORE_OutOfScores, "Exhausted available score data in Seq-graph being split at location {} : total length of Delta-seq bioseq is {} .", curr_pos, bioseq.GetLength());
     }
 }
 
@@ -901,17 +901,17 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
                                            Seq-graph and return NULL */
 
     if (! qs_buf || *qs_buf == '\0' || ! def_acc || ! def_ver) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_InvalidArgs, "Missing arguments for QSbuf_To_Single_SeqGraph call.");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_InvalidArgs, "Missing arguments for QSbuf_To_Single_SeqGraph call.");
         return;
     }
 
     if (bioseq.GetLength() < 1) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_BadBioseqLen, "Invalid Bioseq length : %ld", bioseq.GetLength());
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_BadBioseqLen, "Invalid Bioseq length : {}", bioseq.GetLength());
         return;
     }
 
     if (! bioseq.IsSetId()) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_BadBioseqId, "Invalid Bioseq : no Seq-ids found.");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_BadBioseqId, "Invalid Bioseq : no Seq-ids found.");
         return;
     }
 
@@ -920,7 +920,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     vector<char> mybuf(QSBUF_MAXLINE);
     my_buf = mybuf.data();
     if (! my_buf) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for my_buf buffer");
         return;
     }
 
@@ -929,7 +929,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
     vector<char> deftitle(QSBUF_MAXTITLE);
     def_title = deftitle.data();
     if (! def_title) {
-        ErrPostStr(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_MemAlloc, "MemNew failure for def_title buffer");
         return;
     }
 
@@ -938,7 +938,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
 
     while (*qs_buf != '\0') {
         if (! QSbuf_ReadLine(qs_buf, my_buf, QSBUF_MAXLINE, &qs_line)) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_BadQscoreRead, "QSbuf_ReadLine failure near line %ld of qscore buffer.", qs_line);
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_BadQscoreRead, "QSbuf_ReadLine failure near line {} of qscore buffer.", qs_line);
             return;
         }
 
@@ -961,34 +961,34 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
              * score data
              */
             if (*my_buf != '>') {
-                ErrPostStr(SEV_ERROR, ERR_QSCORE_BadDefline, "qscore buffer does not start with required > character.");
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_BadDefline, "qscore buffer does not start with required > character.");
                 return;
             }
 
             def_stat = QSbuf_ParseDefline(my_buf, def_acc, def_ver, def_title, &def_len, &def_max, &def_min);
             if (def_stat != 1) {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_BadDefline, "QSbuf_ParseDefline failure : return value is >%d< : probable defline data/format error : defline is >%s<\n", def_stat, my_buf);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_BadDefline, "QSbuf_ParseDefline failure : return value is >{}< : probable defline data/format error : defline is >{}<\n", def_stat, my_buf);
                 return;
             }
 
             if (def_acc && *def_acc == '\0') {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_NoAccession, "Could not parse accession from qscore defline : defline is >%s<\n", my_buf);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_NoAccession, "Could not parse accession from qscore defline : defline is >{}<\n", my_buf);
                 return;
             }
             if (def_ver && *def_ver == '\0') {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_NoSeqVer, "Could not parse sequence version number from qscore defline : defline is >%s<\n", my_buf);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_NoSeqVer, "Could not parse sequence version number from qscore defline : defline is >{}<\n", my_buf);
                 return;
             }
             if (def_title && *def_title == '\0') {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_NoTitle, "Could not parse title from qscore defline : defline is >%s<\n", my_buf);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_NoTitle, "Could not parse title from qscore defline : defline is >{}<\n", my_buf);
                 return;
             }
             if (def_len != bioseq.GetLength()) {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_BadLength, "Sequence length from qscore defline does not match bioseq length : %ld (defline) vs %ld (bioseq)", def_len, bioseq.GetLength());
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_BadLength, "Sequence length from qscore defline does not match bioseq length : {} (defline) vs {} (bioseq)", def_len, bioseq.GetLength());
                 return;
             }
             if (def_max < def_min || def_min > def_max) {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_BadMinMax, "Maximum and minimum scores from qscore defline are contradictory : %ld (max) vs %ld (min)", def_max, def_min);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_BadMinMax, "Maximum and minimum scores from qscore defline are contradictory : {} (max) vs {} (min)", def_max, def_min);
                 return;
             }
 
@@ -1003,7 +1003,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
              */
 
             if (StringEqu(my_buf, "//")) {
-                /* ErrPostEx(SEV_WARNING, ERR_QSCORE_DoubleSlash,
+                /* FtaErrPost(SEV_WARNING, ERR_QSCORE_DoubleSlash,
                           "Encountered unusual double-slash terminator in qscore buffer : assuming it flags the end of qscore data.");*/
                 break;
             }
@@ -1012,7 +1012,7 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
              */
             int qs_scores = QSbuf_ParseScores(my_buf, &scores[0], QSBUF_MAXSCORES, &max_score, &min_score, allow_na);
             if (qs_scores < 0) {
-                ErrPostEx(SEV_ERROR, ERR_QSCORE_BadScoreLine, "QSbuf_ParseScores failure : return value is >%ld< : probable score data/format error : score data near >%s<\n", qs_scores, my_buf);
+                FtaErrPost(SEV_ERROR, ERR_QSCORE_BadScoreLine, "QSbuf_ParseScores failure : return value is >{}< : probable score data/format error : score data near >{}<\n", qs_scores, my_buf);
                 return;
             }
 
@@ -1027,20 +1027,20 @@ static void QSbuf_To_Single_Qscore_SeqGraph(const char*                 qs_buf,
         return;
 
     if (total_scores != def_len) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_ScoresVsLen, "number of scores read from qscore buffer does not equal defline sequence length : %ld (scores) vs %ld (defline)", total_scores, def_len);
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_ScoresVsLen, "number of scores read from qscore buffer does not equal defline sequence length : {} (scores) vs {} (defline)", total_scores, def_len);
         problem = true;
     }
     if (total_scores != bioseq.GetLength()) {
-        ErrPostEx(SEV_ERROR, ERR_QSCORE_ScoresVsBspLen, "number of scores read from qscore buffer does not equal supplied bioseq length : %ld (scores) vs %ld (bioseq)", total_scores, bioseq.GetLength());
+        FtaErrPost(SEV_ERROR, ERR_QSCORE_ScoresVsBspLen, "number of scores read from qscore buffer does not equal supplied bioseq length : {} (scores) vs {} (bioseq)", total_scores, bioseq.GetLength());
         problem = true;
     }
     if (check_minmax) {
         if (def_max != max_score) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_BadMax, "maximum score from qscore defline does not equal maximum score value : %ld (defline) vs %ld (scores)", def_max, max_score);
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_BadMax, "maximum score from qscore defline does not equal maximum score value : {} (defline) vs {} (scores)", def_max, max_score);
             problem = true;
         }
         if (def_min != min_score) {
-            ErrPostEx(SEV_ERROR, ERR_QSCORE_BadMin, "minimum score from qscore defline does not equal minimum score value : %ld (defline) vs %ld (scores)", def_min, min_score);
+            FtaErrPost(SEV_ERROR, ERR_QSCORE_BadMin, "minimum score from qscore defline does not equal minimum score value : {} (defline) vs {} (scores)", def_min, min_score);
             problem = true;
         }
     }

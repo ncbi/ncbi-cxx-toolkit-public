@@ -291,7 +291,7 @@ static void ProcessCit(const std::vector<CPubInfo>& pubs, CBioseq::TAnnot& annot
                         }
 
                         if (! found) {
-                            ErrPostEx(SEV_ERROR, ERR_QUALIFIER_NoRefForCiteQual, "No Reference found for Citation qualifier [%d]", ser_num);
+                            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_NoRefForCiteQual, "No Reference found for Citation qualifier [{}]", ser_num);
                         }
                     } else
                         ++qual;

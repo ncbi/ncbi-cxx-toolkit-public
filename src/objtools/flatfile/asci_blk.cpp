@@ -438,10 +438,10 @@ static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char*
     dbp.mOffset[dbp.len] = ch;
 
     if (muids > 1) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
     }
     if (pmids > 1) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PUBMED identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PUBMED identifiers. Ignoring all but the first.");
     }
 }
 
@@ -781,7 +781,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
             ++curdbp;
         } else /* report error, free this node */
         {
-            ErrPostStr(SEV_WARNING, ERR_FEATURE_NoFeatData, "No feature data in the FH block (Embl)");
+            FtaErrPost(SEV_WARNING, ERR_FEATURE_NoFeatData, "No feature data in the FH block (Embl)");
 
             curdbp = chain.erase_after(predbp);
         }
@@ -850,7 +850,7 @@ void GetLenSubNode(DataBlk& dbp)
     }
 
     if (ldbp != subblocks.cbegin() && ldbp != subblocks.cend()) {
-        ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
+        FtaErrPost(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference {}", n);
         done = true;
     }
 
@@ -865,7 +865,7 @@ void GetLenSubNode(DataBlk& dbp)
             }
         }
         if (! done && ldbp != next(curdbp) && ldbp != subblocks.end()) {
-            ErrPostEx(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference %d", n);
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_LineTypeOrder, "incorrect line type order for reference {}", n);
         }
     }
 }
@@ -1327,10 +1327,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         if (sec_acc < 0 || sec_acc == 2) {
             if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
                 if (! allow_uwsec) {
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", a.c_str());
+                    FtaErrPost(SEV_REJECT, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"{}\". WGS/TSA/TLS records are not currently allowed to replace finished sequence records, scaffolds, etc. without human review and confirmation.", a);
                     ibp->drop = true;
                 } else {
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"%s\". This is being allowed via the use of a special parser flag.", a.c_str());
+                    FtaErrPost(SEV_WARNING, ERR_ACCESSION_WGSWithNonWGS_Sec, "This WGS/TSA/TLS record has non-WGS/TSA/TLS secondary accession \"{}\". This is being allowed via the use of a special parser flag.", a);
                 }
             }
 
@@ -1346,7 +1346,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                 continue;
             if (source != Parser::ESource::EMBL && source != Parser::ESource::DDBJ &&
                 source != Parser::ESource::Refseq) {
-                ErrPostEx(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"%s\" is not allowed to be used as a secondary accession number.", a.c_str());
+                FtaErrPost(SEV_REJECT, ERR_ACCESSION_WGSMasterAsSecondary, "WGS/TSA/TLS master accession \"{}\" is not allowed to be used as a secondary accession number.", a);
                 ibp->drop = true;
             }
             continue;
@@ -1358,10 +1358,10 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             i = (StringEquN(a.c_str(), "NZ_", 3)) ? 7 : 4;
             if (! StringEquN(a.c_str(), ibp->acnum, i)) {
                 if (! allow_uwsec) {
-                    ErrPostStr(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
+                    FtaErrPost(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = true;
                 } else if (! is_cp || source != Parser::ESource::NCBI) {
-                    ErrPostStr(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
+                    FtaErrPost(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA project is being replaced (either by another project or by finished sequence). This is being allowed via the use of a special parser flag.");
                 }
             }
         } else if (pri_acc == 2) /* WGS scaffold */
@@ -1369,7 +1369,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
             if (sec_acc == 1 || sec_acc == 5 || sec_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
             {
-                ErrPostStr(SEV_REJECT, ERR_ACCESSION_ScfldHasWGSContigSec, "This record, which appears to be a scaffold, has one or more WGS/TSA/TLS contig accessions as secondary. Currently, it does not make sense for a contig to replace a scaffold.");
+                FtaErrPost(SEV_REJECT, ERR_ACCESSION_ScfldHasWGSContigSec, "This record, which appears to be a scaffold, has one or more WGS/TSA/TLS contig accessions as secondary. Currently, it does not make sense for a contig to replace a scaffold.");
                 ibp->drop = true;
             }
         } else if (unusual_wgs_msg) {
@@ -1379,7 +1379,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                         text = "WGS/TSA/TLS contig secondaries are present, implying that a scaffold is replacing a contig";
                     else
                         text = "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence)";
-                    ErrPostEx(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "%s. This is not allowed without human review and confirmation.", text);
+                    FtaErrPost(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "{}. This is not allowed without human review and confirmation.", text);
                 }
                 unusual_wgs = true;
                 ibp->drop   = true;
@@ -1389,7 +1389,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                         text = "WGS/TSA/TLS contig secondaries are present, implying that a scaffold is replacing a contig";
                     else
                         text = "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence)";
-                    ErrPostEx(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "%s. This is being allowed via the use of a special parser flag.", text);
+                    FtaErrPost(SEV_WARNING, ERR_ACCESSION_UnusualWGS_Secondary, "{}. This is being allowed via the use of a special parser flag.", text);
                 }
                 unusual_wgs = true;
             }
@@ -1583,7 +1583,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned cha
             /* it can be punctuation or alpha character */
             *bu++ = replacechar;
             count++;
-            ErrPostEx(SEV_ERROR, ERR_SEQUENCE_BadResidue, "Invalid residue [%c]", *ptr);
+            FtaErrPost(SEV_ERROR, ERR_SEQUENCE_BadResidue, "Invalid residue [{}]", *ptr);
             return (0);
         }
         ptr++;
@@ -1681,7 +1681,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
     }
 
     if (seqlen != bioseq.GetLength()) {
-        ErrPostEx(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq, "Measured seqlen [%ld] != given [%ld]", (long int)seqlen, (long int)bioseq.GetLength());
+        FtaErrPost(SEV_WARNING, ERR_SEQUENCE_SeqLenNotEq, "Measured seqlen [{}] != given [{}]", seqlen, bioseq.GetLength());
     }
 
     if (str)
@@ -1693,7 +1693,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
            pp->source == Parser::ESource::USPTO &&
            bioseq.GetLength() < 4)
         {
-            ErrPostStr(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent,
+            FtaErrPost(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent,
                        "This sequence for this patent record falls below the minimum length requirement of 4 amino acids.");
             ibp->drop = true;
         }
@@ -1702,19 +1702,19 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
         if (bioseq.GetLength() < 10) {
             if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
                 if (ibp->is_pat == false)
-                    ErrPostStr(SEV_WARNING, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
+                    FtaErrPost(SEV_WARNING, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
                 else
-                    ErrPostStr(SEV_INFO, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
+                    FtaErrPost(SEV_INFO, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
             } else {
                 if (ibp->is_pat == false)
-                    ErrPostStr(SEV_REJECT, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
+                    FtaErrPost(SEV_REJECT, ERR_SEQUENCE_TooShort, "This sequence for this record falls below the minimum length requirement of 10 basepairs.");
                 else
-                    ErrPostStr(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
+                    FtaErrPost(SEV_REJECT, ERR_SEQUENCE_TooShortIsPatent, "This sequence for this patent record falls below the minimum length requirement of 10 basepairs.");
                 ibp->drop = true;
             }
         }
         if (seqlen == static_cast<Uint4>(numns)) {
-            ErrPostStr(SEV_REJECT, ERR_SEQUENCE_AllNs, "This nucleotide sequence for this record contains nothing but unknown (N) basepairs.");
+            FtaErrPost(SEV_REJECT, ERR_SEQUENCE_AllNs, "This nucleotide sequence for this record contains nothing but unknown (N) basepairs.");
             ibp->drop = true;
         }
     }
@@ -1873,114 +1873,114 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
 
     if (pat_acc || pat_ref || StringEqu(div.c_str(), "PAT")) {
         if (pat_ref == false) {
-            ErrPostStr(SEV_REJECT, ERR_DIVISION_MissingPatentRef, "Record in the patent division lacks a reference to a patent document. Entry dropped.");
+            FtaErrPost(SEV_REJECT, ERR_DIVISION_MissingPatentRef, "Record in the patent division lacks a reference to a patent document. Entry dropped.");
             drop = true;
         }
         if (est_kwd) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_PATHasESTKeywords, "EST keywords present on patent sequence.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_PATHasESTKeywords, "EST keywords present on patent sequence.");
         }
         if (sts_kwd) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_PATHasSTSKeywords, "STS keywords present on patent sequence.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_PATHasSTSKeywords, "STS keywords present on patent sequence.");
         }
         if (gss_kwd) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_PATHasGSSKeywords, "GSS keywords present on patent sequence.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_PATHasGSSKeywords, "GSS keywords present on patent sequence.");
         }
         if (if_cds && source != Parser::ESource::EMBL) {
-            ErrPostStr(SEV_INFO, ERR_DIVISION_PATHasCDSFeature, "CDS features present on patent sequence.");
+            FtaErrPost(SEV_INFO, ERR_DIVISION_PATHasCDSFeature, "CDS features present on patent sequence.");
         }
         if (! StringEqu(div.c_str(), "PAT")) {
             if (pat_acc)
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_ShouldBePAT, "Based on the accession number prefix letters, this is a patent sequence, but the division code is not PAT.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_ShouldBePAT, "Based on the accession number prefix letters, this is a patent sequence, but the division code is not PAT.");
 
-            ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoPAT, "Division %s mapped to PAT based on %s.", div.c_str(), (pat_acc == false) ? "patent reference" : "accession number");
+            FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoPAT, "Division {} mapped to PAT based on {}.", div, (pat_acc == false) ? "patent reference" : "accession number");
             div = "PAT";
         }
     } else if (est_kwd) {
         if (if_cds) {
             if (StringEqu(div.c_str(), "EST")) {
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
             } else {
-                ErrPostStr(SEV_INFO, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
+                FtaErrPost(SEV_INFO, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_est)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
             if (StringEqu(div.c_str(), "EST")) {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongESTSequence, "Division code is EST, but the length of the sequence is %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_LongESTSequence, "Division code is EST, but the length of the sequence is {}.", bases);
             } else {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length {}.", bases);
                 if (*tech == CMolInfo::eTech_est)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (! StringEqu(div.c_str(), "EST"))
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoEST, "%s division mapped to EST.", div.c_str());
+                FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoEST, "{} division mapped to EST.", div);
             *tech = CMolInfo::eTech_est;
             div.clear();
         }
     } else if (StringEqu(div.c_str(), "EST")) {
-        ErrPostStr(SEV_WARNING, ERR_DIVISION_MissingESTKeywords, "Division is EST, but entry lacks EST-related keywords.");
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingESTKeywords, "Division is EST, but entry lacks EST-related keywords.");
         if (sts_kwd) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_ESTHasSTSKeywords, "STS keywords present on EST sequence.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_ESTHasSTSKeywords, "STS keywords present on EST sequence.");
         }
         if (if_cds) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
         }
     } else if (sts_kwd) {
         if (if_cds) {
             if (StringEqu(div.c_str(), "STS")) {
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
             } else {
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_sts)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
             if (StringEqu(div.c_str(), "STS")) {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongSTSSequence, "Division code is STS, but the length of the sequence is %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_LongSTSSequence, "Division code is STS, but the length of the sequence is {}.", bases);
             } else {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length {}.", bases);
                 if (*tech == CMolInfo::eTech_sts)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (! StringEqu(div.c_str(), "STS"))
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoSTS, "%s division mapped to STS.", div.c_str());
+                FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoSTS, "{} division mapped to STS.", div);
             *tech = CMolInfo::eTech_sts;
             div.clear();
         }
     } else if (StringEqu(div.c_str(), "STS")) {
-        ErrPostStr(SEV_WARNING, ERR_DIVISION_MissingSTSKeywords, "Division is STS, but entry lacks STS-related keywords.");
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingSTSKeywords, "Division is STS, but entry lacks STS-related keywords.");
         if (if_cds) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
         }
     } else if (gss_kwd) {
         if (if_cds) {
             if (StringEqu(div.c_str(), "GSS")) {
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
             } else {
-                ErrPostStr(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
                 if (*tech == CMolInfo::eTech_survey)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 2500) {
             if (StringEqu(div.c_str(), "GSS")) {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_LongGSSSequence, "Division code is GSS, but the length of the sequence is %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_LongGSSSequence, "Division code is GSS, but the length of the sequence is {}.", bases);
             } else {
-                ErrPostEx(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length %ld.", bases);
+                FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length {}.", bases);
                 if (*tech == CMolInfo::eTech_survey)
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
             if (! StringEqu(div.c_str(), "GSS"))
-                ErrPostEx(SEV_INFO, ERR_DIVISION_MappedtoGSS, "%s division mapped to GSS.", div.c_str());
+                FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoGSS, "{} division mapped to GSS.", div);
             *tech = CMolInfo::eTech_survey;
             div.clear();
         }
     } else if (StringEqu(div.c_str(), "GSS")) {
-        ErrPostStr(SEV_WARNING, ERR_DIVISION_MissingGSSKeywords, "Division is GSS, but entry lacks GSS-related keywords.");
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingGSSKeywords, "Division is GSS, but entry lacks GSS-related keywords.");
         if (if_cds) {
-            ErrPostStr(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
+            FtaErrPost(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
         }
     } else if (StringEqu(div.c_str(), "TSA")) {
         *tech = CMolInfo::eTech_tsa;
@@ -2070,7 +2070,7 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
                     continue;
 
                 if (! gb_block->IsSetDiv()) {
-                    ErrPostStr(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
+                    FtaErrPost(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
                     gb_block->SetDiv(ibp->division);
                 }
             }
@@ -2149,9 +2149,9 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
         ! p && ! cancelled) {
-        ErrPostStr(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
+        FtaErrPost(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
     } else if (tech == CMolInfo::eTech_htgs_3 && p) {
-        ErrPostStr(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
+        FtaErrPost(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
     if (tech != CMolInfo::eTech_htgs_3)
@@ -2174,7 +2174,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
         if (*p != 'n')
             count = 0;
         else if (++count > 10) {
-            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
+            FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
             break;
         }
     }
@@ -2215,9 +2215,9 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlInde
     if ((tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
          tech == CMolInfo::eTech_htgs_2) &&
         ! p && ! cancelled) {
-        ErrPostStr(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
+        FtaErrPost(SEV_WARNING, ERR_DEFINITION_HTGNotInProgress, "This Phase 0, 1 or 2 HTGS sequence is lacking an indication that sequencing is still in progress on its definition/description line.");
     } else if (tech == CMolInfo::eTech_htgs_3 && p) {
-        ErrPostStr(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
+        FtaErrPost(SEV_ERROR, ERR_DEFINITION_HTGShouldBeComplete, "This complete Phase 3 sequence has a definition/description line indicating that its sequencing is still in progress.");
     }
 
     if (tech != CMolInfo::eTech_htgs_3)
@@ -2231,7 +2231,7 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlInde
         if (*p != 'n')
             count = 0;
         else if (++count > 10) {
-            ErrPostStr(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
+            FtaErrPost(SEV_WARNING, ERR_SEQUENCE_UnknownBaseHTG3, "This complete Phase 3 HTGS sequence has one or more runs of 10 contiguous unknown ('n') bases.");
             break;
         }
     }
@@ -2242,11 +2242,11 @@ void XMLDefVsHTGKeywords(CMolInfo::TTech tech, const char* entry, const TXmlInde
 void CheckHTGDivision(const char* div, CMolInfo::TTech tech)
 {
     if (div && StringEqu(div, "HTG") && tech == CMolInfo::eTech_htgs_3) {
-        ErrPostStr(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");
+        FtaErrPost(SEV_WARNING, ERR_DIVISION_ShouldNotBeHTG, "This Phase 3 HTGS sequence is still in the HTG division. If truly complete, it should move to a non-HTG division.");
     } else if ((! div || ! StringEqu(div, "HTG")) &&
                (tech == CMolInfo::eTech_htgs_0 || tech == CMolInfo::eTech_htgs_1 ||
                 tech == CMolInfo::eTech_htgs_2)) {
-        ErrPostStr(SEV_ERROR, ERR_DIVISION_ShouldBeHTG, "Phase 0, 1 or 2 HTGS sequences should have division code HTG.");
+        FtaErrPost(SEV_ERROR, ERR_DIVISION_ShouldBeHTG, "Phase 0, 1 or 2 HTGS sequences should have division code HTG.");
     }
 }
 

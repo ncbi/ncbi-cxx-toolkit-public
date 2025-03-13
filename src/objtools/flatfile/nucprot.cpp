@@ -280,7 +280,7 @@ static bool check_short_CDS(ParserPtr pp, const CSeq_feat& feat, bool err_msg)
 
     if (err_msg) {
         string loc = location_to_string(feat.GetLocation());
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_ShortProtein, "Short CDS (< 6 aa) located in the middle of the sequence: %s", loc.c_str());
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_ShortProtein, "Short CDS (< 6 aa) located in the middle of the sequence: {}", loc);
     }
     return false;
 }
@@ -348,7 +348,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     protacc = CpTheQualValue(cds.SetQual(), "protein_id");
     if (protacc.empty()) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_FATAL, ERR_CDREGION_MissingProteinId, "/protein_id qualifier is missing for CDS feature: \"%s\".", loc.c_str());
+        FtaErrPost(SEV_FATAL, ERR_CDREGION_MissingProteinId, "/protein_id qualifier is missing for CDS feature: \"{}\".", loc);
         return;
     }
 
@@ -367,7 +367,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     p = StringChr(protacc.c_str(), '.');
     if (! p || *(p + 1) == '\0') {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_FATAL, ERR_CDREGION_MissingProteinVersion, "/protein_id qualifier has missing version for CDS feature: \"%s\".", loc.c_str());
+        FtaErrPost(SEV_FATAL, ERR_CDREGION_MissingProteinVersion, "/protein_id qualifier has missing version for CDS feature: \"{}\".", loc);
         return;
     }
 
@@ -375,7 +375,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         q++;
     if (*q != '\0') {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_FATAL, ERR_CDREGION_IncorrectProteinVersion, "/protein_id qualifier \"%s\" has incorrect version for CDS feature: \"%s\".", protacc.c_str(), loc.c_str());
+        FtaErrPost(SEV_FATAL, ERR_CDREGION_IncorrectProteinVersion, "/protein_id qualifier \"{}\" has incorrect version for CDS feature: \"{}\".", protacc, loc);
         return;
     }
 
@@ -386,7 +386,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     cho = GetProtAccOwner(protaccStr);
     if (cho == CSeq_id::e_not_set) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_FATAL, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession \"%s\" for CDS feature: \"%s\".", protaccStr.c_str(), loc.c_str());
+        FtaErrPost(SEV_FATAL, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession \"{}\" for CDS feature: \"{}\".", protaccStr, loc);
         return;
     }
 
@@ -414,9 +414,9 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
         else
             sev = SEV_WARNING;
         if (r)
-            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession prefix \"%s\" for source %s for CDS feature: \"%s\".", protaccStr.c_str(), r, loc.c_str());
+            FtaErrPost(sev, ERR_CDREGION_IncorrectProteinAccession, "/protein_id qualifier has incorrect accession prefix \"{}\" for source {} for CDS feature: \"{}\".", protaccStr, r, loc);
         else
-            ErrPostEx(sev, ERR_CDREGION_IncorrectProteinAccession, "Found mismatching TPA and non-TPA nucleotides's and protein's accessions in one nuc-prot set. Nuc = \"%s\", prot = \"%s\".", text_id->GetAccession().c_str(), protaccStr.c_str());
+            FtaErrPost(sev, ERR_CDREGION_IncorrectProteinAccession, "Found mismatching TPA and non-TPA nucleotides's and protein's accessions in one nuc-prot set. Nuc = \"{}\", prot = \"{}\".", text_id->GetAccession(), protaccStr);
         if (pp->ign_prot_src == false) {
             return;
         }
@@ -539,9 +539,9 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
         string prid = CpTheQualValue(feat.GetQual(), "protein_id");
         string loc = location_to_string(feat.GetLocation());
         if (! prid.empty()) {
-            ErrPostEx(SEV_WARNING, ERR_PROTREF_NoNameForProtein, "No product, gene, or standard_name qualifier found for protein \"%s\" on CDS:%s", prid.c_str(), loc.c_str());
+            FtaErrPost(SEV_WARNING, ERR_PROTREF_NoNameForProtein, "No product, gene, or standard_name qualifier found for protein \"{}\" on CDS:{}", prid, loc);
         } else
-            ErrPostEx(SEV_WARNING, ERR_PROTREF_NoNameForProtein, "No product, gene, or standard_name qualifier found on CDS:%s", loc.c_str());
+            FtaErrPost(SEV_WARNING, ERR_PROTREF_NoNameForProtein, "No product, gene, or standard_name qualifier found on CDS:{}", loc);
         prot_ref->SetDesc("unnamed protein product");
     } else {
         if (! names.empty()) {
@@ -786,7 +786,7 @@ static void QualsToSeqID(CSeq_feat& feat, Parser::ESource source, TSeqIdList& id
             seq_id = StrToSeqId(p + 4, true);
 
         if (seq_id.Empty()) {
-            ErrPostEx(SEV_ERROR, ERR_CDREGION_InvalidDb_xref, "Invalid data format /db_xref = \"%s\", ignore it", (*qual)->GetVal().c_str());
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_InvalidDb_xref, "Invalid data format /db_xref = \"{}\", ignore it", (*qual)->GetVal());
         } else {
             if (p[4] == 'g' && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL))
                 seq_id.Reset();
@@ -853,7 +853,7 @@ static void ValidateQualSeqId(TSeqIdList& ids)
 
         if (abGenBanks[num]) {
             /* PID of this type already exist, ignore it */
-            ErrPostEx(SEV_WARNING, ERR_CDREGION_Multiple_PID, "/db_xref=\"pid:%c%i\" refer the same data base", ch, (*id)->GetGeneral().GetTag().GetId());
+            FtaErrPost(SEV_WARNING, ERR_CDREGION_Multiple_PID, "/db_xref=\"pid:{}{}\" refer the same data base", ch, (*id)->GetGeneral().GetTag().GetId());
 
             id = ids.erase(id);
         } else {
@@ -1079,7 +1079,7 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& co
                 pos_range = ! itis;
 
             if (num_errs > 0 || pos_range) {
-                ErrPostEx(SEV_WARNING, ERR_FEATURE_LocationParsing, "transl_except range is wrong, %s, drop the transl_except", pos);
+                FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "transl_except range is wrong, {}, drop the transl_except", pos);
                 MemFree(pos);
                 MemFree(qval);
                 break;
@@ -1091,7 +1091,7 @@ static void GetCdRegionCB(InfoBioseqPtr ibp, CSeq_feat& feat, TCodeBreakList& co
 
                 sequence::ECompare cmp_res = sequence::Compare(feat.GetLocation(), code_break->GetLoc(), nullptr, sequence::fCompareOverlapping);
                 if (cmp_res != sequence::eContains) {
-                    ErrPostEx(SEV_WARNING, ERR_FEATURE_LocationParsing, "/transl_except not in CDS: %s", qval);
+                    FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "/transl_except not in CDS: {}", qval);
                 }
             }
 
@@ -1124,7 +1124,7 @@ static void CkEndStop(const CSeq_feat& feat, CScope& scope, Uint1 dif)
     r = (len - frm + (Int4)dif) % 3;
     if (r != 0 && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
         string loc = location_to_string(feat.GetLocation());
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_UnevenLocation, "CDS: %s. Length is not divisable by 3, the remain is: %d", loc.c_str(), r);
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_UnevenLocation, "CDS: {}. Length is not divisable by 3, the remain is: {}", loc, r);
     }
 }
 
@@ -1144,7 +1144,7 @@ static void check_end_internal(size_t protlen, const CSeq_feat& feat, Uint1 dif,
 
     if (protlen * 3 != len && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
         string loc = location_to_string(feat.GetLocation());
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_LocationLength, "Length of the CDS: %s (%ld) disagree with the length calculated from the protein: %ld", loc.c_str(), len, protlen * 3);
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_LocationLength, "Length of the CDS: {} ({}) disagree with the length calculated from the protein: {}", loc, len, protlen * 3);
     }
 }
 
@@ -1164,7 +1164,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
 
     if (! feat.IsSetExcept() || feat.GetExcept() == false) {
         string loc = location_to_string(feat.GetLocation());
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_TranslationDiff, "Location: %s, translation: %s", loc.c_str(), qval.c_str());
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
     }
 
     ErrLogPrintStr(prot.c_str());
@@ -1205,7 +1205,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
     size_t blen = prot.size();
 
     if (len != blen && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_ProteinLenDiff, "Lengths of conceptual translation and translation qualifier differ : %d : %d : %s", blen, len, loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_ProteinLenDiff, "Lengths of conceptual translation and translation qualifier differ : {} : {} : {}", blen, len, loc);
     }
 
     difflen = 0;
@@ -1256,13 +1256,13 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
                 aastr << 's'; // plural
             msg2 += aastr.str();
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                ErrPostEx(SEV_WARNING, ERR_CDREGION_TranslationDiff, "%s:%s", msg2.c_str(), loc.c_str());
+                FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
             }
         }
 
         if (! msgout) {
             cdregion.ResetConflict();
-            ErrPostEx(SEV_INFO, ERR_CDREGION_TranslationsAgree, "Parser-generated conceptual translation agrees with input translation %s", loc.c_str());
+            FtaErrPost(SEV_INFO, ERR_CDREGION_TranslationsAgree, "Parser-generated conceptual translation agrees with input translation {}", loc);
         }
 
         if (difflen == 2) {
@@ -1273,7 +1273,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
     else {
         msgout = true;
         if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-            ErrPostEx(SEV_WARNING, ERR_CDREGION_NoTranslationCompare, "Conceptual translation has internal stop codons, no comparison: %s", loc.c_str());
+            FtaErrPost(SEV_WARNING, ERR_CDREGION_NoTranslationCompare, "Conceptual translation has internal stop codons, no comparison: {}", loc);
         }
     }
 
@@ -1287,7 +1287,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
         if ((num == 1 && first) ||
             (pp->transl && ! prot.empty() && cdregion.IsSetConflict() && cdregion.GetConflict())) {
             cdregion.ResetConflict();
-            ErrPostEx(SEV_WARNING, ERR_CDREGION_TranslationOverride, "Input translation is replaced with conceptual translation: %s", loc.c_str());
+            FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationOverride, "Input translation is replaced with conceptual translation: {}", loc);
             *method = eGIBB_method_concept_trans;
         }
     }
@@ -1296,7 +1296,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
         *method = eGIBB_method_concept_trans_a;
 
     if (msgout && pp->transl == false && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_SuppliedProteinUsed, "In spite of previously reported problems, the supplied protein translation will be used : %s", loc.c_str());
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_SuppliedProteinUsed, "In spite of previously reported problems, the supplied protein translation will be used : {}", loc);
     }
 
     prot = qval;
@@ -1365,7 +1365,7 @@ static bool Translate(CSeq_feat& feat, CScope& scope, string& prot)
     try {
         CSeqTranslator::Translate(feat, scope, prot);
     } catch (CSeqMapException& e) {
-        ErrPostStr(SEV_REJECT, 0, 0, e.GetMsg());
+        FtaErrPost(SEV_REJECT, 0, 0, e.GetMsg());
         ret = false;
     }
 
@@ -1580,7 +1580,7 @@ static void fta_check_codon_quals(CSeq_feat& feat)
         }
 
         string loc = location_to_string(feat.GetLocation());
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_CodonQualifierUsed, "Encountered /codon qualifier for \"CDS\" feature at \"%s\". Code-breaks (/transl_except) should be used instead.", loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_CodonQualifierUsed, "Encountered /codon qualifier for \"CDS\" feature at \"{}\". Code-breaks (/transl_except) should be used instead.", loc);
 
         qual = feat.SetQual().erase(qual);
     }
@@ -1664,7 +1664,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
                 {
                     if (check_translation(prot, qval.c_str())) {
                         sev = (pp->taxserver == 0) ? SEV_INFO : SEV_WARNING;
-                        ErrPostEx(sev, ERR_CDREGION_GeneticCodeAssumed, "No genetic code from TaxArch, trying to guess, code %d assumed", cur_code_id);
+                        FtaErrPost(sev, ERR_CDREGION_GeneticCodeAssumed, "No genetic code from TaxArch, trying to guess, code {} assumed", cur_code_id);
                         again = false;
                     }
                     qval.clear();
@@ -1675,7 +1675,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
 
         if (again) {
             sev = (pp->taxserver == 0) ? SEV_INFO : SEV_WARNING;
-            ErrPostEx(sev, ERR_CDREGION_GeneticCodeAssumed, "Can't guess genetic code, code %d assumed", orig_code_id);
+            FtaErrPost(sev, ERR_CDREGION_GeneticCodeAssumed, "Can't guess genetic code, code {} assumed", orig_code_id);
             cur_code->SetId(orig_code_id);
         }
     }
@@ -1704,7 +1704,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
         if (residue != '*') {
             r = EndAdded(feat, scope, gene_refs);
             if (r > 0 && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
-                ErrPostEx(SEV_WARNING, ERR_CDREGION_TerminalStopCodonMissing, "CDS: %s |found end stop codon after %d bases added", loc.c_str(), r);
+                FtaErrPost(SEV_WARNING, ERR_CDREGION_TerminalStopCodonMissing, "CDS: {} |found end stop codon after {} bases added", loc, r);
             }
 
             if ((! feat.IsSetPartial() || feat.GetPartial() == false) && ! SeqLocHaveFuzz(feat.GetLocation())) {
@@ -1712,7 +1712,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
                  * doesn't have "fuzz" then output message
                  */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                    ErrPostEx(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: %s", loc.c_str());
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: {}", loc);
                 }
             }
         } else /* remove termination codon from protein */
@@ -1731,7 +1731,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
                  * a ncbigap character is inserted
                  */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                    ErrPostEx(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: %s", loc.c_str());
+                    FtaErrPost(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: {}", loc);
                 }
                 if (qval.empty()) /* no /translation */
                 {
@@ -1757,7 +1757,9 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
 
         if (intercodon) {
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                ErrPostEx(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, "Found %d internal stop codon, at AA # %s, on feature key, CDS, frame # %d, genetic code %s:%s", (int)num, stopmsg.c_str(), cdregion.GetFrame(), gcode_str.c_str(), loc.c_str());
+                FtaErrPost(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, 
+                        "Found {} internal stop codon, at AA # {}, on feature key, CDS, frame # {}, genetic code {}:{}", 
+                        static_cast<int>(num), stopmsg, static_cast<int>(cdregion.GetFrame()), gcode_str, loc);
             }
 
             if (pp->debug) {
@@ -1765,7 +1767,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
             }
         }
     } else if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_NoProteinSeq, "No protein sequence found:%s", loc.c_str());
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_NoProteinSeq, "No protein sequence found:{}", loc);
     }
 
     if (! qval.empty()) /* compare protein sequence */
@@ -1778,7 +1780,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
 
     if (! prot.empty() && ! intercodon) {
         if (prot.size() > 6 || ! check_short_CDS(pp, feat, false)) {
-            ErrPostEx(SEV_INFO, ERR_CDREGION_TranslationAdded, "input CDS lacks a translation: %s", loc.c_str());
+            FtaErrPost(SEV_INFO, ERR_CDREGION_TranslationAdded, "input CDS lacks a translation: {}", loc);
         }
         *method = eGIBB_method_concept_trans;
         seq_data.swap(prot);
@@ -1789,7 +1791,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
     if (intercodon) {
         cdregion.SetStops(num);
         if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-            ErrPostEx(SEV_WARNING, ERR_CDREGION_NoProteinSeq, "internal stop codons, and no translation qualifier CDS:%s", loc.c_str());
+            FtaErrPost(SEV_WARNING, ERR_CDREGION_NoProteinSeq, "internal stop codons, and no translation qualifier CDS:{}", loc);
         }
     }
 }
@@ -1813,7 +1815,7 @@ static void check_gen_code(int qval, ProtBlkPtr pbp, Uint1 taxserver)
         return;
 
     if (value == 7 || value == 8) {
-        ErrPostEx(SEV_WARNING, ERR_CDREGION_InvalidGcodeTable, "genetic code table is obsolete /transl_table = %d", value);
+        FtaErrPost(SEV_WARNING, ERR_CDREGION_InvalidGcodeTable, "genetic code table is obsolete /transl_table = {}", value);
         pbp->gcode.SetId(pbp->orig_gcode);
         return;
     }
@@ -1822,7 +1824,7 @@ static void check_gen_code(int qval, ProtBlkPtr pbp, Uint1 taxserver)
                         genome != 12 && genome != 16 && genome != 17 &&
                         genome != 18 && genome != 22)) {
         sev = (taxserver == 0) ? SEV_INFO : SEV_ERROR;
-        ErrPostEx(sev, ERR_CDREGION_GeneticCodeDiff, "Genetic code from Taxonomy server: %d, from /transl_table: %d", gcpvalue, value);
+        FtaErrPost(sev, ERR_CDREGION_GeneticCodeDiff, "Genetic code from Taxonomy server: {}, from /transl_table: {}", gcpvalue, value);
     }
 
     pbp->gcode.SetId(value);
@@ -1869,10 +1871,10 @@ static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool t
         loc_str = "???";
     }
     if ((strand == 2 && stop == bioseq.GetLength()) || (strand != 2 && start == 0)) {
-        ErrPostEx(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"%s\" annotates the stop codon of an upstream or downstream coding region.", loc_str.c_str());
+        FtaErrPost(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region.", loc_str);
         i = 1;
     } else {
-        ErrPostEx(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"%s\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str.c_str());
+        FtaErrPost(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str);
         i = -1;
     }
     return (i);
@@ -1943,7 +1945,7 @@ static bool fta_check_exception(CSeq_feat& feat, Parser::ESource source)
             sev = (source == Parser::ESource::Refseq) ? SEV_ERROR : SEV_REJECT;
 
             string loc = location_to_string(feat.GetLocation());
-            ErrPostEx(sev, ERR_QUALIFIER_InvalidException, "/exception value \"%s\" on feature \"CDS\" at location \"%s\" is invalid.", cur_val, loc.empty() ? "Unknown" : loc.c_str());
+            FtaErrPost(sev, ERR_QUALIFIER_InvalidException, "/exception value \"{}\" on feature \"CDS\" at location \"{}\" is invalid.", cur_val, loc.empty() ? "Unknown" : loc);
             if (source != Parser::ESource::Refseq) {
                 stopped = true;
                 break;
@@ -2070,14 +2072,14 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
     if (pp->accver && is_transl && is_pseudo) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"%s\".", loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"{}\".", loc);
         return (-1);
     }
 
     if (pp->mode != Parser::EMode::Relaxed &&
         pp->accver && is_transl == false && !cds.GetNamedQual("protein_id").empty()) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_UnexpectedProteinId, "CDS without /translation should not have a /protein_id qualifier. CDS = \"%s\".", loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_UnexpectedProteinId, "CDS without /translation should not have a /protein_id qualifier. CDS = \"{}\".", loc);
         return (-1);
     }
 
@@ -2092,7 +2094,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
             i = -1;
         }
         sev = (i == -1) ? SEV_REJECT : SEV_ERROR;
-        ErrPostEx(sev, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"%s\". %s rejected.", loc.c_str(), r);
+        FtaErrPost(sev, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\". {} rejected.", loc, r);
         return (i);
     }
 
@@ -2119,7 +2121,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
             if (frame == 0 && is_pseudo == false) {
                 string loc = location_to_string(cds.GetLocation());
                 sev        = (pp->source == Parser::ESource::DDBJ) ? SEV_INFO : SEV_ERROR;
-                ErrPostEx(sev, ERR_CDREGION_MissingCodonStart, "CDS feature \"%s\" is lacking /codon_start qualifier; assuming frame = 1.", loc.c_str());
+                FtaErrPost(sev, ERR_CDREGION_MissingCodonStart, "CDS feature \"{}\" is lacking /codon_start qualifier; assuming frame = 1.", loc);
                 frame = 1;
             }
         }
@@ -2171,7 +2173,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
     if (cdregion->IsSetConflict() && cdregion->GetConflict() && codon_start == 0) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_TooBad, "Input translation does not agree with parser generated one, cdregion \"%s\" is lacking /codon_start, frame not set, - so sequence will be rejected.", loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_TooBad, "Input translation does not agree with parser generated one, cdregion \"{}\" is lacking /codon_start, frame not set, - so sequence will be rejected.", loc);
         return (-1);
     }
 
@@ -2237,7 +2239,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, CBioseq& bio
 
     if (! is_pseudo) {
         string loc = location_to_string(cds.GetLocation());
-        ErrPostEx(SEV_ERROR, ERR_CDREGION_ConvertToImpFeat, "non-pseudo CDS with data problems is converted to ImpFeat%s", loc.c_str());
+        FtaErrPost(SEV_ERROR, ERR_CDREGION_ConvertToImpFeat, "non-pseudo CDS with data problems is converted to ImpFeat{}", loc);
     }
     return (0);
 }
@@ -2276,7 +2278,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         const CSeq_loc& loc = (*featIt)->GetLocation();
         if (loc.IsEmpty() || loc.IsEquiv() || loc.IsBond()) {
             string loc_str = location_to_string(loc);
-            ErrPostEx(SEV_REJECT, ERR_CDREGION_BadLocForTranslation, "Coding region feature has a location that cannot be processed: \"%s\".", loc_str.c_str());
+            FtaErrPost(SEV_REJECT, ERR_CDREGION_BadLocForTranslation, "Coding region feature has a location that cannot be processed: \"{}\".", loc_str);
             pp->entrylist[pp->curindx]->drop = true;
             break;
         }
@@ -2474,7 +2476,7 @@ void ProcNucProt(ParserPtr pp, CRef<CSeq_entry>& pEntry, GeneRefFeats& gene_refs
         gcode       = (pbp->genome == 4 || pbp->genome == 5) ? 2 : 1;
         pp->no_code = true;
         sev         = (pp->taxserver == 0) ? SEV_INFO : SEV_WARNING;
-        ErrPostEx(sev, ERR_CDREGION_GeneticCodeAssumed, "No %sgenetic code from TaxArch, code %d assumed", (gcode == 2) ? "mitochondrial " : "", gcode);
+        FtaErrPost(sev, ERR_CDREGION_GeneticCodeAssumed, "No {}genetic code from TaxArch, code {} assumed", (gcode == 2) ? "mitochondrial " : "", gcode);
         pbp->gcode.SetId(gcode);
         pbp->orig_gcode = gcode;
     }

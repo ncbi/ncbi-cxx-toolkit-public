@@ -49,6 +49,7 @@
 #include "ftaerr.hpp"
 #include "indx_def.h"
 #include "utilfun.h"
+#include <algorithm>
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -321,7 +322,7 @@ bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
         string_view last_prefix  = last.substr(0, preflen2);
         if (first_prefix != last_prefix) {
             msg_issued = true;
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"%s\".", token.c_str());
+            FtaErrPost(SEV_REJECT, ERR_ACCESSION_2ndAccPrefixMismatch, "Inconsistent prefix found in secondary accession range \"{}\".", token);
             bad = true;
             break;
         }
@@ -338,7 +339,7 @@ bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
         auto num2 = NStr::StringToInt(last_digits, NStr::fConvErr_NoThrow);
         if (num2 < num1) {
             msg_issued = true;
-            ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"%s\".", token.c_str());
+            FtaErrPost(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Invalid start/end values in secondary accession range \"{}\".", token);
             bad = true;
             break;
         }
@@ -353,7 +354,7 @@ bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
     if (! bad)
         return true;
     if (! msg_issued) {
-        ErrPostEx(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"%s\".", tbp->c_str());
+        FtaErrPost(SEV_REJECT, ERR_ACCESSION_Invalid2ndAccRange, "Incorrect secondary accession range provided: \"{}\".", tbp->c_str());
     }
     return false;
 }
@@ -763,14 +764,12 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
     };
     CTempString maybe_month(s, 3);
     auto        it = find(months.begin(), months.end(), maybe_month);
+
     if (it == months.end()) {
-        char msg[11];
-        StringNCpy(msg, s, 10);
-        msg[10] = '\0';
-        is_ref ? ErrPostEx(
-                     SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognized month: %s", msg)
-               : ErrPostEx(
-                     SEV_WARNING, ERR_DATE_IllegalDate, "Unrecognized month: %s", msg);
+        const auto length = char_traits<char>::length(s);
+        string_view msg(s, min<size_t>(10,length)); // Avoids undefined behavior when length < 10
+        is_ref ? FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognized month: {}", msg)
+               : FtaErrPost(SEV_WARNING, ERR_DATE_IllegalDate, "Unrecognized month: {}", msg);
         return date;
     }
     int parse_month = int(it - months.begin()) + 1;
@@ -786,11 +785,9 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
         (parse_year < 70) ? (parse_year += 2000) : (parse_year += 1900);
     } else {
         if (is_ref) {
-            ErrPostEx(
-                SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: %d, current year: %d", parse_year, cur_year);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: {}, current year: {}", parse_year, cur_year);
         } else if (source != Parser::ESource::SPROT || parse_year - cur_year > 1) {
-            ErrPostEx(
-                SEV_WARNING, ERR_DATE_IllegalDate, "Illegal year: %d, current year: %d", parse_year, cur_year);
+            FtaErrPost(SEV_WARNING, ERR_DATE_IllegalDate, "Illegal year: {}, current year: {}", parse_year, cur_year);
         }
         // treat bad year like bad month above:
         return date;
@@ -851,7 +848,7 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
     p       = StringChr(msg, '\n');
     if (p)
         *p = '\0';
-    ErrPostEx(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Unknown linetype \"%s\". Line number %d.", msg, line);
+    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Unknown linetype \"{}\". Line number {}.", msg, line);
     if (p)
         *p = '\n';
 
@@ -976,10 +973,10 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
             kwd_spedb = true;
         else if (NStr::EqualNocase(p, 0, 3, "TPA")) {
             if (p[3] == ':') {
-                ErrPostEx(SEV_REJECT, ERR_KEYWORD_InvalidTPATier, "Keyword \"%s\" is not a valid TPA-tier keyword.", p);
+                FtaErrPost(SEV_REJECT, ERR_KEYWORD_InvalidTPATier, "Keyword \"{}\" is not a valid TPA-tier keyword.", p);
                 ret = false;
             } else if (p[3] != '\0' && p[4] != '\0') {
-                ErrPostEx(SEV_WARNING, ERR_KEYWORD_UnexpectedTPA, "Keyword \"%s\" looks like it might be TPA-related, but it is not a recognized TPA keyword.", p);
+                FtaErrPost(SEV_WARNING, ERR_KEYWORD_UnexpectedTPA, "Keyword \"{}\" looks like it might be TPA-related, but it is not a recognized TPA keyword.", p);
             }
         }
         if (i > 2 && i < 8 && j < 4) {
@@ -990,18 +987,18 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
     }
 
     if (kwd_tpa && ! kwd_party) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"Third Party Annotation\" or \"Third Party Data\" in addition to \"TPA\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"Third Party Annotation\" or \"Third Party Data\" in addition to \"TPA\".");
         ret = false;
     } else if (! kwd_tpa && kwd_party) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to \"Third Party Annotation\" or \"Third Party Data\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to \"Third Party Annotation\" or \"Third Party Data\".");
         ret = false;
     }
     if (! kwd_tpa && (kwd_inf || kwd_exp)) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to its TPA-tier keyword.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTPAKeywords, "This TPA-record should have keyword \"TPA\" in addition to its TPA-tier keyword.");
         ret = false;
     } else if (kwd_tpa && kwd_inf == false && kwd_exp == false &&
                kwd_asm == false && kwd_spedb == false) {
-        ErrPostStr(SEV_ERROR, ERR_KEYWORD_MissingTPATier, "This TPA record lacks a keyword to indicate which tier it belongs to: experimental, inferential, reassembly or specialist_db.");
+        FtaErrPost(SEV_ERROR, ERR_KEYWORD_MissingTPATier, "This TPA record lacks a keyword to indicate which tier it belongs to: experimental, inferential, reassembly or specialist_db.");
     }
     if (j > 1) {
         string buf;
@@ -1010,7 +1007,7 @@ bool fta_tpa_keywords_check(const TKeywordList& kwds)
                 buf += ';';
             buf += b[i];
         }
-        ErrPostEx(SEV_REJECT, ERR_KEYWORD_ConflictingTPATiers, "Keywords for multiple TPA tiers exist on this record: \"%s\". A TPA record can only be in one tier.", buf.c_str());
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_ConflictingTPATiers, "Keywords for multiple TPA tiers exist on this record: \"{}\". A TPA record can only be in one tier.", buf);
         ret = false;
     }
 
@@ -1042,10 +1039,10 @@ bool fta_tsa_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     }
 
     if (kwd_tsa && ! kwd_assembly) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"Transcriptome Shotgun Assembly\" in addition to \"TSA\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"Transcriptome Shotgun Assembly\" in addition to \"TSA\".");
         ret = false;
     } else if (! kwd_tsa && kwd_assembly) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"TSA\" in addition to \"Transcriptome Shotgun Assembly\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTSAKeywords, "This TSA-record should have keyword \"TSA\" in addition to \"Transcriptome Shotgun Assembly\".");
         ret = false;
     }
     return (ret);
@@ -1076,10 +1073,10 @@ bool fta_tls_keywords_check(const TKeywordList& kwds, Parser::ESource source)
     }
 
     if (kwd_tls && ! kwd_study) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"Targeted Locus Study\" in addition to \"TLS\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"Targeted Locus Study\" in addition to \"TLS\".");
         ret = false;
     } else if (! kwd_tls && kwd_study) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"TLS\" in addition to \"Targeted Locus Study\".");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingTLSKeywords, "This TLS-record should have keyword \"TLS\" in addition to \"Targeted Locus Study\".");
         ret = false;
     }
     return (ret);
@@ -1382,7 +1379,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
     }
 
     if (! got) {
-        ErrPostStr(SEV_REJECT, ERR_KEYWORD_MissingMGAKeywords, "This is apparently a CAGE record, but it lacks the required keywords. Entry dropped.");
+        FtaErrPost(SEV_REJECT, ERR_KEYWORD_MissingMGAKeywords, "This is apparently a CAGE record, but it lacks the required keywords. Entry dropped.");
         return false;
     }
 
@@ -1401,7 +1398,7 @@ bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
 
     if (is_sage) {
         if (is_cage) {
-            ErrPostStr(SEV_REJECT, ERR_KEYWORD_ConflictingMGAKeywords, "This MGA record contains more than one of the special keywords indicating different techniques.");
+            FtaErrPost(SEV_REJECT, ERR_KEYWORD_ConflictingMGAKeywords, "This MGA record contains more than one of the special keywords indicating different techniques.");
             return false;
         }
         mol_info.SetTechexp("5'-sage");

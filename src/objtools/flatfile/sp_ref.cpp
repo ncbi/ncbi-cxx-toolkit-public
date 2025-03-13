@@ -192,7 +192,7 @@ static void CkSPComTopics(ParserPtr pp, const char* str)
 
     for (ptr1 = str; *ptr1 != '\0';) {
         if (fta_StringMatch(ParFlat_SPRefRcToken, ptr1) < 0) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnkRefRcToken, "Unknown Reference Comment token (swiss-prot) w/ data, %s", ptr1);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnkRefRcToken, "Unknown Reference Comment token (swiss-prot) w/ data, {}", ptr1);
         }
 
         while (*ptr1 != '\0' && *ptr1 != ';')
@@ -337,7 +337,7 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
             prbp->reftype = ParFlat_ReftypeIgnore;
             prbp->journal = str;
 
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the thesis format (swiss-prot), %s, ref [%d].", str, prbp->refnum);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the thesis format (swiss-prot), {}, ref [{}].", str, prbp->refnum);
             prbp->cit = str;
         }
     } else if (ParseJourLine(pp, prbp, str)) {
@@ -348,11 +348,11 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
             prbp->journal = str;
             prbp->cit     = str;
 
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_YearEquZero, "Article without year (swiss-prot), %s", str);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_YearEquZero, "Article without year (swiss-prot), {}", str);
         }
     } else {
         prbp->reftype = ParFlat_ReftypeIgnore;
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the article format (swiss-prot), %s, ref [%d].", str, (int)prbp->refnum);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalFormat, "Could not parse the article format (swiss-prot), {}, ref [{}].", str, (int)prbp->refnum);
         prbp->cit = str;
     }
 }
@@ -413,16 +413,16 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
     }
 
     if (muids) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
     }
     if (pmids) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PubMed identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple PubMed identifiers. Ignoring all but the first.");
     }
     if (dois) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple DOI identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple DOI identifiers. Ignoring all but the first.");
     }
     if (agricolas) {
-        ErrPostStr(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple AGRICOLA identifiers. Ignoring all but the first.");
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple AGRICOLA identifiers. Ignoring all but the first.");
     }
 }
 
@@ -510,7 +510,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
             ParseRLDataSP(pp, prbp, str);
             break;
         default:
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_UnkRefSubType, "Unknown reference subtype (swiss-prot) w/ data, %s", str);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnkRefSubType, "Unknown reference subtype (swiss-prot) w/ data, {}", str);
             break;
         } /* switch */
 
@@ -548,7 +548,7 @@ static CRef<CDate> get_s_date(const Char* str, bool bstring)
         }
 
         if (cal == 12) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognised month: %s", str);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognised month: {}", str);
             ret.Reset();
             return ret;
         }
@@ -563,7 +563,7 @@ static CRef<CDate> get_s_date(const Char* str, bool bstring)
         int cur_year = now.GetYear();
 
         if (year < 1900 || year > cur_year) {
-            ErrPostEx(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal year: %d", year);
+            FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal year: {}", year);
         }
 
         ret->SetStd().SetYear(year);
@@ -631,7 +631,7 @@ static bool GetCitSubmit(ParRefBlkPtr prbp, CCit_sub& sub)
 
     CRef<CDate> date;
     if (NStr::Equal(s + 1, 0, 3, "XXX")) {
-        ErrPostStr(SEV_WARNING, ERR_REFERENCE_IllegalDate, s);
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, s);
         date = get_s_date(s + 1, true);
     } else
         date = get_s_date(s + 1, false);
@@ -994,7 +994,7 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     for (q = p; *q != ' ' && *q != ',' && *q != '\0';)
         q++;
     if (q == p) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: %s", prbp->journal.c_str());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: {}", prbp->journal);
         return (false);
     }
 
@@ -1019,19 +1019,19 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
         country[2] = '\0';
     } else {
         country[0] = '\0';
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: %s", prbp->journal.c_str());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Patent, "Incorrectly formatted patent reference: {}", prbp->journal);
     }
 
     while (*q != '\0' && isdigit(*q) == 0)
         q++;
     if (*q == '\0') {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: %s", prbp->journal.c_str());
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: {}", prbp->journal);
         return (false);
     }
 
     CRef<CDate_std> std_date = get_full_date(q, true, source);
     if (! std_date || std_date.Empty()) {
-        ErrPostEx(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: %s", prbp->journal.c_str());
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_Patent, "Missing date in patent reference: {}", prbp->journal);
         return false;
     }
 
@@ -1261,7 +1261,7 @@ static CRef<CPubdesc> GetPubRef(ParRefBlkPtr prbp, Parser::ESource source)
     }
 
     if (msg) {
-        ErrPostEx(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "%s: %s", msg, prbp->journal.c_str());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "{}: {}", msg, prbp->journal);
         is_set = GetCitGen(prbp, pub->SetGen());
     }
 

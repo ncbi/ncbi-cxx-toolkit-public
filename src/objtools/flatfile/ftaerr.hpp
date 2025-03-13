@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <format>
+#include <source_location>
 
 USING_NCBI_SCOPE;
 
@@ -76,20 +77,24 @@ bool   ErrSetLog(const char* logfile);
 void   ErrLogPrintStr(const char* str);
 ErrSev ErrSetLogLevel(ErrSev sev);
 ErrSev ErrSetMessageLevel(ErrSev sev);
-void   Nlm_ErrPostEx(ErrSev sev, int lev1, int lev2, const char* fmt, ...);
 void   Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, string_view str);
 void   Nlm_ErrSetContext(const char* module, const char* fname, int line);
 
 void FtaInstallPrefix(int prefix, string_view name, string_view location = {});
 void FtaDeletePrefix(int prefix);
 
-/*
-#define ErrPostEx(sev, err_code, ...)                            \
-    ( CNcbiDiag(DIAG_COMPILE_INFO, (EDiagSev) sev).GetRef()      \
-    << ErrCode(err_code) << FtaErrMessage(__VA_ARGS__) << Endm )
-*/
-#define ErrPostEx (Nlm_ErrSetContext(THIS_MODULE, __FILE__, __LINE__), Nlm_ErrPostEx)
-#define ErrPostStr (Nlm_ErrSetContext(THIS_MODULE, __FILE__, __LINE__), Nlm_ErrPostStr)
+
+template <typename ...Args>
+void Nlm_ErrPostStr(ErrSev sev, int lev1, int lev2, 
+        std::format_string<Args...> fs, Args&& ...args)
+{
+    auto msg = std::format(fs, std::forward<Args>(args)...);
+    Nlm_ErrPostStr(sev, lev1, lev2, msg);
+}
+
+#define FtaErrPost(sev, level, ...) \
+    (Nlm_ErrSetContext(THIS_MODULE, __FILE__, __LINE__), \
+     Nlm_ErrPostStr(sev, level, __VA_ARGS__))
 
 END_NCBI_SCOPE
 

@@ -62,7 +62,7 @@ CPubFixMessageListener::PostMessage(const IMessage& message)
                                                         { eDiag_Critical, SEV_REJECT },
                                                         { eDiag_Fatal, SEV_FATAL } };
 
-    ErrPostStr(sSeverityMap.at(message.GetSeverity()),
+    FtaErrPost(sSeverityMap.at(message.GetSeverity()),
                message.GetCode(),    // fix_pub::EFixPubErrorCategory
                message.GetSubCode(), // fix_pub::EFixPubReferenceError
                message.GetText());

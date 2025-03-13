@@ -86,14 +86,6 @@ public:
         const string& featLocation,
         const string& qualKey);
 
-private:
-    using ErrCode          = pair<int, int>;
-    using ErrMessageLookup = map<ErrCode, const char*>;
-
-    static const char* sMessageTemplateFor(
-        int major,
-        int minor);
-    static ErrMessageLookup mMessageTemplates;
 };
 
 

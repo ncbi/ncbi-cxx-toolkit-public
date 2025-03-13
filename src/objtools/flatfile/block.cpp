@@ -137,9 +137,9 @@ static bool QSCmp(QSStructList::const_iterator qs1, QSStructList::const_iterator
 static bool QSNoSequenceRecordErr(bool accver, const QSStruct& qssp)
 {
     if (accver)
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s.%d\" that does not exist in the file of sequence records being parsed.", qssp.accession.c_str(), qssp.version);
+        FtaErrPost(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"{}.{}\" that does not exist in the file of sequence records being parsed.", qssp.accession, qssp.version);
     else
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"%s\" that does not exist in the file of sequence records being parsed.", qssp.accession.c_str());
+        FtaErrPost(SEV_FATAL, ERR_QSCORE_NoSequenceRecord, "Encountered Quality Score data for a record \"{}\" that does not exist in the file of sequence records being parsed.", qssp.accession);
     return false;
 }
 
@@ -193,7 +193,7 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
     tqssp->length = (size_t)ftell(pp->qsfd) - tqssp->offset;
 
     if (qssp.empty()) {
-        ErrPostEx(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"%s\".", pp->qsfile);
+        FtaErrPost(SEV_FATAL, ERR_QSCORE_NoScoreDataFound, "No correctly formatted records containing quality score data were found within file \"{}\".", pp->qsfile);
         return false;
     }
 
@@ -213,9 +213,9 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
 
         if (j < count) {
             if (pp->accver)
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s.%d\".", qsspp[j]->accession.c_str(), qsspp[j]->version);
+                FtaErrPost(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"{}.{}\".", qsspp[j]->accession, qsspp[j]->version);
             else
-                ErrPostEx(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"%s\".", qsspp[j]->accession.c_str());
+                FtaErrPost(SEV_FATAL, ERR_QSCORE_RedundantScores, "Found more than one set of Quality Score for accession \"{}\".", qsspp[j]->accession);
 
             qssp.clear();
             return false;

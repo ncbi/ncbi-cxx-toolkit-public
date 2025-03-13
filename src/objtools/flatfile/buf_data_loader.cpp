@@ -456,7 +456,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
 
     if (ptr >= eptr) {
         pp->entrylist[pp->curindx]->drop = true;
-        ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
+        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
         MemFree(entry->mOffset);
         delete entry;
         return (-1);

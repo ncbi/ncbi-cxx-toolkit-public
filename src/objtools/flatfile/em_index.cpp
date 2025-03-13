@@ -81,7 +81,7 @@ vector<string> checkedEmblKeywords = {
 /**********************************************************/
 static bool em_err_field(const char* str)
 {
-    ErrPostEx(SEV_ERROR, ERR_FORMAT_MissingField, "No %s in Embl format file, entry dropped", str);
+    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingField, "No {} in Embl format file, entry dropped", str);
     return true;
 }
 
@@ -93,7 +93,7 @@ static void ParseEmblVersion(IndexblkPtr entry, const char* line)
 
     p = StringRChr(const_cast<char*>(line), '.');
     if (! p) {
-        ErrPostStr(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
+        FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
         entry->drop = true;
         return;
     }
@@ -101,18 +101,18 @@ static void ParseEmblVersion(IndexblkPtr entry, const char* line)
     for (q = p; *q >= '0' && *q <= '9';)
         q++;
     if (*q != '\0') {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in SV line: \"%s\".", p);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in SV line: \"{}\".", p);
         entry->drop = true;
         return;
     }
     if (! StringEqu(entry->acnum, line)) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"%s\" vs \"%s\".", line, entry->acnum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"{}\" vs \"{}\".", line, entry->acnum);
         entry->drop = true;
         return;
     }
     entry->vernum = atoi(p);
     if (entry->vernum < 1) {
-        ErrPostEx(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"%d\" from Accession.Version value \"%s.%d\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
+        FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;
     }
 }
@@ -224,7 +224,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     }
                 } else if (StringEquN(finfo.str, keywordId.c_str(), keywordId.size())) {
                     if (after_ID) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                         entry->drop = true;
                         break;
                     }
@@ -234,17 +234,17 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                                       finfo.str);
                 } else if (StringEquN(finfo.str, keywordAh.c_str(), keywordAh.size())) {
                     if (entry->is_tpa == false && entry->tsa_allowed == false) {
-                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
-                    ErrPostStr(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
+                    FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                     entry->drop = true;
                     break;
                 }
                 if (StringEquN(finfo.str, keywordNi.c_str(), 2)) {
                     if (after_NI) {
-                        ErrPostStr(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
+                        FtaErrPost(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
                         entry->drop = true;
                         break;
                     }
@@ -254,18 +254,18 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->origin = true;
                 } else if (StringEquN(finfo.str, keywordOs.c_str(), keywordOs.size())) {
                     if (after_OS && pp->source != Parser::ESource::EMBL) {
-                        ErrPostStr(SEV_INFO, ERR_ORGANISM_Multiple, "Multiple OS lines in the entry");
+                        FtaErrPost(SEV_INFO, ERR_ORGANISM_Multiple, "Multiple OS lines in the entry");
                     }
                     after_OS = true;
                 }
                 if (pp->accver &&
                     StringEquN(finfo.str, keywordSv.c_str(), keywordSv.size())) {
                     if (entry->embl_new_ID) {
-                        ErrPostStr(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
                         entry->drop = true;
                     } else {
                         if (after_SV) {
-                            ErrPostStr(SEV_FATAL, ERR_FORMAT_Multiple_SV, "Multiple SV lines in the entry");
+                            FtaErrPost(SEV_FATAL, ERR_FORMAT_Multiple_SV, "Multiple SV lines in the entry");
                             entry->drop = true;
                             break;
                         }
@@ -326,7 +326,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
             if (! entry->drop) {
                 if (after_AC == false) {
-                    ErrPostStr(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No AC in Embl format file, entry dropped");
+                    FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No AC in Embl format file, entry dropped");
                     entry->drop = true;
                 }
 
