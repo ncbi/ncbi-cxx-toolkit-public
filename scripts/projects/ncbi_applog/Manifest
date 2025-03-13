@@ -28,7 +28,6 @@ POSTBUILD: cp $srcdir/src/misc/clog/app/ncbi_applog_run_app.sh $installdir/bin
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Linux64-Centos        : plain : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release
 Linux64-Ubuntu        : plain : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release
 Linux64-Ubuntu-Public : plain : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release
 Linux64-Alma          : plain : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release
