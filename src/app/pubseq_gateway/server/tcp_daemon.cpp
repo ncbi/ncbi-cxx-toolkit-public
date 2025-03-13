@@ -685,7 +685,6 @@ bool CTcpDaemon::OnRequest(CHttpProto **  http_proto)
         return false;
     }
 
-    ++worker->m_request_count;
     *http_proto = &worker->m_protocol;
     return true;
 }

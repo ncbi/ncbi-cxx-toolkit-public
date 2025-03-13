@@ -108,7 +108,6 @@ struct CTcpWorker
 {
     unsigned int                                        m_id;
     uv_thread_t                                         m_thread;
-    std::atomic_uint_fast64_t                           m_request_count;
     std::atomic_uint_fast16_t                           m_connection_count;
     std::atomic_bool                                    m_started;
     std::atomic_bool                                    m_shutdown;
@@ -130,7 +129,6 @@ struct CTcpWorker
                CHttpDaemon &  http_daemon) :
         m_id(id),
         m_thread(0),
-        m_request_count(0),
         m_connection_count(0),
         m_started(false),
         m_shutdown(false),
