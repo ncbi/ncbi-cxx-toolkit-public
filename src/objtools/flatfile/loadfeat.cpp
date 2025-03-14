@@ -3999,7 +3999,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
                     if (! CheckLegalQual(p, ' ', nullptr))
                         continue;
 
-                    string _loc(val_buf.begin(), val_buf.end());
+                    string _loc(&val_buf[0]);
                     if (_loc.size() > 30) {
                         _loc.resize(30);
                         _loc += " ...";
