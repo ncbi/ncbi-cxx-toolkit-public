@@ -2483,7 +2483,8 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
              hsp_array[i] && hsp_array[i+j] &&
              hsp_array[i]->context == hsp_array[i+j]->context &&
              hsp_array[i]->query.offset == hsp_array[i+j]->query.offset &&
-             hsp_array[i]->subject.offset == hsp_array[i+j]->subject.offset) {
+             hsp_array[i]->subject.offset == hsp_array[i+j]->subject.offset &&
+             hsp_array[i]->subject.frame == hsp_array[i+j]->subject.frame) {
          hsp_count--;
          hsp = hsp_array[i+j];
          if (!purge && (hsp->query.end > hsp_array[i]->query.end)) {
@@ -2508,7 +2509,8 @@ Blast_HSPListPurgeHSPsWithCommonEndpoints(EBlastProgramType program,
              hsp_array[i] && hsp_array[i+j] &&
              hsp_array[i]->context == hsp_array[i+j]->context &&
              hsp_array[i]->query.end == hsp_array[i+j]->query.end &&
-             hsp_array[i]->subject.end == hsp_array[i+j]->subject.end) {
+             hsp_array[i]->subject.end == hsp_array[i+j]->subject.end &&
+             hsp_array[i]->subject.frame == hsp_array[i+j]->subject.frame) {
          hsp_count--;
          hsp = hsp_array[i+j];
          if (!purge && (hsp->query.offset < hsp_array[i]->query.offset)) {
