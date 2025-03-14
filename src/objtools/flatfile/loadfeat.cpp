@@ -4809,10 +4809,10 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             string taxname = bio.GetOrg().GetTaxname();
             if (! taxname.empty())
                 FtaErrPost(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
-                           format("BioSource descriptor completely dropped because \"{}\" is not present in the NCBI taxonomy database.", taxname));
+                           format("BioSource descriptor and Source dropped because \"{}\" is not present in the NCBI taxonomy database.", taxname));
             else
                 FtaErrPost(SEV_WARNING, ERR_SOURCE_DescriptorDropped,
-                           "BioSource descriptor completely dropped because provided organism is not present in the NCBI taxonomy database.");
+                           "BioSource descriptor and Source dropped because provided organism is not present in the NCBI taxonomy database.");
         }
     }
     seq_feats.pop_front();
