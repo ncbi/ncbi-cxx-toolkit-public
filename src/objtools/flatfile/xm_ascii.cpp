@@ -260,13 +260,17 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
 
     ibp->wgssec[0] = '\0';
 
-    if (char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE))) {
-        p = StringRChr(str, '.');
-        if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
-            *p = '\0';
+    if(ibp->biodrop == false || pp->source != Parser::ESource::USPTO ||
+        pp->format != Parser::EFormat::XML || pp->taxserver == 0)
+    {
+        if (char* str = StringSave(XMLFindTagValue(entry, ibp->xip, INSDSEQ_SOURCE))) {
+            p = StringRChr(str, '.');
+            if (p && p > str && p[1] == '\0' && *(p - 1) == '.')
+                *p = '\0';
 
-        gbb->SetSource(str);
-        MemFree(str);
+            gbb->SetSource(str);
+            MemFree(str);
+        }
     }
 
     if (! ibp->keywords.empty()) {
