@@ -180,13 +180,12 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
 
         add_library(ncbi_corelib STATIC IMPORTED GLOBAL)
         if(EXISTS "${NCBI_C_LIBPATH}/libncbi_connectless.a")
-            NCBI_set_multi(ncbi_corelib IMPORTED_LOCATION
-                "${NCBI_C_LIBPATH}/libncbi_connectless.a")
             set_target_properties(ncbi_corelib PROPERTIES
+                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi_connectless.a"
                 INTERFACE_LINK_LIBRARIES xconnect)
         else()
-            NCBI_set_multi(ncbi_corelib IMPORTED_LOCATION
-                "${NCBI_C_LIBPATH}/libncbi.a")
+            set_target_properties(ncbi_corelib PROPERTIES
+                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi.a")
         endif()
         if (APPLE)
             set_target_properties(ncbi_corelib PROPERTIES
@@ -262,7 +261,8 @@ NCBIcomponent_report(UUID)
 NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCLUDE curl/curl.h)
 if(NCBI_COMPONENT_CURL_FOUND AND NOT TARGET CURL::libcurl)
     add_library(CURL::libcurl UNKNOWN IMPORTED GLOBAL)
-    NCBI_set_multi(CURL::libcurl IMPORTED_LOCATION ${NCBI_COMPONENT_CURL_LIBS})
+    set_target_properties(CURL::libcurl PROPERTIES
+        IMPORTED_LOCATION ${NCBI_COMPONENT_CURL_LIBS})
 endif()
 NCBIcomponent_report(CURL)
 
@@ -757,7 +757,8 @@ NCBIcomponent_report(LEVELDB)
 NCBI_define_Xcomponent(NAME URing MODULE liburing LIB uring)
 if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
     add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
-    NCBI_set_multi(uring::uring IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS})
+    set_target_properties(uring::uring PROPERTIES
+        IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS})
 endif()
 NCBIcomponent_report(URing)
 
