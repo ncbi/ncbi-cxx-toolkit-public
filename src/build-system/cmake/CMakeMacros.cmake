@@ -73,20 +73,6 @@ function(NCBI_process_imports _file)
     endif()
 endfunction()
 
-# partial copy-hack of NCBI_map_one_import
-function(NCBI_set_multi _tgt _prop _value)
-    set_property(TARGET ${_tgt} PROPERTY ${_prop} ${_value})
-    foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
-        NCBI_util_Cfg_ToStd(${_cfg} _map_cfg)
-        string(TOUPPER ${_cfg} _up_cfg)
-        string(TOUPPER ${_map_cfg} _map_cfg)
-        set_property(TARGET ${_tgt} PROPERTY ${_prop}_${_map_cfg} ${_value})
-        if(NOT "${_up_cfg}" STREQUAL "${_map_cfg}")
-            set_property(TARGET ${_tgt} PROPERTY ${_prop}_${_up_cfg} ${_value})
-        endif()
-    endforeach()
-endfunction()
-
 ##############################################################################
 # assume all files are in the same directory
 function(NCBI_util_gitignore _f)
