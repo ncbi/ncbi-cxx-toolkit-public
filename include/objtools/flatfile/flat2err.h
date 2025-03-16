@@ -388,6 +388,7 @@
 #define ERR_FEATURE_MultipleWBGeneXrefs                17,86
 #define ERR_FEATURE_FinishedHTGHasAssemblyGap          17,87
 #define ERR_FEATURE_MultipleOldLocusTags               17,88
+#define ERR_FEATURE_InvalidQualifierValue              17,89
 
 #define ERR_LOCATION                                   18,0
 #define ERR_LOCATION_FailedCheck                       18,1
