@@ -439,8 +439,6 @@ static const char* EmptyQuals[] = {
     "macronuclear",
     "metagenomic",
     "mitochondrion",
-    "mobile_element_type", /* Fake. Put here to catch
-                                           it's empty */
     "partial",
     "proviral",
     "pseudo",
@@ -531,6 +529,19 @@ const char* RegulatoryClassValues[] = {
     "transcriptional_cis_regulatory_region",
     "other",
     nullptr
+};
+
+const char *MobileElementQualValues[] = {
+    "transposon",
+    "retrotransposon",
+    "integron",
+    "insertion sequence",
+    "non-LTR retrotransposon",
+    "SINE",
+    "MITE",
+    "LINE",
+    "other",
+    NULL
 };
 
 // clang-format off
@@ -4267,27 +4278,45 @@ static void fta_check_artificial_location(CSeq_feat& feat, const string& key)
 /**********************************************************/
 static bool fta_check_mobile_element(const CSeq_feat& feat)
 {
+    char *p_val;
+    char *p;
     bool found = false;
+    Int2 i;
+
     for (const auto& qual : feat.GetQual()) {
         if (qual->IsSetQual() && qual->GetQual() == "mobile_element_type" &&
             qual->IsSetVal() && ! qual->GetVal().empty()) {
-            const Char* p_val = qual->GetVal().c_str();
-            for (; *p_val == '\"';)
-                ++p_val;
+            p_val = (char *) qual->GetVal().c_str();
+            for (p = p_val; *p == '\"';)
+                ++p;
 
-            if (*p_val != '\0') {
+            if (*p != '\0') {
                 found = true;
                 break;
             }
         }
     }
 
-    if (found)
+    if(!found)
+    {
+        auto loc_str = location_to_string_or_unknown(feat.GetLocation());
+        auto msg = format("Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"{}\". Entry dropped.", loc_str.empty() ? "unknown"s : loc_str);
+        FtaErrPost(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing, msg);
+        return false;
+    }
+
+    p = StringChr(p_val, ':');
+    if(p)
+        *p = '\0';
+    i = MatchArrayString(MobileElementQualValues, p_val);
+    if(p)
+        *p = ':';
+    if(i > -1)
         return true;
 
     auto loc_str = location_to_string_or_unknown(feat.GetLocation());
-    auto msg = format("Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"{}\". Entry dropped.", loc_str.empty() ? "unknown"s : loc_str);
-    FtaErrPost(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing, msg);
+    auto msg = format("The value \"{}\" of qualifier /mobile_element_type is invalid for the feature \"mobile_element\" at \"{}\". Entry dropped.", p_val, loc_str);
+    FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidQualifierValue, msg);
 
     return false;
 }
