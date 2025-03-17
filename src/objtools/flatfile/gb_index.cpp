@@ -264,7 +264,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     char*         line_ver;
     char*         line_nid;
     char*         line_locus;
-    size_t        i;
     ValNodePtr    kwds;
     ValNodePtr    tkwds;
     ValNodePtr    dbl;
@@ -362,10 +361,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                             break;
                         }
                     }
-                    i        = q - p;
-                    line_ver = StringNew(i);
-                    StringNCpy(line_ver, p, i);
-                    line_ver[i] = '\0';
+                    line_ver = StringSave(string_view(p, q - p));
                     break;
                 case ParFlat_NCBI_GI:
                     if (pp->source == Parser::ESource::DDBJ || pp->accver == false || line_nid)
@@ -376,10 +372,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     for (q = p; *q != '\0' && *q != ' ' && *q != '\t' &&
                                 *q != '\r' && *q != '\n';)
                         q++;
-                    i        = q - p;
-                    line_nid = StringNew(i);
-                    StringNCpy(line_nid, p, i);
-                    line_nid[i] = '\0';
+                    line_nid = StringSave(string_view(p, q - p));
                     break;
                 case ParFlat_DEFINITION:
                     if (after_DEFNTN) {
