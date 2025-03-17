@@ -143,12 +143,10 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
         return true;
 
     i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA;
-    if (i <= 0)
+    if (i <= 1)
         return false;
 
-    p = StringNew(i);
-    StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA], i);
-    p[i - 1] = '\0';
+    p = StringSave(string_view(&dbp->mOffset[ParFlat_COL_DATA], i - 1)); // exclude trailing EOL
     for (q = p, r = p; *q != '\0'; q++)
         if (*q != '\n' && *q != '\t' && *q != ' ')
             *r++ = *q;

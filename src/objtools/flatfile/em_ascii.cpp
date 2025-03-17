@@ -767,12 +767,10 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
         return true;
 
     Int4 i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA_EMBL;
-    if (i <= 0)
+    if (i <= 1)
         return false;
 
-    p = StringNew(i);
-    StringNCpy(p, &dbp->mOffset[ParFlat_COL_DATA_EMBL], i);
-    p[i - 1] = '\0';
+    p = StringSave(string_view(&dbp->mOffset[ParFlat_COL_DATA_EMBL], i - 1)); // exclude trailing EOL
     for (q = p; *q != '\0'; q++) {
         if (*q == '\t')
             *q = ' ';
