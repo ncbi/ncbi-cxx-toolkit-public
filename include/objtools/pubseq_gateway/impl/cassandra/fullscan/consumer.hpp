@@ -48,7 +48,7 @@ enum class ECassandraFullscanConsumerPolicy {
 
 class ICassandraFullscanConsumer
 {
- public:
+public:
     // Called for every iteration
     // @return false to stop processing
     virtual bool Tick()

@@ -42,7 +42,7 @@ USING_NCBI_SCOPE;
 
 class ICassandraFullscanPlan
 {
- public:
+public:
     using TQueryPtr = shared_ptr<CCassQuery>;
 
     virtual TQueryPtr GetNextQuery() = 0;
@@ -54,9 +54,10 @@ class ICassandraFullscanPlan
 class CCassandraFullscanPlan
     : public ICassandraFullscanPlan
 {
-    static const size_t kMinPartitionsForSubrangeScanDefault = 100'000;
- public:
+    static constexpr size_t kMinPartitionsForSubrangeScanDefault{100'000};
+public:
     using TQueryPtr = shared_ptr<CCassQuery>;
+    using TParamsBinder = function<void(CCassQuery & query, unsigned int first_param_index)>;
 
     CCassandraFullscanPlan();
     CCassandraFullscanPlan(const CCassandraFullscanPlan&) = default;
@@ -64,11 +65,14 @@ class CCassandraFullscanPlan
     CCassandraFullscanPlan& operator=(const CCassandraFullscanPlan&) = default;
     CCassandraFullscanPlan& operator=(CCassandraFullscanPlan&&) = default;
 
-    virtual ~CCassandraFullscanPlan() = default;
+    ~CCassandraFullscanPlan() override = default;
 
     CCassandraFullscanPlan& SetConnection(shared_ptr<CCassConnection> connection);
     CCassandraFullscanPlan& SetFieldList(vector<string> fields);
+
+    NCBI_STD_DEPRECATED("Use SetWhereFilter(string const & sql, unsigned int count, TParamsBinder binder) See ID-8633")
     CCassandraFullscanPlan& SetWhereFilter(string const & where_filter);
+    CCassandraFullscanPlan& SetWhereFilter(string const & sql, unsigned int params_count, TParamsBinder params_binder);
     CCassandraFullscanPlan& SetMinPartitionsForSubrangeScan(size_t value);
     CCassandraFullscanPlan& SetKeyspace(string const & keyspace);
     CCassandraFullscanPlan& SetTable(string const & table);
@@ -83,7 +87,7 @@ class CCassandraFullscanPlan
     TQueryPtr GetNextQuery() override;
     size_t GetQueryCount() const override;
 
- protected:
+protected:
     CCassConnection::TTokenRanges& GetTokenRanges();
     void SplitTokenRangesForLimits();
     int64_t GetPartitionCountPerQueryLimit() const
@@ -91,7 +95,7 @@ class CCassandraFullscanPlan
         return m_PartitionCountPerQueryLimit;
     }
 
- private:
+private:
     size_t GetPartitionCountEstimate();
 
     shared_ptr<CCassConnection> m_Connection;
@@ -99,6 +103,8 @@ class CCassandraFullscanPlan
     string m_Keyspace;
     string m_Table;
     string m_WhereFilter;
+    unsigned int m_WhereFilterParamsCount{0};
+    TParamsBinder m_WhereFilterParamsBinder{nullptr};
     string m_SqlTemplate;
     CCassConnection::TTokenRanges m_TokenRanges;
     size_t m_MinPartitionsForSubrangeScan{kMinPartitionsForSubrangeScanDefault};

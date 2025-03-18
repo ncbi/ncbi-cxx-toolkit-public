@@ -58,7 +58,7 @@ class CCassandraFullscanWorker
         mutex ready_mutex;
     };
     struct SQueryContext
-        : public CCassDataCallbackReceiver
+        : CCassDataCallbackReceiver
     {
         SQueryContext(const SQueryContext &) = delete;
         SQueryContext & operator=(const SQueryContext &) = delete;
@@ -70,7 +70,7 @@ class CCassandraFullscanWorker
         {}
         SQueryContext(CCassandraFullscanPlan::TQueryPtr q, shared_ptr<SProgressStatus> p, unsigned int max_retries)
             : query(std::move(q))
-            , progress(p)
+            , progress(std::move(p))
             , retires(max_retries)
         {}
 
@@ -84,7 +84,7 @@ class CCassandraFullscanWorker
             progress->ready_condition.notify_one();
         }
 
-        ~SQueryContext()
+        ~SQueryContext() override
         {
             if (query) {
                 query->Close();
@@ -99,7 +99,7 @@ class CCassandraFullscanWorker
         atomic_bool query_ready{false};
     };
 
- public:
+public:
     using TTaskProvider = function<CCassandraFullscanPlan::TQueryPtr()>;
 
     CCassandraFullscanWorker();
@@ -121,7 +121,7 @@ class CCassandraFullscanWorker
     bool HadError() const;
     string GetFirstError() const;
 
- private:
+private:
     bool x_StartQuery(size_t index);
     bool x_ProcessQueryResult(size_t index);
     CCassandraFullscanPlan::TQueryPtr x_GetNextTask();

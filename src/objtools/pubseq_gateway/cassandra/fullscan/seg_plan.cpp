@@ -58,8 +58,7 @@ void CCassandraSegscanPlan::Generate()
     auto partition_count_limit = GetPartitionCountPerQueryLimit();
     if (partition_count_limit > 0) {
         // Limiting token range partition size is unstable as size estimates may be different on different nodes
-        //  so we first apply segment filter
-        //  and then we split remaining token ranges accorting to limit
+        //  so we first apply segment filter then we split remaining token ranges according to limit
         SetPartitionCountPerQueryLimit(0);
         CCassandraFullscanPlan::Generate();
         FilterTokenRanges(GetTokenRanges(), m_Segment.first, m_Segment.second);

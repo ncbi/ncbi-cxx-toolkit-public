@@ -37,7 +37,7 @@ USING_NCBI_SCOPE;
 
 class CCassandraFilteredPlan: public CCassandraFullscanPlan
 {
- public:
+public:
     CCassandraFilteredPlan() = default;
     CCassandraFilteredPlan& SetFilterRanges(CCassConnection::TTokenRanges ranges)
     {
@@ -97,7 +97,7 @@ class CCassandraFilteredPlan: public CCassandraFullscanPlan
         return query;
     }*/
 
- private:
+private:
     CCassConnection::TTokenRanges m_Filter;
 };
 
