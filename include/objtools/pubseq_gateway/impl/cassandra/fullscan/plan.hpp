@@ -57,7 +57,7 @@ class CCassandraFullscanPlan
     static constexpr size_t kMinPartitionsForSubrangeScanDefault{100'000};
 public:
     using TQueryPtr = shared_ptr<CCassQuery>;
-    using TParamsBinder = function<void(CCassQuery & query, unsigned int first_param_index)>;
+    using TParamsBinder = function<void(CCassQuery & query, int first_param_index)>;
 
     CCassandraFullscanPlan();
     CCassandraFullscanPlan(const CCassandraFullscanPlan&) = default;

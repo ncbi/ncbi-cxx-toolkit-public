@@ -236,7 +236,7 @@ CCassandraFullscanPlan::TQueryPtr CCassandraFullscanPlan::GetNextQuery()
         query->BindInt64(1, m_TokenRanges.back().second);
     }
     if (m_WhereFilterParamsBinder) {
-        m_WhereFilterParamsBinder(*query, token_count);
+        m_WhereFilterParamsBinder(*query, static_cast<int>(token_count));
     }
     m_TokenRanges.pop_back();
     return query;
