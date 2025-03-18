@@ -168,7 +168,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryWithWhereFilter)
     CCassConnection::TTokenRanges ranges;
     s_Connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
-    auto parameters_binder = [](CCassQuery & query, unsigned int first_param_index) -> void {
+    auto parameters_binder = [](CCassQuery & query, int first_param_index) -> void {
           query.BindStr(first_param_index, "TEST_LOCUS");
           query.BindInt64(first_param_index + 1, 42);
     };
