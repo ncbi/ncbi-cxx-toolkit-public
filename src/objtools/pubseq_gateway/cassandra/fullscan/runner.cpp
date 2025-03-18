@@ -42,10 +42,6 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-const unsigned int CCassandraFullscanRunner::kPageSizeDefault = 4096;
-const unsigned int CCassandraFullscanRunner::kMaxActiveStatementsDefault = 256;
-const unsigned int CCassandraFullscanRunner::kMaxRetryCountDefault = 5;
-
 CCassandraFullscanRunner::CCassandraFullscanRunner() = default;
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetThreadCount(size_t value)
 {
@@ -187,13 +183,13 @@ bool CCassandraFullscanRunner::Execute()
     worker_threads.clear();
 
     bool all_finished = true;
-    for (size_t i = 0; i < workers.size(); ++i) {
-        if (workers[i].HadError()) {
+    for (const auto & worker : workers) {
+        if (worker.HadError()) {
             NCBI_THROW(CCassandraException, eFatal,
-               "Fullscan failed: one of workers got exception with message - " + workers[i].GetFirstError()
+               "Fullscan failed: one of workers got exception with message - " + worker.GetFirstError()
             );
         }
-        if (!workers[i].IsFinished()) {
+        if (!worker.IsFinished()) {
             all_finished = false;
         }
     }

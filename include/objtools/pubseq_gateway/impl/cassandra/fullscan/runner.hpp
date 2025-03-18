@@ -46,10 +46,10 @@ USING_NCBI_SCOPE;
 
 class CCassandraFullscanRunner
 {
- public:
-    static const unsigned int kPageSizeDefault;
-    static const unsigned int kMaxActiveStatementsDefault;
-    static const unsigned int kMaxRetryCountDefault;
+public:
+    static constexpr unsigned int kPageSizeDefault{4096};
+    static constexpr unsigned int kMaxActiveStatementsDefault{256};
+    static constexpr unsigned int kMaxRetryCountDefault{5};
 
     CCassandraFullscanRunner();
     CCassandraFullscanRunner(const CCassandraFullscanRunner&) = delete;
@@ -67,7 +67,8 @@ class CCassandraFullscanRunner
     CCassandraFullscanRunner& SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy policy);
 
     bool Execute();
- private:
+
+private:
     size_t m_ThreadCount{1};
     TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
     unsigned int m_PageSize{kPageSizeDefault};

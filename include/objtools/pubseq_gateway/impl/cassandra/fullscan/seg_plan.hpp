@@ -38,7 +38,7 @@ USING_NCBI_SCOPE;
 class CCassandraSegscanPlan
     : public CCassandraFullscanPlan
 {
- public:
+public:
     CCassandraSegscanPlan();
 
     // by setting Segment we want to run sub-set of the token ranges
@@ -54,10 +54,10 @@ class CCassandraSegscanPlan
     CCassandraSegscanPlan& SetSegment(pair<size_t, size_t> segment);
 
     void Generate() override;
- private:
+private:
     pair<size_t, size_t> m_Segment{make_pair(0, 1)};
 };
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__FULLSCAN__SEG_PLAN_HPP

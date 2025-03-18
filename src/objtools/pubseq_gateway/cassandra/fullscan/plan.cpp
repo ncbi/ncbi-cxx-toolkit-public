@@ -132,6 +132,16 @@ CCassandraFullscanPlan& CCassandraFullscanPlan::SetWhereFilter(string const & wh
     return *this;
 }
 
+CCassandraFullscanPlan& CCassandraFullscanPlan::SetWhereFilter(
+    string const & sql, unsigned int params_count, TParamsBinder params_binder
+)
+{
+    m_WhereFilter = sql;
+    m_WhereFilterParamsCount = params_count;
+    m_WhereFilterParamsBinder = std::move(params_binder);
+    return *this;
+}
+
 CCassandraFullscanPlan& CCassandraFullscanPlan::SetMinPartitionsForSubrangeScan(size_t value)
 {
     m_MinPartitionsForSubrangeScan = value;
@@ -212,14 +222,21 @@ CCassandraFullscanPlan::TQueryPtr CCassandraFullscanPlan::GetNextQuery()
     shared_ptr<CCassQuery> query;
     if (m_TokenRanges.empty()) {
         return nullptr;
-    } else if (m_TokenRanges.size() == 1 && m_TokenRanges[0].first == 0 && m_TokenRanges[0].second == 0) {
+    }
+    unsigned int token_count{0};
+    if (m_TokenRanges.size() == 1 && m_TokenRanges[0].first == 0 && m_TokenRanges[0].second == 0) {
         query = m_Connection->NewQuery();
-        query->SetSQL(m_SqlTemplate, 0);
-    } else {
+        query->SetSQL(m_SqlTemplate, token_count + m_WhereFilterParamsCount);
+    }
+    else {
+        token_count = 2;
         query = m_Connection->NewQuery();
-        query->SetSQL(m_SqlTemplate, 2);
+        query->SetSQL(m_SqlTemplate, token_count + m_WhereFilterParamsCount);
         query->BindInt64(0, m_TokenRanges.back().first);
         query->BindInt64(1, m_TokenRanges.back().second);
+    }
+    if (m_WhereFilterParamsBinder) {
+        m_WhereFilterParamsBinder(*query, token_count);
     }
     m_TokenRanges.pop_back();
     return query;
@@ -243,7 +260,7 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
     // Additional verification of estimates data
     VerifySizeEstimates(estimates);
 
-    auto search_start = estimates.begin();
+    auto search_start = begin(estimates);
     CCassConnection::TTokenRanges result_ranges;
     for (auto const & range : m_TokenRanges) {
         auto range_start = range.first;
@@ -251,14 +268,14 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
 
         // Search for first intersecting range
         auto itr = search_start;
-        while (itr != estimates.end() && itr->range_end <= range_start) {
+        while (itr != end(estimates) && itr->range_end <= range_start) {
             ++itr;
         }
         search_start = itr;
 
         // Counting total partitions from size estimates
         int64_t partitions_count{0};
-        while (itr != estimates.end() && itr->range_start < range_end) {
+        while (itr != end(estimates) && itr->range_start < range_end) {
             auto intersect_start = max(itr->range_start, range_start);
             auto intersect_end = min(itr->range_end, range_end);
             double size_ratio =
@@ -302,7 +319,7 @@ void CCassandraFullscanPlan::Generate()
         if (!m_WhereFilter.empty()) {
             m_SqlTemplate += " WHERE " + m_WhereFilter + " ALLOW FILTERING";
         }
-        m_TokenRanges.push_back(make_pair(0, 0));
+        m_TokenRanges.emplace_back(0, 0);
     } else {
         vector<string> partition_fields = m_Connection->GetPartitionKeyColumnNames(m_Keyspace, m_Table);
         m_Connection->GetTokenRanges(m_TokenRanges);

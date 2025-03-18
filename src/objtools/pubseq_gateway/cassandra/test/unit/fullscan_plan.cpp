@@ -163,6 +163,51 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
             << "Short plan query template is wrong";
 }
 
+TEST_F(CCassandraFullscanPlanTest, CheckQueryWithWhereFilter)
+{
+    CCassConnection::TTokenRanges ranges;
+    s_Connection->GetTokenRanges(ranges);
+    CCassandraFullscanPlan plan;
+    auto parameters_binder = [](CCassQuery & query, unsigned int first_param_index) -> void {
+          query.BindStr(first_param_index, "TEST_LOCUS");
+          query.BindInt64(first_param_index + 1, 42);
+    };
+    plan
+        .SetConnection(s_Connection)
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName)
+        .SetMinPartitionsForSubrangeScan(0)
+        .SetWhereFilter("locus_name > ? AND gaid = ?", 2, std::move(parameters_binder));
+
+    EXPECT_EQ(nullptr, plan.GetNextQuery())
+        << "Plan sould be empty on creation";
+    plan.Generate();
+    shared_ptr<CCassQuery> query = plan.GetNextQuery();
+    string expected_template =
+        "SELECT * FROM test_mlst_storage.allele_data "
+        "WHERE TOKEN(taxid,version) > ? AND TOKEN(taxid,version) <= ?"
+        " AND locus_name > ? AND gaid = ? ALLOW FILTERING";
+    size_t i = 0;
+    while(query) {
+        ASSERT_LE(++i, ranges.size());
+        string expected_query = expected_template + "\nparams: "
+            + to_string(ranges[ranges.size() - i].first)
+            + ", " + to_string(ranges[ranges.size() - i].second)
+            + ", TEST_LOCUS, 42";
+        ASSERT_EQ(expected_query, query->ToString());
+        query = plan.GetNextQuery();
+    }
+
+    plan.SetMinPartitionsForSubrangeScan(numeric_limits<size_t>::max());
+    plan.Generate();
+    expected_template = "SELECT * FROM test_mlst_storage.allele_data "
+        "WHERE locus_name > ? AND gaid = ? ALLOW FILTERING\n"
+        "params: TEST_LOCUS, 42";
+    query = plan.GetNextQuery();
+    ASSERT_EQ(expected_template, query->ToString())
+            << "Short plan query template is wrong";
+}
+
 TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
     CCassConnection::TTokenRanges ranges;
     s_Connection->GetTokenRanges(ranges);
