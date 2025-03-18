@@ -172,21 +172,21 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
 
     if(EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
         set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
-        if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-            set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/altlib64")
-        else()
-            set(NCBI_C_LIBPATH  "${NCBI_CTOOLKIT_PATH}/lib64")
-        endif()
-
+# alt == Debug
+        foreach( _type IN ITEMS "" "alt")
+            set(NCBI_C_LIBPATH${_type}  "${NCBI_CTOOLKIT_PATH}/${_type}lib64")
+            set(_lib${_type} "${NCBI_CTOOLKIT_PATH}/${_type}lib64/libncbi_connectless.a")
+            if(NOT EXISTS "${_lib${_type}}")
+                set(_lib${_type} "${NCBI_CTOOLKIT_PATH}/${_type}lib64/libncbi.a")
+            endif()
+        endforeach()
         add_library(ncbi_corelib STATIC IMPORTED GLOBAL)
-        if(EXISTS "${NCBI_C_LIBPATH}/libncbi_connectless.a")
-            set_target_properties(ncbi_corelib PROPERTIES
-                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi_connectless.a"
-                INTERFACE_LINK_LIBRARIES xconnect)
-        else()
-            set_target_properties(ncbi_corelib PROPERTIES
-                IMPORTED_LOCATION "${NCBI_C_LIBPATH}/libncbi.a")
-        endif()
+        set_target_properties(ncbi_corelib PROPERTIES
+            IMPORTED_LOCATION "${_lib}"
+            IMPORTED_LOCATION_RELEASE "${_lib}"
+            IMPORTED_LOCATION_DEBUG "${_libalt}"
+            INTERFACE_LINK_OPTIONS "-L$<IF:$<CONFIG:Debug>,${NCBI_C_LIBPATHalt},${NCBI_C_LIBPATH}>"
+            INTERFACE_LINK_LIBRARIES xconnect)
         if (APPLE)
             set_target_properties(ncbi_corelib PROPERTIES
                 INTERFACE_LINK_OPTIONS -Wl,-framework,ApplicationServices)
@@ -202,7 +202,7 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
         set(NCBI_COMPONENT_NCBI_C_FOUND YES)
         set(NCBI_COMPONENT_NCBI_C_INCLUDE ${NCBI_C_INCLUDE})
         set(_c_libs  ncbiobj ncbimmdb ${NCBI_C_ncbi})
-        set(NCBI_COMPONENT_NCBI_C_LIBS -L${NCBI_C_LIBPATH} ${_c_libs})
+        set(NCBI_COMPONENT_NCBI_C_LIBS ${_c_libs})
         set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1
             USE_BIGINT_IDS=${USE_BIGINT_IDS})
         set(NCBI_COMPONENT_NCBI_C_LIBPATH ${NCBI_C_LIBPATH})
@@ -262,7 +262,10 @@ NCBI_define_Xcomponent(NAME CURL MODULE libcurl PACKAGE CURL LIB curl CHECK_INCL
 if(NCBI_COMPONENT_CURL_FOUND AND NOT TARGET CURL::libcurl)
     add_library(CURL::libcurl UNKNOWN IMPORTED GLOBAL)
     set_target_properties(CURL::libcurl PROPERTIES
-        IMPORTED_LOCATION ${NCBI_COMPONENT_CURL_LIBS})
+        IMPORTED_LOCATION ${NCBI_COMPONENT_CURL_LIBS}
+        IMPORTED_LOCATION_DEBUG ${NCBI_COMPONENT_CURL_LIBS}
+        IMPORTED_LOCATION_RELEASE ${NCBI_COMPONENT_CURL_LIBS}
+    )
 endif()
 NCBIcomponent_report(CURL)
 
@@ -758,7 +761,10 @@ NCBI_define_Xcomponent(NAME URing MODULE liburing LIB uring)
 if(NCBI_COMPONENT_URing_FOUND AND NOT TARGET uring::uring)
     add_library(uring::uring UNKNOWN IMPORTED GLOBAL)
     set_target_properties(uring::uring PROPERTIES
-        IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS})
+        IMPORTED_LOCATION ${NCBI_COMPONENT_URing_LIBS}
+        IMPORTED_LOCATION_DEBUG ${NCBI_COMPONENT_URing_LIBS}
+        IMPORTED_LOCATION_RELEASE ${NCBI_COMPONENT_URing_LIBS}
+    )
 endif()
 NCBIcomponent_report(URing)
 
