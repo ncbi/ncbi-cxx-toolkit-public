@@ -221,9 +221,17 @@ static bool ContainsLetters(const string& prod_name)
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eTSA | eFatal, "Suspect Product Name")
 {
     for (auto& feat : context.GetFeat()) {
-        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot && feat.GetData().GetProt().IsSetName() && !feat.GetData().GetProt().GetName().empty() && !context.IsPseudo(feat)) {
+        if (! feat.IsSetData()) {
+            continue;
+        }
+        if (context.IsPseudo(feat)) {
+            continue;
+        }
+        const CSeqFeatData &data = feat.GetData();
+        CSeqFeatData::ESubtype subtype = data.GetSubtype();
+        if (subtype == CSeqFeatData::eSubtype_prot && data.GetProt().IsSetName() && !data.GetProt().GetName().empty()) {
             CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-            string prot_name = *feat.GetData().GetProt().GetName().begin();
+            string prot_name = *data.GetProt().GetName().begin();
             vector<char> Hits(rules->Get().size());
             std::fill(Hits.begin(), Hits.end(), 0);
             rules->Screen(prot_name, Hits.data());
@@ -254,6 +262,90 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
                         }
                     }
                     rule_num++;
+                }
+            }
+        } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
+            if (feat.IsSetXref()) {
+                ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
+                    const CSeqFeatXref& xref = **it;
+                    if (xref.IsSetData() && xref.GetData().IsProt() ) {
+                        const CProt_ref& pref = xref.GetData().GetProt();
+                        ITERATE (CProt_ref::TName, it, pref.GetName()) {
+                            if ( !it->empty() ) {
+                                string prot_name = *it;
+                                CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+                                vector<char> Hits(rules->Get().size());
+                                std::fill(Hits.begin(), Hits.end(), 0);
+                                rules->Screen(prot_name, Hits.data());
+                                if (!ContainsLetters(prot_name)) {
+                                    CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+                                    node.Add(*context.SeqFeatObjRef(feat)).Fatal();
+                                }
+                                else {
+                                    size_t rule_num = 0;
+                                    for (auto rule : rules->Get()) {
+                                        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
+                                            string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+                                            size_t rule_type = rule->GetRule_type();
+                                            string rule_name = "[*";
+                                            if (rule_type < 10) {
+                                                rule_name += " ";
+                                            }
+                                            rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
+                                            string rule_text = leading_space + GetRuleMatch(*rule);
+                                            CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                                            if (rule->CanGetReplace()) {
+                                                node.Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                                            }
+                                            else {
+                                                node.Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                                            }
+                                        }
+                                        rule_num++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (subtype == CSeqFeatData::eSubtype_mRNA) {
+            const CRNA_ref& rna = data.GetRna();
+            if (rna.IsSetExt()) {
+                const CRNA_ref::C_Ext& ext = rna.GetExt();
+                if (ext.Which() == CRNA_ref::C_Ext::e_Name) {
+                    string mrna_name = ext.GetName();
+                    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+                    vector<char> Hits(rules->Get().size());
+                    std::fill(Hits.begin(), Hits.end(), 0);
+                    rules->Screen(mrna_name, Hits.data());
+                    if (!ContainsLetters(mrna_name)) {
+                        CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+                        node.Add(*context.SeqFeatObjRef(feat)).Fatal();
+                    }
+                    else {
+                        size_t rule_num = 0;
+                        for (auto rule : rules->Get()) {
+                            if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(mrna_name)) {
+                                string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+                                size_t rule_type = rule->GetRule_type();
+                                string rule_name = "[*";
+                                if (rule_type < 10) {
+                                    rule_name += " ";
+                                }
+                                rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
+                                string rule_text = leading_space + GetRuleMatch(*rule);
+                                CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                                if (rule->CanGetReplace()) {
+                                    node.Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                                }
+                                else {
+                                    node.Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+                                }
+                            }
+                            rule_num++;
+                        }
+                    }
                 }
             }
         }
@@ -341,6 +433,107 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
     CRef<CAutofixReport> ret;
     const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
     const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj->GetMoreInfo().GetPointer());
+
+    const CSeqFeatData &data = sf->GetData();
+    CSeqFeatData::ESubtype subtype = data.GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+       if (sf->IsSetXref()) {
+            ITERATE (CSeq_feat::TXref, it, sf->GetXref()) {
+                const CSeqFeatXref& xref = **it;
+                if (xref.IsSetData() && xref.GetData().IsProt() ) {
+                    string prot_name = xref.GetData().GetProt().GetName().front();
+                    if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+                        return ret;
+                    }
+
+                    string newtext;
+                    string old_prot_name;
+
+                    const CReplace_rule& rr = rule->GetReplace();
+                    const CReplace_func& rf = rr.GetReplace_func();
+                    if (rf.IsSimple_replace()) {
+                        const CSimple_replace& repl = rf.GetSimple_replace();
+                        if (repl.GetWhole_string()) {
+                            newtext = repl.GetReplace();
+                        }
+                        else {
+                            const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+                            const string& subst = repl.GetReplace();
+                            newtext = ReplaceNoCase(prot_name, find, subst);
+                        }
+                    }
+                    else if (rf.IsHaem_replace()) {
+                        newtext = ReplaceNoCase(prot_name, "haem", "hem");
+                    }
+                    if (!newtext.empty() && newtext != prot_name) {
+                        old_prot_name = std::move(prot_name);
+                        prot_name = std::move(newtext);
+                        const_cast<string&>(xref.GetData().GetProt().GetName().front()) = prot_name;
+                    }
+                    if (prot_name != old_prot_name && !prot_name.empty()) {
+                        string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
+                        obj->SetFixed();
+                        ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
+                        CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+                        vector<CRef<CAutofixReport>> reports;
+                        reports.push_back(report);
+                        ret->AddSubitems(reports);
+                    }
+                }
+            }
+        }
+        return ret;
+    } else if (subtype == CSeqFeatData::eSubtype_mRNA) {
+        const CRNA_ref& rna = data.GetRna();
+        if (rna.IsSetExt()) {
+            const CRNA_ref::C_Ext& ext = rna.GetExt();
+            if (ext.Which() == CRNA_ref::C_Ext::e_Name) {
+                string mrna_name = ext.GetName();
+                if (!rule->StringMatchesSuspectProductRule(mrna_name)) {
+                    return ret;
+                }
+
+                string newtext;
+                string old_mrna_name;
+
+                const CReplace_rule& rr = rule->GetReplace();
+                const CReplace_func& rf = rr.GetReplace_func();
+                if (rf.IsSimple_replace()) {
+                    const CSimple_replace& repl = rf.GetSimple_replace();
+                    if (repl.GetWhole_string()) {
+                        newtext = repl.GetReplace();
+                    }
+                    else {
+                        const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+                        const string& subst = repl.GetReplace();
+                        newtext = ReplaceNoCase(mrna_name, find, subst);
+                    }
+                }
+                else if (rf.IsHaem_replace()) {
+                    newtext = ReplaceNoCase(mrna_name, "haem", "hem");
+                }
+                if (!newtext.empty() && newtext != mrna_name) {
+                    old_mrna_name = std::move(mrna_name);
+                    mrna_name = std::move(newtext);
+                    CRef<CSeq_feat> mrna = CRef<CSeq_feat>((CSeq_feat*)sf);
+                    if (mrna) {
+                        mrna->SetData().SetRna().SetExt().SetName() = mrna_name;
+                    }
+                }
+                if (mrna_name != old_mrna_name && !mrna_name.empty()) {
+                    string s = "Changed \'" + old_mrna_name + "\' to \'" + mrna_name + "\' at " + obj->GetLocation();
+                    obj->SetFixed();
+                    ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
+                    CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+                    vector<CRef<CAutofixReport>> reports;
+                    reports.push_back(report);
+                    ret->AddSubitems(reports);
+                }
+            }
+        }
+        return ret;
+    }
+
     CSeq_feat* prot;
     CSeq_feat* mrna;
     GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
