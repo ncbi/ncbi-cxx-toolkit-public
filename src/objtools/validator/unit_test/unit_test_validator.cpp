@@ -677,136 +677,135 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     eval = validator.Validate(seh, options);
 
     CValidErrorFormat format(*objmgr);
+    {
+        vector<string> expected = {
+            "intron\tlcl|nuc\tGT at 17",
+            "intron\tlcl|nuc\tGT at 1",
+            "intron\tlcl|nuc\tAG at 11",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "CDS\tlcl|nuc\tGT at 16",
+            "lcl|nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+        };
 
-    vector<string> expected;
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("lcl|nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-
-    vector<string> seen;
-    for (CValidError_CI vit(*eval); vit; ++vit) {
-        string val = format.FormatForSubmitterReport(*vit, scope);
-        seen.push_back(val);
-    }
-    CheckStrings(seen, expected);
-
-    expected.clear();
-    seen.clear();
-    for (CValidError_CI vit(*eval); vit; ++vit) {
-        seen.push_back(vit->GetErrCode());
-    }
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusDonorTerminalIntron");
-    expected.push_back("NotSpliceConsensusAcceptor");
-    expected.push_back("DeletedEcNumber");
-    expected.push_back("ReplacedEcNumber");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("BadEcNumberFormat");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("NotSpliceConsensusDonor");
-    if (use_geo_loc_name) {
-        expected.push_back("LatLonGeoLocName");
-    } else {
-        expected.push_back("LatLonCountry");
-    }
-    expected.push_back("BadInstitutionCode");
-    expected.push_back("BadInstitutionCode");
-    expected.push_back("BadInstitutionCode");
-    CheckStrings(seen, expected);
-
-    seen.clear();
-    expected.clear();
-    vector<CValidErrItem::TErrIndex> codes = format.GetListOfErrorCodes(*eval);
-    for (CValidErrItem::TErrIndex it : codes) {
-        string val = CValidErrItem::ConvertErrCode(it);
-        seen.push_back(val);
-    }
-    if (use_geo_loc_name) {
-        expected.push_back("BadInstitutionCode");
-        expected.push_back("LatLonGeoLocName");
-    } else {
-        expected.push_back("LatLonCountry");
-        expected.push_back("BadInstitutionCode");
-    }
-    expected.push_back("BadEcNumberFormat");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusAcceptor");
-    expected.push_back("DeletedEcNumber");
-    expected.push_back("ReplacedEcNumber");
-    expected.push_back("NotSpliceConsensusDonorTerminalIntron");
-    CheckStrings(seen, expected);
-
-    string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
-    expected.clear();
-    seen.clear();
-    NStr::Split(rval, "\n", seen);
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    CheckStrings(seen, expected);
-
-    rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
-    expected.clear();
-    seen.clear();
-    NStr::Split(rval, "\n", seen);
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    CheckStrings(seen, expected);
-
-    expected.clear();
-    seen.clear();
-    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    for (const string& it : cat_list) {
-        vector<string> sublist;
-        NStr::Split(it, "\n", sublist);
-        for (const string& sit : sublist) {
-            seen.push_back(sit);
+        vector<string> seen;
+        for (CValidError_CI vit(*eval); vit; ++vit) {
+            string val = format.FormatForSubmitterReport(*vit, scope);
+            seen.push_back(val);
         }
+        CheckStrings(seen, expected);
     }
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    expected.push_back("EC Number Format");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("");
-    expected.push_back("EC Number Value");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("");
-    expected.push_back("Bad Institution Codes");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-    expected.push_back("lcl|nuc\tXXX;YYY;ZZZ");
-    expected.push_back("");
-    if (use_geo_loc_name) {
-        expected.push_back("LatLonGeoLocName Errors");
-    } else {
-        expected.push_back("LatLonCountry Errors");
+    {
+        vector<string> seen;
+        for (CValidError_CI vit(*eval); vit; ++vit) {
+            seen.push_back(vit->GetErrCode());
+        }
+        vector<string> expected {
+            "NotSpliceConsensusDonor",
+            "NotSpliceConsensusDonorTerminalIntron",
+            "NotSpliceConsensusAcceptor",
+            "DeletedEcNumber",
+            "ReplacedEcNumber",
+            "BadEcNumberValue",
+            "BadEcNumberFormat",
+            "BadEcNumberValue",
+            "NotSpliceConsensusDonor",
+            use_geo_loc_name ? "LatLonGeoLocName" : "LatLonCountry",
+            "BadInstitutionCode",
+            "BadInstitutionCode",
+            "BadInstitutionCode",
+        };
+        CheckStrings(seen, expected);
     }
-    expected.push_back("lcl|nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
-    expected.push_back("");
-    CheckStrings(seen, expected);
+    {
+        vector<string> seen;
+        vector<CValidErrItem::TErrIndex> codes = format.GetListOfErrorCodes(*eval);
+        for (CValidErrItem::TErrIndex it : codes) {
+            string val = CValidErrItem::ConvertErrCode(it);
+            seen.push_back(val);
+        }
+        vector<string> expected {
+            use_geo_loc_name ? "BadInstitutionCode" : "LatLonCountry",
+            use_geo_loc_name ? "LatLonGeoLocName" : "BadInstitutionCode",
+            "BadEcNumberFormat",
+            "BadEcNumberValue",
+            "NotSpliceConsensusDonor",
+            "NotSpliceConsensusAcceptor",
+            "DeletedEcNumber",
+            "ReplacedEcNumber",
+            "NotSpliceConsensusDonorTerminalIntron",
+        };
+        CheckStrings(seen, expected);
+    }
+    {
+        string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
+        vector<string> seen;
+        NStr::Split(rval, "\n", seen);
+        vector<string> expected {
+            "Not Splice Consensus",
+            "intron\tlcl|nuc\tGT at 17",
+            "CDS\tlcl|nuc\tGT at 16",
+            "",
+        };
+        CheckStrings(seen, expected);
+    }
+    {
+        string rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
+        vector<string> seen;
+        NStr::Split(rval, "\n", seen);
+        vector<string> expected {
+            "Not Splice Consensus",
+            "intron\tlcl|nuc\tGT at 17",
+            "intron\tlcl|nuc\tGT at 1",
+            "intron\tlcl|nuc\tAG at 11",
+            "CDS\tlcl|nuc\tGT at 16",
+            "",
+        };
+        CheckStrings(seen, expected);
+    }
+    {
+        vector<string> seen;
+        vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+        for (const string& it : cat_list) {
+            vector<string> sublist;
+            NStr::Split(it, "\n", sublist);
+            for (const string& sit : sublist) {
+                seen.push_back(sit);
+            }
+        }
+        vector<string> expected {
+            "Not Splice Consensus",
+            "intron\tlcl|nuc\tGT at 17",
+            "intron\tlcl|nuc\tGT at 1",
+            "intron\tlcl|nuc\tAG at 11",
+            "CDS\tlcl|nuc\tGT at 16",
+            "",
+            "EC Number Format",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "",
+            "EC Number Value",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "lcl|prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name",
+            "",
+            "Bad Institution Codes",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+            "lcl|nuc\tXXX;YYY;ZZZ",
+            "",
+            use_geo_loc_name ? "LatLonGeoLocName Errors" : "LatLonCountry Errors",
+            "lcl|nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'",
+            "",
+        };
+        CheckStrings(seen, expected);
+    }
 }
 
 
