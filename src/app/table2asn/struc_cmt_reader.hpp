@@ -39,6 +39,9 @@ private:
     // First collumn of the file is the name of the field
     // Second collumn of the file is the value of the field
 
+    void x_LoadComments();
+    void x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum) override;
+
     static
     bool IsVertical(ILineReader& reader);
 
@@ -49,6 +52,7 @@ private:
     list<CStructComment> m_comments;
     bool m_vertical = false;
     bool m_verbose = false;
+    string m_Filename;
 };
 
 END_NCBI_SCOPE

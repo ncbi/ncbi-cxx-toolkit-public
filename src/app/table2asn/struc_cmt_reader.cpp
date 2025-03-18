@@ -89,9 +89,19 @@ static void sReportUnappliedStructuredComment(
 
 CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(
     const std::string& filename, ILineErrorListener* logger, bool verbose)
-    : CStructuredCommentsReader(logger), m_verbose(verbose)
+    : CStructuredCommentsReader(logger), m_verbose(verbose), m_Filename(filename)
 {
-    CRef<ILineReader> reader{ILineReader::New(filename)};
+    x_LoadComments();
+}
+
+CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
+{
+}
+
+
+void CTable2AsnStructuredCommentsReader::x_LoadComments()
+{
+    CRef<ILineReader> reader{ILineReader::New(m_Filename)};
     m_vertical = IsVertical(*reader);
     if (m_vertical) {
         m_comments.push_back({});
@@ -105,9 +115,12 @@ CTable2AsnStructuredCommentsReader::CTable2AsnStructuredCommentsReader(
     }
 }
 
-CTable2AsnStructuredCommentsReader::~CTable2AsnStructuredCommentsReader()
+void CTable2AsnStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum)
 {
+    string newMsg = "In " + m_Filename + ": " + msg;
+    CStructuredCommentsReader::x_LogMessage(sev, newMsg, lineNum);
 }
+
 
 void CTable2AsnStructuredCommentsReader::ProcessComments(CSeq_entry& entry) const
 {

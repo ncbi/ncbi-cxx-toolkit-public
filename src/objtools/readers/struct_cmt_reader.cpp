@@ -49,22 +49,100 @@
 
 #include <util/line_reader.hpp>
 #include <objtools/readers/struct_cmt_reader.hpp>
-
+#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
+#include <objtools/error_codes.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
+#define NCBI_USE_ERRCODE_X   Objtools_Reader
 BEGIN_NCBI_SCOPE
+
+
+NCBI_DEFINE_ERR_SUBCODE_X(1);
+
 USING_SCOPE(objects);
 
 CStructuredCommentsReader::CStructuredCommentsReader(ILineErrorListener* logger) : m_logger(logger)
 {
 }
 
+
+
+
 CStructuredCommentsReader::~CStructuredCommentsReader()
 {
 }
 
-const string& CStructuredCommentsReader::CStructComment::GetPrefix(const objects::CSeqdesc& desc)
+
+size_t CStructuredCommentsReader::LoadComments(ILineReader& reader, 
+        list<CStructComment>& comments,
+        CSeq_id::TParseFlags seqid_flags)
+   {
+       vector<string> cols;
+       _LoadHeaderLine(reader, cols);
+       if (cols.empty())
+           return 0;
+
+       const auto numCols = cols.size();
+
+       while (!reader.AtEOF())
+       {
+           reader.ReadLine();
+           // First line is a collumn definitions
+           CTempString current = reader.GetCurrentLine();
+           if (current.empty())
+               continue;
+
+           // Each line except first is a set of values, first collumn is a sequence id
+           vector<CTempString> values;
+           NStr::Split(current, "\t", values);
+        
+           if (values[0].empty()) {
+               continue;
+           }
+
+           if (values.size() > numCols) {
+               string msg{"Number of values exceeds number of columns."};
+               x_LogMessage(eDiag_Error, msg, reader.GetLineNumber());
+               continue; // do not attempt to read
+           }
+
+
+            // try to find destination sequence
+            comments.push_back(CStructComment());
+            CStructComment& cmt = comments.back();
+            cmt.m_id.Reset(new CSeq_id(values[0], seqid_flags));
+            _BuildStructuredComment(cmt, cols, values);
+       }
+       return comments.size();
+   }
+
+
+
+
+size_t CStructuredCommentsReader::LoadCommentsByRow(ILineReader& reader, CStructComment& cmt)
+{
+    CUser_object* user = nullptr;
+
+    while (! reader.AtEOF()) {
+        reader.ReadLine();
+        // First line is a collumn definitions
+        CTempString current = reader.GetCurrentLine();
+        if (current.empty())
+            continue;
+
+        CTempString commentname, comment;
+        NStr::SplitInTwo(current, "\t", commentname, comment);
+
+        // create new user object
+        user = _AddStructuredComment(user, cmt, commentname, comment);
+    }
+    return cmt.m_descs.size();
+}
+
+
+const string& CStructuredCommentsReader::CStructComment::GetPrefix(const CSeqdesc& desc)
 {
     if (!desc.IsUser())
         return kEmptyStr;
@@ -83,7 +161,23 @@ const string& CStructuredCommentsReader::CStructComment::GetPrefix(const objects
     return kEmptyStr;
 }
 
-objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects::CUser_object* user_obj, CStructComment& cmt, const CTempString& name, const CTempString& value)
+
+void CStructuredCommentsReader::x_LogMessage(EDiagSev sev, const string& msg, unsigned int lineNum)
+{
+    if (m_logger) {
+        unique_ptr<CLineErrorEx> pMsg{
+                CLineErrorEx::Create(
+                    ILineError::eProblem_GeneralParsingError,
+                    sev, 0, 0, kEmptyStr, lineNum, msg
+                    )};
+        m_logger->PutError(*pMsg);
+    } else {
+        ERR_POST_X(1, msg << " On line " << lineNum << ".");
+    }
+}
+
+
+CUser_object* CStructuredCommentsReader::_AddStructuredComment(CUser_object* user_obj, CStructComment& cmt, const CTempString& name, const CTempString& value)
 {
     if (name.compare("StructuredCommentPrefix") == 0)
         user_obj = 0; // reset user obj so to create a new one
@@ -107,7 +201,7 @@ objects::CUser_object* CStructuredCommentsReader::_AddStructuredComment(objects:
 void CStructuredCommentsReader::_BuildStructuredComment(CStructComment& cmt, const vector<string>& cols, const vector<CTempString>& values)
 {
     cmt.m_descs.reserve(values.size() - 1);
-    objects::CUser_object* user = 0;
+    CUser_object* user = 0;
 
     for (size_t i = 1; i<values.size(); i++)
     {
