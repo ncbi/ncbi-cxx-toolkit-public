@@ -356,8 +356,8 @@ static void SetCountryOnSrc(CBioSource& src, string country)
 }
 #endif
 
-NCBI_UNUSED
-static string ToAsn1(const CRef<CSeq_entry>& entry)
+template <typename T>
+static string ToAsn1(const T& entry)
 {
     CNcbiOstrstream os;
     os << MSerial_AsnText << entry;
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 
     CValidErrorFormat format(*objmgr);
     {
-        vector<string> expected = {
+        vector<string> expected {
             "intron\tlcl|nuc\tGT at 17",
             "intron\tlcl|nuc\tGT at 1",
             "intron\tlcl|nuc\tAG at 11",
@@ -812,9 +812,13 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 BOOST_AUTO_TEST_CASE(Test_ValidError_Format1)
 {
     CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetProt();
+    feat->SetLocation().SetPnt().SetId().SetLocal().SetStr("good");
+    feat->SetLocation().SetPnt().SetPoint(5);
     string s;
 
     feat->SetId().SetLocal().SetStr("good1");
+    BOOST_CHECK_NO_THROW(ToAsn1(*feat));
     s = CValidErrorFormat::GetFeatureIdLabel(*feat);
     BOOST_CHECK_EQUAL(s, "good1");
     feat->SetId().SetGeneral().SetDb("a");
@@ -822,22 +826,23 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format1)
     s = CValidErrorFormat::GetFeatureIdLabel(*feat);
     BOOST_CHECK_EQUAL(s, "a:good2");
 
-    feat->Reset();
+    feat->ResetId();
     CRef<CFeat_id> id0(new CFeat_id());
     id0->SetLocal().SetStr();
     feat->SetIds().push_back(id0);
     CRef<CFeat_id> id1(new CFeat_id());
-    id1->SetLocal().SetStr("good1");
+    id1->SetLocal().SetStr("good3");
     feat->SetIds().push_back(id1);
     CRef<CFeat_id> id2(new CFeat_id());
-    id2->SetGeneral().SetDb("a");
-    id2->SetGeneral().SetTag().SetStr("good2");
+    id2->SetGeneral().SetDb("b");
+    id2->SetGeneral().SetTag().SetStr("good4");
     feat->SetIds().push_back(id2);
+    BOOST_CHECK_NO_THROW(ToAsn1(feat));
     s = CValidErrorFormat::GetFeatureIdLabel(*feat);
-    BOOST_CHECK_EQUAL(s, "good1");
+    BOOST_CHECK_EQUAL(s, "good3");
     feat->SetIds().reverse();
     s = CValidErrorFormat::GetFeatureIdLabel(*feat);
-    BOOST_CHECK_EQUAL(s, "a:good2");
+    BOOST_CHECK_EQUAL(s, "b:good4");
 }
 
 
