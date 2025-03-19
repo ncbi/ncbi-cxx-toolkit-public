@@ -753,6 +753,8 @@ FASTCGI_OBJS
 FASTCGI_LIBS
 FASTCGI_INCLUDE
 WXWIDGETS_POST_LINK
+WXWIDGETS_MEDIA_STATIC_LIBS
+WXWIDGETS_MEDIA_LIBS
 WXWIDGETS_GL_STATIC_LIBS
 WXWIDGETS_GL_LIBS
 WXWIDGETS_STATIC_LIBS
@@ -25692,6 +25694,45 @@ else
    WXWIDGETS_GL_STATIC_LIBS=`"$wxconf" $wxcfflags --libs gl --static \
       2>/dev/null | sed -e "$basesed; s|-lGLU* -lGLU*|$OPENGL_STATIC_LIBS|"`
    : ${WXWIDGETS_GL_STATIC_LIBS:=$WXWIDGETS_GL_LIBS}
+   WXWIDGETS_MEDIA_LIBS=`"$wxconf" $wxcfflags --libs media | sed -e "$basesed"`
+   WXWIDGETS_MEDIA_STATIC_LIBS=`"$wxconf" $wxcfflags --libs media --static \
+      2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_MEDIA_STATIC_LIBS:=$WXWIDGETS_MEDIA_LIBS}
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for wxMediaCtrl" >&5
+$as_echo_n "checking for wxMediaCtrl... " >&6; }
+if ${ncbi_cv_lib_wxmedia+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$WXWIDGETS_MEDIA_LIBS $WXWIDGETS_LIBS $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <wx/mediactrl.h>
+int
+main ()
+{
+wxMediaCtrl mc;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_wxmedia=yes
+else
+  ncbi_cv_lib_wxmedia=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_wxmedia" >&5
+$as_echo "$ncbi_cv_lib_wxmedia" >&6; }
+   if test $ncbi_cv_lib_wxmedia = yes; then
+                WithPackages="$WithPackages${WithPackagesSep}wxMedia"; WithPackagesSep=" "
+      # wxUSE_MEDIACTRL should suffice on the preprocessor front
+   else
+      WXWIDGETS_MEDIA_LIBS=
+      WXWIDGETS_MEDIA_STATIC_LIBS=
+   fi
    WXWIDGETS_POST_LINK=`"$wxconf" $wxcfflags --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    wxpnglib=$WXWIDGETS_ARCH_PATH/lib/libpng.so
@@ -37948,7 +37989,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI StrictEntrezID StrictTaxID BM64 GCC 
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 wxMedia Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C GOOGLE_CLOUD HIREDIS APACHE_ARROW LIBRDKAFKA CPPKAFKA THRIFT NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -38054,6 +38095,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 

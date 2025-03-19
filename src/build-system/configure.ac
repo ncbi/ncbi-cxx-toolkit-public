@@ -6976,6 +6976,24 @@ else
    WXWIDGETS_GL_STATIC_LIBS=`"$wxconf" $wxcfflags --libs gl --static \
       2>/dev/null | sed -e "$basesed; s|-lGLU* -lGLU*|$OPENGL_STATIC_LIBS|"`
    : ${WXWIDGETS_GL_STATIC_LIBS:=$WXWIDGETS_GL_LIBS}
+   WXWIDGETS_MEDIA_LIBS=`"$wxconf" $wxcfflags --libs media | sed -e "$basesed"`
+   WXWIDGETS_MEDIA_STATIC_LIBS=`"$wxconf" $wxcfflags --libs media --static \
+      2>/dev/null | sed -e "$basesed"`
+   : ${WXWIDGETS_MEDIA_STATIC_LIBS:=$WXWIDGETS_MEDIA_LIBS}
+   AC_CACHE_CHECK([for wxMediaCtrl], ncbi_cv_lib_wxmedia,
+      [CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$WXWIDGETS_MEDIA_LIBS $WXWIDGETS_LIBS $orig_LIBS"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM(
+          [[@%:@include <wx/mediactrl.h>]],
+          [[wxMediaCtrl mc;]])],
+          [ncbi_cv_lib_wxmedia=yes], [ncbi_cv_lib_wxmedia=no])])
+   if test $ncbi_cv_lib_wxmedia = yes; then
+      NCBI_PACKAGE(wxMedia)
+      # wxUSE_MEDIACTRL should suffice on the preprocessor front
+   else
+      WXWIDGETS_MEDIA_LIBS=
+      WXWIDGETS_MEDIA_STATIC_LIBS=
+   fi
    WXWIDGETS_POST_LINK=`"$wxconf" $wxcfflags --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
    wxpnglib=$WXWIDGETS_ARCH_PATH/lib/libpng.so
@@ -10128,6 +10146,8 @@ AC_SUBST(WXWIDGETS_LIBS)
 AC_SUBST(WXWIDGETS_STATIC_LIBS)
 AC_SUBST(WXWIDGETS_GL_LIBS)
 AC_SUBST(WXWIDGETS_GL_STATIC_LIBS)
+AC_SUBST(WXWIDGETS_MEDIA_LIBS)
+AC_SUBST(WXWIDGETS_MEDIA_STATIC_LIBS)
 AC_SUBST(WXWIDGETS_POST_LINK)
 AC_SUBST(FASTCGI_INCLUDE)
 AC_SUBST(FASTCGI_LIBS)
