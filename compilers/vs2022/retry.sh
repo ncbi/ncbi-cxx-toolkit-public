@@ -72,6 +72,9 @@ do
     if [ !$tryagain ] ; then
         grep "fatal error C1090: PDB API call failed" $logfile > /dev/null 2>&1  &&  tryagain=true
     fi
+    if [ !$tryagain ] ; then
+        grep "LINK : fatal error LNK1104: cannot open file" $logfile > /dev/null 2>&1  &&  tryagain=true
+    fi
     # Stop on any other error
     $tryagain  ||  exit $status
 
