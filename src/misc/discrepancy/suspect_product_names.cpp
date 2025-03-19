@@ -264,7 +264,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
                     rule_num++;
                 }
             }
-        } else if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        } else if (subtype == CSeqFeatData::eSubtype_cdregion && ! feat.IsSetProduct()) {
             if (feat.IsSetXref()) {
                 ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
                     const CSeqFeatXref& xref = **it;
@@ -436,7 +436,7 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 
     const CSeqFeatData &data = sf->GetData();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
-    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+    if (subtype == CSeqFeatData::eSubtype_cdregion && ! sf->IsSetProduct()) {
        if (sf->IsSetXref()) {
             ITERATE (CSeq_feat::TXref, it, sf->GetXref()) {
                 const CSeqFeatXref& xref = **it;
