@@ -260,6 +260,8 @@ private:
 
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
+    bool x_RequiresPolyAForStopCodon(const objects::CSeq_id &mrna);
+
     // merge into single interval or, if cross the origin, into two intervals abutting at the origin
     CRef<CSeq_loc> MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2 = NULL);
 

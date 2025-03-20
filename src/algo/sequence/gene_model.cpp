@@ -2125,6 +2125,18 @@ SImplementation::x_ConstructRnaName(const CBioseq_Handle& handle)
     return name;
 }
 
+bool CFeatureGenerator::
+SImplementation::x_RequiresPolyAForStopCodon(const CSeq_id &mrna)
+{
+    CBioseq_Handle rna_handle = m_scope->GetBioseqHandle(mrna);
+    for (CSeqdesc_CI desc(rna_handle, CSeqdesc::e_User); desc; ++desc) {
+        if (desc->GetUser().HasField("polyA required for stop codon")) {
+            return true;
+        }
+    }
+    return false;
+}
+
 CRef<CSeq_feat>
 CFeatureGenerator::
 SImplementation::x_CreateNcRnaFeature(const CSeq_feat* ncrnafeature_on_mrna,
@@ -2248,7 +2260,8 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             align.GetSegs().IsSpliced() &&
             align.GetSegs().GetSpliced().IsSetPoly_a() &&
             feature_on_mrna->GetData().IsCdregion() &&
-            !this_loc->IsPartialStop(eExtreme_Biological))
+            !this_loc->IsPartialStop(eExtreme_Biological) &&
+            x_RequiresPolyAForStopCodon(align.GetSeq_id(0)))
         {
             TSeqPos missing_end =
                 this_loc->GetTotalRange().GetTo() -
@@ -3139,7 +3152,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         {
             /// One or two bases at end replaced by poly-a
             filled_by_polya = true;
-            for (size_t pos = mrna.size() - 1 - missing_end;
+            for (size_t pos = mrna.size() - missing_end;
                  pos < mrna.size(); ++pos)
             {
                 mrna[pos] = 'A';
@@ -3365,7 +3378,9 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         }
     }
 
-    if (has_stop && filled_by_polya) {
+    if (has_stop && filled_by_polya
+                 && x_RequiresPolyAForStopCodon(align->GetSeq_id(0)))
+    {
         TSeqPos pos = Convert(xlate.size());
         CRef<CSeq_loc> mapped = s_MapSingleAA(pos, mapped_protein_id,
                                        product_ranges, to_mrna, to_genomic);
