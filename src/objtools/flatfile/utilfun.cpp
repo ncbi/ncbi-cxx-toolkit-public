@@ -761,7 +761,7 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
     static const vector<string> months{
         "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
     };
-    CTempString maybe_month(s, 3);
+    string_view maybe_month(s, 3);
     auto        it = find(months.begin(), months.end(), maybe_month);
 
     if (it == months.end()) {
@@ -810,12 +810,12 @@ CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source
  *                                              3-25-93
  *
  **********************************************************/
-int SrchKeyword(const CTempString& ptr, const vector<string>& keywordList)
+int SrchKeyword(string_view str, const vector<string>& keywordList)
 {
     SIZE_TYPE keywordCount = keywordList.size();
 
     for (unsigned i = 0; i < keywordCount; ++i) {
-        if (NStr::StartsWith(ptr, keywordList[i])) {
+        if (str.starts_with(keywordList[i])) {
             return (int)i;
         }
     }

@@ -57,8 +57,8 @@ CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
 
 /**********************************************************/
 bool XReadFileBuf(FileBuf& fileBuf, FinfoBlk& finfo);
-bool SkipTitleBuf(FileBuf& fileBuf, FinfoBlk& finfo, const CTempString& keyword);
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlk& finfo, const CTempString& keyword);
+bool SkipTitleBuf(FileBuf& fileBuf, FinfoBlk& finfo, string_view keyword);
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fileBuf, FinfoBlk& finfo, string_view keyword);
 
 IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo);
 bool        GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned skip);
@@ -88,8 +88,8 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
 const Char**               GetAccArray(Parser::ESource source);
 bool                       isSupportedAccession(objects::CSeq_id::E_Choice type);
-objects::CSeq_id::E_Choice GetNucAccOwner(const CTempString& acc);
-objects::CSeq_id::E_Choice GetProtAccOwner(const CTempString& acc);
+objects::CSeq_id::E_Choice GetNucAccOwner(string_view acc);
+objects::CSeq_id::E_Choice GetProtAccOwner(string_view acc);
 // void    FreeParser(ParserPtr pp);
 END_NCBI_SCOPE
 

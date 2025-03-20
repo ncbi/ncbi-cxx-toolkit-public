@@ -1767,7 +1767,7 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
         for (vnpn = vnp->next->next; vnpn; vnpn = vnpn->next->next) {
             if (vnp->next->choice != vnpn->next->choice &&
                 StringEqu(p, vnpn->data)) {
-                if (GetProtAccOwner(q ? CTempString(p, q - p) : CTempString(p)) > CSeq_id::e_not_set)
+                if (GetProtAccOwner(q ? string_view(p, q) : string_view(p)) > CSeq_id::e_not_set)
                     FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", vnpn->data, n, vnpn->next->data);
             }
         }
@@ -1938,7 +1938,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 spb.SetSeqref().push_back(id);
         } else if (NStr::CompareNocase(token1, "EMBL") == 0) {
             p = StringChr(token2, '.');
-            ntype = GetNucAccOwner(p ? CTempString(token2, p - token2) : CTempString(token2));
+            ntype = GetNucAccOwner(p ? string_view(token2, p) : string_view(token2));
             if (ntype == CSeq_id::e_not_set) {
                 FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
             } else if (AddToList(&acc_list, token2)) {
@@ -1955,7 +1955,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 token3[1] >= 'A' && token3[1] <= 'Z') {
                 p = StringChr(token3, '.');
                 if (p) {
-                    ptype = GetProtAccOwner(CTempString(token3, p - token3));
+                    ptype = GetProtAccOwner(string_view(token3, p));
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')
@@ -2022,7 +2022,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 token2[1] >= 'A' && token2[1] <= 'Z') {
                 p = StringChr(token2, '.');
                 if (p) {
-                    ptype = GetProtAccOwner(CTempString(token2, p - token2));
+                    ptype = GetProtAccOwner(string_view(token2, p));
                     for (q = p + 1; *q >= '0' && *q <= '9';)
                         q++;
                     if (q == p + 1 || *q != '\0')

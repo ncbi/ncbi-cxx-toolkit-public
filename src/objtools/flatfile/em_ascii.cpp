@@ -684,12 +684,9 @@ static void GetReleaseInfo(const DataBlk& entry)
  **********************************************************/
 static CRef<COrg_ref> GetEmblOrgRef(const DataBlk& dbp)
 {
-    const char* bptr = dbp.mOffset;
-    const char* eptr = bptr + dbp.len;
-
     string         sTaxname;
     vector<string> taxLines;
-    NStr::Split(CTempString(bptr, eptr - bptr), "\n", taxLines);
+    NStr::Split(string_view(dbp.mOffset, dbp.len), "\n", taxLines);
     for (auto line : taxLines) {
         NStr::TruncateSpacesInPlace(line);
         if (line.empty() || NStr::StartsWith(line, "XX")) {
@@ -1624,14 +1621,14 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
     }
 }
 
-static bool s_HasTPAPrefix(const CTempString& line)
+static bool s_HasTPAPrefix(string_view line)
 {
-    return NStr::StartsWith(line, "TPA:") ||
-           NStr::StartsWith(line, "TPA_exp:") ||
-           NStr::StartsWith(line, "TPA_inf:") ||
-           NStr::StartsWith(line, "TPA_asm:") ||
-           NStr::StartsWith(line, "TPA_reasm:") ||
-           NStr::StartsWith(line, "TPA_specdb:");
+    return line.starts_with("TPA:") ||
+           line.starts_with("TPA_exp:") ||
+           line.starts_with("TPA_inf:") ||
+           line.starts_with("TPA_asm:") ||
+           line.starts_with("TPA_reasm:") ||
+           line.starts_with("TPA_specdb:");
 }
 
 /**********************************************************/

@@ -2888,7 +2888,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
                         for (p = q + 1; *p >= '0' && *p <= '9';)
                             p++;
                         if (*p == '\0') {
-                            if (GetNucAccOwner(CTempString(val_str, 0, q - val_str.c_str())) > CSeq_id::e_not_set)
+                            if (GetNucAccOwner(string_view(val_str.c_str(), q)) > CSeq_id::e_not_set)
                                 badcom = false;
                         }
                     }
@@ -2971,7 +2971,7 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
             }
             if (q == p)
                 continue;
-            i = GetNucAccOwner(CTempString(q, (r ? r : p) - q));
+            i = GetNucAccOwner(string_view(q, (r ? r : p)));
             if (i == CSeq_id::e_Genbank && (q[0] == 'e' || q[0] == 'E') &&
                 (q[1] == 'z' || q[1] == 'Z') && ibp->is_tpa == false)
                 continue;
