@@ -136,49 +136,52 @@ static const char* ObsoleteSourceDbxrefTag[] = {
     nullptr
 };
 
-static const char* DENLRSourceDbxrefTag[] = { /* DENL = DDBJ + EMBL + NCBI +
-                                                          LANL + RefSeq */
-                                              "AFTOL",
-                                              "ANTWEB",
-                                              "ATCC",
-                                              "ATCC(DNA)",
-                                              "ATCC(IN HOST)",
-                                              "BEI",
-                                              "BOLD",
-                                              "FBOL",
-                                              "FUNGORUM",
-                                              "GREENGENES",
-                                              "GRIN",
-                                              "HMP",
-                                              "HOMD",
-                                              "IKMC",
-                                              "ISHAM-ITS",
-                                              "JCM",
-                                              "NBRC",
-                                              "RBGE_GARDEN",
-                                              "RBGE_HERBARIUM",
-                                              "RZPD",
-                                              "UNILIB",
-                                              nullptr
+// DENLR = DDBJ + EMBL + NCBI + LANL + RefSeq
+static const char* DENLRSourceDbxrefTag[] = {
+    "AFTOL",
+    "ANTWEB",
+    "ATCC",
+    "ATCC(DNA)",
+    "ATCC(IN HOST)",
+    "BEI",
+    "BOLD",
+    "FBOL",
+    "FUNGORUM",
+    "GREENGENES",
+    "GRIN",
+    "HMP",
+    "HOMD",
+    "IKMC",
+    "ISHAM-ITS",
+    "JCM",
+    "NBRC",
+    "RBGE_GARDEN",
+    "RBGE_HERBARIUM",
+    "RZPD",
+    "UNILIB",
+    nullptr
 };
 
-static const char* DESourceDbxrefTag[] = { /* DE = DDBJ + EMBL */
-                                           "FANTOM_DB",
-                                           "IMGT/HLA",
-                                           "IMGT/LIGM",
-                                           "MGD",
-                                           "MGI",
-                                           nullptr
+// DE = DDBJ + EMBL
+static const char* DESourceDbxrefTag[] = {
+    "FANTOM_DB",
+    "IMGT/HLA",
+    "IMGT/LIGM",
+    "MGD",
+    "MGI",
+    nullptr
 };
 
-static const char* ESourceDbxrefTag[] = { /* E = EMBL */
-                                          "UNITE",
-                                          nullptr
+// E = EMBL
+static const char* ESourceDbxrefTag[] = {
+    "UNITE",
+    nullptr
 };
 
-static const char* NLRSourceDbxrefTag[] = { /* N = NCBI + LANL + RefSeq */
-                                            "FLYBASE",
-                                            nullptr
+// N = NCBI + LANL + RefSeq
+static const char* NLRSourceDbxrefTag[] = {
+    "FLYBASE",
+    nullptr
 };
 
 static const char* exempt_quals[] = {
@@ -1822,111 +1825,95 @@ static void CheckQualsInSourceFeat(CBioSource& bio, TQualVector& quals, Uint1 ta
 /**********************************************************/
 static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
 {
-    const char** b;
-    const char*  q;
-    char*        p;
-
     CRef<CDbtag> tag;
 
     if (qual->GetQual() != "db_xref")
         return tag;
 
-    std::vector<Char> val_buf(qual->GetVal().begin(), qual->GetVal().end());
-    val_buf.push_back(0);
+    const string& val_buf(qual->GetVal());
 
-    p = StringChr(&val_buf[0], ':');
-    if (! p || p[1] == '\0')
+    auto pos = val_buf.find(':');
+    if (pos == string::npos)
         return tag;
 
-    *p = '\0';
-    if (NStr::CompareNocase(&val_buf[0], "taxon") == 0) {
-        *p = ':';
+    string db(val_buf.substr(0, pos));
+    string t(val_buf.substr(pos + 1));
+    if (t.empty())
         return tag;
-    }
 
+    if (NStr::CompareNocase(db, "taxon") == 0)
+        return tag;
+
+    const char* src;
     if (source == Parser::ESource::NCBI)
-        q = "NCBI";
+        src = "NCBI";
     else if (source == Parser::ESource::EMBL)
-        q = "EMBL";
+        src = "EMBL";
     else if (source == Parser::ESource::DDBJ)
-        q = "DDBJ";
+        src = "DDBJ";
     else if (source == Parser::ESource::SPROT)
-        q = "SwissProt";
+        src = "SwissProt";
     else if (source == Parser::ESource::LANL)
-        q = "LANL";
+        src = "LANL";
     else if (source == Parser::ESource::Refseq)
-        q = "RefSeq";
+        src = "RefSeq";
     else
-        q = "Unknown";
+        src = "Unknown";
 
     if (source != Parser::ESource::NCBI && source != Parser::ESource::DDBJ &&
         source != Parser::ESource::EMBL && source != Parser::ESource::LANL &&
         source != Parser::ESource::Refseq) {
-        *p = ':';
-        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref={}\" for source \"{}\".", &val_buf[0], q);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref={}\" for source \"{}\".", db, src);
         return tag;
     }
 
+    const char** b;
     for (b = ObsoleteSourceDbxrefTag; *b; b++) {
-        if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
+        if (NStr::CompareNocase(*b, db) == 0) {
+            FtaErrPost(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref, "/db_xref type \"{}\" is obsolete.", db);
+            if (NStr::CompareNocase(db, "IFO") == 0) {
+                db = "NBRC";
+                qual->SetVal(db + ':' + t);
+            }
             break;
-    }
-
-    if (*b) {
-        FtaErrPost(SEV_WARNING, ERR_SOURCE_ObsoleteDbXref, "/db_xref type \"{}\" is obsolete.", &val_buf[0]);
-        if (NStr::CompareNocase(&val_buf[0], "IFO") == 0) {
-            string line("NBRC:");
-            line.append(p + 1);
-            qual->SetVal(line);
-
-            val_buf.assign(line.begin(), line.end());
-            val_buf.push_back(0);
-
-            p  = &val_buf[0] + 4;
-            *p = '\0';
         }
     }
 
     for (b = DENLRSourceDbxrefTag; *b; b++) {
-        if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
+        if (NStr::CompareNocase(*b, db) == 0)
             break;
     }
 
     if (! *b && (source == Parser::ESource::DDBJ || source == Parser::ESource::EMBL)) {
         for (b = DESourceDbxrefTag; *b; b++)
-            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, db) == 0)
                 break;
     }
     if (! *b && source == Parser::ESource::EMBL) {
         for (b = ESourceDbxrefTag; *b; b++)
-            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, db) == 0)
                 break;
     }
     if (! *b && (source == Parser::ESource::NCBI || source == Parser::ESource::LANL ||
-                       source == Parser::ESource::Refseq)) {
+                 source == Parser::ESource::Refseq)) {
         for (b = NLRSourceDbxrefTag; *b; b++) {
-            if (NStr::CompareNocase(*b, &val_buf[0]) == 0)
+            if (NStr::CompareNocase(*b, db) == 0)
                 break;
         }
     }
 
     if (! *b) {
-        *p = ':';
-        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref={}\" for source \"{}\".", &val_buf[0], q);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref={}\" for source \"{}\".", db, src);
         return tag;
     }
 
     tag.Reset(new CDbtag);
-    tag->SetDb(&val_buf[0]);
+    tag->SetDb(db);
 
-    *p++ = ':';
-    for (q = p; *p >= '0' && *p <= '9';)
-        p++;
-
-    if (*p == '\0' && *q != '0')
-        tag->SetTag().SetId(atoi(q));
+    if (t.find_first_not_of("0123456789") == string::npos)
+        tag->SetTag().SetId(NStr::StringToInt(t, NStr::fConvErr_NoThrow));
     else
-        tag->SetTag().SetStr(q);
+        tag->SetTag().SetStr(t);
 
     return tag;
 }
