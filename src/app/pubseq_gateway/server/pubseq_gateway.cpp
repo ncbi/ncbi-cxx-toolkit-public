@@ -409,6 +409,12 @@ int CPubseqGatewayApp::Run(void)
                        "Error during daemonization");
     }
 
+    // The config file cannot be reloaded while the server is up and running.
+    // So it is better to prepare the config request reply once and then use
+    // it.
+    m_ConfigReplyJson = x_PrepareConfigJson();
+
+
     bool    connected = OpenCass();
     bool    populated = false;
     if (connected) {

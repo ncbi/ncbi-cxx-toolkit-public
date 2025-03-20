@@ -60,8 +60,8 @@ class CTcpWorkersList
     friend class CTcpDaemon;
 
 private:
-    std::vector<std::unique_ptr<CTcpWorker>>    m_workers;
-    CTcpDaemon *                                m_daemon;
+    std::vector<std::unique_ptr<CTcpWorker>>    m_Workers;
+    CTcpDaemon *                                m_Daemon;
     std::function<void(CTcpDaemon &  daemon)>   m_on_watch_dog;
 
 protected:
@@ -71,7 +71,7 @@ public:
     static uv_key_t         s_thread_worker_key;
 
     CTcpWorkersList(CTcpDaemon *  daemon) :
-        m_daemon(daemon)
+        m_Daemon(daemon)
     {}
     ~CTcpWorkersList();
 
@@ -108,7 +108,6 @@ struct CTcpWorker
 {
     unsigned int                                        m_id;
     uv_thread_t                                         m_thread;
-    std::atomic_uint_fast16_t                           m_connection_count;
     std::atomic_bool                                    m_started;
     std::atomic_bool                                    m_shutdown;
     std::atomic_bool                                    m_shuttingdown;
@@ -118,7 +117,7 @@ struct CTcpWorker
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_connected_list;
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_free_list;
     struct uv_export_t *                                m_exp;
-    CTcpDaemon *                                        m_daemon;
+    CTcpDaemon *                                        m_Daemon;
     std::string                                         m_last_error;
     CHttpDaemon &                                       m_HttpDaemon;
     CHttpProto                                          m_protocol;
@@ -129,7 +128,6 @@ struct CTcpWorker
                CHttpDaemon &  http_daemon) :
         m_id(id),
         m_thread(0),
-        m_connection_count(0),
         m_started(false),
         m_shutdown(false),
         m_shuttingdown(false),
@@ -137,7 +135,7 @@ struct CTcpWorker
         m_joined(false),
         m_error(0),
         m_exp(exp),
-        m_daemon(daemon),
+        m_Daemon(daemon),
         m_HttpDaemon(http_daemon),
         m_protocol(m_HttpDaemon)
     {}
@@ -165,18 +163,40 @@ private:
 class CTcpDaemon
 {
 private:
-    std::string                     m_address;
-    unsigned short                  m_port;
-    unsigned short                  m_num_workers;
-    unsigned short                  m_backlog;
-    unsigned short                  m_max_connections;
+    std::string                     m_Address;
+    unsigned short                  m_Port;
+    unsigned short                  m_NumWorkers;
+    unsigned short                  m_Backlog;
+    size_t                          m_MaxConnHardLimit;
     size_t                          m_MaxConnSoftLimit;
     size_t                          m_MaxConnAlertLimit;
-    CTcpWorkersList *               m_workers;
-    std::atomic_uint_fast16_t       m_connection_count;
+    CTcpWorkersList *               m_Workers;
+
+    // This is a counter for 'good' connections which were established when the
+    // connection soft limit has not been reached yet
+    std::atomic_uint_fast16_t       m_BelowSoftLimitConnCount;
+
+    // This is a counter for 'bad' connections which were established when the
+    // connection soft limit has been reached.
+    // Note: the 'bad' connections may migrate to the 'good' pool if some
+    // 'good' connections were closed.
+    std::atomic_uint_fast16_t       m_AboveSoftLimitConnCount;
 
     friend class CTcpWorkersList;
     friend struct CTcpWorker;
+
+public:
+    size_t NumOfConnections(void) const
+    { return m_BelowSoftLimitConnCount + m_AboveSoftLimitConnCount; }
+
+    size_t GetBelowSoftLimitConnCount(void) const
+    { return m_BelowSoftLimitConnCount; }
+
+    void MigrateConnectionFromAboveLimitToBelowLimit(void)
+    {
+        ++m_BelowSoftLimitConnCount;
+        --m_AboveSoftLimitConnCount;
+    }
 
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);
@@ -194,50 +214,52 @@ private:
     static void s_OnMainSigWinch(uv_signal_t *  /* req */, int  /* signum */)
     { PSG_MESSAGE("SIGWINCH received. Ignoring."); }
 
-    bool ClientConnected(void);
-    bool ClientDisconnected(void);
-
-    bool DoesConnectionExceedSoftLimit(void) const
-    { return m_connection_count > m_MaxConnSoftLimit; }
-
-    bool DoesConnectionExceedAlertLimit(void) const
-    { return m_connection_count > m_MaxConnAlertLimit; }
-
-    uint16_t GetMaxAlertConnections(void) const
+    size_t GetMaxConnectionsAlertLimit(void) const
     { return m_MaxConnAlertLimit; }
 
+    size_t GetMaxConnectionsHardLimit(void) const
+    { return m_MaxConnHardLimit; }
 
+    size_t GetMaxConnectionsSoftLimit(void) const
+    { return m_MaxConnSoftLimit; }
 
+    void IncrementBelowSoftLimitConnCount(void)
+    { ++m_BelowSoftLimitConnCount; }
+
+    void IncrementAboveSoftLimitConnCount(void)
+    { ++m_AboveSoftLimitConnCount; }
+
+    void DecrementBelowSoftLimitConnCount(void)
+    { --m_BelowSoftLimitConnCount; }
+
+    void DecrementAboveSoftLimitConnCount(void)
+    { --m_AboveSoftLimitConnCount; }
 
 protected:
     static constexpr const char IPC_PIPE_NAME[] = "tcp_daemon_startup_rpc";
 
 public:
-    CTcpDaemon(const std::string &  Address, unsigned short  Port,
-               unsigned short  NumWorkers, unsigned short  BackLog,
-               unsigned short  MaxConnections,
-               size_t  MaxConnectionsSoftLimit,
-               size_t  MaxConnectionsAlertLimit) :
-        m_address(Address),
-        m_port(Port),
-        m_num_workers(NumWorkers),
-        m_backlog(BackLog),
-        m_max_connections(MaxConnections),
-        m_MaxConnSoftLimit(MaxConnectionsSoftLimit),
-        m_MaxConnAlertLimit(MaxConnectionsAlertLimit),
-        m_workers(nullptr),
-        m_connection_count(0)
+    CTcpDaemon(const std::string &  address, unsigned short  port,
+               unsigned short  num_workers, unsigned short  backlog,
+               size_t  max_connections_hard_limit,
+               size_t  max_connections_soft_limit,
+               size_t  max_connections_alert_limit) :
+        m_Address(address),
+        m_Port(port),
+        m_NumWorkers(num_workers),
+        m_Backlog(backlog),
+        m_MaxConnHardLimit(max_connections_hard_limit),
+        m_MaxConnSoftLimit(max_connections_soft_limit),
+        m_MaxConnAlertLimit(max_connections_alert_limit),
+        m_Workers(nullptr),
+        m_BelowSoftLimitConnCount(0),
+        m_AboveSoftLimitConnCount(0)
     {}
 
     CUvLoop * m_UVLoop;
 
     void StopDaemonLoop(void);
     bool OnRequest(CHttpProto **  http_proto);
-    uint16_t NumOfConnections(void) const;
-    unsigned short GetMaxConnections(void) const
-    { return m_max_connections; }
-    size_t GetMaxConnectionsSoftLimit(void) const
-    { return m_MaxConnSoftLimit; }
 
     void Run(CHttpDaemon &  http_daemon,
              std::function<void(CTcpDaemon &  daemon)>

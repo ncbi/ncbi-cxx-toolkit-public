@@ -78,6 +78,8 @@ public:
     void Run(std::function<void(CTcpDaemon &)> on_watch_dog = nullptr);
     h2o_globalconf_t *  HttpCfg(void);
     uint16_t NumOfConnections(void) const;
+    size_t GetBelowSoftLimitConnCount(void) const;
+    void MigrateConnectionFromAboveLimitToBelowLimit(void);
 
 private:
     std::unique_ptr<CTcpDaemon>     m_TcpDaemon;

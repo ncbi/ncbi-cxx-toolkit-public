@@ -1147,6 +1147,49 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
 static string   kConfigurationFilePath = "ConfigurationFilePath";
 static string   kConfiguration = "Configuration";
 
+string CPubseqGatewayApp::x_PrepareConfigJson(void)
+{
+    CNcbiOstrstream             conf;
+    CNcbiOstrstreamToString     converter(conf);
+
+    GetConfig().Write(conf);
+
+    CJsonNode   conf_info(CJsonNode::NewObjectNode());
+    conf_info.SetString(kConfigurationFilePath, GetConfigPath());
+
+    // Need to hide the [ADMIN]/auth_token
+    string          conf_file_content = string(converter);
+    vector<string>  lines;
+    NStr::Split(string(converter), "\n", lines);
+    if (!lines.empty()) {
+        for (size_t  k = 0; k < lines.size(); ++k) {
+            auto    pos = lines[k].find_first_not_of(" \n\r\t");
+            string  l_stripped;
+            if (pos == string::npos) {
+                l_stripped = lines[k];
+            } else {
+                l_stripped = lines[k].substr(pos);
+            }
+
+            if (strncasecmp(l_stripped.c_str(), "auth_token", 10) == 0) {
+                lines[k] = "auth_token=*****";
+            }
+            if (k == 0) {
+                conf_file_content = lines[k];
+            } else {
+                conf_file_content += lines[k];
+            }
+            if (k != lines.size() - 1) {
+                conf_file_content += "\n";
+            }
+        }
+    }
+
+    conf_info.SetString(kConfiguration, conf_file_content);
+    return conf_info.Repr(CJsonNode::fStandardJson);
+}
+
+
 int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
                                 shared_ptr<CPSGS_Reply>  reply)
 {
@@ -1162,48 +1205,9 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
             return 0;
         }
 
-        CNcbiOstrstream             conf;
-        CNcbiOstrstreamToString     converter(conf);
-
-        GetConfig().Write(conf);
-
-        CJsonNode   conf_info(CJsonNode::NewObjectNode());
-        conf_info.SetString(kConfigurationFilePath, GetConfigPath());
-
-        // Need to hide the [ADMIN]/auth_token
-        string          conf_file_content = string(converter);
-        vector<string>  lines;
-        NStr::Split(string(converter), "\n", lines);
-        if (!lines.empty()) {
-            for (size_t  k = 0; k < lines.size(); ++k) {
-                auto    pos = lines[k].find_first_not_of(" \n\r\t");
-                string  l_stripped;
-                if (pos == string::npos) {
-                    l_stripped = lines[k];
-                } else {
-                    l_stripped = lines[k].substr(pos);
-                }
-
-                if (strncasecmp(l_stripped.c_str(), "auth_token", 10) == 0) {
-                    lines[k] = "auth_token=*****";
-                }
-                if (k == 0) {
-                    conf_file_content = lines[k];
-                } else {
-                    conf_file_content += lines[k];
-                }
-                if (k != lines.size() - 1) {
-                    conf_file_content += "\n";
-                }
-            }
-        }
-
-        conf_info.SetString(kConfiguration, conf_file_content);
-        string      content = conf_info.Repr(CJsonNode::fStandardJson);
-
         reply->SetContentType(ePSGS_JsonMime);
-        reply->SetContentLength(content.size());
-        reply->SendOk(content.data(), content.size(), false);
+        reply->SetContentLength(m_ConfigReplyJson.size());
+        reply->SendOk(m_ConfigReplyJson.data(), m_ConfigReplyJson.size(), false);
 
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e200_Ok, reply->GetBytesSent());
@@ -2245,14 +2249,17 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
         // a chance that now the number of connections became less than at the
         // time of establishing the connection
 
-        size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
-        if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
-            // The number of connections dropped so can continue as usual.
+        size_t      current_below_limit_conn_num = m_TcpDaemon->GetBelowSoftLimitConnCount();
+        if (current_below_limit_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
+            // The number of 'good' connections dropped so can continue as usual.
             // Also, the connection soft limit flag should be reset
             reply->ResetExceedSoftLimitFlag();
+            m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumConnBadToGoodMigration);
             return false;
         }
 
+        size_t  current_conn_num = m_TcpDaemon->NumOfConnections();
         string  msg = "Too many client connections (currently: " +
                       to_string(current_conn_num) +
                       "; at the time of establishing: " +
@@ -2265,6 +2272,7 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
                                          ePSGS_ConnectionExceedsSoftLimit,
                                          eDiag_Error);
         m_Alerts.Register(ePSGS_TcpConnSoftLimitExceeded, msg);
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit);
         PSG_ERROR(msg);
         return true;
     }
@@ -2281,14 +2289,17 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
         // a chance that now the number of connections became less than at the
         // time of establishing the connection
 
-        size_t      current_conn_num = m_TcpDaemon->NumOfConnections();
-        if (current_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
-            // The number of connections dropped so can continue as usual.
+        size_t      current_below_limit_conn_num = m_TcpDaemon->GetBelowSoftLimitConnCount();
+        if (current_below_limit_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
+            // The number of 'good' connections dropped so can continue as usual.
             // Also, the connection soft limit flag should be reset
             reply->ResetExceedSoftLimitFlag();
+            m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+            m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumConnBadToGoodMigration);
             return false;
         }
 
+        size_t  current_conn_num = m_TcpDaemon->NumOfConnections();
         string  msg = "Too many client connections (currently: " +
                       to_string(current_conn_num) +
                       "; at the time of establishing: " +
@@ -2314,7 +2325,9 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
                                  reply, nullptr);
         }
 
-        PSG_WARNING(msg);
+        m_Alerts.Register(ePSGS_TcpConnSoftLimitExceeded, msg);
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit);
+        PSG_ERROR(msg);
         return true;
     }
     return false;

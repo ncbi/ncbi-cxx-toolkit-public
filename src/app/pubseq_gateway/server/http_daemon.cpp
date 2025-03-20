@@ -128,6 +128,18 @@ uint16_t CHttpDaemon::NumOfConnections(void) const
 }
 
 
+size_t CHttpDaemon::GetBelowSoftLimitConnCount(void) const
+{
+    return m_TcpDaemon->GetBelowSoftLimitConnCount();
+}
+
+
+void CHttpDaemon::MigrateConnectionFromAboveLimitToBelowLimit(void)
+{
+    m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+}
+
+
 int CHttpDaemon::s_OnHttpRequest(h2o_handler_t *  self, h2o_req_t *  req)
 {
     try {

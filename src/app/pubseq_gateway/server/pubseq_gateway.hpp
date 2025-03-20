@@ -458,6 +458,7 @@ private:
 private:
     void x_FixIntrospectionVersion(void);
     void x_FixIntrospectionBuildDate(void);
+    string x_PrepareConfigJson(void);
 
     void x_InsufficientArguments(shared_ptr<CPSGS_Reply>  reply,
                                  const psg_time_point_t &  now,
@@ -553,6 +554,9 @@ private:
     // Serialized JSON introspection message
     string                              m_HelpMessageJson;
     string                              m_HelpMessageHtml;
+
+    // Serialized JSON for the config request
+    string                              m_ConfigReplyJson;
 
     // Requests dispatcher
     unique_ptr<CPSGS_Dispatcher>        m_RequestDispatcher;

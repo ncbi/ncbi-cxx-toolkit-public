@@ -59,14 +59,34 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "NoProcessorInstantiated", "No processor instantiated counter",
             "The number of requests when no processors were instantiated");
+    m_Counters[ePSGS_UvTcpInitFailure] =
+        new SCounterInfo(
+            "UvTcpInitFailure", "libuv failure to init a tcp handler counter",
+            "The number of times uv_tcp_init() call failed");
     m_Counters[ePSGS_AcceptFailure] =
         new SCounterInfo(
             "AcceptFailure", "TCP socket accept failure",
             "The number of times a TCP accept failed");
+    m_Counters[ePSGS_NumConnHardLimitExceeded] =
+        new SCounterInfo(
+            "NumConnHardLimitExceeded", "Connection exceeded hard limit counter",
+            "The number of times a new connection established when a connection hard limit is already reached.");
+    m_Counters[ePSGS_NumConnSoftLimitExceeded] =
+        new SCounterInfo(
+            "NumConnSoftLimitExceeded", "Connection exceeded soft limit counter",
+            "The number of times a new connection established when a connection soft limit is already reached.");
     m_Counters[ePSGS_NumConnAlertLimitExceeded] =
         new SCounterInfo(
-            "NumConnAlertLimitExceeded", "Number of connections exceeded alert limit counter",
+            "NumConnAlertLimitExceeded", "Connection exceeded alert limit counter",
             "The number of times a new connection established when a connection alert limit is already reached.");
+    m_Counters[ePSGS_NumReqRefusedDueToSoftLimit] =
+        new SCounterInfo(
+            "NumReqRefusedDueToSoftLimit", "Requests refused ue to connection soft limit",
+            "The number of times a request was refused (503) due to it came over a connection which was established when a soft limit is already reached.");
+    m_Counters[ePSGS_NumConnBadToGoodMigration] =
+        new SCounterInfo(
+            "NumConnBadToGoodMigration", "Connection migration from 'bad' to 'good' counter",
+            "The number of times a connection migrated from 'bad' to 'good'");
     m_Counters[ePSGS_FrameworkUnknownError] =
         new SCounterInfo(
             "FrameworkUnknownError", "Framework unknown error counter",

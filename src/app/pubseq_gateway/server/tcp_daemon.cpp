@@ -108,7 +108,7 @@ CTcpWorkersList::~CTcpWorkersList()
     PSG_INFO("CTcpWorkersList::~()>>");
     JoinWorkers();
     PSG_INFO("CTcpWorkersList::~()<<");
-    m_daemon->m_workers = nullptr;
+    m_Daemon->m_Workers = nullptr;
 }
 
 
@@ -120,11 +120,11 @@ void CTcpWorkersList::Start(struct uv_export_t *  exp,
     int         err_code;
 
     for (unsigned int  i = 0; i < nworkers; ++i) {
-        m_workers.emplace_back(new CTcpWorker(i + 1, exp,
-                                              m_daemon, http_daemon));
+        m_Workers.emplace_back(new CTcpWorker(i + 1, exp,
+                                              m_Daemon, http_daemon));
     }
 
-    for (auto &  it: m_workers) {
+    for (auto &  it: m_Workers) {
         CTcpWorker *        worker = it.get();
         err_code = uv_thread_create(&worker->m_thread, s_WorkerExecute,
                                     static_cast<void*>(worker));
@@ -133,13 +133,13 @@ void CTcpWorkersList::Start(struct uv_export_t *  exp,
                         "uv_thread_create failed", err_code);
     }
     m_on_watch_dog = OnWatchDog;
-    m_daemon->m_workers = this;
+    m_Daemon->m_Workers = this;
 }
 
 
 bool CTcpWorkersList::AnyWorkerIsRunning(void)
 {
-    for (auto & it : m_workers)
+    for (auto & it : m_Workers)
         if (!it->m_shutdown)
             return true;
     return false;
@@ -148,7 +148,7 @@ bool CTcpWorkersList::AnyWorkerIsRunning(void)
 
 void CTcpWorkersList::KillAll(void)
 {
-    for (auto & it : m_workers)
+    for (auto & it : m_Workers)
         it->Stop();
 }
 
@@ -161,7 +161,7 @@ void CTcpWorkersList::s_OnWatchDog(uv_timer_t *  handle)
     if (g_ShutdownData.m_ShutdownRequested) {
         size_t      proc_groups = GetActiveProcGroupCounter();
         if (proc_groups == 0) {
-            self->m_daemon->StopDaemonLoop();
+            self->m_Daemon->StopDaemonLoop();
         } else {
             if (psg_clock_t::now() >= g_ShutdownData.m_Expired) {
                 if (g_ShutdownData.m_CancelSent) {
@@ -187,7 +187,7 @@ void CTcpWorkersList::s_OnWatchDog(uv_timer_t *  handle)
         uv_stop(handle->loop);
     } else {
         if (self->m_on_watch_dog) {
-            self->m_on_watch_dog(*self->m_daemon);
+            self->m_on_watch_dog(*self->m_Daemon);
         }
         CollectGarbage();
     }
@@ -197,7 +197,7 @@ void CTcpWorkersList::s_OnWatchDog(uv_timer_t *  handle)
 void CTcpWorkersList::JoinWorkers(void)
 {
     int         err_code;
-    for (auto & it : m_workers) {
+    for (auto & it : m_Workers) {
         CTcpWorker *    worker = it.get();
         if (!worker->m_joined) {
             worker->m_joined = true;
@@ -257,7 +257,7 @@ void CTcpWorker::Execute(void)
 
         m_internal->m_listener.data = this;
         err_code = uv_listen(reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
-                             m_daemon->m_backlog, s_OnTcpConnection);
+                             m_Daemon->m_Backlog, s_OnTcpConnection);
         if (err_code != 0)
             NCBI_THROW2(CPubseqGatewayUVException, eUvListenFailure,
                         "uv_listen failed", err_code);
@@ -327,24 +327,29 @@ void CTcpWorker::Execute(void)
         try {
             int         err_code;
 
-            if (m_internal->m_listener.type != 0)
+            if (m_internal->m_listener.type != 0) {
                 uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_listener),
                          NULL);
+            }
 
             CloseAll();
 
-            while (m_connection_count > 0)
+            while (!m_connected_list.empty()) {
                 uv_run(m_internal->m_loop.Handle(), UV_RUN_NOWAIT);
+            }
 
-            if (m_internal->m_async_stop.type != 0)
+            if (m_internal->m_async_stop.type != 0) {
                 uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_async_stop),
                          NULL);
-            if (m_internal->m_async_work.type != 0)
+            }
+            if (m_internal->m_async_work.type != 0) {
                 uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_async_work),
                          NULL);
-            if (m_internal->m_timer.type != 0)
+            }
+            if (m_internal->m_timer.type != 0) {
                 uv_close(reinterpret_cast<uv_handle_t*>(&m_internal->m_timer),
                          NULL);
+            }
 
             m_protocol.ThreadStop();
 
@@ -396,15 +401,21 @@ void CTcpWorker::CloseAll(void)
 
 void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
 {
-    m_daemon->ClientDisconnected();
-    --m_connection_count;
-
     uv_tcp_t *tcp = reinterpret_cast<uv_tcp_t*>(handle);
-    for (auto it = m_connected_list.begin();
-         it != m_connected_list.end(); ++it) {
+    for (auto it = m_connected_list.begin(); it != m_connected_list.end(); ++it) {
         if (tcp == &std::get<0>(*it)) {
+            CHttpConnection *   http_conn = & get<1>(*it);
+
+            // Need to decrement a connection counter depending on the
+            // connection flag
+            if (http_conn->GetExceedSoftLimitFlag()) {
+                m_Daemon->DecrementAboveSoftLimitConnCount();
+            } else {
+                m_Daemon->DecrementBelowSoftLimitConnCount();
+            }
+
             m_protocol.OnClientClosedConnection(reinterpret_cast<uv_stream_t*>(handle),
-                                                & std::get<1>(*it));
+                                                http_conn);
             // NOTE: it is important to reset for reuse before moving
             // between the lists. The CHttpConnection instance holds a list
             // of the pending requests. Sometimes there are a few items in
@@ -416,7 +427,7 @@ void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
             // earliest. On top of it the clearing of the pending requests
             // process will notify the high level dispatcher that the
             // processors group can be removed.
-            std::get<1>(*it).ResetForReuse();
+            http_conn->ResetForReuse();
 
             // Move the closed connection instance to the free list for
             // reuse later.
@@ -510,6 +521,7 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
               " (" << worker << ")");
 }
 
+
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
     if (m_free_list.empty()) {
@@ -532,7 +544,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_UvTcpInitFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
         DismissErrorRequestContext(context,
@@ -546,11 +558,24 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     tcp->data = this;
     m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
 
+    CHttpConnection *   http_conn = & get<1>(*it);
+    size_t              num_connections = m_Daemon->NumOfConnections();
+
     err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
     if (err_code != 0) {
+        // Failure to execute accept(). So the connection will be closed by
+        // the server. The closing is done asynchronously. The closing procedure
+        // will decrease one of the connection counters (in this case it should be
+        // the 'bad' connection counter) so:
+        // - the connection needs to be flagged as 'bad'
+        // - the bad counter needs to be incremented
+        m_Daemon->IncrementAboveSoftLimitConnCount();
+        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
 
-        PSG_ERROR("TCP connection accept failed; uv_accept() error code: " << err_code);
+        PSG_ERROR("TCP connection accept failed; uv_accept() error code: " +
+                  to_string(err_code));
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
@@ -562,18 +587,43 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
-    ++m_connection_count;
+    if (m_shuttingdown) {
+        // We are in shutting down process. The connection will be closed by
+        // the server. The closing is done asynchronously. The closing procedure
+        // will decrease one of the connection counters (in this case it should be
+        // the 'bad' connection counter) so:
+        // - the connection needs to be flagged as 'bad'
+        // - the bad counter needs to be incremented
+        // Technically maintaining the TCP counter value correct is not
+        // required here however it is a bit cleaner, so let's do it.
+        m_Daemon->IncrementAboveSoftLimitConnCount();
+        http_conn->SetExceedSoftLimitFlag(true, num_connections);
 
-    bool b = m_daemon->ClientConnected();
-    if (!b) {
+        uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+        return;
+    }
+
+    size_t  conn_hard_limit = m_Daemon->GetMaxConnectionsHardLimit();
+
+    if (num_connections >= conn_hard_limit) {
+        // More than the hard limit of connections. So the connection will be
+        // closed by the server.
+        // The closing is done asynchronously. The closing procedure will
+        // decrease one of the connection counters (in this case it should be
+        // the 'bad' connection counter) so:
+        // - the connection needs to be flagged as 'bad'
+        // - the bad counter needs to be incremented
+        m_Daemon->IncrementAboveSoftLimitConnCount();
+        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
 
         string      err_msg = "TCP Connection accept failed; "
                               "too many connections (maximum: " +
-                              to_string(m_daemon->GetMaxConnections()) + ")";
+                              to_string(conn_hard_limit) + ")";
         PSG_ERROR(err_msg);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnHardLimitExceeded);
         app->GetCounters().IncrementRequestStopCounter(503);
         app->GetAlerts().Register(ePSGS_TcpConnHardLimitExceeded, err_msg);
 
@@ -584,26 +634,22 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
-    if (m_shuttingdown) {
-        uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
-        return;
-    }
+    size_t  conn_alert_limit = m_Daemon->GetMaxConnectionsAlertLimit();
+    size_t  conn_soft_limit = m_Daemon->GetMaxConnectionsSoftLimit();
+    size_t  num_below_soft_limit_connections = m_Daemon->GetBelowSoftLimitConnCount();
 
-
-    CHttpConnection *   http_conn = & get<1>(*it);
-
-    bool    exceed_alert_limit = m_daemon->DoesConnectionExceedAlertLimit();
-    bool    exceed_soft_limit = m_daemon->DoesConnectionExceedSoftLimit();
+    bool    exceed_alert_limit = (num_connections >= conn_alert_limit);
+    bool    exceed_soft_limit = (num_below_soft_limit_connections >= conn_soft_limit);
 
     if (exceed_alert_limit && ! exceed_soft_limit) {
         // The only connection alert limit is exceeded. A server alert should
         // be triggered and a log message should be produced
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
         string      warn_msg = "Number of client connections (" +
-                               to_string(m_daemon->NumOfConnections()) +
+                               to_string(num_connections) +
                                ") is getting too high, "
                                "exceeds the alert threshold (" +
-                               to_string(m_daemon->GetMaxAlertConnections()) + ")";
+                               to_string(conn_alert_limit) + ")";
 
         PSG_WARNING(warn_msg);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -614,8 +660,18 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         DismissErrorRequestContext(context, CRequestStatus::e100_Continue, 0);
     }
 
-    http_conn->SetExceedSoftLimitFlag(exceed_soft_limit,
-                                      m_daemon->NumOfConnections());
+    if (exceed_soft_limit) {
+        // Need to count as a 'bad' connection
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnSoftLimitExceeded);
+        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+        m_Daemon->IncrementAboveSoftLimitConnCount();
+    } else {
+        // Need to count as a 'good' connection
+        http_conn->SetExceedSoftLimitFlag(false, num_connections);
+        m_Daemon->IncrementBelowSoftLimitConnCount();
+    }
+
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),
                                http_conn, s_OnClientClosed);
 }
@@ -655,20 +711,6 @@ void CTcpDaemon::s_OnMainSigTerm(uv_signal_t *  /* req */, int  /* signum */)
 }
 
 
-bool CTcpDaemon::ClientConnected(void)
-{
-    uint16_t n = ++m_connection_count;
-    return n < m_max_connections;
-}
-
-
-bool CTcpDaemon::ClientDisconnected(void)
-{
-    uint16_t n = --m_connection_count;
-    return n < m_max_connections;
-}
-
-
 void CTcpDaemon::StopDaemonLoop(void)
 {
     m_UVLoop->Stop();
@@ -690,21 +732,15 @@ bool CTcpDaemon::OnRequest(CHttpProto **  http_proto)
 }
 
 
-uint16_t CTcpDaemon::NumOfConnections(void) const
-{
-    return m_connection_count;
-}
-
-
 void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
                      function<void(CTcpDaemon &  daemon)>  OnWatchDog)
 {
     int         rc;
 
-    if (m_address.empty())
+    if (m_Address.empty())
         NCBI_THROW(CPubseqGatewayException, eAddressEmpty,
                    "Failed to start daemon: address is empty");
-    if (m_port == 0)
+    if (m_Port == 0)
         NCBI_THROW(CPubseqGatewayException, ePortNotSpecified,
                    "Failed to start daemon: port is not specified");
 
@@ -741,18 +777,18 @@ void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
 
 
         CUvTcp          listener(loop.Handle());
-        listener.Bind(m_address.c_str(), m_port);
+        listener.Bind(m_Address.c_str(), m_Port);
 
         struct uv_export_t *    exp = NULL;
         rc = uv_export_start(loop.Handle(),
                              reinterpret_cast<uv_stream_t*>(listener.Handle()),
-                             IPC_PIPE_NAME, m_num_workers, &exp);
+                             IPC_PIPE_NAME, m_NumWorkers, &exp);
         if (rc)
             NCBI_THROW2(CPubseqGatewayUVException, eUvExportStartFailure,
                         "uv_export_start failed", rc);
 
         try {
-            workers.Start(exp, m_num_workers, http_daemon, OnWatchDog);
+            workers.Start(exp, m_NumWorkers, http_daemon, OnWatchDog);
         } catch (const exception &  exc) {
             uv_export_close(exp);
             throw;
