@@ -2275,9 +2275,8 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     bool  i;
     Int2  ver_num;
 
-    /* first ID line, 2nd token
-     */
-    bptr     = PointToNextToken(entry.mOffset + ParFlat_COL_DATA_SP);
+    bptr = entry.mOffset + ParFlat_COL_DATA_SP;
+    PointToNextToken(bptr); /* first ID line, 2nd token */
     reviewed = StringEquNI(bptr, "reviewed", 8);
     if (reviewed || StringEquNI(bptr, "standard", 8)) {
         spb->SetClass(CSP_block::eClass_standard);

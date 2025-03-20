@@ -99,7 +99,7 @@ string GetBlkDataReplaceNewLine(string_view, Uint2 indent);
 void CleanTailNoneAlphaChar(char* str);
 void CleanTailNoneAlphaCharInString(std::string& str);
 
-char* PointToNextToken(char* ptr);
+void PointToNextToken(char*& ptr);
 
 /* Return the current token which ptr points to and ptr will points to
  * next token after the routine return.
