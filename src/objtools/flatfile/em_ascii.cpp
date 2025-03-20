@@ -478,7 +478,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             }
         }
 
-        bptr = PointToNextToken(bptr); /* bptr points to primary_identifier */
+        PointToNextToken(bptr); /* bptr points to primary_identifier */
         p    = SrchTheChar(bptr, eptr, '\n');
         ptr  = SrchTheChar(bptr, eptr, ';');
 
@@ -488,8 +488,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
             id.assign(bptr, ptr);
             CleanTailNoneAlphaCharInString(id);
 
-            bptr = PointToNextToken(ptr); /* points to
-                                                   secondary_identifier */
+            bptr = ptr;
+            PointToNextToken(bptr); /* points to secondary_identifier */
         }
         if (p) {
             id1.assign(bptr, p);
@@ -670,7 +670,7 @@ static void GetReleaseInfo(const DataBlk& entry)
     if (! bptr)
         return;
 
-    bptr = PointToNextToken(bptr); /* bptr points to next token */
+    PointToNextToken(bptr); /* bptr points to next token */
 
     id.SetVersion(NStr::StringToInt(bptr, NStr::fAllowTrailingSymbols));
 }
@@ -854,21 +854,20 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
 
     ibp = pp->entrylist[pp->curindx];
 
-    /* p points to 2nd token
-     */
-    p = PointToNextToken(entry.mOffset + ParFlat_COL_DATA_EMBL);
-    p = PointToNextToken(p); /* p points to 3rd token */
+    p = entry.mOffset + ParFlat_COL_DATA_EMBL;
+    PointToNextToken(p); /* p points to 2nd token */
+    PointToNextToken(p); /* p points to 3rd token */
 
     if (ibp->embl_new_ID)
-        p = PointToNextToken(p);
+        PointToNextToken(p);
 
     /* some entries have "circular" before molecule type in embl
      */
     if (StringEquNI(p, "circular", 8)) {
         inst.SetTopology(CSeq_inst::eTopology_circular);
-        p = PointToNextToken(p);
+        PointToNextToken(p);
     } else if (ibp->embl_new_ID)
-        p = PointToNextToken(p);
+        PointToNextToken(p);
 
     r = StringChr(p, ';');
     if (r)
@@ -966,9 +965,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     ibp = pp->entrylist[pp->curindx];
 
-    /* bptr points to 2nd token
-     */
-    bptr = PointToNextToken(entry.mOffset + ParFlat_COL_DATA_EMBL);
+    bptr = entry.mOffset + ParFlat_COL_DATA_EMBL;
+    PointToNextToken(bptr); /* bptr points to 2nd token */
 
     if (ibp->embl_new_ID == false) {
         if (StringEquNI(bptr, "standard", 8)) {
@@ -1241,14 +1239,14 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     if (is_htc_div) {
         char* p;
         p = entry.mOffset + ParFlat_COL_DATA_EMBL; /* p points to 1st token */
-        p = PointToNextToken(p);                   /* p points to 2nd token */
-        p = PointToNextToken(p);                   /* p points to 3rd token */
+        PointToNextToken(p);                       /* p points to 2nd token */
+        PointToNextToken(p);                       /* p points to 3rd token */
 
         if (ibp->embl_new_ID) {
-            p = PointToNextToken(p);
-            p = PointToNextToken(p);
+            PointToNextToken(p);
+            PointToNextToken(p);
         } else if (StringEquNI(p, "circular", 8))
-            p = PointToNextToken(p); /* p points to 4th token */
+            PointToNextToken(p); /* p points to 4th token */
 
         if (StringEquN(p + 1, "s-", 2))
             p += 3;
@@ -1423,13 +1421,13 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     ibp  = pp->entrylist[pp->curindx];
     bptr = entry.mOffset + ParFlat_COL_DATA_EMBL; /* bptr points to 1st
                                                            token */
-    bptr = PointToNextToken(bptr);                /* bptr points to 2nd token */
-    bptr = PointToNextToken(bptr);                /* bptr points to 3rd token */
+    PointToNextToken(bptr);                /* bptr points to 2nd token */
+    PointToNextToken(bptr);                /* bptr points to 3rd token */
 
     if (StringEquNI(bptr, "circular", 8) || ibp->embl_new_ID)
-        bptr = PointToNextToken(bptr); /* bptr points to 4th token */
+        PointToNextToken(bptr); /* bptr points to 4th token */
     if (ibp->embl_new_ID)
-        bptr = PointToNextToken(bptr); /* bptr points to 5th token */
+        PointToNextToken(bptr); /* bptr points to 5th token */
 
     r = StringChr(bptr, ';');
     if (r)

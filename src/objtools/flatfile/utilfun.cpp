@@ -625,7 +625,7 @@ void CleanTailNoneAlphaChar(char* str)
 }
 
 /**********************************************************/
-char* PointToNextToken(char* ptr)
+void PointToNextToken(char*& ptr)
 {
     if (ptr) {
         while (*ptr != ' ')
@@ -633,7 +633,6 @@ char* PointToNextToken(char* ptr)
         while (*ptr == ' ')
             ptr++;
     }
-    return (ptr);
 }
 
 /**********************************************************

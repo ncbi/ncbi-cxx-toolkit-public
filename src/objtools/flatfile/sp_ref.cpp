@@ -316,8 +316,9 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     } else if (StringEquNI("THESIS", str, 6)) {
         prbp->reftype = ParFlat_ReftypeThesis;
 
-        ptr1       = str;
-        ptr2       = PointToNextToken(ptr1);
+        ptr1 = str;
+        ptr2 = ptr1;
+        PointToNextToken(ptr2);
         token      = GetTheCurrentToken(&ptr2); /* token = (year), */
         prbp->year = ParseYear(token);
         MemFree(token);

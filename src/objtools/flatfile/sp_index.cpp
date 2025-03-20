@@ -117,7 +117,6 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
     IndexblkPtr   entry;
     Int4          indx = 0;
-    char*         p;
 
     bool reviewed;
 
@@ -146,7 +145,8 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             after_RN = false;
             after_SQ = false;
 
-            p        = PointToNextToken(finfo.str + ParFlat_COL_DATA_SP);
+            char* p = finfo.str + ParFlat_COL_DATA_SP;
+            PointToNextToken(p);
             reviewed = StringEquNI(p, "reviewed", 8);
 
             while (! end_of_file &&
