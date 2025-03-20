@@ -161,12 +161,14 @@ MAKE_CONST_MAP(kMapTagToHTML, ct::tagStrNocase, ct::tagStrNocase,
     { "REPR_MICROBIAL_GENOMES_DISPL", "<div><@lnk@>-<span class=\"rlLink\">Genomic Sequence</span></div>"},          
     //kStructureUrl
     { "STRUCTURE_URL",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@queryID@>&command=view+annotations;set+annotation+cdd;set+annotation+site;set+view+detailed+view;select+chain+<@label@>;show+selection&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },
+    { "STRUCTURE_SINGLE_CHAIN_URL", "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?mmdbid=5FN2&command=select%20sets%20!<@chainID@>;%20show%20selection\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },
     //kStructureImg
     { "STRUCTURE_IMG",  "<img border=0 height=16 width=16 src=\"https://www.ncbi.nlm.nih.gov/Structure/cblast/str_link.gif\" alt=\"Structure related to <@label@>\">" },  
     //kStructureDispl
     { "STRUCTURE_DISPL",  "<div><@lnk@>-<span class=\"rlLink\">3D structure displays</span></div>" },  
     //kStructureAlphaFoldUrl
     { "STRUCTURE_ALPHA_FOLD",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@queryID@>&command=view+annotations;set+annotation+cdd;set+annotation+site;set+view+detailed+view;select+chain+!A;show+selection&log$=<@log@>&blast_rank=<@blast_rank@>&RID=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },          
+    { "STRUCTURE_ALPHA_FOLD_NO_RID",  "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/icn3d/full.html?from=blast&blast_rep_id=<@label@>&query_id=<@label@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>" },              
     //kUnigeneUrl
     { "UNIGEN",  "<a class=\"gene\" term=\"<@uid@>\" href=\"https://www.ncbi.nlm.nih.gov/unigene/?<@termParam@>RID=<@rid@>&log$=unigene<@log@>&blast_rank=<@blast_rank@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a><input type=\"hidden\" value=\"<@label@>\" />" },      
     //kUnigeneImg
@@ -2257,15 +2259,15 @@ static list<string> s_GetLinkoutUrl(int linkout,
     }
     if (linkout & eStructure){
         CSeq_id seqID(firstAcc);
-        url_link = CAlignFormatUtil::MapTagToHTML("STRUCTURE_URL");
-                 
+        
         string linkTitle;
         if(seqID.Which() == CSeq_id::e_Pdb) {
+            url_link = !linkoutInfo.rid.empty() ? CAlignFormatUtil::MapTagToHTML("STRUCTURE_URL") : CAlignFormatUtil::MapTagToHTML("STRUCTURE_SINGLE_CHAIN_URL");
             lnk_displ = textLink ? "Structure" : CAlignFormatUtil::MapTagToHTML("STRUCTURE_IMG");
             linkTitle = " title=\"View 3D structure <@label@>\"";
         }
-        else {
-            url_link = CAlignFormatUtil::MapTagToHTML("STRUCTURE_ALPHA_FOLD");
+        else {            
+            url_link = !linkoutInfo.rid.empty() ? CAlignFormatUtil::MapTagToHTML("STRUCTURE_ALPHA_FOLD") : CAlignFormatUtil::MapTagToHTML("STRUCTURE_ALPHA_FOLD_NO_RID");
             lnk_displ = textLink ? "AlphaFold Structure" : CAlignFormatUtil::MapTagToHTML("STRUCTURE_IMG");
             linkTitle = " title=\"View AlphaFold 3D structure <@label@>\"";
         }
@@ -2275,6 +2277,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         string molID,chainID;
         NStr::SplitInTwo(firstAcc,"_",molID,chainID);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"molid",molID);
+        url_link = CAlignFormatUtil::MapTemplate(url_link,"chainID",chainID);
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",linkTitle);
         if(textLink) {
@@ -2716,7 +2719,9 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
         if(linkout_map.find(linkout) != linkout_map.end()) {
             idList = linkout_map[linkout];
         }
-        bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (linkoutInfo.cdd_rid == "" || linkoutInfo.cdd_rid == "0")));
+        
+        bool disableLink = (linkout == 0 || idList.size() == 0);
+        
 
         string giList,labelList;
         int seqVersion = ((linkout & eGenomeDataViewer) || (linkout & eTranscript)) ? true : false;
@@ -2861,7 +2866,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(CBioseq::TId& cur_id,
                                                  ILinkoutDB* linkoutdb,
                                                  const string& mv_build_name,
                                                  bool getIdentProteins)
-
+                                                 
 {
     list<string> linkout_list;
 
