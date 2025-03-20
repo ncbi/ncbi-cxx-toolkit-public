@@ -785,7 +785,7 @@ bool g_DoesNotReferencePrimary(const CDelta_ext& delta_ext, const CSeq_id& prima
 }
 
 
-static int sGetPrefixLength(const CTempString& accession)
+static int sGetPrefixLength(string_view accession)
 {
     auto it = find_if(begin(accession),
                       end(accession),
@@ -818,7 +818,7 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
 
     pri_acc = fta_if_wgs_acc(acc);
 
-    CTempString primaryAccession(acc);
+    string_view primaryAccession(acc);
     SIZE_TYPE   prefixLength = 0;
 
 

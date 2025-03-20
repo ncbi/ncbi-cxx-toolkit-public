@@ -301,7 +301,7 @@ char* GetGenBankBlock(TDataBlkList& chain, char* ptr, Int2* retkw, char* eptr)
         ++ptr; /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(CTempString(ptr, eptr - ptr), genbankKeywords);
+        nextkw = SrchKeyword(string_view(ptr, eptr), genbankKeywords);
         if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */
             nextkw = curkw;
@@ -564,7 +564,7 @@ char* GetEmblBlock(TDataBlkList& chain, char* ptr, short* retkw, Parser::EFormat
         ++len;
 
         nextkw = SrchKeyword(
-            CTempString(ptr, eptr - ptr),
+            string_view(ptr, eptr),
             (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
         if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */

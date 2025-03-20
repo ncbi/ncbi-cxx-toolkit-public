@@ -349,13 +349,13 @@ bool SkipTitle(FILE* fp, FinfoBlk& finfo, const char* str, size_t len)
 }
 
 NCBI_UNUSED
-bool SkipTitle(FILE* fp, FinfoBlk& finfo, const CTempString& keyword)
+bool SkipTitle(FILE* fp, FinfoBlk& finfo, string_view keyword)
 {
     return SkipTitle(fp, finfo, keyword.data(), keyword.size());
 }
 
 //  ----------------------------------------------------------------------------
-bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, const CTempString& keyword)
+bool SkipTitleBuf(FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 //  ----------------------------------------------------------------------------
 {
     const char* p           = keyword.data();
@@ -677,23 +677,23 @@ static bool isSpace(char c)
     return isspace(c);
 }
 
-static CTempString::const_iterator
-sFindNextSpace(const CTempString&          tempString,
-               CTempString::const_iterator current_it)
+static string_view::const_iterator
+sFindNextSpace(string_view                 tempString,
+               string_view::const_iterator current_it)
 {
     return find_if(current_it, tempString.end(), isSpace);
 }
 
 
-static CTempString::const_iterator
-sFindNextNonSpace(const CTempString&          tempString,
-                  CTempString::const_iterator current_it)
+static string_view::const_iterator
+sFindNextNonSpace(string_view                 tempString,
+                  string_view::const_iterator current_it)
 {
     return find_if_not(current_it, tempString.end(), isSpace);
 }
 
 
-static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offsets)
+static void sSetLocusLineOffsets(string_view locusLine, LocusCont& offsets)
 {
     offsets.bases    = -1;
     offsets.bp       = -1;
@@ -703,7 +703,7 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
     offsets.div      = -1;
     offsets.date     = -1;
 
-    if (locusLine.substr(0, 5) != "LOCUS") {
+    if (locusLine.substr(0, 5) != "LOCUS"sv) {
         // throw an exception - invalid locus line
     }
 
@@ -741,9 +741,9 @@ static void sSetLocusLineOffsets(const CTempString& locusLine, LocusCont& offset
     offsets.strand = -1;
     if ((space_it - it) == 3) {
         auto currentSubstr = locusLine.substr(it - begin(locusLine), 3);
-        if (currentSubstr == "ss-" ||
-            currentSubstr == "ds-" ||
-            currentSubstr == "ms-") {
+        if (currentSubstr == "ss-"sv ||
+            currentSubstr == "ds-"sv ||
+            currentSubstr == "ms-"sv) {
             offsets.strand = Int4(it - begin(locusLine));
             it             = sFindNextNonSpace(locusLine, space_it);
         }
@@ -1833,7 +1833,7 @@ void MsgSkipTitleFail(const char* flatfile, FinfoBlk& finfo)
 }
 
 
-bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlk& finfo, const CTempString& keyword)
+bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 {
     const char* p    = keyword.data();
     size_t      len  = keyword.size();
@@ -1915,7 +1915,7 @@ bool isSupportedAccession(CSeq_id::E_Choice type)
 
 
 /**********************************************************/
-CSeq_id::E_Choice GetNucAccOwner(const CTempString& acc)
+CSeq_id::E_Choice GetNucAccOwner(string_view acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
@@ -1932,7 +1932,7 @@ CSeq_id::E_Choice GetNucAccOwner(const CTempString& acc)
 
 
 /**********************************************************/
-CSeq_id::E_Choice GetProtAccOwner(const CTempString& acc)
+CSeq_id::E_Choice GetProtAccOwner(string_view acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
