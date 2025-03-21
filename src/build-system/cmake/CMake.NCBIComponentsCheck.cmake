@@ -23,6 +23,7 @@ if(UNIX OR APPLE)
     include(CheckLibraryExists)
     find_package(PkgConfig)
 endif()
+include(CheckIncludeFile)
 include(CheckIncludeFileCXX)
 include(CheckSymbolExists)
 
