@@ -178,7 +178,7 @@ static const char* ESourceDbxrefTag[] = {
     nullptr
 };
 
-// N = NCBI + LANL + RefSeq
+// NLR = NCBI + LANL + RefSeq
 static const char* NLRSourceDbxrefTag[] = {
     "FLYBASE",
     nullptr
@@ -1910,7 +1910,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
     tag.Reset(new CDbtag);
     tag->SetDb(db);
 
-    if (t.find_first_not_of("0123456789") == string::npos)
+    if (t.front() != '0' && t.find_first_not_of("0123456789") == string::npos)
         tag->SetTag().SetId(NStr::StringToInt(t, NStr::fConvErr_NoThrow));
     else
         tag->SetTag().SetStr(t);
