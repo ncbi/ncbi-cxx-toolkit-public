@@ -54,6 +54,10 @@ endif()
 NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind REQUIRES xz_utils;zlib FIND libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
 
+##############################################################################
+# CURL
+NCBI_define_Pkgcomponent(NAME CURL PACKAGE CURL FIND CURL)
+
 #############################################################################
 # Iconv
 if(DEFINED CONAN_LIBICONV_ROOT)
