@@ -153,11 +153,20 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
 #else
         close(0);
 #endif
-        // TODO: current fcgi uses path as a port or a name socket.
-        // Fastcgipp has different listen() methods for port/service and socket/path.
-        if (!m_Manager->listen(nullptr, path.c_str())) {
-            ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
-                            "standalone server at: '" << path << "'");
+        string host, port;
+        if (NStr::SplitInTwo(path, ":", host, port) && !port.empty()) {
+            // Treat path as [host]:port
+            if (!m_Manager->listen(host.empty() ? nullptr : host.c_str(), port.c_str())) {
+                ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
+                    "standalone server at: '" << path << "'");
+            }
+        }
+        else {
+            // Treat path as socket name (unix only)
+            if (!m_Manager->listen(path.c_str())) {
+                ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
+                    "standalone server at: '" << path << "'");
+            }
         }
     }
     else {
