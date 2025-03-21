@@ -49,8 +49,7 @@ NCBI_define_Pkgcomponent(NAME BACKWARD PACKAGE backward-cpp REQUIRES libdwarf FI
 list(REMOVE_ITEM NCBI_ALL_COMPONENTS BACKWARD)
 if(NCBI_COMPONENT_BACKWARD_FOUND)
     set(HAVE_LIBBACKWARD_CPP YES)
-    check_include_file(backward.hpp HAVE_BACKWARD_HPP
-        -I${NCBI_COMPONENT_BACKWARD_INCLUDE})
+    set(HAVE_BACKWARD_HPP YES)
 endif()
 NCBI_define_Pkgcomponent(NAME UNWIND PACKAGE libunwind REQUIRES xz_utils;zlib FIND libunwind)
 #list(REMOVE_ITEM NCBI_ALL_COMPONENTS UNWIND)
@@ -169,8 +168,10 @@ NCBI_define_Pkgcomponent(NAME FASTCGIPP PACKAGE ncbi-fastcgipp FIND ncbi-fastcgi
 # SQLITE3
 NCBI_define_Pkgcomponent(NAME SQLITE3 PACKAGE sqlite3 FIND SQLite3)
 if(NCBI_COMPONENT_SQLITE3_FOUND)
-    check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
-    check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+#    check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
+#    check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+    set(HAVE_SQLITE3_UNLOCK_NOTIFY YES)
+    set(HAVE_SQLITE3ASYNC_H NO)
 endif()
 
 #############################################################################
