@@ -341,6 +341,8 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         char*      p        = StringSave(gb_block.GetSource());
         char*      pper     = nullptr;
 
+        ShrinkSpaces(p);
+
         size_t len = StringLen(p);
         if (p[len - 1] == '.') {
             pper       = StringSave(p);
