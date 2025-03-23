@@ -3976,10 +3976,11 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 }
 
 /**********************************************************/
-static void XMLCheckQualifiers(FeatBlkPtr fbp)
+static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
 {
     const char** b;
     char*        p;
+    bool         embed;
 
     if (! fbp || fbp->quals.empty())
         return;
@@ -3999,7 +4000,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
             } else if (qual_str == "cons_splice") {
                 fta_process_con_slice(val_buf);
             } else if (qual_str == "note") {
-                for (p = &val_buf[0];;) {
+                for (embed = false, p = &val_buf[0];;) {
                     p = StringChr(p, '/');
                     if (! p)
                         break;
@@ -4012,8 +4013,20 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp)
                         _loc.resize(30);
                         _loc += " ...";
                     }
-                    FtaErrPost(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
-                               "/note qualifier value appears to contain other qualifiers : [{}].", _loc);
+                    if(source == Parser::ESource::USPTO)
+                    {
+                        FtaErrPost(SEV_ERROR, ERR_QUALIFIER_EmbeddedQual,
+                                   "/note qualifier value appears to contain other qualifiers : qualifier has been dropped : [{}].", _loc);
+                        embed = true;
+                    }
+                    else
+                        FtaErrPost(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
+                                   "/note qualifier value appears to contain other qualifiers : [{}].", _loc);
+                }
+                if(embed && source == Parser::ESource::USPTO)
+                {
+                    cur = fbp->quals.erase(cur);
+                    continue;
                 }
             }
 
@@ -4116,7 +4129,7 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
         }
 
         if (! fbp->quals.empty()) {
-            XMLCheckQualifiers(fbp);
+            XMLCheckQualifiers(fbp, source);
             MergeNoteQual(fbp->quals); /* allow more than one
                                            notes w/i a key */
 
