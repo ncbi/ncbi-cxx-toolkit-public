@@ -2030,8 +2030,22 @@ void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
 /**********************************************************/
 static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
 {
+    bool ispat;
+
     for (auto& entry : seq_entries) {
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
+            ispat = false;
+            if(bioseq->IsSetId())
+            {
+                for(const auto& id : bioseq->GetId())
+                {
+                    if(id->IsPatent())
+                    {
+                        ispat = true;
+                        break;
+                    }
+                }
+            }
             if (bioseq->IsSetDescr()) {
                 CGB_block*      gb_block = nullptr;
                 CMolInfo*       molinfo  = nullptr;
@@ -2058,9 +2072,15 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
                     ! NStr::CompareNocase(ibp->division, "TSA"))
                     continue;
 
-                if (! gb_block->IsSetDiv()) {
+                if (! gb_block->IsSetDiv() && (!ispat ||
+                   NStr::CompareCase(ibp->division, "PAT")) ) {
                     FtaErrPost(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
                     gb_block->SetDiv(ibp->division);
+                }
+                else if(gb_block->IsSetDiv() && ispat &&
+                        !NStr::CompareCase(gb_block->GetDiv(), "PAT"))
+                {
+                    gb_block->ResetDiv();
                 }
             }
         }
