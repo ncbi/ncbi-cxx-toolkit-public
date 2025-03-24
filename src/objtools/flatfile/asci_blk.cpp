@@ -644,27 +644,19 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
  *                                              6-15-93
  *
  **********************************************************/
-static bool GetSubNodeType(const char* subkw, char** retbptr, char* eptr)
+static bool GetSubNodeType(string_view subkw, char*& bptr, char* eptr)
 {
-    char* bptr;
-    char* ptr;
-
-    bptr          = *retbptr;
-    size_t sublen = StringLen(subkw);
-
     while (bptr < eptr) {
-        if (StringEquN(bptr, subkw, sublen)) {
-            *retbptr = bptr;
+        string_view sv(bptr, eptr - bptr);
+        if (sv.starts_with(subkw))
             return true;
-        }
 
-        ptr = SrchTheChar(bptr, eptr, '\n');
-        if (ptr)
-            bptr = ptr;
+        auto i = sv.find('\n');
+        if (i != string_view::npos)
+            bptr += i;
         bptr++;
     }
 
-    *retbptr = bptr;
     return false;
 }
 
@@ -690,7 +682,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     bptr = dbp.mOffset;
     eptr = bptr + dbp.len;
 
-    if (! GetSubNodeType("RP", &bptr, eptr)) {
+    if (! GetSubNodeType("RP", bptr, eptr)) {
         if (source == Parser::ESource::EMBL)
             dbp.mType = ParFlat_REF_NO_TARGET;
         else
@@ -797,7 +789,7 @@ void GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& entry)
  *                                              4-7-93
  *
  **********************************************************/
-void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
+void BuildSubBlock(DataBlk& dbp, Int2 subtype, string_view subkw)
 {
     char* bptr;
     char* eptr;
@@ -805,7 +797,7 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, const char* subkw)
     bptr = dbp.mOffset;
     eptr = bptr + dbp.len;
 
-    if (GetSubNodeType(subkw, &bptr, eptr)) {
+    if (GetSubNodeType(subkw, bptr, eptr)) {
         if (! dbp.hasData())
             dbp.mData = TDataBlkList();
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), subtype, bptr, eptr - bptr);

@@ -41,7 +41,7 @@ struct Section
         }
     }
 
-    void xBuildSubBlock(int subtype, const char* subKw);
+    void xBuildSubBlock(int subtype, string_view subKw);
     void xBuildFeatureBlocks();
 
     int              mType; // which keyword block or node type

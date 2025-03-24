@@ -53,15 +53,15 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-void Section::xBuildSubBlock(int subtype, const char* subKw)
+void Section::xBuildSubBlock(int subtype, string_view subKw)
 //  ----------------------------------------------------------------------------
 {
     auto subBegin = mTextLines.end(), subEnd = mTextLines.end();
 
     bool found(false);
     for (auto lineIt = mTextLines.begin(); lineIt != mTextLines.end(); lineIt++) {
-        auto line         = *lineIt;
-        auto firstCharPos = line.find_first_not_of(" ");
+        const string& line         = *lineIt;
+        auto          firstCharPos = line.find_first_not_of(" ");
         if (found) {
             if (firstCharPos >= 12) {
                 subEnd++;
@@ -69,7 +69,7 @@ void Section::xBuildSubBlock(int subtype, const char* subKw)
             } else
                 break;
         }
-        if (NStr::StartsWith(line, subKw)) {
+        if (line.starts_with(subKw)) {
             subBegin = lineIt;
             subEnd   = subBegin + 1;
             found    = true;
