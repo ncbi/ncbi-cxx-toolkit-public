@@ -854,6 +854,7 @@ bool CSeqDB::GiToPig(TGi gi, int & pig) const
 {
     ////m_Impl->Verify();
     bool rv = false;
+    pig = -1;
 
     int oid(0);
 

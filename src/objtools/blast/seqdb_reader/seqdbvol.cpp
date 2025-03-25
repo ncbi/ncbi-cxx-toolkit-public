@@ -80,6 +80,7 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     : m_Atlas        (atlas),
       m_IsAA         (prot_nucl == 'p'),
       m_VolName      (name),
+	  m_HasGis       (true),
       m_TaxCache     (256),
       m_MemBit       (0),
       m_OidMaskType  (0),
@@ -162,11 +163,12 @@ CSeqDBVol::x_OpenGiFile(void) const{
     if (m_IsamGi.NotEmpty()) {
     	m_IsamGi->AddReference();
     }
-    else if (m_Idx->GetNumOIDs() != 0) {
+    else if ((m_Idx->GetNumOIDs() != 0) && m_HasGis) {
     	try {
         m_IsamGi = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 'n', eGiId);
     	} catch(CException & e) {
     		m_IsamGi.Reset();
+    		m_HasGis = false;
     	}
     }
 }

@@ -1363,6 +1363,9 @@ private:
     /// The name of this volume.
     string m_VolName;
 
+    //Assume Gis exists, set to false when file cannot be found during lookup
+    mutable bool m_HasGis;
+
     /// Metadata plus offsets into the sequence, header, and ambiguity data.
     CRef<CSeqDBIdxFile> m_Idx;
 
