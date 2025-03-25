@@ -474,41 +474,45 @@ NCBIcomponent_report(VDB)
 
 ##############################################################################
 # wxWidgets
+if(NOT NCBI_COMPONENT_wxWidgets_DISABLED AND NOT NCBI_COMPONENT_wxWidgets_FOUND)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxWidgets.cmake)
+endif(NOT NCBI_COMPONENT_wxWidgets_DISABLED AND NOT NCBI_COMPONENT_wxWidgets_FOUND)
+
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
-NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
-NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
-set(_wx_ver 3.2)
-NCBI_define_Xcomponent(NAME wxWidgets LIB
-    wx_gtk2_gl-${_wx_ver}
-    wx_gtk2_richtext-${_wx_ver}
-    wx_gtk2_aui-${_wx_ver}
-    wx_gtk2_propgrid-${_wx_ver}
-    wx_gtk2_xrc-${_wx_ver}
-    wx_gtk2_html-${_wx_ver}
-    wx_gtk2_qa-${_wx_ver}
-    wx_gtk2_adv-${_wx_ver}
-    wx_gtk2_core-${_wx_ver}
-    wx_base_xml-${_wx_ver}
-    wx_base_net-${_wx_ver}
-    wx_base-${_wx_ver}
-    wxscintilla-${_wx_ver}
-    INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
-)
-if(NCBI_COMPONENT_wxWidgets_FOUND)
-    list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-    get_filename_component(_libdir ${_lib} DIRECTORY)
-    set(NCBI_COMPONENT_wxWidgets_INCLUDE ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_wxWidgets_INCLUDE})
-    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} -lXxf86vm -lSM -lexpat)
-    if(BUILD_SHARED_LIBS)
-        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
+    NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
+    NCBI_define_Xcomponent(NAME FONTCONFIG MODULE fontconfig PACKAGE Fontconfig LIB fontconfig)
+    set(_wx_ver 3.2)
+    NCBI_define_Xcomponent(NAME wxWidgets LIB
+        wx_gtk2_gl-${_wx_ver}
+        wx_gtk2_richtext-${_wx_ver}
+        wx_gtk2_aui-${_wx_ver}
+        wx_gtk2_propgrid-${_wx_ver}
+        wx_gtk2_xrc-${_wx_ver}
+        wx_gtk2_html-${_wx_ver}
+        wx_gtk2_qa-${_wx_ver}
+        wx_gtk2_adv-${_wx_ver}
+        wx_gtk2_core-${_wx_ver}
+        wx_base_xml-${_wx_ver}
+        wx_base_net-${_wx_ver}
+        wx_base-${_wx_ver}
+        wxscintilla-${_wx_ver}
+        INCLUDE wx-${_wx_ver} ADD_COMPONENT FONTCONFIG GTK2
+    )
+    if(NCBI_COMPONENT_wxWidgets_FOUND)
+        list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
+        get_filename_component(_libdir ${_lib} DIRECTORY)
+        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${_libdir}/wx/include/gtk2-ansi-${_wx_ver} ${NCBI_COMPONENT_wxWidgets_INCLUDE})
+        set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS} -lXxf86vm -lSM -lexpat)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__  WXUSINGDLL wxDEBUG_LEVEL=0)
+        else()
+            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
+        endif()
     else()
-        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXGTK__ wxDEBUG_LEVEL=0)
+        NCBI_define_Xcomponent(NAME wxWidgets PACKAGE wxWidgets)
     endif()
-else()
-    NCBI_define_Xcomponent(NAME wxWidgets PACKAGE wxWidgets)
 endif()
 NCBIcomponent_report(wxWidgets)
-endif()
 
 ##############################################################################
 # GCRYPT
