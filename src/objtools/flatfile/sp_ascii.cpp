@@ -804,8 +804,7 @@ static void SpAddToIndexBlk(const DataBlk& entry, IndexblkPtr pIndex)
     char*  offset;
     size_t len = 0;
 
-    offset = SrchNodeType(entry, ParFlatSP_ID, &len);
-    if (! offset || len == 0)
+    if (! SrchNodeType(entry, ParFlatSP_ID, &len, &offset))
         return;
 
     eptr = offset + len - 1;
@@ -1873,8 +1872,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     spb.ResetSeqref();
     spb.ResetDbref();
 
-    offset = SrchNodeType(entry, ParFlatSP_DR, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_DR, &len, &offset))
         return;
 
     ch          = offset[len];
@@ -2133,8 +2131,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
     if (ver_num)
         *ver_num = 0;
 
-    offset = SrchNodeType(entry, ParFlatSP_DT, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_DT, &len, &offset))
         return true;
 
     ch          = offset[len];
@@ -2420,8 +2417,7 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
     Int4  i;
 
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_CC, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_CC, &len, &offset))
         return;
 
     eptr  = offset + len;
@@ -2565,8 +2561,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
     ibp        = pp->entrylist[pp->curindx];
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
-    if (offset) {
+    if (SrchNodeType(entry, ParFlatSP_DE, &len, &offset)) {
         string title = GetSPDescrTitle(string_view(offset, len), &fragment);
         if (! title.empty()) {
             CRef<CSeqdesc> desc_new(new CSeqdesc);
@@ -2967,8 +2962,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
     Char           ch;
 
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_FT, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_FT, &len, &offset))
         return nullptr;
 
     bptr = offset + ParFlat_COL_DATA_SP;
@@ -4013,8 +4007,7 @@ static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
     char* str;
 
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_GN, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_GN, &len, &offset))
         return;
 
     string str_ = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
@@ -4259,8 +4252,7 @@ static void SPGetPEValue(const DataBlk& entry, CSeq_feat& feat)
     char* q;
 
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_PE, &len);
-    if (! offset || len < 1)
+    if (! SrchNodeType(entry, ParFlatSP_PE, &len, &offset))
         return;
 
     buf = StringSave(string_view(offset, len - 1));
@@ -4329,8 +4321,7 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
     CBioseq&    bioseq    = seq_entry.SetSeq();
 
     size_t len = 0;
-    offset     = SrchNodeType(entry, ParFlatSP_DE, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlatSP_DE, &len, &offset))
         return;
 
     CRef<CSeq_feat> feat(new CSeq_feat);

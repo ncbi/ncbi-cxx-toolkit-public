@@ -278,8 +278,7 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
 
     crdate.Reset();
     update.Reset();
-    offset = xSrchNodeType(entry, ParFlat_DT, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlat_DT, &len, &offset))
         return;
 
     eptr   = offset + len;
@@ -428,19 +427,19 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
     bool xip = xil && ! xil->empty();
     if (! xip) {
-        bptr     = xSrchNodeType(entry, ParFlat_DR, &len);
+        if (! SrchNodeType(entry, ParFlat_DR, &len, &bptr))
+            return;
         col_data = ParFlat_COL_DATA_EMBL;
         xref     = nullptr;
     } else {
-        bptr = StringSave(XMLFindTagValue(chentry, *xil, INSDSEQ_DATABASE_REFERENCE));
-        if (bptr)
-            len = StringLen(bptr);
+        auto tmp = XMLFindTagValue(chentry, *xil, INSDSEQ_DATABASE_REFERENCE);
+        if (! tmp)
+            return;
         col_data = 0;
+        bptr     = StringSave(*tmp);
+        len      = tmp->length();
         xref     = bptr;
     }
-
-    if (! bptr)
-        return;
 
     for (eptr = bptr + len; bptr < eptr; bptr = ptr) {
         drline = bptr;
@@ -657,8 +656,7 @@ static void GetReleaseInfo(const DataBlk& entry)
     CBioseq&     bioseq = ebp->seq_entry->SetSeq();
     CTextseq_id& id     = SetTextIdRef(*(bioseq.SetId().front()));
 
-    offset = xSrchNodeType(entry, ParFlat_DT, &len);
-    if (! offset)
+    if (! SrchNodeType(entry, ParFlat_DT, &len, &offset))
         return;
 
     eptr   = offset + len;
@@ -1189,8 +1187,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     }
 
     size_t len = 0;
-    bptr       = xSrchNodeType(entry, ParFlat_KW, &len);
-    if (bptr) {
+    if (SrchNodeType(entry, ParFlat_KW, &len, &bptr)) {
         string kw = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA_EMBL);
 
         if (! est_kwd && kw.find("EST") != string::npos) {
@@ -1650,11 +1647,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DE data ==> descr_title
      */
-    offset = xSrchNodeType(entry, ParFlat_DE, &len);
-
     string title;
 
-    if (offset) {
+    if (SrchNodeType(entry, ParFlat_DE, &len, &offset)) {
         string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_EMBL);
 
         for (size_t pos = 0; pos < str.size();) {
@@ -1717,8 +1712,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         title = str;
     }
 
-    offset = xSrchNodeType(entry, ParFlat_PR, &len);
-    if (offset)
+    if (SrchNodeType(entry, ParFlat_PR, &len, &offset))
         fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::EMBL, &ibp->drop, pp->source);
 
     if (ibp->is_tpa &&
@@ -1849,8 +1843,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         hasEmblBlock = true;
     }
 
-    offset = xSrchNodeType(entry, ParFlat_AH, &len);
-    if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
+    if (! SrchNodeType(entry, ParFlat_AH, &len, &offset) && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:{} record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
@@ -1908,8 +1901,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* all CC data ==> comment
      */
-    offset = xSrchNodeType(entry, ParFlat_CC, &len);
-    if (offset && len > 0) {
+    if (SrchNodeType(entry, ParFlat_CC, &len, &offset)) {
         char* str = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, (pp->xml_comp ? false : is_htg), ibp->is_pat);
         if (str) {
             bool           bad = false;

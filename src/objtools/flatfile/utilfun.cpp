@@ -862,37 +862,27 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
  *   the "type".
  *
  **********************************************************/
-char* SrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
+bool SrchNodeType(const DataBlk& entry, Int4 type, size_t* plen, char** pptr)
 {
     const DataBlk* temp = TrackNodeType(entry, (Int2)type);
     if (temp) {
-        *len = temp->len;
-        return (temp->mOffset);
+        *plen = temp->len;
+        *pptr = temp->mOffset;
+        return true;
     }
 
-    *len = 0;
-    return nullptr;
+    *plen = 0;
+    *pptr = nullptr;
+    return false;
 }
 
-char* xSrchNodeType(const DataBlk& entry, Int4 type, size_t* len)
+string_view GetNodeData(const DataBlk& entry, int nodeType)
 {
-    const DataBlk* temp = TrackNodeType(entry, (Int2)type);
-    if (temp) {
-        *len = temp->len;
-        return (temp->mOffset);
-    }
-
-    *len = 0;
-    return nullptr;
-}
-
-string xGetNodeData(const DataBlk& entry, int nodeType)
-{
-    auto tmp = TrackNodeType(entry, (Int2)nodeType);
+    const DataBlk* tmp = TrackNodeType(entry, (Int2)nodeType);
     if (! tmp) {
-        return "";
+        return {};
     }
-    return string(tmp->mOffset, tmp->len);
+    return string_view(tmp->mOffset, tmp->len);
 }
 
 /**********************************************************

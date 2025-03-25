@@ -307,7 +307,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     ibp            = pp->entrylist[pp->curindx];
     ibp->wgssec[0] = '\0';
 
-    bptr = xSrchNodeType(entry, ParFlat_SOURCE, &len);
+    SrchNodeType(entry, ParFlat_SOURCE, &len, &bptr);
     string str = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA);
     if (! str.empty()) {
         if (str.back() == '.') {
@@ -349,7 +349,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         return ret;
     }
 
-    bptr = xSrchNodeType(entry, ParFlat_ORIGIN, &len);
+    SrchNodeType(entry, ParFlat_ORIGIN, &len, &bptr);
     eptr = bptr + len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
     if (ptr) {
@@ -511,8 +511,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
                 RemoveHtgPhase(gbb->SetKeywords());
             }
 
-            bptr = xSrchNodeType(entry, ParFlat_KEYWORDS, &len);
-            if (bptr) {
+            if (SrchNodeType(entry, ParFlat_KEYWORDS, &len, &bptr)) {
                 string kw = GetBlkDataReplaceNewLine(string_view(bptr, len), ParFlat_COL_DATA);
 
                 if (! est_kwd && kw.find("EST") != string::npos) {
@@ -942,8 +941,7 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
     char*  r;
     size_t l;
 
-    p = xSrchNodeType(entry, ParFlat_USER, &l);
-    if (l < ParFlat_COL_DATA)
+    if (! SrchNodeType(entry, ParFlat_USER, &l, &p) || l < ParFlat_COL_DATA)
         return;
 
     q = StringSave(string_view(p, l - 1));
@@ -1068,10 +1066,8 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* DEFINITION data ==> descr_title
      */
     size_t len = 0;
-    offset     = xSrchNodeType(entry, ParFlat_DEFINITION, &len);
-
     string title;
-    if (offset) {
+    if (SrchNodeType(entry, ParFlat_DEFINITION, &len, &offset)) {
         string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA);
 
         if (! str.empty() && str.front() == ' ') {
@@ -1110,17 +1106,16 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     CRef<CUser_object> dbuop;
-    offset = xSrchNodeType(entry, ParFlat_DBLINK, &len);
-    if (offset)
+    if (SrchNodeType(entry, ParFlat_DBLINK, &len, &offset))
         fta_get_dblink_user_object(bioseq.SetDescr().Set(), offset, len, pp->source, &ibp->drop, dbuop);
     else {
-        offset = xSrchNodeType(entry, ParFlat_PROJECT, &len);
+        SrchNodeType(entry, ParFlat_PROJECT, &len, &offset);
         if (offset)
             fta_get_project_user_object(bioseq.SetDescr().Set(), offset, Parser::EFormat::GenBank, &ibp->drop, pp->source);
     }
 
     if (ibp->is_mga) {
-        offset = xSrchNodeType(entry, ParFlat_MGA, &len);
+        SrchNodeType(entry, ParFlat_MGA, &len, &offset);
         fta_get_mga_user_object(bioseq.SetDescr().Set(), offset, ibp->bases);
     }
     if (ibp->is_tpa &&
@@ -1212,8 +1207,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    offset = xSrchNodeType(entry, ParFlat_PRIMARY, &len);
-    if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
+    if (! SrchNodeType(entry, ParFlat_PRIMARY, &len, &offset) && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
                 FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:{} record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
@@ -1243,8 +1237,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* COMMENT data
      */
-    offset = xSrchNodeType(entry, ParFlat_COMMENT, &len);
-    if (offset && len > 0) {
+    if (SrchNodeType(entry, ParFlat_COMMENT, &len, &offset)) {
         char* str = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
         if (str) {
             bool           bad = false;

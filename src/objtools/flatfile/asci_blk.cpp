@@ -1485,11 +1485,11 @@ void GetSequenceOfKeywords(
     //  Expectation: Each keyword separated by ";", the last one ends with "."
 
     keywords.clear();
-    auto keywordData = xGetNodeData(entry, type);
-    if (keywordData.empty()) {
+    auto tmp = GetNodeData(entry, type);
+    if (tmp.empty()) {
         return;
     }
-    keywordData = GetBlkDataReplaceNewLine(keywordData, col_data);
+    string keywordData = GetBlkDataReplaceNewLine(tmp, col_data);
     if (type == ParFlatSP_KW) {
         StripECO(keywordData);
     }
@@ -1621,22 +1621,21 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
         return true;
 
     if (pp->format == Parser::EFormat::XML) {
-        str    = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE));
-        seqptr = str;
-        if (seqptr) {
-            len = StringLen(seqptr);
-            if (pp->source != Parser::ESource::USPTO || ! ibp->is_prot)
-                for (char* p = seqptr; *p != '\0'; p++)
-                    if (*p >= 'A' && *p <= 'Z')
-                        *p |= 040; // tolower
-        }
+        auto tmp = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
+        if (! tmp)
+            return false;
+        if (pp->source != Parser::ESource::USPTO || ! ibp->is_prot)
+            for (char& c : *tmp)
+                if (c >= 'A' && c <= 'Z')
+                    c |= 040; // tolower
+        seqptr = StringSave(*tmp);
+        len    = tmp->length();
+        str    = seqptr;
     } else {
-        str    = nullptr;
-        seqptr = xSrchNodeType(entry, nodetype, &len);
+        if (! SrchNodeType(entry, nodetype, &len, &seqptr))
+            return false;
+        str = nullptr;
     }
-
-    if (! seqptr)
-        return false;
 
     endptr = seqptr + len;
 
