@@ -166,7 +166,7 @@ CSeqDBVol::x_OpenGiFile(void) const{
     else if ((m_Idx->GetNumOIDs() != 0) && m_HasGis) {
     	try {
         m_IsamGi = new CSeqDBIsam(m_Atlas, m_VolName, (m_IsAA?'p':'n'), 'n', eGiId);
-    	} catch(CException & e) {
+    	} catch(CException &) {
     		m_IsamGi.Reset();
     		m_HasGis = false;
     	}
