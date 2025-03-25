@@ -451,12 +451,12 @@ static bool CheckLocusSP(const char* locus)
  *      Return FALSE if date != dd-mmm-yyyy format.
  *
  **********************************************************/
-static bool CkDateFormat(const char* date)
+static bool CkDateFormat(string_view date)
 {
     if (date[2] == '-' && date[6] == '-' &&
-        isdigit(date[0]) != 0 && isdigit(date[1]) != 0 &&
-        isdigit(date[7]) != 0 && isdigit(date[8]) != 0 &&
-        isdigit(date[9]) != 0 && isdigit(date[10]) != 0 &&
+        isdigit(date[0]) && isdigit(date[1]) &&
+        isdigit(date[7]) && isdigit(date[8]) &&
+        isdigit(date[9]) && isdigit(date[10]) &&
         MatchArraySubString(month_name, date) >= 0)
         return true;
 
@@ -608,20 +608,19 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
  **********************************************************/
 CRef<CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source)
 {
-    Char date[12];
 
     if (StringEquN(ptr, "NODATE", 6))
         return CRef<CDate_std>(new CDate_std(CTime(CTime::eCurrent)));
 
     if (ptr[11] != '\0' && ptr[11] != '\n' && ptr[11] != ' ' &&
-        (source != Parser::ESource::SPROT || ptr[11] != ','))
-        return CRef<CDate_std>();
+        (source != Parser::ESource::SPROT || ptr[11] != ',')) {
+        return {};
+    }
 
-    MemCpy(date, ptr, 11);
-    date[11] = '\0';
-
-    if (! CkDateFormat(date))
-        return CRef<CDate_std>();
+    if (! CkDateFormat(ptr)) {
+        FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Invalid date: {}", ptr);
+        return {};
+    }
 
     return get_full_date(ptr, false, source);
 }

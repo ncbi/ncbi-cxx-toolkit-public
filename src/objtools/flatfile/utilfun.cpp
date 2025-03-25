@@ -50,6 +50,8 @@
 #include "indx_def.h"
 #include "utilfun.h"
 #include <algorithm>
+#include <charconv>
+#include <optional>
 
 #ifdef THIS_FILE
 #  undef THIS_FILE
@@ -737,6 +739,17 @@ void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
     }
 }
 
+
+static optional<int> s_GetNextInt(string_view sv) {
+
+    int val{};
+    if (from_chars(sv.data(), sv.data()+sv.size(), val).ec == errc{}) {
+        return val;
+    }
+
+    return nullopt;
+}
+
 /**********************************************************
  *
  *   CRef<CDate_std> get_full_date(s, is_ref, source):
@@ -744,57 +757,61 @@ void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
  *      Get year, month, day and return CRef<CDate_std>.
  *
  **********************************************************/
-CRef<CDate_std> get_full_date(const char* s, bool is_ref, Parser::ESource source)
+CRef<CDate_std> get_full_date(string_view date_view, bool is_ref, Parser::ESource source)
 {
-    CRef<CDate_std> date;
+    if (date_view.length()<3) {
+        return {};
+    }
 
-    if (! s || *s == '\0')
-        return date;
-
-    int parse_day = 0;
-    if (isdigit(*s) != 0) {
-        parse_day = atoi(s);
-        s += 3;
+    int day = 0;
+    if (isdigit(date_view.front())) {
+        day = s_GetNextInt(date_view).value();
+        date_view = date_view.substr(3);
         // should we make at least a token effort of validation (like <32)?
     }
 
     static const vector<string> months{
         "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
     };
-    string_view maybe_month(s, 3);
+    string_view maybe_month = date_view.substr(0,3);
     auto        it = find(months.begin(), months.end(), maybe_month);
 
     if (it == months.end()) {
-        const auto length = char_traits<char>::length(s);
-        string_view msg(s, min<size_t>(10,length)); // Avoids undefined behavior when length < 10
+        string_view msg = date_view.substr(0,10); // This still works if date_view.length() < 10
         is_ref ? FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Unrecognized month: {}", msg)
                : FtaErrPost(SEV_WARNING, ERR_DATE_IllegalDate, "Unrecognized month: {}", msg);
-        return date;
+        return {};
     }
-    int parse_month = int(it - months.begin()) + 1;
+    int month = int(it - months.begin()) + 1;
 
-    s += 4;
+    date_view = date_view.substr(4);
+    auto parsed_year = s_GetNextInt(date_view);
+    if (! parsed_year.has_value()) {
+        return {};
+    }
+    auto year = *parsed_year;
 
-    int parse_year = atoi(s);
+
     int cur_year   = CCurrentTime().Year();
-    if (1900 <= parse_year && parse_year <= cur_year) {
+    if (1900 <= year && year <= cur_year) {
         // all set
-    } else if (0 <= parse_year && parse_year <= 99 && '0' <= s[1] && s[1] <= '9') {
+    } else if (0 <= year && year <= 99 && '0' <= date_view[1] && date_view[1] <= '9') {
         // insist that short form year has exactly two digits
-        (parse_year < 70) ? (parse_year += 2000) : (parse_year += 1900);
+        (year < 70) ? (year += 2000) : (year += 1900);
     } else {
         if (is_ref) {
-            FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: {}, current year: {}", parse_year, cur_year);
-        } else if (source != Parser::ESource::SPROT || parse_year - cur_year > 1) {
-            FtaErrPost(SEV_WARNING, ERR_DATE_IllegalDate, "Illegal year: {}, current year: {}", parse_year, cur_year);
+            FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: {}, current year: {}", year, cur_year);
+        } else if (source != Parser::ESource::SPROT || year - cur_year > 1) {
+            FtaErrPost(SEV_WARNING, ERR_DATE_IllegalDate, "Illegal year: {}, current year: {}", year, cur_year);
         }
         // treat bad year like bad month above:
-        return date;
+        return {};
     }
-    date.Reset(new CDate_std);
-    date->SetYear(parse_year);
-    date->SetMonth(parse_month);
-    date->SetDay(parse_day);
+
+    auto date = Ref(new CDate_std());
+    date->SetYear(year);
+    date->SetMonth(month);
+    date->SetDay(day);
 
     return date;
 }

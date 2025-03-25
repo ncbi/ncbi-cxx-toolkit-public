@@ -53,7 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CDate_std> get_full_date(const Char* s, bool is_ref, Parser::ESource source);
+CRef<objects::CDate_std> get_full_date(string_view date_view, bool is_ref, Parser::ESource source);
 
 /**********************************************************/
 

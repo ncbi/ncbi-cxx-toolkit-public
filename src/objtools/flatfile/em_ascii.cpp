@@ -283,6 +283,10 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
 
     eptr   = offset + len;
     crdate = GetUpdateDate(offset + ParFlat_COL_DATA_EMBL, source);
+    if (! crdate) {
+        return;
+    }
+
     while (offset < eptr) {
         offset = SrchTheChar(offset, eptr, '\n');
         if (! offset)
@@ -1317,6 +1321,10 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         std_update_date;
 
     GetEmblDate(pp->source, entry, std_creation_date, std_update_date);
+    
+    if (! std_creation_date || ! std_update_date) { // The ASN.1 spec for EMBL-block requires 
+        return {};                                  // both a creation date and an update date.
+    }
 
     embl->SetCreation_date().SetStd(*std_creation_date);
     embl->SetUpdate_date().SetStd(*std_update_date);
