@@ -81,8 +81,7 @@ Seq-submit ::= {
           biomol other
         },
         genbank {
-          source "synthetic construct",
-          div "PAT"
+          source "synthetic construct"
         }
       },
       inst {
@@ -971,8 +970,7 @@ Seq-submit ::= {
           biomol other
         },
         genbank {
-          source "synthetic construct",
-          div "PAT"
+          source "synthetic construct"
         }
       },
       inst {
