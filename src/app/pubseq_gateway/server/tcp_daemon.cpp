@@ -299,25 +299,17 @@ void CTcpWorker::Execute(void)
         PSG_INFO("uv_run (1) worker " << m_id <<
                  " returned " <<  err_code);
     } catch (const CPubseqGatewayUVException &  exc) {
-        m_error = exc.GetUVLibraryErrorCode();
-        m_last_error = exc.GetMsg();
         PSG_ERROR("Libuv exception while preparing/running worker " << m_id <<
-                  " UV error code: " << m_error <<
-                  " Error: " << m_last_error);
+                  " UV error code: " << exc.GetUVLibraryErrorCode() <<
+                  " Error: " << exc.GetMsg());
     } catch (const CException &  exc) {
-        m_error = exc.GetErrCode();
-        m_last_error = exc.GetMsg();
         PSG_ERROR("NCBI exception while preparing/running worker " << m_id <<
-                  " Error code: " << m_error <<
-                  " Error: " << m_last_error);
+                  " Error code: " << exc.GetErrCode() <<
+                  " Error: " << exc.GetMsg());
     } catch (const exception &  exc) {
-        m_error = -1;
-        m_last_error = exc.what();
         PSG_ERROR("Standard exception while preparing/running worker " << m_id <<
                   " Error: " << exc.what());
     } catch (...) {
-        m_error = -1;
-        m_last_error = "unknown";
         PSG_ERROR("Unknown exception while preparing/running worker " << m_id);
     }
 

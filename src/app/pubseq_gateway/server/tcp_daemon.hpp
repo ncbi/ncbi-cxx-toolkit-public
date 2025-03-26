@@ -113,12 +113,10 @@ struct CTcpWorker
     std::atomic_bool                                    m_shuttingdown;
     bool                                                m_close_all_issued;
     bool                                                m_joined;
-    int                                                 m_error;
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_connected_list;
     std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_free_list;
     struct uv_export_t *                                m_exp;
     CTcpDaemon *                                        m_Daemon;
-    std::string                                         m_last_error;
     CHttpDaemon &                                       m_HttpDaemon;
     CHttpProto                                          m_protocol;
     std::unique_ptr<CTcpWorkerInternal_t>               m_internal;
@@ -133,7 +131,6 @@ struct CTcpWorker
         m_shuttingdown(false),
         m_close_all_issued(false),
         m_joined(false),
-        m_error(0),
         m_exp(exp),
         m_Daemon(daemon),
         m_HttpDaemon(http_daemon),
