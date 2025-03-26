@@ -2043,15 +2043,15 @@ static void fta_collect_wormbases(GeneListPtr glp, CSeq_feat& feat)
         return;
 
     CSeq_feat::TDbxref dbxrefs;
-    for (CSeq_feat::TDbxref::iterator dbxref = feat.SetDbxref().begin(); dbxref != feat.SetDbxref().end(); ++dbxref) {
-        if (! (*dbxref)->IsSetTag() || ! (*dbxref)->IsSetDb() ||
-            (*dbxref)->GetDb() != "WormBase" ||
-            ! StringEquN((*dbxref)->GetTag().GetStr().c_str(), "WBGene", 6)) {
-            dbxrefs.push_back(*dbxref);
+    for (const auto& dbxref : feat.SetDbxref()) {
+        if (! dbxref->IsSetTag() || ! dbxref->IsSetDb() ||
+            dbxref->GetDb() != "WormBase"s ||
+            ! dbxref->GetTag().GetStr().starts_with("WBGene"sv)) {
+            dbxrefs.push_back(dbxref);
             continue;
         }
 
-        glp->wormbase.insert((*dbxref)->GetTag().GetStr());
+        glp->wormbase.insert(dbxref->GetTag().GetStr());
     }
 
     if (dbxrefs.empty())

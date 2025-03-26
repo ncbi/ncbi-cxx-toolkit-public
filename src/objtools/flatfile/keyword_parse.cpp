@@ -88,15 +88,15 @@ void CKeywordParser::AddDataLine(
         data = NStr::TruncateSpaces(data.substr(2));
         break;
     }
-    if (! mPending.empty() && ! NStr::EndsWith(mPending, ";")) {
+    if (! mPending.empty() && ! mPending.ends_with(';')) {
         mPending += ' ';
     }
     mPending += data;
-    if (NStr::EndsWith(mPending, '.')) {
+    if (mPending.ends_with('.')) {
         xFinalize();
         return;
     }
-    if (! NStr::EndsWith(mPending, ";")) {
+    if (! mPending.ends_with(';')) {
         mPending += ' ';
         return;
     }

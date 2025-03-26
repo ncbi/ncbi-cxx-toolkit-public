@@ -135,7 +135,7 @@ bool CQualParser::xParseQualifierStart(
     }
 
     auto cleaned = NStr::TruncateSpaces(*mCurrent);
-    if (! NStr::StartsWith(cleaned, '/') || NStr::StartsWith(cleaned, "/ ")) {
+    if (! cleaned.starts_with('/') || cleaned.starts_with("/ ")) {
         if (! silent) {
             CFlatParseReport::UnexpectedData(mFeatKey, mFeatLocation);
         }
@@ -172,14 +172,14 @@ bool CQualParser::xParseQualifierStart(
         thereIsMore = false;
         return true;
     }
-    if (! NStr::StartsWith(tail, '\"')) {
+    if (! tail.starts_with('\"')) {
         // sanity check tail?
         qualVal     = tail;
-        thereIsMore = (qualKey == "anticodon") && ! NStr::EndsWith(tail, ')');
+        thereIsMore = (qualKey == "anticodon") && ! tail.ends_with(')');
         return true;
     }
     // established: tail starts with quote
-    if (NStr::EndsWith(tail, '\"')) {
+    if (tail.ends_with('\"')) {
         qualVal = tail.substr(1, tail.size() - 2);
         NStr::TruncateSpacesInPlace(qualVal);
         thereIsMore = false;
@@ -239,8 +239,8 @@ bool CQualParser::xParseQualifierCont(
     ++mCurrent; // we are going to accept it, so flush it out
 
     thereIsMore = true;
-    if (NStr::EndsWith(cleaned, '\"')) {
-        cleaned     = cleaned.substr(0, cleaned.size() - 1);
+    if (cleaned.ends_with('\"')) {
+        cleaned.pop_back();
         thereIsMore = false;
     }
     xQualValAppendLine(qualKey, cleaned, qualVal);
@@ -316,7 +316,7 @@ void CQualParser::xQualValAppendLine(
         qualData += line;
         return;
     }
-    if (NStr::EndsWith(qualData, "(EC") && '0' <= line[0] && line[0] <= '9') {
+    if (qualData.ends_with("(EC") && '0' <= line[0] && line[0] <= '9') {
         qualData += ' ';
         qualData += line;
         return;

@@ -689,9 +689,9 @@ static CRef<COrg_ref> GetEmblOrgRef(const DataBlk& dbp)
     string         sTaxname;
     vector<string> taxLines;
     NStr::Split(string_view(dbp.mOffset, dbp.len), "\n", taxLines);
-    for (auto line : taxLines) {
+    for (auto& line : taxLines) {
         NStr::TruncateSpacesInPlace(line);
-        if (line.empty() || NStr::StartsWith(line, "XX")) {
+        if (line.empty() || line.starts_with("XX"sv)) {
             continue;
         }
         if (! sTaxname.empty()) {
@@ -1569,7 +1569,7 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
     CSeq_feat::TDbxref xrefs;
     for (const auto& xref : embl_block.GetXref()) {
         if (! xref->IsSetDbname() || ! xref->GetDbname().IsName() ||
-            ! StringEquN(xref->GetDbname().GetName().c_str(), "IMGT/", 5))
+            ! xref->GetDbname().GetName().starts_with("IMGT/"sv))
             continue;
 
         bool empty = true;
@@ -1626,12 +1626,12 @@ static void fta_create_imgt_misc_feat(CBioseq& bioseq, CEMBL_block& embl_block, 
 
 static bool s_HasTPAPrefix(string_view line)
 {
-    return line.starts_with("TPA:") ||
-           line.starts_with("TPA_exp:") ||
-           line.starts_with("TPA_inf:") ||
-           line.starts_with("TPA_asm:") ||
-           line.starts_with("TPA_reasm:") ||
-           line.starts_with("TPA_specdb:");
+    return line.starts_with("TPA:"sv) ||
+           line.starts_with("TPA_exp:"sv) ||
+           line.starts_with("TPA_inf:"sv) ||
+           line.starts_with("TPA_asm:"sv) ||
+           line.starts_with("TPA_reasm:"sv) ||
+           line.starts_with("TPA_specdb:"sv);
 }
 
 /**********************************************************/
@@ -1678,34 +1678,34 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
 
         if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringEquN(str.c_str(), "TPA:", 4)) {
+            str.starts_with("TPA:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tsa == false && StringEquN(str.c_str(), "TSA:", 4)) {
+        if (ibp->is_tsa == false && str.starts_with("TSA:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tls == false && StringEquN(str.c_str(), "TLS:", 4)) {
+        if (ibp->is_tls == false && str.starts_with("TLS:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (StringEquN(str.c_str(), "TPA:", 4)) {
-            string str1;
+        if (str.starts_with("TPA:"sv)) {
+            string_view str1;
             if (ibp->assembly)
-                str1 = "TPA_asm:";
+                str1 = "TPA_asm:"sv;
             else if (ibp->specialist_db)
-                str1 = "TPA_specdb:";
+                str1 = "TPA_specdb:"sv;
             else if (ibp->inferential)
-                str1 = "TPA_inf:";
+                str1 = "TPA_inf:"sv;
             else if (ibp->experimental)
-                str1 = "TPA_exp:";
+                str1 = "TPA_exp:"sv;
 
             if (! str1.empty())
                 str.replace(0, 4, str1);
@@ -1729,13 +1729,13 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (ibp->is_tsa && ! ibp->is_tpa &&
-        (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
+        (title.empty() || ! title.starts_with("TSA:"sv))) {
         FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
-    if (ibp->is_tls && (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
+    if (ibp->is_tls && (title.empty() || ! title.starts_with("TLS:"))) {
         FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
