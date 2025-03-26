@@ -3749,14 +3749,15 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
             m_NumBlastDefLines++;
         } else {
             //format each defline
-            int numBdl = 0;
-            for(list< CRef< CBlast_def_line > >::const_iterator
-                    iter = bdl.begin(); iter != bdl.end(); iter++){
+            int numBdl = 0;            
+            for(list< CRef< CBlast_def_line > >::const_iterator                    
+                    iter = bdl.begin(); iter != bdl.end();){
+                                        
 				alnDispParams = x_FillAlnDispParams(*iter,bsp_handle,use_this_seqid,firstGi,numBdl);
+                iter++;
 				if(alnDispParams) {
                     numBdl++;
-                    bool hideDefline = (numBdl > 1)? true : false;
-					string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline,seqLength);
+                    bool hideDefline = (numBdl > 1)? true : false;                    					
                     if(isFirst){
                         const CSeq_id& aln_id = m_AV->GetSeqId(1);
                         TGi alnGi;
@@ -3767,6 +3768,13 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                         }
                         else {
                             m_CurrAlnID_DbLbl = m_CurrAlnID_Lbl;
+                        }                        
+                        if(alnGi == ZERO_GI && !dispId->Match(*alnDispParams->seqID)) {
+                            //if the first seq in defline (alnDispParams->seqID) does not match the seq in alignment (dispId)
+                            //which is not usually the case, display the sequence from seq align
+                            alnDispParams->seqID = dispId;
+                            alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);                            
+                            iter--;                            
                         }
 
                         firstGi = alnGi;
@@ -3776,7 +3784,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                             m_CurrAlnAccession =
                                 alnDispParams->seqID->AsFastaString();
                         }
-                        else {
+                        else { 
                             m_CurrAlnAccession =
                                 CAlignFormatUtil::GetBareId(
                                                       *alnDispParams->seqID);
@@ -3790,7 +3798,9 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
                                 m_CurrAlnAccession = parts[0];
                             }
                         }
+                        
                     }
+                    string alnDefLine = x_MapDefLine(alnDispParams,isFirst,m_AlignOption&eLinkout,hideDefline,seqLength);
                     //1. isFirst && firstGi == ZERO_GI - covers resource links for non-gis databases
                     //2. alnDispParams->gi == firstGi - covers resource links for gi databases/
                     if( (isFirst && firstGi == ZERO_GI) || (alnDispParams->gi == firstGi && firstGi != ZERO_GI) ) {
