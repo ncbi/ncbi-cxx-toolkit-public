@@ -266,7 +266,7 @@ void xGetGenBankBlocks(Entry& entry)
         if (nextKw == ParFlat_UNKW) {
             nextKw = currentKw;
         }
-        if (nextKw != currentKw || NStr::StartsWith(line, "REFERENCE")) {
+        if (nextKw != currentKw || line.starts_with("REFERENCE")) {
             auto* secPtr = new Section(currentKw, sectionLines);
             // secPtr->DumpText(cerr);
             entry.mSections.push_back(secPtr);
@@ -563,21 +563,19 @@ char* GetEmblBlock(TDataBlkList& chain, char* ptr, short* retkw, Parser::EFormat
         ++ptr; /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(
-            string_view(ptr, eptr),
-            (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
-        if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
-                                            treat as same line */
+        string_view sv(ptr, eptr);
+        nextkw = SrchKeyword(sv, (format == Parser::EFormat::SPROT) ? swissProtKeywords : emblKeywords);
+        if (nextkw == ParFlat_UNKW) // it can be "XX" line, treat as same line
             nextkw = curkw;
-        if (StringEquN(ptr, "RN", 2)) /* treat each RN per block */
+        if (sv.starts_with("RN"sv)) // treat each RN per block
             break;
-        if (StringEquN(ptr, "ID", 2)) /* treat each ID per block */
+        if (sv.starts_with("ID"sv)) // treat each ID per block
             break;
 
-        if (StringEquN(ptr, "OC", 2))
+        if (sv.starts_with("OC"sv))
             seen_oc = true;
 
-        if (StringEquN(ptr, "OS", 2) && seen_oc)
+        if (seen_oc && sv.starts_with("OS"sv))
             break; /* treat as next OS block */
 
     } while (nextkw == curkw);
@@ -1347,8 +1345,8 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) /* WGS/TSA/TLS
                                                                    contig */
         {
-            i = (StringEquN(a.c_str(), "NZ_", 3)) ? 7 : 4;
-            if (! StringEquN(a.c_str(), ibp->acnum, i)) {
+            i = a.starts_with("NZ_"sv) ? 7 : 4;
+            if (! a.starts_with(string_view(ibp->acnum, i))) {
                 if (! allow_uwsec) {
                     FtaErrPost(SEV_REJECT, ERR_ACCESSION_UnusualWGS_Secondary, "This record has one or more WGS/TSA/TLS secondary accession numbers which imply that a WGS/TSA/TLS project is being replaced (either by another project or by finished sequence). This is not allowed without human review and confirmation.");
                     ibp->drop = true;

@@ -567,8 +567,8 @@ string GetBlkDataReplaceNewLine(string_view instr, Uint2 indent)
     vector<string> lines;
     NStr::Split(instr, "\n", lines);
     string replaced;
-    for (auto line : lines) {
-        if (line.empty() || NStr::StartsWith(line, "XX") || line.size() <= indent) {
+    for (const auto& line : lines) {
+        if (line.empty() || line.starts_with("XX") || line.size() <= indent) {
             continue;
         }
         replaced += line.substr(indent);

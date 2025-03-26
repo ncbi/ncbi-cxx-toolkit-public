@@ -828,20 +828,20 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         descr->SetTitle(title);
         bioseq.SetDescr().Set().push_back(descr);
 
-        if (ibp->is_tpa == false && pp->source != Parser::ESource::EMBL &&
-            StringEquN(title.c_str(), "TPA:", 4)) {
+        if (! ibp->is_tpa && pp->source != Parser::ESource::EMBL &&
+            title.starts_with("TPA:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTPA, "This is apparently _not_ a TPA record, but the special \"TPA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tsa == false && StringEquN(title.c_str(), "TSA:", 4)) {
+        if (! ibp->is_tsa && title.starts_with("TSA:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTSA, "This is apparently _not_ a TSA record, but the special \"TSA:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
         }
 
-        if (ibp->is_tls == false && StringEquN(title.c_str(), "TLS:", 4)) {
+        if (! ibp->is_tls && title.starts_with("TLS:"sv)) {
             FtaErrPost(SEV_REJECT, ERR_DEFINITION_ShouldNotBeTLS, "This is apparently _not_ a TLS record, but the special \"TLS:\" prefix is present on its definition line. Entry dropped.");
             ibp->drop = true;
             return;
@@ -849,21 +849,21 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (ibp->is_tpa &&
-        (title.empty() || ! StringEquN(title.c_str(), "TPA:", 4))) {
+        (title.empty() || ! title.starts_with("TPA:"sv))) {
         FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTPA, "This is apparently a TPA record, but it lacks the required \"TPA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
     if (ibp->is_tsa &&
-        (title.empty() || ! StringEquN(title.c_str(), "TSA:", 4))) {
+        (title.empty() || ! title.starts_with("TSA:"))) {
         FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTSA, "This is apparently a TSA record, but it lacks the required \"TSA:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;
     }
 
     if (ibp->is_tls &&
-        (title.empty() || ! StringEquN(title.c_str(), "TLS:", 4))) {
+        (title.empty() || ! title.starts_with("TLS:"sv))) {
         FtaErrPost(SEV_REJECT, ERR_DEFINITION_MissingTLS, "This is apparently a TLS record, but it lacks the required \"TLS:\" prefix on its definition line. Entry dropped.");
         ibp->drop = true;
         return;

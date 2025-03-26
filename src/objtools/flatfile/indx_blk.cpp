@@ -466,16 +466,15 @@ static bool CkDateFormat(const char* date)
 /**********************************************************/
 int CheckSTRAND(const string& str)
 {
-    static const vector<string> strandSpecs = {
+    static const vector<string_view> strandSpecs = {
         "   ", "ss-", "ds-", "ms-"
     };
-    static const auto strandSpecCount = strandSpecs.size();
 
     string compare(str);
     NStr::ToLower(compare);
-    for (int i = 0; i < strandSpecCount; ++i) {
-        if (NStr::StartsWith(compare, strandSpecs[i])) {
-            return i;
+    for (unsigned i = 0; i < strandSpecs.size(); ++i) {
+        if (compare.starts_with(strandSpecs[i])) {
+            return int(i);
         }
     }
     return -1;
@@ -501,16 +500,15 @@ Int2 XMLCheckTPG(string_view str)
 /**********************************************************/
 int CheckTPG(const string& str)
 {
-    static const vector<string> topologies = {
+    static const vector<string_view> topologies = {
         "         ", "linear   ", "circular ", "tandem   "
     };
-    static const auto topologyCount = topologies.size();
 
     string compare(str);
     NStr::ToLower(compare);
-    for (int i = 0; i < topologyCount; ++i) {
-        if (NStr::StartsWith(compare, topologies[i])) {
-            return i;
+    for (unsigned i = 0; i < topologies.size(); ++i) {
+        if (compare.starts_with(topologies[i])) {
+            return int(i);
         }
     }
     return -1;
