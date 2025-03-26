@@ -4557,7 +4557,22 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup_v4)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestGiToOidTimeout, 15)
+{
+	int pig=0;
+	const int gi = 1492455000;
 
+	string giless_protein ="nr";
+	CSeqDB db_giless(giless_protein, CSeqDB::eProtein);
+	BOOST_REQUIRE_EQUAL(db_giless.GiToPig(gi, pig), false);
+	BOOST_REQUIRE_EQUAL(pig, -1);
+
+	for (int i=0; i < 200000; i++) {
+		db_giless.GiToPig(gi, pig);
+	}
+
+
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
