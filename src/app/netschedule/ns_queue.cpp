@@ -4453,8 +4453,14 @@ void CQueue::GetJobsPerState(const CNSClientId &  client,
             aff_jobs = m_AffinityRegistry.GetJobsWithAffinity(aff_id);
     }
 
-    if (!warnings.empty())
+    if (!warnings.empty()) {
+        // This is just in case; theoretically the caller should not use the
+        // results if warnings are present.
+        for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
+            jobs[index] = 0;
+        }
         return;
+    }
 
 
     string          scope = client.GetScope();
