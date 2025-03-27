@@ -12,10 +12,10 @@ if(NOT DEFINED wxWidgets_REQUESTED_COMPONENTS)
         gl richtext aui propgrid xrc html qa adv core xml net
     )
 endif()
-if (BUILD_SHARED_LIBS)
-    set(wxWidgets_USE_STATIC       OFF)
-else()
+if (NCBI_PTBCFG_COMPONENT_StaticComponents)
     set(wxWidgets_USE_STATIC       ON)
+else()
+    set(wxWidgets_USE_STATIC       OFF)
 endif()
 
 
