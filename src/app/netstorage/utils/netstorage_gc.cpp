@@ -233,6 +233,8 @@ void  CNetStorageGCApp::x_RemoveObjects(const vector<string> &  locators,
 
         const string &      hit_id = CDiagContext::GetRequestContext()
                                                                 .SetHitID();
+
+        NCBI_CLANG_ANALYZER_SUPPRESS
         error = true;
         try {
             if (verbose)
