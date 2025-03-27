@@ -5931,10 +5931,13 @@ if test "$with_boost" != "no"; then
    BOOST_LIBPATH_=$BOOST_PATH/lib
    NCBI_RPATHIFY_COND(BOOST_LIBPATH, $BOOST_LIBPATH_)
    if test -d "$BOOST_PATH"; then  
+      in_path=" in $BOOST_PATH"
       boost_path_digits=`basename $BOOST_PATH | sed -e 's/-ncbi[[0-9]]*$//; s/.0$//' | tr -cd 0123456789`
    else
+      in_path=
       boost_path_digits=
       BOOST_LIBPATH_=/usr/lib
+      BOOST_LIBPATH=
    fi
    if test -n "$boost_path_digits"; then
       boost_version_digits=`echo $ncbi_cv_lib_boost_version | sed -e 's/.0$//' | tr -cd 0123456789`
@@ -6156,8 +6159,6 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
    else
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
-
-   in_path=${BOOST_PATH:+ in $BOOST_PATH}
 
    AC_CACHE_CHECK([for Boost.Regex$in_path], ncbi_cv_lib_boost_regex,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
