@@ -3586,6 +3586,7 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
     unique_ptr<CDirEntry> src_ptr;  // deleter
     bool extracted = true;  // assume best
 
+    _ASSERT(dst);
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
         // Conform to POSIX-mandated behavior to extract as files
         type  = CTarEntryInfo::eFile;
