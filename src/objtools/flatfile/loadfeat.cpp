@@ -3638,11 +3638,17 @@ static void MergeNoteQual(TQualVector& quals)
 }
 
 /**********************************************************/
-static bool CheckLegalQual(const Char* val, Char ch, string* qual)
+static bool CheckLegalQual(string_view val, Char ch, string* qual)
 {
     string qual_name;
-    for (; *val && *val != ch && (isalpha(*val) || *val == '_'); ++val)
-        qual_name += *val;
+    for (char c : val) {
+        if (c == ch)
+            break;
+        if (isalpha(c) || c == '_')
+            qual_name += c;
+        else
+            break;
+    }
 
     CSeqFeatData::EQualifier type = CSeqFeatData::GetQualifierType(qual_name);
     if (type == CSeqFeatData::eQual_bad)
@@ -3655,41 +3661,33 @@ static bool CheckLegalQual(const Char* val, Char ch, string* qual)
 }
 
 /**********************************************************/
-static void fta_convert_to_lower_case(char* str)
+static void fta_convert_to_lower_case(string& str)
 {
-    char* p;
-
-    if (! str || *str == '\0')
-        return;
-
-    for (p = str; *p != '\0'; p++)
-        if (*p >= 'A' && *p <= 'Z')
-            *p |= 040;
+    for (char& c : str)
+        if (c >= 'A' && c <= 'Z')
+            c |= 040;
 }
 
 /**********************************************************/
-static void fta_process_con_slice(vector<char>& val_buf)
+static void fta_process_cons_splice(string& val_str)
 {
-    size_t i = 1;
-    char*  p = &val_buf[0];
+    if (val_str.size() < 2)
+        return;
 
+    vector<size_t> v;
     // look for commas not followed by blank or end-of-string
-    for (; *p != '\0'; p++)
-        if (*p == ',' && p[1] != ' ' && p[1] != '\0')
-            i++;
+    for (size_t i = 0; i < val_str.size() - 1; ++i) {
+        if (val_str[i] == ',' && val_str[i + 1] != ' ')
+            v.push_back(i + 1);
+    }
 
+    val_str.reserve(val_str.size() + v.size());
     // if there are some ...
-    if (i > 1) {
-        vector<char> buf(i + val_buf.size());
-        char*        q = &buf[0];
+    while (! v.empty()) {
+        size_t i = v.back();
+        v.pop_back();
         // ... then insert a blank right after the comma
-        for (p = &val_buf[0]; *p != '\0'; p++) {
-            *q++ = *p;
-            if (*p == ',' && p[1] != ' ' && p[1] != '\0')
-                *q++ = ' ';
-        }
-        *q = '\0';
-        val_buf.swap(buf);
+        val_str.insert(i, 1, ' ');
     }
 }
 
@@ -4029,7 +4027,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                 cur->ResetVal();
             } else {
                 if (qual_str == "replace")
-                    fta_convert_to_lower_case(val_str.data());
+                    fta_convert_to_lower_case(val_str);
                 cur->SetVal(val_str);
             }
 
@@ -4045,7 +4043,6 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
 {
     const char** b;
-    char*        p;
     bool         embed;
 
     if (! fbp || fbp->quals.empty())
@@ -4055,57 +4052,62 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
         const string& qual_str = (*cur)->GetQual();
 
         if ((*cur)->IsSetVal()) {
-            const string& val_str = (*cur)->GetVal();
-            vector<Char>  val_buf(val_str.begin(), val_str.end());
-            val_buf.push_back(0);
+            string val_str = (*cur)->GetVal();
 
             if (qual_str == "translation") {
-                DelCharBtwData(&val_buf[0]);
+                DelCharBtwData(val_str.data());
+                auto i = val_str.find('\0');
+                if (i != string::npos)
+                    val_str.resize(i);
             } else if (qual_str == "rpt_unit") {
-                fta_convert_to_lower_case(&val_buf[0]);
+                fta_convert_to_lower_case(val_str);
             } else if (qual_str == "cons_splice") {
-                fta_process_con_slice(val_buf);
+                fta_process_cons_splice(val_str);
             } else if (qual_str == "note") {
-                for (embed = false, p = &val_buf[0];;) {
-                    p = StringChr(p, '/');
-                    if (! p)
+                embed = false;
+                for (size_t p = 0;;) {
+                    p = val_str.find('/', p);
+                    if (p == string::npos)
                         break;
                     p++;
-                    if (! CheckLegalQual(p, ' ', nullptr))
+                    if (! CheckLegalQual(string_view(val_str).substr(p), ' ', nullptr))
                         continue;
 
-                    string _loc(&val_buf[0]);
+                    string _loc(val_str.substr(0, 34));
                     if (_loc.size() > 30) {
                         _loc.resize(30);
                         _loc += " ...";
                     }
-                    if(source == Parser::ESource::USPTO)
-                    {
+                    if (source == Parser::ESource::USPTO) {
                         FtaErrPost(SEV_ERROR, ERR_QUALIFIER_EmbeddedQual,
                                    "/note qualifier value appears to contain other qualifiers : qualifier has been dropped : [{}].", _loc);
                         embed = true;
-                    }
-                    else
+                    } else {
                         FtaErrPost(SEV_WARNING, ERR_QUALIFIER_EmbeddedQual,
                                    "/note qualifier value appears to contain other qualifiers : [{}].", _loc);
+                    }
                 }
-                if(embed && source == Parser::ESource::USPTO)
-                {
+                if (embed && source == Parser::ESource::USPTO) {
                     cur = fbp->quals.erase(cur);
                     continue;
                 }
             }
 
-            for (p = &val_buf[0]; *p == '\"' || *p == ' ' || *p == '\t';)
-                p++;
+            bool empty = true;
+            for (char c : val_str) {
+                if (c == '\"' || c == ' ' || c == '\t')
+                    continue;
+                empty = false;
+                break;
+            }
 
-            if (*p == '\0') {
+            if (empty) {
                 if (qual_str == "replace") {
                     (*cur)->SetVal("");
                 } else
                     (*cur)->ResetVal();
             } else
-                (*cur)->SetVal(&val_buf[0]);
+                (*cur)->SetVal(val_str);
         }
 
         for (b = EmptyQuals; *b; b++)
@@ -4144,7 +4146,6 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
 static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESource source)
 {
     FeatBlkPtr fbp;
-    char*      p;
     Int4       num;
     Int2       keyindx;
     int        retval = GB_FEAT_ERR_NONE;
@@ -4259,17 +4260,13 @@ static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Pa
             string        val_str  = cur->GetVal();
 
             ShrinkSpaces(val_str);
-            vector<Char> val_buf(val_str.begin(), val_str.end());
-            val_buf.push_back(0);
 
-            p = &val_buf[0];
-            if (*p == '\0' && qual_str != "replace") {
+            if (val_str.empty() && qual_str != "replace") {
                 cur->ResetVal();
-                val_buf[0] = 0;
             } else {
                 if (qual_str == "replace")
-                    fta_convert_to_lower_case(p);
-                cur->SetVal(p);
+                    fta_convert_to_lower_case(val_str);
+                cur->SetVal(val_str);
             }
         }
     } /* for, each sub-block, or each feature key */
