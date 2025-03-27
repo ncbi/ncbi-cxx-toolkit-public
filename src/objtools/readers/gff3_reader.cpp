@@ -63,7 +63,6 @@
 #include "reader_message_handler.hpp"
 
 #include <algorithm>
-#include <format>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -117,8 +116,8 @@ bool CGff3ReadRecord::AssignFromGff(
 
     if (! parent.empty() && parent == id) {
         throw CReaderMessage(eDiag_Error, 0,
-                format("Bad data line: " 
-                    "ID and Parent have the same value \"{}\"", parent));
+                "Bad data line: " 
+                "ID and Parent have the same value \"" + parent + "\"");
     }
 
     if (m_strType == "protein_coding_gene" || 
