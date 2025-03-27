@@ -573,6 +573,7 @@ void CHTMLPage::x_LoadTemplateLib(CNcbiIstream& istrm, SIZE_TYPE size,
         if ( !file_name.empty() ) {
             Int8 x_size = CFile(file_name).GetLength();
             if (x_size == 0) {
+                if ( caching ) delete pstr;
                 return;
             } else if (x_size < 0) {
                 NCBI_THROW(CHTMLException, eTemplateAccess,
