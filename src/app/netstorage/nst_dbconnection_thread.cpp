@@ -110,6 +110,8 @@ void CNSTDBConnectionThread::x_RestoreConnection(void)
     m_DbLock.Unlock();
 
     while (m_StopFlag.Get() == 0 && m_Connected == false) {
+
+        NCBI_CLANG_ANALYZER_SUPPRESS
         CNSTPreciseTime     start = CNSTPreciseTime::Current();
 
         try {
