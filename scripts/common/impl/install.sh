@@ -155,9 +155,9 @@ for d in $install_dirs ; do
      ( cd $install_dir  &&  tar xfb - $bs )
    test $? -eq 0  ||  Usage "Failed to copy to $install_dir/$d"
 
-   # Get rid of the .svn sub-dirs
+   # Get rid of hidden sub-dirs (.git/.svn, .#SRC-cache)
    if test "$with_svn" != "yes" ; then
-      find $install_dir/$d -type d -name .svn -prune -exec rm -rf {} \;
+      find $install_dir/$d -type d -name '.??*' -prune -exec rm -rf {} \;
    fi
 done
 
