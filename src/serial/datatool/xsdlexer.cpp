@@ -104,9 +104,8 @@ bool XSDLexer::ProcessDocumentation(void)
 
 TToken XSDLexer::Skip(void)
 {
-    char c = Char();
     for (;;) {
-        c = Char();
+        char c = Char();
         switch (c) {
         case '\0':
             return T_EOF;
