@@ -537,7 +537,10 @@ static void fta_check_pub_ids(TPubList& pub_list)
             continue;
         }
 
-        FtaErrPost(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded, "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : {} {}.", (*pub)->IsMuid() ? "MUID" : "PMID", (*pub)->GetMuid());
+        FtaErrPost(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded,
+                   "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : {} {}.",
+                   (*pub)->IsMuid() ? "MUID" : "PMID",
+                   ENTREZ_ID_TO(TIntId, (*pub)->GetMuid()));
 
         pub = pub_list.erase(pub);
     }
@@ -597,7 +600,9 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
     if (oldpmid > ZERO_ENTREZ_ID) {
         new_cit_art = FetchPubPmId(oldpmid);
         if (new_cit_art.Empty()) {
-            FtaErrPost(SEV_REJECT, ERR_REFERENCE_InvalidPmid, "MedArch failed to find a Cit-art for reference with pmid \"{}\".", oldpmid);
+            FtaErrPost(SEV_REJECT, ERR_REFERENCE_InvalidPmid,
+                       "MedArch failed to find a Cit-art for reference with pmid \"{}\".",
+                       ENTREZ_ID_TO(TIntId, oldpmid));
             ibp->drop = true;
         } else {
             if (new_cit_art->IsSetIds()) {
@@ -611,14 +616,19 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
             }
 
             if (pmid == ZERO_ENTREZ_ID) {
-                FtaErrPost(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid, "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
+                FtaErrPost(SEV_REJECT, ERR_REFERENCE_CitArtLacksPmid,
+                           "Cit-art returned by MedArch lacks pmid identifier in its ArticleIdSet.");
                 ibp->drop = true;
             } else if (pmid != oldpmid) {
-                FtaErrPost(SEV_REJECT, ERR_REFERENCE_DifferentPmids, "Pmid \"{}\" used for lookup does not match pmid \"{}\" in the ArticleIdSet of the Cit-art returned by MedArch.", oldpmid, pmid);
+                FtaErrPost(SEV_REJECT, ERR_REFERENCE_DifferentPmids,
+                           "Pmid \"{}\" used for lookup does not match pmid \"{}\" in the ArticleIdSet of the Cit-art returned by MedArch.",
+                           ENTREZ_ID_TO(TIntId, oldpmid), ENTREZ_ID_TO(TIntId, pmid));
                 ibp->drop = true;
             }
             if (muid > ZERO_ENTREZ_ID && oldmuid > ZERO_ENTREZ_ID && muid != oldmuid) {
-                FtaErrPost(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch, "Reference has supplied Medline UI \"{}\" but it does not match muid \"{}\" in the Cit-art returned by MedArch.", oldmuid, muid);
+                FtaErrPost(SEV_ERROR, ERR_REFERENCE_MuidPmidMissMatch,
+                           "Reference has supplied Medline UI \"{}\" but it does not match muid \"{}\" in the Cit-art returned by MedArch.",
+                           ENTREZ_ID_TO(TIntId, oldmuid), ENTREZ_ID_TO(TIntId, muid));
             }
         }
     }
