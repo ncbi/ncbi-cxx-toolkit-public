@@ -81,7 +81,7 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
             "The number of times a new connection established when a connection alert limit is already reached.");
     m_Counters[ePSGS_NumReqRefusedDueToSoftLimit] =
         new SCounterInfo(
-            "NumReqRefusedDueToSoftLimit", "Requests refused ue to connection soft limit",
+            "NumReqRefusedDueToSoftLimit", "Requests refused due to connection soft limit",
             "The number of times a request was refused (503) due to it came over a connection which was established when a soft limit is already reached.");
     m_Counters[ePSGS_NumConnBadToGoodMigration] =
         new SCounterInfo(
