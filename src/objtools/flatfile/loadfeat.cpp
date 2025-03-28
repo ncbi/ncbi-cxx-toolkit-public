@@ -576,6 +576,8 @@ StrNum LinkageEvidenceValues[] = {
 
 void FeatBlk::location_assign(string_view s)
 {
+    if (location)
+        MemFree(location);
     location = StringSave(s);
 }
 
@@ -617,14 +619,13 @@ static void FreeFeatBlk(TDataBlkList& dbl, Parser::EFormat format)
  *      Deletes blanks in the "str".
  *
  **********************************************************/
-static void DelCharBtwData(char* value)
+static void DelCharBtwData(string& value)
 {
-    char* p;
-
-    for (p = value; *p != '\0'; p++)
-        if (*p != ' ')
-            *value++ = *p;
-    *value = '\0';
+    size_t i = 0;
+    for (char c : value)
+        if (c != ' ')
+            value[i++] = c;
+    value.resize(i);
 }
 
 /**********************************************************
@@ -2388,7 +2389,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
 {
     const char** b;
 
-    char* loc = nullptr;
+    const char* loc = nullptr;
 
     bool locmap = false;
     bool err    = false;
@@ -2396,11 +2397,13 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
     CRef<CSeq_feat> feat;
 
     if (fbp->location_isset()) {
-        loc = fbp->location;
-        DelCharBtwData(loc);
-        pp->buf = fbp->key + " : " + loc;
+        string s = fbp->location_get();
+        DelCharBtwData(s);
+        fbp->location_assign(s);
+        loc = fbp->location_c_str();
+        pp->buf = fbp->key + " : " + s;
         feat.Reset(new CSeq_feat);
-        locmap = GetSeqLocation(*feat, loc, seqid, &err, pp, fbp->key);
+        locmap = GetSeqLocation(*feat, s, seqid, &err, pp, fbp->key);
         pp->buf.reset();
     }
     if (err) {
@@ -2827,7 +2830,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 
             if (got_pseudogene) {
                 FtaErrPost(SEV_ERROR, ERR_QUALIFIER_MultiplePseudoGeneQuals,
-                           "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <{}> : Feature key <{}> : Feature location <{}>.", val_str.empty() ? "[empty]"s : val_str, fbp->key, fbp->location);
+                           "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <{}> : Feature key <{}> : Feature location <{}>.", val_str.empty() ? "[empty]"s : val_str, fbp->key, fbp->location_get());
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2837,7 +2840,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 
             if (val_str.empty()) {
                 FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue,
-                           "Dropping a /pseudogene qualifier because its value is empty : Feature key <{}> : Feature location <{}>.", fbp->key, fbp->location);
+                           "Dropping a /pseudogene qualifier because its value is empty : Feature key <{}> : Feature location <{}>.", fbp->key, fbp->location_get());
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2912,7 +2915,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
             continue;
 
         FtaErrPost(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
-                   "Feature \"{}\" at \"{}\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key, fbp->location);
+                   "Feature \"{}\" at \"{}\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key, fbp->location_get());
         dbp.mDrop = true;
     }
 }
@@ -3676,9 +3679,9 @@ static void fta_process_cons_splice(string& val_str)
 
     vector<size_t> v;
     // look for commas not followed by blank or end-of-string
-    for (size_t i = 0; i < val_str.size() - 1; ++i) {
-        if (val_str[i] == ',' && val_str[i + 1] != ' ')
-            v.push_back(i + 1);
+    for (size_t i = 1; i < val_str.size(); ++i) {
+        if (val_str[i - 1] == ',' && val_str[i] != ' ')
+            v.push_back(i);
     }
 
     val_str.reserve(val_str.size() + v.size());
@@ -3917,7 +3920,6 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         *q = '\0';
 
         if (fbp->location[0] == '\0' && ibp->is_mga) {
-            MemFree(fbp->location);
             fbp->location_assign(loc);
         }
 
@@ -4055,10 +4057,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
             string val_str = (*cur)->GetVal();
 
             if (qual_str == "translation") {
-                DelCharBtwData(val_str.data());
-                auto i = val_str.find('\0');
-                if (i != string::npos)
-                    val_str.resize(i);
+                DelCharBtwData(val_str);
             } else if (qual_str == "rpt_unit") {
                 fta_convert_to_lower_case(val_str);
             } else if (qual_str == "cons_splice") {
@@ -4102,9 +4101,9 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
             }
 
             if (empty) {
-                if (qual_str == "replace") {
+                if (qual_str == "replace")
                     (*cur)->SetVal("");
-                } else
+                else
                     (*cur)->ResetVal();
             } else
                 (*cur)->SetVal(val_str);
