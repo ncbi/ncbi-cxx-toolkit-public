@@ -1477,7 +1477,6 @@ xalntool needs align_format
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
 xasn needs3party $(NETWORK_LIBS)
-xassembly_svc needs gc_asn_access
 xbiosample_util needs $(OBJEDIT_LIBS)
 xbiosample_util needs xmlwrapp
 xbiosample_util needs xobjutil
