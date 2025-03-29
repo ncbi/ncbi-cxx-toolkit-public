@@ -1880,7 +1880,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
     if (source != Parser::ESource::NCBI && source != Parser::ESource::DDBJ &&
         source != Parser::ESource::EMBL && source != Parser::ESource::LANL &&
         source != Parser::ESource::Refseq) {
-        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref={}\" for source \"{}\".", db, src);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Cannot process source feature's \"/db_xref={}\" for source \"{}\".", val_buf, src);
         return tag;
     }
 
@@ -1920,7 +1920,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
     }
 
     if (! *b) {
-        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref={}\" for source \"{}\".", db, src);
+        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidDbXref, "Invalid database name in source feature's \"/db_xref={}\" for source \"{}\".", val_buf, src);
         return tag;
     }
 
