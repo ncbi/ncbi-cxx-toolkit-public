@@ -1568,7 +1568,7 @@ struct formatter<ncbi::CStrictId<TKey, TStorage>, TChar>
         return format(id.Get(), ctx);
     }
 };
-#  endif // __cpp_lib_format
+#  endif // __has_include(<format>)
 #endif /* NCBI_STRICT_GI */
 
 #endif
