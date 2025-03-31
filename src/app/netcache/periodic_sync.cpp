@@ -516,7 +516,9 @@ CNCPeriodicSync::MarkCurSyncByBlobs(Uint8 server_id, Uint2 slot, Uint8 sync_id)
     SSyncSlotSrv* slot_srv;
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
 
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_slot(slot_data->lock);
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started  &&  slot_srv->is_passive
         &&  slot_srv->cur_sync_id == sync_id)
@@ -532,7 +534,9 @@ CNCPeriodicSync::SyncCommandFinished(Uint8 server_id, Uint2 slot, Uint8 sync_id)
     SSyncSlotSrv* slot_srv;
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
 
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_slot(slot_data->lock);
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started  &&  slot_srv->is_passive
         &&  slot_srv->cur_sync_id == sync_id)
@@ -552,7 +556,9 @@ CNCPeriodicSync::Cancel(Uint8 server_id, Uint2 slot, Uint8 sync_id)
     SSyncSlotSrv* slot_srv;
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
 
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_slot(slot_data->lock);
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started  &&  slot_srv->is_passive
         &&  slot_srv->cur_sync_id == sync_id)
@@ -579,10 +585,11 @@ CNCPeriodicSync::Commit(Uint8 server_id,
 
     SSyncSlotData* slot_data;
     SSyncSlotSrv* slot_srv;
-    NCBI_CLANG_ANALYZER_SUPPRESS
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
 
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_slot(slot_data->lock);
+    NCBI_CLANG_ANALYZER_SUPPRESS
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started  &&  slot_srv->is_passive
         &&  slot_srv->cur_sync_id == sync_id)
