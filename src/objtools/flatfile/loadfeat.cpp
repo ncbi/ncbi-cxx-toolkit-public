@@ -1144,15 +1144,14 @@ static Uint1 FTASeqLocCheck(const CSeq_loc& locs, char* accession)
 }
 
 /**********************************************************/
-static void fta_strip_aa(char* str)
+static void fta_strip_aa(string& str)
 {
-    if (! str || *str == '\0')
+    if (str.empty())
         return;
 
-    while (str) {
-        str = StringStr(str, "aa");
-        if (str)
-            fta_StringCpy(str, str + 2);
+    size_t q = 0;
+    while ((q = str.find("aa")) != string::npos) {
+        str.erase(q, 2);
     }
 }
 
@@ -1244,7 +1243,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             break;
         }
 
-        char* location = StringSave(*ploc);
+        string& location = *ploc;
         if (ibp->is_prot)
             fta_strip_aa(location);
 
@@ -1254,7 +1253,6 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         if (err) {
             FtaErrPost(SEV_REJECT, ERR_REFERENCE_UnparsableLocation, "Unparsable reference location. Entry dropped.");
-            MemFree(location);
             break;
         }
 
@@ -1272,8 +1270,6 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
             }
             feats.push_back(feat);
         }
-        if (location)
-            MemFree(location);
     }
 
     if (! err)
@@ -3151,8 +3147,6 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
     list<string>                         linkage_evidence_names;
 
     StrNum*     snp;
-    char*       p;
-    char*       q;
     const char* gap_type;
     bool        finished_gap;
     ErrSev      sev;
@@ -3243,11 +3237,8 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
                     if (cur_val == "unknown")
                         estimated_length = -100;
                     else {
-                        const char* cp = cur_val.c_str();
-                        for (; *cp >= '0' && *cp <= '9';)
-                            ++cp;
-                        if (*cp == '\0')
-                            estimated_length = atoi(cur_val.c_str());
+                        if (string::npos == cur_val.find_first_not_of("0123456789"))
+                            estimated_length = NStr::StringToInt(cur_val);
                     }
                 } else if (cur_qual == "gap_type")
                     gap_type = cur_val.c_str();
@@ -3257,19 +3248,18 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
             }
 
             if (fbp->location_isset()) {
-                p = fbp->location;
+                const char* p = fbp->location_c_str();
                 if (*p == '<')
                     p++;
-                for (q = p; *p >= '0' && *p <= '9';)
+                const char* q = p;
+                for (; *p >= '0' && *p <= '9';)
                     p++;
+                from = NStr::StringToNumeric<decltype(from)>(string_view(q, p - q), NStr::fConvErr_NoThrow);
                 if (*p == '\0') {
-                    from = atoi(q);
-                    to   = from;
+                    to = from;
                 } else if (*p == '.') {
-                    *p   = '\0';
-                    from = atoi(q);
-                    *p++ = '.';
-                    if (*fbp->location == '<' && from != 1)
+                    ++p;
+                    if (*fbp->location_c_str() == '<' && from != 1)
                         from = 0;
                     else if (*p == '.') {
                         if (*++p == '>')
@@ -3277,7 +3267,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
                         for (q = p; *p >= '0' && *p <= '9';)
                             p++;
                         if (*p == '\0')
-                            to = atoi(q);
+                            to = NStr::StringToNumeric<decltype(to)>(string_view(q, p - q), NStr::fConvErr_NoThrow);
                         if (*(q - 1) == '>' && to != (int)ibp->bases)
                             to = 0;
                     }
@@ -3852,7 +3842,6 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
     char* ptr1;
     char* ptr2;
     char* p;
-    char* q;
     string loc;
 
     FeatBlkPtr fbp;
@@ -3890,7 +3879,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
             FtaErrPost(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
             fbp->key = "misc_feature";
         } else
-            fbp->key = string_view(ptr1, ptr2 - ptr1);
+            fbp->key = string(ptr1, ptr2);
 
         for (ptr1 = ptr2; *ptr1 == ' ';)
             ptr1++;
@@ -3898,7 +3887,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
             if (ibp->is_mga == false) {
                 FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location missing");
                 dbp.mDrop = true;
-                retval     = GB_FEAT_ERR_DROP;
+                retval    = GB_FEAT_ERR_DROP;
                 continue;
             }
         } else {
@@ -3911,15 +3900,17 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 
         for (ptr2 = ptr1; *ptr2 != '/' && ptr2 < eptr;)
             ptr2++;
-        fbp->location_assign(string_view(ptr1, ptr2 - ptr1));
+        string tmp_loc(ptr1, ptr2);
         if (ibp->is_prot)
-            fta_strip_aa(fbp->location);
-        for (p = fbp->location, q = p; *p != '\0'; p++)
-            if (*p != ' ' && *p != '\n')
-                *q++ = *p;
-        *q = '\0';
+            fta_strip_aa(tmp_loc);
+        size_t j = 0;
+        for (char c : tmp_loc)
+            if (c != ' ' && c != '\n')
+                tmp_loc[j++] = c;
+        tmp_loc.resize(j);
+        fbp->location_assign(tmp_loc);
 
-        if (fbp->location[0] == '\0' && ibp->is_mga) {
+        if (fbp->location_c_str()[0] == '\0' && ibp->is_mga) {
             fbp->location_assign(loc);
         }
 
