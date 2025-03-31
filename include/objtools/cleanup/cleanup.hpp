@@ -78,6 +78,7 @@ public:
         eClean_KeepTopSet        = 0x20,
         eClean_KeepSingleSeqSet  = 0x40,
         eClean_InHugeSeqSet      = 0x80,
+        eClean_ForFlatfile       = 0x100,
     };
 
     enum EScopeOptions {

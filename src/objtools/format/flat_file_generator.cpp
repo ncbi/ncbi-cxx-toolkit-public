@@ -765,7 +765,8 @@ void CFlatFileGenerator::Generate(
         }
 
         CCleanup cleanup;
-        cleanup.BasicCleanup( *tmp_se );
+        Uint4 options = CCleanup::eClean_ForFlatfile;
+        cleanup.BasicCleanup( *tmp_se, options );
 
         if ( tmp_se->IsSet() ) {
             tseh.SelectSet(bseth);
