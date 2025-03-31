@@ -39,7 +39,7 @@
 ///   existing compressions libraries on a configuration stage. If system version 
 ///   of some compression library is not found, for some libraries like BZIP22, ZLIB, 
 ///   GZIP we have an embedded alternatives, that will be used automatically. 
-///   But for some others, like LZO and ZSTD, we don’t have such options.
+///   But for some others, like LZO and ZSTD, we don't have such options.
 ///   The configure define next macros, that can be used to put specific library
 ///   related code to corresponding #if/#endif block to avoid compilation errors
 ///   on some platforms that miss a specific compression library:
