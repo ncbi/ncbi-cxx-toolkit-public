@@ -856,7 +856,7 @@ public:
     }
 
 private:
-    friend SNcbi_AsnTextProxy operator "" _asn(const char* s, size_t len);
+    friend SNcbi_AsnTextProxy operator ""_asn(const char* s, size_t len);
 
     const char* const m_Data;
     const size_t      m_Size;
@@ -873,7 +873,7 @@ private:
 ///   CRef<CSeq_id> id = "Seq-id ::= gi 12345"_asn;
 ///   CRef<CSeq_id> id = R"~~(Seq-id ::= local str "foobar")~~"_asn;
 inline
-SNcbi_AsnTextProxy operator "" _asn(const char* s, size_t len)
+SNcbi_AsnTextProxy operator ""_asn(const char* s, size_t len)
 {
     return SNcbi_AsnTextProxy(s, len);
 }
