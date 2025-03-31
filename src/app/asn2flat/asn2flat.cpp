@@ -804,7 +804,8 @@ bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
     }
 
     if (m_do_cleanup) {
-        context.m_cleanup.BasicCleanup(sub);
+        Uint4 options = CCleanup::eClean_ForFlatfile;
+        context.m_cleanup.BasicCleanup(sub, options);
     }
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
@@ -895,7 +896,8 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
             tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
         }
 
-        context.m_cleanup.BasicCleanup(*tmp_se);
+        Uint4 options = CCleanup::eClean_ForFlatfile;
+        context.m_cleanup.BasicCleanup(*tmp_se, options);
 
         if (tmp_se->IsSet()) {
             tseh.SelectSet(bseth);

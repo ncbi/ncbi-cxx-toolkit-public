@@ -6066,8 +6066,7 @@ bool SortGBQuals(CSeq_feat& sf)
     CRef<CSeq_feat> orig(new CSeq_feat());
     orig->Assign(sf);
 
-    // first, extract product qualifier values, because order must be
-    // preserved
+    // first, extract product qualifier values, because order must be preserved
     vector<string> products;
     auto& qualset = sf.SetQual();
     CSeq_feat::TQual::iterator it = qualset.begin();
@@ -6139,6 +6138,18 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     if (!sf.IsSetQual()) {
         return;
     }
+
+    if (m_Options & CCleanup::eClean_ForFlatfile) {
+        // check for presence of inference qualifier
+        FOR_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
+            const CGb_qual& gbq = **gbq_it;
+            if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
+                // bail on all remaining GBQual cleanups if an inference is present
+                return;
+            }
+        }
+    }
+
     // clean before uniquing
     EDIT_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
         CGb_qual& gbq = **gbq_it;
