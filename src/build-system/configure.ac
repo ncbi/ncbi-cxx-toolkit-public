@@ -2703,10 +2703,14 @@ case "$compiler" in
       CFLAGS="-Wall -Wno-format-y2k $CFLAGS"
       CXXFLAGS="-Wall -Wno-format-y2k $CXXFLAGS"
       case "$host_os:$compiler_version" in
-         linux*:1[[4-9]]?? | linux*:[[2-9]]??? )
+         linux*:1[[4-9]]?? )
             # Normally an error, breaking some Boost.Test 1.76 usage;
             # no obvious middle ground.
             CXXFLAGS="-Wno-enum-constexpr-conversion $CXXFLAGS"
+            ;;
+      esac
+      case "$host_os:$compiler_version" in
+         linux*:1[[4-7]]?? )
             APP_LDFLAGS="-nopie $APP_LDFLAGS"            
             ;;
       esac
