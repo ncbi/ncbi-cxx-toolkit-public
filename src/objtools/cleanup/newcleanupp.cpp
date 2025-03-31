@@ -192,6 +192,8 @@ CNewCleanup_imp::CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options)
     m_Objmgr = CObjectManager::GetInstance ();
     m_Scope.Reset (new CScope (*m_Objmgr));
 
+    m_HasInferenceQuals = false;
+
 }
 
 // Destructor
@@ -6135,6 +6137,10 @@ void CNewCleanup_imp::x_ConvertGoQualifiers(CSeq_feat& sf)
 
 void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
+    if (m_HasInferenceQuals) {
+        return;
+    }
+
     if (!sf.IsSetQual()) {
         return;
     }
@@ -6145,6 +6151,7 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
             const CGb_qual& gbq = **gbq_it;
             if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
                 // bail on all remaining GBQual cleanups if an inference is present
+                m_HasInferenceQuals = true;
                 return;
             }
         }
