@@ -34,7 +34,7 @@
  *     1) needs HTML template file "cgi_sample.html" in curr. dir to run,
  *     2) needs configuration file "cgi_sample.ini",
  *     3) on most systems, you must make sure the executable's extension
- *        is '.cgi'.
+ *        is '.cgi' (or '.fcgi' if you use it in Fast-CGI mode).
  *
  */
 
@@ -46,6 +46,15 @@
 
 // To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
+
+
+// Special case - use CFastCgiApplication explicitly.
+// See 'fcgi_st_sample.cpp' 
+#ifdef FCGIAPP
+#  include <cgi/fcgiapp_st.hpp>
+#  define CCgiApplication CFastCgiApplication
+#endif
+
 
 USING_NCBI_SCOPE;
 

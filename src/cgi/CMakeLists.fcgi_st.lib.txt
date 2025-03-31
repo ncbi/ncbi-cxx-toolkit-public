@@ -1,0 +1,13 @@
+# $Id$
+
+# This is our traditional Fast-CGI library (single-threaded only) but it's
+# built atop of 'xcgi' library (instead of replacing it) -- which makes it
+# easier to use e.g. with Conan
+
+NCBI_begin_lib(xfcgi_st)
+  NCBI_sources(fcgiapp_st fcgibuf)
+  NCBI_requires(FASTCGI)
+  NCBI_add_definitions(NCBI_XFCGI_EXPORTS)
+  NCBI_uses_toolkit_libraries(xcgi)
+  NCBI_project_watchers(vakatov)
+NCBI_end_lib()
