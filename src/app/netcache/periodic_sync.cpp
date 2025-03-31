@@ -33,6 +33,7 @@
 
 #include <corelib/request_ctx.hpp>
 #include <util/random_gen.hpp>
+#include <common/ncbi_sanitizers.h>
 
 #include "netcached.hpp"
 #include "periodic_sync.hpp"
@@ -578,6 +579,7 @@ CNCPeriodicSync::Commit(Uint8 server_id,
 
     SSyncSlotData* slot_data;
     SSyncSlotSrv* slot_srv;
+    NCBI_CLANG_ANALYZER_SUPPRESS
     s_FindServerSlot(server_id, slot, slot_data, slot_srv);
 
     CMiniMutexGuard g_slot(slot_data->lock);
