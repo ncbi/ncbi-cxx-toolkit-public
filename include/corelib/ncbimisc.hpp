@@ -41,6 +41,10 @@
 #  include <sys/types.h>
 #endif
 
+#if __has_include(<format>)
+#  include <format>
+#endif
+
 #if !defined(HAVE_NULLPTR)  &&  !defined(nullptr)
 #  define nullptr NULL
 #endif
@@ -1551,6 +1555,20 @@ template <class TKey, class TStorage> struct hash<ncbi::CStrictId<TKey, TStorage
         return hash<TStorage>()(x.Get());
     }
 };
+
+#  if __has_include(<format>)
+template <class TKey, class TStorage, class TChar>
+struct formatter<ncbi::CStrictId<TKey, TStorage>, TChar>
+    : public formatter<TStorage, TChar>
+{
+    typedef ncbi::CStrictId<TKey, TStorage> TId;
+    
+    template<class TFmtContext>
+    TFmtContext::iterator format(const TId& id, TFmtContext& ctx) {
+        return format(id.Get(), ctx);
+    }
+};
+#  endif // __cpp_lib_format
 #endif /* NCBI_STRICT_GI */
 
 #endif
