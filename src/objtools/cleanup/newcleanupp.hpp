@@ -595,6 +595,9 @@ protected:
     /// Set via m_Options to synchronize Cdregion genetic codes with BioSource
     bool                  m_SyncGenCodes { false };
 
+    //// Used to bypass x_CleanSeqFeatQuals for flatfile generator with inference in record.
+    bool                  m_HasInferenceQuals { false };
+
     void SetGlobalFlags(const CSeq_entry& se, bool reset = true);
     void SetGlobalFlags(const CSeq_submit& ss);
     void SetGlobalFlags(const CBioseq& bs, bool reset = true);
