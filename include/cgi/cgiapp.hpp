@@ -63,6 +63,7 @@ class NCBI_XCGI_EXPORT CCgiApplication : public CNcbiApplication
 {
     friend class CCgiStatistics;
     friend class CCgiRequestProcessor;
+    friend class CFastCgiApplication;
     friend void s_ScheduleFastCGIExit(void);
 
 public:
@@ -479,6 +480,7 @@ private:
 class NCBI_XCGI_EXPORT CCgiStatistics
 {
     friend class CCgiApplication;
+    friend class CFastCgiApplication;
     friend class CFastCgiApplicationMT;
 public:
     virtual ~CCgiStatistics();

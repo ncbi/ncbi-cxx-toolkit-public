@@ -37,6 +37,15 @@
 #include <signal.h>
 
 
+#ifdef FCGIAPP
+#  include <cgi/fcgiapp_st.hpp>
+#  define CCgiApplication CFastCgiApplication
+#  ifndef HAVE_LIBFASTCGI
+#    define HAVE_LIBFASTCGI 1
+#  endif
+#endif
+
+
 #if !defined(HAVE_LIBFASTCGI)
 
 BEGIN_NCBI_SCOPE

@@ -289,7 +289,7 @@ function(NCBI_internal_analyze_libdeps)
     list(APPEND _host_projects ncbi_xloader_blastdb_rmt;ncbi_xloader_cdd;ncbi_xloader_genbank)
     list(APPEND _host_projects ncbi_xloader_snp;ncbi_xloader_sra;ncbi_xloader_csra;ncbi_xloader_wgs;ncbi_xloader_vdbgraph)
     list(APPEND _host_projects ncbi_xloader_asn_cache;ncbi_xloader_bam;ncbi_xloader_patcher)
-    list(APPEND _host_projects xfcgi;grpc_integration;psg_client;sqlitewrapp;xmlreaders;xsoap_server)
+    list(APPEND _host_projects xfcgi;xfcgi_st;grpc_integration;psg_client;sqlitewrapp;xmlreaders;xsoap_server)
     list(APPEND _host_projects bamread;sraread)
 
     list(SORT _all_projects)
