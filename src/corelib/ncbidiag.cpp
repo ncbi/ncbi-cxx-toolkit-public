@@ -650,7 +650,7 @@ static CSafeStatic<CDiagFilter> s_PostFilter;
 
 // Analogue to strstr.
 // Returns a pointer to the last occurrence of a search string in a string
-const char* 
+const char*
 str_rev_str(const char* begin_str, const char* end_str, const char* str_search)
 {
     if (begin_str == NULL)
@@ -669,10 +669,10 @@ str_rev_str(const char* begin_str, const char* end_str, const char* str_search)
             --cur_char;
         } while(*cur_char != *search_char && cur_char != begin_str);
         if (*cur_char != *search_char)
-            return NULL; 
+            return NULL;
     }
     while (search_char != str_search);
-    
+
     return cur_char;
 }
 
@@ -691,9 +691,9 @@ CDiagCompileInfo::CDiagCompileInfo(void)
 {
 }
 
-CDiagCompileInfo::CDiagCompileInfo(const char* file, 
-                                   int         line, 
-                                   const char* curr_funct, 
+CDiagCompileInfo::CDiagCompileInfo(const char* file,
+                                   int         line,
+                                   const char* curr_funct,
                                    const char* module)
     : m_File(file),
       m_Module(""),
@@ -738,7 +738,7 @@ bool CDiagCompileInfo::x_NeedModule(void) const
     // Check for a file extension without creating of temporary string objects
     const char* cur_extension = strrchr(m_File, '.');
     if (cur_extension == NULL)
-        return false; 
+        return false;
 
     if (*(cur_extension + 1) != '\0') {
         ++cur_extension;
@@ -860,7 +860,7 @@ CDiagCompileInfo::ParseCurrFunctName(void) const
         start_str_tmp = str_rev_str(m_CurrFunctName, end_str, " ");
         if (start_str_tmp != NULL) {
             start_str = start_str_tmp + 1;
-        } 
+        }
     }
 
     const char* cur_funct_name =
@@ -933,6 +933,8 @@ inline Uint8 s_GetThreadId(void)
 }
 
 
+namespace {
+
 enum EThreadDataState {
     eUninitialized = 0,
     eInitializing,
@@ -941,11 +943,14 @@ enum EThreadDataState {
     eReinitializing
 };
 
-static thread_local EThreadDataState s_ThreadDataState(eUninitialized);
-#define USE_TLS_DATA_CACHE
-#ifdef USE_TLS_DATA_CACHE
-static thread_local CDiagContextThreadData* s_ThreadDataCache;
-#endif
+// Lifespan of thread_local objects is much less then of global static ones.
+// To prevent premature destruction of main thread's data it's stored as both
+// thread_local and static.
+static shared_ptr<CDiagContextThreadData> s_MainThreadData;
+thread_local EThreadDataState s_ThreadDataState(eUninitialized);
+thread_local CDiagContextThreadData* s_ThreadDataCache = nullptr;
+
+}
 
 
 bool CDiagContext::IsMainThreadDataInitialized(void)
@@ -968,18 +973,7 @@ CDiagContextThreadData::CDiagContextThreadData(void)
 
 CDiagContextThreadData::~CDiagContextThreadData(void)
 {
-#ifdef USE_TLS_DATA_CACHE
-    if ( s_ThreadDataCache == this ) {
-        s_ThreadDataCache = 0;
-    }
-#endif
-}
-
-
-void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
-                                           void* /*cleanup_data*/)
-{
-    if ( CThread::IsMain() ) {
+    if ( this == s_MainThreadData.get() ) {
         // Copy properties from the main thread's TLS to the global properties.
         CDiagLock lock(CDiagLock::eWrite);
         // Print stop message.
@@ -987,8 +981,10 @@ void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
             GetDiagContext().PrintStop();
         }
     }
-    s_ThreadDataState = eDeinitialized; // re-enable protection
-    delete value;
+    if ( s_ThreadDataCache == this ) {
+        s_ThreadDataCache = nullptr;
+        s_ThreadDataState = eDeinitialized; // re-enable protection
+    }
 }
 
 
@@ -1007,11 +1003,10 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     // mid-execution would both add overhead and open up uncatchable
     // opportunities for inappropriate recursion.
 
- #ifdef USE_TLS_DATA_CACHE
-    if ( CDiagContextThreadData* data = s_ThreadDataCache ) {
+    CDiagContextThreadData* data = s_ThreadDataCache;
+    if ( data && s_ThreadDataState == eInitialized ) {
         return *data;
     }
-#endif
 
 
     if (s_ThreadDataState != eInitialized) {
@@ -1028,7 +1023,7 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
         case eInitializing:
             cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
-                    " diagnostic framework." << endl;
+                    " diagnostic framework.\n";
             Abort();
             break;
 
@@ -1038,35 +1033,28 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
         case eReinitializing:
             cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
-                    " initialized." << endl;
+                    " initialized.\n";
             Abort();
             break;
         }
     }
 
-    static CStaticTls<CDiagContextThreadData>
-        s_ThreadData(nullptr, CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
-
-    // Deliberate leak for 'data'-- for both cases: 
-    // GetValue() and new CDiagContextThreadData.
-    NCBI_LSAN_DISABLE_GUARD;
-    
-    CDiagContextThreadData* data = s_ThreadData.GetValue();
-    if ( !data ) {
-        // Cleanup data set to null for any thread except the main one.
-        // This value is used as a flag to copy threads' properties to global
-        // upon TLS cleanup.
-        data = new CDiagContextThreadData;
-        s_ThreadData.SetValue(data, CDiagContext::sx_ThreadDataTlsCleanup,
-            !CThread::IsMain() ? 0 : (void*)(1),
-            CTlsBase::eDoCleanup);
+    static thread_local shared_ptr<CDiagContextThreadData> tls_data;
+    if (s_ThreadDataState != eInitialized || !tls_data) {
+        tls_data = make_shared<CDiagContextThreadData>();
+        // The first instance of CDiagContextThreadData becomes main thread's data.
+        if ( !s_MainThreadData ) {
+            CDiagLock lock(CDiagLock::eWrite);
+            if ( !s_MainThreadData ) {
+                s_MainThreadData = tls_data;
+            }
+        }
+        s_ThreadDataCache = tls_data.get();
         s_ThreadDataState = eInitialized;
     }
-
-#ifdef USE_TLS_DATA_CACHE
-    s_ThreadDataCache = data;
-#endif
-    return *data;
+    // uncomment next line to force inappropriate recursion
+    //if (!CThread::IsMain())  throw std::runtime_error("inappropriate recursion");
+    return *tls_data;
 }
 
 
@@ -1637,7 +1625,7 @@ CDiagContext::TUID s_CreateUID(CDiagContext::TUID base)
 
     typedef CDiagContext::TPID TPID;
     typedef CDiagContext::TUID TUID;
-    
+
     TPID pid = CDiagContext::GetPID();
     time_t t = time(0);
 
@@ -1676,7 +1664,7 @@ void CDiagContext::x_CreateUID_AsyncSafe(void) const
     // https://man7.org/linux/man-pages/man7/signal-safety.7.html
     // Implemented for Unix only, on other platforms works the same
     // as a regular x_CreateUID().
-    
+
 #if defined(NCBI_OS_UNIX)
     TUID base = kUID_InitBase;
     struct utsname buf;
@@ -1692,7 +1680,7 @@ void CDiagContext::x_CreateUID_AsyncSafe(void) const
         base = base * kUID_Mult + (TUID)GetPID();
     }
     m_UID = s_CreateUID(base);
-#else 
+#else
     x_CreateUID();
 #endif
 }
@@ -2640,7 +2628,7 @@ static const char* kNcbiApplogKeywordStrings[] = {
 struct SNcbiApplogKeywordsInit
 {
     typedef unordered_set<string> TKeywords;
-    
+
     TKeywords* Create(void)
     {
         TKeywords* kw = new TKeywords;
@@ -2691,7 +2679,7 @@ CDiagContext_Extra::Print(const string& name, const string& value)
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, const char* value)
 {
-    return Print(name, string(value)); 
+    return Print(name, string(value));
 }
 
 CDiagContext_Extra&
@@ -2746,19 +2734,19 @@ CDiagContext_Extra::Print(const string& name, unsigned long long value)
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, char value)
 {
-    return Print(name, string(1,value)); 
+    return Print(name, string(1,value));
 }
 
 CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, signed char value)
 {
-    return Print(name, string(1,value)); 
+    return Print(name, string(1,value));
 }
 
-CDiagContext_Extra& 
+CDiagContext_Extra&
 CDiagContext_Extra::Print(const string& name, unsigned char value)
 {
-    return Print(name, string(1,value)); 
+    return Print(name, string(1,value));
 }
 
 CDiagContext_Extra&
@@ -3610,7 +3598,7 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 
     /*
     The default order of checking possible log locations is:
-    
+
       1. CMD - '-logfile <filename>' command line arg
       2. ENV - NCBI_CONFIG__LOG__FILE (or [Log]/File)
       3. LOG - /log/ if writable
@@ -4044,7 +4032,7 @@ void* InitDiagHandler(void)
     if (!s_DiagInitialized) {
         CDiagContext::SetupDiag(eDS_Default, 0, eDCM_Init);
 #ifdef NCBI_OS_MSWIN
-        // Check environment variable for silent exit, suppress popup messages if enabled. 
+        // Check environment variable for silent exit, suppress popup messages if enabled.
         // _ASSERT uses NCBI Diag API, and this allow it to work properly.
         const TXChar* value = NcbiSys_getenv(_TX("DIAG_SILENT_ABORT"));
         if (value && (*value == _TX('Y') || *value == _TX('y') || *value == _TX('1'))) {
@@ -4531,8 +4519,8 @@ SDiagMessage::SDiagMessage(EDiagSev severity,
                            TDiagPostFlags flags, const char* prefix,
                            int err_code, int err_subcode,
                            const char* err_text,
-                           const char* module, 
-                           const char* nclass, 
+                           const char* module,
+                           const char* nclass,
                            const char* function)
     : m_Event(eEvent_Start),
       m_TypedExtra(false),
@@ -4972,7 +4960,7 @@ bool SDiagMessage::ParseMessage(const string& message)
         m_Data->m_UID = NStr::StringToUInt8(
             CTempString(message.c_str() + pos, kDiagW_UID), 0, 16);
         pos += kDiagW_UID + 1;
-        
+
         m_ProcPost = s_ParseInt(message, pos, 0, '/');
         m_ThrPost = s_ParseInt(message, pos, 0, ' ');
 
@@ -5659,11 +5647,11 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
          IsSetDiagErrCodeInfo()) {
 
         CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
-        if ( info  && 
-             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
+        if ( info  &&
+             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode),
                                   &description) ) {
             have_description = true;
-            if (IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags) && 
+            if (IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags) &&
                 description.m_Severity != -1 )
                 m_Severity = (EDiagSev)description.m_Severity;
         }
@@ -5817,8 +5805,8 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
         IsSetDiagErrCodeInfo()) {
 
         CDiagErrCodeInfo* info = GetDiagErrCodeInfo();
-        if ( info  && 
-             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode), 
+        if ( info  &&
+             info->GetDescription(ErrCode(m_ErrCode, m_ErrSubCode),
                                   &description) ) {
             have_description = true;
             if (description.m_Severity != -1)
@@ -6229,7 +6217,7 @@ extern bool DisableDiagPostLevelChange(bool disable_change)
 {
     CDiagLock lock(CDiagLock::eWrite);
     bool prev_status = (CDiagBuffer::sm_PostSeverityChange == eDiagSC_Enable);
-    CDiagBuffer::sm_PostSeverityChange = disable_change ? eDiagSC_Disable : 
+    CDiagBuffer::sm_PostSeverityChange = disable_change ? eDiagSC_Disable :
                                                           eDiagSC_Enable;
     return prev_status;
 }
@@ -6694,7 +6682,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
         string str = ComposeMessage(mess, 0);
         if (NcbiSys_write(handle->GetHandle(), str.data(), (unsigned)str.size()))
             {/*dummy*/}
- 
+
         handle->RemoveReference();
     }
 }
@@ -7714,10 +7702,10 @@ extern CDiagErrCodeInfo* GetDiagErrCodeInfo(bool take_ownership)
 extern void SetDiagFilter(EDiagFilter what, const char* filter_str)
 {
     CDiagLock lock(CDiagLock::eWrite);
-    if (what == eDiagFilter_Trace  ||  what == eDiagFilter_All) 
+    if (what == eDiagFilter_Trace  ||  what == eDiagFilter_All)
         s_TraceFilter->Fill(filter_str);
 
-    if (what == eDiagFilter_Post  ||  what == eDiagFilter_All) 
+    if (what == eDiagFilter_Post  ||  what == eDiagFilter_All)
         s_PostFilter->Fill(filter_str);
 }
 
@@ -7751,10 +7739,10 @@ extern void AppendDiagFilter(EDiagFilter what, const char* filter_str)
 //  CNcbiDiag::
 
 CNcbiDiag::CNcbiDiag(EDiagSev sev, TDiagPostFlags post_flags)
-    : m_Severity(sev), 
-      m_ErrCode(0), 
+    : m_Severity(sev),
+      m_ErrCode(0),
       m_ErrSubCode(0),
-      m_Buffer(GetDiagBuffer()), 
+      m_Buffer(GetDiagBuffer()),
       m_PostFlags(ForceImportantFlags(post_flags)),
       m_OmitStackTrace(false)
 {
@@ -7773,7 +7761,7 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
 {
 }
 
-CNcbiDiag::~CNcbiDiag(void) 
+CNcbiDiag::~CNcbiDiag(void)
 {
     m_Buffer.Detach(this);
 }
@@ -7949,7 +7937,7 @@ bool CNcbiDiag::StrToSeverityLevel(const char* str_sev, EDiagSev& sev)
 {
     if (!str_sev || !*str_sev) {
         return false;
-    } 
+    }
     // Digital value
     int nsev = NStr::StringToNonNegativeInt(str_sev);
 
@@ -8190,7 +8178,7 @@ extern void SetAbortHandler(FAbortHandler func)
 
 extern void Abort(void)
 {
-    // If there is a user abort handler then call it 
+    // If there is a user abort handler then call it
     if ( s_UserAbortHandler )
         s_UserAbortHandler();
 
@@ -8277,7 +8265,7 @@ bool s_ParseErrCodeInfoStr(string&          str,
         x_code = NStr::StringToInt(token);
 
         // Severity
-        if ( !tokens.empty() ) { 
+        if ( !tokens.empty() ) {
             token = NStr::TruncateSpaces(tokens.front());
             EDiagSev sev;
             if (CNcbiDiag::StrToSeverityLevel(token.c_str(), sev)) {
@@ -8300,23 +8288,23 @@ bool s_ParseErrCodeInfoStr(string&          str,
     return true;
 }
 
-  
+
 bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
 {
     string       str;                      // The line being parsed
     SIZE_TYPE    line;                     // # of the line being parsed
-    bool         err_ready       = false;  // Error data ready flag 
+    bool         err_ready       = false;  // Error data ready flag
     int          err_code        = 0;      // First level error code
     int          err_subcode     = 0;      // Second level error code
     string       err_message;              // Short message
     string       err_text;                 // Error explanation
-    int          err_severity    = -1;     // Use default severity if  
+    int          err_severity    = -1;     // Use default severity if
                                            // has not specified
-    int          err_subseverity = -1;     // Use parents severity if  
+    int          err_subseverity = -1;     // Use parents severity if
                                            // has not specified
 
     for (line = 1;  NcbiGetlineEOL(is, str);  line++) {
-        
+
         // This is a comment or empty line
         if (!str.length()  ||  NStr::StartsWith(str,"#")) {
             continue;
@@ -8325,7 +8313,7 @@ bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
         if (err_ready  &&  str[0] == '$') {
             if (err_subseverity == -1)
                 err_subseverity = err_severity;
-            SetDescription(ErrCode(err_code, err_subcode), 
+            SetDescription(ErrCode(err_code, err_subcode),
                 SDiagErrCodeDescription(err_message, err_text,
                                         err_subseverity));
             // Clean
@@ -8336,16 +8324,16 @@ bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
 
         // Get error code
         if (NStr::StartsWith(str,"$$")) {
-            if (!s_ParseErrCodeInfoStr(str, line, err_code, err_severity, 
+            if (!s_ParseErrCodeInfoStr(str, line, err_code, err_severity,
                                        err_message, err_ready))
                 continue;
             err_subcode = 0;
-        
+
         } else if (NStr::StartsWith(str,"$^")) {
         // Get error subcode
             s_ParseErrCodeInfoStr(str, line, err_subcode, err_subseverity,
                                   err_message, err_ready);
-      
+
         } else if (err_ready) {
         // Get line of explanation message
             if (!err_text.empty()) {
@@ -8357,14 +8345,14 @@ bool CDiagErrCodeInfo::Read(CNcbiIstream& is)
     if (err_ready) {
         if (err_subseverity == -1)
             err_subseverity = err_severity;
-        SetDescription(ErrCode(err_code, err_subcode), 
+        SetDescription(ErrCode(err_code, err_subcode),
             SDiagErrCodeDescription(err_message, err_text, err_subseverity));
     }
     return true;
 }
 
 
-bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code, 
+bool CDiagErrCodeInfo::GetDescription(const ErrCode& err_code,
                                       SDiagErrCodeDescription* description)
     const
 {
