@@ -308,6 +308,7 @@ static void* x_LoadFile(const char* file, size_t* size)
         return 0;
     }
     rewind(fp);
+    (void) errno;
     if (fread(buf, 1, (size_t) off, fp) != (size_t) off) {
         free(buf);
         fclose(fp);
