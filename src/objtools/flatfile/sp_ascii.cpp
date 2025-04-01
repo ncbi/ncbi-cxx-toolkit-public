@@ -3435,8 +3435,6 @@ Int2 SpFeatKeyNameValid(const Char* keystr)
 CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid)
 {
     string descrip;
-    char*  loc;
-    char*  p;
     Uint1  type;
     Int2   indx;
     bool   err = false;
@@ -3481,24 +3479,26 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
     }
 
     if (fbp->location_isset()) {
-        loc = fbp->location;
-        for (p = loc; *p; p++)
-            if (*p != ' ')
-                *loc++ = *p;
-        *loc = '\0';
+        string& loc = *fbp->location;
+        // strip spaces
+        size_t j = 0;
+        for (char c : loc)
+            if (c != ' ')
+                loc[j++] = c;
+        loc.resize(j);
         pp->buf = fbp->key + " : " + fbp->location_get();
-        GetSeqLocation(*feat, fbp->location, seqid, &err, pp, fbp->key);
+        GetSeqLocation(*feat, fbp->location_get(), seqid, &err, pp, fbp->key);
         pp->buf.reset();
     }
     if (err) {
         if (! pp->debug) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "{}|{}| range check detects problems", fbp->key, fbp->location_c_str());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "{}|{}| range check detects problems", fbp->key, fbp->location_get());
             if (! descrip.empty())
                 descrip.clear();
             feat->Reset();
             return (null);
         }
-        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "{}|{}| range check detects problems", fbp->key, fbp->location_c_str());
+        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "{}|{}| range check detects problems", fbp->key, fbp->location_get());
     }
 
     if (SeqLocHaveFuzz(feat->GetLocation()))
