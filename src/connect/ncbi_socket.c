@@ -2325,11 +2325,9 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 #ifdef __GNUC__
 inline
 #endif /*__GNUC_*/
-static int/*bool*/ x_IsInterruptiblePoll(size_t n, SOCK sock0)
+static int/*bool*/ x_IsInterruptiblePoll(SOCK sock0)
 {
-    if (n != 1  ||  !sock0)
-        return s_InterruptOnSignal == eOn ? 1/*true*/ : 0/*false*/;
-    return x_IsInterruptibleSOCK(sock0);
+    return sock0 ? x_IsInterruptibleSOCK(sock0) : s_InterruptOnSignal == eOn ? 1/*true*/ : 0/*false*/;
 }
 
 
@@ -2540,7 +2538,7 @@ static EIO_Status s_Select_(size_t                n,
                 UTIL_ReleaseBuffer(strerr);
                 if (!ready)
                     return eIO_Unknown;
-            } else if (x_IsInterruptiblePoll(n, n ? polls[0].sock : 0)) {
+            } else if (x_IsInterruptiblePoll(n == 1 ? polls[0].sock : 0)) {
                 return eIO_Interrupt;
             } else
                 continue;
@@ -2825,7 +2823,7 @@ static EIO_Status s_Poll_(size_t                n,
                     status = eIO_Unknown;
                     break;
                 }
-            } else if (x_IsInterruptiblePoll(n, n ? polls[0].sock : 0)) {
+            } else if (x_IsInterruptiblePoll(n == 1 ? polls[0].sock : 0)) {
                 status = eIO_Interrupt;
                 break;
             } else
