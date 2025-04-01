@@ -2265,6 +2265,20 @@ static int/*bool*/ x_IsSmallerTimeout(const struct timeval* t1,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC_*/
+static int/*bool*/ x_IsInterruptibleSOCK(SOCK sock)
+{
+    assert(sock);
+    if (sock->i_on_sig == eOn)
+        return 1/*true*/;
+    if (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)
+        return 1/*true*/;
+    return 0/*false*/;
+}
+
+
 #if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
 static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 {
@@ -2306,6 +2320,17 @@ static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 
 
 #if !defined(NCBI_OS_MSWIN)  ||  !defined(NCBI_CXX_TOOLKIT)
+
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC_*/
+static int/*bool*/ x_IsInterruptiblePoll(size_t n, SOCK sock0)
+{
+    if (n != 1  ||  !sock0)
+        return s_InterruptOnSignal == eOn ? 1/*true*/ : 0/*false*/;
+    return x_IsInterruptibleSOCK(sock0);
+}
 
 
 static EIO_Status s_Select_(size_t                n,
@@ -2515,10 +2540,7 @@ static EIO_Status s_Select_(size_t                n,
                 UTIL_ReleaseBuffer(strerr);
                 if (!ready)
                     return eIO_Unknown;
-            } else if ((n != 1  &&  s_InterruptOnSignal == eOn)  ||
-                       (n == 1  &&  (polls[0].sock->i_on_sig == eOn
-                                     ||  (polls[0].sock->i_on_sig == eDefault
-                                          &&  s_InterruptOnSignal == eOn)))) {
+            } else if (x_IsInterruptiblePoll(n, n ? polls[0].sock : 0)) {
                 return eIO_Interrupt;
             } else
                 continue;
@@ -2803,10 +2825,7 @@ static EIO_Status s_Poll_(size_t                n,
                     status = eIO_Unknown;
                     break;
                 }
-            } else if ((n != 1  &&  s_InterruptOnSignal == eOn)  ||
-                       (n == 1  &&  (polls[0].sock->i_on_sig == eOn
-                                     ||  (polls[0].sock->i_on_sig == eDefault
-                                          &&  s_InterruptOnSignal == eOn)))) {
+            } else if (x_IsInterruptiblePoll(n, n ? polls[0].sock : 0)) {
                 status = eIO_Interrupt;
                 break;
             } else
@@ -3591,8 +3610,7 @@ static EIO_Status s_Recv(SOCK    sock,
             break/*unknown*/;
         }
 
-        if (sock->i_on_sig == eOn
-            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+        if (x_IsInterruptibleSOCK(sock)) {
             sock->r_status = eIO_Interrupt;
             break/*interrupt*/;
         }
@@ -3893,10 +3911,11 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         assert(pending  &&  !m);
         /* all sockets are not ready for the requested events */
         for (i = k;  i < n;  ++i) {
-            static const struct timeval zero = { 0 };
-            SOCK sock = polls[i].sock;
+            SOCK sock;
             /* try to push pending writes */
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
+                static const struct timeval zero = { 0 };
+                sock = polls[i].sock;
                 assert(sock                          &&
                        sock->sock != SOCK_INVALID    &&
                        sock->type == eSOCK_Socket    &&
@@ -3913,6 +3932,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             /* try to upread immediately readable sockets */
             if (polls[i].event == eIO_Write  &&  polls[i].revent == eIO_Read) {
                 size_t dummy;
+                sock = polls[i].sock;
                 assert(sock                          &&
                        sock->sock != SOCK_INVALID    &&
                        sock->type == eSOCK_Socket    &&
@@ -4166,8 +4186,7 @@ static EIO_Status s_Send(SOCK        sock,
             break/*unknown*/;
         }
 
-        if (sock->i_on_sig == eOn
-            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+        if (x_IsInterruptibleSOCK(sock)) {
             sock->w_status = eIO_Interrupt;
             break/*interrupt*/;
         }
@@ -5108,10 +5127,8 @@ static EIO_Status s_Connect_(SOCK            sock,
             break;
         }
         error = SOCK_ERRNO;
-        if (error != SOCK_EINTR  ||  sock->i_on_sig == eOn
-            ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
+        if (error != SOCK_EINTR  ||  x_IsInterruptibleSOCK(sock))
             break;
-        }
     }
 
     /* statistics & logging */
@@ -6620,8 +6637,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 continue/*read again*/;
             }
         } else if (error == SOCK_EINTR) {
-            if (sock->i_on_sig == eOn
-                || (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)){
+            if (x_IsInterruptibleSOCK(sock)) {
                 sock->r_status = status = eIO_Interrupt;
                 break/*interrupt*/;
             }
@@ -6791,8 +6807,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
                 continue/*send again*/;
             }
         } else if (error == SOCK_EINTR) {
-            if (sock->i_on_sig == eOn
-                || (sock->i_on_sig == eDefault && s_InterruptOnSignal == eOn)){
+            if (x_IsInterruptibleSOCK(sock)) {
                 sock->w_status = status = eIO_Interrupt;
                 break/*interrupt*/;
             }
