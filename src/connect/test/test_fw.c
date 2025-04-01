@@ -89,11 +89,13 @@ extern int main(int argc, char** argv)
     FILE* fp;
 
     /* Cmd.-line args */
-    if (argc != 4  ||
-        (fp = fopen(argv[1], "r")) == 0  ||
-        ((port = atoi(argv[3])) & ~0xFFFF)) {
+    if (argc != 4  ||  ((port = atoi(argv[3])) & ~0xFFFF)) {
         fputs("\nUSAGE:\n"
               "test_fw <inp_file> <host> <port>\n\n", stderr);
+        return 1;
+    }
+    if (!(fp = fopen(argv[1], "r"))) {
+        perror(argv[1]);
         return 1;
     }
 
