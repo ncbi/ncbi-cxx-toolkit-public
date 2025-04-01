@@ -576,18 +576,13 @@ StrNum LinkageEvidenceValues[] = {
 
 void FeatBlk::location_assign(string_view s)
 {
-    if (location)
-        MemFree(location);
-    location = StringSave(s);
+    location = s;
 }
 
 FeatBlk::~FeatBlk()
 {
     key.clear();
-    if (location) {
-        MemFree(location);
-        location = nullptr;
-    }
+    location.reset();
 }
 
 void DataBlk::SetFeatData(FeatBlk* p)
@@ -2385,7 +2380,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
 {
     const char** b;
 
-    const char* loc = nullptr;
+    const string* loc = nullptr;
 
     bool locmap = false;
     bool err    = false;
@@ -2393,24 +2388,22 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
     CRef<CSeq_feat> feat;
 
     if (fbp->location_isset()) {
-        string s = fbp->location_get();
-        DelCharBtwData(s);
-        fbp->location_assign(s);
-        loc = fbp->location_c_str();
-        pp->buf = fbp->key + " : " + s;
+        DelCharBtwData(*fbp->location);
+        loc = fbp->location.operator->();
+        pp->buf = fbp->key + " : " + *loc;
         feat.Reset(new CSeq_feat);
-        locmap = GetSeqLocation(*feat, s, seqid, &err, pp, fbp->key);
+        locmap = GetSeqLocation(*feat, *loc, seqid, &err, pp, fbp->key);
         pp->buf.reset();
 
         if (err) {
             if (pp->debug == false) {
                 FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped,
-                           "{}|{}| range check detects problems", fbp->key, loc);
+                           "{}|{}| range check detects problems", fbp->key, *loc);
                 feat.Reset();
                 return feat;
             }
             FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck,
-                       "{}|{}| range check detects problems", fbp->key, loc);
+                       "{}|{}| range check detects problems", fbp->key, *loc);
         }
     }
 
@@ -2419,7 +2412,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
             feat->SetPartial(true);
     }
 
-    if (loc && StringStr(loc, "order"))
+    if (loc && loc->find("order") != string::npos)
         feat->SetPartial(true);
 
     if (! fbp->quals.empty()) {
@@ -2675,7 +2668,7 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
             const FeatBlk* fbp2 = tdbp->GetFeatData();
 
             if (fbp1->location_isset() && fbp2->location_isset() &&
-                StringCmp(fbp1->location_get(), fbp2->location_get()) < 0)
+                StringCmp(fbp1->location_c_str(), fbp2->location_c_str()) < 0)
                 break;
 
             if (! fta_feats_same(fbp1, fbp2)) {
@@ -2896,7 +2889,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
 
                 if (badcom) {
                     FtaErrPost(SEV_ERROR, ERR_QUALIFIER_IllegalCompareQualifier,
-                               "/compare qualifier value is not a legal Accession.Version : feature \"{}\" at \"{}\" : value \"{}\" : qualifier has been dropped.", fbp->key, fbp->location, val_str.empty() ? "[empty]"s : val_str);
+                               "/compare qualifier value is not a legal Accession.Version : feature \"{}\" at \"{}\" : value \"{}\" : qualifier has been dropped.", fbp->key, fbp->location_get(), val_str.empty() ? "[empty]"s : val_str);
                     cur = fbp->quals.erase(cur);
                     continue;
                 }
@@ -3918,7 +3911,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         tmp_loc.resize(j);
         fbp->location_assign(tmp_loc);
 
-        if (fbp->location_c_str()[0] == '\0' && ibp->is_mga) {
+        if (fbp->location_get().empty() && ibp->is_mga) {
             fbp->location_assign(loc);
         }
 
@@ -4424,7 +4417,6 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
 {
     FeatBlkPtr   fbp;
     const char** b;
-    const char*  p;
     bool         got_note;
     bool         other_class;
     Int4         count;
@@ -4477,12 +4469,13 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
 
             count++;
             if (! cur->IsSetVal() || cur->GetVal().empty()) {
-                if (! fbp->location_isset() || *fbp->location_get() == '\0')
-                    p = "(empty)";
+                string s;
+                if (! fbp->location_isset() || fbp->location_get().empty())
+                    s = "(empty)"s;
                 else
-                    p = fbp->location;
+                    s = fbp->location_get();
                 FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass,
-                           "Empty /regulatory_class qualifier value in regulatory feature at location {}.", p);
+                           "Empty /regulatory_class qualifier value in regulatory feature at location {}.", s);
                 *drop = true;
                 continue;
             }
@@ -4499,38 +4492,42 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
                 continue;
             }
 
-            if (! fbp->location_isset() || *fbp->location_get() == '\0')
-                p = "(empty)";
+            string s;
+            if (! fbp->location_isset() || fbp->location_get().empty())
+                s = "(empty)"s;
             else
-                p = fbp->location;
+                s = fbp->location_get();
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass,
-                       "Invalid /regulatory_class qualifier value {} provided in regulatory feature at location {}.", val_str, p);
+                       "Invalid /regulatory_class qualifier value {} provided in regulatory feature at location {}.", val_str, s);
             *drop = true;
         }
 
         if (count == 0) {
-            if (! fbp->location_isset() || *fbp->location_get() == '\0')
-                p = "(empty)";
+            string s;
+            if (! fbp->location_isset() || fbp->location_get().empty())
+                s = "(empty)"s;
             else
-                p = fbp->location;
+                s = fbp->location_get();
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MissingRegulatoryClass,
-                       "The regulatory feature is missing mandatory /regulatory_class qualifier at location {}.", p);
+                       "The regulatory feature is missing mandatory /regulatory_class qualifier at location {}.", s);
             *drop = true;
         } else if (count > 1) {
-            if (! fbp->location_isset() || *fbp->location_get() == '\0')
-                p = "(empty)";
+            string s;
+            if (! fbp->location_isset() || fbp->location_get().empty())
+                s = "(empty)"s;
             else
-                p = fbp->location;
-            FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MultipleRegulatoryClass, "Multiple /regulatory_class qualifiers were encountered in regulatory feature at location {}.", p);
+                s = fbp->location_get();
+            FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MultipleRegulatoryClass, "Multiple /regulatory_class qualifiers were encountered in regulatory feature at location {}.", s);
             *drop = true;
         }
 
         if (other_class && ! got_note) {
-            if (! fbp->location_isset() || *fbp->location_get() == '\0')
-                p = "(empty)";
+            string s;
+            if (! fbp->location_isset() || fbp->location_get().empty())
+                s = "(empty)"s;
             else
-                p = fbp->location;
-            FtaErrPost(SEV_REJECT, ERR_QUALIFIER_NoNoteForOtherRegulatory, "The regulatory feature of class other is lacking required /note qualifier at location {}.", p);
+                s = fbp->location_get();
+            FtaErrPost(SEV_REJECT, ERR_QUALIFIER_NoNoteForOtherRegulatory, "The regulatory feature of class other is lacking required /note qualifier at location {}.", s);
             *drop = true;
         }
     }
