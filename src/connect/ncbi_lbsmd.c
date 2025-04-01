@@ -1463,8 +1463,10 @@ double LBSM_CalculateStatus(double rate, double fine, ESERV_Algo algo,
         return 0.0;
     if (unlikely(rate < LBSM_STANDBY_THRESHOLD))
         status = rate < 0.0 ? -LBSM_DEFAULT_RATE : LBSM_DEFAULT_RATE;
-    else
+    else {
+        assert(load);
         status = algo & eSERV_Blast ? load->statusBLAST : load->status;
+    }
     status *= rate / LBSM_DEFAULT_RATE;
     /* accurately apply fine: avoid imperfections with 100% */
     status *= (100. - (fine < 0. ? 0. : fine > 100. ? 100. : fine)) / 100.0;

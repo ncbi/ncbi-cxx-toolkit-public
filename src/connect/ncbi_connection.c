@@ -406,10 +406,9 @@ static EIO_Status s_Open(CONN conn)
     if (conn->meta.open) {
         for (;;) {
             int/*bool*/ nocb = 1/*true = no callback*/;
-            if ((status = x_Callback(conn, eCONN_OnOpen, 0)) == eIO_Reserved) {
-                status = eIO_Success;
+            if ((status = x_Callback(conn, eCONN_OnOpen, 0)) == eIO_Reserved)
                 nocb = 0/*false*/;
-            } else if (status != eIO_Success)
+            else if (status != eIO_Success)
                 break;
 
             /* call current connector's "OPEN" method */

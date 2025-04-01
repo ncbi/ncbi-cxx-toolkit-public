@@ -6167,6 +6167,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     } u;
     TSOCK_Handle    fd;
     unsigned int    x_id;
+    TNCBI_IPv6Addr  addr;
     const char*     path;
     unsigned short  port;
 #ifdef NCBI_OS_MSWIN
@@ -6175,7 +6176,6 @@ static EIO_Status s_Accept(LSOCK           lsock,
     int             error;
     SOCK            x_sock;
     TSOCK_socklen_t addrlen;
-    TNCBI_IPv6Addr  addr;
     char            _id[MAXIDLEN];
 
     *sock = 0;
