@@ -402,8 +402,11 @@ int CNCBITestConnStreamApp::Run(void)
     LOG_POST(Info << "Test 2 of " STR(N) ": Socket stream");
 
     bool secure = rand() & 1 ? true : false;
-    if (!(net_info = ConnNetInfo_Create(0)))
+    if (!(net_info = ConnNetInfo_Create(0))) {
         ERR_POST(Fatal << "Cannot create net info");
+        /*NOTREACHED*/
+        return 1;
+    }
 
     unique_ptr<CSocket>        socket(new CSocket
                                       (net_info->host,    secure

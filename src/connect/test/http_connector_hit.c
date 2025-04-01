@@ -142,6 +142,7 @@ int main(int argc, const char* argv[])
                 "/Service/bounce.cgi 'arg1+arg2+arg3'\n",
                 argv[0], argv[0]);
         CORE_LOG(eLOG_Fatal, "Too few arguments");
+        /*NOTREACHED*/
         return 1;
     }
 
@@ -175,16 +176,16 @@ int main(int argc, const char* argv[])
             if (!(inp_fp = fopen(inp_file, "rb"))) {
                 CORE_LOGF(eLOG_Fatal,
                           ("Cannot open file '%s' for reading", inp_file));
+                /*NOTREACHED*/
+                return 1;
             }
         } else
             inp_fp = stdin;
 
-        for (;;) {
+        do {
             n_read = fread(buffer, 1, sizeof(buffer), inp_fp);
-            if (n_read <= 0) {
-                assert(feof(inp_fp));
+            if (n_read <= 0)
                 break; /* EOF */
-            }
 
             status = CONN_Write(conn, buffer, n_read,
                                 &n_written, eIO_WritePersist);
@@ -193,7 +194,8 @@ int main(int argc, const char* argv[])
                           ("Unable to write to URL: %s",IO_StatusStr(status)));
             }
             assert(n_written == n_read);
-        }
+        } while (n_read == sizeof(buffer));
+        assert(feof(inp_fp));
         fclose(inp_fp);
     }
 
