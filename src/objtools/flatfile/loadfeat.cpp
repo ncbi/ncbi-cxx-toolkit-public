@@ -2401,16 +2401,17 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
         feat.Reset(new CSeq_feat);
         locmap = GetSeqLocation(*feat, s, seqid, &err, pp, fbp->key);
         pp->buf.reset();
-    }
-    if (err) {
-        if (pp->debug == false) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped,
+
+        if (err) {
+            if (pp->debug == false) {
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped,
+                           "{}|{}| range check detects problems", fbp->key, loc);
+                feat.Reset();
+                return feat;
+            }
+            FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck,
                        "{}|{}| range check detects problems", fbp->key, loc);
-            feat.Reset();
-            return feat;
         }
-        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck,
-                   "{}|{}| range check detects problems", fbp->key, loc);
     }
 
     if (! fbp->quals.empty()) {
@@ -2418,7 +2419,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
             feat->SetPartial(true);
     }
 
-    if (StringStr(loc, "order"))
+    if (loc && StringStr(loc, "order"))
         feat->SetPartial(true);
 
     if (! fbp->quals.empty()) {
