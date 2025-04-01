@@ -3248,28 +3248,35 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
             }
 
             if (fbp->location_isset()) {
-                const char* p = fbp->location_c_str();
-                if (*p == '<')
-                    p++;
-                const char* q = p;
-                for (; *p >= '0' && *p <= '9';)
-                    p++;
-                from = NStr::StringToNumeric<decltype(from)>(string_view(q, p - q), NStr::fConvErr_NoThrow);
-                if (*p == '\0') {
+                // Parse location => from, to
+                string_view q = fbp->location_get();
+                bool has_lt = false;
+                if (q.starts_with('<')) {
+                    has_lt = true;
+                    q.remove_prefix(1);
+                }
+                size_t p = q.find_first_not_of("0123456789");
+                from = NStr::StringToNumeric<decltype(from)>(q.substr(0, p), NStr::fConvErr_NoThrow);
+                if (p == string_view::npos) {
                     to = from;
-                } else if (*p == '.') {
-                    ++p;
-                    if (*fbp->location_c_str() == '<' && from != 1)
-                        from = 0;
-                    else if (*p == '.') {
-                        if (*++p == '>')
-                            p++;
-                        for (q = p; *p >= '0' && *p <= '9';)
-                            p++;
-                        if (*p == '\0')
-                            to = NStr::StringToNumeric<decltype(to)>(string_view(q, p - q), NStr::fConvErr_NoThrow);
-                        if (*(q - 1) == '>' && to != (int)ibp->bases)
-                            to = 0;
+                } else {
+                    q.remove_prefix(p);
+                    if (q.starts_with('.')) {
+                        q.remove_prefix(1);
+                        if (has_lt && from != 1)
+                            from = 0;
+                        else if (q.starts_with('.')) {
+                            q.remove_prefix(1);
+                            bool has_gt = false;
+                            if (q.starts_with('>')) {
+                                q.remove_prefix(1);
+                                has_gt = true;
+                            }
+                            if (string_view::npos == q.find_first_not_of("0123456789"))
+                                to = NStr::StringToNumeric<decltype(to)>(q, NStr::fConvErr_NoThrow);
+                            if (has_gt && to != (int)ibp->bases)
+                                to = 0;
+                        }
                     }
                 }
             }
