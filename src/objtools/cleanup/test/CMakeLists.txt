@@ -9,4 +9,5 @@ NCBI_add_app(
   unit_test_cleanup_message
   unit_test_extended_cleanup 
   unit_test_cleanup
+  unit_test_newcleanupp
 )
