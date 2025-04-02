@@ -127,561 +127,79 @@ void CFlatFileGenerator::ResetSeqEntryIndex(void)
 }
 
 
+static bool x_InferenceInSeqs (const CSeq_entry& sep)
 
-    /*
-    template<typename _Pred>
-    void VisitAllBioseqs(objects::CSeq_entry& entry, _Pred m)
-    {
-        if (entry.IsSeq())
-        {
-            m(entry.SetSeq());
-        }
-        else
-            if (entry.IsSet())
-            {
-                NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
-                {
-                    VisitAllBioseqs(**it_se, m);
-                }
-            }
-    }
-    // also const visitor
-    template<typename _Pred>
-    void VisitAllBioseqs(const objects::CSeq_entry& entry, _Pred m)
-    {
-        if (entry.IsSeq())
-        {
-            m(entry.GetSeq());
-        }
-        else
-            if (entry.IsSet())
-            {
-                ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.GetSet().GetSeq_set())
-                {
-                    VisitAllBioseqs(**it_se, m);
-                }
-            }
-    }
-
-    template<typename _Pred>
-    void VisitAllSeqSets(objects::CSeq_entry& entry, _Pred m)
-    {
-        if (entry.IsSet())
-        {
-            m(entry.SetSet());
-            NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.SetSet().SetSeq_set())
-            {
-                VisitAllSeqSets(**it_se, m);
-            }
-        }
-    }
-    */
-    // also const visitor
-    template<typename _Pred>
-    void VisitAllSeqSets(const objects::CSeq_entry& entry, _Pred m)
-    {
-        if (entry.IsSet())
-        {
-            m(entry.GetSet());
-            ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.GetSet().GetSeq_set())
-            {
-                VisitAllSeqSets(**it_se, m);
-            }
-        }
-    }
-
-
-
-// Generate a flat-file report for a Seq-entry
-// (the other CFlatFileGenerator::Generate functions ultimately
-// call this)
-#if 0
-void CFlatFileGenerator::Generate
-(const CSeq_entry_Handle& entry,
- CFlatItemOStream& item_os)
 {
-    _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
-
-    if ( m_Ctx->GetConfig().BasicCleanup() )
-    {
-
-        entry.GetTopLevelEntry().GetCompleteObject();
-        CSeq_entry_EditHandle tseh = entry.GetTopLevelEntry().GetEditHandle();
-        CBioseq_set_EditHandle bseth;
-        CBioseq_EditHandle bseqh;
-        CRef<CSeq_entry> tmp_se(new CSeq_entry);
-
-        if ( tseh.IsSet() ) {
-            bseth = tseh.SetSet();
-            CConstRef<CBioseq_set> bset = bseth.GetCompleteObject();
-            bseth.Remove(bseth.eKeepSeq_entry);
-            tmp_se->SetSet(const_cast<CBioseq_set&>(*bset));
-        }
-        else {
-            bseqh = tseh.SetSeq();
-            CConstRef<CBioseq> bseq = bseqh.GetCompleteObject();
-            bseqh.Remove(bseqh.eKeepSeq_entry);
-            tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
-        }
-
-        CCleanup cleanup;
-        cleanup.BasicCleanup( *tmp_se );
-
-        if ( tmp_se->IsSet() ) {
-            tseh.SelectSet(bseth);
-        }
-        else {
-            tseh.SelectSeq(bseqh);
-        }
-    }
-
-    m_Ctx->SetSGS(false);
-    CConstRef<CSeq_entry> topent = entry.GetTopLevelEntry().GetCompleteSeq_entry();
-    if (topent && topent->IsSet()) {
-        /*
-        const CBioseq_set& topset = topent->GetSet();
-        VISIT_ALL_SEQSETS_WITHIN_SEQSET (itr, topset) {
-            const CBioseq_set& bss = *itr;
-            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
-                    m_Ctx->SetSGS(true);
-            }
-        }
-        */
-        VisitAllSeqSets(*topent, [this](const CBioseq_set& bss){
-            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
-                m_Ctx->SetSGS(true);
-            }});
-    }
-
-    CRef<CFlatItemOStream> pItemOS( & item_os );
-    // If there is a ICancel callback, wrap the item_os so
-    // that every call checks it.
-    const ICanceled * pCanceled =
-        m_Ctx->GetConfig().GetCanceledCallback();
-    if( pCanceled ) {
-        pItemOS.Reset(
-            new CCancelableFlatItemOStreamWrapper(
-            item_os, pCanceled) );
-    }
-
-    /// archive a copy of the annot selector before we generate!
-    SAnnotSelector sel = m_Ctx->SetAnnotSelector();
-    m_Ctx->SetEntry(entry);
-
-    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
-        // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
-        CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
-        if (m_Ctx->UsingSeqEntryIndex()) {
-            const CRef<CSeqEntryIndex> idx = m_Ctx->GetSeqEntryIndex();
-            if (idx) {
-                const CRef<CSeqMasterIndex>& midx = idx->GetMasterIndex();
-                if (midx) {
-                    if (midx->GetTopSEH() != topseh) {
-                        m_Ctx->ResetSeqEntryIndex();
+    if (sep.IsSeq()) {
+        const CBioseq& bsp = sep.GetSeq();
+        if (bsp.IsSetAnnot()) {
+            for (auto& annt : bsp.GetAnnot()) {
+                if (! annt->IsFtable()) {
+                    continue;
+                }
+                for (auto& feat : annt->GetData().GetFtable()) {
+                    if (! feat->IsSetQual()) {
+                        continue;
+                    }
+                    for (auto& qual : feat->GetQual()) {
+                        if (qual->IsSetQual() && NStr::EqualNocase(qual->GetQual(), "inference")) {
+                            return true;
+                        }
                     }
                 }
             }
         }
-        if (! m_Ctx->UsingSeqEntryIndex()) {
-            try {
-                CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
-                CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
-                const CFlatFileConfig& cfg = m_Ctx->GetConfig();
-                if ( cfg.OnlyNearFeatures() && ! ( cfg.IsPolicyFtp() || cfg.IsPolicyGenomes() ) ) {
-                    policy = CSeqEntryIndex::eInternal;
-                }
-                if ( cfg.HideSNPFeatures() ) {
-                    flags |= CSeqEntryIndex::fHideSNPFeats;
-                }
-                if ( cfg.HideCDDFeatures() ) {
-                    flags |= CSeqEntryIndex::fHideCDDFeats;
-                }
-                if ( cfg.ShowSNPFeatures() ) {
-                    flags |= CSeqEntryIndex::fShowSNPFeats;
-                }
-                if ( cfg.ShowCDDFeatures() ) {
-                    flags |= CSeqEntryIndex::fShowCDDFeats;
-                }
-                if ( cfg.HideExonFeatures() ) {
-                    flags |= CSeqEntryIndex::fHideExonFeats;
-                }
-                if ( cfg.HideIntronFeatures() ) {
-                    flags |= CSeqEntryIndex::fHideIntronFeats;
-                }
-                if ( cfg.HideMiscFeatures() ) {
-                    flags |= CSeqEntryIndex::fHideMiscFeats;
-                }
-                if ( cfg.GeneRNACDSFeatures() ) {
-                    flags |= CSeqEntryIndex::fGeneRNACDSOnly;
-                }
-                if ( cfg.IsPolicyInternal() ) {
-                    policy = CSeqEntryIndex::eInternal;
-                }
-                if ( cfg.IsPolicyExternal() ) {
-                    policy = CSeqEntryIndex::eExternal;
-                }
-                if ( cfg.IsPolicyExhaustive() ) {
-                    policy = CSeqEntryIndex::eExhaustive;
-                }
-                if ( cfg.IsPolicyFtp() ) {
-                    policy = CSeqEntryIndex::eFtp;
-                }
-                if ( cfg.IsPolicyGenomes() ) {
-                    policy = CSeqEntryIndex::eGenomes;
-                }
-                if ( cfg.IsPolicyWeb() ) {
-                    policy = CSeqEntryIndex::eWeb;
-                }
-                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
-                m_Ctx->SetSeqEntryIndex(idx);
-                if (idx->IsIndexFailure()) {
-                    m_Failed = true;
-                    return;
-                }
-            } catch(CException &) {
-                m_Failed = true;
-                return;
+    } else if (sep.IsSet()) {
+        const CBioseq_set& bssp = sep.GetSet();
+        for (auto& seqentry : bssp.GetSeq_set()) {
+             if (x_InferenceInSeqs(*seqentry)) {
+                 return true;
             }
-        }
-    }
-
-
-    bool onlyNearFeats = false;
-    // bool nearFeatsSuppress = false;
-
-    bool isNc = false;
-    /*
-    bool isNgNtNwNz = false;
-    bool isGED = false;
-    bool isTPA = false;
-    */
-
-    bool hasLocalFeat = false;
-    bool forceOnlyNear = false;
-
-    for (CBioseq_CI bi(entry); bi; ++bi) {
-        const CBioseq_Handle& bh = *bi;
-
-        const CBioseq& bsp = *(bi->GetCompleteBioseq());
-
-        FOR_EACH_SEQID_ON_BIOSEQ (it, bsp) {
-            const CSeq_id& sid = **it;
-            switch (sid.Which()) {
-                case CSeq_id::e_Genbank:
-                case CSeq_id::e_Embl:
-                case CSeq_id::e_Ddbj:
-                    // isGED = true;
-                    break;
-                case CSeq_id::e_Tpg:
-                case CSeq_id::e_Tpe:
-                case CSeq_id::e_Tpd:
-                    // isTPA = true;
-                    break;
-                case CSeq_id::e_Other:
-                    {
-                        const CTextseq_id* tsid = sid.GetTextseq_Id();
-                        if (tsid && tsid->IsSetAccession()) {
-                            const string& acc = tsid->GetAccession().substr(0, 3);
-                            if (acc == "NC_") {
-                                isNc = true;
-                            } else if (acc == "NG_" || acc == "NT_" || acc == "NW_" || acc == "NZ_") {
-                                // isNgNtNwNz = true;
+            if (bssp.IsSetAnnot()) {
+                for (auto& annt : bssp.GetAnnot()) {
+                    if (! annt->IsFtable()) {
+                        continue;
+                    }
+                    for (auto& feat : annt->GetData().GetFtable()) {
+                        if (! feat->IsSetQual()) {
+                            continue;
+                        }
+                        for (auto& qual : feat->GetQual()) {
+                            if (qual->IsSetQual() && NStr::EqualNocase(qual->GetQual(), "inference")) {
+                                return true;
                             }
                         }
                     }
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        FOR_EACH_SEQDESC_ON_BIOSEQ (desc_it, bsp) {
-            const CSeqdesc& desc = **desc_it;
-            if (! desc.IsUser()) continue;
-            if (! desc.GetUser().IsSetType()) continue;
-            const CUser_object& usr = desc.GetUser();
-            const CObject_id& oi = usr.GetType();
-            if (! oi.IsStr()) continue;
-            const string& type = oi.GetStr();
-            if (! NStr::EqualNocase(type, "FeatureFetchPolicy")) continue;
-            FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
-                const CUser_field& fld = **uitr;
-                if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
-                    const string &label_str = GET_FIELD(fld.GetLabel(), Str);
-                    if (! NStr::EqualNocase(label_str, "Policy")) continue;
-                    if (fld.IsSetData() && fld.GetData().IsStr()) {
-                        const string& str = fld.GetData().GetStr();
-                        if (NStr::EqualNocase(str, "OnlyNearFeatures")) {
-                            forceOnlyNear = true;
-                        }
-                    }
                 }
             }
         }
-
-        CSeq_annot_CI annot_ci(bh);
-        for (; annot_ci; ++annot_ci) {
-              const CSeq_annot_Handle& annt = *annot_ci;
-              CConstRef<CSeq_annot> pAnnot = annt.GetCompleteSeq_annot();
-              const CSeq_annot& antx = *pAnnot;
-              FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, antx) {
-                  const CSeq_feat& sft = **feat_it;
-                  const CSeqFeatData& data = sft.GetData();
-                  CSeqFeatData::ESubtype subtype = data.GetSubtype();
-                  if (isNc) {
-                      switch (subtype) {
-                          case CSeqFeatData::eSubtype_centromere:
-                          case CSeqFeatData::eSubtype_telomere:
-                          case CSeqFeatData::eSubtype_rep_origin:
-                          case CSeqFeatData::eSubtype_region:
-                              break;
-                          default:
-                              hasLocalFeat = true;
-                              break;
-                      }
-                  } else {
-                      hasLocalFeat = true;
-                  }
-              }
-              if (hasLocalFeat) {
-                break;
-              }
-         }
     }
+    return false;
+}
 
-    if (forceOnlyNear) {
-        onlyNearFeats = true;
-    /*
-    } else if (isNc) {
-        nearFeatsSuppress = true;
-    } else if (isNgNtNwNz) {
-        onlyNearFeats = true;
-    } else if (isTPA) {
-        onlyNearFeats = true;
-    } else if (isGED) {
-        nearFeatsSuppress = true;
-    */
-    }
 
-    if (onlyNearFeats) {
-        m_Ctx->SetAnnotSelector().SetResolveDepth(0);
-    /*
-    } else if (nearFeatsSuppress) {
-        if (hasLocalFeat) {
-            m_Ctx->SetAnnotSelector().SetResolveDepth(0);
-        } else {
-            m_Ctx->SetAnnotSelector().SetResolveDepth(1);
+bool CFlatFileGenerator::HasInference(const CSeq_entry_Handle& topseh)
+{
+    CSeq_entry_Handle tseh = topseh.GetTopLevelEntry();
+    CConstRef<CSeq_entry> tcsep = tseh.GetCompleteSeq_entry();
+    const CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
+
+    return x_InferenceInSeqs( topsep );
+}
+
+
+template<typename _Pred>
+void VisitAllSeqSets(const objects::CSeq_entry& entry, _Pred m)
+{
+    if (entry.IsSet())
+    {
+        m(entry.GetSet());
+        ITERATE(CSeq_entry::TSet::TSeq_set, it_se, entry.GetSet().GetSeq_set())
+        {
+            VisitAllSeqSets(**it_se, m);
         }
-    */
-    } else {
-        // m_Ctx->SetAnnotSelector().SetResolveDepth(1);
-        m_Ctx->SetAnnotSelector().SetAdaptiveDepth(true);
-    }
-
-
-    CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
-    CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(format));
-    if ( !formatter ) {
-        NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
-    }
-    formatter->SetContext(*m_Ctx);
-    pItemOS->SetFormatter(formatter);
-
-    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
-    if ( !gatherer ) {
-        NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
-    }
-    gatherer->Gather(*m_Ctx, *pItemOS);
-
-    /// reset the context, but preserve our selector
-    /// we do this a bit oddly since resetting the context erases the selector;
-    /// since the caller is reusing this object (most likely), we automatically
-    /// restore the selector to its former glory
-    m_Ctx->Reset();
-    m_Ctx->SetAnnotSelector() = sel;
-
-    /*
-    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
-        m_Ctx->ResetSeqEntryIndex();
-    }
-    */
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
- CScope& scope,
- CFlatItemOStream& item_os)
-{
-    _ASSERT(submit.CanGetData());
-    _ASSERT(submit.CanGetSub());
-    _ASSERT(submit.GetData().IsEntrys());
-    _ASSERT(!submit.GetData().GetEntrys().empty());
-
-    // NB: though the spec specifies a submission may contain multiple entries
-    // this is not the case. A submission should only have a single Top-level
-    // Seq-entry
-    CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
-    if (e.NotEmpty()) {
-        // get Seq_entry_Handle from scope
-        CSeq_entry_Handle entry;
-        try {
-            entry = scope.GetSeq_entryHandle(*e);
-        } catch (CException&) {}
-
-        if (!entry) {  // add to scope if not already in it
-            entry = scope.AddTopLevelSeqEntry(*e);
-        }
-        // "remember" the submission block
-        m_Ctx->SetSubmit(submit.GetSub());
-
-        Generate(entry, item_os);
     }
 }
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq& bioseq,
-CScope& scope,
- CFlatItemOStream& item_os)
-{
-    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_loc& loc,
- CScope& scope,
- CFlatItemOStream& item_os)
-{
-    CBioseq_Handle bsh = GetBioseqFromSeqLoc(loc, scope);
-    if (!bsh) {
-        NCBI_THROW(CFlatException, eInvalidParam, "location not in scope");
-    }
-    CSeq_entry_Handle entry = bsh.GetParentEntry();
-    if (!entry) {
-        NCBI_THROW(CFlatException, eInvalidParam, "Id not in scope");
-    }
-    CRef<CSeq_loc> location(new CSeq_loc);
-    location->Assign(loc);
-    m_Ctx->SetLocation(location);
-
-    CFlatFileConfig& cfg = m_Ctx->SetConfig();
-    if (cfg.IsStyleNormal()) {
-        cfg.SetStyleMaster();
-    }
-
-    Generate(entry, item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq_Handle& bsh,
- CFlatItemOStream& item_os)
-{
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_id& id,
- const TRange& range,
- ENa_strand strand,
- CScope& scope,
- CFlatItemOStream& item_os)
-{
-    CRef<CSeq_id> id2(new CSeq_id);
-    id2->Assign(id);
-    CRef<CSeq_loc> loc;
-    if ( range.IsWhole() ) {
-        loc.Reset(new CSeq_loc);
-        loc->SetWhole(*id2);
-    } else {
-        loc.Reset(new CSeq_loc(*id2, range.GetFrom(), range.GetTo(), strand));
-    }
-    if ( loc ) {
-        Generate(*loc, scope, item_os);
-    }
-}
-void CFlatFileGenerator::Generate
-(const CSeq_submit& submit,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(submit, scope, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq& bioseq,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    const CBioseq_Handle bsh = scope.GetBioseqHandle(bioseq);
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_entry_Handle& entry,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CBioseq_Handle& bsh,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    const CSeq_entry_Handle entry = bsh.GetSeq_entry_Handle();
-    Generate(entry, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_loc& loc,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(loc, scope, *item_os);
-}
-
-
-void CFlatFileGenerator::Generate
-(const CSeq_id& id,
- const TRange& range,
- ENa_strand strand,
- CScope& scope,
- CNcbiOstream& os)
-{
-    CRef<CFlatItemOStream>
-        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
-
-    Generate(id, range, strand, scope, *item_os);
-}
-
-
-#endif
 
 
 // This version iterates Bioseqs within the Bioseq_set
@@ -739,7 +257,7 @@ void CFlatFileGenerator::Generate(
         doFastSets = true;
     }
 
-    if ( cfg.BasicCleanup() )
+    if ( cfg.BasicCleanup() && ! HasInference(entry) )
     {
         if (showDebugTiming) {
             sw.Start();

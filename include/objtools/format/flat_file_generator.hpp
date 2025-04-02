@@ -128,6 +128,8 @@ public:
 
     void SetConfig(const CFlatFileConfig& cfg);
 
+    static bool HasInference(const CSeq_entry_Handle& topseh);
+
 protected:
     CRef<CFlatFileContext>    m_Ctx;
     bool                      m_Failed;
