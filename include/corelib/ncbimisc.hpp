@@ -1564,8 +1564,8 @@ struct formatter<ncbi::CStrictId<TKey, TStorage>, TChar>
     typedef ncbi::CStrictId<TKey, TStorage> TId;
     
     template<class TFmtContext>
-    TFmtContext::iterator format(const TId& id, TFmtContext& ctx) {
-        return format(id.Get(), ctx);
+    TFmtContext::iterator format(const TId& id, TFmtContext& ctx) const {
+        return formatter<TStorage, TChar>::format(id.Get(), ctx);
     }
 };
 #  endif // __has_include(<format>)
