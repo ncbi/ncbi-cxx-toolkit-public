@@ -229,7 +229,6 @@ public:
     void ChangeMade (CCleanupChange::EChanges e);
 
     void EnteringEntry(CSeq_entry& se);
-    void LeavingEntry (CSeq_entry& se);
 
     void SetGeneticCode (CBioseq& bs);
 
@@ -485,9 +484,12 @@ private:
     void x_ClearEmptyDescr( CBioseq_set& bioseq_set );
     void x_ClearEmptyDescr( CBioseq& bioseq );
 
-    // removes single-strandedness from non-viral nucleotide sequences
-    void x_RemoveSingleStrand( CBioseq& bioseq );
 
+public:
+    // removes single-strandedness from non-viral nucleotide sequences
+    bool RemoveSingleStrand( CBioseq& bioseq );
+
+private:
     // functions that prepare for post-processing while traversing
     void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
