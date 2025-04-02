@@ -1154,28 +1154,38 @@ int main(int argc, const char** argv)
     }
 
     // scan and replace deprecated arguments; RW-1324
-    for (int i = 1; i < argc; ++i) {
-        CTempString a = argv[i];
-        if (a == "-r") {
-            if ((i + 1) < argc) {
-                CTempString param = argv[i + 1];
-                if (! param.empty() && param[0] != '-') {
-                    argv[i] = "-outdir";
-                    ++i; // skip parameter
-                    cerr << "Warning: deprecated use of -r argument. Please use -outdir instead.\n";
-                }
+    if (argv) { // CXX-5700
+        for (int i = 1; i < argc; ++i) {
+            if (! argv[i]) { // CXX-5700
+                continue;
             }
-        } else if (a == "-p") {
-            argv[i] = "-indir";
-            cerr << "Warning: argument -p is deprecated. Please use -indir instead.\n";
-        } else if (a == "-R") {
-            argv[i] = "-r";
-            cerr << "Warning: argument -R is deprecated. Please use -r instead.\n";
-        } else if (a == "-gbload") {
-            argv[i] = "-genbank";
-            cerr << "Warning: argument -gbload is deprecated. Please use -genbank instead.\n";
+
+            string_view a{ argv[i] };
+            if (a == "-r") {
+                if (((i + 1) < argc) && argv[i + 1]) {
+                    string_view param{ argv[i + 1] };
+                    if (! param.empty() && param[0] != '-') {
+                        argv[i] = "-outdir";
+                        ++i; // skip parameter
+                        cerr << "Warning: deprecated use of -r argument. Please use "
+                                "-outdir instead.\n";
+                    }
+                }
+            } else if (a == "-p") {
+                argv[i] = "-indir";
+                cerr << "Warning: argument -p is deprecated. Please use -indir "
+                        "instead.\n";
+            } else if (a == "-R") {
+                argv[i] = "-r";
+                cerr << "Warning: argument -R is deprecated. Please use -r instead.\n";
+            } else if (a == "-gbload") {
+                argv[i] = "-genbank";
+                cerr << "Warning: argument -gbload is deprecated. Please use -genbank "
+                        "instead.\n";
+            }
         }
     }
+
 
     return CCleanupApp().AppMain(argc, argv);
 }
