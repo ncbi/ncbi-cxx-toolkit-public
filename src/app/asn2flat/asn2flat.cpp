@@ -879,7 +879,7 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
 {
     //const CArgs& args = GetArgs();
 
-    if (m_do_cleanup) {
+    if (m_do_cleanup && ! CFlatFileGenerator::HasInference(seh)) {
         CSeq_entry_EditHandle  tseh = seh.GetTopLevelEntry().GetEditHandle();
         CBioseq_set_EditHandle bseth;
         CBioseq_EditHandle     bseqh;
