@@ -40,23 +40,13 @@
 #include "asci_blk.h"
 
 BEGIN_NCBI_SCOPE
+
 struct FeatBlk {
-    Int4   num      = 0;
-    string key;
+    Int4             num = 0;
+    string           key;
     optional<string> location;
-    Int2   spindex;
-
-    TQualVector quals;
-
-    const char*   key_or(const char* pch) const { return key.empty() ? pch : key.c_str(); }
-
-    void        location_assign(string_view);
-    bool        location_isset() const { return location.operator bool(); }
-    const string& location_get() const { return *location; }
-    const char* location_c_str() const { return location->c_str(); }
-    const char* location_or(const char* pch) const { return location ? location->c_str() : pch; }
-
-    ~FeatBlk();
+    Int2             spindex;
+    TQualVector      quals;
 };
 
 using FeatBlkPtr = FeatBlk*;

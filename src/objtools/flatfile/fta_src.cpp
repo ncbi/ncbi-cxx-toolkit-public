@@ -396,8 +396,8 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_en
                 continue;
             tsfbp->next = SourceFeatBlkNew();
             tsfbp       = tsfbp->next;
-            if (fbp->location_isset())
-                tsfbp->location = StringSave(fbp->location_get());
+            if (fbp->location)
+                tsfbp->location = StringSave(*fbp->location);
             tsfbp->quals = fbp->quals;
         }
     }

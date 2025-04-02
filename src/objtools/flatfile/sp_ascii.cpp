@@ -3478,7 +3478,7 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
         return (null);
     }
 
-    if (fbp->location_isset()) {
+    if (fbp->location) {
         string& loc = *fbp->location;
         // strip spaces
         size_t j = 0;
@@ -3486,19 +3486,19 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
             if (c != ' ')
                 loc[j++] = c;
         loc.resize(j);
-        pp->buf = fbp->key + " : " + fbp->location_get();
-        GetSeqLocation(*feat, fbp->location_get(), seqid, &err, pp, fbp->key);
+        pp->buf = fbp->key + " : " + *fbp->location;
+        GetSeqLocation(*feat, *fbp->location, seqid, &err, pp, fbp->key);
         pp->buf.reset();
     }
     if (err) {
         if (! pp->debug) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "{}|{}| range check detects problems", fbp->key, fbp->location_get());
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "{}|{}| range check detects problems", fbp->key, *fbp->location);
             if (! descrip.empty())
                 descrip.clear();
             feat->Reset();
             return (null);
         }
-        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "{}|{}| range check detects problems", fbp->key, fbp->location_get());
+        FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "{}|{}| range check detects problems", fbp->key, *fbp->location);
     }
 
     if (SeqLocHaveFuzz(feat->GetLocation()))

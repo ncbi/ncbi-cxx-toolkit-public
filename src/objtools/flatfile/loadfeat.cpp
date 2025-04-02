@@ -574,15 +574,14 @@ StrNum LinkageEvidenceValues[] = {
 };
 // clang-format on
 
-void FeatBlk::location_assign(string_view s)
+inline static string_view key_or(const FeatBlk* fbp, string_view sv)
 {
-    location = s;
+    return fbp->key.empty() ? sv : fbp->key;
 }
 
-FeatBlk::~FeatBlk()
+inline static string_view location_or(const FeatBlk* fbp, string_view sv)
 {
-    key.clear();
-    location.reset();
+    return fbp->location ? *fbp->location : sv;
 }
 
 void DataBlk::SetFeatData(FeatBlk* p)
@@ -2112,7 +2111,7 @@ static void GetImpFeat(CSeq_feat& feat, FeatBlkPtr fbp, bool locmap)
     imp_feat->SetKey(fbp->key);
 
     if (locmap)
-        imp_feat->SetLoc(fbp->location_get());
+        imp_feat->SetLoc(*fbp->location);
 
     feat.SetData().SetImp(*imp_feat);
 }
@@ -2221,7 +2220,7 @@ static void fta_parse_rpt_units(FeatBlkPtr fbp)
         }
 
         FtaErrPost(SEV_ERROR, ERR_QUALIFIER_ObsoleteRptUnit,
-                   "Obsolete /rpt_unit qualifier found on feature \"{}\" at location \"{}\".", fbp->key_or("Unknown"), fbp->location_or("unknown"));
+                   "Obsolete /rpt_unit qualifier found on feature \"{}\" at location \"{}\".", key_or(fbp, "Unknown"), location_or(fbp, "unknown"));
 
         if ((*qual)->GetVal().empty()) {
             qual = fbp->quals.erase(qual);
@@ -2331,7 +2330,7 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
             evi_exp++;
         else {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence,
-                       "Illegal value \"{}\" for /evidence qualifier on the \"{}\" feature at \"{}\". Qualifier dropped.", val_str.empty() ? "Unknown"s : val_str, fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                       "Illegal value \"{}\" for /evidence qualifier on the \"{}\" feature at \"{}\". Qualifier dropped.", val_str.empty() ? "Unknown"s : val_str, key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
         }
 
         qual = fbp->quals.erase(qual);
@@ -2339,19 +2338,19 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
 
     if (evi_exp + evi_not > 0 && exp_good + exp_bad + inf_good + inf_bad > 0) {
         FtaErrPost(SEV_REJECT, ERR_QUALIFIER_Conflict,
-                   "Old /evidence and new /experiment or /inference qualifiers both exist on the \"{}\" feature at \"{}\". This is currently unsupported.", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                   "Old /evidence and new /experiment or /inference qualifiers both exist on the \"{}\" feature at \"{}\". This is currently unsupported.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
         return false;
     }
 
     if (evi_exp + exp_good > 0 && evi_not + inf_good > 0) {
         FtaErrPost(SEV_REJECT, ERR_QUALIFIER_Conflict,
-                   "The special \"no additional details recorded\" values for both /experiment and /inference exist on the \"{}\" feature at \"{}\". This is currently unsupported.", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                   "The special \"no additional details recorded\" values for both /experiment and /inference exist on the \"{}\" feature at \"{}\". This is currently unsupported.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
         return false;
     }
 
     if ((exp_good > 0 && exp_bad > 0) || (inf_good > 0 && inf_bad > 0)) {
         FtaErrPost(SEV_REJECT, ERR_QUALIFIER_Conflict,
-                   "The special \"no additional details recorded\" value for /experiment or /inference exists in conjunction with other /experiment or /inference qualifiers on the \"{}\" feature at \"{}\". This is currently unsupported.", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                   "The special \"no additional details recorded\" value for /experiment or /inference exists in conjunction with other /experiment or /inference qualifiers on the \"{}\" feature at \"{}\". This is currently unsupported.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
         return false;
     }
 
@@ -2380,30 +2379,30 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
 {
     const char** b;
 
-    const string* loc = nullptr;
+    string_view loc;
 
     bool locmap = false;
     bool err    = false;
 
     CRef<CSeq_feat> feat;
 
-    if (fbp->location_isset()) {
+    if (fbp->location) {
         DelCharBtwData(*fbp->location);
-        loc = fbp->location.operator->();
-        pp->buf = fbp->key + " : " + *loc;
+        loc = *fbp->location;
+        pp->buf = fbp->key + " : " + loc;
         feat.Reset(new CSeq_feat);
-        locmap = GetSeqLocation(*feat, *loc, seqid, &err, pp, fbp->key);
+        locmap = GetSeqLocation(*feat, loc, seqid, &err, pp, fbp->key);
         pp->buf.reset();
 
         if (err) {
             if (pp->debug == false) {
                 FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped,
-                           "{}|{}| range check detects problems", fbp->key, *loc);
+                           "{}|{}| range check detects problems", fbp->key, loc);
                 feat.Reset();
                 return feat;
             }
             FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck,
-                       "{}|{}| range check detects problems", fbp->key, *loc);
+                       "{}|{}| range check detects problems", fbp->key, loc);
         }
     }
 
@@ -2412,7 +2411,7 @@ static CRef<CSeq_feat> ProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& 
             feat->SetPartial(true);
     }
 
-    if (loc && loc->find("order") != string::npos)
+    if (loc.find("order") != string_view::npos)
         feat->SetPartial(true);
 
     if (! fbp->quals.empty()) {
@@ -2575,7 +2574,7 @@ static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
         return true;
     if (! fbp1 || ! fbp2 ||
         ! fta_strings_same(fbp1->key.c_str(), fbp2->key.c_str()) ||
-        ! fta_strings_same(fbp1->location_c_str(), fbp2->location_c_str()))
+        ! fta_strings_same(fbp1->location->c_str(), fbp2->location->c_str()))
         return false;
 
     if (fta_qual_a_in_b(fbp1->quals, fbp2->quals) && fta_qual_a_in_b(fbp2->quals, fbp1->quals))
@@ -2633,13 +2632,13 @@ static void fta_check_rpt_unit_range(FeatBlkPtr fbp, size_t length)
             continue;
         }
 
-        string _loc = fbp->location_or("unknown");
+        string _loc(location_or(fbp, "unknown"));
         if (_loc.size() > 20) {
             _loc.resize(20);
             _loc += "...";
         }
         FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidRptUnitRange,
-                   "/rpt_unit_range qualifier \"{}\" on feature \"{}\" at location \"{}\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)"s : val_str, fbp->key_or("Unknown"), _loc);
+                   "/rpt_unit_range qualifier \"{}\" on feature \"{}\" at location \"{}\" is not a valid basepair range. Qualifier dropped.", val_str.empty() ? "(EMPTY)"s : val_str, key_or(fbp, "Unknown"), _loc);
 
         cur = fbp->quals.erase(cur);
     }
@@ -2667,8 +2666,8 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
 
             const FeatBlk* fbp2 = tdbp->GetFeatData();
 
-            if (fbp1->location_isset() && fbp2->location_isset() &&
-                StringCmp(fbp1->location_c_str(), fbp2->location_c_str()) < 0)
+            if (fbp1->location && fbp2->location &&
+                StringCmp(fbp1->location->c_str(), fbp2->location->c_str()) < 0)
                 break;
 
             if (! fta_feats_same(fbp1, fbp2)) {
@@ -2677,13 +2676,13 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
                 continue;
             }
 
-            string _loc = fbp2->location_or("???");
+            string _loc(location_or(fbp2, "???"));
             if (_loc.size() > 20) {
                 _loc.resize(20);
                 _loc += "...";
             }
             FtaErrPost(SEV_WARNING, ERR_FEATURE_DuplicateRemoved,
-                       "Duplicated feature \"{}\" at location \"{}\" removed.", fbp2->key_or("???"), _loc);
+                       "Duplicated feature \"{}\" at location \"{}\" removed.", key_or(fbp2, "???"), _loc);
 
             tdbp->deleteData();
             tdbp = dbl.erase_after(tdbpprev);
@@ -2719,7 +2718,7 @@ static void fta_check_multiple_locus_tag(TDataBlkList& dbl, bool* drop)
             continue;
 
         FtaErrPost(SEV_REJECT, ERR_FEATURE_MultipleLocusTags,
-                   "Multiple /locus_tag values for \"{}\" feature at \"{}\".", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                   "Multiple /locus_tag values for \"{}\" feature at \"{}\".", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
         *drop = true;
         break;
     }
@@ -2743,7 +2742,7 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
 
         if (lt == 0) {
             FtaErrPost(SEV_REJECT, ERR_FEATURE_OldLocusTagWithoutNew,
-                       "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                       "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier but lacks a /locus_tag qualifier. Entry dropped.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
             *drop = true;
         } else {
             for (const auto& gbqp1 : fbp->quals) {
@@ -2763,7 +2762,7 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
                     if (! isOldLocusTag(gbqp2) || ! NStr::EqualNocase(gbqp1_val, gbqp2_val))
                         continue;
                     FtaErrPost(SEV_REJECT, ERR_FEATURE_MatchingOldNewLocusTag,
-                               "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"{}\". Entry dropped.", fbp->key_or("Unknown"), fbp->location_or("unknown location"), gbqp1_val);
+                               "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier with a value that is identical to that of a /locus_tag qualifier: \"{}\". Entry dropped.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"), gbqp1_val);
                     *drop = true;
                 }
             }
@@ -2785,7 +2784,7 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
 
                 if (NStr::CompareNocase(gbqp1_val.c_str(), gbqp2_val.c_str()) == 0) {
                     FtaErrPost(SEV_ERROR, ERR_FEATURE_RedundantOldLocusTag,
-                               "Feature \"{}\" at \"{}\" has redundant /old_locus_tag qualifiers. Dropping all but the first.", fbp->key_or("Unknown"), fbp->location_or("unknown location"));
+                               "Feature \"{}\" at \"{}\" has redundant /old_locus_tag qualifiers. Dropping all but the first.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
                     break;
                 }
             }
@@ -2820,7 +2819,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 
             if (got_pseudogene) {
                 FtaErrPost(SEV_ERROR, ERR_QUALIFIER_MultiplePseudoGeneQuals,
-                           "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <{}> : Feature key <{}> : Feature location <{}>.", val_str.empty() ? "[empty]"s : val_str, fbp->key, fbp->location_get());
+                           "Dropping a /pseudogene qualifier because multiple /pseudogene qualifiers are present : <{}> : Feature key <{}> : Feature location <{}>.", val_str.empty() ? "[empty]"s : val_str, fbp->key, *fbp->location);
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2830,7 +2829,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
 
             if (val_str.empty()) {
                 FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue,
-                           "Dropping a /pseudogene qualifier because its value is empty : Feature key <{}> : Feature location <{}>.", fbp->key, fbp->location_get());
+                           "Dropping a /pseudogene qualifier because its value is empty : Feature key <{}> : Feature location <{}>.", fbp->key, *fbp->location);
 
                 cur = fbp->quals.erase(cur);
                 continue;
@@ -2842,7 +2841,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
             }
 
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidPseudoGeneValue,
-                       "Dropping a /pseudogene qualifier because its value is invalid : <{}> : Feature key <{}> : Feature location <{}>.", val_str, fbp->key, fbp->location_get());
+                       "Dropping a /pseudogene qualifier because its value is invalid : <{}> : Feature key <{}> : Feature location <{}>.", val_str, fbp->key, *fbp->location);
 
             cur = fbp->quals.erase(cur);
         }
@@ -2851,7 +2850,7 @@ static void fta_check_pseudogene_qual(TDataBlkList& dbl)
             continue;
 
         FtaErrPost(SEV_ERROR, ERR_QUALIFIER_OldPseudoWithPseudoGene,
-                   "A legacy /pseudo qualifier and a /pseudogene qualifier are present on the same feature : Dropping /pseudo : Feature key <{}> : Feature location <{}>.", fbp->key, fbp->location_get());
+                   "A legacy /pseudo qualifier and a /pseudogene qualifier are present on the same feature : Dropping /pseudo : Feature key <{}> : Feature location <{}>.", fbp->key, *fbp->location);
         DeleteQual(fbp->quals, "pseudo");
     }
 }
@@ -2889,7 +2888,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
 
                 if (badcom) {
                     FtaErrPost(SEV_ERROR, ERR_QUALIFIER_IllegalCompareQualifier,
-                               "/compare qualifier value is not a legal Accession.Version : feature \"{}\" at \"{}\" : value \"{}\" : qualifier has been dropped.", fbp->key, fbp->location_get(), val_str.empty() ? "[empty]"s : val_str);
+                               "/compare qualifier value is not a legal Accession.Version : feature \"{}\" at \"{}\" : value \"{}\" : qualifier has been dropped.", fbp->key, *fbp->location, val_str.empty() ? "[empty]"s : val_str);
                     cur = fbp->quals.erase(cur);
                     continue;
                 }
@@ -2905,7 +2904,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
             continue;
 
         FtaErrPost(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
-                   "Feature \"{}\" at \"{}\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key, fbp->location_get());
+                   "Feature \"{}\" at \"{}\" lacks required /citation and/or /compare qualifier : feature has been dropped.", fbp->key, *fbp->location);
         dbp.mDrop = true;
     }
 }
@@ -2925,9 +2924,9 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
     auto dbp = dbl.begin();
     for (; dbp != dbl.end(); ++dbp) {
         fbp = dbp->GetFeatData();
-        if (! fbp || ! fbp->location_isset())
+        if (! fbp || ! fbp->location)
             continue;
-        location = StringSave(fbp->location_get());
+        location = StringSave(*fbp->location);
         for (p = location, q = p; *p != '\0'; p++)
             if (*p != ' ' && *p != '\t' && *p != '\n')
                 *q++ = *p;
@@ -3117,14 +3116,14 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
                 continue;
             }
 
-            string _loc = fbp->location_or("???");
+            string _loc(location_or(fbp, "???"));
             if (_loc.size() > 20) {
                 _loc.resize(20);
                 _loc += "...";
             }
 
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved,
-                       "Duplicated qualifier \"{}\" in feature \"{}\" at location \"{}\" removed.", cur_qual ? cur_qual : "???", fbp->key_or("???"), _loc);
+                       "Duplicated qualifier \"{}\" in feature \"{}\" at location \"{}\" removed.", cur_qual ? cur_qual : "???", key_or(fbp, "???"), _loc);
 
             next = fbp->quals.erase(next);
         }
@@ -3241,9 +3240,9 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
                 }
             }
 
-            if (fbp->location_isset()) {
+            if (fbp->location) {
                 // Parse location => from, to
-                string_view q = fbp->location_get();
+                string_view q = *fbp->location;
                 bool has_lt = false;
                 if (q.starts_with('<')) {
                     has_lt = true;
@@ -3278,10 +3277,10 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
             if (from == 0 || to == 0 || from > to) {
                 if (curr_gap == 1) {
                     FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidGapLocation,
-                               "Invalid gap feature location : \"{}\" : all gap features must have a simple X..Y location on the plus strand.", fbp->location_or("unknown"));
+                               "Invalid gap feature location : \"{}\" : all gap features must have a simple X..Y location on the plus strand.", location_or(fbp, "unknown"));
                 } else {
                     FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidAssemblyGapLocation,
-                               "Invalid assembly_gap location : \"{}\".", fbp->location_or("unknown"));
+                               "Invalid assembly_gap location : \"{}\".", location_or(fbp, "unknown"));
                 }
                 ibp->drop = true;
                 break;
@@ -3526,7 +3525,7 @@ static TDataBlkList XMLLoadFeatBlk(char* entry, const TXmlIndexList& xil)
             if (xipfeat.tag == INSDFEATURE_KEY)
                 fbp->key = *XMLGetTagValue(entry, xipfeat);
             else if (xipfeat.tag == INSDFEATURE_LOCATION)
-                fbp->location_assign(*XMLGetTagValue(entry, xipfeat));
+                fbp->location = *XMLGetTagValue(entry, xipfeat);
             else if (xipfeat.tag == INSDFEATURE_QUALS)
                 XMLGetQuals(entry, xipfeat.subtags, fbp->quals);
         }
@@ -3720,7 +3719,7 @@ static void ParseQualifiers(
 
     string      qualKey, qualVal;
     string      featKey(fbp->key);
-    string      featLocation(fbp->location_get());
+    string      featLocation(*fbp->location);
     CQualParser qualParser(format, featKey, featLocation, qualLines);
     while (! qualParser.Done()) {
         if (qualParser.GetNextQualifier(qualKey, qualVal)) {
@@ -3909,13 +3908,13 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
             if (c != ' ' && c != '\n')
                 tmp_loc[j++] = c;
         tmp_loc.resize(j);
-        fbp->location_assign(tmp_loc);
+        fbp->location = std::move(tmp_loc);
 
-        if (fbp->location_get().empty() && ibp->is_mga) {
-            fbp->location_assign(loc);
+        if (fbp->location->empty() && ibp->is_mga) {
+            fbp->location = loc;
         }
 
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, *fbp->location);
         if (fbp->key == "allele" || fbp->key == "mutation") {
             FtaErrPost(SEV_ERROR, ERR_FEATURE_ObsoleteFeature,
                        "Obsolete feature \"{}\" found. Replaced with \"variation\".", fbp->key);
@@ -3941,7 +3940,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                     if (cur_qual == "gap_type" ||
                         cur_qual == "assembly_evidence") {
                         FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidQualifier,
-                                   "Qualifier /{} is invalid for the feature \"{}\" at \"{}\".", cur_qual, fbp->key, fbp->location_or("Unknown"));
+                                   "Qualifier /{} is invalid for the feature \"{}\" at \"{}\".", cur_qual, fbp->key, location_or(fbp, "Unknown"));
                         ibp->drop = true;
                     }
                 }
@@ -3952,7 +3951,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                     const string& cur_qual = cur->GetQual();
                     if (cur_qual == "submitter_seqid") {
                         FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidQualifier,
-                                   "Qualifier /{} is invalid for the feature \"{}\" at \"{}\".", cur_qual, fbp->key, fbp->location_or("Unknown"));
+                                   "Qualifier /{} is invalid for the feature \"{}\" at \"{}\".", cur_qual, fbp->key, location_or(fbp, "Unknown"));
                         ibp->drop = true;
                     }
                 }
@@ -4109,17 +4108,17 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
             if (! (*cur)->IsSetVal()) {
                 if (qual_str == "old_locus_tag") {
                     FtaErrPost(SEV_ERROR, ERR_FEATURE_EmptyOldLocusTag,
-                               "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier with no value. Qualifier has been dropped.", fbp->key_or("Unknown"), fbp->location_or("Empty"));
+                               "Feature \"{}\" at \"{}\" has an /old_locus_tag qualifier with no value. Qualifier has been dropped.", key_or(fbp, "Unknown"), location_or(fbp, "Empty"));
                 } else {
                     FtaErrPost(SEV_WARNING, ERR_QUALIFIER_EmptyQual,
-                               "Qualifier /{} ignored because it lacks a data value. Feature \"{}\", location \"{}\".", qual_str, fbp->key_or("Unknown"), fbp->location_or("Empty"));
+                               "Qualifier /{} ignored because it lacks a data value. Feature \"{}\", location \"{}\".", qual_str, key_or(fbp, "Unknown"), location_or(fbp, "Empty"));
                 }
                 cur = fbp->quals.erase(cur);
                 continue;
             }
         } else if ((*cur)->IsSetVal()) {
             FtaErrPost(SEV_WARNING, ERR_QUALIFIER_ShouldNotHaveValue,
-                       "Qualifier /{} should not have data value. Qualifier value has been ignored. Feature \"{}\", location \"{}\".", qual_str, fbp->key_or("Unknown"), fbp->location_or("Empty"));
+                       "Qualifier /{} should not have data value. Qualifier value has been ignored. Feature \"{}\", location \"{}\".", qual_str, key_or(fbp, "Unknown"), location_or(fbp, "Empty"));
             (*cur)->ResetVal();
         }
 
@@ -4148,7 +4147,7 @@ static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Pa
             continue;
         fbp      = dbp.GetFeatData();
         fbp->num = num++;
-        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, fbp->location_get());
+        FtaInstallPrefix(PREFIX_FEATURE, fbp->key, *fbp->location);
 
         if (fbp->key == "-") {
             FtaErrPost(SEV_WARNING, ERR_FEATURE_FeatureKeyReplaced, "Featkey '-' is replaced by 'misc_feature'");
@@ -4362,13 +4361,13 @@ static bool SortFeaturesByLoc(const DataBlk& sp1, const DataBlk& sp2)
     fbp1 = sp1.GetFeatData();
     fbp2 = sp2.GetFeatData();
 
-    if (! fbp1->location_isset() && fbp2->location_isset())
+    if (! fbp1->location && fbp2->location)
         return false;
-    if (fbp1->location_isset() && ! fbp2->location_isset())
+    if (fbp1->location && ! fbp2->location)
         return false;
 
-    if (fbp1->location_isset() && fbp2->location_isset()) {
-        status = StringCmp(fbp1->location_c_str(), fbp2->location_c_str());
+    if (fbp1->location && fbp2->location) {
+        status = StringCmp(fbp1->location->c_str(), fbp2->location->c_str());
         if (status != 0)
             return status < 0;
     }
@@ -4470,10 +4469,10 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
             count++;
             if (! cur->IsSetVal() || cur->GetVal().empty()) {
                 string s;
-                if (! fbp->location_isset() || fbp->location_get().empty())
-                    s = "(empty)"s;
+                if (fbp->location && ! fbp->location->empty())
+                    s = *fbp->location;
                 else
-                    s = fbp->location_get();
+                    s = "(empty)"s;
                 FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass,
                            "Empty /regulatory_class qualifier value in regulatory feature at location {}.", s);
                 *drop = true;
@@ -4493,10 +4492,10 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
             }
 
             string s;
-            if (! fbp->location_isset() || fbp->location_get().empty())
-                s = "(empty)"s;
+            if (fbp->location && ! fbp->location->empty())
+                s = *fbp->location;
             else
-                s = fbp->location_get();
+                s = "(empty)"s;
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_InvalidRegulatoryClass,
                        "Invalid /regulatory_class qualifier value {} provided in regulatory feature at location {}.", val_str, s);
             *drop = true;
@@ -4504,29 +4503,29 @@ static void fta_check_replace_regulatory(TDataBlkList& dbl, bool* drop)
 
         if (count == 0) {
             string s;
-            if (! fbp->location_isset() || fbp->location_get().empty())
-                s = "(empty)"s;
+            if (fbp->location && ! fbp->location->empty())
+                s = *fbp->location;
             else
-                s = fbp->location_get();
+                s = "(empty)"s;
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MissingRegulatoryClass,
                        "The regulatory feature is missing mandatory /regulatory_class qualifier at location {}.", s);
             *drop = true;
         } else if (count > 1) {
             string s;
-            if (! fbp->location_isset() || fbp->location_get().empty())
-                s = "(empty)"s;
+            if (fbp->location && ! fbp->location->empty())
+                s = *fbp->location;
             else
-                s = fbp->location_get();
+                s = "(empty)"s;
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MultipleRegulatoryClass, "Multiple /regulatory_class qualifiers were encountered in regulatory feature at location {}.", s);
             *drop = true;
         }
 
         if (other_class && ! got_note) {
             string s;
-            if (! fbp->location_isset() || fbp->location_get().empty())
-                s = "(empty)"s;
+            if (fbp->location && ! fbp->location->empty())
+                s = *fbp->location;
             else
-                s = fbp->location_get();
+                s = "(empty)"s;
             FtaErrPost(SEV_REJECT, ERR_QUALIFIER_NoNoteForOtherRegulatory, "The regulatory feature of class other is lacking required /note qualifier at location {}.", s);
             *drop = true;
         }
@@ -4905,7 +4904,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (feat.Empty()) {
                 if (fbp->key == "CDS") {
                     FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing,
-                               "CDS feature has unparsable location. Entry dropped. Location = [{}].", fbp->location_get());
+                               "CDS feature has unparsable location. Entry dropped. Location = [{}].", *fbp->location);
                     ibp->drop = true;
                 }
                 continue;
@@ -4916,7 +4915,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             if (CheckForeignLoc(feat->GetLocation(),
                                 (pp->source == Parser::ESource::USPTO) ? *pat_seq_id : *seq_id)) {
                 FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck,
-                           "Location pointing outside the entry [{}]", fbp->location_get());
+                           "Location pointing outside the entry [{}]", *fbp->location);
 
                 if (feat->GetData().IsImp()) {
                     const CImp_feat& imp_feat = feat->GetData().GetImp();
@@ -4934,7 +4933,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
             i = FTASeqLocCheck(feat->GetLocation(), ibp->acnum);
             if (i == 0) {
-                FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, fbp->location_get());
+                FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, *fbp->location);
 
                 if (pp->debug)
                     seq_feats.push_back(feat);
@@ -4946,10 +4945,10 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 if (i == 1) {
                     if (feat->IsSetExcept_text() && feat->GetExcept_text() == "trans-splicing") {
                         FtaErrPost(SEV_INFO, ERR_LOCATION_TransSpliceMixedStrand,
-                                   "Mixed strands in SeqLoc of /trans_splicing feature: {}", fbp->location_get());
+                                   "Mixed strands in SeqLoc of /trans_splicing feature: {}", *fbp->location);
                     } else {
                         FtaErrPost(SEV_WARNING, ERR_LOCATION_MixedStrand,
-                                   "Mixed strands in SeqLoc: {}", fbp->location_get());
+                                   "Mixed strands in SeqLoc: {}", *fbp->location);
                     }
                 }
 
