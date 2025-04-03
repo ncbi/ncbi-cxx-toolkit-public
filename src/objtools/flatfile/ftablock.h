@@ -279,10 +279,10 @@ public:
         char*  offset = nullptr,
         size_t len_   = 0) :
         mType(type_),
-        mOffset(offset),
-        len(len_),
         mDrop(false)
     {
+        mBuf.ptr = offset;
+        mBuf.len = len_;
     }
 
     ~DataBlk();
@@ -305,8 +305,10 @@ public:
     int            mType;    // which keyword block or node type
     std::variant<monostate, TList, EntryBlk*, FeatBlk*, const TXmlIndexList*>
                    mData;
-    char*          mOffset;  // points to beginning of the entry in the memory
-    size_t         len;      // lenght of data in bytes
+    struct {
+        char*      ptr;      // points to beginning of the entry in the memory
+        size_t     len;      // lenght of data in bytes
+    } mBuf;
     string         mpQscore; // points to quality score buffer
     bool           mDrop;
 };

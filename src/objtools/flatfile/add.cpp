@@ -280,12 +280,12 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
 
         const auto& subblocks = dblk.GetSubBlocks();
         for (const auto& dbp : subblocks)
-            len += dbp.len;
+            len += dbp.mBuf.len;
         if (len == 0)
             continue;
 
         auto dbp = subblocks.cbegin();
-        char* p  = SrchTheStr(dbp->mOffset, dbp->mOffset + len, str);
+        char* p  = SrchTheStr(dbp->mBuf.ptr, dbp->mBuf.ptr + len, str);
         if (p)
             break;
     }

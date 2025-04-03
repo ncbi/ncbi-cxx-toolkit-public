@@ -1778,12 +1778,12 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
 
     CRef<CPubdesc> desc;
 
-    if (! pp || ! dbp.mOffset || ! dbp.hasData())
+    if (! pp || ! dbp.mBuf.ptr || ! dbp.hasData())
         return desc;
 
     desc.Reset(new CPubdesc);
 
-    p = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_REFERENCE));
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_REFERENCE));
     if (p && isdigit((int)*p) != 0) {
         desc->SetPub().Set().push_back(get_num(p));
     } else {
@@ -1793,7 +1793,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     if (p)
         MemFree(p);
 
-    p = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_MEDLINE));
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_MEDLINE));
     if (p) {
         rej = true;
         MemFree(p);
@@ -1802,7 +1802,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     }
 
     pmid = ZERO_ENTREZ_ID;
-    p    = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_PUBMED));
+    p    = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_PUBMED));
     if (p) {
         pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(p, NStr::fAllowTrailingSymbols));
         MemFree(p);
@@ -1810,7 +1810,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
 
     CRef<CAuth_list> auth_list;
 
-    p = StringSave(XMLConcatSubTags(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_AUTHORS, ','));
+    p = StringSave(XMLConcatSubTags(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_AUTHORS, ','));
     if (p) {
         if (pp->xml_comp) {
             q = StringRChr(p, '.');
@@ -1825,7 +1825,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
         for (q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
         if (*q != '\0') {
-            q = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
+            q = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
             char* r = StringChr(p, ',');
             if (r && ! StringChr(r + 1, '.'))
                 *r = '|';
@@ -1835,7 +1835,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
         MemFree(p);
     }
 
-    p = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_CONSORTIUM));
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_CONSORTIUM));
     if (p) {
         for (q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
@@ -1849,7 +1849,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     if (auth_list.Empty() || ! auth_list->IsSetNames())
         no_auth = true;
 
-    p = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_TITLE));
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_TITLE));
 
     CRef<CTitle::C_E> title_art(new CTitle::C_E);
     if (p) {
@@ -1864,7 +1864,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     }
 
     is_online = false;
-    p         = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
+    p         = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
     if (! p) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "No JOURNAL line, reference dropped");
         desc.Reset();
@@ -1881,7 +1881,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     if (NStr::EqualNocase(p, 0, 18, "Online Publication"))
         is_online = true;
 
-    if (char* r = StringSave(XMLFindTagValue(dbp.mOffset, dbp.GetXmlData(), INSDREFERENCE_REMARK))) {
+    if (char* r = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_REMARK))) {
         string comm = NStr::Sanitize(ExtractErratum(r));
         MemFree(r);
         if (! is_online)
@@ -1910,7 +1910,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
     TQualVector xrefs;
     for (const auto& xip : dbp.GetXmlData()) {
         if (xip.tag == INSDREFERENCE_XREF)
-            XMLGetXrefs(dbp.mOffset, xip.subtags, xrefs);
+            XMLGetXrefs(dbp.mBuf.ptr, xip.subtags, xrefs);
     }
 
     string doi;
@@ -1956,7 +1956,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
 
     CRef<CPubdesc> desc(new CPubdesc);
 
-    p = dbp.mOffset + col_data;
+    p = dbp.mBuf.ptr + col_data;
     if (bParser) {
         /* This branch works when this function called in context of PARSER
          */
@@ -1981,7 +1981,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
 
     has_muid = false;
     if (ind[ParFlat_MEDLINE]) {
-        p              = ind[ParFlat_MEDLINE]->mOffset;
+        p              = ind[ParFlat_MEDLINE]->mBuf.ptr;
         CRef<CPub> pub = get_muid(p, Parser::EFormat::GenBank);
         if (pub.NotEmpty()) {
             has_muid = true;
@@ -1991,27 +1991,27 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
 
     pmid = ZERO_ENTREZ_ID;
     if (ind[ParFlat_PUBMED]) {
-        p = ind[ParFlat_PUBMED]->mOffset;
+        p = ind[ParFlat_PUBMED]->mBuf.ptr;
         if (p)
             pmid = ENTREZ_ID_FROM(int, NStr::StringToInt(p, NStr::fAllowTrailingSymbols));
     }
 
     CRef<CAuth_list> auth_list;
     if (ind[ParFlat_AUTHORS]) {
-        p = ind[ParFlat_AUTHORS]->mOffset;
+        p = ind[ParFlat_AUTHORS]->mBuf.ptr;
         for (q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
 
         if (*q != '\0') {
             if (ind[ParFlat_JOURNAL])
-                q = ind[ParFlat_JOURNAL]->mOffset;
+                q = ind[ParFlat_JOURNAL]->mBuf.ptr;
 
             get_auth(p, GB_REF, q, auth_list);
         }
     }
 
     if (ind[ParFlat_CONSRTM]) {
-        p = ind[ParFlat_CONSRTM]->mOffset;
+        p = ind[ParFlat_CONSRTM]->mBuf.ptr;
         for (q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
 
@@ -2024,7 +2024,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
 
     CRef<CTitle::C_E> title_art;
     if (ind[ParFlat_TITLE]) {
-        p = ind[ParFlat_TITLE]->mOffset;
+        p = ind[ParFlat_TITLE]->mBuf.ptr;
         if (! StringEquN(p, "Direct Submission", 17) &&
             *p != '\0' && *p != ';') {
             string title = clean_up(p);
@@ -2042,7 +2042,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
         return desc;
     }
 
-    p = ind[ParFlat_JOURNAL]->mOffset;
+    p = ind[ParFlat_JOURNAL]->mBuf.ptr;
     if (*p == '\0' || *p == ';') {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Fail_to_parse, "JOURNAL line is empty, reference dropped");
 
@@ -2053,7 +2053,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
     is_online = StringEquNI(p, "Online Publication", 18);
 
     if (ind[ParFlat_REMARK]) {
-        r = ind[ParFlat_REMARK]->mOffset;
+        r = ind[ParFlat_REMARK]->mBuf.ptr;
         string comm = NStr::Sanitize(ExtractErratum(r));
         if (! is_online)
             normalize_comment(comm);
@@ -2075,7 +2075,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
         desc->SetPub().Set().push_back(pub);
     }
 
-    CRef<CPub> pub_ref = journal(pp, p, p + ind[ParFlat_JOURNAL]->len, auth_list, title_art, has_muid, cit_art, er);
+    CRef<CPub> pub_ref = journal(pp, p, p + ind[ParFlat_JOURNAL]->mBuf.len, auth_list, title_art, has_muid, cit_art, er);
 
     if (pub_ref.Empty()) {
         desc.Reset();
@@ -2113,8 +2113,8 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
 
     CRef<CPubdesc> desc(new CPubdesc);
 
-    p = dbp.mOffset + col_data;
-    while ((*p < '0' || *p > '9') && dbp.len > 0)
+    p = dbp.mBuf.ptr + col_data;
+    while ((*p < '0' || *p > '9') && dbp.mBuf.len > 0)
         p++;
     if (*p >= '0' && *p <= '9')
         desc->SetPub().Set().push_back(get_num(p));
@@ -2130,12 +2130,12 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
     string agricola;
 
     if (ind[ParFlat_RC])
-        desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->mOffset));
+        desc->SetComment(NStr::Sanitize(ind[ParFlat_RC]->mBuf.ptr));
 
     er = desc->IsSetComment() ? fta_remark_is_er(desc->GetComment()) : 0;
 
     if (ind[ParFlat_RX]) {
-        p              = ind[ParFlat_RX]->mOffset;
+        p              = ind[ParFlat_RX]->mBuf.ptr;
         CRef<CPub> pub = get_muid(p, Parser::EFormat::EMBL);
 
         char* id = get_embl_str_pub_id(p, "DOI;");
@@ -2160,7 +2160,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
 
     CRef<CAuth_list> auth_list;
     if (ind[ParFlat_RA]) {
-        p = ind[ParFlat_RA]->mOffset;
+        p = ind[ParFlat_RA]->mBuf.ptr;
         s = p + StringLen(p) - 1;
         if (*s == ';')
             *s = '\0';
@@ -2168,14 +2168,14 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
             q++;
         if (*q != '\0') {
             if (ind[ParFlat_RL])
-                q = ind[ParFlat_RL]->mOffset;
+                q = ind[ParFlat_RL]->mBuf.ptr;
 
             get_auth(p, EMBL_REF, q, auth_list);
         }
     }
 
     if (ind[ParFlat_RG]) {
-        p = ind[ParFlat_RG]->mOffset;
+        p = ind[ParFlat_RG]->mBuf.ptr;
         s = p + StringLen(p) - 1;
         if (*s == ';')
             *s = '\0';
@@ -2192,7 +2192,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
 
     CRef<CTitle::C_E> title_art;
     if (ind[ParFlat_RT]) {
-        p = ind[ParFlat_RT]->mOffset;
+        p = ind[ParFlat_RT]->mBuf.ptr;
         if (*p != '\0' && *p != ';') {
             string title = clean_up(p);
             if (! title.empty()) {
@@ -2209,7 +2209,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
         return desc;
     }
 
-    p = ind[ParFlat_RL]->mOffset;
+    p = ind[ParFlat_RL]->mBuf.ptr;
     if (*p == '\0' || *p == ';') {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_Illegalreference, "JOURNAL line is empty, reference dropped.");
 
@@ -2230,7 +2230,7 @@ static CRef<CPubdesc> embl_refs(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool
         desc->SetPub().Set().push_back(pub);
     }
 
-    CRef<CPub> pub_ref = journal(pp, p, p + ind[ParFlat_RL]->len, auth_list, title_art, has_muid, cit_art, er);
+    CRef<CPub> pub_ref = journal(pp, p, p + ind[ParFlat_RL]->mBuf.len, auth_list, title_art, has_muid, cit_art, er);
 
     if (pub_ref.Empty()) {
         desc.Reset();

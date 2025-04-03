@@ -338,15 +338,15 @@ static void GetGenBankRefType(DataBlk& dbp, size_t bases)
     char* bptr;
     char* eptr;
 
-    bptr = dbp.mOffset;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr;
+    eptr = bptr + dbp.mBuf.len;
 
     const string s    = to_string(bases);
     const string str  = "(bases 1 to " + s + ")";
     const string str1 = "(bases 1 to " + s + ";";
     const string str2 = "(residues 1 to " + s + "aa)";
 
-    string ref(bptr, bptr + dbp.len);
+    string ref(bptr, bptr + dbp.mBuf.len);
 
     while (bptr < eptr && *bptr != '\n' && *bptr != '(')
         bptr++;
@@ -380,8 +380,8 @@ static void BuildFeatureBlock(DataBlk& dbp)
     char* ptr;
     bool  skip;
 
-    bptr = dbp.mOffset;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr;
+    eptr = bptr + dbp.mBuf.len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
     if (! ptr)
@@ -415,18 +415,18 @@ static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char*
     Int4  muids;
     Int4  pmids;
 
-    if (! dbp.mOffset || (! mtag && ! ptag))
+    if (! dbp.mBuf.ptr || (! mtag && ! ptag))
         return;
 
-    ch                     = dbp.mOffset[dbp.len];
-    dbp.mOffset[dbp.len] = '\0';
+    ch                    = dbp.mBuf.ptr[dbp.mBuf.len];
+    dbp.mBuf.ptr[dbp.mBuf.len] = '\0';
 
     size_t mlen = mtag ? StringLen(mtag) : 0;
     size_t plen = ptag ? StringLen(ptag) : 0;
 
     muids = 0;
     pmids = 0;
-    for (p = dbp.mOffset;; p++) {
+    for (p = dbp.mBuf.ptr;; p++) {
         p = StringChr(p, '\n');
         if (! p)
             break;
@@ -435,7 +435,7 @@ static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char*
         else if (ptag && StringEquN(p + 1, ptag, plen))
             pmids++;
     }
-    dbp.mOffset[dbp.len] = ch;
+    dbp.mBuf.ptr[dbp.mBuf.len] = ch;
 
     if (muids > 1) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_MultipleIdentifiers, "Reference has multiple MEDLINE identifiers. Ignoring all but the first.");
@@ -605,17 +605,17 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
     char* ptr;
     bool  flag = false;
 
-    bptr = dbp.mOffset;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr;
+    eptr = bptr + dbp.mBuf.len;
     ptr  = SrchTheChar(bptr, eptr, '\n');
 
     while (ptr && ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
-            dbp.len     = dbp.len - (ptr - dbp.mOffset + 1);
-            dbp.mOffset = ptr + 1;
+            dbp.mBuf.len = dbp.mBuf.len - (ptr - dbp.mBuf.ptr + 1);
+            dbp.mBuf.ptr = ptr + 1;
 
-            bptr = dbp.mOffset;
-            eptr = bptr + dbp.len;
+            bptr = dbp.mBuf.ptr;
+            eptr = bptr + dbp.mBuf.len;
         } else {
             bptr = ptr + 1;
 
@@ -677,8 +677,8 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     char* eptr;
     char* sptr;
 
-    bptr = dbp.mOffset;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr;
+    eptr = bptr + dbp.mBuf.len;
 
     if (! GetSubNodeType("RP", bptr, eptr)) {
         if (source == Parser::ESource::EMBL)
@@ -792,8 +792,8 @@ void BuildSubBlock(DataBlk& dbp, Int2 subtype, string_view subkw)
     char* bptr;
     char* eptr;
 
-    bptr = dbp.mOffset;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr;
+    eptr = bptr + dbp.mBuf.len;
 
     if (GetSubNodeType(subkw, bptr, eptr)) {
         if (! dbp.hasData())
@@ -825,17 +825,17 @@ void GetLenSubNode(DataBlk& dbp)
     if (subblocks.empty())
         return;
 
-    offset = dbp.mOffset;
+    offset = dbp.mBuf.ptr;
     for (s = offset; *s != '\0' && isdigit(*s) == 0;)
         s++;
     n = atoi(s);
 
     auto ldbp = subblocks.cend();
     for (auto ndbp = subblocks.cbegin(); ndbp != subblocks.cend(); ++ndbp) {
-        size_t l = ndbp->mOffset - offset;
-        if (l > 0 && l < dbp.len) {
-            dbp.len = l;
-            ldbp    = ndbp;
+        size_t l = ndbp->mBuf.ptr - offset;
+        if (l > 0 && l < dbp.mBuf.len) {
+            dbp.mBuf.len = l;
+            ldbp         = ndbp;
         }
     }
 
@@ -845,13 +845,13 @@ void GetLenSubNode(DataBlk& dbp)
     }
 
     for (auto curdbp = subblocks.begin(); next(curdbp) != subblocks.end(); ++curdbp) {
-        offset = curdbp->mOffset;
+        offset = curdbp->mBuf.ptr;
         ldbp   = subblocks.end();
         for (auto ndbp = subblocks.begin(); ndbp != subblocks.end(); ++ndbp) {
-            size_t l = ndbp->mOffset - offset;
-            if (l > 0 && l < curdbp->len) {
-                curdbp->len = l;
-                ldbp        = ndbp;
+            size_t l = ndbp->mBuf.ptr - offset;
+            if (l > 0 && l < curdbp->mBuf.len) {
+                curdbp->mBuf.len = l;
+                ldbp             = ndbp;
             }
         }
         if (! done && ldbp != next(curdbp) && ldbp != subblocks.end()) {
@@ -1008,8 +1008,8 @@ char* SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len
     if (sdbp == sdb.cend())
         return nullptr;
 
-    *len = sdbp->len;
-    return (sdbp->mOffset);
+    *len = sdbp->mBuf.len;
+    return (sdbp->mBuf.ptr);
 }
 
 /**********************************************************/
@@ -1619,7 +1619,7 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
         return true;
 
     if (pp->format == Parser::EFormat::XML) {
-        auto tmp = XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_SEQUENCE);
+        auto tmp = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_SEQUENCE);
         if (! tmp)
             return false;
         if (pp->source != Parser::ESource::USPTO || ! ibp->is_prot)
@@ -2018,7 +2018,7 @@ void AddNIDSeqId(CBioseq& bioseq, const DataBlk& entry, Int2 type, Int2 coldata,
     if (! dbp)
         return;
 
-    const char*   offset = dbp->mOffset + coldata;
+    const char*   offset = dbp->mBuf.ptr + coldata;
     CRef<CSeq_id> sid    = StrToSeqId(offset, false);
     if (sid.Empty())
         return;
@@ -2134,10 +2134,10 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     Int2         count;
 
     const DataBlk* dbp = TrackNodeType(entry, what);
-    if (! dbp || ! dbp->mOffset || dbp->len < 1)
+    if (! dbp || ! dbp->mBuf.ptr || dbp->mBuf.len < 1)
         p = nullptr;
     else {
-        tmp = StringSave(string_view(dbp->mOffset, dbp->len - 1));
+        tmp = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len - 1));
         for (q = tmp; *q != '\0'; q++) {
             if (*q == '\n' && StringEquN(q + 1, "DE   ", 5))
                 fta_StringCpy(q, q + 5);
@@ -2167,13 +2167,13 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
         return;
 
     dbp = TrackNodeType(entry, ori);
-    if (! dbp || ! dbp->mOffset || dbp->len < 1)
+    if (! dbp || ! dbp->mBuf.ptr || dbp->mBuf.len < 1)
         return;
-    r = new char[dbp->len + 1];
+    r = new char[dbp->mBuf.len + 1];
     if (! r)
         return;
-    StringNCpy(r, dbp->mOffset, dbp->len);
-    r[dbp->len] = '\0';
+    StringNCpy(r, dbp->mBuf.ptr, dbp->mBuf.len);
+    r[dbp->mBuf.len] = '\0';
     for (p = r, q = r; *p != '\0'; p++)
         if (*p >= 'a' && *p <= 'z')
             *q++ = *p;

@@ -63,7 +63,7 @@ DataBlk::~DataBlk()
     mpQscore.clear();
     deleteData();
     if (mType == ParFlat_ENTRYNODE) {
-        MemFree(mOffset);
+        MemFree(mBuf.ptr);
     }
 }
 

@@ -96,7 +96,7 @@ USING_SCOPE(objects);
 /**********************************************************/
 static char* GBDivOffset(const DataBlk& entry, Int4 div_shift)
 {
-    return (entry.mOffset + div_shift);
+    return (entry.mBuf.ptr + div_shift);
 }
 
 /**********************************************************/
@@ -139,14 +139,14 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
     int  numerr;
 
     const DataBlk* dbp = TrackNodeType(entry, ParFlat_CONTIG);
-    if (! dbp || ! dbp->mOffset)
+    if (! dbp || ! dbp->mBuf.ptr)
         return true;
 
-    i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA;
+    i = static_cast<Int4>(dbp->mBuf.len) - ParFlat_COL_DATA;
     if (i <= 1)
         return false;
 
-    p = StringSave(string_view(&dbp->mOffset[ParFlat_COL_DATA], i - 1)); // exclude trailing EOL
+    p = StringSave(string_view(&dbp->mBuf.ptr[ParFlat_COL_DATA], i - 1)); // exclude trailing EOL
     for (q = p, r = p; *q != '\0'; q++)
         if (*q != '\n' && *q != '\t' && *q != ' ')
             *r++ = *q;
@@ -209,7 +209,7 @@ static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dn
     Int2        strand;
     char*       topstr;
 
-    char*        bptr = entry.mOffset;
+    char*        bptr = entry.mBuf.ptr;
     IndexblkPtr  ibp  = pp->entrylist[pp->curindx];
     LocusContPtr lcp  = &ibp->lc;
 
@@ -575,7 +575,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
     }
 
     if (is_htc_div) {
-        bptr = entry.mOffset;
+        bptr = entry.mBuf.ptr;
         p    = bptr + lcp->molecule;
         if (*p == 'm' || *p == 'r')
             p++;
@@ -704,7 +704,7 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    bptr = entry.mOffset;
+    bptr = entry.mBuf.ptr;
     ibp  = pp->entrylist[pp->curindx];
 
     molstr = bptr + ibp->lc.molecule;
@@ -1289,7 +1289,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         date.Reset(new CDate);
         date->SetToTime(time);
     } else if (ibp->lc.date > 0) {
-        CRef<CDate_std> std_date = GetUpdateDate(entry.mOffset + ibp->lc.date, pp->source);
+        CRef<CDate_std> std_date = GetUpdateDate(entry.mBuf.ptr + ibp->lc.date, pp->source);
         if (std_date.NotEmpty()) {
             date.Reset(new CDate);
             date->SetStd(*std_date);
@@ -1343,8 +1343,8 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
     }
 
     EntryBlkPtr ebp   = pEntry->GetEntryData();
-    char*       ptr   = pEntry->mOffset;
-    char*       eptr  = ptr + pEntry->len;
+    char*       ptr   = pEntry->mBuf.ptr;
+    char*       eptr  = ptr + pEntry->mBuf.len;
     Int2        curkw = ParFlat_LOCUS;
     while (curkw != ParFlat_END && ptr < eptr) {
         ptr = GetGenBankBlock(ebp->chain, ptr, &curkw, eptr);
@@ -1384,7 +1384,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
 
     AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, mParser.source);
 
-    ibp->is_prot = StringEquN(pEntry->mOffset + ibp->lc.bp, "aa", 2);
+    ibp->is_prot = StringEquN(pEntry->mBuf.ptr + ibp->lc.bp, "aa", 2);
 
     unsigned char* const conv = ibp->is_prot ? GetProtConvTable() : GetDNAConvTable();
 
