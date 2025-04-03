@@ -539,6 +539,15 @@ for(i=0; i<nsc; i++) {
 		/* printf("ct:%d\n",ct); */
 		if(!slo0(mtf,cdf,qsq,sli,cs,ct,&mn,&mx)) {
 			printf("slo0 failed at nrs:%d cs:%d ct:%d\n",nrs,cs,ct);
+			if (sai) free(sai);
+			if (spn) free(spn);
+			if (spc) free(spc);
+			if (cxe) free(cxe);
+			if (spe) free(spe);
+			if (tdg) free(tdg);
+			if (cpa) free(cpa);
+			if (cpl) free(cpl);
+			if (tts) free(tts);
 			return(0); }
 		/* printf("cs:%d ct:%d mn:%d mx:%d\n",cs,ct,mn,mx); */
 
@@ -637,7 +646,15 @@ for(i=0; i<nsc; i++) { cs=sgo->si[i];
 	/* consideration of the lengths of the query sequence and core */
 	/* segments and length ranges for loops. */
 	if(!sal0(cdf,qsq,sli,sai,cs,&mn,&mx)) {
-		printf("failed sal0 nrs:%d cs:%d\n",nrs,cs); 
+		printf("failed sal0 nrs:%d cs:%d\n",nrs,cs);
+		if (spn) free(spn);
+		if (spc) free(spc);
+		if (cxe) free(cxe);
+		if (spe) free(spe);
+		if (tdg) free(tdg);
+		if (cpa) free(cpa);
+		if (cpl) free(cpl);
+		if (tts) free(tts);
 		return(0);}	
 	/* printf("cs:%d mn:%d mx:%d\n",cs,mn,mx); */
 
