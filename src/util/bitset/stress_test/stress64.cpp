@@ -5699,7 +5699,7 @@ void SparseSerializationTest()
                 bvect::size_type sb_from = from / (65536 * 256);
                 bvect::size_type sb_to = to / (65536 * 256);
                 bvect::size_type sb_cnt = sb_to - sb_from + 1;
-                assert(cstat[bm::set_sblock_bienc] == sb_cnt || cstat[bm::set_sblock_bienc] == sb_cnt - 1);
+                assert(cstat[bm::set_sblock_bienc_v3] == sb_cnt || cstat[bm::set_sblock_bienc_v3] == sb_cnt - 1);
             }
 
             bvect bv2;
@@ -10638,7 +10638,7 @@ bool agg_shift_right_and(bm::aggregator<bvect>& agg,
     va_start(args, bv);
     agg.add(bv);
     
-    for (int i = 0; true; ++i)
+    for (; true;)
     {
         const bvect* bv_arg = (const bvect*)va_arg(args, void*);
         if (!bv_arg)
@@ -15587,7 +15587,7 @@ void TestCompressSparseVector()
             csv1.push_back(8, 2);
             csv1.push_back(255, 4);
 
-            csv1.sync(true);
+            csv1.sync(true, true);
 
             for (unsigned k = 0; k < 2; ++k)
             {
@@ -16099,7 +16099,7 @@ void TestCompressSparseSignedVector()
 
 
             csv1.set_null(100);
-            csv1.sync(true);
+            csv1.sync(true, true);
 
             sz = csv1.decode(&arr[0], 100, 1);
             assert(sz == 0);
@@ -16931,14 +16931,14 @@ void TestStrSparseVector()
         // reference test / serialization test
         {
             auto ref = str_sv0[3];
-            const char* s = ref;
+            const char* s = ref.get();
             cmp = ::strcmp(s, str0.c_str());
             assert(cmp == 0);
             str_sv0[3] = "333";
             str_sv0.get(3, str, sizeof(str));
 
             ref = str_sv0[3];
-            s = ref;
+            s = ref.get();
             cmp = ::strcmp(s, "333");
             assert(cmp == 0);
 
@@ -20033,6 +20033,7 @@ int main(int argc, char *argv[])
     if (is_all || is_bvser || is_bvbasic)
     {
         //SerializationCompressionLevelsTest();
+
         SerializationTest();
         CheckAllocLeaks(false);
 

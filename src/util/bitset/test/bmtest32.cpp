@@ -30,6 +30,8 @@ For more information please visit:  http://bitmagic.io
 //#define BMAVX2OPT
 //#define BM_USE_GCC_BUILD
 
+#define BM_DBG_SERIAL
+
 #define BM_NONSTANDARD_EXTENTIONS
 //#define BM64ADDR
 #ifdef _MSC_VER
@@ -70,6 +72,8 @@ typedef  bitset<BSIZE>  test_bitset;
 
 unsigned platform_test = 1;
 
+unsigned long long c_acc = 0; ///< technical var. to help silence some code analysis warnings and too smart optimizer
+
 std::random_device rand_dev;
 std::mt19937 gen(rand_dev()); // mersenne_twister_engine 
 std::uniform_int_distribution<> rand_dis(0, BSIZE); // generate uniform numebrs for [1, vector_max]
@@ -77,6 +81,8 @@ std::uniform_int_distribution<> rand_dis(0, BSIZE); // generate uniform numebrs 
 typedef bm::bvector<> bvect;
 typedef bm::str_sparse_vector<char, bvect, 8> str_svect_type;
 typedef bm::str_sparse_vector<char, bvect, 8> str_sv_type;
+
+float g_fl_cnt = 0;
 
 
 // generate pseudo-random bit-vector, mix of compressed/non-compressed blocks
@@ -354,6 +360,7 @@ void BitCountTest()
     volatile unsigned* p = &value;
     unsigned c1;
     c1 = value = 0;
+    c_acc+= c1;
 
     if (!platform_test)
     {
@@ -364,7 +371,8 @@ void BitCountTest()
     }
     }
 
-    c1 = *p;
+    (c1 = *p); c_acc += c1;
+    
     c1 = value = 0;
     stringstream s;
     s << value << c1; // to fool the optimization
@@ -542,8 +550,7 @@ void BitForEachTest()
     }
     assert(sum1 == sum4);
 
-    char buf[256];
-    sprintf(buf, "%i", (int)value); // to fool some smart compilers like ICC
+    g_fl_cnt += value; // to fool some smart compilers like ICC using global
 
 
     delete [] test_arr;
@@ -876,6 +883,7 @@ void BitCountSparseTest()
     }
 
     c1 = *p;
+    ::memcpy(&c_acc, &c1, sizeof(c1)); // to trick static anal.and optimizer
     value = c1 = 0;
 
     bvect*  bv_c = new bvect(*bv);
@@ -1416,8 +1424,9 @@ void BitCompareTest()
     delete [] arr1;
     delete [] arr2;
 
-    char buf[256];
-    sprintf(buf, "%p", p);
+    if (p)
+        g_fl_cnt += 10.0f; // to fool some smart compilers like ICC using global
+
 }
 
 unsigned long long g_acc = 0;
@@ -1484,8 +1493,7 @@ void FindTest()
             }
         }
     }
-    char cbuf[256];
-    sprintf(cbuf, "%i ", pos_sum); // attempt to avoid agressive optmizations
+    g_fl_cnt += pos_sum; // to fool some smart compilers like ICC using global
 
     {
         bm::chrono_taker<std::ostream> tt(cout, "bvector<>::find()", REPEATS*100);
@@ -1740,8 +1748,8 @@ void EnumeratorTestGAP()
     }
     s << v << endl; // attempt to fool optimization
 
-    char buf[256];
-    sprintf(buf, "%i", cnt); // to fool some smart compilers like ICC
+    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+
 
     delete bv;
     delete bset;
@@ -1786,8 +1794,6 @@ void SerializationTest()
     delete [] buf; buf = 0;
         
     bvect*  bv = new bvect();
-    //test_bitset*  bset = new test_bitset();
-    unsigned value = 0;
 
     SimpleFillSets(nullptr, *bv, 0, BSIZE, 4);
     
@@ -1804,13 +1810,9 @@ void SerializationTest()
     }
     }
 
+    g_fl_cnt += id_size; // to fool some smart compilers like ICC using global
 
-    char cbuf[256] = {0, };
-    sprintf(cbuf, "%u", value);
-    /*
-    cout << cbuf << " " << id_size << " " << len << " " << value << endl;
-    */
-        
+
     delete bv;
     delete [] buf;
 }
@@ -2421,9 +2423,9 @@ void AndCountTest()
     }
     assert(count3 == count2);
 
-
-    count1 = count2 = 0;
-
+    ::memcpy(&c_acc, &count1, sizeof(count1));
+    //count1 = count2 = 0;
+ 
 
     delete bv1;
     delete bv2;
@@ -2446,7 +2448,6 @@ void TI_MetricTest()
     SimpleFillSets(bset2, *bv2, 0, BSIZE, 250);
 
     unsigned count1 = 0;
-    unsigned count2 = 0;
     unsigned countA=0, countB=0, test_countA=0, test_countB=0;
     unsigned test_count = 0;
     double ti1=0, ti2=0, ti3=0;
@@ -2512,7 +2513,8 @@ void TI_MetricTest()
         cout << ti1 << " " << ti2 << endl;
         exit(1);
     }
-    count1 = count2 = 0;
+    c_acc += count1 ;
+    //count1 = 0;
 
     // -----------------------------------------
     if (!platform_test)
@@ -2588,8 +2590,8 @@ void TI_MetricTest()
         cout << ti1 << " " << ti2 << endl;
         exit(1);
     }
-    count1 = count2 = 0;
-    count1 = count2 = 0;
+    //count1 = 0;
+
 
     // -----------------------------------------
     if (!platform_test)
@@ -2753,8 +2755,11 @@ void BitBlockTransposeTest()
 
     }
     
-    char cbuf[256];
-    sprintf(cbuf, "%i %i", cnt, d2[10][10]);
+
+    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+    g_fl_cnt += d2[10][10];
+
+
 
     for (unsigned i = 0; i < blocks_count; ++i)
     {
@@ -3196,12 +3201,7 @@ void SparseVectorAccessTest()
 
     assert(cnt1 == cnt2);
 
-
-
-    
-    char buf[256];
-    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
-
+    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
 }
 
 static
@@ -3353,9 +3353,7 @@ void SparseVectorSignedAccessTest()
         }
     }
 
-
-    char buf[256];
-    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
+    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
 
 }
 
@@ -3443,10 +3441,10 @@ void RSC_SparseVectorRandomAccesTest()
         bm::chrono_taker tt(cout, "rsc_sparse_vector<>::sync() (BIT)", REPEATS*10 );
         for (unsigned i = 0; i < REPEATS*10; ++i)
         {
-            sv1.sync(true);
+            sv1.sync(true, true);
         }
     }
-    sv1.sync(false);
+    sv1.sync(false, false);
 
     //bm::print_svector_stat(cout, sv2);
 
@@ -3517,6 +3515,7 @@ void RSC_SparseVectorRandomAccesTest()
         bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (BIT)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
+        c_acc += sz; // to fool optimizer a bit
         }
         // validate
         for (unsigned i = 0; i < test_idx.size(); ++i)
@@ -3553,7 +3552,7 @@ void RSC_SparseVectorRandomAccesTest()
         bm::chrono_taker tt(cout, "rsc_sparse_vector<>::sync() (GAP)", REPEATS*10 );
         for (unsigned i = 0; i < REPEATS*10; ++i)
         {
-            sv1.sync(true);
+            sv1.sync(true, true);
         }
     }
 
@@ -3597,6 +3596,7 @@ void RSC_SparseVectorRandomAccesTest()
         bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (GAP)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
+        c_acc += sz; // to fool optimizer
         }
         // validate
         for (unsigned i = 0; i < test_idx.size(); ++i)
@@ -3623,6 +3623,7 @@ void RSC_SparseVectorRandomAccesTest()
         bm::chrono_taker tt(cout, "rsc_sparse_vector<>::gather() (GAP) (RO)", REPEATS*10 );
         unsigned sz = (unsigned)test_idx.size();
         sz = sv1.gather(test_arr.data(), test_idx.data(), idx_buf_vec.data(), sz, bm::BM_UNKNOWN);
+        c_acc += sz; // to fool optimizer
         }
 
         // validate
@@ -4121,8 +4122,8 @@ void Set2SetTransformTest()
         }
     }
     */
-    char buf[256];
-    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
+    g_fl_cnt += cnt; // to fool some smart compilers like ICC using global
+
 }
 
 static
@@ -4303,7 +4304,7 @@ void IntervalsTest()
                         if (i == istart + ilen)
                         {
                             cerr << "Error: is_interval test failed! (1)" << endl;
-                            is_int = bm::is_interval(bv, istart, i);
+                            is_int = bm::is_interval(bv, istart, i); (void) is_int;
                             assert(0); exit(1);
                         }
                     }
@@ -4473,8 +4474,8 @@ void IntervalsTest()
                 }
                 assert(cnt == cnt_c);
             }
-            char buf[256];
-            sprintf(buf, "%u", sum); // this is to prevent unwanted optimizations by some compilers
+
+            g_fl_cnt += sum; // to fool some smart compilers like ICC using global
 
         }
 
@@ -5669,6 +5670,7 @@ void StrSparseVectorTest()
             {
                 cerr << "String bfind_eq_str() failure!" << endl;
                 found2 = scanner_4.bfind_eq_str(s.c_str(), pos2);
+                cerr << found2 << endl;
                 assert(0); exit(1);
             }
             f_sum2_4 += pos2;
@@ -5847,6 +5849,8 @@ unsigned generate_inter_test(V* arr, unsigned inc_factor, unsigned target_size)
 static
 void InterpolativeCodingTest()
 {
+    cout << "InterpolativeCodingTest() " << endl;
+
     unsigned char buf[1024 * 200] = { 0, };
 
     const unsigned code_repeats = 500000;
@@ -5855,44 +5859,49 @@ void InterpolativeCodingTest()
     vector<unsigned> sa; sa.resize(test_size);
     vector<unsigned> da; da.resize(test_size);
 
-    bm::word_t* src_arr = &sa[0];
-    bm::word_t* dst_arr = &da[0];
-    unsigned sz;
-    unsigned inc = (unsigned)rand() % (65536 * 256);
-    sz = generate_inter_test_linear(src_arr, inc, test_size);
-    assert(sz);
-    assert(src_arr[0]);
+    //for (unsigned pass = 0; pass < 1000; ++pass)
     {
-        bm::encoder enc(buf, sizeof(buf));
-        bm::bit_out<bm::encoder> bout(enc);
-
-        bout.bic_encode_u32_cm(src_arr, sz - 1, 0, src_arr[sz - 1]);
-        bout.flush();
-        auto ssz = enc.size();
-        assert(ssz < sizeof(buf));
-        (void)ssz;
-    }
-
-    {
-        bm::chrono_taker tt(cout, "bic_decode_u32_cm() ", 1);
-
-        for (unsigned k = 0; k < code_repeats; ++k)
+        bm::word_t* src_arr = &sa[0];
+        bm::word_t* dst_arr = &da[0];
+        unsigned sz;
+        unsigned inc = (unsigned)rand() % (65536 * 256);
+        sz = generate_inter_test_linear(src_arr, inc, test_size);
+        assert(sz);
+        assert(src_arr[0]);
         {
-            bm::decoder dec(buf);
-            bm::bit_in<bm::decoder> bin(dec);
+            bm::encoder enc(buf, sizeof(buf));
+            bm::bit_out<bm::encoder> bout(enc);
 
-            bin.bic_decode_u32_cm(&dst_arr[0], sz - 1, 0, src_arr[sz - 1]);
-            dst_arr[sz - 1] = src_arr[sz - 1];
-            for (unsigned i = 0; i < sz; ++i)
+            bout.bic_encode_u32_cm(src_arr, sz - 1, src_arr[0], src_arr[sz - 1]);
+            bout.flush();
+            auto ssz = enc.size();
+            assert(ssz < sizeof(buf));
+            (void)ssz;
+        }
+
+        {
+            bm::chrono_taker tt(cout, "bic_decode_u32_cm() ", 1);
+
+            for (unsigned k = 0; k < code_repeats; ++k)
             {
-                assert(src_arr[i] == dst_arr[i]);
-                if (i)
+                bm::decoder dec(buf);
+                bm::bit_in<bm::decoder> bin(dec);
+
+                bin.bic_decode_u32_cm(&dst_arr[0], sz - 1, src_arr[0], src_arr[sz - 1]);
+                dst_arr[sz - 1] = src_arr[sz - 1];
+                for (unsigned i = 0; i < sz; ++i)
                 {
-                    assert(src_arr[i - 1] < src_arr[i]);
+                    assert(src_arr[i] == dst_arr[i]);
+                    if (i)
+                    {
+                        assert(src_arr[i - 1] < src_arr[i]);
+                    }
                 }
-            }
-        } // for k
-    }
+            } // for k
+        }
+    } // for pass
+
+    cout << "InterpolativeCodingTest() OK" << endl;
 }
 
 inline
@@ -5944,7 +5953,7 @@ void AS_test1()
             for (unsigned i = 0; i < 1000000; ++i) {
                 const std::pair<string, unsigned>& sp = tsample_v[i];
                 bool f = scanner_32.bfind_eq_str(sp.first.c_str(), sp.first.size(), pos);
-                assert(f);
+                assert(f); (void)f;
                 assert(pos == i);
                 s0+=pos;
             }
@@ -5957,7 +5966,7 @@ void AS_test1()
                 const std::pair<string, unsigned>& sp = tsample_v[i];
                 bool f = scanner_32.bfind_eq_str(sp.first.c_str(), pos);
                 s1+=pos;
-                assert(f);
+                assert(f); (void)f;
                 assert(pos == i);
             }
         }
@@ -6105,8 +6114,53 @@ void AS_test2()
     return;
 }
 
+
+std::vector<std::string> t1(const std::string& str, char delim)
+{
+    (void)delim; (void)str;
+    std::vector<std::string> items;
+    items.reserve(10240);
+
+    for (int i = 0; i < 2000000; ++i) {
+        items.push_back("atgf1234567890");
+    }
+    return items;
+}
+
+void t2(const std::string& str, char delim, std::vector<std::string>& items)
+{
+    (void)delim;
+    (void)str;
+    for (int i = 0; i < 2000000; ++i) {
+        items.push_back("atgf1234567890");
+    }
+}
+
+
+
+void test_ro()
+{
+    {
+    bm::chrono_taker tt(cout, "DK T1 ", 1);
+    std::vector<std::string> items = t1("test", '\n');
+    cout << items.size() << endl;
+    }
+
+    {
+    bm::chrono_taker tt(cout, "DK T2 ", 1);
+    std::vector<std::string> items;
+    items.reserve(10240);
+    t2("test", '\n', items);
+    cout << items.size() << endl;
+    }
+}
+
+
 int main(void)
 {
+//test_ro();
+//return 0;
+
     cout << bm::_copyright<true>::_p << endl;
     cout << "SIMD code = " << bm::simd_version() << endl;
     #if defined (BM64OPT)
@@ -6236,6 +6290,9 @@ int main(void)
 
         StrSparseVectorTest();
         cout << endl;
+
+        if (g_fl_cnt < 0 || c_acc) // ... to fool compiler optimizers not to exclude code
+            cout << "" << "\r";
 
 //        AS_test1();
 //        AS_test2();
