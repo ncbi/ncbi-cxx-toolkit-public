@@ -451,7 +451,41 @@ void CFastCgiApplicationMT::x_ProcessThreadedRequest(CFastCgiThreadedRequest& re
 //  CFastCgiThreadedRequest::
 //
 
+namespace {
+
+const char* s_MaxPostData_Section = "FastCGI";
+const char* s_MaxPostData_Name = "MaxPostData";
+const char* s_MaxPostData_Env = "NCBI_CONFIG__FASTCGI__MAXPOSTDATA";
+
+static Uint8 s_GetMaxPostData(void)
+{
+    const TXChar* str = NcbiSys_getenv(_T_XCSTRING(s_MaxPostData_Env));
+    try {
+        return NStr::StringToUInt8_DataSize(_T_CSTRING(str),
+            NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+    }
+    catch (...) {
+    }
+
+    CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
+    if (app && app->FinishedLoadingConfig()) {
+        const string& s = app->GetConfig().Get(s_MaxPostData_Section, s_MaxPostData_Name);
+        if (!s.empty()) {
+            try {
+                return NStr::StringToUInt8_DataSize(s,
+                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
+            }
+            catch (...) {
+            }
+        }
+    }
+    return string::npos;
+}
+
+};
+
 CFastCgiThreadedRequest::CFastCgiThreadedRequest(void)
+    : TParent(s_GetMaxPostData())
 {
 }
 
