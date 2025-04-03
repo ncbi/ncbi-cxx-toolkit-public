@@ -223,7 +223,7 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out, int indent, bool /*content
             }
         }
     }
-    if (IsASNDataSpec()) {
+    if (IsASNDataSpec() || inAttlist) {
         string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"" + form;
         const CDataMember* mem = GetDataMember();
         if (!inAttlist) {
