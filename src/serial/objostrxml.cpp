@@ -975,6 +975,9 @@ void CObjectOStreamXml::WriteNullPointer(void)
         }
         return;
     }
+    if (m_EndTag) {
+        return;
+    }
     m_SpecialCaseWrite = nillable ? eWriteAsNil : eWriteAsDefault;
     x_SpecialCaseWrite();
     m_SpecialCaseWrite = eWriteAsNormal;

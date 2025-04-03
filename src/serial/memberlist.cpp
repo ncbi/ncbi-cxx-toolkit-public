@@ -359,6 +359,9 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CTypeInfo* info)
 
             const CItemInfo* item = classType->GetItems().GetItemInfo(i);
             if (item->Optional()) {
+                if (family == eTypeFamilyChoice) {
+                    return 0;
+                }
                 continue;
             }
             if (!item->GetId().HasNotag()) {
