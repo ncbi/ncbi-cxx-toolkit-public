@@ -1288,12 +1288,14 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
         att.SetType(DTDAttribute::eEnum);
     }
     int id = 0;
+    bool hasint = false;
     if (GetAttribute("intvalue")) {
         id = NStr::StringToInt(m_Value);
         att.SetType(DTDAttribute::eIntEnum);
+        hasint = true;
     }
     if (GetAttribute("value")) {
-        if (att.GetType() == DTDAttribute::eIntEnum) {
+        if (!hasint && att.GetType() == DTDAttribute::eIntEnum) {
             id = NStr::StringToInt(m_Value);
         }
         string v(m_ValuePrefix);
