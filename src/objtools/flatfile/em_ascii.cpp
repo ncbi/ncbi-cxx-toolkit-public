@@ -688,7 +688,7 @@ static CRef<COrg_ref> GetEmblOrgRef(const DataBlk& dbp)
 {
     string         sTaxname;
     vector<string> taxLines;
-    NStr::Split(string_view(dbp.mOffset, dbp.len), "\n", taxLines);
+    NStr::Split(string_view(dbp.mBuf.ptr, dbp.mBuf.len), "\n", taxLines);
     for (auto& line : taxLines) {
         NStr::TruncateSpacesInPlace(line);
         if (line.empty() || line.starts_with("XX"sv)) {
@@ -763,14 +763,14 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
     int  numerr;
 
     const DataBlk* dbp = TrackNodeType(entry, ParFlat_CO);
-    if (! dbp || ! dbp->mOffset)
+    if (! dbp || ! dbp->mBuf.ptr)
         return true;
 
-    Int4 i = static_cast<Int4>(dbp->len) - ParFlat_COL_DATA_EMBL;
+    Int4 i = static_cast<Int4>(dbp->mBuf.len) - ParFlat_COL_DATA_EMBL;
     if (i <= 1)
         return false;
 
-    p = StringSave(string_view(&dbp->mOffset[ParFlat_COL_DATA_EMBL], i - 1)); // exclude trailing EOL
+    p = StringSave(string_view(&dbp->mBuf.ptr[ParFlat_COL_DATA_EMBL], i - 1)); // exclude trailing EOL
     for (q = p; *q != '\0'; q++) {
         if (*q == '\t')
             *q = ' ';
@@ -851,7 +851,7 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
 
     ibp = pp->entrylist[pp->curindx];
 
-    p = entry.mOffset + ParFlat_COL_DATA_EMBL;
+    p = entry.mBuf.ptr + ParFlat_COL_DATA_EMBL;
     PointToNextToken(p); /* p points to 2nd token */
     PointToNextToken(p); /* p points to 3rd token */
 
@@ -962,7 +962,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     ibp = pp->entrylist[pp->curindx];
 
-    bptr = entry.mOffset + ParFlat_COL_DATA_EMBL;
+    bptr = entry.mBuf.ptr + ParFlat_COL_DATA_EMBL;
     PointToNextToken(bptr); /* bptr points to 2nd token */
 
     if (ibp->embl_new_ID == false) {
@@ -1234,7 +1234,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     if (is_htc_div) {
         char* p;
-        p = entry.mOffset + ParFlat_COL_DATA_EMBL; /* p points to 1st token */
+        p = entry.mBuf.ptr + ParFlat_COL_DATA_EMBL; /* p points to 1st token */
         PointToNextToken(p);                       /* p points to 2nd token */
         PointToNextToken(p);                       /* p points to 3rd token */
 
@@ -1419,7 +1419,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     Int4  i;
 
     ibp  = pp->entrylist[pp->curindx];
-    bptr = entry.mOffset + ParFlat_COL_DATA_EMBL; /* bptr points to 1st
+    bptr = entry.mBuf.ptr + ParFlat_COL_DATA_EMBL; /* bptr points to 1st
                                                            token */
     PointToNextToken(bptr);                /* bptr points to 2nd token */
     PointToNextToken(bptr);                /* bptr points to 3rd token */
@@ -2014,14 +2014,14 @@ static void FakeEmblBioSources(const DataBlk& entry, CBioseq& bioseq)
 
         for (const auto& subdbp : os_blk.GetSubBlocks()) {
             if (subdbp.mType == ParFlat_OG) {
-                GetGenomeInfo(*bio_src, subdbp.mOffset + ParFlat_COL_DATA_EMBL);
+                GetGenomeInfo(*bio_src, subdbp.mBuf.ptr + ParFlat_COL_DATA_EMBL);
                 continue;
             }
-            if (subdbp.mType != ParFlat_OC || ! subdbp.mOffset ||
-                subdbp.len < ParFlat_COL_DATA_EMBL)
+            if (subdbp.mType != ParFlat_OC || ! subdbp.mBuf.ptr ||
+                subdbp.mBuf.len < ParFlat_COL_DATA_EMBL)
                 continue;
 
-            string lineage(subdbp.mOffset + ParFlat_COL_DATA_EMBL, subdbp.len - ParFlat_COL_DATA_EMBL);
+            string lineage(subdbp.mBuf.ptr + ParFlat_COL_DATA_EMBL, subdbp.mBuf.len - ParFlat_COL_DATA_EMBL);
             while (! lineage.empty()) {
                 auto it = lineage.find("\nOC   ");
                 if (it == string::npos)
@@ -2056,9 +2056,9 @@ static void EmblGetDivision(IndexblkPtr ibp, const DataBlk& entry)
     const char* p;
     const char* q;
 
-    p = StringChr(entry.mOffset, ';');
+    p = StringChr(entry.mBuf.ptr, ';');
     if (! p)
-        p = entry.mOffset;
+        p = entry.mBuf.ptr;
     else {
         q = StringChr(p + 1, ';');
         if (q)
@@ -2077,7 +2077,7 @@ static void EmblGetDivisionNewID(IndexblkPtr ibp, const DataBlk& entry)
     const char* p;
     Int4        i;
 
-    for (i = 0, p = entry.mOffset; *p != '\0' && i < 4; p++)
+    for (i = 0, p = entry.mBuf.ptr; *p != '\0' && i < 4; p++)
         if (*p == ';' && p[1] == ' ')
             i++;
 
@@ -2120,9 +2120,9 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
             NCBI_THROW(CException, eUnknown, "Unable to load entry");
         }
         auto  ebp   = pEntry->GetEntryData();
-        char* ptr   = pEntry->mOffset; /* points to beginning of the
+        char* ptr   = pEntry->mBuf.ptr; /* points to beginning of the
                                        memory line */
-        char* eptr  = ptr + pEntry->len;
+        char* eptr  = ptr + pEntry->mBuf.len;
         Int2  curkw = ParFlat_ID;
 
         // TODO: below is a potentially infinite cycle!!!!

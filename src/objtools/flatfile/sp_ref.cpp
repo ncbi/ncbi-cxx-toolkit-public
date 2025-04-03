@@ -166,8 +166,8 @@ static Int4 GetDataFromRN(const DataBlk& dbp, Uint2 col_data)
     char* str;
     Int4  num = 0;
 
-    bptr = dbp.mOffset + col_data;
-    eptr = bptr + dbp.len;
+    bptr = dbp.mBuf.ptr + col_data;
+    eptr = bptr + dbp.mBuf.len;
     while (isdigit(*bptr) == 0 && bptr < eptr)
         bptr++;
     for (str = bptr; isdigit(*str) != 0 && str < eptr;)
@@ -455,7 +455,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
     for (const auto& subdbp : dbp.GetSubBlocks()) {
         /* process REFERENCE subkeywords
          */
-        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp.mOffset, subdbp.len), col_data));
+        str        = StringSave(GetBlkDataReplaceNewLine(string_view(subdbp.mBuf.ptr, subdbp.mBuf.len), col_data));
         size_t len = StringLen(str);
         while (len > 0 && str[len - 1] == ';') {
             str[len - 1] = '\0';

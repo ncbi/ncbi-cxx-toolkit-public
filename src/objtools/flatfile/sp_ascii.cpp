@@ -769,7 +769,7 @@ static CBioSource::EGenome GetSPGenomeFrom_OS_OG(const TDataBlkList& dbl)
         if (dbp.mType == ParFlatSP_OS) {
             for (const auto& subdbp : dbp.GetSubBlocks())
                 if (subdbp.mType == ParFlatSP_OG) {
-                    p = subdbp.mOffset + ParFlat_COL_DATA_SP;
+                    p = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
                     if (StringEquNI(p, "Plastid;", 8))
                         for (p += 8; *p == ' ';)
                             p++;
@@ -1028,15 +1028,15 @@ static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
     char* p;
     char* q;
 
-    size_t len = dbp.len;
+    size_t len = dbp.mBuf.len;
     if (len == 0)
         return nullptr;
-    for (size_t i = 0; i < dbp.len; i++)
-        if (dbp.mOffset[i] == '\n')
+    for (size_t i = 0; i < dbp.mBuf.len; i++)
+        if (dbp.mBuf.ptr[i] == '\n')
             len -= 5;
     res = StringNew(len - 1);
     p   = res;
-    for (q = dbp.mOffset; *q != '\0';) {
+    for (q = dbp.mBuf.ptr; *q != '\0';) {
         if (! StringEquN(q, pattern, 5))
             break;
         if (p > res)
@@ -1337,13 +1337,13 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
     vhp  = new ViralHost;
     tvhp = vhp;
 
-    line                       = StringNew(subdbp->len + 1);
-    ch                         = subdbp->mOffset[subdbp->len - 1];
-    subdbp->mOffset[subdbp->len - 1] = '\0';
+    line                       = StringNew(subdbp->mBuf.len + 1);
+    ch                         = subdbp->mBuf.ptr[subdbp->mBuf.len - 1];
+    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = '\0';
     line[0]                    = '\n';
     line[1]                    = '\0';
-    StringCat(line, subdbp->mOffset);
-    subdbp->mOffset[subdbp->len - 1] = ch;
+    StringCat(line, subdbp->mBuf.ptr);
+    subdbp->mBuf.ptr[subdbp->mBuf.len - 1] = ch;
 
     if (! StringEquNI(line, "\nOH   NCBI_TaxID=", 17)) {
         ch = '\0';
@@ -1437,7 +1437,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             if (subdbp.mType != ParFlatSP_OX)
                 continue;
             got  = true;
-            line = StringSave(string_view(subdbp.mOffset, subdbp.len - 1));
+            line = StringSave(string_view(subdbp.mBuf.ptr, subdbp.mBuf.len - 1));
             p    = StringChr(line, '\n');
             if (p)
                 *p = '\0';
@@ -1543,8 +1543,8 @@ static void get_plasmid(const DataBlk& entry, CSP_block::TPlasnm& plasms)
             if (subdbp.mType != ParFlatSP_OG)
                 continue;
 
-            offset = subdbp.mOffset + ParFlat_COL_DATA_SP;
-            eptr   = offset + subdbp.len;
+            offset = subdbp.mBuf.ptr + ParFlat_COL_DATA_SP;
+            eptr   = offset + subdbp.mBuf.len;
             gmod   = StringMatchIcase(SP_organelle, offset);
         }
     }
@@ -2272,7 +2272,7 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     bool  i;
     Int2  ver_num;
 
-    bptr = entry.mOffset + ParFlat_COL_DATA_SP;
+    bptr = entry.mBuf.ptr + ParFlat_COL_DATA_SP;
     PointToNextToken(bptr); /* first ID line, 2nd token */
     reviewed = StringEquNI(bptr, "reviewed", 8);
     if (reviewed || StringEquNI(bptr, "standard", 8)) {
@@ -4765,8 +4765,8 @@ static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* pr
     EntryBlkPtr ebp;
 
     ebp  = entry.GetEntryData();
-    ptr  = entry.mOffset;
-    eptr = ptr + entry.len;
+    ptr  = entry.mBuf.ptr;
+    eptr = ptr + entry.mBuf.len;
     for (curkw = ParFlatSP_ID; curkw != ParFlatSP_END;) {
         ptr = GetEmblBlock(ebp->chain, ptr, &curkw, pp->format, eptr);
     }

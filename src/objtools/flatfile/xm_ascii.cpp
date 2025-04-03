@@ -130,7 +130,7 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBios
     Int4  i;
     int   numerr;
 
-    p = StringSave(XMLFindTagValue(dbp.mOffset, xil, INSDSEQ_CONTIG));
+    p = StringSave(XMLFindTagValue(dbp.mBuf.ptr, xil, INSDSEQ_CONTIG));
     if (! p)
         return false;
 
@@ -191,9 +191,9 @@ bool XMLGetInst(ParserPtr pp, const DataBlk& dbp, unsigned char* dnaconv, CBiose
     ibp = pp->entrylist[pp->curindx];
     for (const auto& xip : ibp->xip) {
         if (xip.tag == INSDSEQ_TOPOLOGY && ! topstr)
-            topstr = XMLGetTagValue(dbp.mOffset, xip);
+            topstr = XMLGetTagValue(dbp.mBuf.ptr, xip);
         else if (xip.tag == INSDSEQ_STRANDEDNESS && ! strandstr)
-            strandstr = XMLGetTagValue(dbp.mOffset, xip);
+            strandstr = XMLGetTagValue(dbp.mBuf.ptr, xip);
     }
 
     CSeq_inst& inst = bioseq.SetInst();
@@ -606,8 +606,8 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, const DataBlk& entry, COrg_ref
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    molstr = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_MOLTYPE));
-    div    = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_DIVISION));
+    molstr = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_MOLTYPE));
+    div    = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DIVISION));
 
     if (StringEquN(div, "EST", 3))
         mol_info->SetTech(CMolInfo::eTech_est);
@@ -801,7 +801,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
-    str = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_DEFINITION));
+    str = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DEFINITION));
     string title;
 
     if (str) {
@@ -873,7 +873,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     /* pub should be before GBblock because we need patent ref
      */
-    TDataBlkList dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_END);
+    TDataBlkList dbl = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_END);
     for (auto& dbp : dbl) {
         CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty()) {
@@ -884,7 +884,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
     dbl.clear();
 
-    dbl = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_NO_TARGET);
+    dbl = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_NO_TARGET);
     for (auto& dbp : dbl) {
         CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
         if (pubdesc.NotEmpty()) {
@@ -902,9 +902,9 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     CRef<CGB_block>   gbb;
 
     if (pp->source == Parser::ESource::EMBL)
-        embl = XMLGetEMBLBlock(pp, entry.mOffset, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
+        embl = XMLGetEMBLBlock(pp, entry.mBuf.ptr, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
     else
-        gbb = XMLGetGBBlock(pp, entry.mOffset, *mol_info, bio_src);
+        gbb = XMLGetGBBlock(pp, entry.mBuf.ptr, *mol_info, bio_src);
 
     CRef<CUser_object> dbuop;
     if (! dr_ena.empty() || ! dr_biosample.empty())
@@ -953,7 +953,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         bioseq.SetDescr().Set().push_back(descr);
     }
 
-    offset = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_PRIMARY));
+    offset = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_PRIMARY));
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
             if (! fta_dblink_has_sra(dbuop)) {
@@ -988,7 +988,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* COMMENT data
      */
-    offset = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_COMMENT));
+    offset = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_COMMENT));
     if (offset) {
         bool           bad = false;
         TUserObjVector user_objs;
@@ -1052,11 +1052,11 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         update = nullptr;
         crdate = nullptr;
     } else {
-        update = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_UPDATE_DATE));
+        update = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_UPDATE_DATE));
         if (update)
             std_upd_date = GetUpdateDate(update, pp->source);
 
-        crdate = StringSave(XMLFindTagValue(entry.mOffset, ibp->xip, INSDSEQ_CREATE_DATE));
+        crdate = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_CREATE_DATE));
         if (crdate)
             std_cre_date = GetUpdateDate(crdate, pp->source);
     }
@@ -1154,8 +1154,8 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     unique_ptr<DataBlk> dbp(new DataBlk());
     dbp->SetEntryData(ebp);
-    dbp->mOffset = entry;
-    dbp->len     = StringLen(entry);
+    dbp->mBuf.ptr = entry;
+    dbp->mBuf.len = StringLen(entry);
 
     if (! XMLGetInst(&mParser, *dbp, ibp->is_prot ? GetProtConvTable() : GetDNAConvTable(), *bioseq)) {
         ibp->drop = true;
@@ -1167,7 +1167,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         return result;
     }
 
-    XMLFakeBioSources(ibp->xip, dbp->mOffset, *bioseq, mParser.source);
+    XMLFakeBioSources(ibp->xip, dbp->mBuf.ptr, *bioseq, mParser.source);
  
     GetScope().AddBioseq(*bioseq);
 

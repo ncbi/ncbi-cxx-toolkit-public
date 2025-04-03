@@ -883,8 +883,8 @@ bool SrchNodeType(const DataBlk& entry, Int4 type, size_t* plen, char** pptr)
 {
     const DataBlk* temp = TrackNodeType(entry, (Int2)type);
     if (temp) {
-        *plen = temp->len;
-        *pptr = temp->mOffset;
+        *plen = temp->mBuf.len;
+        *pptr = temp->mBuf.ptr;
         return true;
     }
 
@@ -899,7 +899,7 @@ string_view GetNodeData(const DataBlk& entry, int nodeType)
     if (! tmp) {
         return {};
     }
-    return string_view(tmp->mOffset, tmp->len);
+    return string_view(tmp->mBuf.ptr, tmp->mBuf.len);
 }
 
 /**********************************************************

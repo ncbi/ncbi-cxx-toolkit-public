@@ -1169,7 +1169,7 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
      */
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
-        temp_xml_chain = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_BTW);
+        temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_BTW);
         dbp            = temp_xml_chain.begin();
         dbp_end        = temp_xml_chain.end();
     } else {
@@ -1194,9 +1194,9 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
 
         unique_ptr<string> ploc;
         if (pp->format == Parser::EFormat::XML) {
-            ploc = XMLFindTagValue(ref_blk.mOffset, ref_blk.GetXmlData(), INSDREFERENCE_POSITION);
+            ploc = XMLFindTagValue(ref_blk.mBuf.ptr, ref_blk.GetXmlData(), INSDREFERENCE_POSITION);
             if (! ploc) {
-                auto q = XMLFindTagValue(ref_blk.mOffset, ref_blk.GetXmlData(), INSDREFERENCE_REFERENCE);
+                auto q = XMLFindTagValue(ref_blk.mBuf.ptr, ref_blk.GetXmlData(), INSDREFERENCE_REFERENCE);
                 if (q) {
                     auto i = q->find('(');
                     if (i != string::npos)
@@ -1211,15 +1211,15 @@ static void SeqFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
                 }
             }
         } else if (pp->format == Parser::EFormat::GenBank) {
-            for (p = ref_blk.mOffset + col_data; *p != '\0' && *p != '(';)
+            for (p = ref_blk.mBuf.ptr + col_data; *p != '\0' && *p != '(';)
                 p++;
-            ploc = CheckLocStr(string(p, ref_blk.mOffset + ref_blk.len - p).c_str());
+            ploc = CheckLocStr(string(p, ref_blk.mBuf.ptr + ref_blk.mBuf.len - p).c_str());
         } else if (pp->format == Parser::EFormat::EMBL) {
             for (const auto& subdbp : ref_blk.GetSubBlocks()) {
                 if (subdbp.mType != ParFlat_RP)
                     continue;
 
-                for (p = subdbp.mOffset; *p != '\0' && isdigit(*p) == 0;)
+                for (p = subdbp.mBuf.ptr; *p != '\0' && isdigit(*p) == 0;)
                     p++;
                 if (StringChr(p, ',')) {
                     string s = "join(";
@@ -1291,7 +1291,7 @@ static void ImpFeatPub(ParserPtr pp, const DataBlk& entry, TSeqFeatList& feats, 
      */
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
-        temp_xml_chain = XMLBuildRefDataBlk(entry.mOffset, ibp->xip, ParFlat_REF_SITES);
+        temp_xml_chain = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_SITES);
         dbp            = temp_xml_chain.begin();
         dbp_end        = temp_xml_chain.end();
     } else {
@@ -3161,7 +3161,7 @@ static void CollectGapFeats(const DataBlk& entry, DataBlkCIter dbp, DataBlkCIter
         else if (pp->format == Parser::EFormat::EMBL)
             GetSequenceOfKeywords(entry, ParFlat_KW, ParFlat_COL_DATA_EMBL, ibp->keywords);
         else if (pp->format == Parser::EFormat::XML)
-            XMLGetKeywords(entry.mOffset, ibp->xip, ibp->keywords);
+            XMLGetKeywords(entry.mBuf.ptr, ibp->xip, ibp->keywords);
     }
 
     is_htg = -1;
@@ -3859,8 +3859,8 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         fbp->num     = num++;
         dbp.SetFeatData(fbp);
 
-        bptr = dbp.mOffset;
-        eptr = bptr + dbp.len;
+        bptr = dbp.mBuf.ptr;
+        eptr = bptr + dbp.mBuf.len;
 
         for (p = bptr; *p != '\n';)
             p++;
@@ -4778,7 +4778,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     DataBlkIter  dab, dab_end;
     TDataBlkList temp_xml_chain;
     if (pp->format == Parser::EFormat::XML) {
-        temp_xml_chain = XMLLoadFeatBlk(entry.mOffset, ibp->xip);
+        temp_xml_chain = XMLLoadFeatBlk(entry.mBuf.ptr, ibp->xip);
         dab            = temp_xml_chain.begin();
         dab_end        = temp_xml_chain.end();
     } else {
@@ -5550,9 +5550,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     for (const auto& subdbp : subblocks) {
         if (i > 1)
             break;
-        if (! subdbp.mOffset)
+        if (! subdbp.mBuf.ptr)
             continue;
-        offset = subdbp.mOffset + ParFlat_COL_FEATKEY;
+        offset = subdbp.mBuf.ptr + ParFlat_COL_FEATKEY;
         if (StringEquN(offset, "CDS", 3))
             i++;
     }

@@ -182,8 +182,8 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, const DataBlk& 
     cur_block->ppp    = pp;
 
     if (pp->format == Parser::EFormat::GenBank) {
-        char* q = entry.mOffset;
-        if (q && entry.len != 0 && StringEquN(q, "LOCUS ", 6)) {
+        char* q = entry.mBuf.ptr;
+        if (q && entry.mBuf.len != 0 && StringEquN(q, "LOCUS ", 6)) {
             char* p = StringChr(q, '\n');
             if (p)
                 *p = '\0';
@@ -224,8 +224,8 @@ static void AddToIndexBlk(const DataBlk& entry, IndexblkPtr ibp, Parser::EFormat
     if (format != Parser::EFormat::GenBank && format != Parser::EFormat::EMBL)
         return;
 
-    offset     = entry.mOffset;
-    size_t len = entry.len;
+    offset     = entry.mBuf.ptr;
+    size_t len = entry.mBuf.len;
 
     if (! offset || len == 0)
         return;
@@ -279,8 +279,8 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
 
     ibp  = pp->entrylist[pp->curindx];
     ebp  = entry.GetEntryData();
-    ptr  = entry.mOffset;
-    eptr = ptr + entry.len;
+    ptr  = entry.mBuf.ptr;
+    eptr = ptr + entry.mBuf.len;
 
     CRef<CBioseq> bioseq(new CBioseq);
     CRef<CSeq_id> new_id(new CSeq_id);
@@ -355,8 +355,8 @@ static DataBlk* make_entry(char* entry_str)
 {
     DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
 
-    entry->mOffset = entry_str;
-    entry->len     = StringLen(entry->mOffset);
+    entry->mBuf.ptr = entry_str;
+    entry->mBuf.len = StringLen(entry->mBuf.ptr);
     entry->SetEntryData(new EntryBlk);
 
     return entry;
@@ -446,8 +446,8 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     pp->curindx  = ix;
 
     EntryBlkPtr ebp   = entry->GetEntryData();
-    char*       ptr   = entry->mOffset; /* points to beginning of the memory line */
-    char*       eptr  = ptr + entry->len;
+    char*       ptr   = entry->mBuf.ptr; /* points to beginning of the memory line */
+    char*       eptr  = ptr + entry->mBuf.len;
     Int2        curkw = ParFlat_ID;
     while (curkw != ParFlatEM_END) {
         /* ptr points to current keyword's memory line */
@@ -457,7 +457,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (ptr >= eptr) {
         pp->entrylist[pp->curindx]->drop = true;
         FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
-        MemFree(entry->mOffset);
+        MemFree(entry->mBuf.ptr);
         delete entry;
         return (-1);
     }
