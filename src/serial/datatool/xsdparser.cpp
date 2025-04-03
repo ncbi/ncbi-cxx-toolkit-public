@@ -1280,13 +1280,22 @@ void XSDParser::ParseEnumeration(DTDAttribute& att)
 // http://www.w3.org/TR/2004/REC-xmlschema-1-20041028/structures.html#key-vv
 {
     TToken tok = GetRawAttributeSet();
-    att.SetType(DTDAttribute::eEnum);
+    if (att.GetType() == DTDAttribute::eInteger ||
+        att.GetType() == DTDAttribute::eBigInt ||
+        att.GetType() == DTDAttribute::eIntEnum) {
+        att.SetType(DTDAttribute::eIntEnum);
+    } else {
+        att.SetType(DTDAttribute::eEnum);
+    }
     int id = 0;
     if (GetAttribute("intvalue")) {
         id = NStr::StringToInt(m_Value);
         att.SetType(DTDAttribute::eIntEnum);
     }
     if (GetAttribute("value")) {
+        if (att.GetType() == DTDAttribute::eIntEnum) {
+            id = NStr::StringToInt(m_Value);
+        }
         string v(m_ValuePrefix);
         if (!v.empty()) {
             v += ':';
