@@ -114,13 +114,6 @@ namespace compile_time_bits
         using value_compare = std::less<tag>;
     };
 
-    template<typename, typename = void>
-    struct is_string_type : std::false_type {};
-
-    template<typename _T>
-    struct is_string_type<_T, std::void_t<typename _T::case_tag>> : std::true_type {};
-
-
     template<>
     struct DeduceType<tagStrCase>: StringType<char, tagStrCase> {};
 

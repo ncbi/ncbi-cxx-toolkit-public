@@ -38,7 +38,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objects/macro/Source_qual.hpp>
 #include <objects/taxon3/taxon3.hpp>
-#include <util/xregexp/regexp.hpp>
+#include <util/regexp/ctre/ctre.hpp>
 
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
@@ -204,15 +204,22 @@ DISCREPANCY_CASE(INFLUENZA_SEROTYPE, BIOSRC, eOncaller, "Influenza A virus must 
 
 // INFLUENZA_SEROTYPE_FORMAT
 
+// Original code for references
+//static CRegexp rx("^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$");
+
 DISCREPANCY_CASE(INFLUENZA_SEROTYPE_FORMAT, BIOSRC, eOncaller, "Influenza A virus serotype must match /^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$/")
 {
+    constexpr ctll::fixed_string subname_re = "^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$";
+
     for (const CBioSource* biosrc : context.GetBiosources()) {
         if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetTaxname() && NStr::StartsWith(biosrc->GetOrg().GetTaxname(), "Influenza A virus ")) {
-            static CRegexp rx("^H[1-9]\\d*$|^N[1-9]\\d*$|^H[1-9]\\d*N[1-9]\\d*$|^mixed$");
             if (biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
                 for (const auto& it : biosrc->GetOrg().GetOrgname().GetMod()) {
-                    if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype && !rx.IsMatch(it->GetSubname())) {
-                        m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.BiosourceObjRef(*biosrc));
+                    if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_serotype) {
+                        std::string_view subname = it->GetSubname();
+                        if (!ctre::match<subname_re>(subname)) {
+                            m_Objs["[n] Influenza A virus serotype[s] [has] incorrect format"].Add(*context.BiosourceObjRef(*biosrc));
+                        }
                     }
                 }
             }

@@ -5,79 +5,69 @@ NCBI_begin_lib(macro)
     NCBI_uses_toolkit_libraries(seq)
     NCBI_project_watchers(stakhovv kans)
 
-    if (NCBI_FSM_COMPILER_ENABLED)
-        NCBI_custom_target_dependencies(macro_fsm_files)
+    if (TARGET host.multipattern)
+        NCBI_custom_target_dependencies(host.multipattern)
+    else()
+        NCBI_custom_target_dependencies(multipattern)
     endif()
 
 NCBI_end_lib()
 
-if (NCBI_FSM_COMPILER_ENABLED)
+function(define_multipatern_inc_target parent_target compiler modules_var more_args)
 
-    NCBI_begin_custom_target(macro_fsm_files)
-        NCBI_custom_target_definition(define_macro_fsm_files_target)
-        if (TARGET host.multipattern)
-            NCBI_custom_target_dependencies(host.multipattern)
-        else()
-            NCBI_custom_target_dependencies(multipattern)
-        endif()
-    NCBI_end_custom_target()
-
-endif()
-
-
-function(define_macro_fsm_files_target variable access value current_list_file stack)
-    set(_prt_modules
-        weasel.txt
-    )
-
-    define_multipatern_inc_target(macro_fsm_files ${current_list_file} multipattern "${_prt_modules}" "-A")
-endfunction()
-
-function(define_multipatern_inc_target up_target current_list_file compiler modules more_args)
-
-    cmake_path(GET current_list_file PARENT_PATH _source_dir)
+    set(_source_dir ${CMAKE_CURRENT_LIST_DIR})
 
     if (TARGET host.${compiler})
-        set (_compiler "$<TARGET_PROPERTY:host.${compiler},LOCATION>")
+        set (_compiler host.${compiler})
     else()
         set (_compiler ${compiler})
     endif()
 
+    add_dependencies(${parent_target} ${_compiler})
+
     set(_target_dir ${_source_dir})
 
-    file(RELATIVE_PATH _rel_path ${NCBI_SRC_ROOT} ${_source_dir})
+    file(RELATIVE_PATH _rel_path ${CMAKE_SOURCE_DIR} ${_source_dir})
     # intermediate location at inc folder
     set(_target_dir_int ${NCBI_CFGINC_ROOT}/${_rel_path})
 
-    add_custom_target(${up_target}
-        COMMENT "Generate FSM files"
-        SOURCES ${current_list_file} ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
-        )
+    foreach(_module IN LISTS ${modules_var})
 
-    foreach(_module ${modules})
-
-        # remove suffix
-        string(REGEX REPLACE "\\..*" "" _tmp_module_name "${_module}")
+        cmake_path(GET _module STEM LAST_ONLY _module_stem)
 
         set(_prt_file ${_module})
-        set(_inc_file ${_tmp_module_name}.inc)
-        set(_target fsm_${_tmp_module_name}_inc)
+        set(_inc_file ${_module_stem}.inc)
+        set(_target fsm_${_module_stem}_inc)
 
         add_custom_command(
-            OUTPUT ${_target_dir}/${_inc_file}
+            OUTPUT ${_source_dir}/${_inc_file}
+            MAIN_DEPENDENCY ${_prt_file}
             COMMAND ${CMAKE_COMMAND} -E make_directory ${_target_dir_int}
             COMMAND ${_compiler} -o ${_target_dir_int}/${_inc_file} -i ${_prt_file} ${more_args}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/${_inc_file} ${_target_dir}/${_inc_file}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/${_inc_file} ${_inc_file}
             WORKING_DIRECTORY ${_source_dir}
-            COMMENT "Running ${compiler} for ${_prt_file}"
-            DEPENDS ${current_list_file} ${_source_dir}/${_prt_file} ${_compiler} ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
+            COMMENT "Running ${_compiler} for ${_prt_file}"
+            DEPENDS ${CMAKE_CURRENT_LIST_FILE} ${_prt_file} ${_compiler} ${CMAKE_CURRENT_FUNCTION_LIST_FILE}
+            VERBATIM
             )
 
         add_custom_target(
             ${_target}
-            DEPENDS ${_target_dir}/${_inc_file}
+            DEPENDS ${_inc_file}
         )
-        add_dependencies(${up_target} ${_target})
+        set_source_files_properties(${_inc_file} PROPERTIES GENERATED ON)
+        target_sources(${parent_target} PRIVATE ${_inc_file})
+
     endforeach()
 
 endfunction()
+
+if (TARGET macro AND NCBI_FSM_COMPILER_ENABLED)
+
+    set(_prt_modules
+        weasel.txt
+    )
+
+    define_multipatern_inc_target(macro multipattern _prt_modules "-A")
+endif()
+

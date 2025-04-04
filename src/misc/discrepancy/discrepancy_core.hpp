@@ -394,7 +394,7 @@ public:
 
     static string GetGenomeName(unsigned n);
     static string GetAminoacidName(const CSeq_feat& feat); // from tRNA
-    bool IsBadLocusTagFormat(const string& locus_tag) const;
+    static bool IsBadLocusTagFormat(string_view locus_tag);
     bool IsRefseq() const;
     bool IsBGPipe();
     bool IsPseudo(const CSeq_feat& feat);
