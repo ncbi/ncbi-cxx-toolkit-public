@@ -51,6 +51,8 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'freetds/dblib/unittests/common.c',
                  'freetds/odbc/unittests/common.c',
                  'freetds/dblib/unittests/hang.c',
+                 'freetds/tds/unittests/t0006.c',
+                 'freetds/ctlib/unittests/ct_cursors.c',
 
                  'ftds14/freetds/dblib/unittests/rpc.c',
                  'ftds14/freetds/odbc/unittests/describecol.c',
@@ -76,13 +78,11 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'ftds100/freetds/tds/token.c',
                  'ftds100/freetds/tds/challenge.c',
                  'ftds100/freetds/ctlib/unittests/t0006.c',
-                 'ftds100/freetds/ctlib/unittests/ct_cursors.c',
                  'ftds100/freetds/ctlib/unittests/rpc_ct_param.c',
                  'ftds100/freetds/ctlib/blk.c',
                  'ftds100/freetds/replacements/daemon.c',
                  'ftds100/freetds/dblib/dbpivot.c',
                  'ftds100/freetds/tds/numeric.c',
-                 'ftds100/freetds/tds/unittests/t0006.c',
                  'ftds100/freetds/ctlib/unittests/ct_cursor.c']
 
 
