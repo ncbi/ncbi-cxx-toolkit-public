@@ -19,65 +19,71 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'asn/objBlast4.c',
                  'asn/objnetres.c',
                  'asn/objNabr.c',
+
+                 'freetds/dblib/unittests/t0016.c',
+                 'freetds/dblib/unittests/t0014.c',
+                 'freetds/dblib/unittests/t0013.c',
+                 'freetds/ctlib/unittests/ct_diagall.c',
+                 'freetds/ctlib/unittests/ct_dynamic.c',
+                 'freetds/odbc/unittests/attributes.c',
+                 'freetds/dblib/unittests/t0023.c',
+                 'freetds/tds/unittests/convert.c',
+                 'freetds/tds/unittests/t0005.c',
+                 'freetds/tds/unittests/nulls.c',
+                 'freetds/tds/unittests/t0004.c',
+                 'freetds/dblib/unittests/done_handling.c',
+                 'freetds/ctlib/unittests/blk_out.c',
+                 'freetds/odbc/unittests/bcp.c',
+                 'freetds/ctlib/unittests/cs_diag.c',
+                 'freetds/tds/unittests/utf8_3.c',
+                 'freetds/tds/unittests/utf8_2.c',
+                 'freetds/ctlib/unittests/get_send_data.c',
+                 'freetds/ctlib/unittests/blk_in.c',
+                 'freetds/ctlib/unittests/row_count.c',
+                 'freetds/ctlib/unittests/lang_ct_param.c',
+                 'freetds/tds/unittests/collations.c',
+                 'freetds/dblib/unittests/bcp.c',
+                 'freetds/tds/unittests/dataread.c',
+                 'freetds/ctlib/unittests/cancel.c',
+                 'freetds/ctlib/unittests/rpc_fail.c',
+                 'freetds/tds/unittests/utf8_1.c',
+                 'freetds/odbc/unittests/array_out.c',
+                 'freetds/dblib/unittests/common.c',
+                 'freetds/odbc/unittests/common.c',
+                 'freetds/dblib/unittests/hang.c',
+
                  'ftds14/freetds/dblib/unittests/rpc.c',
                  'ftds14/freetds/odbc/unittests/describecol.c',
                  'ftds14/freetds/ctlib/unittests/rpc_ct_setparam.c',
-                 'ftds14/freetds/dblib/unittests/common.c',
                  'ftds14/freetds/ctlib/unittests/rpc_ct_param.c',
                  'ftds14/freetds/tds/unittests/freeze.c',
+                 'ftds14/freetds/ctlib/unittests/cs_convert.c',
+
                  'ftds100/freetds/tds/data.c',
                  'ftds100/freetds/odbc/prepare_query.c',
                  'ftds100/freetds/dblib/dbpivot.c',
                  'ftds100/freetds/tds/numeric.c',
                  'ftds100/freetds/dblib/bcp.c',
-                 'ftds100/freetds/dblib/unittests/t0016.c',
-                 'ftds100/freetds/dblib/unittests/t0014.c',
                  'ftds100/freetds/ctlib/unittests/rpc_ct_setparam.c',
-                 'ftds100/freetds/ctlib/unittests/ct_diagall.c',
                  'ftds100/freetds/dblib/unittests/rpc.c',
-                 'ftds100/freetds/ctlib/unittests/ct_dynamic.c',
-                 'ftds100/freetds/tds/unittests/t0005.c',
                  'ftds100/freetds/ctlib/ct.c',
-                 'ftds100/freetds/odbc/unittests/attributes.c',
                  'ftds100/freetds/dblib/dblib.c',
-                 'ftds100/freetds/dblib/unittests/t0023.c',
-                 'ftds100/freetds/tds/unittests/convert.c',
                  'ftds100/freetds/tds/config.c',
-                 'ftds100/freetds/tds/unittests/nulls.c',
-                 'ftds100/freetds/tds/unittests/t0004.c',
-                 'ftds100/freetds/dblib/unittests/done_handling.c',
                  'ftds100/freetds/odbc/unittests/describecol.c',
-                 'ftds100/freetds/ctlib/unittests/blk_out.c',
                  'ftds100/freetds/odbc/odbc.c',
-                 'ftds100/freetds/odbc/unittests/bcp.c',
                  'ftds100/freetds/odbc/unittests/describecol.c',
                  'ftds100/freetds/odbc/connectparams.c',
                  'ftds100/freetds/tds/token.c',
                  'ftds100/freetds/tds/challenge.c',
-                 'ftds100/freetds/dblib/unittests/t0013.c',
                  'ftds100/freetds/ctlib/unittests/t0006.c',
-                 'ftds100/freetds/ctlib/unittests/cs_diag.c',
                  'ftds100/freetds/ctlib/unittests/ct_cursors.c',
                  'ftds100/freetds/ctlib/unittests/rpc_ct_param.c',
-                 'ftds100/freetds/tds/unittests/utf8_3.c',
-                 'ftds100/freetds/ctlib/unittests/get_send_data.c',
-                 'ftds100/freetds/ctlib/unittests/blk_in.c',
                  'ftds100/freetds/ctlib/blk.c',
-                 'ftds100/freetds/ctlib/unittests/row_count.c',
-                 'ftds100/freetds/tds/unittests/utf8_2.c',
-                 'ftds100/freetds/ctlib/unittests/lang_ct_param.c',
-                 'ftds100/freetds/tds/unittests/collations.c',
-                 'ftds100/freetds/dblib/unittests/bcp.c',
-                 'ftds100/freetds/tds/unittests/dataread.c',
-                 'ftds100/freetds/dblib/unittests/t0023.c',
                  'ftds100/freetds/replacements/daemon.c',
-                 'ftds100/freetds/ctlib/unittests/cancel.c',
-                 'ftds100/freetds/ctlib/unittests/rpc_fail.c',
-                 'ftds100/freetds/tds/unittests/utf8_1.c',
-                 'ftds100/freetds/odbc/unittests/array_out.c',
                  'ftds100/freetds/dblib/dbpivot.c',
                  'ftds100/freetds/tds/numeric.c',
-                 'ftds100/freetds/dblib/unittests/hang.c']
+                 'ftds100/freetds/tds/unittests/t0006.c',
+                 'ftds100/freetds/ctlib/unittests/ct_cursor.c']
 
 
 def timestamp():
@@ -159,11 +165,13 @@ def main():
 
     remove_indexes = []
     for index in range(len(content)):
-        if fileMatch(content[index]['file']):
+        if fileMatch(content[index]['file'].strip()):
             remove_indexes.append(index)
 
     remove_count = len(remove_indexes)
-    print_verbose('Number of files to remove: ' + str(remove_count))
+    print_verbose('# of files to remove from compile_commands.json: ' +
+                  str(remove_count) + 
+                  ' (# of patterns: ' + str(len(EXCLUDE_FILES)) + ')')
 
     while len(remove_indexes) > 0:
         index = remove_indexes.pop()
