@@ -47,7 +47,7 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
-#include <util/xregexp/regexp.hpp>
+#include <util/regexp/ctre/ctre.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -494,15 +494,15 @@ string CDiscrepancyContext::GetAminoacidName(const CSeq_feat& obj) // from tRNA
 }
 
 
-bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag) const
+bool CDiscrepancyContext::IsBadLocusTagFormat(string_view locus_tag)
 {
-    // Optimization:  compile regexp only once by making it static.
-    static CRegexp regexp("^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$");
+    // Original code left the future references
+    //static CRegexp regexp("^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$");
+    constexpr ctll::fixed_string locus_tag_re = "^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$";
 
     // Locus tag format documentation:
     // https://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
-
-    return !regexp.IsMatch(locus_tag);
+    return !ctre::match<locus_tag_re>(locus_tag);
 }
 
 
@@ -714,7 +714,7 @@ sequence::ECompare CDiscrepancyContext::Compare(const CSeq_loc& loc1, const CSeq
             return sequence::eNoOverlap;
         }
     }
-    catch (const CSeqLocException& /* ignored */) {} 
+    catch (const CSeqLocException& /* ignored */) {}
     return sequence::Compare(loc1, loc2, &GetScope(), sequence::fCompareOverlapping);
 }
 

@@ -1,4 +1,25 @@
-# $Id$
+
+set(_discrepancy_modules
+    biosource_tests
+    discrepancy_case
+    division_code_conflicts
+    feature_per_bioseq
+    feature_tests
+    gene_names
+    overlapping_features
+    pub_tests
+    rna_names
+    seqdesc_per_bioseq
+    sequence_tests
+    sesame_street
+    #spell_check #disabled till better times...
+    suspect_product_names
+    transl_note
+    transl_too_long
+    deprecated_quals
+)
+
+set(_discrepancy_testnames_inc ../../../include/misc/discrepancy/testnames.inc)
 
 NCBI_begin_lib(xdiscrepancy)
     NCBI_sources(
@@ -8,14 +29,55 @@ NCBI_begin_lib(xdiscrepancy)
         #individual tests
         ${_discrepancy_modules}
     )
+    NCBI_generated_sources(${_discrepancy_testnames_inc})
     NCBI_uses_toolkit_libraries(xcompress macro xcleanup xobjedit)
     NCBI_project_watchers(gotvyans)
-    
-    NCBI_custom_target_dependencies(discrepancy.testnames)
 
-    if (NCBI_FSM_COMPILER_ENABLED)
-        NCBI_custom_target_dependencies(discrepancy.fsm)
+    if (TARGET host.prt2fsm)
+        NCBI_custom_target_dependencies(host.prt2fsm)
+    else()
+        NCBI_custom_target_dependencies(prt2fsm)
     endif()
 
-
 NCBI_end_lib()
+
+if (TARGET xdiscrepancy AND NCBI_FSM_COMPILER_ENABLED)
+    set(_prt_modules
+        product_rules.prt
+        organelle_products.prt
+        FLATFILE_FIND.txt
+    )
+    define_multipatern_inc_target(xdiscrepancy prt2fsm _prt_modules "")
+endif()
+
+function(define_discrepancy_testnames_target)
+
+    set(_source_dir ${CMAKE_CURRENT_LIST_DIR})
+    cmake_path(RELATIVE_PATH _source_dir BASE_DIRECTORY ${NCBITK_SRC_ROOT} OUTPUT_VARIABLE _rel_path)
+    set(_target_dir ${NCBITK_INC_ROOT}/${_rel_path})
+    # intermediate location at inc folder
+    set(_target_dir_int ${NCBI_CFGINC_ROOT}/${_rel_path})
+
+    set(_cpp_files)
+
+    list(TRANSFORM _discrepancy_modules APPEND ".cpp" OUTPUT_VARIABLE _cpp_files)
+    list(JOIN _cpp_files " " _cpp_files_joined)
+
+    add_custom_command(
+        OUTPUT  ${_discrepancy_testnames_inc} ${_target_dir_int}/testnames.int
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${_target_dir_int}
+        COMMAND ${CMAKE_COMMAND} -P test_names.cmake ${_target_dir_int}/testnames.int "${_cpp_files_joined}"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_target_dir_int}/testnames.int ${_discrepancy_testnames_inc}
+        COMMENT "Running make_test_names.py for modules: ${_discrepancy_modules}"
+        WORKING_DIRECTORY ${_source_dir}
+        DEPENDS ${CMAKE_CURRENT_FUNCTION_LIST_FILE} ${_cpp_files} test_names.cmake
+        VERBATIM
+        )
+        #${_source_dir}/CMakeLists.txt
+
+endfunction()
+
+if (TARGET xdiscrepancy)
+    define_discrepancy_testnames_target()
+endif()
+

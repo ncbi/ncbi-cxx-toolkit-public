@@ -54,7 +54,6 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Person_id.hpp>
-#include <util/xregexp/regexp.hpp>
 #include <util/multipattern_search.hpp>
 #include <util/regexp/ctre/ctre.hpp>
 
@@ -1950,19 +1949,12 @@ DISCREPANCY_SUMMARIZE(ALL_SEQS_CIRCULAR)
 
 
 // SUSPICIOUS_SEQUENCE_ID
-
-static constexpr auto suspicious_id_re = ctll::fixed_string{ "chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bnw_|\\bnz_|\\bnm_|\\bnc_|\\bac_|cp\\d\\d\\d\\d\\d\\d|^x$|^y$|^z$|^w$|^mt$|^pltd$|^chl$" };
-
+// Original code left the future references
+//static CRegexp regexp("chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bNW_|\\bNZ_|\\bNM_|\\bNC_|\\bAC_|CP\\d\\d\\d\\d\\d\\d|^X$|^Y$|^Z$|^W$|^MT$|^PLTD$|^CHL$", CRegexp::fCompile_ignore_case);
 static bool SuspiciousId(const string& s)
 {
-#if 0
-    static CRegexp regexp("chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bNW_|\\bNZ_|\\bNM_|\\bNC_|\\bAC_|CP\\d\\d\\d\\d\\d\\d|^X$|^Y$|^Z$|^W$|^MT$|^PLTD$|^CHL$", CRegexp::fCompile_ignore_case);
-    return regexp.IsMatch(s);
-#else
-    string id = s;
-    NStr::ToLower(id);
-    return ctre::search<suspicious_id_re>(id);
-#endif
+    static constexpr auto suspicious_id_re = ctll::fixed_string{ "chromosome|plasmid|mito|chloroplast|apicoplast|plastid|^chr|^lg|\\bnw_|\\bnz_|\\bnm_|\\bnc_|\\bac_|cp\\d\\d\\d\\d\\d\\d|^x$|^y$|^z$|^w$|^mt$|^pltd$|^chl$" };
+    return ctre::search<suspicious_id_re, ctre::case_insensitive>(s);
 }
 
 DISCREPANCY_CASE(SUSPICIOUS_SEQUENCE_ID, SEQUENCE, eOncaller | eSubmitter | eSmart | eBig, "Suspicious sequence identifiers")
