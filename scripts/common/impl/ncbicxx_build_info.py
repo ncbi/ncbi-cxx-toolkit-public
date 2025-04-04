@@ -1,7 +1,10 @@
 # $Id$
 import ast
 from datetime import date, datetime, timedelta, timezone
-from distutils.sysconfig import parse_makefile, expand_makefile_vars
+try:
+    from distutils.sysconfig import parse_makefile, expand_makefile_vars
+except ImportError:
+    from sysconfig import _parse_makefile as parse_makefile, expand_makefile_vars
 import hashlib
 import mmap
 import os
