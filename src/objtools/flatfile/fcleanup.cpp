@@ -96,6 +96,7 @@ static void MoveSourceDescrToTop(CSeq_entry& entry)
     }
 }
 
+NCBI_UNUSED
 static bool IsEmptyMolInfo(const CMolInfo& mol_info)
 {
     return ! (mol_info.IsSetBiomol() || mol_info.IsSetCompleteness() || mol_info.IsSetGbmoltype() ||

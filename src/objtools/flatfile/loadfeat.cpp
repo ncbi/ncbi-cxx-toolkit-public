@@ -5370,9 +5370,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (genomic < 0 || genomic > 20) {
-        if (pp->source == Parser::ESource::EMBL && StringEquNI(molstr, "XXX", 3))
+        if (pp->source == Parser::ESource::EMBL && molstr && StringEquNI(molstr, "XXX", 3))
             return;
-        if (pp->source == Parser::ESource::DDBJ && StringEquNI(molstr, "PRT", 3))
+        if (pp->source == Parser::ESource::DDBJ && molstr && StringEquNI(molstr, "PRT", 3))
             return;
         ibp->drop = true;
         q         = molstr;
