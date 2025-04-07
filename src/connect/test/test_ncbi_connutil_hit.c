@@ -77,7 +77,7 @@ int main(int argc, char** argv)
                 "Usage:   %s host port path args inp_file [user_header]\n",
                 argv[0]);
         CORE_LOG(eLOG_Fatal, "Two few arguments");
-        return 1;
+        exit(1);
     }
 
     {{
@@ -86,12 +86,12 @@ int main(int argc, char** argv)
 
         if ( !fp ) {
             CORE_LOGF(eLOG_Fatal, ("Non-existent file '%s'", inp_file));
-            return 2;
+            exit(2);
         }
         if ( fseek(fp, 0, SEEK_END) != 0  ||  (offset = ftell(fp)) < 0 ) {
             CORE_LOGF(eLOG_Fatal,
                       ("Cannot obtain size of file '%s'", inp_file));
-            return 2;
+            exit(2);
         }
         fclose(fp);
         content_length = (size_t) offset;
@@ -108,25 +108,27 @@ int main(int argc, char** argv)
                        ? fSOCK_LogDefault | fSOCK_Secure
                        : fSOCK_LogDefault);
     if ( !sock )
-        return 3;
+        exit(3);
 
     {{ /* Pump data from the input file to socket */
         FILE* fp = fopen(inp_file, "rb");
+        size_t n_read;
+
         if ( !fp ) {
             CORE_LOGF(eLOG_Fatal, 
                       ("Cannot open file '%s' for reading", inp_file));
-            return 4;
+            exit(4);
         }
 
-        for (;;) {
+        do {
             size_t n_written;
-            size_t n_read = fread(buffer, 1, sizeof(buffer), fp);
+            n_read = fread(buffer, 1, sizeof(buffer), fp);
             if ( n_read <= 0 ) {
                 if ( content_length ) {
                     CORE_LOGF(eLOG_Fatal,
                               ("Cannot read last %lu bytes from file '%s'",
                                (unsigned long) content_length, inp_file));
-                    return 5;
+                    exit(5);
                 }
                 break;
             }
@@ -139,23 +141,25 @@ int main(int argc, char** argv)
                 CORE_LOGF(eLOG_Fatal,
                           ("Error writing to socket: %s",
                            IO_StatusStr(status)));
-                return 6;
+                exit(6);
             }
-        }
+        } while (n_read == sizeof(buffer));
 
         fclose(fp);
     }}
 
     /* Read reply from socket, write it to STDOUT */
     {{
-        size_t n_read;
         for (;;) {
+            size_t n_read;
+
             status = SOCK_Read(sock, buffer, sizeof(buffer), &n_read,
                                eIO_ReadPlain);
+
             if (status != eIO_Success)
                 break;
 
-            fwrite(buffer, 1, n_read, stdout);
+            (void) fwrite(buffer, 1, n_read, stdout);
         }
 
         if ( status != eIO_Closed ) {
