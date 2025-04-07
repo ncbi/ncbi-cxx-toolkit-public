@@ -383,7 +383,7 @@ int main(int argc, char* argv[])
     if (!(net_info = ConnNetInfo_Create(0))) {
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
         /*NOTREACHED*/
-        return 1;
+        exit(1);
     }
     assert(!net_info->credentials);
 
@@ -391,7 +391,7 @@ int main(int argc, char* argv[])
     if (!ConnNetInfo_ParseURL(net_info, argv[1])) {
         CORE_LOG(eLOG_Fatal, "Cannot parse URL");
         /*NOTREACHED*/
-        return 1;
+        exit(1);
     }
 
     ConnNetInfo_GetValue(0, "IP", blk, 32, 0);
@@ -460,7 +460,7 @@ int main(int argc, char* argv[])
                                 ("Cannot load certificate from \"%s\"",
                                  cert_file));
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
             CORE_LOGF(eLOG_Note,
                       ("Certificate loaded from \"%s\"", cert_file));
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
                                 ("Cannot load private key from \"%s\"",
                                  pkey_file));
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
             CORE_LOGF(eLOG_Note,
                       ("Private key loaded from \"%s\"", pkey_file));
@@ -477,7 +477,7 @@ int main(int argc, char* argv[])
                                                       pkey, pkeysz))) {
                 CORE_LOG(eLOG_Fatal, "Cannot create NCBI_CRED");
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
 #    ifdef HAVE_LIBGNUTLS
             /* only for debugging -- not really necessary, in general */
@@ -523,7 +523,7 @@ int main(int argc, char* argv[])
                           ("Cannot load PKCS#12 %s credentials from"
                            " \"%s\": %s", type, file, gnutls_strerror(err)));
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
         } else if (net_info->debug_printout == eDebugPrintout_Data) {
             /* We don't have to create empty cert credentials, in general (as
@@ -545,7 +545,7 @@ int main(int argc, char* argv[])
             if (!(cred = NcbiCredGnuTls(xcred))) {
                 CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
             if (file) {
                 CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
@@ -568,7 +568,7 @@ int main(int argc, char* argv[])
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags))) {
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
         /*NOTREACHED*/
-        return 1;
+        exit(1);
     }
     /* Could have destroyed net_info at this point here if we did not use the
      * timeout off of it below, so at least unlink the credentials, if any --
@@ -580,7 +580,7 @@ int main(int argc, char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success) {
         CORE_LOG(eLOG_Fatal, "Cannot create connection");
         /*NOTREACHED*/
-        return 1;
+        exit(1);
     }
     CONN_SetTimeout(conn, eIO_Open,      net_info->timeout);
     CONN_SetTimeout(conn, eIO_ReadWrite, net_info->timeout);
@@ -591,7 +591,7 @@ int main(int argc, char* argv[])
         if (status != eIO_Success) {
             CORE_LOGF(eLOG_Fatal, ("Write error: %s", IO_StatusStr(status)));
             /*NOTREACHED*/
-            return 1;
+            exit(1);
         }
     }
     if (fp)
@@ -606,7 +606,7 @@ int main(int argc, char* argv[])
                  ||  (unsigned long)(time(0) - t) > DEF_CONN_TIMEOUT) {
                 CORE_LOG(eLOG_Fatal, "Timed out");
                 /*NOTREACHED*/
-                return 1;
+                exit(1);
             }
 #if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
             usleep(500);
@@ -631,7 +631,7 @@ int main(int argc, char* argv[])
         if (status != eIO_Success  &&  (status != eIO_Closed  ||  connector)) {
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
             /*NOTREACHED*/
-            return 1;
+            exit(1);
         }
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
