@@ -153,8 +153,11 @@ int main(int argc, const char* argv[])
                         CORE_LOGF(eLOG_Note,
                                   ("Done @%u, size %u",
                                    HEAP_ADDR(blk, heap), blk->size));
-                    } else
+                    } else {
                         CORE_LOG(eLOG_Fatal, "Allocation failed");
+                        /*NOTREACHED*/
+                        abort();
+                    }
                     c = (char*) blk + sizeof(*blk);
                     while (i--)
                         *c++ = rand();
