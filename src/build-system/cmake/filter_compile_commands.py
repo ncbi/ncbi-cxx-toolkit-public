@@ -53,6 +53,7 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'freetds/dblib/unittests/hang.c',
                  'freetds/tds/unittests/t0006.c',
                  'freetds/ctlib/unittests/ct_cursors.c',
+                 'freetds/ctlib/unittests/ct_cursor.c',
 
                  'ftds14/freetds/dblib/unittests/rpc.c',
                  'ftds14/freetds/odbc/unittests/describecol.c',
