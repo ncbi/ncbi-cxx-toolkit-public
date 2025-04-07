@@ -92,11 +92,11 @@ extern int main(int argc, char** argv)
     if (argc != 4  ||  ((port = atoi(argv[3])) & ~0xFFFF)) {
         fputs("\nUSAGE:\n"
               "test_fw <inp_file> <host> <port>\n\n", stderr);
-        return 1;
+        exit(1);
     }
     if (!(fp = fopen(argv[1], "r"))) {
         perror(argv[1]);
-        return 1;
+        exit(1);
     }
 
     /* Error logging */
@@ -106,7 +106,7 @@ extern int main(int argc, char** argv)
         FILE* log_fp = fopen("test_fw.log", "a");
         if ( !log_fp ) {
             perror("Failed to open \"test_fw.log\" for writing");
-            return 2;
+            exit(2);
         }
         CORE_SetLOGFILE_Ex(log_fp, eLOG_Trace, eLOG_Fatal, 1/*auto-close*/);
     }}
