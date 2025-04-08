@@ -4557,7 +4557,7 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup_v4)
     }
 }
 
-BOOST_AUTO_TEST_CASE(TestGiToOidTimeout, 15)
+BOOST_AUTO_TEST_CASE_TIMEOUT(TestGiToOidTimeout, 15)
 {
 	int pig=0;
 	const int gi = 1492455000;
