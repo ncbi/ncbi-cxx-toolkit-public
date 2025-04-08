@@ -683,10 +683,18 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    ASSERT(lookup_options->mb_template_length > 0);
 
    mb_lt->next_pos = (Int4 *)calloc(query->length + 1, sizeof(Int4));
+   if (!mb_lt->next_pos) {
+       return -1;
+   }
+
    helper_array = (Uint4*) calloc(mb_lt->hashsize/kCompressionFactor, 
                                   sizeof(Uint4));
-   if (mb_lt->next_pos == NULL || helper_array == NULL)
-      return -1;
+   if (!helper_array) {
+       if (mb_lt->next_pos) {
+           free(mb_lt->next_pos);
+       }
+       return -1;
+   }
 
    template_type = s_GetDiscTemplateType(lookup_options->word_size,
                       lookup_options->mb_template_length, 
