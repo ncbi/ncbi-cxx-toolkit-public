@@ -86,31 +86,30 @@ static bool em_err_field(const char* str)
 }
 
 /**********************************************************/
-static void ParseEmblVersion(IndexblkPtr entry, const char* line)
+static void ParseEmblVersion(IndexblkPtr entry, string_view line)
 {
-    char* p;
-    char* q;
-
-    p = StringRChr(const_cast<char*>(line), '.');
-    if (! p) {
+    size_t p = line.rfind('.');
+    if (p == string_view::npos) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_MissingVerNum, "Missing VERSION number in SV line.");
         entry->drop = true;
         return;
     }
-    *p++ = '\0';
-    for (q = p; *q >= '0' && *q <= '9';)
-        q++;
-    if (*q != '\0') {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in SV line: \"{}\".", p);
+    string acc(line.substr(0, p));
+    ++p;
+    string ver(line.substr(p));
+    for (size_t q = p; q < line.size(); ++q) {
+        if (line[q] < '0' || line[q] > '9') {
+            FtaErrPost(SEV_FATAL, ERR_VERSION_NonDigitVerNum, "Incorrect VERSION number in SV line: \"{}\".", ver);
+            entry->drop = true;
+            return;
+        }
+    }
+    if (entry->acnum != acc) {
+        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"{}\" vs \"{}\".", acc, entry->acnum);
         entry->drop = true;
         return;
     }
-    if (! StringEqu(entry->acnum, line)) {
-        FtaErrPost(SEV_FATAL, ERR_VERSION_AccessionsDontMatch, "Accessions in SV and AC lines don't match: \"{}\" vs \"{}\".", line, entry->acnum);
-        entry->drop = true;
-        return;
-    }
-    entry->vernum = atoi(p);
+    entry->vernum = atoi(ver.c_str());
     if (entry->vernum < 1) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;
@@ -118,29 +117,28 @@ static void ParseEmblVersion(IndexblkPtr entry, const char* line)
 }
 
 /**********************************************************/
-optional<string> EmblGetNewIDVersion(const char* locus, const char* str)
+static optional<string> EmblGetNewIDVersion(string_view locus, string_view str)
 {
-    const char* p;
-    const char* q;
-
-    if (! locus || ! str)
+    if (locus.empty() || str.empty())
         return {};
-    p = StringChr(str, ';');
-    if (! p)
+    auto p = str.find(';');
+    if (p == string_view::npos)
         return {};
-    for (p++; *p == ' ';)
+    ++p;
+    while (p < str.size() && str[p] == ' ')
         p++;
-    if (p[0] != 'S' || p[1] != 'V')
+    if (p + 2 >= str.size() || str[p] != 'S' || str[p + 1] != 'V')
         return {};
-    for (p += 2; *p == ' ';)
+    p += 2;
+    while (p < str.size() && str[p] == ' ')
         p++;
-    q = StringChr(p, ';');
-    if (! q)
+    auto q = str.find(';', p);
+    if (q == string_view::npos)
         return {};
 
     string res(locus);
     res += '.';
-    res += string(p, q);
+    res += str.substr(p, q - p);
     return res;
 }
 
