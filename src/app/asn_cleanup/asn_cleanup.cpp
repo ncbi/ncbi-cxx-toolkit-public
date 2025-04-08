@@ -1161,7 +1161,7 @@ int main(int argc, const char** argv)
             }
 
             string_view a{ argv[i] };
-            if (a == "-r") {
+            if (a == "-r"sv) {
                 if (((i + 1) < argc) && argv[i + 1]) {
                     string_view param{ argv[i + 1] };
                     if (! param.empty() && param[0] != '-') {
@@ -1171,14 +1171,14 @@ int main(int argc, const char** argv)
                                 "-outdir instead.\n";
                     }
                 }
-            } else if (a == "-p") {
+            } else if (a == "-p"sv) {
                 argv[i] = "-indir";
                 cerr << "Warning: argument -p is deprecated. Please use -indir "
                         "instead.\n";
-            } else if (a == "-R") {
+            } else if (a == "-R"sv) {
                 argv[i] = "-r";
                 cerr << "Warning: argument -R is deprecated. Please use -r instead.\n";
-            } else if (a == "-gbload") {
+            } else if (a == "-gbload"sv) {
                 argv[i] = "-genbank";
                 cerr << "Warning: argument -gbload is deprecated. Please use -genbank "
                         "instead.\n";
