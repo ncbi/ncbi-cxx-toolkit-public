@@ -4519,7 +4519,7 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup)
     	string acc = "WP_007051162.1";
     	vector<TTaxId> tax_ids;
     	db.GetTaxIdsForAccession(acc, tax_ids);
-    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 4);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 4U);
     	BOOST_REQUIRE_EQUAL(tax_ids[0], 1678);
     	BOOST_REQUIRE_EQUAL(tax_ids[3], 1263059);
     }
@@ -4527,14 +4527,14 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup)
     	CSeq_id seqid("CCK34598");
     	vector<TTaxId> tax_ids;
     	db.GetTaxIdsForSeqId(seqid, tax_ids);
-    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1U);
     	BOOST_REQUIRE_EQUAL(tax_ids[0], 1205679);
     }
     {
     	string acc = "junk";
     	vector<TTaxId> tax_ids;
     	db.GetTaxIdsForAccession(acc, tax_ids);
-    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0U);
     }
 }
 
@@ -4546,14 +4546,14 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup_v4)
     	string acc = "pir||T49736";
     	vector<TTaxId> tax_ids;
     	db.GetTaxIdsForAccession(acc, tax_ids);
-    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 1U);
     	BOOST_REQUIRE_EQUAL(tax_ids[0], 0);
     }
     {
     	string acc = "junk";
     	vector<TTaxId> tax_ids;
     	db.GetTaxIdsForAccession(acc, tax_ids);
-    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0);
+    	BOOST_REQUIRE_EQUAL(tax_ids.size(), 0U);
     }
 }
 
