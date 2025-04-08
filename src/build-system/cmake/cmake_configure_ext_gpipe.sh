@@ -77,7 +77,7 @@ configure_ext_ParseArgs()
       GPIPE_MODE=dev
       BUILD_TYPE="Debug"
       BUILD_SHARED_LIBS="ON"
-      PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI"
+      PROJECT_FEATURES="${PROJECT_FEATURES};StrictGI;StrictEntrezId"
       PROJECT_COMPONENTS="${PROJECT_COMPONENTS};WGMLST"
       : "${BUILD_ROOT:=../Debug}"
       configure_common_gpipe
