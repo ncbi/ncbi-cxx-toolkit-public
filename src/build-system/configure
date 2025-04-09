@@ -10646,6 +10646,36 @@ case "$CXX:::$ac_cv_prog_CXXCPP" in
    *++17*:::*++14* ) { ac_cv_prog_CXXCPP=; unset ac_cv_prog_CXXCPP;} ;;
 esac
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CXX supports C++20 <format>" >&5
+$as_echo_n "checking whether $CXX supports C++20 <format>... " >&6; }
+if ${ncbi_cv_lib_cxx20_format+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <format>
+int
+main ()
+{
+auto s = std::format("{}", 123.4);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_cxx20_format=yes
+else
+  ncbi_cv_lib_cxx20_format=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_cxx20_format" >&5
+$as_echo "$ncbi_cv_lib_cxx20_format" >&6; }
+if test "$ncbi_cv_lib_cxx20_format" = yes; then
+             WithFeatures="$WithFeatures${WithFeaturesSep}Cxx2020_format_api"; WithFeaturesSep=" "
+fi
+
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -37930,7 +37960,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in ChaosMonkey Int4GI Int8GI StrictGI StrictEntrezID StrictTaxID BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources full-test-data full-blastdb JDK Ncbi-JNI PubSeqOS PSGLoader check Valgrind LimitedLinker; do
+for x in ChaosMonkey Int4GI Int8GI StrictGI StrictEntrezID StrictTaxID BM64 GCC KCC ICC AppleClang LLVMClang Clang VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT Cxx2020_format_api LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources full-test-data full-blastdb JDK Ncbi-JNI PubSeqOS PSGLoader check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"
