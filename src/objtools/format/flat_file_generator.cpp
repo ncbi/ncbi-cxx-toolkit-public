@@ -127,9 +127,14 @@ void CFlatFileGenerator::ResetSeqEntryIndex(void)
 }
 
 
-static bool x_InferenceInSeqs (const CSeq_entry& sep)
+const int kInferenceCutoff = 1000;
+
+static void x_InferenceInSeqs (const CSeq_entry& sep, int *numInferences)
 
 {
+    if (*numInferences >= kInferenceCutoff) {
+        return;
+    }
     if (sep.IsSeq()) {
         const CBioseq& bsp = sep.GetSeq();
         if (bsp.IsSetAnnot()) {
@@ -143,7 +148,10 @@ static bool x_InferenceInSeqs (const CSeq_entry& sep)
                     }
                     for (auto& qual : feat->GetQual()) {
                         if (qual->IsSetQual() && NStr::EqualNocase(qual->GetQual(), "inference")) {
-                            return true;
+                            (*numInferences)++;
+                            if (*numInferences >= kInferenceCutoff) {
+                                return;
+                            }
                         }
                     }
                 }
@@ -152,8 +160,9 @@ static bool x_InferenceInSeqs (const CSeq_entry& sep)
     } else if (sep.IsSet()) {
         const CBioseq_set& bssp = sep.GetSet();
         for (auto& seqentry : bssp.GetSeq_set()) {
-             if (x_InferenceInSeqs(*seqentry)) {
-                 return true;
+            x_InferenceInSeqs(*seqentry, numInferences);
+            if (*numInferences >= kInferenceCutoff) {
+                return;
             }
             if (bssp.IsSetAnnot()) {
                 for (auto& annt : bssp.GetAnnot()) {
@@ -166,7 +175,10 @@ static bool x_InferenceInSeqs (const CSeq_entry& sep)
                         }
                         for (auto& qual : feat->GetQual()) {
                             if (qual->IsSetQual() && NStr::EqualNocase(qual->GetQual(), "inference")) {
-                                return true;
+                                (*numInferences)++;
+                                if (*numInferences >= kInferenceCutoff) {
+                                    return;
+                                }
                             }
                         }
                     }
@@ -174,9 +186,7 @@ static bool x_InferenceInSeqs (const CSeq_entry& sep)
             }
         }
     }
-    return false;
 }
-
 
 bool CFlatFileGenerator::HasInference(const CSeq_entry_Handle& topseh)
 {
@@ -184,7 +194,14 @@ bool CFlatFileGenerator::HasInference(const CSeq_entry_Handle& topseh)
     CConstRef<CSeq_entry> tcsep = tseh.GetCompleteSeq_entry();
     const CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
 
-    return x_InferenceInSeqs( topsep );
+    int numInferences = 0;
+
+    x_InferenceInSeqs( topsep, &numInferences );
+
+    if (numInferences >= kInferenceCutoff) {
+        return true;
+    }
+    return false;
 }
 
 
