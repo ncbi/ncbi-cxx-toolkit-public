@@ -207,6 +207,7 @@ private:
     CFFMultiSourceFileSet     m_writers;
     unique_ptr<ICanceled>     m_pCanceledCallback;
     bool                      m_do_cleanup;
+    bool                      m_do_html;
     mutable std::atomic<bool> m_Exception;
     bool                      m_FetchFail;
     bool                      m_PSGMode;
@@ -472,6 +473,7 @@ int CAsn2FlatApp::Run()
     }
 
     m_do_cleanup = ! args["nocleanup"];
+    m_do_html = args["html"];
     m_OnlyNucs   = false;
     m_OnlyProts  = false;
     if (args["o"]) {
@@ -803,7 +805,7 @@ bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
         return false;
     }
 
-    if (m_do_cleanup) {
+    if (m_do_cleanup && ! m_do_html) {
         Uint4 options = CCleanup::eClean_ForFlatfile;
         context.m_cleanup.BasicCleanup(sub, options);
     }
@@ -879,7 +881,14 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
 {
     //const CArgs& args = GetArgs();
 
-    if (m_do_cleanup && ! CFlatFileGenerator::HasInference(seh)) {
+    bool doConditionalCleanup = m_do_cleanup;
+    if (m_do_cleanup) {
+        if (m_do_html && CFlatFileGenerator::HasInference(seh)) {
+            doConditionalCleanup = false;
+        }
+    }
+
+    if (doConditionalCleanup) {
         CSeq_entry_EditHandle  tseh = seh.GetTopLevelEntry().GetEditHandle();
         CBioseq_set_EditHandle bseth;
         CBioseq_EditHandle     bseqh;
@@ -1044,7 +1053,7 @@ void CAsn2FlatApp::x_CreateFlatFileGenerator(TFFContext& context, const CArgs& a
     cfg.FromArguments(args);
     cfg.BasicCleanup(false);
 
-    if (args["html"]) {
+    if (m_do_html) {
         CHTMLFormatterEx* html_fmt_ex = new CHTMLFormatterEx(context.m_Scope);
         html_fmt_ex->SetNcbiURLBase(NCBI_URL_BASE);
         CRef<IHTMLFormatter> html_fmt(html_fmt_ex);
