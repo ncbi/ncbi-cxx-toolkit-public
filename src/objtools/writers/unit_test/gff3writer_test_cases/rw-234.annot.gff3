@@ -8,6 +8,6 @@ U00096.3	Genbank	antisense_RNA	200	209	.	+	.	ID=rna-MSS635_000001-2;Parent=gene-
 U00096.3	Genbank	exon	200	209	.	+	.	ID=exon-MSS635_000001-2-1;Parent=rna-MSS635_000001-2;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
 U00096.3	Genbank	ncRNA	210	219	.	+	.	ID=rna-MSS635_000001-3;Parent=gene-MSS635_000001;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
 U00096.3	Genbank	exon	210	219	.	+	.	ID=exon-MSS635_000001-3-1;Parent=rna-MSS635_000001-3;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
-U00096.3	Genbank	lnc_RNA	220	229	.	+	.	ID=rna-MSS635_000001-4;Parent=gene-MSS635_000001;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
+U00096.3	Genbank	lncRNA	220	229	.	+	.	ID=rna-MSS635_000001-4;Parent=gene-MSS635_000001;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
 U00096.3	Genbank	exon	220	229	.	+	.	ID=exon-MSS635_000001-4-1;Parent=rna-MSS635_000001-4;Dbxref=EcoGene:EG11277;function=component of addiction module;gbkey=ncRNA;gene=thrL;locus_tag=MSS635_000001
 ###

@@ -1913,6 +1913,7 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
         "guide_RNA",
         "hammerhead_ribozyme",
         "lncRNA",
+        "lnc_RNA",
         "miRNA",
         "ncRNA",
         "other",
