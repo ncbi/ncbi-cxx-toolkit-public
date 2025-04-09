@@ -37,7 +37,7 @@ set(CMAKE_EXE_LINKER_FLAGS_INIT
     -B/opt/ncbi/gcc/${GCCVER}/lib/gcc/x86_64-redhat-linux-gnu/${GCCVER} \
     -L/opt/ncbi/gcc/${GCCVER}/lib64 \
     -Wl,-rpath,/opt/ncbi/gcc/${GCCVER}/lib64 \
-    -Wl,--enable-new-dtags"
+    -Wl,--enable-new-dtags -no-pie"
 )
 
 set(CMAKE_SHARED_LINKER_FLAGS_INIT

@@ -11223,8 +11223,8 @@ case "$compiler" in
             ;;
       esac
       case "$host_os:$compiler_version" in
-         linux*:1[4-7]?? )
-            APP_LDFLAGS="-nopie $APP_LDFLAGS"
+         linux*:???? )
+            APP_LDFLAGS="-no-pie $APP_LDFLAGS"
             ;;
       esac
       ;;
