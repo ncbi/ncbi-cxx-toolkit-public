@@ -1423,6 +1423,72 @@ struct SSortReferenceByName
 };
 
 
+static CTempString x_GetUpdatedDbTagName (
+    CTempString& db
+)
+
+{
+    if (NStr::IsBlank (db)) return db;
+
+    NStr::TruncateSpacesInPlace(db);
+
+    if (NStr::EqualNocase(db, "Swiss-Prot")
+        || NStr::EqualNocase (db, "SWISSPROT")
+        || NStr::EqualNocase (db, "UniProt/Swiss-Prot")) {
+        return "UniProtKB/Swiss-Prot";
+    }
+    if (NStr::EqualNocase(db, "SPTREMBL")  ||
+               NStr::EqualNocase(db, "TrEMBL")  ||
+               NStr::EqualNocase(db, "UniProt/TrEMBL") ) {
+        return "UniProtKB/TrEMBL";
+    }
+    if (NStr::EqualNocase(db, "SUBTILIS")) {
+        return "SubtiList";
+    }
+    if (NStr::EqualNocase(db, "LocusID")) {
+        return "GeneID";
+    }
+    if (NStr::EqualNocase(db, "MaizeDB")) {
+        return "MaizeGDB";
+    }
+    if (NStr::EqualNocase(db, "GeneW")) {
+        return "HGNC";
+    }
+    if (NStr::EqualNocase(db, "MGD")) {
+        return "MGI";
+    }
+    if (NStr::EqualNocase(db, "IFO")) {
+        return "NBRC";
+    }
+    if (NStr::EqualNocase(db, "BHB") ||
+        NStr::EqualNocase(db, "BioHealthBase")) {
+        return "IRD";
+    }
+    if (NStr::Equal(db, "GENEDB")) {
+        return "GeneDB";
+    }
+    if (NStr::Equal(db, "cdd")) {
+        return "CDD";
+    }
+    if (NStr::Equal(db, "FlyBase")) {
+        return "FLYBASE";
+    }
+    if (NStr::Equal(db, "GreengenesID")) {
+        return "Greengenes";
+    }
+    if (NStr::Equal(db, "HMPID")) {
+        return "HMP";
+    }
+    if (NStr::Equal(db, "ATCC (inhost)")) {
+        return "ATCC(in host)";
+    }
+    if (NStr::Equal(db, "ATCC (dna)")) {
+        return "ATCC(dna)";
+    }
+    return db;
+}
+
+
 void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
                          CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
@@ -1443,6 +1509,7 @@ void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
         }
 
         CTempString db = dbt.GetDb();
+        db = x_GetUpdatedDbTagName(db);
         if (db == "PID"  ||  db == "GI") {
             continue;
         }
