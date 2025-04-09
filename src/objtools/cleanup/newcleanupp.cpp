@@ -6153,13 +6153,18 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     }
 
     if (m_Options & CCleanup::eClean_ForFlatfile) {
+        int num_inferences_on_feature = 0;
         // check for presence of inference qualifier
         FOR_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
             const CGb_qual& gbq = **gbq_it;
             if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
-                // bail on all remaining GBQual cleanups if an inference is present
-                m_HasInferenceQuals = true;
-                return;
+                // was - bail on all remaining GBQual cleanups if an inference is present
+                // m_HasInferenceQuals = true;
+                // now just return from the qualifier list for this feature if there are more than 50 inferences
+                num_inferences_on_feature++;
+                if (num_inferences_on_feature >= 50) {
+                    return;
+                }
             }
         }
     }
