@@ -1412,123 +1412,126 @@ static bool CheckAccession(
 }
 
 /**********************************************************/
-static bool IsPatentedAccPrefix(const Parser& parseInfo, const char* acc)
+static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
 {
-    if (acc[2] == '\0') {
-        if ((StringEqu(acc, "AR") || StringEqu(acc, "DZ") ||
-             StringEqu(acc, "EA") || StringEqu(acc, "GC") ||
-             StringEqu(acc, "GP") || StringEqu(acc, "GV") ||
-             StringEqu(acc, "GX") || StringEqu(acc, "GY") ||
-             StringEqu(acc, "GZ") || StringEqu(acc, "HJ") ||
-             StringEqu(acc, "HK") || StringEqu(acc, "HL") ||
-             StringEqu(acc, "KH") || StringEqu(acc, "MI") ||
-             StringEqu(acc, "MM") || StringEqu(acc, "MO") ||
-             StringEqu(acc, "MV") || StringEqu(acc, "MX") ||
-             StringEqu(acc, "MY") || StringEqu(acc, "OO") ||
-             StringEqu(acc, "OS") || StringEqu(acc, "OT") ||
-             StringEqu(acc, "PR") || StringEqu(acc, "PT") ||
-             StringEqu(acc, "PU")) &&
-            (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
-            return true;
-        if ((StringEquN(acc, "AX", 2) || StringEquN(acc, "CQ", 2) ||
-             StringEquN(acc, "CS", 2) || StringEquN(acc, "FB", 2) ||
-             StringEquN(acc, "HA", 2) || StringEquN(acc, "HB", 2) ||
-             StringEquN(acc, "HC", 2) || StringEquN(acc, "HD", 2) ||
-             StringEquN(acc, "HH", 2) || StringEquN(acc, "GM", 2) ||
-             StringEquN(acc, "GN", 2) || StringEquN(acc, "JA", 2) ||
-             StringEquN(acc, "JB", 2) || StringEquN(acc, "JC", 2) ||
-             StringEquN(acc, "JD", 2) || StringEquN(acc, "JE", 2) ||
-             StringEquN(acc, "HI", 2) || StringEquN(acc, "LP", 2) ||
-             StringEquN(acc, "LQ", 2) || StringEquN(acc, "MP", 2) ||
-             StringEquN(acc, "MQ", 2) || StringEquN(acc, "MR", 2) ||
-             StringEquN(acc, "MS", 2)) &&
-            (parseInfo.all == true || parseInfo.source == Parser::ESource::EMBL))
-            return true;
-        if ((StringEquN(acc, "BD", 2) || StringEquN(acc, "DD", 2) ||
-             StringEquN(acc, "DI", 2) || StringEquN(acc, "DJ", 2) ||
-             StringEquN(acc, "DL", 2) || StringEquN(acc, "DM", 2) ||
-             StringEquN(acc, "FU", 2) || StringEquN(acc, "FV", 2) ||
-             StringEquN(acc, "FW", 2) || StringEquN(acc, "FZ", 2) ||
-             StringEquN(acc, "GB", 2) || StringEquN(acc, "HV", 2) ||
-             StringEquN(acc, "HW", 2) || StringEquN(acc, "HZ", 2) ||
-             StringEquN(acc, "LF", 2) || StringEquN(acc, "LG", 2) ||
-             StringEquN(acc, "LV", 2) || StringEquN(acc, "LX", 2) ||
-             StringEquN(acc, "LY", 2) || StringEquN(acc, "LZ", 2) ||
-             StringEquN(acc, "MA", 2) || StringEquN(acc, "MB", 2) ||
-             StringEquN(acc, "MC", 2) || StringEquN(acc, "MD", 2) ||
-             StringEquN(acc, "ME", 2) || StringEquN(acc, "OF", 2) ||
-             StringEquN(acc, "OG", 2) || StringEquN(acc, "OI", 2) ||
-             StringEquN(acc, "OJ", 2) || StringEquN(acc, "PA", 2) ||
-             StringEquN(acc, "PB", 2) || StringEquN(acc, "PC", 2) ||
-             StringEquN(acc, "PD", 2) || StringEquN(acc, "PE", 2) ||
-             StringEquN(acc, "PF", 2) || StringEquN(acc, "PG", 2) ||
-             StringEquN(acc, "PH", 2) || StringEquN(acc, "PI", 2) ||
-             StringEquN(acc, "PJ", 2) || StringEquN(acc, "PK", 2) ||
-             StringEquN(acc, "PL", 2) || StringEquN(acc, "PM", 2)) &&
-            (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
-            return true;
+    if (acc.length() == 2) {
+        if (parseInfo.all || parseInfo.source == Parser::ESource::NCBI) {
+            if (((acc == "AR"sv) || (acc == "DZ"sv) ||
+                 (acc == "EA"sv) || (acc == "GC"sv) ||
+                 (acc == "GP"sv) || (acc == "GV"sv) ||
+                 (acc == "GX"sv) || (acc == "GY"sv) ||
+                 (acc == "GZ"sv) || (acc == "HJ"sv) ||
+                 (acc == "HK"sv) || (acc == "HL"sv) ||
+                 (acc == "KH"sv) || (acc == "MI"sv) ||
+                 (acc == "MM"sv) || (acc == "MO"sv) ||
+                 (acc == "MV"sv) || (acc == "MX"sv) ||
+                 (acc == "MY"sv) || (acc == "OO"sv) ||
+                 (acc == "OS"sv) || (acc == "OT"sv) ||
+                 (acc == "PR"sv) || (acc == "PT"sv) ||
+                 (acc == "PU"sv)))
+                return true;
+        }
+        if (parseInfo.all || parseInfo.source == Parser::ESource::EMBL) {
+            if (((acc == "AX"sv) || (acc == "CQ"sv) ||
+                 (acc == "CS"sv) || (acc == "FB"sv) ||
+                 (acc == "HA"sv) || (acc == "HB"sv) ||
+                 (acc == "HC"sv) || (acc == "HD"sv) ||
+                 (acc == "HH"sv) || (acc == "GM"sv) ||
+                 (acc == "GN"sv) || (acc == "JA"sv) ||
+                 (acc == "JB"sv) || (acc == "JC"sv) ||
+                 (acc == "JD"sv) || (acc == "JE"sv) ||
+                 (acc == "HI"sv) || (acc == "LP"sv) ||
+                 (acc == "LQ"sv) || (acc == "MP"sv) ||
+                 (acc == "MQ"sv) || (acc == "MR"sv) ||
+                 (acc == "MS"sv)))
+                return true;
+        }
+        if (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ) {
+            if (((acc == "BD"sv) || (acc == "DD"sv) ||
+                 (acc == "DI"sv) || (acc == "DJ"sv) ||
+                 (acc == "DL"sv) || (acc == "DM"sv) ||
+                 (acc == "FU"sv) || (acc == "FV"sv) ||
+                 (acc == "FW"sv) || (acc == "FZ"sv) ||
+                 (acc == "GB"sv) || (acc == "HV"sv) ||
+                 (acc == "HW"sv) || (acc == "HZ"sv) ||
+                 (acc == "LF"sv) || (acc == "LG"sv) ||
+                 (acc == "LV"sv) || (acc == "LX"sv) ||
+                 (acc == "LY"sv) || (acc == "LZ"sv) ||
+                 (acc == "MA"sv) || (acc == "MB"sv) ||
+                 (acc == "MC"sv) || (acc == "MD"sv) ||
+                 (acc == "ME"sv) || (acc == "OF"sv) ||
+                 (acc == "OG"sv) || (acc == "OI"sv) ||
+                 (acc == "OJ"sv) || (acc == "PA"sv) ||
+                 (acc == "PB"sv) || (acc == "PC"sv) ||
+                 (acc == "PD"sv) || (acc == "PE"sv) ||
+                 (acc == "PF"sv) || (acc == "PG"sv) ||
+                 (acc == "PH"sv) || (acc == "PI"sv) ||
+                 (acc == "PJ"sv) || (acc == "PK"sv) ||
+                 (acc == "PL"sv) || (acc == "PM"sv)))
+                return true;
+        }
 
         return false;
     }
 
-    if (acc[1] == '\0' && (*acc == 'I' || *acc == 'A' || *acc == 'E')) {
-        if (parseInfo.all == true ||
-            (*acc == 'I' && parseInfo.source == Parser::ESource::NCBI) ||
-            (*acc == 'A' && parseInfo.source == Parser::ESource::EMBL) ||
-            (*acc == 'E' && parseInfo.source == Parser::ESource::DDBJ))
+    if (acc.length() == 1 && (acc[0] == 'I' || acc[0] == 'A' || acc[0] == 'E')) {
+        if (parseInfo.all ||
+            (acc[0] == 'I' && parseInfo.source == Parser::ESource::NCBI) ||
+            (acc[0] == 'A' && parseInfo.source == Parser::ESource::EMBL) ||
+            (acc[0] == 'E' && parseInfo.source == Parser::ESource::DDBJ))
             return true;
     }
     return false;
 }
 
 /**********************************************************/
-static bool IsTPAAccPrefix(const Parser& parseInfo, const char* acc)
+static bool IsTPAAccPrefix(const Parser& parseInfo, string_view acc)
 {
-    if (! acc)
+    if (acc.empty())
         return (false);
 
-    size_t i = StringLen(acc);
+    size_t i = acc.length();
     if (i != 2 && i != 4)
         return (false);
 
     if (i == 4) {
         if (acc[0] == 'D' &&
-            (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
+            (parseInfo.all || parseInfo.source == Parser::ESource::NCBI))
             return (true);
         if ((acc[0] == 'E' || acc[0] == 'Y') &&
-            (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
+            (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ))
             return (true);
         return (false);
     }
 
     if (fta_StringMatch(ncbi_tpa_accpref, acc) >= 0 &&
-        (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
+        (parseInfo.all || parseInfo.source == Parser::ESource::NCBI))
         return (true);
     if (fta_StringMatch(ddbj_tpa_accpref, acc) >= 0 &&
-        (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
+        (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ))
         return (true);
     return (false);
 }
 
 /**********************************************************/
-static bool IsWGSAccPrefix(const Parser& parseInfo, const char* acc)
+static bool IsWGSAccPrefix(const Parser& parseInfo, string_view acc)
 {
-    if (! acc || StringLen(acc) != 2)
+    if (acc.empty() || acc.length() != 2)
         return (false);
 
     if (fta_StringMatch(ncbi_wgs_accpref, acc) >= 0 &&
-        (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI))
+        (parseInfo.all || parseInfo.source == Parser::ESource::NCBI))
         return (true);
     if (fta_StringMatch(ddbj_wgs_accpref, acc) >= 0 &&
-        (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ))
+        (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ))
         return (true);
     return (false);
 }
 
 /**********************************************************/
-static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
+static void IsTSAAccPrefix(const Parser& parseInfo, string_view acc, IndexblkPtr ibp)
 {
-    if (! acc || *acc == '\0')
+    if (acc.empty())
         return;
 
     if (parseInfo.source == Parser::ESource::EMBL ||
@@ -1538,22 +1541,22 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
     }
 
     if (acc[0] == 'U' && acc[1] == '\0' &&
-        (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI)) {
+        (parseInfo.all || parseInfo.source == Parser::ESource::NCBI)) {
         ibp->tsa_allowed = true;
         return;
     }
 
-    if (StringLen(acc) != 2 && StringLen(acc) != 4)
+    if (acc.length() != 2 && acc.length() != 4)
         return;
 
-    if (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI) {
-        if ((StringLen(acc) == 2 &&
-             (StringEqu(acc, "EZ") || StringEqu(acc, "HP") ||
-              StringEqu(acc, "JI") || StringEqu(acc, "JL") ||
-              StringEqu(acc, "JO") || StringEqu(acc, "JP") ||
-              StringEqu(acc, "JR") || StringEqu(acc, "JT") ||
-              StringEqu(acc, "JU") || StringEqu(acc, "JV") ||
-              StringEqu(acc, "JW") || StringEqu(acc, "KA"))) ||
+    if (parseInfo.all || parseInfo.source == Parser::ESource::NCBI) {
+        if ((acc.length() == 2 &&
+             ((acc == "EZ"sv) || (acc == "HP"sv) ||
+              (acc == "JI"sv) || (acc == "JL"sv) ||
+              (acc == "JO"sv) || (acc == "JP"sv) ||
+              (acc == "JR"sv) || (acc == "JT"sv) ||
+              (acc == "JU"sv) || (acc == "JV"sv) ||
+              (acc == "JW"sv) || (acc == "KA"sv))) ||
             fta_if_wgs_acc(ibp->acnum) == 5) {
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
@@ -1562,17 +1565,17 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
             ibp->tsa_allowed = true;
     }
 
-    if (parseInfo.all == true || parseInfo.source == Parser::ESource::DDBJ) {
-        if (StringEquN(acc, "FX", 2) || StringEquN(acc, "LA", 2) ||
-            StringEquN(acc, "LE", 2) || StringEquN(acc, "LH", 2) ||
-            StringEquN(acc, "LI", 2) || StringEquN(acc, "LJ", 2) ||
+    if (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ) {
+        if (acc.starts_with("FX"sv) || acc.starts_with("LA"sv) ||
+            acc.starts_with("LE"sv) || acc.starts_with("LH"sv) ||
+            acc.starts_with("LI"sv) || acc.starts_with("LJ"sv) ||
             fta_if_wgs_acc(ibp->acnum) == 8) {
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
         }
     }
 
-    if (parseInfo.all == true || parseInfo.source == Parser::ESource::EMBL) {
+    if (parseInfo.all || parseInfo.source == Parser::ESource::EMBL) {
         if (fta_if_wgs_acc(ibp->acnum) == 9) {
             ibp->is_tsa      = true;
             ibp->tsa_allowed = true;
@@ -1581,12 +1584,12 @@ static void IsTSAAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr
 }
 
 /**********************************************************/
-static void IsTLSAccPrefix(const Parser& parseInfo, const char* acc, IndexblkPtr ibp)
+static void IsTLSAccPrefix(const Parser& parseInfo, string_view acc, IndexblkPtr ibp)
 {
-    if (! acc || *acc == '\0' || StringLen(acc) != 4)
+    if (acc.empty() || acc.length() != 4)
         return;
 
-    if (parseInfo.all == true || parseInfo.source == Parser::ESource::NCBI ||
+    if (parseInfo.all || parseInfo.source == Parser::ESource::NCBI ||
         parseInfo.source == Parser::ESource::DDBJ)
         if (fta_if_wgs_acc(ibp->acnum) == 11)
             ibp->is_tls = true;
