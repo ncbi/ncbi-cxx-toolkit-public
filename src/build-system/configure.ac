@@ -2255,6 +2255,17 @@ case "$CXX:::$ac_cv_prog_CXXCPP" in
    *++17*:::*++14* ) AS_UNSET(ac_cv_prog_CXXCPP) ;;
 esac
 
+AC_CACHE_CHECK([whether $CXX supports C++20 <format>],
+   ncbi_cv_lib_cxx20_format,
+   [AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM([@%:@include <format>],
+         [auto s = std::format("{}", 123.4);])],
+      [ncbi_cv_lib_cxx20_format=yes],
+      [ncbi_cv_lib_cxx20_format=no])])
+if test "$ncbi_cv_lib_cxx20_format" = yes; then
+   NCBI_FEATURE(Cxx2020_format_api)
+fi
+
 
 AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to enable modern C features in $CC],
