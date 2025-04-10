@@ -128,10 +128,20 @@ inline bool StringEquN(const char* s1, const char* s2, size_t n)
 
     return false;
 }
+inline bool fta_StartsWith(const char* s1, string_view s2)
+{
+    return StringEquN(s1, s2.data(), s2.size());
+}
 inline bool StringEquNI(const char* s1, const char* s2, size_t n)
 {
     const string S1(s1), S2(s2);
     return (NStr::CompareNocase(S1.substr(0, n), S2.substr(0, n)) == 0);
+}
+inline bool fta_StartsWithNocase(const char* s1, string_view s2)
+{
+    size_t n = s2.size();
+    const string S1(s1);
+    return (NStr::CompareNocase(S1.substr(0, n), s2) == 0);
 }
 
 inline bool StringHasNoText(const char* s)

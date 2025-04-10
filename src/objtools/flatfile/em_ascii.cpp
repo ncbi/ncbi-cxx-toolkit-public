@@ -293,7 +293,7 @@ static void GetEmblDate(Parser::ESource source, const DataBlk& entry, CRef<CDate
             break;
 
         offset++; /* newline */
-        if (StringEquN(offset, "DT", 2)) {
+        if (fta_StartsWith(offset, "DT"sv)) {
             update = GetUpdateDate(offset + ParFlat_COL_DATA_EMBL,
                                    source);
             break;
@@ -594,7 +594,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
         /* skip "XX" line
          */
         while (ptr < eptr) {
-            if (StringEquN(ptr, "DR", 2))
+            if (fta_StartsWith(ptr, "DR"sv))
                 break;
 
             ptr = SrchTheChar(ptr, eptr, '\n');
@@ -860,7 +860,7 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
 
     /* some entries have "circular" before molecule type in embl
      */
-    if (StringEquNI(p, "circular", 8)) {
+    if (fta_StartsWithNocase(p, "circular"sv)) {
         inst.SetTopology(CSeq_inst::eTopology_circular);
         PointToNextToken(p);
     } else if (ibp->embl_new_ID)
@@ -966,12 +966,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     PointToNextToken(bptr); /* bptr points to 2nd token */
 
     if (ibp->embl_new_ID == false) {
-        if (StringEquNI(bptr, "standard", 8)) {
+        if (fta_StartsWithNocase(bptr, "standard"sv)) {
             // embl->SetClass(CEMBL_block::eClass_standard);
-        } else if (StringEquNI(bptr, "unannotated", 11)) {
+        } else if (fta_StartsWithNocase(bptr, "unannotated"sv)) {
             embl->SetClass(CEMBL_block::eClass_unannotated);
-        } else if (StringEquNI(bptr, "unreviewed", 10) ||
-                   StringEquNI(bptr, "preliminary", 11)) {
+        } else if (fta_StartsWithNocase(bptr, "unreviewed"sv) ||
+                   fta_StartsWithNocase(bptr, "preliminary"sv)) {
             embl->SetClass(CEMBL_block::eClass_other);
         } else {
             embl->SetClass(CEMBL_block::eClass_not_set);
@@ -1216,11 +1216,11 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (drop) {
             return ret;
         }
-    } else if (! gbdiv.empty() && StringEqu(gbdiv.c_str(), "CON")) {
+    } else if (gbdiv == "CON") {
         gbdiv.clear();
     }
 
-    bool is_htc_div = ! gbdiv.empty() && StringEqu(gbdiv.c_str(), "HTC");
+    bool is_htc_div = (gbdiv == "HTC");
     bool has_htc    = HasHtc(embl->GetKeywords());
 
     if (is_htc_div && ! has_htc) {
@@ -1241,7 +1241,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (ibp->embl_new_ID) {
             PointToNextToken(p);
             PointToNextToken(p);
-        } else if (StringEquNI(p, "circular", 8))
+        } else if (fta_StartsWithNocase(p, "circular"sv))
             PointToNextToken(p); /* p points to 4th token */
 
         if (StringEquN(p + 1, "s-", 2))
@@ -1253,7 +1253,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         else if (StringEquN(p, "transcribed ", 12))
             p += 12;
 
-        if (! StringEquN(p, "RNA", 3)) {
+        if (! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
             return ret;
         }
@@ -1265,20 +1265,20 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     /* will be used in flat file database
      */
     if (! gbdiv.empty()) {
-        if (StringEqu(gbdiv.c_str(), "EST")) {
+        if (gbdiv == "EST") {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringEqu(gbdiv.c_str(), "STS")) {
+        } else if (gbdiv == "STS") {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringEqu(gbdiv.c_str(), "GSS")) {
+        } else if (gbdiv == "GSS") {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringEqu(gbdiv.c_str(), "HTC")) {
+        } else if (gbdiv == "HTC") {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
-        } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
+        } else if ((gbdiv == "SYN") && bio_src &&
                    bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic) {
             gbdiv.clear();
         }
@@ -1334,8 +1334,8 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 &&
-            (StringEquN(ibp->acnum, "CT", 2) ||
-             StringEquN(ibp->acnum, "CU", 2))) {
+            (fta_StartsWith(ibp->acnum, "CT"sv) ||
+             fta_StartsWith(ibp->acnum, "CU"sv))) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
                 if (fta_if_wgs_acc(acc) == 0 &&
@@ -1424,7 +1424,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     PointToNextToken(bptr);                /* bptr points to 2nd token */
     PointToNextToken(bptr);                /* bptr points to 3rd token */
 
-    if (StringEquNI(bptr, "circular", 8) || ibp->embl_new_ID)
+    if (fta_StartsWithNocase(bptr, "circular"sv) || ibp->embl_new_ID)
         PointToNextToken(bptr); /* bptr points to 4th token */
     if (ibp->embl_new_ID)
         PointToNextToken(bptr); /* bptr points to 5th token */
@@ -1452,7 +1452,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
 
     CRef<CMolInfo> mol_info(new CMolInfo);
 
-    if (StringEquN(p, "EST", 3))
+    if (fta_StartsWith(p, "EST"sv))
         mol_info->SetTech(CMolInfo::eTech_est);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -1825,7 +1825,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         return;
     }
 
-    if (StringEquNI(ibp->division, "CON", 3))
+    if (fta_StartsWithNocase(ibp->division, "CON"sv))
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);
@@ -2536,11 +2536,11 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
         if (drop) {
             return ret;
         }
-    } else if (! gbdiv.empty() && StringEqu(gbdiv.c_str(), "CON")) {
+    } else if (gbdiv == "CON") {
         gbdiv.clear();
     }
 
-    bool is_htc_div = ! gbdiv.empty() && StringEqu(gbdiv.c_str(), "HTC");
+    bool is_htc_div = (gbdiv == "HTC");
     bool has_htc    = HasHtc(embl->GetKeywords());
 
     if (is_htc_div && ! has_htc) {
@@ -2563,7 +2563,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
             else if (StringEquN(r, "transcribed ", 12))
                 p = r + 12;
 
-            if (! StringEquN(p, "RNA", 3)) {
+            if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
                 MemFree(r);
                 return ret;
@@ -2578,20 +2578,20 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     /* will be used in flat file database
      */
     if (! gbdiv.empty()) {
-        if (StringEqu(gbdiv.c_str(), "EST")) {
+        if (gbdiv == "EST") {
             ibp->EST = true;
             mol_info.SetTech(CMolInfo::eTech_est);
-        } else if (StringEqu(gbdiv.c_str(), "STS")) {
+        } else if (gbdiv == "STS") {
             ibp->STS = true;
             mol_info.SetTech(CMolInfo::eTech_sts);
-        } else if (StringEqu(gbdiv.c_str(), "GSS")) {
+        } else if (gbdiv == "GSS") {
             ibp->GSS = true;
             mol_info.SetTech(CMolInfo::eTech_survey);
-        } else if (StringEqu(gbdiv.c_str(), "HTC")) {
+        } else if (gbdiv == "HTC") {
             ibp->HTC = true;
             mol_info.SetTech(CMolInfo::eTech_htc);
             gbdiv.clear();
-        } else if (StringEqu(gbdiv.c_str(), "SYN") && bio_src &&
+        } else if ((gbdiv == "SYN") && bio_src &&
                    bio_src->IsSetOrigin() && bio_src->GetOrigin() == CBioSource::eOrigin_synthetic) {
             gbdiv.clear();
         }
@@ -2640,7 +2640,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
-        if (StringLen(ibp->acnum) == 8 && StringEquN(ibp->acnum, "CT", 2)) {
+        if (StringLen(ibp->acnum) == 8 && fta_StartsWith(ibp->acnum, "CT"sv)) {
             bool found = false;
             for (const string& acc : embl->SetExtra_acc()) {
                 if (fta_if_wgs_acc(acc) == 0 &&

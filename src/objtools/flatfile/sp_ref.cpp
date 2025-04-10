@@ -299,21 +299,21 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     char* ptr2;
     char* token;
 
-    if (StringEquNI("UNPUBLISHED", str, 11)) {
+    if (fta_StartsWithNocase(str, "UNPUBLISHED"sv)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
         prbp->journal = str;
-    } else if (StringEquNI("(IN)", str, 4)) {
+    } else if (StringEquNI(str, "(IN)", 4)) {
         prbp->reftype = ParFlat_ReftypeBook;
         for (str += 4; *str == ' ';)
             str++;
         prbp->journal = str;
-    } else if (StringEquNI("SUBMITTED", str, 9)) {
+    } else if (fta_StartsWithNocase(str, "SUBMITTED"sv)) {
         prbp->reftype = ParFlat_ReftypeSubmit;
         prbp->journal = str;
-    } else if (StringEquNI("PATENT NUMBER", str, 13)) {
+    } else if (fta_StartsWithNocase(str, "PATENT NUMBER"sv)) {
         prbp->reftype = ParFlat_ReftypePatent;
         prbp->journal = str;
-    } else if (StringEquNI("THESIS", str, 6)) {
+    } else if (fta_StartsWithNocase(str, "THESIS"sv)) {
         prbp->reftype = ParFlat_ReftypeThesis;
 
         ptr1 = str;

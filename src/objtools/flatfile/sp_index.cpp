@@ -147,11 +147,11 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             char* p = finfo.str + ParFlat_COL_DATA_SP;
             PointToNextToken(p);
-            reviewed = StringEquNI(p, "reviewed", 8);
+            reviewed = fta_StartsWithNocase(p, "reviewed"sv);
 
             while (! end_of_file &&
-                   ! StringEquN(finfo.str, swissProtKeywords[ParFlatSP_END].c_str(), swissProtKeywords[ParFlatSP_END].size())) {
-                if (StringEquN(finfo.str, "RM", 2)) {
+                   ! fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_END])) {
+                if (fta_StartsWith(finfo.str, "RM"sv)) {
                     FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped {}", finfo.str);
                 }
                 if (after_SQ && isalpha(finfo.str[0]) != 0) {
@@ -159,26 +159,26 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                     entry->drop = true;
                     break;
                 }
-                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_SQ].c_str(), swissProtKeywords[ParFlatSP_SQ].size()))
+                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_SQ]))
                     after_SQ = true;
 
-                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_OS].c_str(), swissProtKeywords[ParFlatSP_OS].size()))
+                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_OS]))
                     after_OS = true;
 
-                if (StringEquN(finfo.str, "OC", 2))
+                if (fta_StartsWith(finfo.str, "OC"sv))
                     after_OC = true;
 
-                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_RN].c_str(), swissProtKeywords[ParFlatSP_RN].size()))
+                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_RN]))
                     after_RN = true;
 
-                if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_AC].c_str(), swissProtKeywords[ParFlatSP_AC].size())) {
+                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_AC])) {
                     if (after_AC == false) {
                         after_AC = true;
                         if (! GetAccession(pp, finfo.str, entry, 2))
                             pp->num_drop++;
                     } else if (! entry->drop && ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
-                } else if (StringEquN(finfo.str, swissProtKeywords[ParFlatSP_DT].c_str(), swissProtKeywords[ParFlatSP_DT].size())) {
+                } else if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_DT])) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo.str, entry);
                     auto stoken = TokenString(finfo.str, ' ');

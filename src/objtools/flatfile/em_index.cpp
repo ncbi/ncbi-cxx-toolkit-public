@@ -204,23 +204,23 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
             optional<string> line_sv;
 
-            auto keywordEnd = emblKeywords[ParFlatEM_END];
-            auto keywordId  = emblKeywords[ParFlat_ID];
-            auto keywordNi  = emblKeywords[ParFlat_NI];
-            auto keywordAh  = emblKeywords[ParFlat_AH];
-            auto keywordSq  = emblKeywords[ParFlat_SQ];
-            auto keywordOs  = emblKeywords[ParFlat_OS];
-            auto keywordSv  = emblKeywords[ParFlat_SV];
-            auto keywordKw  = emblKeywords[ParFlat_KW];
+            const auto keywordEnd = emblKeywords[ParFlatEM_END];
+            const auto keywordId  = emblKeywords[ParFlat_ID];
+            const auto keywordNi  = emblKeywords[ParFlat_NI];
+            const auto keywordAh  = emblKeywords[ParFlat_AH];
+            const auto keywordSq  = emblKeywords[ParFlat_SQ];
+            const auto keywordOs  = emblKeywords[ParFlat_OS];
+            const auto keywordSv  = emblKeywords[ParFlat_SV];
+            const auto keywordKw  = emblKeywords[ParFlat_KW];
 
             while (! end_of_file &&
-                   ! StringEquN(finfo.str, keywordEnd.c_str(), keywordEnd.size())) {
-                if (StringEquN(finfo.str, keywordKw.c_str(), 2)) {
+                   ! fta_StartsWith(finfo.str, keywordEnd)) {
+                if (fta_StartsWith(finfo.str, keywordKw)) {
                     if (pp->source == Parser::ESource::EMBL ||
                         pp->source == Parser::ESource::DDBJ) {
                         pp->KeywordParser().AddDataLine(finfo.str);
                     }
-                } else if (StringEquN(finfo.str, keywordId.c_str(), keywordId.size())) {
+                } else if (fta_StartsWith(finfo.str, keywordId)) {
                     if (after_ID) {
                         FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                         entry->drop = true;
@@ -230,7 +230,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     if (entry->embl_new_ID)
                         line_sv = EmblGetNewIDVersion(entry->locusname,
                                                       finfo.str);
-                } else if (StringEquN(finfo.str, keywordAh.c_str(), keywordAh.size())) {
+                } else if (fta_StartsWith(finfo.str, keywordAh)) {
                     if (entry->is_tpa == false && entry->tsa_allowed == false) {
                         FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
@@ -240,24 +240,24 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->drop = true;
                     break;
                 }
-                if (StringEquN(finfo.str, keywordNi.c_str(), 2)) {
+                if (fta_StartsWith(finfo.str, keywordNi)) {
                     if (after_NI) {
                         FtaErrPost(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
                         entry->drop = true;
                         break;
                     }
                     after_NI = true;
-                } else if (StringEquN(finfo.str, keywordSq.c_str(), keywordSq.size())) {
+                } else if (fta_StartsWith(finfo.str, keywordSq)) {
                     after_SQ      = true;
                     entry->origin = true;
-                } else if (StringEquN(finfo.str, keywordOs.c_str(), keywordOs.size())) {
+                } else if (fta_StartsWith(finfo.str, keywordOs)) {
                     if (after_OS && pp->source != Parser::ESource::EMBL) {
                         FtaErrPost(SEV_INFO, ERR_ORGANISM_Multiple, "Multiple OS lines in the entry");
                     }
                     after_OS = true;
                 }
                 if (pp->accver &&
-                    StringEquN(finfo.str, keywordSv.c_str(), keywordSv.size())) {
+                    fta_StartsWith(finfo.str, keywordSv)) {
                     if (entry->embl_new_ID) {
                         FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
                         entry->drop = true;
@@ -277,20 +277,20 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                         line_sv = string(p, q);
                     }
                 }
-                if (StringEquN(finfo.str, "OC", 2))
+                if (fta_StartsWith(finfo.str, "OC"sv))
                     after_OC = true;
 
                 auto keywordRn = emblKeywords[ParFlat_RN];
-                if (StringEquN(finfo.str, keywordRn.c_str(), keywordRn.size()))
+                if (fta_StartsWith(finfo.str, keywordRn))
                     after_RN = true;
 
                 auto keywordCo = emblKeywords[ParFlat_CO];
-                if (StringEquN(finfo.str, keywordCo.c_str(), keywordCo.size()))
+                if (fta_StartsWith(finfo.str, keywordCo))
                     entry->is_contig = true;
 
                 auto keywordAc = emblKeywords[ParFlat_AC];
                 auto keywordDt = emblKeywords[ParFlat_DT];
-                if (StringEquN(finfo.str, keywordAc.c_str(), keywordAc.size())) {
+                if (fta_StartsWith(finfo.str, keywordAc)) {
                     if (after_AC == false) {
                         after_AC = true;
                         if (! GetAccession(pp, finfo.str, entry, 2))
@@ -298,7 +298,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     } else if (! entry->drop &&
                                ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
-                } else if (StringEquN(finfo.str, keywordDt.c_str(), keywordDt.size())) {
+                } else if (fta_StartsWith(finfo.str, keywordDt)) {
                     auto stoken = TokenString(finfo.str, ' ');
                     if (stoken->num > 2) {
                         after_DT    = true;

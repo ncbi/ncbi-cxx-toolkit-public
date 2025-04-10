@@ -265,7 +265,7 @@ static bool XReadFile(FILE* fp, FinfoBlk& finfo)
     bool end_of_file = false;
 
     StringCpy(finfo.str, "\n");
-    while (! end_of_file && StringEquN(finfo.str, "\n", 1)) {
+    while (! end_of_file && (finfo.str[0] == '\n')) {
         finfo.pos = (size_t)ftell(fp);
         if (! fgets(finfo.str, sizeof(finfo.str) - 1, fp))
             end_of_file = true;
@@ -316,7 +316,7 @@ bool XReadFileBuf(FileBuf& fbuf, FinfoBlk& finfo)
     bool end_of_file = false;
 
     StringCpy(finfo.str, "\n");
-    while (! end_of_file && StringEquN(finfo.str, "\n", 1)) {
+    while (! end_of_file && (finfo.str[0] == '\n')) {
         finfo.pos = fbuf.get_offs();
         if (FileGetsBuf(finfo.str, sizeof(finfo.str) - 1, fbuf) == 0)
             end_of_file = true;
@@ -544,9 +544,9 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     if (p)
         *p = '\0';
 
-    if (is_mga == false && ! StringEquN(offset + lcp->bp, "bp", 2) &&
-        ! StringEquN(offset + lcp->bp, "rc", 2) &&
-        ! StringEquN(offset + lcp->bp, "aa", 2)) {
+    if (is_mga == false && ! fta_StartsWith(offset + lcp->bp, "bp"sv) &&
+        ! fta_StartsWith(offset + lcp->bp, "rc"sv) &&
+        ! fta_StartsWith(offset + lcp->bp, "aa"sv)) {
         i = lcp->bp + 1;
         FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "bp/rc string unrecognized in column {}-{}: {}", i, i + 1, offset + lcp->bp);
         ret = false;
@@ -558,7 +558,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
     p = offset + lcp->molecule;
     if (is_mga) {
-        if (! StringEquNI(p, "mRNA", 4) && ! StringEquN(p, "RNA", 3)) {
+        if (! fta_StartsWithNocase(p, "mRNA"sv) && ! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"{}\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
@@ -585,7 +585,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
     }
     MemCpy(date, offset + lcp->date, 11);
     date[11] = '\0';
-    if (StringEquN(date, "NODATE", 6)) {
+    if (fta_StartsWith(date, "NODATE"sv)) {
         FtaErrPost(SEV_WARNING, ERR_FORMAT_LocusLinePosition, "NODATE in LOCUS line will be replaced by current system date");
     } else if (! CkDateFormat(date)) {
         i = lcp->date + 1;
@@ -609,7 +609,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 CRef<CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source)
 {
 
-    if (StringEquN(ptr, "NODATE", 6))
+    if (fta_StartsWith(ptr, "NODATE"sv))
         return CRef<CDate_std>(new CDate_std(CTime(CTime::eCurrent)));
 
     if (ptr[11] != '\0' && ptr[11] != '\n' && ptr[11] != ' ' &&
@@ -861,8 +861,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             if (pp->format == Parser::EFormat::SPROT) {
                 auto it = next(ptr);
                 if (it == stoken->list.end() || it->empty() ||
-                    (! StringEquNI(it->c_str(), "preliminary", 11) &&
-                     ! StringEquNI(it->c_str(), "unreviewed", 10)))
+                    (! fta_StartsWithNocase(it->c_str(), "preliminary"sv) &&
+                     ! fta_StartsWithNocase(it->c_str(), "unreviewed"sv)))
                     badlocus = CheckLocusSP(entry->locusname);
                 else
                     badlocus = false;
@@ -906,23 +906,23 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             ++it;
 
         if (pp->format == Parser::EFormat::EMBL) {
-            if (StringEquNI(it->c_str(), "TSA", 3))
+            if (fta_StartsWithNocase(it->c_str(), "TSA"sv))
                 entry->is_tsa = true;
-            else if (StringEquNI(it->c_str(), "PAT", 3))
+            else if (fta_StartsWithNocase(it->c_str(), "PAT"sv))
                 entry->is_pat = true;
         }
 
         ++it;
 
-        if (StringEquNI(it->c_str(), "EST", 3))
+        if (fta_StartsWithNocase(it->c_str(), "EST"sv))
             entry->EST = true;
-        else if (StringEquNI(it->c_str(), "STS", 3))
+        else if (fta_StartsWithNocase(it->c_str(), "STS"sv))
             entry->STS = true;
-        else if (StringEquNI(it->c_str(), "GSS", 3))
+        else if (fta_StartsWithNocase(it->c_str(), "GSS"sv))
             entry->GSS = true;
-        else if (StringEquNI(it->c_str(), "HTC", 3))
+        else if (fta_StartsWithNocase(it->c_str(), "HTC"sv))
             entry->HTC = true;
-        else if (StringEquNI(it->c_str(), "PAT", 3) &&
+        else if (fta_StartsWithNocase(it->c_str(), "PAT"sv) &&
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }
@@ -1836,10 +1836,8 @@ void MsgSkipTitleFail(const char* flatfile, FinfoBlk& finfo)
 
 bool FindNextEntryBuf(bool end_of_file, FileBuf& fbuf, FinfoBlk& finfo, string_view keyword)
 {
-    const char* p    = keyword.data();
-    size_t      len  = keyword.size();
-    bool        done = end_of_file;
-    while (! done && ! StringEquN(finfo.str, p, len))
+    bool done = end_of_file;
+    while (! done && ! fta_StartsWith(finfo.str, keyword))
         done = XReadFileBuf(fbuf, finfo);
 
     return (done);

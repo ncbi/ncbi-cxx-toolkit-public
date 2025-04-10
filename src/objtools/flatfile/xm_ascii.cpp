@@ -512,7 +512,7 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
             else if (StringEquN(str, "transcribed ", 12))
                 p = str + 12;
 
-            if (! StringEquN(p, "RNA", 3)) {
+            if (! fta_StartsWith(p, "RNA"sv)) {
                 FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
                 MemFree(str);
                 return ret;
@@ -609,13 +609,13 @@ static CRef<CMolInfo> XMLGetMolInfo(ParserPtr pp, const DataBlk& entry, COrg_ref
     molstr = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_MOLTYPE));
     div    = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_DIVISION));
 
-    if (StringEquN(div, "EST", 3))
+    if (fta_StartsWith(div, "EST"sv))
         mol_info->SetTech(CMolInfo::eTech_est);
-    else if (StringEquN(div, "STS", 3))
+    else if (fta_StartsWith(div, "STS"sv))
         mol_info->SetTech(CMolInfo::eTech_sts);
-    else if (StringEquN(div, "GSS", 3))
+    else if (fta_StartsWith(div, "GSS"sv))
         mol_info->SetTech(CMolInfo::eTech_survey);
-    else if (StringEquN(div, "HTG", 3))
+    else if (fta_StartsWith(div, "HTG"sv))
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -927,7 +927,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (pp->source == Parser::ESource::EMBL) {
-        if (StringEquNI(ibp->division, "CON", 3))
+        if (fta_StartsWithNocase(ibp->division, "CON"sv))
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);
@@ -935,7 +935,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (embl->GetExtra_acc().empty())
             embl->ResetExtra_acc();
     } else {
-        if (StringEquNI(ibp->division, "CON", 3))
+        if (fta_StartsWithNocase(ibp->division, "CON"sv))
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, false, ibp->acnum);
@@ -1253,7 +1253,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
         if (mParser.source == Parser::ESource::Flybase) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
         } else if (mParser.source == Parser::ESource::Refseq &&
-                   StringEquN(ibp->acnum, "NW_", 3)) {
+                   fta_StartsWith(ibp->acnum, "NW_"sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
         } else if (ibp->is_wgs) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");

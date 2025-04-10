@@ -897,9 +897,9 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
 
     /* Delete (EC ...)
      */
-    if (StringEquNI(str, "RecName: ", 9) ||
-        StringEquNI(str, "AltName: ", 9) ||
-        StringEquNI(str, "SubName: ", 9)) {
+    if (fta_StartsWithNocase(str, "RecName: "sv) ||
+        fta_StartsWithNocase(str, "AltName: "sv) ||
+        fta_StartsWithNocase(str, "SubName: "sv)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;
@@ -1893,7 +1893,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         if (! ptr)
             break;
         ptr++;
-        if (! StringEquN(ptr, "DR   ", 5))
+        if (! fta_StartsWith(ptr, "DR   "sv))
             continue;
         ptr += ParFlat_COL_DATA_SP;
         token1 = GetDRToken(&ptr);
@@ -2274,11 +2274,11 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     bptr = entry.mBuf.ptr + ParFlat_COL_DATA_SP;
     PointToNextToken(bptr); /* first ID line, 2nd token */
-    reviewed = StringEquNI(bptr, "reviewed", 8);
-    if (reviewed || StringEquNI(bptr, "standard", 8)) {
+    reviewed = fta_StartsWithNocase(bptr, "reviewed"sv);
+    if (reviewed || fta_StartsWithNocase(bptr, "standard"sv)) {
         spb->SetClass(CSP_block::eClass_standard);
-    } else if (StringEquNI(bptr, "preliminary", 11) ||
-               StringEquNI(bptr, "unreviewed", 10)) {
+    } else if (fta_StartsWithNocase(bptr, "preliminary"sv) ||
+               fta_StartsWithNocase(bptr, "unreviewed"sv)) {
         spb->SetClass(CSP_block::eClass_prelim);
     } else {
         spb->SetClass(CSP_block::eClass_not_set);
@@ -2439,8 +2439,8 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
             p++;
         if (*p == '\0')
             break;
-        if (! StringEquNI(p, COPYRIGHT, StringLen(COPYRIGHT)) &&
-            ! StringEquNI(p, COPYRIGHT1, StringLen(COPYRIGHT1)))
+        if (! fta_StartsWithNocase(p, COPYRIGHT) &&
+            ! fta_StartsWithNocase(p, COPYRIGHT1))
             break;
         p = StringStr(p, "----------");
         if (! p)
@@ -4158,9 +4158,9 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
     Int4  count;
     Char  ch;
 
-    if (! str || (! StringEquNI(str, "RecName: ", 9) &&
-                  ! StringEquNI(str, "AltName: ", 9) &&
-                  ! StringEquNI(str, "SubName: ", 9)))
+    if (! str || (! fta_StartsWithNocase(str, "RecName: "sv) &&
+                  ! fta_StartsWithNocase(str, "AltName: "sv) &&
+                  ! fta_StartsWithNocase(str, "SubName: "sv)))
         return;
 
     is_trembl = false;
@@ -4342,15 +4342,15 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
 
     ibp = pp->entrylist[pp->curindx];
 
-    if (StringEquNI(str, "Contains: ", 10) ||
-        StringEquNI(str, "Includes: ", 10)) {
+    if (fta_StartsWithNocase(str, "Contains: "sv) ||
+        fta_StartsWithNocase(str, "Includes: "sv)) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
         ibp->drop = true;
     }
 
-    if (StringEquNI(str, "RecName: ", 9) ||
-        StringEquNI(str, "AltName: ", 9) ||
-        StringEquNI(str, "SubName: ", 9)) {
+    if (fta_StartsWithNocase(str, "RecName: "sv) ||
+        fta_StartsWithNocase(str, "AltName: "sv) ||
+        fta_StartsWithNocase(str, "SubName: "sv)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;

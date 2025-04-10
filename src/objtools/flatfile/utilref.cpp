@@ -89,9 +89,9 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
         more      = false;
 
         for (; *pt != '\0'; pt++) {
-            if (! StringEquN(pt, delimeter, StringLen(delimeter)) &&
-                ! StringEquN(pt, ",\n", 2) && ! StringEquN(pt, ",~", 2) &&
-                ! StringEquN(pt, " and ", 5))
+            if (! fta_StartsWith(pt, delimeter) &&
+                ! fta_StartsWith(pt, ",\n"sv) && ! fta_StartsWith(pt, ",~"sv) &&
+                ! fta_StartsWith(pt, " and "sv))
                 continue;
 
             *pt = '\0';
@@ -565,7 +565,7 @@ CRef<CCit_gen> get_error(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C
 
     if (zero_year) {
         CRef<CTitle::C_E> journal_title(new CTitle::C_E);
-        if (StringEquN(bptr, "(re)", 4))
+        if (fta_StartsWith(bptr, "(re)"sv))
             journal_title->SetName(NStr::Sanitize(bptr));
         else
             journal_title->SetIso_jta(NStr::Sanitize(bptr));
