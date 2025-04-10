@@ -144,6 +144,9 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
     TManager::setupSignals();
     unsigned int max_threads = GetFastCGIMTMaxThreads();
     m_Manager.reset(max_threads ? new TManager(max_threads) : new TManager());
+    // Disable waiting on the socket after it's closed and allow multiple processes
+    // to listen on the same port during fast-cgi restart.
+    m_Manager->reuseAddress(true);
 
     // If to run as a standalone server on local port or named socket
     string path = GetFastCGIStandaloneServer();
