@@ -1178,6 +1178,7 @@ CEST	s	Central Experiment Station
 CET	s	Centro de Estudios Tropicales			
 CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Domesticos			
 CEU	s	Collage of Eastern Utah			
+CFAS	s	A Colecao de Fungos do Ambiente e Saude /The Environmental and Health Fungi Collection			
 CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista			
 CFCC	cb	China Forestry Culture Collection Center			
 CFGR	s	Center for Fungal Genetic Resources			
@@ -1878,6 +1879,7 @@ DMDC	s	Douala Museum
 DMFS	s	Crichton Royal Institution Museum			
 DMH	s	D.M. College of Science			
 DMHN	s	The University of Newcastle			
+DMic	c	Culture colection of biomedical interest fungal			
 DMIV	c	Department of Microbiology and Immunology			
 DMKKU2	c	Department of Microbiology, Faculty of Medical Science	DMKKU		
 DMKU	c	Department of Microbiology Kasetsart University			
