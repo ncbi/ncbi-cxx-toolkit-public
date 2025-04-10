@@ -1540,7 +1540,7 @@ static void IsTSAAccPrefix(const Parser& parseInfo, string_view acc, IndexblkPtr
         return;
     }
 
-    if (acc[0] == 'U' && acc[1] == '\0' &&
+    if (acc == "U"sv &&
         (parseInfo.all || parseInfo.source == Parser::ESource::NCBI)) {
         ibp->tsa_allowed = true;
         return;
@@ -1595,7 +1595,8 @@ static void IsTLSAccPrefix(const Parser& parseInfo, string_view acc, IndexblkPtr
             ibp->is_tls = true;
 }
 
-static inline bool sIsAccPrefixChar(char c)  {
+static inline bool sIsAccPrefixChar(char c)
+{
     return (c >= 'A' && c <= 'Z');
 }
 
