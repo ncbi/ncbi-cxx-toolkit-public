@@ -567,7 +567,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     if (after_REFER == false && pp->source != Parser::ESource::Flybase &&
                         entry->is_wgs == false &&
                         (pp->source != Parser::ESource::Refseq ||
-                         ! StringEquN(entry->acnum, "NW_", 3))) {
+                         ! fta_StartsWith(entry->acnum, "NW_"sv))) {
                         entry->drop = gb_err_field("REFERENCE");
                     }
 

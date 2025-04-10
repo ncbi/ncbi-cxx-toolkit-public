@@ -5093,7 +5093,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     r = nullptr;
     c = '\0';
     if (! ibp->moltype.empty()) {
-        if (pp->source == Parser::ESource::DDBJ && molstr && StringEquNI(molstr, "PRT", 3))
+        if (pp->source == Parser::ESource::DDBJ && molstr && fta_StartsWithNocase(molstr, "PRT"sv))
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;
@@ -5370,9 +5370,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (genomic < 0 || genomic > 20) {
-        if (pp->source == Parser::ESource::EMBL && molstr && StringEquNI(molstr, "XXX", 3))
+        if (pp->source == Parser::ESource::EMBL && molstr && fta_StartsWithNocase(molstr, "XXX"sv))
             return;
-        if (pp->source == Parser::ESource::DDBJ && molstr && StringEquNI(molstr, "PRT", 3))
+        if (pp->source == Parser::ESource::DDBJ && molstr && fta_StartsWithNocase(molstr, "PRT"sv))
             return;
         ibp->drop = true;
         q         = molstr;
@@ -5478,7 +5478,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     if (pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL) {
         biomol = Seq_descr_GIBB_mol_genomic;
-        if (! div || ! StringEquN(div, "VRL", 3)) {
+        if (! div || ! fta_StartsWith(div, "VRL"sv)) {
             FtaErrPost(SEV_ERROR, ERR_LOCUS_NonViralRNAMoltype, "Genomic RNA implied by presence of RNA moltype, but sequence is non-viral.");
         }
         return;
@@ -5510,7 +5510,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     /* Non-viral division
      */
-    if (! div || ! StringEquN(div, "VRL", 3)) {
+    if (! div || ! fta_StartsWith(div, "VRL"sv)) {
         biomol = Seq_descr_GIBB_mol_mRNA;
 
         if (count > 1) {
@@ -5525,7 +5525,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 if (StringEquN(p, "DE   ", 5))
                     p += 5;
             }
-            if (StringEquNI(p, "Synthetase", 10))
+            if (fta_StartsWithNocase(p, "Synthetase"sv))
                 return;
         }
 
@@ -5553,7 +5553,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (! subdbp.mBuf.ptr)
             continue;
         offset = subdbp.mBuf.ptr + ParFlat_COL_FEATKEY;
-        if (StringEquN(offset, "CDS", 3))
+        if (fta_StartsWith(offset, "CDS"sv))
             i++;
     }
     if (i > 1) {

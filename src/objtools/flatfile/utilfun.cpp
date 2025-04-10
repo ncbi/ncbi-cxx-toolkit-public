@@ -852,10 +852,8 @@ bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool
             return true;
     }
 
-    auto keywordCount = keywordList.size();
-    for (unsigned i = 0; i < keywordCount; i++) {
-        auto keyword = keywordList[i];
-        if (StringEquN(ptr, keyword.c_str(), keyword.size()))
+    for (const auto& keyword : keywordList) {
+        if (fta_StartsWith(ptr, keyword))
             return true;
     }
 

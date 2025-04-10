@@ -183,7 +183,7 @@ static int add_entry(ParserPtr pp, const char* acc, Int2 vernum, const DataBlk& 
 
     if (pp->format == Parser::EFormat::GenBank) {
         char* q = entry.mBuf.ptr;
-        if (q && entry.mBuf.len != 0 && StringEquN(q, "LOCUS ", 6)) {
+        if (q && entry.mBuf.len != 0 && fta_StartsWith(q, "LOCUS "sv)) {
             char* p = StringChr(q, '\n');
             if (p)
                 *p = '\0';

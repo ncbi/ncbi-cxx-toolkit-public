@@ -584,7 +584,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
         else if (StringEquN(p, "transcribed ", 12))
             p += 12;
 
-        if (! StringEquN(p, "RNA", 3)) {
+        if (! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_ERROR, ERR_DIVISION_HTCWrongMolType, "All HTC division records should have a moltype of pre-RNA, mRNA or RNA.");
             return ret;
         }
@@ -711,13 +711,13 @@ static CRef<CMolInfo> GetGenBankMolInfo(ParserPtr pp, const DataBlk& entry, cons
 
     bptr = GBDivOffset(entry, ibp->lc.div);
 
-    if (StringEquN(bptr, "EST", 3))
+    if (fta_StartsWith(bptr, "EST"sv))
         mol_info->SetTech(CMolInfo::eTech_est);
-    else if (StringEquN(bptr, "STS", 3))
+    else if (fta_StartsWith(bptr, "STS"sv))
         mol_info->SetTech(CMolInfo::eTech_sts);
-    else if (StringEquN(bptr, "GSS", 3))
+    else if (fta_StartsWith(bptr, "GSS"sv))
         mol_info->SetTech(CMolInfo::eTech_survey);
-    else if (StringEquN(bptr, "HTG", 3))
+    else if (fta_StartsWith(bptr, "HTG"sv))
         mol_info->SetTech(CMolInfo::eTech_htgs_1);
     else if (ibp->is_wgs) {
         if (ibp->is_tsa)
@@ -957,11 +957,11 @@ static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
             p++;
         if (*p == '\0' || p == r)
             break;
-        if (StringEquN(r, "Related", 7))
+        if (fta_StartsWith(r, "Related"sv))
             fta_get_user_field(p, "Related", *user_obj);
-        else if (StringEquN(r, "Assembly", 8))
+        else if (fta_StartsWith(r, "Assembly"sv))
             fta_get_user_field(p, "Assembly", *user_obj);
-        else if (StringEquN(r, "Comment", 7))
+        else if (fta_StartsWith(r, "Comment"sv))
             fta_get_str_user_field(p, "Comment", *user_obj);
         else
             continue;
@@ -1194,7 +1194,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (pp->taxserver == 1 && gbbp->IsSetDiv())
         fta_fix_orgref_div(bioseq.GetAnnot(), org_ref, *gbbp);
 
-    if (StringEquNI(ibp->division, "CON", 3))
+    if (fta_StartsWithNocase(ibp->division, "CON"sv))
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, false, ibp->acnum);
@@ -1384,7 +1384,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
 
     AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, mParser.source);
 
-    ibp->is_prot = StringEquN(pEntry->mBuf.ptr + ibp->lc.bp, "aa", 2);
+    ibp->is_prot = fta_StartsWith(pEntry->mBuf.ptr + ibp->lc.bp, "aa"sv);
 
     unsigned char* const conv = ibp->is_prot ? GetProtConvTable() : GetDNAConvTable();
 
@@ -1488,7 +1488,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         if (mParser.source == Parser::ESource::Flybase) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
         } else if (mParser.source == Parser::ESource::Refseq &&
-                   StringEquN(ibp->acnum, "NW_", 3)) {
+                   fta_StartsWith(ibp->acnum, "NW_"sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
         } else if (ibp->is_wgs) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for WGS entry. Continue anyway.");

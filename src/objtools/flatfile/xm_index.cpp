@@ -802,7 +802,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
     if (got_reference == false && pp->source != Parser::ESource::Flybase &&
         ibp->is_wgs == false &&
         (pp->source != Parser::ESource::Refseq ||
-         ! StringEquN(ibp->acnum, "NW_", 3)))
+         ! fta_StartsWith(ibp->acnum, "NW_"sv)))
         ret = XMLErrField(INSDSEQ_REFERENCES);
     if (got_primary && ibp->is_tpa == false && ibp->tsa_allowed == false) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type {} is allowed for TPA or TSA records only. Continue anyway.", XMLStringByTag(xmkwl, INSDSEQ_PRIMARY));

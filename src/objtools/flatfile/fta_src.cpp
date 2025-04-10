@@ -687,7 +687,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 str_to_find.assign(val_ptr);
 
             for (i = 0, b = source_genomes; *b; b++, i++)
-                if (StringEquNI(str_to_find.c_str(), *b, StringLen(*b)))
+                if (fta_StartsWithNocase(str_to_find.c_str(), *b))
                     break;
             if (*b && i != 8) {
                 if (genomename)
@@ -2635,7 +2635,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                 empty = false;
                 if (! q || *q == '\0')
                     empty = true;
-                else if (StringEquN(p, "fwd_name", 8)) {
+                else if (fta_StartsWith(p, "fwd_name"sv)) {
                     if (prev == 1)
                         prev = -2;
                     else if (prev > 2 && prev < 5)
@@ -2652,7 +2652,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         }
                         prev = 1;
                     }
-                } else if (StringEquN(p, "fwd_seq", 7)) {
+                } else if (fta_StartsWith(p, "fwd_seq"sv)) {
                     if (prev > 2 && prev < 5)
                         prev = -1;
                     else {
@@ -2677,7 +2677,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                         }
                         prev = 2;
                     }
-                } else if (StringEquN(p, "rev_name", 8)) {
+                } else if (fta_StartsWith(p, "rev_name"sv)) {
                     if (prev == 3 || prev == 1)
                         prev = -2;
                     else {

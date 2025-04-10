@@ -306,7 +306,7 @@ char* GetGenBankBlock(TDataBlkList& chain, char* ptr, Int2* retkw, char* eptr)
                                             treat as same line */
             nextkw = curkw;
 
-        if (StringEquN(ptr, "REFERENCE", 9)) /* treat as one block */
+        if (fta_StartsWith(ptr, "REFERENCE"sv)) /* treat as one block */
             break;
     } while (nextkw == curkw);
 
@@ -399,7 +399,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
             bptr++;
 
             skip = false;
-            if (! StringEquN(bptr, "XX", 2))
+            if (! fta_StartsWith(bptr, "XX"sv))
                 ptr = bptr + ParFlat_COL_FEATKEY;
             else
                 skip = true;
@@ -408,21 +408,18 @@ static void BuildFeatureBlock(DataBlk& dbp)
 }
 
 /**********************************************************/
-static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char* ptag)
+static void fta_check_mult_ids(const DataBlk& dbp, string_view mtag, string_view ptag)
 {
     char* p;
     Char  ch;
     Int4  muids;
     Int4  pmids;
 
-    if (! dbp.mBuf.ptr || (! mtag && ! ptag))
+    if (! dbp.mBuf.ptr || (mtag.empty() && ptag.empty()))
         return;
 
     ch                    = dbp.mBuf.ptr[dbp.mBuf.len];
     dbp.mBuf.ptr[dbp.mBuf.len] = '\0';
-
-    size_t mlen = mtag ? StringLen(mtag) : 0;
-    size_t plen = ptag ? StringLen(ptag) : 0;
 
     muids = 0;
     pmids = 0;
@@ -430,9 +427,9 @@ static void fta_check_mult_ids(const DataBlk& dbp, const char* mtag, const char*
         p = StringChr(p, '\n');
         if (! p)
             break;
-        if (mtag && StringEquN(p + 1, mtag, mlen))
+        if (! mtag.empty() && fta_StartsWith(p + 1, mtag))
             muids++;
-        else if (ptag && StringEquN(p + 1, ptag, plen))
+        else if (! ptag.empty() && fta_StartsWith(p + 1, ptag))
             pmids++;
     }
     dbp.mBuf.ptr[dbp.mBuf.len] = ch;
@@ -1128,7 +1125,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||
-            StringEquN(bptr, "XX", 2))
+            fta_StartsWith(bptr, "XX"sv))
             continue;
 
         if (! within) {
@@ -1163,7 +1160,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
         str += size;
         if (is_pat && size > 4 &&
             q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
-            StringEquN(q + 2, "   ", 3))
+            fta_StartsWith(q + 2, "   "sv))
             *str++ = '~';
         else if (size < 50 || within)
             *str++ = '~';
@@ -1860,7 +1857,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
     if (div.empty())
         return false;
 
-    if (pat_acc || pat_ref || StringEqu(div.c_str(), "PAT")) {
+    if (pat_acc || pat_ref || div == "PAT") {
         if (pat_ref == false) {
             FtaErrPost(SEV_REJECT, ERR_DIVISION_MissingPatentRef, "Record in the patent division lacks a reference to a patent document. Entry dropped.");
             drop = true;
@@ -1877,7 +1874,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
         if (if_cds && source != Parser::ESource::EMBL) {
             FtaErrPost(SEV_INFO, ERR_DIVISION_PATHasCDSFeature, "CDS features present on patent sequence.");
         }
-        if (! StringEqu(div.c_str(), "PAT")) {
+        if (div != "PAT") {
             if (pat_acc)
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_ShouldBePAT, "Based on the accession number prefix letters, this is a patent sequence, but the division code is not PAT.");
 
@@ -1886,7 +1883,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
         }
     } else if (est_kwd) {
         if (if_cds) {
-            if (StringEqu(div.c_str(), "EST")) {
+            if (div == "EST") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_ESTHasCDSFeature, "Coding region features exist and division is EST; EST might not be appropriate.");
             } else {
                 FtaErrPost(SEV_INFO, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the presence of CDS features.");
@@ -1894,7 +1891,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
-            if (StringEqu(div.c_str(), "EST")) {
+            if (div == "EST") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_LongESTSequence, "Division code is EST, but the length of the sequence is {}.", bases);
             } else {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoEST, "EST keywords exist, but this entry was not mapped to the EST division because of the sequence length {}.", bases);
@@ -1902,12 +1899,12 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
-            if (! StringEqu(div.c_str(), "EST"))
+            if (div != "EST")
                 FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoEST, "{} division mapped to EST.", div);
             *tech = CMolInfo::eTech_est;
             div.clear();
         }
-    } else if (StringEqu(div.c_str(), "EST")) {
+    } else if (div == "EST") {
         FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingESTKeywords, "Division is EST, but entry lacks EST-related keywords.");
         if (sts_kwd) {
             FtaErrPost(SEV_WARNING, ERR_DIVISION_ESTHasSTSKeywords, "STS keywords present on EST sequence.");
@@ -1917,7 +1914,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
         }
     } else if (sts_kwd) {
         if (if_cds) {
-            if (StringEqu(div.c_str(), "STS")) {
+            if (div == "STS") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
             } else {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the presence of CDS features.");
@@ -1925,7 +1922,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 1000) {
-            if (StringEqu(div.c_str(), "STS")) {
+            if (div == "STS") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_LongSTSSequence, "Division code is STS, but the length of the sequence is {}.", bases);
             } else {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoSTS, "STS keywords exist, but this entry was not mapped to the STS division because of the sequence length {}.", bases);
@@ -1933,19 +1930,19 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
-            if (! StringEqu(div.c_str(), "STS"))
+            if (div != "STS")
                 FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoSTS, "{} division mapped to STS.", div);
             *tech = CMolInfo::eTech_sts;
             div.clear();
         }
-    } else if (StringEqu(div.c_str(), "STS")) {
+    } else if (div == "STS") {
         FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingSTSKeywords, "Division is STS, but entry lacks STS-related keywords.");
         if (if_cds) {
             FtaErrPost(SEV_WARNING, ERR_DIVISION_STSHasCDSFeature, "Coding region features exist and division is STS; STS might not be appropriate.");
         }
     } else if (gss_kwd) {
         if (if_cds) {
-            if (StringEqu(div.c_str(), "GSS")) {
+            if (div == "GSS") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
             } else {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the presence of CDS features.");
@@ -1953,7 +1950,7 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else if (bases > 2500) {
-            if (StringEqu(div.c_str(), "GSS")) {
+            if (div == "GSS") {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_LongGSSSequence, "Division code is GSS, but the length of the sequence is {}.", bases);
             } else {
                 FtaErrPost(SEV_WARNING, ERR_DIVISION_NotMappedtoGSS, "GSS keywords exist, but this entry was not mapped to the GSS division because of the sequence length {}.", bases);
@@ -1961,17 +1958,17 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
                     *tech = CMolInfo::eTech_unknown;
             }
         } else {
-            if (! StringEqu(div.c_str(), "GSS"))
+            if (div != "GSS")
                 FtaErrPost(SEV_INFO, ERR_DIVISION_MappedtoGSS, "{} division mapped to GSS.", div);
             *tech = CMolInfo::eTech_survey;
             div.clear();
         }
-    } else if (StringEqu(div.c_str(), "GSS")) {
+    } else if (div == "GSS") {
         FtaErrPost(SEV_WARNING, ERR_DIVISION_MissingGSSKeywords, "Division is GSS, but entry lacks GSS-related keywords.");
         if (if_cds) {
             FtaErrPost(SEV_WARNING, ERR_DIVISION_GSSHasCDSFeature, "Coding region features exist and division is GSS; GSS might not be appropriate.");
         }
-    } else if (StringEqu(div.c_str(), "TSA")) {
+    } else if (div == "TSA") {
         *tech = CMolInfo::eTech_tsa;
         div.clear();
     }
@@ -2139,7 +2136,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     else {
         tmp = StringSave(string_view(dbp->mBuf.ptr, dbp->mBuf.len - 1));
         for (q = tmp; *q != '\0'; q++) {
-            if (*q == '\n' && StringEquN(q + 1, "DE   ", 5))
+            if (*q == '\n' && fta_StartsWith(q + 1, "DE   "sv))
                 fta_StringCpy(q, q + 5);
             else if (*q == '\n' || *q == '\t')
                 *q = ' ';
@@ -2631,7 +2628,7 @@ bool XMLCheckCDS(const char* entry, const TXmlIndexList& xil)
         auto fxip = txip->subtags.begin();
         for (; fxip != txip->subtags.end(); ++fxip)
             if (fxip->tag == INSDFEATURE_KEY && fxip->end - fxip->start == 3 &&
-                StringEquN(entry + fxip->start, "CDS", 3))
+                fta_StartsWith(entry + fxip->start, "CDS"sv))
                 break;
         if (fxip != txip->subtags.end())
             break;
