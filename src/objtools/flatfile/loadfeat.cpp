@@ -3924,7 +3924,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         CSeqFeatData::ESubtype subtype = CSeqFeatData::SubtypeNameToValue(fbp->key);
 
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key + "Feature dropped");
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key); // "Feature dropped"
             dbp.mDrop = true;
             retval     = GB_FEAT_ERR_DROP;
             continue;
@@ -4181,7 +4181,7 @@ static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Pa
                 keyindx = SpFeatKeyNameValid(fbp->key.c_str());
             }
             if (keyindx < 0 && ! deb) {
-                FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key + "Feature dropped");
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key); // "Feature dropped"
                 dbp.mDrop = true;
                 retval     = GB_FEAT_ERR_DROP;
                 continue;
