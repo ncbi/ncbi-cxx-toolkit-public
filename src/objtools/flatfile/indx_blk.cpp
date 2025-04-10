@@ -1145,7 +1145,7 @@ static int s_RefineWGSType(string_view accession, int initialType)
         }
     }
 
-    if (accession[0] == 'K' || accession[1] == 'T') { // TLS
+    if (accession[0] == 'K' || accession[0] == 'T') { // TLS
         switch (initialType) {
         case 0:
             return 10;
