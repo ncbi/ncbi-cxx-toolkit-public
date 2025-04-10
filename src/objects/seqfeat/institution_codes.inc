@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Sat Feb  8 05:33:08 EST 2025; formally
+/* time_t value corresponding to Thu Apr 10 05:33:06 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1739010788UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1744277586UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1214,6 +1214,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CET\ts\tCentro de Estudios Tropicales\t\t\t",
 "CETESB\tc\tSetor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Domesticos\t\t\t",
 "CEU\ts\tCollage of Eastern Utah\t\t\t",
+"CFAS\ts\tA Colecao de Fungos do Ambiente e Saude /The Environmental and Health Fungi Collection\t\t\t",
 "CFBH\ts\tCelio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista\t\t\t",
 "CFCC\tcb\tChina Forestry Culture Collection Center\t\t\t",
 "CFGR\ts\tCenter for Fungal Genetic Resources\t\t\t",
@@ -1914,6 +1915,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DMFS\ts\tCrichton Royal Institution Museum\t\t\t",
 "DMH\ts\tD.M. College of Science\t\t\t",
 "DMHN\ts\tThe University of Newcastle\t\t\t",
+"DMic\tc\tCulture colection of biomedical interest fungal\t\t\t",
 "DMIV\tc\tDepartment of Microbiology and Immunology\t\t\t",
 "DMKKU2\tc\tDepartment of Microbiology, Faculty of Medical Science\tDMKKU\t\t",
 "DMKU\tc\tDepartment of Microbiology Kasetsart University\t\t\t",
