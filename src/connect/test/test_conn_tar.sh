@@ -1,5 +1,7 @@
 #! /bin/sh
 
+TEST_TAR_FILE='/mmdb/RP_Entropy1.tar'
+
 . ./ncbi_test_data
 
 n="`ls -m $NCBI_TEST_DATA/proxy 2>/dev/null | wc -w`"
@@ -23,10 +25,10 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   huge_tar="$url"/"geo/download/?acc=GSE1580&format=file"
   ;;
   1)
-  huge_tar="ftp://ftp-ext.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
+  huge_tar="ftp://ftp-ext.ncbi.nlm.nih.gov$TEST_TAR_FILE"
   ;;
   2)
-  huge_tar="http://ftp-ext.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
+  huge_tar="http://ftp-ext.ncbi.nlm.nih.gov$TEST_TAR_FILE"
   ;;
 esac
 
