@@ -373,7 +373,7 @@ if (WIN32)
 
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
     if(NOT -UNICODE IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
-        add_compile_definitions(_UNICODE)
+        add_compile_definitions(_UNICODE UNICODE)
     endif()
     if(BUILD_SHARED_LIBS)
         add_compile_definitions(NCBI_DLL_BUILD)
