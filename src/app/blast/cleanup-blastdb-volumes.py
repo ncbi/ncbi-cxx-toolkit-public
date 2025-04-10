@@ -114,29 +114,29 @@ def main():
               file=sys.stderr)
         return 1
 
-    alias_file = "{}.{}al".format(db, ext)
+    alias_file = f"{db}.{ext}al"
     if not os.path.exists(alias_file):
         return 1
 
-    with open(alias_file, "rt") as al:
+    with open(alias_file) as al:
         for line in al:
             if not line.startswith("DBLIST"):
                 continue
             vols = list(map(lambda x: x.replace('"', ''), line.split()[1:]))
-            for existing_vols in sorted(glob("{}.*.{}in".format(db, ext))):
+            for existing_vols in sorted(glob(f"{db}.*.{ext}in")):
                 vol_name = os.path.basename(existing_vols)[:-4]
                 if vol_name in vols:
                     continue
                 if args.dry_run:
-                    print("Will remove extra volume {}".format(existing_vols[:-4]))
-                to_rm = glob("{}??".format(existing_vols[:-2]))
-                to_rm += glob("{}.tar.gz.md5".format(existing_vols[:-4]))
+                    print(f"Will remove extra volume {existing_vols[:-4]}")
+                to_rm = glob(f"{existing_vols[:-2]}??")
+                to_rm += glob(f"{existing_vols[:-4]}.tar.gz.md5")
                 for f in to_rm:
                     if not args.dry_run:
                         os.unlink(f)
-                        print("Removed {}".format(f))
+                        print(f"Removed {f}")
                     elif args.verbose > 0:
-                        print("Will remove {}".format(f))
+                        print(f"Will remove {f}")
 
     return 0
 
