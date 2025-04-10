@@ -312,9 +312,9 @@ if "%CMAKE_GENERATOR%"=="Visual Studio 17 2022" (
 ) else if "%CMAKE_GENERATOR%"=="Visual Studio 14 2015 Win64" (
   set generator_name=VS2015
 ) else if "%CMAKE_GENERATOR%"=="Ninja Multi-Config" (
-  set generator_name=VS%VISUAL_STUDIO%
+  set generator_name=NinjaMulti
 ) else (
-  set generator_name=VS%VISUAL_STUDIO%
+  set generator_name=%CMAKE_GENERATOR%
   set generator_multi_cfg=NO
   if "%BUILD_TYPE%"=="" (
     set BUILD_TYPE=Debug
