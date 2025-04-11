@@ -143,11 +143,11 @@ BOOST_AUTO_TEST_CASE(IdentifyWGSAccessions)
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("IBXK01007945"), 8); // TSA WGS DDBJ contig
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("HBXK01007945"), 9); // TSA WGS EMBL contig
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("KACF01000000"), 10); // TLS WGS project
-    BOOST_CHECK_EQUAL(fta_if_wgs_acc("ATCF01000000"), 10); // TLS WGS project
+    BOOST_CHECK_EQUAL(fta_if_wgs_acc("TACF01000000"), 10); // TLS WGS project
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("KACF01000001"), 11); // TLS WGS contig
-    BOOST_CHECK_EQUAL(fta_if_wgs_acc("ATCF01000001"), 11); // TLS WGS contig
+    BOOST_CHECK_EQUAL(fta_if_wgs_acc("TACF01000001"), 11); // TLS WGS contig
     BOOST_CHECK_EQUAL(fta_if_wgs_acc("KACF00000000"), 12); // TLS WGS master
-    BOOST_CHECK_EQUAL(fta_if_wgs_acc("ATCF00000000"), 12); // TLS WGS master
+    BOOST_CHECK_EQUAL(fta_if_wgs_acc("TACF00000000"), 12); // TLS WGS master
 }
 
 
