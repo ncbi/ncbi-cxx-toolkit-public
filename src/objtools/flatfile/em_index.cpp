@@ -351,7 +351,7 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     entry->drop = em_err_field("Sequence data");
             }
             if (! entry->drop && pp->accver) {
-                ParseEmblVersion(entry, line_sv ? line_sv->c_str() : nullptr);
+                ParseEmblVersion(entry, line_sv ? *line_sv : string_view());
             }
             line_sv.reset();
 
