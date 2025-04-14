@@ -6142,6 +6142,42 @@ void CNewCleanup_imp::x_ConvertGoQualifiers(CSeq_feat& sf)
     }
 }
 
+static bool s_FeatHasInferenceGBQual(CSeq_feat& sf)
+{
+    FOR_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
+        const CGb_qual& gbq = **gbq_it;
+        if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
+            // bail on all remaining GBQual cleanups if an inference is present
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool s_FeatHasFiveInferenceGBQuals(CSeq_feat& sf)
+{
+    int numInferenceQuals = 0;
+
+    FOR_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
+        const CGb_qual& gbq = **gbq_it;
+        if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
+            // bail on all remaining GBQual cleanups if an inference is present
+            numInferenceQuals++;
+            // return immediately once it reaches 5 or more inference qualifiers
+            if (numInferenceQuals >= 5) {
+            	return true;
+            }
+        }
+    }
+
+    if (numInferenceQuals >= 5) {
+        return true;
+    }
+
+    return false;
+}
+
 void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
 {
     if (m_HasInferenceQuals) {
@@ -6153,19 +6189,16 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     }
 
     if (m_Options & CCleanup::eClean_ForFlatfile) {
-        int num_inferences_on_feature = 0;
-        // check for presence of inference qualifier
-        FOR_EACH_GBQUAL_ON_SEQFEAT(gbq_it, sf) {
-            const CGb_qual& gbq = **gbq_it;
-            if (gbq.IsSetQual() && NStr::EqualNocase(gbq.GetQual(), "inference")) {
-                // was - bail on all remaining GBQual cleanups if an inference is present
-                // m_HasInferenceQuals = true;
-                // now just return from the qualifier list for this feature if there are more than 50 inferences
-                num_inferences_on_feature++;
-                if (num_inferences_on_feature >= 50) {
-                    return;
-                }
-            }
+        // in flatfile -html mode
+        if (s_FeatHasInferenceGBQual(sf)) {
+            // skip remaining GBQual cleanup steps if any inference is present
+            return;
+        }
+    } else {
+        // normal flatfile or other cleanup
+        if (s_FeatHasFiveInferenceGBQuals(sf)) {
+            // skip remaining GBQual cleanup steps if multiple inference qualifiers
+            return;
         }
     }
 
