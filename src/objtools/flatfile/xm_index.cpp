@@ -184,11 +184,12 @@ static string XMLRestoreSpecialCharacters(string_view s)
 /**********************************************************/
 unique_ptr<string> XMLGetTagValue(const char* entry, const XmlIndex& xip)
 {
-    if (! entry || xip.start == 0 || xip.end == 0 || xip.start >= xip.end)
+    if (! entry || xip.start == 0 || xip.end == 0 || xip.start > xip.end)
         return {};
+    if (xip.start == xip.end)
+        return make_unique<string>();
 
     string_view buf(entry + xip.start, xip.end - xip.start);
-
     return make_unique<string>(XMLRestoreSpecialCharacters(buf));
 }
 
