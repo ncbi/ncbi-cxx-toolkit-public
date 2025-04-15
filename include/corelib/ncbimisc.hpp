@@ -1453,8 +1453,8 @@ private:
 /// Template helpers for unique_ptr to work with resource allocating/deallocating C functions.
 /// @{
 /// Eliminates the necessity for specifying type of deallocating C function.
-template <class T>
-using c_unique_ptr = unique_ptr<T, void(*)(T*)>;
+template <class T, class U = conditional_t<is_pointer_v<T>, remove_pointer_t<T>, T>>
+using c_unique_ptr = unique_ptr<U, void(*)(U*)>;
 
 /// Eliminates the necessity for specifying types of both allocated resource and deallocating C function.
 template <class T, typename TDeleter>
