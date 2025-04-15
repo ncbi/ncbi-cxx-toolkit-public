@@ -177,8 +177,8 @@ public:
   void BasicCleanupSeqdesc(CSeqdesc & arg0) { x_BasicCleanupBioseq_descr_descr_E(arg0); }
 
 private:
-  void x_BasicCleanupDate(CDate& date);
-  void x_BasicCleanupSeqId(CSeq_id &id);
+  bool x_BasicCleanupDate(CDate& date);
+  bool x_BasicCleanupSeqId(CSeq_id &id);
   void x_BasicCleanupSeqPoint(CSeq_point & seq_point);
   void x_BasicCleanupSeqBond(CSeq_bond & seq_bond);
   void x_BasicCleanupSeqLocEquiv( CSeq_loc_equiv & arg0 );
@@ -192,7 +192,7 @@ private:
   template<typename TSeqLocContainer>
   void x_BasicCleanupSeqLocs(TSeqLocContainer& locs);
   template<typename TSeqIdContainer>
-  void x_BasicCleanupSeqIds(TSeqIdContainer& ids);
+  bool x_BasicCleanupSeqIds(TSeqIdContainer& ids);
   void x_BasicCleanupDenseDiag( CDense_diag & arg0 );
   template<typename TDenseDiagContainer>
   void x_BasicCleanupDenseDiags(TDenseDiagContainer& dense_diags);

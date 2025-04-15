@@ -553,13 +553,15 @@ void CNewCleanup_imp::x_RemoveSpacesBetweenTildesMarkChanged( std::string & str 
     }
 }
 
-void CNewCleanup_imp::x_TruncateSpacesMarkChanged( std::string & str )
+bool CNewCleanup_imp::x_TruncateSpacesMarkChanged(string & str)
 {
     const size_t old_str_size = str.length();
     NStr::TruncateSpacesInPlace(str);
     if( old_str_size != str.length() ) {
         ChangeMade(CCleanupChange::eTrimSpaces);
+        return true;
     }
+    return false;
 }
 
 void CNewCleanup_imp::x_TrimInternalSemicolonsMarkChanged( std::string & str )
@@ -784,20 +786,51 @@ void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
 }
 
 
-void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
+// JIRA: RW-2482 Clean up seq-ids on Bioseq
+bool CNewCleanup_imp::BasicCleanupSeqIds(CBioseq_Handle bsh)
 {
-    // try to find CObject_id in Seq-id for certain types
-    CRef<CObject_id> pObjectId;
-    if( seq_id.IsLocal() ) {
-        pObjectId.Reset( & GET_MUTABLE(seq_id, Local) );
+    if (! bsh.IsSetId()) {
+        return false;
     }
 
-    // currently, we only process the Str ones
-    if( ! pObjectId || ! FIELD_IS(*pObjectId, Str) ) {
-        return;
+    list<pair<CSeq_id_Handle, CRef<CSeq_id>>> replacement_list{};
+    for (auto idHandle : bsh.GetId()) {
+        auto pId = idHandle.GetSeqId();
+        if (! (pId->IsLocal() && pId->GetLocal().IsStr()) &&
+            ! (pId->IsPdb() && pId->GetPdb().IsSetRel())) {
+            continue; // Uses our knowledge of SeqIdBC to optimize. Update if SeqIdBC changes.
+        }
+        auto pNewId = Ref(new CSeq_id());
+        pNewId->Assign(*pId);
+        if (SeqIdBC(*pNewId)) {
+            replacement_list.push_back(make_pair(idHandle, pNewId));
+        }
+    }
+    if (replacement_list.empty()) {
+        return false; // No change made
     }
 
-    x_TruncateSpacesMarkChanged( GET_MUTABLE(*pObjectId, Str) );
+    // Update bioseq/OM
+    auto editHandle = bsh.GetEditHandle();
+    for (auto replacement : replacement_list) {
+        editHandle.RemoveId(replacement.first);
+        editHandle.AddId(CSeq_id_Handle::GetHandle(*(replacement.second)));
+    }
+    return true; // Change made
+}
+
+
+bool CNewCleanup_imp::SeqIdBC(CSeq_id& seq_id)
+{
+    // Only cleanup local strings
+    if (seq_id.IsLocal() && seq_id.GetLocal().IsStr()) {
+        return x_TruncateSpacesMarkChanged(seq_id.SetLocal().SetStr());
+    } else if (seq_id.IsPdb() && seq_id.GetPdb().IsSetRel()) {
+        if (auto& rel = seq_id.SetPdb().SetRel(); rel.IsStd()) {
+          return DateStdBC(rel.SetStd());
+        }
+    }
+    return false;
 }
 
 // change the target string by searching for the given search_pattern
@@ -4614,23 +4647,27 @@ void CNewCleanup_imp::x_FlattenPubEquiv(CPub_equiv& pub_equiv)
 #endif
 
 
-void CNewCleanup_imp::x_DateStdBC( CDate_std& date )
+bool CNewCleanup_imp::DateStdBC(CDate_std& date)
 {
-    if ( FIELD_OUT_OF_RANGE(date, Month, 1, 12) ) {
-        RESET_FIELD(date, Month);
+    bool changed{ false };
+    if (FIELD_OUT_OF_RANGE(date, Month, 1, 12)) {
+        date.ResetMonth();
         ChangeMade(CCleanupChange::eCleanupDate);
+        changed = true;
     }
 
     // Maybe we should have the max range set on a per-month basis? (e.g. 30 days for April).
     // ( This could get complex with leap years and such. )
-    if ( FIELD_OUT_OF_RANGE(date, Day, 1, 31) ) {
-        RESET_FIELD(date, Day);
+    if (FIELD_OUT_OF_RANGE(date, Day, 1, 31)) {
+        date.ResetDay();
         ChangeMade(CCleanupChange::eCleanupDate);
+        changed = true;
     }
 
-    if ( FIELD_OUT_OF_RANGE(date, Second, 0, 59) ) {
-        RESET_FIELD(date, Second);
+    if (FIELD_OUT_OF_RANGE(date, Second, 0, 59)) {
+        date.ResetSecond();
         ChangeMade(CCleanupChange::eCleanupDate);
+        changed = true;
     }
 
     if (date.IsSetMinute()) {
@@ -4638,10 +4675,12 @@ void CNewCleanup_imp::x_DateStdBC( CDate_std& date )
             date.ResetMinute();
             date.ResetSecond();
             ChangeMade(CCleanupChange::eCleanupDate);
+            changed = true;
         }
     } else if (date.IsSetSecond()) {
         date.ResetSecond();
         ChangeMade(CCleanupChange::eCleanupDate);
+        changed = true;
     }
 
     if (date.IsSetHour()) {
@@ -4650,13 +4689,16 @@ void CNewCleanup_imp::x_DateStdBC( CDate_std& date )
             date.ResetMinute();
             date.ResetSecond();
             ChangeMade(CCleanupChange::eCleanupDate);
+            changed = true;
         }
     } else if (date.IsSetMinute() || date.IsSetSecond()) {
         date.ResetMinute();
         date.ResetSecond();
         ChangeMade(CCleanupChange::eCleanupDate);
+        changed = true;
     }
 
+    return changed;
 }
 
 
