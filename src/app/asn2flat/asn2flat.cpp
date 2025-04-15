@@ -805,8 +805,11 @@ bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
         return false;
     }
 
-    if (m_do_cleanup && ! m_do_html) {
-        Uint4 options = CCleanup::eClean_ForFlatfile;
+    if (m_do_cleanup) {
+        Uint4 options = CCleanup::eClean_FlatfileGenerator;
+        if ( m_do_html) {
+            options |= CCleanup::eClean_FlatfileHTMLMode;
+        }
         context.m_cleanup.BasicCleanup(sub, options);
     }
     // NB: though the spec specifies a submission may contain multiple entries
@@ -881,14 +884,7 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
 {
     //const CArgs& args = GetArgs();
 
-    bool doConditionalCleanup = m_do_cleanup;
     if (m_do_cleanup) {
-        if (m_do_html && CFlatFileGenerator::HasInference(seh)) {
-            doConditionalCleanup = false;
-        }
-    }
-
-    if (doConditionalCleanup) {
         CSeq_entry_EditHandle  tseh = seh.GetTopLevelEntry().GetEditHandle();
         CBioseq_set_EditHandle bseth;
         CBioseq_EditHandle     bseqh;
@@ -905,7 +901,10 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
             tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
         }
 
-        Uint4 options = CCleanup::eClean_ForFlatfile;
+        Uint4 options = CCleanup::eClean_FlatfileGenerator;
+        if ( m_do_html) {
+            options |= CCleanup::eClean_FlatfileHTMLMode;
+        }
         context.m_cleanup.BasicCleanup(*tmp_se, options);
 
         if (tmp_se->IsSet()) {

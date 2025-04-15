@@ -274,7 +274,7 @@ void CFlatFileGenerator::Generate(
         doFastSets = true;
     }
 
-    if ( cfg.BasicCleanup() && ! HasInference(entry) )
+    if ( cfg.BasicCleanup() /* && ! HasInference(entry) */ )
     {
         if (showDebugTiming) {
             sw.Start();
@@ -300,7 +300,10 @@ void CFlatFileGenerator::Generate(
         }
 
         CCleanup cleanup;
-        Uint4 options = CCleanup::eClean_ForFlatfile;
+        Uint4 options = CCleanup::eClean_FlatfileGenerator;
+        if (cfg.DoHTML()) {
+            options |= CCleanup::eClean_FlatfileHTMLMode;
+        }
         cleanup.BasicCleanup( *tmp_se, options );
 
         if ( tmp_se->IsSet() ) {
