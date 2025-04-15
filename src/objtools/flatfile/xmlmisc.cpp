@@ -575,8 +575,8 @@ static int VisitXmlNodeProc(
     if (StringDoesHaveText(attrTagFilter)) {
         okay = false;
         for (attr = xop->attributes; attr; attr = attr->next) {
-            if (NStr::CompareNocase(attr->name, attrTagFilter) == 0) {
-                if (StringHasNoText(attrValFilter) || NStr::CompareNocase(attr->contents, attrValFilter) == 0) {
+            if (NStr::EqualNocase(attr->name, attrTagFilter)) {
+                if (StringHasNoText(attrValFilter) || NStr::EqualNocase(attr->contents, attrValFilter)) {
                     okay = true;
                     break;
                 }
@@ -585,7 +585,7 @@ static int VisitXmlNodeProc(
     } else if (StringDoesHaveText(attrValFilter)) {
         okay = false;
         for (attr = xop->attributes; attr; attr = attr->next) {
-            if (NStr::CompareNocase(attr->contents, attrValFilter) == 0) {
+            if (NStr::EqualNocase(attr->contents, attrValFilter)) {
                 okay = true;
                 break;
             }
@@ -594,14 +594,14 @@ static int VisitXmlNodeProc(
 
     /* check node name filter */
     if (StringDoesHaveText(nodeFilter)) {
-        if (NStr::CompareNocase(xop->name, nodeFilter) != 0) {
+        if (! NStr::EqualNocase(xop->name, nodeFilter)) {
             okay = false;
         }
     }
 
     /* check parent name filter */
     if (StringDoesHaveText(parentFilter)) {
-        if (parent && NStr::CompareNocase(parent->name, parentFilter) != 0) {
+        if (parent && ! NStr::EqualNocase(parent->name, parentFilter)) {
             okay = false;
         }
     }

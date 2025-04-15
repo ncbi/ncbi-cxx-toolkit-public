@@ -1409,9 +1409,9 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
         if (key.empty())
             continue;
 
-        if (NStr::CompareNocase(key.c_str(), "TPA") == 0)
+        if (NStr::EqualNocase(key, "TPA"sv))
             key = "TPA";
-        else if (StringEquNI(key.c_str(), "TPA:", 4)) {
+        else if (NStr::StartsWith(key, "TPA:"sv, NStr::eNocase)) {
             string buf("TPA:");
 
             for (p = key.c_str() + 4; *p == ' ' || *p == '\t';)
@@ -2066,16 +2066,16 @@ static void CheckDivCode(TEntryList& seq_entries, ParserPtr pp)
                 IndexblkPtr ibp = pp->entrylist[pp->curindx];
 
                 if (tech == CMolInfo::eTech_tsa &&
-                    ! NStr::CompareNocase(ibp->division, "TSA"))
+                    NStr::EqualNocase(ibp->division, "TSA"))
                     continue;
 
                 if (! gb_block->IsSetDiv() && (!ispat ||
-                   NStr::CompareCase(ibp->division, "PAT")) ) {
+                   ! NStr::EqualCase(ibp->division, "PAT")) ) {
                     FtaErrPost(SEV_WARNING, ERR_DIVISION_GBBlockDivision, "input division code is preserved in GBBlock");
                     gb_block->SetDiv(ibp->division);
                 }
                 else if(gb_block->IsSetDiv() && ispat &&
-                        !NStr::CompareCase(gb_block->GetDiv(), "PAT"))
+                        NStr::EqualCase(gb_block->GetDiv(), "PAT"))
                 {
                     gb_block->ResetDiv();
                 }
@@ -2349,7 +2349,7 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         }
 
         CGB_block& gb_block = (*descr)->SetGenbank();
-        if (div && gb_block.IsSetDiv() && NStr::CompareNocase(div, gb_block.GetDiv().c_str()) == 0)
+        if (div && gb_block.IsSetDiv() && NStr::EqualNocase(div, gb_block.GetDiv()))
             gb_block.ResetDiv();
 
         if (gb_block.IsSetSource()) {

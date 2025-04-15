@@ -476,7 +476,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
                 continue;
             StringNCpy(ibp->division, entry + xip.start, 3);
             ibp->division[3] = '\0';
-            if (NStr::CompareNocase(ibp->division, "EST") == 0)
+            if (NStr::EqualNocase(ibp->division, "EST"))
                 ibp->EST = true;
             else if (StringEqu(ibp->division, "STS"))
                 ibp->STS = true;
@@ -486,7 +486,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
                 ibp->HTC = true;
         } else if (xip.tag == INSDSEQ_MOLTYPE && ibp->is_prot == false) {
             auto buf = XMLGetTagValue(entry, xip);
-            if (buf && NStr::CompareNocase(*buf, "AA") == 0)
+            if (buf && NStr::EqualNocase(*buf, "AA"))
                 ibp->is_prot = true;
         }
         if (ibp->bases > 0 && ibp->date && ibp->division[0] != '?')

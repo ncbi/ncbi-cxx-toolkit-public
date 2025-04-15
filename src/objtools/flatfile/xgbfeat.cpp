@@ -108,7 +108,7 @@ static Int2 GBQualSplit(const Char* qual)
     Int2 i;
 
     for (i = 0; i < ParFlat_SPLIT_IGNORE && qual; i++) {
-        if (NStr::CompareNocase(qual, GBQual_names_split_ignore[i]) == 0)
+        if (NStr::EqualNocase(qual, GBQual_names_split_ignore[i]))
             return (i);
     }
 

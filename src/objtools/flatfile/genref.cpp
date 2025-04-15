@@ -2327,7 +2327,7 @@ static bool LocusTagCheck(GeneListPtr glp, bool& resort)
         }
 
         if (! glpstart->locus.empty() && ! glpstart->locus_tag.empty() &&
-            NStr::EqualCase(glpstart->locus.c_str(), glpstart->locus_tag.c_str())) {
+            glpstart->locus == glpstart->locus_tag) {
             for (glp = glpstart;; glp = glp->next) {
                 glp->locus.clear();
                 resort = true;

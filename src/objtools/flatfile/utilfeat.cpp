@@ -409,9 +409,9 @@ static void CheckDelGbblockSourceFromDescrs(TSeqdescList& descrs, const vector<s
         const string& first_name  = names[0];
         const string& second_name = names[1];
 
-        if (NStr::CompareNocase(p, first_name.c_str()) == 0 || (pper && NStr::CompareNocase(pper, first_name.c_str()) == 0)) {
+        if (NStr::EqualNocase(p, first_name) || (pper && NStr::EqualNocase(pper, first_name))) {
             gb_block.ResetSource();
-        } else if (NStr::CompareNocase(p, second_name.c_str()) == 0 || (pper && NStr::CompareNocase(pper, second_name.c_str()) == 0)) {
+        } else if (NStr::EqualNocase(p, second_name) || (pper && NStr::EqualNocase(pper, second_name))) {
             gb_block.ResetSource();
         }
 

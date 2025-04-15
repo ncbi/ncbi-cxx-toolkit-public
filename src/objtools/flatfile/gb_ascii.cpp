@@ -102,7 +102,7 @@ static char* GBDivOffset(const DataBlk& entry, Int4 div_shift)
 /**********************************************************/
 static void CheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
 {
-    bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
+    bool condiv = NStr::EqualNocase(ibp->division, "CON");
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false &&
         ibp->is_mga == false) {
