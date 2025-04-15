@@ -1,0 +1,10 @@
+# $Id$
+
+NCBI_begin_lib(xconnsftp SHARED)
+  NCBI_sources(ncbi_sftp)
+  NCBI_add_definitions(NCBI_XCONNSFTP_EXPORTS)
+  NCBI_uses_toolkit_libraries(xncbi)
+  NCBI_requires(SSH)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_lib()
+

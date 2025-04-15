@@ -22,5 +22,6 @@ NCBI_add_app(
   test_server_listeners test_ncbi_ipv6 test_ncbi_iprange
   test_ncbi_service_cxx_mt test_ncbi_http_stream
   test_ncbi_http_session test_ncbi_http2_session test_ncbi_blowfish
+  test_ncbi_sftp
 )
 
