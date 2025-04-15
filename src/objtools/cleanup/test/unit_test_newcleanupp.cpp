@@ -194,3 +194,57 @@ BOOST_AUTO_TEST_CASE(Test_ProtSeqBC)
     BOOST_CHECK(pProtFeat->GetLocation().IsPartialStop(eExtreme_Biological));
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SeqIdBC) // RW-2482
+{
+    auto pId = Ref(new CSeq_id());
+    pId->SetLocal().SetStr("  dummy id  ");
+
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+
+    auto pBioseq = s_MakeNucSeq();
+    pBioseq->SetId().push_back(pId);
+    auto bsh = pScope->AddBioseq(*pBioseq);
+
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
+
+    auto pNewId = Ref(new CSeq_id());
+    pNewId->Assign(*pId);
+
+    cleanup_imp.SeqIdBC(*pNewId);
+    bsh.GetEditHandle().RemoveId(CSeq_id_Handle::GetHandle(*pId));
+    bsh.GetEditHandle().AddId(CSeq_id_Handle::GetHandle(*pNewId));
+
+    BOOST_CHECK_EQUAL(pNewId->GetLocal().GetStr(), "dummy id");
+    BOOST_CHECK(bsh.GetBioseqCore()->GetId().back()->Match(*pNewId)); 
+    BOOST_CHECK(bsh.GetScope().Exists(*pNewId)); 
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BasicCleanupSeqIds) // RW-2482
+{
+    auto pId = Ref(new CSeq_id());
+    pId->SetLocal().SetStr("  dummy id  ");
+
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+
+    auto pBioseq = s_MakeNucSeq();
+    pBioseq->SetId().push_back(pId);
+    auto bsh = pScope->AddBioseq(*pBioseq);
+
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
+
+    cleanup_imp.BasicCleanupSeqIds(bsh);
+
+    // Original id is no longer in scope
+    BOOST_CHECK(! bsh.GetScope().Exists(*pId));
+
+    auto pNewId = Ref(new CSeq_id());
+    pNewId->SetLocal().SetStr("dummy id");
+
+    BOOST_CHECK(pBioseq->GetId().back()->Match(*pNewId)); 
+    BOOST_CHECK(bsh.GetScope().Exists(*pNewId));
+}
+

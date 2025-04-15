@@ -237,7 +237,9 @@ public:
     void SeqsetBC (CBioseq_set& bss);
     void ProtSeqBC (CBioseq& bs);
 
-    void SeqIdBC( CSeq_id &seq_id );
+    bool BasicCleanupSeqIds(CBioseq_Handle bsh);
+    bool SeqIdBC( CSeq_id &seq_id );
+
 
     void GBblockOriginBC( string& str);
     void GBblockBC (CGB_block& gbk);
@@ -393,7 +395,7 @@ private:
 //    void x_FlattenPubEquiv(CPub_equiv& pe);
 
     // Date-related
-    void x_DateStdBC( CDate_std& date );
+    bool DateStdBC(CDate_std& date);
 
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
 
@@ -460,7 +462,7 @@ private:
     void x_CompressStringSpacesMarkChanged( std::string &str );
     void x_StripSpacesMarkChanged( std::string& str );
     void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
-    void x_TruncateSpacesMarkChanged( std::string & str );
+    bool x_TruncateSpacesMarkChanged( std::string & str );
     void x_TrimInternalSemicolonsMarkChanged( std::string & str );
 
     void x_PostSeqFeat( CSeq_feat& seq_feat );
