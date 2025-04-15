@@ -1,0 +1,8 @@
+# $Id$
+
+APP_PROJ = sftp_sample
+
+REQUIRES = LIBSSH
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

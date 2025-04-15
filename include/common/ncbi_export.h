@@ -1530,6 +1530,14 @@
 #  define NCBI_XXCONNECT2_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library xconnsftp
+ */
+#ifdef NCBI_XCONNSFTP_EXPORTS
+#  define NCBI_XCONNSFTP_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XCONNSFTP_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library jaeger_tracer
  */
 #ifdef NCBI_JAEGER_TRACER_EXPORTS

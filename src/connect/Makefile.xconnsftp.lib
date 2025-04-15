@@ -1,0 +1,17 @@
+# $Id$
+
+SRC = ncbi_sftp
+
+LIB = xconnsftp
+
+REQUIRES = LIBSSH
+
+LIB_OR_DLL = both
+
+CPPFLAGS = $(LIBSSH_INCLUDE) $(ORIG_CPPFLAGS)
+
+LIBS = $(XCONNSFTP_LIBS) $(ORIG_LIBS)
+
+WATCHERS = sadyrovr
+
+USES_LIBRARIES = xncbi

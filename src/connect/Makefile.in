@@ -9,7 +9,7 @@
 #  - tests:      "test/*.*"
 #################################
 
-LIB_PROJ = connssl connect xxconnect xconnect xxconnect2 xthrserv 
+LIB_PROJ = connssl connect xxconnect xconnect xxconnect2 xthrserv xconnsftp
 SUB_PROJ = services ext test
 
 WATCHERS = lavr
