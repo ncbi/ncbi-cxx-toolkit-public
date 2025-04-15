@@ -6188,14 +6188,14 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
         return;
     }
 
-    if (m_Options & CCleanup::eClean_ForFlatfile) {
+    if (m_Options & CCleanup::eClean_FlatfileHTMLMode) {
         // in flatfile -html mode
         if (s_FeatHasInferenceGBQual(sf)) {
             // skip remaining GBQual cleanup steps if any inference is present
             return;
         }
-    } else {
-        // normal flatfile or other cleanup
+    } else if (m_Options & CCleanup::eClean_FlatfileGenerator) {
+        // normal flatfile
         if (s_FeatHasFiveInferenceGBQuals(sf)) {
             // skip remaining GBQual cleanup steps if multiple inference qualifiers
             return;
