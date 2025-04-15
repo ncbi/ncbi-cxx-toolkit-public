@@ -1014,18 +1014,30 @@ int BlockModelPair::remaster(const BlockModelPair& guide)
 {
 	if (!SeqIdsMatch(getMaster().getSeqId(),guide.getMaster().getSeqId()))
 		return 0;
+
 	//convert guide.slave to the intersection of this.master and guide.master
 	pair<DeltaBlockModel*, bool> deltaGuideToThis = m_master->intersect(guide.getMaster());
 	pair<BlockModel*, bool> intersectedGuideSlave = guide.getSlave() + *(deltaGuideToThis.first);
+    
 	//convert this.slave to the intersection of this.master and guide.master
 	pair<DeltaBlockModel*, bool> deltaThisToGuide = guide.getMaster().intersect(*m_master);
 	pair<BlockModel*, bool> intersectedThisSlave = (*m_slave) + *(deltaThisToGuide.first);
-	assert((intersectedGuideSlave.first)->blockMatch(*(intersectedThisSlave.first)));
-	delete m_master;
-	delete m_slave;
-	m_master = intersectedGuideSlave.first;
-	m_slave = intersectedThisSlave.first;
-	return m_master->getTotalBlockLength();
+    
+    if (intersectedGuideSlave.first && intersectedThisSlave.first) {
+        
+        assert((intersectedGuideSlave.first)->blockMatch(*(intersectedThisSlave.first)));
+
+        delete m_master;
+        delete m_slave;
+
+        m_master = intersectedGuideSlave.first;
+        m_slave = intersectedThisSlave.first;
+
+        return m_master->getTotalBlockLength();
+
+    } else {
+        return 0;
+    }
 }
 
 bool BlockModelPair::mask(const vector<Block>& maskBlocks, bool maskBasedOnMaster)

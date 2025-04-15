@@ -156,11 +156,9 @@ void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree) {
             } else {
                 cursor1 = tmpTree.end();
             }
-            dToNewChild = 0.0;
             cursor1->distance += dToNewParent;
         } else if (nTopLevelNodes > 2) {  // an intermediate node will be inserted as a child of cursor2 below
             item = *cursor2;
-            dToNewChild = cursor2->distance;
         }
 
         newTree.SeqTreeBase::operator=(tmpTree.reroot(newTreeRoot));

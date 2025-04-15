@@ -385,7 +385,7 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
             }
         }
 
-        if (typeStr.length() > 0) {            
+        if (typeStr.length() > 0 && allowedElements) {            
             try {
                 //  Throws an error is 'typeStr' is not found.
                 CCdd_book_ref::ETextelement typeEnum = (CCdd_book_ref::ETextelement) allowedElements->FindValue(typeStr);

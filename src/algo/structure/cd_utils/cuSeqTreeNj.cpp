@@ -410,9 +410,6 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     double finalLen[3] = {0.0, 0.0, 0.0};
 
     tmp = 0;
-    i = USED_ROW;
-    j = USED_ROW;
-    k = USED_ROW;
     for (int l=0; l<m_nseqs; ++l) {
         if (indexMap[l] != USED_ROW) {
             if (tmp < 3) {
@@ -462,10 +459,10 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 
     // clean up temp storage of distance matrix
     for (i=0; i<m_nseqs; i++) {
-        delete []ppDists[i];
+        delete [] ppDists[i];
     }
-    delete []ppDists;
-    delete []pSums;
+    delete [] ppDists;
+    delete [] pSums;
 }
 
 int NJ_TreeAlgorithm::numChildren(const TSeqIt& sit) {
