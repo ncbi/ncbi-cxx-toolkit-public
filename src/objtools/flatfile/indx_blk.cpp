@@ -242,7 +242,7 @@ static const char* GetResidue(TokenStatBlkPtr stoken)
     auto sptr = next(ptr);
     for (i = 1; i < stoken->num; i++, ptr = sptr, sptr = next(ptr)) {
         for (b = ParFlat_RESIDUE_STR; *b; b++)
-            if (NStr::CompareNocase(*b, *sptr) == 0)
+            if (NStr::EqualNocase(*b, *sptr))
                 return ptr->c_str();
     }
 

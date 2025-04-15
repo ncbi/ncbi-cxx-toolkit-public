@@ -723,7 +723,7 @@ static CRef<COrg_ref> GetEmblOrgRef(const DataBlk& dbp)
 /**********************************************************/
 static bool CheckEmblContigEverywhere(const IndexblkPtr ibp, Parser::ESource source)
 {
-    bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
+    bool condiv = NStr::EqualNocase(ibp->division, "CON");
 
     bool result = true;
 

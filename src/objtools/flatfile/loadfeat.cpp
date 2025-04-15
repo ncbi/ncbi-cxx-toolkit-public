@@ -729,7 +729,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     }
 
     const string& val = qual.GetVal();
-    if (NStr::CompareNocase(val.c_str(), "taxon") == 0)
+    if (NStr::EqualNocase(val, "taxon"))
         return tag;
 
     string line = val;
@@ -752,15 +752,15 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
                    "/db_xref type \"{}\" is obsolete.", line);
 
         string buf;
-        if (NStr::CompareNocase(line.c_str(), "BHB") == 0)
+        if (NStr::EqualNocase(line, "BHB"sv))
             buf = "IRD";
-        else if (NStr::CompareNocase(line.c_str(), "BioHealthBase") == 0)
+        else if (NStr::EqualNocase(line, "BioHealthBase"sv))
             buf = "IRD";
-        else if (NStr::CompareNocase(line.c_str(), "GENEW") == 0)
+        else if (NStr::EqualNocase(line, "GENEW"sv))
             buf = "HGNC";
-        else if (NStr::CompareNocase(line.c_str(), "IFO") == 0)
+        else if (NStr::EqualNocase(line, "IFO"sv))
             buf = "NBRC";
-        else if (NStr::CompareNocase(line.c_str(), "SWISS-PROT") == 0)
+        else if (NStr::EqualNocase(line, "SWISS-PROT"sv))
             buf = "UniProt/Swiss-Prot";
         else
             buf = "UniProt/TrEMBL";
@@ -768,8 +768,8 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         line = buf;
     }
 
-    if (NStr::CompareNocase(line.c_str(), "UNIPROT/SWISS-PROT") == 0 ||
-        NStr::CompareNocase(line.c_str(), "UNIPROT/TREMBL") == 0) {
+    if (NStr::EqualNocase(line, "UNIPROT/SWISS-PROT"sv) ||
+        NStr::EqualNocase(line, "UNIPROT/TREMBL"sv)) {
         string buf("UniProtKB");
         buf += line.substr(7);
 
@@ -820,11 +820,11 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         }
         if (*r != '\0' || q != p)
             strid = p;
-        else if (NStr::CompareNocase(line.c_str(), "IntrepidBio") == 0 && fta_number_is_huge(q))
+        else if (NStr::EqualNocase(line, "IntrepidBio"sv) && fta_number_is_huge(q))
             strid = q;
         else
             intid = atoi(q);
-    } else if (NStr::CompareNocase(line.c_str(), "PID") == 0) {
+    } else if (NStr::EqualNocase(line, "PID"sv)) {
         if (*p != 'e' && *p != 'g' && *p != 'd') {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DbxrefIncorrect,
                        "Badly formatted /db_xref qual \"PID\": \"{}\". Qualifier dropped.", val);
@@ -1589,13 +1589,13 @@ static Uint1 fta_get_aa_from_string(char* str)
     const TrnaAa*   tap;
 
     for (tap = taa; tap->name; tap++)
-        if (NStr::CompareNocase(str, tap->name) == 0)
+        if (NStr::EqualNocase(str, tap->name))
             break;
     if (tap->name)
         return (tap->aa);
 
     for (acp = aacodons; acp->straa; acp++)
-        if (NStr::CompareNocase(acp->straa, str) == 0)
+        if (NStr::EqualNocase(acp->straa, str))
             break;
     if (acp->straa)
         return (acp->intaa);
@@ -2324,9 +2324,9 @@ static bool fta_check_evidence(CSeq_feat& feat, FeatBlkPtr fbp)
             continue;
         }
 
-        if (NStr::CompareNocase(val_str.c_str(), "not_experimental") == 0)
+        if (NStr::EqualNocase(val_str, "not_experimental"sv))
             evi_not++;
-        else if (NStr::CompareNocase(val_str.c_str(), "experimental") == 0)
+        else if (NStr::EqualNocase(val_str, "experimental"sv))
             evi_exp++;
         else {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_InvalidEvidence,
@@ -2510,7 +2510,7 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
                 if (q_qual == "gene")
                     continue;
 
-                Int4 i = NStr::CompareNocase(q_qual.c_str(), tq_qual.c_str());
+                Int4 i = NStr::CompareNocase(q_qual, tq_qual);
                 if (i < 0)
                     continue;
                 if (i == 0) {
@@ -2782,7 +2782,7 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
                 if (isOldLocusTag(*gbqp2) || gbqp2_val.empty())
                     continue;
 
-                if (NStr::CompareNocase(gbqp1_val.c_str(), gbqp2_val.c_str()) == 0) {
+                if (NStr::EqualNocase(gbqp1_val, gbqp2_val)) {
                     FtaErrPost(SEV_ERROR, ERR_FEATURE_RedundantOldLocusTag,
                                "Feature \"{}\" at \"{}\" has redundant /old_locus_tag qualifiers. Dropping all but the first.", key_or(fbp, "Unknown"), location_or(fbp, "unknown location"));
                     break;
@@ -5125,91 +5125,91 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "DNA") != 0 &&
-                    NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "DNA") &&
+                    ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "DNA") != 0)
+            } else if (! NStr::EqualNocase(q, "DNA"))
                 same = false;
         } else if (ibp->moltype == "genomic RNA") {
             biomol = Seq_descr_GIBB_mol_genomic;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "mRNA") {
             biomol = Seq_descr_GIBB_mol_mRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "mRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "mRNA"))
                 same = false;
         } else if (ibp->moltype == "tRNA") {
             biomol = Seq_descr_GIBB_mol_tRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "tRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "tRNA"))
                 same = false;
         } else if (ibp->moltype == "rRNA") {
             biomol = Seq_descr_GIBB_mol_rRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "rRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "rRNA"))
                 same = false;
         } else if (ibp->moltype == "snoRNA") {
             biomol = Seq_descr_GIBB_mol_snoRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "snoRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "snoRNA"))
                 same = false;
         } else if (ibp->moltype == "snRNA") {
             biomol = Seq_descr_GIBB_mol_snRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "snRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "snRNA"))
                 same = false;
         } else if (ibp->moltype == "scRNA") {
             biomol = Seq_descr_GIBB_mol_scRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "scRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "scRNA"))
                 same = false;
         } else if (ibp->moltype == "pre-RNA") {
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "pre-mRNA") {
             biomol = Seq_descr_GIBB_mol_preRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "other RNA") {
             if (is_syn)
@@ -5219,9 +5219,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "other DNA") {
             if (is_syn)
@@ -5231,9 +5231,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "DNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "DNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "DNA") != 0)
+            } else if (! NStr::EqualNocase(q, "DNA"))
                 same = false;
         } else if (ibp->moltype == "unassigned RNA") {
             if (is_syn)
@@ -5243,9 +5243,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "unassigned DNA") {
             if (is_syn)
@@ -5255,32 +5255,32 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "DNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "DNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "DNA") != 0)
+            } else if (! NStr::EqualNocase(q, "DNA"))
                 same = false;
         } else if (ibp->moltype == "viral cRNA") {
             biomol = Seq_descr_GIBB_mol_cRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 &&
-                    NStr::CompareNocase(q, "cRNA") != 0 &&
-                    NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") &&
+                    ! NStr::EqualNocase(q, "cRNA") &&
+                    ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "cRNA") != 0)
+            } else if (! NStr::EqualNocase(q, "cRNA"))
                 same = false;
         } else if (ibp->moltype == "transcribed RNA") {
             biomol = Seq_descr_GIBB_mol_trRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
-                if (NStr::CompareNocase(q, "RNA") != 0 && NStr::CompareNocase(ibp->moltype, q) != 0)
+                if (! NStr::EqualNocase(q, "RNA") && ! NStr::EqualNocase(ibp->moltype, q))
                     same = false;
-            } else if (NStr::CompareNocase(q, "RNA") != 0)
+            } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (pp->source == Parser::ESource::USPTO &&
-                   NStr::CompareNocase(ibp->moltype, "protein") == 0) {
+                   NStr::EqualNocase(ibp->moltype, "protein")) {
             biomol = CMolInfo::eBiomol_peptide;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_aa);
         } else {

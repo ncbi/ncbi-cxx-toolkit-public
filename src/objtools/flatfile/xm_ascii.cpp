@@ -97,7 +97,7 @@ static void XMLCheckContigEverywhere(IndexblkPtr ibp, Parser::ESource source)
     if (! ibp)
         return;
 
-    bool condiv = (NStr::CompareNocase(ibp->division, "CON") == 0);
+    bool condiv = NStr::EqualNocase(ibp->division, "CON");
 
     if (! condiv && ibp->is_contig == false && ibp->origin == false) {
         FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingSequenceData, "Required sequence data is absent. Entry dropped.");
