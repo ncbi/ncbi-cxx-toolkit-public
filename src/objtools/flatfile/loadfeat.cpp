@@ -3762,6 +3762,62 @@ static void fta_check_satellite(string_view str, bool* drop)
     }
 }
 
+/**********************************************************/
+static bool fta_check_mobile_element(FeatBlkPtr fbp, Parser::ESource source,
+                                     Parser::EFormat format)
+{
+    char *p_val;
+    char *p;
+    bool found = false;
+    Int2 i;
+
+    for(TQualVector::iterator qual = fbp->quals.begin(); qual != fbp->quals.end(); ++qual)
+    {
+        if ((*qual)->IsSetQual() && (*qual)->GetQual() == "mobile_element_type" &&
+            (*qual)->IsSetVal() && !(*qual)->GetVal().empty()) {
+            p_val = (char *) (*qual)->GetVal().c_str();
+            for (p = p_val; *p == '\"';)
+                ++p;
+
+            if (*p != '\0') {
+                found = true;
+                break;
+            }
+        }
+    }
+
+    if(!found)
+    {
+        optional<string> loc_str = fbp->location;
+        if(source == Parser::ESource::USPTO && format == Parser::EFormat::XML)
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_RequiredQualifierMissing,
+                       "Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"{}\". Feature dropped.", loc_str.has_value() ? loc_str.value() : "unknown");
+        else
+            FtaErrPost(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing,
+                       "Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"{}\". Entry dropped.", loc_str.has_value() ? loc_str.value() : "unknown");
+        return false;
+    }
+
+    p = StringChr(p_val, ':');
+    if(p)
+        *p = '\0';
+    i = MatchArrayString(MobileElementQualValues, p_val);
+    if(p)
+        *p = ':';
+    if(i > -1)
+        return true;
+
+    optional<string> loc_str = fbp->location;
+    if(source == Parser::ESource::USPTO && format == Parser::EFormat::XML)
+        FtaErrPost(SEV_ERROR, ERR_FEATURE_InvalidQualifierValue,
+                   "The value \"{}\" of qualifier /mobile_element_type is invalid for the feature \"mobile_element\" at \"{}\". Feature dropped.", p_val, loc_str.has_value() ? loc_str.value() : "unknown");
+    else
+        FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidQualifierValue,
+                   "The value \"{}\" of qualifier /mobile_element_type is invalid for the feature \"mobile_element\" at \"{}\". Entry dropped.", p_val, loc_str.has_value() ? loc_str.value() : "unknown");
+
+    return false;
+}
+
 /**********************************************************
  *
  *   int ParseFeatureBlock(ibp, deb, dbp, source, format):
@@ -3912,6 +3968,16 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
 
             MergeNoteQual(fbp->quals); /* allow more than one
                                            notes w/i a key */
+
+            if (fbp->key == "mobile_element" &&
+                ! fta_check_mobile_element(fbp, source, format)) {
+                if(source == Parser::ESource::USPTO &&
+                   format == Parser::EFormat::XML)
+                    dbp.mDrop = true;
+                else
+                    ibp->drop = true;
+                continue;
+            }
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
                 FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key);
@@ -4075,7 +4141,7 @@ static void XMLCheckQualifiers(FeatBlkPtr fbp, Parser::ESource source)
 }
 
 /**********************************************************/
-static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource source)
+static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESource source)
 {
     FeatBlkPtr fbp;
     char*      p;
@@ -4132,6 +4198,15 @@ static int XMLParseFeatureBlock(bool deb, TDataBlkList& dbl, Parser::ESource sou
             XMLCheckQualifiers(fbp, source);
             MergeNoteQual(fbp->quals); /* allow more than one
                                            notes w/i a key */
+
+            if (fbp->key == "mobile_element" &&
+                ! fta_check_mobile_element(fbp, source, Parser::EFormat::XML)) {
+                if(source == Parser::ESource::USPTO)
+                    dbp.mDrop = true;
+                else
+                    ibp->drop = true;
+                continue;
+            }
 
             if (subtype == CSeqFeatData::eSubtype_bad) {
                 if (keyindx < 0) {
@@ -4283,52 +4358,6 @@ static void fta_check_artificial_location(CSeq_feat& feat, const string& key)
         feat.SetQual().erase(qual);
         break;
     }
-}
-
-/**********************************************************/
-static bool fta_check_mobile_element(const CSeq_feat& feat)
-{
-    char *p_val;
-    char *p;
-    bool found = false;
-    Int2 i;
-
-    for (const auto& qual : feat.GetQual()) {
-        if (qual->IsSetQual() && qual->GetQual() == "mobile_element_type" &&
-            qual->IsSetVal() && ! qual->GetVal().empty()) {
-            p_val = (char *) qual->GetVal().c_str();
-            for (p = p_val; *p == '\"';)
-                ++p;
-
-            if (*p != '\0') {
-                found = true;
-                break;
-            }
-        }
-    }
-
-    if(!found)
-    {
-        auto loc_str = location_to_string_or_unknown(feat.GetLocation());
-        FtaErrPost(SEV_REJECT, ERR_FEATURE_RequiredQualifierMissing,
-                   "Mandatory qualifier /mobile_element_type is absent or has no value : Feature \"mobile_element\" : Location \"{}\". Entry dropped.", loc_str.empty() ? "unknown"s : loc_str);
-        return false;
-    }
-
-    p = StringChr(p_val, ':');
-    if(p)
-        *p = '\0';
-    i = MatchArrayString(MobileElementQualValues, p_val);
-    if(p)
-        *p = ':';
-    if(i > -1)
-        return true;
-
-    auto loc_str = location_to_string_or_unknown(feat.GetLocation());
-    FtaErrPost(SEV_REJECT, ERR_FEATURE_InvalidQualifierValue,
-               "The value \"{}\" of qualifier /mobile_element_type is invalid for the feature \"mobile_element\" at \"{}\". Entry dropped.", p_val, loc_str);
-
-    return false;
 }
 
 /**********************************************************/
@@ -4776,7 +4805,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
          */
         TDataBlkList& dbl = std::get<TDataBlkList>(dblk.mData);
         if (pp->format == Parser::EFormat::XML)
-            XMLParseFeatureBlock(pp->debug, dbl, pp->source);
+            XMLParseFeatureBlock(ibp, pp->debug, dbl, pp->source);
         else
             ParseFeatureBlock(ibp, pp->debug, dbl, pp->source, pp->format);
 
@@ -4883,12 +4912,6 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                                "CDS feature has unparsable location. Entry dropped. Location = [{}].", fbp->location_get());
                     ibp->drop = true;
                 }
-                continue;
-            }
-
-            if (fbp->key == "mobile_element" &&
-                ! fta_check_mobile_element(*feat)) {
-                ibp->drop = true;
                 continue;
             }
 
