@@ -28,13 +28,11 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <connect/ncbi_sftp.hpp>
-
-#ifdef HAVE_SFTP
 
 #include <common/test_data_path.h>
 #include <corelib/test_boost.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_sftp.hpp>
 
 #include <optional>
 #include <unordered_set>
@@ -585,5 +583,3 @@ BOOST_AUTO_TEST_CASE(MLST)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-#endif
