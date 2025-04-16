@@ -2768,7 +2768,7 @@ BOOST_AUTO_TEST_CASE(SeqIdList)
           "P66272",
           "WP_003405746.1",
           "NP_200967.1",
-          "MFY79158.1",
+          "EFB2373583.1", // identical to  MFY79158.1
           "WP_002211004.1",
           "XP_645408.1",
           "RMS51295.1",
