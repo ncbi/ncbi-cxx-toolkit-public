@@ -49,7 +49,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
     @property
     def _min_cppstd(self):
-        return 17
+        return 20
 
 
 # _default_requires:  enabled by default, can be disabled by request
@@ -116,42 +116,6 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["ncbicrypt/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
-        self.options["libunwind"+_s].minidebuginfo = False
-
-#boost/*:header_only = True
-        self.options["boost"+_s].header_only = False
-#boost/*:without_atomic = True
-#boost/*:without_chrono = True
-#boost/*:without_container = True
-#boost/*:without_context = True
-        self.options["boost"+_s].without_contract = True
-        self.options["boost"+_s].without_coroutine = True
-#boost/*:without_date_time = True
-#boost/*:without_exception = True
-        self.options["boost"+_s].without_fiber = True
-#boost/*:without_filesystem = True
-        self.options["boost"+_s].without_graph = True
-        self.options["boost"+_s].without_graph_parallel = True
-#boost/*:without_iostreams = True
-        self.options["boost"+_s].without_json = True
-        self.options["boost"+_s].without_locale = True
-        self.options["boost"+_s].without_log = True
-        self.options["boost"+_s].without_math = True
-        self.options["boost"+_s].without_mpi = True
-        self.options["boost"+_s].without_nowide = True
-        self.options["boost"+_s].without_program_options = True
-        self.options["boost"+_s].without_python = True
-#boost/*:without_random = True
-#boost/*:without_regex = True
-#boost/*:without_serialization = True
-        self.options["boost"+_s].without_stacktrace = True
-#boost/*:without_system = True
-#boost/*:without_test = True
-#boost/*:without_thread = True
-#boost/*:without_timer = True
-        self.options["boost"+_s].without_type_erasure = True
-        self.options["boost"+_s].without_wave = True
-
         self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
         self.options["opentelemetry-cpp"+_s].with_jaeger = False
 # hyphens make it tricky
