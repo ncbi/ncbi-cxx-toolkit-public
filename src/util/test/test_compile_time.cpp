@@ -1783,3 +1783,67 @@ BOOST_AUTO_TEST_CASE(Test_index_table)
     //std::cerr << std::get<0>(ind1) << std::endl;
 
 }
+
+namespace compile_time_bits {
+template<template<typename...> typename _MapType, typename...TArgs>
+struct const_map_builder_impl
+{
+    using map_type = _MapType<TArgs...>;
+    using init_type = typename map_type::init_type;
+
+    constexpr const_map_builder_impl() = default;
+
+    template<size_t N>
+    constexpr auto operator()(init_type const (&init)[N]) const
+    {
+        return map_type::construct(init);
+    }
+    template<size_t N>
+    constexpr auto operator()(const std::array<init_type, N>& init) const
+    {
+        return map_type::construct(init);
+    }
+};
+
+}
+
+namespace ct{
+
+template<typename _Key, typename _Value>
+static constexpr inline auto const_map_builder        = const_map_builder_impl<ct::const_map, _Key, _Value>();
+template<typename _Key, typename _Value>
+static constexpr inline auto const_map_twoway_builder = const_map_builder_impl<ct::const_map_twoway, _Key, _Value>();
+template<typename _Key>
+static constexpr inline auto const_set_builder        = const_map_builder_impl<ct::const_set, _Key>();
+
+}
+
+
+BOOST_AUTO_TEST_CASE(test_inline_map)
+{
+    constexpr auto x1 = ct::const_map_builder<int, ct::tagStrNocase>(
+        {
+        {1, "1"},
+        {2, "2"},
+        }
+    );
+    constexpr auto x2 = ct::const_map_twoway_builder<int, ct::tagStrNocase>(
+        {
+        {1, "1"},
+        {2, "2"},
+        }
+    );
+    constexpr auto x3 = ct::const_set_builder<ct::tagStrNocase>(
+        {
+            "A", "B", "C",
+        }
+    );
+
+    BOOST_CHECK_EQUAL(x1.size(), 2);
+    BOOST_CHECK_EQUAL(x2.first.size(), 2);
+    BOOST_CHECK_EQUAL(x2.second.size(), 2);
+    BOOST_CHECK_EQUAL(x3.size(), 3);
+
+}
+
+

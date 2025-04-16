@@ -83,6 +83,9 @@ The substitution strings themselves are expanded. Backslash can be used to escap
 
 namespace ct {
 
+
+enum class TReplaceOpType { one, all };
+
 template<ct_fixed_string_input_param replace_text>
 struct pcre_regex
 {
@@ -108,9 +111,9 @@ struct pcre_regex
         }
     };
 
-    template<typename _Search, typename _Input, typename...TArgs>
+    template<TReplaceOpType kind, typename _Search, typename _Input, typename...TArgs>
     static
-    size_t replace_all(_Search search, _Input whole, std::basic_string<char_type, TArgs...>& output)
+    size_t replace_many(std::integral_constant<TReplaceOpType, kind>, const _Search& search, _Input whole, std::basic_string<char_type, TArgs...>& output)
     {
         auto current = whole.begin();
         auto matched = search(current, whole.end());
@@ -118,8 +121,11 @@ struct pcre_regex
         if (!matched)
             return 0;
 
-        size_t counter = 1;
-        while(true) {
+        size_t counter = 0;
+        output.clear();
+
+        do {
+            counter++;
             auto front_part_len = std::distance(current, matched.begin());
             if (front_part_len) {
                 output.append(current, matched.begin());
@@ -133,23 +139,31 @@ struct pcre_regex
             runtime::apply_all(ctx, output);
 
             current = matched.end();
-            matched = search(current, whole.end());
-            if (!matched) {
-                output.append(current, whole.end());
+
+            if constexpr(kind == TReplaceOpType::all) {
+                matched = search(current, whole.end());
+            } else {
                 break;
             }
-            counter++;
         }
+        while(matched);
+
+        output.append(current, whole.end());
 
         return counter;
 
     }
 
-    template<typename..._Matched, typename...TArgs>
+    template<typename _Search, typename...TArgs>
     static
-    void replace(const ::ctre::regex_results<_Matched...>& results, std::basic_string<char_type, TArgs...>& orig)
+    bool replace_inplace(const _Search& search, std::basic_string<char_type, TArgs...>& orig)
     {
         std::basic_string_view<char_type> input(orig);
+
+        auto results = search(input);
+
+        if (!results)
+            return false;
 
         auto front_part = std::distance(input.begin(), results.begin());
 
@@ -179,85 +193,118 @@ struct pcre_regex
 
             orig = std::move(out);
         }
+        return true;
     }
 
 };
 
-
 template<
+    TReplaceOpType kind,
     ct_fixed_string_input_param search_text,
     ct_fixed_string_input_param replace_text
     >
 struct search_replace_op
 {
     using char_type = typename std::decay_t<decltype(replace_text)>::char_type;
+    using view_type = std::basic_string_view<char_type>;
     static constexpr ::ctll::fixed_string<search_text.size()> s_search_text = search_text.m_str;
+    using replace_func = pcre_regex<replace_text>;
+    static constexpr auto search_func = ::ctre::search<s_search_text>;
 
-    template<typename...TArgs>
-    static bool replace_first(std::basic_string<char_type, TArgs...>& orig)
+    using RE = typename ctre::regex_builder<s_search_text>::type;
+    static constexpr bool starts_with_anchor = ctre::starts_with_anchor(ctre::singleline{}, ctll::list<RE>{});
+    static_assert(!(starts_with_anchor && kind == TReplaceOpType::all), "using starting anchor with replace_all not allowed");
+
+    template<TReplaceOpType _kind = kind, typename...TMoreArgs>
+    bool operator()(std::basic_string<char_type, TMoreArgs...>& input) const
     {
+        if constexpr (_kind == TReplaceOpType::one)
+            return replace_func::replace_inplace(search_func, input);
+        else {
+            std::basic_string<char_type, TMoreArgs...> output;
 
-        std::basic_string_view<char_type> input(orig);
-
-        auto matched = ::ctre::search<s_search_text>(input);
-
-        if (!matched)
-            return false;
-
-        using replace_func = pcre_regex<replace_text>;
-
-        replace_func::replace(matched, orig);
-
-        return true;
+            bool modified = replace_many(input, output);
+            if (modified)
+                input = std::move(output);
+            return modified;
+        }
     }
 
-    template<typename _Input>
-    [[nodiscard]] static auto replace_all(_Input&& orig)
+    template<typename...TMoreArgs>
+    bool operator()(view_type input, std::basic_string<char_type, TMoreArgs...>& result) const
     {
-        ct_regex_details::mutable_string mut_input{std::forward<_Input>(orig)};
-
-        auto input = mut_input.to_view();
-
-        using replace_func = pcre_regex<replace_text>;
-
-        typename decltype(mut_input)::output_type output;
-
-        size_t num_replaced = replace_func::replace_all(::ctre::search<s_search_text>, input, output);
-
-        if (num_replaced > 0)
-            mut_input = std::move(output);
-
-        return std::move(mut_input);
+        return replace_many(input, result);
     }
 
-    template<typename...TArgs>
-    bool operator()(std::basic_string<char_type, TArgs...>& orig) const
-    {
-        return replace_first(orig);
+    template<typename...TMoreArgs>
+    [[nodiscard]] static bool replace_many(view_type input, std::basic_string<char_type, TMoreArgs...>& output)
+    {  // this method doesn't modify 'result' parameter if no changes occured
+        size_t num_replaced = replace_func::replace_many(std::integral_constant<TReplaceOpType, kind>{}, search_func, input, output);
+        return (num_replaced>0);
     }
 
+    template<typename _T>
+    static void replace_many(ct_regex_details::mutable_string<_T>& input)
+    {
+        typename ct_regex_details::mutable_string<_T>::output_type output;
+
+        bool replaced = replace_many(input.to_view(), output);
+
+        if (replaced > 0)
+            input = std::move(output);
+    }
 
 };
 
-template<
-    ct_fixed_string_input_param search_text,
-    ct_fixed_string_input_param replace_text,
-    typename...TArgs
-    >
-bool search_replace(std::basic_string<typename std::decay_t<decltype(replace_text)>::char_type, TArgs...>& orig)
+// two separate operators to allow implicit conversion of various string-like classes
+template<auto..._SearchArgs, typename = std::enable_if_t<std::is_same_v<char, typename search_replace_op<_SearchArgs...>::char_type>>>
+[[nodiscard]] auto operator|(std::string_view input, const search_replace_op<_SearchArgs...>& next_op)
 {
-    return search_replace_op<search_text, replace_text>::replace_first(orig);
+    ct_regex_details::mutable_string mut_input{input};
+    next_op.replace_many(mut_input);
+    return mut_input;
 }
 
-template<
-    ct_fixed_string_input_param search_text,
-    ct_fixed_string_input_param replace_text,
-    typename _Input
-    >
-auto search_replace_all(_Input&& input)
+template<auto..._SearchArgs, typename = std::enable_if_t<std::is_same_v<wchar_t, typename search_replace_op<_SearchArgs...>::char_type>>>
+[[nodiscard]] auto operator|(std::wstring_view input, const search_replace_op<_SearchArgs...>& next_op)
 {
-    return search_replace_op<search_text, replace_text>::replace_all(std::forward<_Input>(input));
+    ct_regex_details::mutable_string mut_input{input};
+    next_op.replace_many(mut_input);
+    return mut_input;
 }
+
+
+template<typename _T, auto..._SearchArgs>
+[[nodiscard]] ct_regex_details::mutable_string<_T>&& operator|(ct_regex_details::mutable_string<_T>&& input, const search_replace_op<_SearchArgs...>& next_op)
+{
+    next_op.replace_many(input);
+    return std::move(input);
+}
+
+template<typename _T, auto...TArgs>
+[[nodiscard]] auto operator|(const ct_regex_details::mutable_string<_T>& input, const search_replace_op<TArgs...>& next_op)
+{
+    return operator|(input.to_view(), next_op);
+}
+
+template <
+    ct_fixed_string_input_param search_text,
+    ct_fixed_string_input_param replace_text
+    >
+static constexpr inline auto search_replace = search_replace_op<TReplaceOpType::one, search_text, replace_text>();
+
+template <
+    ct_fixed_string_input_param search_text,
+    ct_fixed_string_input_param replace_text
+    >
+static constexpr inline auto search_replace_all = search_replace_op<TReplaceOpType::all, search_text, replace_text>();
+
+template <
+    ct_fixed_string_input_param search_text,
+    ct_fixed_string_input_param replace_text
+    >
+static constexpr inline auto search_replace_one = search_replace_op<TReplaceOpType::one, search_text, replace_text>();
+
 
 }; // namespace ct
 

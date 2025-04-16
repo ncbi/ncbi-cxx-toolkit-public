@@ -41,6 +41,8 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
+using namespace ncbi;
+
 static constexpr auto pattern_P94 = ctll::fixed_string{ ".*sp\\. P94\\([0-9]{4}\\)" };
 
 static bool match_P94(std::string_view sv) noexcept
@@ -182,7 +184,7 @@ bool TestRegexCompilation(const _CharType (&str)[N], size_t error_pos, std::stri
 template<typename _Res, ct_fixed_string_input_param str1, ct_fixed_string_input_param str2>
 constexpr bool TestRegexInvocable()
 {
-    bool uuuu = std::is_invocable_r_v<bool, ct::search_replace_op<str1, str2>, _Res&>;
+    bool uuuu = std::is_invocable_r_v<bool, decltype(ct::search_replace<str1, str2>), _Res&>;
     return uuuu;
 }
 
@@ -214,9 +216,9 @@ BOOST_AUTO_TEST_CASE(test_ctre_replacer_parser)
 
 BOOST_AUTO_TEST_CASE(test_ctre_replacer_basic_cxx17)
 {
-    static constexpr ct_regex_details::fixed_string re1 {"123"};
-    static constexpr ct_regex_details::fixed_string re2 {L"$1ABC"};
-    static constexpr ct_regex_details::fixed_string re3 {L"$1ABC$2$$"};
+    static constexpr ct::fixed_string re1 {"123"};
+    static constexpr ct::fixed_string re2 {L"$1ABC"};
+    static constexpr ct::fixed_string re3 {L"$1ABC$2$$"};
 
     constexpr auto o1 = ct_regex_details::build_replace_runtime<re1>();
     constexpr auto o2 = ct_regex_details::build_replace_runtime<re2>();
@@ -405,13 +407,13 @@ BOOST_AUTO_TEST_CASE(test_ctre_replace_all)
     char s4[4] = "aaa";
     const char cs4[4] = "aaa";
 
-    auto result1 = ct::search_replace_op<"xxxx", "">::replace_all(s_input);
-    auto result2 = ct::search_replace_op<"( +)", " ">::replace_all(v_input);
-    auto result3 = ct::search_replace_op<" ", "">::replace_all("v_input");
-    auto result4 = ct::search_replace_op<" ", "">::replace_all(sl_input);
+    auto result1 = s_input | ct::search_replace_all<"xxxx", "">;
+    auto result2 = v_input | ct::search_replace_all<"( +)", " ">;
+    auto result3 = "v_input" | ct::search_replace_all<" ", "">;
+    auto result4 = (sl_input) | ct::search_replace_all<" ", "">;
 
-    auto result5 = ct::search_replace_op<" ", "">::replace_all(s4);
-    auto result6 = ct::search_replace_op<" ", "">::replace_all(cs4);
+    auto result5 = s4 | ct::search_replace_all<" ", "">;
+    auto result6 = cs4 | ct::search_replace_all<" ", "">;
 
     BOOST_CHECK(result1 == s_input);
     //BOOST_CHECK(result1->size() == 22);
@@ -420,10 +422,10 @@ BOOST_AUTO_TEST_CASE(test_ctre_replace_all)
     BOOST_CHECK(result2 == "one two three four");
     BOOST_CHECK(result3 == "v_input");
 
-    bool cmp1 = ct::search_replace_all<" ", "">("v_input") == "v_input";
+    bool cmp1 = ("v_input" | ct::search_replace_all<" ", "">) == "v_input";
     BOOST_CHECK(cmp1);
 
-    bool cmp2 = ct::search_replace_all<"( +)", "'$1'">(v_input) == "one'    'two' 'three'  'four";
+    bool cmp2 = (v_input | ct::search_replace_all<"( +)", "'$1'">) == "one'    'two' 'three'  'four";
     BOOST_CHECK(cmp2);
 }
 
@@ -432,24 +434,69 @@ BOOST_AUTO_TEST_CASE(test_ctre_replace_all_w)
     std::wstring s_input(L"one    two three  four");
     std::wstring_view v_input(L"one    two three  four");
 
-    auto result1 = ct::search_replace_op<"xxxx", L"">::replace_all(s_input);
-    #if 0
-    auto result2 = ct::search_replace_op<"( +)", L" ">::replace_all(v_input);
-    auto result3 = ct::search_replace_op<" ", L"">::replace_all(L"v_input");
+    auto result1 = s_input | ct::search_replace_all<"xxxx", L"">;
+    auto result2 = v_input | ct::search_replace_all<"( +)", L" ">;
+    auto result3 = L"v_input" | ct::search_replace_all<" ", L"">;
 
     BOOST_CHECK(result1 == s_input);
     BOOST_CHECK(result2 == L"one two three four");
     BOOST_CHECK(result3 == L"v_input");
 
-    bool cmp1 = ct::search_replace_all<" ", L"">(L"v_input") == L"v_input";
+    bool cmp1 = (L"v_input" | ct::search_replace_all<" ", L"">) == L"v_input";
     BOOST_CHECK(cmp1);
 
-    bool cmp2 = ct::search_replace_all<"( +)", L"'$1'">(v_input) == L"one'    'two' 'three'  'four";
+    bool cmp2 = (v_input | ct::search_replace_all<"( +)", L"'$1'">) == L"one'    'two' 'three'  'four";
     BOOST_CHECK(cmp2);
-    #endif
 
 }
 
+BOOST_AUTO_TEST_CASE(test_ctre_replace_pipe)
+{
+    std::string s_input("one    two three  four");
+    std::wstring w_input(L"one    two three  four");
+
+    auto res1 = s_input | ct::search_replace_all<" +", " ">;
+    auto res2 = "aa   AA" | ct::search_replace_all<" +", " ">;
+    auto res3 = w_input | ct::search_replace_all<L" +", L" ">;
+    auto res4 = L"bb    BB" | ct::search_replace_all<L" +", L" ">;
+
+    BOOST_CHECK(res1 == "one two three four");
+    BOOST_CHECK(res2 == "aa AA");
+    BOOST_CHECK(res3 == L"one two three four");
+    BOOST_CHECK(res4 == L"bb BB");
+
+    auto res5 = s_input | ct::search_replace_all<" +", " "> | ct::search_replace_one<"o", "O">;
+    auto res6 = res5 | ct::search_replace_one<"e", "E">;
+    BOOST_CHECK(res5 == "One two three four");
+    BOOST_CHECK(res6 == "OnE two three four");
+
+
+
+}
+
+BOOST_AUTO_TEST_CASE(test_ctre_literals)
+{
+    constexpr auto aa = "AA"_fs;
+    constexpr auto laa = L"AA"_fs;
+
+    BOOST_CHECK(aa.to_view() == "AA"sv);
+    BOOST_CHECK(laa.to_view() == L"AA"sv);
+
+    std::cout << "aa: " << aa.to_view() << "\n";
+}
+
+BOOST_AUTO_TEST_CASE(test_fixed_strings)
+{
+    ct::fixed_string x1("AA");
+    ct::fixed_string x2("BBB");
+    ct::fixed_string x3("CCC");
+
+    auto s1 = x1 + x2;
+    auto s2 = x1 + x2 + x3;
+
+    BOOST_CHECK( s1.to_view() == "AABBB"sv);
+    BOOST_CHECK( s2.to_view() == "AABBBCCC"sv);
+}
 
 
 #endif
