@@ -76,10 +76,6 @@ namespace compile_time_bits
         }
     */
 
-#if 0
-    template<class _Char>
-    using ct_basic_string = std::basic_string_view<_Char>;
-#else
     template<class _Char=char>
     class ct_basic_string: public std::basic_string_view<_Char>
     {
@@ -114,7 +110,7 @@ namespace compile_time_bits
         }
 
     };
-#endif
+
     using ct_string = ct_basic_string<char>;
 
     constexpr int CompareNocase(const std::string_view& l, const std::string_view& r)
@@ -142,7 +138,85 @@ namespace compile_time_bits
         return result;
     }
 
+    // fixed_string is a compile time class that can be used as cNTTP: class non-type template parameter
+    // instantiation as template parameters requires C++20 or N3599 for C++17
+    // all members must be public and constexpr capable
+    // example of use looks like this:
+    //
+    // declaration, notice no template parameters are used
+    // template<fixed_string arg> struct nnn {}; //
+    //
+    // instantiation
+    // using instance_nnn = nnn<"Hello World">;
+    // using instance_vvv = nnn<"Goor Morning">;
+
+    template<typename _CharType, size_t N>
+    struct fixed_string
+    {   // N is a size of string which is stored as _CharType[N+1] with zero-ending
+        // it allows to be used in runtime as a plain C-type string
+        using char_type = _CharType;
+        using array_type = char_type[N+1];
+
+        constexpr size_t size() const {return N;};
+        constexpr fixed_string() = default;
+        constexpr fixed_string(const _CharType(&s)[N+1])
+        {
+            for (size_t i=0; i<=N; ++i)
+               m_str[i] = s[i];
+        }
+        explicit constexpr fixed_string(const std::array<_CharType, N>&s)
+        {
+            for (size_t i=0; i<N; ++i)
+               m_str[i] = s[i];
+            m_str[N] = 0;
+        }
+        template<typename _CharTraits>
+        constexpr operator std::basic_string_view<_CharType, _CharTraits>() const
+        {
+            return {m_str, N};
+        }
+        constexpr const array_type& get_array() const { return m_str; }
+        constexpr auto to_view() const -> std::basic_string_view<_CharType>
+        {
+            return {m_str, N};
+        }
+        constexpr _CharType operator[](size_t i) const { return m_str[i];}
+
+        array_type m_str {};
+
+    };
+
+    template<typename _CharType, size_t N>
+    fixed_string(const _CharType (&)[N]) -> fixed_string<_CharType, N-1>;
+
+    template<typename _CharType, size_t N, size_t M>
+    constexpr auto
+    operator+ (const fixed_string<_CharType, N>& l, const fixed_string<_CharType, M>& r) -> fixed_string<_CharType, N+M>
+    {
+        std::array<_CharType, M+N> res {};
+        size_t o_pos = 0;
+        for(auto c: l.to_view())
+           res[o_pos++] = c;
+
+        for(auto c: r.to_view())
+           res[o_pos++] = c;
+
+        return fixed_string(res);
+    }
+
+
 }
+namespace ncbi
+{
+    // string literal to use as "The word"_fs or L"Hello"_fs
+
+    template<compile_time_bits::fixed_string s>
+    constexpr auto operator ""_fs()
+    {
+        return s;
+    }
+}
+
 
 namespace std
 {

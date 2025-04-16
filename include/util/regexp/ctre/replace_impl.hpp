@@ -43,7 +43,7 @@
 
 // Let's allow C++ 17 compilations for awhile
 #if __cpp_nontype_template_args > 201411L
-    #define ct_fixed_string_input_param ::ct_regex_details::fixed_string
+    #define ct_fixed_string_input_param ::ct::fixed_string
 #else
     #define ct_fixed_string_input_param const auto&
 #endif
@@ -69,51 +69,15 @@ enum class e_action
 };
 
 template<typename _CharType, size_t N>
-struct fixed_string
-{
-    using char_type = _CharType;
-    using array_type = char_type[N+1];
-
-    constexpr size_t size() const {return N;};
-    constexpr fixed_string() = default;
-    constexpr fixed_string(const _CharType(&s)[N+1])
-    {
-        for (size_t i=0; i<=N; ++i)
-           m_str[i] = s[i];
-    }
-    explicit constexpr fixed_string(const std::array<_CharType, N>&s)
-    {
-        for (size_t i=0; i<N; ++i)
-           m_str[i] = s[i];
-        m_str[N] = 0;
-    }
-    template<typename _CharTraits>
-    constexpr operator std::basic_string_view<_CharType, _CharTraits>() const
-    {
-        return {m_str, N};
-    }
-    constexpr const array_type& get_array() const { return m_str; }
-    constexpr auto to_view() const -> std::basic_string_view<_CharType>
-    {
-        return {m_str, N};
-    }
-    constexpr _CharType operator[](size_t i) const { return m_str[i];}
-    array_type m_str {};
-};
-
-template<typename _CharType, size_t N>
-fixed_string(const _CharType (&)[N]) -> fixed_string<_CharType, N-1>;
-
-template<typename _CharType, size_t N>
 class compiled_regex;
 
 template<typename _CharType, size_t N>
 struct group_name_op
 {
-    fixed_string<_CharType, N> m_name {};
+    ct::fixed_string<_CharType, N> m_name {};
 };
 template<typename _CharType, size_t N>
-group_name_op(fixed_string<_CharType, N>) -> group_name_op<_CharType, N>;
+group_name_op(ct::fixed_string<_CharType, N>) -> group_name_op<_CharType, N>;
 
 struct group_number_op
 {
@@ -142,7 +106,7 @@ class compiled_regex
 public:
     using char_type = _CharType;
     using parsed_str_type = std::array<action_type, N>;
-    using input_array_type = fixed_string<_CharType, N>;
+    using input_array_type = ct::fixed_string<_CharType, N>;
 
     constexpr compiled_regex() = default;
     constexpr compiled_regex(const input_array_type& input)
@@ -166,7 +130,7 @@ public:
 
     template<size_t len>
     constexpr auto extract_string(size_t begin, std::integral_constant<size_t, len>) const
-        -> fixed_string<_CharType, len>
+        -> ct::fixed_string<_CharType, len>
     {
         return x_extract_string(begin, std::make_index_sequence<len>{});
     }
@@ -183,10 +147,10 @@ private:
 
     template<size_t...Is>
     constexpr auto x_extract_string(size_t begin, std::index_sequence<Is...>) const
-        -> fixed_string<_CharType, sizeof...(Is)>
+        -> ct::fixed_string<_CharType, sizeof...(Is)>
     {
         std::array<_CharType, sizeof...(Is)> arr = {_CharType(m_parsed[begin + Is].detail) ... };
-        return fixed_string{arr};
+        return ct::fixed_string{arr};
     }
 
     constexpr
@@ -337,7 +301,7 @@ private:
 template<typename _CharType, size_t N>
 compiled_regex(const _CharType (&)[N]) -> compiled_regex<_CharType, N-1>;
 template<typename _CharType, size_t N>
-compiled_regex(const fixed_string<_CharType, N>&) -> compiled_regex<_CharType, N>;
+compiled_regex(const ct::fixed_string<_CharType, N>&) -> compiled_regex<_CharType, N>;
 
 template<typename _CharType, size_t N>
 compiled_regex(int, const _CharType (&)[N]) -> compiled_regex<_CharType, N-1>;
@@ -371,7 +335,7 @@ struct build_actions_chain
             if constexpr (cmd.cmd == e_action::group_name) {
 #if __cpp_nontype_template_args > 201411L
                 constexpr size_t len = cmd.detail;
-                fixed_string group_name = compiled.extract_string(begin+1, std::integral_constant<size_t, len>{});
+                ct::fixed_string group_name = compiled.extract_string(begin+1, std::integral_constant<size_t, len>{});
                 group_name_op op{group_name};
                 auto newcode = std::make_tuple(op);
                 auto res = std::tuple_cat(tup, newcode);
@@ -504,7 +468,7 @@ private:
     }
 
     template<size_t pos, size_t N, typename _Context>
-    static auto x_get_substitute(_Context&, const fixed_string<char_type, N>& s)
+    static auto x_get_substitute(_Context&, const ct::fixed_string<char_type, N>& s)
     {
         return s.to_view();
     }
@@ -599,7 +563,7 @@ public:
             return m_orig;
     }
 
-    view_type to_view()
+    view_type to_view() const
     {
         if (m_modified)
             return *m_modified;
@@ -608,7 +572,7 @@ public:
     }
 
     template<typename _T=_Input, typename = std::enable_if_t<std::is_constructible_v<output_type, const _T&>, _T>>
-    bool operator==(const _T& v)
+    bool operator==(const _T& v) const
     {
         return to_view() == v;
     }
@@ -620,8 +584,15 @@ public:
         }
         return *m_modified;
     }
+    operator output_type()
+    {
+        if (m_modified)
+            return std::move(m_modified.value());
+        else
+            return output_type(std::move(m_orig));
+    }
 
-    bool modified()
+    bool modified() const
     {
         return (bool) m_modified;
     }
@@ -629,7 +600,7 @@ public:
     template<typename _Change, typename = std::enable_if_t<std::is_assignable_v<output_type, _Change>>>
     mutable_string& operator=(_Change&& new_value)
     {
-        m_modified = new_value;
+        m_modified = std::forward<_Change>(new_value);
         return *this;
     }
 
