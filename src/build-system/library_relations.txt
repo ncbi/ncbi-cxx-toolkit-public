@@ -1517,6 +1517,7 @@ xconnect needs xncbi
 xconnext includes $(CONNEXT)
 xconnext needs xconnect
 xconnserv needs xthrserv
+xconnsftp needs xncbi
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
 xcser needs3party $(NETWORK_LIBS)
