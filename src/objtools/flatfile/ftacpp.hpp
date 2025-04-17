@@ -130,7 +130,7 @@ inline bool StringEquN(const char* s1, const char* s2, size_t n)
 }
 inline bool fta_StartsWith(const char* s1, string_view s2)
 {
-    return string_view(s1, s2.size()).starts_with(s2);
+    return string_view(s1).starts_with(s2);
 }
 inline bool StringEquNI(const char* s1, const char* s2, size_t n)
 {
