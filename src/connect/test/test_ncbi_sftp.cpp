@@ -91,13 +91,25 @@ struct SGlobalFixture
 
     static bool IsSFTP() { return type == SFTP; }
 
-    static unique_ptr<iostream> CreateStream(const string& path)
+    static unique_ptr<iostream> CreateStream(const string& path, const string& file = {}, size_t offset = 0, bool upload = false)
     {
         if (auto sftp_session = get_if<SFTP>(&session)) {
-            return make_unique<CSFTP_Stream>(*sftp_session, path);
+            if (file.empty()) {
+                return make_unique<CSFTP_Stream>(*sftp_session, path);
+            } else if (upload) {
+                return make_unique<CSFTP_UploadStream>(*sftp_session, file, offset, path);
+            } else {
+                return make_unique<CSFTP_DownloadStream>(*sftp_session, file, offset, path);
+            }
 
         } else if (auto cred = get_if<FTP>(&session)) {
-            return make_unique<CConn_FtpStream>("ftp-private.ncbi.nlm.nih.gov", cred->first, cred->second, path);
+            if (file.empty()) {
+                return make_unique<CConn_FtpStream>("ftp-private.ncbi.nlm.nih.gov", cred->first, cred->second, path);
+            } else if (upload) {
+                return make_unique<CConn_FTPUploadStream>("ftp-private.ncbi.nlm.nih.gov", cred->first, cred->second, file, path, 0, 0, offset);
+            } else {
+                return make_unique<CConn_FTPDownloadStream>("ftp-private.ncbi.nlm.nih.gov", file, cred->first, cred->second, path, 0, 0, nullptr, offset);
+            }
 
         } else {
             BOOST_FAIL("Unknown stream type requested");
@@ -126,35 +138,49 @@ struct SDefaultDirFixture
     }
 
     template <class... TArgs>
-    void Test(string_view command, TArgs&&... args)
+    void Test(iostream& s, string_view command, TArgs&&... args)
     {
         BOOST_TEST_INFO_SCOPE(command);
-        stream << command << endl;
-        x_Test(std::forward<TArgs>(args)...);
-        stream.clear();
+        s << command << endl;
+        x_Test(s, std::forward<TArgs>(args)...);
+        s.clear();
+    }
+
+    template <class... TArgs>
+    void Test(string_view command, TArgs&&... args)
+    {
+        Test(stream, command, std::forward<TArgs>(args)...);
+    }
+
+    template <class... TArgs>
+    void TestNoCommand(iostream& s, TArgs&&... args)
+    {
+        BOOST_TEST_INFO_SCOPE("No command");
+        x_Test(s, std::forward<TArgs>(args)...);
+        s.clear();
     }
 
 private:
-    void x_Test()
+    void x_Test(iostream& s)
     {
-        BOOST_CHECK(!getline(stream, line));
-        BOOST_CHECK_EQUAL(stream.rdstate(), ios_base::failbit | ios_base::eofbit);
+        BOOST_CHECK(!getline(s, line));
+        BOOST_CHECK_EQUAL(s.rdstate(), ios_base::failbit | ios_base::eofbit);
     }
 
-    void x_Test(string_view expected)
+    void x_Test(iostream& s, string_view expected)
     {
         BOOST_TEST_INFO_SCOPE("With expected=" << expected);
-        BOOST_CHECK(getline(stream, line));
+        BOOST_CHECK(getline(s, line));
         BOOST_CHECK_EQUAL(line, expected);
-        BOOST_CHECK(!getline(stream, line));
-        BOOST_CHECK_EQUAL(stream.rdstate(), ios_base::failbit | ios_base::eofbit);
+        BOOST_CHECK(!getline(s, line));
+        BOOST_CHECK_EQUAL(s.rdstate(), ios_base::failbit | ios_base::eofbit);
     }
 
-    void x_Test(set<string> expected)
+    void x_Test(iostream& s, set<string> expected)
     {
         set<string> actual;
 
-        while (getline(stream, line)) {
+        while (getline(s, line)) {
             if (line.back() == '\r') {
                 line.replace(line.size() - 1, 1, "\\r"sv);
             }
@@ -163,20 +189,20 @@ private:
         }
 
         BOOST_CHECK_EQUAL_COLLECTIONS(actual.begin(), actual.end(), expected.begin(), expected.end());
-        BOOST_CHECK_EQUAL(stream.rdstate(), ios_base::failbit | ios_base::eofbit);
+        BOOST_CHECK_EQUAL(s.rdstate(), ios_base::failbit | ios_base::eofbit);
     }
 
     template <class TExpected>
-    void x_Test(array<TExpected, 2> expected)
+    void x_Test(iostream& s, array<TExpected, 2> expected)
     {
-        x_Test(expected[SGlobalFixture::IsSFTP() ? 0 : 1]);
+        x_Test(s, expected[SGlobalFixture::IsSFTP() ? 0 : 1]);
     }
 
-    void x_Test(string_view data, string_view expected)
+    void x_Test(iostream& s, string_view data, string_view expected)
     {
         BOOST_TEST_INFO_SCOPE("With data=" << data);
-        stream << data;
-        x_Test(expected);
+        s << data;
+        x_Test(s, expected);
     }
 };
 
@@ -229,9 +255,11 @@ BOOST_AUTO_TEST_CASE(FilesAndDirs)
     Test("RETR file1", "00000000000000000000");
     Test("STOR file1", "111111111", "9");
     Test("RETR file1", "111111111");
-    Test("REST 4", "350");
-    Test("STOR file1", "2222", "4");
-    Test("RETR file1", "111122221");
+
+    auto stor = SGlobalFixture::CreateStream(default_path, "file1", 4, true);
+    TestNoCommand(*stor, "2222", "4");
+    Test(*stor, "RETR file1", "111122221");
+
     Test("REST 8", "350");
     Test("STOR file1", "33", "2");
     Test("RETR file1", "1111222233");
@@ -243,8 +271,12 @@ BOOST_AUTO_TEST_CASE(FilesAndDirs)
     Test("RETR file2", "1111222233444");
     Test("APPE file2", "5", "1");
     Test("RETR file2", "11112222334445");
-    Test("REST 5", "350");
-    Test("APPE file2", "66", "2");
+
+    auto retr = SGlobalFixture::CreateStream(default_path, "file2", 8, false);
+    TestNoCommand(*retr, "334445");
+    Test(*retr, "REST 5", "350");
+    Test(*retr, "APPE file2", "66", "2");
+
     Test("RETR file2", "11112662334445");
     Test("REST 9", "350");
     Test("APPE file2", "77", "2");

@@ -92,8 +92,63 @@ private:
 class NCBI_XCONNSFTP_EXPORT CSFTP_Stream : public CRWStream
 {
 public:
-    CSFTP_Stream(CSFTP_Session session,
-                 string_view path = {});
+    CSFTP_Stream(const CSFTP_Session& session,
+                 string_view          path = {}) :
+        CSFTP_Stream(session, path, {}, 0, false)
+    {
+    }
+
+protected:
+    CSFTP_Stream(const CSFTP_Session& session, string_view path,
+            string_view file, uint64_t offset, bool upload);
+};
+
+
+/// CSFTP_Stream specialization (ctors) for download
+///
+/// @sa CSFTP_Stream, CConn_FTPDownloadStream
+///
+class NCBI_XCONNSFTP_EXPORT CSFTP_DownloadStream : public CSFTP_Stream
+{
+public:
+    CSFTP_DownloadStream(const CSFTP_Session& session,
+                         string_view          file,
+                         string_view          path = {}) :
+        CSFTP_Stream(session, path, file, 0, false)
+    {
+    }
+
+    CSFTP_DownloadStream(const CSFTP_Session& session,
+                         string_view          file,
+                         uint64_t             offset,
+                         string_view          path = {}) :
+        CSFTP_Stream(session, path, file, offset, false)
+    {
+    }
+};
+
+
+/// CSFTP_Stream specialization (ctors) for upload
+///
+/// @sa CSFTP_Stream, CConn_FTPUploadStream
+///
+class NCBI_XCONNSFTP_EXPORT CSFTP_UploadStream : public CSFTP_Stream
+{
+public:
+    CSFTP_UploadStream(const CSFTP_Session& session,
+                       string_view          file,
+                       string_view          path = {}) :
+        CSFTP_Stream(session, path, file, 0, true)
+    {
+    }
+
+    CSFTP_UploadStream(const CSFTP_Session& session,
+                       string_view          file,
+                       uint64_t             offset,
+                       string_view          path = {}) :
+        CSFTP_Stream(session, path, file, offset, true)
+    {
+    }
 };
 
 

@@ -164,9 +164,10 @@ ERW_Result SWrtrState::Write(const void* buf, size_t count, size_t* bytes_writte
 }
 
 
-SRWFsm::SRWFsm(shared_ptr<SSession> session, string_view start_path) :
+SRWFsm::SRWFsm(shared_ptr<SSession> session, string_view start_path, string_view file, uint64_t offset, bool upload) :
     m_Session(std::move(session)),
-    m_CurrentPath("/")
+    m_CurrentPath("/"),
+    m_Offset(offset)
 {
     m_States.emplace("CWD"s, make_unique<SCwdState>(x_GetData(), start_path));
     m_States.emplace("NLST"s, make_unique<SNlstState>(x_GetData()));
@@ -175,16 +176,30 @@ SRWFsm::SRWFsm(shared_ptr<SSession> session, string_view start_path) :
     m_States.emplace("MLST"s, make_unique<SMlstState>(x_GetData()));
     m_States.emplace("PWD"s, make_unique<SPwdState>(x_GetData()));
     m_States.emplace("CDUP"s, make_unique<SCdupState>(x_GetData()));
-    m_States.emplace("RETR"s, make_unique<SRetrState>(x_GetData()));
     m_States.emplace("SIZE"s, make_unique<SSizeState>(x_GetData()));
     m_States.emplace("REST"s, make_unique<SRestState>(x_GetData()));
-    m_States.emplace("STOR"s, make_unique<SWrtrState>(x_GetData(), SWrtrState::eStor));
     m_States.emplace("APPE"s, make_unique<SWrtrState>(x_GetData(), SWrtrState::eAppe));
     m_States.emplace("MKD"s, make_unique<SMkdState>(x_GetData()));
     m_States.emplace("RMD"s, make_unique<SRmdState>(x_GetData()));
     m_States.emplace("DELE"s, make_unique<SDeleState>(x_GetData()));
     m_States.emplace("REN"s, make_unique<SRenState>(x_GetData()));
     m_States.emplace("MDTM"s, make_unique<SMdtmState>(x_GetData()));
+
+    auto retr = make_unique<SRetrState>(x_GetData());
+    auto stor = make_unique<SWrtrState>(x_GetData(), SWrtrState::eStor);
+
+    if (!file.empty()) {
+        if (upload) {
+            stor->Reset(file);
+            m_CurrentState = stor.get();
+        } else {
+            retr->Reset(file);
+            m_CurrentState = retr.get();
+        }
+    }
+
+    m_States.emplace("RETR"s, std::move(retr));
+    m_States.emplace("STOR"s, std::move(stor));
 }
 
 ERW_Result SRWFsm::Read(void* buf, size_t count, size_t* bytes_read)
@@ -263,9 +278,11 @@ CSFTP_Session::CSFTP_Session(const string& host, const string& user, const strin
 }
 
 
-CSFTP_Stream::CSFTP_Stream(CSFTP_Session session,
-             string_view path) :
-    CRWStream(new NSftp::SRWFsm(static_pointer_cast<NSftp::SSession>(session.m_Impl), std::move(path)), 0, nullptr, CRWStreambuf::fOwnAll)
+CSFTP_Stream::CSFTP_Stream(const CSFTP_Session& session, string_view path,
+            string_view file, uint64_t offset, bool upload) :
+    CRWStream(
+            new NSftp::SRWFsm(static_pointer_cast<NSftp::SSession>(session.m_Impl), path, file, offset, upload),
+            0, nullptr, CRWStreambuf::fOwnAll)
 {
 }
 

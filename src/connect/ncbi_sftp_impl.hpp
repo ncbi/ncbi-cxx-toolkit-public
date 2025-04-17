@@ -915,7 +915,7 @@ private:
 
 struct SRWFsm : IState
 {
-    SRWFsm(shared_ptr<SSession> session, string_view start_path);
+    SRWFsm(shared_ptr<SSession> session, string_view start_path, string_view file, uint64_t offset, bool upload);
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0) override;
     ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0) override;
@@ -927,7 +927,7 @@ private:
     map<string, unique_ptr<IState>, PNocase> m_States;
     IState* m_CurrentState = nullptr;
     TPath m_CurrentPath;
-    uint64_t m_Offset = 0;
+    uint64_t m_Offset;
     string m_Buffer;
 };
 
