@@ -149,7 +149,8 @@ if (defined($opt_source)) {
             # status not always reliable.  Check that curl output is all digits.
             my $tmpfile_content = do { local $/; <$tmpfile>};
             print "curl output $tmpfile_content\n" if DEBUG;
-            $location = "GCP" if ($tmpfile_content =~ m/^(\d+)$/);
+            # When running in GCP, set the data source location as NCBI
+            $location = "NCBI" if ($tmpfile_content =~ m/^(\d+)$/);
         } elsif (DEBUG) {
             # Consult https://ec.haxx.se/usingcurl/usingcurl-returns
             print "curl to GCP metadata server returned ", $?>>8, "\n";
