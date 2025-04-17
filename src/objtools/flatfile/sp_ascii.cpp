@@ -3611,28 +3611,26 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 }
 
 /**********************************************************/
-static void DelParenthesis(char* str)
+static void DelParenthesis(string& str)
 {
-    char* p = str;
+    auto p = str.cbegin();
     for (; *p == ' ' || *p == '\t';)
         p++;
-    char* q = p;
-    for (; *q != '\0';)
-        q++;
+    auto q = str.cend();
     if (q > p) {
         --q;
         for (; (q > p) && (*q == ' ' || *q == '\t');)
             q--;
         ++q;
     }
-    char* pp = p;
+    auto pp = p;
     for (; *pp == '(';)
         pp++;
-    char* qq = q;
+    auto qq = q;
     for (; qq > pp && *(qq - 1) == ')';)
         qq--;
     Int2 count = 0, left = 0, right = 0;
-    for (const char* r = pp; r < qq; r++) {
+    for (auto r = pp; r < qq; r++) {
         if (*r == '(')
             left++;
         else if (*r == ')') {
@@ -3643,7 +3641,7 @@ static void DelParenthesis(char* str)
     for (; count < 0 && pp > p; pp--)
         count++;
     count = 0;
-    for (const char* r = qq; r > pp;) {
+    for (auto r = qq; r > pp;) {
         --r;
         if (*r == '(')
             count--;
@@ -3652,9 +3650,12 @@ static void DelParenthesis(char* str)
     }
     for (; count < 0 && qq < q; qq++)
         count++;
-    *qq = '\0';
-    if (pp != str)
-        fta_StringCpy(str, pp);
+
+    // str = string(pp, qq);
+    if (qq < str.end())
+        str.erase(qq, str.end());
+    if (pp > str.begin())
+        str.erase(str.begin(), pp);
 }
 
 /**********************************************************
@@ -3668,17 +3669,15 @@ static void DelParenthesis(char* str)
  *                                              10-25-93
  *
  **********************************************************/
-static void CkGeneNameSP(char* gname)
+static void CkGeneNameSP(string& gname)
 {
-    char* p;
-
     DelParenthesis(gname);
-    for (p = gname; *p != '\0'; p++)
-        if (! (isalnum(*p) || *p == '_' || *p == '-' || *p == '.' ||
-               *p == '\'' || *p == '`' || *p == '/' || *p == '(' || *p == ')'))
+    for (char c : gname)
+        if (! (isalnum(c) || c == '_' || c == '-' || c == '.' ||
+               c == '\'' || c == '`' || c == '/' || c == '(' || c == ')')) {
+            FtaErrPost(SEV_WARNING, ERR_GENENAME_IllegalGeneName, "gene_name contains unusual characters, {}, in SWISS-PROT", gname);
             break;
-    if (*p != '\0')
-        FtaErrPost(SEV_WARNING, ERR_GENENAME_IllegalGeneName, "gene_name contains unusual characters, {}, in SWISS-PROT", gname);
+        }
 }
 
 /**********************************************************
@@ -3707,7 +3706,7 @@ static void ParseGeneNameSP(char* str, CSeq_feat& feat)
             *p++ = '\0';
         if (StringEqu(q, "AND") || StringEqu(q, "OR"))
             continue;
-        char* gname = StringSave(q);
+        string gname(q);
         CkGeneNameSP(gname);
         if (count == 0) {
             count++;
@@ -3715,7 +3714,6 @@ static void ParseGeneNameSP(char* str, CSeq_feat& feat)
         } else {
             gene.SetSyn().push_back(gname);
         }
-        MemFree(gname);
     }
 }
 
