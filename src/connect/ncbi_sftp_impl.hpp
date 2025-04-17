@@ -33,13 +33,13 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 #include <connect/ncbi_sftp.hpp>
 
 #ifdef HAVE_SFTP
 
 #include <chrono>
 #include <filesystem>
-#include <format>
 #include <map>
 #include <memory>
 #include <optional>
@@ -688,7 +688,7 @@ struct SNlstState : SDirReplyState<SNlstState>
 
     string Prepare(sftp_attributes attrs)
     {
-        return *attrs->name == '.' ? ""s : format("{}{}\r\n", m_Path.native(), attrs->name);
+        return *attrs->name == '.' ? ""s : m_Path.native() + attrs->name + "\r\n"sv;
     }
 
 private:
@@ -701,7 +701,7 @@ struct SListState : SDirReplyState<SListState>
 
     string Prepare(sftp_attributes attrs)
     {
-        return *attrs->name == '.' ? ""s : format("{}\r\n", attrs->longname);
+        return *attrs->name == '.' ? ""s : attrs->longname + "\r\n"s;
     }
 };
 
@@ -709,37 +709,43 @@ struct SMlsFormat
 {
     string Prepare(sftp_attributes attrs, const TPath& path = {})
     {
-        return format(
-                "modify={:%Y%m%d%H%M%S};"
-                "size={};"
-                "type={};"
-                "UNIX.group={};"
-                "UNIX.groupname={};"
-                "UNIX.mode=0{:o};"
-                "UNIX.owner={};"
-                "UNIX.ownername={};"
-                " {}{}\n",
-                chrono::floor<chrono::seconds>(chrono::system_clock::from_time_t(attrs->mtime)),
-                attrs->size,
-                x_GetType(attrs->name, attrs->type, path.empty()),
-                attrs->gid,
-                attrs->group ? attrs->group : "",
-                attrs->permissions & 0777,
-                attrs->uid,
-                attrs->owner ? attrs->owner : "",
-                NormalizePath((path / attrs->name).lexically_normal()).native(), path.empty() ? "\r"sv : "");
-    }
+        ostringstream os;
+        os << "modify=" << CTime(attrs->mtime).AsString("YMDhms") <<
+            ";size=" << attrs->size <<
+            ";type=";
 
-private:
-    string_view x_GetType(string_view name, uint8_t type, bool mlsd)
-    {
-        switch (type) {
-            case SSH_FILEXFER_TYPE_REGULAR:   return "file"sv;
-            case SSH_FILEXFER_TYPE_DIRECTORY: return mlsd && name == "."sv ? "cdir" : mlsd && name == ".."sv ? "pdir"sv : "dir"sv;
-            case SSH_FILEXFER_TYPE_SYMLINK:   return "OS.unix=symlink"sv;
-            case SSH_FILEXFER_TYPE_SPECIAL:   return "special"sv;
-            default:                          return "unknown"sv;
+        switch (attrs->type) {
+            case SSH_FILEXFER_TYPE_DIRECTORY:
+                if (path.empty()) {
+                    if (string_view(attrs->name) == "."sv)  os << 'c';
+                    if (string_view(attrs->name) == ".."sv) os << 'p';
+                }
+
+                os << "dir";
+                break;
+            case SSH_FILEXFER_TYPE_REGULAR:   os << "file"; break;
+            case SSH_FILEXFER_TYPE_SYMLINK:   os << "OS.unix=symlink"; break;
+            case SSH_FILEXFER_TYPE_SPECIAL:   os << "special"; break;
+            default:                          os << "unknown"; break;
         }
+
+        os << ";UNIX.group=" << attrs->gid <<
+            ";UNIX.groupname=";
+
+        if (attrs->group) os << attrs->group;
+
+        os << ";UNIX.mode=0" << oct << (attrs->permissions & 0777) << dec <<
+            ";UNIX.owner=" << attrs->uid <<
+            ";UNIX.ownername=";
+
+        if (attrs->owner) os << attrs->owner;
+
+        os << "; " << NormalizePath((path / attrs->name).lexically_normal()).native();
+
+        if (path.empty()) os << '\r';
+
+        os << '\n';
+        return os.str();
     }
 };
 
