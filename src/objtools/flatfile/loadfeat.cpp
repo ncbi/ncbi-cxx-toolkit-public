@@ -5089,7 +5089,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     r = nullptr;
     c = '\0';
     if (! ibp->moltype.empty()) {
-        if (pp->source == Parser::ESource::DDBJ && molstr && fta_StartsWithNocase(molstr, "PRT"sv))
+        if (pp->source == Parser::ESource::DDBJ && molstr && NStr::StartsWith(molstr, "PRT"sv, NStr::eNocase))
             return;
 
         biomol = Seq_descr_GIBB_mol_genomic;
@@ -5366,9 +5366,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (genomic < 0 || genomic > 20) {
-        if (pp->source == Parser::ESource::EMBL && molstr && fta_StartsWithNocase(molstr, "XXX"sv))
+        if (pp->source == Parser::ESource::EMBL && molstr && NStr::StartsWith(molstr, "XXX"sv, NStr::eNocase))
             return;
-        if (pp->source == Parser::ESource::DDBJ && molstr && fta_StartsWithNocase(molstr, "PRT"sv))
+        if (pp->source == Parser::ESource::DDBJ && molstr && NStr::StartsWith(molstr, "PRT"sv, NStr::eNocase))
             return;
         ibp->drop = true;
         q         = molstr;
@@ -5521,7 +5521,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 if (StringEquN(p, "DE   ", 5))
                     p += 5;
             }
-            if (fta_StartsWithNocase(p, "Synthetase"sv))
+            if (NStr::StartsWith(p, "Synthetase"sv, NStr::eNocase))
                 return;
         }
 

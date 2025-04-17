@@ -299,7 +299,7 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
     char* ptr2;
     char* token;
 
-    if (fta_StartsWithNocase(str, "UNPUBLISHED"sv)) {
+    if (NStr::StartsWith(str, "UNPUBLISHED"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
         prbp->journal = str;
     } else if (StringEquNI(str, "(IN)", 4)) {
@@ -307,13 +307,13 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
         for (str += 4; *str == ' ';)
             str++;
         prbp->journal = str;
-    } else if (fta_StartsWithNocase(str, "SUBMITTED"sv)) {
+    } else if (NStr::StartsWith(str, "SUBMITTED"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeSubmit;
         prbp->journal = str;
-    } else if (fta_StartsWithNocase(str, "PATENT NUMBER"sv)) {
+    } else if (NStr::StartsWith(str, "PATENT NUMBER"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypePatent;
         prbp->journal = str;
-    } else if (fta_StartsWithNocase(str, "THESIS"sv)) {
+    } else if (NStr::StartsWith(str, "THESIS"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeThesis;
 
         ptr1 = str;

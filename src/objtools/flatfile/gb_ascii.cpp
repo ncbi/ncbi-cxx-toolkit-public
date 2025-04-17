@@ -1194,7 +1194,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     if (pp->taxserver == 1 && gbbp->IsSetDiv())
         fta_fix_orgref_div(bioseq.GetAnnot(), org_ref, *gbbp);
 
-    if (fta_StartsWithNocase(ibp->division, "CON"sv))
+    if (NStr::StartsWith(ibp->division, "CON"sv, NStr::eNocase))
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, gbbp->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, false, ibp->acnum);

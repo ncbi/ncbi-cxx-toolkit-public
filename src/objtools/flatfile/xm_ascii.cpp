@@ -927,7 +927,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (pp->source == Parser::ESource::EMBL) {
-        if (fta_StartsWithNocase(ibp->division, "CON"sv))
+        if (NStr::StartsWith(ibp->division, "CON"sv, NStr::eNocase))
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, embl->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);
@@ -935,7 +935,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         if (embl->GetExtra_acc().empty())
             embl->ResetExtra_acc();
     } else {
-        if (fta_StartsWithNocase(ibp->division, "CON"sv))
+        if (NStr::StartsWith(ibp->division, "CON"sv, NStr::eNocase))
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, true, ibp->acnum);
         else
             fta_add_hist(pp, bioseq, gbb->SetExtra_accessions(), Parser::ESource::DDBJ, CSeq_id::e_Ddbj, false, ibp->acnum);
