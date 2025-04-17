@@ -2,7 +2,7 @@
 
 NCBI_begin_app(sftp_sample)
   NCBI_sources(sftp_sample)
-  NCBI_requires(SSH Cxx2020_format_api)
+  NCBI_requires(SSH)
   NCBI_uses_toolkit_libraries(xconnsftp xconnect)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()

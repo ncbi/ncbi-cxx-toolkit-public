@@ -4,7 +4,7 @@ SRC = ncbi_sftp
 
 LIB = xconnsftp
 
-REQUIRES = LIBSSH Cxx2020_format_api
+REQUIRES = LIBSSH
 
 LIB_OR_DLL = both
 

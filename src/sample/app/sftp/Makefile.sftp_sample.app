@@ -6,6 +6,6 @@ LIB = xconnsftp xconnect xutil xncbi
 
 LIBS = $(XCONNSFTP_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-REQUIRES = LIBSSH Cxx2020_format_api
+REQUIRES = LIBSSH
 
 WATCHERS = sadyrovr

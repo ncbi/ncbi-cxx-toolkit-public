@@ -8,6 +8,6 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIBS = $(XCONNSFTP_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included LIBSSH Cxx2020_format_api
+REQUIRES = Boost.Test.Included LIBSSH
 
 WATCHERS = sadyrovr
