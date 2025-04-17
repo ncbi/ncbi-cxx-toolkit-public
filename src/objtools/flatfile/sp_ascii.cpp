@@ -3613,29 +3613,26 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 /**********************************************************/
 static void DelParenthesis(char* str)
 {
-    char* p;
-    char* q;
-    char* pp;
-    char* qq;
-    char* r;
-    Int2  count;
-    Int2  left;
-    Int2  right;
-
-    for (p = str; *p == ' ' || *p == '\t';)
+    char* p = str;
+    for (; *p == ' ' || *p == '\t';)
         p++;
-    for (q = p; *q != '\0';)
+    char* q = p;
+    for (; *q != '\0';)
         q++;
-    if (q > p)
-        for (q--; (*q == ' ' || *q == '\t') && q > p;)
-            *q-- = '\0';
-    if (q == p && (*q == ' ' || *q == '\t'))
-        *q = '\0';
-    for (pp = p; *pp == '(';)
+    if (q > p) {
+        --q;
+        for (; (q > p) && (*q == ' ' || *q == '\t');)
+            q--;
+        ++q;
+    }
+    char* pp = p;
+    for (; *pp == '(';)
         pp++;
-    for (qq = q; *qq == ')' && qq >= pp;)
+    char* qq = q;
+    for (; qq > pp && *(qq - 1) == ')';)
         qq--;
-    for (count = 0, left = 0, right = 0, r = pp; r <= qq; r++) {
+    Int2 count = 0, left = 0, right = 0;
+    for (const char* r = pp; r < qq; r++) {
         if (*r == '(')
             left++;
         else if (*r == ')') {
@@ -3643,19 +3640,19 @@ static void DelParenthesis(char* str)
             count = left - right;
         }
     }
-    if (count < 0)
-        for (; count < 0 && pp > p; pp--)
-            count++;
-    for (count = 0, r = qq; r >= pp; r--) {
+    for (; count < 0 && pp > p; pp--)
+        count++;
+    count = 0;
+    for (const char* r = qq; r > pp;) {
+        --r;
         if (*r == '(')
             count--;
         else if (*r == ')')
             count++;
     }
-    if (count < 0)
-        for (; count < 0 && qq < q; qq++)
-            count++;
-    *++qq = '\0';
+    for (; count < 0 && qq < q; qq++)
+        count++;
+    *qq = '\0';
     if (pp != str)
         fta_StringCpy(str, pp);
 }
