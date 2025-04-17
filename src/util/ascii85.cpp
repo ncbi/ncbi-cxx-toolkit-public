@@ -49,47 +49,43 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
     }
 
     char* dst_ptr = dst_buf;
+    const char* src_ptr = src_buf;
+    const char* src_end = src_buf + src_len;
 
-    union UVal
-    {
-        long num;
-        char chars[4];
-    };
-
-    for (const char* src_ptr = src_buf, *src_end = src_buf + src_len;
-         dst_len != 0 && src_ptr < src_end;
-         src_len -= 4
-        )
-    {
-        const size_t l = src_len > 4 ? 4 : src_len;
-        const size_t grplen = l + 1;
+    while (src_ptr < src_end) {
         unsigned long val = 0;
-        for (long shft = 8 * long(l - 1); shft < 0; shft -= 8, ++src_ptr) {
-            val |= ((unsigned char) *src_ptr) << shft;
+        int bytes = 0;
+
+        // Read up to 4 bytes into val
+        for (; bytes < 4 && src_ptr < src_end; ++bytes) {
+            val = (val << 8) | (unsigned char)(*src_ptr++);
         }
 
-        // special case - if values are all zero, output 'z'
-        if (val == 0 && grplen == 5) {
+        // Pad val if fewer than 4 bytes
+        val <<= (4 - bytes) * 8;
+
+        if (val == 0 && bytes == 4) {
+            if (dst_len < 1) break;
             *dst_ptr++ = 'z';
             --dst_len;
             continue;
         }
 
-        char out[5] = { 0 };
+        // Convert to 5 ASCII85 characters
+        char out[5];
         for (int i = 4; i >= 0; --i) {
-            const unsigned long quot = val / 85;
-            const unsigned long rem = val - quot * 85; // val % 85
-            val = quot;
-            out[i] = char(rem + '!');
+            out[i] = (char)((val % 85) + '!');
+            val /= 85;
         }
 
-        if (dst_len < grplen) {
+        int out_len = bytes + 1;
+        if (dst_len < (size_t)out_len) {
             _TRACE(Info << "insufficient buffer space provided\n");
             break;
         }
-        memcpy(dst_ptr, out, grplen);
-        dst_ptr += grplen;
-        dst_len -= grplen;
+        memcpy(dst_ptr, out, out_len);
+        dst_ptr += out_len;
+        dst_len -= out_len;
     }
 
     if (dst_len < 2) {
