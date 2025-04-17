@@ -2573,6 +2573,7 @@ GDMP	s	Guangdong Medical and Pharmaceutical College, Pharmacy Department
 GDOR	s	Museo Civico di Storia Naturale Giacomo Doria			
 GDZQU	s	Zhaoqing University			
 GE	s	Universita di Genova			
+GEA-LAB	s	Department of Biological, Geological and Environmental Sciences, University of Bologna			
 GEFC	s	Gerard E. Flory ?			
 GEIC	s	Guangdong Entomology Institute			
 GEN	s	Generasi Biologi Indonesia			
