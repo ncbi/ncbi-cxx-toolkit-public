@@ -3689,24 +3689,24 @@ static void CkGeneNameSP(string& gname)
  *                                              10-25-93
  *
  **********************************************************/
-static void ParseGeneNameSP(char* str, CSeq_feat& feat)
+static void ParseGeneNameSP(string_view str, CSeq_feat& feat)
 {
-    char* p;
-    char* q;
     Int2  count = 0;
 
     CGene_ref& gene = feat.SetData().SetGene();
 
-    for (p = str; *p != '\0';) {
-        while (*p == ' ')
+    for (auto p = str.begin(); p != str.end();) {
+        while (p != str.end() && *p == ' ')
             p++;
-        for (q = p; *p != '\0' && *p != ' ';)
+        auto q = p;
+        for (; p != str.end() && *p != ' ';)
             p++;
-        if (*p != '\0')
-            *p++ = '\0';
-        if (StringEqu(q, "AND") || StringEqu(q, "OR"))
+        string_view tok(q, p);
+        if (p != str.end())
+            p++;
+        if (tok == "AND"sv || tok == "OR"sv)
             continue;
-        string gname(q);
+        string gname(tok);
         CkGeneNameSP(gname);
         if (count == 0) {
             count++;
@@ -3747,26 +3747,21 @@ static CRef<CSeq_loc> GetSeqLocIntSP(size_t seqlen, char* acnum, bool accver, In
  *                                              10-25-93
  *
  **********************************************************/
-static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char* bptr, size_t seqlen)
+static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, string_view bptr, size_t seqlen)
 {
-    IndexblkPtr ibp;
-
-    char* str;
-    char* ptr;
-
     if (! pp || pp->entrylist.empty())
         return;
 
-    ibp = pp->entrylist[pp->curindx];
+    IndexblkPtr ibp = pp->entrylist[pp->curindx];
     if (! ibp)
         return;
 
-    str = StringSave(bptr);
-    for (ptr = str; *ptr != '\0'; ptr++)
-        if (*ptr == '\t')
-            *ptr = ' ';
+    string str(bptr);
+    for (char& c : str)
+        if (c == '\t')
+            c = ' ';
 
-    CleanTailNoneAlphaChar(str);
+    CleanTailNoneAlphaCharInString(str);
 
     CRef<CSeq_feat> feat(new CSeq_feat);
     ParseGeneNameSP(str, *feat);
@@ -3844,7 +3839,7 @@ static void SPGetOneGeneRefNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats,
 }
 
 /**********************************************************/
-static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, char* bptr, size_t seqlen)
+static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, string_view bptr, size_t seqlen)
 {
     IndexblkPtr ibp;
 
@@ -3857,7 +3852,7 @@ static void SPGetGeneRefsNew(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, c
     char* q;
     char* r;
 
-    if (! pp || pp->entrylist.empty() || ! bptr)
+    if (! pp || pp->entrylist.empty() || bptr.empty())
         return;
 
     ibp = pp->entrylist[pp->curindx];
@@ -3999,28 +3994,23 @@ static Int4 GetSeqLen(const DataBlk& entry)
 static void SPFeatGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, const DataBlk& entry)
 {
     char* offset;
-    char* str;
-
     size_t len = 0;
     if (! SrchNodeType(entry, ParFlatSP_GN, &len, &offset))
         return;
 
-    string str_ = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
-    StripECO(str_);
-    str = StringSave(str_);
-    if (! str)
+    string str = GetBlkDataReplaceNewLine(string_view(offset, len), ParFlat_COL_DATA_SP);
+    StripECO(str);
+    if (str.empty())
         return;
 
     len = GetSeqLen(entry);
-    if (! StringIStr(str, "Name=") &&
-        ! StringIStr(str, "Synonyms=") &&
-        ! StringIStr(str, "OrderedLocusNames=") &&
-        ! StringIStr(str, "ORFNames="))
+    if (! StringIStr(str.c_str(), "Name=") &&
+        ! StringIStr(str.c_str(), "Synonyms=") &&
+        ! StringIStr(str.c_str(), "OrderedLocusNames=") &&
+        ! StringIStr(str.c_str(), "ORFNames="))
         GetOneGeneRef(pp, feats, str, len);
     else
         SPGetGeneRefsNew(pp, feats, str, len);
-
-    MemFree(str);
 }
 
 /**********************************************************/
