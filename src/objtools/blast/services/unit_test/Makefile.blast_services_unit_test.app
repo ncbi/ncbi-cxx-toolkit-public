@@ -14,4 +14,4 @@ LIBS = $(BLAST_THIRD_PARTY_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) \
 
 CHECK_CMD = blast_services_unit_test
 
-WATCHERS = camacho
+WATCHERS = merezhuk camacho

@@ -4,6 +4,6 @@ NCBI_begin_app(blast_services_unit_test)
   NCBI_sources(blast_services_test)
   NCBI_uses_toolkit_libraries(blast_services)
   NCBI_add_test()
-  NCBI_project_watchers(madden camacho)
+  NCBI_project_watchers(merezhuk camacho)
 NCBI_end_app()
 
