@@ -1581,7 +1581,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetBook(*book);
-    } else if (fta_StartsWithNocase(p, "Published Only in Database"sv)) {
+    } else if (NStr::StartsWith(p, "Published Only in Database"sv, NStr::eNocase)) {
         retval                 = ParFlat_GEN_CITATION;
         CRef<CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
 
@@ -1591,7 +1591,7 @@ CRef<CPub> journal(ParserPtr pp, char* bptr, char* eptr, CRef<CAuth_list>& auth_
         }
 
         ret->SetGen(*cit_gen);
-    } else if (fta_StartsWithNocase(p, "Online Publication"sv)) {
+    } else if (NStr::StartsWith(p, "Online Publication"sv, NStr::eNocase)) {
         retval = ParFlat_ONLINE_CITATION;
 
         CRef<CCit_gen> cit_gen = fta_get_citgen(bptr, auth_list, title);
@@ -2050,7 +2050,7 @@ CRef<CPubdesc> gb_refs_common(ParserPtr pp, DataBlk& dbp, Uint2 col_data, bool b
         return desc;
     }
 
-    is_online = fta_StartsWithNocase(p, "Online Publication"sv);
+    is_online = NStr::StartsWith(p, "Online Publication"sv, NStr::eNocase);
 
     if (ind[ParFlat_REMARK]) {
         r = ind[ParFlat_REMARK]->mBuf.ptr;

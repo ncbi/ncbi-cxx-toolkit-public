@@ -860,7 +860,7 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
 
     /* some entries have "circular" before molecule type in embl
      */
-    if (fta_StartsWithNocase(p, "circular"sv)) {
+    if (NStr::StartsWith(p, "circular"sv, NStr::eNocase)) {
         inst.SetTopology(CSeq_inst::eTopology_circular);
         PointToNextToken(p);
     } else if (ibp->embl_new_ID)
@@ -966,12 +966,12 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     PointToNextToken(bptr); /* bptr points to 2nd token */
 
     if (ibp->embl_new_ID == false) {
-        if (fta_StartsWithNocase(bptr, "standard"sv)) {
+        if (NStr::StartsWith(bptr, "standard"sv, NStr::eNocase)) {
             // embl->SetClass(CEMBL_block::eClass_standard);
-        } else if (fta_StartsWithNocase(bptr, "unannotated"sv)) {
+        } else if (NStr::StartsWith(bptr, "unannotated"sv, NStr::eNocase)) {
             embl->SetClass(CEMBL_block::eClass_unannotated);
-        } else if (fta_StartsWithNocase(bptr, "unreviewed"sv) ||
-                   fta_StartsWithNocase(bptr, "preliminary"sv)) {
+        } else if (NStr::StartsWith(bptr, "unreviewed"sv, NStr::eNocase) ||
+                   NStr::StartsWith(bptr, "preliminary"sv, NStr::eNocase)) {
             embl->SetClass(CEMBL_block::eClass_other);
         } else {
             embl->SetClass(CEMBL_block::eClass_not_set);
@@ -1241,7 +1241,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
         if (ibp->embl_new_ID) {
             PointToNextToken(p);
             PointToNextToken(p);
-        } else if (fta_StartsWithNocase(p, "circular"sv))
+        } else if (NStr::StartsWith(p, "circular"sv, NStr::eNocase))
             PointToNextToken(p); /* p points to 4th token */
 
         if (StringEquN(p + 1, "s-", 2))
@@ -1424,7 +1424,7 @@ static CRef<CMolInfo> GetEmblMolInfo(ParserPtr pp, const DataBlk& entry, const C
     PointToNextToken(bptr);                /* bptr points to 2nd token */
     PointToNextToken(bptr);                /* bptr points to 3rd token */
 
-    if (fta_StartsWithNocase(bptr, "circular"sv) || ibp->embl_new_ID)
+    if (NStr::StartsWith(bptr, "circular"sv, NStr::eNocase) || ibp->embl_new_ID)
         PointToNextToken(bptr); /* bptr points to 4th token */
     if (ibp->embl_new_ID)
         PointToNextToken(bptr); /* bptr points to 5th token */
@@ -1825,7 +1825,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         return;
     }
 
-    if (fta_StartsWithNocase(ibp->division, "CON"sv))
+    if (NStr::StartsWith(ibp->division, "CON"sv, NStr::eNocase))
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, true, ibp->acnum);
     else
         fta_add_hist(pp, bioseq, embl_block->SetExtra_acc(), Parser::ESource::EMBL, CSeq_id::e_Embl, false, ibp->acnum);

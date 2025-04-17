@@ -137,10 +137,6 @@ inline bool StringEquNI(const char* s1, const char* s2, size_t n)
     const string S1(s1), S2(s2);
     return NStr::EqualNocase(S1.substr(0, n), S2.substr(0, n));
 }
-inline bool fta_StartsWithNocase(const char* s1, string_view s2)
-{
-    return NStr::StartsWith(s1, s2, NStr::eNocase);
-}
 
 inline bool StringHasNoText(const char* s)
 {

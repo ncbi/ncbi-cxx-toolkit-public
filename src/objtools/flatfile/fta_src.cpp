@@ -687,7 +687,7 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
                 str_to_find.assign(val_ptr);
 
             for (i = 0, b = source_genomes; *b; b++, i++)
-                if (fta_StartsWithNocase(str_to_find.c_str(), *b))
+                if (NStr::StartsWith(str_to_find, *b, NStr::eNocase))
                     break;
             if (*b && i != 8) {
                 if (genomename)

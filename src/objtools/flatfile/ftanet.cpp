@@ -137,9 +137,9 @@ void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
     ShrinkSpaces(comment);
 
     p = comment.empty() ? nullptr : comment.c_str();
-    if (p && (fta_StartsWithNocase(p, "Publication Status"sv) ||
-              fta_StartsWithNocase(p, "Publication_Status"sv) ||
-              fta_StartsWithNocase(p, "Publication-Status"sv)))
+    if (p && (NStr::StartsWith(p, "Publication Status"sv, NStr::eNocase) ||
+              NStr::StartsWith(p, "Publication_Status"sv, NStr::eNocase) ||
+              NStr::StartsWith(p, "Publication-Status"sv, NStr::eNocase)))
         FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"{}\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
 }
 

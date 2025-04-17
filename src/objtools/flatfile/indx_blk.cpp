@@ -558,7 +558,7 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
 
     p = offset + lcp->molecule;
     if (is_mga) {
-        if (! fta_StartsWithNocase(p, "mRNA"sv) && ! fta_StartsWith(p, "RNA"sv)) {
+        if (! NStr::StartsWith(p, "mRNA"sv, NStr::eNocase) && ! fta_StartsWith(p, "RNA"sv)) {
             FtaErrPost(SEV_REJECT, ERR_FORMAT_IllegalCAGEMoltype, "Illegal molecule type provided in CAGE record in LOCUS line: \"{}\". Must be \"mRNA\"or \"RNA\". Entry dropped.", p);
             ret = false;
         }
@@ -861,8 +861,8 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             if (pp->format == Parser::EFormat::SPROT) {
                 auto it = next(ptr);
                 if (it == stoken->list.end() || it->empty() ||
-                    (! fta_StartsWithNocase(it->c_str(), "preliminary"sv) &&
-                     ! fta_StartsWithNocase(it->c_str(), "unreviewed"sv)))
+                    (! NStr::StartsWith(*it, "preliminary"sv, NStr::eNocase) &&
+                     ! NStr::StartsWith(*it, "unreviewed"sv, NStr::eNocase)))
                     badlocus = CheckLocusSP(entry->locusname);
                 else
                     badlocus = false;
@@ -906,23 +906,23 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             ++it;
 
         if (pp->format == Parser::EFormat::EMBL) {
-            if (fta_StartsWithNocase(it->c_str(), "TSA"sv))
+            if (NStr::StartsWith(*it, "TSA"sv, NStr::eNocase))
                 entry->is_tsa = true;
-            else if (fta_StartsWithNocase(it->c_str(), "PAT"sv))
+            else if (NStr::StartsWith(*it, "PAT"sv, NStr::eNocase))
                 entry->is_pat = true;
         }
 
         ++it;
 
-        if (fta_StartsWithNocase(it->c_str(), "EST"sv))
+        if (NStr::StartsWith(*it, "EST"sv, NStr::eNocase))
             entry->EST = true;
-        else if (fta_StartsWithNocase(it->c_str(), "STS"sv))
+        else if (NStr::StartsWith(*it, "STS"sv, NStr::eNocase))
             entry->STS = true;
-        else if (fta_StartsWithNocase(it->c_str(), "GSS"sv))
+        else if (NStr::StartsWith(*it, "GSS"sv, NStr::eNocase))
             entry->GSS = true;
-        else if (fta_StartsWithNocase(it->c_str(), "HTC"sv))
+        else if (NStr::StartsWith(*it, "HTC"sv, NStr::eNocase))
             entry->HTC = true;
-        else if (fta_StartsWithNocase(it->c_str(), "PAT"sv) &&
+        else if (NStr::StartsWith(*it, "PAT"sv, NStr::eNocase) &&
                  pp->source == Parser::ESource::EMBL)
             entry->is_pat = true;
     }

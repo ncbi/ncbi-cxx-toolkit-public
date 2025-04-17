@@ -310,7 +310,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
 
     /* Look for the 'Length:' token and skip past it
      */
-    if (! fta_StartsWithNocase(q, "Length:"sv))
+    if (! NStr::StartsWith(q, "Length:"sv, NStr::eNocase))
         return (-15);
 
     q = StringChr(q, ':');
@@ -354,7 +354,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
 
     /* Look for the 'Min:' token and skip past it
      */
-    if (! fta_StartsWithNocase(q, "Min:"sv))
+    if (! NStr::StartsWith(q, "Min:"sv, NStr::eNocase))
         return (-21);
 
     q = StringChr(q, ':');
@@ -404,7 +404,7 @@ static int QSbuf_ParseDefline(char* qs_defline, char* def_acc, char* def_ver, ch
 
     /* Look for the 'Max:' token and skip past it
      */
-    if (! fta_StartsWithNocase(q, "Max:"sv))
+    if (! NStr::StartsWith(q, "Max:"sv, NStr::eNocase))
         return (-29);
 
     q = StringChr(q, ':');

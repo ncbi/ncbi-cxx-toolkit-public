@@ -893,13 +893,12 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
     }
 
     ShrinkSpaces(str_);
-    str = StringSave(str_);
 
     /* Delete (EC ...)
      */
-    if (fta_StartsWithNocase(str, "RecName: "sv) ||
-        fta_StartsWithNocase(str, "AltName: "sv) ||
-        fta_StartsWithNocase(str, "SubName: "sv)) {
+    if (NStr::StartsWith(str_, "RecName: "sv, NStr::eNocase) ||
+        NStr::StartsWith(str_, "AltName: "sv, NStr::eNocase) ||
+        NStr::StartsWith(str_, "SubName: "sv, NStr::eNocase)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;
@@ -909,6 +908,7 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
         shift = 4;
     }
 
+    str = StringSave(str_);
     for (ptr = str;;) {
         ptr = StringStr(ptr, tag);
         if (! ptr)
@@ -2274,11 +2274,11 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     bptr = entry.mBuf.ptr + ParFlat_COL_DATA_SP;
     PointToNextToken(bptr); /* first ID line, 2nd token */
-    reviewed = fta_StartsWithNocase(bptr, "reviewed"sv);
-    if (reviewed || fta_StartsWithNocase(bptr, "standard"sv)) {
+    reviewed = NStr::StartsWith(bptr, "reviewed"sv, NStr::eNocase);
+    if (reviewed || NStr::StartsWith(bptr, "standard"sv, NStr::eNocase)) {
         spb->SetClass(CSP_block::eClass_standard);
-    } else if (fta_StartsWithNocase(bptr, "preliminary"sv) ||
-               fta_StartsWithNocase(bptr, "unreviewed"sv)) {
+    } else if (NStr::StartsWith(bptr, "preliminary"sv, NStr::eNocase) ||
+               NStr::StartsWith(bptr, "unreviewed"sv, NStr::eNocase)) {
         spb->SetClass(CSP_block::eClass_prelim);
     } else {
         spb->SetClass(CSP_block::eClass_not_set);
@@ -2439,8 +2439,8 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
             p++;
         if (*p == '\0')
             break;
-        if (! fta_StartsWithNocase(p, COPYRIGHT) &&
-            ! fta_StartsWithNocase(p, COPYRIGHT1))
+        if (! NStr::StartsWith(p, COPYRIGHT, NStr::eNocase) &&
+            ! NStr::StartsWith(p, COPYRIGHT1, NStr::eNocase))
             break;
         p = StringStr(p, "----------");
         if (! p)
@@ -4143,9 +4143,9 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
     Int4  count;
     Char  ch;
 
-    if (! str || (! fta_StartsWithNocase(str, "RecName: "sv) &&
-                  ! fta_StartsWithNocase(str, "AltName: "sv) &&
-                  ! fta_StartsWithNocase(str, "SubName: "sv)))
+    if (! str || (! NStr::StartsWith(str, "RecName: "sv, NStr::eNocase) &&
+                  ! NStr::StartsWith(str, "AltName: "sv, NStr::eNocase) &&
+                  ! NStr::StartsWith(str, "SubName: "sv, NStr::eNocase)))
         return;
 
     is_trembl = false;
@@ -4327,15 +4327,15 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
 
     ibp = pp->entrylist[pp->curindx];
 
-    if (fta_StartsWithNocase(str, "Contains: "sv) ||
-        fta_StartsWithNocase(str, "Includes: "sv)) {
+    if (NStr::StartsWith(str_, "Contains: "sv, NStr::eNocase) ||
+        NStr::StartsWith(str_, "Includes: "sv, NStr::eNocase)) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_NoProteinNameCategory, "DE lines do not have a non-Includes/non-Contains RecName, AltName or SubName protein name category. Entry dropped.");
         ibp->drop = true;
     }
 
-    if (fta_StartsWithNocase(str, "RecName: "sv) ||
-        fta_StartsWithNocase(str, "AltName: "sv) ||
-        fta_StartsWithNocase(str, "SubName: "sv)) {
+    if (NStr::StartsWith(str_, "RecName: "sv, NStr::eNocase) ||
+        NStr::StartsWith(str_, "AltName: "sv, NStr::eNocase) ||
+        NStr::StartsWith(str_, "SubName: "sv, NStr::eNocase)) {
         tag   = "; EC=";
         symb  = ';';
         shift = 5;

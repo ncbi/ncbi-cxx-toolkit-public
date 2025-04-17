@@ -147,7 +147,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             char* p = finfo.str + ParFlat_COL_DATA_SP;
             PointToNextToken(p);
-            reviewed = fta_StartsWithNocase(p, "reviewed"sv);
+            reviewed = NStr::StartsWith(p, "reviewed"sv, NStr::eNocase);
 
             while (! end_of_file &&
                    ! fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_END])) {
