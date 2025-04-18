@@ -38,6 +38,7 @@
 
 #ifdef HAVE_SFTP
 
+#include <charconv>
 #include <chrono>
 #include <filesystem>
 #include <map>
