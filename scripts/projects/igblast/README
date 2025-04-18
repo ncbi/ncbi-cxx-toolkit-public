@@ -2,4 +2,4 @@ Documents to set up and run IgBLAST can be found at:
 
 https://ncbi.github.io/igblast/
 
-Note that occasionally some annotation files under internal_data and optional_file folders are updated between IgBLAST releases and it is recommended to use the new annotation files under /am/ftp-blast/executables/igblast/release/patch.
+Note that occasionally some annotation files under internal_data and optional_file folders are updated between IgBLAST releases and it is recommended to use the new annotation files from https://ftp.ncbi.nih.gov/blast/executables/igblast/release/patch/
