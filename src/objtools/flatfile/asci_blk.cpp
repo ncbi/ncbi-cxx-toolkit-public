@@ -301,12 +301,13 @@ char* GetGenBankBlock(TDataBlkList& chain, char* ptr, Int2* retkw, char* eptr)
         ++ptr; /* newline character */
         ++len;
 
-        nextkw = SrchKeyword(string_view(ptr, eptr), genbankKeywords);
+        string_view sv(ptr, eptr);
+        nextkw = SrchKeyword(sv, genbankKeywords);
         if (nextkw == ParFlat_UNKW) /* it can be "XX" line,
                                             treat as same line */
             nextkw = curkw;
 
-        if (fta_StartsWith(ptr, "REFERENCE"sv)) /* treat as one block */
+        if (sv.starts_with("REFERENCE"sv)) /* treat as one block */
             break;
     } while (nextkw == curkw);
 
@@ -399,7 +400,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
             bptr++;
 
             skip = false;
-            if (! fta_StartsWith(bptr, "XX"sv))
+            if (! string_view(bptr, eptr - bptr).starts_with("XX"sv))
                 ptr = bptr + ParFlat_COL_FEATKEY;
             else
                 skip = true;
@@ -1125,7 +1126,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||
-            fta_StartsWith(bptr, "XX"sv))
+            string_view(bptr, eptr - bptr).starts_with("XX"sv))
             continue;
 
         if (! within) {
