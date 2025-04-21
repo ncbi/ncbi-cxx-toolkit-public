@@ -140,10 +140,11 @@ struct SDefaultDirFixture
     template <class... TArgs>
     void Test(iostream& s, string_view command, TArgs&&... args)
     {
-        BOOST_TEST_INFO_SCOPE(command);
-        s << command << endl;
-        x_Test(s, std::forward<TArgs>(args)...);
-        s.clear();
+        BOOST_TEST_CONTEXT(command) {
+            s << command << endl;
+            x_Test(s, std::forward<TArgs>(args)...);
+            s.clear();
+        }
     }
 
     template <class... TArgs>
@@ -155,9 +156,10 @@ struct SDefaultDirFixture
     template <class... TArgs>
     void TestNoCommand(iostream& s, TArgs&&... args)
     {
-        BOOST_TEST_INFO_SCOPE("No command");
-        x_Test(s, std::forward<TArgs>(args)...);
-        s.clear();
+        BOOST_TEST_CONTEXT("No command") {
+            x_Test(s, std::forward<TArgs>(args)...);
+            s.clear();
+        }
     }
 
 private:
@@ -169,11 +171,12 @@ private:
 
     void x_Test(iostream& s, string_view expected)
     {
-        BOOST_TEST_INFO_SCOPE("With expected=" << expected);
-        BOOST_CHECK(getline(s, line));
-        BOOST_CHECK_EQUAL(line, expected);
-        BOOST_CHECK(!getline(s, line));
-        BOOST_CHECK_EQUAL(s.rdstate(), ios_base::failbit | ios_base::eofbit);
+        BOOST_TEST_CONTEXT("With expected=" << expected) {
+            BOOST_CHECK(getline(s, line));
+            BOOST_CHECK_EQUAL(line, expected);
+            BOOST_CHECK(!getline(s, line));
+            BOOST_CHECK_EQUAL(s.rdstate(), ios_base::failbit | ios_base::eofbit);
+        }
     }
 
     void x_Test(iostream& s, set<string> expected)
@@ -200,9 +203,10 @@ private:
 
     void x_Test(iostream& s, string_view data, string_view expected)
     {
-        BOOST_TEST_INFO_SCOPE("With data=" << data);
-        s << data;
-        x_Test(s, expected);
+        BOOST_TEST_CONTEXT("With data=" << data) {
+            s << data;
+            x_Test(s, expected);
+        }
     }
 };
 
