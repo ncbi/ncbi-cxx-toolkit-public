@@ -127,11 +127,15 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
     size_t     n_read;
 
     _ASSERT(!count  ||  buf);
-    if (!m_Eof  &&  !count) {
+    if (m_Eof) {
+        n_read = 0;
+        result = eRW_Error;
+    } else if (!count) {
         n_read = 0;
         result = eRW_Success;
     } else if (m_Pos < m_Size) {
         n_read = m_Size - m_Pos;
+        assert(n_read > 0);
         if (n_read > count)
             n_read = count;
         size_t x_read = ((rand() & 7) == 3
@@ -145,11 +149,8 @@ ERW_Result CMyReader::Read(void* buf, size_t count,
             result = n_read < count ? eRW_Timeout : eRW_Success;
     } else {
         n_read = 0;
-        if (!m_Eof) {
-            m_Eof = true;
-            result = eRW_Eof;
-        } else
-            result = eRW_Error;
+        m_Eof = true;
+        result = eRW_Eof;
     }
     if ( bytes_read )
         *bytes_read = n_read;
@@ -189,11 +190,15 @@ ERW_Result CMyWriter::Write(const void* buf, size_t count,
     size_t  n_written;
 
     _ASSERT(!count  ||  buf);
-    if (!m_Err  &&  !count) {
+    if (m_Err) {
+        n_written = 0;
+        result = eRW_Error;
+    } else if (!count) {
         n_written = 0;
         result = eRW_Success;
     } else if (m_Pos < m_Size) {
         n_written = m_Size - m_Pos;
+        assert(n_written > 0);
         if (n_written > count)
             n_written = count;
         size_t x_written = ((rand() & 7) == 5
