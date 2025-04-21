@@ -500,7 +500,7 @@ bool CDUpdater::blast(bool wait, int row)
 	bool blasted = false;
 	try {
 		if (wait) {
-			blasted = rblast-> SubmitSync();
+			rblast-> SubmitSync();
 			m_rid = rblast->GetRID();
 			//LOG_POST("RID="<<m_rid);
 			getBlastHits();
@@ -700,7 +700,6 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
 	}
 	for(; it != seqAligns.end(); it++)
     {
-        pidScore = 0.0;
 		CRef< CSeq_align > seqAlignRef = *it;
 		//seqAlign from BLAST is in Denseg
 		CSeq_align::C_Segs::TDenseg& denseg = seqAlignRef->SetSegs().SetDenseg();
@@ -709,18 +708,22 @@ bool CDUpdater::update(CCdCore* cd, CSeq_align_set& alignments)
         //  pending issue (JIRA ticket http://jira.be-md.ncbi.nlm.nih.gov/browse/SB-114).
         //  Workaround is to compute the % identity directly, as done below in
         //  the function ComputePercentIdentity.
-		if (false && m_config.identityThreshold > 0)
+        
+		if (false)
 		{
+            pidScore = 0.0;  
+            if (m_config.identityThreshold > 0) {
 
-            //  Note:  if the type isn't in the seq-align, pidScore remains 0.0 and the
-            //  scan of seqAligns will be aborted.
-            seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
+                //  Note:  if the type isn't in the seq-align, pidScore remains 0.0 and the
+                //  scan of seqAligns will be aborted.
+                seqAlignRef->GetNamedScore(CSeq_align::eScore_IdentityCount, pidScore);
 
-			int start = denseg.GetSeqStart(0);
-			int stop = denseg.GetSeqStop(0);
-			pidScore = 100*pidScore/(stop - start + 1);
-			if ((int)pidScore < m_config.identityThreshold)
-				break; //stop
+                int start = denseg.GetSeqStart(0);
+                int stop = denseg.GetSeqStop(0);
+                pidScore = 100*pidScore/(stop - start + 1);
+                if ((int)pidScore < m_config.identityThreshold)
+                    break; //stop
+            }
 		}
 		//the second is slave
 		if (denseg.GetDim() > 1)

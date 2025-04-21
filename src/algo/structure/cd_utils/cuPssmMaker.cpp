@@ -57,6 +57,11 @@ printMsa(const char* filename, const PSIMsa* msa, vector<string>& seqIds)
     ASSERT(filename);
 
     fp = fopen(filename, "w");
+    if ( !fp ) {
+        cerr << "Error: PssmMaker::printMsa - failed to open file " << filename << endl;
+        return;
+    }
+    
 	int startRow = msa->dimensions->num_seqs + 1 - seqIds.size();
 	//if startRow == 1, this means row 0 is the consensus and should be ignored
 	ASSERT(startRow >= 0);
@@ -597,6 +602,10 @@ void PssmMaker::printAlignmentByColumn(string& fileName)
     const PSIMsa& msa = *m_pssmInput->GetData();
 
     FILE* fp = fopen(fileName.c_str(), "w");
+    if ( !fp ) {
+        cerr << "Error: PssmMaker::printAlignmentByColumn - failed to open file " << fileName << endl;
+        return;
+    }
 
     nCols = msa.dimensions->query_length;
     nRows = msa.dimensions->num_seqs;

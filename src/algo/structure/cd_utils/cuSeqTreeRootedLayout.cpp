@@ -118,7 +118,7 @@ void SeqTreeRootedLayout::calculateNodePositions(const SeqTree::iterator& cursor
 			sumY += sib2->y;
 			++sib2;
 		}
-		cursor->y = sumY/numChildren;
+		cursor->y = (numChildren > 0) ? sumY/numChildren : 0;
 	}
 }
 

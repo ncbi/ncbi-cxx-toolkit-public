@@ -112,13 +112,15 @@ int RowSourceTable::findEntries(int row, vector<RowSource>& src, bool scopedOnly
 
 const RowSource& RowSourceTable::findEntry(int row) const 
 {
+    static const RowSource emptyRowSource;
+    
     RowSourceMap::const_iterator rcit = m_table.find(row);
     if (rcit != m_table.end())
     {
         return rcit->second;
     }
     else
-        return *(new RowSource());
+        return emptyRowSource;
 }
 
 RowSource& RowSourceTable::findEntry(int row) 
