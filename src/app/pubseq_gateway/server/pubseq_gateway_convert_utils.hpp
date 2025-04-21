@@ -33,7 +33,6 @@
  *
  */
 
-#include <connect/services/json_over_uttp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
@@ -49,6 +48,7 @@
 
 #include "pubseq_gateway_types.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "http_connection.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -82,5 +82,7 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request);
 string ToJsonString(const CCassAccVerHistoryTaskFetch &  request);
 string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request);
 string ToJsonString(const CIpgStorageReportEntry &  ipg_entry);
+
+string ToJsonString(const SConnectionRunTimeProperties &  conn_props);
 
 #endif

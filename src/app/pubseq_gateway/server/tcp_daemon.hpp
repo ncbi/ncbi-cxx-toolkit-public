@@ -83,6 +83,7 @@ public:
     bool AnyWorkerIsRunning(void);
     void KillAll(void);
     void JoinWorkers(void);
+    string GetConnectionsStatus(void);
 
     static void s_OnWatchDog(uv_timer_t *  handle);
 };
@@ -113,8 +114,9 @@ struct CTcpWorker
     std::atomic_bool                                    m_shuttingdown;
     bool                                                m_close_all_issued;
     bool                                                m_joined;
-    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_connected_list;
-    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_free_list;
+    std::mutex                                          m_ConnListLock;
+    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_ConnectedList;
+    std::list<std::tuple<uv_tcp_t, CHttpConnection>>    m_FreeList;
     struct uv_export_t *                                m_exp;
     CTcpDaemon *                                        m_Daemon;
     CHttpDaemon &                                       m_HttpDaemon;
@@ -143,6 +145,7 @@ struct CTcpWorker
     void OnClientClosed(uv_handle_t *  handle);
     void WakeWorker(void);
     std::list<std::tuple<uv_tcp_t, CHttpConnection>> &  GetConnList(void);
+    std::vector<SConnectionRunTimeProperties>  GetConnProps(void);
 
 private:
     void OnAsyncWork(void);
@@ -164,29 +167,29 @@ private:
     unsigned short                  m_Port;
     unsigned short                  m_NumWorkers;
     unsigned short                  m_Backlog;
-    size_t                          m_MaxConnHardLimit;
-    size_t                          m_MaxConnSoftLimit;
-    size_t                          m_MaxConnAlertLimit;
-    CTcpWorkersList *               m_Workers;
+    int64_t                         m_MaxConnHardLimit;
+    int64_t                         m_MaxConnSoftLimit;
+    int64_t                         m_MaxConnAlertLimit;
+    CTcpWorkersList *               m_WorkersList;
 
     // This is a counter for 'good' connections which were established when the
     // connection soft limit has not been reached yet
-    std::atomic_uint_fast16_t       m_BelowSoftLimitConnCount;
+    std::atomic_int_fast64_t        m_BelowSoftLimitConnCount;
 
     // This is a counter for 'bad' connections which were established when the
     // connection soft limit has been reached.
     // Note: the 'bad' connections may migrate to the 'good' pool if some
     // 'good' connections were closed.
-    std::atomic_uint_fast16_t       m_AboveSoftLimitConnCount;
+    std::atomic_int_fast64_t        m_AboveSoftLimitConnCount;
 
     friend class CTcpWorkersList;
     friend struct CTcpWorker;
 
 public:
-    size_t NumOfConnections(void) const
+    int64_t NumOfConnections(void) const
     { return m_BelowSoftLimitConnCount + m_AboveSoftLimitConnCount; }
 
-    size_t GetBelowSoftLimitConnCount(void) const
+    int64_t GetBelowSoftLimitConnCount(void) const
     { return m_BelowSoftLimitConnCount; }
 
     void MigrateConnectionFromAboveLimitToBelowLimit(void)
@@ -194,6 +197,9 @@ public:
         ++m_BelowSoftLimitConnCount;
         --m_AboveSoftLimitConnCount;
     }
+
+    string GetConnectionsStatus(void)
+    { return m_WorkersList->GetConnectionsStatus(); }
 
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);
@@ -211,13 +217,13 @@ private:
     static void s_OnMainSigWinch(uv_signal_t *  /* req */, int  /* signum */)
     { PSG_MESSAGE("SIGWINCH received. Ignoring."); }
 
-    size_t GetMaxConnectionsAlertLimit(void) const
+    int64_t GetMaxConnectionsAlertLimit(void) const
     { return m_MaxConnAlertLimit; }
 
-    size_t GetMaxConnectionsHardLimit(void) const
+    int64_t GetMaxConnectionsHardLimit(void) const
     { return m_MaxConnHardLimit; }
 
-    size_t GetMaxConnectionsSoftLimit(void) const
+    int64_t GetMaxConnectionsSoftLimit(void) const
     { return m_MaxConnSoftLimit; }
 
     void IncrementBelowSoftLimitConnCount(void)
@@ -238,9 +244,9 @@ protected:
 public:
     CTcpDaemon(const std::string &  address, unsigned short  port,
                unsigned short  num_workers, unsigned short  backlog,
-               size_t  max_connections_hard_limit,
-               size_t  max_connections_soft_limit,
-               size_t  max_connections_alert_limit) :
+               int64_t  max_connections_hard_limit,
+               int64_t  max_connections_soft_limit,
+               int64_t  max_connections_alert_limit) :
         m_Address(address),
         m_Port(port),
         m_NumWorkers(num_workers),
@@ -248,7 +254,7 @@ public:
         m_MaxConnHardLimit(max_connections_hard_limit),
         m_MaxConnSoftLimit(max_connections_soft_limit),
         m_MaxConnAlertLimit(max_connections_alert_limit),
-        m_Workers(nullptr),
+        m_WorkersList(nullptr),
         m_BelowSoftLimitConnCount(0),
         m_AboveSoftLimitConnCount(0)
     {}

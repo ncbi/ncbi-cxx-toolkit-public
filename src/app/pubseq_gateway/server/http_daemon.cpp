@@ -56,9 +56,9 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
                          unsigned short  tcp_port,
                          unsigned short  tcp_workers,
                          unsigned short  tcp_backlog,
-                         unsigned short  tcp_max_connections,
-                         size_t  tcp_max_connections_soft_limit,
-                         size_t  tcp_max_connections_alert_limit) :
+                         int64_t  tcp_max_connections,
+                         int64_t  tcp_max_connections_soft_limit,
+                         int64_t  tcp_max_connections_alert_limit) :
     m_HttpCfg({0}),
     m_HttpCfgInitialized(false),
     m_Handlers(handlers)
@@ -137,6 +137,12 @@ size_t CHttpDaemon::GetBelowSoftLimitConnCount(void) const
 void CHttpDaemon::MigrateConnectionFromAboveLimitToBelowLimit(void)
 {
     m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+}
+
+
+string CHttpDaemon::GetConnectionsStatus(void)
+{
+    return m_TcpDaemon->GetConnectionsStatus();
 }
 
 

@@ -626,6 +626,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnDispatcherStatus(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ADMIN/connections_status",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnConnectionsStatus(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/ID/get_sat_mapping",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {
@@ -669,7 +675,7 @@ int CPubseqGatewayApp::Run(void)
 
 
     x_InitSSL();
-    m_TcpDaemon.reset(
+    m_HttpDaemon.reset(
             new CHttpDaemon(http_handler, "0.0.0.0",
                             m_Settings.m_HttpPort,
                             m_Settings.m_HttpWorkers,
@@ -690,7 +696,7 @@ int CPubseqGatewayApp::Run(void)
                                              &m_LastMyNCBITestOk);
 
     try {
-        m_TcpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
+        m_HttpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
                 {
                     // This lambda is called once per second.
                     // Earlier implementations printed counters on stdout.
@@ -703,7 +709,7 @@ int CPubseqGatewayApp::Run(void)
                     if (++s_TickNoFor5Sec % 5 == 0) {
                         ++s_TickNoFor5Sec = 0;
                         this->m_Timing->CollectMomentousStat(
-                            m_TcpDaemon->NumOfConnections(),
+                            m_HttpDaemon->NumOfConnections(),
                             GetActiveProcGroupCounter(),
                             GetBacklogSize()
                                 );
@@ -767,10 +773,12 @@ static string       kXForwardedForHeader = "X-Forwarded-For";
 static string       kUserAgentHeader = "User-Agent";
 static string       kUserAgentApplog = "USER_AGENT";
 static string       kRequestPathApplog = "request_path";
+static string       kConnectionId = "connection_id";
 
 
 CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
-                                                CHttpRequest &  req)
+                                                CHttpRequest &  req,
+                                                shared_ptr<CPSGS_Reply>  reply)
 {
     CRef<CRequestContext>       context;
 
@@ -849,6 +857,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
 
     // This is the URL path
     extra.Print(kRequestPathApplog, req.GetPath());
+    extra.Print(kConnectionId, reply->GetConnectionId());
 
     string      user_agent = req.GetHeaderValue(kUserAgentHeader);
     if (!user_agent.empty())

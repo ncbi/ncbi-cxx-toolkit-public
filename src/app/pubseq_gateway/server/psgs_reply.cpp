@@ -137,10 +137,25 @@ void CPSGS_Reply::ResetExceedSoftLimitFlag(void)
 }
 
 
+void CPSGS_Reply::IncrementRejectedDueToSoftLimit(void)
+{
+    if (m_Reply)
+        m_Reply->IncrementRejectedDueToSoftLimit();
+}
+
+
 uint16_t CPSGS_Reply::GetConnCntAtOpen(void) const
 {
     if (m_Reply)
         return m_Reply->GetConnCntAtOpen();
+    return 0;
+}
+
+
+int64_t CPSGS_Reply::GetConnectionId(void) const
+{
+    if (m_Reply)
+        return m_Reply->GetConnectionId();
     return 0;
 }
 

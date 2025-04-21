@@ -1085,3 +1085,98 @@ string ToJsonString(const CIpgStorageReportEntry &  ipg_entry)
     return json;
 }
 
+
+static const string     kIdItem = "\"id\": ";
+static const string     kConnCntAtOpenItem = "\"conn_cnt_at_open\": ";
+static const string     kOpenTimestampItem = "\"open_timestamp\": ";
+static const string     kLastRequestTimestampItem = "\"last_request_timestamp\": ";
+static const string     kFinishedReqsCntItem = "\"finished_reqs_cnt\": ";
+static const string     kRejectedDueToSoftLimitReqsCntItem = "\"rejected_due_to_soft_limit_reqs_cnt\": ";
+static const string     kBacklogReqsCntItem = "\"backlog_reqs_cnt\": ";
+static const string     kRunningReqsCntItem = "\"running_reqs_cnt\": ";
+static const string     kPeerIpItem = "\"peer_ip\": ";
+static const string     kExceedSoftLimitFlagItem = "\"exceed_soft_limit_flag\": ";
+static const string     kMovedFromBadToGoodItem = "\"moved_from_bad_to_good\": ";
+string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
+{
+    string              json;
+    char                buf[64];
+    long                len;
+
+    len = PSGToString(conn_props.m_Id, buf);
+
+    json.append(1, '{')
+        .append(kIdItem)
+        .append(buf, len);
+
+    len = PSGToString(conn_props.m_ConnCntAtOpen, buf);
+    json.append(kSep)
+        .append(kConnCntAtOpenItem)
+        .append(buf, len)
+        .append(kSep)
+        .append(kOpenTimestampItem)
+        .append(1, '"')
+        .append(FormatPreciseTime(conn_props.m_OpenTimestamp))
+        .append(1, '"');
+
+    if (conn_props.m_LastRequestTimestamp.has_value()) {
+        json.append(kSep)
+            .append(kLastRequestTimestampItem)
+            .append(1, '"')
+            .append(FormatPreciseTime(conn_props.m_LastRequestTimestamp.value()))
+            .append(1, '"');
+    } else {
+        json.append(kSep)
+            .append(kLastRequestTimestampItem)
+            .append("null");
+    }
+
+    len = PSGToString(conn_props.m_NumFinishedRequests, buf);
+    json.append(kSep)
+        .append(kFinishedReqsCntItem)
+        .append(buf, len);
+
+    len = PSGToString(conn_props.m_RejectedDueToSoftLimit, buf);
+    json.append(kSep)
+        .append(kRejectedDueToSoftLimitReqsCntItem)
+        .append(buf, len);
+
+    len = PSGToString(conn_props.m_NumBackloggedRequests, buf);
+    json.append(kSep)
+        .append(kBacklogReqsCntItem)
+        .append(buf, len);
+
+    len = PSGToString(conn_props.m_NumRunningRequests, buf);
+    json.append(kSep)
+        .append(kRunningReqsCntItem)
+        .append(buf, len)
+        .append(kSep)
+        .append(kPeerIpItem)
+        .append(1, '"')
+        .append(conn_props.m_PeerIp)
+        .append(1, '"');
+
+    if (conn_props.m_ExceedSoftLimitFlag) {
+        json.append(kSep)
+            .append(kExceedSoftLimitFlagItem)
+            .append("true");
+    } else {
+        json.append(kSep)
+            .append(kExceedSoftLimitFlagItem)
+            .append("false");
+    }
+
+    if (conn_props.m_MovedFromBadToGood) {
+        json.append(kSep)
+            .append(kMovedFromBadToGoodItem)
+            .append("true");
+    } else {
+        json.append(kSep)
+            .append(kMovedFromBadToGoodItem)
+            .append("false");
+    }
+
+    json.append(1, '}');
+    return json;
+}
+

@@ -398,7 +398,8 @@ long PSGToString(long  value, char *  buf);
 string SanitizeInputValue(const string &  input_val);
 
 CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
-                                                in_port_t  client_port);
+                                                in_port_t  client_port,
+                                                int64_t  connection_id);
 void DismissErrorRequestContext(CRef<CRequestContext>   context,
                                 int  status,
                                 size_t  bytes_sent);

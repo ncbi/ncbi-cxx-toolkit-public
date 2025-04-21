@@ -55,9 +55,9 @@ struct SPubseqGatewaySettings
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;
     unsigned int                        m_ListenerBacklog;
-    unsigned short                      m_TcpMaxConn;
-    size_t                              m_TcpMaxConnSoftLimit;
-    size_t                              m_TcpMaxConnAlertLimit;
+    int64_t                             m_TcpMaxConn;
+    int64_t                             m_TcpMaxConnSoftLimit;
+    int64_t                             m_TcpMaxConnAlertLimit;
     unsigned int                        m_TimeoutMs;
     unsigned int                        m_MaxRetries;
     unsigned long                       m_SendBlobIfSmall;

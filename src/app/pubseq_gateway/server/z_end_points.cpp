@@ -177,7 +177,7 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     bool                    verbose = false;    // default
     x_GetVerboseParameter(http_req, reply, now, verbose);
@@ -360,7 +360,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(req, reply);
 
     bool                    verbose = false;    // default
     x_GetVerboseParameter(req, reply, now, verbose);
@@ -563,7 +563,7 @@ int CPubseqGatewayApp::OnLivez(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     bool                    verbose = false;    // default
     x_GetVerboseParameter(http_req, reply, now, verbose);

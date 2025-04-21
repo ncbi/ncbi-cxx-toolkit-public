@@ -165,6 +165,7 @@ public:
     int OnDispatcherStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnTestIO(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetSatMapping(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnConnectionsStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
 
     virtual int Run(void);
 
@@ -326,7 +327,8 @@ private:
 
 private:
     string  x_GetCmdLineArguments(void) const;
-    CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req);
+    CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req,
+                                                  shared_ptr<CPSGS_Reply>  reply);
     void x_PrintRequestStop(CRef<CRequestContext>  context,
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status,
@@ -536,7 +538,7 @@ private:
     unique_ptr<char []>                 m_IOTestBuffer;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;
-    unique_ptr<CHttpDaemon>             m_TcpDaemon;
+    unique_ptr<CHttpDaemon>             m_HttpDaemon;
 
     unique_ptr<CExcludeBlobCache>       m_ExcludeBlobCache;
     unique_ptr<CSplitInfoCache>         m_SplitInfoCache;

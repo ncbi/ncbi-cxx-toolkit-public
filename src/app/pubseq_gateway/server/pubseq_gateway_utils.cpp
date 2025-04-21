@@ -1606,7 +1606,8 @@ string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state)
 
 
 CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
-                                                in_port_t  client_port)
+                                                in_port_t  client_port,
+                                                int64_t  connection_id)
 {
     CRef<CRequestContext>   context;
 
@@ -1621,6 +1622,7 @@ CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
     CDiagContext_Extra  extra = GetDiagContext().PrintRequestStart();
     if (client_port > 0)
         extra.Print("peer_socket_port", client_port);
+    extra.Print("connection_id", connection_id);
     return context;
 }
 

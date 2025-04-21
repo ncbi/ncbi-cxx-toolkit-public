@@ -36,6 +36,7 @@
 #include "pubseq_gateway_utils.hpp"
 #include "http_request.hpp"
 #include "active_proc_per_request.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 
 #include "shutdown_data.hpp"
@@ -78,20 +79,32 @@ void CancelAllProcessors(void)
     app->CancelAllProcessors();
 }
 
+void GetPeerIpAndPort(uv_tcp_t *  tcp,
+                      string &  client_ip, in_port_t &  client_port)
+{
+    struct sockaddr     sock_addr;
+    int                 sock_addr_size = sizeof(sock_addr);
+    if (uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size) == 0) {
+        client_ip = GetIPAddress(&sock_addr);
+        client_port = GetPort(&sock_addr);
+    } else {
+        // Note: the peer ip/port are getting known only after the uv accept.
+        // Sometimes an error happens before that so there will be no peer
+        // information available.
+        client_ip.clear();
+        client_port = 0;
+    }
+}
+
+
 CRef<CRequestContext>
-CreateErrorRequestContextHelper(uv_tcp_t *  tcp)
+CreateErrorRequestContextHelper(uv_tcp_t *  tcp, int64_t  connection_id)
 {
     string      client_ip;
     in_port_t   client_port = 0;
 
-    struct sockaddr     sock_addr;
-    int                 sock_addr_size = sizeof(sock_addr);
-    if (!uv_tcp_getpeername(tcp, &sock_addr, &sock_addr_size)) {
-        client_ip = GetIPAddress(&sock_addr);
-        client_port = GetPort(&sock_addr);
-    }
-
-    return CreateErrorRequestContext(client_ip, client_port);
+    GetPeerIpAndPort(tcp, client_ip, client_port);
+    return CreateErrorRequestContext(client_ip, client_port, connection_id);
 }
 
 
@@ -108,7 +121,7 @@ CTcpWorkersList::~CTcpWorkersList()
     PSG_INFO("CTcpWorkersList::~()>>");
     JoinWorkers();
     PSG_INFO("CTcpWorkersList::~()<<");
-    m_Daemon->m_Workers = nullptr;
+    m_Daemon->m_WorkersList = nullptr;
 }
 
 
@@ -133,7 +146,7 @@ void CTcpWorkersList::Start(struct uv_export_t *  exp,
                         "uv_thread_create failed", err_code);
     }
     m_on_watch_dog = OnWatchDog;
-    m_Daemon->m_Workers = this;
+    m_Daemon->m_WorkersList = this;
 }
 
 
@@ -216,19 +229,52 @@ void CTcpWorkersList::JoinWorkers(void)
 }
 
 
+string CTcpWorkersList::GetConnectionsStatus(void)
+{
+    string      json;
+    bool        need_comma = false;
+    json.append(1, '[');
+
+    for (auto &  it : m_Workers) {
+        std::vector<SConnectionRunTimeProperties>   conn_props = it->GetConnProps();
+
+        for (auto &  props : conn_props) {
+            if (need_comma) {
+                json.append(1, ',');
+            } else {
+                need_comma = true;
+            }
+            json.append(ToJsonString(props));
+        }
+    }
+
+    json.append(1, ']');
+    return json;
+}
+
+
 void CTcpWorker::Stop(void)
 {
     if (m_started && !m_shutdown && !m_shuttingdown) {
-        for (auto  it = m_connected_list.begin();
-             it != m_connected_list.end(); ++it) {
+        vector<CHttpConnection *>       all_connections;
+
+        m_ConnListLock.lock();
+        for (auto  it = m_ConnectedList.begin();
+             it != m_ConnectedList.end(); ++it) {
             CHttpConnection *  http_connection  = & std::get<1>(*it);
-            http_connection->CleanupToStop();
+            all_connections.push_back(http_connection);
         }
-        for (auto  it = m_free_list.begin();
-             it != m_free_list.end(); ++it) {
+        for (auto  it = m_FreeList.begin();
+             it != m_FreeList.end(); ++it) {
             CHttpConnection *  http_connection  = & std::get<1>(*it);
-            http_connection->CleanupToStop();
+            all_connections.push_back(http_connection);
         }
+        m_ConnListLock.unlock();
+
+        for (auto  conn : all_connections) {
+            conn->CleanupToStop();
+        }
+
         uv_async_send(&m_internal->m_async_stop);
     }
 }
@@ -326,7 +372,7 @@ void CTcpWorker::Execute(void)
 
             CloseAll();
 
-            while (!m_connected_list.empty()) {
+            while (!m_ConnectedList.empty()) {
                 uv_run(m_internal->m_loop.Handle(), UV_RUN_NOWAIT);
             }
 
@@ -378,13 +424,22 @@ void CTcpWorker::CloseAll(void)
     assert(m_shuttingdown);
     if (!m_close_all_issued) {
         m_close_all_issued = true;
-        for (auto  it = m_connected_list.begin();
-             it != m_connected_list.end(); ++it) {
+
+        vector<uv_tcp_t *>      tcp_handles;
+
+        m_ConnListLock.lock();
+        for (auto  it = m_ConnectedList.begin();
+             it != m_ConnectedList.end(); ++it) {
             uv_tcp_t *tcp = &std::get<0>(*it);
-            if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp)) == 0) {
-                uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
+            tcp_handles.push_back(tcp);
+        }
+        m_ConnListLock.unlock();
+
+        for (auto  tcp_handle : tcp_handles) {
+            if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp_handle)) == 0) {
+                uv_close(reinterpret_cast<uv_handle_t*>(tcp_handle), s_OnClientClosed);
             } else {
-                s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp));
+                s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp_handle));
             }
         }
     }
@@ -394,7 +449,9 @@ void CTcpWorker::CloseAll(void)
 void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
 {
     uv_tcp_t *tcp = reinterpret_cast<uv_tcp_t*>(handle);
-    for (auto it = m_connected_list.begin(); it != m_connected_list.end(); ++it) {
+    std::lock_guard<std::mutex> lock(m_ConnListLock);
+
+    for (auto it = m_ConnectedList.begin(); it != m_ConnectedList.end(); ++it) {
         if (tcp == &std::get<0>(*it)) {
             CHttpConnection *   http_conn = & get<1>(*it);
 
@@ -423,7 +480,7 @@ void CTcpWorker::OnClientClosed(uv_handle_t *  handle)
 
             // Move the closed connection instance to the free list for
             // reuse later.
-            m_free_list.splice(m_free_list.begin(), m_connected_list, it);
+            m_FreeList.splice(m_FreeList.begin(), m_ConnectedList, it);
             return;
         }
     }
@@ -441,7 +498,21 @@ void CTcpWorker::WakeWorker(void)
 std::list<std::tuple<uv_tcp_t, CHttpConnection>> &
 CTcpWorker::GetConnList(void)
 {
-    return m_connected_list;
+    return m_ConnectedList;
+}
+
+
+std::vector<SConnectionRunTimeProperties>
+CTcpWorker::GetConnProps(void)
+{
+    std::vector<SConnectionRunTimeProperties>   conn_props;
+    conn_props.reserve(m_ConnectedList.size());
+
+    std::lock_guard<std::mutex> lock(m_ConnListLock);
+    for (auto &  it: m_ConnectedList) {
+        conn_props.emplace_back(std::get<1>(it).GetProperties());
+    }
+    return conn_props;
 }
 
 
@@ -516,23 +587,23 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
 
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
-    if (m_free_list.empty()) {
+    if (m_FreeList.empty()) {
         CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
-        m_free_list.emplace_back(
+        m_FreeList.emplace_back(
             tuple<uv_tcp_t, CHttpConnection>(uv_tcp_t{0},
                                              CHttpConnection(app->GetHttpMaxBacklog(),
                                              app->GetHttpMaxRunning())));
-        auto                new_item = m_free_list.rbegin();
+        auto                new_item = m_FreeList.rbegin();
         CHttpConnection *   http_connection = & get<1>(*new_item);
         http_connection->SetupMaintainTimer(m_internal->m_loop.Handle());
     }
 
-    auto        it = m_free_list.begin();
+    auto        it = m_FreeList.begin();
     uv_tcp_t *  tcp = & get<0>(*it);
     int         err_code = uv_tcp_init(m_internal->m_loop.Handle(), tcp);
 
     if (err_code != 0) {
-        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp, 0);
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
         CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
@@ -548,10 +619,12 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     uv_tcp_keepalive(tcp, 1, 120);
 
     tcp->data = this;
-    m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
+    m_ConnListLock.lock();
+    m_ConnectedList.splice(m_ConnectedList.begin(), m_FreeList, it);
+    m_ConnListLock.unlock();
 
     CHttpConnection *   http_conn = & get<1>(*it);
-    size_t              num_connections = m_Daemon->NumOfConnections();
+    int64_t             num_connections = m_Daemon->NumOfConnections();
 
     err_code = uv_accept(listener, reinterpret_cast<uv_stream_t*>(tcp));
     if (err_code != 0) {
@@ -562,9 +635,10 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // - the connection needs to be flagged as 'bad'
         // - the bad counter needs to be incremented
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+        http_conn->PrepareForUsage(num_connections, "", true);
 
-        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp,
+                                                                          http_conn->GetConnectionId());
 
         PSG_ERROR("TCP connection accept failed; uv_accept() error code: " +
                   to_string(err_code));
@@ -579,6 +653,10 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
+    string      peer_ip;
+    in_port_t   peer_port = 0;
+    GetPeerIpAndPort(tcp, peer_ip, peer_port);
+
     if (m_shuttingdown) {
         // We are in shutting down process. The connection will be closed by
         // the server. The closing is done asynchronously. The closing procedure
@@ -589,13 +667,13 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // Technically maintaining the TCP counter value correct is not
         // required here however it is a bit cleaner, so let's do it.
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+        http_conn->PrepareForUsage(num_connections, peer_ip, true);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
     }
 
-    size_t  conn_hard_limit = m_Daemon->GetMaxConnectionsHardLimit();
+    int64_t     conn_hard_limit = m_Daemon->GetMaxConnectionsHardLimit();
 
     if (num_connections >= conn_hard_limit) {
         // More than the hard limit of connections. So the connection will be
@@ -606,9 +684,10 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // - the connection needs to be flagged as 'bad'
         // - the bad counter needs to be incremented
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->SetExceedSoftLimitFlag(true, num_connections);
+        http_conn->PrepareForUsage(num_connections, peer_ip, true);
 
-        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp,
+                                                                          http_conn->GetConnectionId());
 
         string      err_msg = "TCP Connection accept failed; "
                               "too many connections (maximum: " +
@@ -626,17 +705,30 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
-    size_t  conn_alert_limit = m_Daemon->GetMaxConnectionsAlertLimit();
-    size_t  conn_soft_limit = m_Daemon->GetMaxConnectionsSoftLimit();
-    size_t  num_below_soft_limit_connections = m_Daemon->GetBelowSoftLimitConnCount();
+    int64_t  conn_alert_limit = m_Daemon->GetMaxConnectionsAlertLimit();
+    int64_t  conn_soft_limit = m_Daemon->GetMaxConnectionsSoftLimit();
+    int64_t  num_below_soft_limit_connections = m_Daemon->GetBelowSoftLimitConnCount();
 
-    bool    exceed_alert_limit = (num_connections >= conn_alert_limit);
     bool    exceed_soft_limit = (num_below_soft_limit_connections >= conn_soft_limit);
 
+    if (exceed_soft_limit) {
+        // Need to count as a 'bad' connection
+        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnSoftLimitExceeded);
+        http_conn->PrepareForUsage(num_connections, peer_ip, true);
+        m_Daemon->IncrementAboveSoftLimitConnCount();
+    } else {
+        // Need to count as a 'good' connection
+        http_conn->PrepareForUsage(num_connections, peer_ip, false);
+        m_Daemon->IncrementBelowSoftLimitConnCount();
+    }
+
+    bool    exceed_alert_limit = (num_connections >= conn_alert_limit);
     if (exceed_alert_limit && ! exceed_soft_limit) {
         // The only connection alert limit is exceeded. A server alert should
         // be triggered and a log message should be produced
-        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp);
+        CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp,
+                                                                          http_conn->GetConnectionId());
         string      warn_msg = "Number of client connections (" +
                                to_string(num_connections) +
                                ") is getting too high, "
@@ -650,18 +742,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         app->GetAlerts().Register(ePSGS_TcpConnAlertLimitExceeded, warn_msg);
 
         DismissErrorRequestContext(context, CRequestStatus::e100_Continue, 0);
-    }
-
-    if (exceed_soft_limit) {
-        // Need to count as a 'bad' connection
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-        app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnSoftLimitExceeded);
-        http_conn->SetExceedSoftLimitFlag(true, num_connections);
-        m_Daemon->IncrementAboveSoftLimitConnCount();
-    } else {
-        // Need to count as a 'good' connection
-        http_conn->SetExceedSoftLimitFlag(false, num_connections);
-        m_Daemon->IncrementBelowSoftLimitConnCount();
     }
 
     m_protocol.OnNewConnection(reinterpret_cast<uv_stream_t*>(tcp),

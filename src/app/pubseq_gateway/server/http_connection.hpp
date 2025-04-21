@@ -32,10 +32,48 @@
  *
  */
 
+#include <chrono>
+#include <optional>
+using namespace std;
+using namespace std::chrono;
+
 #include "psgs_reply.hpp"
 #include "pending_operation.hpp"
 #include "pubseq_gateway_logging.hpp"
 #include "pubseq_gateway_types.hpp"
+
+
+int64_t GenerateConnectionId(void);
+
+
+struct SConnectionRunTimeProperties
+{
+    int64_t                             m_Id;
+
+    // Number of connections at the moment a new one has opened
+    int64_t                             m_ConnCntAtOpen;
+
+    system_clock::time_point            m_OpenTimestamp;
+    optional<system_clock::time_point>  m_LastRequestTimestamp;
+
+    int64_t                             m_NumFinishedRequests;
+    int64_t                             m_RejectedDueToSoftLimit;
+
+    // Sizes of the containers
+    size_t                              m_NumBackloggedRequests;
+    size_t                              m_NumRunningRequests;
+
+    string                              m_PeerIp;
+
+    bool                                m_ExceedSoftLimitFlag;
+    bool                                m_MovedFromBadToGood;
+
+    void PrepareForUsage(int64_t  conn_cnt_at_open,
+                         const string &  peer_ip,
+                         bool  exceed_soft_limit_flag);
+};
+
+
 
 
 class CHttpConnection
@@ -44,8 +82,6 @@ public:
     CHttpConnection(size_t  http_max_backlog,
                     size_t  http_max_running) :
         m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
-        m_ExceedSoftLimitFlag(false),
-        m_ConnCntAtOpen(0),
         m_IsClosed(false), m_ScheduledMaintainTimer{0}
     {}
 
@@ -53,6 +89,11 @@ public:
 
     void SetupMaintainTimer(uv_loop_t *  tcp_worker_loop);
     void CleanupToStop(void);
+
+    int64_t  GetConnectionId(void) const
+    {
+        return m_RunTimeProps.m_Id;
+    }
 
     bool IsClosed(void) const
     {
@@ -91,34 +132,44 @@ public:
         x_MaintainFinished();
     }
 
-    void SetExceedSoftLimitFlag(bool  value, uint16_t  current_conn_cnt)
+    void PrepareForUsage(int64_t  conn_cnt_at_open,
+                         const string &  peer_ip,
+                         bool  exceed_soft_limit_flag)
     {
-        m_ExceedSoftLimitFlag = value;
-        m_ConnCntAtOpen = current_conn_cnt;
+        m_RunTimeProps.PrepareForUsage(conn_cnt_at_open,
+                                       peer_ip, exceed_soft_limit_flag);
     }
 
     bool GetExceedSoftLimitFlag(void) const
     {
-        return m_ExceedSoftLimitFlag;
+        return m_RunTimeProps.m_ExceedSoftLimitFlag;
     }
 
     void ResetExceedSoftLimitFlag(void)
     {
-        m_ExceedSoftLimitFlag = false;
+        if (m_RunTimeProps.m_ExceedSoftLimitFlag == true) {
+            m_RunTimeProps.m_MovedFromBadToGood = true;
+            m_RunTimeProps.m_ExceedSoftLimitFlag = false;
+        }
+    }
+
+    void IncrementRejectedDueToSoftLimit(void)
+    {
+        ++m_RunTimeProps.m_RejectedDueToSoftLimit;
     }
 
     uint16_t GetConnCntAtOpen(void) const
     {
-        return m_ConnCntAtOpen;
+        return m_RunTimeProps.m_ConnCntAtOpen;
     }
+
+    SConnectionRunTimeProperties GetProperties(void) const;
 
 private:
     size_t                          m_HttpMaxBacklog;
     size_t                          m_HttpMaxRunning;
-    bool                            m_ExceedSoftLimitFlag;
 
-    // Number of connections at the moment a new one has opened
-    uint16_t                        m_ConnCntAtOpen;
+    SConnectionRunTimeProperties    m_RunTimeProps;
 
     volatile bool                   m_IsClosed;
     uv_timer_t                      m_ScheduledMaintainTimer;
@@ -140,6 +191,7 @@ private:
     using running_list_iterator_t = typename list<shared_ptr<CPSGS_Reply>>::iterator;
     using backlog_list_iterator_t = typename list<SBacklogAttributes>::iterator;
 
+    void x_RegisterRunning(shared_ptr<CPSGS_Reply>  reply);
     void x_UnregisterRunning(running_list_iterator_t &  it);
     void x_UnregisterBacklog(backlog_list_iterator_t &  it);
 

@@ -74,7 +74,7 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
@@ -195,7 +195,7 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
@@ -338,7 +338,7 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
@@ -464,7 +464,7 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
@@ -584,7 +584,7 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
@@ -689,7 +689,7 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
@@ -901,7 +901,7 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
@@ -993,7 +993,7 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
@@ -1197,7 +1197,7 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         if (!x_CheckAuthorization("config", context, http_req, reply, now)) {
@@ -1266,7 +1266,7 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         if (!x_CheckAuthorization("info", context, http_req, reply, now)) {
@@ -1451,7 +1451,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         if (!x_CheckAuthorization("status", context, http_req, reply, now)) {
@@ -1473,7 +1473,7 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
         }
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_NumberOfConnections,
-            static_cast<uint64_t>(m_TcpDaemon->NumOfConnections()));
+            static_cast<uint64_t>(m_HttpDaemon->NumOfConnections()));
         m_Counters->AppendValueNode(
             status, CPSGSCounters::ePSGS_SplitInfoCacheSize,
             static_cast<uint64_t>(m_SplitInfoCache->Size()));
@@ -1543,7 +1543,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         if (!x_CheckAuthorization("shutdown", context, http_req, reply, now)) {
@@ -1669,7 +1669,7 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         if (!x_CheckAuthorization("get_alerts", context, http_req, reply, now)) {
@@ -1709,7 +1709,7 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1811,7 +1811,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1967,6 +1967,7 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
     return 0;
 }
 
+
 int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
                                           shared_ptr<CPSGS_Reply>  reply)
 {
@@ -1974,7 +1975,7 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
 
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
         CJsonNode  dispatcher_status(CJsonNode::NewArrayNode());
@@ -2007,6 +2008,43 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
     return 0;
 }
 
+
+int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
+                                           shared_ptr<CPSGS_Reply>  reply)
+{
+    // NOTE: expected to work regardless of the shutdown request
+
+    auto                    now = psg_clock_t::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    try {
+        string      content = m_HttpDaemon->GetConnectionsStatus();
+
+        reply->SetContentType(ePSGS_JsonMime);
+        reply->SetContentLength(content.size());
+        reply->SendOk(content.data(), content.size(), false);
+
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok,
+                           reply->GetBytesSent());
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_AdminRequest);
+    } catch (const exception &  exc) {
+        x_Finish500(reply, now, ePSGS_StatusError,
+                    "Exception when handling a connections_status request: " +
+                    string(exc.what()));
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    } catch (...) {
+        x_Finish500(reply, now, ePSGS_StatusError,
+                    "Unknown exception when handling a connections_status request");
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    }
+    return 0;
+}
 
 
 int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
@@ -2045,7 +2083,7 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
         }
 
         if (need_log)
-            context = x_CreateRequestContext(http_req);
+            context = x_CreateRequestContext(http_req, reply);
 
         // Read the return data size
         SRequestParameter   data_size_param = x_GetParam(http_req, kDataSizeParam);
@@ -2123,7 +2161,7 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
 {
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
-    CRef<CRequestContext>   context = x_CreateRequestContext(http_req);
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -2249,17 +2287,17 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
         // a chance that now the number of connections became less than at the
         // time of establishing the connection
 
-        size_t      current_below_limit_conn_num = m_TcpDaemon->GetBelowSoftLimitConnCount();
+        int64_t     current_below_limit_conn_num = m_HttpDaemon->GetBelowSoftLimitConnCount();
         if (current_below_limit_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
             // The number of 'good' connections dropped so can continue as usual.
             // Also, the connection soft limit flag should be reset
             reply->ResetExceedSoftLimitFlag();
-            m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+            m_HttpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumConnBadToGoodMigration);
             return false;
         }
 
-        size_t  current_conn_num = m_TcpDaemon->NumOfConnections();
+        int64_t current_conn_num = m_HttpDaemon->NumOfConnections();
         string  msg = "Too many client connections (currently: " +
                       to_string(current_conn_num) +
                       "; at the time of establishing: " +
@@ -2273,6 +2311,7 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimit(shared_ptr<CPSGS_Reply>  re
                                          eDiag_Error);
         m_Alerts.Register(ePSGS_TcpConnSoftLimitExceeded, msg);
         m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit);
+        reply->IncrementRejectedDueToSoftLimit();
         PSG_ERROR(msg);
         return true;
     }
@@ -2289,17 +2328,17 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
         // a chance that now the number of connections became less than at the
         // time of establishing the connection
 
-        size_t      current_below_limit_conn_num = m_TcpDaemon->GetBelowSoftLimitConnCount();
+        int64_t     current_below_limit_conn_num = m_HttpDaemon->GetBelowSoftLimitConnCount();
         if (current_below_limit_conn_num <= m_Settings.m_TcpMaxConnSoftLimit) {
             // The number of 'good' connections dropped so can continue as usual.
             // Also, the connection soft limit flag should be reset
             reply->ResetExceedSoftLimitFlag();
-            m_TcpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
+            m_HttpDaemon->MigrateConnectionFromAboveLimitToBelowLimit();
             m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumConnBadToGoodMigration);
             return false;
         }
 
-        size_t  current_conn_num = m_TcpDaemon->NumOfConnections();
+        int64_t current_conn_num = m_HttpDaemon->NumOfConnections();
         string  msg = "Too many client connections (currently: " +
                       to_string(current_conn_num) +
                       "; at the time of establishing: " +
@@ -2327,6 +2366,7 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
 
         m_Alerts.Register(ePSGS_TcpConnSoftLimitExceeded, msg);
         m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit);
+        reply->IncrementRejectedDueToSoftLimit();
         PSG_ERROR(msg);
         return true;
     }

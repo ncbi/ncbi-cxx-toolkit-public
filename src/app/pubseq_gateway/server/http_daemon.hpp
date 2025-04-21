@@ -70,9 +70,9 @@ public:
     CHttpDaemon(const std::vector<CHttpHandler> &  handlers,
                 const std::string &  tcp_address, unsigned short  tcp_port,
                 unsigned short  tcp_workers, unsigned short  tcp_backlog,
-                unsigned short  tcp_max_connections,
-                size_t  tcp_max_connections_soft_limit,
-                size_t  tcp_max_connections_alert_limit);
+                int64_t  tcp_max_connections,
+                int64_t  tcp_max_connections_soft_limit,
+                int64_t  tcp_max_connections_alert_limit);
     ~CHttpDaemon();
 
     void Run(std::function<void(CTcpDaemon &)> on_watch_dog = nullptr);
@@ -80,6 +80,7 @@ public:
     uint16_t NumOfConnections(void) const;
     size_t GetBelowSoftLimitConnCount(void) const;
     void MigrateConnectionFromAboveLimitToBelowLimit(void);
+    string GetConnectionsStatus(void);
 
 private:
     std::unique_ptr<CTcpDaemon>     m_TcpDaemon;

@@ -61,11 +61,11 @@ const string            kLogSection = "LOG";
 
 const unsigned short    kWorkersDefault = 64;
 const unsigned int      kListenerBacklogDefault = 256;
-const unsigned short    kTcpMaxConnDefault = 4096;
-const size_t            kTcpConnHardSoftDiffDefault = 256;
-const size_t            kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
-const size_t            kTcpConnSoftAlertDiffDefault = 512;
-const size_t            kTcpMaxConnAlertLimitDefault = kTcpMaxConnSoftLimitDefault - kTcpConnSoftAlertDiffDefault;
+const int64_t           kTcpMaxConnDefault = 4096;
+const int64_t           kTcpConnHardSoftDiffDefault = 256;
+const int64_t           kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
+const int64_t           kTcpConnSoftAlertDiffDefault = 512;
+const int64_t           kTcpMaxConnAlertLimitDefault = kTcpMaxConnSoftLimitDefault - kTcpConnSoftAlertDiffDefault;
 const unsigned int      kTimeoutDefault = 30000;
 const unsigned int      kMaxRetriesDefault = 2;
 const string            kDefaultRootKeyspace = "sat_info3";

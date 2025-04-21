@@ -1216,6 +1216,43 @@ CJsonNode  GetAdminStatisticsRequestNode(void)
     return admin_statistics;
 }
 
+
+CJsonNode GetAdminDispatcherStatusRequestNode(void)
+{
+    CJsonNode   admin_dispatcher_status(CJsonNode::NewObjectNode());
+    admin_dispatcher_status.SetString(kDescription,
+        "Provides the request dispatcher status");
+
+    admin_dispatcher_status.SetByKey("parameters", CJsonNode::NewObjectNode());
+
+    CJsonNode   admin_dispatcher_status_reply(CJsonNode::NewObjectNode());
+    admin_dispatcher_status_reply.SetString(kDescription,
+        "The HTTP body is a JSON dictionary with "
+        "the current request dispatcher status.");
+    admin_dispatcher_status.SetByKey("reply", admin_dispatcher_status_reply);
+
+    return admin_dispatcher_status;
+}
+
+
+CJsonNode GetAdminConnectionsStatusRequestNode(void)
+{
+    CJsonNode   admin_connections_status(CJsonNode::NewObjectNode());
+    admin_connections_status.SetString(kDescription,
+        "Provides the connections status");
+
+    admin_connections_status.SetByKey("parameters", CJsonNode::NewObjectNode());
+
+    CJsonNode   admin_connections_status_reply(CJsonNode::NewObjectNode());
+    admin_connections_status_reply.SetString(kDescription,
+        "The HTTP body is a JSON dictionary with "
+        "the current connections status.");
+    admin_connections_status.SetByKey("reply", admin_connections_status_reply);
+
+    return admin_connections_status;
+}
+
+
 // /healthz
 CJsonNode  GetHealthzRequestNode(void)
 {
@@ -1518,6 +1555,8 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ADMIN/get_alerts", GetAdminGetAlertsRequestNode());
     requests_node.SetByKey("ADMIN/ack_alerts", GetAdminAckAlertsRequestNode());
     requests_node.SetByKey("ADMIN/statistics", GetAdminStatisticsRequestNode());
+    requests_node.SetByKey("ADMIN/dispatcher_status", GetAdminDispatcherStatusRequestNode());
+    requests_node.SetByKey("ADMIN/connections_status", GetAdminConnectionsStatusRequestNode());
 
     requests_node.SetByKey("healthz", GetHealthzRequestNode());
     requests_node.SetByKey("livez", GetLivezRequestNone());

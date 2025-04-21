@@ -101,10 +101,25 @@ void CHttpReply::ResetExceedSoftLimitFlag(void)
 }
 
 
+void CHttpReply::IncrementRejectedDueToSoftLimit(void)
+{
+    if (m_HttpConn)
+        m_HttpConn->IncrementRejectedDueToSoftLimit();
+}
+
+
 uint16_t CHttpReply::GetConnCntAtOpen(void) const
 {
     if (m_HttpConn)
         return m_HttpConn->GetConnCntAtOpen();
+    return 0;
+}
+
+
+int64_t CHttpReply::GetConnectionId(void) const
+{
+    if (m_HttpConn)
+        return m_HttpConn->GetConnectionId();
     return 0;
 }
 

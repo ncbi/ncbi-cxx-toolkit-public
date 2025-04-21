@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <mutex>
 
 #include "http_connection.hpp"
 #include "http_reply.hpp"
@@ -55,6 +56,36 @@ static void NotifyRequestFinished(size_t  request_id)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
     app->NotifyRequestFinished(request_id);
+}
+
+static int64_t      s_ConnectionId = 0;
+static mutex        s_ConnectionIdLock;
+int64_t GenerateConnectionId(void)
+{
+    int64_t  ret;
+    s_ConnectionIdLock.lock();
+    ret = ++s_ConnectionId;
+    s_ConnectionIdLock.unlock();
+    return ret;
+}
+
+
+void
+SConnectionRunTimeProperties::PrepareForUsage(int64_t  conn_cnt_at_open,
+                                              const string &  peer_ip,
+                                              bool  exceed_soft_limit_flag)
+{
+    m_Id = GenerateConnectionId();
+    m_ConnCntAtOpen = conn_cnt_at_open;
+    m_OpenTimestamp = system_clock::now();
+    m_LastRequestTimestamp.reset();
+    m_NumFinishedRequests = 0;
+    m_RejectedDueToSoftLimit = 0;
+    m_NumBackloggedRequests = 0;
+    m_NumRunningRequests = 0;
+    m_PeerIp = peer_ip;
+    m_ExceedSoftLimitFlag = exceed_soft_limit_flag;
+    m_MovedFromBadToGood = false;
 }
 
 
@@ -136,6 +167,7 @@ void MaintanTimerCB(uv_timer_t *  handle)
     http_connection->DoScheduledMaintain();
 }
 
+
 void CHttpConnection::ScheduleMaintain(void)
 {
     // Send one time async event to initiate maintain
@@ -209,7 +241,7 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     }
 
     // Add the reply to the list of running replies
-    m_RunningRequests.push_back(reply);
+    x_RegisterRunning(reply);
 
     // To avoid a possibility to have cancel->start in progress messages in the
     // reply in case of multiple processors due to the first one may do things
@@ -270,6 +302,13 @@ void CHttpConnection::x_CancelAll(void)
 }
 
 
+void CHttpConnection::x_RegisterRunning(shared_ptr<CPSGS_Reply>  reply)
+{
+    m_RunningRequests.push_back(reply);
+    m_RunTimeProps.m_LastRequestTimestamp = system_clock::now();
+}
+
+
 void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
 {
     size_t request_id = (*it)->GetRequestId();
@@ -286,6 +325,10 @@ void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
     (*it)->GetHttpReply()->ResetPendingRequest();
 
     m_RunningRequests.erase(it);
+
+    // Count as a completed request
+    ++m_RunTimeProps.m_NumFinishedRequests;
+
     NotifyRequestFinished(request_id);
 }
 
@@ -364,5 +407,23 @@ void CHttpConnection::x_MaintainBacklog(void)
 
         x_Start(request, reply, std::move(processor_names));
     }
+}
+
+
+SConnectionRunTimeProperties
+CHttpConnection::GetProperties(void) const
+{
+    // Make a copy of the current values
+    SConnectionRunTimeProperties    props(m_RunTimeProps);
+
+    // Update some of the values
+
+    // Stricktly speaking this is not absolutely thread safe however a
+    // precision is not required here. Even if there is a mistake it is likely
+    // to be cleared by the next request of the connection status.
+    props.m_NumBackloggedRequests = m_BacklogRequests.size();
+    props.m_NumRunningRequests = m_RunningRequests.size();
+
+    return props;
 }
 

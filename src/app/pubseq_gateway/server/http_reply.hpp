@@ -310,7 +310,9 @@ public:
 
     bool GetExceedSoftLimitFlag(void) const;
     void ResetExceedSoftLimitFlag(void);
+    void IncrementRejectedDueToSoftLimit(void);
     uint16_t GetConnCntAtOpen(void) const;
+    int64_t GetConnectionId(void) const;
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver
