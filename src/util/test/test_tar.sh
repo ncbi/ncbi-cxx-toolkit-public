@@ -46,7 +46,7 @@ case ${CHECK_SIGNATURE:-Unknown} in
 
   WorkShop* )
     # Although 64-bit build should be okay, it is very slow (because RTL
-    # has a file positioning bug, the archive has to be read out seqentially,
+    # has a file positioning bug, the archive has to be read out sequentially,
     # which prevents from using faster direct access file seeks)...
     what='slow'
     ;;
