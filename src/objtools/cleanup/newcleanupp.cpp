@@ -6250,9 +6250,11 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
         GBQualBC(gbq);
     }
 
-    // sort/unique gbquals, just alphabetically
-    if (SortGBQuals(sf)) {
-        ChangeMade(CCleanupChange::eCleanQualifiers);
+    if (! GBQUAL_ON_SEQFEAT_IS_SORTED (sf, s_GbQualCompareLegalFirst)) {
+        // sort/unique gbquals, just alphabetically
+        if (SortGBQuals(sf)) {
+            ChangeMade(CCleanupChange::eCleanQualifiers);
+        }
     }
 
     if (!GBQUAL_ON_SEQFEAT_IS_UNIQUE(sf, s_GbQualEqual)) {
