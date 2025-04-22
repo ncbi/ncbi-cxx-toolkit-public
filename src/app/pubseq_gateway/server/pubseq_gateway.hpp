@@ -147,6 +147,7 @@ public:
     int OnIPGResolve(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnReadyz(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnReadyzCassandra(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnReadyzConnections(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnReadyzLMDB(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnReadyzWGS(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnReadyzCDD(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);

@@ -1343,6 +1343,28 @@ CJsonNode  GetReadyzCassandraRequestNode(void)
 }
 
 
+// /readyz/connections
+CJsonNode GetReadyzConnectionsRequestNode(void)
+{
+    CJsonNode   readyzconnections(CJsonNode::NewObjectNode());
+    readyzconnections.SetString(kDescription,
+        "Checks that the current number of the client connections is within the soft limit. It can be used by monitoring facilities.");
+    CJsonNode   readyzconnections_params(CJsonNode::NewObjectNode());
+
+    AppendZVerboseParameter(readyzconnections_params);
+    readyzconnections.SetByKey("parameters", readyzconnections_params);
+
+    CJsonNode   readyzconnections_reply(CJsonNode::NewObjectNode());
+    readyzconnections_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the current number of the client connections is within the soft limit. "
+        "Otherwise the HTTP status is set to 503. If verbose flag is provided "
+        "then the HTTP body contains a JSON dictionary with detailed information.");
+    readyzconnections.SetByKey("reply", readyzconnections_reply);
+
+    return readyzconnections;
+}
+
+
 // /readyz/lmdb
 CJsonNode  GetReadyzLMDBRequestNode(void)
 {
@@ -1562,6 +1584,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("livez", GetLivezRequestNone());
     requests_node.SetByKey("readyz", GetReadyzRequestNode());
     requests_node.SetByKey("/readyz/cassandra", GetReadyzCassandraRequestNode());
+    requests_node.SetByKey("/readyz/connections", GetReadyzConnectionsRequestNode());
     requests_node.SetByKey("/readyz/lmdb", GetReadyzLMDBRequestNode());
     requests_node.SetByKey("/readyz/wgs", GetReadyzWGSRequestNode());
     requests_node.SetByKey("/readyz/cdd", GetReadyzCDDRequestNode());

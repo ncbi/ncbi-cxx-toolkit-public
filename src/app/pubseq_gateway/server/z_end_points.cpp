@@ -77,7 +77,9 @@ static vector<SCheckDescription>    s_CheckDescription
   SCheckDescription("cdd", "CDD retrieval",
                     "Check of data retrieval from CDD"),
   SCheckDescription("snp", "SNP retrieval",
-                    "Check of data retrieval from SNP")
+                    "Check of data retrieval from SNP"),
+  SCheckDescription("connections", "Connections within soft limit",
+                    "Check that the number of client connections is within the soft limit")
 };
 
 SCheckDescription  FindCheckDescription(const string &  id)
@@ -120,6 +122,10 @@ void CPubseqGatewayApp::x_InitialzeZEndPointData(void)
             check.HealthCommand = m_Settings.m_SNPProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_SNPHealthTimeoutSec);
             continue;
+        }
+        if (check.Id == "connections") {
+            check.HealthCommand = "";
+            check.HealthCommandTimeout = CTimeout(0);
         }
     }
 
@@ -217,7 +223,7 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
         if (x_NeedReadyZCheckPerform(check.Id, verbose,
                                      exclude_checks, is_critical)) {
             CJsonNode               check_node;
-            CRequestStatus::ECode   http_status = 
+            CRequestStatus::ECode   http_status =
                 x_SelfZEndPointCheckImpl(context, check.Id, check.Name,
                                          check.Description,
                                          verbose, check.HealthCommand,
@@ -317,6 +323,15 @@ int CPubseqGatewayApp::OnReadyzCassandra(CHttpRequest &  req,
 }
 
 
+int CPubseqGatewayApp::OnReadyzConnections(CHttpRequest &  req,
+                                           shared_ptr<CPSGS_Reply>  reply)
+{
+    x_SelfZEndPointCheck(req, reply, "connections");
+    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZConnectionsRequest);
+    return 0;
+}
+
+
 int CPubseqGatewayApp::OnReadyzLMDB(CHttpRequest &  req,
                                     shared_ptr<CPSGS_Reply>  reply)
 {
@@ -371,11 +386,13 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
                            reply->GetBytesSent());
         return;
     }
-    if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
-        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                           CRequestStatus::e503_ServiceUnavailable,
-                           reply->GetBytesSent());
-        return;
+    if (check_id != "connections") {
+        if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e503_ServiceUnavailable,
+                               reply->GetBytesSent());
+            return;
+        }
     }
 
     CJsonNode               check_node;
@@ -485,6 +502,32 @@ CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_conte
     }
 
     CRequestStatus::ECode   ret_code = CRequestStatus::e200_Ok;
+
+    if (check_id == "connections") {
+        // Special case: no need to use the psg client API
+        int64_t current_conn_num = m_HttpDaemon->NumOfConnections();
+        if (current_conn_num > m_Settings.m_TcpMaxConnSoftLimit) {
+            ret_code = CRequestStatus::e503_ServiceUnavailable;
+            if (verbose) {
+                node.SetString("status", "fail");
+                node.SetString("message", "Current number of client connections is " +
+                                          to_string(current_conn_num) + ", which is "
+                                          "over the soft limit of " +
+                                          to_string(m_Settings.m_TcpMaxConnSoftLimit));
+            }
+        } else {
+            ret_code = CRequestStatus::e200_Ok;
+            if (verbose) {
+                node.SetString("status", "ok");
+                node.SetString("message", "The check has succeeded");
+            }
+        }
+        if (verbose) {
+            node.SetInteger("http_status", ret_code);
+        }
+        return ret_code;
+    }
+
     string                  err_msg = "";
 
     // psg client API internally tries to modify the request context.

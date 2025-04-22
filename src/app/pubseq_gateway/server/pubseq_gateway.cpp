@@ -524,6 +524,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnReadyzCassandra(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/readyz/connections",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnReadyzConnections(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/readyz/lmdb",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {

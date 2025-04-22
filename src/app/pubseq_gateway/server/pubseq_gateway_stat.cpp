@@ -221,6 +221,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "ReadyZCassandraRequestCount", "readyz/cassandra requests counter",
             "Number of times a client requested readyz/cassandra status");
+    m_Counters[ePSGS_ReadyZConnectionsRequest] =
+        new SCounterInfo(
+            "ReadyZConnectionsRequestCount", "readyz/connections requests counter",
+            "Number of times a client requested readyz/cconnections status");
     m_Counters[ePSGS_ReadyZLMDBRequest] =
         new SCounterInfo(
             "ReadyZLMDBRequestCount", "readyz/lmdb requests counter",

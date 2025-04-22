@@ -77,6 +77,7 @@ class CPSGSCounters
             ePSGS_ReadyZRequest,
             ePSGS_HealthZRequest,
             ePSGS_ReadyZCassandraRequest,
+            ePSGS_ReadyZConnectionsRequest,
             ePSGS_ReadyZLMDBRequest,
             ePSGS_ReadyZWGSRequest,
             ePSGS_ReadyZCDDRequest,
@@ -197,7 +198,6 @@ class CPSGSCounters
 
             // Used to calculate the number of counters per processor
             ePSGS_LastCounter
-
         };
 
     static EPSGS_CounterType StatusToCounterType(int  status);
