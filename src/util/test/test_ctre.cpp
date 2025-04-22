@@ -71,6 +71,16 @@ BOOST_AUTO_TEST_CASE(test_ctre_2)
 
 // This test requires C++ 20 semantics, which is expected to be default
 #if __cpp_nontype_template_args > 201411L
+namespace ncbi
+{
+    // string literal to use as "The word"_fs or L"Hello"_fs
+
+    template<compile_time_bits::fixed_string s>
+    constexpr auto operator ""_fs()
+    {
+        return s;
+    }
+}
 
 static bool check_suspicious_id(std::string_view id)
 {
