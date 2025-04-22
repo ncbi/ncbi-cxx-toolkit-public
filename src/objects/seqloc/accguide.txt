@@ -1535,10 +1535,10 @@ version  1 # of file format
 2+6  PM  ddbj_patent
 2+8  PM  ddbj_other_nuc
 2+10 PM  ddbj_other_nuc
-2+6  PN  ddbj_other_nuc
+2+6  PN  ddbj_patent
 2+8  PN  ddbj_other_nuc
 2+10 PN  ddbj_other_nuc
-2+6  PO  ddbj_other_nuc
+2+6  PO  ddbj_patent
 2+8  PO  ddbj_other_nuc
 2+10 PO  ddbj_other_nuc
 2+6  PP  gb_dirsub
