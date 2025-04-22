@@ -47,6 +47,7 @@ else()
         set(NCBI_PTBCFG_USELOCAL ON)
     endif()
 endif()
+set(NCBI_PTBCFG_NCBI_BUILD_FLAGS ON)
 #set(NCBI_PTBCFG_COLLECT_REQUIRES      ON)
 #set(NCBI_PTBCFG_COLLECT_REQUIRES_FILE ncbi-cpp_requires)
 
