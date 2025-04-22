@@ -39,21 +39,12 @@
 #include <string_view>
 #include <functional>
 
-#ifdef CT_USE_NCBI_STR
-    #include <corelib/ncbistr.hpp>
-    //#include <corelib/tempstr.hpp>
-#endif
 
 namespace compile_time_bits
 {
 
-#ifdef CT_USE_NCBI_STR
-    using tagStrCase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eCase>;
-    using tagStrNocase = std::integral_constant<ncbi::NStr::ECase, ncbi::NStr::eNocase>;
-#else
     using tagStrCase = std::true_type;
     using tagStrNocase = std::false_type;
-#endif
 
     /*
         See: http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4640.pdf
@@ -206,17 +197,6 @@ namespace compile_time_bits
 
 
 }
-namespace ncbi
-{
-    // string literal to use as "The word"_fs or L"Hello"_fs
-
-    template<compile_time_bits::fixed_string s>
-    constexpr auto operator ""_fs()
-    {
-        return s;
-    }
-}
-
 
 namespace std
 {

@@ -1386,7 +1386,7 @@ BOOST_AUTO_TEST_CASE(Test_bitset_operators2)
     BOOST_CHECK_EQUAL(escaped_range_value.size(), 37);
 }
 
-#if __cpp_inline_variables >= 201606L
+#if __cplusplus >= 202002L
 
 template<typename _bs_type>
 void PrintBitset(std::string prefix, const _bs_type& bs)
