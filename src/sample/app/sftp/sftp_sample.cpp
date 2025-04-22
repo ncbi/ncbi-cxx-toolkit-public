@@ -33,8 +33,6 @@
 #include <connect/ncbi_sftp.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
-#include <format>
-
 USING_NCBI_SCOPE;
 
 class CSftpSampleApp : public CNcbiApplication
@@ -92,6 +90,8 @@ int CSftpSampleApp::Run()
         sftp_stream = make_unique<CSFTP_Stream>(sftp_session, args["path"].AsString());
     }
 
+    cout << boolalpha;
+
     for (string line; s_GetCommandLine(input, line, echo); ) {
         *sftp_stream << line << endl;
 
@@ -116,7 +116,7 @@ int CSftpSampleApp::Run()
         if (flags) {
             const auto s = sftp_stream->rdstate();
             auto l = [s](auto f) { return bool(s & f); };
-            cout << format("bad={}, fail={}, eof={}", l(ios_base::badbit), l(ios_base::failbit), l(ios_base::eofbit)) << endl;
+            cout << "bad=" << l(ios_base::badbit) << ", fail=" << l(ios_base::failbit) << ", eof=" << l(ios_base::eofbit) << endl;
         }
         sftp_stream->clear();
     }
