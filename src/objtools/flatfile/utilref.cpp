@@ -63,7 +63,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /**********************************************************/
-ValNodePtr get_tokens(char* pt, const Char* delimeter)
+ValNodePtr get_tokens(char* pt, string_view delimeter)
 {
     ValNodePtr token;
     ValNodePtr vnp;
@@ -89,18 +89,17 @@ ValNodePtr get_tokens(char* pt, const Char* delimeter)
         more      = false;
 
         for (; *pt != '\0'; pt++) {
-            if (! fta_StartsWith(pt, delimeter) &&
-                ! fta_StartsWith(pt, ",\n"sv) && ! fta_StartsWith(pt, ",~"sv) &&
-                ! fta_StartsWith(pt, " and "sv))
-                continue;
-
-            *pt = '\0';
-
-            if (StringEquN(pt + 1, "and ", 4))
-                pt += 4;
-
-            more = true;
-            break;
+            string_view sv = pt;
+            string_view d;
+            if (sv.starts_with(d = delimeter) ||
+                sv.starts_with(d = ",\n"sv) ||
+                sv.starts_with(d = ",~"sv) ||
+                sv.starts_with(d = " and "sv)) {
+                *pt = '\0';
+                pt += d.size() - 1;
+                more = true;
+                break;
+            }
         }
 
         if (! more)

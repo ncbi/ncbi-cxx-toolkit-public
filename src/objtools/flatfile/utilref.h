@@ -52,7 +52,7 @@ enum ERefFormat {
 BEGIN_NCBI_SCOPE
 
 Int4       valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
-ValNodePtr get_tokens(char* str, const Char* delimeter);
+ValNodePtr get_tokens(char* str, string_view delimeter);
 
 void DealWithGenes(CRef<objects::CSeq_entry>& pEntry, ParserPtr pp);
 
