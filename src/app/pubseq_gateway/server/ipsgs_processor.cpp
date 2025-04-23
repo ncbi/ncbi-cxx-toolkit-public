@@ -259,7 +259,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id);
 
     try {
-        seq_id.Set(request_seq_id);
+        seq_id.Set(stripped_seq_id);
         if (need_trace)
             m_Reply->SendTrace("Parsing CSeq_id('" + stripped_seq_id +
                              "') succeeded", m_Request->GetStartTimestamp());
