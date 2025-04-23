@@ -42,22 +42,25 @@ USING_NCBI_SCOPE;
 
 using TBlobStatusFlagsBase = int64_t;
 enum class EBlobStatusFlags : TBlobStatusFlagsBase {
-    eWithdrawn            = 1,
-    eWithdrawnPermanently = 2,
-    eSuppressPermanently  = 4,
-    eSuppressEditBlocked  = 8,
-    eSuppressTemporary    = 16,
+    eWithdrawn            = 1 << 0,
+    eWithdrawnPermanently = 1 << 1,
+    /* Begin - Flags transferred from Sybase storage - internal/ID/Common/idstates.h */
+    eSuppressPermanently  = 1 << 2,
+    eSuppressEditBlocked  = 1 << 3,
+    eSuppressTemporary    = 1 << 4,
+    /* End */
+    /* Begin - Following flags are reserved and should not be used. */
+    /* In case transfer Sybase=>Cassandra required later see - */
+    /*     @PubSeqOS_source@/PSloadutils.c - function PubSeqOS_idmaint_set_status() */
+    eReservedBlobStatusFlag0 = 1 << 5, // eSuppressWarnNoEdit.
+    eReservedBlobStatusFlag1 = 1 << 6, // eNoIncrementalProcessing
+    /* End */
 };
 
 class CBlobStatusHistoryRecord {
 
- public:
-    CBlobStatusHistoryRecord()
-        : m_SatKey(0)
-        , m_Replaces(0)
-        , m_DoneWhen(0)
-        , m_Flags(0)
-    {}
+public:
+    CBlobStatusHistoryRecord() = default;
     CBlobStatusHistoryRecord(CBlobStatusHistoryRecord const &) = default;
     CBlobStatusHistoryRecord(CBlobStatusHistoryRecord &&) = default;
 
@@ -174,11 +177,11 @@ class CBlobStatusHistoryRecord {
         return ss.str();
     }
 
- private:
-     int32_t m_SatKey;
-     int32_t m_Replaces;
-     int64_t m_DoneWhen;
-     TBlobStatusFlagsBase m_Flags;
+private:
+     int32_t m_SatKey{0};
+     int32_t m_Replaces{0};
+     int64_t m_DoneWhen{0};
+     TBlobStatusFlagsBase m_Flags{0};
      string m_UserName;
      string m_Comment;
      string m_PublicComment;
