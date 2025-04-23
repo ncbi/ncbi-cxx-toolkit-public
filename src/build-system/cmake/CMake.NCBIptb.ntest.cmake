@@ -121,7 +121,7 @@ function(NCBI_internal_create_ncbi_checklist _variable _access)
         file(REMOVE ${NCBI_BUILD_ROOT}/status/${_comp}.enabled)
     endforeach()
     foreach( _comp IN LISTS NCBI_PTBCFG_PROJECT_FEATURES)
-        file(WRITE ${NCBI_BUILD_ROOT}/status/${_feat}.enabled "")
+        file(WRITE ${NCBI_BUILD_ROOT}/status/${_comp}.enabled "")
     endforeach()
 
     if (EXISTS "${NCBI_TREE_BUILDCFG}/check.cfg.in")
