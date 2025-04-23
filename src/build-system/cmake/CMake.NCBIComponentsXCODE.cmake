@@ -119,26 +119,39 @@ if(NOT NCBI_COMPONENT_NCBI_C_DISABLED)
 
     if(EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
         set(NCBI_C_INCLUDE  "${NCBI_CTOOLKIT_PATH}/include64")
+        set(_connectless TRUE)
 # alt == Debug
         foreach( _type IN ITEMS "" "alt")
             set(NCBI_C_LIBPATH${_type}  "${NCBI_CTOOLKIT_PATH}/${_type}lib64")
             set(_lib${_type} "${NCBI_CTOOLKIT_PATH}/${_type}lib64/libncbi_connectless.a")
             if(NOT EXISTS "${_lib${_type}}")
                 set(_lib${_type} "${NCBI_CTOOLKIT_PATH}/${_type}lib64/libncbi.a")
+                set(_connectless FALSE)
             endif()
         endforeach()
         add_library(ncbi_corelib STATIC IMPORTED GLOBAL)
-        set_target_properties(ncbi_corelib PROPERTIES
-            IMPORTED_LOCATION "${_lib}"
-            IMPORTED_LOCATION_RELEASE "${_lib}"
-            IMPORTED_LOCATION_DEBUG "${_libalt}"
-            INTERFACE_LINK_OPTIONS "-L$<IF:$<CONFIG:Debug>,${NCBI_C_LIBPATHalt},${NCBI_C_LIBPATH}>"
-            INTERFACE_LINK_LIBRARIES xconnect)
-        if (APPLE)
-            set_target_properties(ncbi_corelib PROPERTIES
-                INTERFACE_LINK_OPTIONS -Wl,-framework,ApplicationServices)
-        endif ()
-        set(NCBI_C_ncbi "ncbi_corelib")
+        set_property(TARGET ncbi_corelib PROPERTY IMPORTED_LOCATION "${_lib}")
+        foreach(_cfg IN ITEMS ${NCBI_CONFIGURATION_TYPES} Debug Release)
+            NCBI_util_Cfg_ToStd(${_cfg} _std)
+            string(TOUPPER ${_cfg} _upcfg)
+            if("${_std}" STREQUAL "Debug")
+                set_property(TARGET ncbi_corelib PROPERTY IMPORTED_LOCATION_${_upcfg} ${_libalt})
+            else()
+                set_property(TARGET ncbi_corelib PROPERTY IMPORTED_LOCATION_${_upcfg} ${_lib})
+            endif()
+        endforeach()
+        if(APPLE)
+            set_property(TARGET ncbi_corelib PROPERTY INTERFACE_LINK_OPTIONS 
+                -L$<IF:$<CONFIG:${NCBI_DEBUG_CONFIGURATION_TYPES_STRING}>,${NCBI_C_LIBPATHalt},${NCBI_C_LIBPATH}>
+                -Wl,-framework,ApplicationServices)
+        else()
+            set_property(TARGET ncbi_corelib PROPERTY INTERFACE_LINK_OPTIONS 
+                -L$<IF:$<CONFIG:${NCBI_DEBUG_CONFIGURATION_TYPES_STRING}>,${NCBI_C_LIBPATHalt},${NCBI_C_LIBPATH}>)
+        endif()
+        set(NCBI_C_ncbi ncbi_corelib)
+        if(_connectless)
+            set(NCBI_COMPONENT_NCBI_C_NCBILIB xconnect)
+        endif()
         set(HAVE_NCBI_C YES)
     else()
         set(HAVE_NCBI_C NO)
