@@ -55,10 +55,6 @@ use constant AWS_URL => "http://s3.amazonaws.com";
 use constant AMI_URL => "http://169.254.169.254/latest/meta-data/local-hostname";
 use constant AWS_BUCKET => "ncbi-blast-databases";
 
-use constant GCS_URL => "https://storage.googleapis.com";
-use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
-use constant GCP_BUCKET => "blast-db";
-
 use constant BLASTDB_METADATA => "blastdb-metadata-1-1.json";
 use constant BLASTDB_METADATA_VERSION => "1.1";
 
@@ -75,7 +71,6 @@ my $opt_decompress = 0;
 my $opt_source;
 my $opt_legacy_exit_code = 0;
 my $opt_nt = &compute_default_num_threads();
-my $opt_gcp_prj = undef;
 my $opt_use_ftp_protocol = 0;
 my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "quiet"             =>  \$opt_quiet,
@@ -86,7 +81,6 @@ my $result = GetOptions("verbose+"          =>  \$opt_verbose,
                         "version"           =>  \$opt_show_version,
                         "decompress"        =>  \$opt_decompress,
                         "source=s"          =>  \$opt_source,
-                        "gcp-project=s"     =>  \$opt_gcp_prj,
                         "num_threads=i"     =>  \$opt_nt,
                         "legacy_exit_code"  =>  \$opt_legacy_exit_code,
                         "force_ftp"         =>  \$opt_use_ftp_protocol,
@@ -125,36 +119,23 @@ if ($opt_show_version) {
     exit($exit_code);
 }
 my $curl = &get_curl_path();
-my $gsutil = &get_gsutil_path();
-my $gcloud = &get_gcloud_path();
 
 my $location = "NCBI";
 # If provided, the source takes precedence over any attempts to determine the closest location
 if (defined($opt_source)) {
     if ($opt_source =~ /^ncbi/i) {
         $location = "NCBI";
-    } elsif ($opt_source =~ /^gc/i) {
-        $location = "GCP";
     } elsif ($opt_source =~ /^aws/i) {
         $location = "AWS";
+    } else {
+        print STDERR "ERROR: Invalid data source '$opt_source'\n";
+        exit(EXIT_FAILURE);
     }
 } else {
     # Try to auto-detect whether we're on the cloud
     if (defined($curl)) {
         my $tmpfile = File::Temp->new();
-        my $gcp_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo $tmpfile -H 'Metadata-Flavor: Google' " . GCP_URL;
         my $aws_cmd = "$curl --connect-timeout 3 --retry 3 --retry-max-time 30 -sfo /dev/null " . AMI_URL;
-        print "$gcp_cmd\n" if DEBUG;
-        if (system($gcp_cmd) == 0) { 
-            # status not always reliable.  Check that curl output is all digits.
-            my $tmpfile_content = do { local $/; <$tmpfile>};
-            print "curl output $tmpfile_content\n" if DEBUG;
-            # When running in GCP, set the data source location as NCBI
-            $location = "NCBI" if ($tmpfile_content =~ m/^(\d+)$/);
-        } elsif (DEBUG) {
-            # Consult https://ec.haxx.se/usingcurl/usingcurl-returns
-            print "curl to GCP metadata server returned ", $?>>8, "\n";
-        }
 
         print "$aws_cmd\n" if DEBUG;
         if (system($aws_cmd) == 0) {
@@ -170,16 +151,6 @@ if ($location =~ /aws/i and not defined $curl) {
     print "Error: $0 depends on curl to fetch data from cloud storage, please install this utility to access this data source.\n";
     exit(EXIT_FAILURE);
 }
-if ($location =~ /gcp/i and defined($opt_gcp_prj) and (not defined $gsutil or not defined $gcloud)) {
-    print "Error: when providing a GCP project, $0 depends on gsutil and gcloud to fetch data from cloud storage, please install these utilities to access this data source.\n";
-    exit(EXIT_FAILURE);
-}
-my $gcp_prj = $opt_gcp_prj;
-#my $gcp_prj = ($location =~ /gcp/i) ? &get_gcp_project() : undef;
-#if ($location =~ /gcp/i and not defined $gcp_prj) {
-#    print "Error: $0 depends on gcloud being configured to fetch data from cloud storage, please configure it per the instructions in https://cloud.google.com/sdk/docs/initializing .\n";
-#    exit(EXIT_FAILURE);
-#}
 
 my $ftp;
 
@@ -304,21 +275,10 @@ if ($location ne "NCBI") {
             }
         }
         if (@files2download) {
-            my $gsutil = &get_gsutil_path();
             my $awscli = &get_awscli_path();
             my $cmd;
             my $fh = File::Temp->new();
-            if ($location eq "GCP" and defined($gcp_prj)) {
-                $cmd = "$gsutil -u $gcp_prj ";
-                if ($opt_nt > 1) {
-                    $cmd .= "-m -q ";
-                    $cmd .= "-o 'GSUtil:parallel_thread_count=1' -o 'GSUtil:parallel_process_count=$opt_nt' ";
-                    $cmd .= "cp ";
-                } else {
-                    $cmd .= "-q cp ";
-                }
-                $cmd .= join(" ", @files2download) . " .";
-            } elsif ($location eq "AWS" and defined ($awscli)) {
+            if ($location eq "AWS" and defined ($awscli)) {
                 # https://registry.opendata.aws/ncbi-blast-databases/#usageexamples
                 my $aws_cmd = "$awscli s3 cp --no-sign-request ";
                 $aws_cmd .= "--only-show-errors " unless $opt_verbose >= 3;
@@ -328,8 +288,7 @@ if ($location ne "NCBI") {
                 $cmd .= " $aws_cmd {} .";
                 $cmd .= " <$fh " ;
             } else { # fall back to curl
-                my $url = $location eq "AWS" ? AWS_URL : GCS_URL;
-                s,gs://,$url/, foreach (@files2download);
+                my $url = AWS_URL;
                 s,s3://,$url/, foreach (@files2download);
                 if ($opt_nt > 1 and -f "/usr/bin/xargs") {
                     print $fh join("\n", @files2download);
@@ -761,14 +720,6 @@ sub get_latest_dir
     if ($source eq "AWS") {
         $url = AWS_URL . "/" . AWS_BUCKET . "/latest-dir";
         $cmd = "$curl -s $url";
-    } else {
-        if (defined($gcp_prj)) {
-            $url = 'gs://' . GCP_BUCKET . "/latest-dir";
-            $cmd = "$gsutil -u $gcp_prj cat $url";
-        } else {
-            $url = GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
-            $cmd = "$curl -s $url";
-        }
     }
     print "$cmd\n" if DEBUG;
     chomp($retval = `$cmd`);
@@ -792,14 +743,6 @@ sub get_blastdb_metadata
     if ($source eq "AWS") {
         $url = AWS_URL . "/" . AWS_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
-    } elsif ($source eq "GCP") {
-        if (defined($gcp_prj)) {
-            $url = 'gs://' . GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
-            $cmd = "$gsutil -u $gcp_prj cat $url";
-        } else {
-            $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . BLASTDB_METADATA;
-            $cmd = "curl -sf $url";
-        }
     } else {
         $url = 'https://' . NCBI_FTP . "/blast/db/" . BLASTDB_METADATA;
         $cmd = "curl -sf $url";
@@ -818,39 +761,6 @@ sub get_blastdb_metadata
         chomp($retval = `$cmd`);
     }
     return ($retval, $url);
-}
-
-# Returns the path to the gsutil utility or undef if it is not found
-sub get_gsutil_path
-{
-    return undef if ($^O =~ /mswin/i);
-    foreach (qw(/google/google-cloud-sdk/bin /usr/local/bin /usr/bin /snap/bin)) {
-        my $path = "$_/gsutil";
-        return $path if (-f $path);
-    }
-    chomp(my $retval = `which gsutil`);
-    return $retval if (-f $retval);
-    return undef;
-}
-
-sub get_gcloud_path
-{
-    return undef if ($^O =~ /mswin/i);
-    foreach (qw(/google/google-cloud-sdk/bin /usr/local/bin /usr/bin /snap/bin)) {
-        my $path = "$_/gcloud";
-        return $path if (-f $path);
-    }
-    chomp(my $retval = `which gcloud`);
-    return $retval if (-f $retval);
-    return undef;
-}
-
-sub get_gcp_project
-{
-    return undef if ($^O =~ /mswin/i);
-    my $gcloud = &get_gcloud_path();
-    chomp(my $retval = `$gcloud config get-value project`);
-    return $retval;
 }
 
 # Returns the path to the aws CLI utility or undef if it is not found
@@ -969,7 +879,7 @@ update_blastdb.pl [options] blastdb ...
 =item B<--source>
 
 Location to download BLAST databases from (default: auto-detect closest location).
-Supported values: C<ncbi>, C<aws>, or C<gcp>.
+Supported values: C<ncbi>, or C<aws>.
 
 =item B<--decompress>
 
