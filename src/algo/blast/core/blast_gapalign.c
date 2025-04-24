@@ -3454,12 +3454,12 @@ ChainingStruct* ChainingStructFree(ChainingStruct* ch)
 
 ChainingStruct* ChainingStructNew(void)
 {
-    ChainingStruct* retval = calloc(sizeof(ChainingStruct), 1);
+    ChainingStruct* retval = calloc(1, sizeof(ChainingStruct));
     if (!retval) {
         return NULL;
     }
     retval->num_allocated = 100;
-    retval->nodes = malloc(sizeof(BlastInitHSPNode) * retval->num_allocated);
+    retval->nodes = calloc(retval->num_allocated, sizeof(BlastInitHSPNode));
     if (!retval->nodes) {
         return ChainingStructFree(retval);
     }
@@ -3554,8 +3554,9 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
 
        /* find remaining ungapped alignments from the same context */
        i++;
-       while (init_array[i].offsets.qs_offsets.q_off < pctx->query_offset + pctx->query_length &&
-              i < init_hitlist->total) {
+       while ((i < init_hitlist->total) &&
+    		  (init_array[i].offsets.qs_offsets.q_off < pctx->query_offset + pctx->query_length))
+       {
 
            if (num_nodes >= gap_align->chaining->num_allocated) {
                BlastInitHSPNode* new_nodes;
