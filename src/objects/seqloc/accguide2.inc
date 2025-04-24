@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Apr 24 13:34:09 EDT 2025; formally
+/* time_t value corresponding to Thu Apr 24 14:06:04 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1745516049UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1745517964UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -2080,7 +2080,7 @@ static const char* const kBuiltInGuide[] = {
     "special2 LT+6 embl_est",
     ": 159851-65 556286-8089",
     "special2 LT+6 embl_tpa_nuc",
-    ": 548096-244 71433-5 605004 31550-670 906301-58 62964-3174 90249-597",
+    ": 548096-244 71433-5 605004 31550-670 800692-945 906301-58 62964-3174 90249-597",
     "",
     "# Nominally (conservatively) embl_other_nuc.",
     "special  OB000001-OB660024  embl_con",
@@ -5170,6 +5170,14 @@ static const char* const kBuiltInGuide[] = {
     "special  CAZXJM000000000-CAZYKD999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAZYKH000000000-CAZZNZ999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CAZZPA000000000-CAZZQA999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBCSLO000000000-CBCTZZ999999999  embl_tpa_wgs_nuc # 6+9",
+    "special2 CBDDBE+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
+    "special  CBDEIC000000000-CBDEKD999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBDELQ000000000-CBDESL999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBDEWI000000000-CBDEYI999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBDEYL000000000-CBDFEN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBDFEP000000000-CBDFEW999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HBHG+8 embl_tpa_tsa_nuc",
@@ -25767,5 +25775,5 @@ static const char* const kBuiltInGuide[] = {
     ": 9426052-774 6-800 2-903 5-87 9-8023 5-66 8-535 7-77",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CAI9794946-CZZ9999999  unreserved_prot"
+    "#special CAK4035038-CZZ9999999  unreserved_prot"
 };
