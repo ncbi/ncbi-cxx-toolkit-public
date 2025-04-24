@@ -3,7 +3,7 @@
 NCBI_begin_app(ckblastindex)
   NCBI_sources(ckblastindex)
   NCBI_add_definitions(NCBI_MODULE=BLAST)
-  NCBI_uses_toolkit_libraries(xblast)
+  NCBI_uses_toolkit_libraries(xblast blastinput proteinkmer)
   NCBI_requires(-Cygwin)
 NCBI_end_app()
 
