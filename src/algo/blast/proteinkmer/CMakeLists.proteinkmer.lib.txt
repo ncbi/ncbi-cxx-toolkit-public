@@ -6,6 +6,6 @@ NCBI_begin_lib(proteinkmer)
     blastkmerutils mhfile pearson kblastapi
   )
   NCBI_uses_toolkit_libraries(xblast)
-  NCBI_project_watchers(boratyng madden)
+  NCBI_project_watchers(boratyng madden camacho)
 NCBI_end_lib()
 
