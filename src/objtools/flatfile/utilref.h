@@ -51,8 +51,10 @@ enum ERefFormat {
 
 BEGIN_NCBI_SCOPE
 
+using TTokenList = std::forward_list<const char*>;
+
 Int4       valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
-ValNodePtr get_tokens(char* str, string_view delimeter);
+TTokenList get_tokens(char* str, string_view delimeter);
 
 void DealWithGenes(CRef<objects::CSeq_entry>& pEntry, ParserPtr pp);
 
@@ -60,7 +62,7 @@ CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_li
 CRef<objects::CDate>    get_date(const Char* year);
 void                    get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
 void                    get_auth(char* pt, ERefFormat format, char* jour, CRef<objects::CAuth_list>& auths);
-void                    get_auth_from_toks(ValNodePtr tokens, ERefFormat format, CRef<objects::CAuth_list>& auths);
+void                    get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterator end, ERefFormat format, CRef<objects::CAuth_list>& auths);
 CRef<objects::CAuthor>  get_std_auth(const Char* token, ERefFormat format);
 
 END_NCBI_SCOPE

@@ -63,18 +63,14 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /**********************************************************/
-ValNodePtr get_tokens(char* pt, string_view delimeter)
+TTokenList get_tokens(char* pt, string_view delimeter)
 {
-    ValNodePtr token;
-    ValNodePtr vnp;
-
-    bool more;
+    TTokenList tokens;
 
     if (! pt || *pt == '\0')
-        return nullptr;
+        return tokens;
 
-    token = ValNodeNew(nullptr);
-    vnp   = token;
+    auto vnp = tokens.before_begin();
     for (; *pt != '\0'; pt++) {
         for (; *pt != '\0'; pt++) {
             if (! StringChr(" \n\t\f~,", *pt))
@@ -84,10 +80,9 @@ ValNodePtr get_tokens(char* pt, string_view delimeter)
         if (*pt == '\0')
             break;
 
-        vnp       = ValNodeNew(vnp);
-        vnp->data = pt;
-        more      = false;
+        vnp = tokens.insert_after(vnp, pt);
 
+        bool more = false;
         for (; *pt != '\0'; pt++) {
             string_view sv = pt;
             string_view d;
@@ -101,14 +96,11 @@ ValNodePtr get_tokens(char* pt, string_view delimeter)
                 break;
             }
         }
-
         if (! more)
             break;
     } /* for, completed parsing author list */
 
-    vnp = token->next;
-    delete token;
-    return (vnp);
+    return tokens;
 }
 
 /**********************************************************/
@@ -123,16 +115,13 @@ static void RemoveSpacesAndCommas(string& str)
 }
 
 /**********************************************************/
-void get_auth_from_toks(ValNodePtr token, ERefFormat format, CRef<CAuth_list>& auths)
+void get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterator end, ERefFormat format, CRef<CAuth_list>& auths)
 {
-    ValNodePtr  vnp;
-    const char* p;
-
-    if (! token)
+    if (beg == end)
         return;
 
-    for (vnp = token; vnp; vnp = vnp->next) {
-        p = vnp->data;
+    for (auto vnp = beg; vnp != end; ++vnp) {
+        const char* p = *vnp;
         if (StringEquN(p, "and ", 4))
             p += 4;
 
@@ -253,7 +242,6 @@ void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
 {
     static const char* delimiter;
     static char*       eptr;
-    ValNodePtr         token;
 
     switch (format) {
     case GB_REF:
@@ -282,9 +270,8 @@ void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
             FtaErrPost(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "{} : {}", pt, jour);
     }
 
-    token = get_tokens(pt, delimiter);
-    get_auth_from_toks(token, format, auths);
-    ValNodeFree(token);
+    auto tokens = get_tokens(pt, delimiter);
+    get_auth_from_toks(tokens.begin(), tokens.end(), format, auths);
 }
 
 /**********************************************************/
