@@ -119,25 +119,22 @@ const char* ParFlat_SPRefRcToken[] = {
  **********************************************************/
 static bool NotName(const char* name)
 {
-    ValNodePtr vnp;
-    char*      tmp;
-    const char* s;
-    Int4       i;
-
     if (! name)
         return false;
     if (! StringChr(name, '.'))
         return true;
-    tmp = StringSave(name);
-    vnp = get_tokens(tmp, " ");
-    if (! vnp)
+    char* tmp    = StringSave(name);
+    auto  tokens = get_tokens(tmp, " ");
+    if (tokens.empty())
         return true;
-    for (i = 0; vnp->next; vnp = vnp->next)
+    auto vnp = tokens.begin();
+    Int4 i   = 0;
+    for (; next(vnp) != tokens.end(); ++vnp)
         i++;
     if (i > 3)
         return true;
 
-    s = vnp->data;
+    const char* s = *vnp;
     if (StringLen(s) > 8)
         return true;
 
@@ -671,10 +668,6 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
 
     string title;
 
-    ValNodePtr token;
-    ValNodePtr vnp;
-    ValNodePtr here;
-
     if (! prbp || prbp->journal.empty())
         return false;
 
@@ -703,31 +696,32 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     std::vector<Char> buf(temp1.begin(), temp1.end());
     buf.push_back(0);
 
-    token = get_tokens(&buf[0], ", ");
+    auto tokens = get_tokens(&buf[0], ", ");
 
-    for (vnp = token, here = token; vnp; vnp = vnp->next) {
-        if (NotName(vnp->data))
+    auto here = tokens.begin();
+    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
+        if (NotName(*vnp))
             here = vnp;
     }
 
     size_t len = 0;
-    for (vnp = token; vnp; vnp = vnp->next) {
-        len += StringLen(vnp->data) + 2;
+    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
+        len += StringLen(*vnp) + 2;
         if (vnp == here)
             break;
     }
 
     title.reserve(len);
-    for (vnp = token; vnp; vnp = vnp->next) {
-        if (vnp != token)
+    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
+        if (vnp != tokens.begin())
             title.append(", ");
-        title.append(vnp->data);
+        title.append(*vnp);
         if (vnp == here)
             break;
     }
 
     CRef<CAuth_list> authors;
-    get_auth_from_toks(here->next, SP_REF, authors);
+    get_auth_from_toks(next(here), tokens.end(), SP_REF, authors);
     if (authors.Empty() /* || title.empty() */) {
         return false;
     }
