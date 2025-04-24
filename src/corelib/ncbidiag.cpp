@@ -1012,7 +1012,9 @@ private:
                 if constexpr (!std::is_void_v<_MainCleanup>) {
                     _MainCleanup{}(ptr);
                 }
-                delete cleaner;
+                // TODO resolve memory leak, CSafeStaticPtr_Base::x_Cleanup calls x_ReleaseInstanceMutex after SelfCleanup
+                // and never call the destructor
+                //delete cleaner;
                 ptr->~_T();
                 //memset((void*)ptr, 0x55, sizeof(_T));
             }
