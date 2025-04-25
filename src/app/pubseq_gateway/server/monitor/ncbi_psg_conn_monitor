@@ -1,0 +1,647 @@
+#!/usr/bin/env python3
+
+
+# pylint: disable=C0301     # too long lines
+# pylint: disable=C0103     # var names
+# pylint: disable=C0305     # trailing newlines
+# pylint: disable=C0116     # docstring
+# pylint: disable=C0114     # module docstring
+# pylint: disable=C0410     # multiple imports in one line
+# pylint: disable=W0703     # too general exception
+# pylint: disable=W0702     # No exception type(s) specified (bare-except)
+# pylint: disable=W0212     # Access to a protected member
+# pylint: disable=R1702     # Too many nested blocks
+# pylint: disable=R0912     # Too many branches
+# pylint: disable=C0206     # Consider iterating with .items()
+# pylint: disable=R1732     # Consider using 'with' for resource-allocating operations
+# pylint: disable=C0201     # Consider iterating the dictionary directly instead of calling .keys()
+# pylint: disable=R0911     # Too many return statements
+# pylint: disable=W0603     # Using the global statement
+# pylint: disable=W0602     # Using global for
+# pylint: disable=R0913     # Too many arguments
+# pylint: disable=R0917     # Too many positional arguments
+# pylint: disable=R0915     # Too many statements
+# pylint: disable=R0914     # Too many local variables
+
+
+from optparse import OptionParser
+from threading import Thread, Event
+from urllib import request as urlrequest
+from http.client import HTTPException, RemoteDisconnected, BadStatusLine
+from io import StringIO
+import datetime
+import sys
+import os, os.path
+import time
+import ssl
+import json
+import pprint
+import shutil
+from ncbi.grid.deployment_info import services
+
+
+VERBOSE = False
+PSG_TIMEOUT = 3.0
+
+GC_THREAD = None
+REGULAR_THREADS = None
+ALARM_THREADS = None
+STOP_EVENT = None
+
+
+# Starting from python 3.13 the same assignment in a function which creates a
+# context stopped working (at least some of the https servers failed to be
+# detected as https because of a connection exception). The global version of
+# the assignment by some unknown reasons works.
+# The unverified context is harmless for http connections so it is left here.
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
+def timestamp():
+    now = datetime.datetime.now()
+    return now.strftime('%Y-%m-%d %H:%M:%S')
+
+def getDateAndTime():
+    now = datetime.datetime.now()
+    date_as_str = now.strftime('%Y%m%d')
+    time_as_str = now.strftime('%H:%M:%S')
+    mks = int(now.strftime('%f'))
+    ms = int(mks / 1000)
+    if ms == 0:
+        time_as_str += '.000'
+    elif ms <= 9:
+        time_as_str += '.00' + str(ms)
+    elif ms <= 99:
+        time_as_str += '.0' + str(ms)
+    else:
+        time_as_str += '.' + str(ms)
+    return date_as_str, time_as_str, now.strftime('%H')
+
+
+def print_verbose(msg):
+    if VERBOSE:
+        print(timestamp() + ' ' + msg)
+
+def print_error(msg):
+    print(timestamp() + ' ' + msg, file=sys.stderr)
+
+def validateDestinationPath(dst_path):
+    abs_path = os.path.abspath(dst_path)
+    if not os.path.exists(abs_path):
+        try:
+            os.makedirs(abs_path, exist_ok=True)
+        except Exception as exc:
+            print_error(f"Cannot create destination path {abs_path}")
+            print_error(str(exc))
+            return None
+
+    if not os.path.isdir(abs_path):
+        print_error(f"The provided path {dst_path} is not a directory")
+        return None
+
+    abs_path = os.path.normpath(abs_path) + os.path.sep
+    if not os.access(abs_path, os.W_OK):
+        print_error(f"The provided path {dst_path} is not writable")
+        return None
+
+    return abs_path
+
+def isInt(val):
+    try:
+        _ = int(val)
+    except:
+        return False
+    return True
+
+def buildPSGInstances(in_services):
+    """ Resolve services if needed; exclude overlapping if so"""
+
+    # Result is a dictionary <service> -> [ tuples(host,port) ]
+    # Individually provided instances will have '' service
+    result = {}
+    found_services = []
+    for item in in_services:
+        if ':' in item:
+            # supposedly host:port
+            parts = item.split(':')
+            if len(parts) != 2:
+                print_error(f'The server "{item}" does not follow host:port spec')
+                return None
+            if not isInt(parts[1]):
+                print_error(f'The server "{item}" port is not integer')
+                return None
+            if '' not in result:
+                result[''] = []
+            addr = (parts[0], int(parts[1]))
+            if addr in result['']:
+                print_verbose(f'The {item} is provided twice. Ignore and continue')
+            else:
+                result[''].append(addr)
+        else:
+            # supposedly a service name
+            if item.upper() not in result:
+                print('service ' + item.upper())
+                found_services.append(item.upper())
+                result[item.upper()] = []
+                deploymentServices = services.get_services()
+                for svc in deploymentServices[0]:
+                    if svc.name.upper() == item.upper():
+                        result[item.upper()].append((svc.host, int(svc.port)))
+
+    print_verbose(f'Collected psg instances: {result}')
+    print_verbose('Sanitizing psg instances...')
+
+    to_remove = []
+    if '' in result:
+        for instance in result['']:
+            for svc_name in found_services:
+                for item in result[svc_name]:
+                    no_domain1 = item[0].split('.')[0].lower()
+                    no_domain2 = instance[0].split('.')[0].lower()
+                    if no_domain1 == no_domain2:        # host match
+                        if item[1] == instance[1]:      # port match
+                            if instance not in to_remove:
+                                to_remove.append(instance)
+                                print_verbose(f'Removing host {instance[0]}:{instance[1]} because it is a member of service {svc_name}')
+                                break
+
+    svc_to_remove = []
+    for svc_name in found_services:
+        if len(result[svc_name]) == 0:
+            svc_to_remove.append(svc_name)
+            print_verbose(f'Removing service {svc_name} because there were no PSG instances in this service')
+
+    if svc_to_remove:
+        for svc_name in svc_to_remove:
+            del result[svc_name]
+
+    if to_remove:
+        for item in to_remove:
+            result[''].remove(item)
+    else:
+        print_verbose('No overlapping detected')
+
+    total = 0
+    for svc_name in result.keys():
+        total += len(result[svc_name])
+    if total == 0:
+        print_error('No psg instances were identified')
+        return None
+
+    return result
+
+
+def createHttpRequest(noProtoUrl):
+    url = 'http://' + noProtoUrl
+    req = urlrequest.Request(url)
+    return req
+
+
+def createHttpsRequest(noProtoUrl):
+    # Dirty trick so that self signed certificates work
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+    url = 'https://' + noProtoUrl
+    req = urlrequest.Request(url)
+    return req
+
+
+# address -> kind
+# True => http
+# False => https
+# None => unknown
+PSG_SERVER_KIND_CACHE = {}
+def isHttp(host, port, dst_dir, service_name, kind):
+    global PSG_SERVER_KIND_CACHE
+
+    fullAddress = host + ':' + str(port)
+    if fullAddress in PSG_SERVER_KIND_CACHE:
+        if PSG_SERVER_KIND_CACHE[fullAddress] is not None:
+            return PSG_SERVER_KIND_CACHE[fullAddress]
+
+    testPath = '/livez'
+    try:
+        req = createHttpRequest(fullAddress + testPath)
+        response = urlrequest.urlopen(req, timeout=PSG_TIMEOUT)
+        _ = response.read().decode('utf-8')
+        PSG_SERVER_KIND_CACHE[fullAddress] = True
+        print_verbose(f"{fullAddress} instance detected as http")
+        saveContentToFile(dst_dir, host, port,
+                          service_name, kind, 'MESSAGE: {fullAddress} instance detected as http')
+        return True
+    except:
+        pass
+
+    try:
+        req = createHttpsRequest(fullAddress + testPath)
+        response = urlrequest.urlopen(req, timeout=PSG_TIMEOUT)
+        _ = response.read().decode('utf-8')
+        PSG_SERVER_KIND_CACHE[fullAddress] = False
+        print_verbose(f"{fullAddress} instance detected as https")
+        saveContentToFile(dst_dir, host, port,
+                          service_name, kind, 'MESSAGE: {fullAddress} instance detected as https')
+        return False
+    except:
+        pass
+
+    PSG_SERVER_KIND_CACHE[fullAddress] = None
+    print_verbose(f"{fullAddress} instance is detected as faulty. It neither respond to http nor https probe.")
+    return None
+
+
+def getRequest(host, port, path, dst_dir, service_name, kind):
+    is_http = isHttp(host, port, dst_dir, service_name, kind)
+    if is_http is None:
+        # Could not detect the server type https/https
+        return None
+
+    fullAddr = host + ':' + str(port)
+    if is_http:
+        return createHttpRequest(fullAddr + path)
+    return createHttpsRequest(fullAddr + path)
+
+
+def getContentType(response):
+    for item in response.getheaders():
+        if item[0].lower() == 'content-type':
+            return item[1]
+    return None
+
+def getAlarmStatus(host, port, dst_dir, service_name, kind):
+    """Provides: status (True[alarm is on]/False[alarm is off]), error
+       In case of errors status is None"""
+    try:
+        req = getRequest(host, port, '/readyz/connections', dst_dir, service_name, kind)
+        if req is None:
+            # Could not detect http/https
+            return None, 'Could not detect the server type http/https. The server did not respond to the probe.'
+        response = urlrequest.urlopen(req, timeout=PSG_TIMEOUT)
+        _ = response.read().decode('utf-8', errors='ignore')
+
+        if response.status == 200:
+            return False, None  # No connections alarm, no errors
+        return True, None   # Connections alarm, no errors
+    except RemoteDisconnected as exc:
+        return None, 'RemoteDisconnected: ' + str(exc)
+    except BadStatusLine as exc:
+        return None, 'BadStatusLine: ' + str(exc)
+    except HTTPException as exc:
+        return None, 'HTTPException: ' + str(exc)
+    except Exception as exc:
+        return None, 'Exception: ' + str(exc)
+    return None, 'Should not reach this point'
+
+
+def getConnectionsStatus(host, port, dst_dir, service_name, kind):
+    """Provides: content, error
+       In case of errors content is None"""
+    try:
+        req = getRequest(host, port, '/ADMIN/connections_status', dst_dir, service_name, kind)
+        if req is None:
+            # Could not detect http/https
+            return None, 'Could not detect the server type http/https. The server did not respond to the probe.'
+        response = urlrequest.urlopen(req, timeout=PSG_TIMEOUT)
+        content = response.read().decode('utf-8', errors='ignore')
+
+        if response.status != 200:
+            return None, 'The server replied with unexpected http status ' + str(response.status)
+
+        contentType = getContentType(response)
+        if contentType is None:
+            return None, 'The server replied without a content type. Expected to be application/json.'
+        if contentType.lower() != 'application/json':
+            return None, 'The server replied with an unexpected content type ' + contentType + '. Expected to be application/json.'
+
+        # Everything looks fine
+        return json.loads(content), None
+    except RemoteDisconnected as exc:
+        return None, 'RemoteDisconnected: ' + str(exc)
+    except BadStatusLine as exc:
+        return None, 'BadStatusLine: ' + str(exc)
+    except HTTPException as exc:
+        return None, 'HTTPException: ' + str(exc)
+    except Exception as exc:
+        return None, 'Exception: ' + str(exc)
+    return None, 'Should not reach this point'
+
+
+def gcThread(stop_event, dst_dir, retention_day, check_retension_day):
+    print_verbose("Running GC thread")
+    regular_span_sec = int(24*60*60 * retention_day)
+    alarm_span_sec = int(24*60*60 * check_retension_day)
+
+    print_verbose(f'GC: reguar span sec: {regular_span_sec}')
+    print_verbose(f'GC: alarm span sec: {alarm_span_sec}')
+
+    regular_delta = datetime.timedelta(seconds=regular_span_sec)
+    alarm_delta = datetime.timedelta(seconds=alarm_span_sec)
+
+    while True:
+        print_verbose('GC: collecting garbage')
+        now = datetime.datetime.now()
+        if os.path.exists(dst_dir):
+            for dir_item in os.listdir(dst_dir):
+                if dir_item in ['.', '..']:
+                    continue
+                if not os.path.isdir(dst_dir + dir_item):
+                    continue
+                # Check that the directory name conforms to what was created
+                if not ':' in dir_item:
+                    continue
+                parts = dir_item.split(':')
+                if len(parts) != 2:
+                    continue
+                port_part = parts[1].split('-')[0]
+                if not isInt(port_part):
+                    continue
+                # Looks like the dir with the collected data
+                for kind in ['regular', 'alarm']:
+                    kind_dir = dst_dir + dir_item + os.path.sep + kind + os.path.sep
+                    if os.path.exists(kind_dir):
+                        if os.path.isdir(kind_dir):
+                            for kind_item in os.listdir(kind_dir):
+                                if kind_item in ['.', '..']:
+                                    continue
+                                if not os.path.isdir(kind_dir + kind_item):
+                                    continue
+                                # Check that the directory name conforms to
+                                # what was created
+                                parts = kind_item.split('-')
+                                if len(parts) != 2:
+                                    continue
+                                if not isInt(parts[0]) or not isInt(parts[1]):
+                                    continue
+                                # convert into timestamp
+                                dir_ts = datetime.datetime.strptime(kind_item, '%Y%m%d-%H')
+                                dir_to_remove = None
+                                if kind == 'regular':
+                                    if dir_ts + regular_delta < now:
+                                        dir_to_remove = kind_dir + kind_item
+                                else:
+                                    if dir_ts + alarm_delta < now:
+                                        dir_to_remove = kind_dir + kind_item
+                                if dir_to_remove is not None:
+                                    print_verbose(f'GC: deleting directory {dir_to_remove}')
+                                    try:
+                                        shutil.rmtree(dir_to_remove)
+                                    except Exception as exc:
+                                        print_error(f'GC: error deleting directory {dir_to_remove}: ' + str(exc))
+
+        stop_event.wait(1*60*60)    # Every one hour
+        if stop_event.is_set():
+            return
+
+
+def saveContentToFile(dst_dir, host, port, service, kind, content):
+    date_as_str, time_as_str, h_as_str = getDateAndTime()
+    up_name = host + ':' + str(port)
+    if service:
+        up_name += '-' + service
+
+    destination_dir = dst_dir + up_name + os.path.sep + kind + os.path.sep + date_as_str + '-' + h_as_str + os.path.sep
+    destination_file = destination_dir + date_as_str + '-' + time_as_str
+
+    if not os.path.exists(destination_dir):
+        try:
+            os.makedirs(destination_dir, exist_ok=True)
+        except Exception as exc:
+            print_error(f"Cannot create destination path {destination_dir}")
+            print_error(str(exc))
+            return
+
+    try:
+        with open(destination_file, "w", encoding='utf-8') as f:
+            f.write(content)
+    except Exception as exc:
+        print_error(f'Error saving content into {destination_file}: ' + str(exc))
+
+
+def regularThread(stop_event, service_name, host, port, dst_dir, period_sec):
+    print_verbose(f'Running regular collection thread for {host}:{port} in service "{service_name}"')
+    time.sleep(0.1)
+    while True:
+        # Do the regular collection
+        print_verbose(f'Regular: collecting connection data for {host}:{port} in service "{service_name}"')
+        content, error = getConnectionsStatus(host, port, dst_dir, service_name, 'regular')
+        if error is not None:
+            # save an error in the corresponding file
+            print_verbose(f'Regular: error getting data from {host}:{port} in service "{service_name}": {error}')
+            saveContentToFile(dst_dir, host, port,
+                              service_name, 'regular', 'ERROR: ' + error)
+        else:
+            # save the content into a file
+            print_verbose(f'Regular: success getting data from {host}:{port} in service "{service_name}"')
+            strStream = StringIO()
+            prettyPrinter = pprint.PrettyPrinter(indent=0, stream=strStream)
+            prettyPrinter.pprint(content)
+            saveContentToFile(dst_dir, host, port,
+                              service_name, 'regular', strStream.getvalue())
+
+        # May be exit in a middle of the loop if there was a stop request
+        if stop_event.is_set():
+            return
+
+        stop_event.wait(period_sec)
+        if stop_event.is_set():
+            return
+
+def alarmThread(stop_event, service_name, host, port, dst_dir, frequency_sec, backoff_sec):
+    print_verbose(f"Running alarm thread for {host}:{port} in service '{service_name}'")
+    time.sleep(0.15)
+    while True:
+        # Do the alarm collection
+        # Check alarm condition first
+        print_verbose(f'Alarm: checking if connections alarm is on for {host}:{port} in service "{service_name}"')
+        alarm_is_set, error = getAlarmStatus(host, port, dst_dir, service_name, 'alarm')
+        if error is not None:
+            print_verbose(f'Alarm: error getting alarm status from {host}:{port} in service "{service_name}": {error}')
+            saveContentToFile(dst_dir, host, port,
+                              service_name, 'alarm', 'ERROR: ' + error)
+            if stop_event.is_set():
+                return
+            stop_event.wait(frequency_sec)
+            if stop_event.is_set():
+                return
+            continue
+
+        if not alarm_is_set:
+            # The connections are within the limit so there is nothing to do
+            print_verbose(f'Alarm: no connections alarm condition on {host}:{port} in service "{service_name}"')
+            if stop_event.is_set():
+                return
+            stop_event.wait(frequency_sec)
+            if stop_event.is_set():
+                return
+            continue
+
+        # Here is a connection alarm condition => collect connections data
+        print_verbose(f'Alarm: collecting connection data for {host}:{port} in service "{service_name}"')
+
+
+        content, error = getConnectionsStatus(host, port, dst_dir, service_name, 'alarm')
+        if error is not None:
+            # save an error in the corresponding file
+            print_verbose(f'Alarm: error getting data from {host}:{port} in service "{service_name}": {error}')
+            saveContentToFile(dst_dir, host, port,
+                              service_name, 'alarm', 'ERROR: ' + error)
+        else:
+            # save the content into a file
+            print_verbose(f'Alarm: success getting data from {host}:{port} in service "{service_name}"')
+            strStream = StringIO()
+            prettyPrinter = pprint.PrettyPrinter(indent=0, stream=strStream)
+            prettyPrinter.pprint(content)
+            saveContentToFile(dst_dir, host, port,
+                              service_name, 'alarm', strStream.getvalue())
+
+        stop_event.wait(backoff_sec)
+        if stop_event.is_set():
+            return
+
+
+def main():
+
+    global VERBOSE
+    global GC_THREAD
+    global REGULAR_THREADS
+    global ALARM_THREADS
+    global STOP_EVENT
+
+    parser = OptionParser(
+        """
+    %prog [options]
+    """)
+
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="be verbose (default: False)")
+    parser.add_option("--path",
+                      action="store", type="string", dest="dst_path", default=None,
+                      help="Path on disk, to store the collections info (no default)")
+    parser.add_option("--service",
+                      action="append", type="string", dest="in_services", default=[],
+                      help="This arg can appear more than once if multiple services and/or servers need to be monitored (default: PSG2)")
+    parser.add_option("--periodical",
+                      action="store", type="float", dest="period_sec", default=10.0,
+                      help="How often to collect connection info, unconditionally (default: 10.0 sec)")
+    parser.add_option("--retention",
+                      action="store", type="float", dest="retention_day", default=1.0,
+                      help="How far back to keep the results of periodical collection hits (default: 1.0 day)")
+    parser.add_option("--check-freq",
+                      action="store", type="float", dest="frequency_sec", default=0.1,
+                      help="How often to check for the over-the-limit connection condition (default: 0.1 sec)")
+    parser.add_option("--check-backoff",
+                      action="store", type="float", dest="backoff_sec", default=1.0,
+                      help="How long to wait until running next check after a 'positive' check (default: 1.0 sec)")
+    parser.add_option("--check-retention",
+                      action="store", type="float", dest="check_retension_day", default=None,
+                      help="How far back to keep the results of 'positive' (i.e. other the soft limit) check result (default: 2*retention day)")
+
+
+    options, args = parser.parse_args()
+    if len(args) != 0:
+        print_error("No positional arguments are supported")
+        parser.print_help()
+        return 1
+
+    VERBOSE = options.verbose
+    if options.dst_path is None:
+        print_error("The '--path' option is mandatory")
+        parser.print_help()
+        return 1
+
+    dst_dir = validateDestinationPath(options.dst_path)
+    if dst_dir is None:
+        return 1
+
+    if len(options.in_services) == 0:
+        options.in_services = ['PSG2']
+    instances = buildPSGInstances(options.in_services)
+    if instances is None:
+        return 1
+
+    if options.period_sec <= 0:
+        print_error(f"The --periodical provided value {options.period_sec} is invalid. It must be > 0.0")
+        return 1
+
+    if options.retention_day <= 0:
+        print_error(f"The --retention provided value {options.retention_day} is invalid. It must be > 0.0")
+        return 1
+
+    if options.frequency_sec <= 0:
+        print_error(f"The --check-freq provided value {options.frequency_sec} is invalid. It must be > 0.0")
+        return 1
+
+    if options.backoff_sec <= 0:
+        print_error(f"The --check-backoff provided value {options.backoff_sec} is invalid. It must be > 0.0")
+        return 1
+
+    if options.check_retension_day is None:
+        options.check_retension_day = 2 * options.retention_day
+    elif options.check_retension_day <= 0:
+        print_error(f"The --check-retention provided value {options.check_retension_day} is invalid. It must be > 0.0")
+        return 1
+
+    print_verbose("All the arguments are checked. Running infinite loop threads")
+
+
+    STOP_EVENT = Event()
+    GC_THREAD = Thread(target=gcThread, args=[STOP_EVENT, dst_dir, options.retention_day, options.check_retension_day])
+
+    REGULAR_THREADS = []
+    ALARM_THREADS = []
+    for service_name in instances.keys():
+        for item in instances[service_name]:
+            REGULAR_THREADS.append(Thread(target=regularThread,
+                                          args=[STOP_EVENT, service_name, item[0], item[1],
+                                                dst_dir, options.period_sec]))
+            ALARM_THREADS.append(Thread(target=alarmThread,
+                                        args=[STOP_EVENT, service_name, item[0], item[1],
+                                              dst_dir, options.frequency_sec,
+                                              options.backoff_sec]))
+
+    # The threads are really running an infinite loop
+    GC_THREAD.start()
+    for thr in REGULAR_THREADS:
+        thr.start()
+    for thr in ALARM_THREADS:
+        thr.start()
+
+    # Just for the formality, join the threads
+    for thr in ALARM_THREADS:
+        thr.join()
+    for thr in REGULAR_THREADS:
+        thr.join()
+    GC_THREAD.join()
+
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        retVal = main()
+    except KeyboardInterrupt:
+        print_verbose("Keyboard interrupt")
+        retVal = 0
+
+        if STOP_EVENT is not None:
+            print_verbose("Sending stop to threads")
+            STOP_EVENT.set()
+        if GC_THREAD is not None:
+            print_verbose("Joining GC thread...")
+            GC_THREAD.join()
+        if REGULAR_THREADS is not None:
+            for r_thr in REGULAR_THREADS:
+                print_verbose("Joining regular thread...")
+                r_thr.join()
+        if ALARM_THREADS is not None:
+            for a_thr in ALARM_THREADS:
+                print_verbose("Joining alarm thread...")
+                a_thr.join()
+        print_verbose("Finishing up")
+
+    except Exception as exc:
+        print(str(exc), file=sys.stderr)
+        retVal = 3
+
+    sys.exit(retVal)
+
