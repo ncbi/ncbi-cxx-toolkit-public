@@ -2468,6 +2468,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
             NCBI_THROW(CSeqIdException, eFormat,
                        "Empty bare accession supplied");
         }
+        the_id.erase(the_id.find_last_not_of("|") + 1);
         // If no (attempt at a) valid tag, tries to interpret the string
         // as a pure accession.
         if ((flags & fParse_AnyRaw) != 0) {
