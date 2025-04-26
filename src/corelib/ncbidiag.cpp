@@ -1046,7 +1046,6 @@ struct CDiagContextThreadData_Cleanup
 
 thread_local EThreadDataState s_ThreadDataState(eUninitialized);
 thread_local CDiagContextThreadData* s_ThreadDataCache;
-thread_local CTrueTlsData<CDiagContextThreadData, CDiagContextThreadData_Cleanup, void> g_thread_data(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
 }
 
@@ -1130,6 +1129,7 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         }
     }
 
+    static thread_local CTrueTlsData<CDiagContextThreadData, CDiagContextThreadData_Cleanup, void> g_thread_data(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
     s_ThreadDataCache = g_thread_data;
     return *s_ThreadDataCache;
 }
