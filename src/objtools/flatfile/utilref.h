@@ -63,7 +63,7 @@ CRef<objects::CDate>    get_date(const Char* year);
 void                    get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
 void                    get_auth(char* pt, ERefFormat format, char* jour, CRef<objects::CAuth_list>& auths);
 void                    get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterator end, ERefFormat format, CRef<objects::CAuth_list>& auths);
-CRef<objects::CAuthor>  get_std_auth(const Char* token, ERefFormat format);
+CRef<objects::CAuthor>  get_std_auth(string_view token, ERefFormat format);
 
 END_NCBI_SCOPE
 

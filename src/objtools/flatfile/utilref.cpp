@@ -121,9 +121,9 @@ void get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterat
         return;
 
     for (auto vnp = beg; vnp != end; ++vnp) {
-        const char* p = *vnp;
-        if (StringEquN(p, "and ", 4))
-            p += 4;
+        string_view p = *vnp;
+        if (p.starts_with("and "sv))
+            p.remove_prefix("and "sv.size());
 
         CRef<CAuthor> author = get_std_auth(p, format);
 
@@ -162,56 +162,56 @@ void get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterat
 }
 
 /**********************************************************/
-CRef<CAuthor> get_std_auth(const Char* token, ERefFormat format)
+CRef<CAuthor> get_std_auth(string_view token, ERefFormat format)
 {
-    const Char* auth;
-    const Char* eptr;
-
     CRef<CAuthor> author;
 
-    if (! token || *token == '\0')
+    while (! token.empty() && token.back() == ' ')
+        token.remove_suffix(1);
+    if (token.empty())
         return author;
 
-    author                = new CAuthor;
-    CPerson_id& person_id = author->SetName();
-    CName_std&  namestd   = person_id.SetName();
+    author             = new CAuthor;
+    CName_std& namestd = author->SetName().SetName();
 
-    for (eptr = token + StringLen(token) - 1; eptr > token && *eptr == ' ';)
-        eptr--;
+    auto bptr = token.begin();
+    auto eptr = token.end();
+    string_view::iterator auth;
 
     if (format == PIR_REF || format == GB_REF) {
-        for (auth = token; *auth != ',' && *auth != '\0';)
+        for (auth = bptr; auth < eptr && *auth != ',';)
             auth++;
-        if (*auth == ',') {
-            if (auth[1] != '\0')
-                namestd.SetInitials(auth + 1);
+        if (auth < eptr) {
+            if (auth + 1 < eptr)
+                namestd.SetInitials(string(auth + 1, eptr));
         }
 
-        namestd.SetLast(string(token, auth));
+        namestd.SetLast(string(bptr, auth));
     } else if (format == PDB_REF) {
-        for (auth = eptr; auth > token && *auth != '.';)
+        for (auth = eptr - 1; auth > bptr && *auth != '.';)
             auth--;
         if (*auth == '.') {
-            if (auth[1] != '\0' && auth[1] != '.')
-                namestd.SetLast(auth + 1);
-            namestd.SetInitials(string(token, auth + 1));
+            auth++;
+            if (auth < eptr && *auth != '.')
+                namestd.SetLast(string(auth, eptr));
+            namestd.SetInitials(string(bptr, auth));
         } else
-            namestd.SetLast(token);
+            namestd.SetLast(string(token));
     } else if (format == EMBL_REF || format == SP_REF) {
-        for (auth = eptr; *auth != ' ' && auth > token;)
+        for (auth = eptr - 1; auth > bptr && *auth != ' ';)
             auth--;
         if (*auth == ' ') {
             if (*(auth - 1) == '.')
-                for (auth--; *auth != ' ' && auth > token;)
+                for (auth--; auth > bptr && *auth != ' ';)
                     auth--;
             if (*auth == ' ') {
-                if (auth[1] != '\0')
-                    namestd.SetInitials(auth + 1);
+                if (auth + 1 < eptr)
+                    namestd.SetInitials(string(auth + 1, eptr));
             }
         } else
-            auth = eptr + 1;
+            auth = eptr;
 
-        namestd.SetLast(string(token, auth));
+        namestd.SetLast(string(bptr, auth));
     } else if (format == ML_REF) {
         _TROUBLE;
     }
