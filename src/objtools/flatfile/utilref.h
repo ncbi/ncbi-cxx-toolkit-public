@@ -51,10 +51,10 @@ enum ERefFormat {
 
 BEGIN_NCBI_SCOPE
 
-using TTokenList = std::forward_list<const char*>;
+using TTokenList = std::forward_list<string_view>;
 
 Int4       valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress);
-TTokenList get_tokens(char* str, string_view delimeter);
+TTokenList get_tokens(string_view str, string_view delimeter);
 
 void DealWithGenes(CRef<objects::CSeq_entry>& pEntry, ParserPtr pp);
 

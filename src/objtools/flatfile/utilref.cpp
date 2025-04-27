@@ -63,41 +63,39 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /**********************************************************/
-TTokenList get_tokens(char* pt, string_view delimeter)
+TTokenList get_tokens(string_view str, string_view delimeter)
 {
     TTokenList tokens;
 
-    if (! pt || *pt == '\0')
+    if (str.empty())
         return tokens;
 
-    auto vnp = tokens.before_begin();
-    for (; *pt != '\0'; pt++) {
-        for (; *pt != '\0'; pt++) {
-            if (! StringChr(" \n\t\f~,", *pt))
-                break;
-            *pt = '\0';
+    auto it = tokens.before_begin();
+    for (auto pt = str.begin(); pt != str.end();) {
+        if (" \n\t\f~,"sv.find(*pt) != string_view::npos) {
+            ++pt;
+            continue;
         }
-        if (*pt == '\0')
-            break;
 
-        vnp = tokens.insert_after(vnp, pt);
-
+        auto save_pt = pt;
         bool more = false;
-        for (; *pt != '\0'; pt++) {
-            string_view sv = pt;
+        for (; pt != str.end(); ++pt) {
+            string_view sv(pt, str.end());
             string_view d;
             if (sv.starts_with(d = delimeter) ||
                 sv.starts_with(d = ",\n"sv) ||
                 sv.starts_with(d = ",~"sv) ||
                 sv.starts_with(d = " and "sv)) {
-                *pt = '\0';
-                pt += d.size() - 1;
+                it = tokens.insert_after(it, string_view(save_pt, pt));
+                pt += d.size();
                 more = true;
                 break;
             }
         }
-        if (! more)
+        if (! more) {
+            it = tokens.insert_after(it, string_view(save_pt, str.end()));
             break;
+        }
     } /* for, completed parsing author list */
 
     return tokens;

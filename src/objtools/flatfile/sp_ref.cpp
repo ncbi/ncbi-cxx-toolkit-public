@@ -123,18 +123,17 @@ static bool NotName(string_view name)
         return false;
     if (name.find('.') == string_view::npos)
         return true;
-    char* tmp    = StringSave(name);
-    auto  tokens = get_tokens(tmp, " ");
+    auto tokens = get_tokens(name, " ");
     if (tokens.empty())
         return true;
-    auto vnp = tokens.begin();
+    auto it = tokens.begin();
     Int4 i   = 0;
-    for (; next(vnp) != tokens.end(); ++vnp)
+    for (; next(it) != tokens.end(); ++it)
         i++;
     if (i > 3)
         return true;
 
-    string_view s = *vnp;
+    string_view s = *it;
     if (s.size() > 8)
         return true;
 
@@ -144,7 +143,6 @@ static bool NotName(string_view name)
         return true;
     }
 
-    MemFree(tmp);
     return false;
 }
 
@@ -694,30 +692,27 @@ static bool GetCitBookOld(ParRefBlkPtr prbp, CCit_art& article)
     while (isspace(*temp2) != 0)
         temp2++;
 
-    std::vector<Char> buf(temp1.begin(), temp1.end());
-    buf.push_back(0);
-
-    auto tokens = get_tokens(&buf[0], ", ");
+    auto tokens = get_tokens(temp1, ", ");
 
     auto here = tokens.begin();
-    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
-        if (NotName(*vnp))
-            here = vnp;
+    for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+        if (NotName(*it))
+            here = it;
     }
 
     size_t len = 0;
-    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
-        len += StringLen(*vnp) + 2;
-        if (vnp == here)
+    for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+        len += it->size() + 2;
+        if (it == here)
             break;
     }
 
     title.reserve(len);
-    for (auto vnp = tokens.begin(); vnp != tokens.end(); ++vnp) {
-        if (vnp != tokens.begin())
+    for (auto it = tokens.begin(); it != tokens.end(); ++it) {
+        if (! title.empty())
             title.append(", ");
-        title.append(*vnp);
-        if (vnp == here)
+        title.append(*it);
+        if (it == here)
             break;
     }
 
