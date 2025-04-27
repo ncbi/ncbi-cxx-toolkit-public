@@ -117,11 +117,11 @@ const char* ParFlat_SPRefRcToken[] = {
  *   like name.
  *
  **********************************************************/
-static bool NotName(const char* name)
+static bool NotName(string_view name)
 {
-    if (! name)
+    if (name.empty())
         return false;
-    if (! StringChr(name, '.'))
+    if (name.find('.') == string_view::npos)
         return true;
     char* tmp    = StringSave(name);
     auto  tokens = get_tokens(tmp, " ");
@@ -134,14 +134,15 @@ static bool NotName(const char* name)
     if (i > 3)
         return true;
 
-    const char* s = *vnp;
-    if (StringLen(s) > 8)
+    string_view s = *vnp;
+    if (s.size() > 8)
         return true;
 
-    while (isalpha(*s) != 0 || *s == '.')
-        s++;
-    if (*s != '\0')
+    for (char c : s) {
+        if (c == '.' || isalpha(c))
+            continue;
         return true;
+    }
 
     MemFree(tmp);
     return false;

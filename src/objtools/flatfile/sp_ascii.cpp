@@ -3614,21 +3614,23 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 static void DelParenthesis(string& str)
 {
     auto p = str.cbegin();
-    for (; *p == ' ' || *p == '\t';)
-        p++;
     auto q = str.cend();
-    if (q > p) {
+    while (p < q && (*p == ' ' || *p == '\t'))
+        ++p;
+    if (p < q) {
         --q;
-        for (; (q > p) && (*q == ' ' || *q == '\t');)
-            q--;
+        while (p < q && (*q == ' ' || *q == '\t'))
+            --q;
         ++q;
     }
+
     auto pp = p;
-    for (; *pp == '(';)
-        pp++;
     auto qq = q;
-    for (; qq > pp && *(qq - 1) == ')';)
-        qq--;
+    while (pp < qq && *pp == '(')
+        ++pp;
+    while (pp < qq && *(qq - 1) == ')')
+        --qq;
+
     Int2 count = 0, left = 0, right = 0;
     for (auto r = pp; r < qq; r++) {
         if (*r == '(')
@@ -3695,17 +3697,19 @@ static void ParseGeneNameSP(string_view str, CSeq_feat& feat)
 
     CGene_ref& gene = feat.SetData().SetGene();
 
-    for (auto p = str.begin(); p != str.end();) {
-        while (p != str.end() && *p == ' ')
+    for (auto p = str.begin(), e = str.end(); p < e;) {
+        while (p < e && *p == ' ')
             p++;
         auto q = p;
-        for (; p != str.end() && *p != ' ';)
+        while (p < e && *p != ' ')
             p++;
+
         string_view tok(q, p);
-        if (p != str.end())
+        if (p < e)
             p++;
         if (tok == "AND"sv || tok == "OR"sv)
             continue;
+
         string gname(tok);
         CkGeneNameSP(gname);
         if (count == 0) {
