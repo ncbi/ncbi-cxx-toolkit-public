@@ -849,8 +849,9 @@ EIO_Status CNamedPipeHandle::Open(const string&            pipename,
 
         status = SOCK_CreateUNIX(pipename.c_str(), timeout, &m_IoSocket,
                                  NULL, 0, 0/*flags*/);
-        if (status == eIO_Closed
-            &&  (flags & CNamedPipeClient::fNoLogIfClosed)) {
+        if (status == eIO_Timeout
+            ||  (status == eIO_Closed
+                 &&  (flags & CNamedPipeClient::fNoLogIfClosed))) {
             return status;
         }
         if (status != eIO_Success) {
@@ -1063,7 +1064,7 @@ EIO_Status CNamedPipeHandle::Read(void* buf, size_t count, size_t* n_read,
         _VERIFY(SOCK_SetTimeout(m_IoSocket, eIO_Read, timeout) == eIO_Success);
         status = SOCK_Read(m_IoSocket, buf, count, n_read,
                            eIO_ReadPlain);
-        if (status != eIO_Success) {
+        if (status != eIO_Success  &&  status != eIO_Timeout) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
                             + "\" read failed: "
@@ -1101,7 +1102,7 @@ EIO_Status CNamedPipeHandle::Write(const void* buf, size_t count,
         _VERIFY(SOCK_SetTimeout(m_IoSocket, eIO_Write, timeout)== eIO_Success);
         status = SOCK_Write(m_IoSocket, buf, count, n_written,
                             eIO_WritePlain);
-        if (status != eIO_Success) {
+        if (status != eIO_Success  &&  status != eIO_Timeout) {
             NAMEDPIPE_THROW(0,
                             "Named pipe \"" + m_PipeName
                             + "\" write failed: "
