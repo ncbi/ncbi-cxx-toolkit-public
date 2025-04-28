@@ -2821,8 +2821,9 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
             new_rrna->Assign(*(rna_it->GetSeq_feat()));
 
             const CSeq_loc& loc = rna_feat.GetLocation();
-            if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
-              if (loc.GetStart(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+            CBioseq_Handle r = entry.GetScope().GetBioseqHandle(loc);
+            if (r && loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
+                if (loc.GetStart(eExtreme_Biological) >= r.GetBioseqLength()) {
                     new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
                     change_this_rrna = true;
                 }
@@ -2830,12 +2831,12 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                     new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
                     change_this_rrna = true;
                 }
-            } else {
+            } else if (r) {
                 if (loc.GetStart(eExtreme_Biological) < 1) {
                     new_rrna->SetLocation().SetPartialStart(true, eExtreme_Biological);
                     change_this_rrna = true;
                 }
-                if (loc.GetStop(eExtreme_Biological) >= sequence::GetLength(rna_feat.GetLocation(), &entry.GetScope())) {
+                if (loc.GetStop(eExtreme_Biological) >= r.GetBioseqLength()) {
                     new_rrna->SetLocation().SetPartialStop(true, eExtreme_Biological);
                     change_this_rrna = true;
                 }
@@ -2846,7 +2847,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 rrna_h.Replace(*new_rrna);
                 any_changes = true;
             }
-       }
+        }
     }
 
     for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
