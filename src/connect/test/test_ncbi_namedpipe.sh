@@ -23,16 +23,17 @@ client_log=test_ncbi_namedpipe_client.log
 
 rm -f $server_log $client_log
 
-test_ncbi_namedpipe -suffix $$ server </dev/null >$server_log 2>&1 &
+sfx=$$
+test_ncbi_namedpipe -suffix $sfx server </dev/null >$server_log 2>&1 &
 spid=$!
-trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_pipename_$$; echo "`date`."' 0 1 2 3 15
+trap 'kill -9 $spid 2>/dev/null; rm -f ./.ncbi_test_pipename_$sfx; echo "`date`."' 0 1 2 3 15
 
 t=0
 quit_code=3
 while true; do
   if [ -s $server_log ]; then
     sleep 2
-    $CHECK_EXEC test_ncbi_namedpipe -suffix $$ client >$client_log 2>&1
+    $CHECK_EXEC test_ncbi_namedpipe -suffix $sfx client >$client_log 2>&1
     status=$?
     if   [ $status -eq 2 ]; then
       quit_code=0 ; sleep 2
