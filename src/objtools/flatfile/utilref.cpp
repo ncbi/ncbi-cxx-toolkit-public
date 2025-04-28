@@ -236,10 +236,9 @@ CRef<CAuthor> get_std_auth(string_view token, ERefFormat format)
  *                                              12-4-93
  *
  **********************************************************/
-void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
+void get_auth(string_view pt, ERefFormat format, string_view jour, CRef<CAuth_list>& auths)
 {
-    static const char* delimiter;
-    static char*       eptr;
+    string_view delimiter;
 
     switch (format) {
     case GB_REF:
@@ -254,15 +253,14 @@ void get_auth(char* pt, ERefFormat format, char* jour, CRef<CAuth_list>& auths)
     default:
         break;
     }
-    if (! pt || *pt == '\0' || *pt == ';')
+    if (pt.empty() || pt.starts_with(';'))
         return;
 
-    size_t len = StringLen(pt);
-    for (eptr = pt + len - 1; isalnum(*eptr) == 0; eptr--)
-        len--;
-
-    if (len > 4 && StringEquN(eptr - 4, "et al", 5)) {
-        if (! jour)
+    string_view tmp(pt);
+    while (! tmp.empty() && ! isalnum(tmp.back()))
+        tmp.remove_suffix(1);
+    if (tmp.ends_with("et al")) {
+        if (jour.empty())
             FtaErrPost(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "{}", pt);
         else
             FtaErrPost(SEV_WARNING, ERR_REFERENCE_EtAlInAuthors, "{} : {}", pt, jour);

@@ -968,7 +968,7 @@ static CRef<CCit_gen> get_unpub(char* bptr, char* eptr, CRef<CAuth_list>& auth_l
  *                                              11-14-93
  *
  **********************************************************/
-static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre, Parser::EFormat format, char* jour)
+static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTitle::C_E>& title, CImprint::EPrepub pre, Parser::EFormat format, string_view jour)
 {
     char* s;
     char* ss;
@@ -1825,12 +1825,11 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
         for (q = p; *q == ' ' || *q == '.' || *q == ',';)
             q++;
         if (*q != '\0') {
-            q = StringSave(XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL));
+            auto journal = XMLFindTagValue(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_JOURNAL);
             char* r = StringChr(p, ',');
             if (r && ! StringChr(r + 1, '.'))
                 *r = '|';
-            get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, q, auth_list);
-            MemFree(q);
+            get_auth(p, (pp->source == Parser::ESource::EMBL) ? EMBL_REF : GB_REF, journal ? *journal : string_view(), auth_list);
         }
         MemFree(p);
     }

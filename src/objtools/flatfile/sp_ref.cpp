@@ -479,7 +479,7 @@ static ParRefBlkPtr SprotRefString(ParserPtr pp, const DataBlk& dbp, Uint2 col_d
                 GetSprotIds(prbp, str);
             break;
         case ParFlatSP_RA:
-            get_auth(str, SP_REF, nullptr, prbp->authors);
+            get_auth(str, SP_REF, {}, prbp->authors);
             break;
         case ParFlatSP_RG:
             get_auth_consortium(str, prbp->authors);
@@ -830,10 +830,8 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         return GetCitBookOld(prbp, article);
 
     ptr  = &bptr[0] + eds_pos;
-    *ptr = '\0';
     CRef<CAuth_list> auth;
-    get_auth(&bptr[0], SP_REF, nullptr, auth);
-    *ptr = '(';
+    get_auth(string_view(&bptr[0], eds_pos), SP_REF, {}, auth);
     if (auth.Empty())
         return false;
 
