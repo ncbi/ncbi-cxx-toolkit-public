@@ -4,6 +4,9 @@ NCBI_begin_app(test_ncbi_namedpipe)
 
   NCBI_sources(test_ncbi_namedpipe)
   NCBI_uses_toolkit_libraries(xconnect)
+  if(WIN32)
+    NCBI_uses_external_libraries(winmm)
+  endif()
 
   NCBI_begin_test(test_ncbi_namedpipe)
     NCBI_set_test_command(test_ncbi_namedpipe.sh)
