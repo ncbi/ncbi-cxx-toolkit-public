@@ -993,7 +993,8 @@ void MultipleAlignment::copyRowSource(int parentRow, const AlignmentCollection& 
 	malign.GetRowSourceTable().findEntries(row, sources);
 	for (unsigned int i = 0; i < sources.size(); i++)
 	{
-		m_rowSources.addEntry(parentRow, *(new RowSource(sources[i])), 
+//		m_rowSources.addEntry(parentRow, *(new RowSource(sources[i])), 
+		m_rowSources.addEntry(parentRow, sources[i],
 			malign.GetRowSourceTable().isEntryInScope(sources[i]) );
 	}
 }

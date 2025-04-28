@@ -432,7 +432,7 @@ void SetAlignedResiduesForCD(CCdCore* cd, char** & ppAlignedResidues, bool force
     if (ppAlignedResidues == NULL) {
         ppAlignedResidues = new char*[numRows];
         for (int i=0; i<numRows; i++) {
-            ppAlignedResidues[i] = new char[numAligned];
+            ppAlignedResidues[i] = new char[numAligned]{ 0 };
         }
     // if space is already allocated then safe to assume array's been filled in
 //    } else {

@@ -276,7 +276,7 @@ void SLC_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     //  Map rows in distance matrix to index of corresponding node in m_seqiters;
     //  when there is no corresponding distance matrix row, enter USED_ROW.
 
-    int* indexMap = new int[m_nseqs]();  
+    int* indexMap = new int[m_nseqs]{ 0 };  
 
     m_nextNode = m_nseqs + 1;
 
@@ -388,6 +388,11 @@ void SLC_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 	midpointRootIfNeeded();
     //fillSeqNames(m_tree, m_cdd);
 	
+    for (i=0; i<m_nseqs; i++) {
+        delete [] ppDists[i];
+    }
+    delete [] ppDists;
+
     delete [] indexMap;
     delete [] internalDistCorrection;
 
