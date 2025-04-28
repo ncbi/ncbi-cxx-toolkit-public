@@ -43,6 +43,7 @@
 
 #include <util/multi_writer.hpp>
 #include <util/cache/cache_ref.hpp>
+#include <util/random_gen.hpp>
 
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
@@ -1929,7 +1930,9 @@ unsigned int CCgiApplication::GetFastCGIIterations(unsigned int def_iter) const
     int iterations_rnd_inc = GetConfig().
         GetInt("FastCGI", "Iterations_Random_Increase", 0, 0, CNcbiRegistry::eErrPost);
     if (iterations_rnd_inc > 0) {
-        ret += rand() % iterations_rnd_inc;
+        CRandom r;
+        r.Randomize();
+        ret += r.GetRand(0, iterations_rnd_inc);
     }
 
     _TRACE("CCgiApplication::Run: FastCGI limited to "
