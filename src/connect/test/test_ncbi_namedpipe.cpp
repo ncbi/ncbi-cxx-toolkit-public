@@ -37,6 +37,9 @@
 #include <corelib/ncbi_test.hpp>
 #include <connect/ncbi_connutil.h>
 #include <connect/ncbi_namedpipe.hpp>
+#ifdef NCBI_OS_MSWIN
+#  include <timeapi.h>
+#endif // NCBI_OS_MSWIN
 
 #include "test_assert.h"  // This header must go last
 
@@ -67,7 +70,7 @@ const size_t kBlobSize    = kNumSubBlobs * kSubBlobSize;
 
 // Reading from pipe
 static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
-                             size_t msg_size, size_t* n_read) 
+                             size_t msg_size, size_t* n_read, bool silent = false)
 {
     size_t     n_read_total = 0;
     size_t     x_read       = 0;
@@ -76,10 +79,12 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
     do {
         status = pipe.Read((char*) buf + n_read_total,
                            buf_size - n_read_total, &x_read);
-        ERR_POST(Info <<
-                 "Read from pipe: "
-                 + NStr::UIntToString((unsigned int) x_read) + " byte(s): "
-                 + string(IO_StatusStr(status)));
+        if (!silent) {
+            ERR_POST(Info <<
+                     "Read from pipe: "
+                     + NStr::UIntToString((unsigned int) x_read) + " byte(s): "
+                     + string(IO_StatusStr(status)));
+        }
         n_read_total += x_read;
     } while (status == eIO_Success  &&  n_read_total < msg_size);
 
@@ -90,7 +95,7 @@ static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
 
 // Writing to pipe
 static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
-                              size_t* n_written) 
+                              size_t* n_written, bool silent = false)
 {
     size_t     n_written_total = 0;
     size_t     x_written       = 0;
@@ -99,17 +104,18 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
     do {
         status = pipe.Write((char*) buf + n_written_total,
                            size - n_written_total, &x_written);
-        ERR_POST(Info <<
-                 "Write to pipe: "
-                 + NStr::UIntToString((unsigned int) x_written) + " byte(s): "
-                 + string(IO_StatusStr(status)));
+        if (!silent) {
+            ERR_POST(Info <<
+                     "Write to pipe: "
+                     + NStr::UIntToString((unsigned int) x_written) + " byte(s): "
+                     + string(IO_StatusStr(status)));
+        }
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
 
     *n_written = n_written_total;
     return status;
 }
-
 
 
 ////////////////////////////////
@@ -120,6 +126,7 @@ class CTest : public CNcbiApplication
 {
 public:
     CTest(void);
+    ~CTest();
 
     virtual void Init(void);
     virtual int  Run (void);
@@ -130,13 +137,47 @@ protected:
 
     string   m_PipeName;
     STimeout m_Timeout;
+
+    static const STimeout kZeroTimeout;
+
+#ifdef NCBI_OS_MSWIN
+private:
+    static bool xsm_UsePrecisionTimer;
+    static void x_ReportSleepPrecision(void);
+#endif // NCBI_OS_MSWIN
 };
+
+
+const STimeout CTest::kZeroTimeout = { 0, 0 };
+
+
+#ifdef NCBI_OS_MSWIN
+bool CTest::xsm_UsePrecisionTimer = false;
+
+void CTest::x_ReportSleepPrecision(void)
+{
+    CStopWatch sw(CStopWatch::eStart);
+    SleepMilliSec(1);
+    double elapsed = sw.Elapsed();
+    ERR_POST(Info << "Sleep(1ms) = " << setprecision(6) << elapsed * 1000.0 << "ms");
+}
+#endif // NCBI_OS_MSWIN
 
 
 CTest::CTest(void)
 {
     m_Timeout.sec  = DEFAULT_TIMEOUT;
     m_Timeout.usec = 0;
+}
+
+
+CTest::~CTest()
+{
+#ifdef NCBI_OS_MSWIN
+    if (xsm_UsePrecisionTimer) {
+        timeEndPeriod(1);
+    }
+#endif // NCBI_OS_MSWIN
 }
 
 
@@ -189,8 +230,18 @@ void CTest::Init(void)
 int CTest::Run(void)
 {
     // Set randomization seed for the test
-    g_NCBI_ConnectRandomSeed = CNcbiTest::SetRandomSeed();
-    
+    g_NCBI_ConnectRandomSeed = CNcbiTest::SetRandomSeed();    
+
+#ifdef NCBI_OS_MSWIN
+    x_ReportSleepPrecision();
+    if (::rand() & 1) {
+        ERR_POST(Info << "Using precision timer");
+        xsm_UsePrecisionTimer = true;
+        timeBeginPeriod(1);
+        x_ReportSleepPrecision();
+    }
+#endif // NCBI_OS_MSWIN
+
     const CArgs& args = GetArgs();
         
     m_PipeName = args["basename"].AsString();
@@ -221,6 +272,7 @@ int CTest::Run(void)
     else {
         _TROUBLE;
     }
+
     return 0;
 }
 
@@ -245,6 +297,7 @@ int CTest::Client(int num)
     assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
     EIO_Status status;
+
     CDeadline timeout(g_STimeoutToCTimeout(&m_Timeout));
     for (;;) {
         // Wait for server to come up online
@@ -284,6 +337,9 @@ int CTest::Client(int num)
         goto out;
     }
 
+    if (::rand() & 1) {
+        SleepMilliSec(100);
+    }
     // "Hello" test
     {{
         assert(s_WritePipe(pipe, "Hello", 5, &n_written) == eIO_Success);
@@ -293,11 +349,14 @@ int CTest::Client(int num)
         assert(::memcmp(buf, "OK", 2) == 0);
     }}
 
+    if (::rand() & 1) {
+        SleepMilliSec(100);
+    }
     // Big binary blob test
     {{
         // Send a very big binary blob
         size_t i;
-        unsigned char* blob = (unsigned char*) ::malloc(kBlobSize + 1);
+        unsigned char* blob = new unsigned char[kBlobSize + 1];
         for (i = 0;  i < kBlobSize;  ++i) {
             blob[i] = (unsigned char) i;
         }
@@ -314,13 +373,52 @@ int CTest::Client(int num)
         for (i = 0;  i < kBlobSize;  ++i) {
             assert(blob[i] == (unsigned char) i);
         }
-        ::free(blob);
+        delete[] blob;
         ERR_POST(Info << "Blob test is OK!");
     }}
+
     if (::rand() & 1) {
         SleepMilliSec(100);
-    }  
+    }
+    // Download test
+    {{
+        _ASSERT(sizeof(buf) == kSubBlobSize);
+        if (::rand() & 1) {
+            ERR_POST(Info << "Downloading using non-blocking reads");
+            pipe.SetTimeout(eIO_Read, &kZeroTimeout);
+        } else {
+            ERR_POST(Info << "Downloading using blocking reads");
+        }
+        n_read = 0;
+        bool expired;
+        CStopWatch sw(CStopWatch::eStart);
+        timeout = CDeadline(g_STimeoutToCTimeout(&m_Timeout));
+        do {
+            status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_written, true);
+            n_read += n_written/*temp*/;
+            expired = timeout.IsExpired();
+            if (expired) {
+                break;
+            }
+            if (!n_written  &&  status != eIO_Timeout) {
+                break;
+            }
+        } while (n_read < kBlobSize * sizeof(buf));
+        double interval = sw.Elapsed();
+        ERR_POST(Info << (expired ? "Download expired " : "Downloaded ")
+                 << NStr::NumericToString(n_read, NStr::fWithCommas)
+                 << " byte(s) in "
+                 << setprecision(6) << interval << " second(s) @ "
+                 << setprecision(3) << (interval ? n_read / (1024.0 * interval) : 0.0)
+                 << "KB/s: " << IO_StatusStr(status));
+        if (expired)
+            status = eIO_Timeout;
+    }}
+
     if (::rand() & 1) {
+        SleepMilliSec(100);
+    }
+    if ((::rand() & 1)  &&  status == eIO_Success) {
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
         if (status == eIO_Success) {
             ERR_POST(Error << "Extra read succeeded");
@@ -328,6 +426,7 @@ int CTest::Client(int num)
         }
         ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
     }
+
     if (::rand() & 1) {
         status = pipe.Close();
         if (status != eIO_Success) {
@@ -335,6 +434,7 @@ int CTest::Client(int num)
             _TROUBLE;
         }
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+        ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
         _ASSERT(status == eIO_Unknown);
     }
  out:
@@ -358,14 +458,14 @@ int CTest::Server(void)
     size_t n_written = 0;
 
     CNamedPipeServer pipe(m_PipeName, &m_Timeout, kSubBlobSize + 512);
-
     assert(pipe.IsServerSide());
-    assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
-    assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
     EIO_Status status;
 
     for (int n = 1;  n <= 10;  ++n) {
+        assert(pipe.SetTimeout(eIO_Read,  &m_Timeout) == eIO_Success);
+        assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
+
         if (::rand() & 1) {
             SleepMilliSec(100);
         }
@@ -401,13 +501,11 @@ int CTest::Server(void)
             {{
                 // Receive a very big binary blob
                 size_t i;
-                unsigned char* blob = (unsigned char*) ::malloc(kBlobSize + 1);
-
+                unsigned char* blob = new unsigned char[kBlobSize + 1];
                 assert(s_ReadPipe(pipe, blob, kBlobSize +1, kBlobSize, &n_read)
                        == eIO_Success);
                 assert(n_read == kBlobSize);
- 
-                // Check its content
+                // Check its contents
                 for (i = 0;  i < kBlobSize;  ++i) {
                     assert(blob[i] == (unsigned char) i);
                 }
@@ -419,9 +517,46 @@ int CTest::Server(void)
                     assert(n_written == kSubBlobSize);
                 }
                 ::memset(blob, 0, kBlobSize);
-                ::free(blob);
+                delete[] blob;
                 ERR_POST(Info << "Blob test is OK!");
             }}
+
+            if (::rand() & 1) {
+                SleepMilliSec(100);
+            }
+            // Upload test
+            {{
+                _ASSERT(sizeof(buf) == kSubBlobSize);
+                for (size_t i = 0;  i < sizeof(buf);  ++i) {
+                    buf[i] = char(i & 0xFF);
+                }
+                if (::rand() & 1) {
+                    ERR_POST(Info << "Uploading using non-blocking writes");
+                    pipe.SetTimeout(eIO_Write, &kZeroTimeout);
+                } else {
+                    ERR_POST(Info << "Uploading using blocking writes");
+                }
+                bool expired;
+                n_written = 0;
+                CDeadline timeout(g_STimeoutToCTimeout(&m_Timeout));
+                do {
+                    size_t n_done = n_written % sizeof(buf);
+                    size_t n_todo = sizeof(buf) - n_done;
+                    status = s_WritePipe(pipe, &buf[n_done], n_todo, &n_read, true);
+                    n_written += n_read/*temp*/;
+                    expired = timeout.IsExpired();
+                    if (expired) {
+                        break;
+                    }
+                    if (!n_read  &&  status != eIO_Timeout) {
+                        break;
+                    }
+                } while (n_written < kBlobSize * sizeof(buf));
+                ERR_POST(Info << (expired ? "Upload expired " : "Uploaded ")
+                         << NStr::NumericToString(n_written, NStr::fWithCommas)
+                         << " byte(s): " << IO_StatusStr(status));
+            }}
+
             if (::rand() & 1) {
                 SleepMilliSec(100);
             }
@@ -433,6 +568,7 @@ int CTest::Server(void)
                 }
                 ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
             }
+
             ERR_POST(Info << "Disconnecting client...");
             status = pipe.Disconnect();
             if (status != eIO_Success) {
@@ -441,6 +577,7 @@ int CTest::Server(void)
             }
             if (::rand() & 1) {
                 status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
+                ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
                 _ASSERT(status == eIO_Unknown);
             }
             ERR_POST(Info << "Round completed successfully!");
