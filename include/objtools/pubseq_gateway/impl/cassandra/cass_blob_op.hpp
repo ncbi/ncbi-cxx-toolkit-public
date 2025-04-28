@@ -46,7 +46,6 @@
 
 #include "cass_driver.hpp"
 #include "cass_exception.hpp"
-#include "Key.hpp"
 #include "IdCassScope.hpp"
 #include "cass_util.hpp"
 #include "blob_record.hpp"
@@ -58,7 +57,6 @@ BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
 using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
-using TPropsCallback     = function<void(const SBlobStat& stat, bool isFound)>;
 using TDataErrorCallback = function<void(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)>;
 using TDataReadyCallback = void(*)(void*);
 

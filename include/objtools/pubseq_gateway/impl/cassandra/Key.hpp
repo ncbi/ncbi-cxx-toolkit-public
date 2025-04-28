@@ -39,23 +39,15 @@
 #include <bitset>
 #include <corelib/ncbistd.hpp>
 
-#include "cass_exception.hpp"
 #include "IdCassScope.hpp"
-
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-// if blob has large chunks, bfComplete flag indicates whether chunks
-// are successfully inserted or updated
-#define bfComplete      0x0000000001
-#define bfPacked        0x0000000002
-#define bfCheckFailed   0x0000000004
-
 struct SBlobStat
 {
-    int64_t modified = 0;
-    int64_t flags = 0;
+    int64_t modified{0};
+    int64_t flags{0};
 };
 
 struct SBlobFullStat

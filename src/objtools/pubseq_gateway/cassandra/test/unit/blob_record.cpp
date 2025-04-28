@@ -42,6 +42,23 @@ namespace {
     USING_NCBI_SCOPE;
     USING_IDBLOB_SCOPE;
 
+    int16_t GetSybaseWithdrawn(CBlobRecord const& a)
+    {
+        static constexpr uint64_t withdrawn_offset = 7;
+        static constexpr uint64_t withdrawn_mask = 0b1111;
+        return static_cast<int16_t>((a.GetFlags() >> withdrawn_offset) & withdrawn_mask);
+    }
+
+    int16_t GetSybaseSuppress(CBlobRecord const& a)
+    {
+        static constexpr uint64_t suppress_offset = 11;
+        static constexpr uint64_t suppress_mask = 0b111'1110;
+        auto flags = static_cast<uint64_t>(a.GetFlags());
+        return
+            (flags & static_cast<TBlobFlagBase>(EBlobFlags::eSuppress) ? 1 : 0)
+            | static_cast<int16_t>(flags >> (suppress_offset - 1) & suppress_mask);
+    }
+
     TEST(BlobRecordTest, DataComparison) {
         {
             CBlobRecord a, b;
@@ -85,14 +102,42 @@ namespace {
     }
 
     TEST(BlobRecordTest, BlobProperties) {
+        CBlobRecord a;
+        CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT() + 1000);
+        a.SetHupDate(tm);
+        EXPECT_TRUE(a.IsConfidential());
+        tm = tm - 1000;
+        a.SetHupDate(tm);
+        EXPECT_FALSE(a.IsConfidential());
+    }
+
+    TEST(BlobRecordTest, SuppressFlags) {
         {
             CBlobRecord a;
-            CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT()+1000);
-            a.SetHupDate(tm);
-            EXPECT_TRUE(a.IsConfidential());
-            tm = tm - 1000;
-            a.SetHupDate(tm);
-            EXPECT_FALSE(a.IsConfidential());
+            a.SetFlag(true, EBlobFlags::eSuppress);
+            EXPECT_EQ(1, GetSybaseSuppress(a));
+            a.SetFlag(true, EBlobFlags::eSuppressTemporary);
+            EXPECT_EQ(5, GetSybaseSuppress(a));
+            a.SetFlag(true, EBlobFlags::eSuppressEditBlocked);
+            EXPECT_EQ(7, GetSybaseSuppress(a));
+        }
+        {
+            CBlobRecord a;
+            a.SetFlag(true, EBlobFlags::eNoIncrementalProcessing);
+            EXPECT_EQ(16, GetSybaseSuppress(a));
+        }
+    }
+
+    TEST(BlobRecordTest, WithdrawFlags) {
+        {
+            CBlobRecord a;
+            a.SetFlag(true, EBlobFlags::eWithdrawnBase);
+            EXPECT_EQ(1, GetSybaseWithdrawn(a));
+        }
+        {
+            CBlobRecord a;
+            a.SetFlag(true, EBlobFlags::eWithdrawnPermanently);
+            EXPECT_EQ(2, GetSybaseWithdrawn(a));
         }
     }
 }  // namespace

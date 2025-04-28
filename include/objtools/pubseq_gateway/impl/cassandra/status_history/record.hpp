@@ -54,6 +54,8 @@ enum class EBlobStatusFlags : TBlobStatusFlagsBase {
     /*     @PubSeqOS_source@/PSloadutils.c - function PubSeqOS_idmaint_set_status() */
     eReservedBlobStatusFlag0 = 1 << 5, // eSuppressWarnNoEdit.
     eReservedBlobStatusFlag1 = 1 << 6, // eNoIncrementalProcessing
+    eReservedBlobStatusFlag2 = 1 << 7, // Reserved for Suppress extension
+    eReservedBlobStatusFlag3 = 1 << 8, // Reserved for Suppress extension
     /* End */
 };
 

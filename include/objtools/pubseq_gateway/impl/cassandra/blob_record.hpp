@@ -41,12 +41,24 @@ USING_NCBI_SCOPE;
 using TBlobFlagBase = int64_t;
 enum class EBlobFlags : TBlobFlagBase {
     eCheckFailed   = 1 << 0, // 1
-    eGzip          = 1 << 1, // 2
-    eNot4Gbu       = 1 << 2, // 4
-    eWithdrawn     = 1 << 3, // 8
-    eSuppress      = 1 << 4, // 16
-    eDead          = 1 << 5, // 32
-    eBigBlobSchema = 1 << 6,
+    eGzip          = 1 << 1, // 2 - Blob chunks are compressed
+    eNot4Gbu       = 1 << 2, // 4 - Sybase::not2gbu != 0
+    eWithdrawn     = 1 << 3, // 8 - Sybase::withdrawn != 0
+    eSuppress      = 1 << 4, // 16 - Sybase::SuppressPerm - suppress & 0x01
+    eDead          = 1 << 5, // 32 - Sybase::ent_state != 100
+    eBigBlobSchema = 1 << 6, // 64 - BlobChunks total size more than a limit configured for keyspace
+    /* Begin - Flags transferred from Sybase storage - internal/ID/Common/idstates.h */
+    eWithdrawnBase        = 1 << 7,  // 128 - Sybase::withdrawn == 1
+    eWithdrawnPermanently = 1 << 8,  // 256 - Sybase::withdrawn == 2
+    eReservedBlobFlag0    = 1 << 9,  // 512  - Reserved for Withdrawn extension
+    eReservedBlobFlag1    = 1 << 10, // 1024 - Reserved for Withdrawn extension
+    eSuppressEditBlocked  = 1 << 11, // 2048 - Sybase::SuppressNoEdit - suppress & 0x02
+    eSuppressTemporary    = 1 << 12, // 4096 - Sybase::SuppressTemporary - suppress & 0x04
+    eReservedBlobFlag2    = 1 << 13, // 8192 - Sybase::eSuppressWarnNoEdit - suppress & 0x08 (!!!Unused)
+    eNoIncrementalProcessing = 1 << 14, // 16384 - Sybase::eSuppressSkipIncrement - suppress & 0x10
+    eReservedBlobFlag3    = 1 << 15, // 32768 - Reserved for Suppress extension
+    eReservedBlobFlag4    = 1 << 16, // 65536 - Reserved for Suppress extension
+    /* End */
 };
 
 class CBlobRecord {
@@ -85,14 +97,13 @@ class CBlobRecord {
     CBlobRecord& SetOwner(int32_t value);
     CBlobRecord& SetClass(int16_t value);
 
-    //  @warning Flags for extended schema are not compatible with old one.
-    //  DO NOT use these methods to work with old schema data
     CBlobRecord& SetGzip(bool value);
     CBlobRecord& SetNot4Gbu(bool value);
     CBlobRecord& SetSuppress(bool value);
     CBlobRecord& SetWithdrawn(bool value);
     CBlobRecord& SetDead(bool value);
     CBlobRecord& SetBigBlobSchema(bool value);
+    CBlobRecord& SetFlag(bool set_flag, EBlobFlags flag_value);
 
     CBlobRecord& AppendBlobChunk(TBlobChunk&& chunk);
     CBlobRecord& InsertBlobChunk(size_t index, TBlobChunk&& chunk);
@@ -133,9 +144,7 @@ class CBlobRecord {
     // Records are confidential if HUP date is in the future
     bool IsConfidential() const;
 
- private:
-    CBlobRecord& SetFlag(bool set_flag, EBlobFlags flag_value);
-
+private:
     TTimestamp  m_Modified;
     int64_t     m_Flags;
     TSize       m_Size;
