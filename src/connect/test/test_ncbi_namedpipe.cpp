@@ -321,7 +321,7 @@ int CTest::Client(int num)
     size_t n_read    = 0;
     size_t n_written = 0;
 
-    if (num > 2  &&  (rand() & 1)) {
+    if ((::rand() & 1)  &&  num > 2) {
         // Super quick write-and-flee behavior
         ERR_POST(Info << "Quitting the server!");
         assert(s_WritePipe(pipe, "Quit!", 5, &n_written) == eIO_Success);
@@ -405,7 +405,7 @@ int CTest::Client(int num)
             }
         } while (n_read < kBlobSize * sizeof(buf));
         double interval = sw.Elapsed();
-        ERR_POST(Info << (expired ? "Download expired " : "Downloaded ")
+        ERR_POST(Info << (expired ? "Download expired: " : "Downloaded ")
                  << NStr::NumericToString(n_read, NStr::fWithCommas)
                  << " byte(s) in "
                  << setprecision(6) << interval << " second(s) @ "
@@ -437,6 +437,7 @@ int CTest::Client(int num)
         ERR_POST(Info << "Error expected, " << IO_StatusStr(status));
         _ASSERT(status == eIO_Unknown);
     }
+
  out:
     ERR_POST(Info << "TEST completed successfully");
     return exitcode;
@@ -552,7 +553,7 @@ int CTest::Server(void)
                         break;
                     }
                 } while (n_written < kBlobSize * sizeof(buf));
-                ERR_POST(Info << (expired ? "Upload expired " : "Uploaded ")
+                ERR_POST(Info << (expired ? "Upload expired: " : "Uploaded ")
                          << NStr::NumericToString(n_written, NStr::fWithCommas)
                          << " byte(s): " << IO_StatusStr(status));
             }}
