@@ -61,7 +61,7 @@ void DealWithGenes(CRef<objects::CSeq_entry>& pEntry, ParserPtr pp);
 CRef<objects::CCit_gen> get_error(char* bptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title);
 CRef<objects::CDate>    get_date(const Char* year);
 void                    get_auth_consortium(char* cons, CRef<objects::CAuth_list>& auths);
-void                    get_auth(char* pt, ERefFormat format, char* jour, CRef<objects::CAuth_list>& auths);
+void                    get_auth(string_view pt, ERefFormat format, string_view jour, CRef<objects::CAuth_list>& auths);
 void                    get_auth_from_toks(TTokenList::const_iterator beg, TTokenList::const_iterator end, ERefFormat format, CRef<objects::CAuth_list>& auths);
 CRef<objects::CAuthor>  get_std_auth(string_view token, ERefFormat format);
 
