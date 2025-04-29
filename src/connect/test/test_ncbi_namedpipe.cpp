@@ -46,7 +46,8 @@
 #define _STR(x)  #x
 #define  STR(s)  _STR(s)
 
-#define DEFAULT_TIMEOUT  3
+#define DEFAULT_TIMEOUT 3   // seconds
+#define RANDOM_DELAY    100 // milliseconds
 
 
 USING_NCBI_SCOPE;
@@ -286,7 +287,7 @@ int CTest::Client(int num)
     int exitcode = 0;
 
     if (::rand() & 1) {
-        SleepMilliSec(100);
+        SleepMilliSec(RANDOM_DELAY);
     }
     ERR_POST(Info << "Starting client " + NStr::IntToString(num) + "...");
 
@@ -301,8 +302,8 @@ int CTest::Client(int num)
     CDeadline timeout(g_STimeoutToCTimeout(&m_Timeout));
     for (;;) {
         // Wait for server to come up online
-        status = pipe.Open(m_PipeName, kDefaultTimeout, kSubBlobSize,
-                           CNamedPipeClient::fNoLogIfClosed);
+        status = pipe.Open(m_PipeName, kDefaultTimeout/*noop*/,
+                           kSubBlobSize, CNamedPipeClient::fNoLogIfClosed);
         if (status == eIO_Success) {
             break;
         }
@@ -326,7 +327,7 @@ int CTest::Client(int num)
         ERR_POST(Info << "Quitting the server!");
         assert(s_WritePipe(pipe, "Quit!", 5, &n_written) == eIO_Success);
         assert(n_written == 5);
-        if (rand() & 1) {
+        if (::rand() & 1) {
             status = pipe.Close();
             if (status != eIO_Success) {
                 ERR_POST(Error << "Close() failed: " << IO_StatusStr(status));
@@ -338,7 +339,7 @@ int CTest::Client(int num)
     }
 
     if (::rand() & 1) {
-        SleepMilliSec(100);
+        SleepMilliSec(RANDOM_DELAY);
     }
     // "Hello" test
     {{
@@ -350,7 +351,7 @@ int CTest::Client(int num)
     }}
 
     if (::rand() & 1) {
-        SleepMilliSec(100);
+        SleepMilliSec(RANDOM_DELAY);
     }
     // Big binary blob test
     {{
@@ -378,7 +379,7 @@ int CTest::Client(int num)
     }}
 
     if (::rand() & 1) {
-        SleepMilliSec(100);
+        SleepMilliSec(RANDOM_DELAY);
     }
     // Download test
     {{
@@ -416,7 +417,7 @@ int CTest::Client(int num)
     }}
 
     if (::rand() & 1) {
-        SleepMilliSec(100);
+        SleepMilliSec(RANDOM_DELAY);
     }
     if ((::rand() & 1)  &&  status == eIO_Success) {
         status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
@@ -468,7 +469,7 @@ int CTest::Server(void)
         assert(pipe.SetTimeout(eIO_Write, &m_Timeout) == eIO_Success);
 
         if (::rand() & 1) {
-            SleepMilliSec(100);
+            SleepMilliSec(RANDOM_DELAY);
         }
         ERR_POST(Info << "Listening on \"" + m_PipeName + "\", round "
                  + NStr::IntToString(n) + "...");
@@ -479,7 +480,7 @@ int CTest::Server(void)
             ERR_POST(Info << "Client connected!");
 
             if (::rand() & 1) {
-                SleepMilliSec(100);
+                SleepMilliSec(RANDOM_DELAY);
             }
             // "Hello" test
             {{
@@ -496,7 +497,7 @@ int CTest::Server(void)
             }}
 
             if (::rand() & 1) {
-                SleepMilliSec(100);
+                SleepMilliSec(RANDOM_DELAY);
             }
             // Big binary blob test
             {{
@@ -523,7 +524,7 @@ int CTest::Server(void)
             }}
 
             if (::rand() & 1) {
-                SleepMilliSec(100);
+                SleepMilliSec(RANDOM_DELAY);
             }
             // Upload test
             {{
@@ -559,7 +560,7 @@ int CTest::Server(void)
             }}
 
             if (::rand() & 1) {
-                SleepMilliSec(100);
+                SleepMilliSec(RANDOM_DELAY);
             }
             if (::rand() & 1) {
                 status = s_ReadPipe(pipe, buf, sizeof(buf), sizeof(buf), &n_read);
