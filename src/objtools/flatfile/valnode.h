@@ -45,9 +45,7 @@ BEGIN_NCBI_SCOPE
 
 struct ValNode {
     unsigned char choice   = 0;       /* to pick a choice */
-    unsigned char extended = 0;       /* extra fields reserved to NCBI allocated in structure */
     char*         data     = nullptr; /* attached data */
-    bool          fatal    = false;
     ValNode*      next     = nullptr; /* next in linked list */
 };
 using ValNodePtr = ValNode*;
