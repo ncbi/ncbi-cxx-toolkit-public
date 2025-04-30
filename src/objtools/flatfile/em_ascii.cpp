@@ -489,14 +489,14 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
         if (ptr && ptr < p) {
             id.assign(bptr, ptr);
-            CleanTailNoneAlphaCharInString(id);
+            CleanTailNonAlphaChar(id);
 
             bptr = ptr;
             PointToNextToken(bptr); /* points to secondary_identifier */
         }
         if (p) {
             id1.assign(bptr, p);
-            CleanTailNoneAlphaCharInString(id1);
+            CleanTailNonAlphaChar(id1);
         }
 
         if (id.empty()) {

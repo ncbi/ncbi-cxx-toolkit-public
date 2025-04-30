@@ -96,15 +96,14 @@ string GetBlkDataReplaceNewLine(string_view, Uint2 indent);
 /* Delete any tailing ' ', '\n', '\\', ',', ';', '~', '.', ':'
  * characters.
  */
-void CleanTailNoneAlphaChar(char* str);
-void CleanTailNoneAlphaCharInString(std::string& str);
+void CleanTailNonAlphaChar(std::string& str);
 
 void PointToNextToken(char*& ptr);
 
 /* Return the current token which ptr points to and ptr will points to
  * next token after the routine return.
  */
-char* GetTheCurrentToken(char** ptr);
+string GetTheCurrentToken(char** ptr);
 
 /* Search The character letter.
  * Return NULL if not found; otherwise, return a pointer points first

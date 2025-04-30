@@ -587,10 +587,10 @@ string GetBlkDataReplaceNewLine(string_view instr, Uint2 indent)
 
 
 /**********************************************************/
-static size_t SeekLastAlphaChar(const Char* str, size_t len)
+static size_t SeekLastAlphaChar(string_view str)
 {
-    if (str && len != 0) {
-        for (size_t ret = len; ret > 0;) {
+    if (! str.empty()) {
+        for (size_t ret = str.size(); ret > 0;) {
             char c = str[--ret];
             if (c != ' ' && c != '\n' && c != '\\' && c != ',' &&
                 c != ';' && c != '~' && c != '.' && c != ':') {
@@ -602,13 +602,6 @@ static size_t SeekLastAlphaChar(const Char* str, size_t len)
     return 0;
 }
 
-/**********************************************************/
-void CleanTailNoneAlphaCharInString(string& str)
-{
-    size_t ret = SeekLastAlphaChar(str.c_str(), str.size());
-    str        = str.substr(0, ret);
-}
-
 /**********************************************************
  *
  *   void CleanTailNoneAlphaChar(str):
@@ -617,13 +610,10 @@ void CleanTailNoneAlphaCharInString(string& str)
  *   '.', ':' characters.
  *
  **********************************************************/
-void CleanTailNoneAlphaChar(char* str)
+void CleanTailNonAlphaChar(string& str)
 {
-    if (! str || *str == '\0')
-        return;
-
-    size_t last = SeekLastAlphaChar(str, strlen(str));
-    str[last]   = '\0';
+    size_t n = SeekLastAlphaChar(str);
+    str.resize(n);
 }
 
 /**********************************************************/
@@ -646,26 +636,25 @@ void PointToNextToken(char*& ptr)
  *   after the routine return.
  *
  **********************************************************/
-char* GetTheCurrentToken(char** ptr)
+string GetTheCurrentToken(char** ptr)
 {
     char* retptr;
     char* bptr;
-    char* str;
 
     bptr = retptr = *ptr;
     if (! retptr || *retptr == '\0')
-        return nullptr;
+        return {};
 
     while (*retptr != '\0' && *retptr != ' ')
         retptr++;
 
-    str = StringSave(string_view(bptr, retptr - bptr));
+    string str(bptr, retptr);
 
     while (*retptr != '\0' && *retptr == ' ') /* skip blanks */
         retptr++;
     *ptr = retptr;
 
-    CleanTailNoneAlphaChar(str);
+    CleanTailNonAlphaChar(str);
     return (str);
 }
 

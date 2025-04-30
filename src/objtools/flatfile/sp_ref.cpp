@@ -293,7 +293,6 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
 {
     char* ptr1;
     char* ptr2;
-    char* token;
 
     if (NStr::StartsWith(str, "UNPUBLISHED"sv, NStr::eNocase)) {
         prbp->reftype = ParFlat_ReftypeUnpub;
@@ -315,9 +314,9 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
         ptr1 = str;
         ptr2 = ptr1;
         PointToNextToken(ptr2);
-        token      = GetTheCurrentToken(&ptr2); /* token = (year), */
-        prbp->year = ParseYear(token);
-        MemFree(token);
+        string token = GetTheCurrentToken(&ptr2); /* token = (year), */
+        prbp->year = ParseYear(token.c_str());
+        token.clear();
 
         ptr1 = StringChr(ptr2, ',');
         if (ptr1) /* university */
@@ -328,7 +327,7 @@ static void ParseRLDataSP(ParserPtr pp, ParRefBlkPtr prbp, char* str)
                 ptr1++;
             prbp->country = ptr1;
             if (prbp->country != "U.S.A.")
-                CleanTailNoneAlphaCharInString(prbp->country);
+                CleanTailNonAlphaChar(prbp->country);
         } else /* error */
         {
             prbp->reftype = ParFlat_ReftypeIgnore;
