@@ -258,6 +258,30 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
     bool    need_trace = m_Request->NeedTrace();
     string  stripped_seq_id = StripTrailingVerticalBars(request_seq_id);
 
+    // First variation of Set()
+    if (request_seq_id_type > 0) {
+        try {
+            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+                       (CSeq_id_Base::E_Choice)(request_seq_id_type),
+                       stripped_seq_id);
+            if (need_trace) {
+                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                                   to_string(request_seq_id_type) +
+                                   ", '" + stripped_seq_id + "') succeeded.\n"
+                                   "Parsing CSeq_id finished OK (#1)",
+                                   m_Request->GetStartTimestamp());
+            }
+            return ePSGS_ParsedOK;
+        } catch (...) {
+            if (need_trace)
+                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
+                                   to_string(request_seq_id_type) +
+                                   ", '" + stripped_seq_id + "') failed (exception)",
+                                   m_Request->GetStartTimestamp());
+        }
+    }
+
+    // Second variation of Set()
     try {
         seq_id.Set(stripped_seq_id);
         if (need_trace)
@@ -266,7 +290,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
 
         if (request_seq_id_type <= 0) {
             if (need_trace)
-                m_Reply->SendTrace("Parsing CSeq_id finished OK (#1)",
+                m_Reply->SendTrace("Parsing CSeq_id finished OK (#2)",
                                    m_Request->GetStartTimestamp());
             return ePSGS_ParsedOK;
         }
@@ -275,7 +299,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
         int16_t     eff_seq_id_type;
         if (GetEffectiveSeqIdType(seq_id, request_seq_id_type, eff_seq_id_type, false)) {
             if (need_trace)
-                m_Reply->SendTrace("Parsing CSeq_id finished OK (#2)",
+                m_Reply->SendTrace("Parsing CSeq_id finished OK (#3)",
                                    m_Request->GetStartTimestamp());
             return ePSGS_ParsedOK;
         }
@@ -294,7 +318,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
             // Both seq_id_types belong to INSDC
             if (need_trace) {
                 m_Reply->SendTrace("Both types belong to INSDC types.\n"
-                                   "Parsing CSeq_id finished OK (#3)",
+                                   "Parsing CSeq_id finished OK (#4)",
                                    m_Request->GetStartTimestamp());
             }
             return ePSGS_ParsedOK;
@@ -313,29 +337,6 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
             m_Reply->SendTrace("Parsing CSeq_id('" + stripped_seq_id +
                                "') failed (exception)",
                                m_Request->GetStartTimestamp());
-    }
-
-    // Second variation of Set()
-    if (request_seq_id_type > 0) {
-        try {
-            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
-                       (CSeq_id_Base::E_Choice)(request_seq_id_type),
-                       stripped_seq_id);
-            if (need_trace) {
-                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                                   to_string(request_seq_id_type) +
-                                   ", '" + stripped_seq_id + "') succeeded.\n"
-                                   "Parsing CSeq_id finished OK (#4)",
-                                   m_Request->GetStartTimestamp());
-            }
-            return ePSGS_ParsedOK;
-        } catch (...) {
-            if (need_trace)
-                m_Reply->SendTrace("Parsing CSeq_id(eFasta_AsTypeAndContent, " +
-                                   to_string(request_seq_id_type) +
-                                   ", '" + stripped_seq_id + "') failed (exception)",
-                                   m_Request->GetStartTimestamp());
-        }
     }
 
     if (need_trace) {
