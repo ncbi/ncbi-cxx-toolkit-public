@@ -10,4 +10,6 @@ LIBS = $(XCONNSFTP_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included LIBSSH
 
+CHECK_CMD =
+
 WATCHERS = sadyrovr
