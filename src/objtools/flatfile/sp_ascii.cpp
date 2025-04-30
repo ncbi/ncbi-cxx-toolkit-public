@@ -3765,7 +3765,7 @@ static void GetOneGeneRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, stri
         if (c == '\t')
             c = ' ';
 
-    CleanTailNoneAlphaCharInString(str);
+    CleanTailNonAlphaChar(str);
 
     CRef<CSeq_feat> feat(new CSeq_feat);
     ParseGeneNameSP(str, *feat);
