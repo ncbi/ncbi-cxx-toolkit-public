@@ -112,11 +112,9 @@ bool CThreeFeatRecord::IsRecordComplete() const
 
 //  ----------------------------------------------------------------------------
 bool
-CThreeFeatRecord::GetBedFeature(
-    CBedFeatureRecord& bedRecord) const
+CThreeFeatRecord::GetBedFeature(CBedFeatureRecord& bedRecord) const
 //  ----------------------------------------------------------------------------
 {
-    bedRecord = CBedFeatureRecord();
     if (!mpChrom) {
         return false;
     }
@@ -404,7 +402,7 @@ bool CBedWriter::xWriteFeaturesThreeFeatData(
     const CMappedFeat& mf)
 //  ----------------------------------------------------------------------------
 {
-    CBedFeatureRecord bedRecord;
+    CBedFeatureRecord bedRecord(*mpIdResolve);
 
     if (IsCanceled()) {
         NCBI_THROW(
@@ -456,7 +454,7 @@ bool CBedWriter::xWriteFeaturesTracked(
     const CMappedFeat& mf)
     //  ----------------------------------------------------------------------------
 {
-    CBedFeatureRecord record;
+    CBedFeatureRecord record(*mpIdResolve);
     if (!record.AssignName(mf)) {
         return false;
     }

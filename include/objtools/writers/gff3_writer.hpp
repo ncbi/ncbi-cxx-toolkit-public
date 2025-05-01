@@ -45,11 +45,11 @@
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 
-#include <objtools/writers/gff3_idgen.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CGffIdGenerator;
 
 //  ============================================================================
 class CGff3SourceRecord
@@ -156,12 +156,14 @@ public:
         unsigned int = fNormal,
         bool sortAlignments = false
         );
+
     CGff3Writer(
         CNcbiOstream&,
         unsigned int = fNormal,
         bool sortAlignments = false
         );
-    virtual ~CGff3Writer() = default;
+
+    virtual ~CGff3Writer(); 
 
     void SetDefaultMethod(
         const string& defaultMethod) { m_sDefaultMethod = defaultMethod; };
@@ -524,7 +526,7 @@ protected:
     unsigned int m_uPendingGenericId;
     unsigned int m_uPendingAlignId;
 
-    CGffIdGenerator m_idGenerator;
+    unique_ptr<CGffIdGenerator> m_pIdGenerator;
     CBioseq_Handle m_BioseqHandle;
 };
 

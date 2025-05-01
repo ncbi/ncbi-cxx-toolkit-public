@@ -60,6 +60,17 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+static auto s_GffIdFormatter = [](const CSeq_id& id)
+{
+    const auto label_type = id.IsGeneral() ? 
+        CSeq_id::eFasta : 
+        CSeq_id::eContent;
+
+    string label;
+    id.GetLabel(&label, label_type);
+    return label;
+};
+
 //  ----------------------------------------------------------------------------
 CGff2Writer::CGff2Writer(
     CScope& scope,
@@ -70,7 +81,7 @@ CGff2Writer::CGff2Writer(
     m_bHeaderWritten(false)
 {
     m_pScope.Reset( &scope );
-    //SetAnnotSelector();
+    mpIdResolve->SetFormatter() = s_GffIdFormatter;
 };
 
 //  ----------------------------------------------------------------------------
@@ -83,7 +94,7 @@ CGff2Writer::CGff2Writer(
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
-    //SetAnnotSelector();
+    mpIdResolve->SetFormatter() = s_GffIdFormatter;
 };
 
 //  ----------------------------------------------------------------------------
@@ -414,7 +425,7 @@ bool CGff2Writer::xAssignFeatureSeqId(
     //  ----------------------------------------------------------------------------
 {
     string bestId;
-    if (!CGenbankIdResolve::Get().GetBestId(mf, bestId)) {
+    if (!GetBestId(mf, bestId)) {
         bestId = ".";
     }
     record.SetSeqId(bestId);
@@ -783,8 +794,7 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
     }
     if (mf.IsSetProduct()) {
         string product;
-        if (CGenbankIdResolve::Get().GetBestId(
-                mf.GetProductId(), mf.GetScope(), product)) {
+        if (GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
             record.AddAttribute("protein_id", product);
             return true;
         }
@@ -838,8 +848,7 @@ bool CGff2Writer::xAssignFeatureAttributeProduct(
             }
 
             string product;
-            if (CGenbankIdResolve::Get().GetBestId(
-                    mf.GetProductId(), mf.GetScope(), product)) {
+            if (GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
                 record.SetAttribute("product", product);
                 return true;
             }

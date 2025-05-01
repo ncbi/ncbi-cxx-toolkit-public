@@ -35,6 +35,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+
+class CGenbankIdResolve;
 //  ============================================================================
 /// Encapsulation of the BED feature record. That's columnar data with at least
 /// three and at most twelve columns. Each column has a fixed, well defined
@@ -45,7 +47,7 @@ class CBedFeatureRecord
 //  ============================================================================
 {
 public:
-    CBedFeatureRecord();
+    CBedFeatureRecord(CGenbankIdResolve& id_resolve);
 
     ~CBedFeatureRecord();
 
@@ -92,6 +94,9 @@ protected:
     string m_strBlockCount;
     string m_strBlockSizes;
     string m_strBlockStarts;
+
+private:
+    CGenbankIdResolve& mIdResolve;
 };
 
 END_objects_SCOPE

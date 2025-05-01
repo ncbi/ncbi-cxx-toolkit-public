@@ -81,6 +81,7 @@
 #include <array>
 #include <sstream>
 #include <util/compile_time.hpp>
+#include "gff3_idgen.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -224,6 +225,17 @@ string sBestMatchType(
 
 }
 
+static auto s_GffIdFormatter = [](const CSeq_id& id)
+{
+    const auto label_type = id.IsGeneral() ? 
+        CSeq_id::eFasta : 
+        CSeq_id::eContent;
+
+    string label;
+    id.GetLabel(&label, label_type);
+    return label;
+};
+
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(
     CScope& scope,
@@ -234,6 +246,7 @@ CGff3Writer::CGff3Writer(
     CGff2Writer( scope, ostr, uFlags ),
     m_sDefaultMethod(""),
     m_SortAlignments(sortAlignments),
+    m_pIdGenerator(new CGffIdGenerator(*mpIdResolve)),
     m_BioseqHandle(CBioseq_Handle())
 {
     m_uRecordId = 1;
@@ -253,6 +266,7 @@ CGff3Writer::CGff3Writer(
 //  ----------------------------------------------------------------------------
     CGff2Writer( ostr, uFlags ),
     m_SortAlignments(false),
+    m_pIdGenerator(new CGffIdGenerator(*mpIdResolve)),
     m_BioseqHandle(CBioseq_Handle())
 {
     m_uRecordId = 1;
@@ -263,6 +277,11 @@ CGff3Writer::CGff3Writer(
     m_uPendingGenericId = 0;
     m_uPendingAlignId = 0;
 };
+
+
+//  ----------------------------------------------------------------------------
+CGff3Writer::~CGff3Writer() = default;
+//  ----------------------------------------------------------------------------
 
 
 //  ----------------------------------------------------------------------------
@@ -1093,12 +1112,12 @@ bool CGff3Writer::WriteFooter()
 }
 
 
-static string s_GetSequenceRegionId(CBioseq_Handle& bsh)
+static string s_GetSequenceRegionId(const CGenbankIdResolve& id_resolver, CBioseq_Handle& bsh)
 {
     string id;
     auto   pId = bsh.GetNonLocalIdOrNull();
     if (pId) {
-        if (! CGenbankIdResolve::Get().GetBestId(
+        if (! id_resolver.GetBestId(
                 CSeq_id_Handle::GetHandle(*pId),
                 bsh.GetScope(),
                 id)) {
@@ -1123,7 +1142,7 @@ bool CGff3Writer::xWriteSequenceHeader(
 //  ----------------------------------------------------------------------------
 {
     //sequence-region
-    string id = s_GetSequenceRegionId(bsh);
+    string id = s_GetSequenceRegionId(*mpIdResolve, bsh);
     TSeqPos start = 1;
     TSeqPos stop = bsh.GetBioseqLength();
     if (!m_Range.IsWhole()) {
@@ -1633,7 +1652,7 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
         for (it = sublocs.begin(); it != sublocs.end(); ++it) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
-            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
+            pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); //explicitely not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
@@ -1697,7 +1716,7 @@ bool CGff3Writer::xWriteFeatureTrna(
         for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
-            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(rnaId));
+            pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
             pChild->SetType("exon");
             pChild->SetLocation(subint, wrapSize, wrapPoint);
             pChild->SetParent(rnaId);
@@ -2061,7 +2080,7 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
 
     if (mf.IsSetProduct()) {
         string transcript_id;
-        if (CGenbankIdResolve::Get().GetBestId(
+        if (GetBestId(
                 mf.GetProductId(),
                 mf.GetScope(),
                 transcript_id)) {
@@ -2142,7 +2161,7 @@ bool CGff3Writer::xAssignFeatureAttributeID(
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
 {
-    auto rawId = m_idGenerator.GetGffId(mf, fc);
+    auto rawId = m_pIdGenerator->GetGffId(mf, fc);
     record.SetRecordId(rawId);
     return true;
 }
@@ -2379,7 +2398,7 @@ bool CGff3Writer::xAssignSourceSeqId(
         auto ids = bsh.GetId();
         if (!ids.empty()) {
             auto id = ids.front();
-            CGenbankIdResolve::Get().GetBestId(
+            GetBestId(
                 id,
                 bsh.GetScope(),
                 bestId);
@@ -2391,7 +2410,7 @@ bool CGff3Writer::xAssignSourceSeqId(
     }
 
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-    if (!CGenbankIdResolve::Get().GetBestId(
+    if (!GetBestId(
             idh,
             bsh.GetScope(),
             bestId)) {
@@ -2441,7 +2460,7 @@ bool CGff3Writer::xAssignSourceAttributes(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    record.SetRecordId(m_idGenerator.GetGffSourceId(bsh));
+    record.SetRecordId(m_pIdGenerator->GetGffSourceId(bsh));
     return (xAssignSourceAttributeGbKey(record)  &&
         xAssignSourceAttributeMolType(record, bsh)  &&
         xAssignSourceAttributeIsCircular(record, bsh)  &&
@@ -2759,7 +2778,7 @@ bool CGff3Writer::xWriteFeatureRna(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
-            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
+            pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name"); //explicitely not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
@@ -2821,7 +2840,7 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
         for (auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pSegment));
-            pChild->SetRecordId(m_idGenerator.GetNextGffExonId(parentId));
+            pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
@@ -2894,7 +2913,7 @@ bool CGff3Writer::xWriteFeatureProtein(
     }
     if (protein.IsSetProduct()) {
         string proteinId;
-        CGenbankIdResolve::Get().GetBestId(protein.GetProduct(), proteinId);
+        mpIdResolve->GetBestId(protein.GetProduct(), proteinId);
         pRecord->AddAttribute("protein_id", proteinId);
     }
     const auto& prot = protein.GetData().GetProt();
@@ -3128,8 +3147,7 @@ bool CGff3Writer::xWriteRecord(
         id = "";
         const CSeq_loc& loc = record.GetLocation();
         auto idh = sequence::GetIdHandle(loc, m_pScope);
-        if (!CGenbankIdResolve::Get().GetBestId(
-                idh, *m_pScope, id)) {
+        if (!GetBestId(idh, *m_pScope, id)) {
             id = ".";
         }
     }

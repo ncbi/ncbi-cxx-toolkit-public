@@ -48,10 +48,8 @@
 #include <objects/seqtable/SeqTable_column.hpp>
 #include <objects/seqtable/SeqTable_column_info.hpp>
 
-//#include <objtools/writers/gff_record.hpp>
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
-//#include <objtools/writers/genbank_id_resolve.hpp>
 
 #include <math.h>
 
@@ -257,8 +255,7 @@ bool CWiggleWriter::xWriteSingleGraphFixedStep(
         pId->GetLabel(&strChrom);
         if (mpScope) {
             string bestId;
-            CGenbankIdResolve::Get().GetBestId(
-                CSeq_id_Handle::GetHandle(strChrom), *mpScope, bestId);
+            GetBestId(CSeq_id_Handle::GetHandle(strChrom), *mpScope, bestId);
             strChrom = bestId;
         }
         break;
@@ -616,8 +613,7 @@ bool CWiggleWriter::xWriteTableFixedStep(
     string chrom(chromId);
     if (mpScope) {
         string bestId;
-        CGenbankIdResolve::Get().GetBestId(
-            CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+        GetBestId(CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
         chrom = bestId;
     }
 
@@ -660,8 +656,7 @@ bool CWiggleWriter::xWriteTableVariableStep(
     string chrom(chromId);
     if (mpScope) {
         string bestId;
-        CGenbankIdResolve::Get().GetBestId(
-            CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+        GetBestId(CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
         chrom = bestId;
     }
 
@@ -731,8 +726,7 @@ bool CWiggleWriter::xWriteTableBedStyle(
         else {
             if (mpScope) {
                 string bestId;
-                CGenbankIdResolve::Get().GetBestId(
-                    CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                GetBestId(CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
                 bestIdCache[chrom] = bestId;
                 chrom = bestId;
             }
@@ -787,8 +781,7 @@ bool CWiggleWriter::xTableGetChromName(
                 pLoc->GetId()->GetLabel(&chrom, CSeq_id::eContent);
                 if (mpScope) {
                     string bestId;
-                    CGenbankIdResolve::Get().GetBestId(
-                        CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                    GetBestId(CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
                     chrom = bestId;
                 }
                 return true;
@@ -801,8 +794,7 @@ bool CWiggleWriter::xTableGetChromName(
                 pId->GetLabel(&chrom, CSeq_id::eContent);
                 if (mpScope) {
                     string bestId;
-                    CGenbankIdResolve::Get().GetBestId(
-                        CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
+                    GetBestId(CSeq_id_Handle::GetHandle(chrom), *mpScope, bestId);
                     chrom = bestId;
                 }
                 return true;
