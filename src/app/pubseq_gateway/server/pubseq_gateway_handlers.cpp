@@ -2019,7 +2019,23 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
     try {
-        string      content = m_HttpDaemon->GetConnectionsStatus();
+        string      content;
+        char        buf[64];
+        long        len;
+
+        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumConnHardLimitExceeded), buf);
+        content.append(1, '{')
+               .append("\"hard_limit_conn_refused_cnt\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit), buf);
+        content.append(", ")
+               .append("\"soft_limit_req_rejected_cnt\": ")
+               .append(buf, len)
+               .append(", ")
+               .append("\"conn_info\": ")
+               .append(m_HttpDaemon->GetConnectionsStatus())
+               .append(1, '}');
 
         reply->SetContentType(ePSGS_JsonMime);
         reply->SetContentLength(content.size());

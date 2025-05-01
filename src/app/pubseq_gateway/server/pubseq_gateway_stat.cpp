@@ -728,6 +728,19 @@ void CPSGSCounters::Increment(IPSGS_Processor *  processor,
 }
 
 
+uint64_t CPSGSCounters::GetValue(EPSGS_CounterType  counter)
+{
+    if (counter >= ePSGS_MaxIndividualCounter) {
+        PSG_ERROR("Invalid counter id " + to_string(counter) +
+                  ". Only non per-processor counters support value retrieval. "
+                  "Ignore and continue.");
+        return 0;
+    }
+
+    return m_Counters[counter]->m_Value;
+}
+
+
 CPSGSCounters::EPSGS_CounterType
 CPSGSCounters::StatusToCounterType(int  status)
 {

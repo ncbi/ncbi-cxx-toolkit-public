@@ -208,6 +208,7 @@ class CPSGSCounters
 
     void Increment(IPSGS_Processor *  processor,
                    EPSGS_CounterType  counter);
+    uint64_t GetValue(EPSGS_CounterType  counter);
     void IncrementRequestStopCounter(int  status);
     void UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf);
