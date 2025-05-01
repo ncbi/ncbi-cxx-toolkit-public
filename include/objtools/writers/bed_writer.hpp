@@ -39,6 +39,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+
 //  ----------------------------------------------------------------------------
 class CThreeFeatRecord
     //  ----------------------------------------------------------------------------
@@ -78,7 +79,7 @@ public:
     using RECORDS = vector<CThreeFeatRecord>;
     using RECORD_IT = RECORDS::iterator;
 
-    CThreeFeatManager() {};
+    CThreeFeatManager(){};
     ~CThreeFeatManager() {};
 
     bool AddFeature(

@@ -497,7 +497,7 @@ bool CVcfWriter::x_WriteFeatureChrom(
 
     if (id.empty())
     {
-        CGenbankIdResolve::Get().GetBestId(mf, id);
+        GetBestId(mf, id);
     }
     m_Os << id;
     return true;

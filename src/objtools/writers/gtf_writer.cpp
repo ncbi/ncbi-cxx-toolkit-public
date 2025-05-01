@@ -957,8 +957,7 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
 
     FEAT_ID featId = mf.GetNamedQual("transcript_id");
     if (featId.empty()  &&  mf.GetData().IsRna()  &&  mf.IsSetProduct()) {
-        if (!CGenbankIdResolve::Get().GetBestId(
-                mf.GetProductId(), mf.GetScope(), featId)) {
+        if (!GetBestId(mf.GetProductId(), mf.GetScope(), featId)) {
             featId.clear();
         }
     }

@@ -52,7 +52,7 @@ USING_SCOPE(objects);
 #define BUMP( x, y ) if ( x < (y) ) x = (y)
 
 //  ----------------------------------------------------------------------------
-CBedFeatureRecord::CBedFeatureRecord():
+CBedFeatureRecord::CBedFeatureRecord(CGenbankIdResolve& id_resolve):
 //  ----------------------------------------------------------------------------
     m_uColumnCount( 0 ),
     m_strChrom( "." ),
@@ -66,7 +66,8 @@ CBedFeatureRecord::CBedFeatureRecord():
     m_strItemRgb( "." ),
     m_strBlockCount( "." ),
     m_strBlockSizes( "." ),
-    m_strBlockStarts( "." )
+    m_strBlockStarts( "." ),
+    mIdResolve(id_resolve)
 {
 }
 
@@ -245,7 +246,7 @@ bool CBedFeatureRecord::AssignLocation(
         m_strChrom = interval.GetId().GetSeqIdString(true);
         try {
             string bestId;
-            CGenbankIdResolve::Get().GetBestId(
+            mIdResolve.GetBestId(
                 CSeq_id_Handle::GetHandle(interval.GetId()), scope, bestId);
             m_strChrom = bestId;
             // its OK for this to silently fail.
@@ -316,7 +317,7 @@ bool CBedFeatureRecord::SetLocation(
 //  ----------------------------------------------------------------------------
 {
     string bestId;
-    if (!CGenbankIdResolve::Get().GetBestId(loc, bestId)) {
+    if (!mIdResolve.GetBestId(loc, bestId)) {
         return false;
     }
     if (loc.IsInt()) {

@@ -43,15 +43,29 @@ USING_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve::CGenbankIdResolve():
-    mThrowOnUnresolvedGi(false),
-    mLabelType(CSeq_id::eContent)
+    mThrowOnUnresolvedGi(false)
 //  ----------------------------------------------------------------------------
-{}
+{
+    mfFormat = [](const CSeq_id& id) {
+        string label;
+        id.GetLabel(&label, CSeq_id::eContent);
+        return label;
+    };
+}
 
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve::~CGenbankIdResolve()
 //  ----------------------------------------------------------------------------
 {}
+
+
+//  ----------------------------------------------------------------------------
+CGenbankIdResolve::FIdFormat& CGenbankIdResolve::SetFormatter()
+//  ----------------------------------------------------------------------------
+{
+    return mfFormat;
+}
+
 
 //  ----------------------------------------------------------------------------
 CGenbankIdResolve&
@@ -66,7 +80,7 @@ CGenbankIdResolve::Get()
 bool CGenbankIdResolve::GetBestId(
     CSeq_id_Handle idh,
     CScope& scope,
-    string& best_id)
+    string& best_id) const
 //  ----------------------------------------------------------------------------
 {
     if (!idh) {
@@ -84,7 +98,7 @@ bool CGenbankIdResolve::GetBestId(
     }
     string backup = best_id;
     try {
-        best_idh.GetSeqId()->GetLabel(&best_id, mLabelType);
+        best_id = mfFormat(*(best_idh.GetSeqId()));
     }
     catch (...) {
         best_id = backup;
@@ -96,7 +110,7 @@ bool CGenbankIdResolve::GetBestId(
 //  ----------------------------------------------------------------------------
 bool CGenbankIdResolve::GetBestId(
     const CMappedFeat& mf,
-    string& best_id)
+    string& best_id) const
 //  ----------------------------------------------------------------------------
 {
     CSeq_id_Handle idh = mf.GetLocationId();

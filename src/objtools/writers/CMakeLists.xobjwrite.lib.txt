@@ -21,6 +21,7 @@ NCBI_begin_lib(xobjwrite)
     genbank_id_resolve
     multi_source_file
     async_writers
+    writer
   )
   NCBI_uses_toolkit_libraries(variation_utils xformat xobjread xser)
   NCBI_project_watchers(gotvyans boukn foleyjp)

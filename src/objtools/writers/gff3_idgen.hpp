@@ -38,6 +38,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
+class CGenbankIdResolve;
 //  =============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffIdGenerator
     //  =============================================================================
@@ -49,9 +50,11 @@ public:
 
 public:
     CGffIdGenerator(
+        CGenbankIdResolve& id_resolve,
         TFlags flags = fNormal):
         mFlags(flags),
-        mLastTrulyGenericSuffix(0)
+        mLastTrulyGenericSuffix(0),
+        mIdResolve(id_resolve)
     {};
     ~CGffIdGenerator() {};
 
@@ -108,6 +111,7 @@ protected:
     std::set<std::string> mExistingIds;
     std::map<std::string, int> mLastUsedExonIds;
     unsigned int mLastTrulyGenericSuffix;
+    CGenbankIdResolve& mIdResolve;
 };
 
 

@@ -175,7 +175,7 @@ CPslRecord::xInitializeSequenceInfo(
 {
     const auto& queryId = splicedSeg.GetProduct_id();
     auto querySeqHandle = scope.GetBioseqHandle(queryId);
-    CGenbankIdResolve::Get().GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
+    mIdResolve.GetBestId(querySeqHandle.GetSeq_id_Handle(), scope, mNameQ);
     if (!querySeqHandle) {
         throw CWriterMessage(
             "Unable to resolve given query id", eDiag_Error);
@@ -186,7 +186,7 @@ CPslRecord::xInitializeSequenceInfo(
 
     const auto& targetId = splicedSeg.GetGenomic_id();
     auto targetSeqHandle = scope.GetBioseqHandle(targetId);
-    CGenbankIdResolve::Get().GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
+    mIdResolve.GetBestId(targetSeqHandle.GetSeq_id_Handle(), scope, mNameT);
     if (!targetSeqHandle) {
         throw CWriterMessage(
             "Unable to resolve given target id", eDiag_Error);
@@ -419,14 +419,14 @@ CPslRecord::xInitializeSequenceInfo(
 {
     const CSeq_id& idQ = denseSeg.GetSeq_id(0);
     auto seqHandleQ = scope.GetBioseqHandle(idQ);
-    CGenbankIdResolve::Get().GetBestId(seqHandleQ.GetSeq_id_Handle(), scope, mNameQ);
+    mIdResolve.GetBestId(seqHandleQ.GetSeq_id_Handle(), scope, mNameQ);
     mSizeQ = seqHandleQ.GetInst_Length();
     mStartQ = denseSeg.GetSeqStart(0);
     mEndQ = denseSeg.GetSeqStop(0) + 1;
 
     const CSeq_id& idT = denseSeg.GetSeq_id(1);
     auto seqHandleT = scope.GetBioseqHandle(idT);
-    CGenbankIdResolve::Get().GetBestId(seqHandleT.GetSeq_id_Handle(), scope, mNameT);
+    mIdResolve.GetBestId(seqHandleT.GetSeq_id_Handle(), scope, mNameT);
     mSizeT = seqHandleT.GetInst_Length();
     mStartT = denseSeg.GetSeqStart(1);
     mEndT = denseSeg.GetSeqStop(1) + 1;

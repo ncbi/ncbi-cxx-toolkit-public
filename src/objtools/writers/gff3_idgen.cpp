@@ -73,8 +73,8 @@
 #include <objmgr/util/feature_edit.hpp>
 
 #include <objtools/writers/gff3_writer.hpp>
-#include <objtools/writers/gff3_idgen.hpp>
 #include <objtools/writers/genbank_id_resolve.hpp>
+#include "gff3_idgen.hpp"
 
 #include <array>
 #include <sstream>
@@ -132,7 +132,7 @@ string CGffIdGenerator::GetGffSourceId(
     CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
     if (pId) {
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
-        if (CGenbankIdResolve::Get().GetBestId(idh, bsh.GetScope(), bestId)) {
+        if (mIdResolve.GetBestId(idh, bsh.GetScope(), bestId)) {
             locationId = bestId;
         }
     }
@@ -140,7 +140,7 @@ string CGffIdGenerator::GetGffSourceId(
         auto ids = bsh.GetId();
         if (!ids.empty()) {
             auto id = ids.front();
-            CGenbankIdResolve::Get().GetBestId(id, bsh.GetScope(), bestId);
+            mIdResolve.GetBestId(id, bsh.GetScope(), bestId);
             locationId = bestId;
         }
     }
@@ -370,7 +370,7 @@ string CGffIdGenerator::xExtractFeatureLocation(
 //  ----------------------------------------------------------------------------
 {
     string locationId;
-    if (!CGenbankIdResolve::Get().GetBestId(mf, locationId)) {
+    if (!mIdResolve.GetBestId(mf, locationId)) {
         locationId = "unknown";
     }
     auto locationType = mf.GetLocation().Which();

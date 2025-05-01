@@ -44,6 +44,7 @@ class CScope;
 class CSparse_align;
 class CSparse_seg;
 class CWriterListener;
+class CGenbankIdResolve;
 
 //  ----------------------------------------------------------------------------
 class CPslRecord
@@ -51,8 +52,10 @@ class CPslRecord
 {
 public:
     CPslRecord(
+        CGenbankIdResolve& id_resolve,
         CWriterListener* pMessageListener = nullptr):
-        mpMessageListener(pMessageListener)
+        mpMessageListener(pMessageListener),
+        mIdResolve(id_resolve)
     {};
 
     ~CPslRecord() = default;
@@ -158,6 +161,7 @@ protected:
     vector<int> mBlockSizes;                    // list of block sizes
     vector<int> mBlockStartsQ;                  // list of block starting positions in query
     vector<int> mBlockStartsT;                  // list of block starting positions in target
+    CGenbankIdResolve& mIdResolve;
 };
 
 END_objects_SCOPE

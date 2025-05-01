@@ -89,16 +89,11 @@ public:
     } TFlags;
 
 protected:
+
+
     CWriterBase(
         CNcbiOstream& ostr,
-        unsigned int uFlags=0 ) :
-        m_Os( ostr ),
-        m_uFlags( uFlags ),
-        m_Range(CRange<TSeqPos>::GetWhole()),
-        mpMessageListener(nullptr)
-    {
-    };
-
+        unsigned int uFlags=0);
 public:
     virtual ~CWriterBase()
     {};
@@ -263,12 +258,22 @@ public:
         return m_Range;
     }
 
+    CGenbankIdResolve& SetIdResolve(void);
+
+    bool GetBestId(CSeq_id_Handle idh,
+            CScope& scope,
+            string& best_id) const;
+
+    bool GetBestId(const CMappedFeat& mf,
+            string& best_id) const;
+
 protected:
     CNcbiOstream& m_Os;
     unsigned int m_uFlags;
     unique_ptr<SAnnotSelector> m_Selector;
     CRange<TSeqPos> m_Range;
     CWriterListener* mpMessageListener;
+    unique_ptr<CGenbankIdResolve> mpIdResolve;
 };
 
 

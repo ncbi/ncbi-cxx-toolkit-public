@@ -39,6 +39,7 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -48,6 +49,8 @@ class NCBI_XOBJWRITE_EXPORT CGenbankIdResolve
 //  ---------------------------------------------------------------------------
 {
 public:
+    using FIdFormat = std::function<string(const CSeq_id&)>;
+
     static CGenbankIdResolve&
     Get();
 
@@ -58,20 +61,18 @@ public:
     SetThrowOnUnresolvedGi(
         bool doThrow) { mThrowOnUnresolvedGi = doThrow; };
 
-    void
-    SetLabelType(
-        CSeq_id::ELabelType labelType) { mLabelType = labelType; };
+    FIdFormat& SetFormatter();
 
     bool
     GetBestId(
         CSeq_id_Handle,
         CScope&,
-        string&);
+        string&) const;
 
     bool
     GetBestId(
         const CMappedFeat&,
-        string&);
+        string&) const;
 
     bool
     GetBestId(
@@ -85,7 +86,7 @@ private:
 private:
     CRef<CScope> mpDefaultScope;
     bool mThrowOnUnresolvedGi;
-    CSeq_id::ELabelType mLabelType;
+    FIdFormat mfFormat;
 };
 
 END_objects_SCOPE

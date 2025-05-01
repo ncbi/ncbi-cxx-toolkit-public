@@ -66,7 +66,12 @@ CAlnWriter::CAlnWriter(
 {
     m_pScope.Reset(&scope);
     m_Width = 60;
-    CGenbankIdResolve::Get().SetLabelType(CSeq_id::eFasta);
+    mpIdResolve->SetFormatter() = 
+        [](const CSeq_id& id) {
+            string label;
+            id.GetLabel(&label, CSeq_id::eFasta);
+            return label;
+        };
 };
 
 
@@ -573,7 +578,7 @@ void CAlnWriter::WriteContiguous(const string& defline, const string& seqdata)
 string CAlnWriter::GetBestId(const CSeq_id& id)
 {
     string best_id;
-    CGenbankIdResolve::Get().GetBestId(
+    CWriterBase::GetBestId(
         CSeq_id_Handle::GetHandle(id),
         *m_pScope,
         best_id);

@@ -120,7 +120,7 @@ bool CPslWriter::WriteAlign(
 
     ++mRecordCounter;
     try {
-        CPslRecord record(mpMessageListener);
+        CPslRecord record(*mpIdResolve, mpMessageListener);
         auto segType = align.GetSegs().Which();
         switch (segType) {
 

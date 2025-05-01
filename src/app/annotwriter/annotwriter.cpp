@@ -192,9 +192,6 @@ private:
     TSeqPos xGetTo(
         const CArgs& args) const;
 
-    void xSetupIdResolving(
-        const CArgs& args);
-
     string xAssemblyName() const;
     string xAssemblyAccession() const;
     void xTweakAnnotSelector(
@@ -389,11 +386,13 @@ int CAnnotWriterApp::Run()
 
     m_pErrorHandler.reset(new CAnnotWriterLogger);
 
-    xSetupIdResolving(args);
-
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
         m_pWriter.Reset(xInitWriter(args, pOs));
+
+        if (args["throw-exception-on-unresolved-gi"].AsBoolean()) {
+            m_pWriter->SetIdResolve().SetThrowOnUnresolvedGi(true);
+        }
 #if defined(CANCELER_CODE)
         TestCanceler canceller;
         m_pWriter->SetCanceler(&canceller);
@@ -804,16 +803,6 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
     return pI;
 }
 
-//  -----------------------------------------------------------------------------
-void
-CAnnotWriterApp::xSetupIdResolving(
-    const CArgs& args)
-//  -----------------------------------------------------------------------------
-{
-    if (args["throw-exception-on-unresolved-gi"].AsBoolean()) {
-        CGenbankIdResolve::Get().SetThrowOnUnresolvedGi(true);
-    }
-}
 
 //  -----------------------------------------------------------------------------
 unsigned int CAnnotWriterApp::xGffFlags(
