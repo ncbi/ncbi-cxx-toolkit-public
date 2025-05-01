@@ -604,14 +604,7 @@ int CTest::Run(void)
     istringstream in("ABCDEF\n");
     CPipe::EFinish finish;
 
-    finish = CPipe::ExecWait(
-#ifdef NCBI_OS_MSWIN
-                             "more",
-                             {},
-#else
-                             "cat",
-                             { "-" },
-#endif /*NCBI_OS_MSWIN*/
+    finish = CPipe::ExecWait("more", {},
                              in, cout, cerr, exitcode, kEmptyStr, env);
     ERR_POST(Info << "Command completed with exit code " << exitcode);
     _ASSERT(finish == CPipe::eDone);
