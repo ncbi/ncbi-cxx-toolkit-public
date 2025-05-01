@@ -254,3 +254,39 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "test_ncbi_dsock - 1 - s_Client buf access"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			mod=test_ncbi_dsock.exe,src=test_ncbi_dsock.c,func="s_Client(int, unsigned int)";
+		}
+		allocation={
+			!!!;
+			mod=test_ncbi_dsock.exe,src=test_ncbi_dsock.c,func="s_Client(int, unsigned int)";
+		}
+	}
+}
+suppression = {
+	name = "test_ncbi_dsock - 2 - UTIL_PrintableStringSize"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=test_ncbi_dsock.exe,func=UTIL_PrintableStringSize,src=ncbi_util.c,func_line=301;
+			mod=test_ncbi_dsock.exe,func="s_LOG_FileHandler(void *, const struct SLOG_Message *)",src=ncbi_util.c,func_line=6;
+			mod=test_ncbi_dsock.exe,func=LOG_WriteInternal,src=ncbi_core.c,func_line=8;
+		}
+	}
+}
+suppression = {
+	name = "s_CreateHttpConnector -- bitfields"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=ncbi_http_connector.c,func="s_CreateHttpConnector(const struct SConnNetInfo *, const char *, int, unsigned int, void *,  *, struct SHttpConnector * *)";
+		}
+	}
+}
