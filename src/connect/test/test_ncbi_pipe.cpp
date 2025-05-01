@@ -593,26 +593,19 @@ int CTest::Run(void)
 
     // ExecWait()
     ERR_POST(Info << "TEST:  ExecWait()");
-    static const char* const env[] = {
-                                       "PATH="
+    static const char* const kEnv[] = {
+                                        "PATH="
 #ifdef NCBI_OS_MSWIN
-                                             "C:\\Windows\\System32"
+                                              "C:\\Windows\\System32"
 #else
-                                             "/bin:/usr/bin"
+                                              "/bin:/usr/bin"
 #endif /*NCBI_OS_MSWIN*/
-                                       , 0 };
+                                        , 0 };
     istringstream in("ABCDEF\n");
     CPipe::EFinish finish;
 
-    finish = CPipe::ExecWait(
-#ifdef NCBI_OS_MSWIN
-                             "more",
-                             {},
-#else
-                             "cat",
-                             { "-" },
-#endif /*NCBI_OS_MSWIN*/
-                             in, cout, cerr, exitcode, kEmptyStr, env);
+    finish = CPipe::ExecWait("more", {},
+                             in, cout, cerr, exitcode, kEmptyStr, kEnv);
     ERR_POST(Info << "Command completed with exit code " << exitcode);
     _ASSERT(finish == CPipe::eDone);
 
@@ -626,7 +619,7 @@ int CTest::Run(void)
     }
 
     finish = CPipe::ExecWait("echo", { "Hello, world!" },
-                             in, cout, cerr, exitcode, kEmptyStr, env);
+                             in, cout, cerr, exitcode, kEmptyStr, kEnv);
     ERR_POST(Info << "Command completed with exit code " << exitcode);
     _ASSERT(finish == CPipe::eDone);
 
