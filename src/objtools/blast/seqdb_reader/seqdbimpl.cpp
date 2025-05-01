@@ -1187,6 +1187,48 @@ bool CSeqDBImpl::GiToOid(TGi gi, int & oid) const
     return false;
 }
 
+template <typename T > void CSeqDBImpl::x_CheckOid(T & list, CSeqDBLockHold & locked)
+{
+	for (unsigned i =0; i < list.size(); i++) {
+		blastdb::TOid oid1 = list[i].oid;
+		if(oid1 == kSeqDBEntryNotFound) {
+			continue;
+		}
+		blastdb::TOid oid2 = oid1;
+		if (!(x_CheckOrFindOID(oid2, locked) && (oid1 == oid2))) {
+		    	list[i].oid = kSeqDBEntryNotFound;
+		}
+	}
+
+}
+
+bool CSeqDBImpl::IdsToOids(CSeqDBGiList & id_list)
+{
+    CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+    try {
+    	for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
+    		m_VolSet.GetVol(i)->IdsToOids(id_list);
+    	}
+
+    	if (id_list.GetNumGis() > 0) {
+    		x_CheckOid(id_list.GetGiList(), locked);
+    	}
+    	if (id_list.GetNumPigs() > 0) {
+    		x_CheckOid(id_list.GetPigList(), locked);
+    	}
+    	if (id_list.GetNumTis() > 0) {
+    		x_CheckOid(id_list.GetTiList(), locked);
+    	}
+
+    } catch (CException &) {
+    	return false;
+    }
+    return true;
+}
+
+
+
 bool CSeqDBImpl::GiToOidwFilterCheck(TGi gi, int & oid)
 {
     CHECK_MARKER();

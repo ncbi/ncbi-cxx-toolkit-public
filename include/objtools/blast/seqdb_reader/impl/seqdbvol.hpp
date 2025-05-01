@@ -610,8 +610,7 @@ public:
     ///   The set of GI/OID, TI/OID, and Seq-id/OID pairs. [in|out]
     /// @param locked
     ///   The lock holder object for this thread. [in]
-    void IdsToOids(CSeqDBGiList   & gis,
-                   CSeqDBLockHold & locked) const;
+    void IdsToOids(CSeqDBGiList   & gis) const;
 
     /// Add OIDs for this volume, filtered by negative ID lists.
     ///

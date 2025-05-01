@@ -2498,8 +2498,7 @@ bool CSeqDBVol::GiToOid(TGi gi, int & oid, CSeqDBLockHold & locked) const
     return rv;
 }
 
-void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
-                          CSeqDBLockHold & locked) const
+void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids) const
 {
     if (ids.GetNumGis()) {
          x_OpenGiFile();

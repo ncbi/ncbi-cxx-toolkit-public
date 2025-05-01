@@ -1759,6 +1759,11 @@ void CSeqDB::GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids)
 	m_Impl->GetTaxIdsForSeqId(seq_id, taxids);
 }
 
+bool CSeqDB::IdsToOids(CSeqDBGiList & id_list) const
+{
+	return (m_Impl->IdsToOids(id_list));
+}
+
 
 END_NCBI_SCOPE
 

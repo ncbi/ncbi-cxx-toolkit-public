@@ -1090,6 +1090,9 @@ public:
     /// this API once before the preliminary stage
     void SetCacheID();
 
+    /// Get OIDs from an ID list
+    /// @param id_list input id list/output oid found
+    bool IdsToOids(CSeqDBGiList & id_list);
 private:
     CLASS_MARKER_FIELD("IMPL")
 
@@ -1429,6 +1432,8 @@ private:
 
     /// Initialize Id Set
     void x_InitIdSet();
+
+    template <typename T > void x_CheckOid(T & list, CSeqDBLockHold & locked);
 
     CObjectIStreamAsnBinary  *reusable_inpstr; 
 };

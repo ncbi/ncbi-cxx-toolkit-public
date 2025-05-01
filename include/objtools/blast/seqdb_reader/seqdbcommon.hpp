@@ -580,6 +580,18 @@ public:
     	m_MaskOpts|=mask_opts;
     }
 
+    /// Get list of GIs and OIDs.
+    vector<SGiOid> & GetGiList() { return m_GisOids;}
+
+    /// Get list of Tis and OIDs.
+    vector<STiOid> & GetTiList() { return m_TisOids;}
+
+    /// Get list of Seq-ids and OIDs.
+    vector<SSiOid> & GetSiList() { return m_SisOids;}
+
+    /// Get list og Pigs and OIDs
+    vector<SPigOid> & GetPigList() { return m_PigsOids;}
+
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;

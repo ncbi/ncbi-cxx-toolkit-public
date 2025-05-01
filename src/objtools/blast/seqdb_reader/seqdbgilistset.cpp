@@ -297,7 +297,7 @@ CSeqDBGiListSet::x_ResolvePositiveList(CSeqDBAtlas            & atlas,
 
             // Note: The implied ISAM lookups will sort by GI/TI.
 
-            vol->Vol()->IdsToOids(*m_UserList, locked);
+            vol->Vol()->IdsToOids(*m_UserList);
         }
     }
 }
@@ -354,7 +354,7 @@ CSeqDBGiListSet::x_ResolveNegativeList(CSeqDBAtlas            & atlas,
     		}
     		for(int v = 0; v < volset.GetNumVols(); v++) {
     		    const CSeqDBVolEntry * vol = volset.GetVolEntry(v);
-    		    vol->Vol()->IdsToOids(pigs, locked);
+    		    vol->Vol()->IdsToOids(pigs);
     		}
 
     		vector<blastdb::TOid> &  exclude_oid_list = m_NegativeList->SetExcludedOids();
@@ -458,7 +458,7 @@ CSeqDBGiListSet::GetNodeIdList(const CSeqDB_Path & filename,
     	if(gilist->GetNumSis() > 0 ) {
     		gilist->PreprocessIdsForISAMSiLookup();
     	}
-        volp->IdsToOids(*gilist, locked);
+        volp->IdsToOids(*gilist);
     }
 
     // If there is a volume GI list, it will also be attached to the

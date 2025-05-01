@@ -1524,6 +1524,10 @@ public:
     /// @param taxids  taxids for accession
     void GetTaxIdsForSeqId(const CSeq_id & seq_id, vector<TTaxId> & taxids);
 
+    /// Get OIDs from an ID list
+    /// @param id_list input id list/output oid found
+    bool IdsToOids(CSeqDBGiList & id_list) const;
+
 protected:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).
     class CSeqDBImpl * m_Impl;
