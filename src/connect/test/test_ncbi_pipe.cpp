@@ -387,13 +387,13 @@ int CTest::Run(void)
     NcbiCout << endl;
     for (int i = 5;  i <= 10;  ++i) {
         int value; 
-        NcbiCout << "How much is " << i << "*" << i << "?\t" << flush;
+        NcbiCout << "How much is " << i << '*' << i << " ? \t" << flush;
         ps << i << endl;
         ps.flush();
         ps >> value;
         assert(ps.good());
         NcbiCout << value << endl << flush;
-        assert(value == i*i);
+        assert(value == i * i);
     }
     ps >> str;
     NcbiCout << str << endl << flush;
@@ -593,11 +593,25 @@ int CTest::Run(void)
 
     // ExecWait()
     ERR_POST(Info << "TEST:  ExecWait()");
-    static const char* const env[] = { "PATH=/bin:/usr/bin:", 0 };
+    static const char* const env[] = {
+                                       "PATH="
+#ifdef NCBI_OS_MSWIN
+                                             "C:\\Windows\\System32"
+#else
+                                             "/bin:/usr/bin"
+#endif /*NCBI_OS_MSWIN*/
+                                       , 0 };
     istringstream in("ABCDEF\n");
     CPipe::EFinish finish;
 
-    finish = CPipe::ExecWait("cat", { "-" },
+    finish = CPipe::ExecWait(
+#ifdef NCBI_OS_MSWIN
+                             "more",
+                             {},
+#else
+                             "cat",
+                             { "-" },
+#endif /*NCBI_OS_MSWIN*/
                              in, cout, cerr, exitcode, kEmptyStr, env);
     ERR_POST(Info << "Command completed with exit code " << exitcode);
     _ASSERT(finish == CPipe::eDone);
