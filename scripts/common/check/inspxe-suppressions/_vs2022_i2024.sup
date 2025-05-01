@@ -80,6 +80,18 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "vsscanf_l / fflush_nolock"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=fflush_nolock;
+			func=vsscanf_l,src=stdio.h;
+		}
+	}
+}
+
 
 
 suppression = {
@@ -212,9 +224,6 @@ suppression = {
 
 
 
-
-
-
 suppression = {
 	name = "connect / s_CreateHttpConnector"
 	type = {uninitialized_memory_access}
@@ -241,6 +250,9 @@ suppression = {
 		}
 	}
 }
+
+
+
 
 suppression = {
 	name = "Compression API / CCompressionStreambuf / zlib / inflate"
@@ -374,6 +386,35 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "zstd / ZSTD_decompressContinue"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=ncbi_core.dll,func=ZSTD_decompressContinue,src=zstd_decompress.c;
+			func=ZSTD_decompressContinueStream,src=zstd_decompress.c;
+		}
+	}
+}
+suppression = {
+	name = "miniz / mz_zip_reader_extract_to_callback"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=kernelbase.dll,func=WriteFile;
+			...;
+			func=mz_zip_reader_extract_to_callback,src=miniz.c;
+			func="ncbi::CArchiveZip::ExtractEntryToFileSystem(class ncbi::CArchiveEntryInfo const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)",src=archive_zip.cpp;
+		}
+		allocation={
+			...;
+			mod=ncbi_core.dll,func=mz_zip_reader_extract_to_callback,src=miniz.c;
+		}
+	}
+}
+
 suppression = {
 	name = "Compression API / CArchive / compare items - false positive"
 	type = {uninitialized_memory_access}
