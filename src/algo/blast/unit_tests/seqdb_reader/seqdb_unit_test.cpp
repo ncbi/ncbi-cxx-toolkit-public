@@ -4557,6 +4557,42 @@ BOOST_AUTO_TEST_CASE(TestTaxIdsLookup_v4)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestIdsToOids)
+{
+	CSeqDBGiList test_list;
+
+	test_list.AddGi(689972625); //oid 0, Not in alias
+	test_list.AddGi(689972107); //oid 4
+	test_list.AddGi(689971919); //oid 11, Not in alias
+	test_list.AddGi(689971844); //oid 13, Not in alias
+	test_list.AddGi(689971914); // oid 12
+	test_list.AddGi(123);       // Not Found, kSeqDBEntryNotFound
+
+	{
+		vector<blastdb::TOid> oids={kSeqDBEntryNotFound, 13, 12, 11, 4, 0};
+		string db_name = "data/15_seqs_v5";
+		CSeqDB db (db_name, CSeqDB::eNucleotide);
+		db.IdsToOids(test_list);
+		vector<CSeqDBGiList::SGiOid> gilist = test_list.GetGiList();
+		for (unsigned int i=0; i < test_list.GetNumGis(); i++){
+			BOOST_REQUIRE_EQUAL( gilist[i].oid, oids[i]);
+		}
+	}
+	{
+		vector<blastdb::TOid> oids={kSeqDBEntryNotFound, kSeqDBEntryNotFound, 12,
+				                    kSeqDBEntryNotFound, 4, kSeqDBEntryNotFound};
+		string alias_db_name = "data/10_seqs_alias";
+		CSeqDB alias_db (alias_db_name, CSeqDB::eNucleotide);
+		alias_db.IdsToOids(test_list);
+		vector<CSeqDBGiList::SGiOid> gilist = test_list.GetGiList();
+		for (unsigned int i=0; i < test_list.GetNumGis(); i++){
+			BOOST_REQUIRE_EQUAL( gilist[i].oid, oids[i]);
+		}
+	}
+
+
+}
+
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestGiToOidTimeout, 15);
 BOOST_AUTO_TEST_CASE(TestGiToOidTimeout)
 {
