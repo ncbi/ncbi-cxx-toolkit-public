@@ -314,6 +314,25 @@ TBlobFlagBase CBlobRecord::GetFlags() const
     return m_Flags;
 }
 
+/* Begin - ID based values for suppress/withdrawn fields - internal/ID/Common/ps_common.hpp#0296 */
+Uint1 CBlobRecord::GetIDSuppress() const
+{
+    static constexpr uint64_t suppress_offset = 11;
+    static constexpr uint64_t suppress_mask = 0b0111'1110;
+    auto flags = static_cast<uint64_t>(m_Flags);
+    return
+        (flags & static_cast<TBlobFlagBase>(EBlobFlags::eSuppress) ? 1 : 0)
+        | static_cast<Uint1>(flags >> (suppress_offset - 1) & suppress_mask);
+}
+
+Int2 CBlobRecord::GetIDWithdrawn() const
+{
+    static constexpr uint64_t withdrawn_offset = 7;
+    static constexpr uint64_t withdrawn_mask = 0b1111;
+    return static_cast<Int2>((m_Flags >> withdrawn_offset) & withdrawn_mask);
+}
+/* End */
+
 CBlobRecord::TSatKey CBlobRecord::GetKey() const
 {
     return m_SatKey;
