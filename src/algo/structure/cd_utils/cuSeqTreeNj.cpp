@@ -230,7 +230,9 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 
     int i, j, k;
     int idmin, jdmin, tmp;
-    int imin = 0, jmin = 0;
+    int imin = 0;
+    int jmin = 0;
+
     double ilen, jlen; 
     double sum_d, tmp_d;
 
@@ -266,7 +268,7 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     //  Map rows in distance matrix to index of corresponding node in m_seqiters;
     //  when there is no corresponding distance matrix row, enter USED_ROW.
 
-    int* indexMap = new int[m_nseqs]{ 0 };  
+    int* indexMap = new int[m_nseqs]{};  
 
     m_nextNode = m_nseqs + 1;
 

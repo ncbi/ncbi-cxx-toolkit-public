@@ -108,15 +108,16 @@ TreeAlgorithm*  TreeFactory::GetAlgorithm(const ETreeMethod method, bool mpRoot)
 		switch (method) {
 			case eNJ:
 				m_algorithm = new NJ_TreeAlgorithm();
+                m_algorithm->SetMidpointRooting(mpRoot);
 				break;
 			case eSLC:
 				m_algorithm = new SLC_TreeAlgorithm();
+                m_algorithm->SetMidpointRooting(mpRoot);
 				break;
 			case eNoTreeMethod:
 			default:
 				break;
 		}
-        m_algorithm->SetMidpointRooting(mpRoot);
 	}
 	return m_algorithm;
 }
