@@ -145,6 +145,7 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
 
     // See RW-1892, sometimes compressed files are wrongly
@@ -171,6 +172,7 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
             break;
         case CFormatGuess::eFasta:
         case CFormatGuess::eGff3:
+        case CFormatGuess::eGtf:
         case CFormatGuess::eZip:
         case CFormatGuess::eGZip:
         case CFormatGuess::eBZip2:
