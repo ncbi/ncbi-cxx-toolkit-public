@@ -737,8 +737,9 @@ public:
                          << AsString(orig_loc.GetPacked_int())
                          << "\nfinal_loc: "        
                          << AsString(final_loc.GetPacked_int())
-                         << "\ndownstream-int: "   
-                         << MSerial_AsnText << seqint;
+                         << "\nproblem-int: "   
+                         << MSerial_AsnText << seqint
+                         << "\nproblem: " << problem_str << "\n";
 
                 if(prev_seqint) {
                     NcbiCerr << "upstream-int: " 
@@ -844,9 +845,24 @@ static CRef<CSeq_loc> ProjectExon_oldlogic(
         }
 
         TSeqPos bio_start = exon_bio_start_pos + (chunk_offset * genomic_sign);
-        TSeqPos bio_stop = bio_start + (chunk_length - 1) * genomic_sign; 
+        TSeqPos bio_stop = [&]() -> TSeqPos
+        {
+            auto pos = (int64_t)bio_start + (chunk_length - 1) * genomic_sign; 
             // -1 because stop is inclusive
- 
+
+            // CXX-14032 
+            // chunk_length (on product) may be greater than 
+            // it is on subject, so when it abuts the sequence origin
+            // on negative strand, it may overshoot the origin and 
+            // become negative in signed space or close to 2^32 as TSeqPos.
+            //
+            // We will adjust the chunk in frame-preserving manner.
+            if (pos < 0) {
+                pos = ((pos % 3) + 3) % 3; // same as: while (pos < 0) { pos += 3; }
+            }
+            return pos;
+        }();
+   
         CRef<CSeq_interval> chunk(new CSeq_interval);
         chunk->SetId().Assign(genomic_id);
         chunk->SetStrand(genomic_strand);
@@ -1065,6 +1081,18 @@ private:
     }
 };
 
+static TSeqPos as_nucpos(const CProduct_pos& pos)
+{
+    const auto frame = // 0-based frame
+        pos.IsProtpos()
+     && pos.GetProtpos().IsSetFrame()
+     && pos.GetProtpos().GetFrame() > 0 ? pos.GetProtpos().GetFrame() - 1
+                                        : 0;
+
+    return pos.IsNucpos() ? pos.GetNucpos() 
+                          : pos.GetProtpos().GetAmin() * 3 + frame;
+}
+
 
 // Project exon to genomic coordinates, preserving discontinuities.
 //
@@ -1134,8 +1162,8 @@ static CRef<CSeq_loc> ProjectExon_newlogic(
     try { 
         // Validate 
         const size_t exon_product_len = 
-            exon.GetProduct_end().GetNucpos()
-          - exon.GetProduct_start().GetNucpos() + 1;
+            as_nucpos(exon.GetProduct_end())
+          - as_nucpos(exon.GetProduct_start()) + 1;
 
         const size_t loc_len = sequence::GetLength(*exon_loc, NULL);
 
@@ -1196,8 +1224,8 @@ static CRef<CSeq_loc> ProjectExon(
 CRef<CSpliced_exon> CollapseExonStructure(const CSpliced_exon& orig_exon)
 {
     CRef<CSpliced_exon> exon(SerialClone(orig_exon));
-    TSeqPos query_range = exon->GetProduct_end().GetNucpos() 
-                        - exon->GetProduct_start().GetNucpos() + 1;
+    TSeqPos query_range = as_nucpos(exon->GetProduct_end())
+                        - as_nucpos(exon->GetProduct_start()) + 1;
     TSeqPos subject_range = exon->GetGenomic_end() - exon->GetGenomic_start() + 1;
     TSeqPos min_range = min(query_range, subject_range);
     TSeqPos max_range = max(query_range, subject_range);
