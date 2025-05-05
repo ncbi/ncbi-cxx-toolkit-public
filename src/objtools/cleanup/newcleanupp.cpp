@@ -3160,6 +3160,10 @@ static bool s_StringsAreEquivalent(const string& str1, const string& str2)
 
 CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSeq_feat& feat)
 {
+    if (m_HasInferenceQuals) {
+        return eAction_Nothing;
+    }
+
     if( ! FIELD_IS_SET(feat, Data) ) {
         return eAction_Nothing;
     }
@@ -6233,13 +6237,14 @@ void CNewCleanup_imp::x_CleanSeqFeatQuals(CSeq_feat& sf)
     if (m_Options & CCleanup::eClean_FlatfileHTMLMode) {
         // in flatfile -html mode
         if (s_FeatHasInferenceGBQual(sf)) {
-            // skip remaining GBQual cleanup steps if any inference is present
+            // skip all future SeqfeatBC cleanup steps as soon as any inference is detected
+            m_HasInferenceQuals = true;
             return;
         }
     } else if (m_Options & CCleanup::eClean_FlatfileGenerator) {
         // normal flatfile
         if (s_FeatHasFiveInferenceGBQuals(sf)) {
-            // skip remaining GBQual cleanup steps if multiple inference qualifiers
+            // skip remaining steps for this feature if multiple inference qualifiers are present
             return;
         }
     }
@@ -6287,6 +6292,10 @@ void CNewCleanup_imp::SeqfeatBC (
 )
 
 {
+    if (m_HasInferenceQuals) {
+        return;
+    }
+
     // note - need to clean up GBQuals before dbxrefs, because they may be converted to populate other fields
     x_CleanSeqFeatQuals(sf);
     x_ConvertGoQualifiers(sf);
