@@ -62,13 +62,13 @@ enum class EBlobFlags : TBlobFlagBase {
 };
 
 class CBlobRecord {
- public:
+public:
     using TSatKey = int32_t;
     using TSize = int64_t;
     using TTimestamp = int64_t;
     using TBlobChunk = vector<unsigned char>;
 
- public:
+public:
     CBlobRecord();
     explicit CBlobRecord(TSatKey key);
     CBlobRecord(CBlobRecord const &) = default;
@@ -116,6 +116,10 @@ class CBlobRecord {
 
     TBlobFlagBase GetFlags() const;
     bool GetFlag(EBlobFlags flag_value) const;
+    /* Begin - ID based values for suppress/withdrawn fields - internal/ID/Common/ps_common.hpp#0296 */
+    Uint1 GetIDSuppress() const;
+    Int2 GetIDWithdrawn() const;
+    /* End */
     TSize GetSize() const;
     TSize GetSizeUnpacked() const;
 
