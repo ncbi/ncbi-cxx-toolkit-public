@@ -423,7 +423,7 @@ function(NCBI_internal_configure_cd_reporter)
         set(abs_top_srcdir ${NCBITK_TREE_ROOT})
     endif()
     set(top_src_dir ${abs_top_srcdir})
-    set(status_dir ${NCBI_BUILD_ROOT}/status)
+    set(status_dir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_STATUS})
     configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
     configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.sh.in
                     ${build_root}/build-system/run_with_cd_reporter.sh @ONLY)
