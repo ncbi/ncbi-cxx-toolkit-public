@@ -116,10 +116,7 @@ public:
 
     TBlobFlagBase GetFlags() const;
     bool GetFlag(EBlobFlags flag_value) const;
-    /* Begin - ID based values for suppress/withdrawn fields - internal/ID/Common/ps_common.hpp#0296 */
     Uint1 GetIDSuppress() const;
-    Int2 GetIDWithdrawn() const;
-    /* End */
     TSize GetSize() const;
     TSize GetSizeUnpacked() const;
 
