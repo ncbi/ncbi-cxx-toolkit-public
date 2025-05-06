@@ -369,8 +369,9 @@ public:
 
 /// Adjusts protein title to reflect partialness
 /// @param Bioseq to adjust
+/// @param scope Scope used to update OM
 /// @return Boolean indicates whether title was updated
-    static bool AddPartialToProteinTitle(CBioseq &bioseq);
+    static bool AddPartialToProteinTitle(CBioseq &bioseq, CScope* pScope=nullptr);
 
 /// Removes protein product from pseudo coding region
 /// @param cds Seq-feat to adjust

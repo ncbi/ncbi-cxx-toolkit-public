@@ -75,6 +75,7 @@
 #include <objtools/logging/listener.hpp>
 
 #include <objtools/cleanup/influenza_set.hpp>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -2376,153 +2377,161 @@ static SIZE_TYPE s_TitleEndsInOrganism(
     return suffixPos;
 }
 
-
-static void s_RemoveOrgFromEndOfProtein(CBioseq& seq, string taxname)
-
+static bool s_RemoveSuffixFromNames(const string& suffix, list<string>& names)
 {
-    if (taxname.empty()) return;
-    SIZE_TYPE taxlen = taxname.length();
+    if (names.empty()) {
+        return false;
+    }
 
-    EDIT_EACH_SEQANNOT_ON_BIOSEQ(annot_it, seq) {
-        CSeq_annot& annot = **annot_it;
-        if (!annot.IsFtable()) continue;
-        EDIT_EACH_FEATURE_ON_ANNOT(feat_it, annot) {
-            CSeq_feat& feat = **feat_it;
-            CSeqFeatData& data = feat.SetData();
-            if (!data.IsProt()) continue;
+    auto suffix_len = suffix.length();
+    bool change_made{ false };
+    for (auto& name : names) {
+        if (auto len = name.length(); (len >= 5) && NStr::EndsWith(name, suffix)) {
+            name.erase(len - suffix_len); // remove the suffix
+            Asn2gnbkCompressSpaces(name);
+            change_made = true;
+        }
+    }
+    return change_made;
+}
+
+static bool s_RemoveTaxnameFromProtRef(const string& taxname, CBioseq& bioseq, CScope* pScope)
+{
+    if (! bioseq.IsSetAnnot()) {
+        return false;
+    }
+
+    if (NStr::IsBlank(taxname) || taxname.starts_with("NAD"sv)) { // Exclude NAD
+        return false;
+    }
+
+    const string taxname_in_brackets{ '[' + taxname + ']' };
+
+    bool change_made{ false };
+
+    for (auto pAnnot : bioseq.SetAnnot()) {
+        if (! pAnnot->IsFtable()) {
+            continue;
+        }
+
+        for (auto pFeat : pAnnot->SetData().SetFtable()) {
+            CSeqFeatData& data = pFeat->SetData();
+            if ((! data.IsProt()) || (! data.GetProt().IsSetName())) {
+                continue;
+            }
             CProt_ref& prot_ref = data.SetProt();
-            EDIT_EACH_NAME_ON_PROTREF(it, prot_ref) {
-                string str = *it;
-                if (str.empty()) continue;
-                auto len = str.length();
-                if (len < 5) continue;
-                if (str[len - 1] != ']') continue;
-                SIZE_TYPE cp = NStr::Find(str, "[", NStr::eCase, NStr::eReverseSearch);
-                if (cp == NPOS) continue;
-                string suffix = str.substr(cp + 1);
-                if (NStr::StartsWith(suffix, "NAD")) continue;
-                if (suffix.length() != taxlen + 1) continue;
-                if (NStr::StartsWith(suffix, taxname)) {
-                    str.erase(cp);
-                    Asn2gnbkCompressSpaces(str);
-                    *it = str;
+
+            // If pScope, operate on temporary array of names.
+            // If any changes have been made to the temporay array, use CSeq_feat_EditHandle to update OM.
+            if (pScope) {
+                auto temp_names = prot_ref.GetName(); // copy names list
+                if (s_RemoveSuffixFromNames(taxname_in_brackets, temp_names)) {
+                    change_made = true;
+                    CSeq_feat_EditHandle sfeh(pScope->GetSeq_featHandle(*pFeat));
+                    prot_ref.SetName() = move(temp_names);
+                    sfeh.Update();
                 }
+            } else if (s_RemoveSuffixFromNames(taxname_in_brackets, prot_ref.SetName())) {
+                change_made = true;
+            }
+        }
+    }
+    return change_made;
+}
+
+
+static bool s_HasIdType(const list<CRef<CSeq_id>>& ids, CSeq_id::E_Choice type)
+{
+    for (auto pId : ids) {
+        if (pId && (pId->Which() == type)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+static bool s_IsSwissProt(const CBioseq& bioseq)
+{
+    if (bioseq.IsSetId()) {
+        return s_HasIdType(bioseq.GetId(), CSeq_id::e_Swissprot);
+    }
+    return false;
+}
+
+
+static bool s_IsPartial(const CMolInfo& molInfo)
+{
+    if (! molInfo.IsSetCompleteness()) {
+        return false;
+    }
+
+    using enum CMolInfo::ECompleteness;
+    switch (molInfo.GetCompleteness()) {
+    case eCompleteness_partial:
+    case eCompleteness_no_left:
+    case eCompleteness_no_right:
+    case eCompleteness_no_ends:
+        return true;
+    default:
+        break;
+    }
+
+    return false;
+}
+
+
+static void s_GetMolInfoAndSrcDescriptors(const CSeq_descr&    seq_descr,
+                                          CConstRef<CSeqdesc>& pMolinfoDesc,
+                                          CConstRef<CSeqdesc>& pSrcDesc)
+{
+    if ((! seq_descr.IsSet()) || (pMolinfoDesc && pSrcDesc)) {
+        return;
+    }
+
+    for (auto pDesc : seq_descr.Get()) {
+        if (! pDesc) {
+            continue;
+        }
+        if ((! pMolinfoDesc) && pDesc->IsMolinfo()) {
+            pMolinfoDesc = pDesc;
+            if (pSrcDesc) {
+                return;
+            }
+        } else if ((! pSrcDesc) && pDesc->IsSource()) {
+            pSrcDesc = pDesc;
+            if (pMolinfoDesc) {
+                return;
             }
         }
     }
 }
 
-bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
+
+static auto s_GetMolInfoAndSrcDescriptors(const CBioseq& bioseq)
 {
-    // Bail if not protein
-    if (!bioseq.IsSetInst() || !bioseq.GetInst().IsSetMol() || !bioseq.GetInst().IsAa()) {
-        return false;
+    CConstRef<CSeqdesc> pMolinfoDesc;
+    CConstRef<CSeqdesc> pSrcDesc;
+
+    if (bioseq.IsSetDescr()) {
+        s_GetMolInfoAndSrcDescriptors(bioseq.GetDescr(), pMolinfoDesc, pSrcDesc);
     }
 
-    // Bail if record is swissprot
-    FOR_EACH_SEQID_ON_BIOSEQ(seqid_itr, bioseq) {
-        if ((*seqid_itr)->IsSwissprot()) {
-            return false;
+    if ((! pMolinfoDesc) || (! pSrcDesc)) {
+        auto pParentSet = bioseq.GetParentSet();
+        if (pParentSet && pParentSet->IsSetDescr()) {
+            s_GetMolInfoAndSrcDescriptors(pParentSet->GetDescr(),
+                                          pMolinfoDesc,
+                                          pSrcDesc);
         }
     }
 
-    // gather some info from the Seqdesc's on the bioseq, into
-    // the following variables
-    bool bPartial = false;
-    string organelle;
+    return make_pair(pMolinfoDesc, pSrcDesc);
+}
 
-    CConstRef<CSeqdesc> molinfo_desc;
-    CConstRef<CSeqdesc> src_desc;
-    FOR_EACH_SEQDESC_ON_BIOSEQ(descr_iter, bioseq) {
-        if (!molinfo_desc && (*descr_iter)->IsMolinfo()) {
-            molinfo_desc = *descr_iter;
-        }
-        if (!src_desc && (*descr_iter)->IsSource()) {
-            src_desc = *descr_iter;
-        }
-        if (molinfo_desc && src_desc) {
-            break;
-        }
-    }
-    if (!molinfo_desc || !src_desc) {
-        // climb up to get parent Seqdescs
-        CConstRef<CBioseq_set> bioseq_set(bioseq.GetParentSet());
-        for (; bioseq_set; bioseq_set = bioseq_set->GetParentSet()) {
-            FOR_EACH_SEQDESC_ON_SEQSET(descr_iter, *bioseq_set) {
-                if (!molinfo_desc && (*descr_iter)->IsMolinfo()) {
-                    molinfo_desc = *descr_iter;
-                }
-                if (!src_desc && (*descr_iter)->IsSource()) {
-                    src_desc = *descr_iter;
-                }
-                if (molinfo_desc && src_desc) {
-                    break;
-                }
-            }
-            if (molinfo_desc && src_desc) {
-                break;
-            }
-        }
-    }
 
-    if (molinfo_desc && molinfo_desc->GetMolinfo().IsSetCompleteness()) {
-        switch (molinfo_desc->GetMolinfo().GetCompleteness()) {
-            case NCBI_COMPLETENESS(partial):
-            case NCBI_COMPLETENESS(no_left):
-            case NCBI_COMPLETENESS(no_right):
-            case NCBI_COMPLETENESS(no_ends):
-                bPartial = true;
-                break;
-            default:
-                break;
-        }
-    }
-
-    CConstRef<COrg_ref> org;
-    if (src_desc) {
-        const TBIOSOURCE_GENOME genome = (src_desc->GetSource().IsSetGenome() ?
-            src_desc->GetSource().GetGenome() : CBioSource::eGenome_unknown);
-        if (genome >= CBioSource::eGenome_chloroplast &&
-            genome <= CBioSource::eGenome_chromatophore &&
-            genome != CBioSource::eGenome_extrachrom &&
-            genome != CBioSource::eGenome_transposon &&
-            genome != CBioSource::eGenome_insertion_seq &&
-            genome != CBioSource::eGenome_proviral &&
-            genome != CBioSource::eGenome_virion &&
-            genome != CBioSource::eGenome_chromosome)
-        {
-            organelle = CBioSource::GetOrganelleByGenome(genome);
-        }
-
-        if (src_desc->GetSource().IsSetOrg()) {
-            org.Reset(&(src_desc->GetSource().GetOrg()));
-        }
-    }
-
-    if (!org) {
-        return false;
-    }
-    if (org->IsSetTaxname() && !NStr::IsBlank(org->GetTaxname())) {
-        s_RemoveOrgFromEndOfProtein(bioseq, org->GetTaxname());
-    }
-
-    // find the title to edit
-    if (!bioseq.IsSetDescr()) {
-        return false;
-    }
-    CRef<CSeqdesc> title_desc;
-    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, d, bioseq.SetDescr().Set()) {
-        if ((*d)->IsTitle()) {
-            title_desc = *d;
-        }
-    }
-    if (!title_desc) {
-        return false;
-    }
-    string & sTitle = title_desc->SetTitle();
-    // remember original so we can see if we changed it
-    const string sOriginalTitle = sTitle;
-
+static void s_UpdateTitleString(const CBioSource& src, bool bPartial, string& sTitle)
+{
     // search for partial, must be just before bracketed organism
     SIZE_TYPE partialPos = NStr::Find(sTitle, ", partial [");
     if (partialPos == NPOS) {
@@ -2531,10 +2540,10 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
 
     // find oldname or taxname in brackets at end of protein title
     SIZE_TYPE penult = NPOS;
-    SIZE_TYPE suffixPos = s_TitleEndsInOrganism(sTitle, *org, penult); // will point to " [${organism name}]" at end
+    SIZE_TYPE suffixPos = s_TitleEndsInOrganism(sTitle, src.GetOrg(), penult); // will point to " [${organism name}]" at end
     // do not change unless [genus species] was at the end
     if (suffixPos == NPOS) {
-        return false;
+        return;
     }
 
     // truncate bracketed info from end of title, will replace with current taxname
@@ -2557,32 +2566,118 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq &bioseq)
     if (bPartial && partialPos == NPOS) {
         sTitle += ", partial";
     }
-    if (!NStr::IsBlank(organelle)) {
-        sTitle += " (" + string(organelle) + ")";
+
+
+    const auto genome = (src.IsSetGenome() ? src.GetGenome() : CBioSource::eGenome_unknown);
+
+    using enum CBioSource::EGenome;
+    if (genome >= eGenome_chloroplast &&
+        genome <= eGenome_chromatophore &&
+        genome != eGenome_extrachrom &&
+        genome != eGenome_transposon &&
+        genome != eGenome_insertion_seq &&
+        genome != eGenome_proviral &&
+        genome != eGenome_virion &&
+        genome != eGenome_chromosome) {
+        auto organelle = CBioSource::GetOrganelleByGenome(genome);
+        if (! NStr::IsBlank(organelle)) {
+            sTitle += " (" + string(organelle) + ")";
+        }
     }
+
+    const auto& org = src.GetOrg();
     string first_kingdom, second_kingdom;
-    if (IsCrossKingdom(*org, first_kingdom, second_kingdom)) {
+    if (IsCrossKingdom(org, first_kingdom, second_kingdom)) {
         sTitle += " [" + first_kingdom + "][" + second_kingdom + "]";
     } else {
         sTitle += " [";
-        if (org->IsSetTaxname()) {
-            sTitle += org->GetTaxname();
+        if (org.IsSetTaxname()) {
+            sTitle += org.GetTaxname();
         }
         sTitle += "]";
     }
+}
 
-    if (sTitle != sOriginalTitle) {
-        return true;
-    } else {
+// Fetch a CRef to the bioseq title descriptor
+static auto s_GetTitleDesc(CSeq_descr& descr)
+{
+    // Returns the last title descriptor - is that intentional?
+    auto& desc_list = descr.Set();
+    for (auto it = desc_list.rbegin(); it != desc_list.rend(); ++it) {
+        if ((*it)->IsTitle()) {
+            return *it;
+        }
+    }
+    return CRef<CSeqdesc>();
+}
+
+bool CCleanup::AddPartialToProteinTitle(CBioseq& bioseq, CScope* pScope)
+{
+    // Bail if not protein
+    if (! bioseq.IsSetInst() || ! bioseq.GetInst().IsSetMol() || ! bioseq.GetInst().IsAa()) {
         return false;
     }
+
+    // Bail if record is swissprot
+    if (s_IsSwissProt(bioseq)) {
+        return false;
+    }
+
+    // gather some info from the Seqdesc's on the bioseq, into
+    // the following variables
+    CConstRef<CSeqdesc> molinfo_desc;
+    CConstRef<CSeqdesc> src_desc;
+    // Look for molinfo and src descriptors, first on the bioseq, then
+    // on the parent set
+    auto                molinfo_and_src = s_GetMolInfoAndSrcDescriptors(bioseq);
+    molinfo_desc                        = molinfo_and_src.first;
+    src_desc                            = molinfo_and_src.second;
+    if (! src_desc || (! src_desc->GetSource().IsSetOrg())) {
+        return false;
+    }
+    const auto& source = src_desc->GetSource();
+    const auto& org    = source.GetOrg();
+
+    if (org.IsSetTaxname()) {
+        s_RemoveTaxnameFromProtRef(org.GetTaxname(), bioseq, pScope); // Note: this may modify Prot-ref names
+    }
+
+    // find the title to edit
+    if (! bioseq.IsSetDescr()) {
+        return false;
+    }
+
+    CRef<CSeqdesc> title_desc = s_GetTitleDesc(bioseq.SetDescr());
+    if (! title_desc) {
+        return false;
+    }
+
+    string title = title_desc->GetTitle();
+    const bool   bPartial       = (molinfo_desc && s_IsPartial(molinfo_desc->GetMolinfo()));
+    s_UpdateTitleString(source, bPartial, title);
+
+    // Check for change to title string
+    if (title != title_desc->GetTitle()) {
+        if (pScope) {
+            auto pNewTitleDesc = Ref(new CSeqdesc());
+            pNewTitleDesc->SetTitle() = move(title);
+            auto bsh = pScope->GetBioseqHandle(bioseq);
+            bsh.GetEditHandle().ReplaceSeqdesc(*title_desc, *pNewTitleDesc);
+        } else {
+            title_desc->SetTitle() = move(title);
+        }
+        return true;
+    }
+
+    return false;
 }
+
 
 bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
 {
-    if (!sequence::IsPseudo(cds, scope) ||
-        !cds.IsSetData() || !cds.GetData().IsCdregion() ||
-        !cds.IsSetProduct()) {
+    if (! sequence::IsPseudo(cds, scope) ||
+        ! cds.IsSetData() || ! cds.GetData().IsCdregion() ||
+        ! cds.IsSetProduct()) {
         return false;
     }
     CBioseq_Handle pseq = scope.GetBioseqHandle(cds.GetProduct());
@@ -2591,13 +2686,13 @@ bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
         if (prot) {
             string label;
             if (prot->GetData().GetProt().IsSetName() &&
-                !prot->GetData().GetProt().GetName().empty()) {
+                ! prot->GetData().GetProt().GetName().empty()) {
                 label = prot->GetData().GetProt().GetName().front();
             } else if (prot->GetData().GetProt().IsSetDesc()) {
                 label = prot->GetData().GetProt().GetDesc();
             }
-            if (!NStr::IsBlank(label)) {
-                if (cds.IsSetComment() && !NStr::IsBlank(cds.GetComment())) {
+            if (! NStr::IsBlank(label)) {
+                if (cds.IsSetComment() && ! NStr::IsBlank(cds.GetComment())) {
                     cds.SetComment(cds.GetComment() + "; " + label);
                 } else {
                     cds.SetComment(label);

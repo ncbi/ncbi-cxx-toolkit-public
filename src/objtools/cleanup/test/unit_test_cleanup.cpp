@@ -41,86 +41,115 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/mapped_feat.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 
-#include "../newcleanupp.hpp"
+#include <objtools/cleanup/cleanup.hpp>
 
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-
-static CRef<CSeq_loc> s_CreateNewMix() 
+static CRef<CBioseq> s_MakeProtein()  // RW-2486
 {
-    auto pLoc = Ref(new CSeq_loc());
-    pLoc->SetMix();
-    return pLoc;
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_RW_2301)
-{
-    auto pNullLoc = Ref(new CSeq_loc());
-    pNullLoc->SetNull();
-
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
-    {
-        // mix(null, null) -> null
-        auto pLoc = Ref(new CSeq_loc());
-        auto& mix = pLoc->SetMix();
-        mix.AddSeqLoc(*pNullLoc);
-        mix.AddSeqLoc(*pNullLoc);
-        BOOST_CHECK_EQUAL(mix.Get().size(), 2);
-        cleanup_imp.SeqLocBC(*pLoc);
-        // Check that a mix consisting of 2 Nulls is converted to a Null loc
-        BOOST_CHECK(pLoc->IsNull());
-    }
-
+    auto pBioseq = Ref(new CBioseq());
+    pBioseq->SetInst().SetMol(CSeq_inst::eMol_aa);
+    pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    string seq_data{"MPRKTEIN"};
+    pBioseq->SetInst().SetSeq_data().SetIupacaa().Set(seq_data);
+    pBioseq->SetInst().SetLength(seq_data.size());
+    pBioseq->SetInst().SetTopology(CSeq_inst::eTopology_linear);
+    
+    
     auto pId = Ref(new CSeq_id());
-    pId->SetLocal().SetStr("dummyId");
-    {
-        // mix(mix(null, interval, null)) -> interval
-        // Add an interval
-        auto pLoc = s_CreateNewMix();
-        auto pInnerMix = s_CreateNewMix();
-        auto& innerMix = pInnerMix->SetMix();
-        innerMix.AddSeqLoc(*pNullLoc);
-        innerMix.AddInterval(*pId, 25, 1006);
-        innerMix.AddSeqLoc(*pNullLoc);
+    pId->SetLocal().SetStr("seqid");
+    pBioseq->SetId().push_back(pId);
 
-        BOOST_CHECK_EQUAL(innerMix.Get().size(), 3);
-        pLoc->SetMix().Set().push_back(pInnerMix);
-
-        BOOST_CHECK_EQUAL(pLoc->GetMix().Get().size(), 1);
-        cleanup_imp.SeqLocBC(*pLoc);
-        BOOST_CHECK(pLoc->IsInt());
+    // Add mol-info descriptor
+    {   
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        pDesc->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
+        pBioseq->SetDescr().Set().push_back(pDesc);
     }
 
+    // Add BioSource descriptor
     {
-        // mix(interval, mix(null, interval), interval) -> mix(interval, null, interval, null, interval)
-        auto pLoc = s_CreateNewMix();
-        auto& mix = pLoc->SetMix();
-
-        auto pInnerMix = s_CreateNewMix();
-        auto& innerMix = pInnerMix->SetMix();
-        pLoc->SetMix().AddInterval(*pId, 2, 20);
-        innerMix.AddSeqLoc(*pNullLoc);
-        innerMix.AddInterval(*pId, 22, 30);
-        mix.Set().push_back(pInnerMix);
-        mix.AddInterval(*pId, 32, 40);
-
-        cleanup_imp.SeqLocBC(*pLoc);
-
-        BOOST_CHECK(pLoc->IsMix());
-        BOOST_CHECK_EQUAL(pLoc->GetMix().Get().size(), 5);
-        auto it = pLoc->GetMix().Get().begin();
-        BOOST_CHECK((*it)->IsInt());
-        ++it;
-        BOOST_CHECK((*it)->IsNull()); // The '*' is critical. Check for a null location, not an empty CRef.
-        ++it;
-        BOOST_CHECK((*it)->IsInt());
-        ++it;
-        BOOST_CHECK((*it)->IsNull()); // The '*' is critical. Check for a null location, not an empty CRef.
-        ++it;
-        BOOST_CHECK((*it)->IsInt());
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetSource().SetOrg().SetTaxname("dummy taxname");
+        pBioseq->SetDescr().Set().push_back(pDesc);
     }
+
+    // Add title descriptor
+    {
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetTitle("ABCD [dummy taxname]");
+        pBioseq->SetDescr().Set().push_back(pDesc);
+    }
+
+    // Add a protein feature
+    auto pFeat = Ref(new CSeq_feat());
+    pFeat->SetData().SetProt().SetName().push_back("ABCD [dummy taxname]");
+    pFeat->SetLocation().SetInt().SetId(*pId);
+    pFeat->SetLocation().SetInt().SetFrom(0);
+    pFeat->SetLocation().SetInt().SetTo(seq_data.size()-1); 
+    pFeat->SetPartial(true);
+
+    auto pAnnot = Ref(new CSeq_annot());
+    pAnnot->SetData().SetFtable().push_back(move(pFeat));
+    pBioseq->SetAnnot().push_back(move(pAnnot));
+
+    return pBioseq;
 }
+
+
+
+BOOST_AUTO_TEST_CASE(Test_RW_2486_NO_OM) 
+{
+    auto pBioseq = s_MakeProtein();
+    auto madeChange = CCleanup::AddPartialToProteinTitle(*pBioseq);
+    BOOST_CHECK(madeChange);
+    
+    BOOST_CHECK(pBioseq->IsSetDescr() && pBioseq->GetDescr().IsSet());
+    auto pTitleDesc = pBioseq->GetDescr().Get().back();
+    BOOST_CHECK_EQUAL(pTitleDesc->GetTitle(), "ABCD, partial [dummy taxname]");
+
+    BOOST_CHECK(pBioseq->IsSetAnnot() && pBioseq->GetAnnot().front()->IsFtable());
+    auto pProtFeat = pBioseq->GetAnnot().front()->GetData().GetFtable().front();
+    const string& name = pProtFeat->GetData().GetProt().GetName().front();
+    BOOST_CHECK_EQUAL(name, "ABCD"); // check that '[taxname]' as been removed from end of string
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_RW_2486_OM) 
+{
+    auto pBioseq = s_MakeProtein();
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+    auto bsh = pScope->AddBioseq(*pBioseq);
+
+    auto madeChange = CCleanup::AddPartialToProteinTitle(*pBioseq, pScope.GetPointer());
+    BOOST_CHECK(madeChange);
+
+    CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_Title);    
+    BOOST_CHECK_EQUAL(desc_ci->GetTitle(), "ABCD, partial [dummy taxname]");
+
+    CFeat_CI feat_ci(bsh);
+    BOOST_CHECK(feat_ci);
+    const CSeq_feat& prot_feat = feat_ci->GetOriginalFeature();
+    const string& name = prot_feat.GetData().GetProt().GetName().front();
+    BOOST_CHECK_EQUAL(name, "ABCD"); // check that '[taxname]' as been removed from end of string
+}
+
+
