@@ -299,6 +299,12 @@ function(NCBI_internal_install_root _variable _access)
     if (EXISTS ${_buildinfo})
         install( FILES ${_buildinfo} DESTINATION ${_dest} RENAME buildinfo)
     endif()
+    if(NCBI_PTBCFG_USECONAN)
+        set(_conanfile ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_CMAKECFG}/conanfile.py)
+        if (EXISTS ${_conanfile})
+            install( FILES ${_conanfile} DESTINATION ${_dest})
+        endif()
+    endif()
 
     if (WIN32 OR XCODE)
         foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
@@ -400,22 +406,22 @@ function(NCBI_internal_install_root _variable _access)
 
 # test results
     if ($ENV{NCBIPTB_INSTALL_CHECK})
-        install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}")
-        install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}")
+        install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CHECK} DESTINATION "${_dest}")
+        install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING} DESTINATION "${_dest}")
     else()
         if (WIN32 OR XCODE)
-            install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
-                REGEX "${NCBI_BUILD_ROOT}/check/.*/.*/[^/]" EXCLUDE
+            install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CHECK} DESTINATION "${_dest}"
+                REGEX "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CHECK}/.*/.*/[^/]" EXCLUDE
             )
-#            install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}"
-#                REGEX "${NCBI_BUILD_ROOT}/testing/.*/.*/[^/]" EXCLUDE
+#            install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING} DESTINATION "${_dest}"
+#                REGEX "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/.*/.*/[^/]" EXCLUDE
 #            )
         else()
-            install( DIRECTORY ${NCBI_BUILD_ROOT}/check DESTINATION "${_dest}"
-                REGEX "${NCBI_BUILD_ROOT}/check/.*/[^/]" EXCLUDE
+            install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CHECK} DESTINATION "${_dest}"
+                REGEX "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CHECK}/.*/[^/]" EXCLUDE
             )
-#            install( DIRECTORY ${NCBI_BUILD_ROOT}/testing DESTINATION "${_dest}"
-#                REGEX "${NCBI_BUILD_ROOT}/testing/.*/[^/]" EXCLUDE
+#            install( DIRECTORY ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING} DESTINATION "${_dest}"
+#                REGEX "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/.*/[^/]" EXCLUDE
 #            )
         endif()
     endif()
