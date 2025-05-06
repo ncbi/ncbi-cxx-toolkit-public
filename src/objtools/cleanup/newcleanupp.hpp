@@ -421,7 +421,7 @@ private:
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
     void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq);
 
-    void x_AddPartialToProteinTitle( CBioseq &bioseq );
+    void x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope);
 
     string x_ExtractSatelliteFromComment( string &comment );
 
