@@ -715,7 +715,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
     ITERATE(TFieldDiffList, it, diffs) {
         string label = (*it)->GetFieldName();
     bool skipStopWord = true;
-    if (NStr::EqualNocase(label, "collection_date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo_loc_name")) {
+    if (NStr::EqualNocase(label, "collection-date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo-loc-name")) {
         skipStopWord = false;
     }
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
@@ -1041,7 +1041,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
     bool rval = false;
 
     bool skipStopWord = true;
-    if (NStr::EqualNocase(label, "collection_date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo_loc_name")) {
+    if (NStr::EqualNocase(label, "collection-date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo-loc-name")) {
         skipStopWord = false;
     }
     // ignore if BioSource value is blank and BioSample value is a stop word
