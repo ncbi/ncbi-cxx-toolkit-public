@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff2_reader.hpp>
+#include <objtools/readers/co_generator.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -206,7 +207,7 @@ protected:
         const CGff2Record&);
 
     bool xIsIgnoredFeatureType(
-        const string&) override;
+        const CTempString&) override;
 
     void xPostProcessAnnot(
         CSeq_annot&) override;
@@ -215,7 +216,7 @@ protected:
         CSeq_annot& pAnnot);
 
     bool xParseFeature(
-        const string&,
+        const CTempString&,
         CSeq_annot&,
         ILineErrorListener*) override;
 
@@ -223,7 +224,7 @@ protected:
         const string& strLine);
 
     void xProcessSequenceRegionPragma(
-        const string& pragma) override;
+        const CTempString& pragma) override;
 
     // Data:
     map<string, string> mCdsParentMap;
@@ -234,6 +235,22 @@ protected:
 
     shared_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;
+};
+
+
+class CGff3ReaderImpl;
+class NCBI_XOBJREAD_EXPORT CGff3ReaderEx
+{
+public:
+    using TGenerator = Generator<CRef<CSeq_annot>>;
+
+    explicit CGff3ReaderEx() = default;
+    explicit CGff3ReaderEx(const std::string& filename);
+
+    TGenerator ReadAnnots(CGff2Reader& oldreader, ILineErrorListener* pMessageListener);
+
+protected:
+    std::shared_ptr<CGff3ReaderImpl> m_impl;
 };
 
 END_SCOPE(objects)

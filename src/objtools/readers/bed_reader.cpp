@@ -414,7 +414,7 @@ bool CBedReader::xDetermineLikelyColumnCount(
             continue;
         }
 
-        CBedColumnData columnData(SReaderLine(bufferLineNumber, line));
+        CBedColumnData columnData(TReaderLine(bufferLineNumber, line));
         if (realColumnCount == 0 ) {
             realColumnCount = columnData.ColumnCount();
         }
@@ -541,7 +541,7 @@ void CBedReader::xPostProcessAnnot(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xParseTrackLine(
-    const string& strLine)
+    const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
     CReaderMessage warning(
@@ -574,7 +574,7 @@ CBedReader::xParseTrackLine(
 //  ----------------------------------------------------------------------------
 bool
 CBedReader::xParseFeature(
-    const SReaderLine& lineData,
+    const TReaderLine& lineData,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------

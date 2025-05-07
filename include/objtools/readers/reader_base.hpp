@@ -62,11 +62,12 @@ class NCBI_XOBJREAD_EXPORT CReaderBase
 //  ----------------------------------------------------------------------------
 {
 public:
-    using TReaderLine = struct SReaderLine {
-        SReaderLine(unsigned int line, string data): mLine(line), mData(data) {};
-        unsigned int mLine;
+    struct TReaderLine
+    {
+        unsigned int mLine = 0;
         string mData;
     };
+
     using TReaderData = vector<TReaderLine>;
     /// Customization flags that are relevant to all CReaderBase derived readers.
     ///
@@ -289,14 +290,14 @@ protected:
         CSeq_annot& );
 
     virtual bool xParseBrowserLine(
-        const string&,
+        const CTempString&,
         CSeq_annot&);
 
     virtual bool xParseTrackLine(
-        const string&);
+        const CTempString&);
 
     virtual void xSetBrowserRegion(
-        const string&,
+        const CTempString&,
         CAnnot_descr&);
 
     virtual void xPostProcessAnnot(
@@ -360,13 +361,13 @@ protected:
         const list<string>& stringFlags,
         const  map<string, TReaderFlags> flagMap,
         TReaderFlags& baseFlags);
-        
-        
+
+
     //
     //  Data:
     //
     unsigned int m_uLineNumber;
-    unsigned int m_uDataCount = 0;
+    std::atomic<unsigned int> m_uDataCount = 0;
     unsigned int m_uProgressReportInterval;
     unsigned int m_uNextProgressReport;
 

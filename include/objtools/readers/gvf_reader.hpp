@@ -102,10 +102,10 @@ protected:
         CSeq_annot&) override;
 
     bool xParseStructuredComment(
-        const string&) override;
+        const CTempString&) override;
 
     bool xParseFeature(
-        const string&,
+        const CTempString&,
         CSeq_annot&,
         ILineErrorListener*) override;
 

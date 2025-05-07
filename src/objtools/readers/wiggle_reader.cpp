@@ -813,7 +813,7 @@ void CWiggleReader::xSetChrom(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xParseBrowserLine(
-    const string& line,
+    const CTempString& line,
     CSeq_annot&)
 //  ----------------------------------------------------------------------------
 {
@@ -825,7 +825,7 @@ bool CWiggleReader::xParseBrowserLine(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xParseTrackLine(
-    const string& line)
+    const CTempString& line)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsTrackLine(line)) {

@@ -142,8 +142,10 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
     CFileContentInfo content_info;
 
     CFormatGuessEx FG(istr);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    if (m_supported_types) {
+        FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+        FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    }
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
@@ -157,8 +159,9 @@ TTypeInfo CHugeFile::RecognizeContent(std::istream& istr)
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eZstd);
 
     FG.GetFormatHints().DisableAllNonpreferred();
-    if (m_supported_types)
+    if (m_supported_types) {
         FG.SetRecognizedGenbankTypes(*m_supported_types);
+    }
 
     m_format = FG.GuessFormatAndContent(content_info);
 

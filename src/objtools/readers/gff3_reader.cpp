@@ -63,6 +63,7 @@
 #include "reader_message_handler.hpp"
 
 #include <algorithm>
+#include <util/regexp/ctre/ctre.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -116,11 +117,11 @@ bool CGff3ReadRecord::AssignFromGff(
 
     if (! parent.empty() && parent == id) {
         throw CReaderMessage(eDiag_Error, 0,
-                "Bad data line: " 
+                "Bad data line: "
                 "ID and Parent have the same value \"" + parent + "\"");
     }
 
-    if (m_strType == "protein_coding_gene" || 
+    if (m_strType == "protein_coding_gene" ||
         m_strType == "ncRNA_gene") {
         SetType("gene");
         return true;
@@ -298,7 +299,7 @@ void CGff3Reader::xProcessAlignmentData(
 //  ----------------------------------------------------------------------------
 bool
 CGff3Reader::xParseFeature(
-    const string& line,
+    const CTempString& line,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -510,7 +511,7 @@ bool CGff3Reader::xUpdateAnnotCds(
 
     string cdsId = xMakeRecordId(record);
     mpLocations->AddRecordForId(cdsId, record);
-    
+
     string parentId;
     record.GetAttribute("Parent", parentId);
 
@@ -866,7 +867,7 @@ bool CGff3Reader::xReadInit()
 
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::xIsIgnoredFeatureType(
-    const string& featureType)
+    const CTempString& featureType)
 //  ----------------------------------------------------------------------------
 {
     typedef CStaticArraySet<string, PNocase> STRINGARRAY;
@@ -1072,7 +1073,7 @@ void CGff3Reader::xPostProcessAnnot(
 
 //  ----------------------------------------------------------------------------
 void CGff3Reader::xProcessSequenceRegionPragma(
-    const string& pragma)
+    const CTempString& pragma)
 //  ----------------------------------------------------------------------------
 {
     TSeqPos sequenceSize(0);

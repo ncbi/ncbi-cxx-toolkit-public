@@ -172,10 +172,10 @@ protected:
         ILineErrorListener*);
 
     bool xParseTrackLine(
-        const string&) override;
+        const CTempString&) override;
 
     bool xParseFeature(
-        const SReaderLine&,
+        const TReaderLine&,
         CSeq_annot&,
         ILineErrorListener*);
 

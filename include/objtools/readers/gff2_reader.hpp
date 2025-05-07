@@ -116,7 +116,7 @@ public:
     //
     static bool
     IsAlignmentData(
-        const string&);
+        const CTempString&);
 
     //
     //  new stuff:
@@ -132,25 +132,25 @@ public:
     bool IsInGenbankMode() const;
 
     virtual bool xParseStructuredComment(
-        const string&);
+        const CTempString&);
 
     virtual bool xParseFeature(
-        const string&,
+        const CTempString&,
         CSeq_annot&,
         ILineErrorListener*);
 
     virtual bool xIsCurrentDataType(
-        const string&);
+        const CTempString&);
 
     void xPostProcessAnnot(
         CSeq_annot&) override;
 
     virtual void xAssignAnnotId(
         CSeq_annot&,
-        const string& = "");
+        const CTempString = {});
 
     virtual bool x_ParseAlignmentGff(
-        const string& strLine,
+        const CTempString& strLine,
         list<string>& id_list,
         map<string, list<CRef<CSeq_align>>>& alignments);
 
@@ -198,8 +198,8 @@ public:
         CSeq_annot& );
 
     bool xFeatureSetQualifier(
-        const string&,
-        const string&,
+        const CTempString&,
+        const CTempString&,
         CRef<CSeq_feat>);
 
     virtual bool x_ProcessQualifierSpecialCase(
@@ -207,7 +207,7 @@ public:
         CRef< CSeq_feat > );
 
     bool x_GetFeatureById(
-        const string&,
+        const CTempString&,
         CRef< CSeq_feat >& );
 
     bool xAlignmentSetScore(
@@ -266,22 +266,22 @@ public:
 
     static CRef< CDbtag >
     x_ParseDbtag(
-        const string& );
+        const CTempString& );
 
     static bool xIsSequenceRegion(
-        const string& line);
+        const CTempString& line);
 
     static bool xIsFastaMarker(
-        const string& line);
+        const CTempString& line);
 
     CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
     virtual bool xIsIgnoredFeatureType(
-        const string&);
+        const CTempString&);
 
     virtual bool xIsIgnoredFeatureId(
-        const string&);
+        const CTempString&);
 
     //
     //  helpers:
@@ -291,7 +291,7 @@ protected:
 
     void xSetAncestryLine(
         CSeq_feat&,
-        const string&);
+        const CTempString&);
 
     virtual void xSetAncestorXrefs(
         CSeq_feat&,
@@ -302,10 +302,10 @@ protected:
         CSeq_feat&);
 
     bool xNeedsNewSeqAnnot(
-        const string&);
+        const CTempString&);
 
     virtual void xProcessSequenceRegionPragma(
-        const string& /*pragma*/) { /* ignored for most GFF variants */ };
+        const CTempString& /*pragma*/) { /* ignored for most GFF variants */ };
 
     //  data:
     //

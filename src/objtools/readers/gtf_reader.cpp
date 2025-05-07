@@ -164,7 +164,7 @@ CGtfReader::xProcessData(
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {
-        const auto& line = lineData.mData;
+        CTempString line = lineData.mData;
         if (xIsTrackTerminator(line)) {
             continue;
         }
@@ -186,7 +186,7 @@ static bool s_IsTranscriptType(const string& recType)
     return (recType == "exon" || recType == "5utr" || recType == "3utr");
 }
 
-static bool s_IsCDSType(const string& recType) 
+static bool s_IsCDSType(const string& recType)
 {
     return (recType == "cds" || recType == "start_codon" || recType == "stop_codon");
 }
@@ -204,7 +204,7 @@ bool CGtfReader::xUpdateAnnotFeature(
 
 
     if (s_IsCDSType(recType)) { // Only attempt to create/update the transcript if xUpdateAnnotCds() succeeds
-        return (xUpdateAnnotCds(gff, annot) && 
+        return (xUpdateAnnotCds(gff, annot) &&
                 xUpdateAnnotTranscript(gff, annot));
     }
 
@@ -249,17 +249,17 @@ CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& 
             else {
                 const set<string>& yVals = yit->second;
                 set<string> commonVals;
-                set_intersection(begin(xVals), end(xVals), 
-                    begin(yVals), end(yVals), 
+                set_intersection(begin(xVals), end(xVals),
+                    begin(yVals), end(yVals),
                     inserter(commonVals, commonVals.begin()));
                 if (!commonVals.empty()) {
                     for (const auto& val : commonVals) {
                         result.AddValue(xit->first, val);
-                    }    
+                    }
                 }
             }
             ++xit;
-            ++yit;       
+            ++yit;
         }
 
     }
@@ -323,20 +323,20 @@ bool CGtfReader::xUpdateAnnotParent(
             if (!xCreateParentGene(record, annot)) {
                 return false;
             }
-        } 
+        }
         else {
             if (!xCreateParentMrna(record, annot)) {
                 return false;
             }
         }
-        
+
         m_ParentChildQualMap[parentFeatId].emplace(recType, record.GtfAttributes());
         mpLocations->AddRecordForId(parentFeatId, record);
     }
     else {
         mpLocations->AddRecordForId(parentFeatId, record);
 
-        if (auto parentIt = m_ParentChildQualMap.find(parentFeatId); 
+        if (auto parentIt = m_ParentChildQualMap.find(parentFeatId);
             parentIt != m_ParentChildQualMap.end()) {
             if (auto childIt = parentIt->second.find(recType);
                 childIt != parentIt->second.end()) {
@@ -347,7 +347,7 @@ bool CGtfReader::xUpdateAnnotParent(
                 }
                 auto accumulatedAttributes = g_GetIntersection(childAttributes, record.GtfAttributes());
                 childAttributes = accumulatedAttributes;
-            } else { // First feature 
+            } else { // First feature
                 parentIt->second.emplace(recType, record.GtfAttributes());
 
                 if (parentType == "gene") {
@@ -364,8 +364,8 @@ bool CGtfReader::xUpdateAnnotParent(
                         return false;
                     }
                 }
-            } 
-        } 
+            }
+        }
     }
     return true;
 }
@@ -530,15 +530,15 @@ bool CGtfReader::xCreateParentCds(
 }
 
 
-void CGtfReader::xCheckForGeneIdConflict(       
-    const CGtfReadRecord& gff) 
+void CGtfReader::xCheckForGeneIdConflict(
+    const CGtfReadRecord& gff)
 {
     auto transcriptId = gff.TranscriptId();
     if (!transcriptId.empty()) {
         if (auto geneId = gff.GeneKey(); !geneId.empty()) {
             if (auto it = m_TranscriptToGeneMap.find(transcriptId); it != m_TranscriptToGeneMap.end()) {
                 if (it->second != geneId) {
-                    string msg = "Gene id '" + geneId + "' for transcript '" + transcriptId + 
+                    string msg = "Gene id '" + geneId + "' for transcript '" + transcriptId +
                     "' conflicts with previously-assigned '" + it->second + "'";
                     CReaderMessage error(
                         eDiag_Error,
@@ -546,7 +546,7 @@ void CGtfReader::xCheckForGeneIdConflict(
                         msg);
                     m_pMessageHandler->Report(error);
                 }
-            }   
+            }
             else {
                 m_TranscriptToGeneMap.emplace(transcriptId, geneId);
             }
@@ -763,7 +763,7 @@ bool CGtfReader::xFeatureTrimQualifiers(
             ++it;
             continue;
         }
-        
+
         const string& qualVal = (*it)->GetVal();
         if (!prevAttributes.HasValue(qualKey, qualVal)) {
             ++it;
