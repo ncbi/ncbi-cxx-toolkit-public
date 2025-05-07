@@ -160,8 +160,8 @@ case "$ncbi_platform" in
     FreeBSD*   ) : ${MAKE=/usr/local/bin/gmake}; export MAKE ;;
     Linux64    )
         if [ -z "$CXX" -a "$NCBICXX_USE_DEFAULT_GCC" = 1 ]; then
-            CXX=/opt/ncbi/gcc/7.3.0/bin/g++
-            : ${CC=/opt/ncbi/gcc/7.3.0/bin/gcc}
+            CXX=/opt/ncbi/gcc/13.2.0/bin/g++
+            : ${CC=/opt/ncbi/gcc/13.2.0/bin/gcc}
         fi
         ;;
 esac
