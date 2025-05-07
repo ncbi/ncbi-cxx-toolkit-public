@@ -1730,6 +1730,28 @@ void CMultiReaderApp::xDumpErrors(
 int main(int argc, const char* argv[])
 //  ----------------------------------------------------------------------------
 {
+    // this code converts single argument into multiple, just to simplify testing
+    list<string>        split_args;
+    vector<const char*> new_argv;
+
+    if (argc==2 && argv && argv[1] && strchr(argv[1], ' '))
+    {
+        NStr::Split(argv[1], " ", split_args, NStr::fSplit_CanEscape | NStr::fSplit_CanQuote | NStr::fSplit_Truncate | NStr::fSplit_MergeDelimiters);
+
+        argc = 1 + split_args.size();
+        new_argv.reserve(argc);
+        new_argv.push_back(argv[0]);
+        for (auto& s : split_args) {
+            new_argv.push_back(s.c_str());
+            #ifdef _DEBUG
+            std::cerr << s.c_str() << " ";
+            #endif
+        }
+        std::cerr << "\n";
+
+        argv = new_argv.data();
+    }
+
     // Execute main application function
     return CMultiReaderApp().AppMain(argc, argv);
 }

@@ -208,7 +208,7 @@ CGvfReader::xProcessData(
 //  ----------------------------------------------------------------------------
 bool
 CGvfReader::xParseFeature(
-    const string& line,
+    const CTempString& line,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -557,7 +557,7 @@ bool CGvfReader::xFeatureSetVariation(
 
 //  ----------------------------------------------------------------------------
 bool CGvfReader::xParseStructuredComment(
-    const string& strLine)
+    const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
     if ( !CGff2Reader::xParseStructuredComment( strLine) ) {

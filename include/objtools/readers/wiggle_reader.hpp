@@ -293,12 +293,12 @@ protected:
 
     bool
     xParseBrowserLine(
-        const string&,
+        const CTempString&,
         CSeq_annot&) override;
 
     bool
     xParseTrackLine(
-        const string&) override;
+        const CTempString&) override;
 
     bool
     xProcessFixedStepData(

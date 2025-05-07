@@ -1,5 +1,5 @@
 /*  $Id$
- * ===========================================================================
+7 * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -71,6 +71,7 @@
 #include <objtools/readers/gff2_reader.hpp>
 
 #include <algorithm>
+#include <util/regexp/ctre/ctre.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -191,10 +192,12 @@ CGff2Reader::xGetData(
 //  ----------------------------------------------------------------------------
 {
     readerData.clear();
-    string line;
-    if (!xGetLine(lr, line)) {
+    string s_line;
+    if (!xGetLine(lr, s_line)) {
         return;
     }
+    CTempString line{s_line};
+
     if (xNeedsNewSeqAnnot(line)) {
         return;
     }
@@ -238,7 +241,7 @@ CGff2Reader::xGetData(
 //  ----------------------------------------------------------------------------
 void CGff2Reader::xAssignAnnotId(
     CSeq_annot& annot,
-    const string& givenId)
+    const CTempString givenId)
 //  ----------------------------------------------------------------------------
 {
     if (givenId.empty() && annot.GetData().IsAlign()) {
@@ -260,7 +263,7 @@ void CGff2Reader::xAssignAnnotId(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xParseStructuredComment(
-    const string& strLine)
+    const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
     if (NStr::StartsWith(strLine, "###")) {
@@ -275,7 +278,7 @@ bool CGff2Reader::xParseStructuredComment(
 //  ----------------------------------------------------------------------------
 bool
 CGff2Reader::xParseFeature(
-    const string& line,
+    const CTempString& line,
     CSeq_annot& annot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -417,7 +420,7 @@ void CGff2Reader::x_ProcessAlignmentsGff(const list<string>& id_list,
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ParseAlignmentGff(
-    const string& strLine,
+    const CTempString& strLine,
     list<string>& id_list, // Add id to alignment
     map<string, list<CRef<CSeq_align>>>& alignments)
 //  ----------------------------------------------------------------------------
@@ -615,7 +618,7 @@ bool CGff2Reader::x_MergeAlignments(
 //  ----------------------------------------------------------------------------
 bool
 CGff2Reader::xIsCurrentDataType(
-    const string& line)
+    const CTempString& line)
 //  ----------------------------------------------------------------------------
 {
     if (CGff2Reader::IsAlignmentData(line)) {
@@ -1187,8 +1190,8 @@ bool CGff2Reader::x_ProcessQualifierSpecialCase(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::xFeatureSetQualifier(
-    const string& key,
-    const string& value,
+    const CTempString& key,
+    const CTempString& value,
     CRef<CSeq_feat> pTargetFeature)
 //  ----------------------------------------------------------------------------
 {
@@ -1201,12 +1204,11 @@ bool CGff2Reader::xFeatureSetQualifier(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_GetFeatureById(
-    const string & strId,
+    const CTempString& strId,
     ncbi::CRef<CSeq_feat>& pFeature )
 //  ----------------------------------------------------------------------------
 {
-    map< string, CRef< CSeq_feat > >::iterator it;
-    it = m_MapIdToFeature.find(strId);
+    auto it = m_MapIdToFeature.find(strId);
     if(it != m_MapIdToFeature.end()) {
         pFeature = it->second;
         return true;
@@ -1227,7 +1229,7 @@ bool CGff2Reader::xAddFeatureToAnnot(
 //  ============================================================================
 CRef< CDbtag >
 CGff2Reader::x_ParseDbtag(
-    const string& str )
+    const CTempString& str )
 //  ============================================================================
 {
     CRef< CDbtag > pDbtag( new CDbtag() );
@@ -1297,7 +1299,7 @@ bool CGff2Reader::xGenerateParentChildXrefs(
 //  ============================================================================
 void CGff2Reader::xSetAncestryLine(
     CSeq_feat& feat,
-    const string& directParentStr)
+    const CTempString& directParentStr)
 //  ============================================================================
 {
     typedef list<string> PARENTS;
@@ -1393,7 +1395,7 @@ void CGff2Reader::xSetAncestorXrefs(
 
 //  ============================================================================
 bool CGff2Reader::IsAlignmentData(
-    const string& line)
+    const CTempString& line)
 //  ============================================================================
 {
     vector<CTempStringEx> columns;
@@ -1410,7 +1412,7 @@ bool CGff2Reader::IsAlignmentData(
 
 //  ============================================================================
 bool CGff2Reader::xIsIgnoredFeatureType(
-    const string& type)
+    const CTempString& type)
 //  ============================================================================
 {
     return false;
@@ -1418,7 +1420,7 @@ bool CGff2Reader::xIsIgnoredFeatureType(
 
 //  ============================================================================
 bool CGff2Reader::xIsIgnoredFeatureId(
-    const string& type)
+    const CTempString& type)
 //  ============================================================================
 {
     return false;
@@ -1427,7 +1429,7 @@ bool CGff2Reader::xIsIgnoredFeatureId(
 //  ---------------------------------------------------------------------------
 bool
 CGff2Reader::xNeedsNewSeqAnnot(
-    const string& line)
+    const CTempString& line)
 //  ---------------------------------------------------------------------------
 {
     if (IsInGenbankMode()) {
@@ -1456,21 +1458,28 @@ bool CGff2Reader::IsInGenbankMode() const
 
 //  -------------------------------------------------------------------------------
 bool CGff2Reader::xIsSequenceRegion(
-    const string& line)
+    const CTempString& line)
 //  -------------------------------------------------------------------------------
 {
-    string lineLowerCase(line);
+    if (!NStr::StartsWith(line, "##"))
+        return false;
+
+    string lineLowerCase(line.substr(0, 18));
     NStr::ToLower(lineLowerCase);
     return NStr::StartsWith(lineLowerCase, "##sequence-region");
 }
 
 //  -------------------------------------------------------------------------------
 bool CGff2Reader::xIsFastaMarker(
-    const string& line)
+    const CTempString& line)
 //  -------------------------------------------------------------------------------
 {
-    string lineLowerCase(line);
+    if (!NStr::StartsWith(line, "##"))
+        return false;
+
+    string lineLowerCase(line.substr(0, 8));
     NStr::ToLower(lineLowerCase);
+
     return NStr::StartsWith(lineLowerCase, "##fasta");
 }
 
@@ -1478,11 +1487,11 @@ bool CGff2Reader::xIsFastaMarker(
 void
 CGff2Reader::xProcessData(
     const TReaderData& readerData,
-    CSeq_annot& annot) 
+    CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     for (const auto& lineData: readerData) {
-        const auto& line = lineData.mData;
+        CTempString line = lineData.mData;
         if (xParseStructuredComment(line)) {
             continue;
         }

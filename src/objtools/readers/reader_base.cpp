@@ -475,7 +475,7 @@ CReaderBase::xAddStringFlagsWithMap(
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::xSetBrowserRegion(
-    const string& strRaw,
+    const CTempString& strRaw,
     CAnnot_descr& desc)
 //  ----------------------------------------------------------------------------
 {
@@ -534,7 +534,7 @@ void CReaderBase::xSetBrowserRegion(
 
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
-    const string& strLine,
+    const CTempString& strLine,
     CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
@@ -578,7 +578,7 @@ void CReaderBase::xAssignTrackData(
 
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseTrackLine(
-    const string& strLine)
+    const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;
@@ -734,13 +734,11 @@ bool CReaderBase::xIsTrackLine(
     const CTempString& strLine)
 //  ----------------------------------------------------------------------------
 {
-    if (strLine == "track") {
-        return true;
+    if (NStr::StartsWith(strLine, "track")) {
+        if (strLine.size() == 5 || strLine[5] == ' ' || strLine[5] == '\t')
+            return true;
     }
-    if (NStr::StartsWith(strLine, "track ")) {
-        return true;
-    }
-    return NStr::StartsWith(strLine, "track\t");
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
