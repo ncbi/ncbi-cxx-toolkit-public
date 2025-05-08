@@ -350,9 +350,13 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
     Set("format",             blob_info->GetFormat());
     Set("storage_size",       blob_info->GetStorageSize());
     Set("size",               blob_info->GetSize());
-    Set("is_dead",            blob_info->IsDead());
-    Set("is_suppressed",      blob_info->IsSuppressed());
-    Set("is_withdrawn",       blob_info->IsWithdrawn());
+    Set("is_dead",                      blob_info->IsState(CPSG_BlobInfo::eDead));
+    Set("is_suppressed",                blob_info->IsState(CPSG_BlobInfo::eSuppressed));
+    Set("is_suppressed_temporarily",    blob_info->IsState(CPSG_BlobInfo::eSuppressedTemporarily));
+    Set("is_withdrawn",                 blob_info->IsState(CPSG_BlobInfo::eWithdrawn));
+    Set("is_withdrawn_base",            blob_info->IsState(CPSG_BlobInfo::eWithdrawnBase));
+    Set("is_withdrawn_permanently",     blob_info->IsState(CPSG_BlobInfo::eWithdrawnPermanently));
+    Set("is_edit_blocked",              blob_info->IsState(CPSG_BlobInfo::eEditBlocked));
     Set("hup_release_date",   blob_info->GetHupReleaseDate().AsString());
     Set("owner",              blob_info->GetOwner());
     Set("original_load_date", blob_info->GetOriginalLoadDate().AsString());
