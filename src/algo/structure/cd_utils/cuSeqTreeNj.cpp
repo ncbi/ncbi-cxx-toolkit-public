@@ -251,26 +251,23 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     m_tree = atree;
     if (m_tree == NULL) {
         return;
-    } else if (!m_dm) {
+    } else if (!m_dm || m_nseqs <= 0) {
         m_tree->clear();
         m_tree = NULL;
         return;
     }
 
+    m_nextNode = m_nseqs + 1;
     m_seqiters[0] = m_tree->insert(m_tree->begin(), *m_items[0]);
 
     //  For composite nodes, save the mean dist. between the two component nodes.
     //  When this node becomes part of a composite node in a later iteration, that
     //  distance is subtracted from the orig-composite-node to hub distance.
-
-    double* internalDistCorrection = new double[m_nseqs]{ 0 };  
+    double* internalDistCorrection = new double[m_nseqs]();  
 
     //  Map rows in distance matrix to index of corresponding node in m_seqiters;
     //  when there is no corresponding distance matrix row, enter USED_ROW.
-
     int* indexMap = new int[m_nseqs]();  
-
-    m_nextNode = m_nseqs + 1;
 
     if (indexMap == 0 || internalDistCorrection == 0) {
         m_tree->clear();
@@ -290,7 +287,7 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
     double** ppDists;
     ppDists = new double*[m_nseqs];
     for (i=0; i<m_nseqs; i++) {
-        ppDists[i] = new double[m_nseqs]{ 0 };
+        ppDists[i] = new double[m_nseqs]();
     }
     for (i=0; i<m_nseqs; i++) {
         for (j=0; j<m_nseqs; j++) {
