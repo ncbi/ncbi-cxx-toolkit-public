@@ -785,14 +785,28 @@ public:
     /// Get size of the real (before any compression or encryption) blob data
     Uint8 GetSize() const;
 
+    /// Check if the blob data has a special state
+    /// @{
+    enum EState {
+        eDead,
+        eSuppressed,
+        eSuppressedTemporarily,
+        eWithdrawn,
+        eWithdrawnBase,
+        eWithdrawnPermanently,
+        eEditBlocked,
+    };
+    bool IsState(EState state) const;
+    /// @}
+
     /// Return TRUE if the blob data is "dead"
-    bool IsDead() const;
+    bool IsDead() const { return IsState(eDead); }
 
     /// Return TRUE if the blob data is "suppressed"
-    bool IsSuppressed() const;
+    bool IsSuppressed() const { return IsState(eSuppressed); }
 
     /// Return TRUE if the blob data is "withdrawn"
-    bool IsWithdrawn() const;
+    bool IsWithdrawn() const { return IsState(eWithdrawn); }
 
     /// Date when the blob data will be released for public use.
     /// If the blob data is already released, then return "empty" (IsEmpty()) time
@@ -824,6 +838,7 @@ private:
 
     unique_ptr<CPSG_DataId> m_Id;
     CJsonNode m_Data;
+    mutable optional<Int8> m_Flags;
 
     friend class CPSG_Reply;
 };
