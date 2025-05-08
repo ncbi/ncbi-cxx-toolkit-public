@@ -1057,6 +1057,7 @@ CPSG_BlobInfo::CPSG_BlobInfo(unique_ptr<CPSG_DataId> id) :
 {
 }
 
+// Corresponds to EBlobFlags from <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 enum EPSG_BlobInfo_Flags
 {
     fPSGBI_CheckFailed = 1 << 0,
@@ -1065,6 +1066,17 @@ enum EPSG_BlobInfo_Flags
     fPSGBI_Withdrawn   = 1 << 3,
     fPSGBI_Suppress    = 1 << 4,
     fPSGBI_Dead        = 1 << 5,
+    fPSGBI_BigBlobSchema            = 1 << 6,
+    fPSGBI_WithdrawnBase            = 1 << 7,
+    fPSGBI_WithdrawnPermanently     = 1 << 8,
+    fPSGBI_ReservedBlobFlag0        = 1 << 9,
+    fPSGBI_ReservedBlobFlag1        = 1 << 10,
+    fPSGBI_SuppressEditBlocked      = 1 << 11,
+    fPSGBI_SuppressTemporarily      = 1 << 12,
+    fPSGBI_ReservedBlobFlag2        = 1 << 13,
+    fPSGBI_NoIncrementalProcessing  = 1 << 14,
+    fPSGBI_ReservedBlobFlag3        = 1 << 15,
+    fPSGBI_ReservedBlobFlag4        = 1 << 16,
 };
 
 string CPSG_BlobInfo::GetCompression() const
@@ -1087,19 +1099,23 @@ Uint8 CPSG_BlobInfo::GetSize() const
     return static_cast<Uint8>(m_Data.GetInteger("size_unpacked"));
 }
 
-bool CPSG_BlobInfo::IsDead() const
+bool CPSG_BlobInfo::IsState(EState state) const
 {
-    return m_Data.GetInteger("flags") & fPSGBI_Dead;
-}
+    if (!m_Flags) {
+        m_Flags = m_Data.GetInteger("flags");
+    }
 
-bool CPSG_BlobInfo::IsSuppressed() const
-{
-    return m_Data.GetInteger("flags") & fPSGBI_Suppress;
-}
+    switch (state) {
+        case eDead:                    return *m_Flags & fPSGBI_Dead;
+        case eSuppressed:              return *m_Flags & fPSGBI_Suppress;
+        case eSuppressedTemporarily:   return *m_Flags & fPSGBI_SuppressTemporarily;
+        case eWithdrawn:               return *m_Flags & fPSGBI_Withdrawn;
+        case eWithdrawnBase:           return *m_Flags & fPSGBI_WithdrawnBase;
+        case eWithdrawnPermanently:    return *m_Flags & fPSGBI_WithdrawnPermanently;
+        case eEditBlocked:             return *m_Flags & fPSGBI_SuppressEditBlocked;
+    }
 
-bool CPSG_BlobInfo::IsWithdrawn() const
-{
-    return m_Data.GetInteger("flags") & fPSGBI_Withdrawn;
+    return false;
 }
 
 CTime s_GetTime(Int8 milliseconds)
