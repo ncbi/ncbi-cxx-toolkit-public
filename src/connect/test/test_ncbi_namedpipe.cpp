@@ -573,7 +573,7 @@ int CTest::Server(void)
 
             ERR_POST(Info << "Disconnecting client...");
             status = pipe.Disconnect();
-            if (status != eIO_Success) {
+            if (status != eIO_Success  &&  status != eIO_Closed) {
                 ERR_POST(Error << "Disconnect() failed: " << IO_StatusStr(status));
                 _TROUBLE;
             }
