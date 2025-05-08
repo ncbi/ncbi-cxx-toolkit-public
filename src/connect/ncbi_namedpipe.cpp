@@ -445,23 +445,39 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
 
 EIO_Status CNamedPipeHandle::x_Disconnect(bool orderly)
 {
+    EIO_Status status = eIO_Success;
+
     _ASSERT(m_Pipe != INVALID_HANDLE_VALUE);
     if (m_Connected  &&  orderly
         &&  !m_Flushed  &&  !::FlushFileBuffers(m_Pipe)) {
-        NAMEDPIPE_THROW(::GetLastError(),
-                        "Named pipe \"" + m_PipeName
-                        + "\" failed to flush");
+        DWORD error = ::GetLastError();
+        if (!x_IsDisconnectError(error)) {
+            NAMEDPIPE_THROW(error,
+                            "Named pipe \"" + m_PipeName
+                            + "\" failed to flush");
+        } else {
+            string errstr = x_FormatError(int(error),
+                            "Named pipe \"" + m_PipeName
+                            + "\" failed to flush");
+            ERR_POST_X(16, s_FormatErrorMessage("Disconnect", errstr));
+            status = eIO_Closed;
+            orderly = false;
+        }
     }
     m_Flushed = true;
-    EIO_Status status = eIO_Success;
 
     if (m_Connected <= 0) {
         if (!::DisconnectNamedPipe(m_Pipe)) {
-            status = eIO_Unknown;
-            if (orderly) {
-                NAMEDPIPE_THROW(::GetLastError(),
-                                "Named pipe \"" + m_PipeName
-                                + "\" failed to disconnect");
+            DWORD error = ::GetLastError();
+            if (!x_IsDisconnectError(error)) {
+                if (orderly) {
+                    NAMEDPIPE_THROW(error,
+                                    "Named pipe \"" + m_PipeName
+                                    + "\" failed to disconnect");
+                }
+                status = eIO_Unknown;
+            } else {
+                status = eIO_Closed;
             }
         }
         // Per documentation, another client can now connect again
