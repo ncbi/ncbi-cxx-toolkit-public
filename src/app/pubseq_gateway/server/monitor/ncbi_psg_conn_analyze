@@ -1,0 +1,700 @@
+#!/usr/bin/env python3
+
+# pylint: disable=C0301     # too long lines
+# pylint: disable=C0103     # var names
+# pylint: disable=C0305     # trailing newlines
+# pylint: disable=C0116     # docstring
+# pylint: disable=C0114     # module docstring
+# pylint: disable=C0410     # multiple imports in one line
+# pylint: disable=W0703     # too general exception
+# pylint: disable=W0702     # No exception type(s) specified (bare-except)
+# pylint: disable=W0212     # Access to a protected member
+# pylint: disable=R1702     # Too many nested blocks
+# pylint: disable=R0912     # Too many branches
+# pylint: disable=C0206     # Consider iterating with .items()
+# pylint: disable=R1732     # Consider using 'with' for resource-allocating operations
+# pylint: disable=C0201     # Consider iterating the dictionary directly instead of calling .keys()
+# pylint: disable=R0911     # Too many return statements
+# pylint: disable=W0603     # Using the global statement
+# pylint: disable=W0602     # Using global for
+# pylint: disable=R0913     # Too many arguments
+# pylint: disable=R0917     # Too many positional arguments
+# pylint: disable=R0915     # Too many statements
+# pylint: disable=R0914     # Too many local variables
+# pylint: disable=C0209     # Formatting a regular string which could be an f-string
+# pylint: disable=W1309     # Using an f-string that does not have any interpolated variables
+
+
+
+from optparse import OptionParser
+import datetime
+import sys
+import os, os.path
+import json
+import statistics
+from monitor_utils import timestamp, print_error, buildPSGInstances, isHostPortServiceDirectory, isTimestampDirectory, isJsonFile, isFloat
+
+VERBOSE = False
+
+def print_verbose(msg):
+    if VERBOSE:
+        print(timestamp() + ' ' + msg)
+
+
+def readTimestamp(in_val):
+    formats_to_try = ['%Y%m%d-%H:%M:%S.%f', '%Y%m%d-%H:%M:%S']
+    for fmt in formats_to_try:
+        try:
+            ts = datetime.datetime.strptime(in_val, fmt)
+            return ts
+        except:
+            pass
+
+    print_error(f'Invalid timestamp value "{in_val}". Supported format: YYYYMMDD-hh:mm:ss[.ms]')
+    return None
+
+
+def readDelta(in_val):
+    if ':' not in in_val:
+        if not isFloat(in_val):
+            print_error("Invalid '--timespan' option value. The duration part is guessed as given in seconds and could not convert it to float.")
+            return None
+
+        duration_sec = float(in_val)
+        if duration_sec < 0.0:
+            print_error("Invalid '--timespan' option value. Duration cannot be negative.")
+            return None
+
+        return datetime.timedelta(seconds=duration_sec)
+
+    formats_to_try = ['%H:%M:%S.%f', '%H:%M:%S']
+    for fmt in formats_to_try:
+        try:
+            # Note: timedelta does not have a constructor from a formatted
+            # string. So here is a trick:
+            ts = datetime.datetime.strptime(in_val, fmt)
+            delta = ts - datetime.datetime.strptime('00', '%H')
+            return delta
+        except:
+            pass
+    print_error("Invalid '--timespan' option value. Cannot read duration. Supported format: hh:mm:ss[.ms] or ss[.ms]")
+    return None
+
+
+def validateTimespan(in_timespan):
+    start_timestamp = None
+    end_timestamp = None
+
+    format_error_msg = "Invalid '--timespan' option format. Supported options:\n" \
+                       "YYYYMMDD-hh:mm:ss[.ms]/YYYYMMDD-hh:mm:ss[.ms] or\n" \
+                       "YYYYMMDD-hh:mm:ss[.ms]+hh:mm:ss[.ms] or\n" \
+                       "YYYYMMDD-hh:mm:ss[.ms]+ss[.ms]"
+
+    # Two options:
+    # YYYYMMDD-hh:mm:ss.ms/YYYYMMDD-hh:mm:ss.ms
+    # YYYYMMDD-hh:mm:ss.ms+hh:mm:ss.ms
+    if '/' in in_timespan:
+        parts = in_timespan.split('/')
+        if len(parts) != 2:
+            print_error(format_error_msg)
+            return None, None
+
+        start_timestamp = readTimestamp(parts[0])
+        end_timestamp = readTimestamp(parts[1])
+        if start_timestamp is None or end_timestamp is None:
+            return None, None
+        if end_timestamp < start_timestamp:
+            print_error("Invalid '--timespan' option value. The end timestamp cannot be earlier than the start timestamp.")
+            return None, None
+        return start_timestamp, end_timestamp
+
+    if '+' in in_timespan:
+        parts = in_timespan.split('+')
+        if len(parts) != 2:
+            print_error(format_error_msg)
+            return None, None
+
+        start_timestamp = readTimestamp(parts[0])
+        if start_timestamp is None:
+            return None, None
+
+        delta = readDelta(parts[1])
+        if delta is None:
+            return None, None
+
+        end_timestamp = start_timestamp + delta
+        return start_timestamp, end_timestamp
+
+    print_error(format_error_msg)
+    return None, None
+
+
+def getStartEndDuration(instance_data):
+    start_ts = instance_data['start_ts']
+    if 'period_sec' in instance_data:
+        # Regular checks
+        last_period = instance_data['period_sec']
+    else:
+        # Alarm checks
+        last_period = instance_data['check_backoff_sec']
+    # Note: need to add the last interval duration
+    end_ts = instance_data['end_ts'] + datetime.timedelta(seconds=last_period)
+    delta_ts = end_ts - start_ts
+    return start_ts, end_ts, delta_ts
+
+
+def formatTimestamp(ts):
+    """It can be timedelta or datetime
+       The microsecnds should be stripped to ms"""
+    as_str = str(ts)
+    if '.' not in as_str:
+        return as_str
+
+    parts = as_str.split('.')
+    val = float(parts[1]) / 1000.0
+    val = round(val)
+    if val == 0:
+        return parts[0] + '.000'
+    if val < 10:
+        return parts[0] + '.00' + str(val)
+    if val < 100:
+        return parts[0] + '.0' + str(val)
+    return parts[0] + '.' + str(val)
+
+def roundToSignDigits(value, num_of_digits):
+    """Rounding to the <num_of_digits> most significant digits"""
+    # https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
+    format_str = f'%.{num_of_digits}g'
+    str_val = '%s' % float(format_str % value)
+    if str_val.endswith('.0'):
+        return str_val[:-2]
+    return str_val
+
+def matchHostPortService(host, port, service, instances):
+    if instances is None:
+        return True
+    if service not in instances:
+        return False
+    for inst in instances[service]:
+        if inst == (host, port):
+            return True
+    return False
+
+
+def buildFilesList(dst_path, start_timestamp, end_timestamp,
+                   instances, files_to_analyze):
+    """Returns None is case of errors; otherwise populates the files_to_analyze dictionary"""
+    if os.path.isfile(dst_path):
+        # Needs to detect if it is a json or ERROR/MESSAGE file;
+        # Also in case of json detect if it is 'alarm' or 'regular'
+        try:
+            with open(dst_path, "r", encoding='utf-8') as f:
+                content = f.read()
+        except Exception as exc:
+            print_error(f"Error reading from file {dst_path}: " + str(exc))
+            return None
+
+        if content.startswith('ERROR'):
+            print_error(f"File {dst_path} is a file with an error message. There is no data to load.")
+            return None
+
+        if content.startswith('MESSAGE'):
+            print_error(f"File {dst_path} is a file with an informational message. There is no data to load.")
+            return None
+
+        try:
+            parsed_content = json.loads(content)
+        except Exception as exc:
+            print_error(f"File {dst_path} is neither error/message nor json file. Error loading json: " + str(exc))
+            return None
+
+        if not isinstance(parsed_content, dict):
+            print_error(f"Unexpected json in {dst_path}. Expected a dictionary.")
+            return None
+
+        if not 'kind' in parsed_content:
+            print_error(f"Unexpected json in {dst_path}. The dictionary is expected to have the 'kind' key.")
+            return None
+        kind = parsed_content['kind']
+        if kind not in ['alarm', 'regular']:
+            print_error(f"Unexpected json in {dst_path}. The dictionary['kind'] value must be 'alarm' or 'regular'. Found: '{kind}'.")
+            return None
+
+        # All good
+        files_to_analyze[kind].append(dst_path)
+        return files_to_analyze
+
+    # Here: the dst_path is a top level directory
+    #       The upper level code has already checked that the dst_path is a
+    #       file or dir
+    total_files = 0
+    for dir_item in os.listdir(dst_path):
+        host_port_service = isHostPortServiceDirectory(dst_path, dir_item)
+        if host_port_service is False:
+            print_verbose(f"Skipping node {dst_path}{dir_item} because it is not a host:port[-service] directory")
+            continue
+        host = host_port_service[0]
+        port = host_port_service[1]
+        service = host_port_service[2]
+        if matchHostPortService(host, port, service, instances) is False:
+            print_verbose(f"Skipping directory {dst_path}{dir_item} because it is not in the list of PSG instances")
+            continue
+
+        for kind in ['regular', 'alarm']:
+            kind_dir = dst_path + dir_item + os.path.sep + kind + os.path.sep
+            if os.path.exists(kind_dir):
+                if os.path.isdir(kind_dir):
+                    for kind_item in os.listdir(kind_dir):
+                        dir_ts = isTimestampDirectory(kind_dir, kind_item)
+                        if dir_ts is False:
+                            print_verbose(f"Skipping node {kind_dir}{kind_item} because it is not a timestamp directory")
+                            continue
+                        ts_dir = kind_dir + kind_item + os.path.sep
+                        for ts_item in os.listdir(ts_dir):
+                            if isJsonFile(ts_dir, ts_item,
+                                          start_timestamp, end_timestamp,
+                                          print_verbose):
+                                files_to_analyze[kind].append(ts_dir + ts_item)
+                                total_files += 1
+    if total_files == 0:
+        print_error("No files to analyze were found")
+        return None
+    return files_to_analyze
+
+
+def processRegularAsSummary(files):
+    instances = {}
+    all_num_conns = []
+
+    # Accumulation of the information for the peer
+    all_conn_per_peer = []
+    conn_per_peer_max_num_con = 0
+    conn_per_peer_max_peers = []
+
+    # Accumulation of the information for the connection life time
+    all_conn_life_time_per_server = {}  # {host:port-service: {conn_id: {open_ts: <>, last_seen: <>}}}
+    conn_life_time_max_duration = datetime.timedelta(seconds=0)
+    conn_life_time_max_peer = ''
+
+    # Accumulate the info about refused connections and refused requests per
+    # server
+    all_refused = {}    # {host:port-service: {min_conn_refused: <int>,
+                        #                      max_conn_refused: <int>,
+                        #                      min_req_rejected: <int>,
+                        #                      max_req_rejected: <int>}
+
+
+    total = 0
+    for json_file in files:
+        try:
+            with open(json_file, "r", encoding='utf-8') as f:
+                data = f.read()
+            data = json.loads(data)
+        except Exception as exc:
+            print_error(f"Skipping due to error loading json data from {json_file}: " + str(exc))
+            continue
+
+        total += 1
+        ts = datetime.datetime.strptime(data['timestamp'], '%Y%m%d-%H-%M-%S.%f')
+
+        num_conn = len(data['connections'])
+        instance_id = data['host'] + ':' + str(data['port'])
+        if data['service']:
+            instance_id += '-' + data['service']
+
+        # Memorize #of connections regardless on what server it was
+        all_num_conns.append(num_conn)
+
+        conn_per_peer = {}
+        for conn_prop in data['connections']:
+            # Deal with connections per peer data
+            peer = conn_prop['peer_ip']
+            if peer not in conn_per_peer:
+                conn_per_peer[peer] = 1 # first found connection for the peer
+            else:
+                conn_per_peer[peer] = conn_per_peer[peer] + 1
+
+
+            # Deal with the connection life time
+            conn_id = conn_prop['id']
+            conn_open_ts = conn_prop['open_timestamp']
+
+            if instance_id not in all_conn_life_time_per_server:
+                all_conn_life_time_per_server[instance_id] = {}
+
+            if conn_id not in all_conn_life_time_per_server[instance_id]:
+                all_conn_life_time_per_server[instance_id][conn_id] = {'open_ts': conn_open_ts,
+                                                                       'last_seen': ts,
+                                                                       'peer': peer}
+            else:
+                if all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] < ts:
+                    all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] = ts
+
+        # Deal with rejections
+        conn_refused = data['hard_limit_conn_refused_cnt']
+        req_rejected = data['soft_limit_req_rejected_cnt']
+        if instance_id not in all_refused:
+            all_refused[instance_id] = {}
+        if 'min_conn_refused' not in all_refused[instance_id]:
+            all_refused[instance_id]['min_conn_refused'] = conn_refused
+            all_refused[instance_id]['max_conn_refused'] = conn_refused
+            all_refused[instance_id]['min_req_rejected'] = req_rejected
+            all_refused[instance_id]['max_req_rejected'] = req_rejected
+        if conn_refused < all_refused[instance_id]['min_conn_refused']:
+            all_refused[instance_id]['min_conn_refused'] = conn_refused
+        if conn_refused > all_refused[instance_id]['max_conn_refused']:
+            all_refused[instance_id]['max_conn_refused'] = conn_refused
+        if req_rejected < all_refused[instance_id]['min_req_rejected']:
+            all_refused[instance_id]['min_req_rejected'] = req_rejected
+        if req_rejected > all_refused[instance_id]['max_req_rejected']:
+            all_refused[instance_id]['max_req_rejected'] = req_rejected
+
+
+        # Deal with connections per peer data
+        for peer in conn_per_peer:
+            peer_num_con = conn_per_peer[peer]
+            all_conn_per_peer.append(peer_num_con)
+            if peer_num_con > conn_per_peer_max_num_con:
+                conn_per_peer_max_num_con = peer_num_con
+                conn_per_peer_max_peers = [peer]
+            elif peer_num_con == conn_per_peer_max_num_con:
+                if not peer in conn_per_peer_max_peers:
+                    conn_per_peer_max_peers.append(peer)
+
+        if instance_id in instances:
+            instances[instance_id]['num_conn'].append(num_conn)
+        else:
+            instances[instance_id] = {'num_conn': [num_conn], 'start_ts': ts, 'end_ts': ts,
+                                      'period_sec': data['period_sec']}
+
+        if ts < instances[instance_id]['start_ts']:
+            instances[instance_id]['start_ts'] = ts
+        if ts > instances[instance_id]['end_ts']:
+            instances[instance_id]['end_ts'] = ts
+            instances[instance_id]['period_sec'] = data['period_sec']
+
+
+    if total == 0:
+        print("No regular data files were processed")
+        return None
+
+    # Deal with connection life time for all the servers.
+    all_conns_durations = []
+    for instance_id in all_conn_life_time_per_server:
+        for conn_id in all_conn_life_time_per_server[instance_id]:
+            conn_open_ts = all_conn_life_time_per_server[instance_id][conn_id]['open_ts']
+            last_seen = all_conn_life_time_per_server[instance_id][conn_id]['last_seen']
+            duration = last_seen - datetime.datetime.strptime(conn_open_ts, '%Y-%m-%d %H:%M:%S.%f')
+            if duration > conn_life_time_max_duration:
+                conn_life_time_max_duration = duration
+                conn_life_time_max_peer = all_conn_life_time_per_server[instance_id][conn_id]['peer']
+            all_conns_durations.append(duration.total_seconds())
+
+
+    num_con_min = min(all_num_conns)
+    num_con_median = statistics.median(all_num_conns)
+    num_con_avg = statistics.mean(all_num_conns)
+    num_con_max = max(all_num_conns)
+
+    num_con_per_peer_min = min(all_conn_per_peer)
+    num_con_per_peer_median = statistics.median(all_conn_per_peer)
+    num_con_per_peer_avg = statistics.mean(all_conn_per_peer)
+    num_con_per_peer_max = max(all_conn_per_peer)
+
+    conn_life_time_min = min(all_conns_durations)
+    conn_life_time_median = statistics.median(all_conns_durations)
+    conn_life_time_avg = statistics.mean(all_conns_durations)
+    conn_life_time_max = max(all_conns_durations)
+
+
+    for instance_id in instances.keys():
+        start_ts, end_ts, delta_ts = getStartEndDuration(instances[instance_id])
+        delta_ts_as_str = formatTimestamp(delta_ts)
+        instances[instance_id]['duration'] = delta_ts_as_str
+        print(f'    {instance_id}')
+        print(f'        Covered time interval: {formatTimestamp(start_ts)} - {formatTimestamp(end_ts)}')
+        print(f'                               {formatTimestamp(start_ts)}, duration {delta_ts_as_str}')
+        refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
+        instances[instance_id]['refused_conn'] = refused_conn
+        print(f'        Refused connections: {refused_conn}')
+        rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
+        instances[instance_id]['rejected_req'] = rejected_req
+        print(f'        Rejected requests: {rejected_req}')
+
+    # Form a table
+    max_conn_peers = ', '.join(conn_per_peer_max_peers)
+    print()
+    print(f'                  {"Min":>10}{"Median":>10}{"Average":>10}{"Max":>10}   MaxPeerIP(s)')
+    print(f'    Connections:  {roundToSignDigits(num_con_min, 3):>10}{roundToSignDigits(num_con_median, 3):>10}{roundToSignDigits(num_con_avg, 3):>10}{roundToSignDigits(num_con_max, 3):>10}')
+    print(f'    Conn/peer:    {roundToSignDigits(num_con_per_peer_min, 3):>10}{roundToSignDigits(num_con_per_peer_median, 3):>10}{roundToSignDigits(num_con_per_peer_avg, 3):>10}{roundToSignDigits(num_con_per_peer_max, 3):>10}   {max_conn_peers}')
+    print(f'    Conn life(s): {roundToSignDigits(conn_life_time_min, 3):>10}{roundToSignDigits(conn_life_time_median, 3):>10}{roundToSignDigits(conn_life_time_avg, 3):>10}{roundToSignDigits(conn_life_time_max, 3):>10}   {conn_life_time_max_peer}')
+    print()
+
+    # prepare the output data
+    regular = {'instances': instances,
+               'conn_num': {'min': num_con_min,
+                            'median': num_con_median,
+                            'avg': num_con_avg,
+                            'max': num_con_max},
+               'conn_num_per_peer': {'min': num_con_per_peer_min,
+                                     'median': num_con_per_peer_median,
+                                     'avg': num_con_per_peer_avg,
+                                     'max': num_con_per_peer_max,
+                                     'max_peers': conn_per_peer_max_peers},
+               'conn_lifetime': {'min': conn_life_time_min,
+                                 'median': conn_life_time_median,
+                                 'avg': conn_life_time_avg,
+                                 'max': conn_life_time_max,
+                                 'max_peer': conn_life_time_max_peer}}
+    return regular
+
+
+def processAlarmAsSummary(files, regular_results):
+    instances = {}
+    total_alerts = 0
+    total_alert_time = 0
+
+    # Accumulate the info about refused connections and refused requests per
+    # server
+    all_refused = {}    # {host:port-service: {min_conn_refused: <int>,
+                        #                      max_conn_refused: <int>,
+                        #                      min_req_rejected: <int>,
+                        #                      max_req_rejected: <int>}
+
+    total = 0
+    for json_file in files:
+        try:
+            with open(json_file, "r", encoding='utf-8') as f:
+                data = f.read()
+            data = json.loads(data)
+        except Exception as exc:
+            print_error(f"Skipping due to error loading json data from {json_file}: " + str(exc))
+            continue
+
+        total += 1
+        ts = datetime.datetime.strptime(data['timestamp'], '%Y%m%d-%H-%M-%S.%f')
+        check_backoff = data['check_backoff']
+
+        total_alerts += 1
+        total_alert_time += check_backoff
+
+        instance_id = data['host'] + ':' + str(data['port'])
+        if data['service']:
+            instance_id += '-' + data['service']
+
+        if instance_id in instances:
+            instances[instance_id]['num_alerts'] += 1
+            instances[instance_id]['alert_time'] += check_backoff
+        else:
+            instances[instance_id] = {'num_alerts': 1, 'alert_time': check_backoff,
+                                      'start_ts': ts, 'end_ts': ts,
+                                      'check_backoff_sec': check_backoff }
+
+        if ts < instances[instance_id]['start_ts']:
+            instances[instance_id]['start_ts'] = ts
+        if ts > instances[instance_id]['end_ts']:
+            instances[instance_id]['end_ts'] = ts
+            instances[instance_id]['check_backoff_sec'] = check_backoff
+
+        # Deal with rejections
+        conn_refused = data['hard_limit_conn_refused_cnt']
+        req_rejected = data['soft_limit_req_rejected_cnt']
+        if instance_id not in all_refused:
+            all_refused[instance_id] = {}
+        if 'min_conn_refused' not in all_refused[instance_id]:
+            all_refused[instance_id]['min_conn_refused'] = conn_refused
+            all_refused[instance_id]['max_conn_refused'] = conn_refused
+            all_refused[instance_id]['min_req_rejected'] = req_rejected
+            all_refused[instance_id]['max_req_rejected'] = req_rejected
+        if conn_refused < all_refused[instance_id]['min_conn_refused']:
+            all_refused[instance_id]['min_conn_refused'] = conn_refused
+        if conn_refused > all_refused[instance_id]['max_conn_refused']:
+            all_refused[instance_id]['max_conn_refused'] = conn_refused
+        if req_rejected < all_refused[instance_id]['min_req_rejected']:
+            all_refused[instance_id]['min_req_rejected'] = req_rejected
+        if req_rejected > all_refused[instance_id]['max_req_rejected']:
+            all_refused[instance_id]['max_req_rejected'] = req_rejected
+
+
+    if total == 0:
+        print("No alarm data files were processed")
+        return None
+
+    for instance_id in instances.keys():
+        start_ts, end_ts, delta_ts = getStartEndDuration(instances[instance_id])
+        delta_ts_as_str = formatTimestamp(delta_ts)
+        instances[instance_id]['duration'] = delta_ts_as_str
+        print(f'    {instance_id}')
+        print(f'        Covered time interval: {formatTimestamp(start_ts)} - {formatTimestamp(end_ts)}')
+        print(f'                               {formatTimestamp(start_ts)}, duration {delta_ts_as_str}')
+        num_alerts = instances[instance_id]['num_alerts']
+        alert_time = instances[instance_id]['alert_time']
+        print(f'        Number of alerts:      {num_alerts}')
+        print(f'        Time in alerts (sec):  {alert_time}')
+        refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
+        instances[instance_id]['refused_conn'] = refused_conn
+        print(f'        Refused connections: {refused_conn}')
+        rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
+        instances[instance_id]['rejected_req'] = rejected_req
+        print(f'        Rejected requests: {rejected_req}')
+
+    print(f'    Total number of alerts:     {total_alerts}')
+    print(f'    Total time in alerts (sec): {total_alert_time}')
+
+    # Calculate the total covered by all the regular data
+    total_regular_coverage = datetime.timedelta(seconds=0)
+    for instance_id in regular_results['instances']:
+        # reg_start_ts, reg_end_ts, reg_delta_ts = getStartEndDuration(...)
+        _, _, reg_delta_ts = getStartEndDuration(regular_results['instances'][instance_id])
+        total_regular_coverage += reg_delta_ts
+
+    alarm_without_regular_instances = []
+    total_alarm_coverage_sec = 0
+    for instance_id in instances:
+        if instance_id in regular_results['instances']:
+            total_alarm_coverage_sec += instances[instance_id]['alert_time']
+        else:
+            alarm_without_regular_instances.append(instance_id)
+
+    # Print the percentage
+    regular_coverage_sec = total_regular_coverage.total_seconds()
+    if regular_coverage_sec == 0:
+        ratio = None
+        print(f'    Alert % (total alert time/total regular coverage): n/a (no regular coverage)')
+    else:
+        ratio = float(total_alarm_coverage_sec) / float(regular_coverage_sec)
+        ratio *= 100.0
+        print(f'    Alert % (total alert time/total regular coverage): {roundToSignDigits(ratio, 3)}')
+
+    if alarm_without_regular_instances:
+        print(f'    Alert instances which have no records in regular data: {", ".join(alarm_without_regular_instances)}')
+    else:
+        print(f'    Alert instances which have no records in regular data: n/a')
+
+    alarm = {'instances': instances,
+             'total_alerts': total_alerts,
+             'total_alert_time': total_alert_time,
+             'ratio': ratio,
+             'alarm_without_regular_instances': alarm_without_regular_instances}
+
+    return alarm
+
+
+def processFilesAsSummary(files):
+    """The files parameter is as follows: {'alarm': [], 'regular': []}
+       It is guaranteed that there is at least one file name in one of the lists"""
+
+    print("Regular analysis:")
+    if len(files['regular']) > 0:
+        regular = processRegularAsSummary(files['regular'])
+    else:
+        print("No regular files were found")
+
+    print("Alarm analysis:")
+    if len(files['alarm']) > 0:
+        processAlarmAsSummary(files['alarm'], regular)
+    else:
+        print("No alarm files were found")
+
+
+
+def main():
+
+    global VERBOSE
+
+    parser = OptionParser(
+        """
+    %prog [options]
+    """)
+
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="be verbose (default: False)")
+    parser.add_option("--path",
+                      action="store", type="string", dest="dst_path", default=None,
+                      help="Path on disk, from where to analyze the collections info. "
+                           "Can be either: the very top-level path - analyze under that path. "
+                           "The scope can be narrowed by --service and/or --timespan arguments. "
+                           "A single file name. --service and --timespan arguments are not applicable. "
+                           " (no default)")
+    parser.add_option("--timespan",
+                      action="store", type="string", dest="timespan", default=None,
+                      help="Only analyze in the specified time interval. Only applicable if path is a dir. "
+                           "Format: YYYYMMDD-hh:mm:ss.ms/YYYYMMDD-hh:mm:ss.ms or YYYYMMDD-hh:mm:ss.ms+hh:mm:ss.ms. "
+                           " (default: all)")
+    parser.add_option("--service",
+                      action="append", type="string", dest="in_services", default=[],
+                      help="This arg can appear more than once if multiple services and/or servers need to be analyzed. "
+                           "Only applicable if path is a dir. (default: all)")
+    parser.add_option("--summary",
+                      action="store_true", dest="summary", default=False,
+                      help="Show summary only (default: False)")
+    parser.add_option("--html",
+                      action="store_true", dest="html", default=False,
+                      help="Print in HTML format, open the printed page in the default browser (default: False)")
+
+    options, args = parser.parse_args()
+    if len(args) != 0:
+        print_error("No positional arguments are supported")
+        parser.print_help()
+        return 1
+
+    VERBOSE = options.verbose
+
+    if options.dst_path is None:
+        print_error("The '--path' option is mandatory")
+        parser.print_help()
+        return 1
+
+    if not os.path.isfile(options.dst_path) and not os.path.isdir(options.dst_path):
+        print_error("The '--path' option must point to a directory or to a file")
+        parser.print_help()
+        return 1
+
+    start_timestamp = None
+    end_timestamp = None
+    if options.timespan is not None:
+        start_timestamp, end_timestamp = validateTimespan(options.timespan)
+        if start_timestamp is None or end_timestamp is None:
+            return 1
+
+    instances = None
+    if len(options.in_services) > 0:
+        instances = buildPSGInstances(options.in_services, print_verbose)
+        if instances is None:
+            return 1
+
+    files_to_analyze = {'alarm': [], 'regular': []}
+    if buildFilesList(options.dst_path,
+                      start_timestamp, end_timestamp,
+                      instances, files_to_analyze) is None:
+        return 1
+
+    print_verbose(f"Collected files to analyze: {files_to_analyze}")
+
+    if options.html:
+        print_error("HTML output format has not been implemented yet")
+        return 1
+
+    if options.summary:
+        processFilesAsSummary(files_to_analyze)
+    else:
+        print_error("Full analysis has not been implemented yet")
+        return 1
+
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        retVal = main()
+    except KeyboardInterrupt:
+        print_verbose("Keyboard interrupt")
+        retVal = 2
+#    except Exception as exc:
+#        print('Exception')
+#        print(str(exc), file=sys.stderr)
+#        retVal = 3
+
+    sys.exit(retVal)
+

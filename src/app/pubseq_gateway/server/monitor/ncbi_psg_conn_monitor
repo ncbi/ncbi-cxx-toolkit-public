@@ -28,16 +28,14 @@ from optparse import OptionParser
 from threading import Thread, Event
 from urllib import request as urlrequest
 from http.client import HTTPException, RemoteDisconnected, BadStatusLine
-from io import StringIO
 import datetime
 import sys
 import os, os.path
 import time
 import ssl
 import json
-import pprint
 import shutil
-from ncbi.grid.deployment_info import services
+from monitor_utils import timestamp, print_error, buildPSGInstances, isHostPortServiceDirectory, isTimestampDirectory
 
 
 VERBOSE = False
@@ -57,14 +55,10 @@ STOP_EVENT = None
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def timestamp():
-    now = datetime.datetime.now()
-    return now.strftime('%Y-%m-%d %H:%M:%S')
-
 def getDateAndTime():
     now = datetime.datetime.now()
     date_as_str = now.strftime('%Y%m%d')
-    time_as_str = now.strftime('%H:%M:%S')
+    time_as_str = now.strftime('%H-%M-%S')
     mks = int(now.strftime('%f'))
     ms = int(mks / 1000)
     if ms == 0:
@@ -81,9 +75,6 @@ def getDateAndTime():
 def print_verbose(msg):
     if VERBOSE:
         print(timestamp() + ' ' + msg)
-
-def print_error(msg):
-    print(timestamp() + ' ' + msg, file=sys.stderr)
 
 def validateDestinationPath(dst_path):
     abs_path = os.path.abspath(dst_path)
@@ -105,90 +96,6 @@ def validateDestinationPath(dst_path):
         return None
 
     return abs_path
-
-def isInt(val):
-    try:
-        _ = int(val)
-    except:
-        return False
-    return True
-
-def buildPSGInstances(in_services):
-    """ Resolve services if needed; exclude overlapping if so"""
-
-    # Result is a dictionary <service> -> [ tuples(host,port) ]
-    # Individually provided instances will have '' service
-    result = {}
-    found_services = []
-    for item in in_services:
-        if ':' in item:
-            # supposedly host:port
-            parts = item.split(':')
-            if len(parts) != 2:
-                print_error(f'The server "{item}" does not follow host:port spec')
-                return None
-            if not isInt(parts[1]):
-                print_error(f'The server "{item}" port is not integer')
-                return None
-            if '' not in result:
-                result[''] = []
-            addr = (parts[0], int(parts[1]))
-            if addr in result['']:
-                print_verbose(f'The {item} is provided twice. Ignore and continue')
-            else:
-                result[''].append(addr)
-        else:
-            # supposedly a service name
-            if item.upper() not in result:
-                print('service ' + item.upper())
-                found_services.append(item.upper())
-                result[item.upper()] = []
-                deploymentServices = services.get_services()
-                for svc in deploymentServices[0]:
-                    if svc.name.upper() == item.upper():
-                        result[item.upper()].append((svc.host, int(svc.port)))
-
-    print_verbose(f'Collected psg instances: {result}')
-    print_verbose('Sanitizing psg instances...')
-
-    to_remove = []
-    if '' in result:
-        for instance in result['']:
-            for svc_name in found_services:
-                for item in result[svc_name]:
-                    no_domain1 = item[0].split('.')[0].lower()
-                    no_domain2 = instance[0].split('.')[0].lower()
-                    if no_domain1 == no_domain2:        # host match
-                        if item[1] == instance[1]:      # port match
-                            if instance not in to_remove:
-                                to_remove.append(instance)
-                                print_verbose(f'Removing host {instance[0]}:{instance[1]} because it is a member of service {svc_name}')
-                                break
-
-    svc_to_remove = []
-    for svc_name in found_services:
-        if len(result[svc_name]) == 0:
-            svc_to_remove.append(svc_name)
-            print_verbose(f'Removing service {svc_name} because there were no PSG instances in this service')
-
-    if svc_to_remove:
-        for svc_name in svc_to_remove:
-            del result[svc_name]
-
-    if to_remove:
-        for item in to_remove:
-            result[''].remove(item)
-    else:
-        print_verbose('No overlapping detected')
-
-    total = 0
-    for svc_name in result.keys():
-        total += len(result[svc_name])
-    if total == 0:
-        print_error('No psg instances were identified')
-        return None
-
-    return result
 
 
 def createHttpRequest(noProtoUrl):
@@ -227,7 +134,7 @@ def isHttp(host, port, dst_dir, service_name, kind):
         PSG_SERVER_KIND_CACHE[fullAddress] = True
         print_verbose(f"{fullAddress} instance detected as http")
         saveContentToFile(dst_dir, host, port,
-                          service_name, kind, 'MESSAGE: {fullAddress} instance detected as http')
+                          service_name, kind, f'MESSAGE: {fullAddress} instance detected as http')
         return True
     except:
         pass
@@ -239,7 +146,7 @@ def isHttp(host, port, dst_dir, service_name, kind):
         PSG_SERVER_KIND_CACHE[fullAddress] = False
         print_verbose(f"{fullAddress} instance detected as https")
         saveContentToFile(dst_dir, host, port,
-                          service_name, kind, 'MESSAGE: {fullAddress} instance detected as https')
+                          service_name, kind, f'MESSAGE: {fullAddress} instance detected as https')
         return False
     except:
         pass
@@ -286,8 +193,16 @@ def getAlarmStatus(host, port, dst_dir, service_name, kind):
     except BadStatusLine as exc:
         return None, 'BadStatusLine: ' + str(exc)
     except HTTPException as exc:
-        return None, 'HTTPException: ' + str(exc)
+        # 503 actually means that the condition is met
+        exc_msg = str(exc)
+        if '503' in exc_msg and 'Service Unavailable' in exc_msg:
+            return True, None   # Connections alarm, no errors
+        return None, 'HTTPException: ' + exc_msg
     except Exception as exc:
+        # 503 actually means that the condition is met
+        exc_msg = str(exc)
+        if '503' in exc_msg and 'Service Unavailable' in exc_msg:
+            return True, None   # Connections alarm, no errors
         return None, 'Exception: ' + str(exc)
     return None, 'Should not reach this point'
 
@@ -341,18 +256,7 @@ def gcThread(stop_event, dst_dir, retention_day, check_retension_day):
         now = datetime.datetime.now()
         if os.path.exists(dst_dir):
             for dir_item in os.listdir(dst_dir):
-                if dir_item in ['.', '..']:
-                    continue
-                if not os.path.isdir(dst_dir + dir_item):
-                    continue
-                # Check that the directory name conforms to what was created
-                if not ':' in dir_item:
-                    continue
-                parts = dir_item.split(':')
-                if len(parts) != 2:
-                    continue
-                port_part = parts[1].split('-')[0]
-                if not isInt(port_part):
+                if isHostPortServiceDirectory(dst_dir, dir_item) is False:
                     continue
                 # Looks like the dir with the collected data
                 for kind in ['regular', 'alarm']:
@@ -360,19 +264,9 @@ def gcThread(stop_event, dst_dir, retention_day, check_retension_day):
                     if os.path.exists(kind_dir):
                         if os.path.isdir(kind_dir):
                             for kind_item in os.listdir(kind_dir):
-                                if kind_item in ['.', '..']:
+                                dir_ts = isTimestampDirectory(kind_dir, kind_item)
+                                if dir_ts is False:
                                     continue
-                                if not os.path.isdir(kind_dir + kind_item):
-                                    continue
-                                # Check that the directory name conforms to
-                                # what was created
-                                parts = kind_item.split('-')
-                                if len(parts) != 2:
-                                    continue
-                                if not isInt(parts[0]) or not isInt(parts[1]):
-                                    continue
-                                # convert into timestamp
-                                dir_ts = datetime.datetime.strptime(kind_item, '%Y%m%d-%H')
                                 dir_to_remove = None
                                 if kind == 'regular':
                                     if dir_ts + regular_delta < now:
@@ -392,7 +286,7 @@ def gcThread(stop_event, dst_dir, retention_day, check_retension_day):
             return
 
 
-def saveContentToFile(dst_dir, host, port, service, kind, content):
+def saveContentToFile(dst_dir, host, port, service, kind, content, check_backoff=None, period=None):
     date_as_str, time_as_str, h_as_str = getDateAndTime()
     up_name = host + ':' + str(port)
     if service:
@@ -400,6 +294,22 @@ def saveContentToFile(dst_dir, host, port, service, kind, content):
 
     destination_dir = dst_dir + up_name + os.path.sep + kind + os.path.sep + date_as_str + '-' + h_as_str + os.path.sep
     destination_file = destination_dir + date_as_str + '-' + time_as_str
+
+    if not isinstance(content, str):
+        # This is a list of dictionaries with connection properties
+        # Some info needs to be injected and then convert it to a string
+        output = {'kind': kind,
+                  'service': service,
+                  'host': host,
+                  'port': port,
+                  'timestamp': date_as_str + '-' + time_as_str,
+                  'hard_limit_conn_refused_cnt': content['hard_limit_conn_refused_cnt'],
+                  'soft_limit_req_rejected_cnt': content['soft_limit_req_rejected_cnt'],
+                  'connections': content['conn_info']}
+        if kind == 'alarm':
+            output['check_backoff'] = check_backoff
+        else:
+            output['period_sec'] = period
 
     if not os.path.exists(destination_dir):
         try:
@@ -411,7 +321,12 @@ def saveContentToFile(dst_dir, host, port, service, kind, content):
 
     try:
         with open(destination_file, "w", encoding='utf-8') as f:
-            f.write(content)
+            if isinstance(content, str):
+                # Plain string, error or message
+                f.write(content)
+            else:
+                # dictionary which needs to be saved as json
+                json.dump(output, f, indent=0)
     except Exception as exc:
         print_error(f'Error saving content into {destination_file}: ' + str(exc))
 
@@ -431,11 +346,8 @@ def regularThread(stop_event, service_name, host, port, dst_dir, period_sec):
         else:
             # save the content into a file
             print_verbose(f'Regular: success getting data from {host}:{port} in service "{service_name}"')
-            strStream = StringIO()
-            prettyPrinter = pprint.PrettyPrinter(indent=0, stream=strStream)
-            prettyPrinter.pprint(content)
             saveContentToFile(dst_dir, host, port,
-                              service_name, 'regular', strStream.getvalue())
+                              service_name, 'regular', content, period=period_sec)
 
         # May be exit in a middle of the loop if there was a stop request
         if stop_event.is_set():
@@ -487,11 +399,8 @@ def alarmThread(stop_event, service_name, host, port, dst_dir, frequency_sec, ba
         else:
             # save the content into a file
             print_verbose(f'Alarm: success getting data from {host}:{port} in service "{service_name}"')
-            strStream = StringIO()
-            prettyPrinter = pprint.PrettyPrinter(indent=0, stream=strStream)
-            prettyPrinter.pprint(content)
             saveContentToFile(dst_dir, host, port,
-                              service_name, 'alarm', strStream.getvalue())
+                              service_name, 'alarm', content, check_backoff=backoff_sec)
 
         stop_event.wait(backoff_sec)
         if stop_event.is_set():
@@ -555,7 +464,7 @@ def main():
 
     if len(options.in_services) == 0:
         options.in_services = ['PSG2']
-    instances = buildPSGInstances(options.in_services)
+    instances = buildPSGInstances(options.in_services, print_verbose)
     if instances is None:
         return 1
 
