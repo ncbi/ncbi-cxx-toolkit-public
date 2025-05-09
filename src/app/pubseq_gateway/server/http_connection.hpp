@@ -65,12 +65,26 @@ struct SConnectionRunTimeProperties
 
     string                              m_PeerIp;
 
+    // The following two fields may be not initialized;
+    // The values are coming in the '/hello' request
+    optional<string>                    m_PeerId;
+    bool                                m_PeerIdMutated;
+    optional<string>                    m_PeerUserAgent;
+    bool                                m_PeerUserAgentMutated;
+
     bool                                m_ExceedSoftLimitFlag;
     bool                                m_MovedFromBadToGood;
+
+    SConnectionRunTimeProperties() = default;
+    SConnectionRunTimeProperties(const SConnectionRunTimeProperties &  other);
+    SConnectionRunTimeProperties & operator=(const SConnectionRunTimeProperties &) = delete;
 
     void PrepareForUsage(int64_t  conn_cnt_at_open,
                          const string &  peer_ip,
                          bool  exceed_soft_limit_flag);
+    void UpdateLastRequestTimestamp(void);
+    void UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                  const string &  peer_user_agent);
 };
 
 
@@ -164,6 +178,12 @@ public:
     }
 
     SConnectionRunTimeProperties GetProperties(void) const;
+
+    void UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                  const string &  peer_user_agent)
+    {
+        m_RunTimeProps.UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
+    }
 
 private:
     size_t                          m_HttpMaxBacklog;

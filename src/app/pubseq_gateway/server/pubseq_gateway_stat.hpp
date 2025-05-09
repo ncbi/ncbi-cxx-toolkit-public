@@ -83,6 +83,7 @@ class CPSGSCounters
             ePSGS_ReadyZCDDRequest,
             ePSGS_ReadyZSNPRequest,
             ePSGS_LiveZRequest,
+            ePSGS_HelloRequest,
             ePSGS_Si2csiCacheHit,
             ePSGS_Si2csiCacheMiss,
             ePSGS_BioseqInfoCacheHit,

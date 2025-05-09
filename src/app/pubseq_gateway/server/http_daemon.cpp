@@ -140,9 +140,9 @@ void CHttpDaemon::MigrateConnectionFromAboveLimitToBelowLimit(void)
 }
 
 
-string CHttpDaemon::GetConnectionsStatus(void)
+string CHttpDaemon::GetConnectionsStatus(int64_t  self_connection_id)
 {
-    return m_TcpDaemon->GetConnectionsStatus();
+    return m_TcpDaemon->GetConnectionsStatus(self_connection_id);
 }
 
 

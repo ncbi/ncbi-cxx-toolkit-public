@@ -167,6 +167,7 @@ public:
     int OnTestIO(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetSatMapping(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnConnectionsStatus(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
+    int OnHello(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
 
     virtual int Run(void);
 
@@ -457,6 +458,15 @@ private:
                             shared_ptr<CPSGS_Reply>  reply,
                             const psg_time_point_t &  now,
                             vector<string> &  exclude_checks);
+    bool x_GetPeerUserAgentParameter(CHttpRequest &  req,
+                                     shared_ptr<CPSGS_Reply>  reply,
+                                     const psg_time_point_t &  now,
+                                     string &  peer_user_agent);
+    bool x_GetPeerIdParameter(CHttpRequest &  req,
+                              shared_ptr<CPSGS_Reply>  reply,
+                              const psg_time_point_t &  now,
+                              string &  peer_id);
+
 
 private:
     void x_FixIntrospectionVersion(void);

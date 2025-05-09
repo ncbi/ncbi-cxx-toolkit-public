@@ -245,6 +245,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "LiveZRequestCount", "livez requests counter",
             "Number of times a client requested live status");
+    m_Counters[ePSGS_HelloRequest] =
+        new SCounterInfo(
+            "HelloRequestCount", "hello requests counter",
+            "Number of times a client sent hello");
     m_Counters[ePSGS_Si2csiCacheHit] =
         new SCounterInfo(
             "Si2csiCacheHit", "si2csi cache hit counter",

@@ -313,6 +313,8 @@ public:
     void IncrementRejectedDueToSoftLimit(void);
     uint16_t GetConnCntAtOpen(void) const;
     int64_t GetConnectionId(void) const;
+    void UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                  const string &  peer_user_agent);
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

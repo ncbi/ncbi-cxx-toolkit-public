@@ -80,7 +80,7 @@ public:
     uint16_t NumOfConnections(void) const;
     size_t GetBelowSoftLimitConnCount(void) const;
     void MigrateConnectionFromAboveLimitToBelowLimit(void);
-    string GetConnectionsStatus(void);
+    string GetConnectionsStatus(int64_t  self_connection_id);
 
 private:
     std::unique_ptr<CTcpDaemon>     m_TcpDaemon;

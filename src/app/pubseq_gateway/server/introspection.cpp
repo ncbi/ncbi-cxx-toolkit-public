@@ -662,6 +662,30 @@ void AppendAckAlertUsernameParameter(CJsonNode &  node)
     node.SetByKey("username", username);
 }
 
+void AppendPeerIdParameter(CJsonNode &  node)
+{
+    CJsonNode   peer_id(CJsonNode::NewObjectNode());
+    peer_id.SetBoolean(kMandatory, true);
+    peer_id.SetString(kType, "String");
+    peer_id.SetString(kDescription,
+        "The peer identifier");
+    peer_id.SetString(kAllowedValues, "A non-empty string without white space symbols");
+    peer_id.SetString(kDefault, "");
+    node.SetByKey("peer_id", peer_id);
+}
+
+void AppendPeerUserAgentParameter(CJsonNode &  node)
+{
+    CJsonNode   peer_user_agent(CJsonNode::NewObjectNode());
+    peer_user_agent.SetBoolean(kMandatory, true);
+    peer_user_agent.SetString(kType, "String");
+    peer_user_agent.SetString(kDescription,
+        "The peer user agent");
+    peer_user_agent.SetString(kAllowedValues, "A non-empty string without white space symbols");
+    peer_user_agent.SetString(kDefault, "");
+    node.SetByKey("peer_user_agent", peer_user_agent);
+}
+
 void AppendResetParameter(CJsonNode &  node)
 {
     CJsonNode   reset_param(CJsonNode::NewObjectNode());
@@ -1253,6 +1277,31 @@ CJsonNode GetAdminConnectionsStatusRequestNode(void)
 }
 
 
+CJsonNode GetHelloRequestNode(void)
+{
+    CJsonNode   hello(CJsonNode::NewObjectNode());
+    hello.SetString(kDescription,
+        "Provides the peer id and peer user agent to to the server. These values "
+        "can be used for throttling.");
+    CJsonNode   hello_params(CJsonNode::NewObjectNode());
+
+    AppendPeerIdParameter(hello_params);
+    AppendPeerUserAgentParameter(hello_params);
+    hello.SetByKey("parameters", hello_params);
+
+    CJsonNode   hello_reply(CJsonNode::NewObjectNode());
+    hello_reply.SetString(kDescription,
+        "HTTP status is set to 200 if the peer id and user agent values were "
+        "accepted and memorized. Otherwise the HTTP status is set to 400 and "
+        "the HTTP body contains a plain text with an error message. HTTP status "
+        "can be set to 500 (with the plain text HTTP body error message) in case "
+        "of exceptions during the execution.");
+    hello.SetByKey("reply", hello_reply);
+
+    return hello;
+}
+
+
 // /healthz
 CJsonNode  GetHealthzRequestNode(void)
 {
@@ -1580,6 +1629,7 @@ CJsonNode   GetRequestsNode(void)
     requests_node.SetByKey("ADMIN/dispatcher_status", GetAdminDispatcherStatusRequestNode());
     requests_node.SetByKey("ADMIN/connections_status", GetAdminConnectionsStatusRequestNode());
 
+    requests_node.SetByKey("hello", GetHelloRequestNode());
     requests_node.SetByKey("healthz", GetHealthzRequestNode());
     requests_node.SetByKey("livez", GetLivezRequestNone());
     requests_node.SetByKey("readyz", GetReadyzRequestNode());

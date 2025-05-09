@@ -83,7 +83,7 @@ public:
     bool AnyWorkerIsRunning(void);
     void KillAll(void);
     void JoinWorkers(void);
-    string GetConnectionsStatus(void);
+    string GetConnectionsStatus(int64_t  self_connection_id);
 
     static void s_OnWatchDog(uv_timer_t *  handle);
 };
@@ -198,8 +198,8 @@ public:
         --m_AboveSoftLimitConnCount;
     }
 
-    string GetConnectionsStatus(void)
-    { return m_WorkersList->GetConnectionsStatus(); }
+    string GetConnectionsStatus(int64_t  self_connection_id)
+    { return m_WorkersList->GetConnectionsStatus(self_connection_id); }
 
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);

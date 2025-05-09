@@ -229,7 +229,7 @@ void CTcpWorkersList::JoinWorkers(void)
 }
 
 
-string CTcpWorkersList::GetConnectionsStatus(void)
+string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
 {
     string      json;
     bool        need_comma = false;
@@ -239,6 +239,19 @@ string CTcpWorkersList::GetConnectionsStatus(void)
         std::vector<SConnectionRunTimeProperties>   conn_props = it->GetConnProps();
 
         for (auto &  props : conn_props) {
+            if (props.m_Id == self_connection_id) {
+                // May be need to skip the connection because it is the one
+                // which only created to request the connection info.
+                // To detect it, check how long ago the connection was created.
+                system_clock::time_point  now = system_clock::now();
+                const auto                diff_ms = duration_cast<milliseconds>(now - props.m_OpenTimestamp);
+                if (diff_ms.count() < 10) {
+                    // The connection was opened less than 10ms ago so likely
+                    // it is a connection info probe.
+                    continue;
+                }
+            }
+
             if (need_comma) {
                 json.append(1, ',');
             } else {

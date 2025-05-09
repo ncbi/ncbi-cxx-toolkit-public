@@ -1992,14 +1992,14 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
                            reply->GetBytesSent());
         m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
-        x_Finish500(reply, now, ePSGS_StatusError,
+        x_Finish500(reply, now, ePSGS_DispatcherStatusError,
                     "Exception when handling a dispatcher_status request: " +
                     string(exc.what()));
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
-        x_Finish500(reply, now, ePSGS_StatusError,
+        x_Finish500(reply, now, ePSGS_DispatcherStatusError,
                     "Unknown exception when handling a dispatcher_status request");
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
@@ -2034,7 +2034,7 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
                .append(buf, len)
                .append(", ")
                .append("\"conn_info\": ")
-               .append(m_HttpDaemon->GetConnectionsStatus())
+               .append(m_HttpDaemon->GetConnectionsStatus(reply->GetConnectionId()))
                .append(1, '}');
 
         reply->SetContentType(ePSGS_JsonMime);
@@ -2046,15 +2046,76 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
                            reply->GetBytesSent());
         m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_AdminRequest);
     } catch (const exception &  exc) {
-        x_Finish500(reply, now, ePSGS_StatusError,
+        x_Finish500(reply, now, ePSGS_ConnectionsStatusError,
                     "Exception when handling a connections_status request: " +
                     string(exc.what()));
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());
     } catch (...) {
-        x_Finish500(reply, now, ePSGS_StatusError,
+        x_Finish500(reply, now, ePSGS_ConnectionsStatusError,
                     "Unknown exception when handling a connections_status request");
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    }
+    return 0;
+}
+
+
+int CPubseqGatewayApp::OnHello(CHttpRequest &  http_req,
+                               shared_ptr<CPSGS_Reply>  reply)
+{
+    // NOTE: expected to work regardless of the shutdown request
+
+    auto                    now = psg_clock_t::now();
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    try {
+        string      peer_id;
+        if (!x_GetPeerIdParameter(http_req, reply, now, peer_id)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        string      peer_user_agent;
+        if (!x_GetPeerUserAgentParameter(http_req, reply, now, peer_user_agent)) {
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e400_BadRequest,
+                               reply->GetBytesSent());
+            return 0;
+        }
+
+        // Parameters are fine; update the connection properties
+        reply->UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentLength(0);
+        reply->SendOk("", 0, true);
+
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e200_Ok,
+                           reply->GetBytesSent());
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_HelloRequest);
+    } catch (const exception &  exc) {
+        string      err_msg = "Exception when handling a hello request: " + string(exc.what());
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentLength(err_msg.size());
+        reply->Send500(err_msg.c_str());
+        PSG_ERROR(err_msg);
+
+        x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                           CRequestStatus::e500_InternalServerError,
+                           reply->GetBytesSent());
+    } catch (...) {
+        string      err_msg = "Unknown exception when handling a hello request";
+        reply->SetContentType(ePSGS_PlainTextMime);
+        reply->SetContentLength(err_msg.size());
+        reply->Send500(err_msg.c_str());
+        PSG_ERROR(err_msg);
+
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e500_InternalServerError,
                            reply->GetBytesSent());

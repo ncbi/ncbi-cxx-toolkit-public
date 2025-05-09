@@ -58,14 +58,14 @@ static void NotifyRequestFinished(size_t  request_id)
     app->NotifyRequestFinished(request_id);
 }
 
-static int64_t      s_ConnectionId = 0;
-static mutex        s_ConnectionIdLock;
+static int64_t          s_ConnectionId = 0;
+static atomic<bool>     s_ConnectionIdLock(false);
 int64_t GenerateConnectionId(void)
 {
     int64_t  ret;
-    s_ConnectionIdLock.lock();
+
+    CSpinlockGuard      guard(&s_ConnectionIdLock);
     ret = ++s_ConnectionId;
-    s_ConnectionIdLock.unlock();
     return ret;
 }
 
@@ -84,10 +84,87 @@ SConnectionRunTimeProperties::PrepareForUsage(int64_t  conn_cnt_at_open,
     m_NumBackloggedRequests = 0;
     m_NumRunningRequests = 0;
     m_PeerIp = peer_ip;
+
+    m_PeerId.reset();
+    m_PeerIdMutated = false;
+    m_PeerUserAgent.reset();
+    m_PeerUserAgentMutated = false;
+
     m_ExceedSoftLimitFlag = exceed_soft_limit_flag;
     m_MovedFromBadToGood = false;
 }
 
+
+// The update of some fields in the connection properties may happen at the
+// same time when serialization is requested. Thus a lock is required.
+static atomic<bool>     s_ConnPropsLock(false);
+
+void
+SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                                       const string &  peer_user_agent)
+{
+    CSpinlockGuard      guard(&s_ConnPropsLock);
+
+    if (!m_PeerIdMutated) {
+        if (m_PeerId.has_value()) {
+            // The value has been set before
+            if (m_PeerId.value() != peer_id) {
+                m_PeerId.reset();
+                m_PeerIdMutated = true;
+            }
+        } else {
+            // This is a first time setting the value
+            m_PeerId = peer_id;
+        }
+    }
+
+    if (!m_PeerUserAgentMutated) {
+        if (m_PeerUserAgent.has_value()) {
+            // The value has been set before
+            if (m_PeerUserAgent.value() != peer_user_agent) {
+                m_PeerUserAgent.reset();
+                m_PeerUserAgentMutated = true;
+            }
+        } else {
+            // This is a first time setting the value
+            m_PeerUserAgent = peer_user_agent;
+        }
+    }
+}
+
+
+void SConnectionRunTimeProperties::UpdateLastRequestTimestamp(void)
+{
+    CSpinlockGuard      guard(&s_ConnPropsLock);
+    m_LastRequestTimestamp = system_clock::now();
+}
+
+
+SConnectionRunTimeProperties::SConnectionRunTimeProperties(
+        const SConnectionRunTimeProperties &  other)
+{
+    // The m_PeerId and m_PeerUserAgent fields are not really scalar fields and
+    // can be updated from another thread. So the copy constructor (used during
+    // the serialization) needs to use a lock approprietly.
+
+    m_Id = other.m_Id;
+    m_ConnCntAtOpen = other.m_ConnCntAtOpen;
+    m_OpenTimestamp = other.m_OpenTimestamp;
+    m_NumFinishedRequests = other.m_NumFinishedRequests;
+    m_RejectedDueToSoftLimit = other.m_RejectedDueToSoftLimit;
+    m_NumBackloggedRequests = other.m_NumBackloggedRequests;
+    m_NumRunningRequests = other.m_NumRunningRequests;
+    m_PeerIp = other.m_PeerIp;
+    m_ExceedSoftLimitFlag = other.m_ExceedSoftLimitFlag;
+    m_MovedFromBadToGood = other.m_MovedFromBadToGood;
+
+    CSpinlockGuard      guard(&s_ConnPropsLock);
+    m_LastRequestTimestamp = other.m_LastRequestTimestamp;
+    m_PeerId = other.m_PeerId;
+    m_PeerIdMutated = other.m_PeerIdMutated;
+    m_PeerUserAgent = other.m_PeerUserAgent;
+    m_PeerUserAgentMutated = other.m_PeerUserAgentMutated;
+}
 
 
 CHttpConnection::~CHttpConnection()
@@ -305,7 +382,7 @@ void CHttpConnection::x_CancelAll(void)
 void CHttpConnection::x_RegisterRunning(shared_ptr<CPSGS_Reply>  reply)
 {
     m_RunningRequests.push_back(reply);
-    m_RunTimeProps.m_LastRequestTimestamp = system_clock::now();
+    m_RunTimeProps.UpdateLastRequestTimestamp();
 }
 
 

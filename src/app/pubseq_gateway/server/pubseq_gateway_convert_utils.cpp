@@ -1097,6 +1097,8 @@ static const string     kRunningReqsCntItem = "\"running_reqs_cnt\": ";
 static const string     kPeerIpItem = "\"peer_ip\": ";
 static const string     kExceedSoftLimitFlagItem = "\"exceed_soft_limit_flag\": ";
 static const string     kMovedFromBadToGoodItem = "\"moved_from_bad_to_good\": ";
+static const string     kPeerIdItem = "\"peer_id\": ";
+static const string     kPeerUserAgentItem = "\"peer_user_agent\": ";
 string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
 {
     string              json;
@@ -1155,6 +1157,22 @@ string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
         .append(1, '"')
         .append(conn_props.m_PeerIp)
         .append(1, '"');
+
+    if (conn_props.m_PeerId.has_value()) {
+        json.append(kSep)
+            .append(kPeerIdItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(conn_props.m_PeerId.value()))
+            .append(1, '"');
+    }
+
+    if (conn_props.m_PeerUserAgent.has_value()) {
+        json.append(kSep)
+            .append(kPeerUserAgentItem)
+            .append(1, '"')
+            .append(NStr::JsonEncode(conn_props.m_PeerUserAgent.value()))
+            .append(1, '"');
+    }
 
     if (conn_props.m_ExceedSoftLimitFlag) {
         json.append(kSep)

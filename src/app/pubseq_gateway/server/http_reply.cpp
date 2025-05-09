@@ -124,6 +124,14 @@ int64_t CHttpReply::GetConnectionId(void) const
 }
 
 
+void CHttpReply::UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                          const string &  peer_user_agent)
+{
+    if (m_HttpConn)
+        return m_HttpConn->UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
+}
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;

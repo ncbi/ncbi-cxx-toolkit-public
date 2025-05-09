@@ -584,6 +584,12 @@ int CPubseqGatewayApp::Run(void)
                 return OnDeepHealth(req, reply);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/hello",
+            [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
+            {
+                return OnHello(req, reply);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/ADMIN/config",
             [this](CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply)->int
             {

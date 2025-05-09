@@ -151,9 +151,9 @@ void CPubseqGatewayApp::x_Finish500(shared_ptr<CPSGS_Reply>  reply,
                                     EPSGS_PubseqGatewayErrorCode  code,
                                     const string &  err_msg)
 {
-   x_SendMessageAndCompletionChunks(reply, now, err_msg,
-                                    CRequestStatus::e500_InternalServerError,
-                                    code, eDiag_Error);
+    x_SendMessageAndCompletionChunks(reply, now, err_msg,
+                                     CRequestStatus::e500_InternalServerError,
+                                     code, eDiag_Error);
     PSG_ERROR(err_msg);
 }
 
@@ -1211,5 +1211,93 @@ bool CPubseqGatewayApp::x_GetExcludeChecks(CHttpRequest &  req,
         exclude_checks.end());
 
     return true;
+}
+
+
+static string  kWhitespaceChars = " \t\n\r\f\v";
+
+static string  kPeerIdParam = "peer_id";
+static string  kPeerIdNotFoundMsg = "Mandatory '" + kPeerIdParam +
+                                    "' parameter is not found.";
+static string  kPeerIdEmptyMsg = "The '" + kPeerIdParam +
+                                 "' parameter cannot be empty.";
+static string  kPeerIdSpaceCharsMsg = "The '" + kPeerIdParam +
+                                      "' parameter cannot contain whitespace characters.";
+
+bool CPubseqGatewayApp::x_GetPeerIdParameter(CHttpRequest &  req,
+                                             shared_ptr<CPSGS_Reply>  reply,
+                                             const psg_time_point_t &  now,
+                                             string  &  peer_id)
+{
+    peer_id = "";
+    string      err_msg;
+
+    SRequestParameter   peer_id_param = x_GetParam(req, kPeerIdParam);
+    if (peer_id_param.m_Found) {
+        peer_id = peer_id_param.m_Value;
+        if (!peer_id.empty()) {
+            size_t      char_pos = peer_id.find_first_of(kWhitespaceChars);
+            if (char_pos == string::npos) {
+                return true;
+            }
+            err_msg = kPeerIdSpaceCharsMsg;
+        } else {
+            err_msg = kPeerIdEmptyMsg;
+        }
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
+    } else {
+        err_msg = kPeerIdNotFoundMsg;
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_InsufficientArgs);
+    }
+
+    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+    reply->SetContentType(ePSGS_PlainTextMime);
+    reply->SetContentLength(err_msg.size());
+    reply->Send400(err_msg.c_str());
+    PSG_WARNING(err_msg);
+    return false;
+}
+
+
+static string  kPeerUserAgentParam = "peer_user_agent";
+static string  kPeerUserAgentNotFoundMsg = "Mandatory '" + kPeerUserAgentParam +
+                                           "' parameter is not found.";
+static string  kPeerUserAgentEmptyMsg = "The '" + kPeerUserAgentParam +
+                                        "' parameter cannot be empty.";
+static string  kPeerUserAgentSpaceCharsMsg = "The '" + kPeerUserAgentParam +
+                                             "' parameter cannot contain "
+                                             "whitespace characters.";
+bool CPubseqGatewayApp::x_GetPeerUserAgentParameter(CHttpRequest &  req,
+                                                    shared_ptr<CPSGS_Reply>  reply,
+                                                    const psg_time_point_t &  now,
+                                                    string &  peer_user_agent)
+{
+    peer_user_agent = "";
+    string      err_msg;
+
+    SRequestParameter   peer_user_agent_param = x_GetParam(req, kPeerUserAgentParam);
+    if (peer_user_agent_param.m_Found) {
+        peer_user_agent = peer_user_agent_param.m_Value;
+        if (!peer_user_agent.empty()) {
+            size_t      char_pos = peer_user_agent.find_first_of(kWhitespaceChars);
+            if (char_pos == string::npos) {
+                return true;
+            }
+            err_msg = kPeerUserAgentSpaceCharsMsg;
+        } else {
+            err_msg = kPeerUserAgentEmptyMsg;
+        }
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_MalformedArgs);
+    } else {
+        err_msg = kPeerUserAgentNotFoundMsg;
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_InsufficientArgs);
+    }
+
+    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_NonProtocolRequests);
+    reply->SetContentType(ePSGS_PlainTextMime);
+    reply->SetContentLength(err_msg.size());
+    reply->Send400(err_msg.c_str());
+    PSG_WARNING(err_msg);
+    return false;
 }
 

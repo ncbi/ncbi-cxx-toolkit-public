@@ -160,6 +160,14 @@ int64_t CPSGS_Reply::GetConnectionId(void) const
 }
 
 
+void CPSGS_Reply::UpdatePeerIdAndUserAgent(const string &  peer_id,
+                                           const string &  peer_user_agent)
+{
+    if (m_Reply)
+        m_Reply->UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
+}
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);

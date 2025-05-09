@@ -121,7 +121,11 @@ enum EPSGS_PubseqGatewayErrorCode {
 
     ePSGS_ConnectionExceedsSoftLimit            = 351,
 
-    ePSGS_GetSatMappingError                    = 352
+    ePSGS_GetSatMappingError                    = 352,
+
+    ePSGS_DispatcherStatusError                 = 353,
+    ePSGS_ConnectionsStatusError                = 354,
+    ePSGS_HelloStatusError                      = 355
 };
 
 
