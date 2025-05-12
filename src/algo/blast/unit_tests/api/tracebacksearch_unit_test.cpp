@@ -256,11 +256,11 @@ public:
         // objects in the gi_list case, so that it is possible to
         // fetch the query, which is not in the GI list.
         
-        CRef<CSeqDB> query_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
+        CRef<CSeqDB> query_seqdb(new CSeqDB("data/tb_db", CSeqDB::eProtein));
         CRef<CSeqDB> subject_seqdb;
         
         if (gi_list) {
-            subject_seqdb.Reset(new CSeqDB("nr", CSeqDB::eProtein, gi_list));
+            subject_seqdb.Reset(new CSeqDB("data/tb_db", CSeqDB::eProtein, gi_list));
         } else {
             subject_seqdb = query_seqdb;
         }
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE(SimpleTraceback)
         // objects in the gi_list case, so that it is possible to
         // fetch the query, which is not in the GI list.
         
-        CRef<CSeqDB> query_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
+        CRef<CSeqDB> query_seqdb(new CSeqDB("data/tb_db", CSeqDB::eProtein));
         CRef<CSeqDB> subject_seqdb;
         
         subject_seqdb = query_seqdb;
@@ -369,7 +369,7 @@ BOOST_AUTO_TEST_CASE(TracebackWithPssm_AndWarning) {
         TestUtil::ReadObject<CPssmWithParameters>(kPssmFile);
 
     // set up the database
-    CRef<CSeqDB> subject_seqdb(new CSeqDB("nr", CSeqDB::eProtein));
+    CRef<CSeqDB> subject_seqdb(new CSeqDB("data/tb_db", CSeqDB::eProtein));
 
     CSeq_id query("P01013");
     unique_ptr<SSeqLoc> sl(CTestObjMgr::Instance().CreateSSeqLoc(query));
