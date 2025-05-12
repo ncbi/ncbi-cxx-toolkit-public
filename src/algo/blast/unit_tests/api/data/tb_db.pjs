@@ -1,0 +1,27 @@
+{
+  "version": "1.2",
+  "dbname": "tb_db",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "All non-redundant GenBank CDS translations+PDB+SwissProt+PIR+PRF excluding environmental samples from WGS projects; All non-redundant GenBank CDS translations+PDB+SwissProt+PIR+PRF excluding environmental samples from WGS projects; All non-redundant GenBank CDS translations+PDB+SwissProt+PIR+PRF excluding environmental samples from WGS projects",
+  "number-of-letters": 7910,
+  "number-of-sequences": 3,
+  "last-updated": "2025-05-09T14:34:00",
+  "number-of-volumes": 1,
+  "number-of-taxids": 3,
+  "bytes-total": 58203,
+  "bytes-to-cache": 8362,
+  "files": [
+    "tb_db.pdb",
+    "tb_db.phr",
+    "tb_db.pin",
+    "tb_db.pog",
+    "tb_db.pos",
+    "tb_db.pot",
+    "tb_db.ppd",
+    "tb_db.ppi",
+    "tb_db.psq",
+    "tb_db.ptf",
+    "tb_db.pto"
+  ]
+}
