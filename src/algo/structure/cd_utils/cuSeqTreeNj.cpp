@@ -267,7 +267,7 @@ void NJ_TreeAlgorithm::ComputeTree(SeqTree* atree, pProgressFunction pFunc) {
 
     //  Map rows in distance matrix to index of corresponding node in m_seqiters;
     //  when there is no corresponding distance matrix row, enter USED_ROW.
-    int* indexMap = new int[m_nseqs]();  
+    int* indexMap = new int[m_nseqs]{};  
 
     if (indexMap == 0 || internalDistCorrection == 0) {
         m_tree->clear();
