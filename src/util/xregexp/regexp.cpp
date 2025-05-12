@@ -226,7 +226,7 @@ void CRegexp::x_Match(CTempString str, size_t offset, TMatch flags)
                   offset, x_flags, match_data, NULL);
     m_Results = pcre2_get_ovector_pointer(match_data);
     if (rc >= 0) {
-        m_NumFound = pcre2_get_ovector_count(match_data);
+        m_NumFound = rc; // pcre2_get_ovector_count can overshoot
     } else {
         m_NumFound = -1;
     }
