@@ -81,7 +81,7 @@ private:
     TAnnots xReadGFF3(CNcbiIstream& instream, bool post_process);
     TAnnots xReadGTF(CNcbiIstream& instream) const;
     CRef<objects::CSeq_entry> xReadFlatfile(CFormatGuess::EFormat format, const string& filename, CNcbiIstream& instream);
-    void x_PostProcessAnnots(TAnnots& annots) const;
+    void x_PostProcessAnnots(TAnnots& annots, CFormatGuess::EFormat format=CFormatGuess::eUnknown) const;
 
     unique_ptr<CObjectIStream> xCreateASNStream(const string& filename) const;
     unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream) const;
