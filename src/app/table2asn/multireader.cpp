@@ -735,7 +735,7 @@ void CMultiReader::LoadGFF3Fasta(istream& in, TAnnots& annots)
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "Specified GFF3 file does not include any sequence data", 0);
     }
-    x_PostProcessAnnots(annots);
+    x_PostProcessAnnots(annots, CFormatGuess::eGff3);
 }
 
 
@@ -904,7 +904,7 @@ CMultiReader::TAnnots CMultiReader::xReadGFF3(CNcbiIstream& instream, bool post_
         mAtSequenceData = reader.AtSequenceData();
 
         if (post_process) {
-            x_PostProcessAnnots(annots);
+            x_PostProcessAnnots(annots, CFormatGuess::eGff3);
         }
 
         for (const auto& msg : readerListener) {
@@ -938,7 +938,40 @@ static void s_RemoveGenBankDbxrefs(list<CRef<CSeq_feat>>& ftable)
 }
 
 
-void CMultiReader::x_PostProcessAnnots(TAnnots& annots) const
+static void s_UpdateProteinAndTranscriptIds(CSeq_feat& seqfeat)
+{
+    if (!seqfeat.IsSetQual() || seqfeat.GetQual().empty()) {
+        return;
+    }
+
+    // Update protein_id - remove origin_protein_id
+    if (auto orig_protein_id = seqfeat.GetNamedQual("orig_protein_id"); 
+            !orig_protein_id.empty()) {
+        seqfeat.AddOrReplaceQualifier("protein_id", orig_protein_id);
+        seqfeat.RemoveQualifier("orig_protein_id");
+    }
+
+    // Update transcript_id - remove orig_transcript_id
+    if (auto orig_transcript_id = seqfeat.GetNamedQual("orig_transcript_id");
+            !orig_transcript_id.empty()) {
+        seqfeat.AddOrReplaceQualifier("transcript_id", orig_transcript_id);
+        seqfeat.RemoveQualifier("orig_transcript_id");
+    }
+}
+
+
+static void s_UpdateProteinAndTranscriptIds(list<CRef<CSeq_feat>>& ftable)
+{
+    for (auto pFeat : ftable) {
+        if ((pFeat->GetData().IsCdregion() || (pFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA))) {
+            s_UpdateProteinAndTranscriptIds(*pFeat);
+        }
+    }
+}
+
+
+
+void CMultiReader::x_PostProcessAnnots(TAnnots& annots, CFormatGuess::EFormat format) const
 {
     unsigned int startingLocusTagNumber = 1;
     unsigned int startingFeatureId = 1;
@@ -951,6 +984,10 @@ void CMultiReader::x_PostProcessAnnots(TAnnots& annots) const
         }
 
         s_RemoveGenBankDbxrefs(data.SetFtable()); // RW-1861
+
+        if ((format==CFormatGuess::eGff3) && m_context.m_delay_genprodset) { // RW-2490
+            s_UpdateProteinAndTranscriptIds(data.SetFtable());
+        }
 
         edit::CFeatTableEdit fte(
             annot, 0, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
