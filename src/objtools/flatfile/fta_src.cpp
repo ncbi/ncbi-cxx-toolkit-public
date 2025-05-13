@@ -321,6 +321,23 @@ static const char* OrganelleFirstToken[] = {
     nullptr
 };
 
+static const char *NullTermValues[] = {
+    "missing",
+    "not applicable",
+    "not collected",
+    "not provided",
+    "restricted access",
+    "missing: control sample",
+    "missing: sample group",
+    "missing: synthetic construct",
+    "missing: lab stock",
+    "missing: third party data",
+    "missing: data agreement established pre-2023",
+    "missing: endangered species",
+    "missing: human-identifiable",
+    nullptr
+};
+
 /**********************************************************/
 static SourceFeatBlkPtr SourceFeatBlkNew(void)
 {
@@ -2036,7 +2053,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
             for (p = tco; *p == ' ' || *p == '\t';)
                 p++;
             if (*p == '\0') {
-                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Empty country name in /country qualifier : \"{}\".", val_ptr);
+                FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Empty country name in /{} qualifier : \"{}\".", cur_qual, val_ptr);
             } else {
                 for (q = p + 1; *q != '\0';)
                     q++;
@@ -2044,14 +2061,17 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
                     q--;
                 *++q = '\0';
 
-                bool valid_country = CCountries::IsValid(p);
-                if (! valid_country) {
-                    valid_country = CCountries::WasValid(p);
+                if(MatchArrayString(NullTermValues, val_ptr) < 0)
+                {
+                    bool valid_country = CCountries::IsValid(p);
+                    if (! valid_country) {
+                        valid_country = CCountries::WasValid(p);
 
-                    if (! valid_country)
-                        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Country \"{}\" from /country qualifier \"{}\" is not a valid country name.", tco, val_ptr);
-                    else
-                        FtaErrPost(SEV_WARNING, ERR_SOURCE_FormerCountry, "Country \"{}\" from /country qualifier \"{}\" is a former country name which is no longer valid.", tco, val_ptr);
+                        if (! valid_country)
+                            FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidCountry, "Country \"{}\" from /{} qualifier \"{}\" is not a valid country name.", tco, cur_qual, val_ptr);
+                        else
+                            FtaErrPost(SEV_WARNING, ERR_SOURCE_FormerCountry, "Country \"{}\" from /{} qualifier \"{}\" is a former country name which is no longer valid.", tco, cur_qual, val_ptr);
+                    }
                 }
             }
 
@@ -2544,7 +2564,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
     bool  comma;
     bool  bad_start;
     bool  empty;
-    Char  ch;
+    Char  ch = '\0';
     Int4  count;
     Int4  prev; /* 1 = fwd_name, 2 = fwd_seq,
                                            3 = rev_name, 4 = rev_seq */
@@ -2800,6 +2820,10 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
                 continue;
 
             val = (char*)cur->GetVal().c_str();
+
+            if(MatchArrayString(NullTermValues, val) > -1)
+                continue;
+
             for (num_slash = 0, p = val; *p != '\0'; p++)
                 if (*p == '/')
                     num_slash++;
