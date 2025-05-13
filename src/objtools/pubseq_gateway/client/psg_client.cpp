@@ -1122,6 +1122,7 @@ bool CPSG_BlobInfo::IsState(EState state) const
         case eWithdrawnBase:           return *m_Flags & fPSGBI_WithdrawnBase;
         case eWithdrawnPermanently:    return *m_Flags & fPSGBI_WithdrawnPermanently;
         case eEditBlocked:             return *m_Flags & fPSGBI_SuppressEditBlocked;
+        case eNoIncrementalProcessing: return *m_Flags & fPSGBI_NoIncrementalProcessing;
     }
 
     return false;
