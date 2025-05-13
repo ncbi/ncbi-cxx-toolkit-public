@@ -768,6 +768,7 @@ public:
         eWithdrawnBase,
         eWithdrawnPermanently,
         eEditBlocked,
+        eNoIncrementalProcessing,
     };
     bool IsState(EState state) const;
     /// @}
