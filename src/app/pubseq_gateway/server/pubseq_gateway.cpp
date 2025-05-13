@@ -872,8 +872,12 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
     extra.Print(kConnectionId, reply->GetConnectionId());
 
     string      user_agent = req.GetHeaderValue(kUserAgentHeader);
-    if (!user_agent.empty())
+    if (!user_agent.empty()) {
         extra.Print(kUserAgentApplog, user_agent);
+        // This will update the user agent in the connection properties if
+        // needed, i.e. if the field was not set before
+        reply->UpdatePeerUserAgentIfNeeded(user_agent);
+    }
 
 
     // The [log]/log_peer_ip_always may overwrite the need_peer_ip value

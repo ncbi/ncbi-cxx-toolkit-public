@@ -133,6 +133,27 @@ SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
+void SConnectionRunTimeProperties::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+{
+    CSpinlockGuard      guard(&s_ConnPropsLock);
+
+    if (m_PeerUserAgentMutated) {
+        // There were at least two '/hello' requests and the value has been
+        // overwritten, so there is no need to update
+        return;
+    }
+
+    if (m_PeerUserAgent.has_value()) {
+        // The value has already been set previously, so there is no need to
+        // update
+        return;
+    }
+
+    // Here: first time setting and most probably it is an old client
+    m_PeerUserAgent = peer_user_agent;
+}
+
+
 void SConnectionRunTimeProperties::UpdateLastRequestTimestamp(void)
 {
     CSpinlockGuard      guard(&s_ConnPropsLock);

@@ -315,6 +315,7 @@ public:
     int64_t GetConnectionId(void) const;
     void UpdatePeerIdAndUserAgent(const string &  peer_id,
                                   const string &  peer_user_agent);
+    void UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent);
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

@@ -132,6 +132,13 @@ void CHttpReply::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
+void CHttpReply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+{
+    if (m_HttpConn)
+        return m_HttpConn->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+}
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;

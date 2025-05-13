@@ -168,6 +168,13 @@ void CPSGS_Reply::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
+void CPSGS_Reply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+{
+    if (m_Reply)
+        m_Reply->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+}
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);

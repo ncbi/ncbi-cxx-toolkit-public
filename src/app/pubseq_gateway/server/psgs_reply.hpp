@@ -161,6 +161,7 @@ public:
     int64_t GetConnectionId(void) const;
     void UpdatePeerIdAndUserAgent(const string &  peer_id,
                                   const string &  peer_user_agent);
+    void UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent);
 
 public:
     // PSG protocol facilities
