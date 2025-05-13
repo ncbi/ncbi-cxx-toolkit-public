@@ -357,6 +357,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobInfo> blob_info)
     Set("is_withdrawn_base",            blob_info->IsState(CPSG_BlobInfo::eWithdrawnBase));
     Set("is_withdrawn_permanently",     blob_info->IsState(CPSG_BlobInfo::eWithdrawnPermanently));
     Set("is_edit_blocked",              blob_info->IsState(CPSG_BlobInfo::eEditBlocked));
+    Set("no_incremental_processing",    blob_info->IsState(CPSG_BlobInfo::eNoIncrementalProcessing));
     Set("hup_release_date",   blob_info->GetHupReleaseDate().AsString());
     Set("owner",              blob_info->GetOwner());
     Set("original_load_date", blob_info->GetOriginalLoadDate().AsString());
