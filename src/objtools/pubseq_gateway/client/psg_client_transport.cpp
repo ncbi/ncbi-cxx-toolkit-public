@@ -60,9 +60,9 @@ PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, rd_buf_size,                   64 *
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, wr_buf_size,                   64 * 1024,          1024    );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        100,                10      );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_submits,        150,                1       );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  40,                 1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  1,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_requests_per_server, 500,           100     );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        6,                  1       );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, num_io,                        1,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, reader_timeout,                12,                 1       );
 PSG_PARAM_VALUE_DEF_MIN(double,         PSG, rebalance_time,                10.0,               1.0     );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, requests_per_io,               1,                  1       );
@@ -1617,7 +1617,10 @@ void SPSG_IoImpl::OnQueue(uv_async_t* handle)
 
             // Add new session if needed and allowed to
             if (session->IsFull() && (distance(session, server.sessions.end()) == 1)) {
-                if (server.sessions.size() >= TPSG_MaxSessions::GetDefault()) {
+                const auto single_server_single_session = m_Sessions.size() == 1 && TPSG_MaxSessions::GetDefault() == 1;
+                const auto max_sessions = single_server_single_session ? 2 : TPSG_MaxSessions::GetDefault();
+
+                if (server.sessions.size() >= max_sessions) {
                     PSG_IO_TRACE("Server '" << server->address << "' reached session limit");
                     ignore_server();
                 } else {
