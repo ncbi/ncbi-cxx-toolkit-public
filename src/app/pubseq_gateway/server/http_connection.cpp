@@ -99,6 +99,7 @@ SConnectionRunTimeProperties::PrepareForUsage(int64_t  conn_cnt_at_open,
 // same time when serialization is requested. Thus a lock is required.
 static atomic<bool>     s_ConnPropsLock(false);
 
+// This method is purposed for serving the /hello request
 void
 SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
                                                        const string &  peer_user_agent)
@@ -133,45 +134,53 @@ SConnectionRunTimeProperties::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
-void SConnectionRunTimeProperties::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+void SConnectionRunTimeProperties::UpdatePeerUserAgent(const string &  peer_user_agent)
 {
     CSpinlockGuard      guard(&s_ConnPropsLock);
 
     if (m_PeerUserAgentMutated) {
-        // There were at least two '/hello' requests and the value has been
-        // overwritten, so there is no need to update
+        // The stored value has already mutated. Most probably because the
+        // client is a proxy. No need to do anything.
         return;
     }
 
-    if (m_PeerUserAgent.has_value()) {
-        // The value has already been set previously, so there is no need to
-        // update
+    if (!m_PeerUserAgent.has_value()) {
+        // Here: first time setting; save the value
+        m_PeerUserAgent = peer_user_agent;
         return;
     }
 
-    // Here: first time setting and most probably it is an old client
-    m_PeerUserAgent = peer_user_agent;
+    // The value has already been set previously. Check that it has not
+    // changed.
+    if (m_PeerUserAgent.value() != peer_user_agent) {
+        m_PeerUserAgent.reset();
+        m_PeerUserAgentMutated = true;
+    }
 }
 
 
-void SConnectionRunTimeProperties::UpdatePeerIdIfNeeded(const string &  peer_id)
+void SConnectionRunTimeProperties::UpdatePeerId(const string &  peer_id)
 {
     CSpinlockGuard      guard(&s_ConnPropsLock);
 
     if (m_PeerIdMutated) {
-        // There were at least two '/hello' requests and the value has been
-        // overwritten, so there is no need to update
+        // The stored value has already mutated. Most probably because the
+        // client is a proxy. No need to do anything.
         return;
     }
 
-    if (m_PeerId.has_value()) {
-        // The value has already been set previously, so there is no need to
-        // update
+    if (!m_PeerId.has_value()) {
+        // Here: first time setting; save the value
+        m_PeerId = peer_id;
         return;
     }
 
-    // Here: first time setting and most probably it is an old client
-    m_PeerId = peer_id;
+    // The value has already been set previously. Check that it has not
+    // changed.
+    if (m_PeerId.value() != peer_id) {
+        m_PeerId.reset();
+        m_PeerIdMutated = true;
+    }
 }
 
 

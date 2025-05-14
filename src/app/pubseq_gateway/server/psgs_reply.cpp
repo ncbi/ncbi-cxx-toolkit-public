@@ -168,17 +168,17 @@ void CPSGS_Reply::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
-void CPSGS_Reply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+void CPSGS_Reply::UpdatePeerUserAgent(const string &  peer_user_agent)
 {
     if (m_Reply)
-        m_Reply->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+        m_Reply->UpdatePeerUserAgent(peer_user_agent);
 }
 
 
-void CPSGS_Reply::UpdatePeerIdIfNeeded(const string &  peer_id)
+void CPSGS_Reply::UpdatePeerId(const string &  peer_id)
 {
     if (m_Reply)
-        m_Reply->UpdatePeerIdIfNeeded(peer_id);
+        m_Reply->UpdatePeerId(peer_id);
 }
 
 

@@ -132,17 +132,17 @@ void CHttpReply::UpdatePeerIdAndUserAgent(const string &  peer_id,
 }
 
 
-void CHttpReply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+void CHttpReply::UpdatePeerUserAgent(const string &  peer_user_agent)
 {
     if (m_HttpConn)
-        m_HttpConn->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+        m_HttpConn->UpdatePeerUserAgent(peer_user_agent);
 }
 
 
-void CHttpReply::UpdatePeerIdIfNeeded(const string &  peer_id)
+void CHttpReply::UpdatePeerId(const string &  peer_id)
 {
     if (m_HttpConn)
-        m_HttpConn->UpdatePeerIdIfNeeded(peer_id);
+        m_HttpConn->UpdatePeerId(peer_id);
 }
 
 

@@ -876,17 +876,13 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
     string      user_agent = req.GetHeaderValue(kUserAgentHeader);
     if (!user_agent.empty()) {
         extra.Print(kUserAgentApplog, user_agent);
-        // This will update the user agent in the connection properties if
-        // needed, i.e. if the field was not set before
-        reply->UpdatePeerUserAgentIfNeeded(user_agent);
+        reply->UpdatePeerUserAgent(user_agent);
     }
 
     string      peer_id = req.GetHeaderValue(kPeerIdHeader);
     if (!peer_id.empty()) {
         extra.Print(kPeerIdApplog, peer_id);
-        // This will update the peer id in the connection properties if
-        // needed, i.e. if the field was not set before
-        reply->UpdatePeerIdIfNeeded(peer_id);
+        reply->UpdatePeerId(peer_id);
     }
 
 

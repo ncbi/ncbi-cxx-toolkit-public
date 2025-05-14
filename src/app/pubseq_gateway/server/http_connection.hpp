@@ -85,8 +85,8 @@ struct SConnectionRunTimeProperties
     void UpdateLastRequestTimestamp(void);
     void UpdatePeerIdAndUserAgent(const string &  peer_id,
                                   const string &  peer_user_agent);
-    void UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent);
-    void UpdatePeerIdIfNeeded(const string &  peer_id);
+    void UpdatePeerUserAgent(const string &  peer_user_agent);
+    void UpdatePeerId(const string &  peer_id);
 };
 
 
@@ -187,14 +187,14 @@ public:
         m_RunTimeProps.UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
     }
 
-    void UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
+    void UpdatePeerUserAgent(const string &  peer_user_agent)
     {
-        m_RunTimeProps.UpdatePeerUserAgentIfNeeded(peer_user_agent);
+        m_RunTimeProps.UpdatePeerUserAgent(peer_user_agent);
     }
 
-    void UpdatePeerIdIfNeeded(const string &  peer_id)
+    void UpdatePeerId(const string &  peer_id)
     {
-        m_RunTimeProps.UpdatePeerIdIfNeeded(peer_id);
+        m_RunTimeProps.UpdatePeerId(peer_id);
     }
 
 private:
