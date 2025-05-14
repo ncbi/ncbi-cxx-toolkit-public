@@ -135,14 +135,14 @@ def SendThread(stop_event, host, port, delay):
         periodic_url = f"https://{host}:{port}/ID/resolve?seq_id=not_exist&use_cache=yes"
 
     session = requests.Session()
-    r = session.get(hello_url, timeout=PSG_TIMEOUT)
+    r = session.get(hello_url, timeout=PSG_TIMEOUT, headers={'user-agent': ''})
     if r.status_code != 200:
         print(f'/hello request status code {r.status_code} indicates an error')
         return
 
     while True:
         # send request
-        r = session.get(periodic_url, timeout=PSG_TIMEOUT)
+        r = session.get(periodic_url, timeout=PSG_TIMEOUT, headers={'user-agent': ''})
         if r.status_code != 200:
             print(f'ID/resolve request status code {r.status_code} indicates an error')
             return
