@@ -2031,8 +2031,24 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
         len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit), buf);
         content.append(", ")
                .append("\"soft_limit_req_rejected_cnt\": ")
-               .append(buf, len)
-               .append(", ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_TcpMaxConnAlertLimit, buf);
+        content.append(", ")
+               .append("\"conn_alert_limit\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_TcpMaxConnSoftLimit, buf);
+        content.append(", ")
+               .append("\"conn_soft_limit\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_TcpMaxConn, buf);
+        content.append(", ")
+               .append("\"conn_hard_limit\": ")
+               .append(buf, len);
+
+        content.append(", ")
                .append("\"conn_info\": ")
                .append(m_HttpDaemon->GetConnectionsStatus(reply->GetConnectionId()))
                .append(1, '}');
