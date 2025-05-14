@@ -4184,7 +4184,11 @@ static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Pa
         keyindx = -1;
         if (subtype == CSeqFeatData::eSubtype_bad && ! deb) {
             if (source == Parser::ESource::USPTO)
+            {
+                if(fbp->key == "NON_STD")
+                    fbp->key = "MOD_RES";
                 keyindx = SpFeatKeyNameValid(fbp->key.c_str());
+            }
             if (keyindx < 0 && ! deb) {
                 FtaErrPost(SEV_ERROR, ERR_FEATURE_UnknownFeatKey, fbp->key + "Feature dropped");
                 dbp.mDrop = true;
