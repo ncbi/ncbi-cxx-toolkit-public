@@ -2175,7 +2175,7 @@ _PSIComputeFreqRatios(const _PSIMsa* msa,
         }
     }
 
-    freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+    _PSIMatrixFrequencyRatiosFree(freq_ratios);
 
     return PSI_SUCCESS;
 }
@@ -2287,7 +2287,7 @@ _PSIComputeFreqRatiosFromCDs(const PSICdMsa* cd_msa,
         }
     }
 
-    freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+    _PSIMatrixFrequencyRatiosFree(freq_ratios);
 
     return PSI_SUCCESS;
 }
@@ -2465,7 +2465,7 @@ _PSIConvertFreqRatiosToPSSM(_PSIInternalPssmData* internal_pssm,
         }
     }
 
-    freq_ratios = _PSIMatrixFrequencyRatiosFree(freq_ratios);
+    _PSIMatrixFrequencyRatiosFree(freq_ratios);
 
     return PSI_SUCCESS;
 }
