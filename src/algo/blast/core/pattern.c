@@ -583,6 +583,7 @@ Int4 PHIGetPatternOccurrences(const SPHIPatternSearchBlk * pattern_blk,
          if (hitArray[i+1]+from == 0 &&
               hitArray[i]-hitArray[i+1]+1 == BlastQueryInfoGetQueryLength(query_info, program, 0))
          {
+            sfree(hitArray);
             return INT4_MAX;
          }
          s_PHIBlastAddPatternHit(pattern_info, hitArray[i+1]+from, 
