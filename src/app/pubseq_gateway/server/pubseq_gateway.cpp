@@ -783,7 +783,9 @@ static string       kNcbiSidHeader = "HTTP_NCBI_SID";
 static string       kNcbiPhidHeader = "HTTP_NCBI_PHID";
 static string       kXForwardedForHeader = "X-Forwarded-For";
 static string       kUserAgentHeader = "User-Agent";
+static string       kPeerIdHeader = "NCBI-PEER-ID";
 static string       kUserAgentApplog = "USER_AGENT";
+static string       kPeerIdApplog = "NCBI_PEER_ID";
 static string       kRequestPathApplog = "request_path";
 static string       kConnectionId = "connection_id";
 
@@ -877,6 +879,14 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
         // This will update the user agent in the connection properties if
         // needed, i.e. if the field was not set before
         reply->UpdatePeerUserAgentIfNeeded(user_agent);
+    }
+
+    string      peer_id = req.GetHeaderValue(kPeerIdHeader);
+    if (!peer_id.empty()) {
+        extra.Print(kPeerIdApplog, peer_id);
+        // This will update the peer id in the connection properties if
+        // needed, i.e. if the field was not set before
+        reply->UpdatePeerIdIfNeeded(peer_id);
     }
 
 

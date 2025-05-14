@@ -175,6 +175,13 @@ void CPSGS_Reply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
 }
 
 
+void CPSGS_Reply::UpdatePeerIdIfNeeded(const string &  peer_id)
+{
+    if (m_Reply)
+        m_Reply->UpdatePeerIdIfNeeded(peer_id);
+}
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);

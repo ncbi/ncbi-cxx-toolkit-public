@@ -128,14 +128,21 @@ void CHttpReply::UpdatePeerIdAndUserAgent(const string &  peer_id,
                                           const string &  peer_user_agent)
 {
     if (m_HttpConn)
-        return m_HttpConn->UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
+        m_HttpConn->UpdatePeerIdAndUserAgent(peer_id, peer_user_agent);
 }
 
 
 void CHttpReply::UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent)
 {
     if (m_HttpConn)
-        return m_HttpConn->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+        m_HttpConn->UpdatePeerUserAgentIfNeeded(peer_user_agent);
+}
+
+
+void CHttpReply::UpdatePeerIdIfNeeded(const string &  peer_id)
+{
+    if (m_HttpConn)
+        m_HttpConn->UpdatePeerIdIfNeeded(peer_id);
 }
 
 

@@ -316,6 +316,7 @@ public:
     void UpdatePeerIdAndUserAgent(const string &  peer_id,
                                   const string &  peer_user_agent);
     void UpdatePeerUserAgentIfNeeded(const string &  peer_user_agent);
+    void UpdatePeerIdIfNeeded(const string &  peer_id);
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver
