@@ -161,6 +161,21 @@ def formatTimestamp(ts):
         return parts[0] + '.0' + str(val)
     return parts[0] + '.' + str(val)
 
+
+def formatDuration(ts):
+    """It comes timedelta.
+       New rule: Do not show fraction of seconds in "duration" if it's greater than 3 sec"""
+    if ts.total_seconds() <= 3.0:
+        return formatTimestamp(ts)
+
+    as_str = str(ts)
+    if '.' not in as_str:
+        return as_str
+
+    parts = as_str.split('.')
+    return parts[0]
+
+
 def roundToSignDigits(value, num_of_digits):
     """Rounding to the <num_of_digits> most significant digits"""
     # https://stackoverflow.com/questions/3410976/how-to-round-a-number-to-significant-figures-in-python
@@ -271,10 +286,22 @@ def processRegularAsSummary(files):
     conn_per_peer_max_num_con = 0
     conn_per_peer_max_peers = []
 
+    # Accumulation of the information for the user agent
+    all_conn_per_user_agent = []
+    conn_per_user_agent_max_num_con = 0
+    conn_per_user_agent_max_user_agents = []
+
+    # Accumulation of the information for the peer ID
+    all_conn_per_peer_id = []
+    conn_per_peer_id_max_num_con = 0
+    conn_per_peer_id_max_peer_ids = []
+
     # Accumulation of the information for the connection life time
     all_conn_life_time_per_server = {}  # {host:port-service: {conn_id: {open_ts: <>, last_seen: <>}}}
     conn_life_time_max_duration = datetime.timedelta(seconds=0)
     conn_life_time_max_peer = ''
+    conn_life_time_max_peer_id = ''
+    conn_life_time_max_user_agent = ''
 
     # Accumulate the info about refused connections and refused requests per
     # server
@@ -283,6 +310,9 @@ def processRegularAsSummary(files):
                         #                      min_req_rejected: <int>,
                         #                      max_req_rejected: <int>}
 
+    conn_alert_limit = None
+    conn_soft_limit = None
+    conn_hard_limit = None
 
     total = 0
     for json_file in files:
@@ -302,10 +332,19 @@ def processRegularAsSummary(files):
         if data['service']:
             instance_id += '-' + data['service']
 
+        if conn_alert_limit is None and 'conn_alert_limit' in data:
+            conn_alert_limit = data['conn_alert_limit']
+        if conn_soft_limit is None and 'conn_soft_limit' in data:
+            conn_soft_limit = data['conn_soft_limit']
+        if conn_hard_limit is None and 'conn_hard_limit' in data:
+            conn_hard_limit = data['conn_hard_limit']
+
         # Memorize #of connections regardless on what server it was
         all_num_conns.append(num_conn)
 
         conn_per_peer = {}
+        conn_per_user_agent = {}
+        conn_per_peer_id = {}
         for conn_prop in data['connections']:
             # Deal with connections per peer data
             peer = conn_prop['peer_ip']
@@ -313,6 +352,26 @@ def processRegularAsSummary(files):
                 conn_per_peer[peer] = 1 # first found connection for the peer
             else:
                 conn_per_peer[peer] = conn_per_peer[peer] + 1
+
+            # Deal with connections per user data
+            if 'peer_user_agent' in conn_prop:
+                user_agent = conn_prop['peer_user_agent']
+                peer = conn_prop['peer_ip']
+                if user_agent not in conn_per_user_agent:
+                    # first found connection for the user agent
+                    conn_per_user_agent[user_agent] = 1
+                else:
+                    conn_per_user_agent[user_agent] = conn_per_user_agent[user_agent] + 1
+
+            # Deal with connections per peer id
+            if 'peer_id' in conn_prop:
+                # a combined peer id should be used
+                peer_id = conn_prop['peer_ip'] + ':' + conn_prop['peer_id']
+                if peer_id not in conn_per_peer_id:
+                    # first found connection for the user agent
+                    conn_per_peer_id[peer_id] = 1
+                else:
+                    conn_per_peer_id[peer_id] = conn_per_peer_id[peer_id] + 1
 
 
             # Deal with the connection life time
@@ -325,10 +384,24 @@ def processRegularAsSummary(files):
             if conn_id not in all_conn_life_time_per_server[instance_id]:
                 all_conn_life_time_per_server[instance_id][conn_id] = {'open_ts': conn_open_ts,
                                                                        'last_seen': ts,
-                                                                       'peer': peer}
+                                                                       'peer': peer,
+                                                                       'peer_id': '',
+                                                                       'peer_user_agent': ''}
+                if 'peer_id' in conn_prop:
+                    all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] = conn_prop['peer_id']
+                if 'peer_user_agent' in conn_prop:
+                    all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] = conn_prop['peer_user_agent']
             else:
                 if all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] < ts:
                     all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] = ts
+                    if 'peer_id' in conn_prop:
+                        all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] = conn_prop['peer_id']
+                    else:
+                        all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] = ''
+                    if 'peer_user_agent' in conn_prop:
+                        all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] = conn_prop['peer_user_agent']
+                    else:
+                        all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] = ''
 
         # Deal with rejections
         conn_refused = data['hard_limit_conn_refused_cnt']
@@ -361,6 +434,28 @@ def processRegularAsSummary(files):
                 if not peer in conn_per_peer_max_peers:
                     conn_per_peer_max_peers.append(peer)
 
+        # Deal with connections per user agent data
+        for user_agent in conn_per_user_agent:
+            user_agent_num_con = conn_per_user_agent[user_agent]
+            all_conn_per_user_agent.append(user_agent_num_con)
+            if user_agent_num_con > conn_per_user_agent_max_num_con:
+                conn_per_user_agent_max_num_con = user_agent_num_con
+                conn_per_user_agent_max_user_agents = [user_agent]
+            elif user_agent_num_con == conn_per_user_agent_max_num_con:
+                if not user_agent in conn_per_user_agent_max_user_agents:
+                    conn_per_user_agent_max_user_agents.append(user_agent)
+
+        # Deal with connections per peer id
+        for peer_id in conn_per_peer_id:
+            peer_id_num_con = conn_per_peer_id[peer_id]
+            all_conn_per_peer_id.append(peer_id_num_con)
+            if peer_id_num_con > conn_per_peer_id_max_num_con:
+                conn_per_peer_id_max_num_con = peer_id_num_con
+                conn_per_peer_id_max_peer_ids = [peer_id]
+            elif peer_id_num_con == conn_per_peer_id_max_num_con:
+                if not peer_id in conn_per_peer_id_max_peer_ids:
+                    conn_per_peer_id_max_peer_ids.append(peer_id)
+
         if instance_id in instances:
             instances[instance_id]['num_conn'].append(num_conn)
         else:
@@ -380,6 +475,9 @@ def processRegularAsSummary(files):
 
     # Deal with connection life time for all the servers.
     all_conns_durations = []
+    total_connections = 0
+    total_peer_id_not_set = 0
+    total_peer_user_agent_not_set = 0
     for instance_id in all_conn_life_time_per_server:
         for conn_id in all_conn_life_time_per_server[instance_id]:
             conn_open_ts = all_conn_life_time_per_server[instance_id][conn_id]['open_ts']
@@ -388,23 +486,70 @@ def processRegularAsSummary(files):
             if duration > conn_life_time_max_duration:
                 conn_life_time_max_duration = duration
                 conn_life_time_max_peer = all_conn_life_time_per_server[instance_id][conn_id]['peer']
+                conn_life_time_max_peer_id = all_conn_life_time_per_server[instance_id][conn_id]['peer_id']
+                conn_life_time_max_user_agent = all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent']
             all_conns_durations.append(duration.total_seconds())
+            total_connections += 1
+            if all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] == '':
+                total_peer_id_not_set += 1
+            if all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] == '':
+                total_peer_user_agent_not_set += 1
 
 
-    num_con_min = min(all_num_conns)
-    num_con_median = statistics.median(all_num_conns)
-    num_con_avg = statistics.mean(all_num_conns)
-    num_con_max = max(all_num_conns)
+    if all_num_conns:
+        num_con_min = min(all_num_conns)
+        num_con_median = statistics.median(all_num_conns)
+        num_con_avg = statistics.mean(all_num_conns)
+        num_con_max = max(all_num_conns)
+    else:
+        num_con_min = 0
+        num_con_median = 0
+        num_con_avg = 0
+        num_con_max = 0
 
-    num_con_per_peer_min = min(all_conn_per_peer)
-    num_con_per_peer_median = statistics.median(all_conn_per_peer)
-    num_con_per_peer_avg = statistics.mean(all_conn_per_peer)
-    num_con_per_peer_max = max(all_conn_per_peer)
+    if all_conn_per_peer:
+        num_con_per_peer_min = min(all_conn_per_peer)
+        num_con_per_peer_median = statistics.median(all_conn_per_peer)
+        num_con_per_peer_avg = statistics.mean(all_conn_per_peer)
+        num_con_per_peer_max = max(all_conn_per_peer)
+    else:
+        num_con_per_peer_min = 0
+        num_con_per_peer_median = 0
+        num_con_per_peer_avg = 0
+        num_con_per_peer_max = 0
 
-    conn_life_time_min = min(all_conns_durations)
-    conn_life_time_median = statistics.median(all_conns_durations)
-    conn_life_time_avg = statistics.mean(all_conns_durations)
-    conn_life_time_max = max(all_conns_durations)
+    if all_conn_per_user_agent:
+        num_con_per_user_agent_min = min(all_conn_per_user_agent)
+        num_con_per_user_agent_median = statistics.median(all_conn_per_user_agent)
+        num_con_per_user_agent_avg = statistics.mean(all_conn_per_user_agent)
+        num_con_per_user_agent_max = max(all_conn_per_user_agent)
+    else:
+        num_con_per_user_agent_min = 0
+        num_con_per_user_agent_median = 0
+        num_con_per_user_agent_avg = 0
+        num_con_per_user_agent_max = 0
+
+    if all_conn_per_peer_id:
+        num_con_per_peer_id_min = min(all_conn_per_peer_id)
+        num_con_per_peer_id_median = statistics.median(all_conn_per_peer_id)
+        num_con_per_peer_id_avg = statistics.mean(all_conn_per_peer_id)
+        num_con_per_peer_id_max = max(all_conn_per_peer_id)
+    else:
+        num_con_per_peer_id_min = 0
+        num_con_per_peer_id_median = 0
+        num_con_per_peer_id_avg = 0
+        num_con_per_peer_id_max = 0
+
+    if all_conns_durations:
+        conn_life_time_min = min(all_conns_durations)
+        conn_life_time_median = statistics.median(all_conns_durations)
+        conn_life_time_avg = statistics.mean(all_conns_durations)
+        conn_life_time_max = max(all_conns_durations)
+    else:
+        conn_life_time_min = 0
+        conn_life_time_median = 0
+        conn_life_time_avg = 0
+        conn_life_time_max = 0
 
 
     for instance_id in instances.keys():
@@ -413,25 +558,49 @@ def processRegularAsSummary(files):
         instances[instance_id]['duration'] = delta_ts_as_str
         print(f'    {instance_id}')
         print(f'        Covered time interval: {formatTimestamp(start_ts)} - {formatTimestamp(end_ts)}')
-        print(f'                               {formatTimestamp(start_ts)}, duration {delta_ts_as_str}')
+        print(f'                               {formatTimestamp(start_ts)}, duration {formatDuration(delta_ts)}')
         refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
         instances[instance_id]['refused_conn'] = refused_conn
-        print(f'        Refused connections: {refused_conn}')
+        print(f'        Refused connections:   {refused_conn:,}')
         rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
         instances[instance_id]['rejected_req'] = rejected_req
-        print(f'        Rejected requests: {rejected_req}')
+        print(f'        Rejected requests:     {rejected_req:,}')
 
     # Form a table
-    max_conn_peers = ', '.join(conn_per_peer_max_peers)
+    cnt = len(conn_per_peer_max_peers)
+    if cnt < 3:
+        max_conn_peers = ', '.join(conn_per_peer_max_peers)
+    else:
+        max_conn_peers = conn_per_peer_max_peers[0] + ', ' + conn_per_peer_max_peers[1] + f', and {cnt - 2} more'
+    cnt = len(conn_per_user_agent_max_user_agents)
+    if cnt < 3:
+        max_conn_user_agents = ', '.join(conn_per_user_agent_max_user_agents)
+    else:
+        max_conn_user_agents = conn_per_user_agent_max_user_agents[0] + ', ' + conn_per_user_agent_max_user_agents[1] + f', and {cnt - 2} more'
+    cnt = len(conn_per_peer_id_max_peer_ids)
+    if cnt < 3:
+        max_conn_peer_ids = ', '.join(conn_per_peer_id_max_peer_ids)
+    else:
+        max_conn_peer_ids = conn_per_peer_id_max_peer_ids[0] + ', ' + conn_per_peer_id_max_peer_ids[1] + f', and {cnt - 2} more'
     print()
-    print(f'                  {"Min":>10}{"Median":>10}{"Average":>10}{"Max":>10}   MaxPeerIP(s)')
-    print(f'    Connections:  {roundToSignDigits(num_con_min, 3):>10}{roundToSignDigits(num_con_median, 3):>10}{roundToSignDigits(num_con_avg, 3):>10}{roundToSignDigits(num_con_max, 3):>10}')
-    print(f'    Conn/peer:    {roundToSignDigits(num_con_per_peer_min, 3):>10}{roundToSignDigits(num_con_per_peer_median, 3):>10}{roundToSignDigits(num_con_per_peer_avg, 3):>10}{roundToSignDigits(num_con_per_peer_max, 3):>10}   {max_conn_peers}')
-    print(f'    Conn life(s): {roundToSignDigits(conn_life_time_min, 3):>10}{roundToSignDigits(conn_life_time_median, 3):>10}{roundToSignDigits(conn_life_time_avg, 3):>10}{roundToSignDigits(conn_life_time_max, 3):>10}   {conn_life_time_max_peer}')
+    print(f'                              {"Min":>10}{"Median":>10}{"Average":>10}{"Max":>10}   Max: PeerIP/UserAgent/PeerID')
+    print(f'    Connections:              {roundToSignDigits(num_con_min, 2):>10}{roundToSignDigits(num_con_median, 2):>10}{roundToSignDigits(num_con_avg, 2):>10}{roundToSignDigits(num_con_max, 2):>10}   (Thresholds: alarm={conn_alert_limit}, soft={conn_soft_limit}, hard={conn_hard_limit})')
+    print(f'    Conn/peer:                {roundToSignDigits(num_con_per_peer_min, 2):>10}{roundToSignDigits(num_con_per_peer_median, 2):>10}{roundToSignDigits(num_con_per_peer_avg, 2):>10}{roundToSignDigits(num_con_per_peer_max, 2):>10}   {max_conn_peers}')
+    print(f'    Conn/user agent:          {roundToSignDigits(num_con_per_user_agent_min, 2):>10}{roundToSignDigits(num_con_per_user_agent_median, 2):>10}{roundToSignDigits(num_con_per_user_agent_avg, 2):>10}{roundToSignDigits(num_con_per_user_agent_max, 2):>10}   {max_conn_user_agents}')
+    print(f'    Conn/peer id:             {roundToSignDigits(num_con_per_peer_id_min, 2):>10}{roundToSignDigits(num_con_per_peer_id_median, 2):>10}{roundToSignDigits(num_con_per_peer_id_avg, 2):>10}{roundToSignDigits(num_con_per_peer_id_max, 2):>10}   {max_conn_peer_ids}')
+    print(f'    Conn/peer life(s):        {roundToSignDigits(conn_life_time_min, 2):>10}{roundToSignDigits(conn_life_time_median, 2):>10}{roundToSignDigits(conn_life_time_avg, 2):>10}{roundToSignDigits(conn_life_time_max, 2):>10}   {conn_life_time_max_user_agent} @ {conn_life_time_max_peer} - {conn_life_time_max_peer_id}')
+    peer_id_not_set_percent = float(total_peer_id_not_set) / float(total_connections) * 100.0
+    peer_user_agent_not_set_percent = float(total_peer_user_agent_not_set) / float(total_connections) * 100.0
+    print(f'    Total connections:       {total_connections:,}')
+    print(f'    Peer id not set:         {roundToSignDigits(peer_id_not_set_percent, 2)}%')
+    print(f'    Peer user agent not set: {roundToSignDigits(peer_user_agent_not_set_percent, 2)}%')
+
     print()
 
     # prepare the output data
-    regular = {'instances': instances,
+    regular = {'total_connections': total_connections,
+               'peer_id_not_set_percent': peer_id_not_set_percent,
+               'peer_user_agent_not_set_percent': peer_user_agent_not_set_percent,
                'conn_num': {'min': num_con_min,
                             'median': num_con_median,
                             'avg': num_con_avg,
@@ -441,11 +610,24 @@ def processRegularAsSummary(files):
                                      'avg': num_con_per_peer_avg,
                                      'max': num_con_per_peer_max,
                                      'max_peers': conn_per_peer_max_peers},
+               'conn_num_per_user_agent': {'min': num_con_per_user_agent_min,
+                                           'median': num_con_per_user_agent_median,
+                                           'avg': num_con_per_user_agent_avg,
+                                           'max': num_con_per_user_agent_max,
+                                           'max_user_agents': conn_per_user_agent_max_user_agents},
+               'conn_num_per_peer_id': {'min': num_con_per_peer_id_min,
+                                        'median': num_con_per_peer_id_median,
+                                        'avg': num_con_per_peer_id_avg,
+                                        'max': num_con_per_peer_id_max,
+                                        'max_peer_ids': conn_per_peer_id_max_peer_ids},
                'conn_lifetime': {'min': conn_life_time_min,
                                  'median': conn_life_time_median,
                                  'avg': conn_life_time_avg,
                                  'max': conn_life_time_max,
-                                 'max_peer': conn_life_time_max_peer}}
+                                 'max_peer': conn_life_time_max_peer,
+                                 'max_peer_id': conn_life_time_max_peer_id,
+                                 'max_peer_user_agent': conn_life_time_max_user_agent},
+               'instances': instances}
     return regular
 
 
@@ -526,20 +708,20 @@ def processAlarmAsSummary(files, regular_results):
         instances[instance_id]['duration'] = delta_ts_as_str
         print(f'    {instance_id}')
         print(f'        Covered time interval: {formatTimestamp(start_ts)} - {formatTimestamp(end_ts)}')
-        print(f'                               {formatTimestamp(start_ts)}, duration {delta_ts_as_str}')
+        print(f'                               {formatTimestamp(start_ts)}, duration {formatDuration(delta_ts)}')
         num_alerts = instances[instance_id]['num_alerts']
         alert_time = instances[instance_id]['alert_time']
         print(f'        Number of alerts:      {num_alerts}')
         print(f'        Time in alerts (sec):  {alert_time}')
         refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
         instances[instance_id]['refused_conn'] = refused_conn
-        print(f'        Refused connections: {refused_conn}')
+        print(f'        Refused connections:   {refused_conn:,}')
         rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
         instances[instance_id]['rejected_req'] = rejected_req
-        print(f'        Rejected requests: {rejected_req}')
+        print(f'        Rejected requests:     {rejected_req:,}')
 
-    print(f'    Total number of alerts:     {total_alerts}')
-    print(f'    Total time in alerts (sec): {total_alert_time}')
+    print(f'    Total number of alerts:     {total_alerts:,}')
+    print(f'    Total time in alerts (sec): {roundToSignDigits(total_alert_time, 2)}')
 
     # Calculate the total covered by all the regular data
     total_regular_coverage = datetime.timedelta(seconds=0)
@@ -564,7 +746,7 @@ def processAlarmAsSummary(files, regular_results):
     else:
         ratio = float(total_alarm_coverage_sec) / float(regular_coverage_sec)
         ratio *= 100.0
-        print(f'    Alert % (total alert time/total regular coverage): {roundToSignDigits(ratio, 3)}')
+        print(f'    Alert % (total alert time/total regular coverage): {roundToSignDigits(ratio, 2)}%')
 
     if alarm_without_regular_instances:
         print(f'    Alert instances which have no records in regular data: {", ".join(alarm_without_regular_instances)}')

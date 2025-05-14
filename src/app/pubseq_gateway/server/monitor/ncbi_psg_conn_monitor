@@ -305,6 +305,9 @@ def saveContentToFile(dst_dir, host, port, service, kind, content, check_backoff
                   'timestamp': date_as_str + '-' + time_as_str,
                   'hard_limit_conn_refused_cnt': content['hard_limit_conn_refused_cnt'],
                   'soft_limit_req_rejected_cnt': content['soft_limit_req_rejected_cnt'],
+                  'conn_alert_limit': content['conn_alert_limit'],
+                  'conn_soft_limit': content['conn_soft_limit'],
+                  'conn_hard_limit': content['conn_hard_limit'],
                   'connections': content['conn_info']}
         if kind == 'alarm':
             output['check_backoff'] = check_backoff
