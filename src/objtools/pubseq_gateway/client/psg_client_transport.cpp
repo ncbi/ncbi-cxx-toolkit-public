@@ -1061,6 +1061,16 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 }
 
 
+struct SPSG_NcbiPeerID
+{
+    static const string& Get()
+    {
+        static const string ncbi_peer_id(GetDiagContext().GetStringUID());
+        return ncbi_peer_id;
+    }
+};
+
+
 #define HTTP_STATUS_HEADER ":status"
 
 
@@ -1084,6 +1094,7 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
         { ":authority", m_Authority },
         { ":path" },
         { "user-agent", SUvNgHttp2_UserAgent::Get() },
+        { "ncbi-peer-id", SPSG_NcbiPeerID::Get() },
         { "http_ncbi_sid" },
         { "http_ncbi_phid" },
         { "cookie" },
