@@ -373,7 +373,7 @@ static void s_ParseIds(CRequestContext& ctx, trace::TraceId& trace_id, trace::Sp
             flags = (flags_buf[0] << 8) | flags_buf[1];
             return;
         }
-        catch (CStringException) {
+        catch (CStringException&) {
         }
     }
 
