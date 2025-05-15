@@ -96,11 +96,11 @@ protected:
     /// pushed back from the internal buffers before dropping them off.
     virtual CNcbiStreambuf* setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
-    /// Only seekoff(0, IOS_BASE::cur, *) to obtain current position, and input
-    /// skip-forward are permitted:
+    /// Only seekoff(0, IOS_BASE::cur, *) to obtain the current position, and
+    /// input skip-forward are permitted:
     /// seekoff(off, IOS_BASE::cur or IOS_BASE::beg, IOS_BASE::in) when the
-    /// requested stream position is past the current input position (so the
-    /// stream can read forward internally to reach that position).
+    /// requested stream position is at or past the current input position (so
+    /// that the stream can read forward internally to reach that position).
     virtual CT_POS_TYPE seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
                                 IOS_BASE::openmode which =
                                 IOS_BASE::in | IOS_BASE::out);
