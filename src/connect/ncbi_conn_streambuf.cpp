@@ -61,7 +61,7 @@ static inline bool x_IsThrowable(EIO_Status status)
 }
 
 
-static inline bool x_CheckConn(CONN conn)
+static inline bool x_CheckConn(const CONN conn)
 {
     if (conn)
         return true;
@@ -69,6 +69,16 @@ static inline bool x_CheckConn(CONN conn)
     NCBI_IO_CHECK(eIO_Closed);
 #endif // !NCBI_COMPILER_GCC || NCBI_COMPILER_VERSION>=700
     return false;
+}
+
+
+static inline const STimeout* x_GetDefaultTimeout(const CONN conn)
+{
+    // HACK * HACK * HACK
+    const STimeout* timeout
+        = reinterpret_cast<const SMetaConnector*>(conn)->default_timeout;
+    _ASSERT(timeout != kDefaultTimeout);
+    return timeout;
 }
 
 
@@ -100,15 +110,16 @@ string CConn_Streambuf::x_Message(const char*     method,
         status  = m_Status;
     _ASSERT(status != eIO_Success);
     result += IO_StatusStr(status);
-    if (status == eIO_Timeout  &&  timeout/*!=kInfiniteTimeout*/) {
-        if (timeout != kDefaultTimeout) {
+    if (status == eIO_Timeout) {
+        if (timeout == kDefaultTimeout)
+            timeout  = x_GetDefaultTimeout(m_Conn);
+        if (timeout/*!=kInfiniteTimeout*/) {
             char x_timeout[40];
             ::sprintf(x_timeout, "[%u.%06us]",
                       timeout->usec / 1000000 + timeout->sec,
                       timeout->usec % 1000000);
             result += x_timeout;
-        } else
-            result += "(default)";
+        }
     }
     return result;
 }
@@ -244,10 +255,8 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
             buf_size  = 0;
         if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
             m_ReadBuf = write_buf + buf_size;
-#if 0/*unnecessary*/
         if (  flgs & CConn_IOStream::fConn_WriteUnbuffered)
             write_buf = 0;
-#endif
         setp(write_buf, write_buf + buf_size);
     }/* else
         setp(0, 0) */
@@ -359,9 +368,12 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
         if (m_Close) {
             STimeout        xtmo;
             const STimeout* ctmo = CONN_GetTimeout(conn, eIO_Close);
-            if (ctmo != kInfiniteTimeout  &&  ctmo != kDefaultTimeout) {
-                xtmo  = *ctmo;
-                ctmo  = &xtmo;
+            if (ctmo/*!= kInfiniteTimeout*/) {
+                if (ctmo != kDefaultTimeout) {
+                    xtmo  = *ctmo;
+                    ctmo  = &xtmo;
+                } else
+                    ctmo  = x_GetDefaultTimeout(conn);
             }
             if ((m_Status = CONN_Close(conn)) != eIO_Success) {
                 _ALWAYS_TRACE(x_Message("Close",
@@ -735,31 +747,27 @@ streamsize CConn_Streambuf::showmanyc(void)
     if (m_Tie)
         x_Sync();
 
-    const STimeout* tmo;
     const STimeout* timeout = CONN_GetTimeout(m_Conn, eIO_Read);
-    if (timeout == kDefaultTimeout) {
-        // HACK * HACK * HACK
-        tmo = ((SMetaConnector*) m_Conn)->default_timeout;
-        _ASSERT(tmo != kDefaultTimeout);
-    } else
-        tmo = timeout;
+    const STimeout* x_tmo
+        = timeout == kDefaultTimeout ? x_GetDefaultTimeout(m_Conn) : timeout;
+    bool polling = !x_tmo/*kInfiniteTimeout*/  ||  (x_tmo->sec | x_tmo->usec);
 
-    if (!tmo)
+    if (polling)
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, POLLING) == eIO_Success);
     size_t x_read;
     m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize, &x_read, eIO_ReadPlain);
-    if (!tmo)
+    if (polling)
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout) == eIO_Success);
     _ASSERT(x_read > 0  ||  m_Status != eIO_Success);
 
     if (!x_read) {
         switch (m_Status) {
         case eIO_Timeout:
-            if (!tmo  ||  (tmo->sec | tmo->usec))
+            if (polling)
                 break;
-            /*FALLTHRU*/
+            /*FALLTHRU*/ // no data available for non-blocking I/O
         case eIO_Closed:
-            return -1L;  // EOF
+            return -1L;  // EOF / no data available
         case eIO_Success:
             _TROUBLE;
             /*FALLTHRU*/
@@ -768,7 +776,7 @@ streamsize CConn_Streambuf::showmanyc(void)
                 NCBI_IO_CHECK(m_Status);
             break;
         }
-        return       0;  // no data available immediately
+        return       0;  // indeterminate if any data available
     }
 
     m_Initial = false;
@@ -839,10 +847,8 @@ EIO_Status CConn_Streambuf::Fetch(const STimeout* timeout)
         return eIO_InvalidArg;
 
     if (timeout == kDefaultTimeout) {
-        // HACK * HACK * HACK
-        timeout = ((SMetaConnector*) m_Conn)->default_timeout;
-        _ASSERT(timeout != kDefaultTimeout);
-        if (!timeout)
+        timeout  = x_GetDefaultTimeout(m_Conn);
+        if (!timeout/*kInfiniteTimeout*/)
             timeout = &g_NcbiDefConnTimeout;
     }
 
