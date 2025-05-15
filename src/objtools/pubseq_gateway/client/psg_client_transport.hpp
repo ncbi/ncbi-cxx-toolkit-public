@@ -831,7 +831,7 @@ protected:
             const uint8_t* value, size_t valuelen, uint8_t flags);
 
 private:
-    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, eSessionID, eSubHitID, eCookie, eClientIP, eSize };
+    enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, ePeerID, eSessionID, eSubHitID, eCookie, eClientIP, eSize };
 
     SPSG_Submitter::TId GetInternalId() const { return this; }
 
