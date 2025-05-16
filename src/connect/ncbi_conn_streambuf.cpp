@@ -752,11 +752,11 @@ streamsize CConn_Streambuf::showmanyc(void)
         = timeout == kDefaultTimeout ? x_GetDefaultTimeout(m_Conn) : timeout;
     bool polling = !x_tmo/*kInfiniteTimeout*/  ||  (x_tmo->sec | x_tmo->usec);
 
-    if (polling)
-        _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, POLLING) == eIO_Success);
+    if (!x_tmo/*kInfiniteTimeout*/)
+        _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &g_NcbiDefConnTimeout) == eIO_Success);
     size_t x_read;
     m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize, &x_read, eIO_ReadPlain);
-    if (polling)
+    if (!x_tmo/*kInfiniteTimeout*/)
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout) == eIO_Success);
     _ASSERT(x_read > 0  ||  m_Status != eIO_Success);
 
