@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/gff2_reader.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <set>
 #include <map>
 
@@ -43,9 +44,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 class CGtfLocationMerger;
-class CGtfAttributes;
-
-CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& y);
 
 //  ============================================================================
 class CGtfAttributes
@@ -148,7 +146,6 @@ public:
         }
     }
 
-    friend CGtfAttributes g_GetIntersection(const CGtfAttributes& x, const CGtfAttributes& y);
 protected:
     MultiAttributes mAttributes;
 };
@@ -248,103 +245,86 @@ protected:
         CSeq_annot&,
         ILineErrorListener* =nullptr) override;
 
-    virtual bool xUpdateAnnotCds(
-        const CGtfReadRecord&,
-        CSeq_annot&);
-
-    virtual bool xUpdateAnnotTranscript(
-        const CGtfReadRecord&,
-        CSeq_annot&);
-
 private:
-    bool xUpdateAnnotParent(
+    void xUpdateAnnotCds(
+        const CGtfReadRecord&,
+        CSeq_annot&);
+
+    void xUpdateGeneAndMrna(
+        const CGtfReadRecord&,
+        CSeq_annot&);
+
+    void xUpdateAnnotParent(
         const CGtfReadRecord& record,
         const string& parentType,
         CSeq_annot& annot);
 
     bool xIsCommentLine(const CTempString& line) override;
 
+    void xAssignFeatureId(
+        const string& stub,
+        CSeq_feat& feat);
+
 protected:
     void xPostProcessAnnot(
         CSeq_annot&) override;
 
-    bool xCreateFeatureId(
-        const CGtfReadRecord&,
-        const string&,
+    void xFeatureSetQualifiersGene(
+        const CGtfAttributes& attribs,
         CSeq_feat&);
 
-    bool xCreateParentGene(
-        const CGtfReadRecord&,
-        CSeq_annot&);
-
-    bool xFeatureSetQualifiersGene(
-        const CGtfReadRecord& record,
+    void xFeatureSetQualifiersRna(
+        const CGtfAttributes& attribs,
         CSeq_feat&);
 
-    bool xFeatureSetQualifiersRna(
-        const CGtfReadRecord& record,
-        CSeq_feat&);
-
-    bool xFeatureSetQualifiersCds(
-        const CGtfReadRecord& record,
+    void xFeatureSetQualifiersCds(
+        const CGtfAttributes& attribs,
         CSeq_feat&);
 
 private:
-    bool xFeatureSetQualifiers(
-        const CGtfReadRecord& record,
+    void xFeatureSetQualifiers(
+        const CGtfAttributes& attribs,
         const set<string>& ignoredAttrs,
         CSeq_feat&);
 
-protected:    
+    void xCreateParent(
+            const CGtfReadRecord& record,
+            const string& parentType,
+            CSeq_annot& annot);
 
-    bool xCreateParentCds(
+    void xCreateGene(
         const CGtfReadRecord&,
         CSeq_annot&);
 
-    bool xCreateParentMrna(
+    void xCreateCds(
         const CGtfReadRecord&,
         CSeq_annot&);
 
-    bool xFeatureSetDataGene(
+    void xCreateRna(
+        const CGtfReadRecord& record,
+        CSeq_annot& annot);
+
+    void xFeatureSetDataGene(
         const CGtfReadRecord&,
         CSeq_feat&);
 
-    virtual bool xFeatureSetDataRna(
-        const CGtfReadRecord&,
-        CSeq_feat&,
-        CSeqFeatData::ESubtype );
-
-    bool xFeatureSetDataMrna(
+    void xFeatureSetDataCds(
         const CGtfReadRecord&,
         CSeq_feat&);
-
-    bool xFeatureSetDataCds(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-
-    bool xFeatureTrimQualifiers(
-        const CGtfReadRecord&,
-        CSeq_feat&);
-private:
-    bool xFeatureTrimQualifiers(
-        const CGtfAttributes& attributes,
-        CSeq_feat&);
-
-    bool xFeatureTrimQualifiers(
-        const CGtfAttributes& prevAttributes,
-        const CGtfAttributes& currentAttributes,
-        CSeq_feat&);
-
 
     void xCheckForGeneIdConflict(
         const CGtfReadRecord& record);
 
-
-    void xPropagateQualToParent(
-            const CGtfReadRecord& record,
+    void xAddQualToFeat(
+            const CGtfAttributes& attribs,
             const string& qualName,
-            CSeq_feat& parent);
+            CSeq_feat& feat);
 
+    void xAddQualsToParent(
+        const string& recType,
+        const CGtfAttributes& attribs,
+        const string& parentType,
+        CSeq_feat& parent);
 
 protected:
     CRef<CSeq_feat> xFindFeatById(
