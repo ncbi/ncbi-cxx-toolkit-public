@@ -271,35 +271,39 @@ void get_auth(string_view pt, ERefFormat format, string_view jour, CRef<CAuth_li
 }
 
 /**********************************************************/
-void get_auth_consortium(char* cons, CRef<CAuth_list>& auths)
+void get_auth_consortium(string_view str, CRef<CAuth_list>& auths)
 {
-    char* p;
-    char* q;
-
-    if (! cons || *cons == '\0')
+    if (str.empty())
         return;
 
-    for (q = cons;; q = p) {
-        p = StringChr(q, ';');
-        if (p)
-            *p = '\0';
+    for (string_view q = str; ! q.empty();) {
+        auto        p = q.find(';');
+        string_view name;
+        if (p != string_view::npos) {
+            name = q.substr(0, p);
+            q.remove_prefix(p + 1);
+        } else {
+            name = q;
+            q    = {};
+        }
 
         CRef<CAuthor> author(new CAuthor);
-        author->SetName().SetConsortium(q);
-
+        author->SetName().SetConsortium(string(name));
         if (auths.Empty())
             auths.Reset(new CAuth_list);
         auths->SetNames().SetStd().push_front(author);
 
-        if (! p)
-            break;
-
-        for (*p++ = ';'; *p == ';' || *p == ' ';)
-            p++;
-
-        if (NStr::EqualNocase(p, 0, 4, "and ")) {
-            for (p += 4; *p == ' ';)
-                p++;
+        while (! q.empty()) {
+            char c = q.front();
+            if (c == ';' || c == ' ')
+                q.remove_prefix(1);
+            else
+                break;
+        }
+        if (NStr::StartsWith(q, "and ", NStr::eNocase)) {
+            q.remove_prefix(4);
+            while (! q.empty() && q.front() == ' ')
+                q.remove_prefix(1);
         }
     }
 }
