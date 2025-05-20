@@ -540,13 +540,17 @@ endif()
 ##############################################################################
 # GRPC/PROTOBUF
 if(NOT NCBI_PROTOC_APP)
-    set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
+    if(EXISTS "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
+        set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/protoc.exe")
+    endif()
 endif()
 if(NOT NCBI_GRPC_PLUGIN)
-    set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
+    if(EXISTS "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
+        set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/ReleaseDLL/grpc_cpp_plugin.exe")
+    endif()
 endif()
 if(NOT EXISTS "${NCBI_PROTOC_APP}")
-    message("NOT FOUND: ${NCBI_PROTOC_APP}")
+    message("NOT FOUND NCBI_PROTOC_APP: ${NCBI_PROTOC_APP}")
 else()
 NCBI_define_Wcomponent(PROTOBUF
     libprotobuf.lib absl_random_distributions.lib
