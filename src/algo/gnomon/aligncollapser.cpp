@@ -2555,6 +2555,24 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
     return editedalign;
 }
 
+void CAlignCollapser::AddFlexible(int status, TSignedSeqPos pos, EStrand strand, Int8 id, double weight) {
+    int spec_extend = SPECIAL_ALIGN_LEN-1;
+    CGeneModel galign(strand, id, CGeneModel::eSR);
+    galign.SetWeight(weight);
+    if(status&CGeneModel::eRightFlexible)
+	galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
+    else
+	galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
+    if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
+	galign.Status() |= status;
+	auto rslt = m_special_aligns.emplace(make_tuple(status, pos, strand), CAlignModel(galign, galign.GetAlignMap()));
+	if(!rslt.second) { // same position exists  
+	    auto& stored = rslt.first->second;
+	    stored.SetWeight(stored.Weight()+weight);
+	}
+    }
+}
+
 #define COLLAPS_CHUNK 500000
 void CAlignCollapser::AddAlignment(CAlignModel& a) {
 
@@ -2595,7 +2613,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         status = CGeneModel::ePolyA;
 
     if(status != 0) {
-        int pos;
+        TSignedSeqPos pos;
         if(((status&CGeneModel::eCap) && a.Strand() == ePlus) || ((status&CGeneModel::ePolyA) && a.Strand() == eMinus)) {
             status |= CGeneModel::eRightFlexible;
             pos = a.Limits().GetFrom();
@@ -2603,31 +2621,9 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
             status |= CGeneModel::eLeftFlexible;
             pos = a.Limits().GetTo();
         }
-        if(a.Exons().size() == 1) {
-            a.Status() |= status;
-            auto rslt = m_special_aligns.emplace(make_tuple(status, pos), a);
-            if(!rslt.second) { // same position exists
-                auto& stored = rslt.first->second;
-                stored.SetWeight(stored.Weight()+a.Weight());
-            }
-            return;
-        } else {
-            int spec_extend = SPECIAL_ALIGN_LEN-1;
-            CGeneModel galign(a.Strand(), a.ID(), CGeneModel::eSR);
-            galign.SetWeight(a.Weight());
-            if(a.Strand() == ePlus)
-                galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
-            else
-                galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
-            if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
-                galign.Status() |= status;
-                auto rslt = m_special_aligns.emplace(make_tuple(status, pos), CAlignModel(galign, galign.GetAlignMap()));
-                if(!rslt.second) { // same position exists  
-                    auto& stored = rslt.first->second;
-                    stored.SetWeight(stored.Weight()+a.Weight());
-                }
-            }
-        }
+	AddFlexible(status, pos, a.Strand(), a.ID(), a.Weight());
+	if(a.Exons().size() == 1)
+	    return;
     }
 
     bool long_read = acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos;
@@ -2708,29 +2704,17 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         if(not_aligned_5p > NOT_ALIGNED_PHONY_CAGE)
             use_alignment = false; // not aligned
 
-        if(use_alignment) { 
+        if(use_alignment) {
+	    TSignedSeqPos pos;
             status = CGeneModel::eCap;
-            int spec_extend = SPECIAL_ALIGN_LEN-1;
-            CGeneModel galign(a.Strand(), a.ID(), CGeneModel::eSR);
-            galign.SetWeight(a.Weight());
-            int pos;
             if(a.Strand() == ePlus) {
                 pos = a.Limits().GetFrom();
-                galign.AddExon(TSignedSeqRange(pos, pos+spec_extend));
                 status |= CGeneModel::eRightFlexible;
             } else {
                 pos = a.Limits().GetTo();
-                galign.AddExon(TSignedSeqRange(pos-spec_extend, pos));
                 status |= CGeneModel::eLeftFlexible;
-            }
-            if(galign.Limits().GetFrom() >= 0) { // can't check right end because we don't know the contig length yet (will check in chainer)   
-                galign.Status() |= status;
-                auto rslt = m_special_aligns.emplace(make_tuple(status, pos), CAlignModel(galign, galign.GetAlignMap()));
-                if(!rslt.second) { // same position exists  
-                    auto& stored = rslt.first->second;
-                    stored.SetWeight(stored.Weight()+a.Weight());
-                }
-            }
+            }	    
+	    AddFlexible(status, pos, a.Strand(), a.ID(), a.Weight());
         }
     }
     
@@ -2796,7 +2780,35 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
         }
     }
 
-    //    if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller) && m_collapsest)) {   // add alignments for collapsing
+    // capture 5'/3' ends from long reads
+    if((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller)) {
+	TSignedSeqPos pos;
+	if(align.Status()&CGeneModel::eCap) {
+	    align.Status() &= ~CGeneModel::eCap;
+            status = CGeneModel::eCap;
+            if(a.Strand() == ePlus) {
+                pos = a.Limits().GetFrom();
+                status |= CGeneModel::eRightFlexible;
+            } else {
+                pos = a.Limits().GetTo();
+                status |= CGeneModel::eLeftFlexible;
+            }	    
+	    AddFlexible(status, pos, align.Strand(), align.ID(), align.Weight());
+	}
+	if(align.Status()&CGeneModel::ePolyA) {
+	    align.Status() &= ~CGeneModel::ePolyA;
+            status = CGeneModel::ePolyA;
+            if(a.Strand() == eMinus) {
+                pos = a.Limits().GetFrom();
+                status |= CGeneModel::eRightFlexible;
+            } else {
+                pos = a.Limits().GetTo();
+                status |= CGeneModel::eLeftFlexible;
+            }	    
+	    AddFlexible(status, pos, align.Strand(), align.ID(), align.Weight());
+	}
+    }
+
     if((align.Type()&CGeneModel::eSR) || ((align.Type()&CGeneModel::eEST) && !(align.Status()&CGeneModel::eGapFiller))) {   // add alignments for collapsing (long reads always included even if no collapsest - big memory saving)
         if(align.Continuous()) {
             CAlignCommon c(align);
