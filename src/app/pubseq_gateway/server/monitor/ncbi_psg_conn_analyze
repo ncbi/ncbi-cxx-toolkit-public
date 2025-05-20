@@ -243,6 +243,8 @@ def buildFilesList(dst_path, start_timestamp, end_timestamp,
     #       The upper level code has already checked that the dst_path is a
     #       file or dir
     total_files = 0
+    if not dst_path.endswith(os.path.sep):
+        dst_path += os.path.sep
     for dir_item in os.listdir(dst_path):
         host_port_service = isHostPortServiceDirectory(dst_path, dir_item)
         if host_port_service is False:
