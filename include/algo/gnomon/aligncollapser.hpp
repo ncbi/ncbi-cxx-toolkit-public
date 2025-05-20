@@ -202,6 +202,7 @@ private:
     bool RemoveNotSupportedIntronsFromTranscript(CAlignModel& align, bool check_introns_on_both_strands) const;
     void ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold, double min_lim = 0);
     void ClipESTorSR(CAlignModel& align, double clip_threshold, double min_lim);
+    void AddFlexible(int status, TSignedSeqPos pos, EStrand strand, Int8 id, double weight);
 
     typedef map< CAlignCommon,deque<SAlignIndividual> > Tdata;
     Tdata m_aligns;
@@ -209,7 +210,7 @@ private:
     Tidpool m_target_id_pool;
     TAlignIntrons m_align_introns;
     TAlignModelList m_aligns_for_filtering_only;
-    map<tuple<int, int>, CAlignModel> m_special_aligns; // [left/right flex|cap/polya, position]
+    map<tuple<int, TSignedSeqPos, EStrand>, CAlignModel> m_special_aligns; // [left/right flex | cap/polya, position, strand]
 
     int m_count;
     int m_long_read_count;
