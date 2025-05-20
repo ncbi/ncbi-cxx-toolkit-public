@@ -24,6 +24,7 @@ util$
 util/cache$
 util/regexp$
 util/regexp/testdata$
+util/regexp/sljit
 util/xregexp$
 util/bitset$
 util/checksum
