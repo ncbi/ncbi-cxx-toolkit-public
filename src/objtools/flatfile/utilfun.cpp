@@ -829,31 +829,30 @@ int SrchKeyword(string_view str, const vector<string>& keywordList)
 }
 
 /**********************************************************/
-bool CheckLineType(char* ptr, Int4 line, const vector<string>& keywordList, bool after_origin)
+bool CheckLineType(string_view str, Int4 type, const vector<string>& keywordList, bool after_origin)
 {
-    char* p;
-    Char  msg[51];
-
     if (after_origin) {
-        for (p = ptr; *p >= '0' && *p <= '9';)
-            p++;
-        if (*p == ' ')
-            return true;
+        for (char c : str) {
+            if (c >= '0' && c <= '9')
+                continue;
+            if (c == ' ')
+                return true;
+            break;
+        }
     }
 
     for (const auto& keyword : keywordList) {
-        if (fta_StartsWith(ptr, keyword))
+        if (str.starts_with(keyword))
             return true;
     }
 
-    StringNCpy(msg, ptr, 50);
-    msg[50] = '\0';
-    p       = StringChr(msg, '\n');
-    if (p)
-        *p = '\0';
-    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Unknown linetype \"{}\". Line number {}.", msg, line);
-    if (p)
-        *p = '\n';
+    string_view msg(str);
+    if (msg.size() > 50)
+        msg = msg.substr(0, 50);
+    auto n = msg.find('\n');
+    if (n != string_view::npos)
+        msg = msg.substr(0, n);
+    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Unknown linetype \"{}\". Line number {}.", msg, type);
 
     return false;
 }
