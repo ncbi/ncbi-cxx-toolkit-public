@@ -219,7 +219,9 @@ function(NCBI_internal_adjust_proto_target _variable _access _value)
 endfunction()
 
 #############################################################################
-NCBI_register_hook(DATASPEC NCBI_internal_process_proto_dataspec ".proto")
+if(NCBI_COMPONENT_PROTOBUF_FOUND)
+    NCBI_register_hook(DATASPEC NCBI_internal_process_proto_dataspec ".proto")
+endif()
 #NCBI_register_hook(TARGET_ADDED NCBI_internal_adjust_proto_target)
 
 if(NOT NCBI_PTBCFG_PACKAGED AND NOT NCBI_PTBCFG_PACKAGING)
