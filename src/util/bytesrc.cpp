@@ -102,7 +102,7 @@ CRef<CSubSourceCollector>
 CByteSourceReader::SubSource(size_t /*prevent*/,
                              CRef<CSubSourceCollector> parent)
 {
-    return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent, IsMultiPart()));
+    return CRef<CSubSourceCollector>(new CMemorySourceCollector(parent));
 }
 
 
