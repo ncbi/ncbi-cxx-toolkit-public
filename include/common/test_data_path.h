@@ -80,7 +80,7 @@ static const char* NCBI_GetTestDataPath(void)
 //        "/netopt/toolkit_test_data/"
 //#elif defined(NCBI_OS_MSWIN)
 
-#if defined(NCBI_OS_MSWIN)
+#if defined(NCBI_OS_MSWIN) || defined(NCBI_OS_CYGWIN)
         "\\\\snowman\\win-coremake\\Scripts\\test_data\\"
 #else
         "/am/ncbiapdata/test_data/"
