@@ -55,6 +55,8 @@ public:
     bool AssignFromGff(
         const string& ) override;
 
+	string GetOneAttribute(const string&);
+
 protected:
     string x_NormalizedAttributeKey(
         const string& );
@@ -232,6 +234,8 @@ protected:
     map<string, CRef<CSeq_interval> > mMrnaLocs;
     map<string, string> mIdToSeqIdMap;
     SAlignmentData mAlignmentData;
+
+    set<string> mIDsAlreadySeen;
 
     shared_ptr<CGff3LocationMerger> mpLocations;
     static unsigned int msGenericIdCounter;

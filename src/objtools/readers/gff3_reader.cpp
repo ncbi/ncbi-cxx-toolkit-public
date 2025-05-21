@@ -104,6 +104,15 @@ string CGff3Reader::xNextGenericId()
 }
 
 //  ----------------------------------------------------------------------------
+string CGff3ReadRecord::GetOneAttribute(const string& attr)
+//  ----------------------------------------------------------------------------
+{
+    string val;
+    GetAttribute(attr, val);
+    return val;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3ReadRecord::AssignFromGff(
     const string& strRawInput )
 //  ----------------------------------------------------------------------------
@@ -313,6 +322,23 @@ CGff3Reader::xParseFeature(
     try {
         if (!pRecord->AssignFromGff(line)) {
             return false;
+        }
+
+        string id = pRecord->GetOneAttribute("ID");
+        string parent = pRecord->GetOneAttribute("Parent");
+
+        if (! parent.empty()) {
+            if (mIDsAlreadySeen.count(parent) == 0) {
+cerr << "Parent " << parent << " not yet seen for ID " << id << endl;
+                /*
+                throw CReaderMessage(eDiag_Error, 0,
+                            "Bad data line: "
+                    "Parent \"" + parent + " not yet found as ID\"");
+                */
+            }
+        }
+        if (! id.empty()) {
+            mIDsAlreadySeen.insert(id);
         }
     }
     catch(CObjReaderLineException& err) {
@@ -862,6 +888,7 @@ bool CGff3Reader::xReadInit()
         return false;
     }
     mCdsParentMap.clear();
+    mIDsAlreadySeen.clear();
     return true;
 }
 
