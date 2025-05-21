@@ -1,6 +1,9 @@
 Run the tests from a json file:
 ./psg_client.py testcases -service psg11:10011 -input-file ./testcases.json -report -data-limit 1KB -preview-size 16 -timeout 60
 
+Run one test case from a json file:
+./psg_client.py testcases -service psg22.be-md:10010 -input-file ./testcases.json -data-limit 1KB -preview-size 16 -timeout 60 -testcase="..." -report
+
 Check the server response:
 echo '{ "jsonrpc": "2.0", "method": "resolve", "params": { "bio_id": [ "CAP20437" ], "include_info": [ "all-info-except" ], "user_args": "use_cache=yes" }, "id": "resolve_1" }' | psg_client interactive -server-mode -data-limit 1KB -preview-size 16
 
