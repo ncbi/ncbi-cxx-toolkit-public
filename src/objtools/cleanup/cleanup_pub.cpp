@@ -50,6 +50,7 @@
 #include <objtools/cleanup/cleanup_pub.hpp>
 #include "cleanup_utils.hpp"
 #include <objmgr/util/objutil.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -86,6 +87,7 @@ bool CCleanupPub::CleanPubdesc(CPubdesc& pubdesc, bool strip_serial)
             any_change = true;
         }
     }
+
     return any_change;
 }
 
@@ -142,7 +144,7 @@ static size_t s_PubPriority(CPub::E_Choice val)
 
 inline
 static
-bool s_PubWhichCompare(CRef<CPub> pub1, CRef<CPub> pub2) {
+bool s_PubWhichCompare(const CRef<CPub>& pub1, const CRef<CPub>& pub2) {
     size_t pr1 = s_PubPriority(pub1->Which());
     size_t pr2 = s_PubPriority(pub2->Which());
     return (pr1 < pr2);
@@ -196,7 +198,10 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
 
     auto& pe_set = m_Equiv.Set();
 
-    pe_set.sort(s_PubWhichCompare);
+    if (! std::is_sorted(pe_set.begin(), pe_set.end(), s_PubWhichCompare)) {
+        pe_set.sort(s_PubWhichCompare);
+        change = true;
+    }
 
     auto it = pe_set.begin();
     while (it != pe_set.end()) {
@@ -223,7 +228,7 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
                 auto& ids = last_article->SetIds().Set();
                 size_t old_size = ids.size();
                 RemoveDuplicatePubMedArticleIds(last_article->SetIds());
-                change = (ids.size() != old_size);
+                change |= (ids.size() != old_size);
                 // find last article pubmed_id
                 auto id_it = ids.rbegin();
                 while (id_it != ids.rend()) {
