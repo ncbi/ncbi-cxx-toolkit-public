@@ -18,7 +18,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_5",
+      id local str "rna_5",
       data rna {
         type mRNA
       },
@@ -130,7 +130,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_5"
+          id local str "rna_5"
         },
         {
           id local str "gene_4"
@@ -155,7 +155,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_8",
+      id local str "rna_8",
       data rna {
         type mRNA
       },
@@ -309,7 +309,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_8"
+          id local str "rna_8"
         },
         {
           id local str "gene_7"
@@ -317,7 +317,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_10",
+      id local str "rna_10",
       data rna {
         type mRNA
       },
@@ -447,7 +447,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_10"
+          id local str "rna_10"
         },
         {
           id local str "gene_7"
@@ -472,7 +472,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_13",
+      id local str "rna_13",
       data rna {
         type mRNA
       },
@@ -528,7 +528,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_13"
+          id local str "rna_13"
         },
         {
           id local str "gene_12"
@@ -553,7 +553,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_16",
+      id local str "rna_16",
       data rna {
         type mRNA
       },
@@ -833,7 +833,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_16"
+          id local str "rna_16"
         },
         {
           id local str "gene_15"
@@ -841,7 +841,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_18",
+      id local str "rna_18",
       data rna {
         type mRNA
       },
@@ -1037,7 +1037,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_18"
+          id local str "rna_18"
         },
         {
           id local str "gene_15"

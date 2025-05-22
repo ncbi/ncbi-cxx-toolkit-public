@@ -645,7 +645,7 @@ void CGtfReader::xCreateRna(
         }
     }
 
-    xAssignFeatureId("mrna", *pFeature);
+    xAssignFeatureId("rna", *pFeature);
 
     const auto& attribs = record.GtfAttributes();
     if (rec_type == "cds") {
