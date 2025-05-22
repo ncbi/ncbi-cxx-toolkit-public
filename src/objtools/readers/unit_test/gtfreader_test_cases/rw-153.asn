@@ -32,7 +32,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_27",
+      id local str "rna_27",
       data rna {
         type mRNA
       },
@@ -172,7 +172,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_27"
+          id local str "rna_27"
         },
         {
           id local str "gene_26"

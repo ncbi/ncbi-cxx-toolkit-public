@@ -18,7 +18,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_21",
+      id local str "rna_21",
       data rna {
         type mRNA
       },
@@ -82,7 +82,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_21"
+          id local str "rna_21"
         },
         {
           id local str "gene_20"
@@ -107,7 +107,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mrna_24",
+      id local str "rna_24",
       data rna {
         type mRNA
       },
@@ -155,7 +155,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_24"
+          id local str "rna_24"
         },
         {
           id local str "gene_23"
