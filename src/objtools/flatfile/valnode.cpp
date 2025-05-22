@@ -134,9 +134,9 @@ ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
 }
 
 
-static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str, const char* pfx, const char* sfx)
+ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str)
 {
-    size_t     len, pfx_len, sfx_len, str_len;
+    size_t     len;
     ValNodePtr newnode = nullptr, vnp;
     char*      ptr;
     string     tmp;
@@ -148,11 +148,7 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     if (! newnode)
         return nullptr;
 
-    str_len = StringLen(str);
-    pfx_len = StringLen(pfx);
-    sfx_len = StringLen(sfx);
-
-    len = str_len + pfx_len + sfx_len;
+    len = StringLen(str);
 
     if (head) {
         if (! *head) {
@@ -176,14 +172,8 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
         return nullptr;
 
     tmp.reserve(len);
-    if (pfx_len > 0) {
-        tmp.append(pfx);
-    }
-    if (str_len > 0) {
+    if (len > 0) {
         tmp.append(str);
-    }
-    if (sfx_len > 0) {
-        tmp.append(sfx);
     }
 
     StringCpy(ptr, tmp.c_str());
@@ -194,72 +184,6 @@ static ValNodePtr ValNodeCopyStrExEx(ValNodePtr* head, ValNodePtr* tail, short c
     }
 
     return newnode;
-}
-
-ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str)
-{
-    return ValNodeCopyStrExEx(head, tail, choice, str, nullptr, nullptr);
-}
-
-static char* ValNodeMergeStrsExEx(ValNodePtr list, const char* separator, const char* pfx, const char* sfx)
-{
-    size_t      len;
-    size_t      lens;
-    size_t      pfx_len;
-    char*       ptr;
-    const char* sep;
-    size_t      sfx_len;
-    char*       str;
-    string      tmp;
-    ValNodePtr  vnp;
-
-    if (! list)
-        return nullptr;
-
-    pfx_len = StringLen(pfx);
-    sfx_len = StringLen(sfx);
-
-    lens = StringLen(separator);
-
-    for (vnp = list, len = 0; vnp; vnp = vnp->next) {
-        str = vnp->data;
-        len += StringLen(str);
-        len += lens;
-    }
-    if (len == 0)
-        return nullptr;
-    len += pfx_len + sfx_len;
-
-    ptr = StringNew(len + 1);
-    if (! ptr)
-        return nullptr;
-
-    tmp.reserve(len);
-    if (pfx_len > 0) {
-        tmp.append(pfx);
-    }
-    sep = nullptr;
-    for (vnp = list; vnp; vnp = vnp->next) {
-        if (sep) {
-            tmp.append(sep);
-        }
-        str = vnp->data;
-        tmp.append(str);
-        sep = separator;
-    }
-    if (sfx_len > 0) {
-        tmp.append(sfx);
-    }
-
-    StringCpy(ptr, tmp.c_str());
-
-    return ptr;
-}
-
-
-char* ValNodeMergeStrsEx(ValNodePtr list, char* separator)
-{
-    return ValNodeMergeStrsExEx(list, separator, nullptr, nullptr);
 }
 
 END_NCBI_SCOPE
