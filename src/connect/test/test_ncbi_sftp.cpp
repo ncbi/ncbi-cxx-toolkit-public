@@ -66,6 +66,9 @@ static bool s_GetFtpCreds(string& user, string& pass)
 }
 
 
+namespace utf = boost::unit_test;
+namespace tt = boost::test_tools;
+
 struct SGlobalFixture
 {
     void setup()
@@ -79,8 +82,15 @@ struct SGlobalFixture
             type = FTP;
             session.emplace<FTP>(user, password);
         } else {
-            type = SFTP;
-            session.emplace<SFTP>("sftp-private.ncbi.nlm.nih.gov", user, password);
+            try {
+                session.emplace<SFTP>("sftp-private.ncbi.nlm.nih.gov", user, password);
+                type = SFTP;
+            }
+            catch (std::exception& e) {
+                // Cannot leak any exception, Boost.Test would report framework internal error otherwise.
+                // Thus, storing this exception's message to report later
+                failure = e.what();
+            }
         }
     }
 
@@ -111,15 +121,25 @@ struct SGlobalFixture
                 return make_unique<CConn_FTPDownloadStream>("ftp-private.ncbi.nlm.nih.gov", file, cred->first, cred->second, path, 0, 0, nullptr, offset);
             }
 
+        } else if (!failure.empty()) {
+            BOOST_FAIL("Failed to create SFTP session:\n" << exchange(failure, ""s));
+
         } else {
             BOOST_FAIL("Unknown stream type requested");
-            return {};
         }
+
+        return {};
+    }
+
+    static tt::assertion_result CanRun(utf::test_unit_id)
+    {
+        return (type != None) || !failure.empty();
     }
 
 private:
     inline static enum EVariantType : size_t { None, SFTP, FTP } type = None;
     inline static variant<monostate, CSFTP_Session, pair<string, string>> session;
+    inline static string failure;
 };
 
 struct SDefaultDirFixture
@@ -224,7 +244,7 @@ BOOST_TEST_GLOBAL_FIXTURE(SGlobalFixture);
 
 BOOST_FIXTURE_TEST_SUITE(DefaultDir, SDefaultDirFixture)
 
-BOOST_AUTO_TEST_CASE(CurrentPath)
+BOOST_AUTO_TEST_CASE(CurrentPath, * utf::precondition(SGlobalFixture::CanRun))
 {
     Test("CWD model//", "250");
     Test("PWD", default_path + "/model");
@@ -252,7 +272,7 @@ BOOST_AUTO_TEST_CASE(CurrentPath)
     Test("PWD", "/");
 }
 
-BOOST_AUTO_TEST_CASE(FilesAndDirs)
+BOOST_AUTO_TEST_CASE(FilesAndDirs, * utf::precondition(SGlobalFixture::CanRun))
 {
     Test("REST 0", "350");
     Test("STOR file1", "00000000000000000000", "20");
@@ -299,7 +319,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_FIXTURE_TEST_SUITE(ModelDir, SModelDirFixture)
 
-BOOST_AUTO_TEST_CASE(MDTM)
+BOOST_AUTO_TEST_CASE(MDTM, * utf::precondition(SGlobalFixture::CanRun))
 {
     Test("MDTM non-existent");
     Test("MDTM file", "1743652800");
@@ -313,7 +333,7 @@ BOOST_AUTO_TEST_CASE(MDTM)
     Test("MDTM dir/.another_hidden_link", "1743652800");
 }
 
-BOOST_AUTO_TEST_CASE(SIZE)
+BOOST_AUTO_TEST_CASE(SIZE, * utf::precondition(SGlobalFixture::CanRun))
 {
     Test("SIZE non-existent");
     Test("SIZE file", "4");
@@ -327,7 +347,7 @@ BOOST_AUTO_TEST_CASE(SIZE)
     Test("SIZE dir/.another_hidden_link", "19");
 }
 
-BOOST_AUTO_TEST_CASE(NLST)
+BOOST_AUTO_TEST_CASE(NLST, * utf::precondition(SGlobalFixture::CanRun))
 {
     set<string> current_dir{
             "fifo\\r",
@@ -363,7 +383,7 @@ BOOST_AUTO_TEST_CASE(NLST)
     Test("NLST dir/.another_hidden_dir");
 }
 
-BOOST_AUTO_TEST_CASE(LIST)
+BOOST_AUTO_TEST_CASE(LIST, * utf::precondition(SGlobalFixture::CanRun))
 {
     array<set<string>, 2> current_dir{
             set<string>{
@@ -409,7 +429,7 @@ BOOST_AUTO_TEST_CASE(LIST)
     Test("LIST dir/.another_hidden_dir");
 }
 
-BOOST_AUTO_TEST_CASE(MLSD)
+BOOST_AUTO_TEST_CASE(MLSD, * utf::precondition(SGlobalFixture::CanRun))
 {
     array<set<string>, 2> current_dir{
             set<string>{
@@ -515,7 +535,7 @@ BOOST_AUTO_TEST_CASE(MLSD)
     Test("MLSD dir/.another_hidden_dir//", another_hidden_dir);
 }
 
-BOOST_AUTO_TEST_CASE(MLST)
+BOOST_AUTO_TEST_CASE(MLST, * utf::precondition(SGlobalFixture::CanRun))
 {
     array<string_view, 2> current_dir{
             "modify=20250403040000;size=4096;type=dir;UNIX.group=511;UNIX.groupname=;UNIX.mode=0555;UNIX.owner=3755;UNIX.ownername=; /test_ncbi_sftp/model/dir",
