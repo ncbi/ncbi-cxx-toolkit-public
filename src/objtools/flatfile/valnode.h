@@ -56,7 +56,6 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp);
 ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode);
 
 ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str);
-char*      ValNodeMergeStrsEx(ValNodePtr list, char* separator);
 
 END_NCBI_SCOPE
 
