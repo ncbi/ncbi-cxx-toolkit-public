@@ -1,0 +1,11 @@
+
+NCBI_begin_app(test_coroutine)
+  NCBI_sources(test_coroutine co_fasta co_fasta_compat co_gff)
+  NCBI_uses_toolkit_libraries(xutil xhugeasn)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_add_test()
+  NCBI_project_watchers(gotvyans)
+  NCBI_set_test_assets(test_data/uud-1.gff3 test_data/file1.fsa test_data/file2.fsa)
+NCBI_end_app()
+
+
