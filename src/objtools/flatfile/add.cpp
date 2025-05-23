@@ -1545,10 +1545,10 @@ static bool fta_validate_bioproject(char* name, Parser::ESource source)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool newstyle)
+static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool newstyle)
 {
     ValNodePtr vnp;
-    ValNodePtr tvnp;
+    ValNodeList tvnp;
     char*      p;
     char*      q;
     char*      r;
@@ -1557,7 +1557,7 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
 
     if (! str || *str == '\0') {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
-        return nullptr;
+        return {};
     }
 
     for (p = str; *p != '\0'; p++)
@@ -1568,11 +1568,11 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
         p++;
     if (*p == '\0') {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
-        return nullptr;
+        return {};
     }
 
     vnp  = ValNodeNew(nullptr);
-    tvnp = vnp;
+    tvnp.head = vnp;
 
     for (bad = false, p = str; *p != '\0';) {
         while (*p == ' ')
@@ -1601,27 +1601,27 @@ static ValNodePtr fta_tokenize_project(char* str, Parser::ESource source, bool n
             break;
         }
 
-        tvnp = ValNodeNew(tvnp, q);
+        tvnp.head = ValNodeNew(tvnp.head, q);
         *p   = ch;
     }
 
-    tvnp = vnp->next;
+    tvnp.head = vnp->next;
     delete vnp;
 
-    if (! tvnp)
-        return nullptr;
+    if (! tvnp.head)
+        return {};
 
     if (! bad)
         return (tvnp);
 
     ValNodeFreeData(tvnp);
-    return nullptr;
+    return {};
 }
 
 /**********************************************************/
 void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source)
 {
-    ValNodePtr vnp;
+    ValNodeList vnp;
     ValNodePtr tvnp;
 
     const Char* name;
@@ -1664,7 +1664,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         newstyle = true;
 
     vnp = fta_tokenize_project(str + len, source, newstyle);
-    if (! vnp) {
+    if (! vnp.head) {
         *drop = true;
         MemFree(str);
         return;
@@ -1691,7 +1691,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
     CRef<CUser_object> user_obj;
     if (newstyle) {
-        for (i = 0, tvnp = vnp; tvnp; tvnp = tvnp->next)
+        for (i = 0, tvnp = vnp.head; tvnp; tvnp = tvnp->next)
             i++;
 
         if (! got) {
@@ -1706,7 +1706,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
-        for (tvnp = vnp; tvnp; tvnp = tvnp->next)
+        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next)
             user_field->SetData().SetStrs().push_back(tvnp->data);
 
         user_obj_ptr->SetData().push_back(user_field);
@@ -1719,7 +1719,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         CObject_id& id = user_obj_ptr->SetType();
         id.SetStr("GenomeProjectsDB");
 
-        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
@@ -1741,7 +1741,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     }
 
     MemFree(str);
-    ValNodeFree(vnp);
+    ValNodeFree(vnp.head);
 }
 
 /**********************************************************/
@@ -1789,10 +1789,10 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
 }
 
 /**********************************************************/
-static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
+static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
 {
     ValNodePtr vnp;
-    ValNodePtr tvnp;
+    ValNodeList tvnp;
     ValNodePtr uvnp;
     ValNodePtr tagvnp;
 
@@ -1812,15 +1812,15 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
 
     if (! str || *str == '\0') {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
-        return nullptr;
+        return {};
     }
 
     for (p = str; *p != '\0'; p++)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    vnp        = ValNodeNew(nullptr);
-    tvnp       = vnp;
+    tvnp.head  = ValNodeNew(nullptr);
+    vnp        = tvnp.head;
     bad        = false;
     got_nl     = true;
     sra        = false;
@@ -1862,8 +1862,8 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     biosample  = StringEqu(p, "BioSample:");
                     assembly   = StringEqu(p, "Assembly:");
 
-                    if (tvnp->data && StringChr(tvnp->data, ':')) {
-                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
+                    if (tvnp.head->data && StringChr(tvnp.head->data, ':')) {
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp.head->data);
                         bad = true;
                         break;
                     }
@@ -1877,8 +1877,8 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp   = ValNodeNew(tvnp, p);
-                    tagvnp = tvnp;
+                    tvnp.head = ValNodeNew(tvnp.head, p);
+                    tagvnp = tvnp.head;
                     *t     = ch;
                     p      = t;
                     continue;
@@ -1936,32 +1936,32 @@ static ValNodePtr fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp = ValNodeNew(tvnp, q);
+        tvnp.head = ValNodeNew(tvnp.head, q);
         *p   = ch;
     }
 
-    if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
-        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
+    if (! bad && tvnp.head->data && StringChr(tvnp.head->data, ':')) {
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp.head->data);
         bad = true;
     }
 
-    tvnp = vnp->next;
+    tvnp.head = vnp->next;
     delete vnp;
 
-    if (! tvnp)
-        return nullptr;
+    if (! tvnp.head)
+        return {};
 
     if (! bad)
         return (tvnp);
 
     ValNodeFreeData(tvnp);
-    return nullptr;
+    return {};
 }
 
 /**********************************************************/
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<CUser_object>& dbuop)
 {
-    ValNodePtr vnp;
+    ValNodeList vnp;
     ValNodePtr tvnp;
     ValNodePtr uvnp;
 
@@ -1976,7 +1976,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     vnp                          = fta_tokenize_dblink(str1, source);
     MemFree(str1);
 
-    if (! vnp) {
+    if (! vnp.head) {
         *drop = true;
         return;
     }
@@ -1984,7 +1984,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_object> user_obj;
     CRef<CUser_field>  user_field;
 
-    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (user_obj.NotEmpty())
                 break;
@@ -2040,7 +2040,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     user_field.Reset();
 
     bool inpr = false;
-    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (StringEqu(tvnp->data, "Project:")) {
                 inpr = true;
@@ -2414,10 +2414,10 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 }
 
 /**********************************************************/
-static ValNodePtr fta_vnp_structured_comment(char* buf)
+static ValNodeList fta_vnp_structured_comment(char* buf)
 {
     ValNodePtr res;
-    ValNodePtr vnp;
+    ValNodeList vnp;
     char*      start;
     char*      p;
     char*      q;
@@ -2425,7 +2425,7 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
     bool       bad;
 
     if (! buf || *buf == '\0')
-        return nullptr;
+        return {};
 
     for (p = buf; *p != '\0'; p++) {
         if (*p != '~')
@@ -2438,7 +2438,7 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
 
     bad = false;
     res = ValNodeNew(nullptr);
-    vnp = res;
+    vnp.head = res;
     for (start = buf;;) {
         p = StringStr(start, "::");
         if (! p) {
@@ -2449,11 +2449,11 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
 
         q = StringStr(p + 2, "::");
         if (! q) {
-            vnp = ValNodeNew(vnp, start);
-            for (r = vnp->data; *r != '\0'; r++)
+            vnp.head = ValNodeNew(vnp.head, start);
+            for (r = vnp.head->data; *r != '\0'; r++)
                 if (*r == '~')
                     *r = ' ';
-            ShrinkSpaces(vnp->data);
+            ShrinkSpaces(vnp.head->data);
             break;
         }
 
@@ -2466,17 +2466,17 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
         }
 
         *r  = '\0';
-        vnp = ValNodeNew(vnp, start);
+        vnp.head = ValNodeNew(vnp.head, start);
         *r  = '~';
-        for (p = vnp->data; *p != '\0'; p++)
+        for (p = vnp.head->data; *p != '\0'; p++)
             if (*p == '~')
                 *p = ' ';
-        ShrinkSpaces(vnp->data);
+        ShrinkSpaces(vnp.head->data);
 
         start = r;
     }
 
-    vnp       = res->next;
+    vnp.head  = res->next;
     res->next = nullptr;
     ValNodeFree(res);
 
@@ -2484,13 +2484,13 @@ static ValNodePtr fta_vnp_structured_comment(char* buf)
         return (vnp);
 
     ValNodeFreeData(vnp);
-    return nullptr;
+    return {};
 }
 
 /**********************************************************/
 static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 {
-    ValNodePtr vnp;
+    ValNodeList vnp;
     ValNodePtr tvnp;
 
     char* p;
@@ -2502,7 +2502,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
         return obj;
 
     vnp = fta_vnp_structured_comment(buf);
-    if (! vnp)
+    if (! vnp.head)
         return obj;
 
     obj.Reset(new CUser_object);
@@ -2518,7 +2518,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     obj->SetData().push_back(field);
 
-    for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
         p = tvnp->data;
         if (! p || *p == '\0')
             continue;
@@ -2563,7 +2563,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 /**********************************************************/
 void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 {
-    ValNodePtr tagvnp;
+    ValNodeList tagvnp;
     ValNodePtr vnp;
 
     char* start;
@@ -2576,7 +2576,6 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
     if (! str || *str == '\0')
         return;
 
-    tagvnp = nullptr;
     for (p = str;;) {
         p = StringStr(p, "-START##");
         if (! p)
@@ -2615,10 +2614,10 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         if (bad)
             break;
 
-        if (! tagvnp) {
-            tagvnp = ValNodeNew(nullptr, tag);
+        if (! tagvnp.head) {
+            tagvnp.head = ValNodeNew(nullptr, tag);
         } else {
-            for (vnp = tagvnp; vnp; vnp = vnp->next) {
+            for (vnp = tagvnp.head; vnp; vnp = vnp->next) {
                 r = vnp->data;
                 if (StringEqu(r + 2, tag + 2)) {
                     if (*r != ' ') {
@@ -2669,7 +2668,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         MemFree(tag);
     }
 
-    if (tagvnp)
+    if (tagvnp.head)
         ValNodeFreeData(tagvnp);
 }
 

@@ -52,10 +52,14 @@ using ValNodePtr = ValNode*;
 
 ValNodePtr ValNodeNew(ValNodePtr prev, const char* data = nullptr);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
-ValNodePtr ValNodeFreeData(ValNodePtr vnp);
-ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode);
 
-ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str);
+struct ValNodeList {
+    ValNode* head = nullptr;
+};
+
+void       ValNodeFreeData(ValNodeList&);
+ValNodePtr ValNodeLink(ValNodeList&, ValNodePtr newnode);
+ValNodePtr ValNodeCopyStrEx(ValNodeList&, ValNodePtr* tail, short choice, const char* str);
 
 END_NCBI_SCOPE
 

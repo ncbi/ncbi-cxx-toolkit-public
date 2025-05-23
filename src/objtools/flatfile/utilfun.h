@@ -152,7 +152,7 @@ void RemoveHtgPhase(TKeywordList& keywords);
 bool HasHtc(const TKeywordList& keywords);
 bool SetTextId(Uint1 seqtype, objects::CSeq_id& seqId, objects::CTextseq_id& textId);
 
-void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly);
+void check_est_sts_gss_tpa_kwds(const ValNodeList& kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly);
 void xCheckEstStsGssTpaKeywords(
     const std::list<std::string> keywordList,
     bool                         tpa_check,
