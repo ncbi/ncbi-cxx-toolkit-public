@@ -1357,6 +1357,11 @@ BOOST_AUTO_TEST_CASE(Test_pseudogene_qual)
 }
 
 
+static const auto& s_GetLastDesc(const CBioseq& bioseq)
+{
+    return bioseq.GetDescr().Get().back();
+}
+
 BOOST_AUTO_TEST_CASE(Test_RemoveEmptyStructuredCommentField)
 {
     CRef<CSeq_entry> entry = BuildGoodSeq();
@@ -1388,8 +1393,9 @@ BOOST_AUTO_TEST_CASE(Test_RemoveEmptyStructuredCommentField)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetLabel().GetStr(), "I have a value");
+    const auto& new_desc = s_GetLastDesc(entry->GetSeq());
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().size(), 1);
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().front()->GetLabel().GetStr(), "I have a value");
 }
 
 
@@ -1739,10 +1745,12 @@ BOOST_AUTO_TEST_CASE(Test_CleanDBLink)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().size(), 1);
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().IsStrs(), true);
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().GetStrs().size(), 1);
-    BOOST_CHECK_EQUAL(desc->GetUser().GetData().front()->GetData().GetStrs().front(), "A value");
+    const auto& new_desc = s_GetLastDesc(entry->GetSeq());
+
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().size(), 1);
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().front()->GetData().IsStrs(), true);
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().front()->GetData().GetStrs().size(), 1);
+    BOOST_CHECK_EQUAL(new_desc->GetUser().GetData().front()->GetData().GetStrs().front(), "A value");
 }
 
 
@@ -2110,24 +2118,27 @@ void CheckCleanupAndCleanupOfUserObject(const CUser_object& obj)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
+    const auto& new_ud = s_GetLastDesc(entry->GetSeq());
+
+
     CRef<CUser_object> direct_obj(new CUser_object());
     direct_obj->Assign(obj);
     CCleanup::CleanupUserObject(*direct_obj);
 
     if (obj.IsSetType()) {
-        BOOST_CHECK_EQUAL(direct_obj->GetType().GetStr(), ud->GetUser().GetType().GetStr());
+        BOOST_CHECK_EQUAL(direct_obj->GetType().GetStr(), new_ud->GetUser().GetType().GetStr());
     }
 
     if (obj.IsSetData()) {
         auto s1 = direct_obj->GetData().begin();
-        auto s2 = ud->GetUser().GetData().begin();
-        while (s1 != direct_obj->GetData().end() && s2 != ud->GetUser().GetData().end()) {
+        auto s2 = new_ud->GetUser().GetData().begin();
+        while (s1 != direct_obj->GetData().end() && s2 != new_ud->GetUser().GetData().end()) {
             CheckFields(**s1, **s2);
             s1++;
             s2++;
         }
         BOOST_CHECK(s1 == direct_obj->GetData().end());
-        BOOST_CHECK(s2 == ud->GetUser().GetData().end());
+        BOOST_CHECK(s2 == new_ud->GetUser().GetData().end());
     }
 }
 
@@ -2529,7 +2540,9 @@ void TestOneAsn2gnbkCompressSpaces(const string& input, const string& output)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(f->GetData().GetStr(), output);
+    const auto& new_desc = s_GetLastDesc(entry->GetSeq());
+    const auto& new_field = new_desc->GetUser().GetData().back();
+    BOOST_CHECK_EQUAL(new_field->GetData().GetStr(), output);
 }
 
 
@@ -2666,9 +2679,12 @@ void TestOneDate(int hour, int minute, int second, bool expect_hour, bool expect
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
-    BOOST_CHECK_EQUAL(createdate.IsSetHour(), expect_hour);
-    BOOST_CHECK_EQUAL(createdate.IsSetMinute(), expect_minute);
-    BOOST_CHECK_EQUAL(createdate.IsSetSecond(), expect_second);
+
+    const auto& new_desc = s_GetLastDesc(entry->GetSeq());
+    const auto& new_date = new_desc->GetCreate_date().GetStd();
+    BOOST_CHECK_EQUAL(new_date.IsSetHour(), expect_hour);
+    BOOST_CHECK_EQUAL(new_date.IsSetMinute(), expect_minute);
+    BOOST_CHECK_EQUAL(new_date.IsSetSecond(), expect_second);
 }
 
 
@@ -2678,7 +2694,6 @@ BOOST_AUTO_TEST_CASE(Test_DateCleanup)
     TestOneDate(8, -1, 32, true, false, false);
     TestOneDate(25, 30, 32, false, false, false);
     TestOneDate(-1, 30, 32, false, false, false);
-
 }
 
 
