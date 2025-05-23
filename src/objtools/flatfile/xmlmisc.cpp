@@ -151,14 +151,14 @@ static char* TrimSpacesAroundString(char* str)
 }
 
 
-static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
+static void TokenizeXmlLine(ValNodeList& L, ValNodePtr* tailp, char* str)
 {
     char *atr, *fst, *lst, *nxt, *ptr;
     char  ch, cha, chf, chl, quo;
 
     bool doStart, doEnd;
 
-    if (! headp || ! tailp)
+    if (! L.head || ! tailp)
         return;
     if (StringHasNoText(str))
         return;
@@ -229,7 +229,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
                 /* report start tag */
                 if (doStart) {
                     TrimSpacesAroundString(fst);
-                    ValNodeCopyStrEx(headp, tailp, XML_START_TAG, fst);
+                    ValNodeCopyStrEx(L, tailp, XML_START_TAG, fst);
                 }
 
                 /* report individual attribute tag="value" clauses */
@@ -261,7 +261,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
                     }
                     *nxt = '\0';
                     TrimSpacesAroundString(atr);
-                    ValNodeCopyStrEx(headp, tailp, XML_ATTRIBUTE, atr);
+                    ValNodeCopyStrEx(L, tailp, XML_ATTRIBUTE, atr);
                     *nxt = cha;
                     atr  = nxt;
                 }
@@ -269,7 +269,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
                 /* report end tag */
                 if (doEnd) {
                     TrimSpacesAroundString(fst);
-                    ValNodeCopyStrEx(headp, tailp, XML_END_TAG, fst);
+                    ValNodeCopyStrEx(L, tailp, XML_END_TAG, fst);
                 }
             }
 
@@ -290,7 +290,7 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
             /* report content string */
             TrimSpacesAroundString(fst);
             DecodeXml(fst);
-            ValNodeCopyStrEx(headp, tailp, XML_CONTENT, fst);
+            ValNodeCopyStrEx(L, tailp, XML_CONTENT, fst);
             /*
             if (ch != '\0') {
             *ptr = ch;
@@ -300,16 +300,17 @@ static void TokenizeXmlLine(ValNodePtr* headp, ValNodePtr* tailp, char* str)
     }
 }
 
-static ValNodePtr TokenizeXmlString(char* str)
+static ValNodeList TokenizeXmlString(char* str)
 {
-    ValNodePtr head = nullptr, tail = nullptr;
+    ValNodeList L;
+    ValNodePtr tail = nullptr;
 
     if (StringHasNoText(str))
-        return nullptr;
+        return {};
 
-    TokenizeXmlLine(&head, &tail, str);
+    TokenizeXmlLine(L, &tail, str);
 
-    return head;
+    return L;
 }
 
 /* second pass - process ValNode chain into hierarchical structure */
@@ -517,7 +518,7 @@ XmlObjPtr FreeXmlObject(XmlObjPtr xop)
 
 XmlObjPtr ParseXmlString(const Char* str)
 {
-    ValNodePtr head;
+    ValNodeList L;
     XmlObjPtr  root, xop;
     char*      tmp;
 
@@ -527,14 +528,14 @@ XmlObjPtr ParseXmlString(const Char* str)
     if (! tmp)
         return nullptr;
 
-    head = TokenizeXmlString(tmp);
+    L = TokenizeXmlString(tmp);
     MemFree(tmp);
 
-    if (! head)
+    if (! L.head)
         return nullptr;
 
-    root = ParseXmlTokens(head);
-    ValNodeFreeData(head);
+    root = ParseXmlTokens(L.head);
+    ValNodeFreeData(L);
 
     if (! root)
         return nullptr;

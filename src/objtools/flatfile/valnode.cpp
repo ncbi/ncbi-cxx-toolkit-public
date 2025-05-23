@@ -93,17 +93,17 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
  *           allocated single memory block structures.
  *
  *****************************************************************************/
-ValNodePtr ValNodeFreeData(ValNodePtr vnp)
+void ValNodeFreeData(ValNodeList& L)
 {
-    ValNodePtr next;
+    ValNodePtr vnp = L.head;
 
     while (vnp) {
         MemFree(vnp->data);
-        next = vnp->next;
+        ValNodePtr next = vnp->next;
         delete vnp;
         vnp = next;
     }
-    return nullptr;
+    L.head = nullptr;
 }
 
 /*****************************************************************************
@@ -114,27 +114,22 @@ ValNodePtr ValNodeFreeData(ValNodePtr vnp)
  *      ALWAYS returns pointer to START of chain
  *
  *****************************************************************************/
-ValNodePtr ValNodeLink(ValNodePtr* head, ValNodePtr newnode)
+ValNodePtr ValNodeLink(ValNodeList& L, ValNodePtr newnode)
 {
-    ValNodePtr vnp;
-
-    if (! head)
-        return newnode;
-
-    vnp = *head;
+    ValNodePtr vnp = L.head;
 
     if (vnp) {
         while (vnp->next)
             vnp = vnp->next;
         vnp->next = newnode;
     } else
-        *head = newnode;
+        L.head = newnode;
 
-    return *head;
+    return L.head;
 }
 
 
-ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, const char* str)
+ValNodePtr ValNodeCopyStrEx(ValNodeList& L, ValNodePtr* tail, short choice, const char* str)
 {
     size_t     len;
     ValNodePtr newnode = nullptr, vnp;
@@ -150,10 +145,8 @@ ValNodePtr ValNodeCopyStrEx(ValNodePtr* head, ValNodePtr* tail, short choice, co
 
     len = StringLen(str);
 
-    if (head) {
-        if (! *head) {
-            *head = newnode;
-        }
+    if (! L.head) {
+        L.head = newnode;
     }
 
     if (tail) {

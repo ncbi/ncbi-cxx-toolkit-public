@@ -264,9 +264,9 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     char*         line_ver;
     char*         line_nid;
     char*         line_locus;
-    ValNodePtr    kwds;
+    ValNodeList   kwds;
     ValNodePtr    tkwds;
-    ValNodePtr    dbl;
+    ValNodeList   dbl;
     ValNodePtr    tdbl;
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
@@ -282,8 +282,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     auto tibnp = ibl.before_begin();
 
     pp->num_drop = 0;
-    kwds         = nullptr;
-    dbl          = nullptr;
     while (! end_of_file) {
         entry = InitialEntry(pp, finfo);
         if (entry) {
@@ -310,12 +308,12 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
             line_ver       = nullptr;
             line_nid       = nullptr;
             line_locus     = nullptr;
-            if (kwds)
-                kwds = ValNodeFreeData(kwds);
+            if (kwds.head)
+                ValNodeFreeData(kwds);
             tkwds           = nullptr;
             size_t kwds_len = 0;
-            if (dbl)
-                dbl = ValNodeFreeData(dbl);
+            if (dbl.head)
+                ValNodeFreeData(dbl);
             tdbl           = nullptr;
             size_t dbl_len = 0;
             while (currentKeyword != ParFlat_END && ! end_of_file) {
@@ -482,17 +480,17 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     if (pp->source != Parser::ESource::DDBJ &&
                         pp->source != Parser::ESource::EMBL)
                         break;
-                    if (kwds)
+                    if (kwds.head)
                         ValNodeFreeData(kwds);
-                    kwds     = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tkwds    = kwds;
+                    kwds.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
+                    tkwds    = kwds.head;
                     kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
-                    if (dbl)
+                    if (dbl.head)
                         ValNodeFreeData(dbl);
-                    dbl     = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tdbl    = dbl;
+                    dbl.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
+                    tdbl    = dbl.head;
                     dbl_len = StringLen(finfo.str) - 8;
                     break;
                 default:
@@ -520,9 +518,9 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 }
 
 
-                if (kwds) {
+                if (kwds.head) {
                     check_est_sts_gss_tpa_kwds(kwds, kwds_len, entry, tpa_check, entry->specialist_db, entry->inferential, entry->experimental, entry->assembly);
-                    kwds     = ValNodeFreeData(kwds);
+                    ValNodeFreeData(kwds);
                     kwds_len = 0;
                 }
 
@@ -607,9 +605,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line {}", (long int)entry->linenum);
             }
 
-            if (dbl) {
-                dbl = ValNodeFreeData(dbl);
-                // dbl_len = 0;
+            if (dbl.head) {
+                ValNodeFreeData(dbl);
             }
             if (fun) {
                 unique_ptr<DataBlk> data(LoadEntry(pp, entry->offset, entry->len));

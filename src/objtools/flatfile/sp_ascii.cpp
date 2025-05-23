@@ -1650,7 +1650,7 @@ static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
 }
 
 /**********************************************************/
-static bool AddToList(ValNodePtr* head, char* str)
+static bool AddToList(ValNodeList& L, char* str)
 {
     ValNodePtr vnp;
     char*      data;
@@ -1664,7 +1664,7 @@ static bool AddToList(ValNodePtr* head, char* str)
         return true;
 
     dot = StringChr(str, '.');
-    for (vnp = *head; vnp; vnp = vnp->next)
+    for (vnp = L.head; vnp; vnp = vnp->next)
         if (StringEqu(vnp->data, str))
             break;
     if (vnp)
@@ -1672,7 +1672,7 @@ static bool AddToList(ValNodePtr* head, char* str)
 
     if (dot) {
         *dot = '\0';
-        for (vnp = *head; vnp; vnp = vnp->next) {
+        for (vnp = L.head; vnp; vnp = vnp->next) {
             data = vnp->data;
             d    = StringChr(data, '.');
             if (! d)
@@ -1686,7 +1686,7 @@ static bool AddToList(ValNodePtr* head, char* str)
         *dot = '.';
     }
     vnp = ConstructValNode(CSeq_id::e_not_set, str);
-    ValNodeLink(head, vnp);
+    ValNodeLink(L, vnp);
 
     return true;
 }
@@ -1741,7 +1741,7 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 }
 
 /**********************************************************/
-static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
+static void fta_check_embl_drxref_dups(const ValNodeList& embl_acc_list)
 {
     ValNodePtr vnp;
     ValNodePtr vnpn;
@@ -1749,10 +1749,10 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
     const char* p;
     const char* q;
 
-    if (! embl_acc_list || ! embl_acc_list->next->next)
+    if (! embl_acc_list.head || ! embl_acc_list.head->next->next)
         return;
 
-    for (vnp = embl_acc_list; vnp; vnp = vnp->next->next) {
+    for (vnp = embl_acc_list.head; vnp; vnp = vnp->next->next) {
         p = vnp->data;
         q = StringChr(p, '.');
         if (q) {
@@ -1843,12 +1843,12 @@ static void fta_check_embl_drxref_dups(ValNodePtr embl_acc_list)
 static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Parser::ESource source)
 {
     ValNodePtr   embl_vnp;
-    ValNodePtr   acc_list      = nullptr;
-    ValNodePtr   pid_list      = nullptr;
-    ValNodePtr   ens_tran_list = nullptr;
-    ValNodePtr   ens_prot_list = nullptr;
-    ValNodePtr   ens_gene_list = nullptr;
-    ValNodePtr   embl_acc_list = nullptr;
+    ValNodeList  acc_list;
+    ValNodeList  pid_list;
+    ValNodeList  ens_tran_list;
+    ValNodeList  ens_prot_list;
+    ValNodeList  ens_gene_list;
+    ValNodeList  embl_acc_list;
     const char** b;
     char*        offset;
     const char*  token1;
@@ -1883,8 +1883,8 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list   = ValNodeNew(nullptr);
-    embl_vnp        = embl_acc_list;
+    embl_acc_list.head = ValNodeNew(nullptr);
+    embl_vnp        = embl_acc_list.head;
     check_embl_prot = false;
     for (ptr = str;;) {
         if (*drop)
@@ -1939,7 +1939,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             ntype = GetNucAccOwner(p ? string_view(token2, p) : string_view(token2));
             if (ntype == CSeq_id::e_not_set) {
                 FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
-            } else if (AddToList(&acc_list, token2)) {
+            } else if (AddToList(acc_list, token2)) {
                 CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
                                               p ? (Int2) atoi(p + 1) : 0));
                 if (id.NotEmpty())
@@ -1973,7 +1973,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 embl_vnp       = embl_vnp->next;
             }
 
-            if (! AddToList(&pid_list, token3)) {
+            if (! AddToList(pid_list, token3)) {
                 check_embl_prot = true;
                 continue;
             }
@@ -1995,13 +1995,13 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                    NStr::EqualNocase(token1, "ENSEMBLPLANTS")  ||
                    NStr::EqualNocase(token1, "ENSEMBLPROTISTS") ||
                    NStr::EqualNocase(token1, "WORMBASE")) {
-            if (AddToList(&ens_tran_list, token2)) {
+            if (AddToList(ens_tran_list, token2)) {
                 CRef<CDbtag> tag = MakeStrDbtag(token1, token2);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
             }
 
-            if (! AddToList(&ens_prot_list, token3)) {
+            if (! AddToList(ens_prot_list, token3)) {
                 FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Duplicated protein id \"{}\" in \"{}\" DR line.", token3, token1);
             } else {
                 CRef<CDbtag> tag = MakeStrDbtag(token1, token3);
@@ -2009,7 +2009,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                     spb.SetDbref().push_back(tag);
             }
 
-            if (token4 && AddToList(&ens_gene_list, token4)) {
+            if (token4 && AddToList(ens_gene_list, token4)) {
                 CRef<CDbtag> tag = MakeStrDbtag(token1, token4);
                 if (tag.NotEmpty())
                     spb.SetDbref().push_back(tag);
@@ -2036,7 +2036,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 continue;
             }
 
-            if (! AddToList(&pid_list, token2))
+            if (! AddToList(pid_list, token2))
                 continue;
 
             *p++ = '\0';
@@ -2070,22 +2070,25 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         }
     }
 
-    if (embl_acc_list->next) {
+    if (embl_acc_list.head->next) {
+        ValNodeList tmp;
+        tmp.head = embl_acc_list.head->next;
+        embl_acc_list.head->next = nullptr;
         if (check_embl_prot)
-            fta_check_embl_drxref_dups(embl_acc_list->next);
-        ValNodeFreeData(embl_acc_list->next);
+            fta_check_embl_drxref_dups(tmp);
+        ValNodeFreeData(tmp);
     }
-    delete embl_acc_list;
+    delete embl_acc_list.head;
 
-    if (acc_list)
+    if (acc_list.head)
         ValNodeFreeData(acc_list);
-    if (pid_list)
+    if (pid_list.head)
         ValNodeFreeData(pid_list);
-    if (ens_tran_list)
+    if (ens_tran_list.head)
         ValNodeFreeData(ens_tran_list);
-    if (ens_prot_list)
+    if (ens_prot_list.head)
         ValNodeFreeData(ens_prot_list);
-    if (ens_gene_list)
+    if (ens_gene_list.head)
         ValNodeFreeData(ens_gene_list);
     MemFree(str);
 
@@ -2111,7 +2114,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
  **********************************************************/
 static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& sequpd, CDate& annotupd, short* ver_num)
 {
-    ValNodePtr vnp;
+    ValNodeList vnp;
     ValNodePtr tvnp;
     char*      offset;
     char*      p;
@@ -2136,8 +2139,8 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
 
     ch          = offset[len];
     offset[len] = '\0';
-    vnp         = ValNodeNew(nullptr);
-    for (q = offset, tvnp = vnp;;) {
+    vnp.head    = ValNodeNew(nullptr);
+    for (q = offset, tvnp = vnp.head;;) {
         p = StringChr(q, '\n');
         if (p == q)
             break;
@@ -2152,17 +2155,17 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
             break;
     }
     offset[len] = ch;
-    tvnp        = vnp->next;
-    vnp->next   = nullptr;
-    delete vnp;
-    vnp = tvnp;
+    tvnp        = vnp.head->next;
+    vnp.head->next = nullptr;
+    delete vnp.head;
+    vnp.head = tvnp;
 
     first  = 0;
     second = 0;
     third  = 0;
-    if (! StringChr(vnp->data, '(')) {
+    if (! StringChr(vnp.head->data, '(')) {
         new_style = true;
-        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "integrated into")) {
@@ -2192,7 +2195,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
         }
     } else {
         new_style = false;
-        for (tvnp = vnp; tvnp; tvnp = tvnp->next) {
+        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "Created")) {

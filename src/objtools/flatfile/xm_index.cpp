@@ -670,7 +670,7 @@ static bool XMLAccessionsCheck(ParserPtr pp, IndexblkPtr ibp, const char* entry)
 /**********************************************************/
 static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource source)
 {
-    ValNodePtr  vnp;
+    ValNodeList vnp;
 
     bool tpa_check = (source == Parser::ESource::EMBL);
 
@@ -707,9 +707,9 @@ static bool XMLKeywordsCheck(const char* entry, IndexblkPtr ibp, Parser::ESource
         }
     }
 
-    vnp = ConstructValNode(objects::CSeq_id::e_not_set, buf.c_str());
+    vnp.head = ConstructValNode(objects::CSeq_id::e_not_set, buf.c_str());
     check_est_sts_gss_tpa_kwds(vnp, len, ibp, tpa_check, ibp->specialist_db, ibp->inferential, ibp->experimental, ibp->assembly);
-    delete vnp;
+    delete vnp.head;
     return true;
 }
 

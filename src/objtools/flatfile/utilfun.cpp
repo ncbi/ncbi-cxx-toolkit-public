@@ -1276,19 +1276,19 @@ void xCheckEstStsGssTpaKeywords(
     }
 }
 
-void check_est_sts_gss_tpa_kwds(ValNodePtr kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly)
+void check_est_sts_gss_tpa_kwds(const ValNodeList& kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly)
 {
     char* line;
     char* p;
     char* q;
 
-    if (! kwds || ! kwds->data || len < 1)
+    if (! kwds.head || ! kwds.head->data || len < 1)
         return;
 
     line    = StringNew(len);
     line[0] = '\0';
-    for (; kwds; kwds = kwds->next) {
-        StringCat(line, kwds->data);
+    for (auto kwd = kwds.head; kwd; kwd = kwd->next) {
+        StringCat(line, kwd->data);
     }
     for (p = line; *p != '\0'; p++)
         if (*p == '\n' || *p == '\t')
