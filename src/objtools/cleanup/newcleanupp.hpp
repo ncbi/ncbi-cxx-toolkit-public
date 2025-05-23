@@ -293,7 +293,7 @@ public:
     void PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set );
     void SubSourceListBC(CBioSource& biosrc);
 
-    void MolInfoBC( CMolInfo &molinfo );
+    bool MolInfoBC( CMolInfo &molinfo );
     void CreateMissingMolInfo( CBioseq& seq );
 
     static bool IsInternalTranscribedSpacer(const string& name);
@@ -418,7 +418,6 @@ private:
     void x_SubSourceBC( CSubSource & subsrc );
     void x_OrgModBC( COrgMod & orgmod );
 
-    void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
     void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq);
 
     void x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope);
@@ -582,10 +581,9 @@ private:
 
     void x_ExtendedCleanupExtra(CSeq_entry_Handle seh);
 
-protected:
+private:
 
     // variables used for the whole cleaning process
-
     /// If set, holds all the cleanup changes that have occurred so far
     CRef<CCleanupChange>  m_Changes;
     /// See CCleanup::EValidOptions

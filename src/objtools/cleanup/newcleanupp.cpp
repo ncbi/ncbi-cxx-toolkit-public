@@ -447,6 +447,8 @@ void CNewCleanup_imp::ChangeMade (CCleanupChange::EChanges e)
     }
 }
 
+
+
 void CNewCleanup_imp::EnteringEntry (
     CSeq_entry& se
 )
@@ -5653,69 +5655,51 @@ void CNewCleanup_imp::x_OrgModBC(COrgMod & orgmod)
     }
 }
 
-void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq )
-{
-    if(!molinfo.IsSetBiomol())
-    {
-        return;
-    }
 
-    const auto biomol = molinfo.GetBiomol();
-    if( biomol == CMolInfo::eBiomol_unknown) {
-        molinfo.ResetBiomol();
-        ChangeMade(CCleanupChange::eChangeMolInfo);
-        return;
+static CSeq_inst::EMol s_GetInstMolFromBiomol(CMolInfo::TBiomol biomol)
+{
+    switch (biomol) {
+    case CMolInfo::eBiomol_genomic:
+        return CSeq_inst::eMol_na;
+    case CMolInfo::eBiomol_pre_RNA:
+    case CMolInfo::eBiomol_mRNA:
+    case CMolInfo::eBiomol_rRNA:
+    case CMolInfo::eBiomol_tRNA:
+    case CMolInfo::eBiomol_snRNA:
+    case CMolInfo::eBiomol_scRNA:
+    case CMolInfo::eBiomol_cRNA:
+    case CMolInfo::eBiomol_snoRNA:
+    case CMolInfo::eBiomol_transcribed_RNA:
+    case CMolInfo::eBiomol_ncRNA:
+    case CMolInfo::eBiomol_tmRNA:
+        return CSeq_inst::eMol_rna;
+    case CMolInfo::eBiomol_peptide:
+        return CSeq_inst::eMol_aa;
+    case CMolInfo::eBiomol_other_genetic:
+        return CSeq_inst::eMol_other;
+    case CMolInfo::eBiomol_genomic_mRNA:
+        return CSeq_inst::eMol_na;
+    default:
+        break;
     }
-    FixUnsetMolFromBiomol(biomol, bioseq);
+    return CSeq_inst::eMol_not_set;
 }
 
-void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq &bioseq)
-{      
-    if (bioseq.IsSetInst())
-    {
-        auto& inst = bioseq.SetInst();
-        const auto mol = inst.IsSetMol() ?
-            inst.GetMol() :
-            CSeq_inst::eMol_not_set;
-        
-        if( mol == CSeq_inst::eMol_not_set) {
-            switch( biomol ) {
-            case CMolInfo::eBiomol_genomic:
-                inst.SetMol(CSeq_inst::eMol_na);
+
+void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq)
+{
+    if (bioseq.IsSetInst()) {
+        auto&      inst = bioseq.SetInst();
+        const auto mol  = inst.IsSetMol() ? inst.GetMol() : CSeq_inst::eMol_not_set;
+
+        if (mol == CSeq_inst::eMol_not_set) {
+            auto new_mol = s_GetInstMolFromBiomol(biomol);
+            if (new_mol != CSeq_inst::eMol_not_set) {
+                inst.SetMol(new_mol);
                 ChangeMade(CCleanupChange::eChangeBiomol);
-                break;
-            case CMolInfo::eBiomol_pre_RNA:
-            case CMolInfo::eBiomol_mRNA:
-            case CMolInfo::eBiomol_rRNA:
-            case CMolInfo::eBiomol_tRNA:
-            case CMolInfo::eBiomol_snRNA:
-            case CMolInfo::eBiomol_scRNA:
-            case CMolInfo::eBiomol_cRNA:
-            case CMolInfo::eBiomol_snoRNA:
-            case CMolInfo::eBiomol_transcribed_RNA:
-            case CMolInfo::eBiomol_ncRNA:
-            case CMolInfo::eBiomol_tmRNA:
-                inst.SetMol(CSeq_inst::eMol_rna);
-                ChangeMade(CCleanupChange::eChangeBiomol);
-                break;
-            case CMolInfo::eBiomol_peptide:
-                inst.SetMol(CSeq_inst::eMol_aa);
-                ChangeMade(CCleanupChange::eChangeBiomol);
-                break;
-            case CMolInfo::eBiomol_other_genetic:
-                inst.SetMol(CSeq_inst::eMol_other);
-                ChangeMade(CCleanupChange::eChangeBiomol);
-                break;
-            case CMolInfo::eBiomol_genomic_mRNA:
-                inst.SetMol(CSeq_inst::eMol_na);
-                ChangeMade(CCleanupChange::eChangeBiomol);
-                break;
-            default:
-                break;
             }
-        } else if(( mol != CSeq_inst::eMol_rna) &&
-            ( biomol == CMolInfo::eBiomol_cRNA || biomol == CMolInfo::eBiomol_mRNA ) )
-        {
+        } else if ((mol != CSeq_inst::eMol_rna) &&
+                   (biomol == CMolInfo::eBiomol_cRNA || biomol == CMolInfo::eBiomol_mRNA)) {
             inst.SetMol(CSeq_inst::eMol_rna);
             ChangeMade(CCleanupChange::eChangeBiomol);
         }
@@ -5731,36 +5715,36 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope)
 }
 
 // returns empty string if there's a problem
-string CNewCleanup_imp::x_ExtractSatelliteFromComment( string &comment )
+string CNewCleanup_imp::x_ExtractSatelliteFromComment(string& comment)
 {
-    if( comment.empty() ) {
+    if (comment.empty()) {
         return kEmptyStr;
     }
 
     string satellite_type;
-    if ( NStr::StartsWith(comment, "microsatellite") ) {
+    if (NStr::StartsWith(comment, "microsatellite")) {
         satellite_type = "microsatellite";
-    } else if ( NStr::StartsWith (comment, "minisatellite") ) {
+    } else if (NStr::StartsWith(comment, "minisatellite")) {
         satellite_type = "minisatellite";
-    } else if ( NStr::StartsWith (comment, "satellite") ) {
+    } else if (NStr::StartsWith(comment, "satellite")) {
         satellite_type = "satellite";
     } else {
         return kEmptyStr;
     }
 
     string satellite_qual; // the answer
-    if ( comment.length() == satellite_type.length() ) {
+    if (comment.length() == satellite_type.length()) {
         comment.clear();
         ChangeMade(CCleanupChange::eRemoveComment);
         return satellite_type;
     } else if (comment[satellite_type.length()] == ';') {
         satellite_qual = satellite_type;
-        comment = comment.substr( satellite_type.length() + 1 );
+        comment        = comment.substr(satellite_type.length() + 1);
         NStr::TruncateSpacesInPlace(comment);
         ChangeMade(CCleanupChange::eChangeComment);
     }
-    if ( comment [0] == '~' && comment [1] != '~') {
-        comment [0] = ' ';
+    if (comment[0] == '~' && comment[1] != '~') {
+        comment[0] = ' ';
         NStr::TruncateSpacesInPlace(comment);
         ChangeMade(CCleanupChange::eChangeComment);
     }
@@ -11558,17 +11542,30 @@ void CNewCleanup_imp::PCRReactionSetBC( CPCRReactionSet &pcr_reaction_set )
     REMOVE_IF_EMPTY_PCRREACTION_IN_PCRREACTIONSET( pcr_reaction_set );
 }
 
-void CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
+bool CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
 {
-    if( FIELD_EQUALS(molinfo, Tech, NCBI_BIOMOL(unknown) ) ) {
-        RESET_FIELD(molinfo, Tech);
+    bool change_made {false};
+    if( molinfo.IsSetBiomol() &&
+            (molinfo.GetBiomol() == CMolInfo::eBiomol_unknown)) {
+        molinfo.ResetBiomol();
         ChangeMade(CCleanupChange::eChangeMolInfo);
+        change_made = true;
     }
 
-    if( FIELD_EQUALS(molinfo, Completeness, NCBI_COMPLETENESS(unknown) ) ) {
-        RESET_FIELD(molinfo, Completeness);
+    if (molinfo.IsSetTech() &&
+            (molinfo.GetTech() == CMolInfo::eTech_unknown)) {
+        molinfo.ResetTech();
         ChangeMade(CCleanupChange::eChangeMolInfo);
+        change_made = true;
     }
+
+    if (molinfo.IsSetCompleteness() && 
+            (molinfo.GetCompleteness() == CMolInfo::eCompleteness_unknown)) {
+        molinfo.ResetCompleteness();
+        ChangeMade(CCleanupChange::eChangeMolInfo);
+        change_made = true;
+    }
+    return change_made;
 }
 
 // part of ExtendedCleanup
