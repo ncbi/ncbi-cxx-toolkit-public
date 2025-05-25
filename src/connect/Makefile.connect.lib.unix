@@ -37,6 +37,6 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
  endif
 endif
 
-ifneq "" "$(filter icc-% clang-linux,$(COMPILER)-$(OSTYPE))"
+ifneq "" "$(filter icc-% llvm_clang-linux,$(COMPILER)-$(OSTYPE))"
  ncbi_priv.o: CPPFLAGS:=$(filter-out --ccache-skip -frewrite-includes,$(CPPFLAGS))
 endif
