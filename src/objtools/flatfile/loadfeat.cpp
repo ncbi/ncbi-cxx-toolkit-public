@@ -2772,6 +2772,8 @@ static void fta_check_old_locus_tags(TDataBlkList& dbl, bool* drop)
             continue;
 
         for (TQualVector::const_iterator gbqp1 = fbp->quals.begin(); gbqp1 != fbp->quals.end(); ++gbqp1) {
+            if (! (*gbqp1)->IsSetVal())
+                continue;
             const string& gbqp1_val = (*gbqp1)->GetVal();
             if (isOldLocusTag(*gbqp1) || gbqp1_val.empty())
                 continue;
