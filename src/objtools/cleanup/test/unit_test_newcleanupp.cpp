@@ -51,6 +51,10 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/seq/Seq_data.hpp>
 
 #include "../newcleanupp.hpp"
 
@@ -324,5 +328,39 @@ BOOST_AUTO_TEST_CASE(Test_BasicCleanupSeqIds) // RW-2482
 
     BOOST_CHECK(pBioseq->GetId().back()->Match(*pNewId)); 
     BOOST_CHECK(bsh.GetScope().Exists(*pNewId));
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_BasicCleanupDeltaExt) // RW-2507
+{
+    auto pDeltaExt = Ref(new CDelta_ext());
+    {
+        auto pDeltaSeq = Ref(new CDelta_seq());
+        pDeltaSeq->SetLiteral().SetLength(5);
+        pDeltaSeq->SetLiteral().SetSeq_data().SetIupacna().Set("AGGCC");
+        pDeltaExt->Set().push_back(pDeltaSeq);
+    }
+    {
+        auto pDeltaSeq = Ref(new CDelta_seq());
+        pDeltaSeq->SetLiteral().SetLength(0);
+        pDeltaSeq->SetLiteral().SetSeq_data().SetIupacna().Set("");
+        pDeltaExt->Set().push_back(pDeltaSeq);
+    }
+    {
+        auto pDeltaSeq = Ref(new CDelta_seq());
+        pDeltaSeq->SetLiteral().SetLength(1);
+        pDeltaSeq->SetLiteral().SetSeq_data().SetIupacna().Set("C");
+        pDeltaExt->Set().push_back(pDeltaSeq);
+    }
+
+    auto changes = Ref(new CCleanupChange());
+    CNewCleanup_imp cleanup_imp(changes);
+    cleanup_imp.RemoveZeroLengthLiterals(*pDeltaExt);
+
+    BOOST_CHECK_EQUAL(pDeltaExt->Get().size(), 2);
+    BOOST_CHECK_EQUAL(pDeltaExt->Get().front()->GetLiteral().GetLength(), 5);
+    BOOST_CHECK_EQUAL(pDeltaExt->Get().back()->GetLiteral().GetLength(), 1);
+    BOOST_CHECK_EQUAL(changes->ChangeCount(), 1); // just a single change
+    BOOST_CHECK(changes->IsChanged(CCleanupChange::eCleanDeltaExt));
 }
 

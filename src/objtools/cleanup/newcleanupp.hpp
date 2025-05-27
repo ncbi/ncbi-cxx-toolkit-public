@@ -286,7 +286,7 @@ public:
 
     static bool x_IsCommentRedundantWithEC(const CSeq_feat& seqfeat, CScope& scope);
 
-    void DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst );
+    void RemoveZeroLengthLiterals(CDelta_ext & delta_ext);
 
     void UserObjectBC( CUser_object &user_object );
 
