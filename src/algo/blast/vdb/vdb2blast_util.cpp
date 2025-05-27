@@ -659,7 +659,7 @@ CVDBBlastUtil::FillVDBInfo(vector< CBlastFormatUtil::SDbInfo >& vecDbInfo)
 }
 
 CVDBBlastUtil::CVDBBlastUtil(bool bCSRA, const string& strAllRuns):
-        m_bOwnSeqSrc(true), m_strAllRuns(strAllRuns), m_isCSRAUtil(bCSRA)
+        m_bOwnSeqSrc(true), m_strAllRuns(strAllRuns), m_isCSRAUtil(bCSRA), m_IncludeFilteredReads(false)
 {
     m_seqSrc = x_MakeVDBSeqSrc();
 }
