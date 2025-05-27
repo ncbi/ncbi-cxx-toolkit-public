@@ -32,6 +32,7 @@ import sys
 import os, os.path
 import json
 import statistics
+import math
 from monitor_utils import timestamp, print_error, buildPSGInstances, isHostPortServiceDirectory, isTimestampDirectory, isJsonFile, isFloat
 
 VERBOSE = False
@@ -185,6 +186,11 @@ def roundToSignDigits(value, num_of_digits):
         return str_val[:-2]
     return str_val
 
+
+def splitThousands(value):
+    return f'{value:,}'
+
+
 def matchHostPortService(host, port, service, instances):
     if instances is None:
         return True
@@ -278,8 +284,24 @@ def buildFilesList(dst_path, start_timestamp, end_timestamp,
         return None
     return files_to_analyze
 
+def get95and99Percentiles(data):
+    data_sorted = sorted(data) # Sort in ascending order
+    data_length = len(data_sorted)
+    index95 = math.ceil(95 / 100 * data_length)
+    index99 = math.ceil(99 / 100 * data_length)
+    return data_sorted[index95], data_sorted[index99]
 
-def processRegularAsSummary(files):
+def getStatistics(data):
+    if data:
+        data_min = min(data)
+        data_median = statistics.median(data)
+        data_avg = statistics.mean(data)
+        data_max = max(data)
+        data_95, data_99 = get95and99Percentiles(data)
+        return data_min, data_median, data_avg, data_max, data_95, data_99
+    return 0, 0, 0, 0, 0, 0
+
+def processRegularAsSummary(files, peer_ip_filter, peer_id_filter):
     instances = {}
     all_num_conns = []
 
@@ -304,6 +326,7 @@ def processRegularAsSummary(files):
     conn_life_time_max_peer = ''
     conn_life_time_max_peer_id = ''
     conn_life_time_max_user_agent = ''
+    conn_life_time_max_requests = 0
 
     # Accumulate the info about refused connections and refused requests per
     # server
@@ -329,7 +352,6 @@ def processRegularAsSummary(files):
         total += 1
         ts = datetime.datetime.strptime(data['timestamp'], '%Y%m%d-%H-%M-%S.%f')
 
-        num_conn = len(data['connections'])
         instance_id = data['host'] + ':' + str(data['port'])
         if data['service']:
             instance_id += '-' + data['service']
@@ -341,15 +363,25 @@ def processRegularAsSummary(files):
         if conn_hard_limit is None and 'conn_hard_limit' in data:
             conn_hard_limit = data['conn_hard_limit']
 
-        # Memorize #of connections regardless on what server it was
-        all_num_conns.append(num_conn)
 
+        num_conn = 0
         conn_per_peer = {}
         conn_per_user_agent = {}
         conn_per_peer_id = {}
         for conn_prop in data['connections']:
             # Deal with connections per peer data
             peer = conn_prop['peer_ip']
+            peer_id = conn_prop.get('peer_id', '')
+
+            if peer_ip_filter is not None:
+                if peer != peer_ip_filter:
+                    continue
+            if peer_id_filter is not None:
+                if peer_id != peer_id_filter:
+                    continue
+
+            num_conn += 1
+
             if peer not in conn_per_peer:
                 conn_per_peer[peer] = 1 # first found connection for the peer
             else:
@@ -379,6 +411,7 @@ def processRegularAsSummary(files):
             # Deal with the connection life time
             conn_id = conn_prop['id']
             conn_open_ts = conn_prop['open_timestamp']
+            conn_finished_reqs_cnt = conn_prop['finished_reqs_cnt']
 
             if instance_id not in all_conn_life_time_per_server:
                 all_conn_life_time_per_server[instance_id] = {}
@@ -388,7 +421,8 @@ def processRegularAsSummary(files):
                                                                        'last_seen': ts,
                                                                        'peer': peer,
                                                                        'peer_id': '',
-                                                                       'peer_user_agent': ''}
+                                                                       'peer_user_agent': '',
+                                                                       'finished_reqs_cnt': conn_finished_reqs_cnt}
                 if 'peer_id' in conn_prop:
                     all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] = conn_prop['peer_id']
                 if 'peer_user_agent' in conn_prop:
@@ -396,6 +430,7 @@ def processRegularAsSummary(files):
             else:
                 if all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] < ts:
                     all_conn_life_time_per_server[instance_id][conn_id]['last_seen'] = ts
+                    all_conn_life_time_per_server[instance_id][conn_id]['finished_reqs_cnt'] = conn_finished_reqs_cnt
                     if 'peer_id' in conn_prop:
                         all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] = conn_prop['peer_id']
                     else:
@@ -404,6 +439,9 @@ def processRegularAsSummary(files):
                         all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] = conn_prop['peer_user_agent']
                     else:
                         all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent'] = ''
+
+        # Memorize #of connections regardless on what server it was
+        all_num_conns.append(num_conn)
 
         # Deal with rejections
         conn_refused = data['hard_limit_conn_refused_cnt']
@@ -490,6 +528,7 @@ def processRegularAsSummary(files):
                 conn_life_time_max_peer = all_conn_life_time_per_server[instance_id][conn_id]['peer']
                 conn_life_time_max_peer_id = all_conn_life_time_per_server[instance_id][conn_id]['peer_id']
                 conn_life_time_max_user_agent = all_conn_life_time_per_server[instance_id][conn_id]['peer_user_agent']
+                conn_life_time_max_requests = all_conn_life_time_per_server[instance_id][conn_id]['finished_reqs_cnt']
             all_conns_durations.append(duration.total_seconds())
             total_connections += 1
             if all_conn_life_time_per_server[instance_id][conn_id]['peer_id'] == '':
@@ -498,61 +537,11 @@ def processRegularAsSummary(files):
                 total_peer_user_agent_not_set += 1
 
 
-    if all_num_conns:
-        num_con_min = min(all_num_conns)
-        num_con_median = statistics.median(all_num_conns)
-        num_con_avg = statistics.mean(all_num_conns)
-        num_con_max = max(all_num_conns)
-    else:
-        num_con_min = 0
-        num_con_median = 0
-        num_con_avg = 0
-        num_con_max = 0
-
-    if all_conn_per_peer:
-        num_con_per_peer_min = min(all_conn_per_peer)
-        num_con_per_peer_median = statistics.median(all_conn_per_peer)
-        num_con_per_peer_avg = statistics.mean(all_conn_per_peer)
-        num_con_per_peer_max = max(all_conn_per_peer)
-    else:
-        num_con_per_peer_min = 0
-        num_con_per_peer_median = 0
-        num_con_per_peer_avg = 0
-        num_con_per_peer_max = 0
-
-    if all_conn_per_user_agent:
-        num_con_per_user_agent_min = min(all_conn_per_user_agent)
-        num_con_per_user_agent_median = statistics.median(all_conn_per_user_agent)
-        num_con_per_user_agent_avg = statistics.mean(all_conn_per_user_agent)
-        num_con_per_user_agent_max = max(all_conn_per_user_agent)
-    else:
-        num_con_per_user_agent_min = 0
-        num_con_per_user_agent_median = 0
-        num_con_per_user_agent_avg = 0
-        num_con_per_user_agent_max = 0
-
-    if all_conn_per_peer_id:
-        num_con_per_peer_id_min = min(all_conn_per_peer_id)
-        num_con_per_peer_id_median = statistics.median(all_conn_per_peer_id)
-        num_con_per_peer_id_avg = statistics.mean(all_conn_per_peer_id)
-        num_con_per_peer_id_max = max(all_conn_per_peer_id)
-    else:
-        num_con_per_peer_id_min = 0
-        num_con_per_peer_id_median = 0
-        num_con_per_peer_id_avg = 0
-        num_con_per_peer_id_max = 0
-
-    if all_conns_durations:
-        conn_life_time_min = min(all_conns_durations)
-        conn_life_time_median = statistics.median(all_conns_durations)
-        conn_life_time_avg = statistics.mean(all_conns_durations)
-        conn_life_time_max = max(all_conns_durations)
-    else:
-        conn_life_time_min = 0
-        conn_life_time_median = 0
-        conn_life_time_avg = 0
-        conn_life_time_max = 0
-
+    num_con_min, num_con_median, num_con_avg, num_con_max, num_con_95, num_con_99 = getStatistics(all_num_conns)
+    num_con_per_peer_min, num_con_per_peer_median, num_con_per_peer_avg, num_con_per_peer_max, num_con_per_peer_95, num_con_per_peer_99 = getStatistics(all_conn_per_peer)
+    num_con_per_user_agent_min, num_con_per_user_agent_median, num_con_per_user_agent_avg, num_con_per_user_agent_max, num_con_per_user_agent_95, num_con_per_user_agent_99 = getStatistics(all_conn_per_user_agent)
+    num_con_per_peer_id_min, num_con_per_peer_id_median, num_con_per_peer_id_avg, num_con_per_peer_id_max, num_con_per_peer_id_95, num_con_per_peer_id_99 = getStatistics(all_conn_per_peer_id)
+    conn_life_time_min, conn_life_time_median, conn_life_time_avg, conn_life_time_max, conn_life_time_95, conn_life_time_99 = getStatistics(all_conns_durations)
 
     for instance_id in instances.keys():
         start_ts, end_ts, delta_ts = getStartEndDuration(instances[instance_id])
@@ -584,18 +573,25 @@ def processRegularAsSummary(files):
         max_conn_peer_ids = ', '.join(conn_per_peer_id_max_peer_ids)
     else:
         max_conn_peer_ids = conn_per_peer_id_max_peer_ids[0] + ', ' + conn_per_peer_id_max_peer_ids[1] + f', and {cnt - 2} more'
+
+
+    if conn_life_time_max_peer_id:
+        conn_life_time_max_signature = f'{conn_life_time_max_user_agent} @ {conn_life_time_max_peer}/{conn_life_time_max_peer_id}'
+    else:
+        conn_life_time_max_signature = f'{conn_life_time_max_user_agent} @ {conn_life_time_max_peer}/?'
+
     print()
-    print(f'                              {"Min":>10}{"Median":>10}{"Average":>10}{"Max":>10}   Max: PeerIP/UserAgent/PeerID')
-    print(f'    Connections:              {roundToSignDigits(num_con_min, 2):>10}{roundToSignDigits(num_con_median, 2):>10}{roundToSignDigits(num_con_avg, 2):>10}{roundToSignDigits(num_con_max, 2):>10}   (Thresholds: alarm={conn_alert_limit}, soft={conn_soft_limit}, hard={conn_hard_limit})')
-    print(f'    Conn/peer:                {roundToSignDigits(num_con_per_peer_min, 2):>10}{roundToSignDigits(num_con_per_peer_median, 2):>10}{roundToSignDigits(num_con_per_peer_avg, 2):>10}{roundToSignDigits(num_con_per_peer_max, 2):>10}   {max_conn_peers}')
-    print(f'    Conn/user agent:          {roundToSignDigits(num_con_per_user_agent_min, 2):>10}{roundToSignDigits(num_con_per_user_agent_median, 2):>10}{roundToSignDigits(num_con_per_user_agent_avg, 2):>10}{roundToSignDigits(num_con_per_user_agent_max, 2):>10}   {max_conn_user_agents}')
-    print(f'    Conn/peer id:             {roundToSignDigits(num_con_per_peer_id_min, 2):>10}{roundToSignDigits(num_con_per_peer_id_median, 2):>10}{roundToSignDigits(num_con_per_peer_id_avg, 2):>10}{roundToSignDigits(num_con_per_peer_id_max, 2):>10}   {max_conn_peer_ids}')
-    print(f'    Conn/peer life(s):        {roundToSignDigits(conn_life_time_min, 2):>10}{roundToSignDigits(conn_life_time_median, 2):>10}{roundToSignDigits(conn_life_time_avg, 2):>10}{roundToSignDigits(conn_life_time_max, 2):>10}   {conn_life_time_max_user_agent} @ {conn_life_time_max_peer} - {conn_life_time_max_peer_id}')
+    print(f'                              {"Min":>10}{"Median":>10}{"Average":>10}{"Max":>10}{"p95":>10}{"p99":>10}   Max: PeerIP/UserAgent/PeerID')
+    print(f'    Connections:              {roundToSignDigits(num_con_min, 2):>10}{roundToSignDigits(num_con_median, 2):>10}{roundToSignDigits(num_con_avg, 2):>10}{roundToSignDigits(num_con_max, 2):>10}{roundToSignDigits(num_con_95, 2):>10}{roundToSignDigits(num_con_99, 2):>10}   (Thresholds: alarm={conn_alert_limit}, soft={conn_soft_limit}, hard={conn_hard_limit})')
+    print(f'    Conn/peer:                {roundToSignDigits(num_con_per_peer_min, 2):>10}{roundToSignDigits(num_con_per_peer_median, 2):>10}{roundToSignDigits(num_con_per_peer_avg, 2):>10}{roundToSignDigits(num_con_per_peer_max, 2):>10}{roundToSignDigits(num_con_per_peer_95, 2):>10}{roundToSignDigits(num_con_per_peer_99, 2):>10}   {max_conn_peers}')
+    print(f'    Conn/user agent:          {roundToSignDigits(num_con_per_user_agent_min, 2):>10}{roundToSignDigits(num_con_per_user_agent_median, 2):>10}{roundToSignDigits(num_con_per_user_agent_avg, 2):>10}{roundToSignDigits(num_con_per_user_agent_max, 2):>10}{roundToSignDigits(num_con_per_user_agent_95, 2):>10}{roundToSignDigits(num_con_per_user_agent_99, 2):>10}   {max_conn_user_agents}')
+    print(f'    Conn/peer id:             {roundToSignDigits(num_con_per_peer_id_min, 2):>10}{roundToSignDigits(num_con_per_peer_id_median, 2):>10}{roundToSignDigits(num_con_per_peer_id_avg, 2):>10}{roundToSignDigits(num_con_per_peer_id_max, 2):>10}{roundToSignDigits(num_con_per_peer_id_95, 2):>10}{roundToSignDigits(num_con_per_peer_id_99, 2):>10}   {max_conn_peer_ids}')
+    print(f'    Conn/peer life(s):        {roundToSignDigits(conn_life_time_min, 2):>10}{roundToSignDigits(conn_life_time_median, 2):>10}{roundToSignDigits(conn_life_time_avg, 2):>10}{roundToSignDigits(conn_life_time_max, 2):>10}{roundToSignDigits(conn_life_time_95, 2):>10}{roundToSignDigits(conn_life_time_99, 2):>10}   {conn_life_time_max_signature} = {conn_life_time_max_requests}')
     peer_id_not_set_percent = float(total_peer_id_not_set) / float(total_connections) * 100.0
     peer_user_agent_not_set_percent = float(total_peer_user_agent_not_set) / float(total_connections) * 100.0
     print(f'    Total connections:       {total_connections:,}')
-    print(f'    Peer id not set:         {roundToSignDigits(peer_id_not_set_percent, 2)}%')
-    print(f'    Peer user agent not set: {roundToSignDigits(peer_user_agent_not_set_percent, 2)}%')
+    print(f'    Peer id not set:         {roundToSignDigits(peer_id_not_set_percent, 2):>10}%{splitThousands(total_peer_id_not_set):>12}')
+    print(f'    Peer user agent not set: {roundToSignDigits(peer_user_agent_not_set_percent, 2):>10}%{splitThousands(total_peer_user_agent_not_set):>12}')
 
     print()
 
@@ -606,29 +602,40 @@ def processRegularAsSummary(files):
                'conn_num': {'min': num_con_min,
                             'median': num_con_median,
                             'avg': num_con_avg,
-                            'max': num_con_max},
+                            'max': num_con_max,
+                            'p95': num_con_95,
+                            'p99': num_con_99},
                'conn_num_per_peer': {'min': num_con_per_peer_min,
                                      'median': num_con_per_peer_median,
                                      'avg': num_con_per_peer_avg,
                                      'max': num_con_per_peer_max,
-                                     'max_peers': conn_per_peer_max_peers},
+                                     'max_peers': conn_per_peer_max_peers,
+                                     'p95': num_con_per_peer_95,
+                                     'p99': num_con_per_peer_99},
                'conn_num_per_user_agent': {'min': num_con_per_user_agent_min,
                                            'median': num_con_per_user_agent_median,
                                            'avg': num_con_per_user_agent_avg,
                                            'max': num_con_per_user_agent_max,
-                                           'max_user_agents': conn_per_user_agent_max_user_agents},
+                                           'max_user_agents': conn_per_user_agent_max_user_agents,
+                                           'p95': num_con_per_user_agent_95,
+                                           'p99': num_con_per_user_agent_99},
                'conn_num_per_peer_id': {'min': num_con_per_peer_id_min,
                                         'median': num_con_per_peer_id_median,
                                         'avg': num_con_per_peer_id_avg,
                                         'max': num_con_per_peer_id_max,
-                                        'max_peer_ids': conn_per_peer_id_max_peer_ids},
+                                        'max_peer_ids': conn_per_peer_id_max_peer_ids,
+                                        'p95': num_con_per_peer_id_95,
+                                        'p99': num_con_per_peer_id_99},
                'conn_lifetime': {'min': conn_life_time_min,
                                  'median': conn_life_time_median,
                                  'avg': conn_life_time_avg,
                                  'max': conn_life_time_max,
                                  'max_peer': conn_life_time_max_peer,
                                  'max_peer_id': conn_life_time_max_peer_id,
-                                 'max_peer_user_agent': conn_life_time_max_user_agent},
+                                 'max_peer_user_agent': conn_life_time_max_user_agent,
+                                 'max_requests': conn_life_time_max_requests,
+                                 'p95': conn_life_time_95,
+                                 'p99': conn_life_time_99},
                'instances': instances}
     return regular
 
@@ -764,13 +771,13 @@ def processAlarmAsSummary(files, regular_results):
     return alarm
 
 
-def processFilesAsSummary(files):
+def processFilesAsSummary(files, peer_ip, peer_id):
     """The files parameter is as follows: {'alarm': [], 'regular': []}
        It is guaranteed that there is at least one file name in one of the lists"""
 
     print("Regular analysis:")
     if len(files['regular']) > 0:
-        regular = processRegularAsSummary(files['regular'])
+        regular = processRegularAsSummary(files['regular'], peer_ip, peer_id)
     else:
         print("No regular files were found")
 
@@ -810,6 +817,9 @@ def main():
                       action="append", type="string", dest="in_services", default=[],
                       help="This arg can appear more than once if multiple services and/or servers need to be analyzed. "
                            "Only applicable if path is a dir. (default: all)")
+    parser.add_option("--peer",
+                      action="store", type="string", dest="peer", default=None,
+                      help="to only consider connections coming from the specified peer (format: <PeerIP>[/<PeerID>])")
     parser.add_option("--summary",
                       action="store_true", dest="summary", default=False,
                       help="Show summary only (default: False)")
@@ -834,6 +844,20 @@ def main():
         print_error("The '--path' option must point to a directory or to a file")
         parser.print_help()
         return 1
+
+    peer_ip = None
+    peer_id = None
+    if options.peer is not None:
+        parts = options.peer.split('/')
+        if len(parts) > 2:
+            print_error("The '--peer' option must be in format <PeerIP>[/<PeerID>]")
+            parser.print_help()
+            return 1
+        if len(parts) == 2:
+            peer_ip = parts[0]
+            peer_id = parts[1]
+        else:
+            peer_ip = parts[0]
 
     start_timestamp = None
     end_timestamp = None
@@ -861,7 +885,7 @@ def main():
         return 1
 
     if options.summary:
-        processFilesAsSummary(files_to_analyze)
+        processFilesAsSummary(files_to_analyze, peer_ip, peer_id)
     else:
         print_error("Full analysis has not been implemented yet")
         return 1
