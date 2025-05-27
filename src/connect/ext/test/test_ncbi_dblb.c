@@ -74,7 +74,7 @@ static char* optarg;
 #endif /*NCBI_OS_UNIX*/
 
 
-static const char kRevision[] = "$Revision: 666428 $";
+static const char kRevision[] = "$Revision$";
 
 
 static const char* s_Progname(const char* prog)
@@ -149,6 +149,7 @@ int main(int argc, char** argv)
     int/*bool*/ quiet = 0/*false*/;
     const SDBLB_Preference* p = 0;
     SDBLB_Preference preference;
+    const char* const* skip;
     EDBLB_Status result;
     char hostport[256];
     SDBLB_ConnPoint cp;
@@ -209,11 +210,20 @@ int main(int argc, char** argv)
     if (n != optind  ||  optind >= argc)
         s_Usage(argv[0]);
 
+#ifdef NCBI_COMPILER_GCC
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wincompatible-pointer-types"
+#endif /*NCBI_COMPILER_GCC*/
+    skip = optind + 1 < argc ? &argv[optind + 1] : 0;
+#ifdef NCBI_COMPILER_GCC
+#  pragma GCC diagnostic pop
+#endif /*NCBI_COMPILER_GCC*/
+
     s = DBLB_GetServer
         (argv[optind], standby
          ? fDBLB_AllowFallbackToStandby
          : fDBLB_None, p,
-         optind + 1 < argc ? &argv[optind + 1] : 0,  /*NCBI_FAKE_WARNING*/
+         skip,
          &cp, server, sizeof(server),
          &result);
 
