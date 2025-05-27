@@ -8462,23 +8462,28 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion&, CSeq_feat& seqfeat)
 }
 
 
-void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
+void CNewCleanup_imp::RemoveZeroLengthLiterals(CDelta_ext& delta_ext)
 {
+    if (! delta_ext.IsSet()) {
+        return;
+    }
+
     // remove zero-length seq-literals
-    if( FIELD_EQUALS( seq_inst, Repr, CSeq_inst::eRepr_delta ) ) {
-        EDIT_EACH_DELTASEQ_IN_DELTAEXT( delta_seq_iter, delta_ext ) {
-            CDelta_seq &delta_seq = **delta_seq_iter;
-            if( delta_seq.IsLiteral() ) {
-                const CSeq_literal &the_literal = delta_seq.GetLiteral();
-                if( FIELD_IS_SET(the_literal, Seq_data) &&
-                    FIELD_EQUALS(the_literal, Length, 0) &&
-                    the_literal.GetSeq_data().IsIupacna() )
-                {
-                    ERASE_DELTASEQ_IN_DELTAEXT( delta_seq_iter, delta_ext );
-                    ChangeMade(CCleanupChange::eCleanDeltaExt);
-                }
+    auto it = delta_ext.Set().begin();
+    while (it != delta_ext.Set().end()) {
+        const auto& delta_seq = *it;
+        if (delta_seq->IsLiteral()) {
+            const auto& literal = delta_seq->GetLiteral();
+            if (literal.IsSetLength() &&
+                literal.GetLength() == 0 &&
+                literal.IsSetSeq_data() &&
+                literal.GetSeq_data().IsIupacna()) {
+                it = delta_ext.Set().erase(it);
+                ChangeMade(CCleanupChange::eCleanDeltaExt);
+                continue;
             }
         }
+        ++it;
     }
 }
 
