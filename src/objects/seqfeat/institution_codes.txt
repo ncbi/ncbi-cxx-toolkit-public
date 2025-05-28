@@ -1759,6 +1759,7 @@ CZL	s	Centro de Zoologia
 CZRMA	s	Coleccion Zoologica Regional (Mammalia) del Instituto de Historia Natural y Ecologia			
 CZUAA	s	Universidad Autonoma de Aguascalientes (Mexico)			
 CZUG	s	Universidad de Guadalajara,Centro de Estudios en Zoologia, Entomologia			
+CZUT	s	Coleccion Zoologica de la Universidad del Tolima			
 D	s	Chaharmahal and Bakhtiari Agricultural and Natural Resources Research and Education Center			
 DABUH	s	University of Helsinki, Department of Applied Biology			
 DABZ	s	Department of Agriculture, Zimbabwe			
@@ -3436,6 +3437,7 @@ IBUP	s	Institute of Biology
 IBUS	s	Universidade Federal do Rio de Janeiro			
 IBUT	s	Instituto Butanta			
 IBY	s	Botanical Institute of Guangxi			
+IC	s	La Coleccion Ornitologica Phelps (Phelps Ornithological Collection)			
 ICA	s	Instituto Colombiano Agropecuario, Tibaitata			
 ICAI	s	Pontificia Universidad Catolica del Ecuador Sede Ibarra			
 ICAR	s	ICAR-Central Arid Zone Research Institute			

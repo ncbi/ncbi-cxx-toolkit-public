@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed May 14 05:33:05 EDT 2025; formally
+/* time_t value corresponding to Wed May 28 05:33:04 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1747215185UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1748424784UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1795,6 +1795,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CZRMA\ts\tColeccion Zoologica Regional (Mammalia) del Instituto de Historia Natural y Ecologia\t\t\t",
 "CZUAA\ts\tUniversidad Autonoma de Aguascalientes (Mexico)\t\t\t",
 "CZUG\ts\tUniversidad de Guadalajara,Centro de Estudios en Zoologia, Entomologia\t\t\t",
+"CZUT\ts\tColeccion Zoologica de la Universidad del Tolima\t\t\t",
 "D\ts\tChaharmahal and Bakhtiari Agricultural and Natural Resources Research and Education Center\t\t\t",
 "DABUH\ts\tUniversity of Helsinki, Department of Applied Biology\t\t\t",
 "DABZ\ts\tDepartment of Agriculture, Zimbabwe\t\t\t",
@@ -3472,6 +3473,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IBUS\ts\tUniversidade Federal do Rio de Janeiro\t\t\t",
 "IBUT\ts\tInstituto Butanta\t\t\t",
 "IBY\ts\tBotanical Institute of Guangxi\t\t\t",
+"IC\ts\tLa Coleccion Ornitologica Phelps (Phelps Ornithological Collection)\t\t\t",
 "ICA\ts\tInstituto Colombiano Agropecuario, Tibaitata\t\t\t",
 "ICAI\ts\tPontificia Universidad Catolica del Ecuador Sede Ibarra\t\t\t",
 "ICAR\ts\tICAR-Central Arid Zone Research Institute\t\t\t",
