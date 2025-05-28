@@ -1302,8 +1302,10 @@ BOOST_AUTO_TEST_CASE(Test_repeat_type_qual)
     BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), true);
     BOOST_CHECK_EQUAL(test_val, "nested,(tandem),Y_prime_element");
 
+    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue("engineered_foreign_repetitive_element"), false);
+
     test_val = "engineered_foreign_repetitive_element,(non_LTR_retrotransposon_polymeric_tract)";
-    BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
+    // BOOST_CHECK_EQUAL(CGb_qual::IsValidRptTypeValue(test_val), true);
 
     BOOST_CHECK_EQUAL(CGb_qual::FixRptTypeValue(test_val), false);
 }
