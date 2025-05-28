@@ -181,7 +181,6 @@ CGb_qual::GetSetOfLegalRepeatTypes(void)
         "centromeric_repeat",
         "direct",
         "dispersed",
-        "engineered_foreign_repetitive_element",
         "flanking",
         "inverted",
         "long_terminal_repeat",
