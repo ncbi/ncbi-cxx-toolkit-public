@@ -454,13 +454,13 @@ const Char* ParFlat_RptString[] = {
     "terminal",
     "direct",
     "dispersed",
+    "nested",
     "long_terminal_repeat",
     "non_LTR_retrotransposon_polymeric_tract",
     "X_element_combinatorial_repeat",
     "Y_prime_element",
     "telomeric_repeat",
     "centromeric_repeat",
-    "engineered_foreign_repetitive_element",
     "other"
 };
 
