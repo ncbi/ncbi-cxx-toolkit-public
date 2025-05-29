@@ -6730,6 +6730,8 @@ BOOST_AUTO_TEST_CASE(Test_MissingPlasmid)
     // plasmid
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "MissingPlasmidLocation",
         "Plasmid subsource but not plasmid location"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+       "Source should not have both chromosome and plasmid name fields"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     // error goes away if plasmid genome
@@ -6737,8 +6739,11 @@ BOOST_AUTO_TEST_CASE(Test_MissingPlasmid)
 
     unit_test_util::SetGenome(entry, CBioSource::eGenome_plasmid);
     // AddChromosomeNoLocation(expected_errors, entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+       "Source should not have both chromosome and plasmid name fields"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
 
     // if plasmid genome, better have plasmid name
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
@@ -23381,6 +23386,8 @@ void TestOnePlasmid(const string& plasmid_name, bool expect_error)
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BadPlasmidChromosomeLinkageName",
                     "Problematic plasmid/chromosome/linkage group name '" + plasmid_name + "'"));
     }
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+        "Source should not have both chromosome and plasmid name fields"));
     // AddChromosomeNoLocation(expected_errors, entry);
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -24806,6 +24813,11 @@ void TestOneReplicon(CSubSource::ESubtype subtype, const string& val, const stri
 
     if (!NStr::IsBlank(err_code)) {
         expected_errors.push_back(new CExpectedError("lcl|good", sev, err_code, msg));
+    }
+
+    if (subtype == CSubSource::eSubtype_plasmid_name) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceInconsistency",
+                "Source should not have both chromosome and plasmid name fields"));
     }
 
     if (subtype == CSubSource::eSubtype_segment) {

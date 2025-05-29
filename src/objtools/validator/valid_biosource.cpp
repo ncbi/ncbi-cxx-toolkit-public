@@ -528,6 +528,8 @@ const CSeq_entry *ctx)
 
     bool isInfluenzaOrSars2 = false;
     bool isMetagenome = false;
+    bool hasChromosome = false;
+    bool hasPlasmidName = false;
 
     // look at uncultured required modifiers
     if (hasTaxname) {
@@ -669,6 +671,7 @@ const CSeq_entry *ctx)
             break;
 
         case CSubSource::eSubtype_chromosome:
+            hasChromosome = true;
             if (chromosome) {
                 if (NStr::CompareNocase((**ssit).GetName(), chromosome->GetName()) != 0) {
                     chrom_conflict = true;
@@ -748,6 +751,7 @@ const CSeq_entry *ctx)
             break;
 
         case CSubSource::eSubtype_plasmid_name:
+            hasPlasmidName = true;
             if (!bsrc.IsSetGenome() || bsrc.GetGenome() != CBioSource::eGenome_plasmid) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MissingPlasmidLocation,
                     "Plasmid subsource but not plasmid location", obj, ctx);
@@ -836,6 +840,12 @@ const CSeq_entry *ctx)
                 subtype == CSubSource::eSubtype_tissue_type ? eErr_SEQ_DESCR_InvalidTissueType : eErr_SEQ_DESCR_BioSourceInconsistency,
                 "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }
+    }
+
+    if (hasChromosome && hasPlasmidName) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+            "Source should not have both chromosome and plasmid name fields",
+            obj, ctx);
     }
 
     if (IsIndexerVersion() && ctx && CValidError_bioseq::IsWGS(*ctx) &&
