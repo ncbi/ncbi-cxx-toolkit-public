@@ -149,6 +149,10 @@ inline bool StringHasNoText(const char* s)
 
 inline bool StringDoesHaveText(const char* s) { return ! StringHasNoText(s); }
 
+inline int fta_atoi(const char* beg) {
+    return std::atoi(beg);
+}
+
 END_NCBI_SCOPE
 
 #endif // FTACPP_HPP

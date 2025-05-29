@@ -138,7 +138,7 @@ static void ParseGenBankVersion(IndexblkPtr entry, char* line, char* nid, Parser
         }
         return;
     }
-    entry->vernum = atoi(q + 1);
+    entry->vernum = fta_atoi(q + 1);
     *q            = ch;
 
     if (entry->vernum < 1) {
@@ -223,10 +223,10 @@ static bool fta_check_mga_line(char* line, IndexblkPtr ibp)
 
     for (q = str + 5; *q == '0';)
         q++;
-    from = atoi(q);
+    from = fta_atoi(q);
     for (q = p + 5; *q == '0';)
         q++;
-    to = atoi(q);
+    to = fta_atoi(q);
 
     if (from > to) {
         MemFree(str);

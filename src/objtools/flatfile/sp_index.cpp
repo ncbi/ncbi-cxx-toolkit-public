@@ -94,7 +94,7 @@ static void SPGetVerNum(char* str, IndexblkPtr ibp)
         p++;
     if (*p == '.' && (p[1] == '\0' || p[1] == '\n')) {
         *p          = '\0';
-        ibp->vernum = atoi(q);
+        ibp->vernum = fta_atoi(q);
         *p          = '.';
     }
 }

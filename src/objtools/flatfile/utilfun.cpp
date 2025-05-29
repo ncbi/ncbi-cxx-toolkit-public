@@ -231,13 +231,13 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
         const Char* q;
         for (q = p; *p >= '0' && *p <= '9';)
             p++;
-        num1 = atoi(q);
+        num1 = fta_atoi(q);
 
         for (p = last.c_str() + preflen; *p == '0';)
             p++;
         for (q = p; *p >= '0' && *p <= '9';)
             p++;
-        num2 = atoi(q);
+        num2 = fta_atoi(q);
 
         ret.push_back(first);
 

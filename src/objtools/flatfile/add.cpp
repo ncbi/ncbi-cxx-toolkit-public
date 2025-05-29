@@ -1196,7 +1196,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
 
         *p++  = '\0';
-        from1 = atoi(r);
+        from1 = fta_atoi(r);
 
         for (r = p; *p >= '0' && *p <= '9';)
             p++;
@@ -1206,7 +1206,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
         if (*p != '\0')
             *p++ = '\0';
-        to1 = atoi(r);
+        to1 = fta_atoi(r);
 
         if (from1 >= to1) {
             bad_interval = true;
@@ -1241,7 +1241,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 bad_accession = tftbp->accession;
                 break;
             }
-            tftbp->version = atoi(r);
+            tftbp->version = fta_atoi(r);
         }
 
         if (StringEquNI(tftbp->accession, "ti", 2)) {
@@ -1282,7 +1282,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 break;
             }
             *p++         = '\0';
-            tftbp->from2 = atoi(r);
+            tftbp->from2 = fta_atoi(r);
 
             for (r = p; *p >= '0' && *p <= '9';)
                 p++;
@@ -1292,7 +1292,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             }
             if (*p != '\0')
                 *p++ = '\0';
-            tftbp->to2 = atoi(r);
+            tftbp->to2 = fta_atoi(r);
 
             if (tftbp->from2 >= tftbp->to2) {
                 bad_interval = true;
@@ -1416,7 +1416,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             for (r = tftbp->accession + 2; *r == '0';)
                 r++;
             if (fta_number_is_huge(r) == false)
-                tag.SetTag().SetId(atoi(r));
+                tag.SetTag().SetId(fta_atoi(r));
             else
                 tag.SetTag().SetStr(r);
 
@@ -1723,7 +1723,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
-            user_field->SetData().SetInt(atoi(tvnp->data));
+            user_field->SetData().SetInt(fta_atoi(tvnp->data));
             user_obj_ptr->SetData().push_back(user_field);
 
 
@@ -2016,7 +2016,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
         user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(atoi(tvnp->data));
+        user_field->SetData().SetInt(fta_atoi(tvnp->data));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new CUser_field);

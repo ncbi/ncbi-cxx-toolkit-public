@@ -232,7 +232,7 @@ static void FtaErrGetMsgCodes(
 
         ch   = *p;
         *p   = '\0';
-        val2 = atoi(q);
+        val2 = fta_atoi(q);
         *p   = ch;
 
         if (val2 < 1) {

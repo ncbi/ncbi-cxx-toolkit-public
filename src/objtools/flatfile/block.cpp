@@ -182,7 +182,7 @@ bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size)
 
         tqssp            = qssp.emplace_after(tqssp);
         tqssp->accession = string(buf + 1);
-        tqssp->version   = q ? atoi(q) : 0;
+        tqssp->version   = q ? fta_atoi(q) : 0;
         tqssp->offset    = (size_t)ftell(pp->qsfd) - i;
         if (count > 0)
             tqsspprev->length = tqssp->offset - tqsspprev->offset;

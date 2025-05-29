@@ -866,7 +866,7 @@ static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_o
 
             cur_field.Reset(new CUser_field);
             cur_field->SetLabel().SetStr("gi");
-            cur_field->SetNum(atoi(q));
+            cur_field->SetNum(fta_atoi(q));
             field_set->SetData().SetFields().push_back(cur_field);
 
             *p = ch;

@@ -384,12 +384,12 @@ static void GetSprotIds(ParRefBlk* prbp, char* str)
 
         if (StringEquNI(q, "MEDLINE=", 8)) {
             if (prbp->muid == 0)
-                prbp->muid = atoi(q + 8);
+                prbp->muid = fta_atoi(q + 8);
             else
                 muids = true;
         } else if (StringEquNI(q, "PUBMED=", 7)) {
             if (prbp->pmid == ZERO_ENTREZ_ID)
-                prbp->pmid = ENTREZ_ID_FROM(int, atoi(q + 7));
+                prbp->pmid = ENTREZ_ID_FROM(int, fta_atoi(q + 7));
             else
                 pmids = true;
         } else if (StringEquNI(q, "DOI=", 4)) {
