@@ -158,7 +158,8 @@ enum EBlastOptIdx {
     eBlastOpt_Web_DBSubgroup,
     eBlastOpt_Web_ExclModels,
     eBlastOpt_Web_ExclSeqUncult,
-    eBlastOpt_MaxValue       // For testing/looping, not an actual parameter
+    eBlastOpt_MaxValue,       // For testing/looping, not an actual parameter
+    eBlastOpt_Web_OrganismNameExcl,
 };
 
 
