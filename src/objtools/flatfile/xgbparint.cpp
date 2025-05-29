@@ -779,7 +779,7 @@ static void xgbgap(TTokenIt& current_it, TTokenConstIt end_it, CRef<CSeq_loc>& l
         if (it == end_it || it->choice != ETokenType::eRight) {
             return;
         }
-        auto pLoc = XGapToSeqLocEx(atoi(gapsize_it->data.c_str()), unknown);
+        auto pLoc = XGapToSeqLocEx(fta_atoi(gapsize_it->data.c_str()), unknown);
         if (! pLoc) {
             return;
         }
@@ -833,7 +833,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
         fuzz.SetRange();
 
         if (currentPt->choice == ETokenType::eNumber) {
-            fuzz.SetRange().SetMin(atoi(currentPt->data.c_str()) - 1);
+            fuzz.SetRange().SetMin(fta_atoi(currentPt->data.c_str()) - 1);
             if (take_which == TAKE_FIRST) {
                 numPt = fuzz.GetRange().GetMin();
             }
@@ -847,7 +847,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
         else {
             ++currentPt;
             if (currentPt->choice == ETokenType::eNumber) {
-                fuzz.SetRange().SetMax(atoi(currentPt->data.c_str()) - 1);
+                fuzz.SetRange().SetMax(fta_atoi(currentPt->data.c_str()) - 1);
                 if (take_which == TAKE_SECOND) {
                     numPt = fuzz.GetRange().GetMax();
                 }
@@ -877,7 +877,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
             ++numErrors;
         } else {
             if (currentPt->choice == ETokenType::eNumber) {
-                numPt = atoi(currentPt->data.c_str()) - 1;
+                numPt = fta_atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
                 num_found = 1;
             }
@@ -909,7 +909,7 @@ static void xgbload_number(TSeqPos& numPt, CInt_fuzz& fuzz, bool& keep_rawPt, TT
             }
 
             if (one_of_ok && currentPt->choice == ETokenType::eNumber) {
-                numPt = atoi(currentPt->data.c_str()) - 1;
+                numPt = fta_atoi(currentPt->data.c_str()) - 1;
                 ++currentPt;
             } else {
                 one_of_ok = false;

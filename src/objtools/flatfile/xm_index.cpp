@@ -464,7 +464,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             auto buf = XMLGetTagValue(entry, xip);
             if (! buf)
                 continue;
-            ibp->bases = (size_t)atoi(buf->c_str());
+            ibp->bases = (size_t)fta_atoi(buf->c_str());
         } else if (xip.tag == INSDSEQ_UPDATE_DATE && ! ibp->date) {
             auto buf = XMLGetTagValue(entry, xip);
             if (! buf)

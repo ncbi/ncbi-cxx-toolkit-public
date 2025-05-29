@@ -380,7 +380,7 @@ static void GetProtRefSeqId(CBioseq::TId& ids, InfoBioseqPtr ibp, int* num, Pars
     }
 
     const string protaccStr(protacc.c_str(), p);
-    const int    protaccVer(atoi(p + 1));
+    const int    protaccVer(fta_atoi(p + 1));
     protacc.clear();
 
     cho = GetProtAccOwner(protaccStr);

@@ -815,7 +815,7 @@ static void SpAddToIndexBlk(const DataBlk& entry, IndexblkPtr pIndex)
         eptr--;
     while (isdigit(*eptr) != 0 && eptr > offset)
         eptr--;
-    pIndex->bases = atoi(eptr + 1);
+    pIndex->bases = fta_atoi(eptr + 1);
     while (*eptr == ' ' && eptr > offset)
         eptr--;
     if (*eptr == ';')
@@ -1382,7 +1382,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
                 FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID in OH line : \"{}\".", q);
                 tvhp->taxid = ZERO_TAX_ID;
             } else
-                tvhp->taxid = TAX_ID_FROM(int, atoi(q));
+                tvhp->taxid = TAX_ID_FROM(int, fta_atoi(q));
             for (p++; *p == ' ' || *p == ';';)
                 p++;
             r = StringChr(p, '\n');
@@ -1466,7 +1466,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
             for (q = p; *q >= '0' && *q <= '9';)
                 q++;
             if (*q == ' ' || *q == '\0')
-                taxid = TAX_ID_FROM(int, atoi(p));
+                taxid = TAX_ID_FROM(int, fta_atoi(p));
             if (taxid <= ZERO_TAX_ID || (*q != ' ' && *q != '\0')) {
                 FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "Invalid NCBI TaxID on OX line : \"{}\" : Ignored.", p);
             }
@@ -1941,7 +1941,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
             } else if (AddToList(acc_list, token2)) {
                 CRef<CSeq_id> id(MakeAccSeqId(token2, ntype, p ? true : false,
-                                              p ? (Int2) atoi(p + 1) : 0));
+                                              p ? (Int2) fta_atoi(p + 1) : 0));
                 if (id.NotEmpty())
                     spb.SetSeqref().push_back(id);
             }
@@ -1983,7 +1983,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 id = AddPIDToSeqId(token3, token2);
             else {
                 *p++ = '\0';
-                id   = MakeAccSeqId(token3, ptype, true, (Int2)atoi(p));
+                id   = MakeAccSeqId(token3, ptype, true, (Int2)fta_atoi(p));
             }
 
             if (id.NotEmpty())
@@ -2040,7 +2040,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 continue;
 
             *p++ = '\0';
-            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)atoi(p)));
+            CRef<CSeq_id> id(MakeAccSeqId(token2, ptype, true, (Int2)fta_atoi(p)));
             if (id.NotEmpty())
                 spb.SetSeqref().push_back(id);
         } else {
@@ -2186,7 +2186,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
                             p++;
                         if (*p == '.' && p[1] == '\0') {
                             *p       = '\0';
-                            *ver_num = atoi(q);
+                            *ver_num = fta_atoi(q);
                             *p       = '.';
                         }
                     }
@@ -3046,15 +3046,15 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
             q++;
         extra_text = false;
         if (bptr < ptr1 && ptr1 <= endline) {
-            if (*q != '\n' && new_format && (*p == '?' || atoi(p) != -1))
+            if (*q != '\n' && new_format && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
             temp->to.assign(bptr, ptr1);
         } else if (fromstart) {
-            if (*q != '\n' && (*p == '?' || atoi(p) != -1))
+            if (*q != '\n' && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
             temp->to.assign(fromstart, fromend);
         } else {
-            if (*q != '\n' && (*p == '?' || atoi(p) != -1))
+            if (*q != '\n' && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
             temp->to.assign("-1");
         }
@@ -3062,7 +3062,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         q = (char*)temp->to.c_str();
         if (*q == '<' || *q == '>')
             q++;
-        if (extra_text || (*p != '?' && *q != '?' && (atoi(p) > atoi(q)))) {
+        if (extra_text || (*p != '?' && *q != '?' && (fta_atoi(p) > fta_atoi(q)))) {
             ch = '\0';
             p  = extra_text ? nullptr : StringChr(location, ' ');
             q  = StringChr(location, '\n');
@@ -3176,7 +3176,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         p = (char*)temp->from.c_str();
         if (*p == '<' || *p == '>')
             p++;
-        if (*p != '?' && atoi(p) < 0) {
+        if (*p != '?' && fta_atoi(p) < 0) {
             FreeSPFeatInputSet(temp);
             continue;
         }
@@ -3184,7 +3184,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         q = (char*)temp->to.c_str();
         if (*q == '<' || *q == '>')
             q++;
-        if ((*p != '?' && atoi(p) > (Int4)seqlen) || (*q != '?' && atoi(q) > (Int4)seqlen)) {
+        if ((*p != '?' && fta_atoi(p) > (Int4)seqlen) || (*q != '?' && fta_atoi(q) > (Int4)seqlen)) {
             FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
             FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
             FreeSPFeatInputSet(temp);
@@ -3245,12 +3245,12 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
 
         while (*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
-        from = (Int4)atoi(ptr);
+        from = (Int4)fta_atoi(ptr);
     } else if (StringChr(ptr, '?')) {
         from   = 0;
         nofrom = true;
     } else {
-        from = (Int4)atoi(ptr);
+        from = (Int4)fta_atoi(ptr);
     }
     if ((initmet == false && from != 0) ||
         (initmet && signal && from == 1))
@@ -3261,12 +3261,12 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         fuzzto = true;
         while (*ptr != '\0' && isdigit(*ptr) == 0)
             ptr++;
-        to = (Int4)atoi(ptr);
+        to = (Int4)fta_atoi(ptr);
     } else if (StringChr(ptr, '?')) {
         to   = static_cast<Int4>(ibp->bases);
         noto = true;
     } else
-        to = (Int4)atoi(ptr);
+        to = (Int4)fta_atoi(ptr);
 
     if (initmet == false && to != 0)
         to--;
@@ -4464,21 +4464,21 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
 
-            spslp->len = atoi(p);
+            spslp->len = fta_atoi(p);
             hspslp     = spslp;
             curspslp   = spslp;
         } else {
             p = spfip->from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
-            curspslp->len = atoi(p) - curspslp->from;
+            curspslp->len = fta_atoi(p) - curspslp->from;
         }
 
         spslp = new SPSegLoc;
         p     = spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
-        spslp->from    = atoi(p);
+        spslp->from    = fta_atoi(p);
         curspslp->next = spslp;
         curspslp       = spslp;
     }
@@ -4527,11 +4527,11 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
         p = spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
-        from = atoi(p);
+        from = fta_atoi(p);
         p    = spfip->to.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
-        to = atoi(p);
+        to = fta_atoi(p);
 
         if ((from != 0 || to != 0) && (from != 1 || to != 1))
             break;

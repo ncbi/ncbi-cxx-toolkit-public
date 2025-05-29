@@ -109,7 +109,7 @@ static void ParseEmblVersion(IndexblkPtr entry, string_view line)
         entry->drop = true;
         return;
     }
-    entry->vernum = atoi(ver.c_str());
+    entry->vernum = fta_atoi(ver.c_str());
     if (entry->vernum < 1) {
         FtaErrPost(SEV_FATAL, ERR_VERSION_InvalidVersion, "Version number \"{}\" from Accession.Version value \"{}.{}\" is not a positive integer.", entry->vernum, entry->acnum, entry->vernum);
         entry->drop = true;

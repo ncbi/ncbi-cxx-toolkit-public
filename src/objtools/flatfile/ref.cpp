@@ -173,8 +173,8 @@ static CRef<CDate> get_lanl_date(char* s)
             break;
         }
     }
-    day  = atoi(s + 5);
-    year = atoi(s + 8);
+    day  = fta_atoi(s + 5);
+    year = fta_atoi(s + 8);
     if (year < 1900 || year > 1994) {
         FtaErrPost(SEV_WARNING, ERR_REFERENCE_IllegalDate, "Illegal year: {}", year);
     }
@@ -524,7 +524,7 @@ static CRef<CCit_pat> get_pat(ParserPtr pp, char* bptr, CRef<CAuth_list>& auth_l
         ibp->psip = new CPatent_seq_id;
         ibp->psip->SetCit().SetCountry(country);
         ibp->psip->SetCit().SetId().SetNumber(msg);
-        ibp->psip->SetSeqid(app ? atoi(app) : 0);
+        ibp->psip->SetSeqid(app ? fta_atoi(app) : 0);
         if (type)
             ibp->psip->SetCit().SetDoc_type(type);
     }
@@ -1429,7 +1429,7 @@ static CRef<CCit_gen> fta_get_citgen(char* bptr, CRef<CAuth_list>& auth_list, CR
         if (*p == '\n' || *p == '\0') {
             ch   = *r;
             *r   = '\0';
-            year = atoi(q);
+            year = fta_atoi(q);
             if (year < 1900)
                 *r = ch;
             else {

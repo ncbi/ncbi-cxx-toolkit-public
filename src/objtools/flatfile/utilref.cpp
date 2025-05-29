@@ -357,7 +357,7 @@ static Int4 check_mix_pages_range(char* pages)
         for (page2 = q; *q >= '0' && *q <= '9';)
             q++;
 
-        i = atoi(page1) - atoi(page2);
+        i = fta_atoi(page1) - fta_atoi(page2);
 
         if (*p != '\0' || *q != '\0') {
             *dash = '-';
@@ -382,7 +382,7 @@ static Int4 check_mix_pages_range(char* pages)
     *p  = '\0';
     ch2 = *q;
     *q  = '\0';
-    i   = atoi(page2) - atoi(page1);
+    i   = fta_atoi(page2) - fta_atoi(page1);
     *p  = ch1;
     *q  = ch2;
 
@@ -457,9 +457,9 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
         p++;
     if (*p == '-' && *q == '\0') {
         *p  = '\0';
-        fps = atoi(pages);
+        fps = fta_atoi(pages);
         *p  = '-';
-        lps = atoi(p + 1);
+        lps = fta_atoi(p + 1);
 
         if (lps - fps >= MAX_PAGE) {
             FtaErrPost(SEV_WARNING, ERR_REFERENCE_LargePageRange, "Total pages exceed {}: {}: {}", MAX_PAGE, pages, title);
