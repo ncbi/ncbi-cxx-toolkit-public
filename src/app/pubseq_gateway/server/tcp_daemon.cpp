@@ -600,8 +600,9 @@ void CTcpWorker::s_LoopWalk(uv_handle_t *  handle, void *  arg)
 
 void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 {
+    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+
     if (m_FreeList.empty()) {
-        CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
         m_FreeList.emplace_back(
             tuple<uv_tcp_t, CHttpConnection>(uv_tcp_t{0},
                                              CHttpConnection(app->GetHttpMaxBacklog(),
@@ -619,7 +620,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp, 0);
 
         PSG_ERROR("TCP connection accept failed; uv_tcp_init() error code: " << err_code);
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_UvTcpInitFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
@@ -655,7 +655,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
         PSG_ERROR("TCP connection accept failed; uv_accept() error code: " +
                   to_string(err_code));
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_AcceptFailure);
         app->GetCounters().IncrementRequestStopCounter(503);
 
@@ -686,6 +685,10 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         return;
     }
 
+    // Incoming connections are counted right after a successfull accept() call
+    // i.e. they potentially can be rejected due to a hard limit
+    app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_IncomingConnectionsCounter);
+
     int64_t     conn_hard_limit = m_Daemon->GetMaxConnectionsHardLimit();
 
     if (num_connections >= conn_hard_limit) {
@@ -706,7 +709,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
                               "too many connections (maximum: " +
                               to_string(conn_hard_limit) + ")";
         PSG_ERROR(err_msg);
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnHardLimitExceeded);
         app->GetCounters().IncrementRequestStopCounter(503);
         app->GetAlerts().Register(ePSGS_TcpConnHardLimitExceeded, err_msg);
@@ -726,7 +728,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
 
     if (exceed_soft_limit) {
         // Need to count as a 'bad' connection
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnSoftLimitExceeded);
         http_conn->PrepareForUsage(num_connections, peer_ip, true);
         m_Daemon->IncrementAboveSoftLimitConnCount();
@@ -749,7 +750,6 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
                                to_string(conn_alert_limit) + ")";
 
         PSG_WARNING(warn_msg);
-        CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnAlertLimitExceeded);
         app->GetCounters().IncrementRequestStopCounter(100);
         app->GetAlerts().Register(ePSGS_TcpConnAlertLimitExceeded, warn_msg);

@@ -2033,6 +2033,16 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
                .append("\"soft_limit_req_rejected_cnt\": ")
                .append(buf, len);
 
+        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_IncomingConnectionsCounter), buf);
+        content.append(", ")
+               .append("\"incoming_connections_cnt\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Counters->GetFinishedRequestsCounter(), buf);
+        content.append(", ")
+               .append("\"finished_requests_cnt\": ")
+               .append(buf, len);
+
         len = PSGToString(m_Settings.m_TcpMaxConnAlertLimit, buf);
         content.append(", ")
                .append("\"conn_alert_limit\": ")

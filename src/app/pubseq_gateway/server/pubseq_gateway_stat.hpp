@@ -125,6 +125,7 @@ class CPSGSCounters
             ePSGS_MyNCBIErrorCacheHit,
             ePSGS_MyNCBIOKCacheWaitHit,
             ePSGS_IncludeHUPSetToNo,
+            ePSGS_IncomingConnectionsCounter,
 
             // Request stop statuses
             ePSGS_100,
@@ -210,6 +211,7 @@ class CPSGSCounters
     void Increment(IPSGS_Processor *  processor,
                    EPSGS_CounterType  counter);
     uint64_t GetValue(EPSGS_CounterType  counter);
+    uint64_t GetFinishedRequestsCounter(void);
     void IncrementRequestStopCounter(int  status);
     void UpdateConfiguredNameDescription(
                             const map<string, tuple<string, string>> &  conf);
@@ -265,6 +267,13 @@ class CPSGSCounters
     private:
         map<string, size_t>             m_ProcGroupToIndex;
         SCounterInfo *                  m_Counters[ePSGS_MaxIndividualCounter];
+
+        // Introduced for convenience; there are individual counters for each
+        // request stop status code and an alternative would be to sum all of
+        // them. Easier however is to increment just one approprietly and get
+        // the sum quickly when needed.
+        atomic_uint_fast64_t            m_FinishedRequestsCounter;
+
         vector<vector<SCounterInfo *>>  m_PerProcessorCounters;
 };
 

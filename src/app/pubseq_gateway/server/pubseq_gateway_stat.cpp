@@ -43,7 +43,8 @@ static const string     kDescription("description");
 
 
 CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
-    m_ProcGroupToIndex(proc_group_to_index)
+    m_ProcGroupToIndex(proc_group_to_index),
+    m_FinishedRequestsCounter(0)
 {
     // Monotonic counters
     m_Counters[ePSGS_BadUrlPath] =
@@ -369,6 +370,10 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "IncludeHUPSetToNo", "Include HUP set to 'no' when a blob in a secure keyspace counter",
             "Number of times a secure blob was going to be retrieved when include HUP option is explicitly set to 'no'");
+    m_Counters[ePSGS_IncomingConnectionsCounter] =
+        new SCounterInfo(
+            "IncomingConnectionsCounter", "Total number of incoming connections",
+            "Total number of incoming connections (lifetime)");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
@@ -744,6 +749,11 @@ uint64_t CPSGSCounters::GetValue(EPSGS_CounterType  counter)
     return m_Counters[counter]->m_Value;
 }
 
+uint64_t CPSGSCounters::GetFinishedRequestsCounter(void)
+{
+    return m_FinishedRequestsCounter;
+}
+
 
 CPSGSCounters::EPSGS_CounterType
 CPSGSCounters::StatusToCounterType(int  status)
@@ -799,6 +809,7 @@ CPSGSCounters::StatusToCounterType(int  status)
 
 void CPSGSCounters::IncrementRequestStopCounter(int  status)
 {
+    ++m_FinishedRequestsCounter;
     Increment(nullptr, StatusToCounterType(status));
 }
 
