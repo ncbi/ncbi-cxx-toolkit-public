@@ -446,6 +446,8 @@ def processRegularAsSummary(files, peer_ip_filter, peer_id_filter):
         # Deal with rejections
         conn_refused = data['hard_limit_conn_refused_cnt']
         req_rejected = data['soft_limit_req_rejected_cnt']
+        incoming_connections = data.get('incoming_connections_cnt', 0)
+        finished_requests = data.get('finished_requests_cnt', 0)
         if instance_id not in all_refused:
             all_refused[instance_id] = {}
         if 'min_conn_refused' not in all_refused[instance_id]:
@@ -453,6 +455,10 @@ def processRegularAsSummary(files, peer_ip_filter, peer_id_filter):
             all_refused[instance_id]['max_conn_refused'] = conn_refused
             all_refused[instance_id]['min_req_rejected'] = req_rejected
             all_refused[instance_id]['max_req_rejected'] = req_rejected
+            all_refused[instance_id]['min_incoming_connections'] = incoming_connections
+            all_refused[instance_id]['max_incoming_connections'] = incoming_connections
+            all_refused[instance_id]['min_finished_requests'] = finished_requests
+            all_refused[instance_id]['max_finished_requests'] = finished_requests
         if conn_refused < all_refused[instance_id]['min_conn_refused']:
             all_refused[instance_id]['min_conn_refused'] = conn_refused
         if conn_refused > all_refused[instance_id]['max_conn_refused']:
@@ -461,6 +467,14 @@ def processRegularAsSummary(files, peer_ip_filter, peer_id_filter):
             all_refused[instance_id]['min_req_rejected'] = req_rejected
         if req_rejected > all_refused[instance_id]['max_req_rejected']:
             all_refused[instance_id]['max_req_rejected'] = req_rejected
+        if incoming_connections < all_refused[instance_id]['min_incoming_connections']:
+            all_refused[instance_id]['min_incoming_connections'] = incoming_connections
+        if incoming_connections > all_refused[instance_id]['max_incoming_connections']:
+            all_refused[instance_id]['max_incoming_connections'] = incoming_connections
+        if finished_requests < all_refused[instance_id]['min_finished_requests']:
+            all_refused[instance_id]['min_finished_requests'] = finished_requests
+        if finished_requests > all_refused[instance_id]['max_finished_requests']:
+            all_refused[instance_id]['max_finished_requests'] = finished_requests
 
 
         # Deal with connections per peer data
@@ -552,10 +566,24 @@ def processRegularAsSummary(files, peer_ip_filter, peer_id_filter):
         print(f'                               {formatTimestamp(start_ts)}, duration {formatDuration(delta_ts)}')
         refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
         instances[instance_id]['refused_conn'] = refused_conn
-        print(f'        Refused connections:   {refused_conn:,}')
+        incoming_connections = all_refused[instance_id]['max_incoming_connections'] -  all_refused[instance_id]['min_incoming_connections']
+        instances[instance_id]['incoming_connections'] = incoming_connections
+        if incoming_connections > 0:
+            percent_val = float(refused_conn) / float(incoming_connections) * 100.0
+            refused_conn_percent = f'{roundToSignDigits(percent_val, 2)}%'
+        else:
+            refused_conn_percent = ''
+        print(f'        Refused connections:   {refused_conn:,}{refused_conn_percent:>10}')
         rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
         instances[instance_id]['rejected_req'] = rejected_req
-        print(f'        Rejected requests:     {rejected_req:,}')
+        finished_reqs = all_refused[instance_id]['max_finished_requests'] -  all_refused[instance_id]['min_finished_requests']
+        instances[instance_id]['finished_reqs'] = finished_reqs
+        if finished_reqs > 0:
+            percent_val = float(rejected_req) / float(finished_reqs) * 100.0
+            rejected_req_percent = f'{roundToSignDigits(percent_val, 2)}%'
+        else:
+            rejected_req_percent = ''
+        print(f'        Rejected requests:     {rejected_req:,}{rejected_req_percent:>10}')
 
     # Form a table
     cnt = len(conn_per_peer_max_peers)
@@ -690,6 +718,8 @@ def processAlarmAsSummary(files, regular_results):
         # Deal with rejections
         conn_refused = data['hard_limit_conn_refused_cnt']
         req_rejected = data['soft_limit_req_rejected_cnt']
+        incoming_connections = data.get('incoming_connections_cnt', 0)
+        finished_requests = data.get('finished_requests_cnt', 0)
         if instance_id not in all_refused:
             all_refused[instance_id] = {}
         if 'min_conn_refused' not in all_refused[instance_id]:
@@ -697,6 +727,10 @@ def processAlarmAsSummary(files, regular_results):
             all_refused[instance_id]['max_conn_refused'] = conn_refused
             all_refused[instance_id]['min_req_rejected'] = req_rejected
             all_refused[instance_id]['max_req_rejected'] = req_rejected
+            all_refused[instance_id]['min_incoming_connections'] = incoming_connections
+            all_refused[instance_id]['max_incoming_connections'] = incoming_connections
+            all_refused[instance_id]['min_finished_requests'] = finished_requests
+            all_refused[instance_id]['max_finished_requests'] = finished_requests
         if conn_refused < all_refused[instance_id]['min_conn_refused']:
             all_refused[instance_id]['min_conn_refused'] = conn_refused
         if conn_refused > all_refused[instance_id]['max_conn_refused']:
@@ -705,6 +739,14 @@ def processAlarmAsSummary(files, regular_results):
             all_refused[instance_id]['min_req_rejected'] = req_rejected
         if req_rejected > all_refused[instance_id]['max_req_rejected']:
             all_refused[instance_id]['max_req_rejected'] = req_rejected
+        if incoming_connections < all_refused[instance_id]['min_incoming_connections']:
+            all_refused[instance_id]['min_incoming_connections'] = incoming_connections
+        if incoming_connections > all_refused[instance_id]['max_incoming_connections']:
+            all_refused[instance_id]['max_incoming_connections'] = incoming_connections
+        if finished_requests < all_refused[instance_id]['min_finished_requests']:
+            all_refused[instance_id]['min_finished_requests'] = finished_requests
+        if finished_requests > all_refused[instance_id]['max_finished_requests']:
+            all_refused[instance_id]['max_finished_requests'] = finished_requests
 
 
     if total == 0:
@@ -724,10 +766,24 @@ def processAlarmAsSummary(files, regular_results):
         print(f'        Time in alerts (sec):  {alert_time}')
         refused_conn = all_refused[instance_id]['max_conn_refused'] - all_refused[instance_id]['min_conn_refused']
         instances[instance_id]['refused_conn'] = refused_conn
-        print(f'        Refused connections:   {refused_conn:,}')
+        incoming_connections = all_refused[instance_id]['max_incoming_connections'] -  all_refused[instance_id]['min_incoming_connections']
+        instances[instance_id]['incoming_connections'] = incoming_connections
+        if incoming_connections > 0:
+            percent_val = float(refused_conn) / float(incoming_connections) * 100.0
+            refused_conn_percent = f'{roundToSignDigits(percent_val, 2)}%'
+        else:
+            refused_conn_percent = ''
+        print(f'        Refused connections:   {refused_conn:,}{refused_conn_percent:>10}')
         rejected_req = all_refused[instance_id]['max_req_rejected'] - all_refused[instance_id]['min_req_rejected']
         instances[instance_id]['rejected_req'] = rejected_req
-        print(f'        Rejected requests:     {rejected_req:,}')
+        finished_reqs = all_refused[instance_id]['max_finished_requests'] -  all_refused[instance_id]['min_finished_requests']
+        instances[instance_id]['finished_reqs'] = finished_reqs
+        if finished_reqs > 0:
+            percent_val = float(rejected_req) / float(finished_reqs) * 100.0
+            rejected_req_percent = f'{roundToSignDigits(percent_val, 2)}%'
+        else:
+            rejected_req_percent = ''
+        print(f'        Rejected requests:     {rejected_req:,}{rejected_req_percent:>10}')
 
     print(f'    Total number of alerts:     {total_alerts:,}')
     print(f'    Total time in alerts (sec): {roundToSignDigits(total_alert_time, 2)}')
