@@ -28,6 +28,8 @@ LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) 
 
 CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) \
            $(PROTOBUF_INCLUDE) $(CMPRS_INCLUDE) $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
+# Experimenting with http/2 goaway frame
+# -I/home/satskyse/h2o-2.2.6/deps/klib
 LIB = $(SRAREAD_LIBS) dbsnp_ptis grpc_integration sraread \
       cdd_access psg_client id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) $(CMPRS_LIB) \
       pub medline biblio general xser psg_ipg psg_cassandra psg_protobuf psg_cache \

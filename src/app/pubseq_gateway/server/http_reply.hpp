@@ -317,6 +317,11 @@ public:
                                   const string &  peer_user_agent);
     void UpdatePeerUserAgent(const string &  peer_user_agent);
     void UpdatePeerId(const string &  peer_id);
+    bool IsHttp1(void);
+    bool IsHttp2(void);
+#if 0
+    void EnqueueGoAway(void);
+#endif
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

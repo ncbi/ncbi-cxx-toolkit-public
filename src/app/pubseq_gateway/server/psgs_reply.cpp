@@ -182,6 +182,30 @@ void CPSGS_Reply::UpdatePeerId(const string &  peer_id)
 }
 
 
+bool CPSGS_Reply::IsHttp1(void)
+{
+    if (m_Reply)
+        return m_Reply->IsHttp1();
+    return false;
+}
+
+
+bool CPSGS_Reply::IsHttp2(void)
+{
+    if (m_Reply)
+        return m_Reply->IsHttp2();
+    return false;
+}
+
+#if 0
+void CPSGS_Reply::EnqueueGoAway(void)
+{
+    if (m_Reply)
+        m_Reply->EnqueueGoAway();
+}
+#endif
+
+
 void CPSGS_Reply::Clear(void)
 {
     lock_guard<mutex>       guard(m_ChunksLock);

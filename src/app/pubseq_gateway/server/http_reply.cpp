@@ -146,6 +146,56 @@ void CHttpReply::UpdatePeerId(const string &  peer_id)
 }
 
 
+bool CHttpReply::IsHttp1(void)
+{
+    if (h2o_linklist_is_empty(&m_Req->conn->ctx->http1._conns))
+        return false;
+    return true;
+}
+
+bool CHttpReply::IsHttp2(void)
+{
+    if (h2o_linklist_is_empty(&m_Req->conn->ctx->http2._conns))
+        return false;
+    return true;
+}
+
+#if 0
+#include <h2o/http2.h>
+extern "C" {
+#include <h2o/http2_internal.h>
+}
+
+void CHttpReply::EnqueueGoAway(void)
+{
+    if (!IsHttp2()) {
+        cout << "CHttpReply::EnqueueGoAway: Not http/2. No frame sent." << endl;
+        return;
+    }
+
+    h2o_linklist_t *    node;
+    for (node = m_Req->conn->ctx->http2._conns.next;
+         node != &m_Req->conn->ctx->http2._conns;
+         node = node->next) {
+        cout << "CHttpReply::EnqueueGoAway: about to send goaway..." << endl;
+        h2o_http2_conn_t *  conn = H2O_STRUCT_FROM_MEMBER(h2o_http2_conn_t, _conns, node);
+        if (conn->state < H2O_HTTP2_CONN_STATE_HALF_CLOSED) {
+            cout << "CHttpReply::EnqueueGoAway: sending..." << endl;
+            h2o_http2_encode_goaway_frame(&conn->_write.buf,
+                                          conn->pull_stream_ids.max_open,
+                                          H2O_HTTP2_ERROR_NONE,
+                                          h2o_iovec_init(H2O_STRLIT("throttling")));
+            h2o_http2_conn_request_write(conn);
+            conn->state = H2O_HTTP2_CONN_STATE_HALF_CLOSED;
+            cout << "CHttpReply::EnqueueGoAway: sent" << endl;
+        } else {
+            cout << "CHttpReply::EnqueueGoAway: not sending because of a connection state" << endl;
+        }
+    }
+}
+#endif
+
+
 void CHttpReply::x_DoCancel(void)
 {
     m_Canceled = true;
