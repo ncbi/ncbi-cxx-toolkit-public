@@ -44,8 +44,7 @@ struct SPubseqGatewaySettings
     SPubseqGatewaySettings();
     ~SPubseqGatewaySettings();
 
-    void Read(const CNcbiRegistry &   registry,
-              CPSGAlerts &  alerts);
+    void Read(const CNcbiRegistry &   registry);
     void Validate(CPSGAlerts &  alerts);
     size_t GetProcessorMaxConcurrency(const CNcbiRegistry &   registry,
                                       const string &  processor_id);
@@ -74,6 +73,14 @@ struct SPubseqGatewaySettings
     size_t                              m_HttpMaxRunning;
     size_t                              m_LogSamplingRatio;
     size_t                              m_LogTimingThreshold;
+
+    size_t                              m_ConnThrottleThreshold;
+    size_t                              m_ConnThrottleByHost;
+    size_t                              m_ConnThrottleBySite;
+    size_t                              m_ConnThrottleByProcess;
+    size_t                              m_ConnThrottleByUserAgent;
+    double                              m_ConnThrottleCloseIdleSec;
+    double                              m_ConnForceCloseWaitSec;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
@@ -166,37 +173,64 @@ struct SPubseqGatewaySettings
     // [LOG]
     bool                                m_LogPeerIPAlways;
 
+    // [H2o]
+    size_t                              m_IdleTimeoutSec;
+
 private:
-    void x_ReadServerSection(const CNcbiRegistry &   registry,
-                                   CPSGAlerts &  alerts);
+    void x_ReadServerSection(const CNcbiRegistry &   registry);
     void x_ReadStatisticsSection(const CNcbiRegistry &   registry);
     void x_ReadLmdbCacheSection(const CNcbiRegistry &   registry);
     void x_ReadAutoExcludeSection(const CNcbiRegistry &   registry);
     void x_ReadDebugSection(const CNcbiRegistry &   registry);
     void x_ReadIPGSection(const CNcbiRegistry &   registry);
-    void x_ReadAdminSection(const CNcbiRegistry &   registry,
-                            CPSGAlerts &  alerts);
+    void x_ReadAdminSection(const CNcbiRegistry &   registry);
     void x_ReadSSLSection(const CNcbiRegistry &   registry);
-    void x_ReadHealthSection(const CNcbiRegistry &   registry,
-                             CPSGAlerts &  alerts);
-    void x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry,
-                                         CPSGAlerts &  alerts);
-    void x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry,
-                                    CPSGAlerts &  alerts);
-    void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry,
-                                   CPSGAlerts &  alerts);
-    void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry,
-                                   CPSGAlerts &  alerts);
-    void x_ReadSNPProcessorSection(const CNcbiRegistry &   registry,
-                                   CPSGAlerts &  alerts);
+    void x_ReadHealthSection(const CNcbiRegistry &   registry);
+    void x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadCDDProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadWGSProcessorSection(const CNcbiRegistry &   registry);
+    void x_ReadSNPProcessorSection(const CNcbiRegistry &   registry);
     void x_ReadMyNCBISection(const CNcbiRegistry &   registry);
     void x_ReadCountersSection(const CNcbiRegistry &   registry);
     void x_ReadLogSection(const CNcbiRegistry &   registry);
+    void x_ReadH2OSection(const CNcbiRegistry &   registry);
+
+    void x_ValidateServerSection(void);
+    void x_ValidateStatisticsSection(void);
+    void x_ValidateLmdbCacheSection(void);
+    void x_ValidateAutoExcludeSection(void);
+    void x_ValidateDebugSection(void);
+    void x_ValidateIPGSection(void);
+    void x_ValidateAdminSection(void);
+    void x_ValidateSSLSection(void);
+    void x_ValidateHealthSection(void);
+    void x_ValidateCassandraProcessorSection(void);
+    void x_ValidateLMDBProcessorSection(void);
+    void x_ValidateCDDProcessorSection(void);
+    void x_ValidateWGSProcessorSection(void);
+    void x_ValidateSNPProcessorSection(void);
+    void x_ValidateMyNCBISection(void);
+    void x_ValidateCountersSection(void);
+    void x_ValidateLogSection(void);
+    void x_ValidateH2OSection(void);
 
     unsigned long x_GetDataSize(const CNcbiRegistry &  registry,
                                 const string &  section,
                                 const string &  entry,
                                 unsigned long  default_val);
+    double x_GetPercentValue(const CNcbiRegistry &  registry,
+                             const string &  section,
+                             const string &  entry,
+                             double  default_val);
+    bool x_IsPercentValue(const CNcbiRegistry &  registry,
+                          const string &  section,
+                          const string &  entry);
+    void x_ResetConnectionSettingsToDefault(void);
+
+    vector<string>      m_CriticalErrors;
+    vector<string>      m_Errors;
+    vector<string>      m_Warnings;
 };
 
 

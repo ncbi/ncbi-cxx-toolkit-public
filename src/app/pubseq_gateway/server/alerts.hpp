@@ -45,42 +45,22 @@ USING_NCBI_SCOPE;
 
 enum EPSGS_AlertType {
     ePSGS_Unknown = -1,
-    ePSGS_ConfigAuthDecrypt = 0,
-    ePSGS_ConfigHttpWorkers = 1,
-    ePSGS_ConfigListenerBacklog = 2,
-    ePSGS_ConfigMaxConnections = 3,
-    ePSGS_ConfigTimeout = 4,
-    ePSGS_ConfigRetries = 5,
-    ePSGS_ConfigExcludeCacheSize = 6,
-    ePSGS_ConfigExcludeCachePurgeSize = 7,
-    ePSGS_ConfigExcludeCacheInactivity = 8,
-    ePSGS_ConfigStatScaleType = 9,
-    ePSGS_ConfigStatMinMaxVal = 10,
-    ePSGS_ConfigStatNBins = 11,
-    ePSGS_OpenCassandra = 12,
-    ePSGS_NoValidCassandraMapping = 13,             // PSG has no valid cassandra mapping at hand
-    ePSGS_InvalidCassandraMapping = 14,             // PSG has detected an invalid mapping in cassandra
-    ePSGS_NewCassandraMappingAccepted = 15,         // PSG accepted an updated mapping from cassandra
-    ePSGS_NewCassandraSatNamesMapping = 16,         // PSG has detected new mapping in cassandra
-    ePSGS_NewCassandraPublicCommentMapping = 17,
-    ePSGS_OpenCache = 18,                           // PSG cannot create or open the LMDB cache
-    ePSGS_NoCassandraPublicCommentsMapping = 19,    // PSG has no public comments mapping
-    ePSGS_NoIPGKeyspace = 20,
-    ePSGS_ConfigHealthTimeout = 21,
-    ePSGS_ConfigCassandraHealthTimeout = 22,
-    ePSGS_ConfigLMDBHealthTimeout = 23,
-    ePSGS_ConfigCDDHealthTimeout = 24,
-    ePSGS_ConfigWGSHealthTimeout = 25,
-    ePSGS_ConfigSNPHealthTimeout = 26,
-    ePSGS_ConfigTcpMaxConnSoftLimit = 27,
-    ePSGS_ConfigTcpMaxConn = 28,
-    ePSGS_MyNCBIResolveDNS = 29,
-    ePSGS_MyNCBITest = 30,
-    ePSGS_MyNCBIUvLoop = 31,
-    ePSGS_ConfigTcpMaxConnAlertLimit = 32,
-    ePSGS_TcpConnHardLimitExceeded = 33,
-    ePSGS_TcpConnSoftLimitExceeded = 34,
-    ePSGS_TcpConnAlertLimitExceeded = 35
+    ePSGS_ConfigProblems = 0,
+    ePSGS_OpenCassandra = 1,
+    ePSGS_NoValidCassandraMapping = 2,              // PSG has no valid cassandra mapping at hand
+    ePSGS_InvalidCassandraMapping = 3,              // PSG has detected an invalid mapping in cassandra
+    ePSGS_NewCassandraMappingAccepted = 4,          // PSG accepted an updated mapping from cassandra
+    ePSGS_NewCassandraSatNamesMapping = 5,          // PSG has detected new mapping in cassandra
+    ePSGS_NewCassandraPublicCommentMapping = 6,
+    ePSGS_OpenCache = 7,                            // PSG cannot create or open the LMDB cache
+    ePSGS_NoCassandraPublicCommentsMapping = 8,     // PSG has no public comments mapping
+    ePSGS_NoIPGKeyspace = 9,
+    ePSGS_MyNCBIResolveDNS = 10,
+    ePSGS_MyNCBITest = 11,
+    ePSGS_MyNCBIUvLoop = 12,
+    ePSGS_TcpConnHardLimitExceeded = 13,
+    ePSGS_TcpConnSoftLimitExceeded = 14,
+    ePSGS_TcpConnAlertLimitExceeded = 15
 };
 
 enum EPSGS_AlertAckResult {

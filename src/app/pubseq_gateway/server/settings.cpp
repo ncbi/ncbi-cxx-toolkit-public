@@ -57,11 +57,14 @@ const string            kAdminSection = "ADMIN";
 const string            kMyNCBISection = "MY_NCBI";
 const string            kCountersSection = "COUNTERS";
 const string            kLogSection = "LOG";
+const string            kH2OSection = "H2O";
 
 
 const unsigned short    kWorkersDefault = 64;
 const unsigned int      kListenerBacklogDefault = 256;
 const int64_t           kTcpMaxConnDefault = 4096;
+const double            kDefaultTcpMaxConnSoftLimitPercent = 90.0;
+const double            kDefaultTcpMaxConnAlertLimitPercent = 90.0;
 const int64_t           kTcpConnHardSoftDiffDefault = 256;
 const int64_t           kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
 const int64_t           kTcpConnSoftAlertDiffDefault = 512;
@@ -74,6 +77,25 @@ const size_t            kDefaultHttpMaxBacklog = 1024;
 const size_t            kDefaultHttpMaxRunning = 64;
 const size_t            kDefaultLogSamplingRatio = 0;
 const size_t            kDefaultLogTimingThreshold = 1000;
+
+const double            kDefaultConnThrottleThresholdPercent = 75.0;
+const size_t            kDefaultConnThrottleThreshold = round(double(kTcpMaxConnAlertLimitDefault) * kDefaultConnThrottleThresholdPercent / 100.0);
+
+const double            kDefaultConnThrottleByHostPercent = 25.0;
+const size_t            kDefaultConnThrottleByHost = round(double(kDefaultConnThrottleThreshold) * kDefaultConnThrottleByHostPercent / 100.0);
+
+const double            kDefaultConnThrottleBySitePercent = 35.0;
+const size_t            kDefaultConnThrottleBySite = round(double(kDefaultConnThrottleThreshold) * kDefaultConnThrottleBySitePercent / 100.0);
+
+const double            kDefaultConnThrottleByProcessPercent = 15.0;
+const size_t            kDefaultConnThrottleByProcess = round(double(kDefaultConnThrottleThreshold) * kDefaultConnThrottleByProcessPercent / 100.0);
+
+const double            kDefaultConnThrottleByUserAgentPercent = 40.0;
+const size_t            kDefaultConnThrottleByUserAgent = round(double(kDefaultConnThrottleThreshold) * kDefaultConnThrottleByUserAgentPercent / 100.0);
+
+const double            kDefaultConnThrottleCloseIdleSec = 5.0;
+const double            kDefaultConnForceCloseWaitSec = 0.03;
+
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -132,6 +154,8 @@ const string            kDefaultMyNCBITestWebCubbyUser = "MVWNUIMYDR41F2XRDBT8JT
 const size_t            kDefaultMyNCBITestOkPeriodSec = 180;
 const size_t            kDefaultMyNCBITestFailPeriodSec = 20;
 const bool              kDefaultLogPeerIPAlways = false;
+const size_t            kDefaultIdleTimeoutSec = 100000;
+
 
 SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpPort(0),
@@ -156,6 +180,13 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_HttpMaxRunning(kDefaultHttpMaxRunning),
     m_LogSamplingRatio(kDefaultLogSamplingRatio),
     m_LogTimingThreshold(kDefaultLogTimingThreshold),
+    m_ConnThrottleThreshold(kDefaultConnThrottleThreshold),
+    m_ConnThrottleByHost(kDefaultConnThrottleByHost),
+    m_ConnThrottleBySite(kDefaultConnThrottleBySite),
+    m_ConnThrottleByProcess(kDefaultConnThrottleByProcess),
+    m_ConnThrottleByUserAgent(kDefaultConnThrottleByUserAgent),
+    m_ConnThrottleCloseIdleSec(kDefaultConnThrottleCloseIdleSec),
+    m_ConnForceCloseWaitSec(kDefaultConnForceCloseWaitSec),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -201,7 +232,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBITestWebCubbyUser(kDefaultMyNCBITestWebCubbyUser),
     m_MyNCBITestOkPeriodSec(kDefaultMyNCBITestOkPeriodSec),
     m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec),
-    m_LogPeerIPAlways(kDefaultLogPeerIPAlways)
+    m_LogPeerIPAlways(kDefaultLogPeerIPAlways),
+    m_IdleTimeoutSec(kDefaultIdleTimeoutSec)
 {}
 
 
@@ -209,39 +241,43 @@ SPubseqGatewaySettings::~SPubseqGatewaySettings()
 {}
 
 
-void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry,
-                                  CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry)
 {
+    // Note: the Validate() method will use errors/warnings containers to
+    // produce a log message and set an alert if needed
+    m_CriticalErrors.clear();
+    m_Errors.clear();
+    m_Warnings.clear();
+
     // Note: reading of some values in the [SERVER] depends if SSL is on/off
     //       So, reading of the SSL settings is done first
     x_ReadSSLSection(registry);
 
-    x_ReadServerSection(registry, alerts);
+    x_ReadServerSection(registry);
     x_ReadStatisticsSection(registry);
     x_ReadLmdbCacheSection(registry);
     x_ReadAutoExcludeSection(registry);
     x_ReadIPGSection(registry);
     x_ReadDebugSection(registry);
-    x_ReadHealthSection(registry, alerts);
-    x_ReadAdminSection(registry, alerts);
+    x_ReadHealthSection(registry);
+    x_ReadAdminSection(registry);
 
-    x_ReadCassandraProcessorSection(registry, alerts);  // Must be after x_ReadHealthSection()
-    x_ReadLMDBProcessorSection(registry, alerts);       // Must be after x_ReadHealthSection()
-    x_ReadCDDProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
-    x_ReadWGSProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
-    x_ReadSNPProcessorSection(registry, alerts);        // Must be after x_ReadHealthSection()
+    x_ReadCassandraProcessorSection(registry);  // Must be after x_ReadHealthSection()
+    x_ReadLMDBProcessorSection(registry);       // Must be after x_ReadHealthSection()
+    x_ReadCDDProcessorSection(registry);        // Must be after x_ReadHealthSection()
+    x_ReadWGSProcessorSection(registry);        // Must be after x_ReadHealthSection()
+    x_ReadSNPProcessorSection(registry);        // Must be after x_ReadHealthSection()
 
     x_ReadMyNCBISection(registry);
     x_ReadCountersSection(registry);
 
     x_ReadLogSection(registry);
+    x_ReadH2OSection(registry);
 }
 
 
-void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registry,
-                                                 CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registry)
 {
-
     if (!registry.HasEntry(kServerSection, "port"))
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "[" + kServerSection +
@@ -256,10 +292,28 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                         kListenerBacklogDefault);
     m_TcpMaxConn = registry.GetInt(kServerSection, "maxconn",
                                    kTcpMaxConnDefault);
-    m_TcpMaxConnSoftLimit = registry.GetInt(kServerSection, "maxconnsoftlimit",
-                                            kTcpMaxConnSoftLimitDefault);
-    m_TcpMaxConnAlertLimit = registry.GetInt(kServerSection, "maxconnalertlimit",
-                                             kTcpMaxConnAlertLimitDefault);
+    if (x_IsPercentValue(registry, kServerSection, "maxconnsoftlimit")) {
+        // Up to date: percentage value
+        double      val = x_GetPercentValue(registry, kServerSection,
+                                            "maxconnsoftlimit",
+                                            kDefaultTcpMaxConnSoftLimitPercent);
+        m_TcpMaxConnSoftLimit = round(double(m_TcpMaxConn) * val / 100.0);
+    } else {
+        // Obsolete: absolute value
+        m_TcpMaxConnSoftLimit = registry.GetInt(kServerSection, "maxconnsoftlimit",
+                                                kTcpMaxConnSoftLimitDefault);
+    }
+    if (x_IsPercentValue(registry, kServerSection, "maxconnalertlimit")) {
+        // Up to date: percentage value
+        double      val = x_GetPercentValue(registry, kServerSection,
+                                            "maxconnalertlimit",
+                                            kDefaultTcpMaxConnAlertLimitPercent);
+        m_TcpMaxConnAlertLimit = round(double(m_TcpMaxConnSoftLimit) * val / 100.0);
+    } else {
+        // Obsolete: absolute value
+        m_TcpMaxConnAlertLimit = registry.GetInt(kServerSection, "maxconnalertlimit",
+                                                 kTcpMaxConnAlertLimitDefault);
+    }
     m_TimeoutMs = registry.GetInt(kServerSection, "optimeout",
                                   kTimeoutDefault);
     m_MaxRetries = registry.GetInt(kServerSection, "maxretries",
@@ -276,6 +330,38 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                          kDefaultLogSamplingRatio);
     m_LogTimingThreshold = registry.GetInt(kServerSection, "log_timing_threshold",
                                            kDefaultLogTimingThreshold);
+
+    double  percent_val;
+    percent_val = x_GetPercentValue(registry, kServerSection,
+                                    "conn_throttle_threshold",
+                                    kDefaultConnThrottleThresholdPercent);
+    m_ConnThrottleThreshold = round(double(m_TcpMaxConnSoftLimit) * percent_val / 100.0);
+
+    percent_val = x_GetPercentValue(registry, kServerSection,
+                                    "conn_throttle_by_host",
+                                    kDefaultConnThrottleByHostPercent);
+    m_ConnThrottleByHost = round(double(m_ConnThrottleThreshold) * percent_val / 100.0);
+
+    percent_val = x_GetPercentValue(registry, kServerSection,
+                                    "conn_throttle_by_site",
+                                    kDefaultConnThrottleBySitePercent);
+    m_ConnThrottleBySite = round(double(m_ConnThrottleThreshold) * percent_val / 100.0);
+
+    percent_val = x_GetPercentValue(registry, kServerSection,
+                                    "conn_throttle_by_process",
+                                    kDefaultConnThrottleByProcessPercent);
+    m_ConnThrottleByProcess = round(double(m_ConnThrottleThreshold) * percent_val / 100.0);
+
+    percent_val = x_GetPercentValue(registry, kServerSection,
+                                    "conn_throttle_by_user_agent",
+                                    kDefaultConnThrottleByUserAgentPercent);
+    m_ConnThrottleByUserAgent = round(double(m_ConnThrottleThreshold) * percent_val / 100.0);
+
+
+    m_ConnThrottleCloseIdleSec = registry.GetDouble(kServerSection, "conn_throttle_close_idle",
+                                                    kDefaultConnThrottleCloseIdleSec);
+    m_ConnForceCloseWaitSec = registry.GetDouble(kServerSection, "conn_force_close_wait",
+                                                 kDefaultConnForceCloseWaitSec);
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -300,60 +386,6 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
         m_ShutdownIfTooManyOpenFD =
                 registry.GetInt(kServerSection, "ShutdownIfTooManyOpenFD",
                                 kDefaultShutdownIfTooManyOpenFDforHTTP);
-    }
-
-    if (m_TcpMaxConnSoftLimit == 0) {
-        string  err_msg = "Invalid [SERVER]/maxconnsoftlimit value. "
-                          "It must be > 0. Resetting to the default value (" +
-                          to_string(kTcpMaxConnSoftLimitDefault) + ")";
-        alerts.Register(ePSGS_ConfigTcpMaxConnSoftLimit, err_msg);
-        PSG_ERROR(err_msg);
-        m_TcpMaxConnSoftLimit = kTcpMaxConnSoftLimitDefault;
-    }
-
-    if (m_TcpMaxConn < m_TcpMaxConnSoftLimit) {
-        m_TcpMaxConn = m_TcpMaxConnSoftLimit + kTcpConnHardSoftDiffDefault;
-        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconn value. "
-                              "It must be >= [SERVER]/maxconnsoftlimit value. "
-                              "Resetting to " +
-                              to_string(m_TcpMaxConn);
-        alerts.Register(ePSGS_ConfigTcpMaxConn, err_msg);
-        PSG_ERROR(err_msg);
-    }
-
-    // Min spare connections must not be less than
-    if (m_TcpMaxConn - m_TcpMaxConnSoftLimit < 16) {
-        m_TcpMaxConn = m_TcpMaxConnSoftLimit + 16;
-        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconn value. "
-                              "It must be so that ([SERVER]/maxconn value - [SERVER]/maxconnsoftlimit value) >= 16. "
-                              "Resetting to " +
-                              to_string(m_TcpMaxConn);
-        alerts.Register(ePSGS_ConfigTcpMaxConn, err_msg);
-        PSG_ERROR(err_msg);
-    }
-
-    if (m_TcpMaxConnAlertLimit == 0) {
-        string  err_msg = "Invalid [SERVER]/maxconnalertlimit value. "
-                          "It must be > 0. Resetting to the default value (" +
-                          to_string(kTcpMaxConnAlertLimitDefault) + ")";
-        alerts.Register(ePSGS_ConfigTcpMaxConnAlertLimit, err_msg);
-        PSG_ERROR(err_msg);
-        m_TcpMaxConnAlertLimit = kTcpMaxConnAlertLimitDefault;
-    }
-
-    if (m_TcpMaxConnSoftLimit < m_TcpMaxConnAlertLimit) {
-        if (m_TcpMaxConnSoftLimit <= kTcpConnSoftAlertDiffDefault) {
-            m_TcpMaxConnAlertLimit = 1;
-        } else {
-            m_TcpMaxConnAlertLimit = m_TcpMaxConnSoftLimit - kTcpConnSoftAlertDiffDefault;
-        }
-
-        string      err_msg = "Inconsistent configuration of the [SERVER]/maxconnalertlimit value. "
-                              "It must be <= [SERVER]/maxconnsoftlimit value. "
-                              "Resetting to " +
-                              to_string(m_TcpMaxConnAlertLimit);
-        alerts.Register(ePSGS_ConfigTcpMaxConnAlertLimit, err_msg);
-        PSG_ERROR(err_msg);
     }
 }
 
@@ -436,8 +468,7 @@ void SPubseqGatewaySettings::x_ReadSSLSection(const CNcbiRegistry &   registry)
 }
 
 
-void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registry,
-                                                 CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registry)
 {
     // Read a list of critical backends
     string      critical_data_sources = registry.GetString(kHealthSection,
@@ -470,28 +501,25 @@ void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registr
                                                    "none");
         if (none_it != m_CriticalDataSources.end()) {
             m_CriticalDataSources.erase(none_it);
-            PSG_WARNING("The [HEALTH]/critical_data_sources value "
-                        "has NONE together with other items. "
-                        "The NONE item is ignored.");
+            m_Warnings.push_back("The [HEALTH]/critical_data_sources value "
+                                 "has NONE together with other items. "
+                                 "The NONE item is ignored.");
         }
     }
 
     m_HealthTimeoutSec = registry.GetDouble(kHealthSection, "timeout",
                                             kDefaultHealthTimeout);
     if (m_HealthTimeoutSec <= 0) {
-        string  err_msg =
-            "The health timeout is out of range. It must be > 0. "
-            "Received: " + to_string(m_HealthTimeoutSec) + ". Reset to "
-            "default: " + to_string(kDefaultHealthTimeout);
-        alerts.Register(ePSGS_ConfigHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+        m_CriticalDataSources.push_back(
+            "The [HEALTH]/timeout value is out of range. It must be > 0. "
+            "Received: " + to_string(m_HealthTimeoutSec) + ". Resetting to " +
+            to_string(kDefaultHealthTimeout));
         m_HealthTimeoutSec = kDefaultHealthTimeout;
     }
 }
 
 
-void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry,
-                                                             CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry &   registry)
 {
     m_CassandraProcessorsEnabled =
             registry.GetBool(kCassandraProcessorSection, "enabled",
@@ -509,12 +537,10 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
         m_CassandraHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_CassandraHealthTimeoutSec < 0) {
         // Error
-        string  err_msg =
-            "The cassandra health timeout is out of range. It must be >= 0. "
-            "Received: " + to_string(m_CassandraHealthTimeoutSec) + ". Reset to "
-            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
-        alerts.Register(ePSGS_ConfigCassandraHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+        m_CriticalDataSources.push_back(
+            "The [CASSANDRA]/health_timeout value is out of range. It must be >= 0. "
+            "Received: " + to_string(m_CassandraHealthTimeoutSec) + ". Resetting to "
+            "default from [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec));
         m_CassandraHealthTimeoutSec = kDefaultHealthTimeout;
     }
 
@@ -524,8 +550,7 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
 }
 
 
-void SPubseqGatewaySettings::x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry,
-                                                        CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadLMDBProcessorSection(const CNcbiRegistry &   registry)
 {
     m_LMDBProcessorHealthCommand =
             registry.GetString(kLMDBProcessorSection, "health_command",
@@ -540,19 +565,16 @@ void SPubseqGatewaySettings::x_ReadLMDBProcessorSection(const CNcbiRegistry &   
         m_LMDBHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_LMDBHealthTimeoutSec < 0) {
         // Error
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The LMDB health timeout is out of range. It must be >= 0. "
-            "Received: " + to_string(m_LMDBHealthTimeoutSec) + ". Reset to "
-            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
-        alerts.Register(ePSGS_ConfigLMDBHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+            "Received: " + to_string(m_LMDBHealthTimeoutSec) + ". Resetting to "
+            "default from [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec));
         m_LMDBHealthTimeoutSec = kDefaultHealthTimeout;
     }
 }
 
 
-void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   registry,
-                                                       CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   registry)
 {
     m_CDDProcessorsEnabled = registry.GetBool(kCDDProcessorSection,
                                               "enabled",
@@ -570,19 +592,16 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
         m_CDDHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_CDDHealthTimeoutSec < 0) {
         // Error
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The CDD health timeout is out of range. It must be >= 0. "
-            "Received: " + to_string(m_CDDHealthTimeoutSec) + ". Reset to "
-            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
-        alerts.Register(ePSGS_ConfigCDDHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+            "Received: " + to_string(m_CDDHealthTimeoutSec) + ". Resetting to "
+            "default from [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec));
         m_CDDHealthTimeoutSec = kDefaultHealthTimeout;
     }
 }
 
 
-void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   registry,
-                                                       CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   registry)
 {
     m_WGSProcessorsEnabled = registry.GetBool(kWGSProcessorSection,
                                               "enabled",
@@ -600,19 +619,17 @@ void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   r
         m_WGSHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_WGSHealthTimeoutSec < 0) {
         // Error
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The WGS health timeout is out of range. It must be >= 0. "
-            "Received: " + to_string(m_WGSHealthTimeoutSec) + ". Reset to "
-            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
-        alerts.Register(ePSGS_ConfigWGSHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+            "Received: " + to_string(m_WGSHealthTimeoutSec) + ". Resetting to "
+            "default from [HEALTH]/timeout: " +
+            to_string(m_HealthTimeoutSec));
         m_WGSHealthTimeoutSec = kDefaultHealthTimeout;
     }
 }
 
 
-void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   registry,
-                                                       CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   registry)
 {
     m_SNPProcessorsEnabled = registry.GetBool(kSNPProcessorSection,
                                               "enabled",
@@ -630,12 +647,11 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
         m_SNPHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_SNPHealthTimeoutSec < 0) {
         // Error
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The SNP health timeout is out of range. It must be >= 0. "
-            "Received: " + to_string(m_SNPHealthTimeoutSec) + ". Reset to "
-            "default from the [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec);
-        alerts.Register(ePSGS_ConfigSNPHealthTimeout, err_msg);
-        PSG_ERROR(err_msg);
+            "Received: " + to_string(m_SNPHealthTimeoutSec) + ". Resetting to "
+            "default from [HEALTH]/timeout: " +
+            to_string(m_HealthTimeoutSec));
         m_SNPHealthTimeoutSec = kDefaultHealthTimeout;
     }
 }
@@ -702,34 +718,33 @@ void SPubseqGatewaySettings::x_ReadCountersSection(const CNcbiRegistry &   regis
                              NStr::fSplit_ByPattern)) {
             m_IdToNameAndDescription[value_id] = {name, description};
         } else {
-            PSG_WARNING("Malformed counter [" << kCountersSection << "]/" <<
-                        name << " information. Expected <name>:::<description");
+            m_CriticalErrors.push_back(
+                    "Malformed counter [" + kCountersSection + "]/" +
+                    name_and_description +
+                    " information. Expected <name>:::<description");
         }
     }
 }
 
 
-void SPubseqGatewaySettings::x_ReadAdminSection(const CNcbiRegistry &   registry,
-                                                CPSGAlerts &  alerts)
+void SPubseqGatewaySettings::x_ReadAdminSection(const CNcbiRegistry &   registry)
 {
     try {
         m_AuthToken = registry.GetEncryptedString(kAdminSection, "auth_token",
                                                   IRegistry::fPlaintextAllowed);
     } catch (const CRegistryException &  ex) {
-        string  msg = "Decrypting error detected while reading "
-                      "[" + kAdminSection + "]/auth_token value: " +
-                      string(ex.what());
-        ERR_POST(msg);
-        alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
+        m_CriticalErrors.push_back(
+                "Decrypting error detected while reading "
+                "[" + kAdminSection + "]/auth_token value: " +
+                string(ex.what()));
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
                                          kDefaultAuthToken);
     } catch (...) {
-        string  msg = "Unknown decrypting error detected while reading "
-                      "[" + kAdminSection + "]/auth_token value";
-        ERR_POST(msg);
-        alerts.Register(ePSGS_ConfigAuthDecrypt, msg);
+        m_CriticalErrors.push_back(
+                "Unknown decrypting error detected while reading "
+                "[" + kAdminSection + "]/auth_token value");
 
         // Treat the value as a clear text
         m_AuthToken = registry.GetString("ADMIN", "auth_token",
@@ -755,22 +770,106 @@ void SPubseqGatewaySettings::x_ReadLogSection(const CNcbiRegistry &   registry)
 }
 
 
+void SPubseqGatewaySettings::x_ReadH2OSection(const CNcbiRegistry &   registry)
+{
+    m_IdleTimeoutSec = registry.GetInt(kH2OSection, "idle_timeout",
+                                       kDefaultIdleTimeoutSec);
+}
+
+
 void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
 {
-    const unsigned short    kHttpPortMin = 1;
-    const unsigned short    kHttpPortMax = 65534;
-    const unsigned short    kWorkersMin = 1;
-    const unsigned short    kWorkersMax = 100;
-    const unsigned int      kListenerBacklogMin = 5;
-    const unsigned int      kListenerBacklogMax = 2048;
-    const unsigned short    kTcpMaxConnMax = 65000;
-    const unsigned short    kTcpMaxConnMin = 5;
-    const unsigned int      kTimeoutMsMin = 0;
-    const unsigned int      kTimeoutMsMax = UINT_MAX;
-    const unsigned int      kMaxRetriesMin = 0;
-    const unsigned int      kMaxRetriesMax = UINT_MAX;
+    x_ValidateServerSection();
+    x_ValidateStatisticsSection();
+    x_ValidateLmdbCacheSection();
+    x_ValidateAutoExcludeSection();
+    x_ValidateDebugSection();
+    x_ValidateIPGSection();
+    x_ValidateAdminSection();
+    x_ValidateSSLSection();
+    x_ValidateHealthSection();
+    x_ValidateCassandraProcessorSection();
+    x_ValidateLMDBProcessorSection();
+    x_ValidateCDDProcessorSection();
+    x_ValidateWGSProcessorSection();
+    x_ValidateSNPProcessorSection();
+    x_ValidateMyNCBISection();
+    x_ValidateCountersSection();
+    x_ValidateLogSection();
+    x_ValidateH2OSection();
+
+    string      combined_msg;
+    if (!m_CriticalErrors.empty()) {
+        string      combined_critical_errors;
+        for (const string &  item : m_CriticalErrors) {
+            if (!combined_critical_errors.empty()) {
+                combined_critical_errors += "\n";
+            }
+            combined_critical_errors += "- " + item;
+        }
+        combined_msg = "The following critical errors were found "
+                       "while reading settings:\n" + combined_critical_errors;
+        PSG_CRITICAL(combined_msg);
+    }
+
+    if (!m_Errors.empty()) {
+        string      combined_errors;
+        for (const string &  item : m_Errors) {
+            if (!combined_errors.empty()) {
+                combined_errors += "\n";
+            }
+            combined_errors += "- " + item;
+        }
+        string      errors = "The following errors were found "
+                             "while reading settings:\n" + combined_errors;
+        PSG_ERROR(errors);
+
+        if (!combined_msg.empty()) {
+            combined_msg += "\n";
+        }
+        combined_msg += errors;
+    }
+
+    if (!m_Warnings.empty()) {
+        string      combined_warnings;
+        for (const string &  item : m_Warnings) {
+            if (!combined_warnings.empty()) {
+                combined_warnings += "\n";
+            }
+            combined_warnings += "- " + item;
+        }
+        string      warns = "The following warnings were found "
+                            "while reading settings:\n" + combined_warnings;
+        PSG_WARNING(warns);
+
+        if (!combined_msg.empty()) {
+            combined_msg += "\n";
+        }
+        combined_msg += warns;
+    }
+
+    if (!combined_msg.empty()) {
+        alerts.Register(ePSGS_ConfigProblems, combined_msg);
+    }
+}
 
 
+const unsigned short    kHttpPortMin = 1;
+const unsigned short    kHttpPortMax = 65534;
+const unsigned short    kWorkersMin = 1;
+const unsigned short    kWorkersMax = 100;
+const unsigned int      kListenerBacklogMin = 5;
+const unsigned int      kListenerBacklogMax = 2048;
+const unsigned short    kTcpMaxConnMax = 65000;
+const unsigned short    kTcpMaxConnMin = 5;
+const unsigned int      kTimeoutMsMin = 0;
+const unsigned int      kTimeoutMsMax = UINT_MAX;
+const unsigned int      kMaxRetriesMin = 0;
+const unsigned int      kMaxRetriesMax = UINT_MAX;
+
+
+void SPubseqGatewaySettings::x_ValidateServerSection(void)
+{
     if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "[" + kServerSection +
@@ -780,180 +879,249 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
                    to_string(m_HttpPort));
     }
 
-    if (m_Si2csiDbFile.empty()) {
-        PSG_WARNING("[" + kLmdbCacheSection + "]/dbfile_si2csi is not found "
-                    "in the ini file. No si2csi cache will be used.");
-    }
-
-    if (m_BioseqInfoDbFile.empty()) {
-        PSG_WARNING("[" + kLmdbCacheSection + "]/dbfile_bioseq_info is not found "
-                    "in the ini file. No bioseq_info cache will be used.");
-    }
-
-    if (m_BlobPropDbFile.empty()) {
-        PSG_WARNING("[" + kLmdbCacheSection + "]/dbfile_blob_prop is not found "
-                    "in the ini file. No blob_prop cache will be used.");
-    }
-
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The number of HTTP workers is out of range. Allowed "
             "range: " + to_string(kWorkersMin) + "..." +
             to_string(kWorkersMax) + ". Received: " +
-            to_string(m_HttpWorkers) + ". Reset to "
-            "default: " + to_string(kWorkersDefault);
-        alerts.Register(ePSGS_ConfigHttpWorkers, err_msg);
-        PSG_ERROR(err_msg);
+            to_string(m_HttpWorkers) + ". Resetting to " +
+            to_string(kWorkersDefault));
         m_HttpWorkers = kWorkersDefault;
     }
 
     if (m_ListenerBacklog < kListenerBacklogMin ||
         m_ListenerBacklog > kListenerBacklogMax) {
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The listener backlog is out of range. Allowed "
             "range: " + to_string(kListenerBacklogMin) + "..." +
             to_string(kListenerBacklogMax) + ". Received: " +
-            to_string(m_ListenerBacklog) + ". Reset to "
-            "default: " + to_string(kListenerBacklogDefault);
-        alerts.Register(ePSGS_ConfigListenerBacklog, err_msg);
-        PSG_ERROR(err_msg);
+            to_string(m_ListenerBacklog) + ". Resetting to " +
+            to_string(kListenerBacklogDefault));
         m_ListenerBacklog = kListenerBacklogDefault;
     }
 
+    if (m_ConnThrottleCloseIdleSec < 0) {
+        m_CriticalErrors.push_back("Invalid [SERVER]/conn_throttle_close_idle value. "
+                                   "It must be >= 0. Resetting to " +
+                                   to_string(kDefaultConnThrottleCloseIdleSec));
+        m_ConnThrottleCloseIdleSec = kDefaultConnThrottleCloseIdleSec;
+    }
+
+    if (m_ConnForceCloseWaitSec < 0) {
+        m_CriticalErrors.push_back("Invalid [SERVER]/conn_force_close_wait value. "
+                                   "It must be >= 0. Resetting to " +
+                                   to_string(kDefaultConnForceCloseWaitSec));
+        m_ConnForceCloseWaitSec = kDefaultConnForceCloseWaitSec;
+    }
+
+    bool    connection_config_good = true;
     if (m_TcpMaxConn < kTcpMaxConnMin || m_TcpMaxConn > kTcpMaxConnMax) {
-        string  err_msg =
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
             "The max number of connections is out of range. Allowed "
             "range: " + to_string(kTcpMaxConnMin) + "..." +
             to_string(kTcpMaxConnMax) + ". Received: " +
-            to_string(m_TcpMaxConn) + ". Reset to "
-            "default: " + to_string(kTcpMaxConnDefault);
-        alerts.Register(ePSGS_ConfigMaxConnections, err_msg);
-        PSG_ERROR(err_msg);
-        m_TcpMaxConn = kTcpMaxConnDefault;
+            to_string(m_TcpMaxConn) +
+            ". Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_TcpMaxConnSoftLimit == 0) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Invalid [SERVER]/maxconnsoftlimit value. It must be > 0. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_TcpMaxConn < m_TcpMaxConnSoftLimit) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/maxconn value. "
+            "It must be >= [SERVER]/maxconnsoftlimit value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    // Min spare connections must not be less than
+    if (connection_config_good && m_TcpMaxConn - m_TcpMaxConnSoftLimit < 16) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/maxconn value. "
+            "It must be so that ([SERVER]/maxconn value - [SERVER]/maxconnsoftlimit value) >= 16. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_TcpMaxConnAlertLimit == 0) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Invalid [SERVER]/maxconnalertlimit value. "
+            "It must be > 0. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_TcpMaxConnSoftLimit < m_TcpMaxConnAlertLimit) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/maxconnalertlimit value. "
+            "It must be <= [SERVER]/maxconnsoftlimit value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good &&
+        m_ConnThrottleThreshold > static_cast<size_t>(m_TcpMaxConnSoftLimit)) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/conn_throttle_threshold value. It must be "
+            "<= [SERVER]/maxconnsoftlimit value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_ConnThrottleByHost > m_ConnThrottleThreshold) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/conn_throttle_by_host value. It must be "
+            "<= [SERVER]/conn_throttle_threshold value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_ConnThrottleBySite > m_ConnThrottleThreshold) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/conn_throttle_by_site value. It must be "
+            "<= [SERVER]/conn_throttle_threshold value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_ConnThrottleByProcess > m_ConnThrottleThreshold) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/conn_throttle_by_process value. It must be "
+            "<= [SERVER]/conn_throttle_threshold value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
+    }
+
+    if (connection_config_good && m_ConnThrottleByUserAgent > m_ConnThrottleThreshold) {
+        connection_config_good = false;
+        m_CriticalErrors.push_back(
+            "Inconsistent [SERVER]/conn_throttle_by_user_agent value. It must be "
+            "<= [SERVER]/conn_throttle_threshold value. "
+            "Resetting all connection and throttling settings to default.");
+        x_ResetConnectionSettingsToDefault();
     }
 
     if (m_TimeoutMs < kTimeoutMsMin || m_TimeoutMs > kTimeoutMsMax) {
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The operation timeout is out of range. Allowed "
             "range: " + to_string(kTimeoutMsMin) + "..." +
             to_string(kTimeoutMsMax) + ". Received: " +
-            to_string(m_TimeoutMs) + ". Reset to "
-            "default: " + to_string(kTimeoutDefault);
-        alerts.Register(ePSGS_ConfigTimeout, err_msg);
-        PSG_ERROR(err_msg);
+            to_string(m_TimeoutMs) + ". Resetting to " +
+            to_string(kTimeoutDefault));
         m_TimeoutMs = kTimeoutDefault;
     }
 
     if (m_MaxRetries < kMaxRetriesMin || m_MaxRetries > kMaxRetriesMax) {
-        string  err_msg =
+        m_CriticalErrors.push_back(
             "The max retries is out of range. Allowed "
             "range: " + to_string(kMaxRetriesMin) + "..." +
             to_string(kMaxRetriesMax) + ". Received: " +
-            to_string(m_MaxRetries) + ". Reset to "
-            "default: " + to_string(kMaxRetriesDefault);
-        alerts.Register(ePSGS_ConfigRetries, err_msg);
-        PSG_ERROR(err_msg);
+            to_string(m_MaxRetries) + ". Resetting to " +
+            to_string(kMaxRetriesDefault));
         m_MaxRetries = kMaxRetriesDefault;
     }
 
-    if (m_ExcludeCacheMaxSize < 0) {
-        string  err_msg =
-            "The max exclude cache size must be a positive integer. "
-            "Received: " + to_string(m_ExcludeCacheMaxSize) + ". "
-            "Reset to 0 (exclude blobs cache is disabled)";
-        alerts.Register(ePSGS_ConfigExcludeCacheSize, err_msg);
-        PSG_ERROR(err_msg);
-        m_ExcludeCacheMaxSize = 0;
-    }
-
-    if (m_ExcludeCachePurgePercentage < 0 || m_ExcludeCachePurgePercentage > 100) {
-        string  err_msg = "The exclude cache purge percentage is out of range. "
-            "Allowed: 0...100. Received: " +
-            to_string(m_ExcludeCachePurgePercentage) + ". ";
-        if (m_ExcludeCacheMaxSize > 0) {
-            err_msg += "Reset to " +
-                to_string(kDefaultExcludeCachePurgePercentage);
-            PSG_ERROR(err_msg);
-        } else {
-            err_msg += "The provided value has no effect "
-                "because the exclude cache is disabled.";
-            PSG_WARNING(err_msg);
-        }
-        m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
-        alerts.Register(ePSGS_ConfigExcludeCachePurgeSize, err_msg);
-    }
-
-    if (m_ExcludeCacheInactivityPurge <= 0) {
-        string  err_msg = "The exclude cache inactivity purge timeout must be "
-            "a positive integer greater than zero. Received: " +
-            to_string(m_ExcludeCacheInactivityPurge) + ". ";
-        if (m_ExcludeCacheMaxSize > 0) {
-            err_msg += "Reset to " +
-                to_string(kDefaultExcludeCacheInactivityPurge);
-            PSG_ERROR(err_msg);
-        } else {
-            err_msg += "The provided value has no effect "
-                "because the exclude cache is disabled.";
-            PSG_WARNING(err_msg);
-        }
-        m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
-        alerts.Register(ePSGS_ConfigExcludeCacheInactivity, err_msg);
-    }
-
     if (m_HttpMaxBacklog <= 0) {
-        PSG_WARNING("Invalid " + kServerSection + "]/http_max_backlog value (" +
-                    to_string(m_HttpMaxBacklog) + "). "
-                    "The http max backlog must be greater than 0. The http max backlog is "
-                    "reset to the default value (" +
-                    to_string(kDefaultHttpMaxBacklog) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid " + kServerSection + "]/http_max_backlog value (" +
+            to_string(m_HttpMaxBacklog) + "). "
+            "The http max backlog must be > 0. Resetting to " +
+            to_string(kDefaultHttpMaxBacklog));
         m_HttpMaxBacklog = kDefaultHttpMaxBacklog;
     }
 
     if (m_HttpMaxRunning <= 0) {
-        PSG_WARNING("Invalid " + kServerSection + "]/http_max_running value (" +
-                    to_string(m_HttpMaxRunning) + "). "
-                    "The http max running must be greater than 0. The http max running is "
-                    "reset to the default value (" +
-                    to_string(kDefaultHttpMaxRunning) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid " + kServerSection + "]/http_max_running value (" +
+            to_string(m_HttpMaxRunning) + "). "
+            "The http max running must be > 0. Resetting to " +
+            to_string(kDefaultHttpMaxRunning));
         m_HttpMaxRunning = kDefaultHttpMaxRunning;
     }
 
     if (m_LogSamplingRatio < 0) {
-        PSG_WARNING("Invalid " + kServerSection + "]/log_sampling_ratio value (" +
-                    to_string(m_LogSamplingRatio) + "). "
-                    "The log sampling ratio must be greater or equal 0. The log sampling ratio is "
-                    "reset to the default value (" +
-                    to_string(kDefaultLogSamplingRatio) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid " + kServerSection + "]/log_sampling_ratio value (" +
+            to_string(m_LogSamplingRatio) + "). "
+            "The log sampling ratio must be >= 0. Resetting to " +
+            to_string(kDefaultLogSamplingRatio));
         m_LogSamplingRatio = kDefaultLogSamplingRatio;
     }
 
     if (m_LogTimingThreshold < 0) {
-        PSG_WARNING("Invalid " + kServerSection + "]/log_timing_threshold value (" +
-                    to_string(m_LogTimingThreshold) + "). "
-                    "The log timing threshold must be greater or equal 0. The log timing threshold is "
-                    "reset to the default value (" +
-                    to_string(kDefaultLogTimingThreshold) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid " + kServerSection + "]/log_timing_threshold value (" +
+            to_string(m_LogTimingThreshold) + "). "
+            "The log timing threshold must be >= 0. Resetting to " +
+            to_string(kDefaultLogTimingThreshold));
         m_LogTimingThreshold = kDefaultLogTimingThreshold;
     }
 
     if (m_MaxHops <= 0) {
-        PSG_WARNING("Invalid " + kServerSection + "]/max_hops value (" +
-                    to_string(m_MaxHops) + "). "
-                    "The max hops must be greater than 0. The max hops is "
-                    "reset to the default value (" +
-                    to_string(kDefaultMaxHops) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid " + kServerSection + "]/max_hops value (" +
+            to_string(m_MaxHops) + "). "
+            "The max hops must be > 0. Resetting to " +
+            to_string(kDefaultMaxHops));
         m_MaxHops = kDefaultMaxHops;
     }
 
+    if (m_ResendTimeoutSec < 0.0) {
+        m_CriticalErrors.push_back(
+            "Invalid [" + kServerSection + "]/resend_timeout value (" +
+            to_string(m_ResendTimeoutSec) + "). "
+            "The resend timeout must be >= 0. Resetting to " +
+            to_string(kDefaultResendTimeoutSec));
+        m_ResendTimeoutSec = kDefaultResendTimeoutSec;
+    }
+
+    if (m_RequestTimeoutSec <= 0.0) {
+        m_CriticalErrors.push_back(
+            "Invalid [" + kServerSection + "]/request_timeout value (" +
+            to_string(m_RequestTimeoutSec) + "). "
+            "The request timeout must be > 0. Resetting to " +
+            to_string(kDefaultRequestTimeoutSec));
+        m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
+    }
+
+    if (m_ProcessorMaxConcurrency == 0) {
+        m_CriticalErrors.push_back(
+            "Invalid [" + kServerSection +
+            "]/ProcessorMaxConcurrency value (" +
+            to_string(m_ProcessorMaxConcurrency) + "). "
+            "The processor max concurrency must be > 0. "
+            "Resetting to " + to_string(kDefaultProcessorMaxConcurrency));
+        m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
+    }
+}
+
+
+void SPubseqGatewaySettings::x_ValidateStatisticsSection(void)
+{
     bool        stat_settings_good = true;
     if (NStr::CompareNocase(m_StatScaleType, "log") != 0 &&
         NStr::CompareNocase(m_StatScaleType, "linear") != 0) {
-        string  err_msg = "Invalid [" + kStatisticsSection +
+        m_CriticalErrors.push_back(
+            "Invalid [" + kStatisticsSection +
             "]/type value '" + m_StatScaleType +
             "'. Allowed values are: log, linear. "
-            "The statistics parameters are reset to default.";
-        alerts.Register(ePSGS_ConfigStatScaleType, err_msg);
-        PSG_ERROR(err_msg);
+            "The statistics parameters are reset to default values.");
         stat_settings_good = false;
 
         m_MinStatValue = kMinStatValue;
@@ -964,12 +1132,11 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
 
     if (stat_settings_good) {
         if (m_MinStatValue > m_MaxStatValue) {
-            string  err_msg = "Invalid [" + kStatisticsSection +
+            m_CriticalErrors.push_back(
+                "Invalid [" + kStatisticsSection +
                 "]/min and max values. The "
                 "max cannot be less than min. "
-                "The statistics parameters are reset to default.";
-            alerts.Register(ePSGS_ConfigStatMinMaxVal, err_msg);
-            PSG_ERROR(err_msg);
+                "The statistics parameters are reset to default values.");
             stat_settings_good = false;
 
             m_MinStatValue = kMinStatValue;
@@ -981,12 +1148,11 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
 
     if (stat_settings_good) {
         if (m_NStatBins <= 0) {
-            string  err_msg = "Invalid [" + kStatisticsSection +
+            m_CriticalErrors.push_back(
+                "Invalid [" + kStatisticsSection +
                 "]/n_bins value. The "
-                "number of bins must be greater than 0. "
-                "The statistics parameters are reset to default.";
-            alerts.Register(ePSGS_ConfigStatNBins, err_msg);
-            PSG_ERROR(err_msg);
+                "number of bins must be > 0. "
+                "The statistics parameters are reset to default values.");
 
             // Uncomment if there will be more [STATISTICS] section parameters
             // stat_settings_good = false;
@@ -999,49 +1165,93 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
     }
 
     if (m_TickSpan <= 0) {
-        PSG_WARNING("Invalid [" + kStatisticsSection + "]/tick_span value (" +
-                    to_string(m_TickSpan) + "). "
-                    "The tick span must be greater than 0. The tick span is "
-                    "reset to the default value (" +
-                    to_string(kTickSpan) + ").");
+        m_CriticalErrors.push_back(
+            "Invalid [" + kStatisticsSection + "]/tick_span value (" +
+            to_string(m_TickSpan) + "). "
+            "The tick span must be > 0. Resetting to " +
+            to_string(kTickSpan));
         m_TickSpan = kTickSpan;
     }
+}
 
-    if (m_ResendTimeoutSec < 0.0) {
-        PSG_WARNING("Invalid [" + kServerSection + "]/resend_timeout value (" +
-                    to_string(m_ResendTimeoutSec) + "). "
-                    "The resend timeout must be greater or equal to 0. The resend "
-                    "timeout is reset to the default value (" +
-                    to_string(kDefaultResendTimeoutSec) + ").");
-        m_ResendTimeoutSec = kDefaultResendTimeoutSec;
+void SPubseqGatewaySettings::x_ValidateLmdbCacheSection(void)
+{
+    if (m_Si2csiDbFile.empty()) {
+        m_Warnings.push_back(
+                "[" + kLmdbCacheSection + "]/dbfile_si2csi is not found "
+                "in the ini file. No si2csi cache will be used.");
     }
 
-    if (m_RequestTimeoutSec <= 0.0) {
-        PSG_WARNING("Invalid [" + kServerSection + "]/request_timeout value (" +
-                    to_string(m_RequestTimeoutSec) + "). "
-                    "The request timeout must be greater than 0. The request "
-                    "timeout is reset to the default value (" +
-                    to_string(kDefaultRequestTimeoutSec) + ").");
-        m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
+    if (m_BioseqInfoDbFile.empty()) {
+        m_Warnings.push_back(
+                "[" + kLmdbCacheSection + "]/dbfile_bioseq_info is not found "
+                "in the ini file. No bioseq_info cache will be used.");
     }
 
-    if (m_ProcessorMaxConcurrency == 0) {
-        PSG_WARNING("Invalid [" + kServerSection +
-                    "]/ProcessorMaxConcurrency value (" +
-                    to_string(m_ProcessorMaxConcurrency) + "). "
-                    "The processor max concurrency must be greater than 0. "
-                    "The processor max concurrency is reset to the default value (" +
-                    to_string(kDefaultProcessorMaxConcurrency) + ").");
-        m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
+    if (m_BlobPropDbFile.empty()) {
+        m_Warnings.push_back(
+                "[" + kLmdbCacheSection + "]/dbfile_blob_prop is not found "
+                "in the ini file. No blob_prop cache will be used.");
+    }
+}
+
+void SPubseqGatewaySettings::x_ValidateAutoExcludeSection(void)
+{
+    if (m_ExcludeCacheMaxSize < 0) {
+        m_CriticalErrors.push_back(
+            "The max exclude cache size must be a positive integer. "
+            "Received: " + to_string(m_ExcludeCacheMaxSize) + ". "
+            "Resetting to 0 (exclude blobs cache is disabled)");
+        m_ExcludeCacheMaxSize = 0;
     }
 
+    if (m_ExcludeCachePurgePercentage < 0 || m_ExcludeCachePurgePercentage > 100) {
+        string  msg = "The exclude cache purge percentage is out of range. "
+                      "Allowed: 0...100. Received: " +
+                      to_string(m_ExcludeCachePurgePercentage) + ". ";
+        if (m_ExcludeCacheMaxSize > 0) {
+            m_CriticalErrors.push_back(msg + "Resetting to " +
+                               to_string(kDefaultExcludeCachePurgePercentage));
+        } else {
+            m_Warnings.push_back(msg + "The provided value has no effect "
+                                 "because the exclude cache is disabled.");
+        }
+        m_ExcludeCachePurgePercentage = kDefaultExcludeCachePurgePercentage;
+    }
+
+    if (m_ExcludeCacheInactivityPurge <= 0) {
+        string  msg = "The exclude cache inactivity purge timeout must be > 0."
+                      "Received: " +
+                      to_string(m_ExcludeCacheInactivityPurge) + ". ";
+        if (m_ExcludeCacheMaxSize > 0) {
+            m_CriticalErrors.push_back(msg + "Resetting to " +
+                               to_string(kDefaultExcludeCacheInactivityPurge));
+        } else {
+            m_Warnings.push_back(msg + "The provided value has no effect "
+                                 "because the exclude cache is disabled.");
+        }
+        m_ExcludeCacheInactivityPurge = kDefaultExcludeCacheInactivityPurge;
+    }
+}
+
+void SPubseqGatewaySettings::x_ValidateDebugSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateIPGSection(void)
+{
     if (m_IPGPageSize <= 0) {
-        PSG_WARNING("The [" + kIPGSection + "]/page_size value must be > 0. "
-                    "The [" + kIPGSection + "]/page_size is switched to the "
-                    "default value: " + to_string(kDefaultIPGPageSize));
+        m_CriticalErrors.push_back(
+            "The [" + kIPGSection + "]/page_size value must be > 0. "
+            "Resetting to " + to_string(kDefaultIPGPageSize));
         m_IPGPageSize = kDefaultIPGPageSize;
     }
+}
 
+void SPubseqGatewaySettings::x_ValidateAdminSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateSSLSection(void)
+{
     if (m_SSLEnable) {
         if (m_SSLCertFile.empty()) {
             NCBI_THROW(CPubseqGatewayException, eConfigurationError,
@@ -1067,27 +1277,143 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
             m_SSLCiphers = kDefaultSSLCiphers;
         }
     }
+}
 
+void SPubseqGatewaySettings::x_ValidateHealthSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateCassandraProcessorSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateLMDBProcessorSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateCDDProcessorSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateWGSProcessorSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateSNPProcessorSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateMyNCBISection(void)
+{
     if (m_MyNCBIURL.empty()) {
-        PSG_WARNING("The [" + kMyNCBISection + "]/url value must be not empty. "
-                    "The [" + kMyNCBISection + "]/url is switched to the "
-                    "default value: " + kDefaultMyNCBIURL);
+        m_CriticalErrors.push_back(
+            "The [" + kMyNCBISection + "]/url value must be not empty. "
+            "Resetting to " + kDefaultMyNCBIURL);
         m_MyNCBIURL = kDefaultMyNCBIURL;
     }
 
     if (m_MyNCBITimeoutMs <= 0) {
-        PSG_WARNING("The [" + kMyNCBISection + "]/timeout_ms value must be > 0. "
-                    "The [" + kMyNCBISection + "]/timeout_ms is switched to the "
-                    "default value: " + to_string(kDefaultMyNCBITimeoutMs));
+        m_CriticalErrors.push_back(
+            "The [" + kMyNCBISection + "]/timeout_ms value must be > 0. "
+            "Resetting to " + to_string(kDefaultMyNCBITimeoutMs));
         m_MyNCBITimeoutMs = kDefaultMyNCBITimeoutMs;
     }
 
     if (m_MyNCBIResolveTimeoutMs <= 0) {
-        PSG_WARNING("The [" + kMyNCBISection + "]/resolve_timeout_ms value must be > 0. "
-                    "The [" + kMyNCBISection + "]/resolve_timeout_ms is switched to the "
-                    "default value: " + to_string(kDefaultMyNCBIResolveTimeoutMs));
+        m_CriticalErrors.push_back(
+            "The [" + kMyNCBISection + "]/resolve_timeout_ms value must be > 0. "
+            "Resetting to " + to_string(kDefaultMyNCBIResolveTimeoutMs));
         m_MyNCBIResolveTimeoutMs = kDefaultMyNCBIResolveTimeoutMs;
     }
+}
+
+void SPubseqGatewaySettings::x_ValidateCountersSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateLogSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateH2OSection(void)
+{ /* Nothing to validate so far */ }
+
+
+double
+SPubseqGatewaySettings::x_GetPercentValue(const CNcbiRegistry &  registry,
+                                          const string &  section,
+                                          const string &  entry,
+                                          double  default_value)
+{
+    string  reg_value = registry.GetString(section, entry, "");
+    reg_value = NStr::TruncateSpaces(reg_value);
+    if (reg_value.empty()) {
+        return default_value;
+    }
+
+    if (reg_value.back() != '%') {
+        // The '%' character at the end is a must. Return a not set value
+        m_CriticalErrors.push_back(
+            "The [" + section + "]/" + entry + " value is malformed. "
+            "The '%' character must be at the end. "
+            "Resetting to " + to_string(default_value));
+        return default_value;
+    }
+
+    // Remove the '%' character and truncate again
+    reg_value.back() = ' ';
+    reg_value = NStr::TruncateSpaces(reg_value);
+
+    if (reg_value.empty()) {
+        // There is nothing in front of the '%' character
+        m_CriticalErrors.push_back(
+            "The [" + section + "]/" + entry + " value is malformed. "
+            "There is no actual value in front of the '%' character. "
+            "Resetting to " + to_string(default_value));
+        return default_value;
+    }
+
+    // Now actually conver string to double value
+    try {
+        double  val = stod(reg_value);
+        if (val <= 0) {
+            m_CriticalErrors.push_back(
+                "The [" + section + "]/" + entry + " value is invalid. It must be > 0. "
+                "Resetting to " + to_string(default_value));
+            return default_value;
+        }
+        return val;
+    } catch (...) {
+        ; // Error converting, see error message below
+    }
+
+    m_CriticalErrors.push_back(
+        "The [" + section + "]/" + entry + " value is malformed. "
+        "Error converting it to double. "
+        "Resetting to " + to_string(default_value));
+    return default_value;
+}
+
+
+// Detects if the configuration value expressed as a percentage or not
+// Default is the percentage.
+bool
+SPubseqGatewaySettings::x_IsPercentValue(const CNcbiRegistry &  registry,
+                                         const string &  section,
+                                         const string &  entry)
+{
+    string  reg_value = registry.GetString(section, entry, "");
+    reg_value = NStr::TruncateSpaces(reg_value);
+    if (reg_value.empty()) {
+        return true;
+    }
+
+    return reg_value.back() == '%';
+}
+
+
+void SPubseqGatewaySettings::x_ResetConnectionSettingsToDefault(void)
+{
+    m_TcpMaxConn = kTcpMaxConnDefault;
+    m_TcpMaxConnSoftLimit = round(double(m_TcpMaxConn) * kDefaultTcpMaxConnSoftLimitPercent / 100.0);
+    m_TcpMaxConnAlertLimit = round(double(m_TcpMaxConnSoftLimit) * kDefaultTcpMaxConnAlertLimitPercent / 100.0);
+    m_ConnThrottleThreshold = round(double(m_TcpMaxConnSoftLimit) * kDefaultConnThrottleThresholdPercent / 100.0);
+    m_ConnThrottleByHost = round(double(m_ConnThrottleThreshold) * kDefaultConnThrottleByHostPercent / 100.0);
+    m_ConnThrottleBySite = round(double(m_ConnThrottleThreshold) * kDefaultConnThrottleBySitePercent / 100.0);
+    m_ConnThrottleByProcess = round(double(m_ConnThrottleThreshold) * kDefaultConnThrottleByProcessPercent / 100.0);
+    m_ConnThrottleByUserAgent = round(double(m_ConnThrottleThreshold) * kDefaultConnThrottleByUserAgentPercent / 100.0);
 }
 
 
@@ -1122,12 +1448,12 @@ size_t SPubseqGatewaySettings::GetProcessorMaxConcurrency(
                                             "ProcessorMaxConcurrency",
                                             m_ProcessorMaxConcurrency);
         if (limit == 0) {
-           PSG_WARNING("Invalid [" + section + "]/ProcessorMaxConcurrency value (" +
-                       to_string(limit) + "). "
-                       "The processor max concurrency must be greater than 0. "
-                       "The processor max concurrency is reset to the "
-                       "non-processor specific default value (" +
-                       to_string(m_ProcessorMaxConcurrency) + ").");
+            m_CriticalErrors.push_back(
+                "Invalid [" + section + "]/ProcessorMaxConcurrency value (" +
+                to_string(limit) + "). "
+                "The processor max concurrency must be > 0. "
+                "Resetting to " +
+                to_string(m_ProcessorMaxConcurrency));
             limit = m_ProcessorMaxConcurrency;
         }
 

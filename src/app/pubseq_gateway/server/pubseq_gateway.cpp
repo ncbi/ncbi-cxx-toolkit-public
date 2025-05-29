@@ -156,7 +156,7 @@ void CPubseqGatewayApp::ParseArgs(void)
     const CArgs &           args = GetArgs();
     const CNcbiRegistry &   registry = GetConfig();
 
-    m_Settings.Read(registry, m_Alerts);
+    m_Settings.Read(registry);
     g_Log = m_Settings.m_Log;
     g_AllowProcessorTiming = m_Settings.m_AllowProcessorTiming;
 
