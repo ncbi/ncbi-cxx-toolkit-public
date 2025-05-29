@@ -337,6 +337,9 @@ CBlast4Field & CBlast4Field::Get(EBlastOptIdx opt)
         case eBlastOpt_Web_ExclSeqUncult:
             m_[opt] = CBlast4Field("Web_SeqUncult",        CBlast4_value::e_Boolean);
             break;
+        case eBlastOpt_Web_OrganismNameExcl:
+            m_[opt] = CBlast4Field("Web_OrganismNameExcl",     CBlast4_value::e_String);
+            break;            
 
         default:
             ERR_POST(Warning << "Undefined remote BLAST options used");
