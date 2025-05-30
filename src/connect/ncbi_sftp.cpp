@@ -35,6 +35,8 @@
 
 #include <corelib/ncbimisc.hpp>
 
+#include <sys/stat.h>
+
 #include "ncbi_sftp_impl.hpp"
 
 
