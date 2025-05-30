@@ -82,20 +82,25 @@ ssh_session SSshConn::Start(ssh_session s, const TParams& params)
 
 void SSshVerify::Start(ssh_session s, const TParams& params)
 {
+    const auto& host = get<TValues::eHost>(params);
+
     if (auto rv = ssh_session_is_known_server(s); rv == SSH_KNOWN_HOSTS_OK) {
-        NCBI_SSH_TRACE(s << " server verified");
+        NCBI_SSH_TRACE(s << " server '" << host << "' verified");
     } else {
-        NCBI_SSH_TRACE(s << " failed to verify server: " << SError(s));
-        NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to verify server: " << SError(s));
+        NCBI_SSH_TRACE(s << " failed to verify server '" << host << "': " << SError(s));
+        NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to verify server '" << host << "': " << SError(s));
     }
 
     const auto& p = get<TValues::ePassword>(params);
+    const auto& u = get<TValues::eUser>(params);
 
     if (auto rv = p.empty() ? ssh_userauth_gssapi(s) : ssh_userauth_password(s, nullptr, p.data()); rv == SSH_AUTH_SUCCESS) {
-        NCBI_SSH_TRACE(s << " user authenticated");
+        if (u.empty()) {
+            NCBI_SSH_TRACE(s << " user authenticated");
+        } else {
+            NCBI_SSH_TRACE(s << " user '" << u << "' authenticated");
+        }
     } else {
-        const auto& u = get<TValues::eUser>(params);
-
         if (u.empty()) {
             NCBI_SSH_TRACE(s << " failed to authenticate user: " << SError(s));
             NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to authenticate user: " << SError(s));
