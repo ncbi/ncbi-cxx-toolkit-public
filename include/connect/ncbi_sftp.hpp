@@ -68,12 +68,36 @@ public:
 class NCBI_XCONNSFTP_EXPORT CSFTP_Session
 {
 public:
-    CSFTP_Session(const string& host,
-                  const string& password = {});
+    /// Session params.
+    /// Make sure params do not outlive passed strings.
+    struct SParams : private tuple<string_view, string_view, string_view>
+    {
+        using TBase = tuple;
+        enum EValues : size_t { eHost, eUser, ePassword };
 
-    CSFTP_Session(const string& host,
-                  const string& user,
-                  const string& password = {});
+        // It must be strings as libssh requires null-terminated strings
+        SParams(const string& host,
+                const string& user = {},
+                const string& password = {})
+            : tuple(host, user, password)
+        {
+        }
+
+        auto SetUser(const string& user)                    { return Set<eUser>(user); }
+        auto SetPassword(const string& password)            { return Set<ePassword>(password); }
+
+    private:
+        template <EValues what>
+        SParams& Set(const string& value) { get<what>(*this) = value; return *this; }
+
+        friend CSFTP_Session;
+    };
+
+    CSFTP_Session(SParams params);
+
+    /// A shortcut
+    template <class... TArgs>
+    CSFTP_Session(TArgs&&... args) : CSFTP_Session(SParams(std::forward<TArgs>(args)...)) {}
 
 private:
     shared_ptr<void> m_Impl;

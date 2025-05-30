@@ -46,8 +46,8 @@ void CSftpSampleApp::Init()
 {
     unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "SFTP API sample");
-    arg_desc->AddDefaultKey("user", "USER", "User to use", CArgDescriptions::eString, kEmptyStr);
-    arg_desc->AddDefaultKey("password", "PASSWORD", "Password to use", CArgDescriptions::eString, kEmptyStr);
+    arg_desc->AddOptionalKey("user", "USER", "User to use", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("password", "PASSWORD", "Password to use", CArgDescriptions::eString);
     arg_desc->AddDefaultKey("path", "PATH", "Path to start with", CArgDescriptions::eString, kEmptyStr);
     arg_desc->AddDefaultKey("input-file", "FILENAME", "File containing commands and data", CArgDescriptions::eInputFile, "-");
     arg_desc->AddFlag("ftp", "Use FTP instead of SFTP");
@@ -76,17 +76,27 @@ int CSftpSampleApp::Run()
 {
     const auto& args = GetArgs();
     const auto& host = args["HOST"].AsString();
-    const auto& user = args["user"].AsString();
-    const auto& password = args["password"].AsString();
     const auto echo = args["echo"].AsBoolean();
     const auto flags = args["stream-flags"].AsBoolean();
     auto& input = args["input-file"].AsInputFile();
     unique_ptr<iostream> sftp_stream;
 
     if (args["ftp"].HasValue()) {
-        sftp_stream = make_unique<CConn_FtpStream>(host, user.empty() ? "ftp"s : user, password.empty() ? "none"s : password, args["path"].AsString());
+        const auto& user = args["user"].HasValue() ? args["user"].AsString() : "ftp"s;
+        const auto& password = args["password"].HasValue() ? args["password"].AsString() : "none"s;
+        sftp_stream = make_unique<CConn_FtpStream>(host, user, password, args["path"].AsString());
     } else {
-        CSFTP_Session sftp_session(host, user, password);
+        CSFTP_Session::SParams params(host);
+
+        if (args["user"].HasValue()) {
+            params.SetUser(args["user"].AsString());
+        }
+
+        if (args["password"].HasValue()) {
+            params.SetPassword(args["password"].AsString());
+        }
+
+        CSFTP_Session sftp_session(params);
         sftp_stream = make_unique<CSFTP_Stream>(sftp_session, args["path"].AsString());
     }
 
