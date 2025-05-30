@@ -45,6 +45,66 @@ namespace NSftp
 {
 
 
+ssh_session SSshConn::Start(ssh_session s, const TParams& params)
+{
+    const auto& host = get<TValues::eHost>(params);
+
+    if (auto rv = ssh_options_set(s, SSH_OPTIONS_HOST, host.data()); rv == SSH_OK) {
+        NCBI_SSH_TRACE(s << " host set: " << host);
+    } else {
+        NCBI_SSH_TRACE(rv << " failed to set host '" << host << "': " << SError(s));
+        NCBI_THROW_FMT(CSFTP_Exception, eInvalidArg, "Failed to set host '" << host << "': " << SError(s));
+    }
+
+    const auto& u = get<TValues::eUser>(params);
+
+    if (!u.empty()) {
+        if (auto rv = ssh_options_set(s, SSH_OPTIONS_USER, u.data()); rv == SSH_OK) {
+            NCBI_SSH_TRACE(s << " user set: " << u);
+        } else {
+            NCBI_SSH_TRACE(rv << " failed to set user '" << u << "': " << SError(s));
+            NCBI_THROW_FMT(CSFTP_Exception, eInvalidArg, "Failed to set user '" << u << "': " << SError(s));
+        }
+    }
+
+    if (auto rv = ssh_connect(s); rv == SSH_OK) {
+        NCBI_SSH_TRACE(s << " connected");
+    } else {
+        NCBI_SSH_TRACE(s << " failed to connect to host '" << host << "': " << SError(s));
+        NCBI_THROW_FMT(CSFTP_Exception, eInvalidArg, "Failed to connect to host '" << host << "': " << SError(s));
+    }
+
+    return s;
+}
+
+
+void SSshVerify::Start(ssh_session s, const TParams& params)
+{
+    if (auto rv = ssh_session_is_known_server(s); rv == SSH_KNOWN_HOSTS_OK) {
+        NCBI_SSH_TRACE(s << " server verified");
+    } else {
+        NCBI_SSH_TRACE(s << " failed to verify server: " << SError(s));
+        NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to verify server: " << SError(s));
+    }
+
+    const auto& p = get<TValues::ePassword>(params);
+
+    if (auto rv = p.empty() ? ssh_userauth_gssapi(s) : ssh_userauth_password(s, nullptr, p.data()); rv == SSH_AUTH_SUCCESS) {
+        NCBI_SSH_TRACE(s << " user authenticated");
+    } else {
+        const auto& u = get<TValues::eUser>(params);
+
+        if (u.empty()) {
+            NCBI_SSH_TRACE(s << " failed to authenticate user: " << SError(s));
+            NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to authenticate user: " << SError(s));
+        } else {
+            NCBI_SSH_TRACE(s << " failed to authenticate user '" << u << "': " << SError(s));
+            NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to authenticate as user '" << u << "': " << SError(s));
+        }
+    }
+}
+
+
 template <class TDerived>
 void SDirReplyState<TDerived>::Reset(string_view path)
 {
@@ -88,6 +148,48 @@ ERW_Result SDirReplyState<TDerived>::Read(void* buf, size_t count, size_t* bytes
         m_LineReply.Reset(m_Line);
         m_DirContents.pop_front();
     }
+}
+
+
+string SMlsFormat::Prepare(sftp_attributes attrs, const TPath& path)
+{
+    ostringstream os;
+    os << "modify=" << CTime(attrs->mtime).AsString("YMDhms") <<
+        ";size=" << attrs->size <<
+        ";type=";
+
+    switch (attrs->type) {
+        case SSH_FILEXFER_TYPE_DIRECTORY:
+            if (path.empty()) {
+                if (string_view(attrs->name) == "."sv)  os << 'c';
+                if (string_view(attrs->name) == ".."sv) os << 'p';
+            }
+
+            os << "dir";
+            break;
+        case SSH_FILEXFER_TYPE_REGULAR:   os << "file"; break;
+        case SSH_FILEXFER_TYPE_SYMLINK:   os << "OS.unix=symlink"; break;
+        case SSH_FILEXFER_TYPE_SPECIAL:   os << "special"; break;
+        default:                          os << "unknown"; break;
+    }
+
+    os << ";UNIX.group=" << attrs->gid <<
+        ";UNIX.groupname=";
+
+    if (attrs->group) os << attrs->group;
+
+    os << ";UNIX.mode=0" << oct << (attrs->permissions & 0777) << dec <<
+        ";UNIX.owner=" << attrs->uid <<
+        ";UNIX.ownername=";
+
+    if (attrs->owner) os << attrs->owner;
+
+    os << "; " << NormalizePath((path / attrs->name).lexically_normal()).native();
+
+    if (path.empty()) os << '\r';
+
+    os << '\n';
+    return os.str();
 }
 
 
