@@ -100,7 +100,7 @@ public:
         auto SetPassword(const string& password)            { return Set<ePassword>(password); }
         auto SetFlag(EFlags flag) { get<eFlags>(*this) |= flag; return *this; }
 
-        /// Limit trust to specified (base64-encoded) public key.
+        /// Limit trust to new/changed hosts (if enabled) by specified (base64-encoded) public key.
         auto SetExpectedKey(const string& expected_key) { return Set<eExpectedKey>(expected_key); }
 
     private:
