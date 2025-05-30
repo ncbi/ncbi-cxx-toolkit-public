@@ -36,6 +36,7 @@
 #define FTACPP_HPP
 
 #include <cstring>
+#include <charconv>
 #include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
