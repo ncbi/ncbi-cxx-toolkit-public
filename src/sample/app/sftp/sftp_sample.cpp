@@ -48,6 +48,7 @@ void CSftpSampleApp::Init()
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), "SFTP API sample");
     arg_desc->AddOptionalKey("user", "USER", "User to use", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("password", "PASSWORD", "Password to use", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("expected-key", "PUBLIC_KEY", "Limit trust to specified (base64-encoded) public key", CArgDescriptions::eString);
     arg_desc->AddDefaultKey("path", "PATH", "Path to start with", CArgDescriptions::eString, kEmptyStr);
     arg_desc->AddDefaultKey("input-file", "FILENAME", "File containing commands and data", CArgDescriptions::eInputFile, "-");
     arg_desc->AddFlag("ftp", "Use FTP instead of SFTP");
@@ -109,6 +110,10 @@ int CSftpSampleApp::Run()
 
         if (args["trust-changed-host"].AsBoolean()) {
             params.SetFlag(CSFTP_Session::fTrustChangedHost);
+        }
+
+        if (args["expected-key"].HasValue()) {
+            params.SetExpectedKey(args["expected-key"].AsString());
         }
 
         CSFTP_Session sftp_session(params);

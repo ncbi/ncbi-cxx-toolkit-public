@@ -81,23 +81,27 @@ public:
 
     /// Session params.
     /// Make sure params do not outlive passed strings.
-    struct SParams : private tuple<string_view, string_view, string_view, TFlags>
+    struct SParams : private tuple<string_view, string_view, string_view, TFlags, string_view>
     {
         using TBase = tuple;
-        enum EValues : size_t { eHost, eUser, ePassword, eFlags };
+        enum EValues : size_t { eHost, eUser, ePassword, eFlags, eExpectedKey };
 
         // It must be strings as libssh requires null-terminated strings
         SParams(const string& host,
                 const string& user = {},
                 const string& password = {},
-                TFlags        flags = 0)
-            : tuple(host, user, password, flags)
+                TFlags        flags = 0,
+                const string& expected_key = {})
+            : tuple(host, user, password, flags, expected_key)
         {
         }
 
         auto SetUser(const string& user)                    { return Set<eUser>(user); }
         auto SetPassword(const string& password)            { return Set<ePassword>(password); }
         auto SetFlag(EFlags flag) { get<eFlags>(*this) |= flag; return *this; }
+
+        /// Limit trust to specified (base64-encoded) public key.
+        auto SetExpectedKey(const string& expected_key) { return Set<eExpectedKey>(expected_key); }
 
     private:
         template <EValues what>
