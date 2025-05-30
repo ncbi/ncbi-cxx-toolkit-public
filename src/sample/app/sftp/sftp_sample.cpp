@@ -53,6 +53,8 @@ void CSftpSampleApp::Init()
     arg_desc->AddFlag("ftp", "Use FTP instead of SFTP");
     arg_desc->AddFlag("echo", "Echo input data");
     arg_desc->AddFlag("stream-flags", "Output stream state flags after each comand");
+    arg_desc->AddFlag("update-known-hosts", "Update known hosts (~/.ssh/known_hosts) if host is trusted (affects other SSH/SFTP clients!)");
+    arg_desc->AddFlag("do-not-trust-new-host", "Do not trust new (unknown) host");
     arg_desc->AddPositional("HOST", "Host to connect to", CArgDescriptions::eString);
     SetupArgDescriptions(arg_desc.release());
 }
@@ -94,6 +96,14 @@ int CSftpSampleApp::Run()
 
         if (args["password"].HasValue()) {
             params.SetPassword(args["password"].AsString());
+        }
+
+        if (args["update-known-hosts"].AsBoolean()) {
+            params.SetFlag(CSFTP_Session::fUpdateKnownHosts);
+        }
+
+        if (args["do-not-trust-new-host"].AsBoolean()) {
+            params.SetFlag(CSFTP_Session::fDoNotTrustNewHost);
         }
 
         CSFTP_Session sftp_session(params);

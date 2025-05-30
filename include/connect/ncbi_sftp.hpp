@@ -68,23 +68,34 @@ public:
 class NCBI_XCONNSFTP_EXPORT CSFTP_Session
 {
 public:
+    enum EFlags {
+        /// Update known hosts (~/.ssh/known_hosts) if host is trusted.
+        /// @warning Updating known hosts affects other SSH/SFTP clients.
+        fUpdateKnownHosts               = 1 << 0,
+        /// Do not trust new (unknown) host.
+        fDoNotTrustNewHost              = 1 << 1,
+    };
+    DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+
     /// Session params.
     /// Make sure params do not outlive passed strings.
-    struct SParams : private tuple<string_view, string_view, string_view>
+    struct SParams : private tuple<string_view, string_view, string_view, TFlags>
     {
         using TBase = tuple;
-        enum EValues : size_t { eHost, eUser, ePassword };
+        enum EValues : size_t { eHost, eUser, ePassword, eFlags };
 
         // It must be strings as libssh requires null-terminated strings
         SParams(const string& host,
                 const string& user = {},
-                const string& password = {})
-            : tuple(host, user, password)
+                const string& password = {},
+                TFlags        flags = 0)
+            : tuple(host, user, password, flags)
         {
         }
 
         auto SetUser(const string& user)                    { return Set<eUser>(user); }
         auto SetPassword(const string& password)            { return Set<ePassword>(password); }
+        auto SetFlag(EFlags flag) { get<eFlags>(*this) |= flag; return *this; }
 
     private:
         template <EValues what>
