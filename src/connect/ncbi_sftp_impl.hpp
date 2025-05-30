@@ -58,6 +58,9 @@ BEGIN_NCBI_SCOPE
 
 #define NCBI_SSH_TRACE(message)     _TRACE(message)
 
+#define NCBI_SSH_TRACE_AND_THROW(code, what, msg, remaining)                            \
+    NCBI_SSH_TRACE(what << ' ' << (char)tolower(msg[0]) << &msg[1] << remaining);       \
+    NCBI_THROW_FMT(CSFTP_Exception, code, msg << remaining);
 
 namespace NSftp
 {
@@ -241,8 +244,7 @@ struct SSftpInit
         if (auto rv = sftp_init(s.second); rv == SSH_OK) {
             NCBI_SSH_TRACE(s.second << " initialized");
         } else {
-            NCBI_SSH_TRACE(s.second << " failed to initialize: " << SError(s));
-            NCBI_THROW_FMT(CSFTP_Exception, eInternalError, "Failed to initialize SFTP session: " << SError(s));
+            NCBI_SSH_TRACE_AND_THROW(eInternalError, s.second, "Failed to initialize: ", SError(s));
         }
     }
 };
