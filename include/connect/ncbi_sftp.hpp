@@ -74,6 +74,8 @@ public:
         fUpdateKnownHosts               = 1 << 0,
         /// Do not trust new (unknown) host.
         fDoNotTrustNewHost              = 1 << 1,
+        /// Trust host with changed public key.
+        fTrustChangedHost               = 1 << 2,
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 

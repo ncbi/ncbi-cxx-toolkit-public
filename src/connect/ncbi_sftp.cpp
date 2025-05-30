@@ -115,6 +115,20 @@ void SSshVerify::Start(ssh_session s, const TParams& params)
             NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Cannot trust unknown host '", host << '\'');
 
         case SSH_KNOWN_HOSTS_CHANGED:
+            if (auto key = SGuard<SSshServerPublicKey>(s)) {
+                if (auto base64 = SGuard<SSshPublicKeyBase64Str>(key)) {
+                    if (flags & CSFTP_Session::fTrustChangedHost) {
+                        update_known_hosts();
+                        break;
+                    }
+
+                    NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Not allowed to trust changed host '",
+                            host << "' with public key '" << base64.Get() << '\'');
+                }
+            }
+
+            NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Cannot trust changed host '", host << '\'');
+
         case SSH_KNOWN_HOSTS_OTHER:
         case SSH_KNOWN_HOSTS_ERROR:
             NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Failed to verify server '", host << "' : " << SError(s));
