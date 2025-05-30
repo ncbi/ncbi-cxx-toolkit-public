@@ -209,6 +209,54 @@ struct SSshConn
     }
 };
 
+struct SSshServerPublicKey
+{
+    static ssh_key Start(ssh_session s)
+    {
+        ssh_key k = nullptr;
+
+        if (auto rv = ssh_get_server_publickey(s, &k); rv == SSH_OK) {
+            NCBI_SSH_TRACE((void*)k << " created");
+        } else {
+            NCBI_SSH_TRACE("failed to create");
+            k = nullptr; // Just in case
+        }
+
+        return k;
+    }
+
+    static void Stop(ssh_key k)
+    {
+        ssh_key_free(k);
+        NCBI_SSH_TRACE((void*)k << " freed");
+    }
+};
+
+using TSshHash = pair<unsigned char*, size_t>;
+
+struct SSshPublicKeyHash
+{
+    static TSshHash Start(ssh_key k)
+    {
+        TSshHash h;
+
+        if (auto rv = ssh_get_publickey_hash(k, SSH_PUBLICKEY_HASH_SHA1, &h.first, &h.second); rv == SSH_OK) {
+            NCBI_SSH_TRACE((void*)h.first << " created");
+        } else {
+            NCBI_SSH_TRACE("failed to create");
+            h.first = nullptr; // Just in case
+        }
+
+        return h;
+    }
+
+    static void Stop(TSshHash h)
+    {
+        ssh_clean_pubkey_hash(&h.first);
+        NCBI_SSH_TRACE((void*)h.first << " freed");
+    }
+};
+
 struct SSshVerify
 {
     static void Start(ssh_session s, const TParams& params);
@@ -257,6 +305,38 @@ struct SSshStr
             ssh_string_free_char(s);
             NCBI_SSH_TRACE((void*)s << " freed");
         }
+    }
+};
+
+struct SSshPublicKeyBase64Str : SSshStr
+{
+    static char* Start(ssh_key k)
+    {
+        char* b = nullptr;
+
+        if (auto rv = ssh_pki_export_pubkey_base64(k, &b); rv == SSH_OK) {
+            NCBI_SSH_TRACE((void*)b << " created base64 string: '" << rv << '\'');
+        } else {
+            NCBI_SSH_TRACE("failed to create base64 string");
+        }
+
+        return b;
+    }
+};
+
+struct SSshHashHexStr : SSshStr
+{
+    static char* Start(TSshHash hash)
+    {
+        auto rv = ssh_get_hexa(hash.first, hash.second);
+
+        if (rv) {
+            NCBI_SSH_TRACE((void*)rv << " created hex string: '" << rv << '\'');
+        } else {
+            NCBI_SSH_TRACE("failed to create hex string");
+        }
+
+        return rv;
     }
 };
 

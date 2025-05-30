@@ -80,11 +80,44 @@ ssh_session SSshConn::Start(ssh_session s, const TParams& params)
 void SSshVerify::Start(ssh_session s, const TParams& params)
 {
     const auto& host = get<TValues::eHost>(params);
+    const auto& flags = get<TValues::eFlags>(params);
+    auto rv = ssh_session_is_known_server(s);
 
-    if (auto rv = ssh_session_is_known_server(s); rv == SSH_KNOWN_HOSTS_OK) {
-        NCBI_SSH_TRACE(s << " server '" << host << "' verified");
-    } else {
-        NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Failed to verify server '", host << "': " << SError(s));
+    auto update_known_hosts = [&]() {
+        if (flags & CSFTP_Session::fUpdateKnownHosts) {
+            if (auto rv = ssh_session_update_known_hosts(s); rv == SSH_OK) {
+                NCBI_SSH_TRACE(s << " known hosts file created/updated");
+            } else {
+                NCBI_SSH_TRACE_AND_THROW(eInternalError, s, "Failed to create/update known hosts file: ", SError(s));
+            }
+        }
+    };
+
+    switch (rv) {
+        case SSH_KNOWN_HOSTS_OK:
+            NCBI_SSH_TRACE(s << " server '" << host << "' verified");
+            break;
+
+        case SSH_KNOWN_HOSTS_NOT_FOUND:
+        case SSH_KNOWN_HOSTS_UNKNOWN:
+            if (auto key = SGuard<SSshServerPublicKey>(s)) {
+                if (auto base64 = SGuard<SSshPublicKeyBase64Str>(key)) {
+                    if (!(flags & CSFTP_Session::fDoNotTrustNewHost)) {
+                        update_known_hosts();
+                        break;
+                    }
+
+                    NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Not allowed to trust unknown host '",
+                            host << "' with public key '" << base64.Get() << '\'');
+                }
+            }
+
+            NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Cannot trust unknown host '", host << '\'');
+
+        case SSH_KNOWN_HOSTS_CHANGED:
+        case SSH_KNOWN_HOSTS_OTHER:
+        case SSH_KNOWN_HOSTS_ERROR:
+            NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Failed to verify server '", host << "' : " << SError(s));
     }
 
     const auto& p = get<TValues::ePassword>(params);
