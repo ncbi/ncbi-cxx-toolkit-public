@@ -267,16 +267,10 @@ const char* CSFTP_Exception::GetErrCodeString() const
 }
 
 
-CSFTP_Session::CSFTP_Session(const string& host, const string& password) :
-    m_Impl(make_shared<NSftp::SSession>(host, ""s, password))
+CSFTP_Session::CSFTP_Session(SParams params) :
+    m_Impl(make_shared<NSftp::SSession>(NSftp::TParams(params)))
 {
 }
-
-CSFTP_Session::CSFTP_Session(const string& host, const string& user, const string& password) :
-    m_Impl(make_shared<NSftp::SSession>(host, user, password))
-{
-}
-
 
 CSFTP_Stream::CSFTP_Stream(const CSFTP_Session& session, string_view path,
             string_view file, uint64_t offset, bool upload) :

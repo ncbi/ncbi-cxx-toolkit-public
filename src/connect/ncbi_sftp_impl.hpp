@@ -192,16 +192,23 @@ struct SSsh
     }
 };
 
+using TParams = CSFTP_Session::SParams::TBase;
+using TValues = CSFTP_Session::SParams::EValues;
+
 struct SSshConn
 {
-    static ssh_session Start(ssh_session s, const string& host, const string& u)
+    static ssh_session Start(ssh_session s, const TParams& params)
     {
+        const auto& host = get<TValues::eHost>(params);
+
         if (auto rv = ssh_options_set(s, SSH_OPTIONS_HOST, host.data()); rv == SSH_OK) {
             NCBI_SSH_TRACE(s << " host set: " << host);
         } else {
             NCBI_SSH_TRACE(rv << " failed to set host '" << host << "': " << SError(s));
             NCBI_THROW_FMT(CSFTP_Exception, eInvalidArg, "Failed to set host '" << host << "': " << SError(s));
         }
+
+        const auto& u = get<TValues::eUser>(params);
 
         if (!u.empty()) {
             if (auto rv = ssh_options_set(s, SSH_OPTIONS_USER, u.data()); rv == SSH_OK) {
@@ -231,7 +238,7 @@ struct SSshConn
 
 struct SSshVerify
 {
-    static void Start(ssh_session s, const string& u, const string& p)
+    static void Start(ssh_session s, const TParams& params)
     {
         if (auto rv = ssh_session_is_known_server(s); rv == SSH_KNOWN_HOSTS_OK) {
             NCBI_SSH_TRACE(s << " server verified");
@@ -240,9 +247,13 @@ struct SSshVerify
             NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to verify server: " << SError(s));
         }
 
+        const auto& p = get<TValues::ePassword>(params);
+
         if (auto rv = p.empty() ? ssh_userauth_gssapi(s) : ssh_userauth_password(s, nullptr, p.data()); rv == SSH_AUTH_SUCCESS) {
             NCBI_SSH_TRACE(s << " user authenticated");
         } else {
+            const auto& u = get<TValues::eUser>(params);
+
             if (u.empty()) {
                 NCBI_SSH_TRACE(s << " failed to authenticate user: " << SError(s));
                 NCBI_THROW_FMT(CSFTP_Exception, eAuthenticationError, "Failed to authenticate user: " << SError(s));
@@ -526,11 +537,11 @@ struct SSftpMisc
 
 struct SSession
 {
-    SSession(const string& host, const string& user, const string& password) :
+    SSession(const TParams params) :
         m_Library(),
         m_Ssh(),
-        m_SshConn(m_Ssh, host, user),
-        m_SshVerify(m_Ssh, user, password),
+        m_SshConn(m_Ssh, params),
+        m_SshVerify(m_Ssh, params),
         m_Sftp(m_Ssh),
         m_SftpInit(*this)
     {
