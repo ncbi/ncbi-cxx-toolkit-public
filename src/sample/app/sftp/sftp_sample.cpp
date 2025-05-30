@@ -55,6 +55,7 @@ void CSftpSampleApp::Init()
     arg_desc->AddFlag("stream-flags", "Output stream state flags after each comand");
     arg_desc->AddFlag("update-known-hosts", "Update known hosts (~/.ssh/known_hosts) if host is trusted (affects other SSH/SFTP clients!)");
     arg_desc->AddFlag("do-not-trust-new-host", "Do not trust new (unknown) host");
+    arg_desc->AddFlag("trust-changed-host", "Trust host with changed public key");
     arg_desc->AddPositional("HOST", "Host to connect to", CArgDescriptions::eString);
     SetupArgDescriptions(arg_desc.release());
 }
@@ -104,6 +105,10 @@ int CSftpSampleApp::Run()
 
         if (args["do-not-trust-new-host"].AsBoolean()) {
             params.SetFlag(CSFTP_Session::fDoNotTrustNewHost);
+        }
+
+        if (args["trust-changed-host"].AsBoolean()) {
+            params.SetFlag(CSFTP_Session::fTrustChangedHost);
         }
 
         CSFTP_Session sftp_session(params);

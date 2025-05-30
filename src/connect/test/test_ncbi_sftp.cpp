@@ -83,7 +83,7 @@ struct SGlobalFixture
             session.emplace<FTP>(user, password);
         } else {
             try {
-                session.emplace<SFTP>("sftp-private.ncbi.nlm.nih.gov", user, password);
+                session.emplace<SFTP>("sftp-private.ncbi.nlm.nih.gov", user, password, CSFTP_Session::fTrustChangedHost);
                 type = SFTP;
             }
             catch (std::exception& e) {
