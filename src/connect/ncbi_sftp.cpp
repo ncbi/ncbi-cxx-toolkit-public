@@ -81,6 +81,7 @@ void SSshVerify::Start(ssh_session s, const TParams& params)
 {
     const auto& host = get<TValues::eHost>(params);
     const auto& flags = get<TValues::eFlags>(params);
+    const auto& expected = get<TValues::eExpectedKey>(params);
     auto rv = ssh_session_is_known_server(s);
 
     auto update_known_hosts = [&]() {
@@ -103,8 +104,13 @@ void SSshVerify::Start(ssh_session s, const TParams& params)
             if (auto key = SGuard<SSshServerPublicKey>(s)) {
                 if (auto base64 = SGuard<SSshPublicKeyBase64Str>(key)) {
                     if (!(flags & CSFTP_Session::fDoNotTrustNewHost)) {
-                        update_known_hosts();
-                        break;
+                        if (expected.empty() || (expected == string_view(base64.Get()))) {
+                            update_known_hosts();
+                            break;
+                        }
+
+                        NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Cannot trust unknown host '",
+                                host << "' with public key '" << base64.Get() << "' not matching expected key '" << expected << '\'');
                     }
 
                     NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Not allowed to trust unknown host '",
@@ -118,8 +124,13 @@ void SSshVerify::Start(ssh_session s, const TParams& params)
             if (auto key = SGuard<SSshServerPublicKey>(s)) {
                 if (auto base64 = SGuard<SSshPublicKeyBase64Str>(key)) {
                     if (flags & CSFTP_Session::fTrustChangedHost) {
-                        update_known_hosts();
-                        break;
+                        if (expected.empty() || (expected == string_view(base64.Get()))) {
+                            update_known_hosts();
+                            break;
+                        }
+
+                        NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Cannot trust changed host '",
+                                host << "' with public key '" << base64.Get() << "' not matching expected key '" << expected << '\'');
                     }
 
                     NCBI_SSH_TRACE_AND_THROW(eAuthenticationError, s, "Not allowed to trust changed host '",
