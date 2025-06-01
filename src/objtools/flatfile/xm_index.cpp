@@ -469,7 +469,7 @@ static void XMLInitialEntry(IndexblkPtr ibp, const char* entry, bool accver, Par
             auto buf = XMLGetTagValue(entry, xip);
             if (! buf)
                 continue;
-            ibp->date = GetUpdateDate(buf->c_str(), source);
+            ibp->date = GetUpdateDate(*buf, source);
         } else if (xip.tag == INSDSEQ_DIVISION && ibp->division[0] == '?') {
             if (xip.start == 0 || xip.end == 0 || xip.start >= xip.end ||
                 xip.end - xip.start < 3)
