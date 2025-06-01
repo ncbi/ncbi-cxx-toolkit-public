@@ -274,12 +274,12 @@ inline bool IsDigit(char c)
     return ('0' <= c && c <= '9');
 }
 /**********************************************************/
-bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
+bool ParseAccessionRange(TokenStatBlk& tsbp, unsigned skip)
 {
-    auto& tokens = tsbp->list;
+    auto& tokens = tsbp.list;
     if (tokens.empty())
         return true;
-    if ((int)skip >= tsbp->num)
+    if ((int)skip >= tsbp.num)
         return true;
 
     auto tbp = tokens.begin();
@@ -351,7 +351,7 @@ bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
         tbp->resize(dash);
         tbp = tokens.insert_after(tbp, "-");
         tbp = tokens.insert_after(tbp, tmp);
-        tsbp->num += 2;
+        tsbp.num += 2;
     }
     if (! bad)
         return true;
@@ -370,36 +370,31 @@ bool ParseAccessionRange(TokenStatBlk* tsbp, unsigned skip)
  *      Return a statistics of link list token.
  *
  **********************************************************/
-unique_ptr<TokenStatBlk> TokenString(const char* str, Char delimiter)
+TokenStatBlk TokenString(string_view str, Char delimiter)
 {
-    const char*     bptr;
-    const char*     ptr;
-    Int2            num;
-    TokenStatBlkPtr token;
-
-    token     = new TokenStatBlk;
-    auto tail = token->list.before_begin();
+    TokenStatBlk tokens;
+    auto tail = tokens.list.before_begin();
 
     /* skip first several delimiters if any existed
      */
-    for (ptr = str; *ptr == delimiter;)
+    auto ptr = str.begin();
+    while (ptr != str.end() && *ptr == delimiter)
         ptr++;
 
-    for (num = 0; *ptr != '\0' && *ptr != '\r' && *ptr != '\n';) {
-        for (bptr = ptr; *ptr != delimiter && *ptr != '\r' && *ptr != '\n' &&
-                         *ptr != '\t' && *ptr != ' ' && *ptr != '\0';)
+    for (; ptr != str.end() && *ptr != '\r' && *ptr != '\n';) {
+        auto bptr = ptr;
+        while (ptr != str.end() && *ptr != delimiter && *ptr != '\r' && *ptr != '\n' &&
+            *ptr != '\t' && *ptr != ' ')
             ptr++;
 
-        tail = token->list.insert_after(tail, string(bptr, ptr));
-        num++;
+        tail = tokens.list.insert_after(tail, string(bptr, ptr));
+        tokens.num++;
 
         while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
             ptr++;
     }
 
-    token->num = num;
-
-    return unique_ptr<TokenStatBlk>(token);
+    return tokens;
 }
 
 /**********************************************************
