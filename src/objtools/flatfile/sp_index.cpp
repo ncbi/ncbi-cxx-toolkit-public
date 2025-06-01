@@ -181,9 +181,9 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
                 } else if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_DT])) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
                         SPGetVerNum(finfo.str, entry);
-                    auto stoken = TokenString(finfo.str, ' ');
-                    if (stoken->num > 2) {
-                        entry->date = GetUpdateDate(*next(stoken->list.begin()),
+                    auto tokens = TokenString(finfo.str, ' ');
+                    if (tokens.num > 2) {
+                        entry->date = GetUpdateDate(*next(tokens.list.begin()),
                                                     pp->source);
                     }
                 }

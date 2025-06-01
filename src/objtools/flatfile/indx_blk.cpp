@@ -799,10 +799,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
     entry->is_pat  = false;
     entry->biodrop = false;
 
-    auto stoken = TokenString(finfo.str, ' ');
+    auto tokens = TokenString(finfo.str, ' ');
 
     bool badlocus = false;
-    if (stoken->num > 2) {
+    if (tokens.num > 2) {
         p = finfo.str;
         if (pp->mode == Parser::EMode::Relaxed) {
             sSetLocusLineOffsets(p, entry->lc);
@@ -826,10 +826,10 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             }
         }
 
-        auto ptr = stoken->list.begin();
+        auto ptr = tokens.list.begin();
         ++ptr;
         if (pp->format == Parser::EFormat::EMBL &&
-            next(ptr) != stoken->list.end() && *next(ptr) == "SV"s) {
+            next(ptr) != tokens.list.end() && *next(ptr) == "SV"s) {
             for (i = 0, p = finfo.str; *p != '\0'; p++)
                 if (*p == ';' && p[1] == ' ')
                     i++;
@@ -841,7 +841,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
             FtaInstallPrefix(PREFIX_LOCUS, *ptr);
             FtaInstallPrefix(PREFIX_ACCESSION, *ptr);
 
-            if (i != 6 || (stoken->num != 10 && stoken->num != 11)) {
+            if (i != 6 || (tokens.num != 10 && tokens.num != 11)) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_BadlyFormattedIDLine, "The number of fields in this EMBL record's new ID line does not fit requirements.");
                 badlocus = true;
             } else if (fta_check_embl_moltype(finfo.str) == false)
@@ -859,7 +859,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         if (pp->mode != Parser::EMode::Relaxed && ! badlocus) {
             if (pp->format == Parser::EFormat::SPROT) {
                 auto it = next(ptr);
-                if (it == stoken->list.end() || it->empty() ||
+                if (it == tokens.list.end() || it->empty() ||
                     (! NStr::StartsWith(*it, "preliminary"sv, NStr::eNocase) &&
                      ! NStr::StartsWith(*it, "unreviewed"sv, NStr::eNocase)))
                     badlocus = CheckLocusSP(entry->locusname);
@@ -884,7 +884,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         return nullptr;
     }
 
-    bases = GetResidue(stoken.get());
+    bases = GetResidue(&tokens);
     if (bases)
         entry->bases = (size_t)fta_atoi(bases);
 
@@ -892,15 +892,15 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         entry->lc.date > -1) {
         /* last token in the LOCUS line is date of the update's data
          */
-        auto it = stoken->list.begin();
-        for (i = 1; i < stoken->num; ++i)
+        auto it = tokens.list.begin();
+        for (i = 1; i < tokens.num; ++i)
             ++it;
         entry->date = GetUpdateDate(*it, pp->source);
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
-        j = stoken->num - ((pp->format == Parser::EFormat::GenBank) ? 2 : 3);
-        auto it = stoken->list.begin();
+        j = tokens.num - ((pp->format == Parser::EFormat::GenBank) ? 2 : 3);
+        auto it = tokens.list.begin();
         for (i = 1; i < j; ++i)
             ++it;
 
@@ -1312,7 +1312,7 @@ static inline bool sNotAllDigits(const char* first, const char* last)
  *
  **********************************************************/
 static bool CheckAccession(
-    TokenStatBlkPtr tokens,
+    TokenStatBlk&   tokens,
     Parser::ESource source,
     Parser::EMode   mode,
     const char*     priacc,
@@ -1329,7 +1329,7 @@ static bool CheckAccession(
     if (! priacc || mode == Parser::EMode::Relaxed)
         return true;
 
-    auto tbp = tokens->list.begin();
+    auto tbp = tokens.list.begin();
     if (skip > 0)
         ++tbp; // advance(it, skip)
     priformat = IsNewAccessFormat(priacc);
@@ -1340,7 +1340,7 @@ static bool CheckAccession(
         iswgs = false;
 
     count = 0;
-    for (; tbp != tokens->list.end(); ++tbp) {
+    for (; tbp != tokens.list.end(); ++tbp) {
         StringCpy(acnum, tbp->c_str());
         if (acnum[0] == '-' && acnum[1] == '\0')
             continue;
@@ -1625,21 +1625,21 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     auto   tokens = TokenString(line.c_str(), ';');
 
     if (skip != 2) {
-        get = ParseAccessionRange(tokens.get(), skip);
+        get = ParseAccessionRange(tokens, skip);
         if (get)
-            get = CheckAccession(tokens.get(), pp->source, pp->mode, entry->acnum, skip);
+            get = CheckAccession(tokens, pp->source, pp->mode, entry->acnum, skip);
         if (! get)
             entry->drop = true;
 
-        if (skip == 1 && ! tokens->list.empty()) {
-            tokens->list.pop_front();
+        if (skip == 1 && ! tokens.list.empty()) {
+            tokens.list.pop_front();
             skip = 0;
         }
-        if (skip == 0 && ! tokens->list.empty()) {
+        if (skip == 0 && ! tokens.list.empty()) {
             auto tail = entry->secaccs.before_begin();
             for (; next(tail) != entry->secaccs.end();)
                 ++tail;
-            entry->secaccs.splice_after(tail, tokens->list);
+            entry->secaccs.splice_after(tail, tokens.list);
         }
 
         return (get);
@@ -1647,7 +1647,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
 
     entry->is_tpa = false;
     acc[0]        = '\0';
-    if (tokens->num < 2) {
+    if (tokens.num < 2) {
         if (pp->mode != Parser::EMode::Relaxed) {
             FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line {}", (long int)entry->linenum);
             entry->drop = true;
@@ -1655,7 +1655,7 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         return false;
     }
 
-    StringCpy(acc, next(tokens->list.begin())->c_str()); /* get first accession */
+    StringCpy(acc, next(tokens.list.begin())->c_str()); /* get first accession */
 
     if (pp->mode != Parser::EMode::Relaxed) {
         DelNoneDigitTail(acc);
@@ -1715,20 +1715,20 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     }
 
     if (get) {
-        if (tokens->num > 2)
-            get = ParseAccessionRange(tokens.get(), 2);
+        if (tokens.num > 2)
+            get = ParseAccessionRange(tokens, 2);
         if (get) {
-            get = CheckAccession(tokens.get(), pp->source, pp->mode, entry->acnum, 2);
+            get = CheckAccession(tokens, pp->source, pp->mode, entry->acnum, 2);
         }
     } else {
         string sourceName = sourceNames.at(pp->source);
         FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession # prefix [{}] for this source: {}", acc, sourceName);
     }
 
-    tokens->list.pop_front();
-    tokens->list.pop_front();
-    entry->secaccs = std::move(tokens->list);
-    tokens.reset();
+    tokens.list.pop_front();
+    tokens.list.pop_front();
+    entry->secaccs = std::move(tokens.list);
+    tokens = {};
 
     if (! entry->is_pat)
         entry->is_pat = IsPatentedAccPrefix(*pp, acc);

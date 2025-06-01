@@ -299,10 +299,10 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                                ! GetAccession(pp, finfo.str, entry, 1))
                         pp->num_drop++;
                 } else if (fta_StartsWith(finfo.str, keywordDt)) {
-                    auto stoken = TokenString(finfo.str, ' ');
-                    if (stoken->num > 2) {
+                    auto tokens = TokenString(finfo.str, ' ');
+                    if (tokens.num > 2) {
                         after_DT    = true;
-                        entry->date = GetUpdateDate(*next(stoken->list.begin()),
+                        entry->date = GetUpdateDate(*next(tokens.list.begin()),
                                                     pp->source);
                     }
                 }
