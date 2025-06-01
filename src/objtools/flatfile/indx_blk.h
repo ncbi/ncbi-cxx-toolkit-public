@@ -53,7 +53,7 @@ struct FinfoBlk {
 
 using TIndBlkList = forward_list<unique_ptr<Indexblk>>;
 
-CRef<objects::CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source);
+CRef<objects::CDate_std> GetUpdateDate(string_view, Parser::ESource source);
 
 /**********************************************************/
 bool XReadFileBuf(FileBuf& fileBuf, FinfoBlk& finfo);

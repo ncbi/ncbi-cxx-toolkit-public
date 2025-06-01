@@ -606,23 +606,22 @@ bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool
  *   or "NODATE"; otherwise, return Date-std pointer.
  *
  **********************************************************/
-CRef<CDate_std> GetUpdateDate(const char* ptr, Parser::ESource source)
+CRef<CDate_std> GetUpdateDate(string_view str, Parser::ESource source)
 {
-
-    if (fta_StartsWith(ptr, "NODATE"sv))
+    if (str.starts_with("NODATE"sv))
         return CRef<CDate_std>(new CDate_std(CTime(CTime::eCurrent)));
 
-    if (ptr[11] != '\0' && ptr[11] != '\n' && ptr[11] != ' ' &&
-        (source != Parser::ESource::SPROT || ptr[11] != ',')) {
+    if (str.size() > 11 && str[11] != '\n' && str[11] != ' ' &&
+        (source != Parser::ESource::SPROT || str[11] != ',')) {
         return {};
     }
 
-    if (! CkDateFormat(ptr)) {
-        FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Invalid date: {}", ptr);
+    if (! CkDateFormat(str)) {
+        FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Invalid date: {}", str);
         return {};
     }
 
-    return get_full_date(ptr, false, source);
+    return get_full_date(str, false, source);
 }
 
 
@@ -896,7 +895,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
         auto it = stoken->list.begin();
         for (i = 1; i < stoken->num; ++i)
             ++it;
-        entry->date = GetUpdateDate(it->c_str(), pp->source);
+        entry->date = GetUpdateDate(*it, pp->source);
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL) {
