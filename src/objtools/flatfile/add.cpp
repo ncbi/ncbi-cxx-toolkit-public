@@ -285,8 +285,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
             continue;
 
         auto dbp = subblocks.cbegin();
-        char* p  = SrchTheStr(dbp->mBuf.ptr, dbp->mBuf.ptr + len, str);
-        if (p)
+        if (SrchTheStr(string_view(dbp->mBuf.ptr, len), str))
             break;
     }
     if (temp == chain.cend())
@@ -1169,7 +1168,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         buf.assign(p + 1);
         buf.append("\n");
     } else {
-        p = SrchTheChar(offset, offset + len, '\n');
+        p = SrchTheChar(string_view(offset, len), '\n');
         if (! p) {
             return false;
         }
@@ -2568,7 +2567,6 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
     char* start;
     char* tag = nullptr;
-    char* buf;
     char* p;
     char* q;
     char* r;
@@ -2610,6 +2608,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             }
             break;
         }
+        p += 8;
 
         if (bad)
             break;
@@ -2635,19 +2634,16 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         if (StringEqu(tag, "##Metadata")) {
             MemFree(tag);
-            p += 8;
             continue;
         }
 
-        if (! SrchTheStr(p + 8, q, "::")) {
+        if (! SrchTheStr(string_view(p, q), "::")) {
             FtaErrPost(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             MemFree(tag);
-            p += 8;
             continue;
         }
 
-        buf = StringSave(string(p + 8, q));
-
+        char* buf = StringSave(string_view(p, q));
         CRef<CUser_object> cur = fta_build_structured_comment(tag, buf);
         MemFree(buf);
 
