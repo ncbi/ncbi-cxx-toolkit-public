@@ -383,8 +383,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(bptr, eptr, '\n');
-
+    ptr  = SrchTheChar(string_view(bptr, eptr), '\n');
     if (! ptr)
         return;
 
@@ -396,7 +395,7 @@ static void BuildFeatureBlock(DataBlk& dbp)
         InsertDatablkVal(std::get<TDataBlkList>(dbp.mData), ParFlat_FEATBLOCK, bptr, eptr - bptr);
 
         do {
-            bptr = SrchTheChar(bptr, eptr, '\n');
+            bptr = SrchTheChar(string_view(bptr, eptr), '\n');
             bptr++;
 
             skip = false;
@@ -605,7 +604,7 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
 
     bptr = dbp.mBuf.ptr;
     eptr = bptr + dbp.mBuf.len;
-    ptr  = SrchTheChar(bptr, eptr, '\n');
+    ptr  = SrchTheChar(string_view(bptr, eptr), '\n');
 
     while (ptr && ptr + 1 < eptr) {
         if (ptr[2] == 'H') {
@@ -624,7 +623,7 @@ static bool TrimEmblFeatBlk(DataBlk& dbp)
             }
         }
 
-        ptr = SrchTheChar(bptr, eptr, '\n');
+        ptr = SrchTheChar(string_view(bptr, eptr), '\n');
     }
 
     return (flag);
@@ -670,7 +669,6 @@ static bool GetSubNodeType(string_view subkw, char*& bptr, char* eptr)
  **********************************************************/
 static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
 {
-    char* ptr;
     char* bptr;
     char* eptr;
     char* sptr;
@@ -687,15 +685,13 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     }
 
     const string str = " 1-" + to_string(bases);
-    ptr = SrchTheStr(bptr, eptr, str.c_str());
-    if (ptr) {
+    if (SrchTheStr(string_view(bptr, eptr), str)) {
         dbp.mType = ParFlat_REF_END;
         return;
     }
 
     if (source == Parser::ESource::EMBL) {
-        ptr = SrchTheStr(bptr, eptr, " 0-0");
-        if (ptr) {
+        if (SrchTheStr(string_view(bptr, eptr), " 0-0")) {
             dbp.mType = ParFlat_REF_NO_TARGET;
             return;
         }
@@ -705,7 +701,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     if (source == Parser::ESource::NCBI) {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
-        if (SrchTheStr(bptr, sptr, "sites"))
+        if (SrchTheStr(string_view(bptr, sptr), "sites"))
             dbp.mType = ParFlat_REF_SITES;
     }
 }
@@ -1113,7 +1109,6 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
 {
     char* p;
     char* q;
-    char* r;
     char* str;
 
     bool  within = false;
@@ -1122,7 +1117,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
     char* com    = StringNew(len);
 
     for (str = com; bptr < eptr; bptr = p + 1) {
-        p = SrchTheChar(bptr, eptr, '\n');
+        p = SrchTheChar(string_view(bptr, eptr), '\n');
 
         /* skip HTG generated comments starting with '*' */
         if ((is_htg && bptr[col_data] == '*') ||
@@ -1130,8 +1125,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             continue;
 
         if (! within) {
-            r  = SrchTheStr(bptr, p, "-START##");
-            if (r)
+            if (SrchTheStr(string_view(bptr, p), "-START##"))
                 within = true;
         }
 
@@ -1169,8 +1163,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             *str++ = ' ';
 
         if (within) {
-            r  = SrchTheStr(bptr, p, "-END##");
-            if (r)
+            if (SrchTheStr(string_view(bptr, p), "-END##"))
                 within = false;
         }
     }

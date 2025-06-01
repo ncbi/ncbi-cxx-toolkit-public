@@ -662,13 +662,11 @@ string GetTheCurrentToken(char** ptr)
  *   a pointer points first occurrence The character.
  *
  **********************************************************/
-char* SrchTheChar(char* bptr, char* eptr, Char letter)
+char* SrchTheChar(string_view sv, Char letter)
 {
-    string_view sv(bptr, eptr - bptr);
-
     auto i = sv.find(letter);
     if (i != string_view::npos)
-        return bptr + i;
+        return const_cast<char*>(sv.data() + i);
     else
         return nullptr;
 }
@@ -682,13 +680,11 @@ char* SrchTheChar(char* bptr, char* eptr, Char letter)
  *   a pointer points first occurrence The leading string.
  *
  **********************************************************/
-char* SrchTheStr(char* bptr, char* eptr, const char* leadstr)
+char* SrchTheStr(string_view sv, string_view leadstr)
 {
-    string_view sv(bptr, eptr - bptr);
-
     auto i = sv.find(leadstr);
     if (i != string_view::npos)
-        return bptr + i;
+        return const_cast<char*>(sv.data() + i);
     else
         return nullptr;
 }

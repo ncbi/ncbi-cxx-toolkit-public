@@ -349,7 +349,7 @@ static CRef<CGB_block> GetGBBlock(ParserPtr pp, const DataBlk& entry, CMolInfo& 
 
     SrchNodeType(entry, ParFlat_ORIGIN, &len, &bptr);
     eptr = bptr + len;
-    ptr  = SrchTheChar(bptr, eptr, '\n');
+    ptr  = SrchTheChar(string_view(bptr, eptr), '\n');
     if (ptr) {
         eptr = ptr;
         bptr += 6;
@@ -793,7 +793,7 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
         if (! ptr)
             break;
 
-        if (SrchTheChar(bptr, ptr, ';') || ! StringChr(ptr + 1, '\n')) {
+        if (SrchTheChar(string_view(bptr, ptr), ';') || ! StringChr(ptr + 1, '\n')) {
             break;
         }
 

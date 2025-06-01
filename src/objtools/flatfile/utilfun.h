@@ -109,13 +109,13 @@ string GetTheCurrentToken(char** ptr);
  * Return NULL if not found; otherwise, return a pointer points first
  * occurrence The character.
  */
-char* SrchTheChar(char* bptr, char* eptr, Char letter);
+char* SrchTheChar(string_view where, Char letter);
 
 /* Search The string.
  * Return NULL if not found; otherwise, return a pointer points first
  * occurrence The string.
  */
-char* SrchTheStr(char* bptr, char* eptr, const char* str);
+char* SrchTheStr(string_view where, string_view what);
 
 void CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 

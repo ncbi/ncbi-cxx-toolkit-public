@@ -5487,13 +5487,14 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     count      = 0;
     size_t len = 0;
     if (SrchNodeType(entry, ParFlat_DE, &len, &offset)) {
-        mRNA   = SrchTheStr(offset, offset + len, "mRNA");
-        tRNA   = SrchTheStr(offset, offset + len, "tRNA");
-        rRNA   = SrchTheStr(offset, offset + len, "rRNA");
-        snRNA  = SrchTheStr(offset, offset + len, "snRNA");
-        scRNA  = SrchTheStr(offset, offset + len, "scRNA");
-        uRNA   = SrchTheStr(offset, offset + len, "uRNA");
-        snoRNA = SrchTheStr(offset, offset + len, "snoRNA");
+        string_view sv(offset, len);
+        mRNA   = SrchTheStr(sv, "mRNA");
+        tRNA   = SrchTheStr(sv, "tRNA");
+        rRNA   = SrchTheStr(sv, "rRNA");
+        snRNA  = SrchTheStr(sv, "snRNA");
+        scRNA  = SrchTheStr(sv, "scRNA");
+        uRNA   = SrchTheStr(sv, "uRNA");
+        snoRNA = SrchTheStr(sv, "snoRNA");
         if (mRNA)
             count++;
         if (tRNA)
