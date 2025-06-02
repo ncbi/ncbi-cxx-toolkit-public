@@ -167,8 +167,6 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
     IndexblkPtr entry;
     Int4        indx = 0;
-    char*       p;
-    char*       q;
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, emblKeywords[ParFlat_ID]);
     if (end_of_file) {
@@ -215,12 +213,13 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
 
             while (! end_of_file &&
                    ! fta_StartsWith(finfo.str, keywordEnd)) {
-                if (fta_StartsWith(finfo.str, keywordKw)) {
+                const string_view line = finfo.str;
+                if (line.starts_with(keywordKw)) {
                     if (pp->source == Parser::ESource::EMBL ||
                         pp->source == Parser::ESource::DDBJ) {
-                        pp->KeywordParser().AddDataLine(finfo.str);
+                        pp->KeywordParser().AddDataLine(string(line));
                     }
-                } else if (fta_StartsWith(finfo.str, keywordId)) {
+                } else if (line.starts_with(keywordId)) {
                     if (after_ID) {
                         FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                         entry->drop = true;
@@ -228,36 +227,35 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                     }
                     after_ID = true;
                     if (entry->embl_new_ID)
-                        line_sv = EmblGetNewIDVersion(entry->locusname,
-                                                      finfo.str);
-                } else if (fta_StartsWith(finfo.str, keywordAh)) {
+                        line_sv = EmblGetNewIDVersion(entry->locusname, line);
+                } else if (line.starts_with(keywordAh)) {
                     if (entry->is_tpa == false && entry->tsa_allowed == false) {
                         FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"AH\" is allowed for TPA or TSA records only. Continue anyway.");
                     }
                 }
-                if (after_SQ && isalpha(finfo.str[0]) != 0) {
+                if (after_SQ && isalpha(line.front())) {
                     FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                     entry->drop = true;
                     break;
                 }
-                if (fta_StartsWith(finfo.str, keywordNi)) {
+                if (line.starts_with(keywordNi)) {
                     if (after_NI) {
                         FtaErrPost(SEV_ERROR, ERR_FORMAT_Multiple_NI, "Multiple NI lines in the entry, entry dropped");
                         entry->drop = true;
                         break;
                     }
                     after_NI = true;
-                } else if (fta_StartsWith(finfo.str, keywordSq)) {
+                } else if (line.starts_with(keywordSq)) {
                     after_SQ      = true;
                     entry->origin = true;
-                } else if (fta_StartsWith(finfo.str, keywordOs)) {
+                } else if (line.starts_with(keywordOs)) {
                     if (after_OS && pp->source != Parser::ESource::EMBL) {
                         FtaErrPost(SEV_INFO, ERR_ORGANISM_Multiple, "Multiple OS lines in the entry");
                     }
                     after_OS = true;
                 }
                 if (pp->accver &&
-                    fta_StartsWith(finfo.str, keywordSv)) {
+                    line.starts_with(keywordSv)) {
                     if (entry->embl_new_ID) {
                         FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"SV\" is not allowed in conjunction with the new format of \"ID\" line. Entry dropped.");
                         entry->drop = true;
@@ -268,38 +266,39 @@ bool EmblIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 l
                             break;
                         }
                         after_SV = true;
-                        p        = finfo.str + ParFlat_COL_DATA_EMBL;
+                        const char* p = line.data() + ParFlat_COL_DATA_EMBL;
                         while (*p == ' ' || *p == '\t')
                             p++;
-                        for (q = p; *q != '\0' && *q != ' ' && *q != '\t' &&
+                        const char* q = p;
+                        for (; *q != '\0' && *q != ' ' && *q != '\t' &&
                                     *q != '\n';)
                             q++;
                         line_sv = string(p, q);
                     }
                 }
-                if (fta_StartsWith(finfo.str, "OC"sv))
+                if (line.starts_with("OC"sv))
                     after_OC = true;
 
-                auto keywordRn = emblKeywords[ParFlat_RN];
-                if (fta_StartsWith(finfo.str, keywordRn))
+                const auto keywordRn = emblKeywords[ParFlat_RN];
+                if (line.starts_with(keywordRn))
                     after_RN = true;
 
-                auto keywordCo = emblKeywords[ParFlat_CO];
-                if (fta_StartsWith(finfo.str, keywordCo))
+                const auto keywordCo = emblKeywords[ParFlat_CO];
+                if (line.starts_with(keywordCo))
                     entry->is_contig = true;
 
-                auto keywordAc = emblKeywords[ParFlat_AC];
-                auto keywordDt = emblKeywords[ParFlat_DT];
-                if (fta_StartsWith(finfo.str, keywordAc)) {
+                const auto keywordAc = emblKeywords[ParFlat_AC];
+                const auto keywordDt = emblKeywords[ParFlat_DT];
+                if (line.starts_with(keywordAc)) {
                     if (after_AC == false) {
                         after_AC = true;
-                        if (! GetAccession(pp, finfo.str, entry, 2))
+                        if (! GetAccession(pp, line, entry, 2))
                             pp->num_drop++;
                     } else if (! entry->drop &&
-                               ! GetAccession(pp, finfo.str, entry, 1))
+                               ! GetAccession(pp, line, entry, 1))
                         pp->num_drop++;
-                } else if (fta_StartsWith(finfo.str, keywordDt)) {
-                    auto tokens = TokenString(finfo.str, ' ');
+                } else if (line.starts_with(keywordDt)) {
+                    auto tokens = TokenString(line, ' ');
                     if (tokens.num > 2) {
                         after_DT    = true;
                         entry->date = GetUpdateDate(*next(tokens.list.begin()),
