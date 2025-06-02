@@ -76,26 +76,29 @@ static bool sp_err_field(const char* name)
 }
 
 /**********************************************************/
-static void SPGetVerNum(char* str, IndexblkPtr ibp)
+static void SPGetVerNum(string_view str, IndexblkPtr ibp)
 {
-    char* p;
-    char* q;
+    const char* p;
+    const char* q;
 
-    if (! str || ! ibp)
+    if (str.empty() || ! ibp)
         return;
 
-    p = StringIStr(str, "sequence version");
+    p = StringIStr(str.data(), "sequence version");
     if (! p)
         return;
+    p += 16;
 
-    for (p += 16; *p == ' ';)
+    const char* end = str.data() + str.size();
+    while (p < end && *p == ' ')
         p++;
-    for (q = p; *p >= '0' && *p <= '9';)
+    q = p;
+    while (p < end && *p >= '0' && *p <= '9')
         p++;
-    if (*p == '.' && (p[1] == '\0' || p[1] == '\n')) {
-        *p          = '\0';
-        ibp->vernum = fta_atoi(q);
-        *p          = '.';
+    if (p < end && *p == '.') {
+        if (p + 1 >= end || *(p + 1) == '\n') {
+            ibp->vernum = fta_atoi(string_view(q, p));
+        }
     }
 }
 
@@ -151,37 +154,38 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
 
             while (! end_of_file &&
                    ! fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_END])) {
-                if (fta_StartsWith(finfo.str, "RM"sv)) {
-                    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped {}", finfo.str);
+                const string_view line = finfo.str;
+                if (line.starts_with("RM"sv)) {
+                    FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "RM line type has been replaced by RX, skipped {}", line);
                 }
-                if (after_SQ && isalpha(finfo.str[0]) != 0) {
+                if (after_SQ && isalpha(line.front())) {
                     FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped");
                     entry->drop = true;
                     break;
                 }
-                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_SQ]))
+                if (line.starts_with(swissProtKeywords[ParFlatSP_SQ]))
                     after_SQ = true;
 
-                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_OS]))
+                if (line.starts_with(swissProtKeywords[ParFlatSP_OS]))
                     after_OS = true;
 
-                if (fta_StartsWith(finfo.str, "OC"sv))
+                if (line.starts_with("OC"sv))
                     after_OC = true;
 
-                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_RN]))
+                if (line.starts_with(swissProtKeywords[ParFlatSP_RN]))
                     after_RN = true;
 
-                if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_AC])) {
+                if (line.starts_with(swissProtKeywords[ParFlatSP_AC])) {
                     if (after_AC == false) {
                         after_AC = true;
-                        if (! GetAccession(pp, finfo.str, entry, 2))
+                        if (! GetAccession(pp, line, entry, 2))
                             pp->num_drop++;
-                    } else if (! entry->drop && ! GetAccession(pp, finfo.str, entry, 1))
+                    } else if (! entry->drop && ! GetAccession(pp, line, entry, 1))
                         pp->num_drop++;
-                } else if (fta_StartsWith(finfo.str, swissProtKeywords[ParFlatSP_DT])) {
+                } else if (line.starts_with(swissProtKeywords[ParFlatSP_DT])) {
                     if (reviewed && pp->sp_dt_seq_ver && entry->vernum < 1)
-                        SPGetVerNum(finfo.str, entry);
-                    auto tokens = TokenString(finfo.str, ' ');
+                        SPGetVerNum(line, entry);
+                    auto tokens = TokenString(line, ' ');
                     if (tokens.num > 2) {
                         entry->date = GetUpdateDate(*next(tokens.list.begin()),
                                                     pp->source);
