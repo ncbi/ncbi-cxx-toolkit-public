@@ -723,7 +723,7 @@ bool CGeneModel::CdsInvariant(bool check_start_stop) const
     _ASSERT( !(ConfirmedStart() && OpenCds()) );
 
     _ASSERT(Include(cds_info.MaxCdsLimits(), cds_info.Cds()));
-    _ASSERT(cds_info.MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom() || cds_info.MaxCdsLimits().GetFrom() == cds_info.Cds().GetFrom());
+    //best cds could be shorter    _ASSERT(cds_info.MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom() || cds_info.MaxCdsLimits().GetFrom() == cds_info.Cds().GetFrom());
     _ASSERT(cds_info.MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo() || cds_info.MaxCdsLimits().GetTo() == cds_info.Cds().GetTo());
 
     if (check_start_stop && Score() != BadScore()) {
@@ -1838,6 +1838,8 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         attributes["Parent"] = "gene"+NStr::NumericToString(a.GeneID());
     if (a.RankInGene()!=0)
         attributes["rankInGene"] = NStr::NumericToString(a.RankInGene());
+    if (a.TrustedGroup()!=0)
+	attributes["TrustedGroup"] = NStr::NumericToString(a.TrustedGroup());
 
     ITERATE(CSupportInfoSet, i, a.Support()) {
         attributes["support"] += ",";
@@ -1891,6 +1893,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::eGapFiller)!=0)    attributes["flags"] += ",GapFiller";
     if ((a.Status()&CGeneModel::ecDNAIntrons)!=0)    attributes["flags"] += ",cDNAIntrons";
     if ((a.Status()&CGeneModel::eChangedByFilter)!=0)    attributes["flags"] += ",ChangedByFilter";
+    if ((a.Status()&CGeneModel::eExcludedReadthrough)!=0)    attributes["flags"] += ",ExcludedReadthrough";
     if ((a.Status()&CGeneModel::eTSA)!=0)    attributes["flags"] += ",TSA";
     if ((a.Status()&CGeneModel::eLeftConfirmed)!=0)    attributes["flags"] += ",LeftConfirmed";
     if ((a.Status()&CGeneModel::eRightConfirmed)!=0)    attributes["flags"] += ",RightConfirmed";
@@ -2012,8 +2015,9 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "cDNAIntrons") a.Status()       |= CGeneModel::ecDNAIntrons;
         else if (*f == "TSA") a.Status()       |= CGeneModel::eTSA;
         else if (*f == "LeftConfirmed") a.Status()       |= CGeneModel::eLeftConfirmed;
-        else if (*f == "RightConfirmed") a.Status()       |= CGeneModel::eRightConfirmed;
-        else if (*f == "ChangedByFilter") a.Status()       |= CGeneModel::eChangedByFilter;
+        else if (*f == "RightConfirmed") a.Status()      |= CGeneModel::eRightConfirmed;
+        else if (*f == "ChangedByFilter") a.Status()     |= CGeneModel::eChangedByFilter;
+        else if (*f == "ExcludedReadthrough") a.Status() |= CGeneModel::eExcludedReadthrough;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
         else if (*f == "Start") has_start = true;
@@ -2027,6 +2031,9 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     if (!attributes["rankInGene"].empty()) {
         a.SetRankInGene(NStr::StringToNumeric<int>(attributes["rankInGene"]));
     }
+    if (!attributes["TrustedGroup"].empty()) {
+        a.SetTrustedGroup(NStr::StringToNumeric<int>(attributes["TrustedGroup"]));
+    }
 
     if (!attributes["Target"].empty()) {
         string target = NStr::Replace(attributes["Target"], "%20", " ");
@@ -2034,7 +2041,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         CRef<CSeq_id> target_id;
         try {
             target_id = CIdHandler::ToSeq_id(target);
-        } catch(CException) {
+        } catch(CException&) {
             if(((a.Type() & CGeneModel::eGnomon) != 0 || (a.Type() & CGeneModel::eChain) != 0) && target.substr(0,4) == "hmm.") { // handles legacy files
                 target = "gnl|GNOMON|"+target.substr(4);
             } else if((a.Type() & CGeneModel::eProt) != 0 && target.length() == 6 && isalpha(target[0])) {    // probably PIR

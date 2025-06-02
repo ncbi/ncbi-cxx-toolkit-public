@@ -1589,7 +1589,8 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart, b
     FindStartsStops(model, m_data->m_ds[model.Strand()], mrna, mrnamap, starts, stops, frame, obeystart);
 
     CCDSInfo cds_info = model.GetCdsInfo();
-    if((cds_info.ReadingFrame().NotEmpty() || !cds_info.PStops().empty()) && cds_info.IsMappedToGenome())
+    //    if((cds_info.ReadingFrame().NotEmpty() || !cds_info.PStops().empty()) && cds_info.IsMappedToGenome())
+    if(cds_info.IsMappedToGenome())
         cds_info = cds_info.MapFromOrigToEdited(mrnamap);
 
     // remove legit pstopd from stops[]
