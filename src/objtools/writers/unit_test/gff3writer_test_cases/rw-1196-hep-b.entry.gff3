@@ -1,29 +1,20 @@
 ##gff-version 3
 #!gff-spec-version 1.21
 #!processor NCBI annotwriter
-AF121239.1	GenInfo	CDS	2307	3182	.	+	0	ID=cds-AAF24660.1;Dbxref=NCBI_GP:AAF24660.1;Name=AAF24660.1;gbkey=CDS;part=1;product=polymerase;protein_id=AAF24660.1
-AF121239.1	GenInfo	CDS	1	1623	.	+	0	ID=cds-AAF24660.1;Dbxref=NCBI_GP:AAF24660.1;Name=AAF24660.1;gbkey=CDS;part=2;product=polymerase;protein_id=AAF24660.1
-AF121239.1	GenInfo	CDS	2848	3182	.	+	0	ID=cds-AAF24661.1;Dbxref=NCBI_GP:AAF24661.1;Name=AAF24661.1;gbkey=CDS;part=1;product=large S protein;protein_id=AAF24661.1
-AF121239.1	GenInfo	CDS	1	835	.	+	1	ID=cds-AAF24661.1;Dbxref=NCBI_GP:AAF24661.1;Name=AAF24661.1;gbkey=CDS;part=2;product=large S protein;protein_id=AAF24661.1
-AF121239.1	GenInfo	CDS	3172	3182	.	+	0	ID=cds-AAF24662.1;Dbxref=NCBI_GP:AAF24662.1;Name=AAF24662.1;gbkey=CDS;part=1;product=middle S protein;protein_id=AAF24662.1
-AF121239.1	GenInfo	CDS	1	835	.	+	1	ID=cds-AAF24662.1;Dbxref=NCBI_GP:AAF24662.1;Name=AAF24662.1;gbkey=CDS;part=2;product=middle S protein;protein_id=AAF24662.1
-AF121239.1	GenInfo	CDS	155	835	.	+	0	ID=cds-AAF24663.1;Dbxref=NCBI_GP:AAF24663.1;Name=AAF24663.1;gbkey=CDS;product=S protein;protein_id=AAF24663.1
-AF121239.1	GenInfo	CDS	1374	1838	.	+	0	ID=cds-AAF24659.1;Dbxref=NCBI_GP:AAF24659.1;Name=AAF24659.1;gbkey=CDS;product=X peptide;protein_id=AAF24659.1
-AF121239.1	GenInfo	CDS	1901	2452	.	+	0	ID=cds-AAF24664.1;Dbxref=NCBI_GP:AAF24664.1;Name=AAF24664.1;gbkey=CDS;product=core protein;protein_id=AAF24664.1
 ##sequence-region AF121239.1 1 3182
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=10407
 AF121239.1	Genbank	region	1	3182	.	+	.	ID=AF121239.1:1..3182;Dbxref=taxon:10407;Is_circular=true;gbkey=Src;genome=genomic;genotype=D;isolate=HBV/1303;mol_type=genomic DNA;note=isolated from serum of a chronic HBV carrier
 AF121239.1	Genbank	gene	1374	1838	.	+	.	ID=gene-X;Name=X;gbkey=Gene;gene=X;gene_biotype=protein_coding
-AF121239.1	Genbank	CDS	1374	1838	.	+	0	ID=cds-AAF24659.1-2;Parent=gene-X;Dbxref=NCBI_GP:AAF24659.1;Name=AAF24659.1;gbkey=CDS;gene=X;product=X peptide;protein_id=AAF24659.1
+AF121239.1	Genbank	CDS	1374	1838	.	+	0	ID=cds-AAF24659.1;Parent=gene-X;Dbxref=NCBI_GP:AAF24659.1;Name=AAF24659.1;gbkey=CDS;gene=X;product=X peptide;protein_id=AAF24659.1
 AF121239.1	Genbank	gene	1814	2542	.	+	.	ID=gene-C;Name=C;gbkey=Gene;gene=C;gene_biotype=protein_coding
-AF121239.1	Genbank	CDS	1901	2452	.	+	0	ID=cds-AAF24664.1-2;Parent=gene-C;Dbxref=NCBI_GP:AAF24664.1;Name=AAF24664.1;gbkey=CDS;gene=C;product=core protein;protein_id=AAF24664.1
+AF121239.1	Genbank	CDS	1901	2452	.	+	0	ID=cds-AAF24664.1;Parent=gene-C;Dbxref=NCBI_GP:AAF24664.1;Name=AAF24664.1;gbkey=CDS;gene=C;product=core protein;protein_id=AAF24664.1
 AF121239.1	Genbank	sequence_feature	1814	2542	.	+	.	ID=id-C;Note=precore/core pseudogene;gbkey=misc_feature;gene=C
 AF121239.1	Genbank	gene	2307	4805	.	+	.	ID=gene-P;Name=P;gbkey=Gene;gene=P;gene_biotype=protein_coding
-AF121239.1	Genbank	CDS	2307	4805	.	+	0	ID=cds-AAF24660.1-2;Parent=gene-P;Dbxref=NCBI_GP:AAF24660.1;Name=AAF24660.1;gbkey=CDS;gene=P;product=polymerase;protein_id=AAF24660.1
+AF121239.1	Genbank	CDS	2307	4805	.	+	0	ID=cds-AAF24660.1;Parent=gene-P;Dbxref=NCBI_GP:AAF24660.1;Name=AAF24660.1;gbkey=CDS;gene=P;product=polymerase;protein_id=AAF24660.1
 AF121239.1	Genbank	gene	2848	4017	.	+	.	ID=gene-S;Name=S;gbkey=Gene;gene=S;gene_biotype=protein_coding
-AF121239.1	Genbank	CDS	2848	4017	.	+	0	ID=cds-AAF24661.1-2;Parent=gene-S;Dbxref=NCBI_GP:AAF24661.1;Name=AAF24661.1;gbkey=CDS;gene=S;product=large S protein;protein_id=AAF24661.1
-AF121239.1	Genbank	CDS	3172	4017	.	+	0	ID=cds-AAF24662.1-2;Parent=gene-S;Dbxref=NCBI_GP:AAF24662.1;Name=AAF24662.1;gbkey=CDS;gene=S;product=middle S protein;protein_id=AAF24662.1
-AF121239.1	Genbank	CDS	155	835	.	+	0	ID=cds-AAF24663.1-2;Parent=gene-S;Dbxref=NCBI_GP:AAF24663.1;Name=AAF24663.1;gbkey=CDS;gene=S;product=S protein;protein_id=AAF24663.1
+AF121239.1	Genbank	CDS	2848	4017	.	+	0	ID=cds-AAF24661.1;Parent=gene-S;Dbxref=NCBI_GP:AAF24661.1;Name=AAF24661.1;gbkey=CDS;gene=S;product=large S protein;protein_id=AAF24661.1
+AF121239.1	Genbank	CDS	3172	4017	.	+	0	ID=cds-AAF24662.1;Parent=gene-S;Dbxref=NCBI_GP:AAF24662.1;Name=AAF24662.1;gbkey=CDS;gene=S;product=middle S protein;protein_id=AAF24662.1
+AF121239.1	Genbank	CDS	155	835	.	+	0	ID=cds-AAF24663.1;Parent=gene-S;Dbxref=NCBI_GP:AAF24663.1;Name=AAF24663.1;gbkey=CDS;gene=S;product=S protein;protein_id=AAF24663.1
 ##sequence-region AF121240.1 1 3182
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=10407
 AF121240.1	Genbank	region	1	3182	.	+	.	ID=AF121240.1:1..3182;Dbxref=taxon:10407;Is_circular=true;gbkey=Src;genotype=D;isolate=HBV/11066;mol_type=genomic DNA;note=isolated from serum of a chronic HBV carrier
