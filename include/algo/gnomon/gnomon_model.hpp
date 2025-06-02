@@ -390,11 +390,12 @@ public:
         eLeftConfirmed = 65536,
         eRightConfirmed = 131072,
         eLeftFlexible = 262144,
-        eRightFlexible = 524288
+        eRightFlexible = 524288,
+	eExcludedReadthrough = 1048576
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :
-        m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
+    m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0), m_trusted_group(0) {}
     virtual ~CGeneModel() {}
 
     void AddExon(TSignedSeqRange exon, const string& fs = "", const string& ss = "", double ident = 0, const string& seq = "", const CInDelInfo::SSource& src = CInDelInfo::SSource());
@@ -574,6 +575,12 @@ public:
     void InsertTrustedProt(CRef<CSeq_id> g) { m_trusted_prot.push_back(g); };
     void ClearTrustedProt() { m_trusted_prot.clear(); };
 
+    void SetTrustedGroup(int tgr) { m_trusted_group = tgr; }
+    int TrustedGroup() const { return m_trusted_group; }
+
+    void SetTrustedCds(const TSignedSeqRange& r) { m_trusted_cds = r; }
+    TSignedSeqRange TrustedCds() const { return m_trusted_cds; }
+
     const vector<CCDSInfo>* GetEdgeReadingFrames() const { return &m_edge_reading_frames; }
     vector<CCDSInfo>* SetEdgeReadingFrames() { return &m_edge_reading_frames; }
 
@@ -611,7 +618,8 @@ private:
     string m_comment;
     list< CRef<CSeq_id> > m_trusted_prot;
     list< CRef<CSeq_id> > m_trusted_mrna;
-
+    int m_trusted_group;
+    TSignedSeqRange m_trusted_cds; // rough area without checking frame etc
 
     vector<CCDSInfo> m_edge_reading_frames;
 
