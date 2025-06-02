@@ -47,6 +47,7 @@
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature_edit.hpp>
+#include <objmgr/seq_annot_ci.hpp>
 
 #include <objtools/writers/write_util.hpp>
 #include <objtools/writers/gff_writer.hpp>
@@ -179,18 +180,15 @@ bool CGff2Writer::x_WriteSeqEntryHandle(
         return x_WriteBioseqHandle(bsh);
     }
 
-    SAnnotSelector sel;
-    sel.SetMaxSize(1);
-    for (CAnnot_CI aci(seh, sel); aci; ++aci) {
-        CFeat_CI fit(*aci, SetAnnotSelector());
+    for (CSeq_annot_CI aci(seh, CSeq_annot_CI::eSearch_entry); aci; ++aci) {
         CSeq_id_Handle lastId;
-        for ( /*0*/; fit; ++fit ) {
-            CSeq_id_Handle currentId =fit->GetLocationId();
+        for (CFeat_CI fit(*aci); fit; ++fit) {
+            CSeq_id_Handle currentId = fit->GetLocationId();
             if (currentId != lastId) {
                 x_WriteSequenceHeader(currentId);
                 lastId = currentId;
             }
-            if (!xWriteFeature(fit)) {
+            if (! xWriteFeature(fit)) {
                 return false;
             }
         }
