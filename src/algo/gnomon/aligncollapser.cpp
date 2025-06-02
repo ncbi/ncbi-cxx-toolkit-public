@@ -2233,7 +2233,8 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
     if(m_count == 0)
         return;
-
+    
+    CollapsIdentical();
     FilterAlignments();
 
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
