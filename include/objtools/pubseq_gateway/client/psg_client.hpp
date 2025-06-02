@@ -184,7 +184,7 @@ public:
 
     /// @param seq_id
     ///  Seq ID
-    CPSG_BioId(const CSeq_id& seq_id) : m_Type(seq_id.Which()) { seq_id.GetLabel(&m_Id, CSeq_id::eFastaContent); }
+    CPSG_BioId(const CSeq_id& seq_id) : m_Type(seq_id.Which()) { seq_id.GetLabel(&m_Id, CSeq_id::eFastaContent, CSeq_id::fLabel_Trimmed); }
 
     /// @param seq_id_handle
     ///  Seq ID handle
