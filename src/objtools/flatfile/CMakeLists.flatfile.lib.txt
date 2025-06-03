@@ -16,7 +16,6 @@ NCBI_begin_lib(xflatfile)
     sp_index
     utilfun
     xm_index
-    xmlmisc
 
     add
     asci_blk
@@ -64,6 +63,6 @@ NCBI_begin_lib(xflatfile)
     taxon1
   )
 
-  NCBI_project_watchers(foleyjp)
+  NCBI_project_watchers(foleyjp stakhovv)
 
 NCBI_end_lib()

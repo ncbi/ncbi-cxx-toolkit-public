@@ -12,7 +12,6 @@ SRC     = \
     sp_index \
     utilfun \
     xm_index \
-    xmlmisc  \
     add \
     asci_blk \
     citation \
@@ -55,5 +54,5 @@ REQUIRES = -Cygwin
 
 USES_LIBRARIES = xlogging xcleanup
 
-WATCHERS = gotvyans foleyjp
+WATCHERS = gotvyans foleyjp stakhovv
 
