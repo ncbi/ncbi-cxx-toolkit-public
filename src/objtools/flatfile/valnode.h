@@ -58,8 +58,6 @@ struct ValNodeList {
 };
 
 void       ValNodeFreeData(ValNodeList&);
-ValNodePtr ValNodeLink(ValNodeList&, ValNodePtr newnode);
-ValNodePtr ValNodeCopyStrEx(ValNodeList&, ValNodePtr* tail, short choice, const char* str);
 
 END_NCBI_SCOPE
 
