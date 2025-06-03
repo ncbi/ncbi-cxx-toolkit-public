@@ -1686,7 +1686,13 @@ static bool AddToList(ValNodeList& L, char* str)
         *dot = '.';
     }
     vnp = ConstructValNode(CSeq_id::e_not_set, str);
-    ValNodeLink(L, vnp);
+    if (L.head) {
+        ValNodePtr tail = L.head;
+        while (tail->next)
+            tail = tail->next;
+        tail->next = vnp;
+    } else
+        L.head = vnp;
 
     return true;
 }
