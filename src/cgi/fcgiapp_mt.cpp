@@ -148,6 +148,8 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
     // to listen on the same port during fast-cgi restart.
     m_Manager->reuseAddress(true);
 
+    auto listening = true;
+
     // If to run as a standalone server on local port or named socket
     string path = GetFastCGIStandaloneServer();
     if ( !path.empty() ) {
@@ -162,6 +164,7 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
             if (!m_Manager->listen(host.empty() ? nullptr : host.c_str(), port.c_str())) {
                 ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
                     "standalone server at: '" << path << "'");
+                listening = false;
             }
         }
         else {
@@ -169,13 +172,21 @@ bool CFastCgiApplicationMT::x_RunFastCGI(int* result, unsigned int def_iter)
             if (!m_Manager->listen(path.c_str())) {
                 ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
                     "standalone server at: '" << path << "'");
+                listening = false;
             }
         }
     }
     else {
-        m_Manager->listen();
+        if (!m_Manager->listen()) {
+            ERR_POST_X(1, "CFastCgiApplicationMT::x_RunFastCGI:  cannot run as a "
+                "standalone server");
+            listening = false;
+        }
     }
-    m_Manager->start();
+
+    if (listening) {
+        m_Manager->start();
+    }
 
     // Wait for all requests to be processed.
     m_Manager->join();
