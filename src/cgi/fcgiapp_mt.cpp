@@ -39,6 +39,8 @@
 #include <util/cache/icache.hpp>
 #include <util/multi_writer.hpp>
 #include <signal.h>
+#include <fastcgi++/manager.hpp>
+#include <fastcgi++/request.hpp>
 
 # if defined(NCBI_OS_UNIX)
 #   include <unistd.h>
@@ -51,6 +53,60 @@
 
 
 BEGIN_NCBI_SCOPE
+
+
+class CFastCgiThreadedRequest : public Fastcgipp::Request<char>
+{
+public:
+    typedef Fastcgipp::Request<char> TParent;
+    typedef CNcbiOstream TOutput;
+    typedef CNcbiIstream TInput;
+
+    CFastCgiThreadedRequest(void);
+    ~CFastCgiThreadedRequest(void);
+
+    bool response(void) override;
+    void errorHandler(void) override;
+    bool inProcessor(void) override;
+
+    TInput& in(void) { return *m_InputStream; }
+    TOutput& out(void) { return TParent::out; }
+    TOutput& err(void) { return TParent::err; }
+    const char* const* env(void) const {
+        if ( m_Env.data.empty() ) x_ParseEnv();
+        return m_Env.data.data();
+    }
+
+private:
+    void x_ParseEnv(void) const;
+
+    class CEnv {
+    public:
+        CEnv(void) {}
+        ~CEnv(void) {
+            for (auto p: data) {
+                if ( p ) free(p);
+            }
+        }
+
+        void Set(const string& name, const string& value) {
+            string env = name + "=" + value;
+            data.push_back(strdup(env.c_str()));
+        }
+
+        vector<char*> data;
+    };
+
+    shared_ptr<istream> m_InputStream;
+    mutable CEnv        m_Env;
+};
+
+
+// A "typedef" class (forward-declared in header) to hide implementation details
+struct CFastCgiApplicationMT::TManager : Fastcgipp::Manager<CFastCgiThreadedRequest>
+{
+    using Fastcgipp::Manager<CFastCgiThreadedRequest>::Manager;
+};
 
 
 void s_ScheduleFastCGIMTExit(void)
