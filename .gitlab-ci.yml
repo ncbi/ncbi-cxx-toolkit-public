@@ -1,3 +1,7 @@
+variables:
+  DO_CXX_BUILDER_VARIANT: "conan-2.16.1-gcc-13.2.0"
+  DO_CD_LIB_BRANCH: "production"
+
 include:                                                                                               
  - project: "pd/cxxtk/cxx/ncbi-cxx-toolkit-ci"
    ref: "main"
