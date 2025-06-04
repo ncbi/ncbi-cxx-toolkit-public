@@ -33,8 +33,6 @@
 */
 
 #include <cgi/cgiapp.hpp>
-#include <fastcgi++/manager.hpp>
-#include <fastcgi++/request.hpp>
 #include <sstream>
 
 /** @addtogroup CGIBase
@@ -46,57 +44,8 @@
 BEGIN_NCBI_SCOPE
 
 class ICache;
+class CFastCgiThreadedRequest;
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  CFastCgiApplicationMT::
-//
-
-class CFastCgiThreadedRequest : public Fastcgipp::Request<char>
-{
-public:
-    typedef Fastcgipp::Request<char> TParent;
-    typedef CNcbiOstream TOutput;
-    typedef CNcbiIstream TInput;
-
-    CFastCgiThreadedRequest(void);
-    ~CFastCgiThreadedRequest(void);
-
-    bool response(void) override;
-    void errorHandler(void) override;
-    bool inProcessor(void) override;
-
-    TInput& in(void) { return *m_InputStream; }
-    TOutput& out(void) { return TParent::out; }
-    TOutput& err(void) { return TParent::err; }
-    const char* const* env(void) const {
-        if ( m_Env.data.empty() ) x_ParseEnv();
-        return m_Env.data.data();
-    }
-
-private:
-    void x_ParseEnv(void) const;
-
-    class CEnv {
-    public:
-        CEnv(void) {}
-        ~CEnv(void) {
-            for (auto p: data) {
-                if ( p ) free(p);
-            }
-        }
-
-        void Set(const string& name, const string& value) {
-            string env = name + "=" + value;
-            data.push_back(strdup(env.c_str()));
-        }
-
-        vector<char*> data;
-    };
-
-    shared_ptr<istream> m_InputStream;
-    mutable CEnv        m_Env;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 //  CFastCgiApplicationMT::
@@ -127,7 +76,7 @@ private:
 
     void x_ProcessThreadedRequest(CFastCgiThreadedRequest& req);
 
-    typedef Fastcgipp::Manager<CFastCgiThreadedRequest> TManager;
+    struct TManager; // A "typedef" class
 
     unique_ptr<TManager>        m_Manager;
     CAtomicCounter              m_ErrorCounter; // failed requests
