@@ -2076,15 +2076,14 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         }
     }
 
-    if (embl_acc_list.head->next) {
-        ValNodeList tmp;
-        tmp.head = embl_acc_list.head->next;
-        embl_acc_list.head->next = nullptr;
+    auto tmp           = embl_acc_list.head;
+    embl_acc_list.head = tmp->next;
+    delete tmp;
+    if (embl_acc_list.head) {
         if (check_embl_prot)
-            fta_check_embl_drxref_dups(tmp);
-        ValNodeFreeData(tmp);
+            fta_check_embl_drxref_dups(embl_acc_list);
+        ValNodeFreeData(embl_acc_list);
     }
-    delete embl_acc_list.head;
 
     if (acc_list.head)
         ValNodeFreeData(acc_list);
