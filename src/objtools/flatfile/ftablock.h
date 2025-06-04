@@ -228,6 +228,9 @@ struct Indexblk {
     string       submitter_seqid;
     bool         biodrop;               /* TRUE if Biosource will be dropped
                                            due to failed taxonomy lookup */
+    bool         no_gbblock_source;     /* TRUE if the value of SOURCE
+                                           line matches at least one
+                                           source features organism */
     Parser*      ppp = nullptr;
 
     Indexblk();
