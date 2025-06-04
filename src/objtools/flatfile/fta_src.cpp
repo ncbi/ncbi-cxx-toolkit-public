@@ -2107,12 +2107,14 @@ static bool is_a_space_char(Char c)
 }
 
 /**********************************************************/
-static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq)
+static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
+                                    const CBioseq& bioseq, string &source)
 {
     SourceFeatBlkPtr tsfbp;
+    bool ret = false;
 
     if (! sfbp || ! bioseq.IsSetDescr())
-        return;
+        return(ret);
 
     for (const auto& descr : bioseq.GetDescr().Get()) {
         if (! descr->IsSource())
@@ -2142,6 +2144,9 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
             string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
+            if(!source.empty() && source == orgfeat)
+                ret = true;
+
             if (NStr::EqualNocase(orgdescr, "unknown"sv)) {
                 if (NStr::EqualNocase(orgdescr, orgfeat) ||
                     (! commdescr.empty() && NStr::EqualNocase(commdescr, orgfeat))) {
@@ -2158,6 +2163,7 @@ static void CompareDescrFeatSources(SourceFeatBlkPtr sfbp, const CBioseq& bioseq
             FtaErrPost(SEV_ERROR, ERR_ORGANISM_NoSourceFeatMatch, "Organism name \"{}\" from OS/ORGANISM line does not exist in this record's source features.", taxname);
         }
     }
+    return(ret);
 }
 
 /**********************************************************/
@@ -3128,8 +3134,9 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 }
 
 /**********************************************************/
-void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const CSeq_id& seqid, Int2 type, 
-        const CBioseq& bioseq, TSeqFeatList& seq_feats)
+void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
+                     const CSeq_id& seqid, Int2 type, const CBioseq& bioseq,
+                     string &source, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
@@ -3208,7 +3215,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, const
         return;
     }
 
-    CompareDescrFeatSources(sfbp, bioseq);
+    ibp->no_gbblock_source = CompareDescrFeatSources(sfbp, bioseq, source);
 
     CreateRawBioSources(pp, sfbp, use_what);
 
