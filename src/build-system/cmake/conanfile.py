@@ -101,7 +101,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._internal_requires("ncbicrypt/20230516")
         if self.settings.os == "Linux":
             self._internal_requires("ncbi-fastcgi/2.4.2")
-            self._internal_requires("ncbi-fastcgipp/3.1.0")
+            self._internal_requires("ncbi-fastcgipp/[>=3.1.0.4]")
             self._internal_requires("libcurl/8.8.0")
         self._internal_requires("ncbi-vdb/[>=3.0.1 <=3.2.1]")
 
