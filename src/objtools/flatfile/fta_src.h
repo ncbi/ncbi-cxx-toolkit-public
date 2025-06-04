@@ -37,7 +37,8 @@ BEGIN_NCBI_SCOPE
 
 void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end, 
         const objects::CSeq_id& seqid, Int2 type, 
-        const objects::CBioseq& bioseq, TSeqFeatList& seq_feats);
+        const objects::CBioseq& bioseq, string &source,
+        TSeqFeatList& seq_feats);
 
 bool fta_if_special_org(const char* name);
 
