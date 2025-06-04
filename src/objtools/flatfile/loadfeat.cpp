@@ -4835,7 +4835,23 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     TSeqFeatList seq_feats;
     if (! ibp->drop)
-        ParseSourceFeat(pp, dab, dab_end, *seq_id, type, bioseq, seq_feats);
+    {
+        string p;
+        p.clear();
+        if(pp->format == Parser::EFormat::XML &&
+           pp->source == Parser::ESource::USPTO)
+        {
+            p = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_SOURCE));
+            if(!p.empty())
+            {
+                p.erase(remove(p.begin(), p.end(), ' '), p.end());
+                p.erase(remove(p.begin(), p.end(), '\t'), p.end());
+            }
+        }
+        ParseSourceFeat(pp, dab, dab_end, *seq_id, type, bioseq, p, seq_feats);
+        if(!p.empty())
+            p.clear();
+    }
 
     if (seq_feats.empty()) {
         ibp->drop = true;
