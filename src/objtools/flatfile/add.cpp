@@ -1546,8 +1546,8 @@ static bool fta_validate_bioproject(char* name, Parser::ESource source)
 /**********************************************************/
 static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool newstyle)
 {
-    ValNodePtr vnp;
-    ValNodeList tvnp;
+    ValNodeList res;
+    ValNodePtr tvnp;
     char*      p;
     char*      q;
     char*      r;
@@ -1570,8 +1570,8 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
         return {};
     }
 
-    vnp  = ValNodeNew(nullptr);
-    tvnp.head = vnp;
+    res.head = ValNodeNew(nullptr);
+    tvnp = res.head;
 
     for (bad = false, p = str; *p != '\0';) {
         while (*p == ' ')
@@ -1600,20 +1600,21 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
             break;
         }
 
-        tvnp.head = ValNodeNew(tvnp.head, q);
+        tvnp = ValNodeNew(tvnp, q);
         *p   = ch;
     }
 
-    tvnp.head = vnp->next;
-    delete vnp;
+    tvnp = res.head->next;
+    delete res.head;
+    res.head = tvnp;
 
-    if (! tvnp.head)
+    if (! res.head)
         return {};
 
     if (! bad)
-        return (tvnp);
+        return res;
 
-    ValNodeFreeData(tvnp);
+    ValNodeFreeData(res);
     return {};
 }
 
@@ -1790,8 +1791,8 @@ bool fta_if_valid_biosample(const Char* id, bool dblink)
 /**********************************************************/
 static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
 {
-    ValNodePtr vnp;
-    ValNodeList tvnp;
+    ValNodeList res;
+    ValNodePtr tvnp;
     ValNodePtr uvnp;
     ValNodePtr tagvnp;
 
@@ -1818,8 +1819,8 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    tvnp.head  = ValNodeNew(nullptr);
-    vnp        = tvnp.head;
+    res.head   = ValNodeNew(nullptr);
+    tvnp       = res.head;
     bad        = false;
     got_nl     = true;
     sra        = false;
@@ -1861,13 +1862,13 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
                     biosample  = StringEqu(p, "BioSample:");
                     assembly   = StringEqu(p, "Assembly:");
 
-                    if (tvnp.head->data && StringChr(tvnp.head->data, ':')) {
-                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp.head->data);
+                    if (tvnp->data && StringChr(tvnp->data, ':')) {
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
                         bad = true;
                         break;
                     }
 
-                    for (uvnp = vnp->next; uvnp; uvnp = uvnp->next)
+                    for (uvnp = res.head->next; uvnp; uvnp = uvnp->next)
                         if (StringEqu(uvnp->data, p)) {
                             FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", p);
                             bad = true;
@@ -1876,8 +1877,8 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp.head = ValNodeNew(tvnp.head, p);
-                    tagvnp = tvnp.head;
+                    tvnp   = ValNodeNew(tvnp, p);
+                    tagvnp = tvnp;
                     *t     = ch;
                     p      = t;
                     continue;
@@ -1935,25 +1936,26 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp.head = ValNodeNew(tvnp.head, q);
+        tvnp = ValNodeNew(tvnp, q);
         *p   = ch;
     }
 
-    if (! bad && tvnp.head->data && StringChr(tvnp.head->data, ':')) {
-        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp.head->data);
+    if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
         bad = true;
     }
 
-    tvnp.head = vnp->next;
-    delete vnp;
+    tvnp = res.head->next;
+    delete res.head;
+    res.head = tvnp;
 
-    if (! tvnp.head)
+    if (! res.head)
         return {};
 
     if (! bad)
-        return (tvnp);
+        return res;
 
-    ValNodeFreeData(tvnp);
+    ValNodeFreeData(res);
     return {};
 }
 
@@ -2415,8 +2417,8 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 /**********************************************************/
 static ValNodeList fta_vnp_structured_comment(char* buf)
 {
-    ValNodePtr res;
-    ValNodeList vnp;
+    ValNodeList res;
+    ValNodePtr vnp;
     char*      start;
     char*      p;
     char*      q;
@@ -2436,8 +2438,8 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
     }
 
     bad = false;
-    res = ValNodeNew(nullptr);
-    vnp.head = res;
+    res.head = ValNodeNew(nullptr);
+    vnp = res.head;
     for (start = buf;;) {
         p = StringStr(start, "::");
         if (! p) {
@@ -2448,11 +2450,11 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
 
         q = StringStr(p + 2, "::");
         if (! q) {
-            vnp.head = ValNodeNew(vnp.head, start);
-            for (r = vnp.head->data; *r != '\0'; r++)
+            vnp = ValNodeNew(vnp, start);
+            for (r = vnp->data; *r != '\0'; r++)
                 if (*r == '~')
                     *r = ' ';
-            ShrinkSpaces(vnp.head->data);
+            ShrinkSpaces(vnp->data);
             break;
         }
 
@@ -2465,24 +2467,24 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
         }
 
         *r  = '\0';
-        vnp.head = ValNodeNew(vnp.head, start);
+        vnp = ValNodeNew(vnp, start);
         *r  = '~';
-        for (p = vnp.head->data; *p != '\0'; p++)
+        for (p = vnp->data; *p != '\0'; p++)
             if (*p == '~')
                 *p = ' ';
-        ShrinkSpaces(vnp.head->data);
+        ShrinkSpaces(vnp->data);
 
         start = r;
     }
 
-    vnp.head  = res->next;
-    res->next = nullptr;
-    ValNodeFree(res);
+    vnp = res.head->next;
+    delete res.head;
+    res.head = vnp;
 
     if (! bad)
-        return (vnp);
+        return res;
 
-    ValNodeFreeData(vnp);
+    ValNodeFreeData(res);
     return {};
 }
 
