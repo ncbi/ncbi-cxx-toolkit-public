@@ -376,6 +376,11 @@ private:
 
     TSeqRange m_QueryRange;
     string m_CustomDelim;
+
+    /// Convenience method to determine if this object is dealing with CSV output formats
+    inline bool x_IsCsv() const {
+        return (m_CustomDelim == "," || m_FieldDelimiter == ",");
+    }
 };
 
 

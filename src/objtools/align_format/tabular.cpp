@@ -292,21 +292,23 @@ void CBlastTabularInfo::x_PrintSubjectBlastName()
 		m_Ostream << NA;
 		return;
 	}
-	m_Ostream << m_SubjectBlastName;
+	m_Ostream << (x_IsCsv() ? NStr::Quote(m_SubjectBlastName) : m_SubjectBlastName);
 }
 
 void CBlastTabularInfo::x_PrintSubjectBlastNames()
 {
+    CNcbiOstrstream oss;
 	if(m_SubjectBlastNames.empty()) {
-		m_Ostream << NA;
-		return;
-	}
-
-	ITERATE(set<string>, iter, m_SubjectBlastNames) {
-        if (iter != m_SubjectBlastNames.begin())
-            m_Ostream << ";";
-        m_Ostream << *iter;
-	}
+		oss << NA;
+	} else {
+        ITERATE(set<string>, iter, m_SubjectBlastNames) {
+            if (iter != m_SubjectBlastNames.begin())
+                oss << ";";
+            oss << *iter;
+        }
+    }
+    const string output = CNcbiOstrstreamToString(oss);
+    m_Ostream << (x_IsCsv() ? NStr::Quote(output) : output);
 }
 
 void CBlastTabularInfo::x_PrintSubjectSuperKingdom()
@@ -338,21 +340,23 @@ void CBlastTabularInfo::x_PrintSubjectSciName()
 		m_Ostream << NA;
 		return;
 	}
-	m_Ostream << m_SubjectSciName;
+	m_Ostream << (x_IsCsv() ? NStr::Quote(m_SubjectSciName) : m_SubjectSciName);
 }
 
 void CBlastTabularInfo::x_PrintSubjectSciNames()
 {
+    CNcbiOstrstream oss;
 	if(m_SubjectSciNames.empty()) {
-		m_Ostream << NA;
-		return;
-	}
-
-	ITERATE(vector<string>, iter, m_SubjectSciNames) {
-		 if (iter != m_SubjectSciNames.begin())
-			 m_Ostream << ";";
-		 m_Ostream << *iter;
-	}
+		oss << NA;
+	} else {
+        ITERATE(vector<string>, iter, m_SubjectSciNames) {
+             if (iter != m_SubjectSciNames.begin())
+                 oss << ";";
+             oss << *iter;
+        }
+    }
+    const string output = CNcbiOstrstreamToString(oss);
+    m_Ostream << (x_IsCsv() ? NStr::Quote(output) : output);
 }
 
 void CBlastTabularInfo::x_PrintSubjectCommonName()
@@ -361,21 +365,23 @@ void CBlastTabularInfo::x_PrintSubjectCommonName()
 		m_Ostream << NA;
 		return;
 	}
-	m_Ostream << m_SubjectCommonName;
+	m_Ostream << (x_IsCsv() ? NStr::Quote(m_SubjectCommonName) : m_SubjectCommonName);
 }
 
 void CBlastTabularInfo::x_PrintSubjectCommonNames()
 {
+    CNcbiOstrstream oss;
 	if(m_SubjectCommonNames.empty()) {
-		m_Ostream << NA;
-		return;
-	}
-
-	 ITERATE(vector<string>, iter, m_SubjectCommonNames) {
-		 if (iter != m_SubjectCommonNames.begin())
-			 m_Ostream << ";";
-		 m_Ostream << *iter;
-	}
+		oss << NA;
+	} else {
+        ITERATE(vector<string>, iter, m_SubjectCommonNames) {
+             if (iter != m_SubjectCommonNames.begin())
+                 oss << ";";
+             oss << *iter;
+        }
+    }
+    const string output = CNcbiOstrstreamToString(oss);
+    m_Ostream << (x_IsCsv() ? NStr::Quote(output) : output);
 }
 
 void CBlastTabularInfo::x_PrintSubjectAllTitles ()

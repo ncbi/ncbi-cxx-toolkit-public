@@ -2758,7 +2758,6 @@ static void s_ValidateCustomDelim(const string& customFmtSpec,const string& cust
     if(custom_fmt_spec.empty()) return;
 
     //Check if delim is already used
-    const string kFieldsWithCommaSeparator = "ssciname sblastname scomname"; // sep = ','
     const string kFieldsWithSemicolSeparator = "sallseqid staxids sscinames scomnames sblastnames sskingdoms";//sep = ";"
     const string kFramesField = "frames"; //sep = "/"
     const string kAllTitlesField ="salltitles"; //sep = "<>""
@@ -2769,16 +2768,6 @@ static void s_ValidateCustomDelim(const string& customFmtSpec,const string& cust
         for(size_t i = 0; i < tokens.size(); i++)   {
             if(NStr::Find(custom_fmt_spec,tokens[i]) != NPOS) {
                 checkfield = tokens[i];
-                error = true;
-                break;
-            }
-        }
-    } else if (customDelim == ",") {
-        vector<string> tokens;
-        NStr::Split(kFieldsWithCommaSeparator, " ", tokens);
-        for (const auto& token: tokens) {
-            if (NStr::Find(custom_fmt_spec, token) != NPOS) {
-                checkfield = token;
                 error = true;
                 break;
             }
