@@ -1570,7 +1570,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
         return {};
     }
 
-    res.head = ValNodeNew(nullptr);
+    res.push_front(nullptr);
     tvnp = res.head;
 
     for (bad = false, p = str; *p != '\0';) {
@@ -1600,13 +1600,11 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
             break;
         }
 
-        tvnp = ValNodeNew(tvnp, q);
+        tvnp = res.insert_after(tvnp, q);
         *p   = ch;
     }
 
-    tvnp = res.head->next;
-    delete res.head;
-    res.head = tvnp;
+    res.pop_front();
 
     if (! res.head)
         return {};
@@ -1614,7 +1612,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
     if (! bad)
         return res;
 
-    ValNodeFreeData(res);
+    res.clear();
     return {};
 }
 
@@ -1819,7 +1817,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    res.head   = ValNodeNew(nullptr);
+    res.push_front(nullptr);
     tvnp       = res.head;
     bad        = false;
     got_nl     = true;
@@ -1877,7 +1875,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
                     if (bad)
                         break;
 
-                    tvnp   = ValNodeNew(tvnp, p);
+                    tvnp   = res.insert_after(tvnp, p);
                     tagvnp = tvnp;
                     *t     = ch;
                     p      = t;
@@ -1936,7 +1934,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (assembly)
             fta_validate_assembly(q);
 
-        tvnp = ValNodeNew(tvnp, q);
+        tvnp = res.insert_after(tvnp, q);
         *p   = ch;
     }
 
@@ -1945,9 +1943,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         bad = true;
     }
 
-    tvnp = res.head->next;
-    delete res.head;
-    res.head = tvnp;
+    res.pop_front();
 
     if (! res.head)
         return {};
@@ -1955,7 +1951,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
     if (! bad)
         return res;
 
-    ValNodeFreeData(res);
+    res.clear();
     return {};
 }
 
@@ -2073,7 +2069,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
         }
     }
 
-    ValNodeFreeData(vnp);
+    vnp.clear();
 
     if (user_obj.NotEmpty()) {
         CRef<CSeqdesc> descr(new CSeqdesc);
@@ -2438,7 +2434,7 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
     }
 
     bad = false;
-    res.head = ValNodeNew(nullptr);
+    res.push_front(nullptr);
     vnp = res.head;
     for (start = buf;;) {
         p = StringStr(start, "::");
@@ -2450,7 +2446,7 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
 
         q = StringStr(p + 2, "::");
         if (! q) {
-            vnp = ValNodeNew(vnp, start);
+            vnp = res.insert_after(vnp, start);
             for (r = vnp->data; *r != '\0'; r++)
                 if (*r == '~')
                     *r = ' ';
@@ -2467,7 +2463,7 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
         }
 
         *r  = '\0';
-        vnp = ValNodeNew(vnp, start);
+        vnp = res.insert_after(vnp, start);
         *r  = '~';
         for (p = vnp->data; *p != '\0'; p++)
             if (*p == '~')
@@ -2477,14 +2473,12 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
         start = r;
     }
 
-    vnp = res.head->next;
-    delete res.head;
-    res.head = vnp;
+    res.pop_front();
 
     if (! bad)
         return res;
 
-    ValNodeFreeData(res);
+    res.clear();
     return {};
 }
 
@@ -2556,7 +2550,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     obj->SetData().push_back(field);
 
-    ValNodeFreeData(vnp);
+    vnp.clear();
 
     return obj;
 }
@@ -2616,7 +2610,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             break;
 
         if (! tagvnp.head) {
-            tagvnp.head = ValNodeNew(nullptr, tag);
+            tagvnp.push_front(tag);
         } else {
             for (vnp = tagvnp.head; vnp; vnp = vnp->next) {
                 r = vnp->data;
@@ -2628,7 +2622,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
                     break;
                 }
                 if (! vnp->next) {
-                    ValNodeNew(vnp, tag);
+                    tagvnp.insert_after(vnp, tag);
                     break;
                 }
             }
@@ -2666,8 +2660,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         MemFree(tag);
     }
 
-    if (tagvnp.head)
-        ValNodeFreeData(tagvnp);
+    tagvnp.clear();
 }
 
 /**********************************************************/

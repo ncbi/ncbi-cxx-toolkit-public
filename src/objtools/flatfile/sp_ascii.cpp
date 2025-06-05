@@ -1889,7 +1889,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list.head = ValNodeNew(nullptr);
+    embl_acc_list.push_front(nullptr);
     embl_vnp        = embl_acc_list.head;
     check_embl_prot = false;
     for (ptr = str;;) {
@@ -2082,19 +2082,14 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     if (embl_acc_list.head) {
         if (check_embl_prot)
             fta_check_embl_drxref_dups(embl_acc_list);
-        ValNodeFreeData(embl_acc_list);
+        embl_acc_list.clear();
     }
 
-    if (acc_list.head)
-        ValNodeFreeData(acc_list);
-    if (pid_list.head)
-        ValNodeFreeData(pid_list);
-    if (ens_tran_list.head)
-        ValNodeFreeData(ens_tran_list);
-    if (ens_prot_list.head)
-        ValNodeFreeData(ens_prot_list);
-    if (ens_gene_list.head)
-        ValNodeFreeData(ens_gene_list);
+    acc_list.clear();
+    pid_list.clear();
+    ens_tran_list.clear();
+    ens_prot_list.clear();
+    ens_gene_list.clear();
     MemFree(str);
 
     if (pdbold && pdbnew) {
@@ -2144,14 +2139,14 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
 
     ch          = offset[len];
     offset[len] = '\0';
-    vnp.head    = ValNodeNew(nullptr);
+    vnp.push_front(nullptr);
     for (q = offset, tvnp = vnp.head;;) {
         p = StringChr(q, '\n');
         if (p == q)
             break;
         if (p)
             *p = '\0';
-        tvnp = ValNodeNew(tvnp, q);
+        tvnp = vnp.insert_after(tvnp, q);
         if (! p)
             break;
         *p++ = '\n';
@@ -2216,7 +2211,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
         }
     }
 
-    ValNodeFreeData(vnp);
+    vnp.clear();
 
     ret = true;
     if (first == 0) {
