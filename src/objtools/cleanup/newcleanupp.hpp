@@ -418,7 +418,7 @@ private:
     void x_SubSourceBC( CSubSource & subsrc );
     void x_OrgModBC( COrgMod & orgmod );
 
-    void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq);
+    void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq_Handle bsh);
 
     void x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope);
 

@@ -392,13 +392,13 @@ void x_BasicCleanupBioseq_annot( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupBioseqDesc(CSeqdesc& desc);
   void x_BasicCleanupBioseqDescr(CBioseq& bioseq);
   void x_BasicCleanupDeltaExt(CDelta_ext& delta_ext, CSeq_inst::ERepr repr);
-  void x_BasicCleanupBioseq_inst_inst_ext_ext_map( CMap_ext & arg0 );
-  void x_BasicCleanupBioseqSet_seq_set_E_E_seq_seq_inst_inst_ext_ext_seg_ETC( CSeg_ext & arg0 );
+  void x_BasicCleanupMapExt( CMap_ext & arg0 );
+  void x_BasicCleanupSegExt( CSeg_ext & arg0 );
   void x_BasicCleanupSeqExt(CSeq_ext& ext, CSeq_inst::ERepr repr);
   void x_BasicCleanupSeqHistDeleted( CSeq_hist::C_Deleted & arg0 );
   void x_BasicCleanupSeqHistRec( CSeq_hist_rec & arg0 );
   void x_BasicCleanupSeqHist( CSeq_hist & arg0 );
-  void x_BasicCleanupBioseq_inst( CSeq_inst & arg0 );
+  void x_BasicCleanupBioseq_inst(CBioseq_Handle bsh);
   template< typename Tcontainer_ncbi_cref_cseq_annot_ >
 void x_BasicCleanupSeqAnnots( Tcontainer_ncbi_cref_cseq_annot_ & arg0 );
   void x_BasicCleanupBioseqSetDesc( CSeqdesc & arg0 );

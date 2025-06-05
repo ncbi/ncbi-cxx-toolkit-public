@@ -5686,21 +5686,20 @@ static CSeq_inst::EMol s_GetInstMolFromBiomol(CMolInfo::TBiomol biomol)
 }
 
 
-void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq& bioseq)
+void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq_Handle bsh)
 {
-    if (bioseq.IsSetInst()) {
-        auto&      inst = bioseq.SetInst();
-        const auto mol  = inst.IsSetMol() ? inst.GetMol() : CSeq_inst::eMol_not_set;
+    if (bsh.IsSetInst()) {
+        const auto mol  = bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set;
 
         if (mol == CSeq_inst::eMol_not_set) {
             auto new_mol = s_GetInstMolFromBiomol(biomol);
             if (new_mol != CSeq_inst::eMol_not_set) {
-                inst.SetMol(new_mol);
+                bsh.GetEditHandle().SetInst_Mol(new_mol);
                 ChangeMade(CCleanupChange::eChangeBiomol);
             }
         } else if ((mol != CSeq_inst::eMol_rna) &&
                    (biomol == CMolInfo::eBiomol_cRNA || biomol == CMolInfo::eBiomol_mRNA)) {
-            inst.SetMol(CSeq_inst::eMol_rna);
+            bsh.GetEditHandle().SetInst_Mol(CSeq_inst::eMol_rna);
             ChangeMade(CCleanupChange::eChangeBiomol);
         }
     }
@@ -11015,7 +11014,8 @@ void CNewCleanup_imp::x_RemovePopPhyMolInfo(CBioseq_set& set)
                     } else if (pSubEntry->IsSeq()) {
                         AddMolInfo(pSubEntry->SetSeq(), molInfo);
                         if (molInfo.IsSetBiomol()) {
-                            FixUnsetMolFromBiomol(molInfo.GetBiomol(), pSubEntry->SetSeq());
+                            auto bsh = m_Scope->GetBioseqHandle(pSubEntry->GetSeq());
+                            FixUnsetMolFromBiomol(molInfo.GetBiomol(), bsh);
                         }
                     }
                 }
