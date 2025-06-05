@@ -2084,7 +2084,7 @@ static bool CompareDescrFeatSources(const SourceFeatBlkList& sfbl,
             string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
-            if(!source.empty() && source == orgfeat)
+            if (! source.empty() && source == orgfeat)
                 ret = true;
 
             if (NStr::EqualNocase(orgdescr, "unknown"sv)) {
@@ -3016,7 +3016,7 @@ static bool CheckSubmitterSeqidQuals(const SourceFeatBlkList& sfbl, char* acc)
 /**********************************************************/
 void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
                      const CSeq_id& seqid, Int2 type, const CBioseq& bioseq,
-                     string &source, TSeqFeatList& seq_feats)
+                     const string& source, TSeqFeatList& seq_feats)
 {
     IndexblkPtr ibp;
     char*       res;
