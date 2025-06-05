@@ -381,16 +381,16 @@ TokenStatBlk TokenString(string_view str, Char delimiter)
     while (ptr != str.end() && *ptr == delimiter)
         ptr++;
 
-    for (; ptr != str.end() && *ptr != '\r' && *ptr != '\n';) {
+    while (ptr != str.end() && *ptr != '\r' && *ptr != '\n') {
         auto bptr = ptr;
         while (ptr != str.end() && *ptr != delimiter && *ptr != '\r' && *ptr != '\n' &&
-            *ptr != '\t' && *ptr != ' ')
+               *ptr != '\t' && *ptr != ' ')
             ptr++;
 
         tail = tokens.list.insert_after(tail, string(bptr, ptr));
         tokens.num++;
 
-        while (*ptr == delimiter || *ptr == '\t' || *ptr == ' ')
+        while (ptr != str.end() && (*ptr == delimiter || *ptr == '\t' || *ptr == ' '))
             ptr++;
     }
 
