@@ -2108,7 +2108,7 @@ static bool is_a_space_char(Char c)
 
 /**********************************************************/
 static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
-                                    const CBioseq& bioseq, string &source)
+                                    const CBioseq& bioseq, const string& source)
 {
     SourceFeatBlkPtr tsfbp;
     bool ret = false;
@@ -2144,7 +2144,7 @@ static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
             string orgfeat;
             std::remove_copy_if(tsfbp->name, tsfbp->name + name_len, std::back_inserter(orgfeat), is_a_space_char);
 
-            if(!source.empty() && source == orgfeat)
+            if (! source.empty() && source == orgfeat)
                 ret = true;
 
             if (NStr::EqualNocase(orgdescr, "unknown"sv)) {
@@ -3136,7 +3136,7 @@ static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
 /**********************************************************/
 void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
                      const CSeq_id& seqid, Int2 type, const CBioseq& bioseq,
-                     string &source, TSeqFeatList& seq_feats)
+                     const string& source, TSeqFeatList& seq_feats)
 {
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
