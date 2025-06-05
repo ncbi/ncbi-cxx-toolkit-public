@@ -93,9 +93,9 @@ ValNodePtr ValNodeFree(ValNodePtr vnp)
  *           allocated single memory block structures.
  *
  *****************************************************************************/
-void ValNodeFreeData(ValNodeList& L)
+void ValNodeList::clear()
 {
-    ValNodePtr vnp = L.head;
+    ValNodePtr vnp = head;
 
     while (vnp) {
         MemFree(vnp->data);
@@ -103,7 +103,7 @@ void ValNodeFreeData(ValNodeList& L)
         delete vnp;
         vnp = next;
     }
-    L.head = nullptr;
+    head = nullptr;
 }
 
 END_NCBI_SCOPE

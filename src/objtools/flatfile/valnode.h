@@ -50,14 +50,28 @@ struct ValNode {
 };
 using ValNodePtr = ValNode*;
 
-ValNodePtr ValNodeNew(ValNodePtr prev, const char* data = nullptr);
+ValNodePtr ValNodeNew(ValNodePtr prev, const char* data);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
 
 struct ValNodeList {
     ValNode* head = nullptr;
-};
 
-void       ValNodeFreeData(ValNodeList&);
+    void push_front(const char* data)
+    {
+        head = ValNodeNew(nullptr, data);
+    }
+    static ValNode* insert_after(ValNode* pos, const char* data)
+    {
+        return ValNodeNew(pos, data);
+    }
+    void pop_front()
+    {
+        ValNode* p = head;
+        head       = p->next;
+        delete p;
+    }
+    void clear();
+};
 
 END_NCBI_SCOPE
 
