@@ -1603,6 +1603,7 @@ CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (M
 CRE<USA-CA>	s	University of Southern California			
 CREA-AA	c	Consiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente	CRA-CIN		
 CREG	s	Instituto Tecnologico Agropecuario de Jalisco			
+CRFS	s	Colecao de Referencia de Fauna de Solo			
 CRGF	c	Collection de Recursos Geneticos Fungicos, Instituto de Ecologia y Systematica			
 CRH	s	Centre de Recherche en Hydrobiologie			
 CRI	s	Universidade do Extremo Sul Catarinense, Bairro Universitario			
