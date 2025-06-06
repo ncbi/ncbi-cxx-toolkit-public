@@ -1664,7 +1664,7 @@ static bool AddToList(ValNodeList& L, char* str)
         return true;
 
     dot = StringChr(str, '.');
-    for (vnp = L.head; vnp; vnp = vnp->next)
+    for (vnp = L.begin(); vnp != L.end(); vnp = vnp->next)
         if (StringEqu(vnp->data, str))
             break;
     if (vnp)
@@ -1672,7 +1672,7 @@ static bool AddToList(ValNodeList& L, char* str)
 
     if (dot) {
         *dot = '\0';
-        for (vnp = L.head; vnp; vnp = vnp->next) {
+        for (vnp = L.begin(); vnp != L.end(); vnp = vnp->next) {
             data = vnp->data;
             d    = StringChr(data, '.');
             if (! d)
@@ -1686,7 +1686,7 @@ static bool AddToList(ValNodeList& L, char* str)
         *dot = '.';
     }
     vnp = ConstructValNode(CSeq_id::e_not_set, str);
-    if (L.head) {
+    if (! L.empty()) {
         ValNodePtr tail = L.head;
         while (tail->next)
             tail = tail->next;
@@ -1749,16 +1749,15 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 /**********************************************************/
 static void fta_check_embl_drxref_dups(const ValNodeList& embl_acc_list)
 {
-    ValNodePtr vnp;
     ValNodePtr vnpn;
     const char* n;
     const char* p;
     const char* q;
 
-    if (! embl_acc_list.head || ! embl_acc_list.head->next->next)
+    if (embl_acc_list.empty() || ! embl_acc_list.cbegin()->next->next)
         return;
 
-    for (vnp = embl_acc_list.head; vnp; vnp = vnp->next->next) {
+    for (auto vnp = embl_acc_list.cbegin(); vnp != embl_acc_list.cend(); vnp = vnp->next->next) {
         p = vnp->data;
         q = StringChr(p, '.');
         if (q) {
@@ -1890,7 +1889,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     pdbold          = false;
     pdbnew          = false;
     embl_acc_list.push_front("dummy");
-    embl_vnp        = embl_acc_list.head;
+    embl_vnp        = embl_acc_list.begin();
     check_embl_prot = false;
     for (ptr = str;;) {
         if (*drop)
@@ -2077,7 +2076,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     }
 
     embl_acc_list.pop_front();
-    if (embl_acc_list.head) {
+    if (! embl_acc_list.empty()) {
         if (check_embl_prot)
             fta_check_embl_drxref_dups(embl_acc_list);
         embl_acc_list.clear();
@@ -2138,7 +2137,8 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
     ch          = offset[len];
     offset[len] = '\0';
     vnp.push_front("dummy");
-    for (q = offset, tvnp = vnp.head;;) {
+    tvnp = vnp.begin();
+    for (q = offset;;) {
         p = StringChr(q, '\n');
         if (p == q)
             break;
@@ -2158,9 +2158,9 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
     first  = 0;
     second = 0;
     third  = 0;
-    if (! StringChr(vnp.head->data, '(')) {
+    if (! StringChr(vnp.front().data, '(')) {
         new_style = true;
-        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "integrated into")) {
@@ -2190,7 +2190,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
         }
     } else {
         new_style = false;
-        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
             offset = tvnp->data;
             offset += ParFlat_COL_DATA_SP;
             if (StringIStr(offset, "Created")) {

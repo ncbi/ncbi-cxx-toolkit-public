@@ -56,6 +56,13 @@ ValNodePtr ValNodeFree(ValNodePtr vnp);
 struct ValNodeList {
     ValNode* head = nullptr;
 
+    bool                     empty() const { return head == nullptr; }
+    ValNode*                 begin() { return head; }
+    const ValNode*           cbegin() const { return head; }
+    constexpr ValNode*       end() { return nullptr; }
+    constexpr const ValNode* cend() const { return nullptr; }
+    const ValNode&           front() const { return *head; }
+
     void push_front(string_view data)
     {
         head = ValNodeNew(nullptr, data);

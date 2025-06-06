@@ -480,13 +480,13 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         break;
                     kwds.clear();
                     kwds.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tkwds    = kwds.head;
+                    tkwds    = kwds.begin();
                     kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
                     dbl.clear();
                     dbl.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tdbl    = dbl.head;
+                    tdbl    = dbl.begin();
                     dbl_len = StringLen(finfo.str) - 8;
                     break;
                 default:
@@ -514,7 +514,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 }
 
 
-                if (kwds.head) {
+                if (! kwds.empty()) {
                     check_est_sts_gss_tpa_kwds(kwds, kwds_len, entry, tpa_check, entry->specialist_db, entry->inferential, entry->experimental, entry->assembly);
                     kwds.clear();
                     kwds_len = 0;
