@@ -127,7 +127,7 @@ string_view      GetNodeData(const DataBlk& entry, int nodeType);
 TDataBlkList&    TrackNodes(const DataBlk& entry);
 DataBlk*         TrackNodeType(const DataBlk& entry, Int2 type);
 const Section* xTrackNodeType(const Entry&, int type);
-ValNode*         ConstructValNode(objects::CSeq_id::E_Choice choice, const char* data);
+ValNode*         ConstructValNode(objects::CSeq_id::E_Choice choice, string_view data);
 bool             fta_is_tpa_keyword(string_view str);
 bool             fta_tpa_keywords_check(const TKeywordList& kwds);
 bool             fta_is_tsa_keyword(string_view str);

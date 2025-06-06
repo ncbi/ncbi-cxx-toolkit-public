@@ -50,17 +50,17 @@ struct ValNode {
 };
 using ValNodePtr = ValNode*;
 
-ValNodePtr ValNodeNew(ValNodePtr prev, const char* data);
+ValNodePtr ValNodeNew(ValNodePtr prev, string_view data);
 ValNodePtr ValNodeFree(ValNodePtr vnp);
 
 struct ValNodeList {
     ValNode* head = nullptr;
 
-    void push_front(const char* data)
+    void push_front(string_view data)
     {
         head = ValNodeNew(nullptr, data);
     }
-    static ValNode* insert_after(ValNode* pos, const char* data)
+    static ValNode* insert_after(ValNode* pos, string_view data)
     {
         return ValNodeNew(pos, data);
     }

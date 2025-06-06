@@ -1570,7 +1570,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
         return {};
     }
 
-    res.push_front(nullptr);
+    res.push_front("dummy");
     tvnp = res.head;
 
     for (bad = false, p = str; *p != '\0';) {
@@ -1817,7 +1817,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
-    res.push_front(nullptr);
+    res.push_front("dummy");
     tvnp       = res.head;
     bad        = false;
     got_nl     = true;
@@ -2434,7 +2434,7 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
     }
 
     bad = false;
-    res.push_front(nullptr);
+    res.push_front("dummy");
     vnp = res.head;
     for (start = buf;;) {
         p = StringStr(start, "::");
