@@ -113,7 +113,7 @@ Additions/Changes since pubmed_190101 DTD:
         <xs:element minOccurs="0" ref="Pagination"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="Language"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="AuthorList"/>
-        <xs:element minOccurs="0" maxOccurs="unbounded" ref="InvestigatorList"/>
+        <xs:element minOccurs="0" ref="InvestigatorList"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="PublicationType"/>
         <xs:element minOccurs="0" ref="Abstract"/>
         <xs:element minOccurs="0" ref="Sections"/>
@@ -162,7 +162,7 @@ Additions/Changes since pubmed_190101 DTD:
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="KeywordList"/>
         <xs:element minOccurs="0" ref="CoiStatement"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="SpaceFlightMission"/>
-        <xs:element minOccurs="0" ref="InvestigatorList"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="InvestigatorList"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="GeneralNote"/>
       </xs:sequence>
       <xs:attributeGroup ref="MedlineCitation.attlist"/>
