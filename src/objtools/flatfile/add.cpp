@@ -1571,7 +1571,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
     }
 
     res.push_front("dummy");
-    tvnp = res.head;
+    tvnp = res.begin();
 
     for (bad = false, p = str; *p != '\0';) {
         while (*p == ' ')
@@ -1606,7 +1606,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
 
     res.pop_front();
 
-    if (! res.head)
+    if (res.empty())
         return {};
 
     if (! bad)
@@ -1620,7 +1620,6 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
 void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source)
 {
     ValNodeList vnp;
-    ValNodePtr tvnp;
 
     const Char* name;
 
@@ -1662,7 +1661,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         newstyle = true;
 
     vnp = fta_tokenize_project(str + len, source, newstyle);
-    if (! vnp.head) {
+    if (vnp.empty()) {
         *drop = true;
         MemFree(str);
         return;
@@ -1689,7 +1688,8 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 
     CRef<CUser_object> user_obj;
     if (newstyle) {
-        for (i = 0, tvnp = vnp.head; tvnp; tvnp = tvnp->next)
+        i = 0;
+        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next)
             i++;
 
         if (! got) {
@@ -1704,7 +1704,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
-        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next)
+        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next)
             user_field->SetData().SetStrs().push_back(tvnp->data);
 
         user_obj_ptr->SetData().push_back(user_field);
@@ -1717,7 +1717,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         CObject_id& id = user_obj_ptr->SetType();
         id.SetStr("GenomeProjectsDB");
 
-        for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
@@ -1818,7 +1818,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
             *p = ' ';
 
     res.push_front("dummy");
-    tvnp       = res.head;
+    tvnp       = res.begin();
     bad        = false;
     got_nl     = true;
     sra        = false;
@@ -1866,7 +1866,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
                         break;
                     }
 
-                    for (uvnp = res.head->next; uvnp; uvnp = uvnp->next)
+                    for (uvnp = res.cbegin()->next; uvnp != res.cend(); uvnp = uvnp->next)
                         if (StringEqu(uvnp->data, p)) {
                             FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", p);
                             bad = true;
@@ -1945,7 +1945,7 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
 
     res.pop_front();
 
-    if (! res.head)
+    if (res.empty())
         return {};
 
     if (! bad)
@@ -1973,7 +1973,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     vnp                          = fta_tokenize_dblink(str1, source);
     MemFree(str1);
 
-    if (! vnp.head) {
+    if (vnp.empty()) {
         *drop = true;
         return;
     }
@@ -1981,7 +1981,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_object> user_obj;
     CRef<CUser_field>  user_field;
 
-    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+    for (tvnp = vnp.begin(); tvnp != vnp.end(); tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (user_obj.NotEmpty())
                 break;
@@ -2037,7 +2037,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     user_field.Reset();
 
     bool inpr = false;
-    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+    for (tvnp = vnp.begin(); tvnp != vnp.end(); tvnp = tvnp->next) {
         if (StringChr(tvnp->data, ':')) {
             if (StringEqu(tvnp->data, "Project:")) {
                 inpr = true;
@@ -2435,7 +2435,7 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
 
     bad = false;
     res.push_front("dummy");
-    vnp = res.head;
+    vnp = res.begin();
     for (start = buf;;) {
         p = StringStr(start, "::");
         if (! p) {
@@ -2486,7 +2486,6 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
 static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 {
     ValNodeList vnp;
-    ValNodePtr tvnp;
 
     char* p;
     char* q;
@@ -2497,7 +2496,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
         return obj;
 
     vnp = fta_vnp_structured_comment(buf);
-    if (! vnp.head)
+    if (vnp.empty())
         return obj;
 
     obj.Reset(new CUser_object);
@@ -2513,7 +2512,7 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     obj->SetData().push_back(field);
 
-    for (tvnp = vnp.head; tvnp; tvnp = tvnp->next) {
+    for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
         p = tvnp->data;
         if (! p || *p == '\0')
             continue;
@@ -2609,10 +2608,10 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         if (bad)
             break;
 
-        if (! tagvnp.head) {
+        if (tagvnp.empty()) {
             tagvnp.push_front(tag);
         } else {
-            for (vnp = tagvnp.head; vnp; vnp = vnp->next) {
+            for (vnp = tagvnp.begin(); vnp != tagvnp.end(); vnp = vnp->next) {
                 r = vnp->data;
                 if (StringEqu(r + 2, tag + 2)) {
                     if (*r != ' ') {

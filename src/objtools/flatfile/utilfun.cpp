@@ -1273,12 +1273,12 @@ void check_est_sts_gss_tpa_kwds(const ValNodeList& kwds, size_t len, IndexblkPtr
     char* p;
     char* q;
 
-    if (! kwds.head || ! kwds.head->data || len < 1)
+    if (kwds.empty() || ! kwds.front().data || len < 1)
         return;
 
     line    = StringNew(len);
     line[0] = '\0';
-    for (auto kwd = kwds.head; kwd; kwd = kwd->next) {
+    for (auto kwd = kwds.cbegin(); kwd != kwds.cend(); kwd = kwd->next) {
         StringCat(line, kwd->data);
     }
     for (p = line; *p != '\0'; p++)
