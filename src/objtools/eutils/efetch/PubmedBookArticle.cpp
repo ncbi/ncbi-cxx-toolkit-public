@@ -81,7 +81,7 @@ static CRef<CAuth_list> s_GetAuthorList(const CBookDocument::TAuthorList& list_a
             CRef<CPerson_id> person(new CPerson_id());
             if (author_element->GetLC().IsCollectiveName()) {
                 person->SetConsortium(s_CleanupText(
-                    s_TextListToString(author_element->GetLC().GetCollectiveName().Get())));
+                    s_TextListToString(author_element->GetLC().GetCollectiveName().GetCollectiveName())));
                 CRef<objects::CAuthor> auth(new objects::CAuthor());
                 auth->SetName(*person);
                 if (author_list_element->GetAttlist().GetType() == CAuthorList::C_Attlist::eAttlist_Type_editors)

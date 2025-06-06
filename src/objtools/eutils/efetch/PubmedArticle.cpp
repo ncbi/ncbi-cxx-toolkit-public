@@ -482,7 +482,8 @@ static CRef<CAuth_list> s_GetAuthorList(const CArticle& article)
                 if (std_format) {
                     CRef<CPerson_id> person(new CPerson_id());
                     if (author->GetLC().IsCollectiveName()) {
-                        person->SetConsortium(s_Utf8TextListToString(author->GetLC().GetCollectiveName().Get()));
+                        person->SetConsortium(s_Utf8TextListToString(
+                            author->GetLC().GetCollectiveName().GetCollectiveName()));
                     }
                     else {
                         person->SetMl(utf8_to_string(s_GetAuthorMedlineName(*author)));
@@ -853,7 +854,7 @@ string s_GetAuthorMedlineName(const CAuthor& author)
 {
     string author_medline_name;
     if (author.GetLC().IsCollectiveName()) {
-        author_medline_name = s_Utf8TextListToString(author.GetLC().GetCollectiveName().Get());
+        author_medline_name = s_Utf8TextListToString(author.GetLC().GetCollectiveName().GetCollectiveName());
         if (!author_medline_name.empty() && author_medline_name.back() != '.')
             author_medline_name.append(".");
     }
