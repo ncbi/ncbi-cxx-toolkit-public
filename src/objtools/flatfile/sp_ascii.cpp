@@ -1889,7 +1889,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list.push_front(nullptr);
+    embl_acc_list.push_front("dummy");
     embl_vnp        = embl_acc_list.head;
     check_embl_prot = false;
     for (ptr = str;;) {
@@ -2076,9 +2076,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         }
     }
 
-    auto tmp           = embl_acc_list.head;
-    embl_acc_list.head = tmp->next;
-    delete tmp;
+    embl_acc_list.pop_front();
     if (embl_acc_list.head) {
         if (check_embl_prot)
             fta_check_embl_drxref_dups(embl_acc_list);
@@ -2139,7 +2137,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
 
     ch          = offset[len];
     offset[len] = '\0';
-    vnp.push_front(nullptr);
+    vnp.push_front("dummy");
     for (q = offset, tvnp = vnp.head;;) {
         p = StringChr(q, '\n');
         if (p == q)
@@ -2155,10 +2153,7 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
             break;
     }
     offset[len] = ch;
-    tvnp        = vnp.head->next;
-    vnp.head->next = nullptr;
-    delete vnp.head;
-    vnp.head = tvnp;
+    vnp.pop_front();
 
     first  = 0;
     second = 0;
