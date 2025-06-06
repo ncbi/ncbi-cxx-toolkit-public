@@ -10,7 +10,10 @@
 
 <!--
   $Id$
-  
+
+The schema was manually updated to match current pubmed DTD at:
+https://dtd.nlm.nih.gov/ncbi/pubmed/out/pubmed_250101.dtd
+
 2022-12-06
 
 This DTD supports both the E-utilities and ftp service data dissemination methods. 
@@ -110,7 +113,7 @@ Additions/Changes since pubmed_190101 DTD:
         <xs:element minOccurs="0" ref="Pagination"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="Language"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="AuthorList"/>
-        <xs:element minOccurs="0" ref="InvestigatorList"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="InvestigatorList"/>
         <xs:element minOccurs="0" maxOccurs="unbounded" ref="PublicationType"/>
         <xs:element minOccurs="0" ref="Abstract"/>
         <xs:element minOccurs="0" ref="Sections"/>
@@ -544,6 +547,7 @@ Additions/Changes since pubmed_190101 DTD:
       <xs:choice minOccurs="0" maxOccurs="unbounded">
         <xs:group ref="text"/>
       </xs:choice>
+      <xs:attribute name="Investigators" type="xs:IDREF"/>
     </xs:complexType>
   </xs:element>
   <xs:element name="CommentsCorrections">
@@ -669,6 +673,13 @@ Additions/Changes since pubmed_190101 DTD:
             </xs:restriction>
           </xs:simpleType>
         </xs:attribute>
+        <xs:attribute name="AutoHM">
+          <xs:simpleType>
+            <xs:restriction base="xs:token">
+              <xs:enumeration value="Y"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="Type">
           <xs:simpleType>
             <xs:restriction base="xs:token">
@@ -763,7 +774,7 @@ Additions/Changes since pubmed_190101 DTD:
         <xs:element minOccurs="0" ref="GrantID"/>
         <xs:element minOccurs="0" ref="Acronym"/>
         <xs:element ref="Agency"/>
-        <xs:element ref="Country"/>
+        <xs:element minOccurs="0" ref="Country"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -840,8 +851,12 @@ Additions/Changes since pubmed_190101 DTD:
       <xs:sequence>
         <xs:element maxOccurs="unbounded" ref="Investigator"/>
       </xs:sequence>
+      <xs:attributeGroup ref="InvestigatorList.attlist"/>
     </xs:complexType>
   </xs:element>
+  <xs:attributeGroup name="InvestigatorList.attlist">
+    <xs:attribute name="ID" type="xs:ID"/>
+  </xs:attributeGroup>
   <xs:element name="Isbn" type="xs:string"/>
   <xs:element name="ISOAbbreviation" type="xs:string"/>
   <xs:element name="ISSN">
@@ -1226,6 +1241,13 @@ Additions/Changes since pubmed_190101 DTD:
     <xs:complexType>
       <xs:simpleContent>
         <xs:extension base="xs:string">
+        <xs:attribute name="AutoHM">
+          <xs:simpleType>
+            <xs:restriction base="xs:token">
+              <xs:enumeration value="Y"/>
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:attribute>
         <xs:attribute name="MajorTopicYN" default="N">
           <xs:simpleType>
             <xs:restriction base="xs:token">
