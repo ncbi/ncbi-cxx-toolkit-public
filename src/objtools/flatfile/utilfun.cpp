@@ -1267,27 +1267,26 @@ void xCheckEstStsGssTpaKeywords(
     }
 }
 
-void check_est_sts_gss_tpa_kwds(const ValNodeList& kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly)
+void check_est_sts_gss_tpa_kwds(const TKeywordList& kwds, size_t len, IndexblkPtr entry, bool tpa_check, bool& specialist_db, bool& inferential, bool& experimental, bool& assembly)
 {
-    char* line;
     char* p;
     char* q;
 
-    if (kwds.empty() || ! kwds.front().data || len < 1)
+    if (kwds.empty() || kwds.front().empty() || len < 1)
         return;
 
-    line    = StringNew(len);
-    line[0] = '\0';
-    for (auto kwd = kwds.cbegin(); kwd != kwds.cend(); kwd = kwd->next) {
-        StringCat(line, kwd->data);
+    string buf;
+    buf.reserve(len);
+    for (const auto& kwd : kwds) {
+        buf += kwd;
     }
+    char* line = buf.data();
     for (p = line; *p != '\0'; p++)
         if (*p == '\n' || *p == '\t')
             *p = ' ';
     for (p = line; *p == ' ' || *p == '.' || *p == ';';)
         p++;
     if (*p == '\0') {
-        MemFree(line);
         return;
     }
     for (q = p; *q != '\0';)
@@ -1329,7 +1328,6 @@ void check_est_sts_gss_tpa_kwds(const ValNodeList& kwds, size_t len, IndexblkPtr
         else if (NStr::EqualNocase(p, "TPA:experimental"))
             experimental = true;
     }
-    MemFree(line);
 }
 
 /**********************************************************/

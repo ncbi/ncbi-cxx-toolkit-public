@@ -264,10 +264,6 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
     char*         line_ver;
     char*         line_nid;
     char*         line_locus;
-    ValNodeList   kwds;
-    ValNodePtr    tkwds;
-    ValNodeList   dbl;
-    ValNodePtr    tdbl;
 
     end_of_file = SkipTitleBuf(pp->ffbuf, finfo, "LOCUS");
 
@@ -308,12 +304,12 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
             line_ver       = nullptr;
             line_nid       = nullptr;
             line_locus     = nullptr;
-            kwds.clear();
-            tkwds           = nullptr;
-            size_t kwds_len = 0;
-            dbl.clear();
-            tdbl           = nullptr;
-            size_t dbl_len = 0;
+
+            TKeywordList kwds;
+            size_t       kwds_len = 0;
+            list<string> dbl;
+            size_t       dbl_len = 0;
+
             while (currentKeyword != ParFlat_END && ! end_of_file) {
                 switch (currentKeyword) {
                 case ParFlat_LOCUS:
@@ -479,14 +475,12 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                         pp->source != Parser::ESource::EMBL)
                         break;
                     kwds.clear();
-                    kwds.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tkwds    = kwds.begin();
+                    kwds.push_front(finfo.str + 8);
                     kwds_len = StringLen(finfo.str) - 8;
                     break;
                 case ParFlat_DBLINK:
                     dbl.clear();
-                    dbl.head = ConstructValNode(objects::CSeq_id::e_not_set, finfo.str + 8);
-                    tdbl    = dbl.begin();
+                    dbl.push_front(finfo.str + 8);
                     dbl_len = StringLen(finfo.str) - 8;
                     break;
                 default:
@@ -496,13 +490,13 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                 end_of_file = XReadFileBuf(pp->ffbuf, finfo);
 
                 while (! end_of_file && (finfo.str[0] == ' ' || finfo.str[0] == '\t')) {
-                    if (currentKeyword == ParFlat_KEYWORDS && tkwds) {
-                        tkwds = kwds.insert_after(tkwds, finfo.str);
+                    if (currentKeyword == ParFlat_KEYWORDS) {
+                        kwds.push_back(finfo.str);
                         kwds_len += StringLen(finfo.str);
                     }
 
-                    if (currentKeyword == ParFlat_DBLINK && tdbl) {
-                        tdbl = dbl.insert_after(tdbl, finfo.str);
+                    if (currentKeyword == ParFlat_DBLINK) {
+                        dbl.push_back(finfo.str);
                         dbl_len += StringLen(finfo.str);
                     }
 
