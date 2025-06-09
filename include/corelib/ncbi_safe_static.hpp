@@ -294,6 +294,11 @@ public:
         if ( !stack ) {
             x_Get();
         }
+
+        // Update creation order for objects with non-default life span,
+        // so they are destroyed in the proper order
+        ptr->m_CreationOrder = ptr->x_GetCreationOrder();
+
         // Pacify CLANG Static Analyzer
         if (stack) stack->insert(ptr);
     }
