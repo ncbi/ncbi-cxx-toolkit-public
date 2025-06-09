@@ -154,7 +154,7 @@ static string utf8_to_string(const string& str)
     try {
         utf8 = CUtf8::AsUTF8(str, CUtf8::GuessEncoding(str));
     }
-    catch (CStringException) {
+    catch (CStringException&) {
         utf8 = str;
     }
     return utf8::UTF8ToAsciiString(utf8.c_str(), nullptr, nullptr, nullptr);
