@@ -4780,6 +4780,8 @@ case "$signature_compiler:$ac_cv_have_decl__LIBCPP_VERSION" in
       compiler_pfx="GCC-"
       : ${gccver=`$CXX -dumpversion`}
       compiler_vpfx="GCC`echo $gccver | tr -d .`-"
+      real_compiler_pfx="${signature_compiler}-"
+      real_compiler_vpfx="${signature_compiler}${compiler_version}-"
       ;;
    Clang:* | *[[GIK]]CC:* )
       compiler_pfx="${signature_compiler}-"
@@ -8883,19 +8885,22 @@ case "$with_grpc" in
 esac
 if test -d "$GRPC_PATH"; then
    NCBI_FIX_DIR(GRPC_PATH)
-   for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$asan_sfx" \
-            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$asan_sfx" \
-            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
-            "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
-            "$GRPC_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
-      if test -d "$d"; then
-         GRPC_PATH=$d
-         NCBI_FIX_DIR(GRPC_PATH)
-         break
-      fi
+   found=no
+   for a in $asan_sfx ""; do
+      for b in $bit64_sfx ""; do
+         for c in $real_compiler_vpfx $real_compiler_pfx $compiler_vpfx \
+            "$compiler_pfx"; do
+            d="$GRPC_PATH/$c$DEBUG_SFX$mt_sfx$b$a"
+            if test -d "$d"; then
+               GRPC_PATH=$d
+               NCBI_FIX_DIR(GRPC_PATH)
+               found=yes
+               break
+            fi
+         done
+         if test $found = yes; then break; fi
+      done
+      if test $found = yes; then break; fi
    done
 fi
 
