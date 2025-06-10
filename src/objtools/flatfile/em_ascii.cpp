@@ -506,8 +506,8 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
 
         if (name == "BioSample" && ! id.empty()) {
             many_biosample  = (! id.empty() && ! id1.empty());
-            valid_biosample = fta_if_valid_biosample(id.c_str(), false);
-            if (! id1.empty() && fta_if_valid_biosample(id1.c_str(), false) == false)
+            valid_biosample = fta_if_valid_biosample(id, false);
+            if (! id1.empty() && ! fta_if_valid_biosample(id1, false))
                 valid_biosample = false;
             if (many_biosample || ! valid_biosample) {
                 q = nullptr;
@@ -540,7 +540,7 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                     dr_biosample.push_back(id);
                 }
             }
-        } else if (name == "ENA" && ! id.empty() && fta_if_valid_sra(id.c_str(), false)) {
+        } else if (name == "ENA" && ! id.empty() && fta_if_valid_sra(id, false)) {
             if (! id.empty() && ! id1.empty()) {
                 q = nullptr;
                 if (! drline)
