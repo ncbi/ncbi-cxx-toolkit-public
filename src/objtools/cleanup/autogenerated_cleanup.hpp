@@ -225,7 +225,7 @@ private:
   void x_BasicCleanupCitPat( CCit_pat & arg0 );
   void x_BasicCleanupCitGen( CCit_gen & arg0 );
   void x_BasicCleanupCitLet( CCit_let & arg0 );
-  void x_BasicCleanupSeqFeat_cit_ETC( CPub_set & arg0 );
+  void x_BasicCleanupSeqfeatCit( CPub_set & arg0 );
   void  x_BasicCleanupSeqFeat_comment( std::string & arg0 );
   template< typename Tcontainer_ncbi_cref_cdbtag_ >
 void x_BasicCleanupSeqFeat_dbxref_ETC( Tcontainer_ncbi_cref_cdbtag_ & arg0 );
@@ -279,7 +279,7 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_protein_E_E_name_ETC
   void x_BasicCleanupPubEquiv( CPub_equiv & arg0 );
   template< typename Tcontainer_ncbi_cref_cpub_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_pub_pub_pub_pub1778_ETC( Tcontainer_ncbi_cref_cpub_ & arg0 );
-  void x_BasicCleanupSeqFeat_data_data_pub_ETC( CPubdesc & arg0 );
+  void x_BasicCleanupSeqfeatPub(CPubdesc & arg0, bool is_xref=false);
   void x_BasicCleanupSeqFeat_data_data_region_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_product_ETC( std::string & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_rna_ext_gen_gen_quals_quals_E_E_ETC( CRNA_qual & arg0 );
@@ -346,7 +346,6 @@ void x_BasicCleanupSeqFeat_support_support_model_evidence_ETC( Tcontainer_ncbi_c
   void x_BasicCleanupSeqFeatSupport( CSeqFeatSupport & arg0 );
   void x_BasicCleanupBiosource( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_ETC( CCdregion & arg0 );
-  void x_BasicCleanupSeqFeatXrefPub( CPubdesc & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_rna_ETC( CRNA_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_ETC( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_ETC( CSeqFeatData & arg0 );
