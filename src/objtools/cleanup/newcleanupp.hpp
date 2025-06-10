@@ -334,7 +334,7 @@ private:
     // data structures used for post-processing
 
     // recorded by x_NotePubdescOrAnnotPubs
-    typedef std::map<int, int> TMuidToPmidMap;
+    typedef std::map<TEntrezId, TEntrezId> TMuidToPmidMap;
     TMuidToPmidMap m_MuidToPmidMap;
     // recorded by x_RememberMuidThatMightBeConvertibleToPmid
     typedef std::vector< CRef<CPub> > TMuidPubContainer;
@@ -346,6 +346,7 @@ private:
     // at least one should remain so we can make the "old_label -> new_label" connection.
     typedef std::multimap< string, CRef<CPub> > TOldLabelToPubMap;
     TOldLabelToPubMap m_OldLabelToPubMap;
+    map<string,string> m_OldLabelToNewLabel;
     // remember label changes
     typedef std::map< CRef<CPub>, string > TPubToNewPubLabelMap;
     TPubToNewPubLabelMap m_PubToNewPubLabelMap;
@@ -481,6 +482,12 @@ private:
     // This function does that processing.
     void x_PostProcessing(void);
 
+    void xUpdateSeqfeatCitPub(CSeq_entry& entry);
+    void xUpdateSeqfeatCitPub(CBioseq_set& bioset);
+    void xUpdateSeqfeatCitPub(CBioseq& bioseq);
+    void xUpdateSeqfeatCitPub(CSeq_annot& annot);
+    bool xUpdateSeqfeatCitGenLabel(CPub& pub);
+
     // after cleaning bioseq and bioseq-set, need to clear empty descriptors
     void x_ClearEmptyDescr( CBioseq_set& bioseq_set );
     void x_ClearEmptyDescr( CBioseq& bioseq );
@@ -489,12 +496,13 @@ private:
 public:
     // removes single-strandedness from non-viral nucleotide sequences
     bool RemoveSingleStrand( CBioseq& bioseq );
+    void LabelMapAppend(const vector<string>& old_labels, const vector<string>& new_labels);
 
 private:
     // functions that prepare for post-processing while traversing
     void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
-        const CPub_equiv &pub_equiv, int &muid, int &pmid );
+        const CPub_equiv &pub_equiv, TEntrezId &muid, TEntrezId &pmid );
     void x_RememberPubOldLabel( CPub &pub );
     void x_RememberMuidThatMightBeConvertibleToPmid(CPub &pub );
     void x_RememberSeqFeatCitPubs( CPub &pub );
