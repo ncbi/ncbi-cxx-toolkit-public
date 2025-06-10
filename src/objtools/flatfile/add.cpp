@@ -1479,28 +1479,32 @@ CRef<CSeq_loc> fta_get_seqloc_int_whole(const CSeq_id& seq_id, size_t len)
 }
 
 /**********************************************************/
-static void fta_validate_assembly(char* name)
+static void fta_validate_assembly(string_view name)
 {
     bool bad_format = false;
 
-    char* p = name;
-    if (! p || *p == '\0' || StringLen(p) < 7)
+    auto is_digit = [](char c) { return '0' <= c && c <= '9'; };
+
+    if (name.empty() || name.size() < 7)
         bad_format = true;
-    else if (p[0] != 'G' || p[1] != 'C' || (p[2] != 'F' && p[2] != 'A') ||
-             p[3] != '_' || p[4] < '0' || p[4] > '9')
+    else if (name[0] != 'G' || name[1] != 'C' || (name[2] != 'F' && name[2] != 'A') ||
+             name[3] != '_' || ! is_digit(name[4]))
         bad_format = true;
     else {
-        for (p += 5; *p != '\0'; p++)
-            if (*p < '0' || *p > '9')
-                break;
-        if (*p != '.' || p[1] < '0' || p[1] > '9')
+        auto p = name.begin() + 5;
+        auto e = name.end();
+        while (p < e && is_digit(*p))
+            ++p;
+        if (! (p < e && *p == '.')) {
             bad_format = true;
-        else {
-            for (p++; *p != '\0'; p++)
-                if (*p < '0' || *p > '9')
-                    break;
-            if (*p != '\0')
+        } else {
+            ++p;
+            if (! (p < e && is_digit(*p)))
                 bad_format = true;
+            else {
+                if (! std::all_of(p, e, is_digit))
+                    bad_format = true;
+            }
         }
     }
 
@@ -1509,22 +1513,20 @@ static void fta_validate_assembly(char* name)
 }
 
 /**********************************************************/
-static bool fta_validate_bioproject(char* name, Parser::ESource source)
+static bool fta_validate_bioproject(string_view name, Parser::ESource source)
 {
-    char* p;
     bool  bad_format = false;
 
-    if (StringLen(name) < 6)
+    auto is_digit = [](char c) { return '0' <= c && c <= '9'; };
+
+    if (name.size() < 6)
         bad_format = true;
     else if (name[0] != 'P' || name[1] != 'R' || name[2] != 'J' ||
              (name[3] != 'E' && name[3] != 'N' && name[3] != 'D') ||
-             name[4] < 'A' || name[4] > 'Z' || name[5] < '0' || name[5] > '9')
+             name[4] < 'A' || name[4] > 'Z' || ! is_digit(name[5]))
         bad_format = true;
     else {
-        for (p = name + 6; *p != '\0'; p++)
-            if (*p < '0' || *p > '9')
-                break;
-        if (*p != '\0')
+        if (! std::all_of(name.begin() + 6, name.end(), is_digit))
             bad_format = true;
     }
 
@@ -1592,7 +1594,7 @@ static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool 
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", q);
                 bad = true;
             }
-        } else if (fta_validate_bioproject(q, source) == false)
+        } else if (! fta_validate_bioproject(q, source))
             bad = true;
 
         if (bad) {
@@ -1743,17 +1745,13 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
 }
 
 /**********************************************************/
-bool fta_if_valid_sra(const Char* id, bool dblink)
+bool fta_if_valid_sra(string_view id, bool dblink)
 {
-    const Char* p = id;
-
-    if (p && StringLen(p) > 3 &&
-        (p[0] == 'E' || p[0] == 'S' || p[0] == 'D') && p[1] == 'R' &&
-        (p[2] == 'A' || p[2] == 'P' || p[2] == 'R' || p[2] == 'S' ||
-         p[2] == 'X' || p[2] == 'Z')) {
-        for (p += 3; *p >= '0' && *p <= '9';)
-            p++;
-        if (*p == '\0')
+    if (id.size() > 3 &&
+        (id[0] == 'E' || id[0] == 'S' || id[0] == 'D') && id[1] == 'R' &&
+        (id[2] == 'A' || id[2] == 'P' || id[2] == 'R' || id[2] == 'S' ||
+         id[2] == 'X' || id[2] == 'Z')) {
+        if (std::all_of(id.begin() + 3, id.end(), [](char c) { return '0' <= c && c <= '9'; }))
             return true;
     }
 
@@ -1764,19 +1762,15 @@ bool fta_if_valid_sra(const Char* id, bool dblink)
 }
 
 /**********************************************************/
-bool fta_if_valid_biosample(const Char* id, bool dblink)
+bool fta_if_valid_biosample(string_view id, bool dblink)
 {
-    const Char* p = id;
 
-    if (p && StringLen(p) > 5 && p[0] == 'S' && p[1] == 'A' &&
-        p[2] == 'M' && (p[3] == 'N' || p[3] == 'E' || p[3] == 'D')) {
-        if (p[4] == 'A' || p[4] == 'G')
-            p += 5;
-        else
-            p += 4;
-        while (*p >= '0' && *p <= '9')
-            p++;
-        if (*p == '\0')
+    if (id.size() > 5 && id[0] == 'S' && id[1] == 'A' &&
+        id[2] == 'M' && (id[3] == 'N' || id[3] == 'E' || id[3] == 'D')) {
+        auto p = id.begin() + 4;
+        if (*p == 'A' || *p == 'G')
+            ++p;
+        if (std::all_of(p, id.end(), [](char c) { return '0' <= c && c <= '9'; }))
             return true;
     }
 
@@ -1923,10 +1917,9 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
             }
         }
 
-        if ((bioproject &&
-             fta_validate_bioproject(q, source) == false) ||
-            (biosample && fta_if_valid_biosample(q, true) == false) ||
-            (sra && fta_if_valid_sra(q, true) == false)) {
+        if ((bioproject && ! fta_validate_bioproject(q, source)) ||
+            (biosample && ! fta_if_valid_biosample(q, true)) ||
+            (sra && ! fta_if_valid_sra(q, true))) {
             *p  = ch;
             bad = true;
         }
