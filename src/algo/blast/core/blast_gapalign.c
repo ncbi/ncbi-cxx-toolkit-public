@@ -3459,7 +3459,7 @@ ChainingStruct* ChainingStructNew(void)
         return NULL;
     }
     retval->num_allocated = 100;
-    retval->nodes = calloc(retval->num_allocated, sizeof(BlastInitHSPNode));
+    retval->nodes = calloc(retval->num_allocated, sizeof(BlastHSPNode));
     if (!retval->nodes) {
         return ChainingStructFree(retval);
     }
@@ -3523,7 +3523,7 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
 {
    Int4 context = query_info->first_context;
    Int4 i = 0, k;
-   BlastInitHSPNode* nodes = gap_align->chaining->nodes;
+   BlastHSPNode* nodes = gap_align->chaining->nodes;
    /* penalty for a single gap */
    Int4 gap_score = score_params->gap_open + score_params->gap_extend;
 
@@ -3548,7 +3548,7 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
        }
        pctx = &query_info->contexts[context];
 
-       nodes[num_nodes].init_hsp = &init_array[i];
+       nodes[num_nodes].hsp.init_hsp = &init_array[i];
        nodes[num_nodes].best_score = init_array[i].ungapped_data->score;
        num_nodes++;
 
@@ -3559,21 +3559,21 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
        {
 
            if (num_nodes >= gap_align->chaining->num_allocated) {
-               BlastInitHSPNode* new_nodes;
+               BlastHSPNode* new_nodes;
                gap_align->chaining->num_allocated *= 2;
                new_nodes = calloc(gap_align->chaining->num_allocated,
-                                  sizeof(BlastInitHSPNode));
+                                  sizeof(BlastHSPNode));
                if (!new_nodes) {
                    return -1;
                }
-               memcpy(new_nodes, nodes, num_nodes * sizeof(BlastInitHSPNode));
+               memcpy(new_nodes, nodes, num_nodes * sizeof(BlastHSPNode));
                free(gap_align->chaining->nodes);
                gap_align->chaining->nodes = new_nodes;
                nodes = gap_align->chaining->nodes;
            }
 
 
-           nodes[num_nodes].init_hsp = &init_array[i];
+           nodes[num_nodes].hsp.init_hsp = &init_array[i];
            nodes[num_nodes].best_score = init_array[i].ungapped_data->score;
            num_nodes++;
            i++;
@@ -3587,8 +3587,8 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
            for (j = k + 1;j < num_nodes;j++) {
                Int4 new_score = 0;
 
-               Int4 q_diff = nodes[j].init_hsp->ungapped_data->q_start - nodes[k].init_hsp->ungapped_data->q_start + nodes[k].init_hsp->ungapped_data->length;
-               Int4 s_diff = nodes[j].init_hsp->ungapped_data->s_start - nodes[k].init_hsp->ungapped_data->s_start + nodes[k].init_hsp->ungapped_data->length;
+               Int4 q_diff = nodes[j].hsp.init_hsp->ungapped_data->q_start - nodes[k].hsp.init_hsp->ungapped_data->q_start + nodes[k].hsp.init_hsp->ungapped_data->length;
+               Int4 s_diff = nodes[j].hsp.init_hsp->ungapped_data->s_start - nodes[k].hsp.init_hsp->ungapped_data->s_start + nodes[k].hsp.init_hsp->ungapped_data->length;
 
                ASSERT(q_diff >= 0);
 
@@ -3627,10 +3627,10 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
               not work for very low percent identities. */
            if (nodes[k].best_score - gap_score + word_params->cutoffs[context].cutoff_score - 1 < hit_params->cutoffs[context].cutoff_score) {
                /* ungapped_data == NULL indicates removed init_hsp */
-               if (nodes[k].init_hsp->ungapped_data) {
-                   free(nodes[k].init_hsp->ungapped_data);
+               if (nodes[k].hsp.init_hsp->ungapped_data) {
+                   free(nodes[k].hsp.init_hsp->ungapped_data);
                }
-               nodes[k].init_hsp->ungapped_data = NULL;
+               nodes[k].hsp.init_hsp->ungapped_data = NULL;
            }
        }
    }
@@ -3656,6 +3656,226 @@ static Int2 s_ChainingAlignment(BlastQueryInfo* query_info,
 
    /* initial HSPs must be sorted by score for the gapped alignment code */
    Blast_InitHitListSortByScore(init_hitlist);
+
+   return 0;
+}
+
+static int s_CompareHSPsByQueryContextOffset(const void* v1, const void* v2)
+{
+    const BlastHSP** h1_ptr = (const BlastHSP**)v1;
+    const BlastHSP** h2_ptr = (const BlastHSP**)v2;
+    const BlastHSP* h1, *h2;
+    
+    if (!h1_ptr) {
+        return -1;
+    }
+
+    if (!h2_ptr) {
+        return 1;
+    }
+    
+    h1 = *h1_ptr;
+    h2 = *h2_ptr;
+    
+    if (!h1 && !h2) {
+        return 0;
+    }
+    else if (!h1) {
+        return -1;
+    }
+    else if (!h2) {
+        return 1;
+    }
+
+    if (h1->context < h2->context) {
+        return -1;
+    }
+
+    if (h1->context < h2->context) {
+        return 1;
+    }
+
+    if (h1->query.offset < h2->query.offset) {
+        return -1;
+    }
+    if (h1->query.offset > h2->query.offset) {
+        return 1;
+    }
+
+    if (h1->query.end < h2->query.end) {
+        return 1;
+    }
+    if (h1->query.end > h2->query.end) {
+        return -1;
+    }
+
+    if (h1->score < h2->score) {
+        return -1;
+    }
+
+    if (h1->score > h2->score) {
+        return 1;
+    }
+    
+    return 0;
+}
+
+static Int2 s_ChainHSPs(EBlastProgramType program_number,
+                        BLAST_SequenceBlk* query_tmp,
+                        BLAST_SequenceBlk* subject,
+                        BlastGapAlignStruct* gap_align,
+                        const BlastScoringParameters* score_params,
+                        const BlastExtensionParameters* ext_params,
+                        BlastHSPList* hsp_list,
+                        Boolean* fence_hit)
+{
+   Int4 i = 0, k;
+   BlastHSPNode* nodes = gap_align->chaining->nodes;
+
+   /* sort ungapped HSPs by query position, we need to group HSPs by context */
+   qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
+         s_CompareHSPsByQueryContextOffset);
+
+   while (i < hsp_list->hspcnt) {
+       BlastHSP** hsp_array = hsp_list->hsp_array;
+       Int4 num_nodes = 0;
+       Int4 context = hsp_array[i]->context;
+       BlastHSPNode* best_node = NULL;
+
+       nodes[num_nodes].hsp.hsp = hsp_array[i];
+       nodes[num_nodes].best_score = hsp_array[i]->score;
+       num_nodes++;
+
+       /* find remaining alignments from the same context */
+       i++;
+       while ((i < hsp_list->hspcnt) && (hsp_array[i]->context == context)) {
+
+           if (num_nodes >= gap_align->chaining->num_allocated) {
+               BlastHSPNode* new_nodes;
+               gap_align->chaining->num_allocated *= 2;
+               new_nodes = calloc(gap_align->chaining->num_allocated,
+                                  sizeof(BlastHSPNode));
+               if (!new_nodes) {
+                   return -1;
+               }
+               memcpy(new_nodes, nodes, num_nodes * sizeof(BlastHSPNode));
+               free(gap_align->chaining->nodes);
+               gap_align->chaining->nodes = new_nodes;
+               nodes = gap_align->chaining->nodes;
+           }
+
+
+           nodes[num_nodes].hsp.hsp = hsp_array[i];
+           nodes[num_nodes].best_score = hsp_array[i]->score;
+           num_nodes++;
+           i++;
+       }
+       
+       /* process all alignments from query context: find a chain of colinear
+          HSPs that are not too distant */
+       for (k = num_nodes - 1;k >= 0;k--) {
+           Int4 j;
+           Int4 self_score = nodes[k].best_score;
+           for (j = k + 1;j < num_nodes;j++) {
+               Int4 new_score = 0;
+
+               Int4 q_diff = nodes[j].hsp.hsp->query.offset - nodes[k].hsp.hsp->query.end;
+               Int4 s_diff = nodes[j].hsp.hsp->subject.offset - nodes[k].hsp.hsp->subject.end;
+
+               ASSERT(q_diff >= 0);
+
+               /* use only colinear alignments */
+               if (s_diff < 0) {
+                   continue;
+               }
+
+               /* HSPs cannot be too far apart on both the query and subject */
+               if (MAX(q_diff, s_diff) > 100) {
+                   continue;
+               }
+
+               /* check score density? */
+               
+               new_score = self_score + nodes[j].best_score;
+
+               if (new_score > nodes[k].best_score) {
+                   nodes[k].best_score = new_score;
+                   nodes[k].next = &nodes[j];
+               }
+
+           }
+       }
+
+       /* find the beginning of the best scoring chain */
+       for (k = 0;k < num_nodes;k++) {
+           if (nodes[k].best_score > nodes[k].hsp.hsp->score &&
+               (!best_node || nodes[k].best_score > best_node->best_score)) {
+               best_node = &nodes[k];
+           }
+       }
+
+       /* find the best scoring HSP within the chain and re-compute gapped
+        alignment with a larger xdrop */
+       if (best_node) {
+           BlastHSPNode* chain = best_node;
+           BlastHSPNode* node = chain, *prev = chain;
+           BlastInitHSP init_hsp;
+           Int4 orig_xdrop = gap_align->gap_x_dropoff;
+           Int4 new_xdrop;
+           int max_diff = 0;
+           int num_gaps = 0;
+           Int2 status;
+           node = node->next;
+           for (;node;prev=node,node=node->next) {
+               Int4 q_diff = node->hsp.hsp->query.offset - prev->hsp.hsp->query.end;
+               Int4 s_diff = node->hsp.hsp->subject.offset - prev->hsp.hsp->subject.end;
+               max_diff = MAX(MAX(q_diff, s_diff), max_diff);
+               if (q_diff != s_diff) {
+                   num_gaps++;
+               }
+
+               if (node->hsp.hsp->score > best_node->hsp.hsp->score) {
+                   best_node = node;
+               }
+           }
+
+           ASSERT(best_node && best_node->hsp.hsp);
+
+           init_hsp.offsets.qs_offsets.q_off = best_node->hsp.hsp->query.gapped_start;
+           init_hsp.offsets.qs_offsets.s_off = best_node->hsp.hsp->subject.gapped_start;
+           init_hsp.ungapped_data = NULL;
+           new_xdrop = max_diff + 10 * num_gaps;
+           fprintf(stderr, "%d\t%d\t%d\n", gap_align->gap_x_dropoff, ext_params->gap_x_dropoff_final, new_xdrop);
+           gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+/*           gap_align->gap_x_dropoff = 100; */
+           status = s_BlastProtGappedAlignment(program_number, query_tmp,
+                                                subject, gap_align,
+                                                score_params, &init_hsp,
+                                                FALSE,
+                                                fence_hit);
+
+           gap_align->gap_x_dropoff = orig_xdrop;
+
+           /* If the new HSP is better than the original one, save it.
+              The old HSPs will be purged later. */
+           if (!status && gap_align->score > best_node->hsp.hsp->score) {
+               BlastHSP* new_hsp;
+               
+               status = Blast_HSPInit(gap_align->query_start,
+                                      gap_align->query_stop, gap_align->subject_start,
+                                      gap_align->subject_stop,
+                                      init_hsp.offsets.qs_offsets.q_off,
+                                      init_hsp.offsets.qs_offsets.s_off, context,
+                                      best_node->hsp.hsp->query.frame,
+                                      subject->frame, gap_align->score,
+                                      &(gap_align->edit_script), &new_hsp);
+
+
+               status = Blast_HSPListSaveHSP(hsp_list, new_hsp);
+           }
+           
+       }
+   }
 
    return 0;
 }
@@ -4100,6 +4320,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       }
    }
 
+   if (is_prot && hsp_list && hsp_list->hspcnt > 1) {
+       s_ChainHSPs(program_number, &query_tmp, subject, gap_align, score_params,
+                   ext_params, hsp_list, fence_hit);
+   }
+
+   
    sfree(found_high_score);
    if (restricted_align_array) {
        sfree(restricted_align_array);
