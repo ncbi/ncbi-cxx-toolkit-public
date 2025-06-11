@@ -32,6 +32,7 @@
 #include <common/test_data_path.h>
 #include <corelib/test_boost.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_pipe.hpp>
 #include <connect/ncbi_sftp.hpp>
 
 #include <optional>
@@ -43,11 +44,25 @@
 USING_NCBI_SCOPE;
 
 
-// A copy-paste from test_ncbi_conn_stream.cpp
 static bool s_GetFtpCreds(string& user, string& pass)
 {
     user.clear();
     pass.clear();
+
+    vector<string> args{"svn", "cat",
+        "https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/internal/c++/src/internal/test/connect/test_ncbi_sftp.data"};
+    stringstream in, out, err;
+    int exit_code;
+
+    if ((CPipe::ExecWait("/usr/bin/env", args, in, out, err, exit_code) == CPipe::eDone) && !exit_code) {
+        auto dst = NStr::Base64Decode(out.str());
+
+        if (NStr::SplitInTwo(dst, ":", user, pass)) {
+            return true;
+        }
+    }
+
+    // A copy-paste from test_ncbi_conn_stream.cpp
     string path = NCBI_GetTestDataPath();
     path += "/ftp/test_ncbi_ftp_upload";
     ifstream ifs(path.c_str());
