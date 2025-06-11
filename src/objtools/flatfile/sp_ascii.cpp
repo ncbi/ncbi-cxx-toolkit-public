@@ -2109,20 +2109,11 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
  *                                              9-30-93
  *
  **********************************************************/
-static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& sequpd, CDate& annotupd, short* ver_num)
+static bool GetSPDate(Parser::ESource source, const DataBlk& entry, CDate& crdate, CDate& sequpd, CDate& annotupd, short* ver_num)
 {
-    ValNodeList vnp;
-    ValNodePtr tvnp;
-    char*      offset;
-    char*      p;
-    char*      q;
-    bool       new_style;
-    bool       ret;
-    Char       ch;
-    Int4       first;
-    Int4       second;
-    Int4       third;
-    size_t     len;
+    char*  offset;
+    bool   new_style;
+    size_t len;
 
     CRef<CDate_std> std_crdate,
         std_sequpd,
@@ -2133,56 +2124,41 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
 
     if (! SrchNodeType(entry, ParFlatSP_DT, &len, &offset))
         return true;
+    string_view dtblock(offset, len);
 
-    ch          = offset[len];
-    offset[len] = '\0';
-    vnp.push_front("dummy");
-    tvnp = vnp.begin();
-    for (q = offset;;) {
-        p = StringChr(q, '\n');
-        if (p == q)
-            break;
-        if (p)
-            *p = '\0';
-        tvnp = vnp.insert_after(tvnp, q);
-        if (! p)
-            break;
-        *p++ = '\n';
-        q    = p;
-        if (*q == '\0')
-            break;
-    }
-    offset[len] = ch;
-    vnp.pop_front();
+    list<CTempString> dtlines;
+    NStr::Split(dtblock, "\n", dtlines, NStr::fSplit_Truncate_End);
 
-    first  = 0;
-    second = 0;
-    third  = 0;
-    if (! StringChr(vnp.front().data, '(')) {
+    int first  = 0;
+    int second = 0;
+    int third  = 0;
+    if (CTempString::npos == dtlines.front().find('(')) {
         new_style = true;
-        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
-            offset = tvnp->data;
-            offset += ParFlat_COL_DATA_SP;
-            if (StringIStr(offset, "integrated into")) {
+        for (string_view line : dtlines) {
+            line.remove_prefix(ParFlat_COL_DATA_SP);
+            if (NPOS != NStr::FindNoCase(line, "integrated into")) {
                 first++;
-                std_crdate = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "entry version")) {
+                std_crdate = GetUpdateDate(line, source);
+            } else if (NPOS != NStr::FindNoCase(line, "entry version")) {
                 third++;
-                std_annotupd = GetUpdateDate(offset, pp->source);
+                std_annotupd = GetUpdateDate(line, source);
             } else {
-                p = StringIStr(offset, "sequence version");
-                if (p) {
+                auto pos = NStr::FindNoCase(line, "sequence version");
+                if (pos != NPOS) {
+                    static_assert("sequence version"sv.size() == 16);
+                    pos += 16;
                     second++;
-                    std_sequpd = GetUpdateDate(offset, pp->source);
+                    std_sequpd = GetUpdateDate(line, source);
                     if (ver_num) {
-                        for (p += 16; *p == ' ';)
+                        auto p = line.begin() + pos;
+                        auto e = line.end();
+                        while (p < e && *p == ' ')
                             p++;
-                        for (q = p; *p >= '0' && *p <= '9';)
+                        auto q = p;
+                        while (p < e && *p >= '0' && *p <= '9')
                             p++;
-                        if (*p == '.' && p[1] == '\0') {
-                            *p       = '\0';
-                            *ver_num = fta_atoi(q);
-                            *p       = '.';
+                        if (p + 1 == e && *p == '.') {
+                            *ver_num = fta_atoi(string_view(q, p));
                         }
                     }
                 }
@@ -2190,25 +2166,24 @@ static bool GetSPDate(ParserPtr pp, const DataBlk& entry, CDate& crdate, CDate& 
         }
     } else {
         new_style = false;
-        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
-            offset = tvnp->data;
-            offset += ParFlat_COL_DATA_SP;
-            if (StringIStr(offset, "Created")) {
+        for (string_view line : dtlines) {
+            line.remove_prefix(ParFlat_COL_DATA_SP);
+            if (NPOS != NStr::FindNoCase(line, "Created")) {
                 first++;
-                std_crdate = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "Last annotation update")) {
+                std_crdate = GetUpdateDate(line, source);
+            } else if (NPOS != NStr::FindNoCase(line, "Last annotation update")) {
                 third++;
-                std_annotupd = GetUpdateDate(offset, pp->source);
-            } else if (StringIStr(offset, "Last sequence update")) {
+                std_annotupd = GetUpdateDate(line, source);
+            } else if (NPOS != NStr::FindNoCase(line, "Last sequence update")) {
                 second++;
-                std_sequpd = GetUpdateDate(offset, pp->source);
+                std_sequpd = GetUpdateDate(line, source);
             }
         }
     }
 
-    vnp.clear();
+    dtlines.clear();
 
-    ret = true;
+    bool ret = true;
     if (first == 0) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_Date, "Missing required \"{}\" DT line.", (new_style ? "integrated into" : "Created"));
         ret = false;
@@ -2296,9 +2271,9 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     ver_num = 0;
     if (reviewed && pp->sp_dt_seq_ver)
-        i = GetSPDate(pp, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), &ver_num);
+        i = GetSPDate(pp->source, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), &ver_num);
     else
-        i = GetSPDate(pp, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), nullptr);
+        i = GetSPDate(pp->source, entry, spb->SetCreated(), spb->SetSequpd(), spb->SetAnnotupd(), nullptr);
 
     get_plasmid(entry, spb->SetPlasnm());
     if (spb->SetPlasnm().empty())
