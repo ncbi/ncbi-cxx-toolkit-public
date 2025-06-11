@@ -141,21 +141,18 @@ void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm,
 void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
 
 
-/** A node in a path through blast alignments */
-typedef struct BlastHSPNode {
-    union {
-        BlastInitHSP* init_hsp;    /**< Ungapped alignment */
-        BlastHSP* hsp;             /**< Gapped alignment */
-    } hsp;
+/** A node in a path through blast unagpped alignments */
+typedef struct BlastInitHSPNode {
+    BlastInitHSP* init_hsp;    /**< Ungapped alignment */
     int best_score;            /**< Best score for paths that start at this node */
-    struct BlastHSPNode* next;  /**< Next node in the path */
+    struct BlastInitHSPNode* next;  /**< Next node in the path */
 
-} BlastHSPNode;
+} BlastInitHSPNode;
 
 
 /** Workspace used for chaining */
 typedef struct ChainingStruct {
-  BlastHSPNode* nodes;
+  BlastInitHSPNode* nodes;
   Uint4 num_allocated;
     
 } ChainingStruct;
