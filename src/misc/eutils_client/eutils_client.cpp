@@ -525,7 +525,7 @@ static CIncreasingTime::SAllParams s_WaitTimeParams = {
 
 
 CEutilsClient::CEutilsClient()
-    : m_CachedHostNameCount(0), m_RetMax(kMax_Int), m_MaxRetries(DEFAULT_MAX_RETRIES), m_WaitTime(s_WaitTimeParams)
+    : m_CachedHostNameCount(0), m_RetMax(0), m_MaxRetries(DEFAULT_MAX_RETRIES), m_WaitTime(s_WaitTimeParams)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
@@ -537,7 +537,7 @@ CEutilsClient::CEutilsClient()
 CEutilsClient::CEutilsClient(const string& host)
     : m_CachedHostNameCount(0),
       m_HostName(host),
-      m_RetMax(kMax_Int),
+      m_RetMax(0),
       m_MaxRetries(DEFAULT_MAX_RETRIES),
       m_WaitTime(s_WaitTimeParams)
 {

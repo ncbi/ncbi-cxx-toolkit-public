@@ -116,6 +116,10 @@ void CTestEUtilsClientApp::Init(void)
                             CArgDescriptions::eRequires,
                             "retmode");
 
+    arg_desc->AddOptionalKey("ret_max", "retmax",
+                             "Max returned values",
+                             CArgDescriptions::eInteger);
+
     arg_desc->AddOptionalKey("host", "hostname",
                              "Hostname to connect to",
                              CArgDescriptions::eString);
@@ -179,6 +183,9 @@ int CTestEUtilsClientApp::Run(void)
             { "inc", "", args["wait_inc"] ? args["wait_inc"].AsDouble() : 0.5 }
         };
         ecli.SetWaitTime(CIncreasingTime(params));
+    }
+    if (args["ret_max"]) {
+        ecli.SetMaxReturn(args["ret_max"].AsInteger());
     }
 
     CNcbiOstream& ostr = args["o"].AsOutputFile();
