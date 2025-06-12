@@ -1546,87 +1546,61 @@ static bool fta_validate_bioproject(string_view name, Parser::ESource source)
 }
 
 /**********************************************************/
-static ValNodeList fta_tokenize_project(char* str, Parser::ESource source, bool newstyle)
+static forward_list<string> fta_tokenize_project(string str, Parser::ESource source, bool newstyle)
 {
-    ValNodeList res;
-    ValNodePtr tvnp;
-    char*      p;
-    char*      q;
-    char*      r;
-    bool       bad;
-    Char       ch;
-
-    if (! str || *str == '\0') {
+    if (str.empty()) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return {};
     }
 
-    for (p = str; *p != '\0'; p++)
-        if (*p == ';' || *p == ',' || *p == '\t')
-            *p = ' ';
+    unsigned n = 0;
+    for (char& c : str) {
+        if (c == ';' || c == ',' || c == '\t')
+            c = ' ';
+        if (c != ' ')
+            ++n;
+    }
 
-    for (p = str; *p == ' ';)
-        p++;
-    if (*p == '\0') {
+    if (n == 0) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "Empty PROJECT/PR line type supplied. Entry dropped.");
         return {};
     }
 
-    res.push_front("dummy");
-    tvnp = res.begin();
+    forward_list<string> res;
+    auto                 tail = res.before_begin();
 
-    for (bad = false, p = str; *p != '\0';) {
-        while (*p == ' ')
+    for (auto p = str.begin(); p != str.end();) {
+        while (p != str.end() && *p == ' ')
             p++;
 
-        if (*p == '\0')
+        if (p == str.end())
             break;
 
-        for (q = p; *p != ' ' && *p != '\0';)
+        auto q = p;
+        while (p != str.end() && *p != ' ')
             p++;
 
-        ch = *p;
-        *p = '\0';
+        string_view name(q, p);
         if (! newstyle) {
-            for (r = q; *r >= '0' && *r <= '9';)
-                r++;
-            if (*r != '\0') {
-                FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", q);
-                bad = true;
+            if (! std::all_of(name.begin(), name.end(), [](char c) { return '0' <= c && c <= '9'; })) {
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", name);
+                return {};
             }
-        } else if (! fta_validate_bioproject(q, source))
-            bad = true;
-
-        if (bad) {
-            *p = ch;
-            break;
+        } else if (! fta_validate_bioproject(name, source)) {
+            return {};
         }
 
-        tvnp = res.insert_after(tvnp, q);
-        *p   = ch;
+        tail = res.insert_after(tail, string(name));
     }
 
-    res.pop_front();
-
-    if (res.empty())
-        return {};
-
-    if (! bad)
-        return res;
-
-    res.clear();
-    return {};
+    return res;
 }
 
 /**********************************************************/
-void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFormat format, bool* drop, Parser::ESource source)
+void fta_get_project_user_object(TSeqdescList& descrs, const char* offset, Parser::EFormat format, bool* drop, Parser::ESource source)
 {
-    ValNodeList vnp;
+    string_view name;
 
-    const Char* name;
-
-    char* str;
-    char* p;
     Char  ch;
     Int4  i;
 
@@ -1636,24 +1610,23 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     bool newstyle = false;
     if (format == Parser::EFormat::GenBank) {
         i    = ParFlat_COL_DATA;
-        name = "GenomeProject:";
+        name = "GenomeProject:"sv;
         ch   = '\n';
     } else {
         i    = ParFlat_COL_DATA_EMBL;
-        name = "Project:";
+        name = "Project:"sv;
         ch   = ';';
     }
 
-    size_t len = StringLen(name);
-    str        = StringSave(offset + i);
-    p          = StringChr(str, ch);
-    if (p)
-        *p = '\0';
+    size_t len = name.size();
+    string_view str = offset + i;
+    auto        n   = str.find(ch);
+    if (n != string_view::npos)
+        str = str.substr(0, n);
 
-    if (! StringEquN(str, name, len)) {
+    if (! str.starts_with(name)) {
         if (format == Parser::EFormat::GenBank) {
             FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "PROJECT line is missing \"GenomeProject:\" tag. Entry dropped."); // str
-            MemFree(str);
             *drop = true;
             return;
         }
@@ -1662,10 +1635,10 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     } else if (format == Parser::EFormat::EMBL && str[len] == 'P')
         newstyle = true;
 
-    vnp = fta_tokenize_project(str + len, source, newstyle);
+    str.remove_prefix(len);
+    auto vnp = fta_tokenize_project(string(str), source, newstyle);
     if (vnp.empty()) {
         *drop = true;
-        MemFree(str);
         return;
     }
 
@@ -1691,7 +1664,7 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
     CRef<CUser_object> user_obj;
     if (newstyle) {
         i = 0;
-        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next)
+        for (const auto& tvnp : vnp)
             i++;
 
         if (! got) {
@@ -1706,8 +1679,8 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         user_field->SetLabel().SetStr("BioProject");
         user_field->SetNum(i);
 
-        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next)
-            user_field->SetData().SetStrs().push_back(tvnp->data);
+        for (const auto& tvnp : vnp)
+            user_field->SetData().SetStrs().push_back(tvnp);
 
         user_obj_ptr->SetData().push_back(user_field);
     } else {
@@ -1719,13 +1692,12 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         CObject_id& id = user_obj_ptr->SetType();
         id.SetStr("GenomeProjectsDB");
 
-        for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
+        for (const auto& tvnp : vnp) {
 
             CRef<CUser_field> user_field(new CUser_field);
             user_field->SetLabel().SetStr("ProjectID");
-            user_field->SetData().SetInt(fta_atoi(tvnp->data));
+            user_field->SetData().SetInt(fta_atoi(tvnp));
             user_obj_ptr->SetData().push_back(user_field);
-
 
             user_field.Reset(new CUser_field);
             user_field->SetLabel().SetStr("ParentID");
@@ -1739,9 +1711,6 @@ void fta_get_project_user_object(TSeqdescList& descrs, char* offset, Parser::EFo
         descr->SetUser(*user_obj_ptr);
         descrs.push_back(descr);
     }
-
-    MemFree(str);
-    ValNodeFree(vnp.head);
 }
 
 /**********************************************************/
