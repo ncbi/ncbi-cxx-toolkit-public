@@ -46,23 +46,9 @@ USING_NCBI_SCOPE;
 
 static bool s_GetFtpCreds(string& user, string& pass)
 {
+    // A copy-paste from test_ncbi_conn_stream.cpp
     user.clear();
     pass.clear();
-
-    vector<string> args{"svn", "cat",
-        "https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/internal/c++/src/internal/test/connect/test_ncbi_sftp.data"};
-    stringstream in, out, err;
-    int exit_code;
-
-    if ((CPipe::ExecWait("/usr/bin/env", args, in, out, err, exit_code) == CPipe::eDone) && !exit_code) {
-        auto dst = NStr::Base64Decode(out.str());
-
-        if (NStr::SplitInTwo(dst, ":", user, pass)) {
-            return true;
-        }
-    }
-
-    // A copy-paste from test_ncbi_conn_stream.cpp
     string path = NCBI_GetTestDataPath();
     path += "/ftp/test_ncbi_ftp_upload";
     ifstream ifs(path.c_str());
@@ -77,6 +63,19 @@ static bool s_GetFtpCreds(string& user, string& pass)
         dst.resize(n_written);
         NStr::SplitInTwo(dst, ":", user, pass);
     }
+
+    if (user.empty() || pass.empty()) {
+        vector<string> args{"svn", "cat",
+            "https://svn.ncbi.nlm.nih.gov/repos/toolkit/trunk/internal/c++/src/internal/test/connect/test_ncbi_sftp.data"};
+        stringstream in, out, err;
+        int exit_code;
+
+        if ((CPipe::ExecWait("/usr/bin/env", args, in, out, err, exit_code) == CPipe::eDone) && !exit_code) {
+            auto dst = NStr::Base64Decode(out.str());
+            NStr::SplitInTwo(dst, ":", user, pass);
+        }
+    }
+
     return !user.empty()  &&  !pass.empty();
 }
 
