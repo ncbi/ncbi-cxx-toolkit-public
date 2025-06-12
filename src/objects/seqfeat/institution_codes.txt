@@ -4231,7 +4231,7 @@ KRSF	s	Koronivia Research Station
 KRSU	s	Krasnoyarsk State University, Department of Biogeocoenology			
 KSA	s	Sejong National Arboretum			
 KSAN	s	Kimberley South African National Parks Herbarium			
-KSB	s	The Kansas State Biorepository			
+KSB	s	Kansas State Biorepository			
 KSB:Mamm	s	Mammal Collection			
 KSBS	s	Lawrence, University of Kansas, State Biological Survey of Kansas			
 KSC	s	Kansas State University			
