@@ -9,6 +9,19 @@ suppression = {
 	}
 }
 suppression = {
+	name = "Boost.Ttest - unit_test_parameters"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_mismatch_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, const unsigned __int64)",src=vector_algorithms.cpp;
+			func=_Mismatch_vectorized,src=xtree;
+			...;
+			func="boost::unit_test::runtime_config::`anonymous namespace'::register_parameters(class boost::runtime::parameters_store & const)",src=unit_test_parameters.ipp;
+		}
+	}
+}
+suppression = {
 	name = "VDB - deallocation without allocation in KNgcObjWriteToFile() at ncbi_vdb.dll - false positive"
 	type = {invalid_deallocation}
 	stacks = {

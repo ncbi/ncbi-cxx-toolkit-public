@@ -290,3 +290,102 @@ suppression = {
 		}
 	}
 }
+
+suppression = {
+	name = "ncbi_connutil - s_StripToPattern - false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="s_StripToPattern(void *,  *, const void *, unsigned __int64, struct SNcbiBuf * *, unsigned __int64 *)",src=ncbi_connutil.c;
+			func=SOCK_StripToPattern,src=ncbi_connutil.c;
+		}
+	}
+}
+suppression = {
+	name = "ncbi_http_connector - s_ReadHeader - false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="s_ReadHeader(struct SHttpConnector *, struct SRetry *, EExtractMode)",src=ncbi_http_connector.c;
+			func="s_PreRead(struct SHttpConnector *, const struct STimeoutTag *, EExtractMode)",src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+			func="s_ReadHeader(struct SHttpConnector *, struct SRetry *, EExtractMode)",src=ncbi_http_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "ncbi_conn_stream - s_ReadHeader - false positive"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="ncbi::SHTTP_StatusData::Parse(char const *)",src=ncbi_conn_stream.cpp;
+			func="ncbi::CConn_HttpStream::sx_ParseHeader(char const *,void *,int)",src=ncbi_conn_stream.cpp;
+			func="s_ReadHeader(struct SHttpConnector *, struct SRetry *, EExtractMode)",src=ncbi_http_connector.c;
+		}
+		allocation={
+			...;
+			func="s_ReadHeader(struct SHttpConnector *, struct SRetry *, EExtractMode)",src=ncbi_http_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "SFTPConnector - bitfields"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="s_VT_Flush(struct SConnectorTag *, const struct STimeoutTag *)",src=ncbi_ftp_connector.c;
+			func="x_Flush(struct SConnectionTag *, const struct STimeoutTag *, int)",src=ncbi_connection.c;
+			func=CONN_Flush,src=ncbi_connection.c;
+		}
+	}
+}
+suppression = {
+	name = "SFTPConnector - bitfields 2"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="x_FTPPollCntl(struct SFTPConnector *, const struct STimeoutTag *)",src=ncbi_ftp_connector.c;
+			func=x_FTPSyncCntl,src=ncbi_ftp_connector.c;
+		}
+	}
+}
+suppression = {
+	name = "SFTPConnector - bitfields 3"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="s_VT_Read(struct SConnectorTag *, void *, unsigned __int64, unsigned __int64 *, const struct STimeoutTag *)",src=ncbi_ftp_connector.c;
+			func="s_CONN_Read(struct SConnectionTag *, void *, const unsigned __int64, unsigned __int64 *, int)",src=ncbi_connection.c;
+		}
+	}
+}
+suppression = {
+	name = "SConnNetInfo - bitfields"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=ncbi_connutil.c,func=ConnNetInfo_CreateInternal;
+		}
+	}
+}
+suppression = {
+	name = "test_ncbi_http_get - x_LoadFile"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=test_ncbi_http_get.c,func="x_LoadFile(const char *, unsigned __int64 *)";
+		}
+	}
+}
+
+
