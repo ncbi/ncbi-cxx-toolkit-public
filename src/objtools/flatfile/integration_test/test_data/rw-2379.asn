@@ -79,9 +79,6 @@ Seq-submit ::= {
         },
         molinfo {
           biomol other
-        },
-        genbank {
-          source "synthetic construct"
         }
       },
       inst {
@@ -968,9 +965,6 @@ Seq-submit ::= {
         },
         molinfo {
           biomol other
-        },
-        genbank {
-          source "synthetic construct"
         }
       },
       inst {
