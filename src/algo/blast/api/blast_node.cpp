@@ -246,7 +246,6 @@ void CBlastMasterNode::FormatResults()
 		}
 		m_NumQueries += n->GetNumOfQueries();
 		m_QueriesLength += n->GetQueriesLength();
-		n->Detach();
 		m_PostOffice.erase(node_num);
 		m_RegisteredNodes.erase(node_num);
 
