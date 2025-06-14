@@ -2373,20 +2373,16 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 }
 
 /**********************************************************/
-static ValNodeList fta_vnp_structured_comment(char* buf)
+static forward_list<string> fta_vnp_structured_comment(string& buf)
 {
-    ValNodeList res;
-    ValNodePtr vnp;
     char*      start;
     char*      p;
     char*      q;
-    char*      r;
-    bool       bad;
 
-    if (! buf || *buf == '\0')
+    if (buf.empty())
         return {};
 
-    for (p = buf; *p != '\0'; p++) {
+    for (p = buf.data(); *p != '\0'; p++) {
         if (*p != '~')
             continue;
 
@@ -2395,69 +2391,52 @@ static ValNodeList fta_vnp_structured_comment(char* buf)
         p--;
     }
 
-    bad = false;
-    res.push_front("dummy");
-    vnp = res.begin();
-    for (start = buf;;) {
+    forward_list<string> res;
+    auto vnp = res.before_begin();
+    for (start = buf.data();;) {
         p = StringStr(start, "::");
-        if (! p) {
-            if (start == buf)
-                bad = true;
+        if (! p)
             break;
-        }
 
         q = StringStr(p + 2, "::");
         if (! q) {
-            vnp = res.insert_after(vnp, start);
-            for (r = vnp->data; *r != '\0'; r++)
-                if (*r == '~')
-                    *r = ' ';
-            ShrinkSpaces(vnp->data);
+            string s(start);
+            for (char& c : s)
+                if (c == '~')
+                    c = ' ';
+            ShrinkSpaces(s);
+            vnp = res.insert_after(vnp, s);
             break;
         }
 
         *q = '\0';
-        r  = StringRChr(p + 2, '~');
+        char* r  = StringRChr(p + 2, '~');
         *q = ':';
-        if (! r) {
-            bad = true;
-            break;
-        }
+        if (! r)
+            return {};
 
-        *r  = '\0';
-        vnp = res.insert_after(vnp, start);
-        *r  = '~';
-        for (p = vnp->data; *p != '\0'; p++)
-            if (*p == '~')
-                *p = ' ';
-        ShrinkSpaces(vnp->data);
+        string s(start, r);
+        for (char& c : s)
+            if (c == '~')
+                c = ' ';
+        ShrinkSpaces(s);
+        vnp = res.insert_after(vnp, s);
 
         start = r;
     }
 
-    res.pop_front();
-
-    if (! bad)
-        return res;
-
-    res.clear();
-    return {};
+    return res;
 }
 
 /**********************************************************/
-static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
+static CRef<CUser_object> fta_build_structured_comment(const char* tag, string& buf)
 {
-    ValNodeList vnp;
-
-    char* p;
-    char* q;
-
     CRef<CUser_object> obj;
 
-    if (! tag || *tag == '\0' || ! buf || *buf == '\0')
+    if (! tag || *tag == '\0' || buf.empty())
         return obj;
 
-    vnp = fta_vnp_structured_comment(buf);
+    auto vnp = fta_vnp_structured_comment(buf);
     if (vnp.empty())
         return obj;
 
@@ -2474,27 +2453,27 @@ static CRef<CUser_object> fta_build_structured_comment(char* tag, char* buf)
 
     obj->SetData().push_back(field);
 
-    for (auto tvnp = vnp.cbegin(); tvnp != vnp.cend(); tvnp = tvnp->next) {
-        p = tvnp->data;
-        if (! p || *p == '\0')
+    for (const auto& tvnp : vnp) {
+        if (tvnp.empty())
             continue;
 
-        q = StringStr(p, "::");
-        if (! q)
+        auto q = tvnp.find("::");
+        if (q == string::npos)
             continue;
 
-        if (q > p && *(q - 1) == ' ')
+        if (q > 0 && tvnp[q - 1] == ' ')
             q--;
 
-        for (*q++ = '\0'; *q == ' ' || *q == ':';)
+        auto qq = q++;
+        while (q < tvnp.size() && (tvnp[q] == ' ' || tvnp[q] == ':'))
             q++;
 
-        if (*p == '\0' || *q == '\0')
+        if (q == tvnp.size())
             continue;
 
         field.Reset(new CUser_field);
-        field->SetLabel().SetStr(p);
-        field->SetData().SetStr(q);
+        field->SetLabel().SetStr(tvnp.substr(0, qq));
+        field->SetData().SetStr((tvnp.substr(q)));
 
         obj->SetData().push_back(field);
     }
@@ -2600,9 +2579,9 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             continue;
         }
 
-        char* buf = StringSave(string_view(p, q));
+        string buf(p, q);
         CRef<CUser_object> cur = fta_build_structured_comment(tag, buf);
-        MemFree(buf);
+        buf.clear();
 
         if (cur.Empty()) {
             bad = true;
