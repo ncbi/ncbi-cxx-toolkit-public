@@ -2859,7 +2859,7 @@ void CChainer::CChainerImpl::RightLeft(TContained& pointers)
 	    mi.m_cds_from_trusted = true;
 	else
 	    mi.m_cds_from_trusted = false;
-        TContained micontained = mi.CollectContainedForMemeber();
+        TContained micontained; //  = mi.CollectContainedForMemeber();
         bool not_sorted = true;
         //        sort(micontained.begin(),micontained.end(),RightOrderD());
         
@@ -2973,8 +2973,10 @@ void CChainer::CChainerImpl::RightLeft(TContained& pointers)
             if(newcds < mi.m_right_cds)
                 continue;
 
-            if(not_sorted)
+            if(not_sorted) {
+		micontained = mi.CollectContainedForMemeber();
                 sort(micontained.begin(),micontained.end(),RightOrderD());
+	    }
             int first = 0;
             if(!j_lflexible && !i_rflexible)
                 first = upper_bound(micontained.begin(),micontained.end(),&mj,RightOrder())-micontained.begin(); // first alignment contained in ai and outside aj
@@ -3276,6 +3278,10 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             align.Status() &= ~CGeneModel::eReversed;
         }
     }
+
+    // some alignmets were divided to parts
+    for(CGeneModel& align : clust)
+	align.SetTrustedCds(align.TrustedCds()&align.Limits());
     
     CChainMembers allpointers(clust, orig_aligns, unmodified_aligns);
 
@@ -6532,8 +6538,8 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
     TClustersByStrand trusted_aligns;
     ITERATE(TGeneModelList, it, clust) {
         CAlignModel* orig_align = orig_aligns[it->ID()];
-	if(it->Continuous() && (!it->TrustedmRNA().empty() || !it->TrustedProt().empty())
-	   && orig_align != nullptr && it->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen()) {	
+		if(it->Continuous() && (!it->TrustedmRNA().empty() || !it->TrustedProt().empty())
+		   && orig_align != nullptr && it->AlignLen() > minscor.m_minprotfrac*orig_align->TargetLen()) {	
             trusted_aligns[it->Strand()].Insert(*it); 
         }           
     }
@@ -6542,85 +6548,149 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
         return;
 
     typedef set<string> TAccessions;
-    typedef set<int> TSplices;    
-    typedef vector<tuple<TSplices, TAccessions, const TGeneModelCluster*, TSignedSeqRange>> TSplicesVec;
-    typedef map<int,TSplicesVec> TSplicesByStrand;
-    TSplicesByStrand trusted_splices;
+    typedef set<TSignedSeqPos> TSplices;
+	typedef tuple<TSplices, TAccessions, const TGeneModelCluster*, TSignedSeqRange, list<TIVec>> TGRInfo;
+    typedef vector<TGRInfo> TGRInfoVec;
+    typedef map<int,TGRInfoVec> TGRInfoByStrand;
+    TGRInfoByStrand trusted_splices;
     
     for(auto& strand_vec :  trusted_aligns) {
         int strand = strand_vec.first;
         TGeneModelClusterSet& clset = strand_vec.second;
-	for(const TGeneModelCluster& cls : clset) {
+		for(const TGeneModelCluster& cls : clset) {
             trusted_splices[strand].emplace_back();
-            TSplices& splices = get<0>(trusted_splices[strand].back());
-            TAccessions& accessions = get<1>(trusted_splices[strand].back());
-	    get<2>(trusted_splices[strand].back()) = &cls;
-	    TSignedSeqRange& cds = get<3>(trusted_splices[strand].back());
-	    for(const CGeneModel& align : cls) {
-		for(auto& e : align.Exons()) {
+			auto& last = trusted_splices[strand].back();
+            TSplices& splices = get<0>(last);
+            TAccessions& accessions = get<1>(last);
+			get<2>(last) = &cls;
+			TSignedSeqRange& cds = get<3>(last);
+			list<TIVec>& cds_maps = get<4>(last);
+			for(const CGeneModel& talign : cls) {
+				//splices
+				for(auto& e : talign.Exons()) {
                     if(e.m_fsplice)
                         splices.insert(e.GetFrom());
                     if(e.m_ssplice)
                         splices.insert(e.GetTo());                       
                 }
-                for(auto& cref : align.TrustedProt())
+				//accessions
+                for(auto& cref : talign.TrustedProt())
                     accessions.insert(CIdHandler::ToString(*cref));
-                for(auto& cref : align.TrustedmRNA())
+                for(auto& cref : talign.TrustedmRNA())
                     accessions.insert(CIdHandler::ToString(*cref));
-		cds += align.RealCdsLimits();
-             }
+				//cds and cds_maps
+				TSignedSeqRange tcds = talign.GetCdsInfo().Cds();
+				if(tcds.NotEmpty()) {
+					cds += tcds;
+					CAlignMap tmap(talign.Exons(), talign.FrameShifts(), talign.Strand(), tcds);
+					cds_maps.emplace_back(tmap.FShiftedLen(tcds)/3,0);
+					for(auto& e : talign.Exons()) {
+						auto overlap = (e.Limits()&tcds);
+						for(TSignedSeqPos k = overlap.GetFrom(); k <= overlap.GetTo(); ++k) {
+							TSignedSeqPos p =  tmap.MapOrigToEdited(k);
+							if(p >= 0 && p%3 == 0) {
+								_ASSERT(p/3 < (int)cds_maps.back().size());
+								cds_maps.back()[p/3] = k;
+							}
+						}
+					}
+				}
+			}
         }
     }
 
     for(auto& ts : trusted_splices) {
-	char strand = ts.first == ePlus ? '+' : '-';
-	TSplicesVec& spl = ts.second;
-	for(int i = 0; i < (int)spl.size(); ++i) {
-	    auto& cls = *get<2>(spl[i]);
-	    int tgr = i+1;
-	    if(strand == '-')
-		tgr = -tgr;
-	    trusted_group_cds[tgr] = get<3>(spl[i]);
-	    set<Int8> included_ids;
-	    for(const CGeneModel& align : cls) {
-		if(!included_ids.count(align.ID())) // proteins doubled as unmodifieds
-		   cerr << "TGR: " << strand << " " << tgr << " " << align.ID() << endl;
-	    }
-	}
+		char strand = ts.first == ePlus ? '+' : '-';
+		TGRInfoVec& spl = ts.second;
+		for(int i = 0; i < (int)spl.size(); ++i) {
+			auto& cls = *get<2>(spl[i]);
+			int tgr = i+1;
+			if(strand == '-')
+				tgr = -tgr;
+			trusted_group_cds[tgr] = get<3>(spl[i]);
+			set<Int8> included_ids;
+			for(const CGeneModel& align : cls) {
+				if(!included_ids.count(align.ID())) // proteins doubled as unmodifieds
+					cerr << "TGR: " << strand << " " << tgr << " " << align.ID() << endl;
+			}
+		}
     }
 
     for(TGeneModelList::iterator it_loop = clust.begin(); it_loop != clust.end(); ) {
-        TGeneModelList::iterator it = it_loop++;
+        TGeneModelList::iterator ita = it_loop++;
         
-        CGeneModel& align = *it;
-	if((align.Status()&CGeneModel::eUnknownOrientation) || align.Exons().size() == 1)
-	    continue;
+        CGeneModel& align = *ita;
+		if((align.Status()&CGeneModel::eUnknownOrientation) || align.Exons().size() == 1) //allow one-exons with CDS??
+			continue;
 	
         int strand = align.Strand();
-        const TSplicesVec& spl = trusted_splices[strand];
+		if(!trusted_splices.count(strand))
+			continue;
+
+        const TGRInfoVec& spl = trusted_splices[strand];
+		auto first = lower_bound(spl.begin(), spl.end(), align.Limits().GetFrom(),
+								 [](const TGRInfo& ti, TSignedSeqPos p) { return get<2>(ti)->Limits().GetTo() < p; }); 
+		auto second = upper_bound(spl.begin(), spl.end(), align.Limits().GetTo(),
+								  [](TSignedSeqPos p, const TGRInfo& ti) { return p < get<2>(ti)->Limits().GetFrom(); });
+		if(first == second)
+			continue;
+
+		// align overlaps with at least one trusted group
+		
+		TSignedSeqRange acds = align.GetCdsInfo().Cds();
+		TIVec acds_map;
+		if(acds.NotEmpty()) {
+			CAlignMap amap(align.Exons(), align.FrameShifts(), align.Strand(), acds);
+			acds_map.resize(amap.FShiftedLen(acds)/3,0);
+			for(auto& e : align.Exons()) {
+				auto overlap = (e.Limits()&acds);
+				for(TSignedSeqPos k = overlap.GetFrom(); k <= overlap.GetTo(); ++k) {
+					TSignedSeqPos p =  amap.MapOrigToEdited(k);
+					if(p >= 0 && p%3 == 0) {
+						_ASSERT(p/3 < (int)acds_map.size());
+						acds_map[p/3] = k;
+					}
+				}
+			}
+		}
 
         int count = 0;
         bool paralogs = false;
         TAccessions prev_accessions;
-	for(int j = 0; j < (int)spl.size(); ++j) {
-            const TSplices& splices = get<0>(spl[j]);
-            const TAccessions& accessions = get<1>(spl[j]);
-	    int tgr = j+1;
-	    if(strand == eMinus)
-		tgr = -tgr;
-            for(unsigned int i = 0; i < align.Exons().size(); ++i) {
+		for(auto it = first; it != second; ++it) {
+			int tgr = it-spl.begin()+1;
+			if(strand == eMinus)
+				tgr = -tgr;
+
+			int atgr = 0;
+			const TSplices& splices = get<0>(*it);
+            for(unsigned int i = 0; i < align.Exons().size() && atgr != tgr; ++i) {
                 const CModelExon& e = align.Exons()[i];
-		if((e.m_fsplice && splices.find(e.GetFrom()) != splices.end()) || (e.m_ssplice && splices.find(e.GetTo()) != splices.end())) {
-                    auto num = prev_accessions.size();
-                    prev_accessions.insert(accessions.begin(), accessions.end());
-                    if(num+accessions.size() != prev_accessions.size()) // overlapping ids
-                        paralogs = true;
-                    ++count;
-		    align.SetTrustedGroup(tgr);
-		    align.SetTrustedCds((align.TrustedCds()+get<3>(spl[j]))&align.Limits());
-                    break;
-                }
+				if((e.m_fsplice && splices.count(e.GetFrom())) || (e.m_ssplice && splices.count(e.GetTo())))
+					atgr = tgr;
             }
+			TSignedSeqRange cds = get<3>(*it);
+			if(atgr != tgr && acds.IntersectingWith(cds)) {
+				const list<TIVec>& cds_maps = get<4>(*it);
+				for(const TIVec& tcds_map : cds_maps) {
+					int long_enough = 10;
+					int mci = MaxCommonInterval(acds_map, tcds_map, long_enough);
+					if(mci >= long_enough) {
+						atgr = tgr;
+						break;
+					}
+				}
+			}
+			if(atgr == tgr) {
+				const TAccessions& accessions = get<1>(*it);
+				auto num = prev_accessions.size();
+				prev_accessions.insert(accessions.begin(), accessions.end());
+				if(num+accessions.size() != prev_accessions.size()) // overlapping ids
+					paralogs = true;
+				++count;
+				align.SetTrustedGroup(tgr);
+				align.SetTrustedCds(cds&align.Limits());
+			}
         }
 
         if(count > 1) {
@@ -6635,7 +6705,7 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
                 flag = "Prot";
             cerr << "Chimeric alignment " << align.ID() << " " << (paralogs ? "paralogs" : "unrelated") << " " << flag << endl;
             SkipReason(orig_aligns[align.ID()],"Chimera");
-            clust.erase(it);
+            clust.erase(ita);
         }
     }
 }
