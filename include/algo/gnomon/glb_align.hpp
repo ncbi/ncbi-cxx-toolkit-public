@@ -106,6 +106,26 @@ int EditDistance(const T &s1, const T & s2) {
 	return prevCol[len2];
 }
 
+template<class T>
+int MaxCommonInterval(const T& a, const T& b, int long_enough = numeric_limits<int>::max()) {
+	vector<int> s(b.size()+1, 0);
+	vector<int> sm(b.size()+1, 0);
+	int len = 0;
+	for(int i = 0; i < (int)a.size() && len < long_enough; ++i) {
+		auto& ai = a[i];
+		for(int j = 0; j < (int)b.size() && len < long_enough; ) {
+			int l = 0;
+			if(ai == b[j]) {
+				l = sm[j]+1;
+				len = max(len, l);
+			}
+			s[++j] = l;
+		}
+		s.swap(sm);
+	}
+	return len;
+}
+
 double Entropy(const string& seq);
 
 END_SCOPE(gnomon)
