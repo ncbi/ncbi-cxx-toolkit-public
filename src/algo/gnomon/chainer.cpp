@@ -6547,50 +6547,52 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
     if(trusted_aligns[ePlus].size() < 2 && trusted_aligns[eMinus].size() < 2)
         return;
 
-    typedef set<string> TAccessions;
+    typedef set<pair<Int8,string>> TIDs;
     typedef set<TSignedSeqPos> TSplices;
-	typedef tuple<TSplices, TAccessions, const TGeneModelCluster*, TSignedSeqRange, list<TIVec>> TGRInfo;
-    typedef vector<TGRInfo> TGRInfoVec;
+	struct STGRInfo {
+		TSplices m_splices;
+		TIDs m_ids;
+		TSignedSeqRange m_limits;
+		TSignedSeqRange m_cds_limits;
+		list<TIVec> m_cds_maps;
+	};
+	typedef vector<STGRInfo> TGRInfoVec;
     typedef map<int,TGRInfoVec> TGRInfoByStrand;
-    TGRInfoByStrand trusted_splices;
+	TGRInfoByStrand tgr_info;
     
     for(auto& strand_vec :  trusted_aligns) {
         int strand = strand_vec.first;
         TGeneModelClusterSet& clset = strand_vec.second;
 		for(const TGeneModelCluster& cls : clset) {
-            trusted_splices[strand].emplace_back();
-			auto& last = trusted_splices[strand].back();
-            TSplices& splices = get<0>(last);
-            TAccessions& accessions = get<1>(last);
-			get<2>(last) = &cls;
-			TSignedSeqRange& cds = get<3>(last);
-			list<TIVec>& cds_maps = get<4>(last);
+            tgr_info[strand].emplace_back();
+			auto& last = tgr_info[strand].back();
+			last.m_limits = cls.Limits();
 			for(const CGeneModel& talign : cls) {
 				//splices
 				for(auto& e : talign.Exons()) {
                     if(e.m_fsplice)
-                        splices.insert(e.GetFrom());
+                        last.m_splices.insert(e.GetFrom());
                     if(e.m_ssplice)
-                        splices.insert(e.GetTo());                       
+                        last.m_splices.insert(e.GetTo());                       
                 }
-				//accessions
+				//ids
                 for(auto& cref : talign.TrustedProt())
-                    accessions.insert(CIdHandler::ToString(*cref));
+					last.m_ids.emplace(talign.ID(),CIdHandler::ToString(*cref)); 
                 for(auto& cref : talign.TrustedmRNA())
-                    accessions.insert(CIdHandler::ToString(*cref));
+					last.m_ids.emplace(talign.ID(),CIdHandler::ToString(*cref));
 				//cds and cds_maps
 				TSignedSeqRange tcds = talign.GetCdsInfo().Cds();
 				if(tcds.NotEmpty()) {
-					cds += tcds;
+					last.m_cds_limits += tcds;
 					CAlignMap tmap(talign.Exons(), talign.FrameShifts(), talign.Strand(), tcds);
-					cds_maps.emplace_back(tmap.FShiftedLen(tcds)/3,0);
+					last.m_cds_maps.emplace_back(tmap.FShiftedLen(tcds)/3,0);
 					for(auto& e : talign.Exons()) {
 						auto overlap = (e.Limits()&tcds);
 						for(TSignedSeqPos k = overlap.GetFrom(); k <= overlap.GetTo(); ++k) {
 							TSignedSeqPos p =  tmap.MapOrigToEdited(k);
 							if(p >= 0 && p%3 == 0) {
-								_ASSERT(p/3 < (int)cds_maps.back().size());
-								cds_maps.back()[p/3] = k;
+								_ASSERT(p/3 < (int)last.m_cds_maps.back().size());
+								last.m_cds_maps.back()[p/3] = k;
 							}
 						}
 					}
@@ -6599,20 +6601,16 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
         }
     }
 
-    for(auto& ts : trusted_splices) {
+    for(auto& ts : tgr_info) {
 		char strand = ts.first == ePlus ? '+' : '-';
 		TGRInfoVec& spl = ts.second;
 		for(int i = 0; i < (int)spl.size(); ++i) {
-			auto& cls = *get<2>(spl[i]);
 			int tgr = i+1;
 			if(strand == '-')
 				tgr = -tgr;
-			trusted_group_cds[tgr] = get<3>(spl[i]);
-			set<Int8> included_ids;
-			for(const CGeneModel& align : cls) {
-				if(!included_ids.count(align.ID())) // proteins doubled as unmodifieds
-					cerr << "TGR: " << strand << " " << tgr << " " << align.ID() << endl;
-			}
+			trusted_group_cds[tgr] = spl[i].m_cds_limits;
+			for(auto& id : spl[i].m_ids)
+				cerr << "TGR: " << strand << " " << tgr << " " << id.first << " " << id.second << endl;	
 		}
     }
 
@@ -6624,14 +6622,14 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
 			continue;
 	
         int strand = align.Strand();
-		if(!trusted_splices.count(strand))
+		if(!tgr_info.count(strand))
 			continue;
 
-        const TGRInfoVec& spl = trusted_splices[strand];
-		auto first = lower_bound(spl.begin(), spl.end(), align.Limits().GetFrom(),
-								 [](const TGRInfo& ti, TSignedSeqPos p) { return get<2>(ti)->Limits().GetTo() < p; }); 
-		auto second = upper_bound(spl.begin(), spl.end(), align.Limits().GetTo(),
-								  [](TSignedSeqPos p, const TGRInfo& ti) { return p < get<2>(ti)->Limits().GetFrom(); });
+        const TGRInfoVec& tinfo = tgr_info[strand];
+		auto first = lower_bound(tinfo.begin(), tinfo.end(), align.Limits().GetFrom(),
+								 [](const STGRInfo& ti, TSignedSeqPos p) { return ti.m_limits.GetTo() < p; }); 
+		auto second = upper_bound(tinfo.begin(), tinfo.end(), align.Limits().GetTo(),
+								  [](TSignedSeqPos p, const STGRInfo& ti) { return p < ti.m_limits.GetFrom(); });
 		if(first == second)
 			continue;
 
@@ -6656,23 +6654,21 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
 
         int count = 0;
         bool paralogs = false;
-        TAccessions prev_accessions;
+        set<string> prev_accessions;
 		for(auto it = first; it != second; ++it) {
-			int tgr = it-spl.begin()+1;
+			int tgr = it-tinfo.begin()+1;
 			if(strand == eMinus)
 				tgr = -tgr;
 
 			int atgr = 0;
-			const TSplices& splices = get<0>(*it);
             for(unsigned int i = 0; i < align.Exons().size() && atgr != tgr; ++i) {
                 const CModelExon& e = align.Exons()[i];
-				if((e.m_fsplice && splices.count(e.GetFrom())) || (e.m_ssplice && splices.count(e.GetTo())))
+				if((e.m_fsplice && it->m_splices.count(e.GetFrom())) || (e.m_ssplice && it->m_splices.count(e.GetTo())))
 					atgr = tgr;
             }
-			TSignedSeqRange cds = get<3>(*it);
+			TSignedSeqRange cds = it->m_cds_limits;
 			if(atgr != tgr && acds.IntersectingWith(cds)) {
-				const list<TIVec>& cds_maps = get<4>(*it);
-				for(const TIVec& tcds_map : cds_maps) {
+				for(const TIVec& tcds_map : it->m_cds_maps) {
 					int long_enough = 10;
 					int mci = MaxCommonInterval(acds_map, tcds_map, long_enough);
 					if(mci >= long_enough) {
@@ -6682,10 +6678,10 @@ void CChainer::CChainerImpl::FilterOutChimeras(TGeneModelList& clust)
 				}
 			}
 			if(atgr == tgr) {
-				const TAccessions& accessions = get<1>(*it);
 				auto num = prev_accessions.size();
-				prev_accessions.insert(accessions.begin(), accessions.end());
-				if(num+accessions.size() != prev_accessions.size()) // overlapping ids
+				for(auto& id : it->m_ids)
+					prev_accessions.insert(id.second);
+				if(num+it->m_ids.size() != prev_accessions.size()) // overlapping ids
 					paralogs = true;
 				++count;
 				align.SetTrustedGroup(tgr);
