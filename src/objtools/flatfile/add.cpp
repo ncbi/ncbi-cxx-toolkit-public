@@ -2373,7 +2373,7 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 }
 
 /**********************************************************/
-static forward_list<string> fta_vnp_structured_comment(string& buf)
+static forward_list<string> fta_vnp_structured_comment(string buf)
 {
     char*      start;
     char*      p;
@@ -2429,14 +2429,14 @@ static forward_list<string> fta_vnp_structured_comment(string& buf)
 }
 
 /**********************************************************/
-static CRef<CUser_object> fta_build_structured_comment(const char* tag, string& buf)
+static CRef<CUser_object> fta_build_structured_comment(string_view tag, string_view scomment)
 {
     CRef<CUser_object> obj;
 
-    if (! tag || *tag == '\0' || buf.empty())
+    if (tag.empty() || scomment.empty())
         return obj;
 
-    auto vnp = fta_vnp_structured_comment(buf);
+    auto vnp = fta_vnp_structured_comment(string(scomment));
     if (vnp.empty())
         return obj;
 
@@ -2473,7 +2473,7 @@ static CRef<CUser_object> fta_build_structured_comment(const char* tag, string& 
 
         field.Reset(new CUser_field);
         field->SetLabel().SetStr(tvnp.substr(0, qq));
-        field->SetData().SetStr((tvnp.substr(q)));
+        field->SetData().SetStr(tvnp.substr(q));
 
         obj->SetData().push_back(field);
     }
@@ -2498,14 +2498,12 @@ static CRef<CUser_object> fta_build_structured_comment(const char* tag, string& 
 /**********************************************************/
 void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 {
-    ValNodeList tagvnp;
-    ValNodePtr vnp;
+    forward_list<string> tagvnp;
 
     char* start;
-    char* tag = nullptr;
+    string tag;
     char* p;
     char* q;
-    char* r;
 
     if (! str || *str == '\0')
         return;
@@ -2523,28 +2521,27 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         }
 
         start = q;
-
-        tag = StringSave(string_view(q, p - q));
+        tag = string(q, p);
+        p += 8;
 
         for (q = p;;) {
-            q = StringStr(q, tag);
+            q = StringStr(q, tag.c_str());
             if (! q) {
                 bad = true;
                 break;
             }
-            size_t i = StringLen(tag);
+            size_t i = tag.size();
             if (! StringEquN(q + i, "-END##", 6)) {
                 q += (i + 6);
                 continue;
             }
-            r = StringStr(p + 8, "-START##");
+            const char* r = StringStr(p, "-START##");
             if (r && r < q) {
                 bad = true;
                 break;
             }
             break;
         }
-        p += 8;
 
         if (bad)
             break;
@@ -2552,36 +2549,32 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
         if (tagvnp.empty()) {
             tagvnp.push_front(tag);
         } else {
-            for (vnp = tagvnp.begin(); vnp != tagvnp.end(); vnp = vnp->next) {
-                r = vnp->data;
-                if (StringEqu(r + 2, tag + 2)) {
-                    if (*r != ' ') {
-                        FtaErrPost(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, "More than one structured comment with the same tag \"{}\" found.", tag + 2);
-                        *r = ' ';
+            for (auto vnp = tagvnp.begin(); vnp != tagvnp.end(); ++vnp) {
+                if (vnp->substr(2) == tag.substr(2)) {
+                    if (vnp->front() != ' ') {
+                        FtaErrPost(SEV_ERROR, ERR_COMMENT_SameStructuredCommentTags, "More than one structured comment with the same tag \"{}\" found.", tag.c_str() + 2);
+                        vnp->front() = ' '; // do not issue the same error again
                     }
                     break;
                 }
-                if (! vnp->next) {
+                if (next(vnp) == tagvnp.end()) {
                     tagvnp.insert_after(vnp, tag);
                     break;
                 }
             }
         }
 
-        if (StringEqu(tag, "##Metadata")) {
-            MemFree(tag);
+        if (tag == "##Metadata") {
             continue;
         }
 
-        if (! SrchTheStr(string_view(p, q), "::")) {
+        string_view scomment(p, q);
+        if (scomment.find("::") == string_view::npos) {
             FtaErrPost(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
-            MemFree(tag);
             continue;
         }
 
-        string buf(p, q);
-        CRef<CUser_object> cur = fta_build_structured_comment(tag, buf);
-        buf.clear();
+        CRef<CUser_object> cur = fta_build_structured_comment(tag, scomment);
 
         if (cur.Empty()) {
             bad = true;
@@ -2590,17 +2583,13 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         objs.push_back(cur);
 
-        fta_StringCpy(start, q + StringLen(tag) + 6);
-        MemFree(tag);
+        fta_StringCpy(start, q + tag.size() + 6);
         p = start;
     }
 
     if (bad) {
-        FtaErrPost(SEV_REJECT, ERR_COMMENT_InvalidStructuredComment, "Incorrectly formatted structured comment with tag \"{}\" encountered. Entry dropped.", tag + 2);
-        MemFree(tag);
+        FtaErrPost(SEV_REJECT, ERR_COMMENT_InvalidStructuredComment, "Incorrectly formatted structured comment with tag \"{}\" encountered. Entry dropped.", tag.c_str() + 2);
     }
-
-    tagvnp.clear();
 }
 
 /**********************************************************/
