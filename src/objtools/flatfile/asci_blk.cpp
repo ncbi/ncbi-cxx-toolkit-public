@@ -2468,7 +2468,7 @@ static bool descr_cmp(const CRef<CSeqdesc>& desc1,
             uop2.IsSetType() && uop2.GetType().IsStr()) {
             str1 = uop1.GetType().GetStr().c_str();
             str2 = uop2.GetType().GetStr().c_str();
-            if (strcmp(str1, str2) <= 0)
+            if (strcmp(str1, str2) < 0)
                 return (true);
             return (false);
         }
