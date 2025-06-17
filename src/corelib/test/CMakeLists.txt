@@ -20,5 +20,5 @@ NCBI_add_app(
   test_ncbi_rwstream test_condvar test_base64 test_trial_check 
   test_message_mt test_ncbicntr test_ncbi_url test_trial 
   test_uncaught_exception test_ncbi_fast test_boost_mt test_ncbimtx
-  test_ncbidiag_perf
+  test_ncbidiag_perf test_ncbi_safe_static
 )

@@ -19,7 +19,7 @@ APP_PROJ = test_tls_object \
            test_ncbi_rwstream test_condvar test_base64 test_trial_check \
            test_message_mt test_ncbicntr test_ncbi_url test_trial \
            test_uncaught_exception test_ncbi_fast test_boost_mt \
-           test_strdbl test_ncbidiag_perf test_ncbimtx
+           test_strdbl test_ncbidiag_perf test_ncbimtx test_ncbi_safe_static
 
 EXPENDABLE_APP_PROJ = test_trial_fail
 PROJ_TAG = test
