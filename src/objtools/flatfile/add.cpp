@@ -1750,13 +1750,8 @@ bool fta_if_valid_biosample(string_view id, bool dblink)
 }
 
 /**********************************************************/
-static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
+static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource source)
 {
-    ValNodeList res;
-    ValNodePtr tvnp;
-    ValNodePtr uvnp;
-    ValNodePtr tagvnp;
-
     bool got_nl;
     bool bad;
     bool sra;
@@ -1780,15 +1775,17 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (*p == ';' || *p == '\t')
             *p = ' ';
 
+    forward_list<string> res;
     res.push_front("dummy");
-    tvnp       = res.begin();
+    auto tvnp   = res.begin();
+    auto tagvnp = res.end();
+
     bad        = false;
     got_nl     = true;
     sra        = false;
     assembly   = false;
     biosample  = false;
     bioproject = false;
-    tagvnp     = nullptr;
 
     for (p = str; *p != '\0'; got_nl = false) {
         while (*p == ' ' || *p == '\n' || *p == ':' || *p == ',') {
@@ -1807,38 +1804,39 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
                     ch = *++t;
                     *t = '\0';
 
-                    if (! StringEqu(p, "Project:") &&
-                        ! StringEqu(p, "Assembly:") &&
-                        ! StringEqu(p, "BioSample:") &&
-                        ! StringEqu(p, "BioProject:") &&
-                        ! StringEqu(p, "Sequence Read Archive:") &&
-                        ! StringEqu(p, "Trace Assembly Archive:")) {
-                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Invalid DBLINK tag encountered: \"{}\". Entry dropped.", p);
+                    string tag(p);
+                    if (! (tag == "Project:") &&
+                        ! (tag == "Assembly:") &&
+                        ! (tag == "BioSample:") &&
+                        ! (tag == "BioProject:") &&
+                        ! (tag == "Sequence Read Archive:") &&
+                        ! (tag == "Trace Assembly Archive:")) {
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Invalid DBLINK tag encountered: \"{}\". Entry dropped.", tag);
                         bad = true;
                         break;
                     }
 
-                    bioproject = StringEqu(p, "BioProject:");
-                    sra        = StringEqu(p, "Sequence Read Archive:");
-                    biosample  = StringEqu(p, "BioSample:");
-                    assembly   = StringEqu(p, "Assembly:");
+                    bioproject = (tag == "BioProject:");
+                    sra        = (tag == "Sequence Read Archive:");
+                    biosample  = (tag == "BioSample:");
+                    assembly   = (tag == "Assembly:");
 
-                    if (tvnp->data && StringChr(tvnp->data, ':')) {
-                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
+                    if (! tvnp->empty() && tvnp->find(':') != string::npos) {
+                        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
                         bad = true;
                         break;
                     }
 
-                    for (uvnp = res.cbegin()->next; uvnp != res.cend(); uvnp = uvnp->next)
-                        if (StringEqu(uvnp->data, p)) {
-                            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", p);
+                    for (auto uvnp = next(res.cbegin()); uvnp != res.cend(); ++uvnp)
+                        if (*uvnp == tag) {
+                            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", tag);
                             bad = true;
                             break;
                         }
                     if (bad)
                         break;
 
-                    tvnp   = res.insert_after(tvnp, p);
+                    tvnp   = res.insert_after(tvnp, std::move(tag));
                     tagvnp = tvnp;
                     *t     = ch;
                     p      = t;
@@ -1868,40 +1866,37 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
         if (q == p)
             continue;
 
-        ch = *p;
-        *p = '\0';
+        string name(q, p);
 
-        if (tagvnp && tagvnp->data) {
-            for (uvnp = tagvnp->next; uvnp; uvnp = uvnp->next) {
-                if (! uvnp->data || ! StringEqu(uvnp->data, q))
+        if (tagvnp != res.end() && ! tagvnp->empty()) {
+            auto uvnp = next(tagvnp);
+            for (; uvnp != res.end(); ++uvnp) {
+                if (uvnp->empty() || *uvnp != name)
                     continue;
 
-                FtaErrPost(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"{}\" from \"{}\" link removed.", q, tagvnp->data);
+                FtaErrPost(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"{}\" from \"{}\" link removed.", name, *tagvnp);
                 break;
             }
 
-            if (uvnp) {
-                *p = ch;
+            if (uvnp != res.end()) {
                 continue;
             }
         }
 
-        if ((bioproject && ! fta_validate_bioproject(q, source)) ||
-            (biosample && ! fta_if_valid_biosample(q, true)) ||
-            (sra && ! fta_if_valid_sra(q, true))) {
-            *p  = ch;
+        if ((bioproject && ! fta_validate_bioproject(name, source)) ||
+            (biosample && ! fta_if_valid_biosample(name, true)) ||
+            (sra && ! fta_if_valid_sra(name, true))) {
             bad = true;
         }
 
         if (assembly)
-            fta_validate_assembly(q);
+            fta_validate_assembly(name);
 
-        tvnp = res.insert_after(tvnp, q);
-        *p   = ch;
+        tvnp = res.insert_after(tvnp, std::move(name));
     }
 
-    if (! bad && tvnp->data && StringChr(tvnp->data, ':')) {
-        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", tvnp->data);
+    if (! bad && ! tvnp->empty() && tvnp->find(':') != string::npos) {
+        FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
         bad = true;
     }
 
@@ -1920,19 +1915,12 @@ static ValNodeList fta_tokenize_dblink(char* str, Parser::ESource source)
 /**********************************************************/
 void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<CUser_object>& dbuop)
 {
-    ValNodeList vnp;
-    ValNodePtr tvnp;
-    ValNodePtr uvnp;
-
-    const char* str;
-    Int4        i;
-
     if (! offset)
         return;
 
     char* str1                   = StringSave(offset + ParFlat_COL_DATA);
     str1[len - ParFlat_COL_DATA] = '\0';
-    vnp                          = fta_tokenize_dblink(str1, source);
+    auto vnp                     = fta_tokenize_dblink(str1, source);
     MemFree(str1);
 
     if (vnp.empty()) {
@@ -1943,12 +1931,12 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_object> user_obj;
     CRef<CUser_field>  user_field;
 
-    for (tvnp = vnp.begin(); tvnp != vnp.end(); tvnp = tvnp->next) {
-        if (StringChr(tvnp->data, ':')) {
+    for (auto tvnp = vnp.begin(); tvnp != vnp.end(); ++tvnp) {
+        if (tvnp->find(':') != string::npos) {
             if (user_obj.NotEmpty())
                 break;
 
-            if (StringEqu(tvnp->data, "Project:")) {
+            if (*tvnp == "Project:") {
                 user_obj.Reset(new CUser_object);
                 CObject_id& id = user_obj->SetType();
 
@@ -1960,7 +1948,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
         if (user_obj.Empty())
             continue;
 
-        str = tvnp->data;
+        const char* str = tvnp->c_str();
         if (! str || *str == '\0')
             continue;
 
@@ -1968,14 +1956,14 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             while (*str >= '0' && *str <= '9')
                 str++;
         if (*str != '\0') {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", tvnp->data);
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", *tvnp);
             continue;
         }
 
         user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(fta_atoi(tvnp->data));
+        user_field->SetData().SetInt(fta_atoi(*tvnp));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new CUser_field);
@@ -1999,9 +1987,9 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     user_field.Reset();
 
     bool inpr = false;
-    for (tvnp = vnp.begin(); tvnp != vnp.end(); tvnp = tvnp->next) {
-        if (StringChr(tvnp->data, ':')) {
-            if (StringEqu(tvnp->data, "Project:")) {
+    for (auto tvnp = vnp.begin(); tvnp != vnp.end(); ++tvnp) {
+        if (tvnp->find(':') != string::npos) {
+            if (*tvnp == "Project:") {
                 inpr = true;
                 continue;
             }
@@ -2013,21 +2001,22 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
                 user_obj->SetType().SetStr("DBLink");
             }
 
-            for (i = 0, uvnp = tvnp->next; uvnp; uvnp = uvnp->next, i++)
-                if (StringChr(uvnp->data, ':'))
+            CUser_field::TNum i = 0;
+            for (auto uvnp = next(tvnp); uvnp != vnp.end(); ++uvnp, ++i)
+                if (uvnp->find(':') != string::npos)
                     break;
 
             user_field.Reset(new CUser_field);
 
-            string lstr(tvnp->data);
-            lstr = lstr.substr(0, lstr.size() - 1);
+            string lstr(*tvnp);
+            lstr.pop_back();
             user_field->SetLabel().SetStr(lstr);
             user_field->SetNum(i);
             user_field->SetData().SetStrs();
 
             user_obj->SetData().push_back(user_field);
         } else if (! inpr && user_obj.NotEmpty()) {
-            user_field->SetData().SetStrs().push_back(tvnp->data);
+            user_field->SetData().SetStrs().push_back(*tvnp);
         }
     }
 
