@@ -8195,71 +8195,69 @@ private:
     mutable CRef<CScope> m_Scope;
 };
 
-void CNewCleanup_imp::CdregionFeatBC (CCdregion& cds, CSeq_feat& seqfeat)
+void CNewCleanup_imp::CdregionFeatBC(CCdregion& cds, CSeq_feat& seqfeat)
 {
     // move the cdregion's xrefs to their destination protein
-    x_MoveCdregionXrefsToProt( cds, seqfeat );
+    x_MoveCdregionXrefsToProt(seqfeat);
 
     // make code-break's location on minus strand if seq-feat's location is
     // on minus strand(and both are on the same seqid)
-    if( FIELD_IS_SET(seqfeat, Location) ) {
-        const ENa_strand seqfeat_loc_strand = GET_FIELD(seqfeat, Location).GetStrand();
-        const CSeq_id* seqfeat_loc_id = GET_FIELD(seqfeat, Location).GetId();
-        if( (seqfeat_loc_strand == eNa_strand_minus) && seqfeat_loc_id ) {
-            EDIT_EACH_CODEBREAK_ON_CDREGION(code_break_iter, cds) {
-                CCode_break &code_break = **code_break_iter;
-                if( FIELD_IS_SET(code_break, Loc) ) {
-                    const ENa_strand code_break_strand = GET_FIELD(code_break, Loc).GetStrand();
-                    const CSeq_id* code_break_id = GET_FIELD(code_break, Loc).GetId();
-                    if( (code_break_strand != eNa_strand_minus) && code_break_id &&
-                        GET_FIELD(code_break, Loc).IsInt() &&
-                        code_break_id->Compare(*seqfeat_loc_id) == CSeq_id::e_YES )
-                    {
-                        GET_MUTABLE(code_break, Loc).SetStrand(eNa_strand_minus);
-                        ChangeMade( CCleanupChange::eChangeStrand );
+    if (seqfeat.IsSetLocation() && cds.IsSetCode_break() && (! cds.GetCode_break().empty())) {
+        const ENa_strand seqfeat_loc_strand = seqfeat.GetLocation().GetStrand();
+        const CSeq_id*   seqfeat_loc_id     = seqfeat.GetLocation().GetId();
+        if ((seqfeat_loc_strand == eNa_strand_minus) && seqfeat_loc_id) {
+            for (auto pCodeBreak : cds.SetCode_break()) {
+                CCode_break& code_break = *pCodeBreak;
+                if (code_break.IsSetLoc()) {
+                    const ENa_strand code_break_strand = code_break.GetLoc().GetStrand();
+                    const CSeq_id*   code_break_id     = code_break.GetLoc().GetId();
+                    if ((code_break_strand != eNa_strand_minus) && code_break_id &&
+                        code_break.GetLoc().IsInt() &&
+                        code_break_id->Compare(*seqfeat_loc_id) == CSeq_id::e_YES) {
+                        code_break.SetLoc().SetStrand(eNa_strand_minus);
+                        ChangeMade(CCleanupChange::eChangeStrand);
                     }
                 }
             }
         }
     }
 
-    // sort/uniq code breaks
-    CCodeBreakCompare code_break_compare( seqfeat.GetLocation(), m_Scope );
-    if( ! CODEBREAK_ON_CDREGION_IS_SORTED(cds, code_break_compare) ) {
-        SORT_CODEBREAK_ON_CDREGION(cds, code_break_compare);
-        ChangeMade(CCleanupChange::eChangeCodeBreak);
-    }
+    if (cds.IsSetCode_break()) {
+        auto&             code_breaks = cds.SetCode_break();
+        // sort/uniq code breaks
+        CCodeBreakCompare code_break_compare(seqfeat.GetLocation(), m_Scope);
+        if (! std::is_sorted(code_breaks.begin(), code_breaks.end(), code_break_compare)) {
+            code_breaks.sort(code_break_compare);
+            ChangeMade(CCleanupChange::eChangeCodeBreak);
+        }
 
-    CCodeBreakEqual code_break_equal( m_Scope );
-    if( ! CODEBREAK_ON_CDREGION_IS_UNIQUE(cds, code_break_equal) ) {
-        UNIQUE_CODEBREAK_ON_CDREGION(cds, code_break_equal);
-        ChangeMade(CCleanupChange::eChangeCodeBreak);
-    }
-    if (cds.IsSetCode_break() && cds.GetCode_break().empty()) {
-        cds.ResetCode_break();
-        ChangeMade(CCleanupChange::eChangeCodeBreak);
+        CCodeBreakEqual code_break_equal(m_Scope);
+        const auto      num_code_breaks = code_breaks.size();
+        code_breaks.unique(code_break_equal);
+        if (code_breaks.size() < num_code_breaks) {
+            ChangeMade(CCleanupChange::eChangeCodeBreak);
+        }
+
+        if (cds.GetCode_break().empty()) {
+            cds.ResetCode_break();
+            ChangeMade(CCleanupChange::eChangeCodeBreak);
+        }
     }
 
     // check if comment is redundant due to selenocysteine or pyrrolysine
-    if( GET_STRING_FLD_OR_BLANK(seqfeat, Comment) == "selenocysteine" ||
-        GET_STRING_FLD_OR_BLANK(seqfeat, Comment) == "pyrrolysine" )
-    {
-        const string & comment = GET_STRING_FLD_OR_BLANK(seqfeat, Comment);
-        FOR_EACH_CODEBREAK_ON_CDREGION(code_break_iter, cds) {
-            const CCode_break &code_break = **code_break_iter;
+    if (cds.IsSetCode_break() && (! cds.GetCode_break().empty()) && seqfeat.IsSetComment() &&
+        (seqfeat.GetComment() == "selenocysteine" || seqfeat.GetComment() == "pyrrolysine")) {
+        const auto& comment = seqfeat.GetComment();
+        for (auto pCodeBreak : cds.SetCode_break()) {
+            const CCode_break& code_break = *pCodeBreak;
             // We only check ncbieaa since that seems to be how the C
             // toolkit behaves.  Maybe in the future, we can also check for
             // ncbi8aa, ncbistdaa, etc.
-            if( FIELD_IS_SET_AND_IS(code_break, Aa, Ncbieaa) ) {
-                if( GET_FIELD(code_break.GetAa(), Ncbieaa) == 'U' &&
-                    comment == "selenocysteine" )
-                {
-                    RESET_FIELD(seqfeat, Comment);
-                    ChangeMade(CCleanupChange::eChangeComment);
-                } else if( GET_FIELD(code_break.GetAa(), Ncbieaa) == 'O' &&
-                    comment == "pyrrolysine" )
-                {
-                    RESET_FIELD(seqfeat, Comment);
+            if (code_break.IsSetAa() && code_break.GetAa().IsNcbieaa()) {
+                const auto& aa = code_break.GetAa().GetNcbieaa();
+                if ((aa == 'U' && comment == "selenocysteine") ||
+                    (aa == 'O' && comment == "pyrrolysine")) {
+                    seqfeat.ResetComment();
                     ChangeMade(CCleanupChange::eChangeComment);
                 }
             }
@@ -8419,7 +8417,7 @@ void s_CopyProtXrefToProtFeat( CProt_ref &prot_ref, CProt_ref &cds_prot_ref )
     }
 }
 
-void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion&, CSeq_feat& seqfeat)
+void CNewCleanup_imp::x_MoveCdregionXrefsToProt(CSeq_feat& seqfeat)
 {
     if( !seqfeat.IsSetXref() || ! seqfeat.IsSetProduct() ) {
         return;
@@ -8428,10 +8426,25 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion&, CSeq_feat& seqfeat)
         return;
     }
 
-    // get the protein
+    // get the protein id
+    const auto* product_id = seqfeat.GetProduct().GetId();
+    if (! product_id) {
+        return;
+    }
 
     // get protein sequence for product
-    CBioseq_Handle product_bioseq = m_Scope->GetBioseqHandle(seqfeat.GetProduct());
+    // RW-2521 - restrict search for product sequence to TSE
+    CScope::TTSE_Handles tse_handles;
+    m_Scope->GetAllTSEs(tse_handles);
+
+    CBioseq_Handle product_bioseq;
+    for (auto tse_handle : tse_handles) {
+        product_bioseq = m_Scope->GetBioseqHandleFromTSE(*product_id, tse_handle);
+        if (product_bioseq) {
+            break;
+        }
+    }
+
     if (product_bioseq) {
         CConstRef<CBioseq> pseq = product_bioseq.GetCompleteBioseq();
         if (pseq && pseq->IsSetAnnot()) {
@@ -8444,10 +8457,9 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion&, CSeq_feat& seqfeat)
                             auto xref = xref_list.begin();
                             while (xref != xref_list.end()) {
                                 if ((*xref)->IsSetData() && (*xref)->GetData().IsProt()) {
-                                    CRef<CSeq_feat> pfeat(const_cast<CSeq_feat *>(fit.GetPointer()));
-                                    ProtrefBC(pfeat->SetData().SetProt());
+                                    ProtrefBC(fit->SetData().SetProt());
                                     ProtrefBC((*xref)->SetData().SetProt());
-                                    s_CopyProtXrefToProtFeat(pfeat->SetData().SetProt(),
+                                    s_CopyProtXrefToProtFeat(fit->SetData().SetProt(),
                                         (*xref)->SetData().SetProt());
                                     xref = xref_list.erase(xref);
                                     ChangeMade(CCleanupChange::eMoveToProtXref);
