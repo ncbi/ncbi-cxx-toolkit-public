@@ -241,12 +241,8 @@ void x_BasicCleanupOrgRefMod( Tcontainer_std_string_ & arg0 );
   void x_BasicCleanupOrgNameName( COrgName::C_Name & arg0 );
   void x_BasicCleanupHybridOrgName( COrgName & arg0 );
   void x_BasicCleanupOrgName( COrgName & arg0, CBioSource* pBiosrc=nullptr);
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_cdregion_code_break_E_E_ETC( CCode_break & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_cdregion_code_break_E_ETC( CCode_break & arg0 );
-  template< typename Tcontainer_ncbi_cref_ccode_break_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_cdregion_cdregion_code_break_ETC( Tcontainer_ncbi_cref_ccode_break_ & arg0 );
-  void x_BasicCleanupSeqFeat_data_data_cdregion_cdregion( CCdregion & arg0 );
-  void x_BasicCleanupSeqFeat_data_data_cdregion( CCdregion & arg0 );
+  void x_BasicCleanupCodeBreak( CCode_break & arg0 );
+  void x_BasicCleanupCdregion( CCdregion & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_E_ETC( CClone_seq & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_clone_clone_clone_seq_clone_seq_E_ETC( CClone_seq & arg0 );
   template< typename Tcontainer_ncbi_cref_cclone_seq_ >

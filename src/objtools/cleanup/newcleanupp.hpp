@@ -440,7 +440,7 @@ private:
 
     void x_RemoveFlankingQuotes( string &val );
 
-    void x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqfeat);
+    void x_MoveCdregionXrefsToProt(CSeq_feat& seqfeat);
     bool x_InGpsGenomic( const CSeq_feat& seqfeat );
 
     void x_AddNonCopiedQual(
