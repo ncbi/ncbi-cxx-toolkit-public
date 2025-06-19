@@ -78,6 +78,7 @@
 #include "entry.h"
 #include "ref.h"
 #include "xutils.h"
+#include "valnode.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -1667,7 +1668,7 @@ static bool AddToList(ValNodeList& L, char* str)
     for (vnp = L.begin(); vnp != L.end(); vnp = vnp->next)
         if (StringEqu(vnp->data, str))
             break;
-    if (vnp)
+    if (vnp != L.end())
         return false;
 
     if (dot) {
@@ -1685,14 +1686,14 @@ static bool AddToList(ValNodeList& L, char* str)
         }
         *dot = '.';
     }
-    vnp = ConstructValNode(CSeq_id::e_not_set, str);
+
     if (! L.empty()) {
         ValNodePtr tail = L.head;
         while (tail->next)
             tail = tail->next;
-        tail->next = vnp;
+        L.emplace_after(tail, CSeq_id::e_not_set, str);
     } else
-        L.head = vnp;
+        L.emplace_front(CSeq_id::e_not_set, str);
 
     return true;
 }
@@ -1888,7 +1889,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list.push_front("dummy");
+    embl_acc_list.emplace_front(CSeq_id::E_Choice::e_not_set, "dummy");
     embl_vnp        = embl_acc_list.begin();
     check_embl_prot = false;
     for (ptr = str;;) {
@@ -1972,10 +1973,8 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 p = nullptr;
 
             if (ntype > CSeq_id::e_not_set) {
-                embl_vnp->next = ConstructValNode(ptype, token3);
-                embl_vnp       = embl_vnp->next;
-                embl_vnp->next = ConstructValNode(ntype, token2);
-                embl_vnp       = embl_vnp->next;
+                embl_vnp = embl_acc_list.emplace_after(embl_vnp, ptype, token3);
+                embl_vnp = embl_acc_list.emplace_after(embl_vnp, ntype, token2);
             }
 
             if (! AddToList(pid_list, token3)) {

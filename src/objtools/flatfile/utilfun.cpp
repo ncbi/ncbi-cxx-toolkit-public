@@ -1331,16 +1331,6 @@ void check_est_sts_gss_tpa_kwds(const TKeywordList& kwds, size_t len, IndexblkPt
 }
 
 /**********************************************************/
-ValNodePtr ConstructValNode(CSeq_id::E_Choice choice, string_view data)
-{
-    ValNodePtr res;
-
-    res         = ValNodeNew(nullptr, data);
-    res->choice = choice;
-    return (res);
-}
-
-/**********************************************************/
 bool fta_check_mga_keywords(CMolInfo& mol_info, const TKeywordList& kwds)
 {
     bool is_cage;

@@ -50,7 +50,6 @@
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 #include <forward_list>
 #include <variant>
-#include "valnode.h"
 
 BEGIN_NCBI_SCOPE
 
