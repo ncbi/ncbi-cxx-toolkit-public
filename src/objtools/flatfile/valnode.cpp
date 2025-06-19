@@ -50,21 +50,12 @@ BEGIN_NCBI_SCOPE
  *      adds after prev if not NULL
  *
  *****************************************************************************/
-ValNodePtr ValNodeNew(ValNodePtr prev, CSeq_id::E_Choice choice, string_view data)
+ValNode::ValNode(CSeq_id::E_Choice c, string_view d) :
+    choice(c)
 {
-    ValNodePtr newnode = new ValNode;
-
-    if (prev) {
-        prev->next = newnode;
+    if (! d.empty()) {
+        data = StringSave(d);
     }
-
-    if (! data.empty()) {
-        newnode->data = StringSave(data);
-    }
-
-    newnode->choice = choice;
-
-    return newnode;
 }
 
 /*****************************************************************************
