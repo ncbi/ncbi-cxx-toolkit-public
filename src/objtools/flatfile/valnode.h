@@ -50,10 +50,10 @@ struct ValNode {
     CSeq_id::E_Choice choice = CSeq_id::e_not_set; /* to pick a choice */
     char*         data     = nullptr; /* attached data */
     ValNode*      next     = nullptr; /* next in linked list */
+
+    ValNode(CSeq_id::E_Choice, string_view);
 };
 using ValNodePtr = ValNode*;
-
-ValNodePtr ValNodeNew(ValNodePtr prev, CSeq_id::E_Choice choice, string_view data);
 
 struct ValNodeList {
     ValNode* head = nullptr;
@@ -67,11 +67,13 @@ struct ValNodeList {
 
     void emplace_front(CSeq_id::E_Choice choice, string_view data)
     {
-        head = ValNodeNew(nullptr, choice, data);
+        head = new ValNode(choice, data);
     }
     static ValNode* emplace_after(ValNode* pos, CSeq_id::E_Choice choice, string_view data)
     {
-        return ValNodeNew(pos, choice, data);
+        ValNode* newnode = new ValNode(choice, data);
+        pos->next        = newnode;
+        return newnode;
     }
     void pop_front()
     {
