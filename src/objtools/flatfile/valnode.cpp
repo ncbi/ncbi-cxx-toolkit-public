@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
  *      adds after prev if not NULL
  *
  *****************************************************************************/
-ValNodePtr ValNodeNew(ValNodePtr prev, string_view data)
+ValNodePtr ValNodeNew(ValNodePtr prev, CSeq_id::E_Choice choice, string_view data)
 {
     ValNodePtr newnode = new ValNode;
 
@@ -62,27 +62,9 @@ ValNodePtr ValNodeNew(ValNodePtr prev, string_view data)
         newnode->data = StringSave(data);
     }
 
+    newnode->choice = choice;
+
     return newnode;
-}
-
-/*****************************************************************************
- *
- *   ValNodeFree(vnp)
- *      frees whole chain of ValNodes
- *       Does NOT free associated data pointers
- *           see ValNodeFreeData()
- *
- *****************************************************************************/
-ValNodePtr ValNodeFree(ValNodePtr vnp)
-{
-    ValNodePtr next;
-
-    while (vnp) {
-        next = vnp->next;
-        delete vnp;
-        vnp = next;
-    }
-    return nullptr;
 }
 
 /*****************************************************************************
