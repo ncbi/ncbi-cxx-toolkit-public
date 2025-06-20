@@ -218,6 +218,40 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "SetNamedSecurityInfo / RtValidSid"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlValidSid;
+			...;
+			mod=advapi32.dll,func=SetNamedSecurityInfoA;
+		}
+	}
+}
+suppression = {
+	name = "vector_algorithms.cpp -- _Find_vectorized"
+	type = {invalid_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_4,unsigned int>(const void *, const void *, unsigned int)",src=vector_algorithms.cpp;
+			func=_Find_vectorized;
+		}
+	}
+}
+suppression = {
+	name = "vector_algorithms.cpp -- _Find_vectorized"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_4,unsigned int>(const void *, const void *, unsigned int)",src=vector_algorithms.cpp;
+			func=_Find_vectorized;
+		}
+	}
+}
 
 
 
