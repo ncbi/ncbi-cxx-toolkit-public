@@ -118,11 +118,13 @@ struct FTATpaBlock {
 using FTATpaBlockPtr = FTATpaBlock*;
 
 struct FTATpaSpan {
-    Int4        from = 0;
-    Int4        to   = 0;
-    FTATpaSpan* next = nullptr;
+    Int4 from = 0;
+    Int4 to   = 0;
+    FTATpaSpan(Int4 f, Int4 t) :
+        from(f), to(t)
+    {
+    }
 };
-using FTATpaSpanPtr = FTATpaSpan*;
 
 /**********************************************************/
 static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
@@ -991,46 +993,38 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, CMolInfo& mol_info)
 /**********************************************************/
 static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tpa)
 {
-    FTATpaBlockPtr tftbp;
-    FTATpaSpanPtr  ftsp;
-    FTATpaSpanPtr  tftsp;
-    Int4           i1;
-    Int4           i2;
-    Int4           j;
+    forward_list<FTATpaSpan> ftsp;
 
     if (! ftbp || length < 1)
         return;
 
-    ftsp       = new FTATpaSpan;
-    ftsp->from = ftbp->from1;
-    ftsp->to   = ftbp->to1;
-    ftsp->next = nullptr;
-    tftsp      = ftsp;
-    for (tftbp = ftbp; tftbp; tftbp = tftbp->next) {
-        i1 = tftbp->to1 - tftbp->from1;
-        i2 = tftbp->to2 - tftbp->from2;
-        j  = (i2 > i1) ? (i2 - i1) : (i1 - i2);
+    ftsp.emplace_front(ftbp->from1, ftbp->to1);
+    auto tftsp = ftsp.begin();
+    for (auto tftbp = ftbp; tftbp != nullptr; tftbp = tftbp->next) {
+        Int4 i1 = tftbp->to1 - tftbp->from1;
+        Int4 i2 = tftbp->to2 - tftbp->from2;
+        Int4 j  = (i2 > i1) ? (i2 - i1) : (i1 - i2);
         i1++;
 
         if (i1 < 3000 && j * 10 > i1) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_SpanLengthDiff, 
-                        "Span \"{}..{}\" of this TPA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", 
+                FtaErrPost(SEV_ERROR, ERR_TPA_SpanLengthDiff,
+                        "Span \"{}..{}\" of this TPA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.",
                         tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_SpanLengthDiff, 
-                        "Span \"{}..{}\" of this TSA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.", 
+                FtaErrPost(SEV_ERROR, ERR_TSA_SpanLengthDiff,
+                        "Span \"{}..{}\" of this TSA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.",
                         tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
         }
 
         if (i1 >= 3000 && j > 300) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_SpanDiffOver300bp, 
-                        "Span \"{}..{}\" of this TPA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", 
+                FtaErrPost(SEV_ERROR, ERR_TPA_SpanDiffOver300bp,
+                        "Span \"{}..{}\" of this TPA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.",
                         tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_SpanDiffOver300bp, 
-                        "Span \"{}..{}\" of this TSA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.", 
+                FtaErrPost(SEV_ERROR, ERR_TSA_SpanDiffOver300bp,
+                        "Span \"{}..{}\" of this TSA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.",
                         tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
         }
 
@@ -1040,34 +1034,31 @@ static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tp
             continue;
         }
 
-        tftsp->next = new FTATpaSpan;
-        tftsp       = tftsp->next;
-        tftsp->from = tftbp->from1;
-        tftsp->to   = tftbp->to1;
+        tftsp = ftsp.emplace_after(tftsp, tftbp->from1, tftbp->to1);
     }
 
-    if (ftsp->from - 1 > 50) {
+    if (ftsp.front().from - 1 > 50) {
         if (tpa)
-            FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1);
+            FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp.front().from - 1);
         else
-            FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->from - 1);
+            FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp.front().from - 1);
     }
 
-    for (; ftsp; ftsp = tftsp) {
-        tftsp = ftsp->next;
-        if (tftsp && tftsp->from - ftsp->to - 1 > 50) {
+    for (auto it = ftsp.begin(); it != ftsp.end();) {
+        auto it_next = next(it);
+        if (it_next != ftsp.end() && it_next->from - it->to - 1 > 50) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, it_next->from - 1);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, tftsp->from - 1);
-        } else if (! tftsp && length - ftsp->to > 50) {
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, it_next->from - 1);
+        } else if (it_next == ftsp.end() && length - it->to > 50) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, length);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp->to + 1, length);
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, length);
         }
-
-        delete ftsp;
+        // ftsp.pop_front();
+        it = it_next;
     }
 }
 
