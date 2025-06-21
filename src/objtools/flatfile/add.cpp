@@ -113,9 +113,16 @@ struct FTATpaBlock {
     Int4              to2       = 0;
     ENa_strand        strand    = eNa_strand_unknown;
     CSeq_id::E_Choice sicho     = CSeq_id::e_not_set;
-    FTATpaBlock*      next      = nullptr;
+
+    FTATpaBlock(Int4 f, Int4 t) :
+        from1(f), to1(t) {}
+    ~FTATpaBlock()
+    {
+        if (accession)
+            MemFree(accession);
+    }
 };
-using FTATpaBlockPtr = FTATpaBlock*;
+using FTATpaBlockList = forward_list<FTATpaBlock>;
 
 struct FTATpaSpan {
     Int4 from = 0;
@@ -125,19 +132,6 @@ struct FTATpaSpan {
     {
     }
 };
-
-/**********************************************************/
-static void fta_tpa_block_free(FTATpaBlockPtr ftbp)
-{
-    FTATpaBlockPtr next;
-
-    for (; ftbp; ftbp = next) {
-        next = ftbp->next;
-        if (ftbp->accession)
-            MemFree(ftbp->accession);
-        delete ftbp;
-    }
-}
 
 /**********************************************************
  *
@@ -991,16 +985,16 @@ bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, CMolInfo& mol_info)
 }
 
 /**********************************************************/
-static void fta_check_tpa_tsa_coverage(FTATpaBlockPtr ftbp, Int4 length, bool tpa)
+static void fta_check_tpa_tsa_coverage(const FTATpaBlockList& ftbp, Int4 length, bool tpa)
 {
     forward_list<FTATpaSpan> ftsp;
 
-    if (! ftbp || length < 1)
+    if (ftbp.empty() || length < 1)
         return;
 
-    ftsp.emplace_front(ftbp->from1, ftbp->to1);
+    ftsp.emplace_front(ftbp.front().from1, ftbp.front().to1);
     auto tftsp = ftsp.begin();
-    for (auto tftbp = ftbp; tftbp != nullptr; tftbp = tftbp->next) {
+    for (auto tftbp = ftbp.begin(); tftbp != ftbp.end(); ++tftbp) {
         Int4 i1 = tftbp->to1 - tftbp->from1;
         Int4 i2 = tftbp->to2 - tftbp->from2;
         Int4 j  = (i2 > i1) ? (i2 - i1) : (i1 - i2);
@@ -1124,9 +1118,7 @@ bool fta_number_is_huge(const Char* s)
 /**********************************************************/
 bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa)
 {
-    FTATpaBlockPtr ftbp;
-    FTATpaBlockPtr tftbp;
-    FTATpaBlockPtr ft;
+    FTATpaBlockList ftbp;
 
     string      buf;
     char*       p;
@@ -1136,10 +1128,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     const char* bad_accession;
     bool        bad_line;
     bool        bad_interval;
-    Int4        from1;
-    Int4        to1;
-    Int4        len1;
-    Int4        len2;
 
     CSeq_id::E_Choice choice;
 
@@ -1166,7 +1154,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         buf.assign(p + 1, offset + len);
     }
 
-    ftbp = new FTATpaBlock;
+    ftbp.emplace_front(0, 0); // dummy
 
     bad_line      = false;
     bad_interval  = false;
@@ -1186,7 +1174,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
 
         *p++  = '\0';
-        from1 = fta_atoi(r);
+        Int4 from1 = fta_atoi(r);
 
         for (r = p; *p >= '0' && *p <= '9';)
             p++;
@@ -1196,23 +1184,21 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
         if (*p != '\0')
             *p++ = '\0';
-        to1 = fta_atoi(r);
+        Int4 to1 = fta_atoi(r);
 
         if (from1 >= to1) {
             bad_interval = true;
             break;
         }
 
-        for (ft = ftbp; ft->next; ft = ft->next)
-            if ((ft->next->from1 > from1) ||
-                (ft->next->from1 == from1 && ft->next->to1 > to1))
+        auto ft = ftbp.begin();
+        for (;; ++ft) {
+            auto it_next = next(ft);
+            if (it_next == ftbp.end() || (it_next->from1 > from1) ||
+                (it_next->from1 == from1 && it_next->to1 > to1))
                 break;
-        tftbp       = new FTATpaBlock;
-        tftbp->next = ft->next;
-        ft->next    = tftbp;
-
-        tftbp->from1 = from1;
-        tftbp->to1   = to1;
+        }
+        auto tftbp = ftbp.emplace_after(ft, from1, to1);
 
         while (*p == ' ')
             p++;
@@ -1323,15 +1309,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
         }
 
-        if (ftbp)
-            fta_tpa_block_free(ftbp);
+        ftbp.clear();
         return false;
     }
 
-    tftbp      = ftbp->next;
-    ftbp->next = nullptr;
-    delete ftbp;
-    ftbp = tftbp;
+    ftbp.pop_front(); // dummy
 
     fta_check_tpa_tsa_coverage(ftbp, bioseq.GetLength(), tpa);
 
@@ -1344,9 +1326,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     root_align->SetType(CSeq_align::eType_not_set);
     CSeq_align_set& align_set = root_align->SetSegs().SetDisc();
 
-    for (; tftbp; tftbp = tftbp->next) {
-        len1 = tftbp->to1 - tftbp->from1 + 1;
-        len2 = tftbp->to2 - tftbp->from2 + 1;
+    for (auto it = ftbp.begin(); it != ftbp.end(); ++it) {
+        Int4 len1 = it->to1 - it->from1 + 1;
+        Int4 len2 = it->to2 - it->from2 + 1;
 
         CRef<CSeq_align> align(new CSeq_align);
         align->SetType(CSeq_align::eType_partial);
@@ -1357,15 +1339,15 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         seg.SetDim(2);
         seg.SetNumseg((len1 == len2) ? 1 : 2);
 
-        seg.SetStarts().push_back(tftbp->from1 - 1);
-        seg.SetStarts().push_back(tftbp->from2 - 1);
+        seg.SetStarts().push_back(it->from1 - 1);
+        seg.SetStarts().push_back(it->from2 - 1);
 
         if (len1 != len2) {
             if (len1 < len2) {
                 seg.SetStarts().push_back(-1);
-                seg.SetStarts().push_back(tftbp->from2 - 1 + len1);
+                seg.SetStarts().push_back(it->from2 - 1 + len1);
             } else {
-                seg.SetStarts().push_back(tftbp->from1 - 1 + len2);
+                seg.SetStarts().push_back(it->from1 - 1 + len2);
                 seg.SetStarts().push_back(-1);
             }
         }
@@ -1381,11 +1363,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
 
         seg.SetStrands().push_back(eNa_strand_plus);
-        seg.SetStrands().push_back(tftbp->strand);
+        seg.SetStrands().push_back(it->strand);
 
         if (len1 != len2) {
             seg.SetStrands().push_back(eNa_strand_plus);
-            seg.SetStrands().push_back(tftbp->strand);
+            seg.SetStrands().push_back(it->strand);
         }
 
         CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -1399,11 +1381,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         SetTextId(choice, *id, *text_id);
         seg.SetIds().push_back(id);
 
-        if (StringEquNI(tftbp->accession, "ti", 2)) {
+        if (StringEquNI(it->accession, "ti", 2)) {
             CRef<CSeq_id> gen_id(new CSeq_id);
             CDbtag&       tag = gen_id->SetGeneral();
 
-            for (r = tftbp->accession + 2; *r == '0';)
+            for (r = it->accession + 2; *r == '0';)
                 r++;
             if (fta_number_is_huge(r) == false)
                 tag.SetTag().SetId(fta_atoi(r));
@@ -1414,13 +1396,13 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             seg.SetIds().push_back(gen_id);
         } else {
             CRef<CTextseq_id> otext_id(new CTextseq_id);
-            otext_id->SetAccession(tftbp->accession);
+            otext_id->SetAccession(it->accession);
 
-            if (tftbp->version > 0)
-                otext_id->SetVersion(tftbp->version);
+            if (it->version > 0)
+                otext_id->SetVersion(it->version);
 
             aux_id.Reset(new CSeq_id);
-            SetTextId(tftbp->sicho, *aux_id, *otext_id);
+            SetTextId(it->sicho, *aux_id, *otext_id);
         }
 
         if (aux_id.NotEmpty())
@@ -1431,8 +1413,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     assembly.push_back(root_align);
 
-    if (ftbp)
-        fta_tpa_block_free(ftbp);
+    ftbp.clear();
     return true;
 }
 
