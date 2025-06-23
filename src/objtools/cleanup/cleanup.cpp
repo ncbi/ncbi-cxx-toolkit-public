@@ -2395,9 +2395,9 @@ static bool s_RemoveSuffixFromNames(const string& suffix, list<string>& names)
     return change_made;
 }
 
-static bool s_RemoveTaxnameFromProtRef(const string& taxname, CBioseq& bioseq, CScope* pScope)
+static bool s_RemoveTaxnameFromProtRef(const string& taxname, CBioseq_Handle bsh)
 {
-    if (! bioseq.IsSetAnnot()) {
+    if (! bsh.HasAnnots()) {
         return false;
     }
 
@@ -2409,52 +2409,41 @@ static bool s_RemoveTaxnameFromProtRef(const string& taxname, CBioseq& bioseq, C
 
     bool change_made{ false };
 
-    for (auto pAnnot : bioseq.SetAnnot()) {
-        if (! pAnnot->IsFtable()) {
+    // Consider also the case where bsh doesn't have a parent entry
+    CSeq_annot_CI annot_it(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for(; annot_it; ++annot_it) {
+        if (! annot_it->IsFtable()) {
             continue;
         }
-
-        for (auto pFeat : pAnnot->SetData().SetFtable()) {
-            CSeqFeatData& data = pFeat->SetData();
-            if ((! data.IsProt()) || (! data.GetProt().IsSetName())) {
-                continue;
-            }
-            CProt_ref& prot_ref = data.SetProt();
-
-            // If pScope, operate on temporary array of names.
-            // If any changes have been made to the temporay array, use CSeq_feat_EditHandle to update OM.
-            if (pScope) {
-                auto temp_names = prot_ref.GetName(); // copy names list
+        SAnnotSelector sel;
+        sel.SetFeatType(CSeqFeatData::e_Prot);
+        CFeat_CI feat_it(*annot_it, sel);
+        for (; feat_it; ++feat_it) {
+            if (feat_it->GetOriginalFeature().GetData().GetProt().IsSetName()) {
+                auto temp_names = feat_it->GetOriginalFeature().GetData().GetProt().GetName();
                 if (s_RemoveSuffixFromNames(taxname_in_brackets, temp_names)) {
                     change_made = true;
-                    CSeq_feat_EditHandle sfeh(pScope->GetSeq_featHandle(*pFeat));
-                    prot_ref.SetName() = move(temp_names);
-                    sfeh.Update();
+                    auto pEditedFeat = Ref(new CSeq_feat());
+                    pEditedFeat->Assign(feat_it->GetOriginalFeature());
+                    pEditedFeat->SetData().SetProt().SetName() = move(temp_names);
+                    CSeq_feat_EditHandle(*feat_it).Replace(*pEditedFeat);
                 }
-            } else if (s_RemoveSuffixFromNames(taxname_in_brackets, prot_ref.SetName())) {
-                change_made = true;
             }
         }
     }
+
     return change_made;
 }
 
 
-static bool s_HasIdType(const list<CRef<CSeq_id>>& ids, CSeq_id::E_Choice type)
-{
-    for (auto pId : ids) {
-        if (pId && (pId->Which() == type)) {
-            return true;
+static bool s_IsSwissProt(const CBioseq_Handle& bsh) {
+    if (bsh.IsSetId()) {    
+        for (auto id_handle : bsh.GetId()) {
+            auto pId = id_handle.GetSeqId();
+            if (pId && (pId->Which() == CSeq_id::e_Swissprot)) {
+                return true;
+            }
         }
-    }
-    return false;
-}
-
-
-static bool s_IsSwissProt(const CBioseq& bioseq)
-{
-    if (bioseq.IsSetId()) {
-        return s_HasIdType(bioseq.GetId(), CSeq_id::e_Swissprot);
     }
     return false;
 }
@@ -2508,19 +2497,19 @@ static void s_GetMolInfoAndSrcDescriptors(const CSeq_descr&    seq_descr,
 }
 
 
-static auto s_GetMolInfoAndSrcDescriptors(const CBioseq& bioseq)
+static auto s_GetMolInfoAndSrcDescriptors(const CBioseq_Handle& bsh)
 {
     CConstRef<CSeqdesc> pMolinfoDesc;
     CConstRef<CSeqdesc> pSrcDesc;
 
-    if (bioseq.IsSetDescr()) {
-        s_GetMolInfoAndSrcDescriptors(bioseq.GetDescr(), pMolinfoDesc, pSrcDesc);
+    if (bsh.IsSetDescr()) {
+        s_GetMolInfoAndSrcDescriptors(bsh.GetDescr(), pMolinfoDesc, pSrcDesc);
     }
 
     if ((! pMolinfoDesc) || (! pSrcDesc)) {
-        auto pParentSet = bioseq.GetParentSet();
-        if (pParentSet && pParentSet->IsSetDescr()) {
-            s_GetMolInfoAndSrcDescriptors(pParentSet->GetDescr(),
+        auto pParentSet = bsh.GetParentBioseq_set();
+        if (pParentSet && pParentSet.IsSetDescr()) {
+            s_GetMolInfoAndSrcDescriptors(pParentSet.GetDescr(),
                                           pMolinfoDesc,
                                           pSrcDesc);
         }
@@ -2598,28 +2587,29 @@ static void s_UpdateTitleString(const CBioSource& src, bool bPartial, string& sT
     }
 }
 
-// Fetch a CRef to the bioseq title descriptor
-static auto s_GetTitleDesc(CSeq_descr& descr)
+// Fetch a CConstRef to the bioseq title descriptor
+static CConstRef<CSeqdesc> s_GetTitleDesc(const CSeq_descr& descr)
 {
     // Returns the last title descriptor - is that intentional?
-    auto& desc_list = descr.Set();
+    const auto& desc_list = descr.Get();
     for (auto it = desc_list.rbegin(); it != desc_list.rend(); ++it) {
         if ((*it)->IsTitle()) {
             return *it;
         }
     }
-    return CRef<CSeqdesc>();
+    return CConstRef<CSeqdesc>();
 }
 
-bool CCleanup::AddPartialToProteinTitle(CBioseq& bioseq, CScope* pScope)
+
+bool CCleanup::AddPartialToProteinTitle(CBioseq_Handle bsh)
 {
     // Bail if not protein
-    if (! bioseq.IsSetInst() || ! bioseq.GetInst().IsSetMol() || ! bioseq.GetInst().IsAa()) {
+    if (! bsh.IsSetInst_Mol() || ! bsh.GetInst_Mol() == CSeq_inst::eMol_aa ) {
         return false;
     }
 
     // Bail if record is swissprot
-    if (s_IsSwissProt(bioseq)) {
+    if (s_IsSwissProt(bsh)) {
         return false;
     }
 
@@ -2629,7 +2619,7 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq& bioseq, CScope* pScope)
     CConstRef<CSeqdesc> src_desc;
     // Look for molinfo and src descriptors, first on the bioseq, then
     // on the parent set
-    auto                molinfo_and_src = s_GetMolInfoAndSrcDescriptors(bioseq);
+    auto                molinfo_and_src = s_GetMolInfoAndSrcDescriptors(bsh);
     molinfo_desc                        = molinfo_and_src.first;
     src_desc                            = molinfo_and_src.second;
     if (! src_desc || (! src_desc->GetSource().IsSetOrg())) {
@@ -2638,16 +2628,17 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq& bioseq, CScope* pScope)
     const auto& source = src_desc->GetSource();
     const auto& org    = source.GetOrg();
 
+
     if (org.IsSetTaxname()) {
-        s_RemoveTaxnameFromProtRef(org.GetTaxname(), bioseq, pScope); // Note: this may modify Prot-ref names
+        s_RemoveTaxnameFromProtRef(org.GetTaxname(), bsh); // Note: this may modify Prot-ref names
     }
 
     // find the title to edit
-    if (! bioseq.IsSetDescr()) {
+    if (! bsh.IsSetDescr()) {
         return false;
     }
 
-    CRef<CSeqdesc> title_desc = s_GetTitleDesc(bioseq.SetDescr());
+    CConstRef<CSeqdesc> title_desc = s_GetTitleDesc(bsh.GetDescr());
     if (! title_desc) {
         return false;
     }
@@ -2658,14 +2649,9 @@ bool CCleanup::AddPartialToProteinTitle(CBioseq& bioseq, CScope* pScope)
 
     // Check for change to title string
     if (title != title_desc->GetTitle()) {
-        if (pScope) {
-            auto pNewTitleDesc = Ref(new CSeqdesc());
-            pNewTitleDesc->SetTitle() = move(title);
-            auto bsh = pScope->GetBioseqHandle(bioseq);
-            bsh.GetEditHandle().ReplaceSeqdesc(*title_desc, *pNewTitleDesc);
-        } else {
-            title_desc->SetTitle() = move(title);
-        }
+        auto pNewTitleDesc = Ref(new CSeqdesc());
+        pNewTitleDesc->SetTitle() = move(title);
+        bsh.GetEditHandle().ReplaceSeqdesc(*title_desc, *pNewTitleDesc);
         return true;
     }
 

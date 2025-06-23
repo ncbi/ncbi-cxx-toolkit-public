@@ -419,9 +419,11 @@ private:
     void x_SubSourceBC( CSubSource & subsrc );
     void x_OrgModBC( COrgMod & orgmod );
 
+public:
     void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq_Handle bsh);
 
-    void x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope);
+    void AddPartialToProteinTitle(CBioseq_Handle bsh);
+private:
 
     string x_ExtractSatelliteFromComment( string &comment );
 
@@ -511,7 +513,6 @@ private:
     void AddMolInfo(CBioseq_set& set, const CMolInfo& mol);
     void AddMolInfo(CBioseq& seq, const CMolInfo& mol);
 
-private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
 
     void x_FixStructuredCommentKeywords(CSeq_descr& descr);

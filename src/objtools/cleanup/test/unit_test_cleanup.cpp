@@ -62,6 +62,10 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
+
+
+
 static CRef<CBioseq> s_MakeProtein()  // RW-2486
 {
     auto pBioseq = Ref(new CBioseq());
@@ -100,36 +104,32 @@ static CRef<CBioseq> s_MakeProtein()  // RW-2486
     }
 
     // Add a protein feature
-    auto pFeat = Ref(new CSeq_feat());
-    pFeat->SetData().SetProt().SetName().push_back("ABCD [dummy taxname]");
-    pFeat->SetLocation().SetInt().SetId(*pId);
-    pFeat->SetLocation().SetInt().SetFrom(0);
-    pFeat->SetLocation().SetInt().SetTo(seq_data.size()-1); 
-    pFeat->SetPartial(true);
+    auto pFeat1 = Ref(new CSeq_feat());
+    pFeat1->SetData().SetProt().SetName().push_back("ABCD [dummy taxname]");
+    pFeat1->SetLocation().SetInt().SetId(*pId);
+    pFeat1->SetLocation().SetInt().SetFrom(0);
+    pFeat1->SetLocation().SetInt().SetTo(seq_data.size()-1); 
+    pFeat1->SetPartial(true);
+
+    // Adding different feature types to check that the iteration over features
+    // works as expected.
+    auto pFeat2 = Ref(new CSeq_feat());
+    pFeat2->Assign(*pFeat1);
+    pFeat2->SetData().Reset();
+    pFeat2->SetData().SetComment();
+    pFeat2->SetComment("Dummy comment");
+
+    auto pFeat3 = Ref(new CSeq_feat());
+    pFeat3->Assign(*pFeat1);
+    pFeat3->SetData().SetProt().SetName().push_back("EFGH [not a dummy taxname]");
 
     auto pAnnot = Ref(new CSeq_annot());
-    pAnnot->SetData().SetFtable().push_back(move(pFeat));
+    pAnnot->SetData().SetFtable().push_back(move(pFeat1));
+    pAnnot->SetData().SetFtable().push_back(move(pFeat2));
+    pAnnot->SetData().SetFtable().push_back(move(pFeat3));
     pBioseq->SetAnnot().push_back(move(pAnnot));
 
     return pBioseq;
-}
-
-
-
-BOOST_AUTO_TEST_CASE(Test_RW_2486_NO_OM) 
-{
-    auto pBioseq = s_MakeProtein();
-    auto madeChange = CCleanup::AddPartialToProteinTitle(*pBioseq);
-    BOOST_CHECK(madeChange);
-    
-    BOOST_CHECK(pBioseq->IsSetDescr() && pBioseq->GetDescr().IsSet());
-    auto pTitleDesc = pBioseq->GetDescr().Get().back();
-    BOOST_CHECK_EQUAL(pTitleDesc->GetTitle(), "ABCD, partial [dummy taxname]");
-
-    BOOST_CHECK(pBioseq->IsSetAnnot() && pBioseq->GetAnnot().front()->IsFtable());
-    auto pProtFeat = pBioseq->GetAnnot().front()->GetData().GetFtable().front();
-    const string& name = pProtFeat->GetData().GetProt().GetName().front();
-    BOOST_CHECK_EQUAL(name, "ABCD"); // check that '[taxname]' as been removed from end of string
 }
 
 
@@ -139,17 +139,39 @@ BOOST_AUTO_TEST_CASE(Test_RW_2486_OM)
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     auto bsh = pScope->AddBioseq(*pBioseq);
 
-    auto madeChange = CCleanup::AddPartialToProteinTitle(*pBioseq, pScope.GetPointer());
+    auto madeChange = CCleanup::AddPartialToProteinTitle(bsh);
     BOOST_CHECK(madeChange);
 
     CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_Title);    
     BOOST_CHECK_EQUAL(desc_ci->GetTitle(), "ABCD, partial [dummy taxname]");
 
-    CFeat_CI feat_ci(bsh);
-    BOOST_CHECK(feat_ci);
-    const CSeq_feat& prot_feat = feat_ci->GetOriginalFeature();
-    const string& name = prot_feat.GetData().GetProt().GetName().front();
-    BOOST_CHECK_EQUAL(name, "ABCD"); // check that '[taxname]' as been removed from end of string
+    const auto& bioseq = *(bsh.GetCompleteBioseq());
+    BOOST_CHECK(bioseq.IsSetAnnot() && bioseq.GetAnnot().front()->IsFtable());
+
+    const auto& feat_list = bioseq.GetAnnot().front()->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(feat_list.size(), 3);
+
+    auto it = feat_list.begin();
+    {
+        const auto& feat = **it;
+        const string& name = feat.GetData().GetProt().GetName().front();
+        BOOST_CHECK_EQUAL(name, "ABCD"); // check that '[taxname]' as been removed from end of string
+    }
+
+    ++it;
+    {
+        const auto& feat = **it;
+        BOOST_CHECK(feat.GetData().IsComment());
+    }
+
+    ++it;
+    {
+        const auto& feat = **it;
+        const auto& names = feat.GetData().GetProt().GetName();
+        BOOST_CHECK_EQUAL(names.size(), 2);
+        BOOST_CHECK_EQUAL(names.front(), "ABCD"); // check that '[taxname]' as been removed from end of string
+        BOOST_CHECK_EQUAL(names.back(), "EFGH [not a dummy taxname]"); // nothing removed from end of string
+    }
 }
 
 

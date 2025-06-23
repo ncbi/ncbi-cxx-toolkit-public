@@ -5718,9 +5718,9 @@ void CNewCleanup_imp::FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq_Ha
 }
 
 
-void CNewCleanup_imp::x_AddPartialToProteinTitle(CBioseq &bioseq, CScope& scope)
+void CNewCleanup_imp::AddPartialToProteinTitle(CBioseq_Handle bsh)
 {
-    if (CCleanup::AddPartialToProteinTitle(bioseq, &scope)) {
+    if (CCleanup::AddPartialToProteinTitle(bsh)) {
         ChangeMade(CCleanupChange::eCleanBioseqTitle);
     }
 }
@@ -12283,7 +12283,8 @@ void CNewCleanup_imp::x_SetPartialsForProtein(CBioseq& seq, bool partial5, bool 
     }
 
     if (changed) {
-        x_AddPartialToProteinTitle(seq, *m_Scope);
+        auto bsh = m_Scope->GetBioseqHandle(seq);
+        AddPartialToProteinTitle(bsh);
     }
 }
 
