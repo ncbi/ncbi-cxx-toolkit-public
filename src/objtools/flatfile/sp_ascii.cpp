@@ -1737,30 +1737,24 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 /**********************************************************/
 static void fta_check_embl_drxref_dups(const ValNodeList& embl_acc_list)
 {
-    ValNodePtr vnpn;
-    const char* n;
-    const char* p;
-    const char* q;
-
     if (embl_acc_list.empty() || ! embl_acc_list.cbegin()->next->next)
         return;
 
-    for (auto vnp = embl_acc_list.cbegin(); vnp != embl_acc_list.cend(); vnp = vnp->next->next) {
-        p = vnp->data;
-        q = StringChr(p, '.');
-        if (q) {
-            for (p = q + 1; *p >= '0' && *p <= '9';)
-                p++;
-            if (*p != '\0')
-                q = nullptr;
-            p = vnp->data;
+    for (auto it = embl_acc_list.cbegin(); it != embl_acc_list.cend(); it = it->next->next) {
+        string_view acc = it->data;
+        auto        dot = acc.find('.');
+        if (dot != string_view::npos) {
+            for (auto p = acc.begin() + dot + 1; p != acc.end(); ++p) {
+                if (*p >= '0' && *p <= '9')
+                    continue;
+                dot = string::npos;
+                break;
+            }
         }
-        n = vnp->next->data;
-        for (vnpn = vnp->next->next; vnpn; vnpn = vnpn->next->next) {
-            if (vnp->next->choice != vnpn->next->choice &&
-                StringEqu(p, vnpn->data)) {
-                if (GetProtAccOwner(q ? string_view(p, q) : string_view(p)) > CSeq_id::e_not_set)
-                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", vnpn->data, n, vnpn->next->data);
+        for (auto it2 = it->next->next; it2 != embl_acc_list.cend(); it2 = it2->next->next) {
+            if (it->next->choice != it2->next->choice && acc == string_view(it2->data)) {
+                if (GetProtAccOwner(acc.substr(0, dot)) > CSeq_id::e_not_set)
+                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", it2->data, it->next->data, it2->next->data);
             }
         }
     }

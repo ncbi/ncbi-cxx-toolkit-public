@@ -48,7 +48,7 @@ using objects::CSeq_id;
 
 struct ValNode {
     CSeq_id::E_Choice choice = CSeq_id::e_not_set; /* to pick a choice */
-    char*         data     = nullptr; /* attached data */
+    string        data; /* attached data */
     ValNode*      next     = nullptr; /* next in linked list */
 
     ValNode(CSeq_id::E_Choice, string_view);
