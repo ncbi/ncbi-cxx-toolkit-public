@@ -492,6 +492,8 @@ private:
 
 
 #define EUTILS_CLIENT_SECTION "eutils_client"
+// Temporary limit to be virtually 'unlimited' but prevent server failure - see CXX-14065 and EU-3437
+#define DEFAULT_RETMAX 100000000
 // The default values approximate the old "sqrt(retry)" wait times.
 #define DEFAULT_MAX_RETRIES 9
 #define DEFAULT_WAIT_TIME 0
@@ -525,7 +527,7 @@ static CIncreasingTime::SAllParams s_WaitTimeParams = {
 
 
 CEutilsClient::CEutilsClient()
-    : m_CachedHostNameCount(0), m_RetMax(0), m_MaxRetries(DEFAULT_MAX_RETRIES), m_WaitTime(s_WaitTimeParams)
+    : m_CachedHostNameCount(0), m_RetMax(DEFAULT_RETMAX), m_MaxRetries(DEFAULT_MAX_RETRIES), m_WaitTime(s_WaitTimeParams)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
@@ -537,7 +539,7 @@ CEutilsClient::CEutilsClient()
 CEutilsClient::CEutilsClient(const string& host)
     : m_CachedHostNameCount(0),
       m_HostName(host),
-      m_RetMax(0),
+      m_RetMax(DEFAULT_RETMAX),
       m_MaxRetries(DEFAULT_MAX_RETRIES),
       m_WaitTime(s_WaitTimeParams)
 {
