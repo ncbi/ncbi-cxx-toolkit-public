@@ -51,11 +51,8 @@ BEGIN_NCBI_SCOPE
  *
  *****************************************************************************/
 ValNode::ValNode(CSeq_id::E_Choice c, string_view d) :
-    choice(c)
+    choice(c), data(d)
 {
-    if (! d.empty()) {
-        data = StringSave(d);
-    }
 }
 
 /*****************************************************************************
@@ -71,7 +68,6 @@ void ValNodeList::clear()
     ValNodePtr vnp = head;
 
     while (vnp) {
-        MemFree(vnp->data);
         ValNodePtr next = vnp->next;
         delete vnp;
         vnp = next;
