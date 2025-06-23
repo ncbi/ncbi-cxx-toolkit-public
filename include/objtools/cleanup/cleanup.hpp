@@ -368,10 +368,9 @@ public:
     static bool SetGeneticCodes(CBioseq_Handle bsh);
 
 /// Adjusts protein title to reflect partialness
-/// @param Bioseq to adjust
-/// @param scope Scope used to update OM
+/// @param bsh Bioseq to edit
 /// @return Boolean indicates whether title was updated
-    static bool AddPartialToProteinTitle(CBioseq &bioseq, CScope* pScope=nullptr);
+    static bool AddPartialToProteinTitle(CBioseq_Handle bsh);
 
 /// Removes protein product from pseudo coding region
 /// @param cds Seq-feat to adjust
