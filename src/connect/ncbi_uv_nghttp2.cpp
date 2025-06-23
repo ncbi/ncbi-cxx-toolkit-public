@@ -538,6 +538,24 @@ int SNgHttp2_Session::Resume(int32_t stream_id)
     return x_DelOnError(rv);
 }
 
+void SNgHttp2_Session::Goaway()
+{
+    if (!m_Session) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " not initialized, not sending goaway");
+        return;
+    }
+
+    auto rv = nghttp2_submit_goaway(m_Session, NGHTTP2_FLAG_NONE, 0, NGHTTP2_NO_ERROR, nullptr, 0);
+
+    if (rv < 0) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " goaway send failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
+    } else {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " goaway sent");
+    }
+
+    x_DelOnError(rv);
+}
+
 ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 {
     if (auto rv = Init()) return rv;
@@ -1043,6 +1061,13 @@ void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType c
     m_Tls->Close();
     m_Tcp.Close(close_type);
     OnReset(std::move(error));
+}
+
+void SUvNgHttp2_SessionBase::Shutdown()
+{
+    NCBI_UVNGHTTP2_SESSION_TRACE(this << " shutting down");
+    m_Session.Goaway();
+    Send();
 }
 
 END_NCBI_SCOPE

@@ -508,7 +508,7 @@ SH2S_IoCoordinator::SH2S_IoCoordinator() :
 SH2S_IoCoordinator::~SH2S_IoCoordinator()
 {
     for (auto& session : m_Sessions) {
-        session.second.Reset("Shutdown is in progress");
+        session.second.Shutdown();
     }
 
     m_Loop.Run(UV_RUN_DEFAULT);
