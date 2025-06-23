@@ -1651,49 +1651,36 @@ static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
 }
 
 /**********************************************************/
-static bool AddToList(ValNodeList& L, char* str)
+static bool AddToList(forward_list<string>& L, string_view str)
 {
-    ValNodePtr vnp;
-    char*      data;
-    char*      dot;
-    char*      d;
-
-    if (! str)
+    if (str.empty())
         return false;
 
-    if (str[0] == '-' && str[1] == '\0')
+    if (str == "-"sv)
         return true;
 
-    dot = StringChr(str, '.');
-    for (vnp = L.begin(); vnp != L.end(); vnp = vnp->next)
-        if (StringEqu(vnp->data, str))
-            break;
-    if (vnp != L.end())
-        return false;
+    for (string_view it : L)
+        if (it == str)
+            return false;
 
-    if (dot) {
-        *dot = '\0';
-        for (vnp = L.begin(); vnp != L.end(); vnp = vnp->next) {
-            data = vnp->data;
-            d    = StringChr(data, '.');
-            if (! d)
-                continue;
-            *d = '\0';
-            if (StringEqu(data, str)) {
-                FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Same protein accessions with different versions found in DR line [PID1:{}.{}; PID2:{}.{}].", data, d + 1, str, dot + 1);
+    auto dot = str.find('.');
+    if (dot != string_view::npos) {
+        string_view acc2 = str.substr(0, dot);
+        for (string_view it : L) {
+            auto d = it.find('.');
+            if (d != string_view::npos) {
+                string_view acc1 = it.substr(0, d);
+                if (acc1 == acc2) {
+                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Same protein accessions with different versions found in DR line [PID1:{}.{}; PID2:{}.{}].", acc1, it.substr(d + 1), acc2, str.substr(dot + 1));
+                }
             }
-            *d = '.';
         }
-        *dot = '.';
     }
 
-    if (! L.empty()) {
-        ValNodePtr tail = L.head;
-        while (tail->next)
-            tail = tail->next;
-        L.emplace_after(tail, CSeq_id::e_not_set, str);
-    } else
-        L.emplace_front(CSeq_id::e_not_set, str);
+    auto tail = L.before_begin();
+    while (next(tail) != L.end())
+        ++tail;
+    L.emplace_after(tail, str);
 
     return true;
 }
@@ -1848,12 +1835,11 @@ static void fta_check_embl_drxref_dups(const ValNodeList& embl_acc_list)
  **********************************************************/
 static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Parser::ESource source)
 {
-    ValNodePtr   embl_vnp;
-    ValNodeList  acc_list;
-    ValNodeList  pid_list;
-    ValNodeList  ens_tran_list;
-    ValNodeList  ens_prot_list;
-    ValNodeList  ens_gene_list;
+    forward_list<string> acc_list,
+        pid_list,
+        ens_tran_list,
+        ens_prot_list,
+        ens_gene_list;
     ValNodeList  embl_acc_list;
     const char** b;
     char*        offset;
@@ -1890,7 +1876,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     pdbold          = false;
     pdbnew          = false;
     embl_acc_list.emplace_front(CSeq_id::E_Choice::e_not_set, "dummy");
-    embl_vnp        = embl_acc_list.begin();
+    auto embl_vnp   = embl_acc_list.begin();
     check_embl_prot = false;
     for (ptr = str;;) {
         if (*drop)
