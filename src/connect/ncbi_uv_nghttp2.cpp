@@ -490,11 +490,11 @@ int SNgHttp2_Session::Init()
     return 0;
 }
 
-void SNgHttp2_Session::Del()
+int SNgHttp2_Session::Terminate()
 {
     if (!m_Session) {
         NCBI_NGHTTP2_SESSION_TRACE(this << " already terminated");
-        return;
+        return -1;
     }
 
     auto rv = nghttp2_session_terminate_session(m_Session, NGHTTP2_NO_ERROR);
@@ -505,7 +505,13 @@ void SNgHttp2_Session::Del()
         NCBI_NGHTTP2_SESSION_TRACE(this << " terminated");
     }
 
-    x_DelOnError(-1);
+    return rv;
+}
+
+void SNgHttp2_Session::Del(int terminate_rv)
+{
+    NCBI_NGHTTP2_SESSION_TRACE(this << " deleting");
+    x_DelOnError(terminate_rv);
 }
 
 int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd)
@@ -536,24 +542,6 @@ int SNgHttp2_Session::Resume(int32_t stream_id)
     }
 
     return x_DelOnError(rv);
-}
-
-void SNgHttp2_Session::Goaway()
-{
-    if (!m_Session) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " not initialized, not sending goaway");
-        return;
-    }
-
-    auto rv = nghttp2_submit_goaway(m_Session, NGHTTP2_FLAG_NONE, 0, NGHTTP2_NO_ERROR, nullptr, 0);
-
-    if (rv < 0) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " goaway send failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
-    } else {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " goaway sent");
-    }
-
-    x_DelOnError(rv);
 }
 
 ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
@@ -1026,7 +1014,7 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
         auto read_rv = m_Tls->Read(buf, nread);
 
         if (read_rv == 0) {
-            m_Session.Del();
+            m_Session.Del(m_Session.Terminate());
             m_Tls->Close();
             m_Tcp.Close(SUv_Tcp::eNormalClose);
 
@@ -1058,20 +1046,19 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
     Send();
 }
 
-void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type)
+void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type, bool shutdown)
 {
     NCBI_UVNGHTTP2_SESSION_TRACE(this << " resetting with " << error);
-    m_Session.Del();
+    auto rv = m_Session.Terminate();
+
+    if (!rv && shutdown) {
+        Send();
+    }
+
+    m_Session.Del(rv);
     m_Tls->Close();
     m_Tcp.Close(close_type);
     OnReset(std::move(error));
-}
-
-void SUvNgHttp2_SessionBase::Shutdown()
-{
-    NCBI_UVNGHTTP2_SESSION_TRACE(this << " shutting down");
-    m_Session.Goaway();
-    Send();
 }
 
 END_NCBI_SCOPE

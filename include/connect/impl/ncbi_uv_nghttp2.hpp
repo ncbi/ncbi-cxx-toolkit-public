@@ -397,11 +397,11 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
             nghttp2_error_callback2             on_error,
             nghttp2_on_frame_recv_callback      on_frame_recv = nullptr);
 
-    void Del();
+    int Terminate();
+    void Del(int terminate_rv);
 
     int32_t Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd = nullptr);
     int Resume(int32_t stream_id);
-    void Goaway();
 
     // Send() returns either an nghttp2 error or one of the special values below
     enum ESendResult : ssize_t { eOkay, eWantsClose };
@@ -476,8 +476,8 @@ struct NCBI_XXCONNECT2_EXPORT SUvNgHttp2_SessionBase
     virtual ~SUvNgHttp2_SessionBase() {}
 
     SId GetId() const { return { m_Authority, m_Tcp.GetLocalPort() }; }
-    void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset);
-    void Shutdown();
+    void Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType close_type = SUv_Tcp::eCloseReset, bool shutdown = false);
+    void Shutdown() { Reset("Shutdown is in process", SUv_Tcp::eNormalClose, true); }
 
 protected:
     bool Send();
