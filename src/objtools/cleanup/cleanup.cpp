@@ -2604,7 +2604,7 @@ static CConstRef<CSeqdesc> s_GetTitleDesc(const CSeq_descr& descr)
 bool CCleanup::AddPartialToProteinTitle(CBioseq_Handle bsh)
 {
     // Bail if not protein
-    if (! bsh.IsSetInst_Mol() || ! bsh.GetInst_Mol() == CSeq_inst::eMol_aa ) {
+    if (! bsh.IsSetInst_Mol() || ! (bsh.GetInst_Mol() == CSeq_inst::eMol_aa) ) {
         return false;
     }
 
