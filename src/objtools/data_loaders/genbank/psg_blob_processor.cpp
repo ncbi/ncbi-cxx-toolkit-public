@@ -505,6 +505,13 @@ CPSGL_Blob_Processor::ProcessItemFast(EPSG_Status status,
             
         }
         break;
+    case CPSG_ReplyItem::eProcessor:
+        if ( auto processor = dynamic_pointer_cast<CPSG_Processor>(item) ) {
+            if ( processor->GetProgressStatus() == CPSG_Processor::eUnauthorized ) {
+                m_GotUnauthorized = true;
+            }
+        }
+        break;
     default:
         break;
     }

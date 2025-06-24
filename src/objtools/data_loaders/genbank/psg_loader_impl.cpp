@@ -1031,9 +1031,14 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         auto processor = result.GetProcessor<CPSGL_GetBlob_Processor>();
         _ASSERT(processor);
         ret = processor->GetTSE_Lock();
-        if ( !ret && processor->GotForbidden() ) {
-            CBioseq_Handle::TBioseqStateFlags state =
-                CBioseq_Handle::fState_no_data|CBioseq_Handle::fState_withdrawn;
+        if ( !ret && (processor->GotForbidden() || processor->GotUnauthorized()) ) {
+            CBioseq_Handle::TBioseqStateFlags state = CBioseq_Handle::fState_no_data;
+            if ( processor->GotUnauthorized() ) {
+                state |= CBioseq_Handle::fState_confidential;
+            }
+            else {
+                state |= CBioseq_Handle::fState_withdrawn;
+            }
             state |= processor->GetBlobInfoState(blob_id.ToPsgId());
             NCBI_THROW2(CBlobStateException, eBlobStateError,
                         "blob state error for "+blob_id.ToPsgId(), state);

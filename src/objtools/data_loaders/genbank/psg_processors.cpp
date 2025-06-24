@@ -771,11 +771,16 @@ CPSGL_Get_Processor::ProcessReplySlow(EPSG_Status status,
     auto& psg_blob_id = GetPSGBlobId();
     if ( (status == EPSG_Status::eForbidden) ||
          (m_BioseqInfoStatus == EPSG_Status::eForbidden) ||
-         GotForbidden() ) {
+         GotForbidden() || GotUnauthorized() ) {
         // PSG reported 'forbidden' status - no blobs to return
         // but we need to prepare blob state
-        CBioseq_Handle::TBioseqStateFlags state =
-            CBioseq_Handle::fState_no_data | CBioseq_Handle::fState_withdrawn;
+        CBioseq_Handle::TBioseqStateFlags state = CBioseq_Handle::fState_no_data;
+        if ( GotUnauthorized() ) {
+            state |= CBioseq_Handle::fState_confidential;
+        }
+        else {
+            state |= CBioseq_Handle::fState_withdrawn;
+        }
         // copy 'dead' state from bioseq info
         if ( m_BioseqInfoResult->IsDead() ) {
             state |= CBioseq_Handle::fState_dead;
