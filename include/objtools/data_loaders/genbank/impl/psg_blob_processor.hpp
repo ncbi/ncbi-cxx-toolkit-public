@@ -89,6 +89,10 @@ public:
     {
         return m_GotForbidden;
     }
+    bool GotUnauthorized() const
+    {
+        return m_GotUnauthorized;
+    }
     int GetBlobInfoState(const string& psg_blob_id);
     
 protected:
@@ -172,6 +176,7 @@ protected:
     TTSEBlobMap m_TSEBlobMap;
     TSplitBlobMap m_SplitBlobMap;
     bool m_GotForbidden = false;
+    bool m_GotUnauthorized = false;
     
     // cache pointers and other params
     bool m_AddWGSMasterDescr;

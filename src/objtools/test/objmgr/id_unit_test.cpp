@@ -247,6 +247,17 @@ bool s_HaveCache(void)
 }
 
 
+bool s_HaveOnlyCache(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD");
+    if ( !env ) {
+        // assume default ID2
+        return false;
+    }
+    return NStr::Equal(env, "cache", NStr::eNocase);
+}
+
+
 bool s_HaveNA()
 {
     // NA are available in PSG and ID2
@@ -1294,6 +1305,7 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
         LOG_POST("Skipping HUP access for unknown user");
         return;
     }
+    bool only_cache = s_HaveOnlyCache();
     if ( authorized ) {
         LOG_POST("Checking HUP access for authorized user");
     }
@@ -1319,13 +1331,25 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
     {{
         CScope scope(*objmgr);
         scope.AddDataLoader(gb_hup);
-        if ( authorized ) {
-            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
-        }
-        else {
-            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-        }
-        BOOST_CHECK(scope.GetBioseqHandle(id_main));
+        {{
+            auto bh_hup = scope.GetBioseqHandle(id_hup);
+            if ( authorized ) {
+                BOOST_CHECK(bh_hup);
+                BOOST_CHECK(bh_hup.GetState() == CBioseq_Handle::fState_none);
+            }
+            else {
+                BOOST_CHECK(!bh_hup);
+                BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_no_data);
+                if ( !only_cache ) {
+                    BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_confidential);
+                }
+            }
+        }}
+        {{
+            auto bh_main = scope.GetBioseqHandle(id_main);
+            BOOST_CHECK(bh_main);
+            BOOST_CHECK_EQUAL(bh_main.GetState(), CBioseq_Handle::fState_none);
+        }}
     }}
 
     {{
@@ -1334,15 +1358,35 @@ BOOST_AUTO_TEST_CASE(Test_HUP)
         
         BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
         scope.AddDataLoader(gb_hup);
-        if ( authorized ) {
-            BOOST_CHECK(scope.GetBioseqHandle(id_hup));
-        }
-        else {
-            BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
-        }
-        BOOST_CHECK(scope.GetBioseqHandle(id_main));
+        {{
+            auto bh_hup = scope.GetBioseqHandle(id_hup);
+            if ( authorized ) {
+                BOOST_CHECK(bh_hup);
+                BOOST_CHECK(bh_hup.GetState() == CBioseq_Handle::fState_none);
+            }
+            else {
+                BOOST_CHECK(!bh_hup);
+                BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_no_data);
+                if ( !only_cache ) {
+                    BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_confidential);
+                }
+            }
+        }}
+        {{
+            auto bh_main = scope.GetBioseqHandle(id_main);
+            BOOST_CHECK(bh_main);
+            BOOST_CHECK_EQUAL(bh_main.GetState(), CBioseq_Handle::fState_none);
+        }}
         scope.RemoveDataLoader(gb_hup);
-        BOOST_CHECK(!scope.GetBioseqHandle(id_hup));
+        {{
+            // without HUP GB loader it's simply confidential
+            auto bh_hup = scope.GetBioseqHandle(id_hup);
+            BOOST_CHECK(!bh_hup);
+            BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_no_data);
+            if ( !only_cache ) {
+                BOOST_CHECK(bh_hup.GetState() & CBioseq_Handle::fState_confidential);
+            }
+        }}
     }}
     
     objmgr->RevokeDataLoader(gb_hup);
