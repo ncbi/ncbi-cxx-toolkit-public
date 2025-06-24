@@ -78,7 +78,6 @@
 #include "entry.h"
 #include "ref.h"
 #include "xutils.h"
-#include "valnode.h"
 
 #ifdef THIS_FILE
 #    undef THIS_FILE
@@ -449,6 +448,18 @@ struct ViralHost {
     ViralHost* next  = nullptr;
 };
 using ViralHostPtr = ViralHost*;
+
+struct EmblAcc {
+    CSeq_id::E_Choice choice;
+    string            acc;
+    string            pid;
+
+    EmblAcc(CSeq_id::E_Choice c, string_view a, string_view p) :
+        choice(c), acc(a), pid(p)
+    {
+    }
+};
+using TEmblAccList = forward_list<EmblAcc>;
 
 // clang-format off
 CharIntLen spde_tags[] = {
@@ -1735,26 +1746,26 @@ static void CheckSPDupPDBXrefs(CSP_block::TSeqref& refs)
 }
 
 /**********************************************************/
-static void fta_check_embl_drxref_dups(const ValNodeList& embl_acc_list)
+static void fta_check_embl_drxref_dups(const TEmblAccList& embl_acc_list)
 {
-    if (embl_acc_list.empty() || ! embl_acc_list.cbegin()->next->next)
+    if (embl_acc_list.empty() || next(embl_acc_list.cbegin()) == embl_acc_list.cend())
         return;
 
-    for (auto it = embl_acc_list.cbegin(); it != embl_acc_list.cend(); it = it->next->next) {
-        string_view acc = it->data;
-        auto        dot = acc.find('.');
+    for (auto it = embl_acc_list.cbegin(); it != embl_acc_list.cend(); ++it) {
+        string_view pid = it->pid;
+        auto        dot = pid.find('.');
         if (dot != string_view::npos) {
-            for (auto p = acc.begin() + dot + 1; p != acc.end(); ++p) {
+            for (auto p = pid.begin() + dot + 1; p != pid.end(); ++p) {
                 if (*p >= '0' && *p <= '9')
                     continue;
                 dot = string::npos;
                 break;
             }
         }
-        for (auto it2 = it->next->next; it2 != embl_acc_list.cend(); it2 = it2->next->next) {
-            if (it->next->choice != it2->next->choice && acc == string_view(it2->data)) {
-                if (GetProtAccOwner(acc.substr(0, dot)) > CSeq_id::e_not_set)
-                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", it2->data, it->next->data, it2->next->data);
+        for (auto it2 = next(it); it2 != embl_acc_list.cend(); ++it2) {
+            if (it->choice != it2->choice && pid == string_view(it2->pid)) {
+                if (GetProtAccOwner(pid.substr(0, dot)) > CSeq_id::e_not_set)
+                    FtaErrPost(SEV_WARNING, ERR_SPROT_DRLineCrossDBProtein, "Protein accession \"{}\" associated with \"{}\" and \"{}\".", pid, it->acc, it2->acc);
             }
         }
     }
@@ -1834,7 +1845,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         ens_tran_list,
         ens_prot_list,
         ens_gene_list;
-    ValNodeList  embl_acc_list;
+    TEmblAccList embl_acc_list;
     const char** b;
     char*        offset;
     const char*  token1;
@@ -1869,8 +1880,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
     offset[len]     = ch;
     pdbold          = false;
     pdbnew          = false;
-    embl_acc_list.emplace_front(CSeq_id::E_Choice::e_not_set, "dummy");
-    auto embl_vnp   = embl_acc_list.begin();
+    auto embl_tail  = embl_acc_list.before_begin();
     check_embl_prot = false;
     for (ptr = str;;) {
         if (*drop)
@@ -1953,8 +1963,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 p = nullptr;
 
             if (ntype > CSeq_id::e_not_set) {
-                embl_vnp = embl_acc_list.emplace_after(embl_vnp, ptype, token3);
-                embl_vnp = embl_acc_list.emplace_after(embl_vnp, ntype, token2);
+                embl_tail = embl_acc_list.emplace_after(embl_tail, ntype, token2, token3);
             }
 
             if (! AddToList(pid_list, token3)) {
@@ -2054,7 +2063,6 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
         }
     }
 
-    embl_acc_list.pop_front();
     if (! embl_acc_list.empty()) {
         if (check_embl_prot)
             fta_check_embl_drxref_dups(embl_acc_list);
