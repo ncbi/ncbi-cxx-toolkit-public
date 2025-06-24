@@ -5,7 +5,6 @@ NCBI_begin_lib(xflatfile)
     xgbfeat
     xgbparint
     xutils
-    valnode
     ftaerr
 
     block

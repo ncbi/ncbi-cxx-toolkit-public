@@ -2,7 +2,6 @@ SRC     = \
     xgbfeat \
     xgbparint \
     xutils \
-    valnode \
     ftaerr  \
     block \
     em_index \
