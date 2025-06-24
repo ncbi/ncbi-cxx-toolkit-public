@@ -560,7 +560,7 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 {
     if (auto rv = Init()) return rv;
 
-    _DEBUG_ARG(ssize_t total = 0);
+    ssize_t total = 0;
 
     while (nghttp2_session_want_write(m_Session)) {
         const uint8_t* data;
@@ -568,16 +568,20 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
         if (rv > 0) {
             buffer.insert(buffer.end(), data, data + rv);
-            _DEBUG_CODE(total += rv;);
+            total += rv;
 
         } else if (rv < 0) {
             NCBI_NGHTTP2_SESSION_TRACE(this << " send failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
             return x_DelOnError(rv);
 
         } else {
-            NCBI_NGHTTP2_SESSION_TRACE(this << " sent: " << total);
-            return eOkay;
+            break;
         }
+    }
+
+    if (total) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " sent: " << total);
+        return eOkay;
     }
 
     if (nghttp2_session_want_read(m_Session) == 0) {
