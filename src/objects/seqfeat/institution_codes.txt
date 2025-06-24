@@ -2020,7 +2020,7 @@ DTC	s	Dmitrijs Telnovs
 DTE	s	Centro de Investigaciones Cientificas y Transferencia de Tecnologia a la Produccion (CICyTTP-CONICET)			
 DTIC	s	Departamento Parasitologia			
 DTN	s	Darlington and Teesdale Naturalists' Field Club			
-DTO	sc	Department of Applied and Industrial Mycology			
+DTO	cs	Department of Applied and Industrial Mycology			
 DU	s	Duke University Vertebrate Collection			
 DUBN	s	Dublin Naturalists' Field Club			
 DUE	s	University of Dundee			
