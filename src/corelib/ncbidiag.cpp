@@ -234,8 +234,6 @@ private:
 
 #if defined(NCBI_POSIX_THREADS) && defined(HAVE_PTHREAD_ATFORK)
 
-#include <unistd.h> // for pthread_atfork()
-
 extern "C" {
     static void s_NcbiDiagPreFork(void)
     {
