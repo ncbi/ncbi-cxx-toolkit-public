@@ -87,13 +87,12 @@ struct CharUInt1 {
 #define BIOSOURCES_THRESHOLD 20
 
 struct PcrPrimers {
-    char*       fwd_name = nullptr;
-    char*       fwd_seq  = nullptr;
-    char*       rev_name = nullptr;
-    char*       rev_seq  = nullptr;
-    PcrPrimers* next     = nullptr;
+    string fwd_name;
+    string fwd_seq;
+    string rev_name;
+    string rev_seq;
 };
-using PcrPrimersPtr = PcrPrimers*;
+using PcrPrimersList = forward_list<PcrPrimers>;
 
 struct SourceFeatBlk {
     char* name            = nullptr;
@@ -2411,10 +2410,8 @@ static char* CheckPcrPrimersTag(char* str)
 }
 
 /**********************************************************/
-static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
+static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersList& ppp, Int4 count)
 {
-    PcrPrimersPtr tppp = nullptr;
-
     string str_fs;
     string str_rs;
     string str_fn;
@@ -2422,34 +2419,36 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
     Int4   num_fn;
     Int4   num_rn;
 
-    if (! ppp || count < 1)
+    if (ppp.empty() || count < 1)
         return;
 
     CBioSource::TSubtype& subs = bio.SetSubtype();
     CRef<CSubSource>      sub;
 
     if (count == 1) {
+        const auto& pp = ppp.front();
+
         sub.Reset(new CSubSource);
         sub->SetSubtype(CSubSource::eSubtype_fwd_primer_seq);
-        sub->SetName(ppp->fwd_seq);
+        sub->SetName(pp.fwd_seq);
         subs.push_back(sub);
 
         sub.Reset(new CSubSource);
         sub->SetSubtype(CSubSource::eSubtype_rev_primer_seq);
-        sub->SetName(ppp->rev_seq);
+        sub->SetName(pp.rev_seq);
         subs.push_back(sub);
 
-        if (ppp->fwd_name && ppp->fwd_name[0] != '\0') {
+        if (! pp.fwd_name.empty()) {
             sub.Reset(new CSubSource);
             sub->SetSubtype(CSubSource::eSubtype_fwd_primer_name);
-            sub->SetName(ppp->fwd_name);
+            sub->SetName(pp.fwd_name);
             subs.push_back(sub);
         }
 
-        if (ppp->rev_name && ppp->rev_name[0] != '\0') {
+        if (! pp.rev_name.empty()) {
             sub.Reset(new CSubSource);
             sub->SetSubtype(CSubSource::eSubtype_rev_primer_name);
-            sub->SetName(ppp->rev_name);
+            sub->SetName(pp.rev_name);
             subs.push_back(sub);
         }
         return;
@@ -2461,15 +2460,15 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
            len_rn = 0;
     num_fn        = 0;
     num_rn        = 0;
-    for (tppp = ppp; tppp; tppp = tppp->next) {
-        len_fs += (StringLen(tppp->fwd_seq) + 1);
-        len_rs += (StringLen(tppp->rev_seq) + 1);
-        if (tppp->fwd_name && tppp->fwd_name[0] != '\0') {
-            len_fn += (StringLen(tppp->fwd_name) + 1);
+    for (const auto& tppp : ppp) {
+        len_fs += (tppp.fwd_seq.size() + 1);
+        len_rs += (tppp.rev_seq.size() + 1);
+        if (! tppp.fwd_name.empty()) {
+            len_fn += (tppp.fwd_name.size() + 1);
             num_fn++;
         }
-        if (tppp->rev_name && tppp->rev_name[0] != '\0') {
-            len_rn += (StringLen(tppp->rev_name) + 1);
+        if (! tppp.rev_name.empty()) {
+            len_rn += (tppp.rev_name.size() + 1);
             num_rn++;
         }
     }
@@ -2481,20 +2480,20 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
     if (len_rn > 0)
         str_rn.reserve(len_rn + count - num_rn + 1);
 
-    for (tppp = ppp; tppp; tppp = tppp->next) {
+    for (const auto& tppp : ppp) {
         str_fs.append(",");
-        str_fs.append(tppp->fwd_seq);
+        str_fs.append(tppp.fwd_seq);
         str_rs.append(",");
-        str_rs.append(tppp->rev_seq);
+        str_rs.append(tppp.rev_seq);
         if (len_fn > 0) {
             str_fn.append(",");
-            if (tppp->fwd_name && tppp->fwd_name[0] != '\0')
-                str_fn.append(tppp->fwd_name);
+            if (! tppp.fwd_name.empty())
+                str_fn.append(tppp.fwd_name);
         }
         if (len_rn > 0) {
             str_rn.append(",");
-            if (tppp->rev_name && tppp->rev_name[0] != '\0')
-                str_rn.append(tppp->rev_name);
+            if (! tppp.rev_name.empty())
+                str_rn.append(tppp.rev_name);
         }
     }
 
@@ -2540,29 +2539,9 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersPtr ppp, Int4 count)
 }
 
 /**********************************************************/
-static void PcrPrimersFree(PcrPrimersPtr ppp)
-{
-    PcrPrimersPtr next;
-
-    for (; ppp; ppp = next) {
-        next = ppp->next;
-        if (ppp->fwd_name)
-            MemFree(ppp->fwd_name);
-        if (ppp->fwd_seq)
-            MemFree(ppp->fwd_seq);
-        if (ppp->rev_name)
-            MemFree(ppp->rev_name);
-        if (ppp->rev_seq)
-            MemFree(ppp->rev_seq);
-        delete ppp;
-    }
-}
-
-/**********************************************************/
 static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
 {
-    PcrPrimersPtr ppp;
-    PcrPrimersPtr tppp = nullptr;
+    PcrPrimersList ppp;
 
     char* p;
     char* q;
@@ -2576,7 +2555,8 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                                            3 = rev_name, 4 = rev_seq */
 
     bool got_problem = false;
-    for (ppp = nullptr; sfbp; sfbp = sfbp->next) {
+    auto tppp = ppp.before_begin();
+    for (; sfbp; sfbp = sfbp->next) {
         if (sfbp->quals.empty() || sfbp->bio_src.Empty())
             continue;
 
@@ -2587,13 +2567,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                 continue;
 
             count++;
-            if (! ppp) {
-                ppp  = new PcrPrimers;
-                tppp = ppp;
-            } else {
-                tppp->next = new PcrPrimers;
-                tppp       = tppp->next;
-            }
+            tppp = ppp.emplace_after(tppp);
 
             prev = 0;
             std::vector<Char> val_buf(cur->GetVal().begin(), cur->GetVal().end());
@@ -2643,38 +2617,22 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                     else if (prev > 2 && prev < 5)
                         prev = -1;
                     else {
-                        if (! tppp->fwd_name)
-                            tppp->fwd_name = StringSave(q);
-                        else {
-                            string s(tppp->fwd_name);
-                            s.append(":");
-                            s.append(q);
-                            MemFree(tppp->fwd_name);
-                            tppp->fwd_name = StringSave(s);
-                        }
+                        if (! tppp->fwd_name.empty())
+                            tppp->fwd_name += ':';
+                        tppp->fwd_name += q;
                         prev = 1;
                     }
                 } else if (fta_StartsWith(p, "fwd_seq"sv)) {
                     if (prev > 2 && prev < 5)
                         prev = -1;
                     else {
-                        if (! tppp->fwd_seq)
-                            tppp->fwd_seq = StringSave(q);
+                        if (tppp->fwd_seq.empty())
+                            tppp->fwd_seq = q;
                         else {
-                            string s(tppp->fwd_seq);
-                            s.append(":");
-                            s.append(q);
-                            MemFree(tppp->fwd_seq);
-                            tppp->fwd_seq = StringSave(s);
+                            tppp->fwd_seq += ':';
+                            tppp->fwd_seq += q;
                             if (prev != 1) {
-                                if (! tppp->fwd_name)
-                                    tppp->fwd_name = StringSave(":");
-                                else {
-                                    string s(tppp->fwd_name);
-                                    s.append(":");
-                                    MemFree(tppp->fwd_name);
-                                    tppp->fwd_name = StringSave(s);
-                                }
+                                tppp->fwd_name += ':';
                             }
                         }
                         prev = 2;
@@ -2683,38 +2641,22 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                     if (prev == 3 || prev == 1)
                         prev = -2;
                     else {
-                        if (! tppp->rev_name)
-                            tppp->rev_name = StringSave(q);
-                        else {
-                            string s(tppp->rev_name);
-                            s.append(":");
-                            s.append(q);
-                            MemFree(tppp->rev_name);
-                            tppp->rev_name = StringSave(s);
-                        }
+                        if (! tppp->rev_name.empty())
+                            tppp->rev_name += ':';
+                        tppp->rev_name += q;
                         prev = 3;
                     }
                 } else {
                     if (prev == 1)
                         prev = -2;
                     else {
-                        if (! tppp->rev_seq)
-                            tppp->rev_seq = StringSave(q);
+                        if (tppp->rev_seq.empty())
+                            tppp->rev_seq = q;
                         else {
-                            string s(tppp->rev_seq);
-                            s.append(":");
-                            s.append(q);
-                            MemFree(tppp->rev_seq);
-                            tppp->rev_seq = StringSave(s);
+                            tppp->rev_seq += ':';
+                            tppp->rev_seq += q;
                             if (prev != 3) {
-                                if (! tppp->rev_name)
-                                    tppp->rev_name = StringSave(":");
-                                else {
-                                    string s(tppp->rev_name);
-                                    s.append(":");
-                                    MemFree(tppp->rev_name);
-                                    tppp->rev_name = StringSave(s);
-                                }
+                                tppp->rev_name += ':';
                             }
                         }
                         prev = 4;
@@ -2769,8 +2711,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
                 break;
             }
 
-            if (! tppp->fwd_seq || tppp->fwd_seq[0] == '\0' ||
-                ! tppp->rev_seq || tppp->rev_seq[0] == '\0') {
+            if (tppp->fwd_seq.empty() || tppp->rev_seq.empty()) {
                 FtaErrPost(SEV_REJECT, ERR_QUALIFIER_MissingPCRprimerSeq, "/PCR_primers qualifier \"{}\" is missing or has an empty required fwd_seq or rev_seq fields (or both). Entry dropped.", &val_buf[0]);
                 got_problem = true;
                 break;
@@ -2778,13 +2719,12 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
         }
 
         if (got_problem) {
-            PcrPrimersFree(ppp);
+            ppp.clear();
             break;
         }
 
         PopulatePcrPrimers(*sfbp->bio_src, ppp, count);
-        PcrPrimersFree(ppp);
-        ppp = nullptr;
+        ppp.clear();
     }
 
     if (! sfbp)
