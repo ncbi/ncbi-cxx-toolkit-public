@@ -1606,9 +1606,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
       retry->data = 0;*/
 
     /* line by line HTTP header input */
+    size = BUF_Size(uuu->http);
     for (;;) {
         /* do we have full header yet? */
-        if ((size = BUF_Size(uuu->http)) >= 4) {
+        if (size >= 4) {
             if (!(hdr = (char*) malloc(size + 1))) {
                 int error = errno;
                 assert(!url);
@@ -1635,7 +1636,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, &n);
 
-        if (status != eIO_Success  ||  size + n != BUF_Size(uuu->http)) {
+        if (status != eIO_Success  ||  (size += n) != BUF_Size(uuu->http)) {
             ELOG_Level level;
             if (status == eIO_Timeout) {
                 const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
@@ -2327,9 +2328,9 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         if (how) {
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_X(21, eLOG_Warning,
-                        ("[HTTP%s%s]  %s data (received "
+                        ("[HTTP%s%s]  %s data: received "
                          "%" NCBI_BIGCOUNT_FORMAT_SPEC " vs. "
-                         "%" NCBI_BIGCOUNT_FORMAT_SPEC " expected)",
+                         "%" NCBI_BIGCOUNT_FORMAT_SPEC " expected",
                          url ? "; " : "",
                          url ? url  : "", how,
                          uuu->received,
