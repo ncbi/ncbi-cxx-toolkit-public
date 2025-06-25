@@ -1624,10 +1624,10 @@ void SChainMember::AddCodingToContained(TContained& contained, TMemberPtrSet& in
     if(m_type != eCDS)
         return;
 
-    //    list<const SChainMember*> not_visited(1,this);
     deque<const SChainMember*> not_visited(1,this);
     while(!not_visited.empty()) {
-        const SChainMember* mbr = not_visited.front();
+        const SChainMember* mbr = not_visited.back();
+		not_visited.pop_back();
         for(int c = 0; c < (int)mbr->m_contained->size(); ++c) {
             SChainMember* mi = (*mbr->m_contained)[c];
             if(mi->m_type != eCDS)
@@ -1642,7 +1642,6 @@ void SChainMember::AddCodingToContained(TContained& contained, TMemberPtrSet& in
                 not_visited.push_back(mi);                //store for future
             }            
         }
-        not_visited.pop_front();
     }
 }
 
@@ -1674,11 +1673,10 @@ TContained SChainMember::CollectCodingContainedForChain()
 }
 //visits all levels of nested and adds uniquely to contained
 void SChainMember::AddToContained(TContained& contained, TMemberPtrSet& included_in_list) {
-
-    //    list<const SChainMember*> not_visited(1,this);
     deque<const SChainMember*> not_visited(1,this);
     while(!not_visited.empty()) {
-        const SChainMember* mbr = not_visited.front();
+        const SChainMember* mbr = not_visited.back();
+		not_visited.pop_back();
         for(int c = 0; c < (int)mbr->m_contained->size(); ++c) {
             SChainMember* mi = (*mbr->m_contained)[c];
             if(c < mbr->m_identical_count) {
@@ -1691,7 +1689,6 @@ void SChainMember::AddToContained(TContained& contained, TMemberPtrSet& included
                 not_visited.push_back(mi);                //store for future
             }            
         }
-        not_visited.pop_front();
     }
 }
 
@@ -4039,11 +4036,10 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
                 CChainMembers unmapointers(unmacl, orig_aligns, unmodified_aligns);
                 Duplicate5pendsAndShortCDSes(unmapointers);
-                sort(pointers.begin(),pointers.end(),GenomeOrderD());
+                sort(pointers_all.begin(),pointers_all.end(),GenomeOrderD());
                 ITERATE(TContained, ip, unmapointers) {
                     SChainMember& mi = **ip;
                     IncludeInContained(mi, mi);          // include self                    
-                    //                    ITERATE(TContained, jp, pointers) {
                     ITERATE(TContained, jp, pointers_all) {
                         SChainMember& mj = **jp;
                         if(CanIncludeJinI(mi, mj)) 
