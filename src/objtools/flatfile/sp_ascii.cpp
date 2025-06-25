@@ -390,18 +390,20 @@ SPFeatType ParFlat_SPFeat[] = {
 #define SPDE_INN        010000
 
 struct CharIntLen {
-    const char* str;
+    string_view str;
     Int4        num;
     Int4        len;
 };
 
-struct SPDEFields {
-    Int4        tag   = 0;
-    char*       start = nullptr;
-    char*       end   = nullptr;
-    SPDEFields* next  = nullptr;
+struct SPDEField {
+    Int4        tag;
+    const char* start;
+    const char* end = nullptr;
+
+    SPDEField(Int4 t, const char* s) :
+        tag(t), start(s) {}
 };
-using SPDEFieldsPtr = SPDEFields*;
+using SPDEFieldList = forward_list<SPDEField>;
 
 struct SPFeatInput {
     string       key;            /* column 6-13 */
@@ -462,7 +464,7 @@ struct EmblAcc {
 using TEmblAccList = forward_list<EmblAcc>;
 
 // clang-format off
-CharIntLen spde_tags[] = {
+const CharIntLen spde_tags[] = {
     {"RecName:",    SPDE_RECNAME,     8},
     {"AltName:",    SPDE_ALTNAME,     8},
     {"SubName:",    SPDE_SUBNAME,     8},
@@ -476,7 +478,7 @@ CharIntLen spde_tags[] = {
     {"Biotech=",    SPDE_BIOTECH,     8},
     {"CD_antigen=", SPDE_CD_ANTIGEN, 11},
     {"INN=",        SPDE_INN,         4},
-    {nullptr,       0,                0},
+    {{},            0,                0},
 };
 
 const char* org_mods[] = {
@@ -4026,51 +4028,44 @@ static void SPValidateEcnum(string& ecnum)
 }
 
 /**********************************************************/
-static void SPCollectProtNames(SPDEFieldsPtr sfp, CProt_ref& prot, Int4 tag)
+static void SPCollectProtNames(const SPDEFieldList& sfl, SPDEFieldList::const_iterator sfp, CProt_ref& prot, Int4 tag)
 {
-    Char ch;
-
-    for (; sfp; sfp = sfp->next) {
+    for (; sfp != sfl.cend(); ++sfp) {
         if (sfp->tag == SPDE_RECNAME || sfp->tag == SPDE_ALTNAME ||
             sfp->tag == SPDE_SUBNAME || sfp->tag == SPDE_FLAGS)
             break;
         if (sfp->tag != tag)
             continue;
 
-        ch        = *sfp->end;
-        *sfp->end = '\0';
-
-        prot.SetName().push_back(sfp->start);
-        *sfp->end = ch;
+        prot.SetName().push_back(string(sfp->start, sfp->end));
     }
 }
 
 /**********************************************************/
-static void SPValidateDefinition(SPDEFieldsPtr sfp, bool* drop, bool is_trembl)
+static void SPValidateDefinition(const SPDEFieldList& sfl, bool* drop, bool is_trembl)
 {
-    SPDEFieldsPtr tsfp;
-    Int4          rcount;
-    Int4          scount;
-    Int4          fcount;
+    Int4 rcount = 0;
+    Int4 scount = 0;
+    Int4 fcount = 0;
 
-    for (rcount = 0, scount = 0, tsfp = sfp; tsfp; tsfp = tsfp->next) {
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp) {
         if (tsfp->tag == SPDE_RECNAME)
             rcount++;
         else if (tsfp->tag == SPDE_SUBNAME)
             scount++;
     }
 
-    for (fcount = 0, tsfp = sfp; tsfp; tsfp = tsfp->next) {
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp) {
         if (tsfp->tag != SPDE_RECNAME)
             continue;
-        for (tsfp = tsfp->next; tsfp; tsfp = tsfp->next) {
+        for (++tsfp; tsfp != sfl.cend(); ++tsfp) {
             if (tsfp->tag == SPDE_RECNAME || tsfp->tag == SPDE_ALTNAME ||
                 tsfp->tag == SPDE_SUBNAME || tsfp->tag == SPDE_FLAGS)
                 break;
             if (tsfp->tag == SPDE_FULL)
                 fcount++;
         }
-        if (! tsfp)
+        if (tsfp == sfl.cend())
             break;
     }
 
@@ -4096,16 +4091,9 @@ static void SPValidateDefinition(SPDEFieldsPtr sfp, bool* drop, bool is_trembl)
 /**********************************************************/
 static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ibp, CProt_ref& prot)
 {
-    CharIntLen*   cilp;
-    SPDEFieldsPtr sfp;
-    SPDEFieldsPtr tsfp;
-
-    bool  is_trembl;
-    char* p;
-    char* q;
-    char* r;
-    Int4  count;
-    Char  ch;
+    SPDEFieldList sfl;
+    bool is_trembl;
+    const char* p;
 
     if (! str || (! NStr::StartsWith(str, "RecName: "sv, NStr::eNocase) &&
                   ! NStr::StartsWith(str, "AltName: "sv, NStr::eNocase) &&
@@ -4123,29 +4111,30 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
             is_trembl = true;
     }
 
-    sfp       = new SPDEFields;
-    sfp->tag  = 0;
-    sfp->next = nullptr;
+    sfl.emplace_front(0, nullptr);
+    auto tsfp = sfl.begin();
 
-    for (tsfp = sfp, p = str, count = 0; *p != '\0';) {
+    // Int4 count = 0;
+    for (p = str; *p != '\0';) {
         while (*p == ' ')
             p++;
-        for (q = p; *p != '\0' && *p != ' ';)
+        auto q = p;
+        while (*p != '\0' && *p != ' ')
             p++;
-        ch = *p;
-        *p = '\0';
-        for (cilp = spde_tags; cilp->str; cilp++)
-            if (StringEquNI(cilp->str, q, cilp->len))
+        string_view sv(q, p);
+        const CharIntLen* cilp;
+        for (cilp = spde_tags; cilp->num != 0; cilp++)
+            if (NStr::StartsWith(sv, cilp->str, NStr::eNocase))
                 break;
 
-        *p = ch;
-        if (! cilp->str)
+        if (cilp->num == 0)
             continue;
 
         if (tsfp->tag != 0) {
             if (q == tsfp->start)
                 tsfp->end = q;
             else {
+                const char* r;
                 for (r = q - 1; *r == ' ' || *r == ';';)
                     r--;
                 tsfp->end = r + 1;
@@ -4155,41 +4144,40 @@ static void SPParseDefinition(char* str, const CBioseq::TId& ids, IndexblkPtr ib
         if (cilp->num == SPDE_INCLUDES || cilp->num == SPDE_CONTAINS)
             break;
 
-        count++;
-        tsfp->next = new SPDEFields;
-        tsfp       = tsfp->next;
-        tsfp->tag  = cilp->num;
-        for (r = q + cilp->len; *r == ' ';)
+        // count++;
+        const char* r;
+        for (r = q + cilp->str.size(); *r == ' ';)
             r++;
-        tsfp->start = r;
-        tsfp->next  = nullptr;
+        tsfp = sfl.emplace_after(tsfp, cilp->num, r);
     }
 
     if (*p == '\0')
         tsfp->end = p;
 
-    SPValidateDefinition(sfp->next, &ibp->drop, is_trembl);
+    sfl.pop_front();
 
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+    SPValidateDefinition(sfl, &ibp->drop, is_trembl);
+
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_RECNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_FULL);
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_RECNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_SHORT);
 
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_ALTNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_FULL);
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_ALTNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_SHORT);
 
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_SUBNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_FULL);
-    for (tsfp = sfp->next; tsfp; tsfp = tsfp->next)
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_FULL);
+    for (auto tsfp = sfl.cbegin(); tsfp != sfl.cend(); ++tsfp)
         if (tsfp->tag == SPDE_SUBNAME)
-            SPCollectProtNames(tsfp->next, prot, SPDE_SHORT);
+            SPCollectProtNames(sfl, next(tsfp), prot, SPDE_SHORT);
 }
 
 /**********************************************************/
