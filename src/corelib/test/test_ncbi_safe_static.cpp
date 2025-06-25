@@ -105,10 +105,10 @@ template <int> constexpr auto ls_adjust    =  42;
 template <>    constexpr auto ls_adjust<2> =   0;
 template <>    constexpr auto ls_adjust<3> = -13;
 
-template <int i> const auto lifespan = CSafeStaticLifeSpan(ls_level<i / 100>, ls_span<i / 10 % 10>, ls_adjust<i % 10>);
+template <int i> auto GetLifespan() { return CSafeStaticLifeSpan(ls_level<i / 100>, ls_span<i / 10 % 10>, ls_adjust<i % 10>); }
 
-template <int n>        CSafeStatic<SObject> global_one = { &SObject::Create<n>, nullptr, lifespan<n / 10> };
-template <int n> static CSafeStatic<SObject> static_one = { &SObject::Create<n>, nullptr, lifespan<n / 10> };
+template <int n>        CSafeStatic<SObject> global_one = { &SObject::Create<n>, nullptr, GetLifespan<n / 10>() };
+template <int n> static CSafeStatic<SObject> static_one = { &SObject::Create<n>, nullptr, GetLifespan<n / 10>() };
 
 template <int n>
 auto GlobalOne(SObject* member_one = nullptr)
@@ -125,7 +125,7 @@ auto StaticOne(SObject* global_one)
 template <int n>
 auto LocalOne(SObject* static_one)
 {
-    static CSafeStatic<SObject> local_one = { &SObject::Create<n>, nullptr, lifespan<n / 10> };
+    static CSafeStatic<SObject> local_one = { &SObject::Create<n>, nullptr, GetLifespan<n / 10>() };
     return local_one->Do(static_one);
 }
 
@@ -134,7 +134,7 @@ struct SMemberOne
 {
     auto Do(SObject* local_one) { return member_one->Do(local_one); }
 
-    inline static CSafeStatic<SObject> member_one = { &SObject::Create<n>, nullptr, lifespan<n / 10> };
+    inline static CSafeStatic<SObject> member_one = { &SObject::Create<n>, nullptr, GetLifespan<n / 10>() };
 };
 
 template <int n>
