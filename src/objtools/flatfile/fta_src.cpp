@@ -126,9 +126,12 @@ struct MinMax {
     Int4        min     = 0;
     Int4        max     = 0;
     bool        skip    = false;
-    MinMax*     next    = nullptr;
+
+    MinMax() {}
+    MinMax(const char* o, Int4 i, Int4 x, bool s) :
+        orgname(o), min(i), max(x), skip(s) {}
 };
-using MinMaxPtr = MinMax*;
+using MinMaxList = forward_list<MinMax>;
 
 static const char* ObsoleteSourceDbxrefTag[] = {
     "IFO",
@@ -904,17 +907,6 @@ static char* CheckSourceFeatLocAccs(SourceFeatBlkPtr sfbp, char* acc)
 }
 
 /**********************************************************/
-static void MinMaxFree(MinMaxPtr mmp)
-{
-    MinMaxPtr tmmp;
-
-    for (; mmp; mmp = tmmp) {
-        tmmp = mmp->next;
-        delete mmp;
-    }
-}
-
-/**********************************************************/
 bool fta_if_special_org(const Char* name)
 {
     const char** b;
@@ -931,11 +923,9 @@ bool fta_if_special_org(const Char* name)
 }
 
 /**********************************************************/
-static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t len)
+static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxList& mml, size_t len)
 {
     SourceFeatBlkPtr tsfbp;
-    MinMaxPtr        tmmp;
-    MinMaxPtr        mmpnext;
     char*            p;
     char*            q;
     char*            r;
@@ -1003,27 +993,15 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t
             if (min > 0 && max > 0) {
                 if (min == 1 && (size_t)max == len)
                     tsfbp->full = true;
-                for (tmmp = mmp;; tmmp = tmmp->next) {
+                MinMax newval(tsfbp->name, min, max, tsfbp->skip);
+                for (auto tmmp = mml.begin();; ++tmmp) {
                     if (min < tmmp->min) {
-                        mmpnext             = tmmp->next;
-                        tmmp->next          = new MinMax;
-                        tmmp->next->orgname = tmmp->orgname;
-                        tmmp->next->min     = tmmp->min;
-                        tmmp->next->max     = tmmp->max;
-                        tmmp->next->skip    = tmmp->skip;
-                        tmmp->next->next    = mmpnext;
-                        tmmp->orgname       = tsfbp->name;
-                        tmmp->min           = min;
-                        tmmp->max           = max;
-                        tmmp->skip          = tsfbp->skip;
+                        mml.insert_after(tmmp, *tmmp);
+                        *tmmp = newval;
                         break;
                     }
-                    if (! tmmp->next) {
-                        tmmp->next          = new MinMax;
-                        tmmp->next->orgname = tsfbp->name;
-                        tmmp->next->min     = min;
-                        tmmp->next->max     = max;
-                        tmmp->next->skip    = tsfbp->skip;
+                    if (next(tmmp) == mml.end()) {
+                        mml.insert_after(tmmp, newval);
                         break;
                     }
                 }
@@ -1037,11 +1015,12 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxPtr mmp, size_t
     if (loc)
         MemFree(loc);
 
-    mmp = mmp->next;
-    if (! mmp || mmp->min != 1)
+    auto mmp = mml.begin();
+    ++mmp;
+    if (mmp == mml.end() || mmp->min != 1)
         return (1);
 
-    for (max = mmp->max; mmp; mmp = mmp->next)
+    for (max = mmp->max; mmp != mml.end(); ++mmp)
         if (mmp->max > max && mmp->min <= max + 1)
             max = mmp->max;
 
@@ -1277,41 +1256,41 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
 }
 
 /**********************************************************/
-static bool IfSpecialFeat(MinMaxPtr mmp, size_t len)
+static bool IfSpecialFeat(const MinMax& mmp, size_t len)
 {
-    if ((mmp->min == 1 && (size_t)mmp->max == len) || mmp->skip)
+    if ((mmp.min == 1 && (size_t)mmp.max == len) || mmp.skip)
         return true;
     return false;
 }
 
 /**********************************************************/
-static char* CheckSourceOverlap(MinMaxPtr mmp, size_t len)
+static char* CheckSourceOverlap(const MinMaxList& mml, size_t len)
 {
-    MinMaxPtr tmmp;
-    char*     res;
+    MinMaxList::const_iterator tmmp;
 
-    for (; mmp; mmp = mmp->next) {
-        if (IfSpecialFeat(mmp, len))
+    auto mmp = mml.begin();
+    ++mmp;
+    for (; mmp != mml.end(); ++mmp) {
+        if (IfSpecialFeat(*mmp, len))
             continue;
-        for (tmmp = mmp->next; tmmp; tmmp = tmmp->next) {
-            if (IfSpecialFeat(tmmp, len))
+        for (tmmp = next(mmp); tmmp != mml.end(); ++tmmp) {
+            if (IfSpecialFeat(*tmmp, len))
                 continue;
             if (NStr::EqualNocase(mmp->orgname, tmmp->orgname))
                 continue;
             if (tmmp->min <= mmp->max && tmmp->max >= mmp->min)
                 break;
         }
-        if (tmmp)
+        if (tmmp != mml.end())
             break;
     }
-    if (! mmp)
+    if (mmp == mml.end())
         return nullptr;
 
     stringstream ss;
     ss << "\"" << mmp->orgname << "\" at " << mmp->min << ".." << mmp->max
        << " vs \"" << tmmp->orgname << "\" at " << tmmp->min << ".." << tmmp->max;
-    res = StringSave(ss.str());
-    return res;
+    return StringSave(ss.str());
 }
 
 /**********************************************************/
@@ -3081,7 +3060,6 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
     SourceFeatBlkPtr sfbp;
     SourceFeatBlkPtr tsfbp;
 
-    MinMaxPtr   mmp;
     IndexblkPtr ibp;
     char*       res;
     char*       acc;
@@ -3166,8 +3144,9 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
 
     PropagateSuppliedLineage(bioseq, sfbp, pp->taxserver);
 
-    mmp = new MinMax;
-    i   = CheckSourceFeatCoverage(sfbp, mmp, len);
+    MinMaxList mml;
+    mml.emplace_front();
+    i = CheckSourceFeatCoverage(sfbp, mml, len);
     if (i != 0) {
         if (i == 1) {
             FtaErrPost(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
@@ -3175,19 +3154,16 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
             FtaErrPost(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
         }
         SourceFeatBlkSetFree(sfbp);
-        MinMaxFree(mmp);
         return;
     }
 
     if (! CheckForENV(sfbp, ibp, pp->source)) {
         SourceFeatBlkSetFree(sfbp);
-        MinMaxFree(mmp);
         return;
     }
 
     if (! CheckSYNTGNDivision(sfbp, ibp->division)) {
         SourceFeatBlkSetFree(sfbp);
-        MinMaxFree(mmp);
         return;
     }
 
@@ -3221,7 +3197,6 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
 
         if (sev == SEV_REJECT) {
             SourceFeatBlkSetFree(sfbp);
-            MinMaxFree(mmp);
             return;
         }
     }
@@ -3230,7 +3205,6 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_FocusQualNotFullLength, "/focus qualifier should be used for the full-length source feature, not on source feature at \"{}\".", res);
         SourceFeatBlkSetFree(sfbp);
-        MinMaxFree(mmp);
         return;
     }
     i = CheckFocusInOrgs(sfbp, len, &pp->errstat);
@@ -3251,12 +3225,11 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
 
         if (sev == SEV_REJECT) {
             SourceFeatBlkSetFree(sfbp);
-            MinMaxFree(mmp);
             return;
         }
     }
-    res = CheckSourceOverlap(mmp->next, len);
-    MinMaxFree(mmp);
+    res = CheckSourceOverlap(mml, len);
+    mml.clear();
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_MultiOrgOverlap, "Overlapping source features have different organism names {}. Entry dropped.", res);
         SourceFeatBlkSetFree(sfbp);
