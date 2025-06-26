@@ -493,7 +493,7 @@ int SNgHttp2_Session::Init()
 int SNgHttp2_Session::Terminate()
 {
     if (!m_Session) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " already terminated");
+        NCBI_NGHTTP2_SESSION_TRACE(this << " already deleted");
         return -1;
     }
 
@@ -510,8 +510,10 @@ int SNgHttp2_Session::Terminate()
 
 void SNgHttp2_Session::Del(int terminate_rv)
 {
-    NCBI_NGHTTP2_SESSION_TRACE(this << " deleting");
-    x_DelOnError(terminate_rv);
+    if (m_Session) {
+        NCBI_NGHTTP2_SESSION_TRACE(this << " deleting");
+        x_DelOnError(terminate_rv);
+    }
 }
 
 int32_t SNgHttp2_Session::Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd)
