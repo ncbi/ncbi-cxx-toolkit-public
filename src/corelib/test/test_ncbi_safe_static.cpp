@@ -29,8 +29,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -38,7 +36,7 @@
 USING_NCBI_SCOPE;
 
 
-class CSampleBasicApplication : public CNcbiApplication
+class CSafeStaticTestApp : public CNcbiApplication
 {
 private:
     virtual int  Run(void);
@@ -150,7 +148,7 @@ auto MemberOne(SObject* local_one)
     return member_one.Do(local_one);
 }
 
-int CSampleBasicApplication::Run(void)
+int CSafeStaticTestApp::Run(void)
 {
     MemberOne<1114>(LocalOne<1113>(StaticOne<1112>(GlobalOne<1111>())));
     MemberOne<1124>(LocalOne<1123>(StaticOne<1122>(GlobalOne<1121>(MemberOne<1114>()))));
@@ -184,10 +182,10 @@ int CSampleBasicApplication::Run(void)
     MemberOne<2534>(LocalOne<2533>(StaticOne<2532>(GlobalOne<2531>(MemberOne<2524>()))));
     MemberOne<2624>(LocalOne<2623>(StaticOne<2622>(GlobalOne<2621>(MemberOne<2534>()))));
 
-	return 0;
+    return 0;
 }
 
 int main(int argc, ncbi::TXChar* argv[])
 {
-    return CSampleBasicApplication().AppMain(argc, argv);
+    return CSafeStaticTestApp().AppMain(argc, argv);
 }
