@@ -246,6 +246,19 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "LIBXML - xmlPatterncompile"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlPatterncompile;
+			...;
+			func="xml::node::evaluate_xpath_expression(class xml::xpath_expression const &,void *)",src=node.cpp;
+		}
+	}
+}
+
 
 suppression = {
 	name = "LIBUV - uv_loop_init"

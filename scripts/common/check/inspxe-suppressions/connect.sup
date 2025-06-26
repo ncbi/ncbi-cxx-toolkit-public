@@ -388,4 +388,16 @@ suppression = {
 	}
 }
 
-
+suppression = {
+	name = "CONN_Read / x_StrcatCRLF"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="x_StrcatCRLF(char * *, const char *, int)",src=ncbi_connutil.c;
+			func="s_ModifyUserHeader(struct SConnNetInfo *, const char *, EUserHeaderOp)",src=ncbi_connutil.c;
+			...;
+			func=CONN_Read,src=ncbi_connection.c;
+		}
+	}
+}
