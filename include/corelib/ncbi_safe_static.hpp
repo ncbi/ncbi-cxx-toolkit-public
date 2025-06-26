@@ -305,6 +305,9 @@ public:
         if (stack) stack->insert(ptr);
     }
 
+    /// Add new function to call on destroying variables at a specified life span.
+    static void Register(function<void()> on_exit, CSafeStaticLifeSpan life_span);
+
     /// Disable checking on child thread(s) running during destruction
     static void DisableChildThreadsCheck();
 

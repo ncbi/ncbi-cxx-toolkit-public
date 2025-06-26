@@ -106,6 +106,37 @@ CSafeStaticPtr_Base::~CSafeStaticPtr_Base(void)
 
 /////////////////////////////////////////////////////////////////////////////
 //
+//  SSafeStaticFunction::
+//
+
+struct SSafeStaticFunction
+{
+    using TFunction = function<void()>;
+    using TQueue = deque<CSafeStatic<TFunction>>;
+
+    static void CallAndReset(TFunction& func)
+    {
+        func();
+        func = nullptr;
+    }
+
+    static TQueue*& GetQueue()
+    {
+        static TQueue* queue;
+        return queue;
+    }
+
+    static void Cleanup()
+    {
+        auto& queue = GetQueue();
+        delete queue;
+        queue = nullptr;
+    }
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 //  CSafeStaticGuard::
 //
 
@@ -129,9 +160,25 @@ CSafeStaticGuard::CSafeStaticGuard(void)
     if (sm_RefCount == 0) {
         x_GetStack(CSafeStaticLifeSpan::eLifeLevel_Default) = new CSafeStaticGuard::TStack;
         x_GetStack(CSafeStaticLifeSpan::eLifeLevel_AppMain) = new CSafeStaticGuard::TStack;
+        SSafeStaticFunction::GetQueue() = new SSafeStaticFunction::TQueue;
     }
 
     sm_RefCount++;
+}
+
+
+void CSafeStaticGuard::Register(function<void()> on_exit, CSafeStaticLifeSpan life_span)
+{
+    auto& queue = SSafeStaticFunction::GetQueue();
+
+    if (!queue) {
+        x_Get();
+    }
+
+    if (queue) {
+        auto& holder = queue->emplace_back(nullptr, SSafeStaticFunction::CallAndReset, life_span);
+        *holder = std::move(on_exit);
+    }
 }
 
 
@@ -184,6 +231,7 @@ CSafeStaticGuard::~CSafeStaticGuard(void)
 
     x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_AppMain));
     x_Cleanup(guard, x_GetStack(CSafeStaticLifeSpan::eLifeLevel_Default));
+    SSafeStaticFunction::Cleanup();
 }
 
 
