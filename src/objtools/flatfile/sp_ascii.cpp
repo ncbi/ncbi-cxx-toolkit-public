@@ -406,13 +406,12 @@ struct SPDEField {
 using SPDEFieldList = forward_list<SPDEField>;
 
 struct SPFeatInput {
-    string       key;            /* column 6-13 */
-    string       from;           /* column 15-20 */
-    string       to;             /* column 22-27 */
-    string       descrip;        /* column 35-75, continue line if a blank key */
-    SPFeatInput* next = nullptr; /* next FT */
+    string key;     /* column 6-13 */
+    string from;    /* column 15-20 */
+    string to;      /* column 22-27 */
+    string descrip; /* column 35-75, continue line if a blank key */
 };
-using SPFeatInputPtr = SPFeatInput*;
+using SPFeatInputList = forward_list<SPFeatInput>;
 
 struct SPFeatBln {
     bool initmet = false;
@@ -2741,65 +2740,32 @@ static void GetSPInst(ParserPtr pp, const DataBlk& entry, unsigned char* protcon
 }
 
 /**********************************************************/
-static void FreeSPFeatInput(SPFeatInputPtr spfip)
+static bool fta_spfeats_same(SPFeatInput& fi1, SPFeatInput& fi2)
 {
-    delete spfip;
-}
-
-/**********************************************************
- *
- *   static void FreeSPFeatInputSet(spfip):
- *
- *                                              10-18-93
- *
- **********************************************************/
-static void FreeSPFeatInputSet(SPFeatInputPtr spfip)
-{
-    SPFeatInputPtr next;
-
-    for (; spfip; spfip = next) {
-        next = spfip->next;
-        FreeSPFeatInput(spfip);
-    }
-}
-
-/**********************************************************/
-static bool fta_spfeats_same(SPFeatInputPtr fip1, SPFeatInputPtr fip2)
-{
-    if (! fip1 && ! fip2)
-        return true;
-
-    if (! fip1 || ! fip2 ||
-        fip1->key != fip2->key ||
-        fip1->from != fip2->from ||
-        fip1->to != fip2->to ||
-        fip1->descrip != fip2->descrip)
+    if (fi1.key != fi2.key ||
+        fi1.from != fi2.from ||
+        fi1.to != fi2.to ||
+        fi1.descrip != fi2.descrip)
         return false;
 
     return true;
 }
 
 /**********************************************************/
-static void fta_remove_dup_spfeats(SPFeatInputPtr spfip)
+static void fta_remove_dup_spfeats(SPFeatInputList& spfil)
 {
-    SPFeatInputPtr fip;
-    SPFeatInputPtr fipnext;
-    SPFeatInputPtr fipprev;
-
-    if (! spfip || ! spfip->next)
+    if (spfil.empty() || next(spfil.begin()) == spfil.end())
         return;
 
-    for (; spfip && spfip->next; spfip = spfip->next) {
-        fipprev = spfip;
-        for (fip = spfip->next; fip; fip = fipnext) {
-            fipnext = fip->next;
-            if (! fta_spfeats_same(spfip, fip)) {
-                fipprev = fip;
+    for (auto spfip = spfil.begin(); spfip != spfil.end() && next(spfip) != spfil.end(); ++spfip) {
+        auto fipprev = spfip;
+        for (auto fip = next(fipprev); fip != spfil.end();) {
+            if (! fta_spfeats_same(*spfip, *fip)) {
+                fipprev = fip++;
                 continue;
             }
-            fipprev->next = fip->next;
             FtaErrPost(SEV_WARNING, ERR_FEATURE_DuplicateRemoved, "Duplicated feature \"{}\" at location \"{}..{}\" removed.", fip->key.empty() ? "???" : fip->key, fip->from.empty() ? "???" : fip->from, fip->to.empty() ? "???" : fip->to);
-            FreeSPFeatInput(fip);
+            fip = spfil.erase_after(fipprev);
         }
     }
 }
@@ -2898,11 +2864,9 @@ static void SPPostProcVarSeq(string& varseq)
  *                                              10-15-93
  *
  **********************************************************/
-static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
+static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
 {
-    SPFeatInputPtr temp;
-    SPFeatInputPtr current;
-    SPFeatInputPtr spfip;
+    SPFeatInputList spfil;
     const char*    defdelim;
     char*          fromstart;
     char*          fromend;
@@ -2925,23 +2889,22 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
 
     size_t len = 0;
     if (! SrchNodeType(entry, ParFlatSP_FT, &len, &offset))
-        return nullptr;
+        return spfil;
 
     bptr = offset + ParFlat_COL_DATA_SP;
     eptr = offset + len;
 
-    spfip   = nullptr;
-    current = nullptr;
+    auto current = spfil.before_begin();
 
     while (bptr < eptr && (endline = SrchTheChar(string_view(bptr, eptr), '\n'))) {
-        temp = new SPFeatInput;
+        SPFeatInput temp;
 
         for (p = bptr, i = 0; *p != ' ' && *p != '\n' && i < 8; i++)
             p++;
-        temp->key.assign(bptr, p);
-        NStr::TruncateSpacesInPlace(temp->key, NStr::eTrunc_End);
+        temp.key.assign(bptr, p);
+        NStr::TruncateSpacesInPlace(temp.key, NStr::eTrunc_End);
 
-        if (temp->key == "VAR_SEQ")
+        if (temp.key == "VAR_SEQ")
             defdelim = "\n";
         else
             defdelim = " ";
@@ -2964,7 +2927,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
             ptr1++;
 
         if (bptr < ptr1 && ptr1 <= endline) {
-            temp->from.assign(bptr, ptr1);
+            temp.from.assign(bptr, ptr1);
             fromstart = bptr;
             fromend   = ptr1;
         } else {
@@ -2978,12 +2941,12 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 *p = '\0';
             }
             if (bptr == ptr1)
-                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp->key);
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp.key);
             else
-                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Empty location at feature \"{}\". Feature dropped.", temp->key);
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Empty location at feature \"{}\". Feature dropped.", temp.key);
             if (p)
                 *p = ch;
-            temp->from.assign("-1");
+            temp.from.assign("-1");
             fromstart = nullptr;
             fromend   = nullptr;
         }
@@ -2997,7 +2960,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                           (*ptr1 >= '0' && *ptr1 <= '9');)
             ptr1++;
 
-        p = (char*)temp->from.c_str();
+        p = (char*)temp.from.c_str();
         if (*p == '<' || *p == '>')
             p++;
 
@@ -3007,18 +2970,18 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         if (bptr < ptr1 && ptr1 <= endline) {
             if (*q != '\n' && new_format && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
-            temp->to.assign(bptr, ptr1);
+            temp.to.assign(bptr, ptr1);
         } else if (fromstart) {
             if (*q != '\n' && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
-            temp->to.assign(fromstart, fromend);
+            temp.to.assign(fromstart, fromend);
         } else {
             if (*q != '\n' && (*p == '?' || fta_atoi(p) != -1))
                 extra_text = true;
-            temp->to.assign("-1");
+            temp.to.assign("-1");
         }
 
-        q = (char*)temp->to.c_str();
+        q = (char*)temp.to.c_str();
         if (*q == '<' || *q == '>')
             q++;
         if (extra_text || (*p != '?' && *q != '?' && (fta_atoi(p) > fta_atoi(q)))) {
@@ -3031,10 +2994,10 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 ch = *p;
                 *p = '\0';
             }
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp->key);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_BadLocation, "Invalid location \"{}\" at feature \"{}\". Feature dropped.", location, temp.key);
             if (p)
                 *p = ch;
-            temp->from.assign("-1");
+            temp.from.assign("-1");
         }
 
         for (bptr = ptr1; *bptr == ' ' && bptr <= endline;)
@@ -3047,7 +3010,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 if (*--str != ' ')
                     delim = nullptr;
         if (bptr <= endline)
-            temp->descrip.assign(bptr, endline);
+            temp.descrip.assign(bptr, endline);
 
         for (bptr = endline; *bptr == ' ' || *bptr == '\n';)
             bptr++;
@@ -3081,7 +3044,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                     if (*p == '=' && p[1] == '\"') {
                         *p      = '\0';
                         badqual = true;
-                        FtaErrPost(SEV_ERROR, ERR_FEATURE_InvalidQualifier, "Qualifier {} is invalid for the feature \"{}\" at \"{}..{}\".", bptr, temp->key, temp->from, temp->to);
+                        FtaErrPost(SEV_ERROR, ERR_FEATURE_InvalidQualifier, "Qualifier {} is invalid for the feature \"{}\" at \"{}..{}\".", bptr, temp.key, temp.from, temp.to);
                         *p = '=';
                     }
                 }
@@ -3096,16 +3059,16 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 p = nullptr;
 
             if (quotes) {
-                StringCombine(temp->descrip, string(bptr, quotes), delim);
+                StringCombine(temp.descrip, string(bptr, quotes), delim);
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
-                    StringCombine(temp->descrip, string(quotes + 1, endline - 1), "");
+                    StringCombine(temp.descrip, string(quotes + 1, endline - 1), "");
                 else
-                    StringCombine(temp->descrip, string(quotes + 1, endline), "");
+                    StringCombine(temp.descrip, string(quotes + 1, endline), "");
             } else {
                 if (p && p - 1 >= bptr && *(p - 1) == '.')
-                    StringCombine(temp->descrip, string(bptr, endline - 1), delim);
+                    StringCombine(temp.descrip, string(bptr, endline - 1), delim);
                 else
-                    StringCombine(temp->descrip, string(bptr, endline), delim);
+                    StringCombine(temp.descrip, string(bptr, endline), delim);
             }
 
             if (p)
@@ -3124,42 +3087,35 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
         }
 
         if (badqual) {
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Invalid qualifier(s) found within the feature \"{}\" at \"{}..{}\". Feature dropped.", temp->key, temp->from, temp->to);
-            FreeSPFeatInputSet(temp);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Invalid qualifier(s) found within the feature \"{}\" at \"{}..{}\". Feature dropped.", temp.key, temp.from, temp.to);
             continue;
         }
 
         if (*defdelim == '\n')
-            SPPostProcVarSeq(temp->descrip);
+            SPPostProcVarSeq(temp.descrip);
 
-        p = (char*)temp->from.c_str();
+        p = (char*)temp.from.c_str();
         if (*p == '<' || *p == '>')
             p++;
         if (*p != '?' && fta_atoi(p) < 0) {
-            FreeSPFeatInputSet(temp);
             continue;
         }
 
-        q = (char*)temp->to.c_str();
+        q = (char*)temp.to.c_str();
         if (*q == '<' || *q == '>')
             q++;
         if ((*p != '?' && fta_atoi(p) > (Int4)seqlen) || (*q != '?' && fta_atoi(q) > (Int4)seqlen)) {
-            FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
-            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp->key, seqlen, temp->from, temp->to);
-            FreeSPFeatInputSet(temp);
+            FtaErrPost(SEV_WARNING, ERR_LOCATION_FailedCheck, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp.key, seqlen, temp.from, temp.to);
+            FtaErrPost(SEV_ERROR, ERR_FEATURE_Dropped, "Location range exceeds the sequence length: feature={}, length={}, from={}, to={}", temp.key, seqlen, temp.from, temp.to);
             continue;
         }
 
-        if (! spfip)
-            spfip = temp;
-        else
-            current->next = temp;
-        current = temp;
+        current = spfil.insert_after(current, temp);
     }
 
-    fta_remove_dup_spfeats(spfip);
+    fta_remove_dup_spfeats(spfil);
 
-    return (spfip);
+    return spfil;
 }
 
 /**********************************************************
@@ -3175,7 +3131,7 @@ static SPFeatInputPtr ParseSPFeat(const DataBlk& entry, size_t seqlen)
  *                                              10-18-93
  *
  **********************************************************/
-static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond, bool initmet, bool signal)
+static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, const SPFeatInput& spfip, bool bond, bool initmet, bool signal)
 {
     CRef<CSeq_loc> loc;
 
@@ -3191,14 +3147,14 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
     Int4 from;
     Int4 to;
 
-    if (! spfip || spfip->from.empty() || spfip->to.empty())
+    if (spfip.from.empty() || spfip.to.empty())
         return loc;
 
     ibp = pp->entrylist[pp->curindx];
 
     loc.Reset(new CSeq_loc);
 
-    ptr = spfip->from.c_str();
+    ptr = spfip.from.c_str();
     if (StringChr(ptr, '<')) {
         fuzzfrom = true;
 
@@ -3215,7 +3171,7 @@ static CRef<CSeq_loc> GetSPSeqLoc(ParserPtr pp, SPFeatInputPtr spfip, bool bond,
         (initmet && signal && from == 1))
         from--;
 
-    ptr = spfip->to.c_str();
+    ptr = spfip.to.c_str();
     if (StringChr(ptr, '>')) {
         fuzzto = true;
         while (*ptr != '\0' && isdigit(*ptr) == 0)
@@ -3479,10 +3435,8 @@ CRef<CSeq_feat> SpProcFeatBlk(ParserPtr pp, FeatBlkPtr fbp, const CSeq_id& seqid
  *                                              10-18-93
  *
  **********************************************************/
-static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq_annot::C_Data::TFtable& feats)
+static void SPFeatGeneral(ParserPtr pp, SPFeatInputList& spfil, bool initmet, CSeq_annot::C_Data::TFtable& feats)
 {
-    SPFeatInputPtr temp;
-
     Int2 indx;
     bool signal;
     bool bond;
@@ -3491,23 +3445,23 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
 */
     Uint1 type;
 
-    for (temp = spfip; temp; temp = temp->next) {
-        FtaInstallPrefix(PREFIX_FEATURE, temp->key, temp->from);
+    for (auto& temp : spfil) {
+        FtaInstallPrefix(PREFIX_FEATURE, temp.key, temp.from);
 
-        if (NStr::EqualNocase("VARSPLIC", temp->key)) {
+        if (NStr::EqualNocase("VARSPLIC", temp.key)) {
             FtaErrPost(SEV_WARNING, ERR_FEATURE_ObsoleteFeature, "Obsolete UniProt feature \"VARSPLIC\" found. Replaced with \"VAR_SEQ\".");
-            temp->key = "VAR_SEQ";
+            temp.key = "VAR_SEQ";
         }
 
-        if (NStr::EqualNocase(temp->key, "NON_STD")) {
-            if (NStr::EqualNocase(temp->descrip, "Selenocysteine.")) {
-                temp->key = "SE_CYS";
-                temp->descrip.clear();
+        if (NStr::EqualNocase(temp.key, "NON_STD")) {
+            if (NStr::EqualNocase(temp.descrip, "Selenocysteine.")) {
+                temp.key = "SE_CYS";
+                temp.descrip.clear();
             } else
-                temp->key = "MOD_RES";
+                temp.key = "MOD_RES";
         }
 
-        indx = SpFeatKeyNameValid(temp->key.c_str());
+        indx = SpFeatKeyNameValid(temp.key.c_str());
         if (indx == -1) {
             FtaErrPost(SEV_WARNING, ERR_FEATURE_UnknownFeatKey, "dropping");
             FtaDeletePrefix(PREFIX_FEATURE);
@@ -3526,7 +3480,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
         type = ParFlat_SPFeat[indx].type;
         if (type == ParFlatSPSites) {
             if (indx == ParFlatSPSitesModB)
-                indx = GetSPSitesMod(temp->descrip);
+                indx = GetSPSitesMod(temp.descrip);
 
             feat->SetData().SetSite(static_cast<CSeqFeatData::ESite>(ParFlat_SPFeat[indx].keyint));
         } else if (type == ParFlatSPBonds) {
@@ -3542,7 +3496,7 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
         } else {
             if (type != ParFlatSPInitMet && type != ParFlatSPNonTer &&
                 type != ParFlatSPNonCons) {
-                FtaErrPost(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"{}\" with unknown type dropped.", temp->key);
+                FtaErrPost(SEV_WARNING, ERR_FEATURE_Dropped, "Swiss-Prot feature \"{}\" with unknown type dropped.", temp.key);
             }
             FtaDeletePrefix(PREFIX_FEATURE);
             continue;
@@ -3563,8 +3517,8 @@ static void SPFeatGeneral(ParserPtr pp, SPFeatInputPtr spfip, bool initmet, CSeq
         if (SeqLocHaveFuzz(*loc))
             feat->SetPartial(true);
 
-        if (! temp->descrip.empty())
-            feat->SetComment(NStr::Sanitize(temp->descrip));
+        if (! temp.descrip.empty())
+            feat->SetComment(NStr::Sanitize(temp.descrip));
 
         feats.push_back(feat);
 
@@ -4387,25 +4341,25 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
  *                                              11-5-93
  *
  **********************************************************/
-static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeatBlnPtr spfbp)
+static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfil, SPFeatBlnPtr spfbp)
 {
     SPSegLocPtr curspslp = nullptr;
     SPSegLocPtr hspslp   = nullptr;
     SPSegLocPtr spslp;
     const char* p;
 
-    if (! spfip)
+    if (spfil.empty())
         return nullptr;
 
     /* get location range
      */
-    for (; spfip; spfip = spfip->next) {
-        if (spfip->key != "NON_CONS")
+    for (const auto& spfip : spfil) {
+        if (spfip.key != "NON_CONS")
             continue;
 
         if (! hspslp) {
             spslp = new SPSegLoc;
-            p     = spfip->from.c_str();
+            p     = spfip.from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
 
@@ -4413,14 +4367,14 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
             hspslp     = spslp;
             curspslp   = spslp;
         } else {
-            p = spfip->from.c_str();
+            p = spfip.from.c_str();
             if (*p == '<' || *p == '>' || *p == '?')
                 p++;
             curspslp->len = fta_atoi(p) - curspslp->from;
         }
 
         spslp = new SPSegLoc;
-        p     = spfip->from.c_str();
+        p     = spfip.from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
         spslp->from    = fta_atoi(p);
@@ -4453,15 +4407,16 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, SPFeatInputPtr spfip, SPFeat
  *                                              11-1-93
  *
  **********************************************************/
-static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
+static void CkInitMetSP(ParserPtr pp, const SPFeatInputList& spfil, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
-    SPFeatInputPtr temp;
-    const char*    p;
-    Int2           count;
-    Int4           from = 0;
-    Int4           to;
+    Int2 count = 0;
+    Int4 from  = 0;
+    Int4 to;
 
-    for (count = 0; spfip; spfip = spfip->next) {
+    auto spfip = spfil.cbegin();
+    auto temp  = spfil.cend();
+
+    for (; spfip != spfil.cend(); ++spfip) {
         if (spfip->key != "INIT_MET")
             continue;
 
@@ -4469,7 +4424,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
             break;
 
         count++;
-        p = spfip->from.c_str();
+        const char* p = spfip->from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
         from = fta_atoi(p);
@@ -4486,7 +4441,7 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
     if (count == 0)
         return;
 
-    if (spfip) {
+    if (spfip != spfil.cend()) {
         FtaErrPost(SEV_ERROR, ERR_FEATURE_Invalid_INIT_MET, "Either incorrect or more than one INIT_MET feature provided.");
         return;
     }
@@ -4526,12 +4481,11 @@ static void CkInitMetSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entr
  *                                              11-2-93
  *
  **********************************************************/
-static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
+static void CkNonTerSP(ParserPtr pp, const SPFeatInputList& spfil, CSeq_entry& seq_entry, SPFeatBlnPtr spfbp)
 {
-    SPFeatInputPtr temp;
-    Int4           from;
-    Int4           ctr;
-    bool           segm;
+    Int4 from;
+    Int4 ctr;
+    bool segm;
 
     CMolInfo* mol_info = nullptr;
     CBioseq&  bioseq   = seq_entry.SetSeq();
@@ -4546,17 +4500,17 @@ static void CkNonTerSP(ParserPtr pp, SPFeatInputPtr spfip, CSeq_entry& seq_entry
     }
 
     segm = false;
-    for (temp = spfip; temp; temp = temp->next) {
-        if (temp->key == "NON_CONS") {
+    for (const auto& temp : spfil) {
+        if (temp.key == "NON_CONS") {
             segm = true;
             continue;
         }
 
-        if (temp->key != "NON_TER")
+        if (temp.key != "NON_TER")
             continue;
 
-        from = NStr::StringToInt(temp->from);
-        if (from != NStr::StringToInt(temp->to)) {
+        from = NStr::StringToInt(temp.from);
+        if (from != NStr::StringToInt(temp.to)) {
             FtaErrPost(SEV_WARNING, ERR_FEATURE_UnEqualEndPoint, "NON_TER has unequal endpoints");
             continue;
         }
@@ -4648,9 +4602,7 @@ static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
  **********************************************************/
 static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
 {
-    SPFeatInputPtr spfip;
-    EntryBlkPtr    ebp;
-
+    EntryBlkPtr  ebp;
     SPFeatBlnPtr spfbp;
     SPSegLocPtr  spslp; /* segment location, data from NON_CONS */
     SPSegLocPtr  next;
@@ -4659,14 +4611,14 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
     CSeq_entry& seq_entry = *ebp->seq_entry;
 
     spfbp = new SPFeatBln;
-    spfip = ParseSPFeat(entry, pp->entrylist[pp->curindx]->bases);
+    auto spfil = ParseSPFeat(entry, pp->entrylist[pp->curindx]->bases);
 
     CSeq_annot::C_Data::TFtable feats;
 
-    if (spfip) {
-        CkNonTerSP(pp, spfip, seq_entry, spfbp);
-        CkInitMetSP(pp, spfip, seq_entry, spfbp);
-        SPFeatGeneral(pp, spfip, spfbp->initmet, feats);
+    if (! spfil.empty()) {
+        CkNonTerSP(pp, spfil, seq_entry, spfbp);
+        CkInitMetSP(pp, spfil, seq_entry, spfbp);
+        SPFeatGeneral(pp, spfil, spfbp->initmet, feats);
     }
 
     SPFeatGeneRef(pp, feats, entry);        /* GN line */
@@ -4674,7 +4626,7 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
 
     CBioseq& bioseq = seq_entry.SetSeq();
 
-    spslp = GetSPSegLocInfo(bioseq, spfip, spfbp); /* checking NON_CONS key */
+    spslp = GetSPSegLocInfo(bioseq, spfil, spfbp); /* checking NON_CONS key */
     if (spslp)
         SeqToDeltaSP(bioseq, spslp);
 
@@ -4689,7 +4641,6 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
         delete spslp;
     }
 
-    FreeSPFeatInputSet(spfip);
     delete spfbp;
 }
 
