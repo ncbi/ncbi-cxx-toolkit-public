@@ -148,7 +148,9 @@ protected:
         : m_SelfCleanup(self_cleanup),
           m_UserCleanup(user_cleanup),
           m_LifeSpan(life_span),
-          m_CreationOrder(x_GetCreationOrder())
+          m_CreationOrder(x_GetCreationOrder()),
+          m_MutexRefCount(0),
+          m_InstanceMutex(nullptr)
     {}
 
     /// Pointer to the data
