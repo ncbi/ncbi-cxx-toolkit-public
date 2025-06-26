@@ -106,9 +106,9 @@ GetBiosampleData(const string& accession, bool use_dev_server, TBioSamples *cach
     unique_ptr<CObjectIStream> in_stream;
     in_stream.reset(new CObjectIStreamAsn(http_stream));
  
-	CRef< CSeq_descr > response(new CSeq_descr());
+    CRef< CSeq_descr > response(new CSeq_descr());
     try {
-	    *in_stream >> *response;
+        *in_stream >> *response;
     } catch (...) {
         response.Reset(NULL);
     }
@@ -394,6 +394,24 @@ void sPrintField(const string& value, size_t width, CNcbiOstream& ostr)
     ostr << formattedValue;
 }
 
+string CBiosampleFieldDiff::GetSrcVal() const
+{
+    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "lat-lon" || m_FieldName == "collection-date") {
+        return m_SrcVal;
+    }
+
+    return CBioSource::IsStopWord(m_SrcVal) ? string("") : m_SrcVal;
+}
+
+string CBiosampleFieldDiff::GetSampleVal() const
+{
+    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "lat-lon" || m_FieldName == "collection-date") {
+        return m_SampleVal;
+    }
+
+    return CBioSource::IsStopWord(m_SampleVal) ? string("") : m_SampleVal;
+}
+
 void CBiosampleFieldDiff::PrettyPrint(
     CNcbiOstream& ostr,
     size_t keyWidth,
@@ -487,7 +505,7 @@ TStructuredCommentTableColumnList GetAvailableFields(vector<CConstRef<CUser_obje
 
     ITERATE(vector<CConstRef<CUser_object> >, it, src) {
         TStructuredCommentTableColumnList src_fields = GetStructuredCommentFields(**it);
-		fields.insert(fields.end(), src_fields.begin(), src_fields.end());
+        fields.insert(fields.end(), src_fields.begin(), src_fields.end());
     }
 
     // no need to sort and unique if there are less than two fields
@@ -640,15 +658,15 @@ bool s_IsReportableStructuredComment(const CSeqdesc& desc, const string& expecte
     const CUser_object& user = desc.GetUser();
 
     if (!user.IsSetType() || !user.GetType().IsStr()
-    	|| !NStr::Equal(user.GetType().GetStr(), "StructuredComment")){
-    	rval = false;
+        || !NStr::Equal(user.GetType().GetStr(), "StructuredComment")){
+        rval = false;
     } else {
         string prefix = CComment_rule::GetStructuredCommentPrefix(user);
         if (NStr::IsBlank (expected_prefix)) {
             if (!NStr::StartsWith(prefix, "##Genome-Assembly-Data", NStr::eNocase)
                 && !NStr::StartsWith(prefix, "##Assembly-Data", NStr::eNocase)
                 && !NStr::StartsWith(prefix, "##Genome-Annotation-Data", NStr::eNocase)) {
-		        rval = true;
+                rval = true;
             }
         } else if (NStr::StartsWith(prefix, expected_prefix)) {
             rval = true;
@@ -676,7 +694,7 @@ void AddValueToColumn (CRef<CSeqTable_column> column, string value, size_t row)
     while (column->SetData().SetString().size() < row + 1) {
         column->SetData().SetString().push_back ("");
     }
-	column->SetData().SetString()[row] = value;
+    column->SetData().SetString()[row] = value;
 }
 
 
@@ -695,7 +713,7 @@ void AddValueToTable (CSeq_table& table, string column_name, string value, size_
     if (!found) {
         CRef<objects::CSeqTable_column> new_col(new objects::CSeqTable_column());
         new_col->SetHeader().SetTitle(column_name);
-		AddValueToColumn(new_col, value, row);
+        AddValueToColumn(new_col, value, row);
         table.SetColumns().push_back(new_col);
     }
 }
@@ -869,7 +887,7 @@ bool ResolveSuppliedBioSampleAccession(const string& biosample_accession, vector
             }
             if (!found) {
                 return false;
-	    }
+        }
             biosample_ids.clear();
             biosample_ids.push_back(biosample_accession);
         }

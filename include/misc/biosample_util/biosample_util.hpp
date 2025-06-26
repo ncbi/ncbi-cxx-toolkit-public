@@ -99,8 +99,8 @@ public:
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(const string& id) { m_SequenceID = id; };
     const string& GetFieldName() const { return m_FieldName; };
-    string GetSrcVal() const { return CBioSource::IsStopWord(m_SrcVal) ? string("") : m_SrcVal; };
-    string GetSampleVal() const { return CBioSource::IsStopWord(m_SampleVal) ? string("") : m_SampleVal; };
+    string GetSrcVal() const;
+    string GetSampleVal() const;
     string GetPureSrcVal() const { return m_SrcVal; };
     string GetPureSampleVal() const { return m_SampleVal; };
     const string& GetBioSample() const { return m_BiosampleID; };
