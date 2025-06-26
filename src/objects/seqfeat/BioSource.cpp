@@ -714,10 +714,13 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
 
     ITERATE(TFieldDiffList, it, diffs) {
         string label = (*it)->GetFieldName();
-    bool skipStopWord = true;
-    if (NStr::EqualNocase(label, "collection-date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo-loc-name")) {
-        skipStopWord = false;
-    }
+        bool skipStopWord = true;
+        if (NStr::EqualNocase(label, "collection-date") ||
+            NStr::EqualNocase(label, "country") ||
+            NStr::EqualNocase(label, "geo-loc-name") ||
+            NStr::EqualNocase(label, "lat-lon")) {
+            skipStopWord = false;
+        }
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
             SetOrg().SetTaxname((*it)->GetSampleVal());
             if (GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetName()) {
@@ -1041,7 +1044,10 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
     bool rval = false;
 
     bool skipStopWord = true;
-    if (NStr::EqualNocase(label, "collection-date") || NStr::EqualNocase(label, "country") || NStr::EqualNocase(label, "geo-loc-name")) {
+    if (NStr::EqualNocase(label, "collection-date") ||
+        NStr::EqualNocase(label, "country") ||
+        NStr::EqualNocase(label, "geo-loc-name") ||
+        NStr::EqualNocase(label, "lat-lon")) {
         skipStopWord = false;
     }
     // ignore if BioSource value is blank and BioSample value is a stop word
@@ -1819,11 +1825,17 @@ bool CBioSource::RemoveNullTerms()
         CBioSource::TSubtype::iterator s = SetSubtype().begin();
         while (s != SetSubtype().end()) {
             if ((*s)->IsSetSubtype()) {
-                if ((*s)->GetSubtype() == CSubSource::eSubtype_country || (*s)->GetSubtype() == CSubSource::eSubtype_collection_date) {
+                CSubSource::TSubtype subtype = (*s)->GetSubtype();
+                if (subtype == CSubSource::eSubtype_country ||
+                    subtype == CSubSource::eSubtype_collection_date ||
+                    subtype == CSubSource::eSubtype_lat_lon) {
                     // skip "missing" null exemption value (RW-1944)
-                    if ((*s)->IsSetName() && NStr::EqualNocase((*s)->GetName(), "missing")) {
-                        ++s;
-                        continue;
+                    if ((*s)->IsSetName()) {
+                        string nm = (*s)->GetName();
+                        if (NStr::EqualNocase(nm, "missing") || NStr::EqualNocase(nm, "not applicable")) {
+                            ++s;
+                            continue;
+                        }
                     }
                 }
             }
