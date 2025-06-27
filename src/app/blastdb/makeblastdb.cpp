@@ -731,6 +731,9 @@ CRawSeqDBSource::GetNext(CTempString               & sequence,
     }
 #endif
 
+    if (m_RandomOids.size()== 0) {
+    	m_Oid = oid;
+    }
     m_Oid ++;
 
     return true;
