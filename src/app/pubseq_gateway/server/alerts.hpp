@@ -60,7 +60,8 @@ enum EPSGS_AlertType {
     ePSGS_MyNCBIUvLoop = 12,
     ePSGS_TcpConnHardLimitExceeded = 13,
     ePSGS_TcpConnSoftLimitExceeded = 14,
-    ePSGS_TcpConnAlertLimitExceeded = 15
+    ePSGS_TcpConnAlertLimitExceeded = 15,
+    ePSGS_Throttling = 16
 };
 
 enum EPSGS_AlertAckResult {

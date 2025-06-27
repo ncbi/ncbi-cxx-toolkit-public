@@ -295,7 +295,7 @@ void CPSGS_SNPProcessor::x_LoadConfig(void)
 bool CPSGS_SNPProcessor::x_IsEnabled(CPSGS_Request& request) const
 {
     auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetSNPProcessorsEnabled();
+    bool enabled = app->Settings().m_SNPProcessorsEnabled;
     if (enabled) {
         for (const auto& name : request.GetRequest<SPSGS_RequestBase>().m_DisabledProcessors) {
             if (NStr::EqualNocase(name, kSNPProcessorName)) return false;

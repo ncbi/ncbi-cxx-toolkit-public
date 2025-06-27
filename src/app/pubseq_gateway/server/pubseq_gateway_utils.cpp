@@ -1594,6 +1594,17 @@ string SanitizeInputValue(const string &  input_val)
 }
 
 
+string GetSiteFromIP(const string &  ip_address)
+{
+    auto const  pos = ip_address.find_last_of('.');
+    string      site;
+    if (pos == string::npos) {
+        return ip_address;
+    }
+    return ip_address.substr(0, pos);
+}
+
+
 static map<EPSGS_StartupDataState, string> s_CassStartupDataStateMsg =
     { {ePSGS_NoCassConnection, "Cassandra DB connection is not established"},
       {ePSGS_NoValidCassMapping, "Cassandra DB mapping configuration is invalid"},
@@ -1627,7 +1638,7 @@ CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
 }
 
 
-void DismissErrorRequestContext(CRef<CRequestContext>   context,
+void DismissErrorRequestContext(CRef<CRequestContext> &  context,
                                 int  status, size_t  bytes_sent)
 {
     CDiagContext::SetRequestContext(context);

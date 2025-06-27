@@ -58,7 +58,8 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_MyNCBIUvLoop,                     "MyNCBIUvLoop" },
     { ePSGS_TcpConnHardLimitExceeded,         "TcpConnHardLimitExceeded" },
     { ePSGS_TcpConnSoftLimitExceeded,         "TcpConnSoftLimitExceeded" },
-    { ePSGS_TcpConnAlertLimitExceeded,        "TcpConnAlertLimitExceeded" }
+    { ePSGS_TcpConnAlertLimitExceeded,        "TcpConnAlertLimitExceeded" },
+    { ePSGS_Throttling,                       "Throttling" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

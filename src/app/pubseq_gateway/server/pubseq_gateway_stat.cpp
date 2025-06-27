@@ -374,6 +374,14 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "IncomingConnectionsCounter", "Total number of incoming connections",
             "Total number of incoming connections (lifetime)");
+    m_Counters[ePSGS_NewConnThrottled] =
+        new SCounterInfo(
+            "NewConnThrottled", "Number of times a new connection was closed due to throttling",
+            "Number of times a new connection was closed due to throttling");
+    m_Counters[ePSGS_OldConnThrottled] =
+        new SCounterInfo(
+            "OldConnThrottled", "Number of times an old connection was closed due to throttling",
+            "Number of times an old connection was closed due to throttling");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",

@@ -291,7 +291,7 @@ CPSGS_CassProcessorBase::IsCassandraProcessorEnabled(
     //            not in the request.
 
     auto *      app = CPubseqGatewayApp::GetInstance();
-    bool        enabled = app->GetCassandraProcessorsEnabled();
+    bool        enabled = app->Settings().m_CassandraProcessorsEnabled;
 
     if (enabled) {
         for (const auto &  dis_processor :

@@ -81,6 +81,7 @@ struct SPubseqGatewaySettings
     size_t                              m_ConnThrottleByUserAgent;
     double                              m_ConnThrottleCloseIdleSec;
     double                              m_ConnForceCloseWaitSec;
+    double                              m_ThrottlingDataValidSec;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;

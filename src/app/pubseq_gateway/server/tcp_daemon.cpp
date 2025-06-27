@@ -266,6 +266,62 @@ string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
 }
 
 
+bool  IdleTimestampPredicate(const SPSGS_IdleConnectionProps &  lhs,
+                             const SPSGS_IdleConnectionProps &  rhs)
+{
+    return lhs.m_LastActivityTimestamp < rhs.m_LastActivityTimestamp;
+}
+
+
+void
+CTcpWorkersList::PopulateThrottlingData(SThrottlingData &  throttling_data)
+{
+    throttling_data.Clear();
+    system_clock::time_point  now = system_clock::now();
+
+    for (auto &  it : m_Workers) {
+        it->PopulateThrottlingData(throttling_data, now, m_IdleTimeoutMs);
+    }
+
+    // Sort by the timestamp
+    throttling_data.m_IdleConnProps.sort(IdleTimestampPredicate);
+
+    // Build the lists of those who broke the limits
+    for (const auto &  it : throttling_data.m_PeerIPCounts) {
+        if (it.second > m_ConnThrottleByHost) {
+            throttling_data.m_PeerIPOverLimit.push_back(it.first);
+        }
+    }
+    for (const auto &  it : throttling_data.m_PeerSiteCounts) {
+        if (it.second > m_ConnThrottleBySite) {
+            throttling_data.m_PeerSiteOverLimit.push_back(it.first);
+        }
+    }
+    for (const auto &  it : throttling_data.m_PeerIDCounts) {
+        if (it.second > m_ConnThrottleByProcess) {
+            throttling_data.m_PeerIDOverLimit.push_back(it.first);
+        }
+    }
+    for (const auto &  it : throttling_data.m_UserAgentCounts) {
+        if (it.second > m_ConnThrottleByUserAgent) {
+            throttling_data.m_UserAgentOverLimit.push_back(it.first);
+        }
+    }
+}
+
+
+bool CTcpWorkersList::CloseThrottledConnection(unsigned int  worker_id,
+                                               int64_t  conn_id)
+{
+    for (auto &  it : m_Workers) {
+        if (it->m_id == worker_id) {
+            return it->CloseThrottledConnection(conn_id);
+        }
+    }
+    return false;   // There is no such worker id
+}
+
+
 void CTcpWorker::Stop(void)
 {
     if (m_started && !m_shutdown && !m_shuttingdown) {
@@ -285,7 +341,7 @@ void CTcpWorker::Stop(void)
         m_ConnListLock.unlock();
 
         for (auto  conn : all_connections) {
-            conn->CleanupToStop();
+            conn->CleanupTimers();
         }
 
         uv_async_send(&m_internal->m_async_stop);
@@ -529,6 +585,91 @@ CTcpWorker::GetConnProps(void)
 }
 
 
+bool CTcpWorker::CloseThrottledConnection(int64_t  conn_id)
+{
+    std::lock_guard<std::mutex> lock(m_ConnListLock);
+    for (auto &  it: m_ConnectedList) {
+        if (std::get<1>(it).GetConnectionId() == conn_id) {
+            std::get<1>(it).CloseThrottledConnection(
+                                CHttpConnection::ePSGS_AsyncClose);
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void
+CTcpWorker::PopulateThrottlingData(SThrottlingData &  throttling_data,
+                                    const system_clock::time_point &  now,
+                                    uint64_t  idle_timeout_ms)
+{
+    std::lock_guard<std::mutex> lock(m_ConnListLock);
+    for (auto &  it: m_ConnectedList) {
+        SConnectionRunTimeProperties    props = std::get<1>(it).GetProperties();
+
+        ++throttling_data.m_TotalConns;
+        if (!props.m_PeerIp.empty()) {
+            if (throttling_data.m_PeerIPCounts.find(props.m_PeerIp) == throttling_data.m_PeerIPCounts.end()) {
+                throttling_data.m_PeerIPCounts[props.m_PeerIp] = 1;
+            } else {
+                ++throttling_data.m_PeerIPCounts[props.m_PeerIp];
+            }
+
+            string      site = GetSiteFromIP(props.m_PeerIp);
+            if (throttling_data.m_PeerSiteCounts.find(site) == throttling_data.m_PeerSiteCounts.end()) {
+                throttling_data.m_PeerSiteCounts[site] = 1;
+            } else {
+                ++throttling_data.m_PeerSiteCounts[site];
+            }
+
+            if (props.m_PeerId.has_value()) {
+                if (throttling_data.m_PeerIDCounts.find(props.m_PeerId.value()) == throttling_data.m_PeerIDCounts.end()) {
+                    throttling_data.m_PeerIDCounts[props.m_PeerId.value()] = 1;
+                } else {
+                    ++throttling_data.m_PeerIDCounts[props.m_PeerId.value()];
+                }
+            }
+
+            if (props.m_PeerUserAgent.has_value()) {
+                if (throttling_data.m_UserAgentCounts.find(props.m_PeerUserAgent.value()) == throttling_data.m_UserAgentCounts.end()) {
+                    throttling_data.m_UserAgentCounts[props.m_PeerUserAgent.value()] = 1;
+                } else {
+                    ++throttling_data.m_UserAgentCounts[props.m_PeerUserAgent.value()];
+                }
+            }
+        }
+
+        if (props.m_LastRequestTimestamp.has_value()) {
+            if (chrono::duration_cast<chrono::milliseconds>
+                (now - props.m_LastRequestTimestamp.value()).count() <=
+                static_cast<int64_t>(idle_timeout_ms)) {
+                continue;
+            }
+        } else {
+            if (chrono::duration_cast<chrono::milliseconds>
+                (now - props.m_OpenTimestamp).count() <=
+                static_cast<int64_t>(idle_timeout_ms)) {
+                continue;
+            }
+        }
+
+        // Here: idle connection
+        system_clock::time_point    ts = props.m_OpenTimestamp;
+        if (props.m_LastRequestTimestamp.has_value()) {
+            ts = props.m_LastRequestTimestamp.value();
+        }
+
+        throttling_data.m_IdleConnProps.emplace_back(
+                SPSGS_IdleConnectionProps(ts, props.m_PeerIp,
+                                          props.m_PeerId,
+                                          props.m_PeerUserAgent,
+                                          m_id, props.m_Id));
+
+    }
+}
+
+
 void CTcpWorker::OnAsyncWork(void)
 {
     // If shutdown is in progress, close outstanding requests
@@ -603,13 +744,17 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
 
     if (m_FreeList.empty()) {
+        const SPubseqGatewaySettings &  settings = app->Settings();
+        uint64_t    conn_force_close_wait_ms = lround(settings.m_ConnForceCloseWaitSec * 1000.0);
+
         m_FreeList.emplace_back(
             tuple<uv_tcp_t, CHttpConnection>(uv_tcp_t{0},
-                                             CHttpConnection(app->GetHttpMaxBacklog(),
-                                             app->GetHttpMaxRunning())));
+                                             CHttpConnection(settings.m_HttpMaxBacklog,
+                                                             settings.m_HttpMaxRunning,
+                                                             conn_force_close_wait_ms)));
         auto                new_item = m_FreeList.rbegin();
         CHttpConnection *   http_connection = & get<1>(*new_item);
-        http_connection->SetupMaintainTimer(m_internal->m_loop.Handle());
+        http_connection->SetupTimers(m_internal->m_loop.Handle());
     }
 
     auto        it = m_FreeList.begin();
@@ -648,7 +793,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // - the connection needs to be flagged as 'bad'
         // - the bad counter needs to be incremented
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->PrepareForUsage(num_connections, "", true);
+        http_conn->PrepareForUsage(nullptr, num_connections, "", true);
 
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp,
                                                                           http_conn->GetConnectionId());
@@ -679,7 +824,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // Technically maintaining the TCP counter value correct is not
         // required here however it is a bit cleaner, so let's do it.
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->PrepareForUsage(num_connections, peer_ip, true);
+        http_conn->PrepareForUsage(nullptr, num_connections, peer_ip, true);
 
         uv_close(reinterpret_cast<uv_handle_t*>(tcp), s_OnClientClosed);
         return;
@@ -700,7 +845,7 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
         // - the connection needs to be flagged as 'bad'
         // - the bad counter needs to be incremented
         m_Daemon->IncrementAboveSoftLimitConnCount();
-        http_conn->PrepareForUsage(num_connections, peer_ip, true);
+        http_conn->PrepareForUsage(nullptr, num_connections, peer_ip, true);
 
         CRef<CRequestContext>   context = CreateErrorRequestContextHelper(tcp,
                                                                           http_conn->GetConnectionId());
@@ -729,11 +874,11 @@ void CTcpWorker::OnTcpConnection(uv_stream_t *  listener)
     if (exceed_soft_limit) {
         // Need to count as a 'bad' connection
         app->GetCounters().Increment(nullptr, CPSGSCounters::ePSGS_NumConnSoftLimitExceeded);
-        http_conn->PrepareForUsage(num_connections, peer_ip, true);
+        http_conn->PrepareForUsage(tcp, num_connections, peer_ip, true);
         m_Daemon->IncrementAboveSoftLimitConnCount();
     } else {
         // Need to count as a 'good' connection
-        http_conn->PrepareForUsage(num_connections, peer_ip, false);
+        http_conn->PrepareForUsage(tcp, num_connections, peer_ip, false);
         m_Daemon->IncrementBelowSoftLimitConnCount();
     }
 
@@ -837,7 +982,12 @@ void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
                         "uv_key_create failed", rc);
     }
 
-    CTcpWorkersList     workers(this);
+    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+    CTcpWorkersList         workers(this, app->Settings().m_IdleTimeoutSec,
+                                          app->Settings().m_ConnThrottleByHost,
+                                          app->Settings().m_ConnThrottleBySite,
+                                          app->Settings().m_ConnThrottleByProcess,
+                                          app->Settings().m_ConnThrottleByUserAgent);
     {{
         CUvLoop         loop;
         m_UVLoop = &loop;

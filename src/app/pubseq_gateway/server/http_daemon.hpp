@@ -38,6 +38,7 @@
 #include <h2o.h>
 
 #include "http_proto.hpp"
+#include "throttling.hpp"
 
 
 class CHttpRequestParser;
@@ -72,7 +73,9 @@ public:
                 unsigned short  tcp_workers, unsigned short  tcp_backlog,
                 int64_t  tcp_max_connections,
                 int64_t  tcp_max_connections_soft_limit,
-                int64_t  tcp_max_connections_alert_limit);
+                int64_t  tcp_max_connections_alert_limit,
+                size_t  idle_timeout_sec,
+                double  conn_force_close_wait_sec);
     ~CHttpDaemon();
 
     void Run(std::function<void(CTcpDaemon &)> on_watch_dog = nullptr);
@@ -81,6 +84,8 @@ public:
     size_t GetBelowSoftLimitConnCount(void) const;
     void MigrateConnectionFromAboveLimitToBelowLimit(void);
     string GetConnectionsStatus(int64_t  self_connection_id);
+    void PopulateThrottlingData(SThrottlingData &  throttling_data);
+    bool CloseThrottledConnection(unsigned int  worker_id, int64_t  conn_id);
 
 private:
     std::unique_ptr<CTcpDaemon>     m_TcpDaemon;

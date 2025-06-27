@@ -43,6 +43,9 @@ using namespace std::chrono;
 #include "pubseq_gateway_types.hpp"
 
 
+class CHttpDaemon;
+
+
 int64_t GenerateConnectionId(void);
 
 
@@ -96,15 +99,23 @@ class CHttpConnection
 {
 public:
     CHttpConnection(size_t  http_max_backlog,
-                    size_t  http_max_running) :
+                    size_t  http_max_running,
+                    uint64_t  immediate_conn_close_timeout_ms) :
         m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
-        m_IsClosed(false), m_ScheduledMaintainTimer{0}
+        m_ImmediateConnCloseTimeoutMs(immediate_conn_close_timeout_ms),
+        m_IsClosed(false),
+        m_ScheduledMaintainTimer{0},
+        m_InitiateClosingEvent{0},
+        m_H2oConnection(nullptr),
+        m_TcpStream(nullptr),
+        m_HttpCtx({0}),
+        m_H2oCtxInitialized(false)
     {}
 
     ~CHttpConnection();
 
-    void SetupMaintainTimer(uv_loop_t *  tcp_worker_loop);
-    void CleanupToStop(void);
+    void SetupTimers(uv_loop_t *  tcp_worker_loop);
+    void CleanupTimers(void);
 
     int64_t  GetConnectionId(void) const
     {
@@ -122,11 +133,14 @@ public:
         x_CancelAll();
     }
 
-    void OnBeforeClosedConnection(void)
-    {
-        m_IsClosed = true;
-        x_CancelAll();
-    }
+    void OnBeforeClosedConnection(void);
+
+    enum EPSGS_ClosingType {
+        ePSGS_SyncClose,
+        ePSGS_AsyncClose
+    };
+
+    void CloseThrottledConnection(EPSGS_ClosingType  closing_type);
 
     static void s_OnBeforeClosedConnection(void *  data)
     {
@@ -148,10 +162,14 @@ public:
         x_MaintainFinished();
     }
 
-    void PrepareForUsage(int64_t  conn_cnt_at_open,
+    void PrepareForUsage(uv_tcp_t *  uv_tcp_stream,
+                         int64_t  conn_cnt_at_open,
                          const string &  peer_ip,
                          bool  exceed_soft_limit_flag)
     {
+        m_IsClosed = false;
+        m_H2oConnection = nullptr;
+        m_TcpStream = uv_tcp_stream;
         m_RunTimeProps.PrepareForUsage(conn_cnt_at_open,
                                        peer_ip, exceed_soft_limit_flag);
     }
@@ -197,14 +215,35 @@ public:
         m_RunTimeProps.UpdatePeerId(peer_id);
     }
 
+    void UpdateH2oConnection(h2o_conn_t *  h2o_conn);
+
+    h2o_context_t *  InitializeH2oHttpContext(uv_loop_t *  loop,
+                                              CHttpDaemon &  http_daemon);
+
+
 private:
     size_t                          m_HttpMaxBacklog;
     size_t                          m_HttpMaxRunning;
+    uint64_t                        m_ImmediateConnCloseTimeoutMs;
 
     SConnectionRunTimeProperties    m_RunTimeProps;
 
     volatile bool                   m_IsClosed;
     uv_timer_t                      m_ScheduledMaintainTimer;
+    uv_async_t                      m_InitiateClosingEvent;
+
+    // The h2o connection is initialized when a first request comes over this
+    // connection.
+    // Used to close a throttled connection when available
+    h2o_conn_t *                    m_H2oConnection;
+    // The uv tcp stream is initialized when a new connection is established
+    // Used to close a throttled connection when h2o_conn_t* is not available
+    // i.e. a connection is opened and then there is no activity over that
+    // connection.
+    uv_tcp_t *                      m_TcpStream;
+
+    h2o_context_t                   m_HttpCtx;
+    bool                            m_H2oCtxInitialized;
 
     struct SBacklogAttributes
     {

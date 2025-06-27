@@ -48,6 +48,7 @@
 #include "http_daemon.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_logging.hpp"
+#include "throttling.hpp"
 USING_NCBI_SCOPE;
 
 class CTcpWorkersList;
@@ -63,6 +64,11 @@ private:
     std::vector<std::unique_ptr<CTcpWorker>>    m_Workers;
     CTcpDaemon *                                m_Daemon;
     std::function<void(CTcpDaemon &  daemon)>   m_on_watch_dog;
+    uint64_t                                    m_IdleTimeoutMs;
+    size_t                                      m_ConnThrottleByHost;
+    size_t                                      m_ConnThrottleBySite;
+    size_t                                      m_ConnThrottleByProcess;
+    size_t                                      m_ConnThrottleByUserAgent;
 
 protected:
     static void s_WorkerExecute(void *  _worker);
@@ -70,9 +76,21 @@ protected:
 public:
     static uv_key_t         s_thread_worker_key;
 
-    CTcpWorkersList(CTcpDaemon *  daemon) :
-        m_Daemon(daemon)
-    {}
+    CTcpWorkersList(CTcpDaemon *  daemon,
+                    double  idle_timeout_sec,
+                    size_t  conn_throttle_by_host,
+                    size_t  conn_throttle_by_site,
+                    size_t  conn_throttle_by_process,
+                    size_t  conn_throttle_by_user_agent) :
+        m_Daemon(daemon),
+        m_ConnThrottleByHost(conn_throttle_by_host),
+        m_ConnThrottleBySite(conn_throttle_by_site),
+        m_ConnThrottleByProcess(conn_throttle_by_process),
+        m_ConnThrottleByUserAgent(conn_throttle_by_user_agent)
+    {
+        // Milliseconds should be enough
+        m_IdleTimeoutMs = static_cast<uint64_t>(idle_timeout_sec * 1000);
+    }
     ~CTcpWorkersList();
 
     void Start(struct uv_export_t *  exp,
@@ -84,6 +102,8 @@ public:
     void KillAll(void);
     void JoinWorkers(void);
     string GetConnectionsStatus(int64_t  self_connection_id);
+    void PopulateThrottlingData(SThrottlingData &  throttling_data);
+    bool CloseThrottledConnection(unsigned int  worker_id, int64_t  conn_id);
 
     static void s_OnWatchDog(uv_timer_t *  handle);
 };
@@ -146,6 +166,15 @@ struct CTcpWorker
     void WakeWorker(void);
     std::list<std::tuple<uv_tcp_t, CHttpConnection>> &  GetConnList(void);
     std::vector<SConnectionRunTimeProperties>  GetConnProps(void);
+    void PopulateThrottlingData(SThrottlingData &  throttling_data,
+                                 const system_clock::time_point &  now,
+                                 uint64_t  idle_timeout_ms);
+    bool CloseThrottledConnection(int64_t  conn_id);
+
+    // Need to be public because the CHttpConnection may need to close a
+    // hanging connection using libuv facilities. See
+    // CHttpConnection::CloseThrottledConnection()
+    static void s_OnClientClosed(uv_handle_t *  handle);
 
 private:
     void OnAsyncWork(void);
@@ -154,7 +183,6 @@ private:
     static void s_OnTimer(uv_timer_t *  handle);
     static void s_OnAsyncStop(uv_async_t *  handle);
     static void s_OnTcpConnection(uv_stream_t *  listener, const int  status);
-    static void s_OnClientClosed(uv_handle_t *  handle);
     static void s_LoopWalk(uv_handle_t *  handle, void *  arg);
     void OnTcpConnection(uv_stream_t *  listener);
 };
@@ -200,6 +228,12 @@ public:
 
     string GetConnectionsStatus(int64_t  self_connection_id)
     { return m_WorkersList->GetConnectionsStatus(self_connection_id); }
+
+    void PopulateThrottlingData(SThrottlingData &  throttling_data)
+    { m_WorkersList->PopulateThrottlingData(throttling_data); }
+
+    bool CloseThrottledConnection(unsigned int  worker_id, int64_t  conn_id)
+    { return m_WorkersList->CloseThrottledConnection(worker_id, conn_id); }
 
 private:
     static void s_OnMainSigInt(uv_signal_t *  /* req */, int  /* signum */);

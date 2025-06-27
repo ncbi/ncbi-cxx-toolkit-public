@@ -20,7 +20,7 @@ SRC = pubseq_gateway  \
       psgs_seq_id_utils http_request http_connection http_reply http_proto \
       tcp_daemon http_daemon url_param_utils dummy_processor time_series_stat \
       ipg_resolve settings my_ncbi_cache myncbi_callback backlog_per_request \
-      active_proc_per_request z_end_points myncbi_monitor
+      active_proc_per_request z_end_points myncbi_monitor throttling
 
 LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) \
        $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) \
@@ -28,8 +28,7 @@ LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) 
 
 CPPFLAGS = $(OPENSSL_INCLUDE) $(CASSANDRA_INCLUDE) $(H2O_INCLUDE) $(LMDB_INCLUDE) \
            $(PROTOBUF_INCLUDE) $(CMPRS_INCLUDE) $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
-# Experimenting with http/2 goaway frame
-# -I/home/satskyse/h2o-2.2.6/deps/klib
+
 LIB = $(SRAREAD_LIBS) dbsnp_ptis grpc_integration sraread \
       cdd_access psg_client id2 seqsplit seqset $(SEQ_LIBS) xregexp $(PCRE_LIB) $(CMPRS_LIB) \
       pub medline biblio general xser psg_ipg psg_cassandra psg_protobuf psg_cache \

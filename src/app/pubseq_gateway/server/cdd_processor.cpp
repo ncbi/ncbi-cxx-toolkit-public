@@ -193,7 +193,7 @@ CPSGS_CDDProcessor::~CPSGS_CDDProcessor(void)
 bool CPSGS_CDDProcessor::x_IsEnabled(CPSGS_Request& request) const
 {
     // first check global setting
-    bool enabled = CPubseqGatewayApp::GetInstance()->GetCDDProcessorsEnabled();
+    bool enabled = CPubseqGatewayApp::GetInstance()->Settings().m_CDDProcessorsEnabled;
     if ( enabled ) {
         // check if disabled in request
         for (const auto& name : request.GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {

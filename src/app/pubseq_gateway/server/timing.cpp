@@ -949,7 +949,7 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     // Overwrite the default names and descriptions with what came from
     // the configuration
     auto        app = CPubseqGatewayApp::GetInstance();
-    auto        id_to_name_and_desc = app->GetIdToNameAndDescriptionMap();
+    auto        id_to_name_and_desc = app->Settings().m_IdToNameAndDescription;
 
     for (const auto &  item : id_to_name_and_desc) {
         if (m_NamesMap.find(item.first) != m_NamesMap.end()) {

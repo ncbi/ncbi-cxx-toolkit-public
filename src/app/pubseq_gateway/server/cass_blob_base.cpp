@@ -260,7 +260,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSlimTSE(CCassBlobFetch *  fetch_details,
     auto &          blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
     auto *          app = CPubseqGatewayApp::GetInstance();
 
-    unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+    unsigned int    max_to_send = max(app->Settings().m_SendBlobIfSmall,
                                       blob_request.m_SendBlobIfSmall);
 
     fetch_details->GetLoader()->ClearError();
@@ -308,7 +308,7 @@ CPSGS_CassBlobBase::x_OnBlobPropSmartTSE(CCassBlobFetch *  fetch_details,
         auto &          blob_request = m_Request->GetRequest<SPSGS_BlobRequestBase>();
         auto *          app = CPubseqGatewayApp::GetInstance();
 
-        unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+        unsigned int    max_to_send = max(app->Settings().m_SendBlobIfSmall,
                                           blob_request.m_SendBlobIfSmall);
 
         if (blob.GetSize() <= max_to_send) {

@@ -764,7 +764,7 @@ void CPSGS_AnnotProcessor::OnAnnotBlobProp(CCassBlobFetch *  fetch_details,
     }
 
     auto    app = CPubseqGatewayApp::GetInstance();
-    unsigned int    max_to_send = max(app->GetSendBlobIfSmall(),
+    unsigned int    max_to_send = max(app->Settings().m_SendBlobIfSmall,
                                       m_AnnotRequest->m_SendBlobIfSmall);
     if (blob.GetSize() > max_to_send) {
         // Nothing needs to be sent because the blob is too big

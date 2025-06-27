@@ -694,7 +694,9 @@ int CPubseqGatewayApp::Run(void)
                             m_Settings.m_ListenerBacklog,
                             m_Settings.m_TcpMaxConn,
                             m_Settings.m_TcpMaxConnSoftLimit,
-                            m_Settings.m_TcpMaxConnAlertLimit));
+                            m_Settings.m_TcpMaxConnAlertLimit,
+                            m_Settings.m_IdleTimeoutSec,
+                            m_Settings.m_ConnForceCloseWaitSec));
 
     // Run the monitoring thread
     int             ret_code = 0;
@@ -901,11 +903,34 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
     context->SetRequestStatus(CRequestStatus::e200_Ok);
     context->SetReadOnly(true);
 
+
+    EPSGS_ThrottlingDecision    decision = x_CheckThrottling(req, reply,
+                                                             client_ip,
+                                                             peer_id,
+                                                             user_agent);
+    switch (decision) {
+        case ePSGS_Continue:
+            break;  // Do nothing, continue as usual
+        case ePSGS_CloseThis:
+            // This call will reset the request context.
+            // The callers of the x_CreateRequestContext() must check that the
+            // context is set. If not then there must be no continue of
+            // processing a request.
+            x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
+                               CRequestStatus::e503_ServiceUnavailable,
+                               reply->GetBytesSent());
+            x_CloseThrottledConnection(reply);
+            break;
+        case ePSGS_OtherClosed:
+            break;  // The other connection was closed so there is nothing
+                    // to be done here
+    }
+
     return context;
 }
 
 
-void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext>   context,
+void CPubseqGatewayApp::x_PrintRequestStop(CRef<CRequestContext> &   context,
                                            CPSGS_Request::EPSGS_Type  request_type,
                                            CRequestStatus::ECode  status,
                                            size_t  bytes_sent)

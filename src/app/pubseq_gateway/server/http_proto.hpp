@@ -94,8 +94,6 @@ public:
     CHttpProto(CHttpDaemon & daemon) :
         m_Worker(nullptr),
         m_Daemon(daemon),
-        m_HttpCtx({0}),
-        m_H2oCtxInitialized(false),
         m_HttpAcceptCtx({0})
     {
         PSG_TRACE("CHttpProto::CHttpProto");
@@ -139,8 +137,6 @@ private:
 private:
     CTcpWorker *        m_Worker;
     CHttpDaemon &       m_Daemon;
-    h2o_context_t       m_HttpCtx;
-    bool                m_H2oCtxInitialized;
     h2o_accept_ctx_t    m_HttpAcceptCtx;
 };
 

@@ -81,23 +81,7 @@ public:
     CHttpReply(h2o_req_t *  req,
                CHttpProto *  proto,
                CHttpConnection *  http_conn,
-               const char *  cd_uid) :
-        m_Req(req),
-        m_RespGenerator(nullptr),
-        m_RequestId(0),
-        m_OutputIsReady(true),
-        m_OutputFinished(false),
-        m_Postponed(false),
-        m_Canceled(false),
-        m_Completed(false),
-        m_State(eReplyInitialized),
-        m_HttpProto(proto),
-        m_HttpConn(http_conn),
-        m_DataReady(make_shared<CDataTrigger>(proto)),
-        m_ReplyContentType(ePSGS_NotSet),
-        m_CdUid(cd_uid)
-    {}
-
+               const char *  cd_uid);
 
     CHttpReply(const CHttpReply&) = delete;
     CHttpReply(CHttpReply&&) = delete;
@@ -317,11 +301,6 @@ public:
                                   const string &  peer_user_agent);
     void UpdatePeerUserAgent(const string &  peer_user_agent);
     void UpdatePeerId(const string &  peer_id);
-    bool IsHttp1(void);
-    bool IsHttp2(void);
-#if 0
-    void EnqueueGoAway(void);
-#endif
 
 private:
     struct CDataTrigger : public CCassDataCallbackReceiver

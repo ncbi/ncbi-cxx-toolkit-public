@@ -36,6 +36,7 @@
 #include "http_reply.hpp"
 #include "pubseq_gateway.hpp"
 #include "backlog_per_request.hpp"
+#include "tcp_daemon.hpp"
 
 
 static void IncrementBackloggedCounter(void)
@@ -57,6 +58,14 @@ static void NotifyRequestFinished(size_t  request_id)
     auto *  app = CPubseqGatewayApp::GetInstance();
     app->NotifyRequestFinished(request_id);
 }
+
+
+void s_OnAsyncConnClose(uv_async_t *  handle)
+{
+    CHttpConnection *   http_conn = static_cast<CHttpConnection *>(handle->data);
+    http_conn->CloseThrottledConnection(CHttpConnection::ePSGS_SyncClose);
+}
+
 
 static int64_t          s_ConnectionId = 0;
 static atomic<bool>     s_ConnectionIdLock(false);
@@ -234,20 +243,33 @@ CHttpConnection::~CHttpConnection()
         (*it)->GetHttpReply()->CancelPending();
         x_UnregisterRunning(it);
     }
+
+    if (m_H2oCtxInitialized) {
+        h2o_context_dispose(&m_HttpCtx);
+        m_H2oCtxInitialized = false;
+    }
 }
 
 
-void CHttpConnection::SetupMaintainTimer(uv_loop_t *  tcp_worker_loop)
+void CHttpConnection::SetupTimers(uv_loop_t *  tcp_worker_loop)
 {
     uv_timer_init(tcp_worker_loop, &m_ScheduledMaintainTimer);
     m_ScheduledMaintainTimer.data = (void *)(this);
+
+    uv_async_init(tcp_worker_loop, &m_InitiateClosingEvent, s_OnAsyncConnClose);
+
 }
 
 
-void CHttpConnection::CleanupToStop(void)
+void CHttpConnection::CleanupTimers(void)
 {
-    uv_timer_stop(&m_ScheduledMaintainTimer);
+    if (uv_is_active((uv_handle_t*)(&m_ScheduledMaintainTimer))) {
+        // The time is active, stop it first
+        uv_timer_stop(&m_ScheduledMaintainTimer);
+    }
     uv_close(reinterpret_cast<uv_handle_t*>(&m_ScheduledMaintainTimer), nullptr);
+
+    uv_close(reinterpret_cast<uv_handle_t*>(&m_InitiateClosingEvent), nullptr);
 }
 
 
@@ -553,5 +575,86 @@ CHttpConnection::GetProperties(void) const
     props.m_NumRunningRequests = m_RunningRequests.size();
 
     return props;
+}
+
+
+void CHttpConnection::CloseThrottledConnection(EPSGS_ClosingType  closing_type)
+{
+    if (m_IsClosed) {
+        return;
+    }
+
+    if (closing_type == ePSGS_AsyncClose) {
+        // Async means that the call is coming from another uv loop and thus no
+        // actions can be performed right away. Instead an async signal should
+        // be sent to that uv loop.
+
+        m_InitiateClosingEvent.data = this;
+        uv_async_send(&m_InitiateClosingEvent);
+        return;
+    }
+
+    // Here: synchronous closing i.e. the call happened from the very same uv
+    // loop. The closing can be done right away.
+
+    if (m_H2oConnection != nullptr) {
+        // Case 1: there were requests over this connection so there is a
+        // libh2o connection structure. The connection closing way depends on
+        // if it was an http/1 or http/2 connection.
+
+        if (h2o_linklist_is_empty(&m_H2oConnection->ctx->http2._conns)) {
+            // http/1
+            h2o_socket_close(m_H2oConnection->callbacks->get_socket(m_H2oConnection));
+        } else {
+            // http/2
+            h2o_context_request_shutdown(m_H2oConnection->ctx);
+        }
+    } else {
+        // Case 2: the connection was opened but there were no activity on it.
+        // Thus the only libuv tcp stream is available. So close using the
+        // libuv facilities.
+        if (m_TcpStream != nullptr) {
+            uv_close(reinterpret_cast<uv_handle_t*>(m_TcpStream),
+                     CTcpWorker::s_OnClientClosed);
+        }
+    }
+}
+
+
+void CHttpConnection::UpdateH2oConnection(h2o_conn_t *  h2o_conn)
+{
+    if (m_H2oConnection == nullptr) {
+        m_H2oConnection = h2o_conn;
+        return;
+    }
+
+    if (m_H2oConnection != h2o_conn) {
+        // This should not happened. Once set the connection pointer should
+        // stay unchanged.
+        PSG_ERROR("Internal error. The low level libh2o connection pointer "
+                  "has been altered.");
+    }
+}
+
+
+h2o_context_t *
+CHttpConnection::InitializeH2oHttpContext(uv_loop_t *  loop,
+                                          CHttpDaemon &  http_daemon)
+{
+    h2o_context_init(&m_HttpCtx, loop, http_daemon.HttpCfg());
+    m_H2oCtxInitialized = true;
+    return &m_HttpCtx;
+}
+
+
+void CHttpConnection::OnBeforeClosedConnection(void)
+{
+    if (m_H2oCtxInitialized) {
+        h2o_context_dispose(&m_HttpCtx);
+        m_H2oCtxInitialized = false;
+    }
+
+    m_IsClosed = true;
+    x_CancelAll();
 }
 

@@ -49,11 +49,12 @@ void GetSSLSettings(bool &  enabled,
                     string &  key_file,
                     string &  ciphers)
 {
-    auto *  app = CPubseqGatewayApp::GetInstance();
-    enabled = app->GetSSLEnable();
-    cert_file = app->GetSSLCertFile();
-    key_file = app->GetSSLKeyFile();
-    ciphers = app->GetSSLCiphers();
+    const SPubseqGatewaySettings &  settings =
+                            CPubseqGatewayApp::GetInstance()->Settings();
+    enabled = settings.m_SSLEnable;
+    cert_file = settings.m_SSLCertFile;
+    key_file = settings.m_SSLKeyFile;
+    ciphers = settings.m_SSLCiphers;
 }
 
 
@@ -62,7 +63,7 @@ void GetSSLSettings(bool &  enabled,
 void CheckFDLimit(void)
 {
     auto *  app = CPubseqGatewayApp::GetInstance();
-    ssize_t limit = app->GetShutdownIfTooManyOpenFD();
+    ssize_t limit = app->Settings().m_ShutdownIfTooManyOpenFD;
 
     if (limit == 0)
         return;
@@ -128,22 +129,14 @@ void CheckFDLimit(void)
 
 void CHttpProto::ThreadStart(uv_loop_t *  loop, CTcpWorker *  worker)
 {
-    m_HttpAcceptCtx.ctx = &m_HttpCtx;
     m_HttpAcceptCtx.hosts = m_Daemon.HttpCfg()->hosts;
-    h2o_context_init(&m_HttpCtx, loop, m_Daemon.HttpCfg());
     m_Worker = worker;
-    m_H2oCtxInitialized = true;
 }
 
 
 void CHttpProto::ThreadStop(void)
 {
     m_Worker = nullptr;
-    if (m_H2oCtxInitialized) {
-        h2o_context_dispose(&m_HttpCtx);
-        m_H2oCtxInitialized = false;
-    }
-    // h2o_mem_dispose_recycled_allocators();
 }
 
 
@@ -163,6 +156,12 @@ void CHttpProto::OnNewConnection(uv_stream_t *  conn,
         uv_close((uv_handle_t*)conn, close_cb);
         return;
     }
+
+    // The http context must be created per connection because some of the
+    // context members are modified in the process of throttling:
+    // GOAWAY callbacks and timers
+    m_HttpAcceptCtx.ctx = http_conn->InitializeH2oHttpContext(conn->loop,
+                                                              m_Daemon);
 
     h2o_accept(&m_HttpAcceptCtx, sock);
     if (uv_fileno(reinterpret_cast<uv_handle_t*>(conn), &fd) == 0) {
@@ -267,12 +266,14 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
                 break;
             case CHttpReply::eReplyStarted:
             case CHttpReply::eReplyInitialized:
+#if 0
                 if (!reply->GetHttpReply()->IsPostponed()) {
                     string  msg = "Unfinished request hasn't "
                                   "been scheduled (postponed)";
                     PSG_ERROR(msg);
                     FinishReply503(reply, msg);
                 }
+#endif
                 break;
             default:
                 {

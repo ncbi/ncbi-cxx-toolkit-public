@@ -126,6 +126,8 @@ class CPSGSCounters
             ePSGS_MyNCBIOKCacheWaitHit,
             ePSGS_IncludeHUPSetToNo,
             ePSGS_IncomingConnectionsCounter,
+            ePSGS_NewConnThrottled,
+            ePSGS_OldConnThrottled,
 
             // Request stop statuses
             ePSGS_100,

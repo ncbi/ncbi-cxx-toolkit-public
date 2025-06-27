@@ -362,7 +362,7 @@ void CPSGS_WGSProcessor::Process()
 bool CPSGS_WGSProcessor::x_IsEnabled(CPSGS_Request& request) const
 {
     auto app = CPubseqGatewayApp::GetInstance();
-    bool enabled = app->GetWGSProcessorsEnabled();
+    bool enabled = app->Settings().m_WGSProcessorsEnabled;
     if ( enabled ) {
         for (const auto& name : request.GetRequest<SPSGS_RequestBase>().m_DisabledProcessors ) {
             if ( NStr::EqualNocase(name, kWGSProcessorName) ) return false;

@@ -309,7 +309,7 @@ bool CPSGS_AsyncResolveBase::GetSeqIdResolve(void)
     if (effective_seq_id_resolve == false) {
         // The settings may overwrite it
         auto    app = CPubseqGatewayApp::GetInstance();
-        if (app->GetSeqIdResolveAlways() == true) {
+        if (app->Settings().m_SeqIdResolveAlways == true) {
             if (m_Request->NeedTrace()) {
                 m_Reply->SendTrace("The request seq_id_resolve flag "
                                    "is set to 'no' however the configuration "

@@ -76,6 +76,11 @@ int CPubseqGatewayApp::OnBadURL(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
                            CPSGS_Request::ePSGS_UnknownRequest,
@@ -196,6 +201,11 @@ int CPubseqGatewayApp::OnGet(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySeqIdRequest,
@@ -340,6 +350,11 @@ int CPubseqGatewayApp::OnGetBlob(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_BlobBySatSatKeyRequest,
                            CRequestStatus::e503_ServiceUnavailable,
@@ -466,6 +481,11 @@ int CPubseqGatewayApp::OnResolve(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_ResolveRequest,
                            CRequestStatus::e503_ServiceUnavailable,
@@ -586,6 +606,11 @@ int CPubseqGatewayApp::OnGetTSEChunk(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_TSEChunkRequest,
                            CRequestStatus::e503_ServiceUnavailable,
@@ -690,6 +715,11 @@ int CPubseqGatewayApp::OnGetNA(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_AnnotationRequest,
@@ -903,6 +933,11 @@ int CPubseqGatewayApp::OnAccessionVersionHistory(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context,
                            CPSGS_Request::ePSGS_AccessionVersionHistoryRequest,
@@ -994,6 +1029,11 @@ int CPubseqGatewayApp::OnIPGResolve(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_IPGResolveRequest,
@@ -1199,6 +1239,11 @@ int CPubseqGatewayApp::OnConfig(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     try {
         if (!x_CheckAuthorization("config", context, http_req, reply, now)) {
             // Did not pass authorization
@@ -1267,6 +1312,11 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     try {
         if (!x_CheckAuthorization("info", context, http_req, reply, now)) {
@@ -1453,6 +1503,11 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     try {
         if (!x_CheckAuthorization("status", context, http_req, reply, now)) {
             // Did not pass authorization
@@ -1544,6 +1599,11 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     try {
         if (!x_CheckAuthorization("shutdown", context, http_req, reply, now)) {
@@ -1671,6 +1731,11 @@ int CPubseqGatewayApp::OnGetAlerts(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     try {
         if (!x_CheckAuthorization("get_alerts", context, http_req, reply, now)) {
             // Did not pass authorization
@@ -1710,6 +1775,11 @@ int CPubseqGatewayApp::OnAckAlert(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1812,6 +1882,11 @@ int CPubseqGatewayApp::OnStatistics(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -1977,6 +2052,11 @@ int CPubseqGatewayApp::OnDispatcherStatus(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     try {
         CJsonNode  dispatcher_status(CJsonNode::NewArrayNode());
 
@@ -2018,6 +2098,11 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     try {
         string      content;
         char        buf[64];
@@ -2056,6 +2141,41 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
         len = PSGToString(m_Settings.m_TcpMaxConn, buf);
         content.append(", ")
                .append("\"conn_hard_limit\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_ConnThrottleThreshold, buf);
+        content.append(", ")
+               .append("\"conn_throttle_threshold\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_ConnThrottleByHost, buf);
+        content.append(", ")
+               .append("\"conn_throttle_by_host\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_ConnThrottleBySite, buf);
+        content.append(", ")
+               .append("\"conn_throttle_by_site\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_ConnThrottleByProcess, buf);
+        content.append(", ")
+               .append("\"conn_throttle_by_process\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Settings.m_ConnThrottleByUserAgent, buf);
+        content.append(", ")
+               .append("\"conn_throttle_by_user_agent\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NewConnThrottled), buf);
+        content.append(", ")
+               .append("\"new_throttled_cnt\": ")
+               .append(buf, len);
+
+        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_OldConnThrottled), buf);
+        content.append(", ")
+               .append("\"old_throttled_cnt\": ")
                .append(buf, len);
 
         content.append(", ")
@@ -2097,6 +2217,11 @@ int CPubseqGatewayApp::OnHello(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     try {
         string      peer_id;
@@ -2185,8 +2310,13 @@ int CPubseqGatewayApp::OnTestIO(CHttpRequest &  http_req,
             need_log = log_param.m_Value == "yes";
         }
 
-        if (need_log)
+        if (need_log) {
             context = x_CreateRequestContext(http_req, reply);
+            if (context.IsNull()) {
+                // The connection was throttled and the request is stopped/closed
+                return 0;
+            }
+        }
 
         // Read the return data size
         SRequestParameter   data_size_param = x_GetParam(http_req, kDataSizeParam);
@@ -2265,6 +2395,11 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     if (x_IsShuttingDown(reply, now)) {
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
@@ -2479,7 +2614,7 @@ bool CPubseqGatewayApp::x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPS
 
 // true => some processors were instantiated
 // false => no suitable processor
-bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext>   context,
+bool CPubseqGatewayApp::x_DispatchRequest(CRef<CRequestContext> &  context,
                                           shared_ptr<CPSGS_Request>  request,
                                           shared_ptr<CPSGS_Reply>  reply)
 {

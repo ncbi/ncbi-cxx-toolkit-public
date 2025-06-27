@@ -134,9 +134,6 @@ public:
     shared_ptr<CPSGMessages>  GetPublicCommentsMapping(void)
     { return m_CassSchemaProvider->GetMessages(); }
 
-    unsigned long GetSendBlobIfSmall(void) const
-    { return m_Settings.m_SendBlobIfSmall; }
-
     int OnBadURL(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGet(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
     int OnGetBlob(CHttpRequest &  req, shared_ptr<CPSGS_Reply>  reply);
@@ -179,36 +176,18 @@ public:
     COperationTiming & GetTiming(void)
     { return *m_Timing.get(); }
 
+    const SPubseqGatewaySettings &  Settings(void) const
+    { return m_Settings; }
+
+    size_t GetProcessorMaxConcurrency(const string &  processor_id)
+    { return m_Settings.GetProcessorMaxConcurrency(GetConfig(), processor_id); }
+
     EPSGS_StartupDataState GetStartupDataState(void) const
     { return m_StartupDataState; }
-
-    map<string, tuple<string, string>>  GetIdToNameAndDescriptionMap(void) const
-    { return m_Settings.m_IdToNameAndDescription; }
-
-    unsigned int GetCassandraTimeout(void) const
-    { return m_Settings.m_TimeoutMs; }
-
-    unsigned int GetCassandraMaxRetries(void) const
-    { return m_Settings.m_MaxRetries; }
-
-    bool GetCDDProcessorsEnabled() const
-    { return m_Settings.m_CDDProcessorsEnabled; }
-
-    bool GetWGSProcessorsEnabled() const
-    { return m_Settings.m_WGSProcessorsEnabled; }
-
-    bool GetSNPProcessorsEnabled() const
-    { return m_Settings.m_SNPProcessorsEnabled; }
-
-    bool GetCassandraProcessorsEnabled(void) const
-    { return m_Settings.m_CassandraProcessorsEnabled; }
 
     IPSGS_Processor::EPSGS_StartProcessing
     SignalStartProcessing(IPSGS_Processor *  processor)
     { return m_RequestDispatcher->SignalStartProcessing(processor); }
-
-    size_t GetProcessorMaxConcurrency(const string &  processor_id)
-    { return m_Settings.GetProcessorMaxConcurrency(GetConfig(), processor_id); }
 
     void SignalFinishProcessing(IPSGS_Processor *  processor,
                                 CPSGS_Dispatcher::EPSGS_SignalSource  signal_source)
@@ -216,33 +195,6 @@ public:
 
     void SignalConnectionCanceled(size_t  request_id)
     { m_RequestDispatcher->SignalConnectionCanceled(request_id); }
-
-    bool GetSSLEnable(void) const
-    { return m_Settings.m_SSLEnable; }
-
-    string GetSSLCertFile(void) const
-    { return m_Settings.m_SSLCertFile; }
-
-    string GetSSLKeyFile(void) const
-    { return m_Settings.m_SSLKeyFile; }
-
-    string GetSSLCiphers(void) const
-    { return m_Settings.m_SSLCiphers; }
-
-    size_t GetShutdownIfTooManyOpenFD(void) const
-    { return m_Settings.m_ShutdownIfTooManyOpenFD; }
-
-    int GetPageSize(void) const
-    { return m_Settings.m_IPGPageSize; }
-
-    size_t GetHttpMaxBacklog(void) const
-    { return m_Settings.m_HttpMaxBacklog; }
-
-    size_t GetHttpMaxRunning(void) const
-    { return m_Settings.m_HttpMaxRunning; }
-
-    bool GetSeqIdResolveAlways(void) const
-    { return m_Settings.m_SeqIdResolveAlways; }
 
     CPSGAlerts &  GetAlerts(void)
     { return m_Alerts; }
@@ -331,7 +283,7 @@ private:
     string  x_GetCmdLineArguments(void) const;
     CRef<CRequestContext>  x_CreateRequestContext(CHttpRequest &  req,
                                                   shared_ptr<CPSGS_Reply>  reply);
-    void x_PrintRequestStop(CRef<CRequestContext>  context,
+    void x_PrintRequestStop(CRef<CRequestContext> &  context,
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status,
                             size_t  bytes_sent);
@@ -492,7 +444,7 @@ private:
     bool x_IsConnectionAboveSoftLimitForZEndPoints(shared_ptr<CPSGS_Reply>  reply,
                                          bool  verbose);
     void x_RegisterProcessors(void);
-    bool x_DispatchRequest(CRef<CRequestContext>   context,
+    bool x_DispatchRequest(CRef<CRequestContext> &  context,
                            shared_ptr<CPSGS_Request>  request,
                            shared_ptr<CPSGS_Reply>  reply);
     void x_InitSSL(void);
@@ -517,7 +469,7 @@ private:
                                       shared_ptr<CPSGS_Reply>  reply);
 
     CRequestStatus::ECode
-    x_SelfZEndPointCheckImpl(CRef<CRequestContext>  context,
+    x_SelfZEndPointCheckImpl(CRef<CRequestContext> &  context,
                              const string &  check_id,
                              const string &  check_name,
                              const string &  check_description,
@@ -529,12 +481,36 @@ private:
                                   bool  verbose,
                                   const vector<string> &  exclude_checks,
                                   bool &  is_critical);
-    void x_SelfZEndPointCheck(CHttpRequest &  req,
-                              shared_ptr<CPSGS_Reply>  reply,
-                              const string &  health_command);
+    int x_SelfZEndPointCheck(CHttpRequest &  req,
+                             shared_ptr<CPSGS_Reply>  reply,
+                             const string &  health_command);
     void x_SendZEndPointReply(CRequestStatus::ECode  http_status,
                               shared_ptr<CPSGS_Reply>  reply,
                               const string *  payload);
+
+private:
+    // Throttling support
+    enum EPSGS_ThrottlingDecision {
+        ePSGS_Continue = 0,     // The request should proceed as usual
+        ePSGS_CloseThis = 1,    // The connection associated with the current
+                                // request should be closed
+        ePSGS_OtherClosed = 2   // Another [idle] connection is chosen to be closed
+    };
+
+    EPSGS_ThrottlingDecision x_CheckThrottling(CHttpRequest &  req,
+                                               shared_ptr<CPSGS_Reply>  reply,
+                                               const string &  peer_ip,
+                                               const string &  peer_id,
+                                               const string &  user_agent);
+    void x_RebuildThrottlingData(void);
+    void x_CloseThrottledConnection(shared_ptr<CPSGS_Reply>  reply,
+                                    unsigned int  worker_id, int64_t  conn_id);
+    void x_CloseThrottledConnection(shared_ptr<CPSGS_Reply>  reply);
+
+    atomic<bool>                            m_ThrottlingDataLock;
+    bool                                    m_ThrottlingDataInProgress;
+    psg_time_point_t                        m_ThrottlingDataTimestamp;
+    shared_ptr<SThrottlingData>             m_ThrottlingData;
 
 private:
     SPubseqGatewaySettings              m_Settings;

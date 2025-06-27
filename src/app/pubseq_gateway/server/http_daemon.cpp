@@ -34,6 +34,7 @@
 #include <common/ncbi_package_ver.h>
 #include <connect/ext/ncbi_localnet.h>
 #include <uv.h>
+#include <math.h>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
@@ -58,7 +59,9 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
                          unsigned short  tcp_backlog,
                          int64_t  tcp_max_connections,
                          int64_t  tcp_max_connections_soft_limit,
-                         int64_t  tcp_max_connections_alert_limit) :
+                         int64_t  tcp_max_connections_alert_limit,
+                         size_t  idle_timeout_sec,
+                         double  conn_force_close_wait_sec) :
     m_HttpCfg({0}),
     m_HttpCfgInitialized(false),
     m_Handlers(handlers)
@@ -72,6 +75,15 @@ CHttpDaemon::CHttpDaemon(const vector<CHttpHandler> &  handlers,
 
     h2o_config_init(&m_HttpCfg);
     m_HttpCfg.server_name = h2o_iovec_init(H2O_STRLIT("PSG/" NCBI_PACKAGE_VERSION " h2o/" H2O_VERSION));
+
+    if (idle_timeout_sec != 0) {
+        // libh2o has the idle timeout in ms
+        m_HttpCfg.http2.idle_timeout = idle_timeout_sec * 1000;
+    }
+
+    // libh2o has the graceful shutdown timeout in ms
+    m_HttpCfg.http2.graceful_shutdown_timeout = lround(conn_force_close_wait_sec * 1000);
+
     m_HttpCfgInitialized = true;
 
     sm_CdUid = getenv("CD_UID");
@@ -143,6 +155,19 @@ void CHttpDaemon::MigrateConnectionFromAboveLimitToBelowLimit(void)
 string CHttpDaemon::GetConnectionsStatus(int64_t  self_connection_id)
 {
     return m_TcpDaemon->GetConnectionsStatus(self_connection_id);
+}
+
+
+void CHttpDaemon::PopulateThrottlingData(SThrottlingData &  throttling_data)
+{
+    m_TcpDaemon->PopulateThrottlingData(throttling_data);
+}
+
+
+bool CHttpDaemon::CloseThrottledConnection(unsigned int  worker_id,
+                                           int64_t  conn_id)
+{
+    return m_TcpDaemon->CloseThrottledConnection(worker_id, conn_id);
 }
 
 

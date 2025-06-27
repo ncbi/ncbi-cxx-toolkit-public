@@ -396,11 +396,12 @@ unsigned long GetTimespanToNowMs(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
 long PSGToString(long  value, char *  buf);
 string SanitizeInputValue(const string &  input_val);
+string GetSiteFromIP(const string &  ip_address);
 
 CRef<CRequestContext> CreateErrorRequestContext(const string &  client_ip,
                                                 in_port_t  client_port,
                                                 int64_t  connection_id);
-void DismissErrorRequestContext(CRef<CRequestContext>   context,
+void DismissErrorRequestContext(CRef<CRequestContext> &  context,
                                 int  status,
                                 size_t  bytes_sent);
 

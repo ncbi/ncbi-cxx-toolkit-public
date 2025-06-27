@@ -94,7 +94,8 @@ const double            kDefaultConnThrottleByUserAgentPercent = 40.0;
 const size_t            kDefaultConnThrottleByUserAgent = round(double(kDefaultConnThrottleThreshold) * kDefaultConnThrottleByUserAgentPercent / 100.0);
 
 const double            kDefaultConnThrottleCloseIdleSec = 5.0;
-const double            kDefaultConnForceCloseWaitSec = 0.03;
+const double            kDefaultConnForceCloseWaitSec = 0.1;
+const double            kDefaultThrottlingDataValidSec = 1.0;
 
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
@@ -187,6 +188,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_ConnThrottleByUserAgent(kDefaultConnThrottleByUserAgent),
     m_ConnThrottleCloseIdleSec(kDefaultConnThrottleCloseIdleSec),
     m_ConnForceCloseWaitSec(kDefaultConnForceCloseWaitSec),
+    m_ThrottlingDataValidSec(kDefaultThrottlingDataValidSec),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -362,6 +364,8 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                                     kDefaultConnThrottleCloseIdleSec);
     m_ConnForceCloseWaitSec = registry.GetDouble(kServerSection, "conn_force_close_wait",
                                                  kDefaultConnForceCloseWaitSec);
+    m_ThrottlingDataValidSec = registry.GetDouble(kServerSection, "conn_throttle_data_valid",
+                                                  kDefaultThrottlingDataValidSec);
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -914,6 +918,13 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
         m_ConnForceCloseWaitSec = kDefaultConnForceCloseWaitSec;
     }
 
+    if (m_ThrottlingDataValidSec <= 0) {
+        m_CriticalErrors.push_back("Invalid [SERVER]/conn_throttle_data_valid value. "
+                                   "It must be > 0. Resetting to " +
+                                   to_string(kDefaultThrottlingDataValidSec));
+        m_ThrottlingDataValidSec = kDefaultThrottlingDataValidSec;
+    }
+
     bool    connection_config_good = true;
     if (m_TcpMaxConn < kTcpMaxConnMin || m_TcpMaxConn > kTcpMaxConnMax) {
         connection_config_good = false;
@@ -939,16 +950,6 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
         m_CriticalErrors.push_back(
             "Inconsistent [SERVER]/maxconn value. "
             "It must be >= [SERVER]/maxconnsoftlimit value. "
-            "Resetting all connection and throttling settings to default.");
-        x_ResetConnectionSettingsToDefault();
-    }
-
-    // Min spare connections must not be less than
-    if (connection_config_good && m_TcpMaxConn - m_TcpMaxConnSoftLimit < 16) {
-        connection_config_good = false;
-        m_CriticalErrors.push_back(
-            "Inconsistent [SERVER]/maxconn value. "
-            "It must be so that ([SERVER]/maxconn value - [SERVER]/maxconnsoftlimit value) >= 16. "
             "Resetting all connection and throttling settings to default.");
         x_ResetConnectionSettingsToDefault();
     }

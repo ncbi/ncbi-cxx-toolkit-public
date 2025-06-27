@@ -185,6 +185,11 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
+
     bool                    verbose = false;    // default
     x_GetVerboseParameter(http_req, reply, now, verbose);
 
@@ -317,8 +322,9 @@ bool CPubseqGatewayApp::x_NeedReadyZCheckPerform(const string &  check_name,
 int CPubseqGatewayApp::OnReadyzCassandra(CHttpRequest &  req,
                                          shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "cassandra");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZCassandraRequest);
+    if (x_SelfZEndPointCheck(req, reply, "cassandra") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZCassandraRequest);
+    }
     return 0;
 }
 
@@ -326,8 +332,9 @@ int CPubseqGatewayApp::OnReadyzCassandra(CHttpRequest &  req,
 int CPubseqGatewayApp::OnReadyzConnections(CHttpRequest &  req,
                                            shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "connections");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZConnectionsRequest);
+    if (x_SelfZEndPointCheck(req, reply, "connections") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZConnectionsRequest);
+    }
     return 0;
 }
 
@@ -335,8 +342,9 @@ int CPubseqGatewayApp::OnReadyzConnections(CHttpRequest &  req,
 int CPubseqGatewayApp::OnReadyzLMDB(CHttpRequest &  req,
                                     shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "lmdb");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZLMDBRequest);
+    if (x_SelfZEndPointCheck(req, reply, "lmdb") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZLMDBRequest);
+    }
     return 0;
 }
 
@@ -344,8 +352,9 @@ int CPubseqGatewayApp::OnReadyzLMDB(CHttpRequest &  req,
 int CPubseqGatewayApp::OnReadyzWGS(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "wgs");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZWGSRequest);
+    if (x_SelfZEndPointCheck(req, reply, "wgs") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZWGSRequest);
+    }
     return 0;
 }
 
@@ -353,8 +362,9 @@ int CPubseqGatewayApp::OnReadyzWGS(CHttpRequest &  req,
 int CPubseqGatewayApp::OnReadyzCDD(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "cdd");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZCDDRequest);
+    if (x_SelfZEndPointCheck(req, reply, "cdd") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZCDDRequest);
+    }
     return 0;
 }
 
@@ -362,13 +372,14 @@ int CPubseqGatewayApp::OnReadyzCDD(CHttpRequest &  req,
 int CPubseqGatewayApp::OnReadyzSNP(CHttpRequest &  req,
                                    shared_ptr<CPSGS_Reply>  reply)
 {
-    x_SelfZEndPointCheck(req, reply, "snp");
-    m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZSNPRequest);
+    if (x_SelfZEndPointCheck(req, reply, "snp") == 0) {
+        m_Counters->Increment(nullptr, CPSGSCounters::ePSGS_ReadyZSNPRequest);
+    }
     return 0;
 }
 
 
-void
+int
 CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
                                         shared_ptr<CPSGS_Reply>  reply,
                                         const string &  check_id)
@@ -377,6 +388,11 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req, reply);
 
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 1;
+    }
+
     bool                    verbose = false;    // default
     x_GetVerboseParameter(req, reply, now, verbose);
 
@@ -384,14 +400,14 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e503_ServiceUnavailable,
                            reply->GetBytesSent());
-        return;
+        return 0;
     }
     if (check_id != "connections") {
         if (x_IsConnectionAboveSoftLimitForZEndPoints(reply, verbose)) {
             x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                                CRequestStatus::e503_ServiceUnavailable,
                                reply->GetBytesSent());
-            return;
+            return 0;
         }
     }
 
@@ -443,6 +459,7 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                        http_status, reply->GetBytesSent());
+    return 0;
 }
 
 
@@ -484,7 +501,7 @@ CRequestStatus::ECode  OnReplyComplete(const shared_ptr<CPSG_Reply>&  reply,
 
 
 CRequestStatus::ECode
-CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext>  request_context,
+CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext> &  request_context,
                                             const string &  check_id,
                                             const string &  check_name,
                                             const string &  check_description,
@@ -607,6 +624,11 @@ int CPubseqGatewayApp::OnLivez(CHttpRequest &  http_req,
     auto                    now = psg_clock_t::now();
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(http_req, reply);
+
+    if (context.IsNull()) {
+        // The connection was throttled and the request is stopped/closed
+        return 0;
+    }
 
     bool                    verbose = false;    // default
     x_GetVerboseParameter(http_req, reply, now, verbose);
