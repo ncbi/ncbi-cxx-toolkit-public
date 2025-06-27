@@ -825,9 +825,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         if (records.size() == 1)
             prefix = "Selected record:\n";
         else
-            prefix = "Record with max version (and max date changed if "
-                     "more than one with max version) selected "
-                     "(SEQ_STATE_LIFE records are checked first)\n";
+            prefix = "Record with max date changed selected\n";
         m_Reply->SendTrace(
             prefix +
             ToJsonString(records[index_to_pick],

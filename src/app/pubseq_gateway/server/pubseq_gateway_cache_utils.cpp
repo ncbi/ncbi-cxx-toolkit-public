@@ -124,10 +124,13 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                 }
 
                 if (m_NeedTrace) {
+                    string      prefix;
+                    if (records.size() == 1)
+                        prefix = "Selected record:\n";
+                    else
+                        prefix = "Record with max date changed selected\n";
                     m_Reply->SendTrace(
-                        "Record with max version (and max date changed if "
-                        "more than one with max version) selected "
-                        "(SEQ_STATE_LIFE records are checked first)\n" +
+                        prefix +
                         ToJsonString(records[index_to_pick],
                                      SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
                         m_Request->GetStartTimestamp());

@@ -46,60 +46,21 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
         return 0;
 
     ssize_t                             index = -1;
-    CBioseqInfoRecord::TVersion         version = -1;
     CBioseqInfoRecord::TDateChanged     date_changed = 0;
 
-    // First try: select among those which have seq_state as alive
-    // Pick the max version record (and max date changed if more than one with
-    // max version)
+    // Always pick the record with latest date_changed, regardless of its
+    // version number or state.
     for (size_t  k = 0; k < records.size(); ++k) {
-        if (records[k].GetSeqState() != ncbi::psg::retrieval::SEQ_STATE_LIVE)
-            continue;
-
         if (index == -1) {
             // Not found yet
             index = k;
-            version = records[k].GetVersion();
             date_changed = records[k].GetDateChanged();
             continue;
         }
 
-        // Something has already been picked
-        if (records[k].GetVersion() > version) {
+        if (records[k].GetDateChanged() > date_changed) {
             index = k;
-            version = records[k].GetVersion();
             date_changed = records[k].GetDateChanged();
-        } else {
-            if (records[k].GetVersion() == version) {
-                if (records[k].GetDateChanged() > date_changed) {
-                    index = k;
-                    date_changed = records[k].GetDateChanged();
-                }
-            }
-        }
-    }
-
-    if (index != -1)
-        return index;
-
-    // Second try: all records are not SEQ_STATE_LIVE so select basing on
-    // the max version (and max date changed if more than one with the max
-    // version)
-    index = 0;
-    version = records[0].GetVersion();
-    date_changed = records[0].GetDateChanged();
-    for (size_t  k = 0; k < records.size(); ++k) {
-        if (records[k].GetVersion() > version) {
-            index = k;
-            version = records[k].GetVersion();
-            date_changed = records[k].GetDateChanged();
-        } else {
-            if (records[k].GetVersion() == version) {
-                if (records[k].GetDateChanged() > date_changed) {
-                    index = k;
-                    date_changed = records[k].GetDateChanged();
-                }
-            }
         }
     }
 
