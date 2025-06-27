@@ -370,7 +370,7 @@ static void SourceFeatBlkFree(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void SourceFeatBlkSetFree(SourceFeatBlkPtr sfbp)
+static void SourceFeatBlkSetFree(SourceFeatBlkPtr& sfbp)
 {
     SourceFeatBlkPtr tsfbp;
 
@@ -378,6 +378,7 @@ static void SourceFeatBlkSetFree(SourceFeatBlkPtr sfbp)
         sfbp = tsfbp->next;
         SourceFeatBlkFree(tsfbp);
     }
+    sfbp = nullptr;
 }
 
 /**********************************************************/
@@ -1450,14 +1451,14 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr SourceFeatMoveOneUp(SourceFeatBlkPtr where,
-                                            SourceFeatBlkPtr what)
+static void SourceFeatMoveOneUp(SourceFeatBlkPtr& where,
+                                SourceFeatBlkPtr what)
 {
     SourceFeatBlkPtr prev;
     SourceFeatBlkPtr tsfbp;
 
     if (what == where)
-        return (where);
+        return;
 
     prev = where;
     for (tsfbp = where->next; tsfbp; tsfbp = tsfbp->next) {
@@ -1466,15 +1467,15 @@ static SourceFeatBlkPtr SourceFeatMoveOneUp(SourceFeatBlkPtr where,
         prev = tsfbp;
     }
     if (! tsfbp)
-        return (where);
+        return;
 
     prev->next = what->next;
     what->next = where;
-    return (what);
+    where = what;
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr SourceFeatRemoveDups(SourceFeatBlkPtr sfbp)
+static void SourceFeatRemoveDups(SourceFeatBlkPtr& sfbp)
 {
     SourceFeatBlkPtr tsfbp;
     SourceFeatBlkPtr prev;
@@ -1528,17 +1529,16 @@ static SourceFeatBlkPtr SourceFeatRemoveDups(SourceFeatBlkPtr sfbp)
         tsfbp->next = nullptr;
         SourceFeatBlkFree(tsfbp);
     }
-    return (sfbp);
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
-                                         SourceFeatBlkPtr res)
+static void SourceFeatDerive(SourceFeatBlkPtr& sfbp,
+                             SourceFeatBlkPtr res)
 {
     SourceFeatBlkPtr tsfbp;
 
     if (! res)
-        return (sfbp);
+        return;
 
     tsfbp           = SourceFeatBlkNew();
     tsfbp->name     = res->name ? StringSave(res->name) : nullptr;
@@ -1604,11 +1604,11 @@ static SourceFeatBlkPtr SourceFeatDerive(SourceFeatBlkPtr sfbp,
         cur = sfbp->quals.erase(cur);
     }
 
-    return (SourceFeatRemoveDups(sfbp));
+    SourceFeatRemoveDups(sfbp);
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
+static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
 {
     SourceFeatBlkPtr res;
     SourceFeatBlkPtr tsfbp;
@@ -1617,7 +1617,7 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
         if (! sfbp->full) {
             FtaErrPost(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
         }
-        return (sfbp);
+        return;
     }
 
     NCBI_UNUSED Int4 count_skip = 0;
@@ -1638,8 +1638,9 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
 
     if (same) {
         if (count_noskip == 1) {
-            sfbp = SourceFeatMoveOneUp(sfbp, res);
-            return (SourceFeatRemoveDups(sfbp));
+            SourceFeatMoveOneUp(sfbp, res);
+            SourceFeatRemoveDups(sfbp);
+            return;
         }
         for (res = nullptr, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
             if (count_noskip != 0 && tsfbp->skip)
@@ -1648,15 +1649,18 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
             if (! res)
                 res = tsfbp;
         }
-        return (SourceFeatDerive(sfbp, res));
+        SourceFeatDerive(sfbp, res);
+        return;
     }
 
     for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp->tg)
             break;
     }
-    if (tsfbp)
-        return (SourceFeatMoveOneUp(sfbp, tsfbp));
+    if (tsfbp) {
+        SourceFeatMoveOneUp(sfbp, tsfbp);
+        return;
+    }
 
     for (res = nullptr, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->focus)
@@ -1686,7 +1690,8 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
                     tsfbp->useit = false;
             }
         }
-        return (SourceFeatDerive(sfbp, res));
+        SourceFeatDerive(sfbp, res);
+        return;
     }
 
     for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
@@ -1696,13 +1701,13 @@ static SourceFeatBlkPtr PickTheDescrSource(SourceFeatBlkPtr sfbp)
         break;
     }
     if (res) {
-        sfbp = SourceFeatMoveOneUp(sfbp, res);
-        return (SourceFeatRemoveDups(sfbp));
+        SourceFeatMoveOneUp(sfbp, res);
+        SourceFeatRemoveDups(sfbp);
+        return;
     }
 
     SourceFeatBlkSetFree(sfbp);
     FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
-    return nullptr;
 }
 
 /**********************************************************/
@@ -3255,7 +3260,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
 
     CheckCollectionDate(sfbp, pp->source);
 
-    sfbp = PickTheDescrSource(sfbp);
+    PickTheDescrSource(sfbp);
     if (! sfbp || ! UpdateRawBioSource(sfbp, pp->source, ibp, pp->taxserver)) {
         SourceFeatBlkSetFree(sfbp);
         return;
@@ -3297,10 +3302,10 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         seq_feats.push_back(feat);
     }
 
-    SourceFeatBlkSetFree(sfbp);
-
     if (tsfbp)
         seq_feats.clear();
+
+    SourceFeatBlkSetFree(sfbp);
 }
 
 END_NCBI_SCOPE
