@@ -119,7 +119,7 @@ struct SourceFeatBlk {
     CBioSource::EGenome genome = CBioSource::eGenome_unknown;
     SourceFeatBlk*      next   = nullptr;
 };
-using SourceFeatBlkPtr = SourceFeatBlk*;
+using SourceFeatBlkList = SourceFeatBlk*;
 
 struct MinMax {
     const char* orgname = nullptr; /* Do not free! It's just a pointer */
@@ -341,13 +341,13 @@ static const char *NullTermValues[] = {
 };
 
 /**********************************************************/
-static SourceFeatBlkPtr SourceFeatBlkNew(void)
+static SourceFeatBlk* SourceFeatBlkNew(void)
 {
     return new SourceFeatBlk;
 }
 
 /**********************************************************/
-static void SourceFeatBlkFree(SourceFeatBlkPtr sfbp)
+static void SourceFeatBlkFree(SourceFeatBlk* sfbp)
 {
     if (sfbp->name)
         MemFree(sfbp->name);
@@ -370,25 +370,21 @@ static void SourceFeatBlkFree(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void SourceFeatBlkSetFree(SourceFeatBlkPtr& sfbp)
+static void SourceFeatBlkSetFree(SourceFeatBlkList& sfbl)
 {
-    SourceFeatBlkPtr tsfbp;
-
-    for (tsfbp = sfbp; tsfbp; tsfbp = sfbp) {
-        sfbp = tsfbp->next;
+    for (auto tsfbp = sfbl; tsfbp;) {
+        auto sfbp = tsfbp->next;
         SourceFeatBlkFree(tsfbp);
+        tsfbp = sfbp;
     }
-    sfbp = nullptr;
+    sfbl = nullptr;
 }
 
 /**********************************************************/
-static SourceFeatBlkPtr CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_end, Int2 type)
+static SourceFeatBlkList CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_end, Int2 type)
 {
-    SourceFeatBlkPtr sfbp;
-    SourceFeatBlkPtr tsfbp;
-
-    sfbp  = SourceFeatBlkNew();
-    tsfbp = sfbp;
+    auto sfbp  = SourceFeatBlkNew();
+    auto tsfbp = sfbp;
 
     for (; dbp != dbp_end; ++dbp) {
         if (dbp->mType != type)
@@ -406,7 +402,8 @@ static SourceFeatBlkPtr CollectSourceFeats(DataBlkCIter dbp, DataBlkCIter dbp_en
     }
     tsfbp = sfbp->next;
     delete sfbp;
-    return (tsfbp);
+    sfbp = tsfbp;
+    return sfbp;
 }
 
 /**********************************************************/
@@ -425,9 +422,9 @@ static void RemoveStringSpaces(char* line)
 }
 
 /**********************************************************/
-static void RemoveSourceFeatSpaces(SourceFeatBlkPtr sfbp)
+static void RemoveSourceFeatSpaces(SourceFeatBlkList& sfbl)
 {
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         RemoveStringSpaces(sfbp->location);
         for (auto& cur : sfbp->quals) {
             if (cur->IsSetQual()) {
@@ -441,11 +438,11 @@ static void RemoveSourceFeatSpaces(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void CheckForExemption(SourceFeatBlkPtr sfbp)
+static void CheckForExemption(SourceFeatBlkList& sfbl)
 {
     const char** b;
 
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         for (const auto& cur : sfbp->quals) {
             for (b = exempt_quals; *b; b++) {
                 if (cur->GetQual() == *b)
@@ -475,17 +472,14 @@ static void PopulateSubNames(string& namstr, const Char* name, const Char* value
 }
 
 /**********************************************************/
-static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* name, const Char* cultivar, const Char* isolate, const Char* serotype, const Char* serovar, const Char* specimen_voucher, const Char* strain, const Char* sub_species, const Char* sub_strain, const Char* variety, const Char* ecotype)
+static void CollectSubNames(SourceFeatBlk& sfbp, Int4 use_what, const Char* name, const Char* cultivar, const Char* isolate, const Char* serotype, const Char* serovar, const Char* specimen_voucher, const Char* strain, const Char* sub_species, const Char* sub_strain, const Char* variety, const Char* ecotype)
 {
-    if (! sfbp)
-        return;
+    if (sfbp.namstr)
+        MemFree(sfbp.namstr);
+    sfbp.namstr = nullptr;
 
-    if (sfbp->namstr)
-        MemFree(sfbp->namstr);
-    sfbp->namstr = nullptr;
-
-    if (sfbp->orgname.NotEmpty())
-        sfbp->orgname.Reset();
+    if (sfbp.orgname.NotEmpty())
+        sfbp.orgname.Reset();
 
     if (! name)
         return;
@@ -513,12 +507,12 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         i += (StringLen(ecotype) + StringLen("ecotype") + 5);
 
     if (i == 0) {
-        sfbp->namstr = StringSave(name);
+        sfbp.namstr = StringSave(name);
         return;
     }
 
-    sfbp->orgname     = new COrgName;
-    TOrgModList& mods = sfbp->orgname->SetMod();
+    sfbp.orgname      = new COrgName;
+    TOrgModList& mods = sfbp.orgname->SetMod();
 
     string s = name;
     s.reserve(s.size() + i);
@@ -542,11 +536,11 @@ static void CollectSubNames(SourceFeatBlkPtr sfbp, Int4 use_what, const Char* na
         PopulateSubNames(s, "  (variety ", variety, COrgMod::eSubtype_variety, mods);
     if ((use_what & USE_ECOTYPE) == USE_ECOTYPE && ecotype)
         PopulateSubNames(s, "  (ecotype ", ecotype, COrgMod::eSubtype_ecotype, mods);
-    sfbp->namstr = StringSave(s);
+    sfbp.namstr = StringSave(s);
 }
 
 /**********************************************************/
-static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 use_what)
+static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkList& sfbl, Int4 use_what)
 {
     const Char** b;
 
@@ -568,7 +562,8 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
     bool        ret;
     Int4        i;
 
-    for (ret = true; sfbp; sfbp = sfbp->next) {
+    ret = true;
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         name             = nullptr;
         cultivar         = nullptr;
         isolate          = nullptr;
@@ -743,14 +738,15 @@ static bool SourceFeatStructFillIn(IndexblkPtr ibp, SourceFeatBlkPtr sfbp, Int4 
         if (organelle && ! sfbp->organelle)
             sfbp->organelle = StringSave(organelle);
 
-        CollectSubNames(sfbp, use_what, name, cultivar, isolate, serotype, serovar, specimen_voucher, strain, sub_species, sub_strain, variety, ecotype);
+        CollectSubNames(*sfbp, use_what, name, cultivar, isolate, serotype, serovar, specimen_voucher, strain, sub_species, sub_strain, variety, ecotype);
     }
     return (ret);
 }
 
 /**********************************************************/
-static char* CheckSourceFeatFocusAndTransposon(SourceFeatBlkPtr sfbp)
+static char* CheckSourceFeatFocusAndTransposon(const SourceFeatBlkList& sfbl)
 {
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (sfbp->focus && sfbp->skip)
             break;
@@ -762,9 +758,10 @@ static char* CheckSourceFeatFocusAndTransposon(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static char* CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, int* status)
+static char* CheckSourceFeatOrgs(const SourceFeatBlkList& sfbl, int* status)
 {
     *status = 0;
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         /** if (sfbp->namstr) */
         if (sfbp->name)
@@ -779,7 +776,7 @@ static char* CheckSourceFeatOrgs(SourceFeatBlkPtr sfbp, int* status)
 }
 
 /**********************************************************/
-static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
+static bool CheckSourceFeatLocFuzz(const SourceFeatBlkList& sfbl)
 {
     const char** b;
     char*        p;
@@ -790,7 +787,7 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
     bool         ret;
 
     ret = true;
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (! sfbp->location || sfbp->location[0] == '\0')
             break;
         if (sfbp->skip)
@@ -852,12 +849,13 @@ static bool CheckSourceFeatLocFuzz(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static char* CheckSourceFeatLocAccs(SourceFeatBlkPtr sfbp, char* acc)
+static char* CheckSourceFeatLocAccs(const SourceFeatBlkList& sfbl, char* acc)
 {
     char* p;
     char* q;
     char* r;
 
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (! sfbp->location || sfbp->location[0] == '\0')
             continue;
@@ -924,9 +922,8 @@ bool fta_if_special_org(const Char* name)
 }
 
 /**********************************************************/
-static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxList& mml, size_t len)
+static Int4 CheckSourceFeatCoverage(const SourceFeatBlkList& sfbl, MinMaxList& mml, size_t len)
 {
-    SourceFeatBlkPtr tsfbp;
     char*            p;
     char*            q;
     char*            r;
@@ -939,7 +936,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxList& mml, size
     Int4             sporg;
 
     loc = nullptr;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->location || tsfbp->location[0] == '\0' ||
             ! tsfbp->name || tsfbp->name[0] == '\0')
             continue;
@@ -1031,7 +1028,8 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxList& mml, size
     tgs   = 0;
     count = 0;
     sporg = 0;
-    for (tsfbp = sfbp, i = 0; tsfbp; tsfbp = tsfbp->next, i++) {
+    i     = 0;
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next, i++) {
         if (! tsfbp->full)
             continue;
 
@@ -1051,12 +1049,12 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkPtr sfbp, MinMaxList& mml, size
 }
 
 /**********************************************************/
-static char* CheckWholeSourcesVersusFocused(SourceFeatBlkPtr sfbp)
+static char* CheckWholeSourcesVersusFocused(const SourceFeatBlkList& sfbl)
 {
     char* p     = nullptr;
     bool  whole = false;
 
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (sfbp->full)
             whole = true;
         else if (sfbp->focus)
@@ -1069,7 +1067,7 @@ static char* CheckWholeSourcesVersusFocused(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
+static bool CheckSYNTGNDivision(const SourceFeatBlkList& sfbl, char* div)
 {
     char* p;
     bool  got;
@@ -1085,7 +1083,9 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
             syntgndiv = 2;
     }
 
-    for (ret = true, got = false; sfbp; sfbp = sfbp->next) {
+    ret = true;
+    got = false;
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (! sfbp->tg)
             continue;
 
@@ -1112,20 +1112,19 @@ static bool CheckSYNTGNDivision(SourceFeatBlkPtr sfbp, char* div)
 }
 
 /**********************************************************/
-static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
+static Int4 CheckTransgenicSourceFeats(const SourceFeatBlkList& sfbl)
 {
-    SourceFeatBlkPtr tsfbp;
     char*            taxname;
     bool             same;
     bool             tgfull;
 
-    if (! sfbp)
+    if (! sfbl)
         return (0);
 
     Int4 ret   = 0;
     bool tgs   = false;
     bool focus = false;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp->tg) {
             if (! tsfbp->full)
                 ret = 1; /* /transgenic on not full-length */
@@ -1149,7 +1148,7 @@ static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
     same    = true;
     tgfull  = false;
     taxname = nullptr;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp->skip)
             continue;
         if (! taxname)
@@ -1165,14 +1164,15 @@ static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
     if (same == false && tgfull == false && focus == false)
         return (4);
 
-    if (! sfbp->next || ! tgs)
+    if (! sfbl->next || ! tgs)
         return (0);
 
-    for (tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next)
-        if (fta_strings_same(sfbp->name, tsfbp->name) == false ||
-            fta_strings_same(sfbp->strain, tsfbp->strain) == false ||
-            fta_strings_same(sfbp->isolate, tsfbp->isolate) == false ||
-            fta_strings_same(sfbp->organelle, tsfbp->organelle) == false)
+    auto tsfbp = sfbl->next;
+    for (; tsfbp; tsfbp = tsfbp->next)
+        if (fta_strings_same(sfbl->name, tsfbp->name) == false ||
+            fta_strings_same(sfbl->strain, tsfbp->strain) == false ||
+            fta_strings_same(sfbl->isolate, tsfbp->isolate) == false ||
+            fta_strings_same(sfbl->organelle, tsfbp->organelle) == false)
             break;
 
     if (! tsfbp)
@@ -1183,9 +1183,8 @@ static Int4 CheckTransgenicSourceFeats(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
+static Int4 CheckFocusInOrgs(const SourceFeatBlkList& sfbl, size_t len, int* status)
 {
-    SourceFeatBlkPtr tsfbp;
     const char**     b;
     char*            name;
     string           pat;
@@ -1195,7 +1194,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
     count = 0;
     name  = nullptr;
     same  = true;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->name)
             continue;
         if (tsfbp->focus)
@@ -1209,7 +1208,8 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
         (*status)++;
 
     name = nullptr;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    auto tsfbp = sfbl;
+    for (; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->focus || ! tsfbp->name)
             continue;
         if (! name)
@@ -1225,7 +1225,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
 
     name = nullptr;
     pat  = "1.." + to_string(len);
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->name || ! tsfbp->location || tsfbp->skip)
             continue;
 
@@ -1246,7 +1246,7 @@ static Int4 CheckFocusInOrgs(SourceFeatBlkPtr sfbp, size_t len, int* status)
     if (! tsfbp)
         return (0);
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp->full && tsfbp->tg && ! tsfbp->skip)
             break;
     }
@@ -1295,28 +1295,27 @@ static char* CheckSourceOverlap(const MinMaxList& mml, size_t len)
 }
 
 /**********************************************************/
-static char* CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
+static char* CheckForUnusualFullLengthOrgs(const SourceFeatBlkList& sfbl)
 {
-    SourceFeatBlkPtr tsfbp;
     const char**     b;
 
-    if (! sfbp || ! sfbp->next)
+    if (! sfbl || ! sfbl->next)
         return nullptr;
 
-    for (tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next)
-        if (! NStr::EqualNocase(sfbp->name, tsfbp->name))
+    auto tsfbp = sfbl->next;
+    for (; tsfbp; tsfbp = tsfbp->next)
+        if (! NStr::EqualNocase(sfbl->name, tsfbp->name))
             break;
-
     if (! tsfbp)
         return nullptr;
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next)
+    for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next)
         if (tsfbp->full && tsfbp->tg)
             break;
-
     if (tsfbp)
         return nullptr;
 
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (! sfbp->full || sfbp->tg)
             continue;
@@ -1336,9 +1335,8 @@ static char* CheckForUnusualFullLengthOrgs(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_what)
+static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkList& sfbl, Int4 use_what)
 {
-    SourceFeatBlkPtr tsfbp;
     char*            namstr;
     const Char*      cultivar;
     const Char*      isolate;
@@ -1351,7 +1349,7 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
     const Char*      sub_strain;
     const Char*      variety;
 
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (sfbp->bio_src.NotEmpty())
             continue;
 
@@ -1422,13 +1420,13 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
                     }
                 }
             }
-            CollectSubNames(sfbp, use_what, sfbp->name, cultivar, isolate, serotype, serovar, specimen_voucher, strain, sub_species, sub_strain, variety, ecotype);
+            CollectSubNames(*sfbp, use_what, sfbp->name, cultivar, isolate, serotype, serovar, specimen_voucher, strain, sub_species, sub_strain, variety, ecotype);
         }
 
         sfbp->bio_src.Reset(new CBioSource);
         sfbp->bio_src->SetOrg(*org_ref);
 
-        for (tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next) {
+        for (auto tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next) {
             if (tsfbp->bio_src.NotEmpty() || ! NStr::EqualNocase(namstr, tsfbp->namstr))
                 continue;
 
@@ -1451,17 +1449,15 @@ static void CreateRawBioSources(ParserPtr pp, SourceFeatBlkPtr sfbp, Int4 use_wh
 }
 
 /**********************************************************/
-static void SourceFeatMoveOneUp(SourceFeatBlkPtr& where,
-                                SourceFeatBlkPtr what)
+static void SourceFeatMoveOneUp(SourceFeatBlkList& sfbl,
+                                SourceFeatBlk* what)
 {
-    SourceFeatBlkPtr prev;
-    SourceFeatBlkPtr tsfbp;
-
-    if (what == where)
+    if (what == sfbl)
         return;
 
-    prev = where;
-    for (tsfbp = where->next; tsfbp; tsfbp = tsfbp->next) {
+    auto prev = sfbl;
+    auto tsfbp = sfbl->next;
+    for (; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp == what)
             break;
         prev = tsfbp;
@@ -1470,18 +1466,16 @@ static void SourceFeatMoveOneUp(SourceFeatBlkPtr& where,
         return;
 
     prev->next = what->next;
-    what->next = where;
-    where = what;
+    what->next = sfbl;
+    sfbl       = what;
 }
 
 /**********************************************************/
-static void SourceFeatRemoveDups(SourceFeatBlkPtr& sfbp)
+static void SourceFeatRemoveDups(SourceFeatBlkList& sfbl)
 {
-    SourceFeatBlkPtr tsfbp;
-    SourceFeatBlkPtr prev;
-    SourceFeatBlkPtr next;
+    SourceFeatBlk* next;
 
-    for (prev = sfbp, tsfbp = sfbp->next; tsfbp; tsfbp = next) {
+    for (auto prev = sfbl, tsfbp = sfbl->next; tsfbp; tsfbp = next) {
         next = tsfbp->next;
         if (! tsfbp->useit) {
             prev = tsfbp;
@@ -1495,7 +1489,7 @@ static void SourceFeatRemoveDups(SourceFeatBlkPtr& sfbp)
                 continue;
 
             bool found = false;
-            for (const auto& next : sfbp->quals) {
+            for (const auto& next : sfbl->quals) {
                 const string& next_qual = next->GetQual();
 
                 if (next_qual == "focus" || next_qual != cur_qual)
@@ -1532,10 +1526,10 @@ static void SourceFeatRemoveDups(SourceFeatBlkPtr& sfbp)
 }
 
 /**********************************************************/
-static void SourceFeatDerive(SourceFeatBlkPtr& sfbp,
-                             SourceFeatBlkPtr res)
+static void SourceFeatDerive(SourceFeatBlkList& sfbl,
+                             SourceFeatBlk* res)
 {
-    SourceFeatBlkPtr tsfbp;
+    SourceFeatBlk* tsfbp;
 
     if (! res)
         return;
@@ -1558,17 +1552,17 @@ static void SourceFeatDerive(SourceFeatBlkPtr& sfbp,
         tsfbp->orgname->Assign(*res->orgname);
 
     tsfbp->quals = res->quals;
-    tsfbp->next  = sfbp;
-    sfbp         = tsfbp;
+    tsfbp->next  = sfbl;
+    sfbl         = tsfbp;
 
-    for (TQualVector::iterator cur = sfbp->quals.begin(); cur != sfbp->quals.end();) {
+    for (TQualVector::iterator cur = sfbl->quals.begin(); cur != sfbl->quals.end();) {
         const string& cur_qual = (*cur)->GetQual();
         if (cur_qual == "focus") {
             ++cur;
             continue;
         }
 
-        for (tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next) {
+        for (tsfbp = sfbl->next; tsfbp; tsfbp = tsfbp->next) {
             if (tsfbp == res || ! tsfbp->useit)
                 continue;
 
@@ -1601,20 +1595,19 @@ static void SourceFeatDerive(SourceFeatBlkPtr& sfbp,
             continue;
         }
 
-        cur = sfbp->quals.erase(cur);
+        cur = sfbl->quals.erase(cur);
     }
 
-    SourceFeatRemoveDups(sfbp);
+    SourceFeatRemoveDups(sfbl);
 }
 
 /**********************************************************/
-static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
+static void PickTheDescrSource(SourceFeatBlkList& sfbl)
 {
-    SourceFeatBlkPtr res;
-    SourceFeatBlkPtr tsfbp;
+    SourceFeatBlk* res;
 
-    if (! sfbp->next) {
-        if (! sfbp->full) {
+    if (! sfbl->next) {
+        if (! sfbl->full) {
             FtaErrPost(SEV_WARNING, ERR_SOURCE_SingleSourceTooShort, "Source feature does not span the entire length of the sequence.");
         }
         return;
@@ -1623,8 +1616,8 @@ static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
     NCBI_UNUSED Int4 count_skip = 0;
     Int4 count_noskip = 0;
     bool same         = true;
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
-        if (! NStr::EqualNocase(tsfbp->name, sfbp->name)) {
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
+        if (! NStr::EqualNocase(tsfbp->name, sfbl->name)) {
             same = false;
             break;
         }
@@ -1638,31 +1631,34 @@ static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
 
     if (same) {
         if (count_noskip == 1) {
-            SourceFeatMoveOneUp(sfbp, res);
-            SourceFeatRemoveDups(sfbp);
+            SourceFeatMoveOneUp(sfbl, res);
+            SourceFeatRemoveDups(sfbl);
             return;
         }
-        for (res = nullptr, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+        res = nullptr;
+        for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
             if (count_noskip != 0 && tsfbp->skip)
                 continue;
             tsfbp->useit = true;
             if (! res)
                 res = tsfbp;
         }
-        SourceFeatDerive(sfbp, res);
+        SourceFeatDerive(sfbl, res);
         return;
     }
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    auto tsfbp = sfbl;
+    for (; tsfbp; tsfbp = tsfbp->next) {
         if (tsfbp->tg)
             break;
     }
     if (tsfbp) {
-        SourceFeatMoveOneUp(sfbp, tsfbp);
+        SourceFeatMoveOneUp(sfbl, tsfbp);
         return;
     }
 
-    for (res = nullptr, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    res = nullptr;
+    for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->focus)
             continue;
         res = tsfbp;
@@ -1673,7 +1669,7 @@ static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
     if (res) {
         count_skip   = 0;
         count_noskip = 0;
-        for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+        for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
             if (! NStr::EqualNocase(res->name, tsfbp->name))
                 continue;
             tsfbp->useit = true;
@@ -1683,30 +1679,30 @@ static void PickTheDescrSource(SourceFeatBlkPtr& sfbp)
                 count_noskip++;
         }
         if (count_noskip > 0) {
-            for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+            for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
                 if (! NStr::EqualNocase(res->name, tsfbp->name))
                     continue;
                 if (res != tsfbp && tsfbp->skip)
                     tsfbp->useit = false;
             }
         }
-        SourceFeatDerive(sfbp, res);
+        SourceFeatDerive(sfbl, res);
         return;
     }
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->full)
             continue;
         res = tsfbp;
         break;
     }
     if (res) {
-        SourceFeatMoveOneUp(sfbp, res);
-        SourceFeatRemoveDups(sfbp);
+        SourceFeatMoveOneUp(sfbl, res);
+        SourceFeatRemoveDups(sfbl);
         return;
     }
 
-    SourceFeatBlkSetFree(sfbp);
+    SourceFeatBlkSetFree(sfbl);
     FtaErrPost(SEV_ERROR, ERR_SOURCE_MissingSourceFeatureForDescr, "Could not select the right source feature among different organisms to create descriptor: no /focus and 1..N one. Entry dropped.");
 }
 
@@ -1915,7 +1911,7 @@ static CRef<CDbtag> GetSourceDbtag(CRef<CGb_qual>& qual, Parser::ESource source)
 }
 
 /**********************************************************/
-static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, IndexblkPtr ibp, Uint1 taxserver)
+static bool UpdateRawBioSource(SourceFeatBlkList& sfbl, Parser::ESource source, IndexblkPtr ibp, Uint1 taxserver)
 {
     char* div;
     char* tco;
@@ -1936,6 +1932,7 @@ static bool UpdateRawBioSource(SourceFeatBlkPtr sfbp, Parser::ESource source, In
         else if (StringEqu(div, "PAT"))
             is_pat = true;
     }
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (sfbp->bio_src.Empty())
             continue;
@@ -2090,13 +2087,12 @@ static bool is_a_space_char(Char c)
 }
 
 /**********************************************************/
-static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
-                                    const CBioseq& bioseq, string &source)
+static bool CompareDescrFeatSources(const SourceFeatBlkList& sfbl,
+                                    const CBioseq& bioseq, const string& source)
 {
-    SourceFeatBlkPtr tsfbp;
     bool ret = false;
 
-    if (! sfbp || ! bioseq.IsSetDescr())
+    if (! sfbl || ! bioseq.IsSetDescr())
         return(ret);
 
     for (const auto& descr : bioseq.GetDescr().Get()) {
@@ -2119,7 +2115,8 @@ static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
             std::remove_copy_if(common.begin(), common.end(), std::back_inserter(commdescr), is_a_space_char);
         }
 
-        for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+        auto tsfbp = sfbl;
+        for (; tsfbp; tsfbp = tsfbp->next) {
             if (tsfbp->name == nullptr || tsfbp->name[0] == '\0')
                 continue;
 
@@ -2150,11 +2147,12 @@ static bool CompareDescrFeatSources(SourceFeatBlkPtr sfbp,
 }
 
 /**********************************************************/
-static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bool is_pat)
+static bool CheckSourceLineage(const SourceFeatBlkList& sfbl, Parser::ESource source, bool is_pat)
 {
     const Char* p;
     ErrSev      sev;
 
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (! sfbp->lookup || sfbp->bio_src.Empty() || ! sfbp->bio_src->IsSetOrg())
             continue;
@@ -2181,17 +2179,15 @@ static bool CheckSourceLineage(SourceFeatBlkPtr sfbp, Parser::ESource source, bo
 
 /**********************************************************/
 static void PropagateSuppliedLineage(const CBioseq& bioseq,
-                                     SourceFeatBlkPtr sfbp,
+                                     const SourceFeatBlkList& sfbl,
                                      Uint1            taxserver)
 {
-    SourceFeatBlkPtr tsfbp;
-
     const Char* p;
 
-    if (! bioseq.IsSetDescr() || ! sfbp)
+    if (! bioseq.IsSetDescr() || ! sfbl)
         return;
 
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (sfbp->lookup || sfbp->bio_src.Empty() ||
             ! sfbp->bio_src->IsSetOrg() || ! sfbp->bio_src->GetOrg().IsSetTaxname() ||
             ! sfbp->name || *sfbp->name == '\0' ||
@@ -2249,7 +2245,7 @@ static void PropagateSuppliedLineage(const CBioseq& bioseq,
         }
 
         orgname.SetLineage(p);
-        for (tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next) {
+        for (auto tsfbp = sfbp->next; tsfbp; tsfbp = tsfbp->next) {
             if (tsfbp->lookup || tsfbp->bio_src.Empty() ||
                 ! tsfbp->bio_src->IsSetOrg() || ! tsfbp->bio_src->GetOrg().IsSetTaxname() ||
                 ! tsfbp->name || *tsfbp->name == '\0' ||
@@ -2270,26 +2266,25 @@ static void PropagateSuppliedLineage(const CBioseq& bioseq,
 }
 
 /**********************************************************/
-static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, string& moltype)
+static bool CheckMoltypeConsistency(const SourceFeatBlkList& sfbl, string& moltype)
 {
-    SourceFeatBlkPtr tsfbp;
     char*            name;
     char*            p;
     bool             ret;
     Char             ch;
 
-    if (! sfbp)
+    if (! sfbl)
         return true;
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next)
+    auto tsfbp = sfbl;
+    for (; tsfbp; tsfbp = tsfbp->next)
         if (tsfbp->moltype)
             break;
-
     if (! tsfbp)
         return true;
 
     name = tsfbp->moltype;
-    for (ret = true, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    for (ret = true, tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next) {
         if (! tsfbp->moltype) {
             ch = '\0';
             p  = tsfbp->location;
@@ -2311,7 +2306,7 @@ static bool CheckMoltypeConsistency(SourceFeatBlkPtr sfbp, string& moltype)
 }
 
 /**********************************************************/
-static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource source)
+static bool CheckForENV(const SourceFeatBlkList& sfbl, IndexblkPtr ibp, Parser::ESource source)
 {
     const char** b;
 
@@ -2320,12 +2315,13 @@ static bool CheckForENV(SourceFeatBlkPtr sfbp, IndexblkPtr ibp, Parser::ESource 
     Int4  envs;
     Char  ch;
 
-    if (! sfbp || ! ibp)
+    if (! sfbl || ! ibp)
         return true;
 
     bool skip            = false;
     location             = nullptr;
     ibp->env_sample_qual = false;
+    auto sfbp            = sfbl;
     for (envs = 0, sources = 0; sfbp; sfbp = sfbp->next, sources++) {
         bool env_found = false;
         for (const auto& cur : sfbp->quals) {
@@ -2523,7 +2519,7 @@ static void PopulatePcrPrimers(CBioSource& bio, PcrPrimersList& ppp, Int4 count)
 }
 
 /**********************************************************/
-static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
+static bool ParsePcrPrimers(SourceFeatBlkList& sfbl)
 {
     PcrPrimersList ppp;
 
@@ -2535,11 +2531,11 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
     bool  empty;
     Char  ch = '\0';
     Int4  count;
-    Int4  prev; /* 1 = fwd_name, 2 = fwd_seq,
-                                           3 = rev_name, 4 = rev_seq */
+    Int4  prev; /* 1 = fwd_name, 2 = fwd_seq, 3 = rev_name, 4 = rev_seq */
 
     bool got_problem = false;
     auto tppp = ppp.before_begin();
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (sfbp->quals.empty() || sfbp->bio_src.Empty())
             continue;
@@ -2717,7 +2713,7 @@ static bool ParsePcrPrimers(SourceFeatBlkPtr sfbp)
 }
 
 /**********************************************************/
-static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
+static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource source)
 {
     const char*  Mmm[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", nullptr };
     const char** b;
@@ -2739,7 +2735,7 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
     CTime     time(CTime::eCurrent);
     CDate_std date(time);
 
-    for (; sfbp; sfbp = sfbp->next) {
+    for (auto sfbp = sfbl; sfbp; sfbp = sfbp->next) {
         if (sfbp->quals.empty() || sfbp->bio_src.Empty())
             continue;
 
@@ -2956,13 +2952,14 @@ static void CheckCollectionDate(SourceFeatBlkPtr sfbp, Parser::ESource source)
 }
 
 /**********************************************************/
-static bool CheckNeedSYNFocus(SourceFeatBlkPtr sfbp)
+static bool CheckNeedSYNFocus(const SourceFeatBlkList& sfbl)
 {
     const char** b;
 
-    if (! sfbp || ! sfbp->next)
+    if (! sfbl || ! sfbl->next)
         return false;
 
+    auto sfbp = sfbl;
     for (; sfbp; sfbp = sfbp->next) {
         if (! sfbp->full)
             continue;
@@ -3016,19 +3013,21 @@ static void CheckMetagenome(CBioSource& bio)
 }
 
 /**********************************************************/
-static bool CheckSubmitterSeqidQuals(SourceFeatBlkPtr sfbp, char* acc)
+static bool CheckSubmitterSeqidQuals(const SourceFeatBlkList& sfbl, char* acc)
 {
-    SourceFeatBlkPtr tsfbp;
     char*            ssid;
     Int4             count_feat;
     Int4             count_qual;
 
-    if (! sfbp)
+    if (! sfbl)
         return (true);
 
     count_feat = 0;
     count_qual = 0;
-    for (ssid = nullptr, tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    ssid       = nullptr;
+
+    auto tsfbp = sfbl;
+    for (; tsfbp; tsfbp = tsfbp->next) {
         count_feat++;
         if (! tsfbp->submitter_seqid)
             continue;
@@ -3062,9 +3061,6 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
                      const CSeq_id& seqid, Int2 type, const CBioseq& bioseq,
                      string &source, TSeqFeatList& seq_feats)
 {
-    SourceFeatBlkPtr sfbp;
-    SourceFeatBlkPtr tsfbp;
-
     IndexblkPtr ibp;
     char*       res;
     char*       acc;
@@ -3081,104 +3077,104 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
 
     pp->errstat = 0;
 
-    sfbp = CollectSourceFeats(dbp, dbp_end, type);
-    if (! sfbp) {
+    auto sfbl = CollectSourceFeats(dbp, dbp_end, type);
+    if (! sfbl) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_FeatureMissing, "Required source feature is missing. Entry dropped.");
         return;
     }
 
-    RemoveSourceFeatSpaces(sfbp);
-    CheckForExemption(sfbp);
+    RemoveSourceFeatSpaces(sfbl);
+    CheckForExemption(sfbl);
 
-    if (! CheckSourceFeatLocFuzz(sfbp)) {
-        SourceFeatBlkSetFree(sfbp);
+    if (! CheckSourceFeatLocFuzz(sfbl)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    res = CheckSourceFeatLocAccs(sfbp, acc);
+    res = CheckSourceFeatLocAccs(sfbl, acc);
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_BadLocation, "Source feature location points to another record: \"{}\". Entry dropped.", res);
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    if (! SourceFeatStructFillIn(ibp, sfbp, use_what)) {
+    if (! SourceFeatStructFillIn(ibp, sfbl, use_what)) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_MultipleMolTypes, "Multiple /mol_type qualifiers were encountered within source feature. Entry dropped.");
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    if (! ibp->submitter_seqid.empty() && ! CheckSubmitterSeqidQuals(sfbp, acc)) {
+    if (! ibp->submitter_seqid.empty() && ! CheckSubmitterSeqidQuals(sfbl, acc)) {
         ibp->submitter_seqid.clear();
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    if (! CheckMoltypeConsistency(sfbp, ibp->moltype)) {
+    if (! CheckMoltypeConsistency(sfbl, ibp->moltype)) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_InconsistentMolType, "Inconsistent /mol_type qualifiers were encountered. Entry dropped.");
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    res = CheckSourceFeatFocusAndTransposon(sfbp);
+    res = CheckSourceFeatFocusAndTransposon(sfbl);
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_FocusAndTransposonNotAllowed, "/transposon (or /insertion_seq) qualifiers should not be used in conjunction with /focus. Source feature at \"{}\". Entry dropped.", res);
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    res = CheckSourceFeatOrgs(sfbp, &i);
+    res = CheckSourceFeatOrgs(sfbl, &i);
     if (res) {
         if (i == 1) {
             FtaErrPost(SEV_REJECT, ERR_SOURCE_NoOrganismQual, "/organism qualifier contains only organell/genome name. No genus/species present. Source feature at \"{}\". Entry dropped.", res);
         } else {
             FtaErrPost(SEV_REJECT, ERR_SOURCE_OrganismIncomplete, "Required /organism qualifier is containing genome info only at \"{}\". Entry dropped.", res);
         }
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    ibp->no_gbblock_source = CompareDescrFeatSources(sfbp, bioseq, source);
+    ibp->no_gbblock_source = CompareDescrFeatSources(sfbl, bioseq, source);
 
-    CreateRawBioSources(pp, sfbp, use_what);
+    CreateRawBioSources(pp, sfbl, use_what);
 
-    if (! CheckSourceLineage(sfbp, pp->source, ibp->is_pat)) {
-        SourceFeatBlkSetFree(sfbp);
+    if (! CheckSourceLineage(sfbl, pp->source, ibp->is_pat)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    PropagateSuppliedLineage(bioseq, sfbp, pp->taxserver);
+    PropagateSuppliedLineage(bioseq, sfbl, pp->taxserver);
 
     MinMaxList mml;
     mml.emplace_front();
-    i = CheckSourceFeatCoverage(sfbp, mml, len);
+    i = CheckSourceFeatCoverage(sfbl, mml, len);
     if (i != 0) {
         if (i == 1) {
             FtaErrPost(SEV_REJECT, ERR_SOURCE_IncompleteCoverage, "Supplied source features do not span every base of the sequence. Entry dropped.");
         } else {
             FtaErrPost(SEV_REJECT, ERR_SOURCE_ExcessCoverage, "Sequence is spanned by too many source features. Entry dropped.");
         }
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    if (! CheckForENV(sfbp, ibp, pp->source)) {
-        SourceFeatBlkSetFree(sfbp);
+    if (! CheckForENV(sfbl, ibp, pp->source)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    if (! CheckSYNTGNDivision(sfbp, ibp->division)) {
-        SourceFeatBlkSetFree(sfbp);
+    if (! CheckSYNTGNDivision(sfbl, ibp->division)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
     if (pp->source == Parser::ESource::EMBL)
-        need_focus = CheckNeedSYNFocus(sfbp);
+        need_focus = CheckNeedSYNFocus(sfbl);
     else
         need_focus = true;
 
     already = false;
-    i       = CheckTransgenicSourceFeats(sfbp);
+    i       = CheckTransgenicSourceFeats(sfbl);
     if (i == 5) {
         if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::EMBL)
             sev = SEV_WARNING;
@@ -3201,18 +3197,18 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         }
 
         if (sev == SEV_REJECT) {
-            SourceFeatBlkSetFree(sfbp);
+            SourceFeatBlkSetFree(sfbl);
             return;
         }
     }
 
-    res = CheckWholeSourcesVersusFocused(sfbp);
+    res = CheckWholeSourcesVersusFocused(sfbl);
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_FocusQualNotFullLength, "/focus qualifier should be used for the full-length source feature, not on source feature at \"{}\".", res);
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
-    i = CheckFocusInOrgs(sfbp, len, &pp->errstat);
+    i = CheckFocusInOrgs(sfbl, len, &pp->errstat);
     if (pp->errstat != 0)
         i = 1;
     if (i > 0) {
@@ -3229,7 +3225,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
         }
 
         if (sev == SEV_REJECT) {
-            SourceFeatBlkSetFree(sfbp);
+            SourceFeatBlkSetFree(sfbl);
             return;
         }
     }
@@ -3237,44 +3233,46 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
     mml.clear();
     if (res) {
         FtaErrPost(SEV_REJECT, ERR_SOURCE_MultiOrgOverlap, "Overlapping source features have different organism names {}. Entry dropped.", res);
-        SourceFeatBlkSetFree(sfbp);
+        SourceFeatBlkSetFree(sfbl);
         MemFree(res);
         return;
     }
 
-    res = CheckForUnusualFullLengthOrgs(sfbp);
+    res = CheckForUnusualFullLengthOrgs(sfbl);
     if (res) {
         FtaErrPost(SEV_WARNING, ERR_SOURCE_UnusualOrgName, "Unusual organism name \"{}\" encountered for full-length source feature.", res);
     }
 
-    for (tsfbp = sfbp, i = 0; tsfbp; tsfbp = tsfbp->next)
+    i = 0;
+    for (auto tsfbp = sfbl; tsfbp; tsfbp = tsfbp->next)
         i++;
     if (i > BIOSOURCES_THRESHOLD) {
         FtaErrPost(SEV_WARNING, ERR_SOURCE_ManySourceFeats, "This record has more than {} source features.", BIOSOURCES_THRESHOLD);
     }
 
-    if (! ParsePcrPrimers(sfbp)) {
-        SourceFeatBlkSetFree(sfbp);
+    if (! ParsePcrPrimers(sfbl)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
 
-    CheckCollectionDate(sfbp, pp->source);
+    CheckCollectionDate(sfbl, pp->source);
 
-    PickTheDescrSource(sfbp);
-    if (! sfbp || ! UpdateRawBioSource(sfbp, pp->source, ibp, pp->taxserver)) {
-        SourceFeatBlkSetFree(sfbp);
+    PickTheDescrSource(sfbl);
+    if (! sfbl || ! UpdateRawBioSource(sfbl, pp->source, ibp, pp->taxserver)) {
+        SourceFeatBlkSetFree(sfbl);
         return;
     }
-    if(sfbp->lookup == false)
+    if (sfbl->lookup == false)
         ibp->biodrop = true;
 
-    if (sfbp->focus)
-        sfbp->bio_src->SetIs_focus();
+    if (sfbl->focus)
+        sfbl->bio_src->SetIs_focus();
     else
-        sfbp->bio_src->ResetIs_focus();
+        sfbl->bio_src->ResetIs_focus();
 
 
-    for (tsfbp = sfbp; tsfbp; tsfbp = tsfbp->next) {
+    auto tsfbp = sfbl;
+    for (; tsfbp; tsfbp = tsfbp->next) {
         CheckMetagenome(*tsfbp->bio_src);
 
         CRef<CSeq_feat> feat(new CSeq_feat);
@@ -3305,7 +3303,7 @@ void ParseSourceFeat(ParserPtr pp, DataBlkCIter dbp, DataBlkCIter dbp_end,
     if (tsfbp)
         seq_feats.clear();
 
-    SourceFeatBlkSetFree(sfbp);
+    SourceFeatBlkSetFree(sfbl);
 }
 
 END_NCBI_SCOPE
