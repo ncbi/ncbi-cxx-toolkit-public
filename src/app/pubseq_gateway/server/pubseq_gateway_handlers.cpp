@@ -2178,6 +2178,11 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
                .append("\"old_throttled_cnt\": ")
                .append(buf, len);
 
+        len = PSGToString(lround(m_Settings.m_ConnThrottleCloseIdleSec * 1000), buf);
+        content.append(", ")
+               .append("\"conn_throttle_close_idle_ms\": ")
+               .append(buf, len);
+
         content.append(", ")
                .append("\"conn_info\": ")
                .append(m_HttpDaemon->GetConnectionsStatus(reply->GetConnectionId()))
