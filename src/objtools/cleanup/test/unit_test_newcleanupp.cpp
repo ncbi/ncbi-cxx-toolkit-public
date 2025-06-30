@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveSingleStrand)
     BOOST_CHECK(pBioseq->GetInst().IsSetStrand());
     BOOST_CHECK(bsh.IsSetInst_Strand());
     {
-        auto madeChange = cleanup_imp.RemoveSingleStrand(*pBioseq);
+        auto madeChange = cleanup_imp.RemoveSingleStrand(bsh);
         BOOST_CHECK(madeChange);
     }
 
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(Test_RemoveSingleStrand)
     BOOST_CHECK_EQUAL(pBioseq->GetInst().GetStrand(), CSeq_inst::eStrand_ss);
     BOOST_CHECK(bsh.IsSetInst_Strand());
     {
-        auto madeChange = cleanup_imp.RemoveSingleStrand(*pBioseq);
+        auto madeChange = cleanup_imp.RemoveSingleStrand(bsh);
         BOOST_CHECK(madeChange);
     }
 
