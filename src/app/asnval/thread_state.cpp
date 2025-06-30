@@ -194,11 +194,6 @@ void CAsnvalThreadState::ReadClassMember(CObjectIStream& in,
                     }
                 }
 
-                if (mAppConfig.mDoCleanup) {
-                    m_Cleanup.SetScope(scope);
-                    m_Cleanup.BasicCleanup(*se);
-                }
-
                 if (mAppConfig.mOnlyAnnots) {
                     for (CSeq_annot_CI ni(seh); ni; ++ni) {
                         const CSeq_annot_Handle& sah = *ni;
@@ -388,10 +383,6 @@ void CAsnvalThreadState::ProcessSeqEntry(CSeq_entry& se, IMessageHandler& msgHan
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
-    if (mAppConfig.mDoCleanup) {
-        m_Cleanup.SetScope(scope);
-        m_Cleanup.BasicCleanup(se);
-    }
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
     CBioseq_CI bi(seh);
     if (bi) {
@@ -498,10 +489,6 @@ void CAsnvalThreadState::ProcessSeqSubmit(CRef<CSerialObject> serial, IMessageHa
             }
         }
     }
-    if (mAppConfig.mDoCleanup) {
-        m_Cleanup.SetScope(scope);
-        m_Cleanup.BasicCleanup(*ss);
-    }
 
     if (!mAppConfig.mQuiet) {
         LOG_POST_XX(Corelib_App, 1, m_CurrentId);
@@ -520,10 +507,6 @@ void CAsnvalThreadState::ProcessSeqAnnot(CRef<CSerialObject> serial, IMessageHan
     // Validate Seq-annot
     CValidator validator(*m_ObjMgr, m_pContext);
     CRef<CScope> scope = BuildScope();
-    if (mAppConfig.mDoCleanup) {
-        m_Cleanup.SetScope(scope);
-        m_Cleanup.BasicCleanup(*sa);
-    }
     CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
     validator.Validate(sah, m_Options, msgHandler);
     m_NumRecords++;
@@ -535,11 +518,6 @@ void CAsnvalThreadState::ProcessSeqFeat(CRef<CSerialObject> serial, IMessageHand
     CRef<CSeq_feat> feat(CTypeConverter<CSeq_feat>::SafeCast(serial));
 
     CRef<CScope> scope = BuildScope();
-    if (mAppConfig.mDoCleanup) {
-        m_Cleanup.SetScope(scope);
-        m_Cleanup.BasicCleanup(*feat);
-    }
-
     CValidator validator(*m_ObjMgr, m_pContext);
     m_NumRecords++;
     validator.Validate(*feat, scope, m_Options, msgHandler);
@@ -654,12 +632,6 @@ void CAsnvalThreadState::ValidateAsync(
     }
 
     if (top_h) {
-        if (mAppConfig.mDoCleanup) {
-            CCleanup cleanup;
-            cleanup.SetScope(scope);
-            cleanup.BasicCleanup(*pEntry);
-        }
-
         CValidErrorSuppress::TCodes suppressed;
         if (pSubmitBlock) {
             auto pSubmit = Ref(new CSeq_submit());

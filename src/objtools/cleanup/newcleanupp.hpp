@@ -235,7 +235,7 @@ public:
     void SubmitblockBC (CSubmit_block& sb);
 
     void SeqsetBC (CBioseq_set& bss);
-    void ProtSeqBC (CBioseq& bs);
+    void ProtSeqBC (CBioseq_Handle bsh);
 
     bool BasicCleanupSeqIds(CBioseq_Handle bsh);
     bool SeqIdBC( CSeq_id &seq_id );
@@ -493,11 +493,12 @@ private:
     // after cleaning bioseq and bioseq-set, need to clear empty descriptors
     void x_ClearEmptyDescr( CBioseq_set& bioseq_set );
     void x_ClearEmptyDescr( CBioseq& bioseq );
+    void ClearEmptyDescr(CBioseq_Handle bsh);
 
 
 public:
     // removes single-strandedness from non-viral nucleotide sequences
-    bool RemoveSingleStrand( CBioseq& bioseq );
+    bool RemoveSingleStrand(CBioseq_Handle bsh);
     void LabelMapAppend(const vector<string>& old_labels, const vector<string>& new_labels);
 
 private:

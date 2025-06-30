@@ -676,50 +676,51 @@ static bool s_UpdatePartialness(const CSeq_feat& feat)
         (! feat.GetLocation().IsPartialStop(eExtreme_Biological));
 }
 
-void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
+
+void CNewCleanup_imp::ProtSeqBC(CBioseq_Handle bsh)
 {
     // Pre-load segments
-    if ( CBioseq_Handle bh = m_Scope->GetBioseqHandle(bs, CScope::eMissing_Null) ) {
+    //if (bsh = m_Scope->GetBioseqHandle(bs, CScope::eMissing_Null)) {
         // Set up selector to resolve all first level references in delta sequence
         // SetLinkUsedTSE() is necessary to prevent OM garbage collector to remove
         // loaded sequences if the segment list is too long
         SSeqMapSelector sel(CSeqMap::fFindLeafRef, kMax_UInt);
-        sel.SetLinkUsedTSE(bh.GetTSE_Handle());
+        sel.SetLinkUsedTSE(bsh.GetTSE_Handle());
         sel.SetResolveCount(0);
-        bh.GetSeqMap().CanResolveRange(m_Scope, sel);
-    }
+        bsh.GetSeqMap().CanResolveRange(m_Scope, sel);
+   // }
+
     // Bail if not protein
-    if (!bs.IsSetInst()) {
-        return;
-    }
-    CSeq_inst& inst = bs.SetInst();
-    if (!inst.IsSetMol() || inst.GetMol() != CSeq_inst::eMol_aa) {
+    if (! bsh.IsSetInst()) {
         return;
     }
 
-    if (inst.IsSetTopology() && inst.GetTopology() == CSeq_inst::eTopology_linear) {
-        auto bsh = m_Scope->GetBioseqHandle(bs);
+    if (! bsh.IsSetInst_Mol() || (bsh.GetInst_Mol() != CSeq_inst::eMol_aa)) {
+        return;
+    }
+
+    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_linear) {
         bsh.GetEditHandle().x_RealResetInst_Topology();
         ChangeMade(CCleanupChange::eChangeBioseqInst);
     }
 
 
-    if (! bs.IsSetId() || ! bs.IsSetDescr() || ! bs.IsSetAnnot()) {
+    if (! bsh.IsSetId() || ! bsh.IsSetDescr() || ! bsh.HasAnnots()) {
         return;
     }
 
     // Bail if no GIBBSQ ID
-    const auto& id_list = bs.GetId();
-    auto it = find_if(id_list.begin(), id_list.end(), 
-            [](CRef<CSeq_id> pId) { return (pId && pId->IsGibbsq()); });
-    if (it == id_list.end()) { // No gibbsq
+    const auto& id_handles = bsh.GetId();
+    auto        it         = find_if(id_handles.begin(), id_handles.end(), 
+            [](auto handle) { return (handle.GetSeqId() && handle.GetSeqId()->IsGibbsq()); });
+    if (it == id_handles.end()) { // No gibbsq
         return;
     }
 
 
     bool make_partial5 = false;
     bool make_partial3 = false;
-    for (auto dit : bs.GetDescr().Get()) {
+    for (auto dit : bsh.GetDescr().Get()) {
         if (dit->IsTitle()) {
             if (NStr::Find(dit->GetTitle(), "{C-terminal}") != string::npos) {
                 make_partial5 = true;
@@ -731,54 +732,54 @@ void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
         }
     }
 
-    if (!make_partial5 && !make_partial3) {
+    if (! make_partial5 && ! make_partial3) {
         return;
     }
 
 
-    bool updateCompleteness{false};
-    for (auto pAnnot : bs.SetAnnot()) {
-        if (pAnnot->IsSetData() && pAnnot->GetData().IsFtable()) {
-            for (auto pFeat : pAnnot->SetData().SetFtable()) {
-                if (pFeat->IsSetData() &&
-                    pFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot &&
-                    s_UpdatePartialness(*pFeat)) {
-                    // note - we are only fixing partials if *both*
-                    // ends were left as complete. One end being
-                    // set as partial means that someone was doing this
-                    // deliberately.
-                    CSeq_feat_EditHandle sfeh(m_Scope->GetSeq_featHandle(*pFeat));
-                    if (make_partial5) {
-                        pFeat->SetLocation().SetPartialStart(true, eExtreme_Biological);
-                    }
-                    if (make_partial3) {
-                        pFeat->SetLocation().SetPartialStop(true, eExtreme_Biological);
-                    }
-                    sfeh.Update(); // Update index
+    bool updateCompleteness{ false };
 
-                    ChangeMade(CCleanupChange::eChangeSeqloc);
-                    updateCompleteness = true;
+    CSeq_annot_CI annot_it(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for (; annot_it; ++annot_it) {
+        if (! annot_it->IsFtable()) {
+            continue;
+        }
+        SAnnotSelector sel;
+        sel.SetFeatType(CSeqFeatData::e_Prot);
+        CFeat_CI feat_it(*annot_it, sel);
+        for (; feat_it; ++feat_it) {
+            auto pFeat = feat_it->GetSeq_feat();
+            if (s_UpdatePartialness(*pFeat)) {
+                auto pNewFeat = Ref(new CSeq_feat());
+                pNewFeat->Assign(*pFeat);
+                if (make_partial5) {
+                    pNewFeat->SetLocation().SetPartialStart(true, eExtreme_Biological);
                 }
+                if (make_partial3) {
+                    pNewFeat->SetLocation().SetPartialStop(true, eExtreme_Biological);
+                }
+                CSeq_feat_EditHandle(*feat_it).Replace(*pNewFeat);
+                ChangeMade(CCleanupChange::eChangeSeqloc);
+                updateCompleteness = true;
             }
         }
+    }
 
-        if (updateCompleteness) {
-            auto completeness = GetCompletenessFromFlags(make_partial5, make_partial3, true); // true=>is partial
-            for (auto pDesc : bs.SetDescr().Set()) {
-                if (pDesc->IsMolinfo()) {
-                    if ((! pDesc->GetMolinfo().IsSetCompleteness()) ||
-                        (pDesc->GetMolinfo().GetCompleteness() != completeness)) {
-                        // Replace descriptor
-                        auto pNewDesc = Ref(new CSeqdesc());
-                        pNewDesc->Assign(*pDesc);
-                        pNewDesc->SetMolinfo().SetCompleteness(completeness);
+    if (updateCompleteness) {
+        const bool is_partial{ true };
+        auto       completeness = GetCompletenessFromFlags(make_partial5, make_partial3, is_partial);
+        for (auto pDesc : bsh.GetDescr().Get()) {
+            if (pDesc->IsMolinfo()) {
+                if ((! pDesc->GetMolinfo().IsSetCompleteness()) ||
+                    (pDesc->GetMolinfo().GetCompleteness() != completeness)) {
+                    // Replace descriptor
+                    auto pNewDesc = Ref(new CSeqdesc());
+                    pNewDesc->Assign(*pDesc);
+                    pNewDesc->SetMolinfo().SetCompleteness(completeness);
 
-                        auto bsh = m_Scope->GetBioseqHandle(bs);
-                        bsh.GetEditHandle().ReplaceSeqdesc(*pDesc, *pNewDesc);
-
-                        ChangeMade(CCleanupChange::eChangeMolInfo);
-                        break; 
-                    }
+                    bsh.GetEditHandle().ReplaceSeqdesc(*pDesc, *pNewDesc);
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
+                    break;
                 }
             }
         }
@@ -8879,6 +8880,14 @@ void CNewCleanup_imp::x_ClearEmptyDescr( CBioseq& bioseq )
 }
 
 
+void CNewCleanup_imp::ClearEmptyDescr(CBioseq_Handle bsh)
+{
+    if (bsh.IsSetDescr() && bsh.GetDescr().Get().empty()) {
+        bsh.GetEditHandle().ResetDescr();
+    }
+}
+
+
 static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
 {
     bool ret = false;
@@ -8899,19 +8908,18 @@ static bool IsBadSeqInstStrand(const CSeq_inst& inst, const CBioSource* bio_src)
     return ret;
 }
 
-bool CNewCleanup_imp::RemoveSingleStrand(CBioseq& bioseq)
+
+bool CNewCleanup_imp::RemoveSingleStrand(CBioseq_Handle bsh)
 {
     // do not remove single-strandedness for patent sequences
-    const auto& idset = bioseq.GetId();
-    for (auto id : idset) {
-        if (id->IsPatent()) {
+    const auto& id_handles = bsh.GetId();
+    for (auto handle : id_handles) {
+        if (handle.GetSeqId() && handle.GetSeqId()->IsPatent()) {
             return false;
         }
     }
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
-
-    if (bioseq.IsSetInst() && IsBadSeqInstStrand(bioseq.GetInst(), sequence::GetBioSource(bsh))) {
+    if (bsh.IsSetInst() && IsBadSeqInstStrand(bsh.GetInst(), sequence::GetBioSource(bsh))) {
         bsh.GetEditHandle().x_RealResetInst_Strand();
         ChangeMade(CCleanupChange::eChangeBioseqInst);
         return true;

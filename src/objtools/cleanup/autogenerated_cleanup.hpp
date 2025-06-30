@@ -363,7 +363,7 @@ private:
     void x_BasicCleanupSPBlock(CSP_block& arg0);
     void x_BasicCleanupDescTitle(std::string& arg0);
     void x_BasicCleanupBioseqDesc(CSeqdesc& desc);
-    void x_BasicCleanupBioseqDescr(CBioseq& bioseq);
+    void x_BasicCleanupBioseqDescr(CBioseq_Handle bsh);
     void x_BasicCleanupDeltaExt(CDelta_ext& delta_ext, CSeq_inst::ERepr repr);
     void x_BasicCleanupMapExt(CMap_ext& arg0);
     void x_BasicCleanupSegExt(CSeg_ext& arg0);
