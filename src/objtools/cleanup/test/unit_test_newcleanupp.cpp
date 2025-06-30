@@ -259,7 +259,7 @@ BOOST_AUTO_TEST_CASE(Test_ProtSeqBC)
 
     BOOST_CHECK_EQUAL(pProtSeq->GetInst().GetTopology(),CSeq_inst::eTopology_linear);
 
-    cleanup_imp.ProtSeqBC(*pProtSeq);
+    cleanup_imp.ProtSeqBC(bsh);
 
     // Check that linear topology has been cleared
     BOOST_CHECK(! pProtSeq->GetInst().IsSetTopology());
