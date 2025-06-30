@@ -1718,8 +1718,17 @@ public:
     ///   if you don't need to check that entry is a directory.
     virtual bool Exists(void) const;
 
+    /// Windows specific:
+    /// Historically, we try to use %APPDATA% first, and use %USERPROFILE% as a fallback
+    /// to detect a "home" directory on Windows. This is actually not exactly correct,
+    /// and at least some users want to do it in the reverse order.
+    /// @sa GetHome
+    enum EHomeWindows {
+        eHomeWindows_AppData,      ///< Try env var %APPDATA% first
+        eHomeWindows_UserProfile   ///< Try env var %USERPROFILE% first
+    };
     /// Get user "home" directory.
-    static string GetHome(void);
+    static string GetHome(EHomeWindows home = eHomeWindows_AppData);
 
     /// Get temporary directory.
     ///

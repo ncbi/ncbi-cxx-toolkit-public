@@ -3621,19 +3621,18 @@ static bool s_GetHomeByLOGIN(string& home)
 #endif // NCBI_OS_UNIX
 
 
-string CDir::GetHome(void)
+string CDir::GetHome(EHomeWindows home_check_order)
 {
     string home;
 
 #if defined(NCBI_OS_MSWIN)
     // Get home dir from environment variables
-    // like - C:\Documents and Settings\user\Application Data
-    const TXChar* str = NcbiSys_getenv(_TX("APPDATA"));
+
+    const TXChar* str = NcbiSys_getenv((home_check_order == eHomeWindows_AppData) ? _TX("APPDATA") : _TX("USERPROFILE"));
     if ( str ) {
         home = _T_CSTRING(str);
     } else {
-        // like - C:\Documents and Settings\user
-        str = NcbiSys_getenv(_TX("USERPROFILE"));
+        str = NcbiSys_getenv((home_check_order == eHomeWindows_AppData) ? _TX("USERPROFILE") : _TX("APPDATA"));
         if ( str ) {
             home = _T_CSTRING(str);
         }
@@ -3688,7 +3687,6 @@ string CDir::GetTmpDir(void)
     }
 
 #endif
-
     return tmp;
 }
 
