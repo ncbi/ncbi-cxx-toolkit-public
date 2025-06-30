@@ -56,7 +56,6 @@ public:
     CAppConfig(const CArgs& args, const CNcbiRegistry& reg);
 
     bool mQuiet;
-    bool mDoCleanup;
     EVerbosity mVerbosity;
     EDiagSev mLowCutoff;
     EDiagSev mHighCutoff;

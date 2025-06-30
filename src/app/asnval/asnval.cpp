@@ -304,7 +304,8 @@ void CAsnvalApp::Init()
     CArgAllow* v_constraint = new CArgAllow_Integers(CAppConfig::eVerbosity_min, CAppConfig::eVerbosity_max);
     arg_desc->SetConstraint("v", v_constraint);
 
-    arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit)");
+    arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit); obsolete", 
+        CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
     arg_desc->AddFlag("huge", "Execute in huge-file mode");
     arg_desc->AddFlag("disable-huge", "Explicitly disable huge-files mode");
@@ -471,6 +472,10 @@ int CAsnvalApp::Run()
 
     if (args["b"]) {
         cerr << "Warning: -b is deprecated; do not use" << endl;
+    }
+
+    if (args["cleanup"]) {
+        cerr << "Warning: -cleanup is deprecated; do not use" << endl;
     }
 
     CThreadExitData exit_data;

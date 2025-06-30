@@ -61,7 +61,6 @@ static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
 CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
 {
     mQuiet = args["quiet"] && args["quiet"].AsBoolean();
-    mDoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
     mVerbosity = static_cast<CAppConfig::EVerbosity>(args["v"].AsInteger());
     mLowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     mHighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
