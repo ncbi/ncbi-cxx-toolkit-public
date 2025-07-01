@@ -1509,6 +1509,7 @@ static void SourceFeatRemoveDups(SourceFeatBlkList& sfbl)
         prev->next  = tsfbp->next;
         tsfbp->next = nullptr;
         delete(tsfbp);
+        tsfbp = prev->next;
     }
 }
 
