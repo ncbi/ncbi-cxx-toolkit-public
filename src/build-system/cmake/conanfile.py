@@ -24,6 +24,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "FASTCGIPP":  ["ncbi-fastcgipp"],
         "GIF":        ["giflib"],
         "GRPC":       ["grpc", "protobuf", "abseil"],
+        "Iconv":      ["libiconv"],
         "JPEG":       ["libjpeg"],
         "LMDB":       ["lmdb"],
         "LZO":        ["lzo"],
@@ -78,6 +79,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("grpc/[>=1.50.1 <=1.67.1]")
         if self.settings.os == "Linux" or NCBIfound:
             self._default_requires("libdb/5.3.28")
+        self._default_requires("libiconv/[>=1.17]")
         self._default_requires("libjpeg/9e")
         self._default_requires("libnghttp2/[>=1.51.0 <=1.61.0]")
         self._default_requires("libpng/[>=1.6.37 <=1.6.44]")
