@@ -190,6 +190,11 @@ endif()
 #############################################################################
 # XML
 NCBI_define_Pkgcomponent(NAME XML PACKAGE libxml2 REQUIRES zlib;libiconv FIND LibXml2)
+if (NCBI_COMPONENT_XML_FOUND)
+    if(CMAKE_COMPILER_IS_GNUCC)
+        set(NCBI_COMPONENT_XML_LIBS -Wl,--no-as-needed ${NCBI_COMPONENT_XML_LIBS})
+    endif()
+endif()
 
 #############################################################################
 # XSLT
