@@ -424,11 +424,13 @@ using SPFeatBlnPtr = SPFeatBln*;
 /* segment location, data from NON_CONS
  */
 struct SPSegLoc {
-    Int4      from = 0; /* the beginning point of the segment */
-    Int4      len  = 0; /* total length of the segment */
-    SPSegLoc* next = nullptr;
+    Int4 from;    /* the beginning point of the segment */
+    Int4 len = 0; /* total length of the segment */
+
+    SPSegLoc(Int4 f) :
+        from(f) {}
 };
-using SPSegLocPtr = SPSegLoc*;
+using SPSegLocList = forward_list<SPSegLoc>;
 
 struct SetOfSyns {
     char*      synname = nullptr;
@@ -4341,15 +4343,13 @@ static void SPFeatProtRef(ParserPtr pp, CSeq_annot::C_Data::TFtable& feats, cons
  *                                              11-5-93
  *
  **********************************************************/
-static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfil, SPFeatBlnPtr spfbp)
+static SPSegLocList GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfil, SPFeatBlnPtr spfbp)
 {
-    SPSegLocPtr curspslp = nullptr;
-    SPSegLocPtr hspslp   = nullptr;
-    SPSegLocPtr spslp;
-    const char* p;
+    SPSegLocList spsll;
+    SPSegLocList::iterator curspslp;
 
     if (spfil.empty())
-        return nullptr;
+        return spsll;
 
     /* get location range
      */
@@ -4357,29 +4357,17 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfil
         if (spfip.key != "NON_CONS")
             continue;
 
-        if (! hspslp) {
-            spslp = new SPSegLoc;
-            p     = spfip.from.c_str();
-            if (*p == '<' || *p == '>' || *p == '?')
-                p++;
-
-            spslp->len = fta_atoi(p);
-            hspslp     = spslp;
-            curspslp   = spslp;
-        } else {
-            p = spfip.from.c_str();
-            if (*p == '<' || *p == '>' || *p == '?')
-                p++;
-            curspslp->len = fta_atoi(p) - curspslp->from;
+        if (spsll.empty()) {
+            spsll.emplace_front(0);
+            curspslp = spsll.begin();
         }
 
-        spslp = new SPSegLoc;
-        p     = spfip.from.c_str();
+        const char* p = spfip.from.c_str();
         if (*p == '<' || *p == '>' || *p == '?')
             p++;
-        spslp->from    = fta_atoi(p);
-        curspslp->next = spslp;
-        curspslp       = spslp;
+        Int4 from = fta_atoi(p);
+        curspslp->len = from - curspslp->from;
+        curspslp = spsll.emplace_after(curspslp, from);
     }
 
     for (auto& descr : bioseq.SetDescr().Set()) {
@@ -4394,10 +4382,10 @@ static SPSegLocPtr GetSPSegLocInfo(CBioseq& bioseq, const SPFeatInputList& spfil
             descr->SetMolinfo().SetCompleteness(CMolInfo::eCompleteness_no_right);
     }
 
-    if (hspslp)
+    if (! spsll.empty())
         curspslp->len = bioseq.GetLength() - curspslp->from;
 
-    return (hspslp);
+    return spsll;
 }
 
 /**********************************************************
@@ -4559,15 +4547,15 @@ static void CkNonTerSP(ParserPtr pp, const SPFeatInputList& spfil, CSeq_entry& s
 }
 
 /**********************************************************/
-static void SeqToDeltaSP(CBioseq& bioseq, SPSegLocPtr spslp)
+static void SeqToDeltaSP(CBioseq& bioseq, const SPSegLocList& spsll)
 {
-    if (! spslp || ! bioseq.GetInst().IsSetSeq_data())
+    if (spsll.empty() || ! bioseq.GetInst().IsSetSeq_data())
         return;
 
     CSeq_ext::TDelta& deltas      = bioseq.SetInst().SetExt().SetDelta();
     const string&     bioseq_data = bioseq.GetInst().GetSeq_data().GetIupacaa().Get();
 
-    for (; spslp; spslp = spslp->next) {
+    for (auto spslp = spsll.begin(); spslp != spsll.end(); ++spslp) {
         CRef<CDelta_seq> delta(new CDelta_seq);
         if (! deltas.Set().empty()) {
             delta->SetLiteral().SetLength(0);
@@ -4604,8 +4592,7 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
 {
     EntryBlkPtr  ebp;
     SPFeatBlnPtr spfbp;
-    SPSegLocPtr  spslp; /* segment location, data from NON_CONS */
-    SPSegLocPtr  next;
+    SPSegLocList spsll; /* segment location, data from NON_CONS */
 
     ebp                   = entry.GetEntryData();
     CSeq_entry& seq_entry = *ebp->seq_entry;
@@ -4626,9 +4613,9 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
 
     CBioseq& bioseq = seq_entry.SetSeq();
 
-    spslp = GetSPSegLocInfo(bioseq, spfil, spfbp); /* checking NON_CONS key */
-    if (spslp)
-        SeqToDeltaSP(bioseq, spslp);
+    spsll = GetSPSegLocInfo(bioseq, spfil, spfbp); /* checking NON_CONS key */
+    if (! spsll.empty())
+        SeqToDeltaSP(bioseq, spsll);
 
     if (! feats.empty()) {
         CRef<CSeq_annot> annot(new CSeq_annot);
@@ -4636,11 +4623,7 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
         bioseq.SetAnnot().push_back(annot);
     }
 
-    for (; spslp; spslp = next) {
-        next = spslp->next;
-        delete spslp;
-    }
-
+    spsll.clear();
     delete spfbp;
 }
 
