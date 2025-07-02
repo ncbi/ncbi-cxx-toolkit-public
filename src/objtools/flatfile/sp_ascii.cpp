@@ -448,9 +448,8 @@ using SetOfSpeciesPtr = SetOfSpecies*;
 struct ViralHost {
     TTaxId     taxid = ZERO_TAX_ID;
     char*      name  = nullptr;
-    ViralHost* next  = nullptr;
 };
-using ViralHostPtr = ViralHost*;
+using ViralHostList = forward_list<ViralHost>;
 
 struct EmblAcc {
     CSeq_id::E_Choice choice;
@@ -1325,21 +1324,19 @@ static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
 }
 
 /**********************************************************/
-static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
+static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
 {
-    ViralHostPtr vhp;
-    ViralHostPtr tvhp;
-    char*        line;
-    char*        p;
-    char*        q;
-    char*        r;
-    Char         ch;
+    char* line;
+    char* p;
+    char* q;
+    char* r;
+    Char  ch;
 
     for (; dbp != dbp_end; ++dbp)
         if (dbp->mType == ParFlatSP_OS)
             break;
     if (dbp == dbp_end)
-        return nullptr;
+        return {};
 
     const auto& subblocks = dbp->GetSubBlocks();
     auto        subdbp    = subblocks.cbegin();
@@ -1347,10 +1344,10 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
         if (subdbp->mType == ParFlatSP_OH)
             break;
     if (subdbp == subblocks.cend())
-        return nullptr;
+        return {};
 
-    vhp  = new ViralHost;
-    tvhp = vhp;
+    ViralHostList vhl;
+    auto          tvhp = vhl.before_begin();
 
     line                       = StringNew(subdbp->mBuf.len + 1);
     ch                         = subdbp->mBuf.ptr[subdbp->mBuf.len - 1];
@@ -1385,8 +1382,7 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
         r = StringChr(q, '\n');
         p = StringChr(q, ';');
         if ((! r || r > p) && p) {
-            tvhp->next = new ViralHost;
-            tvhp       = tvhp->next;
+            tvhp = vhl.emplace_after(tvhp);
             for (p--; *p == ';' || *p == ' ';)
                 p--;
             p++;
@@ -1426,13 +1422,10 @@ static ViralHostPtr GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end)
     }
     MemFree(line);
 
-    tvhp = vhp->next;
-    delete vhp;
-
-    if (! tvhp)
+    if (vhl.empty())
         FtaErrPost(SEV_WARNING, ERR_SOURCE_NoNcbiTaxIDLookup, "No legal NCBI TaxIDs found in OH line.");
 
-    return (tvhp);
+    return vhl;
 }
 
 /**********************************************************/
@@ -2517,8 +2510,6 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
     TTaxId     taxid;
 
     IndexblkPtr  ibp;
-    ViralHostPtr vhp;
-    ViralHostPtr tvhp;
 
     CSeq_descr& descr = bioseq.SetDescr();
 
@@ -2638,30 +2629,29 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         if (bio_src.Empty())
             break;
 
-        vhp = GetViralHostsFrom_OH(dbp, chain.cend());
-        if (vhp) {
+        ViralHostList vhl = GetViralHostsFrom_OH(dbp, chain.cend());
+        if (! vhl.empty()) {
             COrgName& orgname = bio_src->SetOrg().SetOrgname();
 
-            for (tvhp = vhp; tvhp; tvhp = vhp) {
-                vhp = tvhp->next;
+            for (; ! vhl.empty(); vhl.pop_front()) {
+                const auto& vh = vhl.front();
 
                 CRef<COrgMod> mod(new COrgMod);
                 mod->SetSubtype(COrgMod::eSubtype_nat_host);
-                mod->SetSubname(tvhp->name);
+                mod->SetSubname(vh.name);
                 orgname.SetMod().push_back(mod);
 
-                if (tvhp->taxid <= ZERO_TAX_ID) {
-                    delete tvhp;
+                if (vh.taxid <= ZERO_TAX_ID) {
                     continue;
                 }
 
                 bool drop = false;
-                CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, tvhp->taxid, &drop, true);
+                CRef<COrg_ref> org_ref_cur = fta_fix_orgref_byid(pp, vh.taxid, &drop, true);
                 if (org_ref_cur.Empty()) {
                     if (! drop)
-                        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"{}\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, tvhp->taxid));
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_InvalidNcbiTaxID, "OH-line TaxId \"{}\" was not found via the NCBI TaxArch service.", TAX_ID_TO(int, vh.taxid));
                     else
-                        FtaErrPost(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"{}\" failed.", TAX_ID_TO(int, tvhp->taxid));
+                        FtaErrPost(SEV_ERROR, ERR_SOURCE_NcbiTaxIDLookupFailure, "Taxonomy lookup for OH-line TaxId \"{}\" failed.", TAX_ID_TO(int, vh.taxid));
                 } else {
                     vector<Char> org_taxname;
                     if (org_ref_cur->IsSetTaxname()) {
@@ -2671,15 +2661,14 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
 
                     org_taxname.push_back(0);
 
-                    if (! IfOHTaxIdMatchOHName(&org_taxname[0], tvhp->name))
+                    if (! IfOHTaxIdMatchOHName(&org_taxname[0], vh.name))
                         FtaErrPost(SEV_WARNING,
-                                  ERR_SOURCE_HostNameVsTaxIDMissMatch,
-                                  "OH-line HostName \"{}\" does not match NCBI organism name \"{}\" obtained by lookup of NCBI TaxID \"{}\".",
-                                  tvhp->name,
-                                  &org_taxname[0],
-                                  TAX_ID_TO(int, tvhp->taxid));
+                                   ERR_SOURCE_HostNameVsTaxIDMissMatch,
+                                   "OH-line HostName \"{}\" does not match NCBI organism name \"{}\" obtained by lookup of NCBI TaxID \"{}\".",
+                                   vh.name,
+                                   &org_taxname[0],
+                                   TAX_ID_TO(int, vh.taxid));
                 }
-                delete tvhp;
             }
         }
 
