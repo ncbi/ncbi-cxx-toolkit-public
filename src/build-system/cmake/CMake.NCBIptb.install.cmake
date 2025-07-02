@@ -20,6 +20,7 @@ function(NCBI_internal_install_target _variable _access)
 
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
         set(_doexport YES)
+        set(_doinclude YES)
         set(_haspdb NO)
         set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_ARCHIVE})
         if(WIN32)
@@ -27,6 +28,7 @@ function(NCBI_internal_install_target _variable _access)
         endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
         set(_doexport YES)
+        set(_doinclude YES)
         set(_haspdb YES)
         if (WIN32)
             set(_dest    ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_SHARED})
@@ -36,6 +38,7 @@ function(NCBI_internal_install_target _variable _access)
         endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP" OR ${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "GUIAPP")
         set(_doexport NO)
+        set(_doinclude NO)
         set(_haspdb YES)
         set(_dest ${NCBI_DIRNAME_PREBUILT}/${NCBI_DIRNAME_RUNTIME})
         if (NOT "${NCBI_PTBCFG_INSTALL_TAGS}" STREQUAL "")
@@ -121,6 +124,10 @@ function(NCBI_internal_install_target _variable _access)
         endif()
     endif()
     set(_exp "")
+    set(_inc)
+    if(_doinclude AND NCBI_PTBCFG_PACKAGING)
+        set(_inc INCLUDES DESTINATION include)
+    endif()
     if (WIN32 OR XCODE)
         if(NCBI_PTBCFG_PACKAGING)
             foreach(_cfg IN LISTS NCBI_CONFIGURATION_TYPES)
@@ -135,6 +142,7 @@ function(NCBI_internal_install_target _variable _access)
                         CONFIGURATIONS ${_cfg}
                         ARCHIVE DESTINATION ${_dest_ar}
                         CONFIGURATIONS ${_cfg}
+                        ${_inc}
                     )
                 else()
                     install(
@@ -142,6 +150,7 @@ function(NCBI_internal_install_target _variable _access)
                         ${_exp}
                         DESTINATION ${_dest}
                         CONFIGURATIONS ${_cfg}
+                        ${_inc}
                     )
                 endif()
             endforeach()
@@ -210,6 +219,7 @@ function(NCBI_internal_install_target _variable _access)
             TARGETS ${NCBI_PROJECT}
             ${_exp}
             DESTINATION ${_dest}
+            ${_inc}
         )
     endif()
 endfunction()
