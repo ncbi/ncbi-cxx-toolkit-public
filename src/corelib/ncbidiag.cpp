@@ -956,15 +956,18 @@ public:
     template<typename...TArgs, typename = std::enable_if_t<std::is_constructible_v<_T, TArgs...>>>
     CTrueTlsData(const CSafeStaticLifeSpan& span, TArgs&&...args)
     {
-        void* mem = static_cast<void*>(m_memory.data());
+        void* ptr = static_cast<void*>(m_memory.data());
         // thread_local instances are pre-initialized with zeros
         // memsetting with non-zeros helps finding unitialized members
         //memset(m_memory.data(), 0xBD, m_memory.size());
         // Non-allocating placement operator new
-        auto ptr = new (mem) _T(std::forward<TArgs>(args)...);
+        auto data = new (ptr) _T(std::forward<TArgs>(args)...);
         if (std::this_thread::get_id() == main_thread_id) {
-            auto cl = std::bind(x_Clean<_MainCleanup>, ptr);
-            CSafeStaticGuard::Register(cl, span);
+            // this won't work with CSafeStaticLifeSpan::GetDefault()
+            // because CSafeStaticGuard doesn't free them
+            // use standard thread_local instead
+            auto cleaner = new TMainThreadCleaner(span, data);
+            CSafeStaticGuard::Register(cleaner);
         }
     }
 
@@ -975,7 +978,12 @@ public:
         if (std::this_thread::get_id() == main_thread_id) {
             // live long my friend and hope CSafeStaticGuard cares about you later
         } else {
-            x_Clean<_ThreadCleanup>(ptr);
+            if constexpr (!std::is_void_v<_ThreadCleanup>) {
+                _ThreadCleanup{}(ptr);
+            }
+            // call the destructor directly, without 'delete'
+            ptr -> ~_T();
+            //memset(m_memory.data(), 0xAA, m_memory.size());
         }
     }
 
@@ -983,18 +991,35 @@ public:
     operator _T&() { return **this; }
 
 private:
-    template<typename _Cleanup>
-    static void x_Clean(_T* ptr)
+    struct TMainThreadCleaner: CSafeStaticPtr_Base
     {
-        if constexpr (!std::is_void_v<_Cleanup>) {
-            _Cleanup{}(ptr);
+        TMainThreadCleaner(const CSafeStaticLifeSpan& span, _T * ptr) : CSafeStaticPtr_Base{SelfCleanup, nullptr, span}
+        {
+            // TODO: these should be initialized in the parent instead
+            m_MutexRefCount = 0;
+            m_InstanceMutex = nullptr;
+            m_Ptr = ptr;
         }
-        // call the destructor directly, without 'delete'
-        ptr -> ~_T();
-        //memset(m_memory.data(), 0xAA, m_memory.size());
-    }
 
-    // no initializion needed as CTrueTls supposed to be used as thread_local variable
+        static void SelfCleanup(CSafeStaticPtr_Base* safe_static,
+            TInstanceMutexGuard& /*guard*/)
+        {
+            if (safe_static) {
+                TMainThreadCleaner* cleaner = (TMainThreadCleaner*)safe_static;
+                _T* ptr = static_cast<_T*>(const_cast<void*>(cleaner->x_ReleasePtr()));
+                if constexpr (!std::is_void_v<_MainCleanup>) {
+                    _MainCleanup{}(ptr);
+                }
+                // TODO resolve memory leak, CSafeStaticPtr_Base::x_Cleanup calls x_ReleaseInstanceMutex after SelfCleanup
+                // and never call the destructor
+                //delete cleaner;
+                ptr->~_T();
+                //memset((void*)ptr, 0x55, sizeof(_T));
+            }
+        }
+    };
+
+    // no initialized needed as CTrueTls supposed to be used as thread_local variable
     // the object is a first member to respect requested alignment
     std::array<uint8_t, sizeof(_T)> m_memory;
 };
