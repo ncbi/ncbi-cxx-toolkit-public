@@ -432,16 +432,10 @@ struct SPSegLoc {
 };
 using SPSegLocList = forward_list<SPSegLoc>;
 
-struct SetOfSyns {
-    char*      synname = nullptr;
-    SetOfSyns* next    = nullptr;
-};
-using SetOfSynsPtr = SetOfSyns*;
-
 struct SetOfSpecies {
     char*      fullname = nullptr;
     char*      name     = nullptr;
-    SetOfSyns* syn      = nullptr;
+    forward_list<string> syn;
 };
 using SetOfSpeciesPtr = SetOfSpecies*;
 
@@ -1075,8 +1069,6 @@ static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
 static SetOfSpeciesPtr GetSetOfSpecies(char* line)
 {
     SetOfSpeciesPtr res;
-    SetOfSynsPtr    ssp;
-    SetOfSynsPtr    tssp;
     char*           p;
     char*           q;
     char*           r;
@@ -1109,8 +1101,7 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
         }
         res->name = StringSave(temp);
         *p        = '(';
-        ssp       = new SetOfSyns;
-        tssp      = ssp;
+        auto tssp = res->syn.before_begin();
         for (;;) {
             for (p++; *p == ' ' || *p == '\t';)
                 p++;
@@ -1124,9 +1115,7 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                     break;
             }
             if (*p == '\0') {
-                tssp->next    = new SetOfSyns;
-                tssp          = tssp->next;
-                tssp->synname = StringSave(q);
+                tssp = res->syn.insert_after(tssp, q);
                 break;
             }
             *p = '\0';
@@ -1137,17 +1126,12 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                         break;
                 }
             }
-            tssp->next    = new SetOfSyns;
-            tssp          = tssp->next;
-            tssp->synname = StringSave(q);
-            *p            = ')';
-            p             = StringChr(p, '(');
+            tssp = res->syn.insert_after(tssp, q);
+            *p   = ')';
+            p    = StringChr(p, '(');
             if (! p)
                 break;
         }
-
-        res->syn = ssp->next;
-        delete ssp;
     }
 
     MemFree(temp);
@@ -1179,12 +1163,6 @@ static void fix_taxname_dot(COrg_ref& org_ref)
 /**********************************************************/
 static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
 {
-    SetOfSynsPtr synsp;
-
-    const char** b;
-
-    char*  p;
-    char*  q;
     Uint1  num;
     size_t i;
 
@@ -1198,12 +1176,13 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
     if (sosp->name && sosp->name[0] != '\0')
         org_ref->SetTaxname(sosp->name);
 
-    for (synsp = sosp->syn; synsp; synsp = synsp->next) {
-        p = synsp->synname;
-        if (! p || *p == '\0')
+    for (auto synsp = sosp->syn.begin(); synsp != sosp->syn.end(); ++synsp) {
+        auto& syn = *synsp;
+        if (syn.empty())
             continue;
 
-        q = StringIStr(p, "PLASMID");
+        char* p = syn.data();
+        char* q = StringIStr(p, "PLASMID");
         if (! q)
             q = StringIStr(p, "CLONE");
         if (q) {
@@ -1246,11 +1225,11 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             continue;
         }
 
-        *p = '\0';
+        string_view modifier(syn.data(), p);
         for (q = p + 1; *q == ' ' || *q == '\t';)
             q++;
 
-        if (NStr::EqualNocase(synsp->synname, "COMMON")) {
+        if (NStr::EqualNocase(modifier, "COMMON")) {
             if (! org_ref->IsSetCommon())
                 org_ref->SetCommon(q);
             else
@@ -1258,8 +1237,9 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             continue;
         }
 
+        const char** b;
         for (b = org_mods, num = 2; *b; b++, num++)
-            if (NStr::EqualNocase(synsp->synname, *b))
+            if (NStr::EqualNocase(modifier, *b))
                 break;
         *p = ' ';
 
@@ -1268,7 +1248,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
                 if (! NStr::EqualNocase(*b, "ISOLATE") &&
                     ! NStr::EqualNocase(*b, "STRAIN"))
                     continue;
-                p = StringIStr(synsp->synname, *b);
+                p = StringIStr(syn.c_str(), *b);
                 if (! p)
                     continue;
 
@@ -1277,14 +1257,14 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
                 if (*p == ' ' && (p[i] == ' ' || p[i] == '\t' || p[i] == '\0')) {
                     string& taxname = org_ref->SetTaxname();
                     taxname += " (";
-                    taxname += synsp->synname;
+                    taxname += syn;
                     taxname += ")";
                     break;
                 }
             }
 
             if (! *b)
-                org_ref->SetSyn().push_back(synsp->synname);
+                org_ref->SetSyn().push_back(syn);
             continue;
         }
 
@@ -1293,7 +1273,7 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
             taxname += " ";
 
         taxname += "(";
-        taxname += synsp->synname;
+        taxname += syn;
         taxname += ")";
     }
 
@@ -1307,19 +1287,11 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
 /**********************************************************/
 static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
 {
-    SetOfSynsPtr ssp;
-    SetOfSynsPtr tssp;
-
     if (sosp->fullname)
         MemFree(sosp->fullname);
     if (sosp->name)
         MemFree(sosp->name);
-    for (ssp = sosp->syn; ssp; ssp = tssp) {
-        tssp = ssp->next;
-        if (ssp->synname)
-            MemFree(ssp->synname);
-        delete ssp;
-    }
+    sosp->syn.clear();
     delete sosp;
 }
 
