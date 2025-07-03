@@ -87,19 +87,16 @@ struct AccMinMax {
     Int4 max = -1;
 };
 
-using AccMinMaxPtr = AccMinMax*;
 
-struct GeneLocs {
+struct GeneLoc {
     string          gene;
     string          locus;
     Int4            strand;
     Int4            verymin;
     Int4            verymax;
     list<AccMinMax> ammp;
-    GeneLocs*       next;
 };
-
-using GeneLocsPtr = GeneLocs*;
+using TGeneLocList = forward_list<GeneLoc>;
 
 
 struct SeqlocInfoblk {
@@ -184,7 +181,7 @@ struct GeneNode {
     bool         skipdiv;  /* skip BCT and SYN divisions */
     CdssListPtr  clp;
     bool         circular;
-    GeneLocsPtr  gelop;
+    TGeneLocList gelocs;
     bool         simple_genes;
     bool         got_misc; /* TRUE if there is a misc_feature
                                            with gene or/and locus_tag */
@@ -198,7 +195,6 @@ struct GeneNode {
         skipdiv(false),
         clp(nullptr),
         circular(false),
-        gelop(nullptr),
         simple_genes(false),
         got_misc(false)
     {
@@ -567,17 +563,6 @@ static void CdssListFree(CdssListPtr clp)
     }
 }
 
-
-/**********************************************************/
-static void GeneLocsFree(GeneLocsPtr gelop)
-{
-    GeneLocsPtr gelopnext;
-
-    for (; gelop; gelop = gelopnext) {
-        gelopnext = gelop->next;
-        delete gelop;
-    }
-}
 
 /**********************************************************
  *
@@ -1016,21 +1001,21 @@ static void fta_check_pseudogene(GeneListPtr tglp, GeneListPtr glp)
 
 
 /**********************************************************/
-static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c, MixLocPtr mlp, Int4 from, Int4 to)
+static bool fta_check_feat_overlap(const TGeneLocList& gelocs, GeneListPtr c, MixLocPtr mlp, Int4 from, Int4 to)
 {
     Int4 min;
     Int4 max;
 
-    if (! gelop || ! c || ! mlp)
+    if (gelocs.empty() || ! c || ! mlp)
         return true;
 
     min = (mlp->min > from) ? from : mlp->min;
     max = (mlp->max < to) ? to : mlp->max;
 
-    for (; gelop; gelop = gelop->next) {
+    auto gelop = gelocs.begin();
+    for (; gelop != gelocs.end(); ++gelop) {
         if (min > gelop->verymax) {
-            gelop = nullptr;
-            break;
+            return false;
         }
 
         if ((gelop->strand > -1 && c->slibp->strand != gelop->strand) ||
@@ -1058,7 +1043,7 @@ static bool fta_check_feat_overlap(GeneLocsPtr gelop, GeneListPtr c, MixLocPtr m
         }
     }
 
-    return gelop != nullptr;
+    return gelop != gelocs.end();
 }
 
 /**********************************************************/
@@ -1090,7 +1075,7 @@ static bool ConfirmCircular(MixLocPtr mlp)
 }
 
 /**********************************************************/
-static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
+static void FixMixLoc(GeneListPtr c, const TGeneLocList& gelocs)
 {
     Int4       from;
     Int4       to;
@@ -1200,7 +1185,7 @@ static void FixMixLoc(GeneListPtr c, GeneLocsPtr gelop)
             tempcirc = false;
             if (s_IdsMatch(pId, tmlp->pId) && tmlp->strand == strand) {
                 if (tempcirc == false && ((tmlp->min <= to && tmlp->max >= from) ||
-                                          fta_check_feat_overlap(gelop, c, tmlp, from, to) == false)) {
+                                          fta_check_feat_overlap(gelocs, c, tmlp, from, to) == false)) {
                     if (tmlp->min > from) {
                         tmlp->min    = from;
                         tmlp->noleft = noleft;
@@ -1531,7 +1516,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
     bool circular = false;
     for (j = 1, c = gnp->glp; c; c = c->next, j++) {
 
-        FixMixLoc(c, gnp->gelop);
+        FixMixLoc(c, gnp->gelocs);
         if (gnp->circular && ConfirmCircular(c->mlp))
             circular = true;
     }
@@ -1901,7 +1886,7 @@ static bool GetFeatNameAndLoc(GeneListPtr glp, const CSeq_feat& feat, GeneNodePt
 
 /**********************************************************/
 static list<AccMinMax> fta_get_acc_minmax_strand(const CSeq_loc* location,
-                                                 GeneLocsPtr     gelop)
+                                                 GeneLoc*        gelop)
 {
     list<AccMinMax> ammps;
     Int4            from;
@@ -1986,54 +1971,22 @@ static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, cons
     if (! gnp || ! location)
         return;
 
-    GeneLocsPtr gelop = new GeneLocs();
-
-    gelop->gene    = gene;
-    gelop->locus   = locus_tag;
-    gelop->verymin = -1;
-    gelop->verymax = -1;
-    gelop->ammp    = fta_get_acc_minmax_strand(location, gelop);
-    gelop->next    = gnp->gelop;
-    gnp->gelop     = gelop;
+    auto& geloc = gnp->gelocs.emplace_front();
+    geloc.gene    = gene;
+    geloc.locus   = locus_tag;
+    geloc.verymin = -1;
+    geloc.verymax = -1;
+    geloc.ammp    = fta_get_acc_minmax_strand(location, &geloc);
 }
 
 /**********************************************************/
-static bool CompareGeneLocsMinMax(const GeneLocsPtr& sp1, const GeneLocsPtr& sp2)
+static bool CompareGeneLocsMinMax(const GeneLoc& sp1, const GeneLoc& sp2)
 {
-    Int4 status = sp2->verymax - sp1->verymax;
+    Int4 status = sp2.verymax - sp1.verymax;
     if (status == 0)
-        status = sp1->verymin - sp2->verymin;
+        status = sp1.verymin - sp2.verymin;
 
     return status < 0;
-}
-
-/**********************************************************/
-static GeneLocsPtr fta_sort_feat_list(GeneLocsPtr gelop)
-{
-    Int4 index;
-    Int4 total;
-
-    GeneLocsPtr glp;
-
-    total = 0;
-    for (glp = gelop; glp; glp = glp->next)
-        total++;
-
-    vector<GeneLocsPtr> temp(total);
-
-    for (index = 0, glp = gelop; glp; glp = glp->next)
-        temp[index++] = glp;
-
-    std::sort(temp.begin(), temp.end(), CompareGeneLocsMinMax);
-
-    gelop = glp = temp[0];
-    for (index = 0; index < total - 1; glp = glp->next, index++)
-        glp->next = temp[index + 1];
-
-    glp       = temp[total - 1];
-    glp->next = nullptr;
-
-    return (gelop);
 }
 
 /**********************************************************/
@@ -2171,8 +2124,8 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
         gnp->glp     = newglp;
     }
 
-    if (gnp->gelop)
-        gnp->gelop = fta_sort_feat_list(gnp->gelop);
+    if (! gnp->gelocs.empty())
+        gnp->gelocs.sort(CompareGeneLocsMinMax);
 }
 
 /**********************************************************/
@@ -2536,7 +2489,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
             ibp->drop = true;
             GeneListFree(gnp->glp);
             CdssListFree(gnp->clp);
-            GeneLocsFree(gnp->gelop);
             delete gnp;
 
             return;
@@ -2551,10 +2503,7 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
             ibp->drop = true;
             GeneListFree(gnp->glp);
             CdssListFree(gnp->clp);
-            GeneLocsFree(gnp->gelop);
-
             delete gnp;
-
             return;
         }
 
@@ -2594,8 +2543,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
     }
 
     CdssListFree(gnp->clp);
-    GeneLocsFree(gnp->gelop);
-
     delete gnp;
 }
 
