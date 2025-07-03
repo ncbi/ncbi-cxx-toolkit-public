@@ -15,7 +15,7 @@ set( NCBI_TOOLKIT_NCBIPTB_BUILD_SYSTEM_INCLUDED ON)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0111 OLD)
+#cmake_policy(SET CMP0111 OLD)
 
 set(NCBI_PTBCFG_PACKAGED               ON)
 set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
@@ -28,6 +28,24 @@ set(NCBI_PTBCFG_ENABLE_COLLECTOR       ON)
 get_filename_component(NCBI_PTBCFG_PACKAGELIST "${CMAKE_CURRENT_LIST_DIR}/../../.."   ABSOLUTE)
 get_filename_component(NCBI_PTBCFG_PACKAGEROOT "${NCBI_PTBCFG_PACKAGELIST}/.."   ABSOLUTE)
 
+find_program(NCBI_CONAN_APP conan${CMAKE_EXECUTABLE_SUFFIX})
+if(NCBI_CONAN_APP)
+    execute_process(
+        COMMAND ${NCBI_CONAN_APP} version
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        RESULT_VARIABLE NCBI_CONAN_VERSION
+        OUTPUT_QUIET ERROR_QUIET
+    )
+    if(NCBI_CONAN_VERSION EQUAL 0)
+        set(NCBI_CONAN_VERSION 2)
+    else()
+        set(NCBI_CONAN_VERSION 1)
+    endif()
+#    message("Conan v${NCBI_CONAN_VERSION}.x: ${NCBI_CONAN_APP}")
+else()
+    message(FATAL_ERROR "Conan not found")
+endif()
+
 ###############################################################################
 set(_listdir "${CMAKE_CURRENT_LIST_DIR}")
 include(${_listdir}/CMake.NCBIptb.definitions.cmake)
@@ -38,6 +56,16 @@ include(${_listdir}/CMakeChecks.compiler.cmake)
 include(${_listdir}/CMake.NCBIpkg.codegen.cmake)
 if(NCBI_PTBCFG_ADDTEST)
     include(${_listdir}/CMake.NCBIptb.ctest.cmake)
+endif()
+
+if(NCBI_CONAN_VERSION EQUAL 2 AND DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    set(NCBI_EXTERNAL_BUILD_ROOT ${NCBI_EXTERNAL_TREE_ROOT})
+    if (EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+        include(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+        set(__NCBI_PTBCFG_ORIGLIBS ON)
+        include(${_listdir}/CMake.NCBIComponents.cmake)
+        unset(__NCBI_PTBCFG_ORIGLIBS)
+    endif()
 endif()
 
 ###############################################################################
@@ -86,7 +114,7 @@ macro(NCBIptb_setup)
     NCBI_internal_collect_packagelist()
     set(NCBI_PTBCFG_PACKAGEIMPORTS)
 
-    if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    if (NCBI_CONAN_VERSION EQUAL 1 AND DEFINED NCBI_EXTERNAL_TREE_ROOT)
         set(NCBI_EXTERNAL_BUILD_ROOT ${NCBI_EXTERNAL_TREE_ROOT})
         if (EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
             foreach(_next IN LISTS NCBI_PTBCFG_PACKAGELIST)
