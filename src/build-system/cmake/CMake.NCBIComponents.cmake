@@ -120,7 +120,7 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
 
 #############################################################################
 # ORIG_LIBS
-if(UNIX)
+if(UNIX AND NOT TARGET NCBI::DL_LIBS)
     include(CheckLibraryExists)
 
     NCBI_find_system_library(DL_LIBS dl)
@@ -177,7 +177,9 @@ if(UNIX)
 elseif(WIN32)
     set(ORIG_LIBS bcrypt.lib ws2_32.lib dbghelp.lib)
 endif()
-
+if(__NCBI_PTBCFG_ORIGLIBS)
+  return()
+endif()
 #############################################################################
 # TLS
 set(NCBI_REQUIRE_TLS_FOUND YES)
