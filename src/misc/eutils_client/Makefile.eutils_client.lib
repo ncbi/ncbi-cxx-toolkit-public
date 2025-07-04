@@ -6,6 +6,7 @@ SRC = eutils_client
 ASN_DEP = seq
 
 DLL_LIB = xmlwrapp $(SOBJMGR_LIBS)
+LIBS = $(LIBXML_LIBS) $(ORIG_LIBS)
 
 WATCHERS = grichenk
 
