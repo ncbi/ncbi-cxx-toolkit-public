@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <sstream>
+#include <forward_list>
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
@@ -32,35 +33,18 @@ struct FtaMsgModTagCtx {
     string           strsubtag;
     int              intsubtag   = -1;
     ErrSev           intseverity = ErrSev(-1);
-    FtaMsgModTagCtx* next        = nullptr;
-
-    ~FtaMsgModTagCtx() { delete next; };
 };
 
 struct FtaMsgModTag {
     string           strtag;
     int              inttag = 0;
-    FtaMsgModTagCtx* bmctx  = nullptr;
-    FtaMsgModTag*    next   = nullptr;
-
-    ~FtaMsgModTag()
-    {
-        delete bmctx;
-        delete next;
-    };
+    std::forward_list<FtaMsgModTagCtx> bmctx_list;
 };
 
-struct FtaMsgModFiles {
+struct FtaMsgModFile {
     string          modname;  /* NCBI_MODULE or THIS_MODULE value */
     string          filename; /* Name with full path of .msg file */
-    FtaMsgModTag*   bmmt = nullptr;
-    FtaMsgModFiles* next = nullptr;
-
-    ~FtaMsgModFiles()
-    {
-        delete bmmt;
-        delete next;
-    };
+    std::forward_list<FtaMsgModTag> bmmt_list;
 };
 
 
@@ -83,7 +67,7 @@ struct FtaMsgPost {
     ErrSev          loglevel; /* Filter out messages displaying in
                                            logfile only: ignode those with
                                            severity lower than msglevel */
-    FtaMsgModFiles* bmmf = nullptr;
+    std::forward_list<FtaMsgModFile> bmmf_list;
 
     FtaMsgPost() :
         lfd(nullptr),
@@ -111,7 +95,6 @@ struct FtaMsgPost {
         prefix_locus.clear();
         prefix_accession.clear();
         prefix_feature.clear();
-        delete bmmf;
     };
 };
 
@@ -146,11 +129,6 @@ static ErrSev FtaStrSevToIntSev(const string& strsevcode)
 static void FtaErrGetMsgCodes(
     const char* module, int code, int subcode, string& strcode, string& strsubcode, ErrSev& sevcode)
 {
-    FtaMsgModTagCtx* bmctxp;
-    FtaMsgModFiles*  bmmfp;
-    FtaMsgModTag*    bmmtp;
-    FILE*            fd;
-
     char* p;
     char* q;
     char  s[2048];
@@ -160,23 +138,24 @@ static void FtaErrGetMsgCodes(
     if (! bmp)
         FtaErrInit();
 
-    for (got_mod = false, bmmfp = bmp->bmmf; bmmfp; bmmfp = bmmfp->next) {
-        if (bmmfp->modname != module) {
+    got_mod = false;
+    for (const auto& bmmf : bmp->bmmf_list) {
+        if (bmmf.modname != module) {
             continue;
         }
 
         got_mod = true;
-        for (bmmtp = bmmfp->bmmt; bmmtp; bmmtp = bmmtp->next) {
-            if (bmmtp->inttag != code)
+        for (const auto& bmmt : bmmf.bmmt_list) {
+            if (bmmt.inttag != code)
                 continue;
 
-            strcode = bmmtp->strtag;
-            for (bmctxp = bmmtp->bmctx; bmctxp; bmctxp = bmctxp->next) {
-                if (bmctxp->intsubtag != subcode)
+            strcode = bmmt.strtag;
+            for (const auto& bmctx : bmmt.bmctx_list) {
+                if (bmctx.intsubtag != subcode)
                     continue;
 
-                strsubcode = bmctxp->strsubtag;
-                sevcode    = bmctxp->intseverity;
+                strsubcode = bmctx.strsubtag;
+                sevcode    = bmctx.intseverity;
                 break;
             }
             break;
@@ -189,7 +168,7 @@ static void FtaErrGetMsgCodes(
 
     string curdir = CDir::GetCwd();
     string buf    = curdir + CDir::GetPathSeparator() + module + ".msg";
-    fd            = fopen(buf.c_str(), "r");
+    FILE*  fd     = fopen(buf.c_str(), "r");
     if (! fd) {
         buf = string(MESSAGE_DIR) + CDir::GetPathSeparator() + module + ".msg";
         fd  = fopen(buf.c_str(), "r");
@@ -198,15 +177,10 @@ static void FtaErrGetMsgCodes(
         }
     }
 
-    bmmfp           = new FtaMsgModFiles;
-    bmmfp->modname  = module;
-    bmmfp->filename = buf;
+    auto& bmmf    = bmp->bmmf_list.emplace_front();
+    bmmf.modname  = module;
+    bmmf.filename = buf;
 
-    if (bmp->bmmf)
-        bmmfp->next = bmp->bmmf;
-    bmp->bmmf = bmmfp;
-
-    bmmtp = nullptr;
     while (fgets(s, 2047, fd)) {
         if (s[0] != '$' || (s[1] != '^' && s[1] != '$'))
             continue;
@@ -257,36 +231,30 @@ static void FtaErrGetMsgCodes(
         }
 
         if (s[1] == '$') {
-            bmmtp = new FtaMsgModTag;
-            if (bmmfp->bmmt)
-                bmmtp->next = bmmfp->bmmt;
-            bmmfp->bmmt = bmmtp;
-
-            bmmtp->strtag = val1;
-            bmmtp->inttag = val2;
+            auto& bmmt  = bmmf.bmmt_list.emplace_front();
+            bmmt.strtag = val1;
+            bmmt.inttag = val2;
             if (val2 == code && strcode.empty())
                 strcode = val1;
 
             continue;
         }
 
-        if (! bmmfp->bmmt || ! bmmtp) {
+        if (bmmf.bmmt_list.empty()) {
             continue;
         }
 
-        bmctxp = new FtaMsgModTagCtx;
-        if (bmmtp->bmctx)
-            bmctxp->next = bmmtp->bmctx;
-        bmmtp->bmctx = bmctxp;
+        auto& bmmt  = bmmf.bmmt_list.front();
+        auto& bmctx = bmmt.bmctx_list.emplace_front();
 
-        bmctxp->strsubtag   = val1;
-        bmctxp->intsubtag   = val2;
-        bmctxp->intseverity = FtaStrSevToIntSev(val3);
+        bmctx.strsubtag   = val1;
+        bmctx.intsubtag   = val2;
+        bmctx.intseverity = FtaStrSevToIntSev(val3);
 
         if (val2 == subcode && strsubcode.empty() && ! strcode.empty()) {
             strsubcode = val1;
             if (sevcode < 0)
-                sevcode = bmctxp->intseverity;
+                sevcode = bmctx.intseverity;
         }
     }
 
