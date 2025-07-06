@@ -14,8 +14,8 @@ LIB = prosplign xalgoalignutil xalgoseq xmlwrapp eutils_client hydra_client \
       $(ncbi_xloader_wgs) $(SRAREAD_LIBS) xqueryparse xregexp $(PCRE_LIB) \
       $(OBJMGR_LIBS)
 
-LIBS = $(BLAST_THIRD_PARTY_LIBS) $(GENBANK_THIRD_PARTY_LIBS) \
-       $(SRA_SDK_SYSLIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) \
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(BLAST_THIRD_PARTY_LIBS) \
+       $(GENBANK_THIRD_PARTY_LIBS) $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
