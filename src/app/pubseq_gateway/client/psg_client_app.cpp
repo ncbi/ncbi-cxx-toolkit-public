@@ -233,7 +233,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
@@ -283,7 +283,7 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_IpgResolve>(CArgDescriptions& arg
     arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "ipg");
     arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "nucleotide");
     arg_desc.AddFlag("server-mode", "Output one response per line");
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
 
@@ -304,7 +304,7 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("echo", "Echo all incoming requests");
     arg_desc.AddFlag("one-server", "Use only one server from the service", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("testing", "Testing mode adjustments", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eInteger, "0");
+    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
     arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
     arg_desc.SetDependency("preview-size", CArgDescriptions::eRequires, "data-limit");
 }
@@ -448,7 +448,7 @@ struct SParallelProcessing : SBase<TParams>, SIoRedirector
     SParallelProcessing(const CArgs& args, TInitArgs&&... init_args) :
         SBase<TParams>{
             args,
-            args["rate"].AsInteger(),
+            args["rate"].AsDouble(),
             max(1, min(10, args["worker-threads"].AsInteger())),
             args["input-file"].AsString() == "-",
             args["server-mode"].AsBoolean(),

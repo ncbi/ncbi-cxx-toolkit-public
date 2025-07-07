@@ -207,12 +207,12 @@ struct SOneRequestParams : SParams
 
 struct SParallelProcessingParams : SParams
 {
-    const int rate;
+    const double rate;
     const int worker_threads;
     const bool pipe;
     const bool server;
 
-    SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv) :
+    SParallelProcessingParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv) :
         SParams(std::move(s), rf, std::move(ua)),
         rate(r),
         worker_threads(wt),
@@ -231,7 +231,7 @@ struct SResolveParams
 
 struct SBatchResolveParams : SParallelProcessingParams, SResolveParams
 {
-    SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, SResolveParams resolve_params) :
+    SBatchResolveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv, SResolveParams resolve_params) :
         SParallelProcessingParams(std::move(s), rf, std::move(ua), r, wt, p, srv),
         SResolveParams(std::move(resolve_params))
     {}
@@ -246,7 +246,7 @@ struct SInteractiveParams : SParallelProcessingParams
     const bool echo;
     const bool testing;
 
-    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, int r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
+    SInteractiveParams(string s, CPSG_Request::TFlags rf, SPSG_UserArgs ua, double r, int wt, bool p, bool srv, size_t dl, size_t ps, bool e, bool os, bool t) :
         SParallelProcessingParams(GetService(std::move(s), os), rf, std::move(ua), r, wt, p, srv),
         data_limit(dl),
         preview_size(ps),
@@ -353,6 +353,7 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
 
     auto parallel_processing = CreateParallelProcessing(params);
     auto start = params.rate > 0 ? system_clock::now() : system_clock::time_point{};
+    auto wait = params.rate > 0 ? 1s / params.rate : 0s;
     auto n = 0;
     string line;
 
@@ -360,10 +361,16 @@ inline int CProcessing::ParallelProcessing(const TParams& params, istream& is)
         _ASSERT(!line.empty()); // ReadLine makes sure it's not empty
         parallel_processing(std::move(line));
 
-        if ((params.rate > 0) && (++n == params.rate)) {
-            n = 0;
-            this_thread::sleep_for(seconds(1) - (system_clock::now() - start));
-            start += seconds(1);
+        if (wait > 0s) {
+            this_thread::sleep_for(wait);
+
+            // Recalculate wait once per second or after each sleep, whichever is longer
+            if (++n >= params.rate) {
+                auto now = system_clock::now();
+                wait -= (now - start) / n - 1s / params.rate;
+                start = now;
+                n = 0;
+            }
         }
     }
 
