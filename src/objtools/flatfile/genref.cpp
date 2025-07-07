@@ -159,13 +159,11 @@ struct GeneList {
 
 using GeneListPtr = GeneList*;
 
-struct CdssList {
-    Int4      from;
-    Int4      to;
-    CdssList* next;
+struct Cds {
+    Int4 from;
+    Int4 to;
 };
-
-using CdssListPtr = CdssList*;
+using TCdsList = forward_list<Cds>;
 
 struct GeneNode {
     bool         flag; /* TRUE, if a level has been found
@@ -179,7 +177,7 @@ struct GeneNode {
                                            GeneRefPtr only */
     bool         accver;   /* for ACCESSION.VERSION */
     bool         skipdiv;  /* skip BCT and SYN divisions */
-    CdssListPtr  clp;
+    TCdsList     cdsl;
     bool         circular;
     TGeneLocList gelocs;
     bool         simple_genes;
@@ -193,7 +191,6 @@ struct GeneNode {
         glp(nullptr),
         accver(false),
         skipdiv(false),
-        clp(nullptr),
         circular(false),
         simple_genes(false),
         got_misc(false)
@@ -552,18 +549,6 @@ static void GeneListFree(GeneListPtr glp)
     }
 }
 
-/**********************************************************/
-static void CdssListFree(CdssListPtr clp)
-{
-    CdssListPtr clpnext;
-
-    for (; clp; clp = clpnext) {
-        clpnext = clp->next;
-        delete clp;
-    }
-}
-
-
 /**********************************************************
  *
  *   GetLowHighFromSeqLoc:
@@ -689,18 +674,18 @@ static bool DoWeHaveGeneInBetween(GeneListPtr c, SeqlocInfoblkPtr second, GeneNo
 }
 
 /**********************************************************/
-static bool DoWeHaveCdssInBetween(GeneListPtr c, Int4 to, CdssListPtr clp)
+static bool DoWeHaveCdssInBetween(GeneListPtr c, Int4 to, const TCdsList& cdsl)
 {
     SeqlocInfoblkPtr cloc;
 
     cloc = c->slibp;
     if (cloc->to >= to)
         return false;
-    for (; clp; clp = clp->next)
-        if (clp->from > cloc->to && clp->to < to)
-            break;
+    for (const auto& clp : cdsl)
+        if (clp.from > cloc->to && clp.to < to)
+            return true;
 
-    return clp != nullptr;
+    return false;
 }
 
 /**********************************************************/
@@ -1534,8 +1519,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
             continue;
         }
 
-        if (gnp->skipdiv && gnp->clp && gnp->simple_genes == false &&
-            DoWeHaveCdssInBetween(c, cn->slibp->from, gnp->clp)) {
+        if (gnp->skipdiv && ! gnp->cdsl.empty() && ! gnp->simple_genes &&
+            DoWeHaveCdssInBetween(c, cn->slibp->from, gnp->cdsl)) {
             c = cn;
             continue;
         }
@@ -2129,31 +2114,23 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
 }
 
 /**********************************************************/
-static CdssListPtr SrchCdss(CSeq_annot::C_Data::TFtable& feats, CdssListPtr clp, const CSeq_id& id)
+static void SrchCDSs(CSeq_annot::C_Data::TFtable& feats, TCdsList& cdsl, const CSeq_id& id)
 {
-    CdssListPtr      newclp;
-    SeqlocInfoblkPtr slip;
-
     for (const auto& feat : feats) {
         if (IfCDSGeneFeat(*feat, CSeqFeatData::e_Cdregion, "CDS") == false)
             continue;
 
         const CSeq_loc* cur_loc = feat->IsSetLocation() ? &feat->GetLocation() : nullptr;
 
-        slip = GetLowHighFromSeqLoc(cur_loc, -99, id);
+        const SeqlocInfoblk* slip = GetLowHighFromSeqLoc(cur_loc, -99, id);
         if (! slip)
             continue;
 
-        newclp         = new CdssList();
-        newclp->from   = slip->from;
-        newclp->to     = slip->to;
+        auto& newclp = cdsl.emplace_front();
+        newclp.from  = slip->from;
+        newclp.to    = slip->to;
         delete slip;
-
-        newclp->next = clp;
-        clp          = newclp;
     }
-
-    return (clp);
 }
 
 
@@ -2189,7 +2166,7 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
         SrchGene(annot->SetData().SetFtable(), gene_node, bioseq.GetLength(), *id);
 
         if (gene_node->skipdiv) {
-            gene_node->clp = SrchCdss(annot->SetData().SetFtable(), gene_node->clp, *id);
+            SrchCDSs(annot->SetData().SetFtable(), gene_node->cdsl, *id);
         }
 
         if (gene_node->glp && gene_node->flag == false) {
@@ -2488,7 +2465,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         if (LocusTagCheck(gnp->glp, resort) == false) {
             ibp->drop = true;
             GeneListFree(gnp->glp);
-            CdssListFree(gnp->clp);
             delete gnp;
 
             return;
@@ -2502,7 +2478,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         if (GeneLocusCheck(gnp->feats, pp->diff_lt) == false) {
             ibp->drop = true;
             GeneListFree(gnp->glp);
-            CdssListFree(gnp->clp);
             delete gnp;
             return;
         }
@@ -2542,7 +2517,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         gnp->glp = nullptr;
     }
 
-    CdssListFree(gnp->clp);
     delete gnp;
 }
 
