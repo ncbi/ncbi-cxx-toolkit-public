@@ -190,7 +190,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
-    arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|frames|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("test-identity", "IDENTITY", "Set test identity.", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddDefaultKey("min-severity", "SEVERITY", "Minimum severity level of messages to output", CArgDescriptions::eString, "Warning");

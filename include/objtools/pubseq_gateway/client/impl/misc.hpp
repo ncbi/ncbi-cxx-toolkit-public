@@ -414,7 +414,7 @@ using TPSG_ThrottleUntilDiscovery = PSG_PARAM_VALUE_TYPE(PSG, throttle_hold_unti
 NCBI_PARAM_DECL(string, PSG, throttle_by_connection_error_rate);
 using TPSG_ThrottleThreshold = NCBI_PARAM_TYPE(PSG, throttle_by_connection_error_rate);
 
-enum class EPSG_DebugPrintout { eNone, eSome, eAll };
+enum class EPSG_DebugPrintout { eNone, eSome, eFrames, eAll };
 NCBI_PARAM_ENUM_DECL(EPSG_DebugPrintout, PSG, debug_printout);
 using TPSG_DebugPrintout = PSG_PARAM_VALUE_TYPE(PSG, debug_printout);
 

@@ -96,6 +96,7 @@ NCBI_PARAM_ENUM_ARRAY(EPSG_DebugPrintout, PSG, debug_printout)
 {
     { "none", EPSG_DebugPrintout::eNone },
     { "some", EPSG_DebugPrintout::eSome },
+    { "frames", EPSG_DebugPrintout::eFrames },
     { "all",  EPSG_DebugPrintout::eAll  }
 };
 NCBI_PARAM_ENUM_DEF(EPSG_DebugPrintout, PSG, debug_printout, EPSG_DebugPrintout::eNone);
@@ -1096,7 +1097,8 @@ SPSG_IoSession::SPSG_IoSession(SPSG_Server& s, const SPSG_Params& params, SPSG_A
             TPSG_WrBufSize::GetDefault(),
             TPSG_Https::GetDefault(),
             TPSG_MaxConcurrentStreams::GetDefault(),
-            std::forward<TNgHttp2Cbs>(callbacks)...),
+            std::forward<TNgHttp2Cbs>(callbacks)...,
+            params.debug_printout >= EPSG_DebugPrintout::eFrames ? s_OnFrameRecv : nullptr),
     server(s),
     m_Params(params),
     m_Headers{{
@@ -1367,6 +1369,37 @@ void SPSG_IoSession::OnReset(SUvNgHttp2_Error error)
     }
 
     m_Requests.clear();
+}
+
+auto s_GetFrameName(const nghttp2_frame* frame)
+{
+    switch (frame->hd.type) {
+		case NGHTTP2_DATA:              return "DATA"sv;
+		case NGHTTP2_HEADERS:           return "HEADERS"sv;
+		case NGHTTP2_PRIORITY:          return "PRIORITY"sv;
+		case NGHTTP2_RST_STREAM:        return "RST_STREAM"sv;
+		case NGHTTP2_SETTINGS:          return "SETTINGS"sv;
+		case NGHTTP2_PUSH_PROMISE:      return "PUSH_PROMISE"sv;
+		case NGHTTP2_PING:              return "PING"sv;
+		case NGHTTP2_GOAWAY:            return "GOAWAY"sv;
+		case NGHTTP2_WINDOW_UPDATE:     return "WINDOW_UPDATE"sv;
+		case NGHTTP2_CONTINUATION:      return "CONTINUATION"sv;
+		case NGHTTP2_ALTSVC:            return "ALTSVC"sv;
+		case NGHTTP2_ORIGIN:            return "ORIGIN"sv;
+    }
+
+    _TROUBLE;
+    return ""sv;
+}
+
+int SPSG_IoSession::OnFrameRecv(nghttp2_session*, const nghttp2_frame* frame)
+{
+    PSG_IO_SESSION_TRACE(this << '/' << frame->hd.stream_id << " frame: " << s_GetFrameName(frame));
+
+    auto it = m_Requests.find(frame->hd.stream_id);
+    auto id = it != m_Requests.end() ? it->second.GetId() : "*"sv;
+    ERR_POST(Message << id << ": Received "sv << s_GetFrameName(frame) << " frame"sv);
+    return 0;
 }
 
 

@@ -605,6 +605,12 @@ struct SPSG_TimedRequest
         return make_pair(m_Id, m_Request->processed_by.CanBe(m_Id) ? m_Request : nullptr);
     }
 
+    string_view GetId()
+    {
+        _ASSERT(m_Request);
+        return m_Request->reply->debug_printout.id;
+    }
+
     unsigned AddTime() { return ++m_Time; }
     void ResetTime() { m_Time = 0; }
 
@@ -849,6 +855,13 @@ private:
     }
 
     void OnReset(SUvNgHttp2_Error error) override;
+    int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
+
+    static int s_OnFrameRecv(nghttp2_session* session, const nghttp2_frame* frame, void* user_data)
+    {
+        _ASSERT(user_data);
+        return static_cast<SPSG_IoSession*>(user_data)->OnFrameRecv(session, frame);
+    }
 
     SPSG_Params m_Params;
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;
