@@ -1063,9 +1063,20 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
 struct SPSG_NcbiPeerID
 {
+    static string Init()
+    {
+        if (auto tci = TUvNgHttp2_TestIdentity::GetDefault(); tci.empty()) {
+            return GetDiagContext().GetStringUID();
+        } else if (tci.starts_with("peer_id_")) {
+            return tci;
+        } else {
+            return {};
+        }
+    }
+
     static const string& Get()
     {
-        static const string ncbi_peer_id(GetDiagContext().GetStringUID());
+        static const string ncbi_peer_id(Init());
         return ncbi_peer_id;
     }
 };

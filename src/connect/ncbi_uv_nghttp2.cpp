@@ -44,6 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
+NCBI_PARAM_DEF(string, UVNGHTTP2, test_identity, "");
+
 #define NCBI_UV_WRITE_TRACE(message)        _TRACE(message)
 #define NCBI_UV_TCP_TRACE(message)          _TRACE(message)
 #define NCBI_NGHTTP2_SESSION_TRACE(message) _TRACE(message)
@@ -402,6 +404,14 @@ struct SUvNgHttp2_UserAgentImpl : string
 
 SUvNgHttp2_UserAgentImpl::SUvNgHttp2_UserAgentImpl()
 {
+    if (auto tci = TUvNgHttp2_TestIdentity::GetDefault(); !tci.empty()) {
+        if (tci.starts_with("ua_")) {
+            assign(tci);
+        }
+
+        return;
+    }
+
     if (auto app = CNcbiApplication::InstanceGuard()) {
         const auto& full_version = app->GetFullVersion();
         const auto& app_version = full_version.GetVersionInfo();

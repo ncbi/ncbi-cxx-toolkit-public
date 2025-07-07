@@ -192,6 +192,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddOptionalKey("timeout", "SECONDS", "Set request timeout (in seconds)", CArgDescriptions::eInteger);
     arg_desc.AddOptionalKey("debug-printout", "WHAT", "Debug printout of PSG protocol (some|all).", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("user-args", "USER_ARGS", "Arbitrary request URL arguments (queue-wide)", CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("test-identity", "IDENTITY", "Set test identity.", CArgDescriptions::eString, CArgDescriptions::fHidden);
     arg_desc.AddDefaultKey("min-severity", "SEVERITY", "Minimum severity level of messages to output", CArgDescriptions::eString, "Warning");
     arg_desc.AddFlag("include-hup", "Include HUP data");
     arg_desc.AddFlag("https", "Enable HTTPS");
@@ -371,6 +372,11 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
     if (args["debug-printout"].HasValue()) {
         auto debug_printout = args["debug-printout"].AsString();
         TPSG_DebugPrintout::SetDefault(debug_printout);
+    }
+
+    if (args["test-identity"].HasValue()) {
+        const auto& test_identity = args["test-identity"].AsString();
+        CPSG_Misc::SetTestIdentity(test_identity);
     }
 }
 

@@ -203,6 +203,7 @@ public:
     static shared_ptr<CPSG_Request> CreateRawRequest(string abs_path_ref, shared_ptr<void> user_context, CRef<CRequestContext> request_context);
     static const CPSG_BlobId* GetRawResponseBlobId(const shared_ptr<CPSG_BlobData>& blob_data);
     static int GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply);
+    static void SetTestIdentity(const string& identity);
 };
 
 template <class TParam>

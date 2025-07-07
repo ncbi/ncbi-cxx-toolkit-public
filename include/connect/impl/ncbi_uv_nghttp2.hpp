@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbidbg.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <common/ncbi_export.h>
 
 #include <uv.h>
@@ -553,6 +554,9 @@ SUvNgHttp2_SessionBase::SUvNgHttp2_SessionBase(uv_loop_t* loop, const TAddrNCred
     m_Session(this, std::forward<TArgs>(args)...)
 {
 }
+
+NCBI_PARAM_DECL_EXPORT(NCBI_XXCONNECT2_EXPORT, string, UVNGHTTP2, test_identity);
+using TUvNgHttp2_TestIdentity = NCBI_PARAM_TYPE(UVNGHTTP2, test_identity);
 
 END_NCBI_SCOPE
 

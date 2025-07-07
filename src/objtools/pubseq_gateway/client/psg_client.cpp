@@ -1699,6 +1699,11 @@ int CPSG_Misc::GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply)
     return state.InProgress() ? 0 : state.GetStatus().GetHttpCode();
 }
 
+void CPSG_Misc::SetTestIdentity(const string& identity)
+{
+    TUvNgHttp2_TestIdentity::SetDefault(identity);
+}
+
 
 END_NCBI_SCOPE
 
