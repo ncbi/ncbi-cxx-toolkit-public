@@ -1046,8 +1046,7 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
     bool skipStopWord = true;
     if (NStr::EqualNocase(label, "collection-date") ||
         NStr::EqualNocase(label, "country") ||
-        NStr::EqualNocase(label, "geo-loc-name") ||
-        NStr::EqualNocase(label, "lat-lon")) {
+        NStr::EqualNocase(label, "geo-loc-name")) {
         skipStopWord = false;
     }
     // ignore if BioSource value is blank and BioSample value is a stop word
