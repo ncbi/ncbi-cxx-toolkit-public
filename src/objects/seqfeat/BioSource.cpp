@@ -717,8 +717,7 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
         bool skipStopWord = true;
         if (NStr::EqualNocase(label, "collection-date") ||
             NStr::EqualNocase(label, "country") ||
-            NStr::EqualNocase(label, "geo-loc-name") ||
-            NStr::EqualNocase(label, "lat-lon")) {
+            NStr::EqualNocase(label, "geo-loc-name")) {
             skipStopWord = false;
         }
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {

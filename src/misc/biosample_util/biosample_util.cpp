@@ -396,7 +396,7 @@ void sPrintField(const string& value, size_t width, CNcbiOstream& ostr)
 
 string CBiosampleFieldDiff::GetSrcVal() const
 {
-    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "lat-lon" || m_FieldName == "collection-date") {
+    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "collection-date") {
         return m_SrcVal;
     }
 
@@ -405,7 +405,7 @@ string CBiosampleFieldDiff::GetSrcVal() const
 
 string CBiosampleFieldDiff::GetSampleVal() const
 {
-    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "lat-lon" || m_FieldName == "collection-date") {
+    if (m_FieldName == "country" || m_FieldName == "geo-loc-name" || m_FieldName == "collection-date") {
         return m_SampleVal;
     }
 
