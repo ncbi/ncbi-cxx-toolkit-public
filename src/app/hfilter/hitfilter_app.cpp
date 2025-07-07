@@ -65,7 +65,6 @@ namespace {
     const double kBigDbl(0.5 * numeric_limits<float>::max());
     const string kBoth("strict");
     const string kQuery("query");
-    const string kSubj("subject");
 }
 
 void CAppHitFilter::Init()
