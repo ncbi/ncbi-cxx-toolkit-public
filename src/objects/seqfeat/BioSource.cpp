@@ -1825,8 +1825,7 @@ bool CBioSource::RemoveNullTerms()
             if ((*s)->IsSetSubtype()) {
                 CSubSource::TSubtype subtype = (*s)->GetSubtype();
                 if (subtype == CSubSource::eSubtype_country ||
-                    subtype == CSubSource::eSubtype_collection_date ||
-                    subtype == CSubSource::eSubtype_lat_lon) {
+                    subtype == CSubSource::eSubtype_collection_date) {
                     // skip "missing" null exemption value (RW-1944)
                     if ((*s)->IsSetName()) {
                         string nm = (*s)->GetName();
