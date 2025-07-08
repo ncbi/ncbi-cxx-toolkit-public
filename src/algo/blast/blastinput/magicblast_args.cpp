@@ -202,7 +202,7 @@ class CMapperMTArgs : public CMTArgs
 {
 public:
     virtual void ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */) {
-        const int kMaxValue = static_cast<int>(GetCpuCount());
+        const int kMaxValue = static_cast<int>(CSystemInfo::GetCpuCount());
 
         if (args.Exist(kArgNumThreads) &&
             args[kArgNumThreads].HasValue()) {
