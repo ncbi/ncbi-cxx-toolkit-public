@@ -86,7 +86,7 @@ CPSGS_UvLoopBinder::~CPSGS_UvLoopBinder()
 {
     // Note: Closing of the handles is done in the x_Unregister() method.
     // It must not be done in the destructor.
-    // This is because the libuv appraoach. It has to be done as follows:
+    // This is because the libuv approach. It has to be done as follows:
     // - to close the handles the libuv loop must still exist
     // - the loop is stopped
     // - the handles need to be closed

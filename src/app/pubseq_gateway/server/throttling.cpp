@@ -63,23 +63,13 @@ CPubseqGatewayApp::x_CheckThrottling(CHttpRequest &  req,
         return ePSGS_Continue;
     }
 
-    m_Alerts.Register(ePSGS_Throttling, "Throttling limit has been reached");
-
-
     // Exception: ADMIN/connections_status request
     if (req.GetPath() == "/ADMIN/connections_status") {
         return ePSGS_Continue;
     }
 
+    m_Alerts.Register(ePSGS_Throttling, "Throttling limit has been reached");
 
-    // Check if the current connection had some activity before
-    SConnectionRunTimeProperties    conn_props =
-        reply->GetHttpReply()->GetHttpConnection()->GetProperties();
-    if (conn_props.m_NumFinishedRequests > 0) {
-        // This connection had activity before so there is no need to do
-        // throttlig; it is a 'not guilty' connection
-        return ePSGS_Continue;
-    }
 
     // Throttling data needs to be collected or used if it is up to date
     shared_ptr<SThrottlingData>     throttling_data;
@@ -144,6 +134,7 @@ CPubseqGatewayApp::x_CheckThrottling(CHttpRequest &  req,
                 return ePSGS_OtherClosed;
             }
         }
+
         if (find(throttling_data->m_PeerIPOverLimit.begin(),
                  throttling_data->m_PeerIPOverLimit.end(),
                   props.m_PeerIP) != throttling_data->m_PeerIPOverLimit.end()) {
@@ -183,6 +174,18 @@ CPubseqGatewayApp::x_CheckThrottling(CHttpRequest &  req,
             }
         }
     }
+
+    // Check if the current connection had some activity before
+    SConnectionRunTimeProperties    conn_props =
+        reply->GetHttpReply()->GetHttpConnection()->GetProperties();
+    if (conn_props.m_NumInitiatedRequests > 1) {
+        // The initiated requests are counted before the throttling procedure
+        // is triggered so 1 means "this very request"
+        // This connection had activity before so there is no need to do
+        // throttlig; it is a 'not guilty' connection
+        return ePSGS_Continue;
+    }
+
 
     // Here: there is no good candidate for throttling basing on the idle
     // connection properties. Let's check the current request properties

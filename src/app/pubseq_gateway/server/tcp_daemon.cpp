@@ -280,7 +280,7 @@ CTcpWorkersList::PopulateThrottlingData(SThrottlingData &  throttling_data)
     system_clock::time_point  now = system_clock::now();
 
     for (auto &  it : m_Workers) {
-        it->PopulateThrottlingData(throttling_data, now, m_IdleTimeoutMs);
+        it->PopulateThrottlingData(throttling_data, now, m_ConnThrottleIdleTimeoutMs);
     }
 
     // Sort by the timestamp
@@ -461,11 +461,11 @@ void CTcpWorker::Execute(void)
             m_protocol.ThreadStop();
 
             err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
-
             if (err_code != 0)
                 PSG_INFO("worker " << m_id <<
                          ", uv_run (2) returned " << err_code <<
                          ", st: " << m_started.load());
+
             // uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
             err_code = m_internal->m_loop.Close();
             if (err_code != 0) {
@@ -494,22 +494,39 @@ void CTcpWorker::CloseAll(void)
     if (!m_close_all_issued) {
         m_close_all_issued = true;
 
-        vector<uv_tcp_t *>      tcp_handles;
+        // vector<uv_tcp_t *>          tcp_handles;
+        vector<CHttpConnection *>   http_conns;
 
         m_ConnListLock.lock();
-        for (auto  it = m_ConnectedList.begin();
-             it != m_ConnectedList.end(); ++it) {
-            uv_tcp_t *tcp = &std::get<0>(*it);
-            tcp_handles.push_back(tcp);
+        for (auto  it = m_ConnectedList.begin(); it != m_ConnectedList.end(); ++it) {
+            // uv_tcp_t *tcp = &std::get<0>(*it);
+            // tcp_handles.push_back(tcp);
+
+            CHttpConnection *   http_conn = & get<1>(*it);
+            http_conns.push_back(http_conn);
         }
         m_ConnListLock.unlock();
 
-        for (auto  tcp_handle : tcp_handles) {
-            if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp_handle)) == 0) {
-                uv_close(reinterpret_cast<uv_handle_t*>(tcp_handle), s_OnClientClosed);
-            } else {
-                s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp_handle));
-            }
+        // Old implementation:
+        // This does not work when there is an opened http/2 connection. In
+        // this case libh2o creates uv timers and async events and closing via
+        // uv_close() call does not release the libuv handles.
+        // Thus, when the server is stopped (Ctrl+C) the libuv loop after
+        // closing becomes infinite because of still active handles.
+        // for (auto  tcp_handle : tcp_handles) {
+        //     if (uv_is_closing(reinterpret_cast<uv_handle_t*>(tcp_handle)) == 0) {
+        //         uv_close(reinterpret_cast<uv_handle_t*>(tcp_handle), s_OnClientClosed);
+        //     } else {
+        //         s_OnClientClosed(reinterpret_cast<uv_handle_t*>(tcp_handle));
+        //     }
+        // }
+
+        // New implemetation:
+        // reuse the connection closing in case of throttling.
+        // It will close the connection the most careful way. http/2 via
+        // libh2o, http/1 via libuv.
+        for (auto  http_conn : http_conns) {
+            http_conn->CloseThrottledConnection(CHttpConnection::ePSGS_SyncClose);
         }
     }
 }
@@ -641,15 +658,15 @@ CTcpWorker::PopulateThrottlingData(SThrottlingData &  throttling_data,
         }
 
         if (props.m_LastRequestTimestamp.has_value()) {
-            if (chrono::duration_cast<chrono::milliseconds>
-                (now - props.m_LastRequestTimestamp.value()).count() <=
-                static_cast<int64_t>(idle_timeout_ms)) {
+            int64_t     timespan = chrono::duration_cast<chrono::milliseconds>
+                                        (now - props.m_LastRequestTimestamp.value()).count();
+            if (timespan <= static_cast<int64_t>(idle_timeout_ms)) {
                 continue;
             }
         } else {
-            if (chrono::duration_cast<chrono::milliseconds>
-                (now - props.m_OpenTimestamp).count() <=
-                static_cast<int64_t>(idle_timeout_ms)) {
+            int64_t     timespan = chrono::duration_cast<chrono::milliseconds>
+                                        (now - props.m_OpenTimestamp).count();
+            if (timespan <= static_cast<int64_t>(idle_timeout_ms)) {
                 continue;
             }
         }
@@ -983,7 +1000,7 @@ void CTcpDaemon::Run(CHttpDaemon &  http_daemon,
     }
 
     CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
-    CTcpWorkersList         workers(this, app->Settings().m_IdleTimeoutSec,
+    CTcpWorkersList         workers(this, app->Settings().m_ConnThrottleCloseIdleSec,
                                           app->Settings().m_ConnThrottleByHost,
                                           app->Settings().m_ConnThrottleBySite,
                                           app->Settings().m_ConnThrottleByProcess,

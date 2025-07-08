@@ -64,7 +64,7 @@ private:
     std::vector<std::unique_ptr<CTcpWorker>>    m_Workers;
     CTcpDaemon *                                m_Daemon;
     std::function<void(CTcpDaemon &  daemon)>   m_on_watch_dog;
-    uint64_t                                    m_IdleTimeoutMs;
+    uint64_t                                    m_ConnThrottleIdleTimeoutMs;
     size_t                                      m_ConnThrottleByHost;
     size_t                                      m_ConnThrottleBySite;
     size_t                                      m_ConnThrottleByProcess;
@@ -77,7 +77,7 @@ public:
     static uv_key_t         s_thread_worker_key;
 
     CTcpWorkersList(CTcpDaemon *  daemon,
-                    double  idle_timeout_sec,
+                    double  conn_throttle_idle_timeout_sec,
                     size_t  conn_throttle_by_host,
                     size_t  conn_throttle_by_site,
                     size_t  conn_throttle_by_process,
@@ -89,7 +89,7 @@ public:
         m_ConnThrottleByUserAgent(conn_throttle_by_user_agent)
     {
         // Milliseconds should be enough
-        m_IdleTimeoutMs = static_cast<uint64_t>(idle_timeout_sec * 1000);
+        m_ConnThrottleIdleTimeoutMs = static_cast<uint64_t>(conn_throttle_idle_timeout_sec * 1000);
     }
     ~CTcpWorkersList();
 

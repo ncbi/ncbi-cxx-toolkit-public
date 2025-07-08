@@ -246,6 +246,8 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
 
     CHttpConnection *           http_conn =
                     static_cast<CHttpConnection*>(sock->on_close.data);
+    http_conn->OnNewRequest();
+
     CHttpRequest                hreq(req);
     unique_ptr<CHttpReply>      low_level_reply(
                                     new CHttpReply(req, this,

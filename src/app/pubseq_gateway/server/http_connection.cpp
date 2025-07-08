@@ -89,6 +89,7 @@ SConnectionRunTimeProperties::PrepareForUsage(int64_t  conn_cnt_at_open,
     m_OpenTimestamp = system_clock::now();
     m_LastRequestTimestamp.reset();
     m_NumFinishedRequests = 0;
+    m_NumInitiatedRequests = 0;
     m_RejectedDueToSoftLimit = 0;
     m_NumBackloggedRequests = 0;
     m_NumRunningRequests = 0;
@@ -211,6 +212,7 @@ SConnectionRunTimeProperties::SConnectionRunTimeProperties(
     m_ConnCntAtOpen = other.m_ConnCntAtOpen;
     m_OpenTimestamp = other.m_OpenTimestamp;
     m_NumFinishedRequests = other.m_NumFinishedRequests;
+    m_NumInitiatedRequests = other.m_NumInitiatedRequests;
     m_RejectedDueToSoftLimit = other.m_RejectedDueToSoftLimit;
     m_NumBackloggedRequests = other.m_NumBackloggedRequests;
     m_NumRunningRequests = other.m_NumRunningRequests;
@@ -257,19 +259,26 @@ void CHttpConnection::SetupTimers(uv_loop_t *  tcp_worker_loop)
     m_ScheduledMaintainTimer.data = (void *)(this);
 
     uv_async_init(tcp_worker_loop, &m_InitiateClosingEvent, s_OnAsyncConnClose);
-
+    m_TimersStopped = false;
 }
 
 
 void CHttpConnection::CleanupTimers(void)
 {
+    if (m_TimersStopped) {
+        return;
+    }
+
     if (uv_is_active((uv_handle_t*)(&m_ScheduledMaintainTimer))) {
         // The time is active, stop it first
         uv_timer_stop(&m_ScheduledMaintainTimer);
     }
+
     uv_close(reinterpret_cast<uv_handle_t*>(&m_ScheduledMaintainTimer), nullptr);
 
     uv_close(reinterpret_cast<uv_handle_t*>(&m_InitiateClosingEvent), nullptr);
+
+    m_TimersStopped = true;
 }
 
 

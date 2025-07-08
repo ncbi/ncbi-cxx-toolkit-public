@@ -60,6 +60,7 @@ struct SConnectionRunTimeProperties
     optional<system_clock::time_point>  m_LastRequestTimestamp;
 
     int64_t                             m_NumFinishedRequests;
+    int64_t                             m_NumInitiatedRequests;
     int64_t                             m_RejectedDueToSoftLimit;
 
     // Sizes of the containers
@@ -104,6 +105,7 @@ public:
         m_HttpMaxBacklog(http_max_backlog), m_HttpMaxRunning(http_max_running),
         m_ImmediateConnCloseTimeoutMs(immediate_conn_close_timeout_ms),
         m_IsClosed(false),
+        m_TimersStopped(true),
         m_ScheduledMaintainTimer{0},
         m_InitiateClosingEvent{0},
         m_H2oConnection(nullptr),
@@ -192,6 +194,11 @@ public:
         ++m_RunTimeProps.m_RejectedDueToSoftLimit;
     }
 
+    void OnNewRequest(void)
+    {
+        ++m_RunTimeProps.m_NumInitiatedRequests;
+    }
+
     uint16_t GetConnCntAtOpen(void) const
     {
         return m_RunTimeProps.m_ConnCntAtOpen;
@@ -229,6 +236,7 @@ private:
     SConnectionRunTimeProperties    m_RunTimeProps;
 
     volatile bool                   m_IsClosed;
+    bool                            m_TimersStopped;
     uv_timer_t                      m_ScheduledMaintainTimer;
     uv_async_t                      m_InitiateClosingEvent;
 

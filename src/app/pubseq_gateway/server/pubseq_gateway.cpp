@@ -99,6 +99,8 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
+    m_ThrottlingDataLock(false),
+    m_ThrottlingDataInProgress(false),
     m_CassConnection(nullptr),
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_StartTime(GetFastLocalTime()),
