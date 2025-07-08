@@ -170,12 +170,15 @@ public:
     void BasicCleanupSeqEntry(CSeq_entry& arg0);
     void BasicCleanupSeqSubmit(CSeq_submit& arg0);
     void BasicCleanupSeqAnnot(CSeq_annot& arg0);
+    void BasicCleanupSeqAnnot(const CSeq_annot_Handle& annotHandle);
     void BasicCleanupBioseq(CBioseq& arg0);
     void BasicCleanupBioseqSet(CBioseq_set& arg0);
     void BasicCleanupSeqFeat(CSeq_feat& arg0_raw);
+    void BasicCleanupSeqFeat(const CSeq_feat_Handle& featHandle);
     void BasicCleanupSeqdesc(CSeqdesc& arg0) { x_BasicCleanupBioseqDesc(arg0); }
 
 private:
+    void x_FallBackSeqAnnotMethod(const CSeq_annot_Handle& annotHandle);
     bool x_BasicCleanupDate(CDate& date);
     bool x_BasicCleanupSeqId(CSeq_id& id);
     void x_BasicCleanupSeqPoint(CSeq_point& seq_point);
@@ -373,6 +376,7 @@ private:
     void x_BasicCleanupSeqHist(CSeq_hist& arg0);
     void x_BasicCleanupBioseq_inst(CBioseq_Handle bsh);
     void x_BasicCleanupSeqAnnots(list<CRef<CSeq_annot>>& annots);
+    void x_BasicCleanupSeqAnnots(const CBioseq_Handle& bsh);
     void x_BasicCleanupBioseqSetDesc(CSeqdesc& arg0);
     void x_BasicCleanupBioseqSet_descr_ETC(CSeq_descr& arg0);
     void x_BasicCleanupSeqEntry_set(CBioseq_set& arg0);

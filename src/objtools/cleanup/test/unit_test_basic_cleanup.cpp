@@ -1646,6 +1646,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4360)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    auto feat_handle = scope->GetSeq_featHandle(*rna);
     entry->Parentize();
 
     CCleanup cleanup;
@@ -1653,19 +1654,23 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4360)
     cleanup.SetScope(scope);
     cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetProduct(), "stRNA");
-    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().IsSetClass(), false);
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetRna().GetExt().GetGen().GetProduct(), "stRNA");
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetRna().GetExt().GetGen().IsSetClass(), false);
 
     scope->RemoveTopLevelSeqEntry(seh);
     entry = BuildGoodSeq();
     rna = AddMiscFeature(entry);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
     rna->SetData().SetRna().SetExt().SetGen().SetProduct("Vault_RNA fakeproduct");
+
     seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
+
+    feat_handle = scope->GetSeq_featHandle(*rna);
     cleanup.BasicCleanup(*entry);
-    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetProduct(), "fakeproduct");
-    BOOST_CHECK_EQUAL(rna->GetData().GetRna().GetExt().GetGen().GetClass(), "vault_RNA");
+
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetRna().GetExt().GetGen().GetProduct(), "fakeproduct");
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetRna().GetExt().GetGen().GetClass(), "vault_RNA");
 }
 
 
@@ -2105,20 +2110,20 @@ BOOST_AUTO_TEST_CASE(Test_ReadLocFromText)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
+    auto feat_handle = scope->GetSeq_featHandle(*trna);
 
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(trna->IsSetQual(), false);
-    BOOST_CHECK_EQUAL(trna->GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
-    const CSeq_loc& loc = trna->GetData().GetRna().GetExt().GetTRNA().GetAnticodon();
+    BOOST_CHECK_EQUAL(feat_handle.IsSetQual(), false);
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetRna().GetExt().GetTRNA().IsSetAnticodon(), true);
+    const CSeq_loc& loc = feat_handle.GetData().GetRna().GetExt().GetTRNA().GetAnticodon();
     BOOST_CHECK_EQUAL(loc.GetStart(eExtreme_Biological), 4);
     BOOST_CHECK_EQUAL(loc.GetStop(eExtreme_Biological), 2);
     BOOST_CHECK_EQUAL(loc.GetStrand(), eNa_strand_minus);
 }
-
 
 void CheckFields(const CUser_field& f1, const CUser_field& f2)
 {
@@ -2354,13 +2359,15 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     scope->AddTopLevelSeqEntry(*entry);
+    
+    auto feat_handle = scope->GetSeq_featHandle(*prot);
 
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(entry->SetSet());
 
-    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetProt().GetName().front(), "a b");
 }
 
 BOOST_AUTO_TEST_CASE(Test_SQD_4508_BioseqSetHandle)
@@ -2371,12 +2378,13 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508_BioseqSetHandle)
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     scope->AddTopLevelSeqEntry(*entry);
+    auto feat_handle = scope->GetSeq_featHandle(*prot);
+
     auto bssh = scope->GetBioseq_setHandle(entry->GetSet());
     CCleanup cleanup;
     auto changes = cleanup.BasicCleanup(bssh);
-    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "a b");
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetProt().GetName().front(), "a b");
 }
-
 
 
 BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
@@ -2547,13 +2555,14 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4565)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
 
+    auto feat_handle = scope->GetSeq_featHandle(*prot);
+
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(prot->SetData().SetProt().GetName().size(), 4);
-
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetProt().GetName().size(), 4);
 }
 
 
@@ -2611,13 +2620,15 @@ BOOST_AUTO_TEST_CASE(Test_GeneDbToFeatDb)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
 
+    auto feat_handle = scope->GetSeq_featHandle(*gene);
+
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(gene->GetData().GetGene().IsSetDb(), false);
-    BOOST_CHECK_EQUAL(gene->GetDbxref().size(), 1);
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetGene().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(feat_handle.GetDbxref().size(), 1);
 }
 
 
@@ -2651,18 +2662,20 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefGeneDbToFeatDb)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
 
+    auto feat_handle = scope->GetSeq_featHandle(*gene);
+
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(gene->GetXref().size(), 2);
-    BOOST_CHECK_EQUAL(gene->GetXref().front()->IsSetId(), true);
-    BOOST_CHECK_EQUAL(gene->GetXref().back()->GetData().GetGene().GetLocus(), "Z");
-    BOOST_CHECK_EQUAL(gene->GetXref().back()->GetData().GetGene().IsSetDb(), false);
-    BOOST_CHECK_EQUAL(gene->GetDbxref().size(), 2);
-    BOOST_CHECK_EQUAL(gene->GetDbxref().front()->GetDb(), "A");
-    BOOST_CHECK_EQUAL(gene->GetDbxref().back()->GetDb(), "C");
+    BOOST_CHECK_EQUAL(feat_handle.GetXref().size(), 2);
+    BOOST_CHECK_EQUAL(feat_handle.GetXref().front()->IsSetId(), true);
+    BOOST_CHECK_EQUAL(feat_handle.GetXref().back()->GetData().GetGene().GetLocus(), "Z");
+    BOOST_CHECK_EQUAL(feat_handle.GetXref().back()->GetData().GetGene().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(feat_handle.GetDbxref().size(), 2);
+    BOOST_CHECK_EQUAL(feat_handle.GetDbxref().front()->GetDb(), "A");
+    BOOST_CHECK_EQUAL(feat_handle.GetDbxref().back()->GetDb(), "C");
 
 }
 
@@ -2680,13 +2693,15 @@ BOOST_AUTO_TEST_CASE(Test_BasicProtCleanup)
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
     entry->Parentize();
 
+    auto feat_handle = scope->GetSeq_featHandle(*prot);
+
     CCleanup cleanup;
 
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
-    BOOST_CHECK_EQUAL(prot->GetData().GetProt().IsSetDb(), false);
-    BOOST_CHECK_EQUAL(prot->GetDbxref().size(), 1);
+    BOOST_CHECK_EQUAL(feat_handle.GetData().GetProt().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(feat_handle.GetDbxref().size(), 1);
 }
 
 
