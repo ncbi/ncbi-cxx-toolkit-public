@@ -41,6 +41,7 @@
 #include <util/util_exception.hpp>
 
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -136,5 +137,73 @@ BOOST_AUTO_TEST_CASE(s_TestDBTag2)
     BOOST_CHECK(!dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes));
     BOOST_CHECK(!dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes, CDbtag::eIsEstOrGss_No));
     BOOST_CHECK( dbtag.IsApproved(CDbtag::eIsRefseq_No, CDbtag::eIsSource_Yes, CDbtag::eIsEstOrGss_Yes));
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(s_RW2532_GBK1202)
+{
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("SK-FST");
+    dbtag.SetTag().SetStr("SK35782");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_SK_FST);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("ASAP");
+    dbtag.SetTag().SetStr("ABE-0006294");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_ASAP);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("IntrepidBio");
+    dbtag.SetTag().SetStr("6440264547");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_IntrepidBio);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("niaEST");
+    dbtag.SetTag().SetStr("E0300A01-5");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_niaEST);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("NRESTdb");
+    dbtag.SetTag().SetStr("Y20F04");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_NRESTdb);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("PBmice");
+    dbtag.SetTag().SetStr("100513224-HRA");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_PBmice);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("SGN");
+    dbtag.SetTag().SetStr("E556418");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_SGN);
+    BOOST_CHECK(dbtag.GetUrl().empty());
+    }
+
+    {
+    CDbtag dbtag;
+    dbtag.SetDb("PDB");
+    dbtag.SetTag().SetStr("1A3R");
+    BOOST_CHECK_EQUAL(dbtag.GetType(), CDbtag::eDbtagType_PDB);
+    BOOST_CHECK_EQUAL(dbtag.GetUrl(), "https://www.rcsb.org/structure/1A3R");
     }
 }
