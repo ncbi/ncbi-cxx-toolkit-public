@@ -433,6 +433,23 @@ DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | e
                         if (s->GetSubtype() == CSubSource::eSubtype_other && s->IsSetName() && NStr::Equal(s->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
                             return;
                         }
+                        if (s->GetSubtype() == CSubSource::eSubtype_isolation_source && s->IsSetName()) {
+                            string nm = s->GetName();
+                            if (NStr::StartsWith(nm, "single cell amplified") || NStr::StartsWith(nm, "a few single cells amplified")) {
+                                return;
+                            }
+                            size_t spc = nm.find(' ');
+                            if (spc != std::string::npos) {
+                                if (NStr::StartsWith(nm.substr(spc+1), "single cells amplified")) {
+                                    try {
+                                        if (NStr::StringToUInt(nm.substr(0, spc)) > 0) {
+                                            return;
+                                        }
+                                    } catch (...) {
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -586,6 +603,7 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria
             if (biosrc->IsSetSubtype()) {
                 bool is_metagenomic = false;
                 bool is_env_sample = false;
+                bool is_single_cell_amplified = false;
                 for (const auto& s : biosrc->GetSubtype()) {
                     if (s->IsSetSubtype()) {
                         if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
@@ -600,9 +618,30 @@ DISCREPANCY_CASE(REQUIRED_STRAIN, BIOSRC, eDisc | eSubmitter | eSmart, "Bacteria
                                 break;
                             }
                         }
+                        if (s->GetSubtype() == CSubSource::eSubtype_isolation_source && s->IsSetName()) {
+                            string nm = s->GetName();
+                            if (NStr::StartsWith(nm, "single cell amplified") || NStr::StartsWith(nm, "a few single cells amplified")) {
+                                is_single_cell_amplified = true;
+                            } else {
+                                size_t spc = nm.find(' ');
+                                if (spc != std::string::npos) {
+                                    if (NStr::StartsWith(nm.substr(spc+1), "single cells amplified")) {
+                                        try {
+                                            if (NStr::StringToUInt(nm.substr(0, spc)) > 0) {
+                                                is_single_cell_amplified = true;
+                                            }
+                                        } catch (...) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 if (is_metagenomic && is_env_sample) {
+                    continue;
+                }
+                if (is_single_cell_amplified) {
                     continue;
                 }
             }
