@@ -1565,6 +1565,9 @@ version  1 # of file format
 2+6  PW  unreserved_nuc # deliberately skipped
 2+8  PW  unreserved_nuc # deliberately skipped
 2+10 PW  unreserved_nuc # deliberately skipped
+2+6  PX  gb_dirsub
+2+8  PX  gb_other_nuc
+2+10 PX  gb_other_nuc
 2+6  P?  gb_other_nuc
 2+8  P?  gb_other_nuc
 2+10 P?  gb_other_nuc
