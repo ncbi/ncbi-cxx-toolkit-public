@@ -1,7 +1,7 @@
 @script_shell@
 # $Id$
-for x in '@PYTHON3@' "$VIRTUAL_ENV/bin/python3" "$(type -path python3)" \
-                     "$VIRTUAL_ENV/bin/python" "$(type -path python)"; do
+for x in '@PYTHON3@' "$VIRTUAL_ENV/bin/python3" "$(command -v python3)" \
+                     "$VIRTUAL_ENV/bin/python" "$(command -v python)"; do
     if [ -x "$x" ]; then
         exec "$x" "${0%.sh}.py" "$@"
     fi
