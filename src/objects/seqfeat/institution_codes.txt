@@ -1754,6 +1754,7 @@ CZ-IICT	s	Centro de Zoologia, Instituto de Investigacao Cientifica Tropical
 CZAA	s	Catedra de Zoologia Agricola			
 CZACC	s	Coleccion Zoologia, Academia de Ciencias de Cuba			
 CZCEN 	s	Coleccion Zoologica de la Facultad de Ciencias Exactas y Naturales	CZCEN		
+CZEUM	c	Collection of Zoosporic Eufungi at University of Michigan			
 CZH	s	Hanshan Normal University			
 CZIP	s	Universidad de Magallanes, Instituto de la Patagonia (Chile)			
 CZL	s	Centro de Zoologia			
