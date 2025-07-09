@@ -43,7 +43,8 @@ if(NCBI_CONAN_APP)
     endif()
 #    message("Conan v${NCBI_CONAN_VERSION}.x: ${NCBI_CONAN_APP}")
 else()
-    message(FATAL_ERROR "Conan not found")
+#    message(FATAL_ERROR "Conan not found")
+    set(NCBI_CONAN_VERSION 2)
 endif()
 
 ###############################################################################
