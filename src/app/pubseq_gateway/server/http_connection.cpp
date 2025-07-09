@@ -658,12 +658,15 @@ CHttpConnection::InitializeH2oHttpContext(uv_loop_t *  loop,
 
 void CHttpConnection::OnBeforeClosedConnection(void)
 {
-    if (m_H2oCtxInitialized) {
-        h2o_context_dispose(&m_HttpCtx);
-        m_H2oCtxInitialized = false;
-    }
+    if (m_IsClosed)
+        return;
 
     m_IsClosed = true;
     x_CancelAll();
+
+    if (m_H2oCtxInitialized) {
+        m_H2oCtxInitialized = false;
+        h2o_context_dispose(&m_HttpCtx);
+    }
 }
 
