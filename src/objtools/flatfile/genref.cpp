@@ -651,7 +651,7 @@ static void AddGeneFeat(Gene& g, const string& maploc, TSeqFeatList& feats)
     if (g.allpseudo)
         feat->SetPseudo(true);
 
-    if (! g.pseudogene.empty() && g.pseudogene[0] != '\0') {
+    if (! g.pseudogene.empty()) {
         CRef<CGb_qual> qual(new CGb_qual);
         qual->SetQual("pseudogene");
         qual->SetVal(g.pseudogene);
@@ -886,31 +886,18 @@ static void fta_check_pseudogene(Gene& tg, Gene& g)
         return;
 
     if (! tg.pseudogene.empty() && ! g.pseudogene.empty()) {
-        if (tg.pseudogene[0] == '\0' || g.pseudogene[0] == '\0') {
-            tg.pseudogene[0]   = '\0';
-            g.pseudogene[0]  = '\0';
-        } else if (tg.pseudogene != g.pseudogene) {
+        if (tg.pseudogene != g.pseudogene) {
             FtaErrPost(SEV_ERROR, ERR_FEATURE_InconsistentPseudogene, "All /pseudogene qualifiers for a given Gene and/or Locus-Tag should be uniform. But pseudogenes \"{}\" vs. \"{}\" exist for the features with Gene Symbol \"{}\" and Locus Tag \"{}\".", (g.locus.empty()) ? "NONE" : g.locus, (g.locus_tag.empty()) ? "NONE" : g.locus_tag, tg.pseudogene, g.pseudogene);
-            tg.pseudogene[0]   = '\0';
-            g.pseudogene[0]  = '\0';
+            tg.pseudogene.clear();
+            g.pseudogene.clear();
         }
         return;
     }
 
     if (tg.pseudogene.empty()) {
-        if (g.pseudogene[0] != '\0')
-            tg.pseudogene = g.pseudogene;
-        else {
-            tg.pseudogene.resize(1);
-            tg.pseudogene[0] = '\0';
-        }
+        tg.pseudogene = g.pseudogene;
     } else if (g.pseudogene.empty()) {
-        if (tg.pseudogene[0] != '\0')
-            g.pseudogene = tg.pseudogene;
-        else {
-            g.pseudogene.resize(1);
-            g.pseudogene[0] = '\0';
-        }
+        g.pseudogene = tg.pseudogene;
     }
 }
 
