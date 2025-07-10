@@ -1,6 +1,6 @@
 /*
  cd $NCBI/mbedtls-3.6.3/src/Debug64MT/library/CMakeFiles && \
- ls mbed*[^c].dir/*.o | sort -t/ -k2 | \
+ ls mbed*[^c].dir/?*.o | sort -t/ -k2 | \
  while read x; do nm -g -arch all --defined-only $x 2>/dev/null | \
  grep -v '_self_test' | sed -ne '/ [A-TV-Z] /s/ _/ /p' | sort -k3 -u; done | \
  awk '/ / { s=substr($3, 1); print "#define", s " \\\n        " s "_ncbicxx_3_6_3" }'
