@@ -1,7 +1,8 @@
 /*
- for x in connect/mbedtls/?*.o; do echo ${x##*mbedtls?} $x; done | sort | \
- while read _ x; do nm -g --defined-only $x | sed -e 's,_ncbicxx_.*,,' | \
- sort -k3; done | \
+ cd $NCBI/mbedtls-3.6.1/src/Debug64MT/library/CMakeFiles && \
+ ls mbed*[^c].dir/*.o | sort -t/ -k2 | \
+ while read x; do nm -g -arch all --defined-only $x 2>/dev/null | \
+ grep -v '_self_test' | sed -ne '/ [A-TV-Z] /s/ _/ /p' | sort -k3 -u; done | \
  awk '/ / { s=substr($3, 1); print "#define", s " \\\n        " s "_ncbicxx_3_6_1" }'
  */
 #define mbedtls_aes_crypt_cbc \
@@ -56,14 +57,6 @@
         mbedtls_aesni_inverse_key_ncbicxx_3_6_1
 #define mbedtls_aesni_setkey_enc \
         mbedtls_aesni_setkey_enc_ncbicxx_3_6_1
-#define mbedtls_arc4_crypt \
-        mbedtls_arc4_crypt_ncbicxx_3_6_1
-#define mbedtls_arc4_free \
-        mbedtls_arc4_free_ncbicxx_3_6_1
-#define mbedtls_arc4_init \
-        mbedtls_arc4_init_ncbicxx_3_6_1
-#define mbedtls_arc4_setup \
-        mbedtls_arc4_setup_ncbicxx_3_6_1
 #define mbedtls_aria_crypt_cbc \
         mbedtls_aria_crypt_cbc_ncbicxx_3_6_1
 #define mbedtls_aria_crypt_cfb128 \
@@ -312,20 +305,6 @@
         mbedtls_mpi_core_write_be_ncbicxx_3_6_1
 #define mbedtls_mpi_core_write_le \
         mbedtls_mpi_core_write_le_ncbicxx_3_6_1
-#define mbedtls_blowfish_crypt_cbc \
-        mbedtls_blowfish_crypt_cbc_ncbicxx_3_6_1
-#define mbedtls_blowfish_crypt_cfb64 \
-        mbedtls_blowfish_crypt_cfb64_ncbicxx_3_6_1
-#define mbedtls_blowfish_crypt_ctr \
-        mbedtls_blowfish_crypt_ctr_ncbicxx_3_6_1
-#define mbedtls_blowfish_crypt_ecb \
-        mbedtls_blowfish_crypt_ecb_ncbicxx_3_6_1
-#define mbedtls_blowfish_free \
-        mbedtls_blowfish_free_ncbicxx_3_6_1
-#define mbedtls_blowfish_init \
-        mbedtls_blowfish_init_ncbicxx_3_6_1
-#define mbedtls_blowfish_setkey \
-        mbedtls_blowfish_setkey_ncbicxx_3_6_1
 #define mbedtls_camellia_crypt_cbc \
         mbedtls_camellia_crypt_cbc_ncbicxx_3_6_1
 #define mbedtls_camellia_crypt_cfb128 \
@@ -366,286 +345,6 @@
         mbedtls_ccm_update_ncbicxx_3_6_1
 #define mbedtls_ccm_update_ad \
         mbedtls_ccm_update_ad_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt \
-        mbedtls_test_ca_crt_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec \
-        mbedtls_test_ca_crt_ec_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec_der \
-        mbedtls_test_ca_crt_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec_der_len \
-        mbedtls_test_ca_crt_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec_len \
-        mbedtls_test_ca_crt_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec_pem \
-        mbedtls_test_ca_crt_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_ec_pem_len \
-        mbedtls_test_ca_crt_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_len \
-        mbedtls_test_ca_crt_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa \
-        mbedtls_test_ca_crt_rsa_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_len \
-        mbedtls_test_ca_crt_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1 \
-        mbedtls_test_ca_crt_rsa_sha1_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1_der \
-        mbedtls_test_ca_crt_rsa_sha1_der_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1_der_len \
-        mbedtls_test_ca_crt_rsa_sha1_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1_len \
-        mbedtls_test_ca_crt_rsa_sha1_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1_pem \
-        mbedtls_test_ca_crt_rsa_sha1_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha1_pem_len \
-        mbedtls_test_ca_crt_rsa_sha1_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256 \
-        mbedtls_test_ca_crt_rsa_sha256_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256_der \
-        mbedtls_test_ca_crt_rsa_sha256_der_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256_der_len \
-        mbedtls_test_ca_crt_rsa_sha256_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256_len \
-        mbedtls_test_ca_crt_rsa_sha256_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256_pem \
-        mbedtls_test_ca_crt_rsa_sha256_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_crt_rsa_sha256_pem_len \
-        mbedtls_test_ca_crt_rsa_sha256_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key \
-        mbedtls_test_ca_key_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec \
-        mbedtls_test_ca_key_ec_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec_der \
-        mbedtls_test_ca_key_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec_der_len \
-        mbedtls_test_ca_key_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec_len \
-        mbedtls_test_ca_key_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec_pem \
-        mbedtls_test_ca_key_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_ec_pem_len \
-        mbedtls_test_ca_key_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_len \
-        mbedtls_test_ca_key_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa \
-        mbedtls_test_ca_key_rsa_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa_der \
-        mbedtls_test_ca_key_rsa_der_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa_der_len \
-        mbedtls_test_ca_key_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa_len \
-        mbedtls_test_ca_key_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa_pem \
-        mbedtls_test_ca_key_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_key_rsa_pem_len \
-        mbedtls_test_ca_key_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd \
-        mbedtls_test_ca_pwd_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_ec \
-        mbedtls_test_ca_pwd_ec_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_ec_der_len \
-        mbedtls_test_ca_pwd_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_ec_len \
-        mbedtls_test_ca_pwd_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_ec_pem \
-        mbedtls_test_ca_pwd_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_ec_pem_len \
-        mbedtls_test_ca_pwd_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_len \
-        mbedtls_test_ca_pwd_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_rsa \
-        mbedtls_test_ca_pwd_rsa_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_rsa_der_len \
-        mbedtls_test_ca_pwd_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_rsa_len \
-        mbedtls_test_ca_pwd_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_rsa_pem \
-        mbedtls_test_ca_pwd_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_ca_pwd_rsa_pem_len \
-        mbedtls_test_ca_pwd_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cas \
-        mbedtls_test_cas_ncbicxx_3_6_1
-#define mbedtls_test_cas_der \
-        mbedtls_test_cas_der_ncbicxx_3_6_1
-#define mbedtls_test_cas_der_len \
-        mbedtls_test_cas_der_len_ncbicxx_3_6_1
-#define mbedtls_test_cas_len \
-        mbedtls_test_cas_len_ncbicxx_3_6_1
-#define mbedtls_test_cas_pem \
-        mbedtls_test_cas_pem_ncbicxx_3_6_1
-#define mbedtls_test_cas_pem_len \
-        mbedtls_test_cas_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt \
-        mbedtls_test_cli_crt_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec \
-        mbedtls_test_cli_crt_ec_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec_der \
-        mbedtls_test_cli_crt_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec_der_len \
-        mbedtls_test_cli_crt_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec_len \
-        mbedtls_test_cli_crt_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec_pem \
-        mbedtls_test_cli_crt_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_ec_pem_len \
-        mbedtls_test_cli_crt_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_len \
-        mbedtls_test_cli_crt_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa \
-        mbedtls_test_cli_crt_rsa_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa_der \
-        mbedtls_test_cli_crt_rsa_der_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa_der_len \
-        mbedtls_test_cli_crt_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa_len \
-        mbedtls_test_cli_crt_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa_pem \
-        mbedtls_test_cli_crt_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_crt_rsa_pem_len \
-        mbedtls_test_cli_crt_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key \
-        mbedtls_test_cli_key_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec \
-        mbedtls_test_cli_key_ec_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec_der \
-        mbedtls_test_cli_key_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec_der_len \
-        mbedtls_test_cli_key_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec_len \
-        mbedtls_test_cli_key_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec_pem \
-        mbedtls_test_cli_key_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_ec_pem_len \
-        mbedtls_test_cli_key_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_len \
-        mbedtls_test_cli_key_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa \
-        mbedtls_test_cli_key_rsa_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa_der \
-        mbedtls_test_cli_key_rsa_der_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa_der_len \
-        mbedtls_test_cli_key_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa_len \
-        mbedtls_test_cli_key_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa_pem \
-        mbedtls_test_cli_key_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_key_rsa_pem_len \
-        mbedtls_test_cli_key_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd \
-        mbedtls_test_cli_pwd_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_ec \
-        mbedtls_test_cli_pwd_ec_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_ec_len \
-        mbedtls_test_cli_pwd_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_ec_pem \
-        mbedtls_test_cli_pwd_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_ec_pem_len \
-        mbedtls_test_cli_pwd_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_len \
-        mbedtls_test_cli_pwd_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_rsa \
-        mbedtls_test_cli_pwd_rsa_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_rsa_len \
-        mbedtls_test_cli_pwd_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_rsa_pem \
-        mbedtls_test_cli_pwd_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_cli_pwd_rsa_pem_len \
-        mbedtls_test_cli_pwd_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt \
-        mbedtls_test_srv_crt_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec \
-        mbedtls_test_srv_crt_ec_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec_der \
-        mbedtls_test_srv_crt_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec_der_len \
-        mbedtls_test_srv_crt_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec_len \
-        mbedtls_test_srv_crt_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec_pem \
-        mbedtls_test_srv_crt_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_ec_pem_len \
-        mbedtls_test_srv_crt_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_len \
-        mbedtls_test_srv_crt_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa \
-        mbedtls_test_srv_crt_rsa_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_len \
-        mbedtls_test_srv_crt_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1 \
-        mbedtls_test_srv_crt_rsa_sha1_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1_der \
-        mbedtls_test_srv_crt_rsa_sha1_der_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1_der_len \
-        mbedtls_test_srv_crt_rsa_sha1_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1_len \
-        mbedtls_test_srv_crt_rsa_sha1_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1_pem \
-        mbedtls_test_srv_crt_rsa_sha1_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha1_pem_len \
-        mbedtls_test_srv_crt_rsa_sha1_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256 \
-        mbedtls_test_srv_crt_rsa_sha256_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256_der \
-        mbedtls_test_srv_crt_rsa_sha256_der_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256_der_len \
-        mbedtls_test_srv_crt_rsa_sha256_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256_len \
-        mbedtls_test_srv_crt_rsa_sha256_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256_pem \
-        mbedtls_test_srv_crt_rsa_sha256_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_crt_rsa_sha256_pem_len \
-        mbedtls_test_srv_crt_rsa_sha256_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key \
-        mbedtls_test_srv_key_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec \
-        mbedtls_test_srv_key_ec_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec_der \
-        mbedtls_test_srv_key_ec_der_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec_der_len \
-        mbedtls_test_srv_key_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec_len \
-        mbedtls_test_srv_key_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec_pem \
-        mbedtls_test_srv_key_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_ec_pem_len \
-        mbedtls_test_srv_key_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_len \
-        mbedtls_test_srv_key_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa \
-        mbedtls_test_srv_key_rsa_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa_der \
-        mbedtls_test_srv_key_rsa_der_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa_der_len \
-        mbedtls_test_srv_key_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa_len \
-        mbedtls_test_srv_key_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa_pem \
-        mbedtls_test_srv_key_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_key_rsa_pem_len \
-        mbedtls_test_srv_key_rsa_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd \
-        mbedtls_test_srv_pwd_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_ec \
-        mbedtls_test_srv_pwd_ec_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_ec_der_len \
-        mbedtls_test_srv_pwd_ec_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_ec_len \
-        mbedtls_test_srv_pwd_ec_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_ec_pem \
-        mbedtls_test_srv_pwd_ec_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_ec_pem_len \
-        mbedtls_test_srv_pwd_ec_pem_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_len \
-        mbedtls_test_srv_pwd_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_rsa \
-        mbedtls_test_srv_pwd_rsa_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_rsa_der_len \
-        mbedtls_test_srv_pwd_rsa_der_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_rsa_len \
-        mbedtls_test_srv_pwd_rsa_len_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_rsa_pem \
-        mbedtls_test_srv_pwd_rsa_pem_ncbicxx_3_6_1
-#define mbedtls_test_srv_pwd_rsa_pem_len \
-        mbedtls_test_srv_pwd_rsa_pem_len_ncbicxx_3_6_1
 #define mbedtls_chacha20_crypt \
         mbedtls_chacha20_crypt_ncbicxx_3_6_1
 #define mbedtls_chacha20_free \
@@ -742,8 +441,6 @@
         mbedtls_ct_memcpy_offset_ncbicxx_3_6_1
 #define mbedtls_ct_memmove_left \
         mbedtls_ct_memmove_left_ncbicxx_3_6_1
-#define mbedtls_ct_zero \
-        mbedtls_ct_zero_ncbicxx_3_6_1
 #define mbedtls_ct_zeroize_if \
         mbedtls_ct_zeroize_if_ncbicxx_3_6_1
 #define mbedtls_ctr_drbg_free \
@@ -1384,16 +1081,8 @@
         mbedtls_pk_write_pubkey_pem_ncbicxx_3_6_1
 #define mbedtls_platform_setup \
         mbedtls_platform_setup_ncbicxx_3_6_1
-#define mbedtls_platform_set_snprintf \
-        mbedtls_platform_set_snprintf_ncbicxx_3_6_1
-#define mbedtls_platform_set_vsnprintf \
-        mbedtls_platform_set_vsnprintf_ncbicxx_3_6_1
 #define mbedtls_platform_teardown \
         mbedtls_platform_teardown_ncbicxx_3_6_1
-#define mbedtls_snprintf \
-        mbedtls_snprintf_ncbicxx_3_6_1
-#define mbedtls_vsnprintf \
-        mbedtls_vsnprintf_ncbicxx_3_6_1
 #define mbedtls_ms_time \
         mbedtls_ms_time_ncbicxx_3_6_1
 #define mbedtls_platform_gmtime_r \
@@ -1708,76 +1397,6 @@
         mbedtls_psa_cipher_update_ncbicxx_3_6_1
 #define psa_reset_key_attributes \
         psa_reset_key_attributes_ncbicxx_3_6_1
-#define psa_driver_wrapper_aead_decrypt \
-        psa_driver_wrapper_aead_decrypt_ncbicxx_3_6_1
-#define psa_driver_wrapper_aead_encrypt \
-        psa_driver_wrapper_aead_encrypt_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_abort \
-        psa_driver_wrapper_cipher_abort_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_decrypt \
-        psa_driver_wrapper_cipher_decrypt_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_decrypt_setup \
-        psa_driver_wrapper_cipher_decrypt_setup_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_encrypt \
-        psa_driver_wrapper_cipher_encrypt_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_encrypt_setup \
-        psa_driver_wrapper_cipher_encrypt_setup_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_finish \
-        psa_driver_wrapper_cipher_finish_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_set_iv \
-        psa_driver_wrapper_cipher_set_iv_ncbicxx_3_6_1
-#define psa_driver_wrapper_cipher_update \
-        psa_driver_wrapper_cipher_update_ncbicxx_3_6_1
-#define psa_driver_wrapper_export_key \
-        psa_driver_wrapper_export_key_ncbicxx_3_6_1
-#define psa_driver_wrapper_export_public_key \
-        psa_driver_wrapper_export_public_key_ncbicxx_3_6_1
-#define psa_driver_wrapper_free \
-        psa_driver_wrapper_free_ncbicxx_3_6_1
-#define psa_driver_wrapper_generate_key \
-        psa_driver_wrapper_generate_key_ncbicxx_3_6_1
-#define psa_driver_wrapper_get_builtin_key \
-        psa_driver_wrapper_get_builtin_key_ncbicxx_3_6_1
-#define psa_driver_wrapper_get_key_buffer_size \
-        psa_driver_wrapper_get_key_buffer_size_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_abort \
-        psa_driver_wrapper_hash_abort_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_clone \
-        psa_driver_wrapper_hash_clone_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_compute \
-        psa_driver_wrapper_hash_compute_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_finish \
-        psa_driver_wrapper_hash_finish_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_setup \
-        psa_driver_wrapper_hash_setup_ncbicxx_3_6_1
-#define psa_driver_wrapper_hash_update \
-        psa_driver_wrapper_hash_update_ncbicxx_3_6_1
-#define psa_driver_wrapper_import_key \
-        psa_driver_wrapper_import_key_ncbicxx_3_6_1
-#define psa_driver_wrapper_init \
-        psa_driver_wrapper_init_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_abort \
-        psa_driver_wrapper_mac_abort_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_compute \
-        psa_driver_wrapper_mac_compute_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_sign_finish \
-        psa_driver_wrapper_mac_sign_finish_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_sign_setup \
-        psa_driver_wrapper_mac_sign_setup_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_update \
-        psa_driver_wrapper_mac_update_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_verify_finish \
-        psa_driver_wrapper_mac_verify_finish_ncbicxx_3_6_1
-#define psa_driver_wrapper_mac_verify_setup \
-        psa_driver_wrapper_mac_verify_setup_ncbicxx_3_6_1
-#define psa_driver_wrapper_sign_hash \
-        psa_driver_wrapper_sign_hash_ncbicxx_3_6_1
-#define psa_driver_wrapper_sign_message \
-        psa_driver_wrapper_sign_message_ncbicxx_3_6_1
-#define psa_driver_wrapper_verify_hash \
-        psa_driver_wrapper_verify_hash_ncbicxx_3_6_1
-#define psa_driver_wrapper_verify_message \
-        psa_driver_wrapper_verify_message_ncbicxx_3_6_1
 #define psa_driver_wrapper_export_public_key \
         psa_driver_wrapper_export_public_key_ncbicxx_3_6_1
 #define psa_driver_wrapper_get_builtin_key \
@@ -2042,16 +1661,6 @@
         mbedtls_rsa_validate_crt_ncbicxx_3_6_1
 #define mbedtls_rsa_validate_params \
         mbedtls_rsa_validate_params_ncbicxx_3_6_1
-#define mbedtls_rsa_deduce_crt \
-        mbedtls_rsa_deduce_crt_ncbicxx_3_6_1
-#define mbedtls_rsa_deduce_primes \
-        mbedtls_rsa_deduce_primes_ncbicxx_3_6_1
-#define mbedtls_rsa_deduce_private_exponent \
-        mbedtls_rsa_deduce_private_exponent_ncbicxx_3_6_1
-#define mbedtls_rsa_validate_crt \
-        mbedtls_rsa_validate_crt_ncbicxx_3_6_1
-#define mbedtls_rsa_validate_params \
-        mbedtls_rsa_validate_params_ncbicxx_3_6_1
 #define mbedtls_internal_sha1_process \
         mbedtls_internal_sha1_process_ncbicxx_3_6_1
 #define mbedtls_sha1 \
@@ -2148,8 +1757,6 @@
         mbedtls_ssl_get_ciphersuite_sig_pk_alg_ncbicxx_3_6_1
 #define mbedtls_ssl_list_ciphersuites \
         mbedtls_ssl_list_ciphersuites_ncbicxx_3_6_1
-#define mbedtls_ssl_handshake_client_step \
-        mbedtls_ssl_handshake_client_step_ncbicxx_3_6_1
 #define mbedtls_ssl_write_client_hello \
         mbedtls_ssl_write_client_hello_ncbicxx_3_6_1
 #define mbedtls_ssl_cookie_check \
@@ -2264,12 +1871,6 @@
         mbedtls_ssl_write_record_ncbicxx_3_6_1
 #define mbedtls_ssl_write_version \
         mbedtls_ssl_write_version_ncbicxx_3_6_1
-#define mbedtls_ssl_conf_dtls_cookies \
-        mbedtls_ssl_conf_dtls_cookies_ncbicxx_3_6_1
-#define mbedtls_ssl_handshake_server_step \
-        mbedtls_ssl_handshake_server_step_ncbicxx_3_6_1
-#define mbedtls_ssl_set_client_transport_id \
-        mbedtls_ssl_set_client_transport_id_ncbicxx_3_6_1
 #define mbedtls_ssl_ticket_free \
         mbedtls_ssl_ticket_free_ncbicxx_3_6_1
 #define mbedtls_ssl_ticket_init \
@@ -2664,8 +2265,6 @@
         mbedtls_mutex_lock_ncbicxx_3_6_1
 #define mbedtls_mutex_unlock \
         mbedtls_mutex_unlock_ncbicxx_3_6_1
-#define mbedtls_threading_free_alt \
-        mbedtls_threading_free_alt_ncbicxx_3_6_1
 #define mbedtls_threading_key_slot_mutex \
         mbedtls_threading_key_slot_mutex_ncbicxx_3_6_1
 #define mbedtls_threading_psa_globaldata_mutex \
@@ -2674,8 +2273,6 @@
         mbedtls_threading_psa_rngdata_mutex_ncbicxx_3_6_1
 #define mbedtls_threading_readdir_mutex \
         mbedtls_threading_readdir_mutex_ncbicxx_3_6_1
-#define mbedtls_threading_set_alt \
-        mbedtls_threading_set_alt_ncbicxx_3_6_1
 #define mbedtls_timing_get_delay \
         mbedtls_timing_get_delay_ncbicxx_3_6_1
 #define mbedtls_timing_get_final_delay \
@@ -2890,13 +2487,18 @@
         mbedtls_x509write_csr_set_subject_alternative_name_ncbicxx_3_6_1
 #define mbedtls_x509write_csr_set_subject_name \
         mbedtls_x509write_csr_set_subject_name_ncbicxx_3_6_1
-#define mbedtls_xtea_crypt_cbc \
-        mbedtls_xtea_crypt_cbc_ncbicxx_3_6_1
-#define mbedtls_xtea_crypt_ecb \
-        mbedtls_xtea_crypt_ecb_ncbicxx_3_6_1
-#define mbedtls_xtea_free \
-        mbedtls_xtea_free_ncbicxx_3_6_1
-#define mbedtls_xtea_init \
-        mbedtls_xtea_init_ncbicxx_3_6_1
-#define mbedtls_xtea_setup \
-        mbedtls_xtea_setup_ncbicxx_3_6_1
+/* platform-/configuration-specific additions */
+#define mbedtls_ct_zero \
+        mbedtls_ct_zero_ncbicxx_3_6_1
+#define mbedtls_platform_set_snprintf \
+        mbedtls_platform_set_snprintf_ncbicxx_3_6_1
+#define mbedtls_platform_set_vsnprintf \
+        mbedtls_platform_set_vsnprintf_ncbicxx_3_6_1
+#define mbedtls_snprintf \
+        mbedtls_snprintf_ncbicxx_3_6_1
+#define mbedtls_vsnprintf \
+        mbedtls_vsnprintf_ncbicxx_3_6_1
+#define mbedtls_threading_free_alt \
+        mbedtls_threading_free_alt_ncbicxx_3_6_1
+#define mbedtls_threading_set_alt \
+        mbedtls_threading_set_alt_ncbicxx_3_6_1
