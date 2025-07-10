@@ -4036,11 +4036,11 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
 
                 CChainMembers unmapointers(unmacl, orig_aligns, unmodified_aligns);
                 Duplicate5pendsAndShortCDSes(unmapointers);
-                sort(pointers_all.begin(),pointers_all.end(),GenomeOrderD());
+                sort(pointers.begin(),pointers.end(),GenomeOrderD());
                 ITERATE(TContained, ip, unmapointers) {
                     SChainMember& mi = **ip;
                     IncludeInContained(mi, mi);          // include self                    
-                    ITERATE(TContained, jp, pointers_all) {
+                    ITERATE(TContained, jp, pointers) {
                         SChainMember& mj = **jp;
                         if(CanIncludeJinI(mi, mj)) 
                             IncludeInContained(mi, mj);
