@@ -154,12 +154,10 @@ struct Gene {
     string location;
     bool   todel    = false;
     bool   circular = false;
-    Gene*  next     = nullptr;
 
     ~Gene();
 };
-using TGeneList = Gene*;
-using GeneListPtr = Gene*;
+using TGeneList = forward_list<Gene>;
 
 struct Cds {
     Int4 from;
@@ -173,7 +171,7 @@ struct GeneNode {
     CBioseq*     bioseq;
     CBioseq_set* bioseq_set;
 
-    TGeneList    gl = nullptr; /* a list of gene infomation for
+    TGeneList    gl;       /* a list of gene infomation for
                                            the entries */
     TSeqFeatList feats;    /* a list which contains the
                                            GeneRefPtr only */
@@ -394,20 +392,20 @@ static Int4 fta_cmp_locusyn(const Gene& g1, const Gene& g2)
 }
 
 /**********************************************************/
-static bool CompareGeneListName(const Gene* sp1, const Gene* sp2)
+static bool CompareGeneListName(const Gene& g1, const Gene& g2)
 {
-    SeqlocInfoblk* slip1 = sp1->slibp;
-    SeqlocInfoblk* slip2 = sp2->slibp;
-
-    Int4 status = fta_cmp_locusyn(*sp1, *sp2);
+    Int4 status = fta_cmp_locusyn(g1, g2);
     if (status != 0)
         return status < 0;
+
+    const SeqlocInfoblk* slip1 = g1.slibp;
+    const SeqlocInfoblk* slip2 = g2.slibp;
 
     status = slip1->strand - slip2->strand;
     if (status != 0)
         return status < 0;
 
-    status = (Int4)(sp1->leave - sp2->leave);
+    status = (Int4)(g1.leave - g2.leave);
     if (status != 0)
         return status < 0;
 
@@ -427,34 +425,6 @@ static bool CompareGeneListName(const Gene* sp1, const Gene* sp2)
 }
 
 /**********************************************************/
-static void sort_gnp_list(TGeneList& gl)
-{
-    Int4 index;
-    Int4 total;
-
-    Gene* glp;
-
-    total = 0;
-    for (glp = gl; glp; glp = glp->next)
-        total++;
-
-    vector<Gene*> temp(total);
-
-    for (index = 0, glp = gl; glp; glp = glp->next)
-        temp[index++] = glp;
-
-    std::sort(temp.begin(), temp.end(), CompareGeneListName);
-
-    gl = glp = temp[0];
-    for (index = 0; index < total - 1; glp = glp->next, index++)
-        glp->next = temp[index + 1];
-
-    glp       = temp[total - 1];
-    glp->next = nullptr;
-}
-
-
-/**********************************************************/
 static void MixLocFree(MixLocPtr mlp)
 {
     MixLocPtr next;
@@ -472,16 +442,6 @@ Gene::~Gene()
         delete slibp;
     if (mlp)
         MixLocFree(mlp);
-}
-static void GeneListFree(TGeneList& gl)
-{
-    for (auto glp = gl; glp;) {
-        auto glpnext = glp->next;
-        glp->next    = nullptr;
-        delete glp;
-        glp = glpnext;
-    }
-    gl = nullptr;
 }
 
 /**********************************************************
@@ -585,8 +545,8 @@ static bool DoWeHaveGeneInBetween(Gene& g, SeqlocInfoblkPtr second, const GeneNo
     if (! gnp || first->to >= second->from)
         return false;
 
-    auto glp = gnp->gl;
-    for (; glp; glp = glp->next) {
+    auto glp = gnp->gl.cbegin();
+    for (; glp != gnp->gl.cend(); ++glp) {
         if (! glp->slibp)
             continue;
 
@@ -605,7 +565,7 @@ static bool DoWeHaveGeneInBetween(Gene& g, SeqlocInfoblkPtr second, const GeneNo
         break;
     }
 
-    return glp != nullptr;
+    return glp != gnp->gl.cend();
 }
 
 /**********************************************************/
@@ -1394,16 +1354,14 @@ static void SortMixLoc(MixLocPtr& mll)
 /**********************************************************/
 static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 {
-    GeneListPtr cn;
-
     MixLocPtr mlp;
     Int4      j;
     Int2      level;
 
     bool join;
 
-    for (auto c = gnp->gl; c->next; c = c->next) {
-        for (cn = c->next; cn; cn = cn->next) {
+    for (auto c = gnp->gl.cbegin(); next(c) != gnp->gl.cend(); ++c) {
+        for (auto cn = next(c); cn != gnp->gl.cend(); ++cn) {
             if (c->feat.NotEmpty() && cn->feat.NotEmpty() &&
                 c->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
                 cn->feat->IsSetData() && c->feat->GetData().IsCdregion() &&
@@ -1415,7 +1373,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
     bool circular = false;
     j             = 1;
-    for (auto c = gnp->gl; c; c = c->next, j++) {
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c, j++) {
         FixMixLoc(*c, gnp->gelocs);
         if (gnp->circular && ConfirmCircular(c->mlp))
             circular = true;
@@ -1424,8 +1382,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
     gnp->circular = circular;
 
 
-    for (auto c = gnp->gl; c->next;) {
-        cn = c->next;
+    for (auto c = gnp->gl.begin(); next(c) != gnp->gl.end();) {
+        auto cn = next(c);
         if (fta_cmp_locusyn(*c, *cn) != 0 ||
             c->leave != 0 || cn->leave != 0 ||
             c->slibp->strand != cn->slibp->strand ||
@@ -1450,8 +1408,8 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
         }
 
         if (! gnp->simple_genes) {
-            auto cp = gnp->gl;
-            for (; cp; cp = cp->next) {
+            auto cp = gnp->gl.begin();
+            for (; cp != gnp->gl.end(); ++cp) {
                 if (cp->leave == 1 || cp->circular)
                     continue;
                 if (fta_cmp_locusyn(*cp, *c) == 0 ||
@@ -1461,7 +1419,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
                     c->slibp->to >= cp->slibp->from)
                     break;
             }
-            join = (cp != nullptr);
+            join = (cp != gnp->gl.end());
         } else
             join = false;
 
@@ -1487,27 +1445,26 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
         fta_add_olt(*cn, *c);
         c->noleft  = c->slibp->noleft;
         c->noright = c->slibp->noright;
-        c->next    = cn->next;
-        delete cn;
+        gnp->gl.erase_after(c);
     }
 
-    for (auto c = gnp->gl; c; c = c->next) {
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c) {
         SortMixLoc(c->mlp);
         if (gnp->circular)
             CircularSeqLocFormat(*c);
     }
 
 
-    for (auto c = gnp->gl; c; c = c->next)
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c)
         if (c->loc.Empty() && c->mlp)
             c->loc = MakeCLoc(c->mlp, c->noleft, c->noright);
 
-    for (auto c = gnp->gl; c; c = c->next) {
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c) {
         if (c->loc.Empty())
             continue;
 
         const CSeq_loc& loc = *c->loc;
-        for (cn = gnp->gl; cn; cn = cn->next) {
+        for (auto cn = gnp->gl.begin(); cn != gnp->gl.end(); ++cn) {
             if (cn->loc.Empty() || &loc == cn->loc ||
                 cn->slibp->strand != c->slibp->strand ||
                 fta_cmp_locusyn(*cn, *c) != 0)
@@ -1535,28 +1492,24 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
         }
     }
 
-    GeneListPtr cp = nullptr;
-    for (auto c = gnp->gl; c; c = cn) {
-        cn = c->next;
+    auto cp = gnp->gl.before_begin();
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end();) {
         if (! c->loc) {
-            if (! cp)
-                gnp->gl = cn;
-            else
-                cp->next = cn;
-            delete c;
+            c = gnp->gl.erase_after(cp);
         } else
-            cp = c;
+            cp = c++;
     }
 
-    for (auto c = gnp->gl; c; c = cn) {
-        cn = c->next;
-        if (! cn || fta_cmp_locusyn(*c, *cn) != 0) {
+    for (auto c = gnp->gl.begin(); c != gnp->gl.end();) {
+        auto cn = next(c);
+        if (cn == gnp->gl.end() || fta_cmp_locusyn(*c, *cn) != 0) {
             AddGeneFeat(*c, c->maploc, gnp->feats);
+            c = cn;
             continue;
         }
 
         string maploc;
-        for (cn = c; cn; cn = cn->next) {
+        for (cn = c; cn != gnp->gl.end(); ++cn) {
             if (fta_cmp_locusyn(*c, *cn) != 0)
                 break;
             if (cn->maploc.empty())
@@ -1568,11 +1521,12 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
                 FtaErrPost(SEV_WARNING, ERR_GENEREF_NoUniqMaploc, "Different maplocs in the gene {}\"{}\".", (c->locus.empty()) ? "with locus_tag " : "", (c->locus.empty()) ? c->locus_tag : c->locus);
             }
         }
-        for (cn = c; cn; cn = cn->next) {
+        for (cn = c; cn != gnp->gl.end(); ++cn) {
             if (fta_cmp_locusyn(*c, *cn) != 0)
                 break;
             AddGeneFeat(*cn, maploc, gnp->feats);
         }
+        c = cn;
     }
 }
 
@@ -1960,66 +1914,63 @@ static void SrchGene(CSeq_annot::C_Data::TFtable& feats, GeneNodePtr gnp, Int4 l
 
         const string pseudogene = CpTheQualValue(feat->GetQual(), "pseudogene");
 
-        Gene* newglp       = new Gene;
-        newglp->locus      = gene;
-        newglp->locus_tag  = locus_tag;
-        newglp->pseudogene = pseudogene;
+        Gene& newg      = gnp->gl.emplace_front();
+        newg.locus      = gene;
+        newg.locus_tag  = locus_tag;
+        newg.pseudogene = pseudogene;
 
-        fta_collect_wormbases(*newglp, *feat);
-        fta_collect_olts(*newglp, *feat);
-        if (GetFeatNameAndLoc(newglp, *feat, gnp))
+        fta_collect_wormbases(newg, *feat);
+        fta_collect_olts(newg, *feat);
+        if (GetFeatNameAndLoc(&newg, *feat, gnp))
             fta_append_feat_list(gnp, cur_loc, gene, locus_tag);
 
-        newglp->feat.Reset();
+        newg.feat.Reset();
         if (gnp->simple_genes == false && cur_loc && cur_loc->IsMix()) {
-            newglp->feat.Reset(new CSeq_feat);
-            newglp->feat->Assign(*feat);
+            newg.feat.Reset(new CSeq_feat);
+            newg.feat->Assign(*feat);
         }
 
-        newglp->slibp = GetLowHighFromSeqLoc(cur_loc, length, id);
-        if (! newglp->slibp) {
-            delete newglp;
+        newg.slibp = GetLowHighFromSeqLoc(cur_loc, length, id);
+        if (! newg.slibp) {
+            gnp->gl.pop_front();
             continue;
         }
         if (gnp->simple_genes == false && feat->IsSetData() &&
             WeDontNeedToJoinThis(feat->GetData()))
-            newglp->leave = 1;
+            newg.leave = 1;
 
-        newglp->genefeat = IfCDSGeneFeat(*feat, CSeqFeatData::e_Gene, "gene");
+        newg.genefeat = IfCDSGeneFeat(*feat, CSeqFeatData::e_Gene, "gene");
 
         if (feat->IsSetQual()) {
             auto qual = GetTheQualValue(feat->SetQual(), "map");
             if (qual) {
-                newglp->maploc = *qual;
+                newg.maploc = *qual;
             }
         }
 
-        GetGeneSyns(feat->GetQual(), gene, newglp->syn);
+        GetGeneSyns(feat->GetQual(), gene, newg.syn);
 
-        newglp->loc.Reset();
+        newg.loc.Reset();
         if (cur_loc) {
-            newglp->loc.Reset(new CSeq_loc);
-            newglp->loc->Assign(*cur_loc);
+            newg.loc.Reset(new CSeq_loc);
+            newg.loc->Assign(*cur_loc);
         }
 
-        newglp->todel = false;
-        if (IfCDSGeneFeat(*feat, CSeqFeatData::e_Cdregion, "CDS") == false && newglp->genefeat == false)
-            newglp->pseudo = false;
+        newg.todel = false;
+        if (IfCDSGeneFeat(*feat, CSeqFeatData::e_Cdregion, "CDS") == false && newg.genefeat == false)
+            newg.pseudo = false;
         else
-            newglp->pseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
+            newg.pseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
 
-        newglp->allpseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
+        newg.allpseudo = feat->IsSetPseudo() ? feat->GetPseudo() : false;
 
         if (fta_rnas_cds_feat(*feat)) {
-            newglp->noleft  = newglp->slibp->noleft;
-            newglp->noright = newglp->slibp->noright;
+            newg.noleft  = newg.slibp->noleft;
+            newg.noright = newg.slibp->noright;
         } else {
-            newglp->noleft  = false;
-            newglp->noright = false;
+            newg.noleft  = false;
+            newg.noright = false;
         }
-
-        newglp->next = gnp->gl;
-        gnp->gl      = newglp;
     }
 
     if (! gnp->gelocs.empty())
@@ -2082,7 +2033,7 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
             SrchCDSs(annot->SetData().SetFtable(), gene_node->cdsl, *id);
         }
 
-        if (gene_node->gl && gene_node->flag == false) {
+        if (! gene_node->gl.empty() && gene_node->flag == false) {
             /* the seqentry is not a member of segment seqentry
              */
             gene_node->bioseq = &bioseq;
@@ -2096,16 +2047,16 @@ static void FindGene(CBioseq& bioseq, GeneNodePtr gene_node)
 /**********************************************************/
 static void GeneCheckForStrands(const TGeneList& gl)
 {
-    if (! gl)
+    if (gl.empty())
         return;
 
-    auto glp = gl;
-    while (glp) {
+    auto glp = gl.cbegin();
+    while (glp != gl.cend()) {
         if (glp->locus.empty() && glp->locus_tag.empty())
             continue; // infinite loop ?
         bool got  = false;
-        auto tglp = glp->next;
-        for (; tglp; tglp = tglp->next) {
+        auto tglp = next(glp);
+        for (; tglp != gl.cend(); ++tglp) {
             if (tglp->locus.empty() && tglp->locus_tag.empty())
                 continue;
             if (fta_cmp_locusyn(*glp, *tglp) != 0)
@@ -2124,33 +2075,33 @@ static void GeneCheckForStrands(const TGeneList& gl)
 /**********************************************************/
 static bool LocusTagCheck(TGeneList& gl, bool& resort)
 {
-    GeneListPtr glpstart;
-    GeneListPtr glpstop;
+    TGeneList::iterator glpstart;
+    TGeneList::iterator glpstop;
 
     bool same_gn;
     bool same_lt;
     bool ret;
 
     resort = false;
-    if (! gl || ! gl->next)
+    if (gl.empty() || next(gl.begin()) == gl.end())
         return true;
 
-    glpstop = nullptr;
+    glpstop = gl.end(); // ???
     ret     = true;
-    for (auto glp = gl; glp; glp = glpstop->next) {
+    for (auto glp = gl.begin(); glp != gl.end(); glp = next(glpstop)) {
         if (glp->locus.empty() && glp->locus_tag.empty())
-            continue;
+            continue; // crash ???
 
         glpstart = glp;
         glpstop  = glp;
-        for (auto tglp = glp->next; tglp; tglp = tglp->next) {
+        for (auto tglp = next(glp); tglp != gl.end(); ++tglp) {
             if (NStr::EqualNocase(glp->locus, tglp->locus) == false ||
                 NStr::EqualNocase(glp->locus_tag, tglp->locus_tag) == false)
                 break;
             glpstop = tglp;
         }
 
-        for (auto tglp = glpstop->next; tglp; tglp = tglp->next) {
+        for (auto tglp = next(glpstop); tglp != gl.end(); ++tglp) {
             if (tglp->locus.empty() && tglp->locus_tag.empty())
                 continue;
 
@@ -2161,7 +2112,7 @@ static bool LocusTagCheck(TGeneList& gl, bool& resort)
                 same_gn || glpstart->locus_tag.empty())
                 continue;
 
-            for (glp = glpstart;; glp = glp->next) {
+            for (glp = glpstart;; ++glp) {
                 FtaErrPost(SEV_REJECT, ERR_FEATURE_InconsistentLocusTagAndGene, "Inconsistent pairs /gene+/locus_tag are encountered: \"{}\"+\"{}\" : {} feature at {} : \"{}\"+\"{}\" : {} feature at {}. Entry dropped.", (glp->locus.empty()) ? "(NULL)" : glp->locus, (glp->locus_tag.empty()) ? "(NULL)" : glp->locus_tag, glp->fname, glp->location, (tglp->locus.empty()) ? "(NULL)" : tglp->locus, (tglp->locus_tag.empty()) ? "(NULL)" : tglp->locus_tag, tglp->fname, tglp->location);
                 if (glp == glpstop)
                     break;
@@ -2171,7 +2122,7 @@ static bool LocusTagCheck(TGeneList& gl, bool& resort)
 
         if (! glpstart->locus.empty() && ! glpstart->locus_tag.empty() &&
             glpstart->locus == glpstart->locus_tag) {
-            for (glp = glpstart;; glp = glp->next) {
+            for (glp = glpstart;; ++glp) {
                 glp->locus.clear();
                 resort = true;
                 if (glp == glpstop)
@@ -2186,15 +2137,15 @@ static bool LocusTagCheck(TGeneList& gl, bool& resort)
 /**********************************************************/
 static void MiscFeatsWithoutGene(GeneNodePtr gnp)
 {
-    if (! gnp || ! gnp->gl)
+    if (! gnp || gnp->gl.empty())
         return;
 
-    for (auto glp = gnp->gl; glp; glp = glp->next) {
+    for (auto glp = gnp->gl.begin(); glp != gnp->gl.end(); ++glp) {
         if (glp->locus_tag.empty() || ! glp->locus.empty() ||
             (glp->fname != "misc_feature"))
             continue;
 
-        for (auto tglp = gnp->gl; tglp; tglp = tglp->next) {
+        for (auto tglp = gnp->gl.begin(); tglp != gnp->gl.end(); ++tglp) {
             if (tglp->fname.empty() ||
                 (tglp->fname == "misc_feature")) { // Looks suspicious - check again
                 continue;
@@ -2211,15 +2162,15 @@ static void MiscFeatsWithoutGene(GeneNodePtr gnp)
 /**********************************************************/
 static void RemoveUnneededMiscFeats(GeneNodePtr gnp)
 {
-    if (! gnp || ! gnp->gl)
+    if (! gnp || gnp->gl.empty())
         return;
 
-    for (auto glp = gnp->gl; glp; glp = glp->next) {
+    for (auto glp = gnp->gl.begin(); glp != gnp->gl.end(); ++glp) {
         if (glp->todel || ! glp->syn.empty() || (glp->fname != "misc_feature"))
             continue;
 
         bool got = false;
-        for (auto tglp = gnp->gl; tglp; tglp = tglp->next) {
+        for (auto tglp = gnp->gl.begin(); tglp != gnp->gl.end(); ++tglp) {
             if (tglp->todel || (tglp->fname == "misc_feature"))
                 continue;
             if (! NStr::EqualNocase(glp->locus, tglp->locus) ||
@@ -2240,23 +2191,15 @@ static void RemoveUnneededMiscFeats(GeneNodePtr gnp)
             glp->todel = false;
     }
 
-    GeneListPtr glpprev = nullptr;
-    for (auto glp = gnp->gl; glp;) {
-        auto glpnext = glp->next;
+    auto glpprev = gnp->gl.before_begin();
+    for (auto glp = gnp->gl.begin(); glp != gnp->gl.end();) {
         if (! glp->todel) {
             glp->loc.Reset();
-            glpprev = glp;
-            glp     = glpnext;
+            glpprev = glp++;
             continue;
         }
 
-        if (! glpprev)
-            gnp->gl = glpnext;
-        else
-            glpprev->next = glpnext;
-
-        delete glp;
-        glp = glpnext;
+        glp = gnp->gl.erase_after(glpprev);
     }
 }
 
@@ -2359,30 +2302,28 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         MiscFeatsWithoutGene(gnp);
         RemoveUnneededMiscFeats(gnp);
     } else {
-        for (auto glp = gnp->gl; glp; glp = glp->next) {
+        for (auto glp = gnp->gl.begin(); glp != gnp->gl.end(); ++glp) {
             glp->loc.Reset();
         }
     }
 
-    if (gnp->gl) {
-        sort_gnp_list(gnp->gl);
+    if (! gnp->gl.empty()) {
+        gnp->gl.sort(CompareGeneListName);
 
         resort = false;
         if (LocusTagCheck(gnp->gl, resort) == false) {
             ibp->drop = true;
-            GeneListFree(gnp->gl);
             delete gnp;
             return;
         }
 
         if (resort)
-            sort_gnp_list(gnp->gl);
+            gnp->gl.sort(CompareGeneListName);
 
         ScannGeneName(gnp, gnp->bioseq ? gnp->bioseq->GetLength() : 0);
 
         if (GeneLocusCheck(gnp->feats, pp->diff_lt) == false) {
             ibp->drop = true;
-            GeneListFree(gnp->gl);
             delete gnp;
             return;
         }
@@ -2418,7 +2359,7 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
             }
         }
 
-        GeneListFree(gnp->gl);
+        gnp->gl.clear();
     }
 
     delete gnp;
