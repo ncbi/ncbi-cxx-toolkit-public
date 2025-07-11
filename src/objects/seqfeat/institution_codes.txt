@@ -684,6 +684,7 @@ BK	s	Bangkok Herbarium
 BKCC	s	B K. College Chikodi			
 BKF	s	Forest Herbarium, Department of National Parks, Wildlife and Plant Conservation			
 BKL	s	Brooklyn Botanic Garden			
+BKLU	s	Herbarium Universitas Bengkulu			
 BKNU	s	Kunsan National University			
 BKUCH	s	Bacha Khan University Charsadda			
 BLA	s	Fundacao Estadual de Pesquisa Agropecuaria			
