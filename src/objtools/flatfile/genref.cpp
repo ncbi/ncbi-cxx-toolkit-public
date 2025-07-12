@@ -1149,32 +1149,33 @@ static CRef<CSeq_loc> MakeCLoc(MixLocPtr mlp, bool noleft, bool noright)
 /**********************************************************/
 static Int2 GetMergeOrder(MixLocPtr first, MixLocPtr second)
 {
-    MixLocPtr mlp;
-    MixLocPtr tmlp;
-    Int2      count;
-
-    count = 0;
-    for (mlp = second; mlp; mlp = mlp->next) {
+    Int2 count2 = 0;
+    for (auto mlp = second; mlp; mlp = mlp->next) {
         if (! mlp->pId)
             continue;
-        for (tmlp = second; tmlp < mlp; tmlp = tmlp->next)
-            if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId))
+        bool seen_before = false;
+        for (auto tmlp = second; tmlp != mlp; tmlp = tmlp->next)
+            if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId)) {
+                seen_before = true;
                 break;
-        if (tmlp < mlp)
-            continue;
-        count++;
+            }
+        if (! seen_before)
+            count2++;
     }
-    for (mlp = first; mlp; mlp = mlp->next) {
+    Int2 count1 = 0;
+    for (auto mlp = first; mlp; mlp = mlp->next) {
         if (! mlp->pId)
             continue;
-        for (tmlp = first; tmlp < mlp; tmlp = tmlp->next)
-            if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId))
+        bool seen_before = false;
+        for (auto tmlp = first; tmlp != mlp; tmlp = tmlp->next)
+            if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId)) {
+                seen_before = true;
                 break;
-        if (tmlp < mlp)
-            continue;
-        count--;
+            }
+        if (! seen_before)
+            count1++;
     }
-    return (count);
+    return (count2 - count1);
 }
 
 /**********************************************************/
