@@ -120,7 +120,7 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponentsCheck.cmake)
 
 #############################################################################
 # ORIG_LIBS
-if(UNIX AND NOT TARGET NCBI::DL_LIBS)
+if(UNIX)
     include(CheckLibraryExists)
 
     NCBI_find_system_library(DL_LIBS dl)
