@@ -241,8 +241,10 @@ if(NCBI_COMPONENT_BACKWARD_FOUND)
         endif()
     endif()
 endif()
-check_include_file_cxx(backward.hpp HAVE_BACKWARD_HPP
-    -I${NCBI_COMPONENT_BACKWARD_INCLUDE})
+if(NOT HAVE_BACKWARD_HPP)
+    check_include_file_cxx(backward.hpp HAVE_BACKWARD_HPP
+        -I${NCBI_COMPONENT_BACKWARD_INCLUDE})
+endif()
 if(NOT NCBI_COMPONENT_UNWIND_FOUND)
     if(NOT CYGWIN OR (DEFINED NCBI_COMPONENT_UNWIND_DISABLED AND NOT NCBI_COMPONENT_UNWIND_DISABLED))
         check_include_file(libunwind.h HAVE_LIBUNWIND_H)
@@ -255,11 +257,12 @@ endif()
 ############################################################################
 # Kerberos 5 (via GSSAPI)
 NCBI_define_Xcomponent(NAME KRB5 LIB gssapi_krb5 krb5 k5crypto com_err CHECK_INCLUDE gssapi/gssapi_krb5.h)
-NCBIcomponent_report(KRB5)
 if(NCBI_COMPONENT_KRB5_FOUND)
     set(KRB5_INCLUDE ${NCBI_COMPONENT_KRB5_INCLUDE})
     set(KRB5_LIBS ${NCBI_COMPONENT_KRB5_LIBS})
 endif()
+NCBIcomponent_report(KRB5)
+
 ##############################################################################
 # UUID
 if(${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
@@ -350,19 +353,19 @@ NCBIcomponent_report(LZO)
 #############################################################################
 # ZSTD
 NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
+NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
     set(NCBI_COMPONENT_ZSTD_FOUND NO)
     set(HAVE_LIBZSTD 0)
 endif()
-NCBIcomponent_report(ZSTD)
 
 #############################################################################
 # BOOST
 if(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
-include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
-endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
+    include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
+endif()
 NCBIcomponent_report(Boost.Test.Included)
 NCBIcomponent_report(Boost.Test)
 NCBIcomponent_report(Boost.Spirit)
@@ -401,22 +404,24 @@ NCBIcomponent_report(FASTCGIPP)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
-NCBIcomponent_report(SQLITE3)
-if(NCBI_COMPONENT_SQLITE3_FOUND)
-    check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
-    check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
+    NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
+    if(NCBI_COMPONENT_SQLITE3_FOUND)
+        check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
+        check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+    endif()
 endif()
+NCBIcomponent_report(SQLITE3)
 
 #############################################################################
 # BerkeleyDB
 NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
-NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
     set(HAVE_BDB_CACHE   1)
 endif()
+NCBIcomponent_report(BerkeleyDB)
 
 #############################################################################
 # ODBC
@@ -475,8 +480,8 @@ NCBIcomponent_report(VDB)
 ##############################################################################
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_DISABLED AND NOT NCBI_COMPONENT_wxWidgets_FOUND)
-include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxWidgets.cmake)
-endif(NOT NCBI_COMPONENT_wxWidgets_DISABLED AND NOT NCBI_COMPONENT_wxWidgets_FOUND)
+    include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxWidgets.cmake)
+endif()
 
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
     NCBI_define_Xcomponent(NAME GTK2 PACKAGE GTK2)
@@ -549,11 +554,13 @@ endif()
 
 #############################################################################
 # EXSLT
-NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
-NCBIcomponent_report(EXSLT)
-if(NCBI_COMPONENT_EXSLT_FOUND)
-    set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
+if(NOT NCBI_COMPONENT_EXSLT_FOUND)
+    NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
+    if(NCBI_COMPONENT_EXSLT_FOUND)
+        set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
+    endif()
 endif()
+NCBIcomponent_report(EXSLT)
 
 #############################################################################
 # XLSXWRITER
@@ -563,12 +570,12 @@ NCBIcomponent_report(XLSXWRITER)
 #############################################################################
 # LAPACK
 NCBI_define_Xcomponent(NAME LAPACK PACKAGE LAPACK LIB lapack blas)
-NCBIcomponent_report(LAPACK)
 if(NCBI_COMPONENT_LAPACK_FOUND)
     check_include_file(lapacke.h HAVE_LAPACKE_H)
     check_include_file(lapacke/lapacke.h HAVE_LAPACKE_LAPACKE_H)
     check_include_file(Accelerate/Accelerate.h HAVE_ACCELERATE_ACCELERATE_H)
 endif()
+NCBIcomponent_report(LAPACK)
 
 #############################################################################
 # SAMTOOLS
@@ -589,7 +596,6 @@ NCBIcomponent_report(FTGL)
 # GLEW
 #NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
 NCBI_define_Xcomponent(NAME GLEW LIB GLEW)
-NCBIcomponent_report(GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     foreach( _inc IN LISTS NCBI_COMPONENT_GLEW_INCLUDE)
         get_filename_component(_incdir ${_inc} DIRECTORY)
@@ -616,15 +622,16 @@ if(NCBI_COMPONENT_GLEW_FOUND)
         set(NCBI_COMPONENT_GLEW_DEFINES ${NCBI_COMPONENT_GLEW_DEFINES} GLEW_STATIC)
     endif()
 endif()
+NCBIcomponent_report(GLEW)
 
 ##############################################################################
 # OpenGL
 set(OpenGL_GL_PREFERENCE LEGACY)
 NCBI_define_Xcomponent(NAME OpenGL PACKAGE OpenGL LIB GLU GL)
-NCBIcomponent_report(OpenGL)
 if(NCBI_COMPONENT_OpenGL_FOUND)
     set(NCBI_COMPONENT_OpenGL_LIBS ${NCBI_COMPONENT_OpenGL_LIBS}  -lXmu -lXt -lXext -lX11)
 endif()
+NCBIcomponent_report(OpenGL)
 
 ##############################################################################
 # OSMesa
@@ -715,7 +722,7 @@ NCBIcomponent_report(XALAN)
 
 ##############################################################################
 # PERL
-if(NOT NCBI_COMPONENT_PERL_DISABLED)
+if(NOT NCBI_COMPONENT_PERL_DISABLED AND NOT NCBI_COMPONENT_PERL_FOUND)
     find_package(PerlLibs)
     if (PERLLIBS_FOUND)
         set(NCBI_COMPONENT_PERL_FOUND   YES)
@@ -749,19 +756,17 @@ NCBIcomponent_report(SGE)
 # MONGOCXX
 NCBI_define_Xcomponent(NAME MONGOC LIB mongoc-1.0 bson-1.0)
 if(NCBI_COMPONENT_MONGOC_FOUND)
-  list(GET NCBI_COMPONENT_MONGOC_LIBS 0 NCBI_COMPONENT_MONGOC_LIBS_0)
-  get_filename_component(NCBI_COMPONENT_MONGOC_LIBDIR
-    ${NCBI_COMPONENT_MONGOC_LIBS_0} DIRECTORY)
-  # Avoid find_*, as they return the usual versions, which may differ
-  set(NCBI_COMPONENT_MONGOC_LIBSSL "${NCBI_COMPONENT_MONGOC_LIBDIR}/libssl.so")
-  set(NCBI_COMPONENT_MONGOC_LIBCRYPTO
-    "${NCBI_COMPONENT_MONGOC_LIBDIR}/libcrypto.so")
-  if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBSSL})
-    list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBSSL})
-  endif()
-  if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
-    list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
-  endif()
+    list(GET NCBI_COMPONENT_MONGOC_LIBS 0 NCBI_COMPONENT_MONGOC_LIBS_0)
+    get_filename_component(NCBI_COMPONENT_MONGOC_LIBDIR ${NCBI_COMPONENT_MONGOC_LIBS_0} DIRECTORY)
+    # Avoid find_*, as they return the usual versions, which may differ
+    set(NCBI_COMPONENT_MONGOC_LIBSSL "${NCBI_COMPONENT_MONGOC_LIBDIR}/libssl.so")
+    set(NCBI_COMPONENT_MONGOC_LIBCRYPTO "${NCBI_COMPONENT_MONGOC_LIBDIR}/libcrypto.so")
+    if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBSSL})
+        list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBSSL})
+    endif()
+    if(EXISTS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
+        list(APPEND NCBI_COMPONENT_MONGOC_LIBS ${NCBI_COMPONENT_MONGOC_LIBCRYPTO})
+    endif()
 endif()
 NCBI_define_Xcomponent(NAME MONGOCXX MODULE libmongocxx LIB mongocxx bsoncxx INCLUDE mongocxx/v_noabi bsoncxx/v_noabi)
 NCBIcomponent_report(MONGOCXX)
@@ -810,11 +815,13 @@ NCBIcomponent_report(GLPK)
 
 #############################################################################
 # UV
-NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
-NCBIcomponent_report(UV)
-if(NCBI_COMPONENT_UV_FOUND)
-    set(NCBI_COMPONENT_UV_LIBS    ${NCBI_COMPONENT_UV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+if(NOT NCBI_COMPONENT_UV_FOUND)
+    NCBI_define_Xcomponent(NAME UV MODULE libuv LIB uv)
+    if(NCBI_COMPONENT_UV_FOUND)
+        set(NCBI_COMPONENT_UV_LIBS    ${NCBI_COMPONENT_UV_LIBS} ${CMAKE_THREAD_LIBS_INIT})
+    endif()
 endif()
+NCBIcomponent_report(UV)
 
 #############################################################################
 # NGHTTP2
@@ -865,9 +872,7 @@ NCBIcomponent_report(GNUTLS)
 
 #############################################################################
 # NCBICRYPT
-if(NOT NCBI_COMPONENT_NCBICRYPT_DISABLED)
-    NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
-endif()
+NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
 NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
@@ -905,7 +910,7 @@ NCBIcomponent_report(OPENTELEMETRY)
 
 #############################################################################
 # AWSSDK
-if( NOT NCBI_COMPONENT_Z_DISABLED)
+if(NOT NCBI_COMPONENT_AWS_SDK_FOUND AND NOT NCBI_COMPONENT_Z_DISABLED)
     cmake_policy(PUSH)
     if(POLICY CMP0130)
         cmake_policy(SET CMP0130 OLD)

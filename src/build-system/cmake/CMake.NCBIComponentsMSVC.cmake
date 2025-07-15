@@ -275,11 +275,13 @@ set(HAVE_LIBLMDB ${NCBI_COMPONENT_LMDB_FOUND})
 
 #############################################################################
 # PCRE
-NCBI_define_Wcomponent(PCRE libpcre.lib)
-NCBIcomponent_report(PCRE)
-if(NCBI_COMPONENT_PCRE_FOUND)
-    set(NCBI_COMPONENT_PCRE_DEFINES PCRE_STATIC NOPOSIX)
+if(NOT NCBI_COMPONENT_PCRE_FOUND)
+    NCBI_define_Wcomponent(PCRE libpcre.lib)
+    if(NCBI_COMPONENT_PCRE_FOUND)
+        set(NCBI_COMPONENT_PCRE_DEFINES PCRE_STATIC NOPOSIX)
+    endif()
 endif()
+NCBIcomponent_report(PCRE)
 if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h
    AND NOT NCBI_COMPONENT_PCRE_FOUND)
     set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -288,11 +290,13 @@ if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h
 endif()
 set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 
-NCBI_define_Wcomponent(PCRE2 pcre2-8-static.lib)
-NCBIcomponent_report(PCRE2)
-if(NCBI_COMPONENT_PCRE2_FOUND)
-    set(NCBI_COMPONENT_PCRE2_DEFINES PCRE2_STATIC)
+if(NOT NCBI_COMPONENT_PCRE2_FOUND)
+    NCBI_define_Wcomponent(PCRE2 pcre2-8-static.lib)
+    if(NCBI_COMPONENT_PCRE2_FOUND)
+        set(NCBI_COMPONENT_PCRE2_DEFINES PCRE2_STATIC)
+    endif()
 endif()
+NCBIcomponent_report(PCRE2)
 if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre2.h
    AND NOT NCBI_COMPONENT_PCRE2_FOUND)
     set(NCBI_COMPONENT_PCRE2_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -331,13 +335,13 @@ NCBIcomponent_report(LZO)
 #############################################################################
 # ZSTD
 NCBI_define_Wcomponent(ZSTD libzstd_static.lib)
+NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
     set(NCBI_COMPONENT_ZSTD_FOUND NO)
     set(HAVE_LIBZSTD 0)
 endif()
-NCBIcomponent_report(ZSTD)
 
 #############################################################################
 # BOOST
@@ -415,16 +419,12 @@ NCBIcomponent_report(TIFF)
 
 #############################################################################
 # GNUTLS
-if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
-    NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
-endif()
+NCBI_define_Wcomponent(GNUTLS libgnutls-30.lib)
 NCBIcomponent_report(GNUTLS)
 
 #############################################################################
 # NCBICRYPT
-if(NOT NCBI_COMPONENT_NCBICRYPT_DISABLED)
-    NCBI_define_Wcomponent(NCBICRYPT ncbicrypt.lib)
-endif()
+NCBI_define_Wcomponent(NCBICRYPT ncbicrypt.lib)
 NCBIcomponent_report(NCBICRYPT)
 
 #############################################################################
@@ -435,22 +435,24 @@ NCBIcomponent_report(FASTCGI)
 #############################################################################
 # BerkeleyDB
 NCBI_define_Wcomponent(BerkeleyDB libdb.lib)
-NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
     set(HAVE_BERKELEY_DB 1)
     set(HAVE_BDB         1)
     set(HAVE_BDB_CACHE   1)
 endif()
+NCBIcomponent_report(BerkeleyDB)
 
 #############################################################################
 # XML
-NCBI_define_Wcomponent(XML libxml2.lib)
-NCBIcomponent_report(XML)
-if (NCBI_COMPONENT_XML_FOUND)
-    if(NOT BUILD_SHARED_LIBS)
-        set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
+if(NOT NCBI_COMPONENT_XML_FOUND)
+    NCBI_define_Wcomponent(XML libxml2.lib)
+    if (NCBI_COMPONENT_XML_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
+        endif()
     endif()
 endif()
+NCBIcomponent_report(XML)
 
 #############################################################################
 # XSLT
@@ -475,11 +477,11 @@ set(NCBI_COMPONENT_LAPACK_FOUND NO)
 # Sybase
 NCBI_define_Wcomponent(Sybase # libsybdb.lib
                        libsybct.lib libsybblk.lib libsybcs.lib)
-NCBIcomponent_report(Sybase)
 if (NCBI_COMPONENT_Sybase_FOUND)
     set(SYBASE_PATH ${NCBI_ThirdParty_Sybase}/Sybase)
     set(SYBASE_LCL_PATH "${NCBI_ThirdParty_SybaseLocalPath}")
 endif()
+NCBIcomponent_report(Sybase)
 
 #############################################################################
 # VDB
@@ -531,11 +533,11 @@ NCBIcomponent_report(VDB)
 #############################################################################
 # PYTHON
 NCBI_define_Wcomponent(PYTHON python311.lib python3.lib)
-NCBIcomponent_report(PYTHON)
 if(NCBI_COMPONENT_PYTHON_FOUND)
     set(NCBI_COMPONENT_PYTHON_BINPATH ${NCBI_ThirdParty_PYTHON})
     set(NCBI_COMPONENT_PYTHON_VERSION 3.11)
 endif()
+NCBIcomponent_report(PYTHON)
 
 ##############################################################################
 # GRPC/PROTOBUF
@@ -582,23 +584,25 @@ NCBI_define_Wcomponent(PROTOBUF
     absl_int128.lib absl_throw_delegate.lib absl_raw_logging_internal.lib
     absl_log_severity.lib
 )
+if(NOT NCBI_COMPONENT_GRPC_FOUND)
+    NCBI_define_Wcomponent(GRPC
+        grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib
+        libprotoc.lib upb.lib boringcrypto.lib boringssl.lib re2.lib
+        absl_random_internal_pool_urbg.lib absl_random_internal_randen.lib
+        absl_random_internal_randen_hwaes.lib
+        absl_random_internal_randen_hwaes_impl.lib
+        absl_random_internal_randen_slow.lib absl_random_internal_platform.lib
+        absl_random_internal_seed_material.lib absl_random_seed_gen_exception.lib
+    )
+    if(NCBI_COMPONENT_GRPC_FOUND)
+        set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
+        set(NCBI_COMPONENT_GRPC_LIBS
+            ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_PROTOBUF_LIBS})
+    endif()
+endif()
+endif()
 NCBIcomponent_report(PROTOBUF)
-NCBI_define_Wcomponent(GRPC
-    grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib
-    libprotoc.lib upb.lib boringcrypto.lib boringssl.lib re2.lib
-    absl_random_internal_pool_urbg.lib absl_random_internal_randen.lib
-    absl_random_internal_randen_hwaes.lib
-    absl_random_internal_randen_hwaes_impl.lib
-    absl_random_internal_randen_slow.lib absl_random_internal_platform.lib
-    absl_random_internal_seed_material.lib absl_random_seed_gen_exception.lib
-)
 NCBIcomponent_report(GRPC)
-if(NCBI_COMPONENT_GRPC_FOUND)
-    set(NCBI_COMPONENT_GRPC_DEFINES _WIN32_WINNT=0x0600)
-    set(NCBI_COMPONENT_GRPC_LIBS
-        ${NCBI_COMPONENT_GRPC_LIBS} ${NCBI_COMPONENT_PROTOBUF_LIBS})
-endif()
-endif()
 if(NCBI_TRACE_COMPONENT_PROTOBUF OR NCBI_TRACE_ALLCOMPONENTS)
     message("NCBI_PROTOC_APP = ${NCBI_PROTOC_APP}")
 endif()
@@ -613,23 +617,27 @@ NCBIcomponent_report(XALAN)
 
 ##############################################################################
 # XERCES
-NCBI_define_Wcomponent(XERCES xerces-c.lib)
-NCBIcomponent_report(XERCES)
-if(NCBI_COMPONENT_XERCES_FOUND)
-    if(BUILD_SHARED_LIBS)
-        set(NCBI_COMPONENT_XERCES_DEFINES XERCES_DLL)
-    else()
-        set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
+if(NOT NCBI_COMPONENT_XERCES_FOUND)
+    NCBI_define_Wcomponent(XERCES xerces-c.lib)
+    if(NCBI_COMPONENT_XERCES_FOUND)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_XERCES_DEFINES XERCES_DLL)
+        else()
+            set(NCBI_COMPONENT_XERCES_DEFINES XML_LIBRARY)
+        endif()
     endif()
 endif()
+NCBIcomponent_report(XERCES)
 
 ##############################################################################
 # FTGL
-NCBI_define_Wcomponent(FTGL ftgl.lib)
-NCBIcomponent_report(FTGL)
-if(NCBI_COMPONENT_FTGL_FOUND)
-    set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
+if(NOT NCBI_COMPONENT_FTGL_FOUND)
+    NCBI_define_Wcomponent(FTGL ftgl.lib)
+    if(NCBI_COMPONENT_FTGL_FOUND)
+        set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
+    endif()
 endif()
+NCBIcomponent_report(FTGL)
 
 ##############################################################################
 # FreeType
@@ -638,41 +646,45 @@ NCBIcomponent_report(FreeType)
 
 ##############################################################################
 # GLEW
-NCBI_define_Wcomponent(GLEW glew32mx.lib)
-NCBIcomponent_report(GLEW)
-if(NCBI_COMPONENT_GLEW_FOUND)
-    if(BUILD_SHARED_LIBS)
-        set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX)
-    else()
-        set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX GLEW_STATIC)
+if(NOT NCBI_COMPONENT_GLEW_FOUND)
+    NCBI_define_Wcomponent(GLEW glew32mx.lib)
+    if(NCBI_COMPONENT_GLEW_FOUND)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX)
+        else()
+            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX GLEW_STATIC)
+        endif()
     endif()
 endif()
+NCBIcomponent_report(GLEW)
 
 ##############################################################################
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
-NCBI_define_Wcomponent( wxWidgets
-        wxbase.lib wxbase_net.lib wxbase_xml.lib wxmsw_core.lib wxmsw_gl.lib
-        wxmsw_html.lib wxmsw_aui.lib wxmsw_adv.lib wxmsw_richtext.lib wxmsw_propgrid.lib
-        wxmsw_xrc.lib wxexpat.lib wxjpeg.lib wxpng.lib wxregex.lib wxtiff.lib wxzlib.lib)
-NCBIcomponent_report( wxWidgets)
-if(NCBI_COMPONENT_wxWidgets_FOUND)
-    set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE} ${NCBI_COMPONENT_wxWidgets_INCLUDE}/msvc)
-    if(BUILD_SHARED_LIBS)
-        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH WXUSINGDLL=1)
-    else()
-        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH)
+    NCBI_define_Wcomponent( wxWidgets
+            wxbase.lib wxbase_net.lib wxbase_xml.lib wxmsw_core.lib wxmsw_gl.lib
+            wxmsw_html.lib wxmsw_aui.lib wxmsw_adv.lib wxmsw_richtext.lib wxmsw_propgrid.lib
+            wxmsw_xrc.lib wxexpat.lib wxjpeg.lib wxpng.lib wxregex.lib wxtiff.lib wxzlib.lib)
+    if(NCBI_COMPONENT_wxWidgets_FOUND)
+        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE} ${NCBI_COMPONENT_wxWidgets_INCLUDE}/msvc)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH WXUSINGDLL=1)
+        else()
+            set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMSW__ NCBI_WXWIN_USE_PCH)
+        endif()
     endif()
 endif()
-endif()
+NCBIcomponent_report( wxWidgets)
 
 ##############################################################################
 # UV
-NCBI_define_Wcomponent(UV libuv.lib)
-NCBIcomponent_report( UV)
-if(NCBI_COMPONENT_UV_FOUND)
-    set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
+if(NOT NCBI_COMPONENT_UV_FOUND)
+    NCBI_define_Wcomponent(UV libuv.lib)
+    if(NCBI_COMPONENT_UV_FOUND)
+        set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
+    endif()
 endif()
+NCBIcomponent_report( UV)
 
 ##############################################################################
 # NGHTTP2

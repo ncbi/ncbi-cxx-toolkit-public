@@ -221,15 +221,15 @@ set(NCBI_COMPONENT_PCRE2_FOUND NO)
 NCBIcomponent_report(PCRE)
 NCBIcomponent_report(PCRE2)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
-  if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h)
-    set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
-    set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
-    set(NCBI_COMPONENT_PCRE_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
-  else()
-    set(NCBI_COMPONENT_PCRE2_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
-    set(NCBI_COMPONENT_PCRE2_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
-    set(NCBI_COMPONENT_PCRE2_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
-  endif()
+    if(EXISTS ${NCBITK_INC_ROOT}/util/regexp/pcre.h)
+        set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
+        set(NCBI_COMPONENT_PCRE_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
+        set(NCBI_COMPONENT_PCRE_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
+    else()
+        set(NCBI_COMPONENT_PCRE2_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
+        set(NCBI_COMPONENT_PCRE2_INCLUDE ${NCBI_COMPONENT_LocalPCRE_INCLUDE})
+        set(NCBI_COMPONENT_PCRE2_NCBILIB ${NCBI_COMPONENT_LocalPCRE_NCBILIB})
+    endif()
 endif()
 set(HAVE_LIBPCRE ${NCBI_COMPONENT_PCRE_FOUND})
 set(HAVE_LIBPCRE2 ${NCBI_COMPONENT_PCRE2_FOUND})
@@ -264,14 +264,13 @@ NCBIcomponent_report(LZO)
 #############################################################################
 # ZSTD
 NCBI_define_Xcomponent(NAME ZSTD LIB zstd CHECK_INCLUDE zstd.h)
+NCBIcomponent_report(ZSTD)
 if(NCBI_COMPONENT_ZSTD_FOUND AND
     (DEFINED NCBI_COMPONENT_ZSTD_VERSION AND "${NCBI_COMPONENT_ZSTD_VERSION}" VERSION_LESS "1.4"))
     message("ZSTD: Version requirement not met (required at least v1.4)")
     set(NCBI_COMPONENT_ZSTD_FOUND NO)
     set(HAVE_LIBZSTD 0)
 endif()
-NCBIcomponent_report(ZSTD)
-
 
 #############################################################################
 # BOOST
@@ -345,22 +344,24 @@ NCBIcomponent_report(FASTCGI)
 
 #############################################################################
 # SQLITE3
-NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
-NCBIcomponent_report(SQLITE3)
-if(NCBI_COMPONENT_SQLITE3_FOUND)
-    check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
-    check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+if(NOT NCBI_COMPONENT_SQLITE3_FOUND)
+    NCBI_define_Xcomponent(NAME SQLITE3 MODULE sqlite3 PACKAGE SQLite3 LIB sqlite3)
+    if(NCBI_COMPONENT_SQLITE3_FOUND)
+        check_symbol_exists(sqlite3_unlock_notify ${NCBI_COMPONENT_SQLITE3_INCLUDE}/sqlite3.h HAVE_SQLITE3_UNLOCK_NOTIFY)
+        check_include_file(sqlite3async.h HAVE_SQLITE3ASYNC_H -I${NCBI_COMPONENT_SQLITE3_INCLUDE})
+    endif()
 endif()
+NCBIcomponent_report(SQLITE3)
 
 #############################################################################
 #BerkeleyDB
 NCBI_define_Xcomponent(NAME BerkeleyDB LIB db CHECK_INCLUDE db.h)
-NCBIcomponent_report(BerkeleyDB)
 if(NCBI_COMPONENT_BerkeleyDB_FOUND)
   set(HAVE_BERKELEY_DB 1)
   set(HAVE_BDB         1)
   set(HAVE_BDB_CACHE   1)
 endif()
+NCBIcomponent_report(BerkeleyDB)
 
 #############################################################################
 # ODBC
@@ -421,45 +422,53 @@ NCBIcomponent_report(VDB)
 #############################################################################
 # wxWidgets
 if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
-set(_wx_ver 3.2)
-NCBI_define_Xcomponent(NAME wxWidgets LIB
-    wx_osx_cocoa_gl-${_wx_ver}
-    wx_osx_cocoa_richtext-${_wx_ver}
-    wx_osx_cocoa_aui-${_wx_ver}
-    wx_osx_cocoa_propgrid-${_wx_ver}
-    wx_osx_cocoa_xrc-${_wx_ver}
-    wx_osx_cocoa_qa-${_wx_ver}
-    wx_osx_cocoa_html-${_wx_ver}
-    wx_osx_cocoa_adv-${_wx_ver}
-    wx_osx_cocoa_core-${_wx_ver}
-    wx_base_xml-${_wx_ver}
-    wx_base_net-${_wx_ver}
-    wx_base-${_wx_ver}
-)
+    set(_wx_ver 3.2)
+    NCBI_define_Xcomponent(NAME wxWidgets LIB
+        wx_osx_cocoa_gl-${_wx_ver}
+        wx_osx_cocoa_richtext-${_wx_ver}
+        wx_osx_cocoa_aui-${_wx_ver}
+        wx_osx_cocoa_propgrid-${_wx_ver}
+        wx_osx_cocoa_xrc-${_wx_ver}
+        wx_osx_cocoa_qa-${_wx_ver}
+        wx_osx_cocoa_html-${_wx_ver}
+        wx_osx_cocoa_adv-${_wx_ver}
+        wx_osx_cocoa_core-${_wx_ver}
+        wx_base_xml-${_wx_ver}
+        wx_base_net-${_wx_ver}
+        wx_base-${_wx_ver}
+    )
+    if(NCBI_COMPONENT_wxWidgets_FOUND)
+        list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
+        get_filename_component(_libdir ${_lib} DIRECTORY)
+        set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/osx_cocoa-ansi-${_wx_ver})
+        set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  "-framework Cocoa")
+        set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
+    endif()
+endif()
 NCBIcomponent_report(wxWidgets)
-if(NCBI_COMPONENT_wxWidgets_FOUND)
-    list(GET NCBI_COMPONENT_wxWidgets_LIBS 0 _lib)
-    get_filename_component(_libdir ${_lib} DIRECTORY)
-    set(NCBI_COMPONENT_wxWidgets_INCLUDE ${NCBI_COMPONENT_wxWidgets_INCLUDE}/wx-${_wx_ver} ${_libdir}/wx/include/osx_cocoa-ansi-${_wx_ver})
-    set(NCBI_COMPONENT_wxWidgets_LIBS    ${NCBI_COMPONENT_wxWidgets_LIBS}  "-framework Cocoa")
-    set(NCBI_COMPONENT_wxWidgets_DEFINES __WXMAC__ __WXOSX__ __WXOSX_COCOA__ wxDEBUG_LEVEL=0)
-endif()
-endif()
 
 #############################################################################
 # XML
-NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
-NCBIcomponent_report(XML)
-if(NCBI_COMPONENT_XML_FOUND)
-    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
-    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
-    string(REPLACE "?" ";" NCBI_COMPONENT_XML_LIBS "${_x}")
+if(NOT NCBI_COMPONENT_XML_FOUND)
+    NCBI_define_Xcomponent(NAME XML MODULE libxml-2.0 PACKAGE LibXml2 LIB xml2 INCLUDE libxml2 CHECK_INCLUDE libxml/xmlexports.h)
+    if(NCBI_COMPONENT_XML_FOUND)
+        string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XML_LIBS}")
+        string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+        string(REPLACE "?" ";" NCBI_COMPONENT_XML_LIBS "${_x}")
+    endif()
 endif()
+NCBIcomponent_report(XML)
 
 #############################################################################
 # XSLT
-NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
-NCBIcomponent_report(XSLT)
+if(NOT NCBI_COMPONENT_XSLT_FOUND)
+    NCBI_define_Xcomponent(NAME XSLT MODULE libxslt PACKAGE LibXslt LIB xslt ADD_COMPONENT XML CHECK_INCLUDE libxslt/xslt.h)
+    if(NCBI_COMPONENT_XSLT_FOUND)
+        string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XSLT_LIBS}")
+        string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+        string(REPLACE "?" ";" NCBI_COMPONENT_XSLT_LIBS "${_x}")
+    endif()
+endif()
 if(NCBI_COMPONENT_XSLT_FOUND)
     if(NOT DEFINED NCBI_XSLTPROCTOOL)
         if(LIBXSLT_XSLTPROC_EXECUTABLE)
@@ -473,23 +482,22 @@ if(NCBI_COMPONENT_XSLT_FOUND)
             set(NCBI_REQUIRE_XSLTPROCTOOL_FOUND YES)
         endif()
     endif()
-
-    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_XSLT_LIBS}")
-    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
-    string(REPLACE "?" ";" NCBI_COMPONENT_XSLT_LIBS "${_x}")
 endif()
+NCBIcomponent_report(XSLT)
 
 #############################################################################
 # EXSLT
-NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
-NCBIcomponent_report(EXSLT)
-if(NCBI_COMPONENT_EXSLT_FOUND)
-    set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
+if(NOT NCBI_COMPONENT_EXSLT_FOUND)
+    NCBI_define_Xcomponent(NAME EXSLT MODULE libexslt PACKAGE LibXslt LIB exslt ADD_COMPONENT XML GCRYPT CHECK_INCLUDE libexslt/exslt.h)
+    if(NCBI_COMPONENT_EXSLT_FOUND)
+        set(NCBI_COMPONENT_EXSLT_LIBS ${LIBXSLT_EXSLT_LIBRARIES} ${NCBI_COMPONENT_EXSLT_LIBS})
 
-    string(REPLACE ";" "?" _x "${NCBI_COMPONENT_EXSLT_LIBS}")
-    string(REPLACE "-L/sw/lib?" "" _x "${_x}")
-    string(REPLACE "?" ";" NCBI_COMPONENT_EXSLT_LIBS "${_x}")
+        string(REPLACE ";" "?" _x "${NCBI_COMPONENT_EXSLT_LIBS}")
+        string(REPLACE "-L/sw/lib?" "" _x "${_x}")
+        string(REPLACE "?" ";" NCBI_COMPONENT_EXSLT_LIBS "${_x}")
+    endif()
 endif()
+NCBIcomponent_report(EXSLT)
 
 #############################################################################
 # LAPACK
@@ -509,7 +517,6 @@ NCBIcomponent_report(FTGL)
 #############################################################################
 # GLEW
 NCBI_define_Xcomponent(NAME GLEW MODULE glew LIB GLEW)
-NCBIcomponent_report(GLEW)
 if(NCBI_COMPONENT_GLEW_FOUND)
     get_filename_component(_incdir "${NCBI_COMPONENT_GLEW_INCLUDE}" DIRECTORY)
     get_filename_component(_incGL "${NCBI_COMPONENT_GLEW_INCLUDE}" NAME)
@@ -517,6 +524,7 @@ if(NCBI_COMPONENT_GLEW_FOUND)
         set(NCBI_COMPONENT_GLEW_INCLUDE ${_incdir})
     endif()
 endif()
+NCBIcomponent_report(GLEW)
 
 #############################################################################
 # OpenGL
@@ -614,14 +622,10 @@ NCBIcomponent_report(NETTLE)
 
 #############################################################################
 # GNUTLS
-if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
-    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
-endif()
+NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
 NCBIcomponent_report(GNUTLS)
 
 #############################################################################
 # NCBICRYPT
-if(NOT NCBI_COMPONENT_NCBICRYPT_DISABLED)
-    NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
-endif()
+NCBI_define_Xcomponent(NAME NCBICRYPT LIB ncbicrypt)
 NCBIcomponent_report(NCBICRYPT)
