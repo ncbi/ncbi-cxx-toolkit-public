@@ -55,7 +55,7 @@
 #include <netinet/in.h>
 #include <resolv.h>
 
-#define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 32 and up */
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 
 #define SizeOf(a)                (sizeof(a) / sizeof((a)[0]))
@@ -320,13 +320,13 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
 
     memset(rr, 0, sizeof(*rr));
     if ((len = dn_expand(msg, eom, ptr, rr->name, sizeof(rr->name))) <= 0) {
-        CORE_LOGF(level, ("DNS %s cannot expand name", what));
+        CORE_LOGF_X(32, level, ("DNS %s cannot expand name", what));
         return -1;
     }
     ptr += len;
     size = qd ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
-        CORE_LOGF(level, ("DNS %s overrun", what));
+        CORE_LOGF_X(33, level, ("DNS %s overrun", what));
         return -1;
     }
     assert(NS_QFIXEDSZ  == NS_INT16SZ*2);
@@ -338,13 +338,13 @@ static int unpack_rr(const unsigned char* msg, const unsigned char* eom,
         NS_GET32(rr->ttl,      ptr);
         NS_GET16(rr->rdlength, ptr);
         if (!rr->rdlength) {
-            CORE_LOGF(level == eLOG_Trace ? eLOG_Trace : eLOG_Warning,
-                      ("DNS RR %s RDATA empty",
-                       x_TypeStr(ns_rr_type(*rr), buf)));
+            CORE_LOGF_X(34, level == eLOG_Trace ? eLOG_Trace : eLOG_Warning,
+                        ("DNS RR %s RDATA empty",
+                         x_TypeStr(ns_rr_type(*rr), buf)));
         } else if (ptr + rr->rdlength > eom) {
-            CORE_LOGF(level,
-                      ("DNS RR %s RDATA overrun",
-                       x_TypeStr(ns_rr_type(*rr), buf)));
+            CORE_LOGF_X(35, level,
+                        ("DNS RR %s RDATA overrun",
+                         x_TypeStr(ns_rr_type(*rr), buf)));
             return -1;
         }
         size += rr->rdlength;
@@ -361,13 +361,13 @@ static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
     int len, size;
 
     if ((len = dn_skipname(ptr, eom)) <= 0) {
-        CORE_LOGF(eLOG_Error, ("DNS %s cannot skip name", what));
+        CORE_LOGF_X(36, eLOG_Error, ("DNS %s cannot skip name", what));
         return -1;
     }
     ptr += len;
     size = qd ? NS_QFIXEDSZ : NS_RRFIXEDSZ;
     if (ptr + size > eom) {
-        CORE_LOGF(eLOG_Error, ("DNS %s overrun", what));
+        CORE_LOGF_X(37, eLOG_Error, ("DNS %s overrun", what));
         return -1;
     }
     if (!qd) {
@@ -375,7 +375,7 @@ static int skip_rr(const unsigned char* ptr, const unsigned char* eom,
         ptr += NS_INT16SZ*2 + NS_INT32SZ;
         NS_GET16(rdlen, ptr);
         if (ptr + rdlen > eom) {
-            CORE_LOG(eLOG_Error, "DNS RR RDATA overrun");
+            CORE_LOG_X(38, eLOG_Error, "DNS RR RDATA overrun");
             return -1;
         }
         size += rdlen;
@@ -425,8 +425,8 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
 
     if (!name) {
         assert(!info);
-        CORE_LOGF_ERRNO(eLOG_Error, errno,
-                        ("LBDNS cannot create entry for \"%s\"", iter->name));
+        CORE_LOGF_ERRNO_X(39, eLOG_Error, errno,
+                          ("LBDNS cannot create entry for \"%s\"", iter->name));
         return 0/*failure(NULL info)*/;
     }
     assert(info);
@@ -437,9 +437,9 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
         if (SERV_EqualInfo(info, data->cand[n].info)
             &&  strcasecmp(name, SERV_NameOfInfo(data->cand[n].info)) == 0) {
             char* infostr = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Warning,
-                      ("LBDNS ignoring duplicate entry: \"%s\" %s", name,
-                       infostr ? infostr : "<NULL>"));
+            CORE_LOGF_X(40, eLOG_Warning,
+                        ("LBDNS ignoring duplicate entry: \"%s\" %s", name,
+                         infostr ? infostr : "<NULL>"));
             if (infostr)
                 free(infostr);
             free(info);
@@ -451,8 +451,8 @@ static int/*bool*/ x_AddInfo(SERV_ITER iter, SSERV_Info* info)
         data = (struct SLBDNS_Data*) realloc(iter->data, sizeof(*data)
                                              + (n - 1) * sizeof(data->cand));
         if (!data) {
-            CORE_LOGF_ERRNO(eLOG_Error, errno,
-                            ("LBDNS cannot add entry for \"%s\"", iter->name));
+            CORE_LOGF_ERRNO_X(41, eLOG_Error, errno,
+                              ("LBDNS cannot add entry for \"%s\"", iter->name));
             free(info);
             return 0/*failure*/;
         }
@@ -507,9 +507,9 @@ static int/*bool*/ x_UpdateHost(SERV_ITER iter, const char* fqdn,
         } else {
             /* NB: "buf" is always '\0'-terminated, even on error */
             NcbiAddrToString(buf, sizeof(buf), addr);
-            CORE_LOGF(eLOG_Warning,
-                      ("LBDNS cannot re-update entry \"%s\" @%p with host"
-                       " \"%s\": %s", SERV_NameOfInfo(info), info, fqdn, buf));
+            CORE_LOGF_X(42, eLOG_Warning,
+                        ("LBDNS cannot re-update entry \"%s\" @%p with host"
+                         " \"%s\": %s", SERV_NameOfInfo(info), info, fqdn, buf));
             continue;
         }
         if (x_info != info) {
@@ -524,9 +524,9 @@ static int/*bool*/ x_UpdateHost(SERV_ITER iter, const char* fqdn,
         if (x_info) {
             if (done) {
                 NcbiAddrToString(buf, sizeof(buf), addr);
-                CORE_LOGF(eLOG_Warning,
-                          ("LBDNS multiple entries updated with host \"%s\":"
-                           " %s", fqdn, buf));
+                CORE_LOGF_X(43, eLOG_Warning,
+                            ("LBDNS multiple entries updated with host \"%s\":"
+                             " %s", fqdn, buf));
             } else
                 done = 1/*true*/;
         }
@@ -599,8 +599,8 @@ static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
     int rv;
 
     if (rdlen <= sizeof(srv)) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS SRV RR RDATA too short: %hu", rdlen));
+        CORE_LOGF_X(44, eLOG_Error,
+                    ("DNS SRV RR RDATA too short: %hu", rdlen));
         return 0/*false*/;
     }
     memset(&srv, 0, sizeof(srv));
@@ -608,11 +608,11 @@ static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
     NS_GET16(srv.weight,   rdata);
     NS_GET16(srv.port,     rdata);
     if ((rv = dn_expand(msg, eom, rdata, target, sizeof(target))) <= 0) {
-        CORE_LOG(eLOG_Error, "DNS SRV RR cannot expand target");
+        CORE_LOG_X(45, eLOG_Error, "DNS SRV RR cannot expand target");
         return 0/*false*/;
     }
     if (&rdata[rv] > &start[rdlen]) {
-        CORE_LOG(eLOG_Error, "DNS SRV RR target overrun");
+        CORE_LOG_X(46, eLOG_Error, "DNS SRV RR target overrun");
         return 0/*false*/;
     }
     if (((const struct SLBDNS_Data*) iter->data)->debug) {
@@ -623,17 +623,17 @@ static int/*bool*/ dns_srv(SERV_ITER iter, const unsigned char* msg,
     }
     if (&rdata[rv] != &start[rdlen]) {
         assert(&rdata[rv] < &start[rdlen]);
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS SRV RR %lu/%hu byte(s) remain unparsed",
-                   (unsigned long)(&start[rdlen] - &rdata[rv]), rdlen));
+        CORE_LOGF_X(47, eLOG_Warning,
+                    ("DNS SRV RR %lu/%hu byte(s) remain unparsed",
+                     (unsigned long)(&start[rdlen] - &rdata[rv]), rdlen));
     }
     if (!target[0]  ||  (target[0] == '.'  &&  !target[1])) {
         /* service down */
         if (srv.port | srv.priority | srv.weight)
-            CORE_LOG(eLOG_Warning, "DNS SRV RR blank target dirty");
+            CORE_LOG_X(48, eLOG_Warning, "DNS SRV RR blank target dirty");
         return -1/*true, special*/;
     } else if (!srv.port) {
-        CORE_LOG(eLOG_Error, "DNS SRV RR zero port");
+        CORE_LOG_X(49, eLOG_Error, "DNS SRV RR zero port");
         return 0/*false*/;
     }
     x_BlankInfo(&x_info, fSERV_Standalone);
@@ -654,7 +654,7 @@ static void dns_txt(SERV_ITER iter, const char* fqdn,
         char buf[40];
         unsigned short slen = *rdata++;
         if ((len += 1 + slen) > rdlen) {
-            CORE_LOG(eLOG_Error, "DNS TXT RR RDATA overrun");
+            CORE_LOG_X(50, eLOG_Error, "DNS TXT RR RDATA overrun");
             return;
         }
         if (slen > SERVNSD_TXT_RR_PORT_LEN 
@@ -705,8 +705,8 @@ static int/*bool*/ dns_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
         }
         if (!ipv4  ||  ipv4 == (unsigned int)(-1)) {
             SOCK_ntoa(ipv4, buf, sizeof(buf));
-            CORE_LOGF(eLOG_Error,
-                      ("DNS A RR bad IPv4 ignored: %s", buf));
+            CORE_LOGF_X(51, eLOG_Error,
+                        ("DNS A RR bad IPv4 ignored: %s", buf));
             return 0/*failure*/;
         }
         verify(NcbiIPv4ToIPv6(&ipv6, ipv4, 0));
@@ -722,21 +722,21 @@ static int/*bool*/ dns_a(SERV_ITER iter, ns_type qtype, ns_type rtype,
         if (NcbiIsEmptyIPv6(&ipv6)
             ||  NcbiIPv6ToIPv4(&ipv6, 0) == (unsigned int)(-1)) {
             NcbiIPv6ToString(buf, sizeof(buf), &ipv6);
-            CORE_LOGF(eLOG_Error,
-                      ("DNS AAAA RR bad IPv6 ignored: %s", buf));
+            CORE_LOGF_X(52, eLOG_Error,
+                        ("DNS AAAA RR bad IPv6 ignored: %s", buf));
             return 0/*failure*/;
         }
         len = NS_IN6ADDRSZ;
     } else {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS %s RR RDATA bad size: %hu",
-                   x_TypeStr(rtype, buf), rdlen));
+        CORE_LOGF_X(53, eLOG_Error,
+                    ("DNS %s RR RDATA bad size: %hu",
+                     x_TypeStr(rtype, buf), rdlen));
         return 0/*failure*/;
     }
     if (len < rdlen) {
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS %s RR %u/%hu byte(s) remain unparsed",
-                   x_TypeStr(rtype, buf), rdlen - len, rdlen));
+        CORE_LOGF_X(54, eLOG_Warning,
+                    ("DNS %s RR %u/%hu byte(s) remain unparsed",
+                     x_TypeStr(rtype, buf), rdlen - len, rdlen));
     }
     if (qtype == ns_t_srv)
         return x_UpdateHost(iter, fqdn, &ipv6);
@@ -761,11 +761,11 @@ static const char* dns_cname(unsigned int/*bool*/ debug,
     const char* retval;
     int rv;
     if ((rv = dn_expand(msg, eom, rdata, cname, sizeof(cname))) <= 0) {
-        CORE_LOG(eLOG_Error, "DNS CNAME RR cannot expand cname");
+        CORE_LOG_X(55, eLOG_Error, "DNS CNAME RR cannot expand cname");
         return 0/*failure*/;
     }
     if (rv > (int) rdlen) {
-        CORE_LOG(eLOG_Error, "DNS CNAME RR cname overrun");
+        CORE_LOG_X(56, eLOG_Error, "DNS CNAME RR cname overrun");
         return 0/*failure*/;
     }
     if (debug) {
@@ -775,14 +775,14 @@ static const char* dns_cname(unsigned int/*bool*/ debug,
     }
     if (rv != (int) rdlen) {
         assert(rv < (int) rdlen);
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS CNAME RR %d/%hu byte(s) remain unparsed",
-                   (int) rdlen - rv, rdlen));
+        CORE_LOGF_X(57, eLOG_Warning,
+                    ("DNS CNAME RR %d/%hu byte(s) remain unparsed",
+                     (int) rdlen - rv, rdlen));
     }
     if (!(retval = strdup(strlwr(cname)))) {
-        CORE_LOGF_ERRNO(eLOG_Error, errno,
-                        ("DNS CNAME RR cannot store cname \"%s\" for \"%s\"",
-                         cname, fqdn));
+        CORE_LOGF_ERRNO_X(58, eLOG_Error, errno,
+                          ("DNS CNAME RR cannot store cname \"%s\" for \"%s\"",
+                           cname, fqdn));
         return 0/*failure*/;
     }
     return retval;
@@ -837,9 +837,9 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                 continue;
             }
             if (!n  &&  !same_domain(fqdn, ns_rr_name(rr))) {
-                CORE_LOGF(eLOG_Warning,
-                          ("DNS reply AN %u \"%s\" mismatch FQDN \"%s\"",
-                           c + 1, ns_rr_name(rr), fqdn));
+                CORE_LOGF_X(59, eLOG_Warning,
+                            ("DNS reply AN %u \"%s\" mismatch FQDN \"%s\"",
+                             c + 1, ns_rr_name(rr), fqdn));
                 continue;
             }
             if (ns_rr_type(rr) == ns_t_cname) {
@@ -854,9 +854,9 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                     fqdn = cname;
                     done = 1/*true*/;
                 } else {
-                    CORE_LOGF(eLOG_Warning,
-                              ("DNS CNAME RR misplaced @A%c %u",
-                               "RN"[!n], c + 1));
+                    CORE_LOGF_X(60, eLOG_Warning,
+                                ("DNS CNAME RR misplaced @A%c %u",
+                                 "RN"[!n], c + 1));
                 }
                 continue;
             }
@@ -867,8 +867,8 @@ static const unsigned char* x_ProcessReply(SERV_ITER iter,
                              ns_rr_name(rr), ns_rr_rdlen(rr), ns_rr_rdata(rr));
                 if (rv) {
                     if (rv < 0  &&  data->n_cand) {
-                        CORE_LOG(eLOG_Warning,
-                                 "DNS SRV RR blank target misplaced");
+                        CORE_LOG_X(61, eLOG_Warning,
+                                   "DNS SRV RR blank target misplaced");
                     } else
                         done = 1/*true*/;
                 }
@@ -913,62 +913,62 @@ static const unsigned char* x_VerifyReply(const char* fqdn,
 
     assert(eom - msg >= NS_HFIXEDSZ);
     if (hdr->rcode/*!=ns_r_noerror*/) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply indicates an error: %s",
-                   x_RcodeStr(hdr->rcode, buf)));
+        CORE_LOGF_X(62, eLOG_Error,
+                    ("DNS reply indicates an error: %s",
+                     x_RcodeStr(hdr->rcode, buf)));
         return 0/*failed*/;
     }
     if (!hdr->qr) {
-        CORE_LOG(eLOG_Error,
-                 ("DNS reply is a query, not a reply"));
+        CORE_LOG_X(63, eLOG_Error,
+                   ("DNS reply is a query, not a reply"));
         return 0/*failed*/;
     }
     if (hdr->opcode != ns_o_query) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply has unexpected opcode: %s",
-                   x_OpcodeStr(hdr->opcode, buf)));
+        CORE_LOGF_X(64, eLOG_Error,
+                    ("DNS reply has unexpected opcode: %s",
+                     x_OpcodeStr(hdr->opcode, buf)));
         return 0/*failed*/;
     }
     if ((count[0] = ntohs(hdr->qdcount)) != 1) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply has bad number of questions: %hu",
-                   count[0]));
+        CORE_LOGF_X(65, eLOG_Error,
+                    ("DNS reply has bad number of questions: %hu",
+                     count[0]));
         return 0/*failed*/;
     }
     if (!(count[0] = ntohs(hdr->ancount))) {
-        CORE_LOG(eLOG_Error, "DNS reply has no answers");
+        CORE_LOG_X(66, eLOG_Error, "DNS reply has no answers");
         return 0/*failed*/;
     }
     ptr = msg + NS_HFIXEDSZ;
     if (ptr == eom) {
-        CORE_LOG(eLOG_Error, "DNS reply has no records");
+        CORE_LOG_X(67, eLOG_Error, "DNS reply has no records");
         return 0/*failed*/;
     }
     rv = unpack_rr(msg, eom, ptr, &qd, 1/*QD*/, eLOG_Error);
     if (rv < 0)
         return 0/*failed*/;
     if (ns_rr_class(qd) != ns_c_in) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply for unsupported class: %s",
-                   x_ClassStr(ns_rr_class(qd), buf)));
+        CORE_LOGF_X(68, eLOG_Error,
+                    ("DNS reply for unsupported class: %s",
+                     x_ClassStr(ns_rr_class(qd), buf)));
         return 0/*failed*/;
     }
     if (ns_rr_type(qd) != ns_t_any) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply for unmatching type: %s vs. ANY queried",
-                   x_TypeStr(ns_rr_type(qd), buf)));
+        CORE_LOGF_X(69, eLOG_Error,
+                    ("DNS reply for unmatching type: %s vs. ANY queried",
+                     x_TypeStr(ns_rr_type(qd), buf)));
         return 0/*failed*/;
     }
     if (!same_domain(ns_rr_name(qd), fqdn)) {
-        CORE_LOGF(eLOG_Error,
-                  ("DNS reply for unmatching name: \"%s\" vs. \"%s\" queried",
-                   ns_rr_name(qd), fqdn));
+        CORE_LOGF_X(70, eLOG_Error,
+                    ("DNS reply for unmatching name: \"%s\" vs. \"%s\" queried",
+                     ns_rr_name(qd), fqdn));
         return 0/*failed*/;
     }
     ptr += rv;
     assert(ptr <= eom);
     if (ptr == eom) {
-        CORE_LOG(eLOG_Error, "DNS reply too short to include any RR(s)");
+        CORE_LOG_X(71, eLOG_Error, "DNS reply too short to include any RR(s)");
         return 0/*failed*/;
     }
     count[1] = ntohs(hdr->nscount);
@@ -1068,9 +1068,9 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
         }
     }
     if (!x_FormFQDN(fqdn, iter->name, len, type, data->domain, data->domlen)) {
-        CORE_LOGF(eLOG_Error,
-                  ("LBDNS FQDN for \"%s\" %s in \"%s\": Name too long",
-                   iter->name, x_TypeStr(type, errbuf), data->domain));
+        CORE_LOGF_X(72, eLOG_Error,
+                    ("LBDNS FQDN for \"%s\" %s in \"%s\": Name too long",
+                     iter->name, x_TypeStr(type, errbuf), data->domain));
         return 0/*failure*/;
     }
     CORE_TRACEF(("LBDNS query \"%s\" %s", fqdn, x_TypeStr(type, errbuf)));
@@ -1103,13 +1103,13 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     } else {
         CORE_TRACEF(("LBDNS reply \"%s\": %d byte(s)", fqdn, rv));
         if (rv < NS_HFIXEDSZ) {
-            CORE_LOGF(eLOG_Error,
-                      ("DNS reply for \"%s\" too short: %d", fqdn, rv));
+            CORE_LOGF_X(73, eLOG_Error,
+                        ("DNS reply for \"%s\" too short: %d", fqdn, rv));
             return 0/*failure*/;
         }
         if (rv >= (int) sizeof(msg)) {
-            CORE_LOGF(rv > (int) sizeof(msg) ? eLOG_Error : eLOG_Warning,
-                      ("DNS reply overflow: %d", rv));
+            CORE_LOGF_X(74, rv > (int) sizeof(msg) ? eLOG_Error : eLOG_Warning,
+                        ("DNS reply overflow: %d", rv));
             rv  = (int) sizeof(msg);
         }
         eom = msg + rv;
@@ -1122,8 +1122,8 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
     if (err) {
         if (err > 0)
             err = 0/*false*/;
-        CORE_LOGF_ERRNO(rv ? eLOG_Trace : eLOG_Error, err ? x_error : 0,
-                        ("DNS lookup failure \"%s\": %s", fqdn, errstr));
+        CORE_LOGF_ERRNO_X(75, rv ? eLOG_Trace : eLOG_Error, err ? x_error : 0,
+                          ("DNS lookup failure \"%s\": %s", fqdn, errstr));
         return !err/*failure/success(but nodata)*/;
     }
     assert(NS_HFIXEDSZ <= (size_t)(eom - msg));
@@ -1137,9 +1137,9 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
         return 0/*failure*/;
     if (ptr < eom) {
         assert(msg < ptr);
-        CORE_LOGF(eLOG_Warning,
-                  ("DNS reply %lu/%d byte(s) remain unparsed",
-                   (unsigned long)(eom - ptr), rv));
+        CORE_LOGF_X(76, eLOG_Warning,
+                    ("DNS reply %lu/%d byte(s) remain unparsed",
+                     (unsigned long)(eom - ptr), rv));
     }
     return 1/*success*/;
 }
@@ -1223,9 +1223,9 @@ static void x_Finalize(SERV_ITER iter)
         x_info.time += iter->time;
         if (!(data->cand[0].info = SERV_CopyInfoEx(&x_info, iter->reverse_dns
                                                    ? iter->name : ""))) {
-            CORE_LOGF(eLOG_Error,
-                      ("LBDNS cannot create dummy entry for \"%s\"",
-                       iter->name));
+            CORE_LOGF_X(77, eLOG_Error,
+                        ("LBDNS cannot create dummy entry for \"%s\"",
+                         iter->name));
         } else {
             data->cand[0].status = 0.0;
             if (data->debug) {
@@ -1532,18 +1532,18 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("LBDNS open(\"%s\")", iter->name));
     if (iter->arg) {
         assert(iter->arglen);
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Argument affinity lookup not supported by LBDNS:"
-                   " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
-                   &"\""[!iter->val], iter->val ? iter->val : "",
-                   &"\""[!iter->val]));
+        CORE_LOGF_X(78, eLOG_Error,
+                    ("[%s]  Argument affinity lookup not supported by LBDNS:"
+                     " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
+                     &"\""[!iter->val], iter->val ? iter->val : "",
+                     &"\""[!iter->val]));
         goto err;
     }
     if (!(data = (struct SLBDNS_Data*) calloc(1, sizeof(*data)
                                               + (LBDNS_INITIAL_ALLOC - 1)
                                               * sizeof(data->cand)))) {
-        CORE_LOG_ERRNO(eLOG_Error, errno,
-                       "LBDNS failed to create private data structure");
+        CORE_LOG_ERRNO_X(79, eLOG_Error, errno,
+                         "LBDNS failed to create private data structure");
         goto err;
     }
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
@@ -1562,19 +1562,19 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
         if (!domain  ||  !x_CheckDomain(domain)) {
-            CORE_LOG(eLOG_Critical,
-                     "LBDNS cannot figure out system domain name");
+            CORE_LOG_X(80, eLOG_Critical,
+                       "LBDNS cannot figure out system domain name");
             goto out;
         }
         CORE_TRACEF(("LBDNS found system domain \"%s\"", domain));
     } else if (!x_CheckDomain(val)) {
-        CORE_LOGF(eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
+        CORE_LOGF_X(81, eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
         goto out;
     } else
         domain = val;
     if (!(data->domain = x_CopyDomain(domain))) {
-        CORE_LOGF_ERRNO(eLOG_Error, errno,
-                        ("LBDNS failed to store domain name \"%s\"", domain));
+        CORE_LOGF_ERRNO_X(82, eLOG_Error, errno,
+                          ("LBDNS failed to store domain name \"%s\"", domain));
         goto out;
     }
     data->domlen = strlen(data->domain);
@@ -1645,7 +1645,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     /* NB: This should never be called on a non-UNIX platform */
     static void* volatile /*bool*/ s_Once = 0/*false*/;
     if (CORE_Once(&s_Once))
-        CORE_LOG(eLOG_Critical, "LBDNS only available on UNIX platform(s)");
+        CORE_LOG_X(31, eLOG_Critical, "LBDNS only available on UNIX platform(s)");
     return 0;
 }
 
