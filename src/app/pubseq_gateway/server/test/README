@@ -79,3 +79,20 @@ vtune
 On tonka1 it is located here:
 /usr/local/intel/2018/vtune_amplifier_2018.3.0.558279/bin64/
 
+
+Stress test with psg_client
+---------------------------
+
+psg_client.ini:
+[PSG]
+max_sessions = 10
+num_io = 80
+request_retries = 0
+request_timeout = 3000
+
+Command line:
+$ yes 2 |head -1000 | pv -lL50 |psg_client resolve -service tonka1:2180 -https -server-mode |jq -c '.|select(.status=="Error")'
+
+-1000 => 1000 requests
+pv -lL50 => 50 requests per second
+

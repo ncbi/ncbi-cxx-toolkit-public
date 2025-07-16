@@ -44,20 +44,6 @@
 extern SShutdownData       g_ShutdownData;
 
 
-void GetSSLSettings(bool &  enabled,
-                    string &  cert_file,
-                    string &  key_file,
-                    string &  ciphers)
-{
-    const SPubseqGatewaySettings &  settings =
-                            CPubseqGatewayApp::GetInstance()->Settings();
-    enabled = settings.m_SSLEnable;
-    cert_file = settings.m_SSLCertFile;
-    key_file = settings.m_SSLKeyFile;
-    ciphers = settings.m_SSLCiphers;
-}
-
-
 // Checks if the configured FD limit is reached.
 // If so then produce a log message and initiate a shutdown
 void CheckFDLimit(void)
@@ -129,7 +115,6 @@ void CheckFDLimit(void)
 
 void CHttpProto::ThreadStart(uv_loop_t *  loop, CTcpWorker *  worker)
 {
-    m_HttpAcceptCtx.hosts = m_Daemon.HttpCfg()->hosts;
     m_Worker = worker;
 }
 
@@ -160,10 +145,8 @@ void CHttpProto::OnNewConnection(uv_stream_t *  conn,
     // The http context must be created per connection because some of the
     // context members are modified in the process of throttling:
     // GOAWAY callbacks and timers
-    m_HttpAcceptCtx.ctx = http_conn->InitializeH2oHttpContext(conn->loop,
-                                                              m_Daemon);
+    http_conn->InitializeH2oHttpContext(conn->loop, m_Daemon, sock);
 
-    h2o_accept(&m_HttpAcceptCtx, sock);
     if (uv_fileno(reinterpret_cast<uv_handle_t*>(conn), &fd) == 0) {
         int                 no = -1;
         struct linger       linger = {0, 0};
@@ -268,14 +251,9 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
                 break;
             case CHttpReply::eReplyStarted:
             case CHttpReply::eReplyInitialized:
-#if 0
-                if (!reply->GetHttpReply()->IsPostponed()) {
-                    string  msg = "Unfinished request hasn't "
-                                  "been scheduled (postponed)";
-                    PSG_ERROR(msg);
-                    FinishReply503(reply, msg);
-                }
-#endif
+                // This is a valid case now;
+                // When a coonection is throttled (the very same which issued
+                // the current request) then the request will not be postponed.
                 break;
             default:
                 {
@@ -304,64 +282,5 @@ int CHttpProto::OnHttpRequest(CHttpGateHandler *  rh,
         }
     }
     return 0;
-}
-
-
-void CHttpProto::x_SetupSSL(void)
-{
-    bool        enabled;
-    string      cert_file;
-    string      key_file;
-    string      ciphers;
-
-    GetSSLSettings(enabled, cert_file, key_file, ciphers);
-    if (!enabled)
-        return;
-
-    m_HttpAcceptCtx.ssl_ctx = SSL_CTX_new(SSLv23_server_method());
-    m_HttpAcceptCtx.expect_proxy_line = 0;
-
-    const long  ssl_flags = SSL_OP_NO_SSLv2 |
-                            SSL_OP_NO_SSLv3 |
-                            SSL_OP_NO_TLSv1 |
-                            SSL_OP_NO_TLSv1_1;
-    SSL_CTX_set_options(m_HttpAcceptCtx.ssl_ctx, ssl_flags);
-    SSL_CTX_set_ecdh_auto(m_HttpAcceptCtx.ssl_ctx, 1);
-    SSL_CTX_set_timeout(m_HttpAcceptCtx.ssl_ctx, 1);
-
-    if (SSL_CTX_use_certificate_chain_file(m_HttpAcceptCtx.ssl_ctx,
-                                           cert_file.c_str()) != 1) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "Error loading SSL certificate from " +
-                   cert_file);
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(m_HttpAcceptCtx.ssl_ctx,
-                                    key_file.c_str(),
-                                    SSL_FILETYPE_PEM) != 1) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "Error loading SSL private key from " +
-                   key_file);
-    }
-
-    if (SSL_CTX_set_cipher_list(m_HttpAcceptCtx.ssl_ctx,
-                                ciphers.c_str()) != 1) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "Error setting SSL ciphers (" +
-                   ciphers + ")");
-    }
-
-    // Note:
-    // NPN support could also be added however it does not look necessary
-    // because it is for SPDY while http/2 tends to use ALPN
-    // #if H2O_USE_NPN
-    //     h2o_ssl_register_npn_protocols(m_HttpAcceptCtx.ssl_ctx,
-    //                                    h2o_http2_npn_protocols);
-    // #endif
-
-    #if H2O_USE_ALPN
-        h2o_ssl_register_alpn_protocols(m_HttpAcceptCtx.ssl_ctx,
-                                        h2o_http2_alpn_protocols);
-    #endif
 }
 

@@ -1089,7 +1089,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
 
             // The low level destruction also means that there will be no
             // libh2o signal that the response generator memory can be
-            // disposed. Set another flag that it could be safe to destrow the
+            // disposed. Set another flag that it could be safe to destroy the
             // group.
             procs->second->m_LowLevelClose = true;
         }

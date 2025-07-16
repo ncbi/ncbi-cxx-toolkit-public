@@ -111,6 +111,7 @@ public:
         m_H2oConnection(nullptr),
         m_TcpStream(nullptr),
         m_HttpCtx({0}),
+        m_HttpAcceptCtx({0}),
         m_H2oCtxInitialized(false)
     {}
 
@@ -225,7 +226,8 @@ public:
     void UpdateH2oConnection(h2o_conn_t *  h2o_conn);
 
     h2o_context_t *  InitializeH2oHttpContext(uv_loop_t *  loop,
-                                              CHttpDaemon &  http_daemon);
+                                              CHttpDaemon &  http_daemon,
+                                              h2o_socket_t *  sock);
 
 
 private:
@@ -251,6 +253,7 @@ private:
     uv_tcp_t *                      m_TcpStream;
 
     h2o_context_t                   m_HttpCtx;
+    h2o_accept_ctx_t                m_HttpAcceptCtx;
     bool                            m_H2oCtxInitialized;
 
     struct SBacklogAttributes

@@ -20,7 +20,7 @@ SRC = pubseq_gateway  \
       psgs_seq_id_utils http_request http_connection http_reply http_proto \
       tcp_daemon http_daemon url_param_utils dummy_processor time_series_stat \
       ipg_resolve settings my_ncbi_cache myncbi_callback backlog_per_request \
-      active_proc_per_request z_end_points myncbi_monitor throttling
+      active_proc_per_request z_end_points myncbi_monitor throttling ssl
 
 LIBS = $(PCRE_LIBS) $(OPENSSL_LIBS) $(H2O_STATIC_LIBS) $(CASSANDRA_STATIC_LIBS) \
        $(LIBXML_LIBS) $(LIBXSLT_LIBS) $(LIBUV_STATIC_LIBS) $(LMDB_STATIC_LIBS) $(PROTOBUF_LIBS) $(KRB5_LIBS) \

@@ -37,6 +37,7 @@
 #include "pubseq_gateway.hpp"
 #include "backlog_per_request.hpp"
 #include "tcp_daemon.hpp"
+#include "ssl.hpp"
 
 
 static void IncrementBackloggedCounter(void)
@@ -247,8 +248,12 @@ CHttpConnection::~CHttpConnection()
     }
 
     if (m_H2oCtxInitialized) {
-        h2o_context_dispose(&m_HttpCtx);
         m_H2oCtxInitialized = false;
+        h2o_context_dispose(&m_HttpCtx);
+
+        if (m_HttpAcceptCtx.ssl_ctx) {
+            SSL_CTX_free(m_HttpAcceptCtx.ssl_ctx);
+        }
     }
 }
 
@@ -645,12 +650,26 @@ void CHttpConnection::UpdateH2oConnection(h2o_conn_t *  h2o_conn)
     }
 }
 
-
 h2o_context_t *
 CHttpConnection::InitializeH2oHttpContext(uv_loop_t *  loop,
-                                          CHttpDaemon &  http_daemon)
+                                          CHttpDaemon &  http_daemon,
+                                          h2o_socket_t *  sock)
 {
+    // The http context (m_HttpCtx) must be per connection (opposite to per
+    // worker). This is because the context stores timers and other data
+    // related to http/2 implementation. If GOAWAY frame is needed for that
+    // connection then the data fields are in use and they must be per
+    // connection.
+
+    memset(&m_HttpAcceptCtx, 0, sizeof(h2o_accept_ctx_t));
+    SetupSSL(&m_HttpAcceptCtx);
+    m_HttpAcceptCtx.hosts = http_daemon.HttpCfg()->hosts;
+
     h2o_context_init(&m_HttpCtx, loop, http_daemon.HttpCfg());
+
+    m_HttpAcceptCtx.ctx = &m_HttpCtx;
+    h2o_accept(&m_HttpAcceptCtx, sock);
+
     m_H2oCtxInitialized = true;
     return &m_HttpCtx;
 }
@@ -667,6 +686,11 @@ void CHttpConnection::OnBeforeClosedConnection(void)
     if (m_H2oCtxInitialized) {
         m_H2oCtxInitialized = false;
         h2o_context_dispose(&m_HttpCtx);
+
+        if (m_HttpAcceptCtx.ssl_ctx) {
+            SSL_CTX_free(m_HttpAcceptCtx.ssl_ctx);
+            m_HttpAcceptCtx.ssl_ctx = nullptr;
+        }
     }
 }
 

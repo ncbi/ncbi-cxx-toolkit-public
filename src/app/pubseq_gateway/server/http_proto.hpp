@@ -49,10 +49,6 @@ class CPSGS_Reply;
 class CTcpDaemon;
 struct CTcpWorker;
 
-void GetSSLSettings(bool &  enabled,
-                    string &  cert_file,
-                    string &  key_file,
-                    string &  ciphers);
 void CheckFDLimit(void);
 
 
@@ -93,19 +89,13 @@ class CHttpProto
 public:
     CHttpProto(CHttpDaemon & daemon) :
         m_Worker(nullptr),
-        m_Daemon(daemon),
-        m_HttpAcceptCtx({0})
+        m_Daemon(daemon)
     {
         PSG_TRACE("CHttpProto::CHttpProto");
-        x_SetupSSL();
     }
 
     ~CHttpProto()
     {
-        if (m_HttpAcceptCtx.ssl_ctx) {
-            SSL_CTX_free(m_HttpAcceptCtx.ssl_ctx);
-        }
-
         PSG_TRACE("~CHttpProto");
     }
 
@@ -132,12 +122,8 @@ public:
                       const char *  cd_uid);
 
 private:
-    void x_SetupSSL(void);
-
-private:
     CTcpWorker *        m_Worker;
     CHttpDaemon &       m_Daemon;
-    h2o_accept_ctx_t    m_HttpAcceptCtx;
 };
 
 #endif

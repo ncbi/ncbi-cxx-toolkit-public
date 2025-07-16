@@ -1,0 +1,26 @@
+Preparation:
+-----------
+run_n() { for ((i = 1; i <= ${1:-1}; ++i)); do eval ${2:-:}; done; sleep 0.1; }
+run_psg_client() { ./psg_client resolve -service $1 -server-mode -test-identity $2 -rate ${3:-0}; }
+run_n_psg_clients() { trap "run_n $1 'kill %\$i'" RETURN; run_n $1 "yes 2 |run_psg_client $2 $3 $4 &"; sleep 1h; }
+
+
+
+E.g. Test case 1 from CXX-14075 (custom psg_client)
+
+Conn 1:
+------
+(echo 2; sleep 1d) |run_psg_client tonka1:2180 peer_id_0
+
+Conn 2-7:
+--------
+run_n_psg_clients 6 tonka1:2180 peer_id_0 0.25
+
+Conn 8-14:
+---------
+run_n_psg_clients 7 tonka1:2180 'peer_id_$i' 0.25
+
+Conn 15:
+-------
+echo 2 |run_psg_client tonka1:2180 peer_id_0
+
