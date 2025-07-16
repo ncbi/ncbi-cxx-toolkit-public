@@ -35,6 +35,8 @@
 #include "ncbi_lbdns.h"
 #include "ncbi_once.h"
 
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
+
 #ifdef NCBI_OS_UNIX
 
 #include "ncbi_lb.h"
@@ -54,8 +56,6 @@
 #include <arpa/nameser.h>
 #include <netinet/in.h>
 #include <resolv.h>
-
-#define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 
 #define SizeOf(a)                (sizeof(a) / sizeof((a)[0]))
