@@ -119,9 +119,8 @@ struct MixLoc {
     bool          noleft  = false;
     bool          noright = false;
     Int4          numint  = 0;
-    MixLoc*       next    = nullptr;
 };
-using TMixLocList = MixLoc*;
+using TMixLocList = forward_list<MixLoc>;
 
 struct Gene {
     string locus; /* the name of the gene,
@@ -138,7 +137,7 @@ struct Gene {
 
     CRef<CSeq_loc> loc;
 
-    TMixLocList mlp = nullptr;
+    TMixLocList mlp;
 
     TSynSet      syn;
     TWormbaseSet wormbase;
@@ -424,23 +423,11 @@ static bool CompareGeneListName(const Gene& g1, const Gene& g2)
 }
 
 /**********************************************************/
-static void MixLocFree(TMixLocList& mll)
-{
-    for (auto mlp = mll; mlp != nullptr;) {
-        auto next = mlp->next;
-        delete mlp;
-        mlp = next;
-    }
-    mll = nullptr;
-}
-
-/**********************************************************/
 Gene::~Gene()
 {
     if (slibp)
         delete slibp;
-    if (mlp)
-        MixLocFree(mlp);
+    mlp.clear();
 }
 
 /**********************************************************
@@ -657,19 +644,6 @@ static void AddGeneFeat(Gene& g, const string& maploc, TSeqFeatList& feats)
 }
 
 /**********************************************************/
-static MixLoc* MixLocCopy(const MixLoc& ml)
-{
-    MixLoc* res  = new MixLoc();
-    res->pId     = ml.pId;
-    res->min     = ml.min;
-    res->max     = ml.max;
-    res->strand  = ml.strand;
-    res->noleft  = ml.noleft;
-    res->noright = ml.noright;
-    res->numint  = ml.numint;
-    return res;
-}
-/**********************************************************/
 
 static bool s_IdsMatch(const CRef<CSeq_id>& pId1, const CRef<CSeq_id>& pId2)
 {
@@ -687,62 +661,55 @@ static bool s_IdsMatch(const CRef<CSeq_id>& pId1, const CRef<CSeq_id>& pId2)
 /**********************************************************/
 static TMixLocList EasySeqLocMerge(const TMixLocList& first, const TMixLocList& second, bool join)
 {
-    if (! first && ! second)
-        return nullptr;
+    TMixLocList res;
+    if (first.empty() && second.empty())
+        return res;
 
-    MixLoc* tres = new MixLoc;
-    MixLoc* res  = tres;
-    MixLoc* mlp  = first ? first : second;
-    for (; mlp != nullptr; mlp = mlp->next) {
-        res->next = MixLocCopy(*mlp);
-        res       = res->next;
+    const TMixLocList& either = first.empty() ? second : first;
+    auto tres = res.before_begin();
+    for (auto mlp = either.cbegin(); mlp != either.cend(); ++mlp) {
+        tres = res.insert_after(tres, *mlp);
     }
-    if (first && second) {
-        for (mlp = second; mlp; mlp = mlp->next) {
-            auto nxt = MixLocCopy(*mlp);
-            auto it  = tres->next;
-            for (; it != nullptr; it = it->next) {
-                if (! s_IdsMatch(it->pId, nxt->pId) ||
-                    it->strand != nxt->strand)
+    if (! first.empty() && ! second.empty()) {
+        for (auto mlp = second.cbegin(); mlp != second.cend(); ++mlp) {
+            auto nxt(*mlp);
+            auto it  = res.begin();
+            for (; it != res.cend(); ++it) {
+                if (! s_IdsMatch(it->pId, nxt.pId) ||
+                    it->strand != nxt.strand)
                     continue;
 
-                auto ttt  = it->next;
-                it->next  = nxt;
-                nxt->next = ttt;
+                res.insert_after(it, nxt);
                 break;
             }
-            if (it != nullptr)
+            if (it != res.end())
                 continue;
 
-            auto prev = tres;
-            for (; prev->next != nullptr; prev = prev->next) {
-                auto ttt = prev->next;
-                auto it  = mlp->next;
-                for (; it != nullptr; it = it->next) {
+            auto prev = res.before_begin();
+            for (; next(prev) != res.cend(); ++prev) {
+                auto ttt = next(prev);
+                auto it  = next(mlp);
+                for (; it != res.cend(); ++it) {
                     if (s_IdsMatch(it->pId, ttt->pId) &&
                         it->strand == ttt->strand)
                         break;
                 }
-                if (it != nullptr)
+                if (it != res.cend())
                     break;
             }
-            auto ttt   = prev->next;
-            prev->next = nxt;
-            nxt->next  = ttt;
+            res.insert_after(prev, nxt);
         }
     }
 
-    res = tres->next;
-    delete tres;
-    if (! res)
-        return nullptr;
+    if (res.empty())
+        return res;
 
     for (bool got = true; got;) {
         got = false;
-        for (tres = res; tres != nullptr; tres = tres->next) {
+        for (auto tres = res.begin(); tres != res.end(); ++tres) {
             if (! tres->pId)
                 continue;
-            for (mlp = tres->next; mlp != nullptr; mlp = mlp->next) {
+            for (auto mlp = next(tres); mlp != res.end(); ++mlp) {
                 if (! mlp->pId ||
                     ! s_IdsMatch(tres->pId, mlp->pId) ||
                     tres->strand != mlp->strand)
@@ -781,43 +748,33 @@ static TMixLocList EasySeqLocMerge(const TMixLocList& first, const TMixLocList& 
             }
         }
     }
-    for (mlp = nullptr, tres = res; tres != nullptr;) {
-        auto nxt = tres->next;
+
+    for (auto prev = res.before_begin(), tres = res.begin(); tres != res.end();) {
         if (tres->pId) {
-            mlp = tres;
-            tres = nxt;
+            prev = tres++;
             continue;
         }
-        if (mlp == nullptr)
-            res = tres->next;
-        else
-            mlp->next = tres->next;
-        delete tres;
-        tres = nxt;
+        tres = res.erase_after(prev);
     }
-    return (res);
+    return res;
 }
 
 /**********************************************************/
 static TMixLocList CircularSeqLocCollect(const TMixLocList& first, const TMixLocList& second)
 {
-    if (! first && ! second)
-        return nullptr;
+    TMixLocList res;
+    if (first.empty() && second.empty())
+        return res;
 
-    MixLoc* tres = new MixLoc;
-    MixLoc* res  = tres;
-    for (auto mlp = first; mlp != nullptr; mlp = mlp->next) {
-        res->next = MixLocCopy(*mlp);
-        res       = res->next;
+    auto tres = res.before_begin();
+    for (auto mlp = first.cbegin(); mlp != first.cend(); ++mlp) {
+        tres = res.insert_after(tres, *mlp);
     }
-    for (auto mlp = second; mlp != nullptr; mlp = mlp->next) {
-        res->next = MixLocCopy(*mlp);
-        res       = res->next;
+    for (auto mlp = second.cbegin(); mlp != second.cend(); ++mlp) {
+        tres = res.insert_after(tres, *mlp);
     }
 
-    res = tres->next;
-    delete tres;
-    return (res);
+    return res;
 }
 
 /**********************************************************/
@@ -879,7 +836,7 @@ static bool fta_check_feat_overlap(const TGeneLocList& gelocs, Gene& g, const Mi
             max < gelop->verymin)
             continue;
 
-        if (fta_strings_same(g.locus.c_str(), gelop->gene.c_str()) && fta_strings_same(g.locus_tag.c_str(), gelop->locus.c_str()))
+        if (g.locus == gelop->gene && g.locus_tag == gelop->locus)
             continue;
         auto it = gelop->ammp.begin();
         for (; it != gelop->ammp.end(); ++it) {
@@ -906,24 +863,24 @@ static bool fta_check_feat_overlap(const TGeneLocList& gelocs, Gene& g, const Mi
 /**********************************************************/
 static bool ConfirmCircular(TMixLocList& mll)
 {
-    if (! mll || mll->next == nullptr)
+    if (mll.empty() || next(mll.begin()) == mll.end())
         return false;
 
-    auto tmlp = mll;
-    if (mll->strand != eNa_strand_minus) {
-        for (; tmlp->next != nullptr; tmlp = tmlp->next)
-            if (tmlp->min > tmlp->next->min)
+    auto tmlp = mll.begin();
+    if (mll.front().strand != eNa_strand_minus) {
+        for (; next(tmlp) != mll.end(); ++tmlp)
+            if (tmlp->min > next(tmlp)->min)
                 break;
     } else {
-        for (; tmlp->next != nullptr; tmlp = tmlp->next)
-            if (tmlp->min < tmlp->next->min)
+        for (; next(tmlp) != mll.end(); ++tmlp)
+            if (tmlp->min < next(tmlp)->min)
                 break;
     }
 
-    if (tmlp->next != nullptr)
+    if (next(tmlp) != mll.end())
         return true;
 
-    for (tmlp = mll; tmlp != nullptr; tmlp = tmlp->next) {
+    for (tmlp = mll.begin(); tmlp != mll.end(); ++tmlp) {
         tmlp->numint = 0;
     }
     return false;
@@ -940,7 +897,7 @@ static void FixMixLoc(Gene& g, const TGeneLocList& gelocs)
     bool noright;
     bool tempcirc;
 
-    g.mlp = nullptr;
+    g.mlp.clear();
 
     if (g.feat.Empty() || ! g.feat->IsSetLocation()) {
         CRef<CSeq_id> pTempId;
@@ -955,16 +912,14 @@ static void FixMixLoc(Gene& g, const TGeneLocList& gelocs)
             return;
         }
 
-        MixLoc* mlp = new MixLoc();
-        g.mlp       = mlp;
-        auto& ml    = *mlp;
-        ml.pId      = pTempId;
-        ml.min      = g.slibp->from;
-        ml.max      = g.slibp->to;
-        ml.strand   = g.slibp->strand;
-        ml.noleft   = g.slibp->noleft;
-        ml.noright  = g.slibp->noright;
-        ml.numint   = 0;
+        auto& ml   = g.mlp.emplace_front();
+        ml.pId     = pTempId;
+        ml.min     = g.slibp->from;
+        ml.max     = g.slibp->to;
+        ml.strand  = g.slibp->strand;
+        ml.noleft  = g.slibp->noleft;
+        ml.noright = g.slibp->noright;
+        ml.numint  = 0;
         return;
     }
 
@@ -973,7 +928,6 @@ static void FixMixLoc(Gene& g, const TGeneLocList& gelocs)
         return;
     }
 
-    MixLoc*         mlp  = nullptr;
     Int4            i    = 1;
     const CSeq_loc& locs = g.feat->GetLocation();
     for (CSeq_loc::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
@@ -1022,20 +976,19 @@ static void FixMixLoc(Gene& g, const TGeneLocList& gelocs)
             continue;
         }
 
-
-        if (! mlp) {
-            mlp          = new MixLoc();
-            mlp->pId     = pId;
-            mlp->min     = from;
-            mlp->max     = to;
-            mlp->strand  = strand;
-            mlp->noleft  = noleft;
-            mlp->noright = noright;
-            mlp->numint  = i++;
+        if (g.mlp.empty()) {
+            auto& ml   = g.mlp.emplace_front();
+            ml.pId     = pId;
+            ml.min     = from;
+            ml.max     = to;
+            ml.strand  = strand;
+            ml.noleft  = noleft;
+            ml.noright = noright;
+            ml.numint  = i++;
             continue;
         }
 
-        for (auto tmlp = mlp;; tmlp = tmlp->next) {
+        for (auto tmlp = g.mlp.begin();; ++tmlp) {
             tempcirc = false;
             if (s_IdsMatch(pId, tmlp->pId) && tmlp->strand == strand) {
                 if (tempcirc == false && ((tmlp->min <= to && tmlp->max >= from) ||
@@ -1052,24 +1005,21 @@ static void FixMixLoc(Gene& g, const TGeneLocList& gelocs)
                 }
             }
 
-            if (tmlp->next != nullptr)
+            if (next(tmlp) != g.mlp.end())
                 continue;
 
-            tmlp->next = new MixLoc();
-            tmlp       = tmlp->next;
-            auto& tm   = *tmlp;
-            tm.pId     = pId;
-            tm.min     = from;
-            tm.max     = to;
-            tm.strand  = strand;
-            tm.noleft  = noleft;
-            tm.noright = noright;
-            tm.numint  = i++;
+            tmlp       = g.mlp.emplace_after(tmlp);
+            auto& ml   = *tmlp;
+            ml.pId     = pId;
+            ml.min     = from;
+            ml.max     = to;
+            ml.strand  = strand;
+            ml.noleft  = noleft;
+            ml.noright = noright;
+            ml.numint  = i++;
             break;
         }
     }
-
-    g.mlp = mlp;
 }
 
 
@@ -1113,18 +1063,18 @@ static CRef<CSeq_loc> MakeCLoc(TMixLocList& mll, bool noleft, bool noright)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
 
-    if (mll->next == nullptr) {
-        if (mll->min == mll->max)
-            fta_make_seq_pnt(*mll, noleft, noright, ret->SetPnt());
+    if (next(mll.begin()) == mll.end()) {
+        if (mll.front().min == mll.front().max)
+            fta_make_seq_pnt(mll.front(), noleft, noright, ret->SetPnt());
         else
-            fta_make_seq_int(*mll, noleft, noright, ret->SetInt());
+            fta_make_seq_int(mll.front(), noleft, noright, ret->SetInt());
         return ret;
     }
 
     CRef<CSeq_loc> cur;
     CSeq_loc_mix&  mix = ret->SetMix();
 
-    for (auto mlp = mll; mlp != nullptr; mlp = mlp->next) {
+    for (auto mlp = mll.begin(); mlp != mll.end(); ++mlp) {
         cur.Reset(new CSeq_loc);
 
         if (mlp->min == mlp->max) {
@@ -1143,11 +1093,11 @@ static CRef<CSeq_loc> MakeCLoc(TMixLocList& mll, bool noleft, bool noright)
 static Int2 GetMergeOrder(const TMixLocList& first, const TMixLocList& second)
 {
     Int2 count2 = 0;
-    for (auto mlp = second; mlp != nullptr; mlp = mlp->next) {
+    for (auto mlp = second.cbegin(); mlp != second.cend(); ++mlp) {
         if (! mlp->pId)
             continue;
         bool seen_before = false;
-        for (auto tmlp = second; tmlp != mlp; tmlp = tmlp->next)
+        for (auto tmlp = second.cbegin(); tmlp != mlp; ++tmlp)
             if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId)) {
                 seen_before = true;
                 break;
@@ -1156,11 +1106,11 @@ static Int2 GetMergeOrder(const TMixLocList& first, const TMixLocList& second)
             count2++;
     }
     Int2 count1 = 0;
-    for (auto mlp = first; mlp != nullptr; mlp = mlp->next) {
+    for (auto mlp = first.cbegin(); mlp != first.cend(); ++mlp) {
         if (! mlp->pId)
             continue;
         bool seen_before = false;
-        for (auto tmlp = first; tmlp != mlp; tmlp = tmlp->next)
+        for (auto tmlp = first.cbegin(); tmlp != mlp; ++tmlp)
             if (tmlp->pId && s_IdsMatch(tmlp->pId, mlp->pId)) {
                 seen_before = true;
                 break;
@@ -1174,15 +1124,15 @@ static Int2 GetMergeOrder(const TMixLocList& first, const TMixLocList& second)
 /**********************************************************/
 static void CircularSeqLocFormat(Gene& g)
 {
-    if (! g.mlp || ! g.mlp->next)
+    if (g.mlp.empty() || next(g.mlp.begin()) == g.mlp.end())
         return;
 
-    for (bool got = true; got == true;) {
+    for (bool got = true; got;) {
         got = false;
-        for (auto mlp = g.mlp; mlp != nullptr; mlp = mlp->next) {
+        for (auto mlp = g.mlp.begin(); mlp != g.mlp.end(); ++mlp) {
             if (mlp->numint == -1)
                 continue;
-            for (auto tmlp = mlp->next; tmlp != nullptr; tmlp = tmlp->next) {
+            for (auto tmlp = next(mlp); tmlp != g.mlp.end(); ++tmlp) {
                 if (tmlp->numint == -1 || mlp->strand != tmlp->strand)
                     continue;
 
@@ -1242,36 +1192,27 @@ static void CircularSeqLocFormat(Gene& g)
         }
     }
 
-    MixLoc* mlpprev = nullptr;
-    for (auto mlp = g.mlp; mlp != nullptr;) {
-        auto mlpnext = mlp->next;
+    auto mlpprev = g.mlp.before_begin();
+    for (auto mlp = g.mlp.begin(); mlp != g.mlp.end();) {
+        auto mlpnext = next(mlp);
         if (mlp->numint != -1) {
             mlpprev = mlp;
             mlp     = mlpnext;
             continue;
         }
 
-        if (! mlpprev)
-            g.mlp = mlpnext;
-        else
-            mlpprev->next = mlpnext;
-        delete mlp;
+        g.mlp.erase_after(mlpprev);
         mlp = mlpnext;
     }
 
-    mlpprev = nullptr;
-    auto mlp = g.mlp;
-    for (; mlp != nullptr; mlpprev = mlp, mlp = mlp->next)
+    mlpprev = g.mlp.before_begin();
+    auto mlp = g.mlp.begin();
+    for (; mlp != g.mlp.end(); mlpprev = mlp++)
         if (mlp->numint == 1)
             break;
 
-    if (mlp != nullptr && mlp != g.mlp) {
-        mlpprev->next = nullptr;
-        auto tmlp     = mlp;
-        while (tmlp->next != nullptr)
-            tmlp = tmlp->next;
-        tmlp->next = g.mlp;
-        g.mlp      = mlp;
+    if (mlp != g.mlp.end() && mlp != g.mlp.begin()) {
+        g.mlp.splice_after(g.mlp.before_begin(), g.mlp, mlpprev, g.mlp.end());
     }
 }
 
@@ -1285,11 +1226,11 @@ static void SortMixLoc(TMixLocList& mll)
     Int4 max;
     Int4 numint;
 
-    if (! mll || mll->next == nullptr)
+    if (mll.empty() || next(mll.begin()) == mll.end())
         return;
 
-    for (auto* mlp = mll; mlp != nullptr; mlp = mlp->next) {
-        for (auto* tmlp = mlp->next; tmlp != nullptr; tmlp = tmlp->next) {
+    for (auto mlp = mll.begin(); mlp != mll.end(); ++mlp) {
+        for (auto tmlp = next(mlp); tmlp != mll.end(); ++tmlp) {
             if (! s_IdsMatch(mlp->pId, tmlp->pId) ||
                 mlp->strand != tmlp->strand)
                 break;
@@ -1367,7 +1308,6 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
 
     gnp->circular = circular;
 
-
     for (auto c = gnp->gl.begin(); next(c) != gnp->gl.end();) {
         auto cn = next(c);
         if (fta_cmp_locusyn(*c, *cn) != 0 ||
@@ -1409,20 +1349,19 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
         } else
             join = false;
 
-        MixLoc* mlp;
+        TMixLocList mll;
         if (! gnp->circular) {
             auto level = GetMergeOrder(c->mlp, cn->mlp);
             if (level > 0) {
-                mlp     = EasySeqLocMerge(cn->mlp, c->mlp, join);
+                mll = EasySeqLocMerge(cn->mlp, c->mlp, join);
                 c->feat = cn->feat;
             } else
-                mlp = EasySeqLocMerge(c->mlp, cn->mlp, join);
+                mll = EasySeqLocMerge(c->mlp, cn->mlp, join);
         } else
-            mlp = CircularSeqLocCollect(c->mlp, cn->mlp);
+            mll = CircularSeqLocCollect(c->mlp, cn->mlp);
 
-        if (c->mlp)
-            MixLocFree(c->mlp);
-        c->mlp = mlp;
+        c->mlp.clear();
+        c->mlp = mll;
         if (cn->pseudo)
             c->pseudo = true;
         if (! cn->allpseudo)
@@ -1442,7 +1381,7 @@ static void ScannGeneName(GeneNodePtr gnp, Int4 seqlen)
     }
 
     for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c)
-        if (c->loc.Empty() && c->mlp)
+        if (c->loc.Empty() && ! c->mlp.empty())
             c->loc = MakeCLoc(c->mlp, c->noleft, c->noright);
 
     for (auto c = gnp->gl.begin(); c != gnp->gl.end(); ++c) {
@@ -1811,7 +1750,7 @@ static void fta_append_feat_list(GeneNodePtr gnp, const CSeq_loc* location, cons
     if (! gnp || ! location)
         return;
 
-    auto& geloc = gnp->gelocs.emplace_front();
+    auto& geloc   = gnp->gelocs.emplace_front();
     geloc.gene    = gene;
     geloc.locus   = locus_tag;
     geloc.verymin = -1;
@@ -2282,7 +2221,7 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
         for (CTypeIterator<CBioseq> bioseq(Begin(*entry)); bioseq; ++bioseq) {
             FindGene(*bioseq, gnp);
         }
-    }   
+    }
 
     if (gnp->got_misc) {
         MiscFeatsWithoutGene(gnp);
@@ -2344,8 +2283,6 @@ static void CheckGene(CRef<CSeq_entry> entry, ParserPtr pp, GeneRefFeats& gene_r
                 gene_refs.valid = true;
             }
         }
-
-        gnp->gl.clear();
     }
 
     delete gnp;
