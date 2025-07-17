@@ -222,7 +222,8 @@ fi
 TESTS="readyz_exclude healthz readyz_snp_no_verbose readyz_cdd_no_verbose
        readyz_wgs_no_verbose readyz_lmdb_no_verbose readyz_cassandra_no_verbose
        readyz_no_verbose readyz_snp readyz_cdd readyz_wgs readyz_lmdb
-       readyz_cassandra readyz livez_no_verbose livez"
+       readyz_cassandra readyz livez_no_verbose livez hello_bad_user_agent
+       hello_bad_id hello_no_id hello_no_user_agent hello_ok"
 if echo $TESTS | grep -w $obasename > /dev/null; then
     # in addition to the most common case the 'content length' needs to be
     # stripped because the http outputs it starting with a capital letter while
