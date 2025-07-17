@@ -304,6 +304,8 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_GenerateGoldenFile = (options & CValidator::eVal_generate_golden_file) != 0;
     m_CompareVDJCtoCDS = (options & CValidator::eVal_compare_vdjc_to_cds) != 0;
     m_IgnoreInferences = (options & CValidator::eVal_ignore_inferences) != 0;
+    m_ForceInferences = (options & CValidator::eVal_force_inferences) != 0;
+    m_NewStrainValidation = (options & CValidator::eVal_new_strain_validation) != 0;
 }
 
 
@@ -1503,7 +1505,7 @@ bool CValidError_imp::Validate
     // count inference accessions - if there are too many, WAS temporarily disable inference checking
     // now disable inference checking for rest of this validator run
     bool old_inference_acc_check = m_ValidateInferenceAccessions;
-    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
+    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff && ! m_ForceInferences) {
         m_IgnoreInferences = true;
     }
     if (! m_IgnoreInferences) {
@@ -1514,7 +1516,7 @@ bool CValidError_imp::Validate
                     if (! GetContext().PreprocessHugeFile) {
                         m_CumulativeInferenceCount++;
                     }
-                    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
+                    if (m_CumulativeInferenceCount >= InferenceAccessionCutoff && ! m_ForceInferences) {
                         // disable inference checking for remainder of run
                         m_IgnoreInferences = true;
 
@@ -1543,7 +1545,7 @@ bool CValidError_imp::Validate
                             if (! GetContext().PreprocessHugeFile) {
                                 m_CumulativeInferenceCount += num_accessions;
                             }
-                            if (m_CumulativeInferenceCount >= InferenceAccessionCutoff) {
+                            if (m_CumulativeInferenceCount >= InferenceAccessionCutoff && ! m_ForceInferences) {
                                 // disable inference checking for remainder of run
                                 m_IgnoreInferences = true;
 

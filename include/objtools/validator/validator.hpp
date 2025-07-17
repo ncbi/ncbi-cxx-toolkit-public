@@ -105,6 +105,8 @@ public:
         eVal_generate_golden_file    = 0x2000000,
         eVal_compare_vdjc_to_cds     = 0x4000000,
         eVal_ignore_inferences       = 0x10000000,
+        eVal_force_inferences        = 0x20000000,
+        eVal_new_strain_validation   = 0x40000000,
     };
 
     // Constructor / Destructor

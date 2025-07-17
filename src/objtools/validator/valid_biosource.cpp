@@ -3082,10 +3082,15 @@ static bool StrainCheckCallback(const string& organism, const string& strain)
 */
 
 
-static bool s_init_NewTaxVal(void)
+static bool s_init_NewTaxVal(bool use_new_strain_validation)
 {
     if (! CNcbiApplication::Instance()) {
         return false;
+    }
+
+    // allow bit flag to override environment variable
+    if (use_new_strain_validation) {
+        return true;
     }
 
     const CNcbiEnvironment& env = CNcbiApplication::Instance()->GetEnvironment();
@@ -3102,9 +3107,9 @@ static bool s_init_NewTaxVal(void)
 }
 
 
-static bool NCBI_NewTaxVal(void)
+static bool NCBI_NewTaxVal(bool use_new_strain_validation)
 {
-    static bool value = s_init_NewTaxVal();
+    static bool value = s_init_NewTaxVal(use_new_strain_validation);
     return value;
 }
 
@@ -3132,8 +3137,8 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
     // Now look at specific-host values
     ValidateSpecificHost(*pTval);
 
-    // Commented out until TM-725 is resolved
-    if (NCBI_NewTaxVal()) {
+    // (was) commented out until TM-725 is resolved
+    if (NCBI_NewTaxVal(m_NewStrainValidation)) {
         CStrainRequest::ExploreStrainsForTaxonInfo(*pTval, *this, se,
             [this] (const vector<CRef<COrg_ref>>& request) -> CRef<CTaxon3_reply>
             {
@@ -3141,6 +3146,10 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                     return CRef<CTaxon3_reply>();
                 }
                 CRef<CTaxon3_reply> reply = m_pContext->m_taxon_update(request);
+                // temporary code for RW-2538 to confirm proper function is being called when flag is set
+                if (m_NewStrainValidation) {
+                    cerr << "CStrainRequest::ExploreStrainsForTaxonInfo TaxonReply:" << endl << MSerial_AsnText << reply << endl;
+                }
                 // cerr << "TaxonReply: " << MSerial_AsnText << reply << endl;
                 return reply;
             }

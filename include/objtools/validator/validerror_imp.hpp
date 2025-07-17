@@ -304,6 +304,8 @@ public:
     bool GenerateGoldenFile()     const { return m_GenerateGoldenFile; }
     bool DoCompareVDJCtoCDS()     const { return m_CompareVDJCtoCDS; }
     bool IgnoreInferences()       const { return m_IgnoreInferences; }
+    bool ForceInferences()        const { return m_ForceInferences; }
+    bool NewStrainValidation()    const { return m_NewStrainValidation; }
 
 
     // flags calculated by examining data in record
@@ -582,6 +584,8 @@ private:
     bool m_GenerateGoldenFile;
     bool m_CompareVDJCtoCDS;
     bool m_IgnoreInferences;
+    bool m_ForceInferences;
+    bool m_NewStrainValidation;
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;
