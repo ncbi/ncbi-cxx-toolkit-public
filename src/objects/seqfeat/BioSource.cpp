@@ -1829,18 +1829,21 @@ bool CBioSource::RemoveNullTerms()
                     // skip "missing" null exemption value (RW-1944)
                     if ((*s)->IsSetName()) {
                         string nm = (*s)->GetName();
-                        if (NStr::EqualNocase(nm, "missing") || NStr::EqualNocase(nm, "not applicable")) {
+                        if (IsStopWord(nm)) {
                             ++s;
                             continue;
                         }
                     }
                 }
             }
-            if ((*s)->IsSetName() &&
-                (NStr::EqualNocase((*s)->GetName(), "Missing")
-                 || NStr::EqualNocase((*s)->GetName(), "N/A"))) {
-                s = SetSubtype().erase(s);
-                any_change = true;
+            if ((*s)->IsSetName()) {
+                string nm = (*s)->GetName();
+                if (IsStopWord(nm)) {
+                    s = SetSubtype().erase(s);
+                    any_change = true;
+                } else {
+                    ++s;
+                }
             } else {
                 ++s;
             }
@@ -1854,11 +1857,14 @@ bool CBioSource::RemoveNullTerms()
         && GetOrg().GetOrgname().IsSetMod()) {
         COrgName::TMod::iterator m = SetOrg().SetOrgname().SetMod().begin();
         while (m != SetOrg().SetOrgname().SetMod().end()) {
-            if ((*m)->IsSetSubname() &&
-                (NStr::EqualNocase((*m)->GetSubname(), "Missing")
-                || NStr::EqualNocase((*m)->GetSubname(), "N/A"))) {
-                m = SetOrg().SetOrgname().SetMod().erase(m);
-                any_change = true;
+            if ((*m)->IsSetSubname()) {
+                string nm = (*m)->GetSubname();
+                if (IsStopWord(nm)) {
+                    m = SetOrg().SetOrgname().SetMod().erase(m);
+                    any_change = true;
+                } else {
+                    ++m;
+                }
             } else {
                 ++m;
             }
