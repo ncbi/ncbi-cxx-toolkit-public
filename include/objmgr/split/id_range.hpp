@@ -102,7 +102,7 @@ public:
     CNcbiOstream& Print(CNcbiOstream& out) const;
 
     typedef COneSeqRange::TRange TRange;
-    typedef map<CSeq_id_Handle, COneSeqRange> TRanges;
+    typedef map<CSeq_id_Handle, COneSeqRange, CSeq_id_Handle::PLessOrdered> TRanges;
     typedef TRanges::const_iterator const_iterator;
 
     const_iterator begin(void) const

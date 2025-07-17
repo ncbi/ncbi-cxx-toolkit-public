@@ -173,7 +173,7 @@ struct SIdAnnotPieces
 class CAnnotPieces : public CObject
 {
 public:
-    typedef map<CSeq_id_Handle, SIdAnnotPieces> TPiecesById;
+    typedef map<CSeq_id_Handle, SIdAnnotPieces, CSeq_id_Handle::PLessOrdered> TPiecesById;
     typedef TPiecesById::const_iterator const_iterator;
     typedef TPiecesById::iterator iterator;
 
