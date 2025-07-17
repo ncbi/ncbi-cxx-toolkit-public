@@ -66,6 +66,8 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("golden_file", "Suppress context part of message");
     argdescr->AddFlag("vdjc", "Compare CDS against VDJC segments");
     argdescr->AddFlag("g", "Ignore Inferences");
+    argdescr->AddFlag("full_inference", "Force Inference Validation");
+    argdescr->AddFlag("new_strain_test", "New Strain validation");
 }
 
 
@@ -166,6 +168,12 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
 
     if (args["g"]) {
         options |= CValidator::eVal_ignore_inferences;
+    }
+    if (args["full_inference"]) {
+        options |= CValidator::eVal_force_inferences;
+    }
+    if (args["new_strain_test"]) {
+        options |= CValidator::eVal_new_strain_validation;
     }
 
     return options;
