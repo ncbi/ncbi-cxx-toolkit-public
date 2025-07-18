@@ -47,6 +47,7 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
 
     ssize_t                             index = -1;
     CBioseqInfoRecord::TDateChanged     date_changed = 0;
+    CBioseqInfoRecord::TSeqState        seq_state = CBioseqInfoRecord::kStateAlive;
 
     // Always pick the record with latest date_changed, regardless of its
     // version number or state.
@@ -55,12 +56,22 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
             // Not found yet
             index = k;
             date_changed = records[k].GetDateChanged();
+            seq_state = records[k].GetSeqState();
             continue;
         }
 
         if (records[k].GetDateChanged() > date_changed) {
             index = k;
             date_changed = records[k].GetDateChanged();
+            seq_state = records[k].GetSeqState();
+        } else if (records[k].GetDateChanged() == date_changed) {
+            // Prefer the one which is alive
+            if (seq_state != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
+                // The currently selected is not alive so prefer the other
+                index = k;
+                date_changed = records[k].GetDateChanged();
+                seq_state = records[k].GetSeqState();
+            }
         }
     }
 
