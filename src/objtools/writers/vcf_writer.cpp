@@ -142,9 +142,10 @@ bool CVcfWriter::WriteAnnot(
     {
         CVariationNormalization::NormalizeVariation(*annot,CVariationNormalization::eVCF,m_Scope);
     }
-    catch(...)
+    catch(exception& e)
     {
-     return false;
+        ERR_POST(Error << e.what());
+        return false;
     }
     if ( ! x_WriteInit( *annot ) ) {
         return false;
