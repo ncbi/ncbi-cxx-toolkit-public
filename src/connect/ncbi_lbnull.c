@@ -326,6 +326,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                      iter->name));
         return 0;
     }
+    assert(len);
     memcpy(host, iter->name, ++len);
     domlen = sizeof(host) - len;
     domain = host + len;
@@ -346,6 +347,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         return 0;
     } else {
         domlen = strlen(domain);
+        assert(domlen > 1);
         if (domain[domlen - 1] == '.')
             domlen--;
         if (*domain == '.')
