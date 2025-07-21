@@ -275,7 +275,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                      &"\""[!iter->val]));
         return 0;
     }
-    CORE_TRACEF(("[%s]  Using server type \"%s\"", iter->name, SERV_TypeStr(type)));
+    CORE_TRACEF(("[%s]  LBNULL using server type \"%s\"",
+                 iter->name, SERV_TypeStr(type)));
 
     port = 0;
     if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_PORT,
@@ -318,7 +319,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         else
             port = CONN_PORT_LBNULL;
     }
-    CORE_TRACEF(("[%s]  Using default port number %lu", iter->name, port));
+    CORE_TRACEF(("[%s]  LBNULL using port number %lu", iter->name, port));
 
     if ((len = strlen(iter->name)) >= sizeof(host)) {
         CORE_LOGF_X(90, eLOG_Error,
@@ -326,7 +327,6 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                      iter->name));
         return 0;
     }
-    assert(len);
     memcpy(host, iter->name, ++len);
     domlen = sizeof(host) - len;
     domain = host + len;
@@ -347,7 +347,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         return 0;
     } else {
         domlen = strlen(domain);
-        assert(domlen > 1);
+        assert(domlen > 1  ||  *domain != '.');
         if (domain[domlen - 1] == '.')
             domlen--;
         if (*domain == '.')
@@ -362,8 +362,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  LBNULL using host name \"%s\"", iter->name, host));
 
     if (!(data = (struct SLBNULL_Data*) calloc(1, sizeof(*data) + len))) {
-        CORE_LOG_ERRNO_X(93, eLOG_Error, errno,
-                         "LBNULL failed to allocate for private data structure");
+        CORE_LOGF_ERRNO_X(93, eLOG_Error, errno,
+                          ("[%s]  LBNULL failed to allocate for SLBNULL_Data",
+                           iter->name));
         return 0;
     }
 
