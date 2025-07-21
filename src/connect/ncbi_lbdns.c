@@ -37,10 +37,11 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
 
+
 #ifdef NCBI_OS_UNIX
 
+
 #include "ncbi_lb.h"
-#include <connect/ncbi_ipv6.h>
 #include <ctype.h>
 #include <errno.h>
 #include <math.h>
