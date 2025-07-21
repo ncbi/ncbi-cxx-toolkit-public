@@ -400,12 +400,12 @@ TPid s_Daemonize(const char* logfile, CCurrentProcess::TDaemonFlags flags)
 {
     class CBoolResetter {
     public:
-        CResetter(bool& val)
+        CBoolResetter(bool& val)
             : m_Val(val)
         {
             m_Val = true;
         }
-        ~CResetter()
+        ~CBoolResetter()
         {
             m_Val = false;
         }
