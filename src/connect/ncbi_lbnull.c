@@ -261,7 +261,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (types  &&  !(type &= types))
         return 0;
 
-    CORE_TRACEF(("LBNULL open(\"%s\")", iter->name));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\")", iter->name));
 
     if (iter->arg) {
         assert(iter->arglen);
