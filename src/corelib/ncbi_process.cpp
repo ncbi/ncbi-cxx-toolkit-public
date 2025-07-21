@@ -393,7 +393,9 @@ namespace {
 
 
 DEFINE_STATIC_FAST_MUTEX(s_CorelibDaemonizeMutex);
-bool g_CorelibDaemonize = false;  //  NB: This global is used in connect/ncbi_core_cxx.cpp
+extern "C" {
+    bool g_CorelibDaemonize = false;  //  NB: This global is used in connect/ncbi_core_cxx.cpp
+};
 
 
 TPid s_Daemonize(const char* logfile, CCurrentProcess::TDaemonFlags flags)
