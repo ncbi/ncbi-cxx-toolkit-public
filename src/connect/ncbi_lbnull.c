@@ -91,22 +91,28 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     SSERV_Info* info;
                                  
     if (!SOCK_gethostbynameEx6(&ipv6, data->host, data->debug ? eOn : eDefault))
-        return 0;
+        return 0/*failure*/;
 
     assert(!NcbiIsEmptyIPv6(&ipv6));
     if (!(ipv4 = NcbiIPv6ToIPv4(&ipv6, 0)))
         ipv4 = (unsigned int)(-1);
 
-    if (type & fSERV_Dns)
+    if (type & fSERV_Dns) {
         info = SERV_CreateDnsInfo(ipv4);
-    else if (type &= fSERV_Http)
-        info = SERV_CreateHttpInfo(type, ipv4, data->port, "/" , 0);
-    else
+        info->port = data->port;
+    } else if (type &= fSERV_Http) {
+        info = SERV_CreateHttpInfo(type, ipv4, 0, "/" , 0);
+        info->port = data->port
+            ? data->port
+            : info->mode & fSERV_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
+    } else {
+        assert(data->port);
         info = SERV_CreateStandaloneInfo(ipv4, data->port);
+    }
     if (!info) {
         CORE_LOGF_ERRNO_X(84, eLOG_Error, errno,
                           ("[%s]  Unable to create server info", iter->name));
-        return 0;
+        return 0/*failure*/;
     }
     info->time = LBSM_DEFAULT_TIME + iter->time;
     info->rate = LBSM_DEFAULT_RATE;
@@ -126,7 +132,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
     free(info);
 
-    return data->info ? 1/*T*/ : 0/*F*/;
+    return data->info ? 1/*success*/ : 0/*failure*/;
 }
 
 
@@ -313,7 +319,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         if (type & fSERV_Dns)
             ; /*none*/
         else if (type & fSERV_Http)
-            port = CONN_PORT_HTTP;
+            ; /*default*/
         else if ((!type  ||  type == fSERV_Standalone)  &&  iter->reverse_dns)
             port = CONN_PORT_MSSQL;
         else
