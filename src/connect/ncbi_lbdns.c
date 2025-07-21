@@ -1411,6 +1411,18 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
     char* p;
     assert(domain  &&  domainsize);
 
+    CORE_LOCK_READ;
+    if ((p = getenv("LOCALDOMAIN")) != 0) {
+        size_t n = strlen(p);
+        if (1 < n  &&  n < domainsize)
+            memcpy(domain, p, n + 1);
+        else
+            p = 0;
+    }
+    CORE_UNLOCK;
+    if (p)
+        return domain;
+
 #if defined(NCBI_OS_CYGWIN)  ||  defined(NCBI_OS_IRIX)
     if (getdomainname(domain, domainsize) == 0
         &&  domain[0]  &&  domain[1]
@@ -1424,18 +1436,7 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
         return p;
     }
 
-    CORE_LOCK_READ;
-    if ((p = getenv("LOCALDOMAIN")) != 0) {
-        size_t n = strlen(p);
-        if (1 < n  &&  n < domainsize)
-            memcpy(domain, p, n + 1);
-        else
-            domain = 0;
-    } else
-        domain = 0;
-    CORE_UNLOCK;
-
-    return domain;
+    return 0;
 }
 
 
