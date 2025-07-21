@@ -32,11 +32,11 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_local.h"
-#include "ncbi_lbnull.h"
 #ifdef NCBI_OS_UNIX
 #  include "ncbi_lbsmd.h"
 #endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
+#  include "ncbi_lbnull.h"
 #  include "ncbi_lbdns.h"
 #  include "ncbi_linkerd.h"
 #  include "ncbi_namerd.h"
@@ -268,11 +268,11 @@ static SERV_ITER x_Open(const char*         service,
 {
     int/*bool*/
         do_local,
-        do_lbnull,
 #ifdef NCBI_OS_UNIX
         do_lbsmd   = -1/*unassigned*/,
 #endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
+        do_lbnull,
 #  ifdef NCBI_OS_UNIX
         do_lbdns   = -1/*unassigned*/,
 #  endif /*NCBI_OS_UNIX*/
@@ -379,9 +379,11 @@ static SERV_ITER x_Open(const char*         service,
     if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
          !(op = SERV_LOCAL_Open(iter, info)))
 
+#ifdef NCBI_CXX_TOOLKIT
         &&
         (!(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))    ||
          !(op = SERV_LBNULL_Open(iter, info)))
+#endif /*NCBI_CXX_TOOLKIT*/
 
 #ifdef NCBI_OS_UNIX
         &&
@@ -435,7 +437,7 @@ static SERV_ITER x_Open(const char*         service,
                               (svc, REG_CONN_DISPD_DISABLE)))                ||
          !(op = SERV_DISPD_Open(iter, net_info, info)))) {
         if (!s_Fast  &&  net_info
-            &&  !do_local  &&  !do_lbnull
+            &&  !do_local
 #ifdef NCBI_OS_UNIX
             &&  !do_lbsmd
 #endif /*NXBI_OS_UNIX*/
@@ -443,7 +445,7 @@ static SERV_ITER x_Open(const char*         service,
 #  ifdef NCBI_OS_UNIX
             &&  !do_lbdns
 #  endif /*NCBI_OS_UNIX*/
-            &&  !do_linkerd  &&  !do_namerd
+            &&  !do_lbnull  &&  !do_linkerd  &&  !do_namerd
 #endif /*NCBI_CXX_TOOLKIT*/
             &&  !do_dispd
             ) {
