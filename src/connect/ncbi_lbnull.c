@@ -383,6 +383,6 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    CORE_TRACEF(("LBNULL open(\"%s\"): success", iter->name));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", iter->name));
     return &kLbnullOp;
 }
