@@ -493,9 +493,8 @@ extern int TEST_StreamPushback(iostream& ios,
         ERR_POST("Cannot send data");
         return 1;
     }
-    if (rewind) {
+    if (rewind)
         ios.seekg(0);
-    }
 
     ERR_POST(Info << "Doing random reads and {push|step}backs of the reply");
 
