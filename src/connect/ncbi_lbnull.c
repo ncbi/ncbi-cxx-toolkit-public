@@ -361,7 +361,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
 
     if (!(data = (struct SLBNULL_Data*) calloc(1, sizeof(*data) + len))) {
         CORE_LOG_ERRNO_X(93, eLOG_Error, errno,
-                         "LBNULL failef to allocate for private data structure");
+                         "LBNULL failed to allocate for private data structure");
         return 0;
     }
 
