@@ -356,13 +356,53 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         }
     }
 
+	// clean the ends
+	if(!indels.empty()) {
+		auto& indl = indels.front();
+		auto& e = Exons().front();
+		if(!indl.IsMismatch() && indl.Loc() == e.GetFrom()) {
+			if(indl.IsInsertion()) {
+				e.AddFrom(indl.Len());
+				RecalculateLimits();
+			} else {
+				auto& t = transcript_exons.front();
+				if(orientation == ePlus)
+					t.SetFrom(t.GetFrom()+indl.Len());
+				else
+					t.SetTo(t.GetTo()-indl.Len());
+			}
+			indels.erase(indels.begin());
+		}
+	}
+	if(!indels.empty()) {
+		auto& indl = indels.back();
+		auto& e = Exons().back();
+		if(!indl.IsMismatch() && indl.InDelEnd() == e.GetTo()+1) {
+			if(indl.IsInsertion()) {
+				e.AddTo(-indl.Len());
+				RecalculateLimits();
+			} else {
+				auto& t = transcript_exons.back();
+				if(orientation == ePlus)
+					t.SetTo(t.GetTo()-indl.Len());
+				else
+					t.SetFrom(t.GetFrom()+indl.Len());
+			}
+			indels.pop_back();
+		}
+	}
+	Exons().front().m_fsplice_sig.clear();
+	Exons().back().m_ssplice_sig.clear();
+	
     m_alignmap = CAlignMap(Exons(), transcript_exons, indels, orientation, target_len );
     FrameShifts() = indels;
 
+	/*
     TSignedSeqRange newlimits = m_alignmap.ShrinkToRealPoints(Limits(),is_protein);
     if(newlimits != Limits()) {
         Clip(newlimits,CAlignModel::eRemoveExons);    
-    }   
+    }
+	*/
 
     for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {
         _ASSERT( !piece_begin->m_fsplice );
@@ -429,7 +469,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
         }
 
-        CCDSInfo cds_info_t;
+        CCDSInfo cds_info_t(false);
         cds_info_t.SetReadingFrame(reading_frame, true);
         if (start.NotEmpty()) {
             cds_info_t.SetStart(start, false);
