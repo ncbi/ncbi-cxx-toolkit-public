@@ -153,17 +153,17 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     if (!data->info  &&  !s_Resolve(iter)) {
         CORE_LOGF_X(86, eLOG_Error,
                     ("[%s]  Unable to resolve", iter->name));
-        return 0;
+        info = 0;
+    } else {
+        info = data->info;
+        assert(info);
+        data->info = 0;
+
+        if (host_info)
+            *host_info = 0;
     }
-
-    info = data->info;
-    assert(info);
-    data->info = 0;
-
-    if (host_info)
-        *host_info = 0;
     CORE_TRACEF(("Leave LBNULL::s_GetNextInfo(\"%s\"): \"%s\" %p",
-                 iter->name, SERV_NameOfInfo(info), info));
+                 iter->name, info ? SERV_NameOfInfo(info) : "", info));
     return info;
 }
 
