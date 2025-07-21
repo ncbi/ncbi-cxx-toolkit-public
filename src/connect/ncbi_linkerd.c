@@ -278,7 +278,7 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
-    assert(data  &&  !data->info);
+    assert(data  &&  !data->info); /*s_Reset() had to be called before*/
     CORE_TRACEF(("Enter LINKERD::s_Close(\"%s\")", iter->name));
     iter->data = 0;
     ConnNetInfo_Destroy(data->net_info);
