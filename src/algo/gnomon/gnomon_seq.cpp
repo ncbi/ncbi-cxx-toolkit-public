@@ -435,7 +435,6 @@ TSignedSeqPos CAlignMap::InsertIndelRangesForInterval(TSignedSeqPos orig_a, TSig
     
     for( ;fsi != fsi_end && fsi->Loc() == orig_a && !fsi->IsMismatch(); ++fsi ) {    // first left end
         if(fsi->IsInsertion()) {
-            _ASSERT(type_a != eBoundary);
             orig_a += fsi->Len();
             left_orige += fsi->Len(); 
         } else {
