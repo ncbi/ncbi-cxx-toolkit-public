@@ -1282,20 +1282,23 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
 }
 
 
-#define SERV_MERGE(a, b)  a ## b
+#define _SERV_MERGE(a, b)  a ## b
+#define  SERV_MERGE(a, b)  _SERV_MERGE(a, b)
+
 
 #define SERV_GET_IMPLICIT_SERVER_TYPE(variant)                              \
-    ESERV_Type SERV_MERGE(SERV_GetImplicitServerType, variant)              \
-        (const char* service)                                               \
+    ESERV_Type SERV_MERGE(SERV_GetImplicitServerType,                       \
+                          _SERV_MERGE(variant, Ex))                         \
+        (const char* service, ESERV_Type default_type)                      \
     {                                                                       \
         ESERV_Type type;                                                    \
         const char *end;                                                    \
         char val[40];                                                       \
         /* Try to retrieve service-specific first, then global default */   \
-        if (!SERV_MERGE(ConnNetInfo_GetValue, variant)                      \
+        if (!_SERV_MERGE(ConnNetInfo_GetValue, variant)                     \
             (service, REG_CONN_IMPLICIT_SERVER_TYPE, val, sizeof(val), 0)   \
             ||  !*val  ||  !(end = SERV_ReadType(val, &type))  ||  *end) {  \
-            return SERV_GetImplicitServerTypeDefault();                     \
+            return default_type;                                            \
         }                                                                   \
         return type;                                                        \
     }                                                                       \
@@ -1303,23 +1306,28 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
 
 /* Public API */
 #define SERV_GET_IMPLICIT_SERVER_TYPE_PUBLIC_API
-extern  SERV_GET_IMPLICIT_SERVER_TYPE(SERV_GET_IMPLICIT_SERVER_TYPE_PUBLIC_API)
+static  SERV_GET_IMPLICIT_SERVER_TYPE(SERV_GET_IMPLICIT_SERVER_TYPE_PUBLIC_API)
 #undef  SERV_GET_IMPLICIT_SERVER_TYPE_PUBLIC_API
+
+extern ESERV_Type SERV_GetImplicitServerType(const char* service)
+{
+    return SERV_GetImplicitServerTypeEx(service, SERV_GetImplicitServerTypeDefault());
+}
 
 
 /* Internal API */
 SERV_GET_IMPLICIT_SERVER_TYPE(Internal)
 
+ESERV_Type SERV_GetImplicitServerTypeInternal(const char* service)
+{
+    return SERV_GetImplicitServerTypeInternalEx(service, SERV_GetImplicitServerTypeDefault());
+}
+
 
 #undef SERV_GET_IMPLICIT_SERVER_TYPE
 
-#undef SERV_MERGE
-
-
-ESERV_Type SERV_GetImplicitServerTypeDefault(void)
-{
-    return fSERV_Http;
-}
+#undef  SERV_MERGE
+#undef _SERV_MERGE
 
 
 #if 0

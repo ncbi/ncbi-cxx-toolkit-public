@@ -241,10 +241,12 @@ void SERV_PrintFirewallPorts
 
 
 /* Return the global default */
-ESERV_Type SERV_GetImplicitServerTypeDefault(void);
+#define SERV_GetImplicitServerTypeDefault()     fSERV_Http
 
 /* Private interface: same as public but service is not checked/substituted */
-ESERV_Type SERV_GetImplicitServerTypeInternal(const char* service);
+ESERV_Type SERV_GetImplicitServerTypeInternal  (const char* service);
+ESERV_Type SERV_GetImplicitServerTypeInternalEx(const char* service,
+                                                ESERV_Type default_type);
 
 
 #ifdef __cplusplus

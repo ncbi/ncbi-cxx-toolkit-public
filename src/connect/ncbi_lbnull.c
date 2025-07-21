@@ -53,7 +53,7 @@
 
 #define REG_CONN_LBNULL_DEBUG       DEF_CONN_REG_SECTION "_" "LBNULL_DEBUG"
 
-#define REG_CONN_LBNULL_PORT        "LBNULL_PORT"
+#define REG_CONN_LBNULL_PORT        DEF_CONN_REG_SECTION "_" "LBNULL_PORT"
 
 
 #ifdef __cplusplus
@@ -252,15 +252,14 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (iter->external)
         return 0;
 
-    if (!(type = SERV_GetImplicitServerTypeInternal(iter->name)))
-        type = fSERV_Standalone;
-    else if (!(type & (fSERV_Standalone | fSERV_Http | fSERV_Dns)))
+    type = SERV_GetImplicitServerTypeInternalEx(iter->name, fSERV_Standalone);
+    if (!(type & (fSERV_Standalone | fSERV_Http | fSERV_Dns)))
         return 0;
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone),
      * and explicit fSERV_Standalone, fSERV_Http and fSERV_Dns only */
     types = iter->types & ~fSERV_Stateless;
-    if (types != fSERV_Any/*0*/  &&  !(type &= types))
+    if (types  &&  !(type &= types))
         return 0;
 
     CORE_TRACEF(("LBNULL open(\"%s\")", iter->name));
@@ -276,25 +275,24 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     }
     CORE_TRACEF(("[%s]  Using server type \"%s\"", iter->name, SERV_TypeStr(type)));
 
-    if (type & fSERV_Dns)
-        port = 0/*none*/;
-    else if (type & fSERV_Http)
-        port = CONN_PORT_HTTP;
-    else if ((!type  ||  type == fSERV_Standalone)  &&  iter->reverse_dns)
-        port = CONN_PORT_MSSQL;
-    else {
-        if (!ConnNetInfo_GetValue(iter->name, REG_CONN_LBNULL_PORT,
-                                  val, sizeof(val), 0)) {
-            CORE_LOGF(eLOG_Error,
-                      ("[%s]  Cannot obtain default port number from registry",
-                       iter->name));
-            return 0;
-        }
-        if (!*val)
-            port = CONN_PORT_LBNULL;
-        else if (!isdigit((unsigned char)(*val)))
-            port = 0;
-        else {
+    port = 0;
+    if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_PORT,
+                                     val, sizeof(val), 0)) {
+        port = (unsigned long)(-1L);
+    } else if (!*val  &&
+               !ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_PORT,
+                                             val, sizeof(val), 0)) {
+        port = (unsigned long)(-1L);
+    }
+    if (port/*== (unsigned long)(-1L)*/) {
+        CORE_LOGF(eLOG_Error,
+                  ("[%s]  Cannot obtain default port number from registry",
+                   iter->name));
+        return 0;
+    }
+    assert(!port);
+    if (*val) {
+        if (isdigit((unsigned char)(*val))) {
             char* end;
             errno = 0;
             port = strtoul(val, &end, 0);
@@ -307,6 +305,16 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                        iter->name, val));
             return 0;
         }
+        assert(port);
+    } else {
+        if (type & fSERV_Dns)
+            ; /*none*/
+        else if (type & fSERV_Http)
+            port = CONN_PORT_HTTP;
+        else if ((!type  ||  type == fSERV_Standalone)  &&  iter->reverse_dns)
+            port = CONN_PORT_MSSQL;
+        else
+            port = CONN_PORT_LBNULL;
     }
     CORE_TRACEF(("[%s]  Using default port number %lu", iter->name, port));
 
@@ -316,10 +324,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                    iter->name));
         return 0;
     }
-    memcpy(host, iter->name, len);
+    memcpy(host, iter->name, ++len);
     domlen = sizeof(host) - len;
     domain = host + len;
-    assert(domlen > 0);
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
                                       domain, domlen, 0)) {
@@ -339,19 +346,15 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         domlen = strlen(domain);
         if (domain[domlen - 1] == '.')
             domlen--;
-        if (*domain != '.') {
-            memmove(domain + 1, domain, domlen);
-            *domain  = '.';
-            domlen++;
-        }
-        if ((len += domlen) >= sizeof(host)) {
-            CORE_LOGF(eLOG_Error,
-                      ("[%s]  Host name \"%.*s\" too long for LBNULL",
-                       iter->name, (int) len, host));
-            return 0;
-        }
+        if (*domain == '.')
+            memmove(domain - 1, domain, domlen--);
+        else
+            domain[-1] = '.';
+        len += domlen;
+        assert(len < sizeof(host));
         host[len] = '\0';
     }
+    strlwr(host);
     CORE_TRACEF(("[%s]  LBNULL using host name \"%s\"", iter->name, host));
 
     if (!(data = (struct SLBNULL_Data*) calloc(1, sizeof(*data) + len))) {
@@ -363,8 +366,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBNULL_DEBUG,
                                        val, sizeof(val), 0));
-    data->type = type;
-    data->port = port;
+    data->type =                  type;
+    data->port = (unsigned short) port;
     memcpy((char*) data->host, host, len + 1);
 
     iter->data = data;
