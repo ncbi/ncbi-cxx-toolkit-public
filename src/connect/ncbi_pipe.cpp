@@ -36,7 +36,6 @@
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
-#include "ncbi_priv.h"
 #include <corelib/ncbiexec.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_system.hpp>
@@ -44,6 +43,7 @@
 #include <corelib/ncbi_safe_static.hpp>
 #include <connect/error_codes.hpp>
 #include <connect/ncbi_pipe.hpp>
+#include <connect/ncbi_util.h>
 
 #ifdef NCBI_OS_MSWIN
 
@@ -1281,14 +1281,9 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
         argv[++i] = 0;
 
-        CORE_LOCK_WRITE;
-        g_CORE_SkipPostForkChildUnlock = 1/*true*/;
-
         // Fork off a child process
         switch (m_Pid = ::fork()) {
         case (TPid)(-1):
-            g_CORE_SkipPostForkChildUnlock = 0/*false*/;
-            CORE_UNLOCK;
             PIPE_THROW(errno,
                        "Failed fork()");
             /*NOTREACHED*/
@@ -1371,9 +1366,6 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
             // *** CHILD PROCESS DOES NOT CONTINUE BEYOND THIS LINE ***
         }
-
-        g_CORE_SkipPostForkChildUnlock = 0/*false*/;
-        CORE_UNLOCK;
 
         // Close unused pipes' ends
         if (!IS_SET(create_flags, CPipe::fStdIn_Close)) {

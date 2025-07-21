@@ -391,8 +391,30 @@ namespace {
     };
 }
 
+
+DEFINE_STATIC_FAST_MUTEX(s_CorelibDaemonizeMutex);
+bool g_CorelibDaemonize = false;  //  NB: This global is used in connect/ncbi_core_cxx.cpp
+
+
 TPid s_Daemonize(const char* logfile, CCurrentProcess::TDaemonFlags flags)
 {
+    class CBoolResetter {
+    public:
+        CResetter(bool& val)
+            : m_Val(val)
+        {
+            m_Val = true;
+        }
+        ~CResetter()
+        {
+            m_Val = false;
+        }
+    private:
+        bool& m_Val;
+    };
+    CFastMutexGuard guard(s_CorelibDaemonizeMutex);
+    CBoolResetter   reset(g_CorelibDaemonize);
+
     if (!(flags & CCurrentProcess::fDF_AllowThreads)) {
         if (unsigned n = CThread::GetThreadsCount()) {
             NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "

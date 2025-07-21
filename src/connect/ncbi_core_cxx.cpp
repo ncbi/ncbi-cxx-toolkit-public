@@ -643,8 +643,11 @@ static void x_PostForkParent(void)
 
 static void x_PostForkChild(void)
 {
-    if (!g_CORE_SkipPostForkChildUnlock)
+    extern bool g_CorelibDaemonize;
+    if (g_CorelibDaemonize)
         CORE_UNLOCK;
+    else
+        g_CORE_MT_Lock = 0;
 }
 } // extern "C"
 #endif // NCBI_POSIX_THREADS
@@ -691,7 +694,7 @@ static void s_Fini(void) THROWS_NONE
 
 DEFINE_STATIC_FAST_MUTEX(s_ConnectInitMutex);
 
-/* NB: gets called under a lock */
+/* NB: gets called under a lock (s_ConnectInitMutex) */
 static void s_Init(const IRWRegistry* reg  = 0,
                    FSSLSetup          ssl  = 0,
                    CRWLock*           lock = 0,

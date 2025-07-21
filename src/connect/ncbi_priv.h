@@ -53,7 +53,6 @@
  *                     g_CORE_GetReferer
  *                     g_CORE_GetRequestID
  *                     g_CORE_GetRequestDtab
- *                     g_CORE_SkipPostForkChildUnlock
  *
  */
 
@@ -376,16 +375,6 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
  */
 typedef const char* (*FNcbiGetRequestDtab)(void);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
-
-
-/******************************************************************************
- * Prevent pthread_atfork() from unlocking in the child fork handler.  This may
- * be necessary if the parent is an MT process and the child is headed for exec()
- * (as in this case the repertoir of calls limited to only async-signal-safe ones
- * because the child might have inherited inconsistent locks due to activity
- * in the other threads -- so having unlock in place can lead to a deadlock).
- */
-extern int/*bool*/ g_CORE_SkipPostForkChildUnlock/* = 0(Off) by default*/;
 
 
 
