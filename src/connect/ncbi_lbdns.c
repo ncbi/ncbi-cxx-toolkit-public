@@ -70,6 +70,17 @@
 #define LBDNS_INITIAL_ALLOC      32
 
 
+/* LBDNS registry settings */
+
+#define REG_CONN_LBDNS_DOMAIN       DEF_CONN_REG_SECTION "_" "LBDNS_DOMAIN"
+
+#define REG_CONN_LBDNS_DEBUG        DEF_CONN_REG_SECTION "_" "LBDNS_DEBUG"
+
+#define REG_CONN_LBDNS_HOST         DEF_CONN_REG_SECTION "_" "LBDNS_HOST"
+
+#define REG_CONN_LBDNS_PORT         DEF_CONN_REG_SECTION "_" "LBDNS_PORT"
+
+
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
 typedef socklen_t  TSOCK_socklen_t;
 #else
@@ -1558,23 +1569,25 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBDNS_DOMAIN,
                                       val, sizeof(val), 0)) {
+        CORE_LOG_X(80, eLOG_Critical,
+                   "LBDNS cannot obtain domain name from registry");
         goto out;
     }
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
         if (!domain  ||  !x_CheckDomain(domain)) {
-            CORE_LOG_X(80, eLOG_Critical,
+            CORE_LOG_X(81, eLOG_Critical,
                        "LBDNS cannot figure out system domain name");
             goto out;
         }
         CORE_TRACEF(("LBDNS found system domain \"%s\"", domain));
     } else if (!x_CheckDomain(val)) {
-        CORE_LOGF_X(81, eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
+        CORE_LOGF_X(82, eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
         goto out;
     } else
         domain = val;
     if (!(data->domain = x_CopyDomain(domain))) {
-        CORE_LOGF_ERRNO_X(82, eLOG_Error, errno,
+        CORE_LOGF_ERRNO_X(83, eLOG_Error, errno,
                           ("LBDNS failed to store domain name \"%s\"", domain));
         goto out;
     }

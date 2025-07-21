@@ -94,6 +94,7 @@
 #define CONN_PORT_SMTP   25
 #define CONN_PORT_HTTP   80
 #define CONN_PORT_HTTPS  443
+#define CONN_PORT_MSSQL  1433
 
 /* SConnNetInfo's field lengths NOT including the terminating '\0's */
 #define CONN_USER_LEN    63
@@ -307,27 +308,24 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
 #define REG_CONN_LOCAL_ENABLE       "LOCAL_ENABLE"
+#define REG_CONN_LBNULL_ENABLE      "LBNULL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE      "LBSMD_DISABLE"
 #define REG_CONN_LBDNS_ENABLE       "LBDNS_ENABLE"
 #define REG_CONN_LINKERD_ENABLE     "LINKERD_ENABLE"
 #define REG_CONN_NAMERD_ENABLE      "NAMERD_ENABLE"
 #define REG_CONN_DISPD_DISABLE      "DISPD_DISABLE"
 
-/* Implicit server type (LINKERD/NAMERD) */
-#define REG_CONN_IMPLICIT_SERVER_TYPE  "IMPLICIT_SERVER_TYPE"
-
 /* Substitute (redirected) service name */
 #define REG_CONN_SERVICE_NAME       DEF_CONN_REG_SECTION "_" "SERVICE_NAME"
+
 
 /* Local service dispatcher */
 #define REG_CONN_LOCAL_SERVICES     DEF_CONN_REG_SECTION "_" "LOCAL_SERVICES"
 #define REG_CONN_LOCAL_SERVER       DEF_CONN_REG_SECTION "_" "LOCAL_SERVER"
 
-/* LBDNS settings */
-#define REG_CONN_LBDNS_DOMAIN       DEF_CONN_REG_SECTION "_" "LBDNS_DOMAIN"
-#define REG_CONN_LBDNS_DEBUG        DEF_CONN_REG_SECTION "_" "LBDNS_DEBUG"
-#define REG_CONN_LBDNS_HOST         DEF_CONN_REG_SECTION "_" "LBDNS_HOST"
-#define REG_CONN_LBDNS_PORT         DEF_CONN_REG_SECTION "_" "LBDNS_PORT"
+
+/* Implicit server type (LBNULL/LINKERD/NAMERD) */
+#define REG_CONN_IMPLICIT_SERVER_TYPE  "IMPLICIT_SERVER_TYPE"
 
 
 /* Local IP table */
