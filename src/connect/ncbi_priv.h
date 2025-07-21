@@ -96,7 +96,7 @@ extern "C" {
 NCBI_C_DEFINE_ERRCODE_X(Connect_Conn,          301,  37);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Socket,        302, 166);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Util,          303,  15);
-NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,          304,  83);
+NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,          304,  92);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,           305,  14);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  26);

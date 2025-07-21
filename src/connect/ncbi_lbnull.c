@@ -40,9 +40,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-
-#define NCBI_USE_ERRCODE_X   Connect_LBSM  /* errors: 84 and up */
-
+#define NCBI_USE_ERRCODE_X   Connect_LBSM
+ 
 
 #define CONN_PORT_LBNULL            5555
 
@@ -105,8 +104,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     else
         info = SERV_CreateStandaloneInfo(ipv4, data->port);
     if (!info) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Unable to create server info", iter->name));
+        CORE_LOGF_X(84, eLOG_Error,
+                    ("[%s]  Unable to create server info", iter->name));
         return 0;
     }
     info->time = LBSM_DEFAULT_TIME + iter->time;
@@ -143,8 +142,8 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     data->reset = 0/*false*/;
     if (!data->info  &&  !s_Resolve(iter)) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Unable to resolve", iter->name));
+        CORE_LOGF_X(85, eLOG_Error,
+                    ("[%s]  Unable to resolve", iter->name));
         return 0;
     }
 
@@ -266,11 +265,11 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
 
     if (iter->arg) {
         assert(iter->arglen);
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Argument affinity lookup not supported by LBNULL:"
-                   " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
-                   &"\""[!iter->val], iter->val ? iter->val : "",
-                   &"\""[!iter->val]));
+        CORE_LOGF_X(86, eLOG_Error,
+                    ("[%s]  Argument affinity lookup not supported by LBNULL:"
+                     " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
+                     &"\""[!iter->val], iter->val ? iter->val : "",
+                     &"\""[!iter->val]));
         return 0;
     }
     CORE_TRACEF(("[%s]  Using server type \"%s\"", iter->name, SERV_TypeStr(type)));
@@ -285,9 +284,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         port = (unsigned long)(-1L);
     }
     if (port/*== (unsigned long)(-1L)*/) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Cannot obtain default port number from registry",
-                   iter->name));
+        CORE_LOGF_X(87, eLOG_Error,
+                    ("[%s]  Cannot obtain default port number from registry",
+                     iter->name));
         return 0;
     }
     assert(!port);
@@ -300,9 +299,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                 port = 0;
         }
         if (!port) {
-            CORE_LOGF(eLOG_Error,
-                      ("[%s]  Bad default port number \"%s\" for LBNULL",
-                       iter->name, val));
+            CORE_LOGF_X(88, eLOG_Error,
+                        ("[%s]  Bad default port number \"%s\" for LBNULL",
+                         iter->name, val));
             return 0;
         }
         assert(port);
@@ -319,9 +318,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  Using default port number %lu", iter->name, port));
 
     if ((len = strlen(iter->name)) >= sizeof(host)) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Name too long for LBNULL",
-                   iter->name));
+        CORE_LOGF_X(89, eLOG_Error,
+                    ("[%s]  Name too long for LBNULL",
+                     iter->name));
         return 0;
     }
     memcpy(host, iter->name, ++len);
@@ -330,17 +329,17 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
                                       domain, domlen, 0)) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Cannot obtain domain name from registry",
-                   iter->name));
+        CORE_LOGF_X(90, eLOG_Error,
+                    ("[%s]  Cannot obtain domain name from registry",
+                     iter->name));
         return 0;
     }
     if (!*domain) {
         domlen = 0;
     } else if (!x_CheckDomain(domain)) {
-        CORE_LOGF(eLOG_Error,
-                  ("[%s]  Bad domain name \"%s\" for LBNULL",
-                   iter->name, domain));
+        CORE_LOGF_X(91, eLOG_Error,
+                    ("[%s]  Bad domain name \"%s\" for LBNULL",
+                     iter->name, domain));
         return 0;
     } else {
         domlen = strlen(domain);
@@ -358,8 +357,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  LBNULL using host name \"%s\"", iter->name, host));
 
     if (!(data = (struct SLBNULL_Data*) calloc(1, sizeof(*data) + len))) {
-        CORE_LOG_ERRNO(eLOG_Error, errno,
-                       "LBNULL failef to allocate for private data structure");
+        CORE_LOG_ERRNO_X(92, eLOG_Error, errno,
+                         "LBNULL failef to allocate for private data structure");
         return 0;
     }
 
