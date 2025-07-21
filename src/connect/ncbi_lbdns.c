@@ -40,7 +40,6 @@
 
 #ifdef NCBI_OS_UNIX
 
-
 #include "ncbi_lb.h"
 #include <ctype.h>
 #include <errno.h>
