@@ -37,7 +37,6 @@
 #include "ncbi_linkerd.h"
 #include "ncbi_namerd.h"
 #include "ncbi_once.h"
-#include "ncbi_priv.h"
 #include "parson.h"
 
 #include <connect/ncbi_buffer.h>

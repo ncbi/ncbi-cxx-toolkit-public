@@ -33,10 +33,9 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
-#include "ncbi_lb.h"
 #include "ncbi_linkerd.h"
 #include "ncbi_namerd.h"
-#include "ncbi_once.h"
+#include "ncbi_priv.h"
 
 #include <connect/ncbi_buffer.h>
 #include <connect/ncbi_connutil.h>
