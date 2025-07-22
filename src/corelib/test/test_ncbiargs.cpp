@@ -49,7 +49,7 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
 {
     // Describe the expected command-line arguments
     arg_desc.AddOptionalPositional
-        ("logfile",
+        ("mylogfile",
          "This is an optional named positional argument without default value",
          CArgDescriptions::eOutputFile,
          CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
@@ -95,7 +95,7 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          3,  // up to 3 optional extra args
          "These are the optional extra (unnamed positional) arguments. "
          "They will be printed out to the file specified by the "
-         "2nd positional argument,\n\"logfile\"",
+         "2nd positional argument,\n\"mylogfile\"",
          CArgDescriptions::eBoolean);
 
     arg_desc.AddKey
@@ -134,25 +134,25 @@ static void s_RunTest0(const CArgs& args, ostream& os)
 {
     assert(!args.Exist(kEmptyStr));  // never exists;  use #1, #2, ... instead
     assert(args.Exist("f1"));
-    assert(args.Exist("logfile"));
+    assert(args.Exist("mylogfile"));
     assert(args["barfooetc"]);
 
     assert(args["kd8"].GetDefault() == "123456789012");
     assert(args["kd"].GetDefault()  == "123");
 
-    if ( !args["logfile"] ) {
+    if ( !args["mylogfile"] ) {
         return;
     }
 
     // Printout argument values
     os << "Printing arguments to file `"
-       << args["logfile"].AsString() << "'..." << endl;
+       << args["mylogfile"].AsString() << "'..." << endl;
 
-    ostream& lg = args["logfile"].AsOutputFile();
+    ostream& lg = args["mylogfile"].AsOutputFile();
 
     lg << "k:         " << args["k"].AsString() << endl;
     lg << "barfooetc: " << args["barfooetc"].AsString() << endl;
-    lg << "logfile:   " << args["logfile"].AsString() << endl;
+    lg << "mylogfile: " << args["mylogfile"].AsString() << endl;
 
     if ( args["ko"] ) {
         lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
