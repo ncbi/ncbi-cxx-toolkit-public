@@ -329,9 +329,11 @@ void s_Create_Args_L(
 {
     // Count arguments to allocate memory
     va_list v_args = begin;
-    size_t xcnt = 2;
-    while ( va_arg(v_args, const char*) ) {
-        xcnt++;
+    size_t xcnt = argv ? 2 : 1;
+    if (argv) {
+        while (va_arg(v_args, const char*)) {
+            xcnt++;
+        }
     }
     const TXChar **args = new const TXChar*[xcnt+1];
     if ( !args ) {
@@ -341,14 +343,16 @@ void s_Create_Args_L(
 
     // Use temporary vector to store quoted/unicoded strings.
     xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
-    xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
-    // Repeat for each argument in the variable list
-    v_args = begin;
-    for (size_t i=2; i < xcnt; ++i) {
-        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(va_arg(v_args, const char*))) );
+    if (argv) {
+        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
+        // Repeat for each argument in the variable list
+        v_args = begin;
+        for (size_t i=2; i < xcnt; ++i) {
+            xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(va_arg(v_args, const char*))) );
+        }
     }
-    // Prepare array of char* arguments for execution
-    for (size_t i=0; i < xargs.size(); ++i) {
+    // Copy processes arguments back
+    for (size_t i = 0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
     args[xcnt] = NULL;
@@ -359,8 +363,11 @@ void s_Create_Args_L(
 void s_Create_Args_V(
     vector<TXString>& xargs, TXArgsOrEnv& t_args, const char* cmdname, const char** argv)
 {
+    // For empty arguments: argv == NULL
+    const char* argv_empty[] = { NULL, NULL };
+
     // Count arguments to allocate memory
-    const char** p = argv;
+    const char** p = argv ? argv : argv_empty;
     size_t xcnt = 1;
     while ( *(++p) ) {
         xcnt++;
@@ -373,15 +380,15 @@ void s_Create_Args_V(
 
     // Use temporary vector to store quoted/unicoded strings.
     xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
-    // Repeat for each argument in the array
     p = argv;
     for (size_t i=1; i < xcnt; ++i) {
         xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(*(++p))) );
     }
-    // Prepare array of char* arguments for execution
+    // Copy processes arguments back
     for (size_t i=0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
+    cout << xargs.size() << endl;
     args[xcnt] = NULL;
 }
 
@@ -430,7 +437,7 @@ void s_Create_Env(
     a_##name = t_##name.get();
 #else
 #define XGET_EXEC_ARGS(name, ptr) \
-    int xcnt = 2; \
+    int xcnt = ptr ? 2 : 1; \
     va_list vargs; \
     va_start(vargs, ptr); \
     while ( va_arg(vargs, const char*) ) xcnt++; \
@@ -466,8 +473,9 @@ void s_Create_Env(
     a_##name = t_##name.get();
 #else
 #  define XGET_PTR_ARGS(name, ptr) \
-    const char* const *a_##name = ptr; \
-    char** xptr = const_cast<char**>(ptr); \
+    const char* ptr_empty[] = { NULL, NULL }; \
+    const char* const *a_##name = ptr ? ptr : ptr_empty; \
+    char** xptr = const_cast<char**>(ptr ?  ptr : ptr_empty); \
     xptr[0] = const_cast<char*>(cmdname);
 #  define XGET_PTR_ENVP(name, ptr) \
     const char* const *a_##name = ptr;

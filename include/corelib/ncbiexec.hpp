@@ -175,16 +175,16 @@ public:
     ///
     /// Meaning of the suffix "L" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    ///   arguments are passed separately as arguments.
+    ///   arguments are passed separately as a list of arguments.
     ///
     /// @param mode
     ///   Mode for running the process.
     /// @param cmdname
     ///   Path to the process to spawn.
     /// @param argv
-    ///   First argument vector parameter.
+    ///   First argument (char*).
     /// @param ...
-    ///   Argument vector. Must ends with NULL.
+    ///   Additional argument(s) (char*). Must ends with NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -196,6 +196,9 @@ public:
     ///   SpawnVPE().
     static CResult
     SpawnL(EMode mode, const char *cmdname, const char *argv, .../*, NULL */);
+    // No arguments version
+    static CResult
+    SpawnL(EMode mode, const char* cmdname) { return SpawnL(mode, cmdname, NULL); };
 
     /// Spawn a new process with specified command-line arguments and
     /// environment settings.
@@ -207,7 +210,7 @@ public:
     ///
     /// Meaning of the suffix "LE" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    ///   arguments are passed separately as arguments.
+    ///   arguments are passed separately as a list of arguments.
     /// - The letter "E" as suffix refers to the fact that environment pointer,
     ///   envp, is passed as an array of pointers to environment settings to 
     ///   the new process. The NULL environment pointer indicates that the new 
@@ -218,11 +221,11 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   First argument vector parameter.
+    ///   First argument (char*).
     /// @param ...
-    ///   Argument vector. Must ends with NULL.
+    ///   Additional argument(s) (char*). Must ends with NULL.
     /// @param envp
-    ///   Pointer to vector with environment variables which will be used
+    ///   Pointer to a vector with environment variables which will be used
     ///   instead of current environment. Last value in vector must be NULL.
     /// @return 
     ///   On success, return:
@@ -248,7 +251,7 @@ public:
     ///
     /// Meaning of the suffix "LP" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    ///   arguments are passed separately as arguments.
+    ///   arguments are passed separately as a list of arguments.
     /// - The letter "P" as suffix refers to the fact that the PATH
     ///   environment variable is used to find file to execute - on a Unix
     ///   platform this feature works in functions without letter "P" in
@@ -259,9 +262,9 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   First argument vector parameter.
+    ///   First argument (char*).
     /// @param ...
-    ///   Argument vector. Must ends with NULL.
+    ///   Additional argument(s) (char*). Must ends with NULL.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -273,6 +276,9 @@ public:
     ///   SpawnVPE().
     static CResult 
     SpawnLP(EMode mode, const char *cmdname, const char *argv, .../*, NULL*/);
+    // No arguments version
+    static CResult 
+    SpawnLP(EMode mode, const char* cmdname) { return SpawnLP(mode, cmdname, NULL); };
 
     /// Spawn a new process with specified command-line arguments, 
     /// environment settings and find file to execute from the PATH
@@ -287,7 +293,7 @@ public:
     ///
     /// Meaning of the suffix "LPE" in method name:
     /// - The letter "L" as suffix refers to the fact that command-line
-    ///   arguments are passed separately as arguments.
+    ///   arguments are passed separately as a list of arguments.
     /// - The letter "P" as suffix refers to the fact that the PATH
     ///   environment variable is used to find file to execute - on a Unix
     ///   platform this feature works in functions without letter "P" in
@@ -302,11 +308,11 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   First argument vector parameter.
+    ///   First argument (char*).
     /// @param ...
-    ///   Argument vector. Must ends with NULL.
+    ///   Additional argument(s) (char*). Must ends with NULL.
     /// @param envp
-    ///   Pointer to vector with environment variables which will be used
+    ///   Pointer to a vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:
@@ -324,9 +330,9 @@ public:
     /// Spawn a new process with variable number of command-line arguments. 
     ///
     /// In the SpawnV() version, the command-line arguments are a variable
-    /// number. The array of pointers to arguments must have a length of 1 or
-    /// more and you must assign parameters for the new process beginning
-    /// from 1.
+    /// number. If specified, the array of pointers to arguments must have
+    /// a size of 2 or more and you must assign parameters for the new process
+    /// beginning from argv[1].
     ///
     /// Meaning of the suffix "V" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
@@ -337,7 +343,8 @@ public:
     /// @param cmdline
     ///   Path of file to be executed.
     /// @param argv
-    ///   Pointer to argument vector. Last value in vector must be NULL.
+    ///   - Argument vector. Arguments starts from index 1. Last value must be NULL.
+    ///   - NULL, if argument list is empty.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -348,15 +355,17 @@ public:
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnVE(), SpawnVP(), 
     ///   SpawnVPE().
     static CResult
-    SpawnV(EMode mode, const char *cmdname, const char *const *argv);
+    SpawnV(EMode mode, const char *cmdname, const char *const *argv = NULL);
 
     /// Spawn a new process with variable number of command-line arguments
     /// and specified environment settings.
     ///
     /// In the SpawnVE() version, the command-line arguments are a variable
-    /// number. The array of pointers to arguments must have a length of 1 or
-    /// more and you must assign parameters for the new process beginning from
-    /// 1.  The individual environment parameter settings are known in advance
+    /// number. If specified, the array of pointers to arguments must have
+    /// a size of 2 or more and you must assign parameters for the new process
+    /// beginning from argv[1].
+    /// 
+    /// The individual environment parameter settings are known in advance
     /// and passed explicitly.
     ///
     /// Meaning of the suffix "VE" in method name:
@@ -372,9 +381,10 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   Argument vector. Last value must be NULL.
+    ///   - Argument vector. Arguments starts from index 1. Last value must be NULL.
+    ///   - NULL, if argument list is empty.
     /// @param envp
-    ///   Pointer to vector with environment variables which will be used
+    ///   Pointer to a vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:
@@ -393,9 +403,11 @@ public:
     /// find file to execute from the PATH environment variable.
     ///
     /// In the SpawnVP() version, the command-line arguments are a variable
-    /// number. The array of pointers to arguments must have a length of 1 or
-    /// more and you must assign parameters for the new process beginning from
-    /// 1. The PATH environment variable is used to find the file to execute.
+    /// number. If specified, the array of pointers to arguments must have
+    /// a size of 2 or more and you must assign parameters for the new process
+    /// beginning from argv[1].
+    /// 
+    /// The PATH environment variable is used to find the file to execute.
     ///
     /// Meaning of the suffix "VP" in method name:
     /// - The letter "V" as suffix refers to the fact that the number of
@@ -410,7 +422,8 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   Pointer to argument vector. Last value in vector must be NULL.
+    ///   - Argument vector. Arguments starts from index 1. Last value must be NULL.
+    ///   - NULL, if argument list is empty.
     /// @return 
     ///   On success, return:
     ///     - exit code      - in eWait mode.
@@ -421,16 +434,18 @@ public:
     ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), 
     ///   SpawnVPE().
     static CResult
-    SpawnVP(EMode mode, const char *cmdname, const char *const *argv);
+    SpawnVP(EMode mode, const char *cmdname, const char *const *argv = NULL);
 
     /// Spawn a new process with variable number of command-line arguments
     /// and specified environment settings, and find the file to execute
     /// from the PATH environment variable.
     ///
     /// In the SpawnVPE() version, the command-line arguments are a variable
-    /// number. The array of pointers to arguments must have a length of 1 or
-    /// more and you must assign parameters for the new process beginning from
-    /// 1. The PATH environment variable is used to find the file to execute,
+    /// number. If specified, the array of pointers to arguments must have
+    /// a size of 2 or more and you must assign parameters for the new process
+    /// beginning from argv[1].
+    ///
+    /// The PATH environment variable is used to find the file to execute,
     /// and the environment is passed via an environment vector pointer.
     ///
     /// Meaning of the suffix "VPE" in method name:
@@ -450,9 +465,10 @@ public:
     /// @param cmdname
     ///   Path of file to be executed.
     /// @param argv
-    ///   Argument vector. Last value must be NULL.
+    ///   - Argument vector. Arguments starts from index 1. Last value must be NULL.
+    ///   - NULL, if argument list is empty.
     /// @param envp
-    ///   Pointer to vector with environment variables which will be used
+    ///   Pointer to a vector with environment variables which will be used
     ///   instead of current environment. Last value in an array must be NULL.
     /// @return 
     ///   On success, return:

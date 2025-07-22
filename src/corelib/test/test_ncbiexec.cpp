@@ -55,8 +55,9 @@
 USING_NCBI_SCOPE;
 
 
-#define TEST_RESULT_C    99   // Test exit code for current test
-#define TEST_RESULT_P     0   // Test exit code for test from PATH
+#define TEST_RESULT_C        99   // Test exit code for current test
+#define TEST_RESULT_NO_ARGS  98   // Test exit code for current test (no arguments)
+#define TEST_RESULT_P         0   // Test exit code for test from PATH
 
 // Array of arguments to test argument quoting in SpawnL/SpawnV
 const char* s_QuoteArgsTest[] =
@@ -107,8 +108,11 @@ void CTest::Init(void)
 {
     SetDiagPostLevel(eDiag_Warning);
     unique_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_files",
-                       "test file's accessory functions");
+    d->SetUsageContext("test_ncbiexec", "Test program for portable exec functions");
+    d->AddOptionalPositional
+    ("run",
+        "Run tests. This argument is required for a master test process.",
+        CArgDescriptions::eString);
     SetupArgDescriptions(d.release());
 }
 
@@ -190,7 +194,42 @@ int CTest::Run(void)
     cmd = string(app_p) + " " + app_pp;
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_P );
 
-    // Spawn with eWait
+    // Spawn with eWait - no arguments
+    {{
+        code = CExec::SpawnL(CExec::eWait, app_c).GetExitCode(); 
+        assert( code == TEST_RESULT_NO_ARGS );
+        code = CExec::SpawnL(CExec::eWait, app_c, NULL).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+
+        code = CExec::SpawnLP(CExec::eWait, app_p).GetExitCode();
+        assert(code == TEST_RESULT_P);
+        code = CExec::SpawnLP(CExec::eWait, app_p, NULL).GetExitCode();
+        assert( code == TEST_RESULT_P );
+
+        code = CExec::SpawnLE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+
+        code = CExec::SpawnLPE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+
+        code = CExec::SpawnV(CExec::eWait, app_c).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+        code = CExec::SpawnV(CExec::eWait, app_c, NULL).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+
+        code = CExec::SpawnVP(CExec::eWait, app_p).GetExitCode();
+        assert( code == TEST_RESULT_P );
+        code = CExec::SpawnVP(CExec::eWait, app_p, NULL).GetExitCode();
+        assert(code == TEST_RESULT_P);
+
+        code = CExec::SpawnVE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+
+        code = CExec::SpawnVPE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
+        assert(code == TEST_RESULT_NO_ARGS);
+    }}
+
+    // Spawn with eWait - with arguments
     {{
         code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL).GetExitCode(); 
         assert( code == TEST_RESULT_C );
@@ -299,12 +338,24 @@ int CTest::Run(void)
 
 int main(int argc, const char* argv[], const char* /*envp*/[])
 {
-    // Exec from test?
-    if ( argc > 1) {
-        assert(argv[1] && *argv[1]);
-        cout << endl << "Exec: " << argv[1] << endl;
+    // Exec without parameters?
+    if (argc == 1) {
+        cout << endl << "Exec: no arguments" << endl;
+        return TEST_RESULT_NO_ARGS;
+    }
 
-        if ( strstr(argv[1],"Quote")) {
+    // Exec with parameters
+
+    assert(argc > 1);
+    assert(argv[1] && *argv[1]);
+    std::string_view argv1(argv[1]);
+
+    if (argv1 != "run") {
+        // Child process:
+
+        cout << endl << "Exec: " << argv1 << endl;
+
+        if ( argv1.find("Quote") != NPOS ) {
             // Check arguments
             const size_t n = sizeof(s_QuoteArgsTest) / sizeof(s_QuoteArgsTest[0]);
             assert(argc == (n-1));
@@ -316,7 +367,6 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
                 cout.flush();
                 assert( NStr::CompareCase(s_QuoteArgsTest[i], argv[i]) == 0 );
             }
-
         } else {
             assert(argc == 2);
         }
@@ -329,8 +379,8 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
             env_var++;
         }
         */
-        // Check environment
-        if ( strstr(argv[1],"E_e")) {
+        // Check environment for Spawn*E() tests
+        if ( argv1.find("E_e") != NPOS ) {
             char* ptr = getenv("TEST_NCBI_EXEC");
             if (!ptr || !*ptr) {
                 cout << "Environment variable TEST_NCBI_EXEC not found" <<endl;
@@ -343,8 +393,7 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
         cout.flush();
         _exit(TEST_RESULT_C);
     }
-    LOG_POST("Start tests:\n");
 
-    // Execute main application function
+    // Execute main application / master process
     return CTest().AppMain(argc, argv);
 }
