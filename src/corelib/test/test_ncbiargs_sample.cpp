@@ -73,7 +73,7 @@ void CArgTestSampleApplication::Init(void)
 
     // Describe the expected command-line arguments
     arg_desc->AddOptionalPositional
-        ("logfile",
+        ("mylogfile",
          "This is an optional named positional argument without default value",
          CArgDescriptions::eOutputFile,
          CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
@@ -103,7 +103,7 @@ void CArgTestSampleApplication::Init(void)
          3,  // up to 3 optional extra args
          "These are the optional extra (unnamed positional) arguments. "
          "They will be printed out to the file specified by the "
-         "2nd positional argument,\n\"logfile\"",
+         "2nd positional argument,\n\"mylogfile\"",
          CArgDescriptions::eBoolean);
 
     arg_desc->AddKey
@@ -152,23 +152,23 @@ int CArgTestSampleApplication::Run(void)
 
     // Self test
     assert(args.Exist("f1"));
-    assert(args.Exist("logfile"));
+    assert(args.Exist("mylogfile"));
     assert(args["barfooetc"]);
 
     // Stream to result output
     // (NOTE: "x_lg" is just a workaround for bug in SUN WorkShop 5.1 compiler)
-    ostream* x_lg = args["logfile"] ? &args["logfile"].AsOutputFile() : &cout;
+    ostream* x_lg = args["mylogfile"] ? &args["mylogfile"].AsOutputFile() : &cout;
     ostream& lg = *x_lg;
 
-    if ( args["logfile"] )
+    if ( args["mylogfile"] )
         cout << "Printing arguments to file `"
-             << args["logfile"].AsString() << "'..." << endl;
+             << args["mylogfile"].AsString() << "'..." << endl;
 
     // Printout argument values
     lg << "k:         " << args["k"].AsString() << endl;
     lg << "barfooetc: " << args["barfooetc"].AsString() << endl;
-    if ( args["logfile"] )
-        lg << "logfile:   " << args["logfile"].AsString() << endl;
+    if ( args["mylogfile"] )
+        lg << "mylogfile: " << args["mylogfile"].AsString() << endl;
 
     if ( args["ko"] ) {
         lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
