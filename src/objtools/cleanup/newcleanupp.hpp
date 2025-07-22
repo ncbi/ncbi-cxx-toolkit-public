@@ -157,10 +157,6 @@ public:
         CSeq_annot& sa
     );
 
-    void BasicCleanupBioseq (
-        CBioseq& bs
-    );
-
     void BasicCleanupBioseqSet (
         CBioseq_set& bss
     );
@@ -178,7 +174,7 @@ public:
     );
 
     void BasicCleanupBioseqHandle (
-        CBioseq_Handle& bsh
+        const CBioseq_Handle& bsh
     );
 
     void BasicCleanupBioseqSetHandle (
@@ -232,12 +228,14 @@ public:
 
     void SetGeneticCode (CBioseq& bs);
 
+    void SetGeneticCode(const CBioseq_Handle& bsh);
+
     void SubmitblockBC (CSubmit_block& sb);
 
     void SeqsetBC (CBioseq_set& bss);
-    void ProtSeqBC (CBioseq_Handle bsh);
+    void ProtSeqBC (const CBioseq_Handle& bsh);
 
-    bool BasicCleanupSeqIds(CBioseq_Handle bsh);
+    bool BasicCleanupSeqIds(const CBioseq_Handle& bsh);
     bool SeqIdBC( CSeq_id &seq_id );
 
 
@@ -420,9 +418,9 @@ private:
     void x_OrgModBC( COrgMod & orgmod );
 
 public:
-    void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, CBioseq_Handle bsh);
+    void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, const CBioseq_Handle& bsh);
 
-    void AddPartialToProteinTitle(CBioseq_Handle bsh);
+    void AddPartialToProteinTitle(const CBioseq_Handle& bsh);
 private:
 
     string x_ExtractSatelliteFromComment( string &comment );
@@ -488,17 +486,18 @@ private:
     void xUpdateSeqfeatCitPub(CBioseq_set& bioset);
     void xUpdateSeqfeatCitPub(CBioseq& bioseq);
     void xUpdateSeqfeatCitPub(CSeq_annot& annot);
+
+    void xUpdateSeqfeatCitPub(const CBioseq_Handle& bsh);
+    void xUpdateSeqfeatCitPub(const CSeq_annot_Handle& annotHandle);
     bool xUpdateSeqfeatCitGenLabel(CPub& pub);
 
     // after cleaning bioseq and bioseq-set, need to clear empty descriptors
     void x_ClearEmptyDescr( CBioseq_set& bioseq_set );
     void x_ClearEmptyDescr( CBioseq& bioseq );
-    void ClearEmptyDescr(CBioseq_Handle bsh);
-
-
 public:
+    void ClearEmptyDescr(const CBioseq_Handle& bsh);
     // removes single-strandedness from non-viral nucleotide sequences
-    bool RemoveSingleStrand(CBioseq_Handle bsh);
+    bool RemoveSingleStrand(const CBioseq_Handle& bsh);
     void LabelMapAppend(const vector<string>& old_labels, const vector<string>& new_labels);
 
 private:
