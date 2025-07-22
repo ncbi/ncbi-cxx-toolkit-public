@@ -1673,8 +1673,8 @@ void CTest::Init(void)
     SetDiagPostFlag(eDPF_All);
     
     unique_ptr<CArgDescriptions> d(new CArgDescriptions);
-    d->SetUsageContext("test_files",
-                       "test file's accessory functions");
+    d->SetUsageContext("test_ncbifile",
+                       "Test file's accessory functions");
     d->AddFlag("largefiles",
                "Enable CFileIO test with files > 4Gb (turned off by default).");
 
