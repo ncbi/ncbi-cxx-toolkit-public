@@ -1835,6 +1835,15 @@ bool CBioSource::RemoveNullTerms()
                         }
                     }
                 }
+                if (subtype == CSubSource::eSubtype_chromosome) {
+                    if ((*s)->IsSetName()) {
+                        string nm = (*s)->GetName();
+                        if (NStr::EqualNocase(nm, "unknown")) {
+                            ++s;
+                            continue;
+                        }
+                    }
+                }
             }
             if ((*s)->IsSetName()) {
                 string nm = (*s)->GetName();
