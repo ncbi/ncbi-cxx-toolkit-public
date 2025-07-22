@@ -67,23 +67,23 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         else:
             print("NCBI artifactory is not found")
 
-        self._default_requires("abseil/[>=20230125.3 <=20240116.2]")
+        self._default_requires("abseil/[>=20230125.3 <=20250127.0]")
         self._optional_requires("aws-sdk-cpp/[>=1.9.234 <=1.11.352]")
         if self.settings.os == "Linux":
             self._default_requires("backward-cpp/1.6")
-        self._default_requires("boost/[>=1.82.0 <=1.86.0]")
+        self._default_requires("boost/[>=1.82.0 <=1.88.0]")
         self._default_requires("bzip2/1.0.8")
         if self.settings.os == "Linux":
             self._default_requires("cassandra-cpp-driver/[>=2.15.3 <=2.16.2]")
         self._default_requires("giflib/[>=5.2.1 <=5.2.2]")
-        self._default_requires("grpc/[>=1.50.1 <=1.67.1]")
+        self._default_requires("grpc/[>=1.50.1 <=1.72.0]")
         if self.settings.os == "Linux" or NCBIfound:
             self._default_requires("libdb/5.3.28")
-        self._default_requires("libiconv/[>=1.17]")
+        self._default_requires("libiconv/1.17")
         self._default_requires("libjpeg/9e")
         self._default_requires("libnghttp2/[>=1.51.0 <=1.61.0]")
-        self._default_requires("libpng/[>=1.6.37 <=1.6.44]")
-        self._default_requires("libtiff/[>=4.3.0 <=4.6.0]")
+        self._default_requires("libpng/[>=1.6.37 <=1.6.50]")
+        self._default_requires("libtiff/[>=4.3.0 <=4.7.0]")
         if self.settings.os == "Linux":
             self._default_requires("libunwind/[>=1.6.2 <=1.8.1]")
         self._default_requires("libuv/[>=1.45.0 <=1.49.2]")
@@ -91,20 +91,20 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libxslt/[>=1.1.34 <=1.1.42]")
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
-        self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.17.0]")
+        self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.21.0]")
         self._default_requires("pcre/8.45")
         self._default_requires("pcre2/10.42")
-        self._default_requires("protobuf/[>=3.21.12 <=5.27.0]")
-        self._default_requires("sqlite3/[>=3.40.0 <=3.47.1]")
-        self._optional_requires("wxwidgets/3.2.6")
+        self._default_requires("protobuf/[>=3.21.12 <=6.30.1]")
+        self._default_requires("sqlite3/[>=3.40.0 <=3.49.1]")
+        self._optional_requires("wxwidgets/3.2.8")
         self._default_requires("zlib/[>=1.2.11 <2]")
-        self._default_requires("zstd/[>=1.5.2 <=1.5.6]")
+        self._default_requires("zstd/[>=1.5.2 <=1.5.5]")
 
         self._internal_requires("ncbicrypt/20230516")
         if self.settings.os == "Linux":
             self._internal_requires("ncbi-fastcgi/2.4.2")
             self._internal_requires("ncbi-fastcgipp/[>=3.1.0.4]")
-            self._internal_requires("libcurl/8.8.0")
+            self._internal_requires("libcurl/[>=8.8.0 <=8.12.1]")
         self._internal_requires("ncbi-vdb/[>=3.0.1 <=3.2.1]")
 
 
@@ -113,7 +113,6 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self.options["grpc/*"].shared = False
         self.options["protobuf/*"].shared = False
         self.options["boost/*"].shared = False
-        self.options["ncbicrypt/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
         self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
