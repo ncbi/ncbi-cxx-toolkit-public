@@ -113,6 +113,11 @@ inline bool BOOST_CURRENT_TEST_PASSED()
     return rc.passed();
 }
 
+#if BOOST_VERSION >= 108700
+#define BOOST_TEST_DETAIL_DUMMY_COND false
+#else
+#define BOOST_TEST_DETAIL_DUMMY_COND ::boost::test_tools::tt_detail::dummy_cond()
+#endif
 
 #if BOOST_VERSION >= 105900
 #  if BOOST_VERSION >= 106000
@@ -139,7 +144,7 @@ do {                                                                    \
                               BOOST_STRINGIZE( S ),                     \
                               TL, CHECK_MSG, _ );                       \
     }                                                                   \
-} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+} while( BOOST_TEST_DETAIL_DUMMY_COND )                 \
 /**/
 
 #    define BOOST_THROW_AFFIX ""
@@ -169,7 +174,7 @@ do {                                                                    \
                               BOOST_STRINGIZE( S ),                     \
                               TL, CHECK_MSG, _ );                       \
     }                                                                   \
-} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+} while( BOOST_TEST_DETAIL_DUMMY_COND )                 \
 /**/
 #  endif
 
@@ -192,7 +197,7 @@ do {                                                                    \
                               BOOST_STRINGIZE( S ),                     \
                               TL, CHECK_MSG, _ );                       \
     }                                                                   \
-} while( ::boost::test_tools::tt_detail::dummy_cond() )                 \
+} while( BOOST_TEST_DETAIL_DUMMY_COND )                 \
 /**/
 #else
 #  define BOOST_CHECK_THROW_IMPL_EX( S, E, P, prefix, TL, guard )        \
@@ -459,7 +464,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
         BOOST_CHECK_NO_THROW_IMPL_EX(_ncbitest_value = (P);, TL,          \
             _ncbitest_guard.Guard(NCBI_NS_NCBI::g_NcbiTestMutex));        \
         BOOST_TEST_TOOL_IMPL(2, _ncbitest_value, check_descr, TL, CT, _); \
-    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #  define BOOST_PP_BOOL_00 0
 
@@ -481,7 +486,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
                              descr, TL, CT,                                 \
                              (_ncbitest_value1)(BOOST_STRINGIZE(A1))        \
                              (_ncbitest_value2)(BOOST_STRINGIZE(A2)));      \
-    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #  define BOOST_CHECK_IMPL_MT_SAFE( P, check_descr, TL, CT )                \
     do {                                                                    \
@@ -489,7 +494,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
         NCBI_NS_NCBI::CFastMutexGuard _ncbitest_guard                       \
             (NCBI_NS_NCBI::g_NcbiTestMutex);                                \
         BOOST_TEST_TOOL_IMPL( 2, _ncbitest_value, check_descr, TL, CT, _ ); \
-    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #  define BOOST_CHECK_WITH_2_ARGS_IMPL_MT_SAFE(P, descr, TL, CT, A1, A2) \
     do {                                                                 \
@@ -501,7 +506,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
                              descr, TL, CT,                              \
                              (_ncbitest_value1)(BOOST_STRINGIZE(A1))     \
                              (_ncbitest_value2)(BOOST_STRINGIZE(A2)));   \
-    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #  define BOOST_CLOSE_IMPL_MT_SAFE( L, R, T, TL )                             \
     do {                                                                      \
@@ -514,7 +519,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
             00, ::boost::test_tools::check_is_close_t(), "", TL, CHECK_CLOSE, \
             (_ncbitest_l)(BOOST_STRINGIZE(L))(_ncbitest_r)(BOOST_STRINGIZE(R))\
             (_ncbitest_t)(""));  \
-    } while ( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while ( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #  define BOOST_EQUAL_COLLECTIONS_IMPL_MT_SAFE( LB, LE, RB, RE, TL ) \
     do {                                                             \
@@ -523,7 +528,7 @@ static struct BOOST_JOIN( test_name, _timeout_spec )                    \
         BOOST_TEST_TOOL_IMPL(                                        \
             1, ::boost::test_tools::tt_detail::equal_coll_impl(),    \
             "", TL, CHECK_EQUAL_COLL, (LB)(LE)(RB)(RE) );            \
-    } while( ::boost::test_tools::tt_detail::dummy_cond() )
+    } while( BOOST_TEST_DETAIL_DUMMY_COND )
 
 #else
 
