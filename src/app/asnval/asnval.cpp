@@ -304,7 +304,7 @@ void CAsnvalApp::Init()
     CArgAllow* v_constraint = new CArgAllow_Integers(CAppConfig::eVerbosity_min, CAppConfig::eVerbosity_max);
     arg_desc->SetConstraint("v", v_constraint);
 
-    arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit); obsolete", 
+    arg_desc->AddFlag("cleanup", "Perform BasicCleanup before validating (to match C Toolkit); obsolete",
         CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc->AddFlag("batch", "Process NCBI release file (Seq-submit or Bioseq-set only)");
     arg_desc->AddFlag("huge", "Execute in huge-file mode");
@@ -577,7 +577,13 @@ void CAsnvalApp::Setup(const CArgs& args)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-int main(int argc, const char* argv[])
+int
+#ifdef NCBI_SUBUTILS_MULTICALL_asnvalidate
+asnvalidate_app_main
+#else
+main
+#endif
+(int argc, const char* argv[])
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;

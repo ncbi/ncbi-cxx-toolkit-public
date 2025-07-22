@@ -1130,7 +1130,13 @@ USING_NCBI_SCOPE;
 //
 // Main
 
-int main(int argc, const char** argv)
+int
+#ifdef NCBI_SUBUTILS_MULTICALL_asn_cleanup
+asn_cleanup_app_main
+#else
+main
+#endif
+(int argc, const char** argv)
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;

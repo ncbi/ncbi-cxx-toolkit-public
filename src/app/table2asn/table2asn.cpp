@@ -1626,7 +1626,13 @@ END_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-int main(int argc, const char* argv[])
+int
+#ifdef NCBI_SUBUTILS_MULTICALL_table2asn
+table2asn_app_main
+#else
+main
+#endif
+(int argc, const char* argv[])
 {
     #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing

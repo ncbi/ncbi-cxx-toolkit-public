@@ -1237,7 +1237,13 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 //  ==========================================================================
-int main(int argc, const char** argv)
+int
+#ifdef NCBI_SUBUTILS_MULTICALL_asn2fasta
+asn2fasta_app_main
+#else
+main
+#endif
+(int argc, const char** argv)
 //  ==========================================================================
 {
     return CAsn2FastaApp().AppMain(argc, argv);

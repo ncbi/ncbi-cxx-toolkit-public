@@ -1429,7 +1429,13 @@ void CBiosampleChkApp::SaveFile(const string &fname, bool useBinaryOutputFormat)
 //  MAIN
 
 
-int main(int argc, const char* argv[])
+int
+#ifdef NCBI_SUBUTILS_MULTICALL_biosample_chk
+biosample_chk_app_main
+#else
+main
+#endif
+(int argc, const char* argv[])
 {
     return CBiosampleChkApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
