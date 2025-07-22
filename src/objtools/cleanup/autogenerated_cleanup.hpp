@@ -171,7 +171,7 @@ public:
     void BasicCleanupSeqSubmit(CSeq_submit& arg0);
     void BasicCleanupSeqAnnot(CSeq_annot& arg0);
     void BasicCleanupSeqAnnot(const CSeq_annot_Handle& annotHandle);
-    void BasicCleanupBioseq(CBioseq& arg0);
+    void BasicCleanupBioseqHandle(const CBioseq_Handle& bsh);
     void BasicCleanupBioseqSet(CBioseq_set& arg0);
     void BasicCleanupSeqFeat(CSeq_feat& arg0_raw);
     void BasicCleanupSeqFeat(const CSeq_feat_Handle& featHandle);
@@ -366,7 +366,7 @@ private:
     void x_BasicCleanupSPBlock(CSP_block& arg0);
     void x_BasicCleanupDescTitle(std::string& arg0);
     void x_BasicCleanupBioseqDesc(CSeqdesc& desc);
-    void x_BasicCleanupBioseqDescr(CBioseq_Handle bsh);
+    void x_BasicCleanupBioseqDescr(const CBioseq_Handle& bsh);
     void x_BasicCleanupDeltaExt(CDelta_ext& delta_ext, CSeq_inst::ERepr repr);
     void x_BasicCleanupMapExt(CMap_ext& arg0);
     void x_BasicCleanupSegExt(CSeg_ext& arg0);
@@ -374,7 +374,7 @@ private:
     void x_BasicCleanupSeqHistDeleted(CSeq_hist::C_Deleted& arg0);
     void x_BasicCleanupSeqHistRec(CSeq_hist_rec& arg0);
     void x_BasicCleanupSeqHist(CSeq_hist& arg0);
-    void x_BasicCleanupBioseq_inst(CBioseq_Handle bsh);
+    void x_BasicCleanupBioseq_inst(const CBioseq_Handle& bsh);
     void x_BasicCleanupSeqAnnots(list<CRef<CSeq_annot>>& annots);
     void x_BasicCleanupSeqAnnots(const CBioseq_Handle& bsh);
     void x_BasicCleanupBioseqSetDesc(CSeqdesc& arg0);
