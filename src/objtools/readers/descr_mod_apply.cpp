@@ -465,11 +465,10 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             const size_t num_names = names.size();
             if (num_names <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for(int i=num_names-1; i>=0; --i) { // don't use auto here. i stops when at -1.
-                    s_SetPrimerNames(names[i], (*it++)->SetReverse());
+                for (auto name_it = names.rbegin(); name_it != names.rend(); ++name_it) {
+                    s_SetPrimerNames(*name_it, (*it++)->SetReverse());
                 }
-            }
-            else {
+            } else {
 
                 auto it = pcr_reaction_set.Set().begin();
                 for (size_t i=0; i<num_reactions; ++i) {
@@ -499,11 +498,10 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             const size_t num_seqs = seqs.size();
             if (num_seqs <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for(int i=num_seqs-1; i>=0; --i) { // don't use auto here. i stops at -1.
-                    s_SetPrimerSeqs(seqs[i], (*it++)->SetReverse());
+                for (auto seq_it = seqs.rbegin(); seq_it != seqs.rend(); ++seq_it) {
+                    s_SetPrimerSeqs(*seq_it, (*it++)->SetReverse());
                 }
-            }
-            else {
+            } else {
                 auto it = pcr_reaction_set.Set().begin();
                 for (size_t i=0; i<num_reactions; ++i) {
                      s_SetPrimerSeqs(seqs[i], (*it++)->SetReverse());

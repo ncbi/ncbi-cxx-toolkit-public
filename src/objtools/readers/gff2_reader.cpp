@@ -830,11 +830,10 @@ bool CGff2Reader::xGetStartsOnPlusStrand(TSeqPos offset,
 //  ----------------------------------------------------------------------------
 {
     starts.clear();
-    const auto gapCount = gapParts.size();
 
-    for (auto i=0; i<gapCount; ++i) {
-        char changeType = gapParts[i][0];
-        int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+    for (const auto& gap_part : gapParts) {
+        char changeType = gap_part[0];
+        int changeSize = NStr::StringToInt(gap_part.substr(1));
         switch (changeType) {
         default:
             return false;
@@ -921,7 +920,7 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
         }
     }
 
-    for (auto i=0; i<gapCount; ++i) {
+    for (size_t i=0; i<gapCount; ++i) {
         denseg.SetStarts().push_back(targetStarts[i]);
         denseg.SetStarts().push_back(identStarts[i]);
     }
@@ -1004,12 +1003,11 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
         gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
     }
 
-    const auto gapCount = gapParts.size();
 
-    for (auto i=0; i<gapCount; ++i) {
+    for (const auto& gap_part : gapParts) {
         CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk());
-        char changeType = gapParts[i][0];
-        int changeSize = NStr::StringToInt(gapParts[i].substr(1));
+        char changeType = gap_part[0];
+        int changeSize = NStr::StringToInt(gap_part.substr(1));
         switch (changeType) {
         default:
             return false;
