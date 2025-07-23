@@ -356,7 +356,9 @@ void s_Create_Args_L(
         args[i] = xargs[i].c_str();
     }
     args[xcnt] = NULL;
-    va_arg(v_args, const char**);
+    if (argv) {
+        va_arg(v_args, const char**);
+    }
     begin = v_args;
 }
 
