@@ -214,3 +214,77 @@ BOOST_AUTO_TEST_CASE(Test_RW1941)
         pDiscrSet->RunTests({testName}, pEntry->GetSet(), "");
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_RW2544_IsShortrRNA) 
+{
+    auto pRrna = Ref(new CSeq_feat());
+    pRrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    
+    auto pId = Ref(new CSeq_id());
+    pId->SetLocal().SetStr("seqid");
+
+    auto pLoc = Ref(new CSeq_loc());
+    pLoc->SetInt().SetId(*pId);
+    pLoc->SetInt().SetFrom(0);
+    pLoc->SetInt().SetTo(10);
+    pRrna->SetLocation(*pLoc);
+
+    BOOST_CHECK(! pRrna->IsSetPartial());
+    pRrna->SetData().SetRna().SetExt().SetName("This is 16S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 18S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 23S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 25S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 26S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 28S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is small rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is large rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+
+    pRrna->SetData().SetRna().SetExt().SetName("This shouldn't be reported as short"); 
+    BOOST_CHECK( ! IsShortrRNA(*pRrna, nullptr)); 
+
+    pRrna->SetPartial(true);
+
+    pRrna->SetData().SetRna().SetExt().SetName("This is 16S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 18S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 23S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 25S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 26S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is 28S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is small rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+    pRrna->SetData().SetRna().SetExt().SetName("This is large rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr)); 
+
+    pRrna->SetData().SetRna().SetExt().SetName("This shouldn't be reported as short"); 
+    BOOST_CHECK( ! IsShortrRNA(*pRrna, nullptr)); 
+
+    pRrna->ResetPartial();
+
+    BOOST_CHECK(! pRrna->IsSetPartial());
+    pRrna->SetData().SetRna().SetExt().SetName("This is 5S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
+    pRrna->SetData().SetRna().SetExt().SetName("This is 5.8S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
+
+    pRrna->SetPartial(true);
+
+    pRrna->SetData().SetRna().SetExt().SetName("This is 5S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
+    pRrna->SetData().SetRna().SetExt().SetName("This is 5.8S rRNA");
+    BOOST_CHECK(IsShortrRNA(*pRrna, nullptr));
+}
