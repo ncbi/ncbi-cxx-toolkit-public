@@ -1844,10 +1844,19 @@ bool CBioSource::RemoveNullTerms()
                         }
                     }
                 }
+                if (subtype == CSubSource::eSubtype_mating_type) {
+                    if ((*s)->IsSetName()) {
+                        string nm = (*s)->GetName();
+                        if (NStr::EqualNocase(nm, "-")) {
+                            ++s;
+                            continue;
+                        }
+                    }
+                }
             }
             if ((*s)->IsSetName()) {
                 string nm = (*s)->GetName();
-                if (IsStopWord(nm)) {
+                if ( IsStopWord(nm) /* NStr:: EqualNocase(nm, "Missing") || NStr:: EqualNocase(nm, "N/A") */ ) {
                     s = SetSubtype().erase(s);
                     any_change = true;
                 } else {
