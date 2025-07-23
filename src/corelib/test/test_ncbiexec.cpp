@@ -350,7 +350,7 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
     assert(argv[1] && *argv[1]);
     std::string_view argv1(argv[1]);
 
-    if (argv1 != "run") {
+    if (argv1 != std::string_view("run")) {
         // Child process:
 
         cout << endl << "Exec: " << argv1 << endl;
