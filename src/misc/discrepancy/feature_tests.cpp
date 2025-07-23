@@ -54,6 +54,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objtools/edit/cds_fix.hpp>
+#include <array>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -91,11 +92,42 @@ DISCREPANCY_AUTOFIX(PSEUDO_MISMATCH)
 
 
 // SHORT_RRNA
+bool IsShortrRNA(const CSeq_feat& f, CScope* scope) // N.B. doesn't check partialness
+{
+    if (f.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
+        return false;
+    }
+
+    static const array<pair<string, size_t>, 10> kRrnaMinLengths = {{ // Aggregate initialization requires '{{' here.
+        { "16S", 1000 },
+        { "18S", 1000 },
+        { "23S", 2000 },
+        { "25S", 1000 },
+        { "26S", 1000 },
+        { "28S", 3300 },
+        { "small", 1000 },
+        { "large", 1000 },
+        { "5.8S", 130 },
+        { "5S", 90 }
+    }};
+
+    auto        len       = sequence::GetLength(f.GetLocation(), scope);
+    const auto& rrna_name = f.GetData().GetRna().GetRnaProductName();
+
+    for (const auto& [rrna_type, min_length] : kRrnaMinLengths) {
+        SIZE_TYPE pos = NStr::FindNoCase(rrna_name, rrna_type);
+        if (pos != NPOS && len < min_length) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 DISCREPANCY_CASE(SHORT_RRNA, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Short rRNA Features")
 {
     for (const CSeq_feat& feat : context.GetFeat()) {
-        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && !feat.IsSetPartial() && IsShortrRNA(feat, &(context.GetScope()))) {
+        if (feat.IsSetData() && ((! feat.IsSetPartial()) || (! feat.GetPartial()))  && IsShortrRNA(feat, &(context.GetScope()))) {
             m_Objs["[n] rRNA feature[s] [is] too short"].Add(*context.SeqFeatObjRef(feat)).Fatal();
         }
     }

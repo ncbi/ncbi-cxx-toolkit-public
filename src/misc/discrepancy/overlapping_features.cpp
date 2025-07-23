@@ -180,45 +180,6 @@ DISCREPANCY_AUTOFIX(_CDS_TRNA_OVERLAP)
 
 
 // RNA_CDS_OVERLAP
-
-typedef pair<size_t, bool> TRNALength;
-typedef map<string, TRNALength > TRNALengthMap;
-
-static const TRNALengthMap kTrnaLengthMap{
-    { "16S", { 1000, false } },
-    { "18S", { 1000, false } },
-    { "23S", { 2000, false } },
-    { "25S", { 1000, false } },
-    { "26S", { 1000, false } },
-    { "28S", { 3300, false } },
-    { "small", { 1000, false } },
-    { "large", { 1000, false } },
-    { "5.8S", { 130, true } },
-    { "5S", { 90, true } }
-    // possible problem: if it matches /25S/ it would also match /5S/
-    // luckily, if it fails the /5S/ rule it would fail the /25S/ rule
-};
-
-
-bool IsShortrRNA(const CSeq_feat& f, CScope* scope) // used in feature_tests.cpp
-{
-    if (f.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
-        return false;
-    }
-    bool is_bad = false;
-    size_t len = sequence::GetLength(f.GetLocation(), scope);
-    string rrna_name = f.GetData().GetRna().GetRnaProductName();
-    for (const auto& it : kTrnaLengthMap) {
-        SIZE_TYPE pos = NStr::FindNoCase(rrna_name, it.first);
-        if (pos != NPOS && len < it.second.first && !(it.second.second && f.IsSetPartial() && f.GetPartial()) ) {
-            is_bad = true;
-            break;
-        }
-    }
-    return is_bad;
-}
-
-
 const string kCDSRNAAnyOverlap = "[n/2] coding region[s] overlap RNA feature[s]";
 const string kCDSRNAExactMatch = "[n/2] coding region location[s] exactly match an RNA location";
 const string kCDSRNAContainedIn = "[n/2] coding region[s] [is] completely contained in RNA[s]";
@@ -244,20 +205,7 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, SEQUENCE, eDisc | eSubmitter | eSmart | eFatal
         if ((subtype == CSeqFeatData::eSubtype_tRNA && is_eukaryotic) || subtype == CSeqFeatData::eSubtype_mRNA || subtype == CSeqFeatData::eSubtype_ncRNA) {
             continue;
         }
-        else if (subtype == CSeqFeatData::eSubtype_rRNA) {
-            size_t len = sequence::GetLength(rna_loc, &context.GetScope());
-            string rrna_name = pRna->GetData().GetRna().GetRnaProductName();
-            bool is_bad = false;
-            for (const auto& it : kTrnaLengthMap) {
-                if (NStr::FindNoCase(rrna_name, it.first) != NPOS && len < it.second.first && (!it.second.second || (pRna->IsSetPartial() && pRna->GetPartial())) ) {
-                    is_bad = true;
-                    break;
-                }
-            }
-            if (is_bad) {
-                continue;
-            }
-        }
+
         for (const auto* pCds : cds) {
             const CSeq_loc& cds_loc = pCds->GetLocation();
             const auto compare = context.Compare(cds_loc, rna_loc);
