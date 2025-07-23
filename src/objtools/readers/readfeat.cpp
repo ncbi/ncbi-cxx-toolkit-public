@@ -1280,7 +1280,7 @@ private:
                     code->SetId(num);
                     crp.SetCode().Set().push_back(code);
                     return true;
-                } catch( CStringException ) {
+                } catch(CStringException&) {
                     // if val is not a number, add qualifier directly and
                     // let cleanup convert?
                     return x_AddGBQualToFeature(sfp, "transl_table", val);

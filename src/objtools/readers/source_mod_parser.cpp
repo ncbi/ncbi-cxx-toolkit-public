@@ -874,7 +874,7 @@ static void s_GetPrimerInfo(const CSourceModParser::SMod* pNamesMod,
     const auto num_seqs = seqs.size();
     const auto num_reactions = max(num_names, num_seqs);
 
-    for (int i=0; i<num_reactions; ++i) {
+    for (size_t i=0; i<num_reactions; ++i) {
         const string name = (i<num_names) ? names[i] : "";
         const string seq  = (i<num_seqs) ? seqs[i] : "";
         reaction_info.push_back(make_pair(name, seq));
@@ -909,7 +909,7 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
     auto num_rev_primer_info = rev_primer_info.size();
 
     if (num_fwd_primer_info == num_rev_primer_info) {
-        for (auto i=0; i<num_fwd_primer_info; ++i) {
+        for (size_t i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
@@ -919,13 +919,13 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
     else
     if (num_fwd_primer_info > num_rev_primer_info) {
         auto diff = num_fwd_primer_info - num_rev_primer_info;
-        for (int i=0; i<diff; ++i) {
+        for (size_t i=0; i<diff; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
 
-        for (int i=diff; i<num_fwd_primer_info; ++i) {
+        for (size_t i=diff; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             s_AddPrimers(rev_primer_info[i-diff], pcr_reaction->SetReverse());
@@ -934,14 +934,14 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reacti
     }
     else
     if (num_fwd_primer_info < num_rev_primer_info) {
-        for (int i=0; i<num_fwd_primer_info; ++i) {
+        for (size_t i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
 
-        for (int i=num_fwd_primer_info; i<num_rev_primer_info; ++i) {
+        for (size_t i=num_fwd_primer_info; i<num_rev_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
             s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);

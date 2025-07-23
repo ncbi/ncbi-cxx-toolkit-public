@@ -225,16 +225,6 @@ string sBestMatchType(
 
 }
 
-static auto s_GffIdFormatter = [](const CSeq_id& id)
-{
-    const auto label_type = id.IsGeneral() ? 
-        CSeq_id::eFasta : 
-        CSeq_id::eContent;
-
-    string label;
-    id.GetLabel(&label, label_type);
-    return label;
-};
 
 //  ----------------------------------------------------------------------------
 CGff3Writer::CGff3Writer(

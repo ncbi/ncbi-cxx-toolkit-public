@@ -78,7 +78,7 @@ public:
         NStr::Split(err.Message(), "\n", messageLines);
         if (!messageLines.empty()) {
             mStream << "Message    : " << messageLines.front() << endl;
-            for (auto i=1; i < messageLines.size(); ++i) {
+            for (size_t i=1; i < messageLines.size(); ++i) {
                 mStream << "             " << messageLines[i] << endl;
             }
         }

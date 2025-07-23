@@ -88,7 +88,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
         tokens.reverse(); // different ordering of seq-loc-mix components on minus strand
     }
 
-    for (const auto token : tokens) {
+    for (const auto& token : tokens) {
         auto divPos = token.find("..");
         if (divPos == string::npos) {
             auto point = NStr::StringToInt(token) - 1;
