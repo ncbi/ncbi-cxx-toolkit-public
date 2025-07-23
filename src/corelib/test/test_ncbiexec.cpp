@@ -195,41 +195,55 @@ int CTest::Run(void)
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_P );
 
     // Spawn with eWait - no arguments
+    cout << "eWait - no arguments" << endl;
     {{
+        cout << "SpawnL(1):" << endl;
         code = CExec::SpawnL(CExec::eWait, app_c).GetExitCode(); 
         assert( code == TEST_RESULT_NO_ARGS );
+        cout << "SpawnL(2):" << endl;
         code = CExec::SpawnL(CExec::eWait, app_c, NULL).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
 
+        cout << "SpawnLP(1):" << endl;
         code = CExec::SpawnLP(CExec::eWait, app_p).GetExitCode();
         assert(code == TEST_RESULT_P);
+        cout << "SpawnLP(2):" << endl;
         code = CExec::SpawnLP(CExec::eWait, app_p, NULL).GetExitCode();
         assert( code == TEST_RESULT_P );
 
+        cout << "SpawnLE:" << endl;
         code = CExec::SpawnLE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
 
+        cout << "SpawnLPE:" << endl;
         code = CExec::SpawnLPE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
 
+        cout << "SpawnV(1):" << endl;
         code = CExec::SpawnV(CExec::eWait, app_c).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
+        cout << "SpawnV(2):" << endl;
         code = CExec::SpawnV(CExec::eWait, app_c, NULL).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
 
+        cout << "SpawnVP(1):" << endl;
         code = CExec::SpawnVP(CExec::eWait, app_p).GetExitCode();
         assert( code == TEST_RESULT_P );
+        cout << "SpawnVP(2):" << endl;
         code = CExec::SpawnVP(CExec::eWait, app_p, NULL).GetExitCode();
         assert(code == TEST_RESULT_P);
 
+        cout << "SpawnVE:" << endl;
         code = CExec::SpawnVE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
 
+        cout << "SpawnVPE:" << endl;
         code = CExec::SpawnVPE(CExec::eWait, app_c, NULL, my_env).GetExitCode();
         assert(code == TEST_RESULT_NO_ARGS);
     }}
 
     // Spawn with eWait - with arguments
+    cout << "eWait - with arguments" << endl;
     {{
         code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL).GetExitCode(); 
         assert( code == TEST_RESULT_C );
@@ -250,6 +264,7 @@ int CTest::Run(void)
     }}
 
     // Spawn with eNoWait, waiting self
+    cout << "eNoWait tests" << endl;
     {{
         handle = CExec::SpawnL  (CExec::eNoWait, app_c, "SpawnL_eNoWait", NULL).GetProcessHandle();
         assert(CExec::Wait(handle) == TEST_RESULT_C );
@@ -262,6 +277,7 @@ int CTest::Run(void)
     }}
 
     // Spawn with eDetach
+    cout << "eDetach tests" << endl;
     {{
         CExec::SpawnL  (CExec::eDetach, app_c, "SpawnL_eDetach", NULL);
         CExec::SpawnLP (CExec::eDetach, app_p, app_pp, NULL);
@@ -340,7 +356,7 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
 {
     // Exec without parameters?
     if (argc == 1) {
-        cout << endl << "Exec: no arguments" << endl;
+        cout << "Exec: no arguments" << endl;
         return TEST_RESULT_NO_ARGS;
     }
 
@@ -350,7 +366,7 @@ int main(int argc, const char* argv[], const char* /*envp*/[])
     assert(argv[1] && *argv[1]);
     std::string_view argv1(argv[1]);
 
-    if (argv1 != std::string_view("run")) {
+    if (argv1 != "run"sv) {
         // Child process:
 
         cout << endl << "Exec: " << argv1 << endl;
