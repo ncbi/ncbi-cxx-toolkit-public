@@ -388,7 +388,6 @@ void s_Create_Args_V(
     for (size_t i=0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
-    cout << xargs.size() << endl;
     args[xcnt] = NULL;
 }
 
