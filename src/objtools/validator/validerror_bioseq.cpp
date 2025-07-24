@@ -548,6 +548,15 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx, bo
             }
             if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
                 const string& acc = dbt.GetTag().GetStr();
+                if (m_Imp.IsIndexerVersion()) {
+                    if (NStr::StartsWith(acc, "pgaptmp", NStr::eNocase)) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not start with pgaptmp", ctx);
+                    } else if (NStr::StartsWith(acc, "egapxtmp", NStr::eNocase)) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not start with egapxtmp", ctx);
+                    } else if (NStr::StartsWith(acc, "egaptmp", NStr::eNocase)) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier must not start with egaptmp", ctx);
+                    }
+                }
                 char badch;
                 if (dbt.IsSetDb() && (NStr::Equal(dbt.GetDb(), "NCBIFILE") || NStr::Equal(dbt.GetDb(), "BankIt"))) {
                     badch = CheckForBadFileIDSeqIdChars(acc);
