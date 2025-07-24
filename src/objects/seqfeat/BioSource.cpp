@@ -1822,50 +1822,52 @@ bool CBioSource::RemoveNullTerms()
     if (IsSetSubtype()) {
         CBioSource::TSubtype::iterator s = SetSubtype().begin();
         while (s != SetSubtype().end()) {
+
+            if (! (*s)->IsSetName()) {
+                // keep subsource without name
+                ++s;
+                continue;
+            }
+
+            string nm = (*s)->GetName();
+
             if ((*s)->IsSetSubtype()) {
                 CSubSource::TSubtype subtype = (*s)->GetSubtype();
-                if (subtype == CSubSource::eSubtype_country ||
-                    subtype == CSubSource::eSubtype_collection_date) {
+ 
+                // allow all null terms for these subsource types
+                if (subtype == CSubSource::eSubtype_country || subtype == CSubSource::eSubtype_collection_date) {
                     // skip "missing" null exemption value (RW-1944)
-                    if ((*s)->IsSetName()) {
-                        string nm = (*s)->GetName();
-                        if (IsStopWord(nm)) {
-                            ++s;
-                            continue;
-                        }
+                    if (IsStopWord(nm)) {
+                        ++s;
+                        continue;
                     }
                 }
-                if (subtype == CSubSource::eSubtype_chromosome) {
-                    if ((*s)->IsSetName()) {
-                        string nm = (*s)->GetName();
-                        if (NStr::EqualNocase(nm, "unknown")) {
-                            ++s;
-                            continue;
-                        }
-                    }
+                // additional exceptions to allow valid biological data values
+                if (subtype == CSubSource::eSubtype_chromosome && NStr::EqualNocase(nm, "unknown")) {
+                    ++s;
+                    continue;
                 }
-                if (subtype == CSubSource::eSubtype_mating_type) {
-                    if ((*s)->IsSetName()) {
-                        string nm = (*s)->GetName();
-                        if (NStr::EqualNocase(nm, "-")) {
-                            ++s;
-                            continue;
-                        }
-                    }
+                if (subtype == CSubSource::eSubtype_segment && NStr::EqualNocase(nm, "NA")) {
+                    ++s;
+                    continue;
+                }
+                if (subtype == CSubSource::eSubtype_mating_type && NStr::EqualNocase(nm, "-")) {
+                    ++s;
+                    continue;
                 }
             }
-            if ((*s)->IsSetName()) {
-                string nm = (*s)->GetName();
-                if ( IsStopWord(nm) /* NStr:: EqualNocase(nm, "Missing") || NStr:: EqualNocase(nm, "N/A") */ ) {
-                    s = SetSubtype().erase(s);
-                    any_change = true;
-                } else {
-                    ++s;
-                }
+
+            if ( IsStopWord(nm)) {
+                // otherwise erase items with null terms
+                s = SetSubtype().erase(s);
+                any_change = true;
+                ++s;
             } else {
+                // but keep item with non-null term
                 ++s;
             }
         }
+
         if (GetSubtype().empty()) {
             ResetSubtype();
             any_change = true;
