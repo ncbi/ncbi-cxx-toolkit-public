@@ -53,7 +53,7 @@ BEGIN_NCBI_SCOPE
 
 TExitCode CExec::CResult::GetExitCode(void)
 {
-    if ( (m_Flags & fExitCode) == 0 ) {
+    if ((m_Flags & fExitCode) == 0) {
         NCBI_THROW(CExecException, eResult,
                    "CExec:: CResult contains process handle, not exit code");
     }
@@ -62,7 +62,7 @@ TExitCode CExec::CResult::GetExitCode(void)
 
 TProcessHandle CExec::CResult::GetProcessHandle(void)
 {
-    if ( (m_Flags & fHandle) == 0 ) {
+    if ((m_Flags & fHandle) == 0) {
         NCBI_THROW(CExecException, eResult,
                    "CExec:: CResult contains process exit code, not handle");
     }
@@ -72,13 +72,13 @@ TProcessHandle CExec::CResult::GetProcessHandle(void)
 CExec::CResult::operator intptr_t(void) const
 {
     switch (m_Flags) {
-        case fExitCode:
-            return (intptr_t)m_Result.exitcode;
-        case fHandle:
-            return (intptr_t)m_Result.handle;
-        default:
-            NCBI_THROW(CExecException, eResult,
-                       "CExec:: CResult undefined conversion");
+    case fExitCode:
+        return (intptr_t)m_Result.exitcode;
+    case fHandle:
+        return (intptr_t)m_Result.handle;
+    default:
+        NCBI_THROW(CExecException, eResult,
+                   "CExec:: CResult undefined conversion");
     }
     // Not reached
     return 0;
@@ -90,13 +90,12 @@ CExec::CResult::operator intptr_t(void) const
 // Convert CExec class mode to the real mode
 static int s_GetRealMode(CExec::EMode mode)
 {
-    static const int s_Mode[] =  { 
-        P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH 
+    static const int s_Mode[] = {
+        P_OVERLAY, P_WAIT, P_NOWAIT, P_DETACH
     };
-
     // Translate only master modes and ignore all additional modes on MS Windows.
-    int x_mode = (int) mode & CExec::fModeMask;
-    _ASSERT(0 <= x_mode  &&  x_mode < sizeof(s_Mode)/sizeof(s_Mode[0]));
+    int x_mode = (int)mode & CExec::fModeMask;
+    _ASSERT(0 <= x_mode  &&  x_mode < sizeof(s_Mode) / sizeof(s_Mode[0]));
     return s_Mode[x_mode];
 }
 #endif
@@ -105,19 +104,18 @@ static int s_GetRealMode(CExec::EMode mode)
 #if defined(NCBI_OS_UNIX)
 
 // Type function to call
-enum ESpawnFunc {eV, eVE, eVP, eVPE};
+enum ESpawnFunc { eV, eVE, eVP, eVPE };
 
-static int 
-s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode, 
-            const char *cmdname, const char *const *argv, 
-            const char *const *envp = (const char *const*)0)
+static int
+s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
+            const char* cmdname, const char* const* argv,
+            const char* const* envp = (const char* const*)0)
 {
     // Empty environment for Spawn*E
     const char* empty_env[] = { 0 };
-    if ( !envp ) {
+    if (!envp) {
         envp = empty_env;
     }
-
     // Get master mode
     CExec::EMode mode = (CExec::EMode)(full_mode & (int)CExec::fModeMask);
 
@@ -134,12 +132,11 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
             return execvp(cmdname, const_cast<char**>(argv));
         case eVE:
         case eVPE:
-            return execve(cmdname, const_cast<char**>(argv), 
-                          const_cast<char**>(envp));
+            return execve(cmdname, const_cast<char**>(argv), const_cast<char**>(envp));
         }
         return -1;
     }
-    
+
     // Create temporary pipe to get status of execution
     // of the child process
     int status_pipe[2];
@@ -147,34 +144,34 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
         NCBI_THROW(CExecException, eSpawn,
                    "CExec:: Failed to create status pipe");
     }
-    fcntl(status_pipe[0], F_SETFL, 
-    fcntl(status_pipe[0], F_GETFL, 0) & ~O_NONBLOCK);
-    fcntl(status_pipe[1], F_SETFD, 
-    fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
-    
+    fcntl(status_pipe[0], F_SETFL,
+          fcntl(status_pipe[0], F_GETFL, 0) & ~O_NONBLOCK);
+    fcntl(status_pipe[1], F_SETFD,
+          fcntl(status_pipe[1], F_GETFD, 0) | FD_CLOEXEC);
+
     // Fork child process
     pid_t pid;
     switch (pid = fork()) {
-    case (pid_t)(-1):
+    case (pid_t)(-1) :
         // fork failed
         return -1;
     case 0:
         // Now we are in the child process
-        
+
         // Close unused pipe handle
         close(status_pipe[0]);
-        
+
         if (mode == CExec::eDetach) {
-            if ( freopen("/dev/null", "r", stdin)  ) { /*dummy*/ };
-            if ( freopen("/dev/null", "w", stdout) ) { /*dummy*/ };
-            if ( freopen("/dev/null", "a", stderr) ) { /*dummy*/ };
+            if (freopen("/dev/null", "r", stdin))  { /*dummy*/ };
+            if (freopen("/dev/null", "w", stdout)) { /*dummy*/ };
+            if (freopen("/dev/null", "a", stderr)) { /*dummy*/ };
             setsid();
         }
 
-        if (((int)full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
+        if (((int)full_mode & CExec::fNewGroup) == CExec::fNewGroup) {
             setpgid(0, 0);
         }
-        int status =-1;
+        int status = -1;
         switch (func) {
         case eV:
             status = execv(cmdname, const_cast<char**>(argv));
@@ -184,24 +181,23 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
             break;
         case eVE:
         case eVPE:
-            status = execve(cmdname, const_cast<char**>(argv),
-                            const_cast<char**>(envp));
+            status = execve(cmdname, const_cast<char**>(argv), const_cast<char**>(envp));
             break;
         }
         // Error executing exec*(), report error code to parent process
         int errcode = errno;
-        if ( write(status_pipe[1], &errcode, sizeof(errcode)) ) { /*dummy*/};
+        if (write(status_pipe[1], &errcode, sizeof(errcode))) { /*dummy*/ };
         close(status_pipe[1]);
         _exit(status);
     }
-    
+
     // Check status pipe.
     // If it have some data, this is an errno from the child process.
     // If EOF in status pipe, that child executed successful.
     // Retry if either blocked or interrupted
-    
-    close(status_pipe[1]);    
-   
+
+    close(status_pipe[1]);
+
     // Try to read errno from forked process
     ssize_t n;
     int errcode;
@@ -213,12 +209,12 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     if (n > 0) {
         // Child could not run -- reap it and exit with error
         waitpid(pid, 0, 0);
-        errno = (size_t) n >= sizeof(errcode) ? errcode : 0;        
+        errno = (size_t)n >= sizeof(errcode) ? errcode : 0;
         return -1;
     }
 
     // The "pid" contains the childs pid
-    if ( mode == CExec::eWait ) {
+    if (mode == CExec::eWait) {
         return CExec::Wait(pid);
     }
     return pid;
@@ -231,8 +227,8 @@ string CExec::QuoteArg(const string& arg)
 {
     // Enclose argument in quotes if it is empty,
     // or contains spaces and does not contain quotes.
-    if ( arg.empty()  ||
-        (arg.find(' ') != NPOS  &&  arg.find('"') == NPOS) ) {
+    if (arg.empty() ||
+        (arg.find(' ') != NPOS && arg.find('"') == NPOS)) {
         return '"' + arg + '"';
     }
     return arg;
@@ -270,13 +266,15 @@ string s_QuoteSpawnArg(const string& arg)
             s.append(n_backslashes * 2, '\\');
             break;
 
-        } else if (*it == '"') {
+        }
+        else if (*it == '"') {
             // Escape all backslashes and the following
             // double quotation mark.
             //
             s.append(n_backslashes * 2 + 1, '\\');
             s.push_back(*it);
-        } else {
+        }
+        else {
             // Backslashes aren't special here.
             //
             s.append(n_backslashes, '\\');
@@ -308,8 +306,8 @@ static void s_CheckExecArg(const char* arg)
 #  endif
     if (lo == 0  &&  hi != 0) {
         ERR_POST_X(10, Warning <<
-                       "It is possible that you used 0 instead of NULL "
-                       "to terminate the argument list of a CExec::Spawn*() call.");
+                   "It is possible that you used 0 instead of NULL "
+                   "to terminate the argument list of a CExec::Spawn*() call.");
     }
 }
 #else
@@ -335,20 +333,20 @@ void s_Create_Args_L(
             xcnt++;
         }
     }
-    const TXChar **args = new const TXChar*[xcnt+1];
-    if ( !args ) {
+    const TXChar** args = new const TXChar * [xcnt + 1];
+    if (!args) {
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
     }
     t_args = args;
 
     // Use temporary vector to store quoted/unicoded strings.
-    xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
+    xargs.push_back(_T_XSTRING(CExec::QuoteArg(cmdname)));
     if (argv) {
-        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(argv)) );
+        xargs.push_back(_T_XSTRING(s_QuoteSpawnArg(argv)));
         // Repeat for each argument in the variable list
         v_args = begin;
-        for (size_t i=2; i < xcnt; ++i) {
-            xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(va_arg(v_args, const char*))) );
+        for (size_t i = 2; i < xcnt; ++i) {
+            xargs.push_back(_T_XSTRING(s_QuoteSpawnArg(va_arg(v_args, const char*))));
         }
     }
     // Copy processes arguments back
@@ -371,23 +369,23 @@ void s_Create_Args_V(
     // Count arguments to allocate memory
     const char** p = argv ? argv : argv_empty;
     size_t xcnt = 1;
-    while ( *(++p) ) {
+    while (*(++p)) {
         xcnt++;
     }
-    const TXChar **args = new const TXChar*[xcnt+1];
-    if ( !args ) {
+    const TXChar** args = new const TXChar * [xcnt + 1];
+    if (!args) {
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
     }
     t_args = args;
 
     // Use temporary vector to store quoted/unicoded strings.
-    xargs.push_back( _T_XSTRING(CExec::QuoteArg(cmdname)) );
+    xargs.push_back(_T_XSTRING(CExec::QuoteArg(cmdname)));
     p = argv;
-    for (size_t i=1; i < xcnt; ++i) {
-        xargs.push_back( _T_XSTRING(s_QuoteSpawnArg(*(++p))) );
+    for (size_t i = 1; i < xcnt; ++i) {
+        xargs.push_back(_T_XSTRING(s_QuoteSpawnArg(*(++p))));
     }
     // Copy processes arguments back
-    for (size_t i=0; i < xargs.size(); ++i) {
+    for (size_t i = 0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
     args[xcnt] = NULL;
@@ -398,27 +396,27 @@ void s_Create_Env(
 {
     const char** envp = begin;
     int xcnt = 0;
-    while ( *(envp++) ) {
+    while (*(envp++)) {
         xcnt++;
     }
-    const TXChar **args = new const TXChar*[xcnt+1];
-    if ( !args ) {
+    const TXChar** args = new const TXChar * [xcnt + 1];
+    if (!args) {
         NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
     }
     t_args = args;
-    
+
     envp = begin;
-    int i_arg=0;
-    while ( i_arg < xcnt ) {
+    int i_arg = 0;
+    while (i_arg < xcnt) {
 #  if defined(_UNICODE)
-        xargs.push_back( _T_XSTRING(*(envp++)) );
+        xargs.push_back(_T_XSTRING(*(envp++)));
 #  else
         args[i_arg] = *(envp++);
 #  endif
         ++i_arg;
     }
 #  if defined(_UNICODE)
-    for (size_t i=0; i < xargs.size(); ++i) {
+    for (size_t i = 0; i < xargs.size(); ++i) {
         args[i] = xargs[i].c_str();
     }
 #  endif
@@ -511,12 +509,12 @@ void s_Create_Env(
     return result
 
 
-TExitCode CExec::System(const char *cmdline)
-{ 
+TExitCode CExec::System(const char* cmdline)
+{
     int status;
 #if defined(NCBI_OS_MSWIN)
     _flushall();
-    status = NcbiSys_system(cmdline ? _T_XCSTRING(cmdline) : NULL); 
+    status = NcbiSys_system(cmdline ? _T_XCSTRING(cmdline) : NULL);
 #elif defined(NCBI_OS_UNIX)
     status = system(cmdline);
 #endif
@@ -526,8 +524,7 @@ TExitCode CExec::System(const char *cmdline)
     }
 #if defined(NCBI_OS_UNIX)
     if (cmdline) {
-        return WIFSIGNALED(status) ? WTERMSIG(status) + 0x80
-            : WEXITSTATUS(status);
+        return WIFSIGNALED(status) ? WTERMSIG(status) + 0x80 : WEXITSTATUS(status);
     } else {
         return status;
     }
@@ -536,12 +533,100 @@ TExitCode CExec::System(const char *cmdline)
 #endif
 }
 
-
 CExec::CResult
-CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::Spawn(const string& cmdname, const vector<string>& args, const vector<string>& env, EMode mode, TModeFlags flags)
 {
     intptr_t status;
-    XGET_EXEC_ARGS(args, argv);
+
+    // Predefined values for empty args/env
+    TXChar* args_empty[] = { NULL, NULL };
+    TXChar* envs_empty[] = { NULL };
+
+    TXArgsOrEnv t_args, t_envs;
+    const TXChar* const* a_args;
+    const TXChar* const* a_envs;
+
+#if defined(NCBI_OS_MSWIN)
+#   define DO_PROCESS_ARGS 1
+#endif
+#if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
+#   define DO_PROCESS_ENVS 1
+#endif
+
+#if defined(DO_PROCESS_ARGS)
+    vector<TXString> v_args;
+#endif
+#if defined(DO_PROCESS_ENVS)
+    vector<TXString> v_envs;
+#endif
+
+    size_t n = args.size();
+    if (n) {
+        ++n; // for added cmdname
+        const TXChar** ptr = new const TXChar * [n + 1];
+        if (!ptr) {
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+        }
+        t_args = ptr;
+        a_args = ptr;
+#if defined(DO_PROCESS_ARGS)
+        // Use temporary vector to store quoted/unicoded strings.
+        v_args.reserve(n + 1);
+        v_args.push_back(_T_XSTRING(CExec::QuoteArg(cmdname)));
+        for (const string& e : args) {
+            v_args.push_back(_T_XSTRING(s_QuoteSpawnArg(e)));
+        }
+        for (size_t i = 0; i < n; ++i) {
+            ptr[i] = v_args[i].c_str();
+        }
+#else
+        ptr[0] = cmdname.c_str();
+        for (size_t i = 0; i < n; ++i) {
+            ptr[i + 1] = args[i].c_str();
+        }
+#endif
+        ptr[n] = NULL;
+    }
+    else {
+#if defined(DO_PROCESS_ARGS)
+        v_args.push_back(_T_XSTRING(CExec::QuoteArg(cmdname)));
+        args_empty[0] = const_cast<TXChar*>(v_args.front().c_str());
+#else
+        args_empty[0] = const_cast<char*>(cmdname.c_str());
+#endif
+        a_args = args_empty;
+    }
+
+    n = env.size();
+    if (n) {
+        const TXChar** ptr = new const TXChar * [n + 1];
+        if (!ptr) {
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
+        }
+        t_envs = ptr;
+        a_envs = ptr;
+#if defined(DO_PROCESS_ENVS)
+        // Use temporary vector to store unicoded strings.
+        v_envs.reserve(n + 1);
+        for (const string& e : env) {
+            v_envs.push_back(_T_XSTRING(e));
+        }
+        for (size_t i = 0; i < n; ++i) {
+            ptr[i] = v_envs[i].c_str();
+        }
+#else
+        for (size_t i = 0; i < n; ++i) {
+            ptr[i] = env[i].c_str();
+        }
+#endif
+        ptr[n] = NULL;
+    }
+    else {
+        a_envs = envs_empty;
+    }
+
+    mode = EMode(mode | flags);
+    bool use_path = (((int)mode & CExec::fPath) == CExec::fPath);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -549,20 +634,64 @@ CExec::SpawnL(EMode mode, const char *cmdname, const char *argv, ...)
     if (realmode == P_OVERLAY) {
         GetDiagContext().PrintStop();
     }
-    status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
+    if (env.empty()) {
+        if (use_path) {
+            status = NcbiSys_spawnvp(realmode, _T_XCSTRING(cmdname), a_args);
+        } else {
+            status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
+        }
+    }
+    else {
+        if (use_path) {
+            status = NcbiSys_spawnvpe(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+        } else {
+            status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+        }
+    }
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eV, mode, cmdname, a_args);
+    if (env.empty()) {
+        status = s_SpawnUnix(use_path ? eVP : eV, mode, cmdname.c_str(), a_args);
+    } else {
+        status = s_SpawnUnix(use_path ? eVPE : eVE, mode, cmdname.c_str(), a_args, a_envs);
+    }
+#endif
+
+    RETURN_RESULT(Spawn);
+}
+
+
+CExec::CResult
+CExec::SpawnL(EMode mode, const char* cmdname, const char* argv, ...)
+{
+    intptr_t status;
+    XGET_EXEC_ARGS(args, argv);
+    bool use_path = (((int)mode & CExec::fPath) == CExec::fPath);
+
+#if defined(NCBI_OS_MSWIN)
+    _flushall();
+    int realmode = s_GetRealMode(mode);
+    if (realmode == P_OVERLAY) {
+        GetDiagContext().PrintStop();
+    }
+    if (use_path) {
+        status = NcbiSys_spawnvp(realmode, _T_XCSTRING(cmdname), a_args);
+    } else {
+        status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
+    }
+#elif defined(NCBI_OS_UNIX)
+    status = s_SpawnUnix(use_path ? eVP : eV, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnL);
 }
 
 
 CExec::CResult
-CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
+CExec::SpawnLE(EMode mode, const char* cmdname, const char* argv, ...)
 {
     intptr_t status;
     XGET_EXEC_ARGS(args, argv);
     XGET_EXEC_ENVP(envs);
+    bool use_path = (((int)mode & CExec::fPath) == CExec::fPath);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -570,16 +699,20 @@ CExec::SpawnLE(EMode mode, const char *cmdname,  const char *argv, ...)
     if (realmode == P_OVERLAY) {
         GetDiagContext().PrintStop();
     }
-    status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    if (use_path) {
+        status = NcbiSys_spawnvpe(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    } else {
+        status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    }
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
+    status = s_SpawnUnix(use_path ? eVPE : eVE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnLE);
 }
 
 
 CExec::CResult
-CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::SpawnLP(EMode mode, const char* cmdname, const char* argv, ...)
 {
     intptr_t status;
     XGET_EXEC_ARGS(args, argv);
@@ -599,7 +732,7 @@ CExec::SpawnLP(EMode mode, const char *cmdname, const char *argv, ...)
 
 
 CExec::CResult
-CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
+CExec::SpawnLPE(EMode mode, const char* cmdname, const char* argv, ...)
 {
     intptr_t status;
     XGET_EXEC_ARGS(args, argv);
@@ -620,10 +753,11 @@ CExec::SpawnLPE(EMode mode, const char *cmdname, const char *argv, ...)
 
 
 CExec::CResult
-CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
+CExec::SpawnV(EMode mode, const char* cmdname, const char* const* argv)
 {
     intptr_t status;
     XGET_PTR_ARGS(args, argv);
+    bool use_path = (((int)mode & CExec::fPath) == CExec::fPath);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -631,21 +765,26 @@ CExec::SpawnV(EMode mode, const char *cmdname, const char *const *argv)
     if (realmode == P_OVERLAY) {
         GetDiagContext().PrintStop();
     }
-    status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
+    if (use_path) {
+        status = NcbiSys_spawnvp(realmode, _T_XCSTRING(cmdname), a_args);
+    } else {
+        status = NcbiSys_spawnv(realmode, _T_XCSTRING(cmdname), a_args);
+    }
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eV, mode, cmdname, a_args);
+    status = s_SpawnUnix(use_path ? eVP : eV, mode, cmdname, a_args);
 #endif
     RETURN_RESULT(SpawnV);
 }
 
 
 CExec::CResult
-CExec::SpawnVE(EMode mode, const char *cmdname, 
-               const char *const *argv, const char * const *envp)
+CExec::SpawnVE(EMode mode, const char* cmdname,
+    const char* const* argv, const char* const* envp)
 {
     intptr_t status;
     XGET_PTR_ARGS(args, argv);
     XGET_PTR_ENVP(envs, envp);
+    bool use_path = (((int)mode & CExec::fPath) == CExec::fPath);
 
 #if defined(NCBI_OS_MSWIN)
     _flushall();
@@ -653,16 +792,20 @@ CExec::SpawnVE(EMode mode, const char *cmdname,
     if (realmode == P_OVERLAY) {
         GetDiagContext().PrintStop();
     }
-    status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    if (use_path) {
+        status = NcbiSys_spawnvpe(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    } else {
+        status = NcbiSys_spawnve(realmode, _T_XCSTRING(cmdname), a_args, a_envs);
+    }
 #elif defined(NCBI_OS_UNIX)
-    status = s_SpawnUnix(eVE, mode, cmdname, a_args, a_envs);
+    status = s_SpawnUnix(use_path ? eVPE : eVE, mode, cmdname, a_args, a_envs);
 #endif
     RETURN_RESULT(SpawnVE);
 }
 
 
 CExec::CResult
-CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
+CExec::SpawnVP(EMode mode, const char* cmdname, const char* const* argv)
 {
     intptr_t status;
     XGET_PTR_ARGS(args, argv);
@@ -682,8 +825,8 @@ CExec::SpawnVP(EMode mode, const char *cmdname, const char *const *argv)
 
 
 CExec::CResult
-CExec::SpawnVPE(EMode mode, const char *cmdname,
-                const char *const *argv, const char * const *envp)
+CExec::SpawnVPE(EMode mode, const char* cmdname,
+    const char* const* argv, const char* const* envp)
 {
     intptr_t status;
     XGET_PTR_ARGS(args, argv);
@@ -712,7 +855,7 @@ TExitCode CExec::Wait(TProcessHandle handle, unsigned long timeout)
 // Predefined timeout (in milliseconds)
 const unsigned long kWaitPrecision = 100;
 
-int CExec::Wait(list<TProcessHandle>& handles, 
+int CExec::Wait(list<TProcessHandle>& handles,
                 EWaitMode             mode,
                 list<CResult>&        result,
                 unsigned long         timeout)
@@ -725,7 +868,7 @@ int CExec::Wait(list<TProcessHandle>& handles,
         for (THandleIt it = handles.begin(); it != handles.end(); ) {
             TProcessHandle handle = *it;
             TExitCode exitcode = Wait(handle, 0);
-            if ( exitcode != -1 ) {
+            if (exitcode != -1) {
                 CResult res;
                 res.m_Flags = CResult::fBoth;
                 res.m_Result.handle = handle;
@@ -738,8 +881,8 @@ int CExec::Wait(list<TProcessHandle>& handles,
                 ++it;
             }
         }
-        if ( (mode == eWaitAny  &&  !result.empty())  ||
-             (mode == eWaitAll  &&  handles.empty()) ) {
+        if ((mode == eWaitAny  &&  !result.empty()) ||
+            (mode == eWaitAll  &&  handles.empty())) {
             break;
         }
         // Wait before next loop
@@ -748,7 +891,7 @@ int CExec::Wait(list<TProcessHandle>& handles,
             if (x_sleep > timeout) {
                 x_sleep = timeout;
             }
-            if ( !x_sleep ) {
+            if (!x_sleep) {
                 break;
             }
             timeout -= x_sleep;
@@ -760,8 +903,8 @@ int CExec::Wait(list<TProcessHandle>& handles,
 }
 
 
-CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
-                                const char *argv, ... /*, NULL */)
+CExec::CResult CExec::RunSilent(EMode mode, const char* cmdname,
+                                const char* argv, ... /*, NULL */)
 {
     intptr_t status = -1;
 
@@ -781,8 +924,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     StartupInfo.cb          = sizeof(STARTUPINFOA);
     StartupInfo.dwFlags     = STARTF_USESHOWWINDOW;
     StartupInfo.wShowWindow = SW_HIDE;
-    DWORD dwCreateFlags     = (mode == eDetach) ? 
-                              DETACHED_PROCESS : CREATE_NEW_CONSOLE;
+    DWORD dwCreateFlags     = (mode == eDetach) ? DETACHED_PROCESS : CREATE_NEW_CONSOLE;
 #  if defined(_UNICODE)
     dwCreateFlags |= CREATE_UNICODE_ENVIRONMENT;
 #  endif
@@ -792,13 +934,13 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
     cmdline = _T_XCSTRING(CExec::QuoteArg(cmdname));
 
     if (argv) {
-        cmdline += _TX(" "); 
+        cmdline += _TX(" ");
         cmdline += _T_XCSTRING(argv);
         va_list vargs;
         va_start(vargs, argv);
         const char* p = NULL;
-        while ( (p = va_arg(vargs, const char*)) ) {
-            cmdline += _TX(" "); 
+        while ((p = va_arg(vargs, const char*))) {
+            cmdline += _TX(" ");
             cmdline += _T_XSTRING(s_QuoteSpawnArg(p));
         }
         va_end(vargs);
@@ -851,7 +993,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
 bool CExec::IsExecutable(const string& path)
 {
     CFile f(path);
-    if (f.Exists()  &&
+    if (f.Exists() &&
         f.CheckAccess(CFile::fExecute)) {
         return true;
     }
@@ -864,13 +1006,14 @@ string CExec::ResolvePath(const string& filename)
     string path = kEmptyStr;
 
     // Absolute path
-    if ( CDirEntry::IsAbsolutePath(filename) ) {
-        if ( IsExecutable(filename) ) {
+    if (CDirEntry::IsAbsolutePath(filename)) {
+        if (IsExecutable(filename)) {
             path = filename;
         }
-    } else {
+    }
+    else {
 
-    // Relative path
+        // Relative path
 
         string tmp = filename;
 #  ifdef NCBI_OS_MSWIN
@@ -878,32 +1021,32 @@ string CExec::ResolvePath(const string& filename)
         // if it running without extension
         string dir, title, ext;
         CDirEntry::SplitPath(filename, &dir, &title, &ext);
-        if ( ext.empty() ) {
+        if (ext.empty()) {
             tmp = CDirEntry::MakePath(dir, title, "exe");
         }
 #  endif
         // Check on relative path with sub-directories,
         // ignore such filenames.
         size_t sep = tmp.find_first_of("/\\");
-        if ( sep == NPOS ) {
+        if (sep == NPOS) {
             // The path looks like "filename".
             // The behavior for such executables are different on Unix and Windows. 
             // Unix always use PATH env.variable to find it, Windows try
             // current directory first.
 #  ifdef NCBI_OS_MSWIN
-            if ( CFile(tmp).Exists() ) {
+            if (CFile(tmp).Exists()) {
                 // File in the current directory
                 tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
-                if ( IsExecutable(tmp) ) {
+                if (IsExecutable(tmp)) {
                     path = tmp;
                 }
-            } 
+            }
 #  endif
             // Try to find filename among the paths of the PATH
             // environment variable.
-            if ( path.empty() ) {
+            if (path.empty()) {
                 const TXChar* env = NcbiSys_getenv(_TX("PATH"));
-                if (env  &&  *env) {
+                if (env && *env) {
                     list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
                     NStr::Split(_T_STDSTRING(env), ";", split_path,
@@ -914,7 +1057,7 @@ string CExec::ResolvePath(const string& filename)
 #  endif
                     ITERATE(list<string>, it, split_path) {
                         string p = CDirEntry::MakePath(*it, tmp);
-                        if (CFile(p).Exists()  &&  IsExecutable(p)) {
+                        if (CFile(p).Exists() && IsExecutable(p)) {
                             path = p;
                             break;
                         }
@@ -923,17 +1066,17 @@ string CExec::ResolvePath(const string& filename)
             } /* path.empty() */
         } /* sep == NPOS */
 
-        if ( path.empty()  &&  CFile(tmp).Exists() ) {
+        if (path.empty() && CFile(tmp).Exists()) {
             // Relative path from the current directory
             tmp = CDir::GetCwd() + CDirEntry::GetPathSeparator() + tmp;
-            if ( IsExecutable(tmp) ) {
+            if (IsExecutable(tmp)) {
                 path = tmp;
             }
-        } 
+        }
     }
 
     // If found - normalize path 
-    if ( !path.empty() ) {
+    if (!path.empty()) {
         path = CDirEntry::NormalizePath(path);
     }
     return path;

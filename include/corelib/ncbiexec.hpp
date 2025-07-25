@@ -63,19 +63,25 @@ class NCBI_XNCBI_EXPORT CExec
 {
 public:
     /// Modification flags for EMode.
-    ///
-    /// @note
-    /// These flags works on UNIX only, and will be ignored on MS Windows.
-    /// Also, they don't work for eOverlay/eDetach modes.
     enum EModeFlags {
-        /// After fork() move a process to new group (assign new PGID).
-        /// This can be useful if new created process also spawns child
-        /// processes and you wish to control it using signals, or,
-        /// for example, terminate the whole process group at once.
+        /// UNIX only:
+        /// Move newly created process to a new group after fork() (assign new PGID).
+        /// This can be useful if new created process also spawns child processes
+        /// and you wish to control it using signals, or for example, terminate
+        /// the whole process group at once.
+        /// These flag works on UNIX only, and will be ignored on MS Windows.
+        /// Also, it doesn't work for eOverlay/eDetach modes.
         fNewGroup  = (1 << 8),
-        /// Mask for all master modes, all EModeFlags must be above it.
+
+        /// Find command file to execute using PATH environment variable.
+        /// This can make any Spawn*() method to work similar to Spawn*P().
+        /// Mostly useful for generic Spawn() method, that don't have many variations.
+        fPath      = (1 << 9),
+
+        /// Mask for all master modes, all EModeFlags must be declared above it.
         fModeMask  = 0x0F  // eOverlay | eWait | eNoWait | eDetach
     };
+    typedef unsigned int TModeFlags;  ///< bitwise OR of "EModeFlag"
 
     /// Which exec mode the spawned process is called with.
     enum EMode {
@@ -90,7 +96,7 @@ public:
         /// process group.
         eWaitGroup = eWait | fNewGroup,
         /// Continues to execute calling process concurrently with new
-        /// process (asynchronous process). Do not forget to call Wait()
+        /// process (asynchronous spawn). Do not forget to call Wait()
         /// to get process exit code, or started process will became
         /// a "zombie", even it has finished all work.
         eNoWait      = 2, 
@@ -109,13 +115,14 @@ public:
    
     /// The result type for Spawn methods.
     /// 
-    /// In the eNoWait and eDetach modes for Spawn functions to return process
-    /// handles.  On MS Windows it is a real process handle of type HANDLE.
-    /// On UNIX it is a process identifier (pid).
+    /// In the eNoWait and eDetach modes for Spawn functions to return
+    /// process handles. On MS Windows it is a real process handle
+    /// of type HANDLE. On UNIX it is a process identifier (pid).
     /// In the eWait mode, the spawn functions return exit code of a process.
     /// Throws an exception if you try to get exit code instead of 
     /// stored process handle, and otherwise.
     /// In some cases can store both - an exit code and a handle (see Wait()).
+    /// 
     class NCBI_XNCBI_EXPORT CResult
     {
     public:
@@ -153,6 +160,7 @@ public:
     /// pointer, System() checks if the shell (command interpreter) exists and
     /// is executable. If the shell is available, System() returns a non-zero
     /// value; otherwise, it returns 0.
+    /// 
     static TExitCode System(const char* cmdline);
 
     /// Quote argument.
@@ -165,7 +173,51 @@ public:
     ///   disjointly, and hence they can automatically use a more advanced
     ///   and OS-specific algorithm for quoting if really necessary.
     /// @sa System
+    /// 
     static string QuoteArg(const string& arg);
+
+    /// Spawn a new process.
+    ///
+    /// CExec class have many different Spawn*() methods with specific 
+    /// sufficses in the method name: L, LP, LPE, V, VP, VPE. They are still
+    /// there for backward compatibility. But this Spawn() can replace them all,
+    /// it is more universal, uses modern syntax and don't require C-language
+    /// legacy NULL values in the list of arguments or environment variables.
+    /// 
+    /// @param cmdname
+    ///   Path to the process to spawn, or binary name
+    /// @param args
+    ///   Vector of arguments. Can be empty if not used.
+    /// @param env 
+    ///   Vector with environment variables which will be used
+    ///   instead of current environment. Can be empty if not used.
+    /// @param mode
+    ///   Mode for running the process.
+    /// @param flags
+    ///   Additional flags for running the process.
+    /// @return 
+    ///   On success, return:
+    ///     - exit code      - in eWait mode.
+    ///     - process handle - in eNoWait and eDetach modes.
+    ///     - nothing        - in eOverlay mode.   
+    ///   Throw an exception if command failed to execute.
+    /// @sa
+    ///   System, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
+    static CResult
+    Spawn(const string& cmdname, const vector<string>& args, const vector<string>& env,
+          EMode mode, TModeFlags flags = 0);
+
+    static CResult
+    Spawn(const string& cmdname, EMode mode, TModeFlags flags = 0) {
+        return Spawn(cmdname, {}, {}, mode, flags);
+    }
+
+    static CResult
+    Spawn(const string& cmdname, const vector<string>& args, EMode mode, TModeFlags flags = 0) {
+        return Spawn(cmdname, args, {}, mode, flags);
+    }
+
 
     /// Spawn a new process with specified command-line arguments.
     ///
@@ -192,8 +244,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnL(EMode mode, const char *cmdname, const char *argv, .../*, NULL */);
     // No arguments version
@@ -234,8 +286,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnLE (EMode mode, const char *cmdname, 
              const char *argv, ... /*, NULL, const char *envp[] */);
@@ -272,8 +324,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult 
     SpawnLP(EMode mode, const char *cmdname, const char *argv, .../*, NULL*/);
     // No arguments version
@@ -321,8 +373,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///    Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnV(), SpawnVE(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnLPE(EMode mode, const char *cmdname,
              const char *argv, ... /*, NULL, const char *envp[] */);
@@ -352,8 +404,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnVE(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnV(EMode mode, const char *cmdname, const char *const *argv = NULL);
 
@@ -393,8 +445,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVP(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnVE(EMode mode, const char *cmdname,
             const char *const *argv, const char *const *envp);
@@ -431,8 +483,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), 
-    ///   SpawnVPE().
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnVP(EMode mode, const char *cmdname, const char *const *argv = NULL);
 
@@ -477,8 +529,8 @@ public:
     ///     - nothing        - in eOverlay mode.   
     ///   Throw an exception if command failed to execute.
     /// @sa
-    ///   SpawnL(), SpawnLE(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(),
-    ///   SpawnVP(), 
+    ///   Spawn, SpawnL(), SpawnLP(), SpawnLPE(), SpawnV(), SpawnVE(), SpawnVP(), SpawnVPE()
+    /// 
     static CResult
     SpawnVPE(EMode mode, const char *cmdname,
              const char *const *argv, const char *const *envp);
@@ -491,7 +543,7 @@ public:
     ///   Wait on process with identifier "handle", returned by one 
     ///   of the Spawn* function in eNoWait and eDetach modes.
     /// @param timeout
-    ///   Time-out interval. By default it is infinite.
+    ///   Time interval in milliseconds (infinite by default) to wait.
     /// @return
     ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occurred.
@@ -504,6 +556,7 @@ public:
     ///   when the parent process ends.
     /// @sa
     ///   CProcess::Wait(), CProcess:IsAlive(), TMode
+    /// 
     static TExitCode Wait(TProcessHandle handle,
                           unsigned long  timeout = kInfiniteTimeoutMs);
 
@@ -532,13 +585,14 @@ public:
     ///   the list "handles". If this list have elements, that they will
     ///   be removed.
     /// @param timeout
-    ///   Time-out interval. By default it is infinite.
+    ///   Time interval in milliseconds (infinite by default) to wait.
     /// @return
     ///   - Number of terminated processes (size of the "result" list),
     ///     if no errors. Regardless of timeout status.
     ///   - (-1), if error has occurred.
     /// @sa
     ///   Wait(), CProcess::Wait(), CProcess:IsAlive()
+    /// 
     static int Wait(list<TProcessHandle>& handles, 
                     EWaitMode             mode,
                     list<CResult>&        result,
@@ -575,6 +629,7 @@ public:
     ///   Throw an exception if command failed to execute.
     /// @sa
     ///   SpawnL(), TMode
+    /// 
     static CResult
     RunSilent(EMode mode, const char *cmdname,
               const char *argv, ... /*, NULL */);
@@ -592,6 +647,7 @@ public:
     ///   TRUE if file is executable, FALSE otherwise.
     /// @sa
     ///   CFile::CheckAccess
+    /// 
     static bool IsExecutable(const string& path);
 
     /// Find executable file.
@@ -605,6 +661,7 @@ public:
     ///   or the file do not have executable permissions.
     /// @sa
     ///   IsExecutable
+    /// 
     static string ResolvePath(const string& filename);
 };
 
@@ -618,6 +675,7 @@ public:
 /// CExecException inherits its basic functionality from
 /// CErrnoTemplException<CCoreException> and defines additional error codes
 /// for errors generated by CExec.
+/// 
 
 class NCBI_XNCBI_EXPORT CExecException : public CErrnoTemplException<CCoreException>
 {
