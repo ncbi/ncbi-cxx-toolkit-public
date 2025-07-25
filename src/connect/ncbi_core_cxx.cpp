@@ -703,7 +703,9 @@ static void s_Init(const IRWRegistry* reg  = 0,
 {
     _TRACE("CONNECT::s_Init(reg="
            + NStr::PtrToString(reg)                         + ", ssl="
-           + NStr::PtrToString((void*) ssl)                 + "(), lock="
+           + (ssl == NcbiSetupTls
+              ? string("NcbiSetupTls")
+              : NStr::PtrToString((void*) ssl))             + "(), lock="
            + NStr::PtrToString(lock)                        + ", flag=0x"
            + NStr::UIntToString((unsigned int) flag, 0, 16) + ", how="
            + NStr::IntToString(int(how))                    + ')');
