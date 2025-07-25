@@ -9976,11 +9976,11 @@ extern int gettimeofday(struct timeval* tp, void* unused)
         FILETIME       systime;
         ULARGE_INTEGER time;
 
-    #if _WIN32_WINNT >= _WIN32_WINNT_WIN8
+#  if _WIN32_WINNT >= _WIN32_WINNT_WIN8
         GetSystemTimePreciseAsFileTime(&systime);
-    #else
+#  else
         GetSystemTimeAsFileTime(&systime);
-    #endif
+#  endif
 
         time.LowPart  = systime.dwLowDateTime;
         time.HighPart = systime.dwHighDateTime;
