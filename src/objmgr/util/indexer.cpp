@@ -1763,6 +1763,8 @@ void CBioseqIndex::x_InitDescs (void)
                                         m_TargetedLocus = fld.GetData().GetStr();
                                     }
                                 }
+                            } else if (NStr::EqualNocase(type, "TpaAssembly")) {
+                                m_ThirdParty = true;
                             }
                         }
                     }
