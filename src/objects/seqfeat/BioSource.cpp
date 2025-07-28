@@ -1861,7 +1861,7 @@ bool CBioSource::RemoveNullTerms()
                 // otherwise erase items with null terms
                 s = SetSubtype().erase(s);
                 any_change = true;
-                ++s;
+                if ( s != SetSubtype().end() ) ++s;
             } else {
                 // but keep item with non-null term
                 ++s;
