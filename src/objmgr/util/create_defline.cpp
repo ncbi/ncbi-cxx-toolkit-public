@@ -983,6 +983,8 @@ void CDeflineGenerator::x_SetFlags (
                             m_TargetedLocus = fld.GetData().GetStr();
                         }
                     }
+                } else if (user_obj.GetType().GetStr() == "TpaAssembly" ) {
+                    m_ThirdParty = true;
                 }
             }
             break;
@@ -3438,6 +3440,7 @@ static const char* s_tpaPrefixList [] = {
   "TPA_inf:",
   "TPA_reasm:",
   "TPA_asm:",
+  "TPA_assembly:",
   "TSA:",
   "UNVERIFIED_ORG:",
   "UNVERIFIED_ASMBLY:",

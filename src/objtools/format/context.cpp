@@ -858,7 +858,7 @@ void CBioseqContext::x_SetId(void)
             break;
         case CSeq_id::e_General:
             if ( id.GetGeneral().CanGetDb() ) {
-                if ( !NStr::CompareCase(id.GetGeneral().GetDb(), "BankIt") ) {
+                if ( !NStr::Equal(id.GetGeneral().GetDb(), "BankIt") ) {
                     m_IsTPA = bTpaAssemblyPresent;
                 }
                 if( NStr::Equal(id.GetGeneral().GetDb(), "NCBI_GENOMES") ) {
