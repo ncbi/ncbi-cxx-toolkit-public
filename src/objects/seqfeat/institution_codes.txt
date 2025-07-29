@@ -410,6 +410,8 @@ AUGIE	s	Augustana College
 AUH	s	Agriculture University Herbarium			
 AUM	s	Auburn University Museum			
 AUM:Fish	s	Auburn University Museum, Fish collection			
+AUM:Invertebrates	s	Auburn University Museum, Invertebrates Collection			
+AUM:Mollusks	s	Auburn University Museum, Malacology Collection			
 AUMC<EGY>	c	Assiut University Mycological Centre Culture Collection			
 AUMH	s	Agricultural University of Georgia			
 AUR	s	Museum des Volcans			
@@ -3114,6 +3116,7 @@ HMP	s	Hornonitrianske muzeum, Department of Natural History
 HMS	s	Embrapa Gado de Corte			
 HMSAU	s	Shanxi Agricultural University			
 HMSNMO	s	Museo civico di Storia naturale di Morbegno			
+HMUCC	b	Hellenic Mediterranean University Culture Collection			
 HMUG	s	Hunterian Museum	GLAHM		
 HMUT	s	Herbarium Mycologicum Universitatis Tarimensis			
 HN	s	National Center for Natural Sciences and Technology, Botany Department			

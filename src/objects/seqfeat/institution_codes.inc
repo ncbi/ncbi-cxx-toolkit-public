@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Jul 11 05:33:04 EDT 2025; formally
+/* time_t value corresponding to Tue Jul 29 05:33:05 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1752226384UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1753781585UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -446,6 +446,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AUH\ts\tAgriculture University Herbarium\t\t\t",
 "AUM\ts\tAuburn University Museum\t\t\t",
 "AUM:Fish\ts\tAuburn University Museum, Fish collection\t\t\t",
+"AUM:Invertebrates\ts\tAuburn University Museum, Invertebrates Collection\t\t\t",
+"AUM:Mollusks\ts\tAuburn University Museum, Malacology Collection\t\t\t",
 "AUMC<EGY>\tc\tAssiut University Mycological Centre Culture Collection\t\t\t",
 "AUMH\ts\tAgricultural University of Georgia\t\t\t",
 "AUR\ts\tMuseum des Volcans\t\t\t",
@@ -3150,6 +3152,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HMS\ts\tEmbrapa Gado de Corte\t\t\t",
 "HMSAU\ts\tShanxi Agricultural University\t\t\t",
 "HMSNMO\ts\tMuseo civico di Storia naturale di Morbegno\t\t\t",
+"HMUCC\tb\tHellenic Mediterranean University Culture Collection\t\t\t",
 "HMUG\ts\tHunterian Museum\tGLAHM\t\t",
 "HMUT\ts\tHerbarium Mycologicum Universitatis Tarimensis\t\t\t",
 "HN\ts\tNational Center for Natural Sciences and Technology, Botany Department\t\t\t",
