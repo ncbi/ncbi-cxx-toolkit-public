@@ -784,6 +784,7 @@ void CBioseqContext::x_SetId(void)
         }
         if ( obj.GetType().GetStr() == "TpaAssembly" ) {
             bTpaAssemblyPresent = true;
+            m_IsTPA = true;
             continue;
         }
         if ( obj.GetType().GetStr() == "GenomeProjectsDB" ) {
@@ -858,9 +859,6 @@ void CBioseqContext::x_SetId(void)
             break;
         case CSeq_id::e_General:
             if ( id.GetGeneral().CanGetDb() ) {
-                if ( NStr::Equal(id.GetGeneral().GetDb(), "BankIt") ) {
-                    m_IsTPA = bTpaAssemblyPresent;
-                }
                 if( NStr::Equal(id.GetGeneral().GetDb(), "NCBI_GENOMES") ) {
                     m_IsNcbiGenomes = true;
                 }
