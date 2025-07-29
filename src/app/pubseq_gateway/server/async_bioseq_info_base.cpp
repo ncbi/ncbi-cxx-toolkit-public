@@ -232,7 +232,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         if (records.size() == 1)
             prefix = "Selected record:\n";
         else
-            prefix = "Record with max date changed selected\n";
+            prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
         m_Reply->SendTrace(
             prefix +
             ToJsonString(records[index],

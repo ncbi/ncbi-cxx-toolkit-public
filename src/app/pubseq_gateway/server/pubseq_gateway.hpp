@@ -90,8 +90,16 @@ public:
     void CloseCass(void);
     optional<SSatInfoEntry> SatToKeyspace(int32_t  sat)
     { return m_CassSchemaProvider->GetBlobKeyspace(sat); }
+    bool IsSecureSat(int32_t  sat)
+    {
+        auto      keyspace = m_CassSchemaProvider->GetBlobKeyspace(sat);
+        if (keyspace.has_value())
+            return keyspace->IsSecureSat();
+        return false;
+    }
 
-    void MaintainSplitInfoBlobCache(void) {
+    void MaintainSplitInfoBlobCache(void)
+    {
         if (m_SplitInfoCache)
             m_SplitInfoCache->Maintain();
     }

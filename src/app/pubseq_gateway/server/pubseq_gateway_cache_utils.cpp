@@ -128,7 +128,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                     if (records.size() == 1)
                         prefix = "Selected record:\n";
                     else
-                        prefix = "Record with max date changed selected\n";
+                        prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
                     m_Reply->SendTrace(
                         prefix +
                         ToJsonString(records[index_to_pick],

@@ -33,12 +33,15 @@
 
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 #include "bioseq_info_record_selector.hpp"
+#include "pubseq_gateway.hpp"
 
 USING_NCBI_SCOPE;
 
 
 ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
 {
+    static auto app = CPubseqGatewayApp::GetInstance();
+
     if (records.empty())
         return -1;
 
@@ -46,31 +49,52 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
         return 0;
 
     ssize_t                             index = -1;
-    CBioseqInfoRecord::TDateChanged     date_changed = 0;
-    CBioseqInfoRecord::TSeqState        seq_state = CBioseqInfoRecord::kStateAlive;
 
-    // Always pick the record with latest date_changed, regardless of its
-    // version number or state.
+
+    // CXX-14074, ID-8744 : Always pick the record with latest date_changed, regardless of its
+    // version number or state. 
+    // ID-8796 : date_changed cannot be used as a criterion because it depends on GiFlags.status_change.
+    // Correct order of priorities:
+    // 1a. Live (state = 10), not HUP sat
+    // 1b. Dead (state != 10), not HUP sat
+    // 1c. all HUP sat
+    // 2. Largest gi;
+    // 3. Largest version.
+    vector<size_t> live_idx_v;
+    vector<size_t> dead_idx_v;
+    vector<size_t> hup_idx_v;
     for (size_t  k = 0; k < records.size(); ++k) {
-        if (index == -1) {
-            // Not found yet
-            index = k;
-            date_changed = records[k].GetDateChanged();
-            seq_state = records[k].GetSeqState();
-            continue;
+        bool    is_secure_sat = app->IsSecureSat(records[k].GetSat());
+        if (records[k].GetSeqState() == ncbi::psg::retrieval::SEQ_STATE_LIVE &&
+            is_secure_sat == false) {
+            live_idx_v.push_back(k);
+        } else if (is_secure_sat == false) {
+            dead_idx_v.push_back(k);
+        } else {
+            hup_idx_v.push_back(k);
         }
+    }
 
-        if (records[k].GetDateChanged() > date_changed) {
+    vector<size_t>* good_idx_v_ptr = NULL;
+    if (!live_idx_v.empty()) good_idx_v_ptr = &live_idx_v;
+    else if (!dead_idx_v.empty()) good_idx_v_ptr = &dead_idx_v;
+    else good_idx_v_ptr = &hup_idx_v;
+
+    TGi max_gi = ZERO_GI;
+    CBioseqInfoRecord::TVersion max_version = -1;
+    size_t k = -1;
+    for (size_t i = 0; i < good_idx_v_ptr->size(); ++i) {
+        k = (*good_idx_v_ptr)[i];
+        auto gi = records[k].GetGI();
+        if (gi > max_gi) {
             index = k;
-            date_changed = records[k].GetDateChanged();
-            seq_state = records[k].GetSeqState();
-        } else if (records[k].GetDateChanged() == date_changed) {
-            // Prefer the one which is alive
-            if (seq_state != ncbi::psg::retrieval::SEQ_STATE_LIVE) {
-                // The currently selected is not alive so prefer the other
+            max_gi = gi;
+            max_version = records[k].GetVersion();
+        } else if (gi == max_gi) {
+            auto version = records[k].GetVersion();
+            if (version > max_version) {
                 index = k;
-                date_changed = records[k].GetDateChanged();
-                seq_state = records[k].GetSeqState();
+                max_version = version;
             }
         }
     }
