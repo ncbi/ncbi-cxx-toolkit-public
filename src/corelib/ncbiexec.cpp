@@ -581,8 +581,8 @@ CExec::Spawn(const string& cmdname, const vector<string>& args, const vector<str
         }
 #else
         ptr[0] = cmdname.c_str();
-        for (size_t i = 0; i < n; ++i) {
-            ptr[i + 1] = args[i].c_str();
+        for (size_t i = 1; i < n; ++i) {
+            ptr[i] = args[i - 1].c_str();
         }
 #endif
         ptr[n] = NULL;
