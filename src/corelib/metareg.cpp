@@ -104,9 +104,7 @@ bool CMetaRegistry::SEntry::Reload(CMetaRegistry::TFlags reload_flags)
             }
         }
 
-        if (dest) {
-            dest->WriteLock();
-        } else {
+        if (dest == nullptr) {
             dest = registry.GetPointer();
         }
     } else {
