@@ -47,7 +47,7 @@ string CpTheQualValue(const TQualVector& qlist, const char* qual);
 optional<string> GetTheQualValue(TQualVector& qlist, const char* qual);
 bool  DeleteQual(TQualVector& qlist, const char* qual);
 
-Uint1 GetQualValueAa(const char* qval, bool checkseq);
+Uint1 GetQualValueAa(string_view qval, bool checkseq);
 bool  GetGenomeInfo(objects::CBioSource& bsp, string_view bptr);
 void  MaybeCutGbblockSource(TEntryList& seq_entries);
 
