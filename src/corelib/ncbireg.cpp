@@ -538,6 +538,9 @@ void IRegistry::ReadLock (void)
 {
     x_ChildLockAction(&IRegistry::ReadLock);
     m_Lock.ReadLock();
+    if (m_WriteLockCount.Get() > 0) {
+        m_WriteLockCount.Add(1);
+    }
 }
 
 
@@ -545,11 +548,15 @@ void IRegistry::WriteLock(void)
 {
     x_ChildLockAction(&IRegistry::WriteLock);
     m_Lock.WriteLock();
+    m_WriteLockCount.Add(1);
 }
 
 
 void IRegistry::Unlock(void)
 {
+    if (m_WriteLockCount.Get() > 0) {
+        m_WriteLockCount.Add(-1);
+    }
     m_Lock.Unlock();
     x_ChildLockAction(&IRegistry::Unlock);
 }
@@ -946,7 +953,6 @@ bool IRWRegistry::MaybeSet(string& target, const string& value, TFlags flags)
 
 bool CMemoryRegistry::x_Empty(TFlags) const
 {
-    TReadGuard LOCK(*this);
     return m_Sections.empty()  &&  m_RegistryComment.empty();
 }
 
@@ -1189,6 +1195,10 @@ void CCompoundRegistry::Add(const IRegistry& reg, TPriority prio,
     // Needed for some operations that touch (only) metadata...
     IRegistry& nc_reg = const_cast<IRegistry&>(reg);
     // XXX - Check whether reg is a duplicate, at least in debug mode?
+    TWriteGuard LOCK(*this);
+    for (TNCBIAtomicValue i = 0;  i < x_GetWriteLockCount();  ++i) {
+        nc_reg.WriteLock();
+    }
     m_PriorityMap.insert(TPriorityMap::value_type
                          (prio, CRef<IRegistry>(&nc_reg)));
     if (name.size()) {
@@ -1206,6 +1216,7 @@ void CCompoundRegistry::Add(const IRegistry& reg, TPriority prio,
 
 void CCompoundRegistry::Remove(const IRegistry& reg)
 {
+    TWriteGuard LOCK(*this);
     NON_CONST_ITERATE (TNameMap, it, m_NameMap) {
         if (it->second == &reg) {
             m_NameMap.erase(it);
@@ -1215,6 +1226,9 @@ void CCompoundRegistry::Remove(const IRegistry& reg)
     NON_CONST_ITERATE (TPriorityMap, it, m_PriorityMap) {
         if (it->second == &reg) {
             m_PriorityMap.erase(it);
+            for (TNCBIAtomicValue i = 0;  i < x_GetWriteLockCount();  ++i) {
+                const_cast<IRegistry&>(reg).Unlock();
+            }
             return; // subregistries should be unique
         }
     }
@@ -1227,6 +1241,7 @@ void CCompoundRegistry::Remove(const IRegistry& reg)
 
 CConstRef<IRegistry> CCompoundRegistry::FindByName(const string& name) const
 {
+    TReadGuard LOCK(*this);
     TNameMap::const_iterator it = m_NameMap.find(name);
     return it == m_NameMap.end() ? CConstRef<IRegistry>() : it->second;
 }
@@ -1236,6 +1251,7 @@ CConstRef<IRegistry> CCompoundRegistry::FindByContents(const string& section,
                                                        const string& entry,
                                                        TFlags flags) const
 {
+    TReadGuard LOCK(*this);
     TFlags has_entry_flags = (flags | fCountCleared) & ~fJustCore;
     REVERSE_ITERATE(TPriorityMap, it, m_PriorityMap) {
         if (it->second->HasEntry(section, entry, has_entry_flags)) {
@@ -1643,6 +1659,7 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
         return false;
     }
 
+    TWriteGuard LOCK(*this);
     if (HasEntry("NCBI", "DONT_USE_NCBIRC")) {
         return false;
     }
@@ -1653,6 +1670,9 @@ bool CNcbiRegistry::IncludeNcbircIfAllowed(TFlags flags)
                                   0, flags, m_SysRegistry.GetPointer());
         if (entry.registry  &&  entry.registry != m_SysRegistry) {
             ERR_POST_X(5, Warning << "Resetting m_SysRegistry");
+            for (TNCBIAtomicValue i = 0;  i < x_GetWriteLockCount();  ++i) {
+                entry.registry->WriteLock();
+            }
             m_SysRegistry.Reset(entry.registry);
         }
         if (!entry.actual_name.empty()) return true;
@@ -1766,12 +1786,14 @@ CCompoundRWRegistry::~CCompoundRWRegistry()
 
 CCompoundRWRegistry::TPriority CCompoundRWRegistry::GetCoreCutoff(void) const
 {
+    TReadGuard LOCK(*this);
     return m_AllRegistries->GetCoreCutoff();
 }
 
 
 void CCompoundRWRegistry::SetCoreCutoff(TPriority prio)
 {
+    TWriteGuard LOCK(*this);
     m_AllRegistries->SetCoreCutoff(prio);
 }
 
@@ -1788,6 +1810,10 @@ void CCompoundRWRegistry::Add(const IRegistry& reg, TPriority prio,
                       << "Reserved priority value automatically downgraded.");
         prio = ePriority_MaxUser;
     }
+    // x_Add will add at least one nominally unbalanced write lock on
+    // reg itself to avoid skew; SUBLOCK ensures consistent first-lock
+    // ordering when this registry is currently unlocked.
+    TWriteGuard SUBLOCK(const_cast<IRegistry&>(reg)), LOCK(*this);
     x_Add(reg, prio, name);
 }
 
@@ -1826,6 +1852,7 @@ bool CCompoundRWRegistry::LoadBaseRegistries(TFlags flags, int metareg_flags,
     }
 
     list<string> names;
+    TWriteGuard LOCK(*this);
     {{
         string s = m_MainRegistry->Get("NCBI", ".Inherits");
 

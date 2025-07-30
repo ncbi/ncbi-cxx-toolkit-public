@@ -388,8 +388,12 @@ protected:
     typedef void (IRegistry::*FLockAction)(void);
     virtual void x_ChildLockAction(FLockAction /* action */) {}
 
+    TNCBIAtomicValue x_GetWriteLockCount(void) const
+    { return m_WriteLockCount.Get(); }
+
 private:
     mutable CRWLock m_Lock;
+    CAtomicCounter_WithAutoInit m_WriteLockCount;
 };
 
 

@@ -72,6 +72,7 @@ CEnvironmentRegistry::~CEnvironmentRegistry()
 void CEnvironmentRegistry::AddMapper(const IEnvRegMapper& mapper,
                                      TPriority prio)
 {
+    CRegistryWriteGuard LOCK(*this);
     m_PriorityMap.insert(TPriorityMap::value_type
                      (prio, CConstRef<IEnvRegMapper>(&mapper)));
 }
@@ -79,6 +80,7 @@ void CEnvironmentRegistry::AddMapper(const IEnvRegMapper& mapper,
 
 void CEnvironmentRegistry::RemoveMapper(const IEnvRegMapper& mapper)
 {
+    CRegistryWriteGuard LOCK(*this);
     NON_CONST_ITERATE (TPriorityMap, it, m_PriorityMap) {
         if (it->second == &mapper) {
             m_PriorityMap.erase(it);
