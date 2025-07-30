@@ -201,24 +201,24 @@ bool DeleteQual(TQualVector& qlist, const Char* qual)
  *   "ParFlat_AA_array".
  *
  **********************************************************/
-Uint1 GetQualValueAa(const char* qval, bool checkseq)
+Uint1 GetQualValueAa(string_view qval, bool checkseq)
 {
-    const char* str;
-    const char* p;
+    auto i = qval.find("aa:");
+    if (i == string_view::npos)
+        return 255;
+    i += 3;
 
-    str = StringStr(qval, "aa:");
-    if (! str)
-        return (255);
+    while (i < qval.size() && qval[i] == ' ')
+        i++;
 
-    for (str += 3; *str == ' ';)
-        str++;
-    for (p = str; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
-        p++;
+    auto j = i;
+    for (char c; j < qval.size() && (c = qval[j], (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));)
+        j++;
 
-    if (checkseq && ! StringStr(p, "seq:"))
+    if (checkseq && qval.find("seq:", j) == string_view::npos)
         FtaErrPost(SEV_ERROR, ERR_QUALIFIER_AntiCodonLacksSequence, "Anticodon qualifier \"{}\" lacks a 'seq' field for the sequence of the anticodon.", qval);
 
-    return CCleanup::ValidAminoAcid(string_view(str, p - str));
+    return CCleanup::ValidAminoAcid(qval.substr(i, j - i));
 }
 
 /**********************************************************/

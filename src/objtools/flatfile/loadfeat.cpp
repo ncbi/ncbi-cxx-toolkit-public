@@ -2000,7 +2000,7 @@ static void GetRnaRef(CSeq_feat& feat, CBioseq& bioseq, Parser::ESource source, 
 
             /* value has format: (pos:base_range, aa:amino_acid)
              */
-            trnaa->SetAa().SetNcbieaa(GetQualValueAa(qval->c_str(), true));
+            trnaa->SetAa().SetNcbieaa(GetQualValueAa(*qval, true));
             trnaa->SetAnticodon(*anticodon);
             rna_ref->SetExt().SetTRNA(*trnaa);
         }
