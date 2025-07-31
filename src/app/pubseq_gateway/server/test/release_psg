@@ -7,6 +7,7 @@
 # pylint: disable=C0302     # too many lines in the module
 # pylint: disable=C0305     # trailing newlines
 # pylint: disable=C0410     # multiple imports in one line
+# pylint: disable=C0103     # naming
 # pylint: disable=W0613     # unused argument
 # pylint: disable=W0603     # using global
 # pylint: disable=W0703     # too general exception
@@ -14,6 +15,18 @@
 # pylint: disable=R0912     # too many branches
 # pylint: disable=R0911     # too many return statements
 # pylint: disable=R0915     # too many statements
+# pylint: disable=C0415     # Import outside toplevel
+# pylint: disable=R0914     # Too many local variables
+# pylint: disable=R0402
+# pylint: disable=W0602     # Using global for ... but no assignment
+# pylint: disable=R1732     # Consider using 'with'
+# pylint: disable=R1702     # Too many nested blocks
+# pylint: disable=W0702     # No exception type(s) specified (bare-except)
+# pylint: disable=W0611     # Unused import
+# pylint: disable=W1514     # Using open without explicitly specifying an encoding
+# pylint: disable=W0719     # Raising too general exception
+# pylint: disable=W0707     # Consider explicitly re-raising
+
 
 
 from optparse import OptionParser
@@ -46,11 +59,6 @@ AFTER_STOP_DELAY = 45
 
 PRODUCTION_SERVICE = 'PSG2'
 DEV_SERVICE = 'PSG2_DEV'
-
-
-# Without this call python sets its own signal handler and it leads to an error
-# "Broken pipe" when a complicated command is run via os.system() call
-signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
 def timestamp():
@@ -107,6 +115,34 @@ def prepareConfigFile(source, target, subst):
     f = open(target, 'w')
     f.write(content)
     f.close()
+
+def prepareConfigAndRunServer(artefactDir, logFile, is_https, pipe_output):
+    global SRV1
+
+    subst = {'si2csi.db': artefactDir + 'si2csi.db',
+             'bioseq_info.db': artefactDir +'bioseq_info.db',
+             'blob_prop.db': artefactDir + 'blob_prop.db',
+             'port': f'{PORT1}',
+             'ssl_cert': artefactDir + 'psg.crt',
+             'ssl_key': artefactDir + 'psg.key'}
+    if is_https:
+        subst['ssl_enable'] = 'true'
+    else:
+        subst['ssl_enable'] = 'false'
+    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
+                      artefactDir + 'pubseq_gateway.ini', subst)
+
+    cmdLine = [artefactDir + 'pubseq_gateway',
+               '-conffile', artefactDir + 'pubseq_gateway.ini',
+               '-logfile', logFile]
+    safeRemove(logFile)
+    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
+
+    if pipe_output:
+        SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        SRV1 = subprocess.Popen(cmdLine)
+    time.sleep(AFTER_START_DELAY)
 
 def getBuildResultsDir(options):
     artefactDir = getArtefactDir(options)
@@ -211,7 +247,6 @@ def saveProcessArtefacts(srv, dst):
     f.write(content)
     f.close()
 
-
 def stopServer(srv, reset=True):
     global SRV1
     global SRV2
@@ -230,7 +265,6 @@ def stopServer(srv, reset=True):
         if reset:
             SRV2 = None
         time.sleep(AFTER_STOP_DELAY)
-
 
 def prepareO2Gsandbox(options):
     artefactDir = getArtefactDir(options)
@@ -373,7 +407,6 @@ def getDevServiceInstanceByVersion(ver):
     instances = ', '.join(tryInstances)
     print_error(f'Could not find a PSG instance of version {ver} in service {DEV_SERVICE}')
     return None
-
 
 def getArchivedTestPath(options):
     binPath = getArchivedBinaryPath(options.psg_ver)
@@ -733,32 +766,16 @@ def functional_test(commands, options, args):
     if prepareO2Gsandbox(options) != 0:
         return 1
 
+    errors = []
     artefactDir = getArtefactDir(options)
 
-    # Round up 1: Prepare the config file for UT (http)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-ut-http.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(AFTER_START_DELAY)
+    # Round 1: UT (http)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-ut-http.log',
+                              False,    # is https
+                              False)    # pipe output
 
     # Run the tests
-    errors = []
-
     buildResultsDir = getBuildResultsDir(options)
     testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
     cmdLine = f'{testDir}run_tests.py localhost:{PORT1} > {artefactDir}ut-http.log 2>&1'
@@ -772,29 +789,13 @@ def functional_test(commands, options, args):
         print_verbose('http unit tests succeeded')
     stopServer(SRV1)
 
-    # Round up 2: Prepare the config file for UT (https)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'true',
-                       'ssl_cert': artefactDir + 'psg.crt',
-                       'ssl_key': artefactDir + 'psg.key'})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-ut-https.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(AFTER_START_DELAY)
+    # Round 2: UT (https)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-ut-https.log',
+                              True,    # is https
+                              False)
 
     # Run the tests
-
     cmdLine = f'{testDir}run_tests.py --https localhost:{PORT1} > {artefactDir}ut-https.log 2>&1'
     print_verbose(f'Running https unit tests: {cmdLine}')
     ret = os.system(cmdLine)
@@ -807,18 +808,7 @@ def functional_test(commands, options, args):
     stopServer(SRV1)
 
 
-    # Round up 3: integration smoke test using psg_client
-
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
+    # Round 3: integration smoke test using psg_client
     psg_client_path = getPsgClientPath()
     if psg_client_path is None:
         errors.append('Cannot find psg_client. The integration smoke tests are skipped')
@@ -829,15 +819,10 @@ def functional_test(commands, options, args):
         if ret != 0:
             errors.append(f'Error copying psg_client from {psg_client_path}')
         else:
-            # Run the server
-            logFile = f'{artefactDir}pubseq_gateway-integration-test.log'
-            cmdLine = [artefactDir + 'pubseq_gateway',
-                       '-conffile', artefactDir + 'pubseq_gateway.ini',
-                       '-logfile', logFile]
-            safeRemove(logFile)
-            print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-            SRV1 = subprocess.Popen(cmdLine)
-            time.sleep(AFTER_START_DELAY)
+            prepareConfigAndRunServer(artefactDir,
+                                      f'{artefactDir}pubseq_gateway-integration-test.log',
+                                      False,    # is https
+                                      False)    # pipe output
 
             # Run the tests
             integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -866,9 +851,10 @@ def stability_test(commands, options, args):
     if prepareO2Gsandbox(options) != 0:
         return 1
 
+    errors = []
     artefactDir = getArtefactDir(options)
 
-    # Round up 1: Prepare the config file for UT (http)
+    # Round 1
     prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
                       artefactDir + 'pubseq_gateway.ini',
                       {'si2csi.db': artefactDir + 'si2csi.db',
@@ -879,8 +865,6 @@ def stability_test(commands, options, args):
                        'ssl_cert': '',
                        'ssl_key': ''})
 
-
-    errors = []
     testCases = ['ID/resolve?psg_protocol=yes&seq_id=XP_015453951&fmt=json&all_info=yes',
                  'ID/get_na?fmt=json&all_info=yes&seq_id=NW_017890465&psg_protocol=yes&names=NA000122.1',
                  'ID/get?seq_id=164040&seq_id_type=3&exclude_blobs=1.1,4.8091,3.3',
@@ -1050,26 +1034,11 @@ def memcheck(commands, options, args):
     if prepareSandboxFiles(buildResultsDir, testDir, artefactDir) != 0:
         return 1
 
-    # Round 1: Prepare the config file for UT (http)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-memcheck-ut-http.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(AFTER_START_DELAY)
+    # Round 1: UT (http)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-memcheck-ut-http.log',
+                              False,    # is https
+                              True)     # pipe output
 
     # Run the tests
     errors = []
@@ -1088,29 +1057,13 @@ def memcheck(commands, options, args):
     saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-http.sanitizer.log')
     SRV1 = None
 
-    # Round 2: Prepare the config file for UT (https)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'true',
-                       'ssl_cert': artefactDir + 'psg.crt',
-                       'ssl_key': artefactDir + 'psg.key'})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-memcheck-ut-https.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(AFTER_START_DELAY)
+    # Round 2: UT (https)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-memcheck-ut-https.log',
+                              True,     # is https
+                              True)     # pipe output
 
     # Run the tests
-
     cmdLine = f'{testDir}run_tests.py --https localhost:{PORT1} > {artefactDir}memcheck-ut-https.log 2>&1'
     print_verbose(f'Running https unit tests: {cmdLine}')
     ret = os.system(cmdLine)
@@ -1125,26 +1078,11 @@ def memcheck(commands, options, args):
     saveProcessArtefacts(SRV1, f'{artefactDir}memcheck-ut-https.sanitizer.log')
     SRV1 = None
 
-    # Round 3: Prepare the config file for stress test (http)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-http.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(AFTER_START_DELAY)
+    # Round 3: stress test (http)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-memcheck-stress-http.log',
+                              False,    # is https
+                              True)     # pipe output
 
     # Run the tests
     cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}memcheck-stress-http.log 2>&1'
@@ -1166,7 +1104,7 @@ def memcheck(commands, options, args):
     psg_client_good = False
     psg_client_path = getPsgClientPath()
     if psg_client_path is None:
-        errors.append(f'psg_client http stress test (memcheck) is skipped because psg_client is not found')
+        errors.append('psg_client http stress test (memcheck) is skipped because psg_client is not found')
     else:
         cmdLine = f'cp -f {psg_client_path} {artefactDir}'
         print_verbose(f'Copying psg_client from {psg_client_path} ...')
@@ -1175,14 +1113,10 @@ def memcheck(commands, options, args):
             errors.append(f'Error copying psg_client from {psg_client_path}')
         else:
             psg_client_good = True
-            logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-psg_client-http.log'
-            cmdLine = [artefactDir + 'pubseq_gateway',
-                       '-conffile', artefactDir + 'pubseq_gateway.ini',
-                       '-logfile', logFile]
-            safeRemove(logFile)
-            print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-            SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            time.sleep(AFTER_START_DELAY)
+            prepareConfigAndRunServer(artefactDir,
+                                      f'{artefactDir}pubseq_gateway-memcheck-stress-psg_client-http.log',
+                                      False,    # is https
+                                      True)     # pipe output
 
             # Run psg_client
             cmdLine = f'''yes 2 | head -1000000 | {artefactDir}psg_client resolve -service localhost:{PORT1} -server-mode | jq -c '.|select(.status=="Error")' > {artefactDir}memcheck-stress-psg_client-http.log 2>&1'''
@@ -1199,29 +1133,13 @@ def memcheck(commands, options, args):
             SRV1 = None
 
 
-    # Round 5: Prepare the config file for stress tests (https)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'true',
-                       'ssl_cert': artefactDir + 'psg.crt',
-                       'ssl_key': artefactDir + 'psg.key'})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-https.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    time.sleep(AFTER_START_DELAY)
+    # Round 5: stress tests (https)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-memcheck-stress-https.log',
+                              True,     # is https
+                              True)     # pipe output
 
     # Run the tests
-
     cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --https --server localhost:{PORT1} > {artefactDir}memcheck-stress-https.log 2>&1'
     print_verbose(f'Running https stress tests: {cmdLine}')
     ret = os.system(cmdLine)
@@ -1237,17 +1155,13 @@ def memcheck(commands, options, args):
     SRV1 = None
 
     # Round 6: psg_client memcheck stress test in https mode
-    if psg_client_good == False:
-        errors.append(f'psg_client https memcheck stress test is skipped because psg_client is not found')
+    if psg_client_good is False:
+        errors.append('psg_client https memcheck stress test is skipped because psg_client is not found')
     else:
-        logFile = f'{artefactDir}pubseq_gateway-memcheck-stress-psg_client-https.log'
-        cmdLine = [artefactDir + 'pubseq_gateway',
-                   '-conffile', artefactDir + 'pubseq_gateway.ini',
-                   '-logfile', logFile]
-        safeRemove(logFile)
-        print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-        SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(AFTER_START_DELAY)
+        prepareConfigAndRunServer(artefactDir,
+                                  f'{artefactDir}pubseq_gateway-memcheck-stress-psg_client-https.log',
+                                  True,     # is https
+                                  True)     # pipr output
 
         # Run psg_client
         cmdLine = f'''yes 2 | head -1000000 | {artefactDir}psg_client resolve -service localhost:{PORT1} -https -server-mode | jq -c '.|select(.status=="Error")' > {artefactDir}memcheck-stress-psg_client-https.log 2>&1'''
@@ -1264,29 +1178,13 @@ def memcheck(commands, options, args):
         SRV1 = None
 
     # Round 7: integration smoke test using psg_client
-
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
-    if psg_client_good == False:
+    if psg_client_good is False:
         errors.append('Cannot find psg_client. The integration smoke tests are skipped')
     else:
-        # Run the server
-        logFile = f'{artefactDir}pubseq_gateway-memcheck-integration-test.log'
-        cmdLine = [artefactDir + 'pubseq_gateway',
-                   '-conffile', artefactDir + 'pubseq_gateway.ini',
-                   '-logfile', logFile]
-        safeRemove(logFile)
-        print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-        SRV1 = subprocess.Popen(cmdLine, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        time.sleep(AFTER_START_DELAY)
+        prepareConfigAndRunServer(artefactDir,
+                                  f'{artefactDir}pubseq_gateway-memcheck-integration-test.log',
+                                  False,    # is https
+                                  True)     # pipe output
 
         # Run the tests
         integrationTestDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/integrationsmoketest/'
@@ -1317,32 +1215,16 @@ def stress_test(commands, options, args):
     if prepareO2Gsandbox(options) != 0:
         return 1
 
+    errors = []
     artefactDir = getArtefactDir(options)
 
-    # Round up 1: Prepare the config file for stress test (http)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'false',
-                       'ssl_cert': '',
-                       'ssl_key': ''})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-stress-http.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(AFTER_START_DELAY)
+    # Round 1: stress test (http)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-stress-http.log',
+                              False,    # is https
+                              False)    # pipe output
 
     # Run the tests
-    errors = []
-
     buildResultsDir = getBuildResultsDir(options)
     testDir = f'{buildResultsDir}c++/src/app/pubseq_gateway/server/test/'
     cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}stress-http.log 2>&1'
@@ -1356,11 +1238,11 @@ def stress_test(commands, options, args):
         print_verbose('http stress tests succeeded')
     stopServer(SRV1)
 
-    # Round #2: psg_client bases tests. The config file is still good
+    # Round #2: psg_client bases tests
     psg_client_good = False
     psg_client_path = getPsgClientPath()
     if psg_client_path is None:
-        errors.append(f'psg_client http stress test is skipped because psg_client is not found')
+        errors.append('psg_client http stress test is skipped because psg_client is not found')
     else:
         cmdLine = f'cp -f {psg_client_path} {artefactDir}'
         print_verbose(f'Copying psg_client from {psg_client_path} ...')
@@ -1369,20 +1251,25 @@ def stress_test(commands, options, args):
             errors.append(f'Error copying psg_client from {psg_client_path}')
         else:
             psg_client_good = True
-            logFile = f'{artefactDir}pubseq_gateway-stress-psg_client-http.log'
-            cmdLine = [artefactDir + 'pubseq_gateway',
-                       '-conffile', artefactDir + 'pubseq_gateway.ini',
-                       '-logfile', logFile]
-            safeRemove(logFile)
-            print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-            SRV1 = subprocess.Popen(cmdLine)
-            time.sleep(AFTER_START_DELAY)
+            prepareConfigAndRunServer(artefactDir,
+                                      f'{artefactDir}pubseq_gateway-stress-psg_client-http.log',
+                                      False,    # is https
+                                      False)    # pipe output
 
             # Run psg_client
+
+            # Without this call python sets its own signal handler and it leads to an error
+            # "Broken pipe" when a complicated command is run via os.system() call
+            signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
             cmdLine = f'''yes 2 | head -1000000 | {artefactDir}psg_client resolve -service localhost:{PORT1} -server-mode | jq -c '.|select(.status=="Error")' > {artefactDir}stress-psg_client-http.log 2>&1'''
             print_verbose(f'Running http psg_client stress test: {cmdLine}')
             ret = os.system(cmdLine)
             print_verbose(f'http psg_client stress test return code: {ret}')
+
+            # Restore the signal handler. Python ignores it.
+            signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+
             if ret != 0:
                 errors.append(f'Error executing http psg_client stress tests. Return code: {ret}')
                 print_verbose('http psg_client stress tests failed')
@@ -1390,29 +1277,13 @@ def stress_test(commands, options, args):
                 print_verbose('http psg_client stress tests succeeded')
             stopServer(SRV1)
 
-    # Round 3: Prepare the config file for UT (https)
-    prepareConfigFile(artefactDir + 'pubseq_gateway.ini.baseline',
-                      artefactDir + 'pubseq_gateway.ini',
-                      {'si2csi.db': artefactDir + 'si2csi.db',
-                       'bioseq_info.db': artefactDir +'bioseq_info.db',
-                       'blob_prop.db': artefactDir + 'blob_prop.db',
-                       'port': f'{PORT1}',
-                       'ssl_enable': 'true',
-                       'ssl_cert': artefactDir + 'psg.crt',
-                       'ssl_key': artefactDir + 'psg.key'})
-
-    # Run the server
-    logFile = f'{artefactDir}pubseq_gateway-stress-https.log'
-    cmdLine = [artefactDir + 'pubseq_gateway',
-               '-conffile', artefactDir + 'pubseq_gateway.ini',
-               '-logfile', logFile]
-    safeRemove(logFile)
-    print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-    SRV1 = subprocess.Popen(cmdLine)
-    time.sleep(AFTER_START_DELAY)
+    # Round 3: stress tests (https)
+    prepareConfigAndRunServer(artefactDir,
+                              f'{artefactDir}pubseq_gateway-stress-https.log',
+                              True,     # is https
+                              False)    # pipe output
 
     # Run the tests
-
     cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --https --server localhost:{PORT1} > {artefactDir}stress-https.log 2>&1'
     print_verbose(f'Running https stress tests: {cmdLine}')
     ret = os.system(cmdLine)
@@ -1425,23 +1296,28 @@ def stress_test(commands, options, args):
     stopServer(SRV1)
 
     # Round 4: psg_client stress test in https mode
-    if psg_client_good == False:
-        errors.append(f'psg_client https stress test is skipped because psg_client is not found')
+    if psg_client_good is False:
+        errors.append('psg_client https stress test is skipped because psg_client is not found')
     else:
-        logFile = f'{artefactDir}pubseq_gateway-stress-psg_client-https.log'
-        cmdLine = [artefactDir + 'pubseq_gateway',
-                   '-conffile', artefactDir + 'pubseq_gateway.ini',
-                   '-logfile', logFile]
-        safeRemove(logFile)
-        print_verbose('Running PSG server: ' + ' '.join(cmdLine))
-        SRV1 = subprocess.Popen(cmdLine)
-        time.sleep(AFTER_START_DELAY)
+        prepareConfigAndRunServer(artefactDir,
+                                  f'{artefactDir}pubseq_gateway-stress-psg_client-https.log',
+                                  True,     # is https
+                                  False)    # pipe output
 
         # Run psg_client
+
+        # Without this call python sets its own signal handler and it leads to an error
+        # "Broken pipe" when a complicated command is run via os.system() call
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
         cmdLine = f'''yes 2 | head -1000000 | {artefactDir}psg_client resolve -service localhost:{PORT1} -https -server-mode | jq -c '.|select(.status=="Error")' > {artefactDir}stress-psg_client-https.log 2>&1'''
         print_verbose(f'Running https psg_client stress test: {cmdLine}')
         ret = os.system(cmdLine)
         print_verbose(f'https psg_client stress test return code: {ret}')
+
+        # Restore the signal handler. Python ignores it.
+        signal.signal(signal.SIGPIPE, signal.SIG_IGN)
+
         if ret != 0:
             errors.append(f'Error executing https psg_client stress tests. Return code: {ret}')
             print_verbose('https psg_client stress tests failed')
