@@ -554,8 +554,17 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
             vhost = 0;
     }
     if (vhost) {
-        assert((size_t) info->vhost < sizeof(net_info->host));
-        strncpy0(net_info->host, vhost, (size_t) info->vhost);
+        size_t len;
+        /* peel off :port, if any, minding the [ipv6]:port notation */
+        const char* end = memrchr(vhost, "]:"[!(*vhost == '[')], (size_t) info->vhost);
+        if (end) {
+            if (*end == ']')
+                ++vhost;
+            len = (size_t)(end - vhost);
+        } else
+            len = (size_t) info->vhost;
+        assert(len <= info->vhost  &&  info->vhost < sizeof(net_info->host));
+        strncpy0(net_info->host, vhost, len);
     } else if (info->host == SOCK_HostToNetLong((unsigned int)(-1))) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
         char* end = NcbiAddrToString(net_info->host + ipv6,
