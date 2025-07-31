@@ -957,8 +957,11 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     offset = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_PRIMARY));
     if (! offset && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
-            if (! fta_dblink_has_sra(dbuop)) {
-                FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:{} record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
+            if (! fta_dblink_has_sra(dbuop) &&
+                ! XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_COMMENT)) {
+                FtaErrPost(SEV_REJECT, ERR_TPA_TpaCommentMissing,
+                           "TPA:{} record lacks the mandatory comment line. Entry dropped.",
+                           (ibp->inferential == false) ? "experimental" : "inferential");
                 ibp->drop = true;
                 return;
             }
