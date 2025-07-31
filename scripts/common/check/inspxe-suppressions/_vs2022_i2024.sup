@@ -690,7 +690,7 @@ suppression = {
 
 
 suppression = {
-	name = "dbapi / ctlib / ct_dyndesc"
+	name = "DBAPI / ctlib / ct_dyndesc"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -699,7 +699,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "dbapi / ctlib / memcmp"
+	name = "DBAPI / ctlib / memcmp"
 	type = {invalid_call}
 	stacks = {
 		{
@@ -709,7 +709,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "dbapi / ctlib / ct_wakeup"
+	name = "DBAPI / ctlib / ct_wakeup"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -719,7 +719,7 @@ suppression = {
 	}
 }
 suppression = {
-	name = "dbapi / freetds100 / tds_get_byte_ver100"
+	name = "DBAPI / freetds100 / tds_get_byte_ver100"
 	type = {uninitialized_memory_access}
 	stacks = {
 		{
@@ -729,6 +729,172 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "DBAPI / CDB_String::Assign / assign / length"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=length,src=types.cpp;
+			func="ncbi::CDB_String::Assign(char const *,unsigned __int64,enum ncbi::EEncoding)",src=types.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / libsybtcl64.dll / ReadFile"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=NtReadFile;
+			...;
+			mod=libsybtcl64.dll;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_process_info"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="tds_process_info(struct tds_socket *, int)",src=token.c;
+			func=tds_process_login_tokens_ver14,src=token.c;
+			...;
+			func="ncbi::impl::CDriverContext::MakePooledConnection(class ncbi::CDBConnParams const &)",src=dbapi_impl_context.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_canonical_charset_ver14"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=tds_canonical_charset_ver14,src=iconv.c;
+			...;
+			func=CtxMakeConnection,src=dbapi_conn_factory.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / msodbcsql18.dll / OutInit"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			mod=schannel.dll;
+		}
+		allocation={
+			...;
+			mod=rpcrt4.dll,func=NdrOutInit;
+			...;
+			mod=msodbcsql18.dll;
+			...;
+			mod=ntdll.dll,func=RtlDeregisterWaitEx;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / GetTDSServerType"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			func=GetTDSServerType,src=connection.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / ftds14_ctlib::CTDS_RowResult::GetBlobDescriptor"
+	type = {prob_mem_invalid_partial,prob_mem_uninit,prob_mem_uninit_partial}
+	stacks = {
+		{
+			...;
+			func=ncbi::ftds14_ctlib::CTDS_RowResult::GetBlobDescriptor(int),src=result.cpp;
+			func=ncbi::CDB_Result::GetBlobDescriptor(void),src=public.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / dbapi_unit_test_lob.cpp / compare"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			func=compare,src=dbapi_unit_test_lob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "x_json_parse_string / parse_boolean"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=parse_boolean_value,src=parson.c;
+			...;
+			func=x_json_parse_string,src=parson.c;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_get_byte_ver14"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=tds_get_byte_ver14,src=read.c;
+			func=tds_process_tokens_ver14,src=token.c,line=698;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / dbapi_unit_test_lob / compare"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func="ncbi::NStr::CompareCase(class ncbi::CTempStringEx,class ncbi::CTempStringEx)",src=ncbistr.cpp;
+			func=Compare,src=dbapi_unit_test_lob.cpp;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_convert_int2"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=tds_convert_int2,src=convert.c;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_convert_int2"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			!!!;
+			src=convert.c,func=tds_convert_int2;
+		}
+	}
+}
+suppression = {
+	name = "DBAPI / tds_poll / EnterCriticalSection"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			...;
+			mod=ws2_32.dll,func=WSAPoll;
+			func=tds_poll_ver100,src=poll.c;
+		}
+	}
+}
+
 
 
 suppression = {

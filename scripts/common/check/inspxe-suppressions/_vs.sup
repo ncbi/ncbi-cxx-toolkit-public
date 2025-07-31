@@ -489,6 +489,18 @@ suppression = {
 	}
 }
 suppression = {
+	name = "Critical sections - invalid memory access 2"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+		}
+	}
+}
+suppression = {
 	name = "_T_XCSTRING / string.c_str() - 1"
 	type = {invalid_memory_access_partial}
 	stacks = {

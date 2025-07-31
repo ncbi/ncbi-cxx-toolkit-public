@@ -258,6 +258,56 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "LIBXML - xmlCheckFilename"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ucrtbase.dll,func=wcsrchr;
+			...;
+			func=xmlCheckFilename;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlXPathCompiledEval"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlXPathCompiledEval;
+			func="xml::node::evaluate_xpath_expression(class xml::xpath_expression const &,void *)",src=node.cpp;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xmlPatterncompile"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			mod=test_xpath.exe,func=xmlPatterncompile;
+			...;
+			mod=test_xpath.exe,func=xmlXPathCtxtCompile;
+			func=xml::xpath_expression::compile_expression(void),src=xpath_expression.cpp;
+		}
+	}
+}
+suppression = {
+	name = "LIBXML - xsltParseStylesheetDoc - xmlPatterncompile"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=xmlPatterncompile;
+			...;
+			func=xsltXPathCompile;
+			...;
+			func=xsltParseStylesheetDoc;
+		}
+	}
+}
 
 
 suppression = {
@@ -304,3 +354,27 @@ suppression = {
 	}
 }
 
+suppression = {
+	name = "SQLITE3 - sqlite3_step"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			...;
+			func=sqlite3_step,src=sqlite3.c;
+			...;
+			func=Execute;
+		}
+	}
+}
+suppression = {
+	name = "SQLITE3 - sqlite3_step - partial"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func=sqlite3_step,src=sqlite3.c;
+			...;
+			func=Execute;
+		}
+	}
+}
