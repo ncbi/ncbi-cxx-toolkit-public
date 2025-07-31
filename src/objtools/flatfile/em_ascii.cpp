@@ -1851,8 +1851,11 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     if (! SrchNodeType(entry, ParFlat_AH, &len, &offset) && ibp->is_tpa && ibp->is_wgs == false) {
         if (ibp->inferential || ibp->experimental) {
-            if (! fta_dblink_has_sra(dbuop)) {
-                FtaErrPost(SEV_REJECT, ERR_TPA_TpaSpansMissing, "TPA:{} record lacks both AH/PRIMARY linetype and Sequence Read Archive links. Entry dropped.", (ibp->inferential == false) ? "experimental" : "inferential");
+            if (! fta_dblink_has_sra(dbuop) &&
+                ! TrackNodeType(entry, ParFlat_CC)) {
+                FtaErrPost(SEV_REJECT, ERR_TPA_TpaCommentMissing,
+                           "TPA:{} record lacks the mandatory comment line. Entry dropped.",
+                           (ibp->inferential == false) ? "experimental" : "inferential");
                 ibp->drop = true;
                 return;
             }

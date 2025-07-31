@@ -593,6 +593,7 @@
 #define ERR_TPA_SpanLengthDiff                         33,5
 #define ERR_TPA_SpanDiffOver300bp                      33,6
 #define ERR_TPA_TpaSpansMissing                        33,7
+#define ERR_TPA_TpaCommentMissing                      33,8
 
 #define ERR_DRXREF                                     34,0
 #define ERR_DRXREF_UnknownDBname                       34,1
