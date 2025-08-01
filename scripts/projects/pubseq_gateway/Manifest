@@ -31,4 +31,7 @@ Linux64-Alma   : O2g               : GCC.sh 13.2.0 --without-debug  --with-symbo
 Linux64-Alma   : O2gWithH2oAssert  : GCC.sh 13.2.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.17.1+a8 --with-h2o=$NCBI/h2o-2.2.6-ncbi3+a8/GCC730-DebugMT64 --with-libssh2=$NCBI/libssh2-1.11.0 --with-lmdb=$NCBI/lmdb-0.9.24
 Linux64-Alma   : MaxDebug          : GCC.sh 13.2.0 --with-max-debug                --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.17.1+a8 --with-h2o=$NCBI/h2o-2.2.6-ncbi3+a8 --with-libssh2=$NCBI/libssh2-1.11.0 --with-lmdb=$NCBI/lmdb-0.9.24
 
+# Only to test compilation with strict gi
+Linux64-Alma   : O2gStrictGI       : GCC.sh 13.2.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=$NCBI/libuv-1.42.0 --with-cassandra=$NCBI/datastax-cpp-driver-2.17.1+a8 --with-h2o=$NCBI/h2o-2.2.6-ncbi3+a8 --with-libssh2=$NCBI/libssh2-1.11.0 --with-lmdb=$NCBI/lmdb-0.9.24 --with-experimental=StrictGI
+
 USE_COMPONENTS
