@@ -69,8 +69,6 @@ const int64_t           kTcpConnHardSoftDiffDefault = 256;
 const int64_t           kTcpMaxConnSoftLimitDefault = kTcpMaxConnDefault - kTcpConnHardSoftDiffDefault;
 const int64_t           kTcpConnSoftAlertDiffDefault = 512;
 const int64_t           kTcpMaxConnAlertLimitDefault = kTcpMaxConnSoftLimitDefault - kTcpConnSoftAlertDiffDefault;
-const unsigned int      kTimeoutDefault = 30000;
-const unsigned int      kMaxRetriesDefault = 2;
 const string            kDefaultRootKeyspace = "sat_info3";
 const string            kDefaultConfigurationDomain = "PSG";
 const size_t            kDefaultHttpMaxBacklog = 1024;
@@ -165,8 +163,6 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_TcpMaxConn(kTcpMaxConnDefault),
     m_TcpMaxConnSoftLimit(kTcpMaxConnSoftLimitDefault),
     m_TcpMaxConnAlertLimit(kTcpMaxConnAlertLimitDefault),
-    m_TimeoutMs(kTimeoutDefault),
-    m_MaxRetries(kMaxRetriesDefault),
     m_SendBlobIfSmall(kDefaultSendBlobIfSmall),
     m_Log(kDefaultLog),
     m_MaxHops(kDefaultMaxHops),
@@ -316,10 +312,6 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
         m_TcpMaxConnAlertLimit = registry.GetInt(kServerSection, "maxconnalertlimit",
                                                  kTcpMaxConnAlertLimitDefault);
     }
-    m_TimeoutMs = registry.GetInt(kServerSection, "optimeout",
-                                  kTimeoutDefault);
-    m_MaxRetries = registry.GetInt(kServerSection, "maxretries",
-                                   kMaxRetriesDefault);
     m_RootKeyspace = registry.GetString(kServerSection, "root_keyspace",
                                         kDefaultRootKeyspace);
     m_ConfigurationDomain = registry.GetString(kServerSection, "configuration_domain",
@@ -866,10 +858,6 @@ const unsigned int      kListenerBacklogMin = 5;
 const unsigned int      kListenerBacklogMax = 2048;
 const unsigned short    kTcpMaxConnMax = 65000;
 const unsigned short    kTcpMaxConnMin = 5;
-const unsigned int      kTimeoutMsMin = 0;
-const unsigned int      kTimeoutMsMax = UINT_MAX;
-const unsigned int      kMaxRetriesMin = 0;
-const unsigned int      kMaxRetriesMax = UINT_MAX;
 
 
 void SPubseqGatewaySettings::x_ValidateServerSection(void)
@@ -1016,26 +1004,6 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
             "<= [SERVER]/conn_throttle_threshold value. "
             "Resetting all connection and throttling settings to default.");
         x_ResetConnectionSettingsToDefault();
-    }
-
-    if (m_TimeoutMs < kTimeoutMsMin || m_TimeoutMs > kTimeoutMsMax) {
-        m_CriticalErrors.push_back(
-            "The operation timeout is out of range. Allowed "
-            "range: " + to_string(kTimeoutMsMin) + "..." +
-            to_string(kTimeoutMsMax) + ". Received: " +
-            to_string(m_TimeoutMs) + ". Resetting to " +
-            to_string(kTimeoutDefault));
-        m_TimeoutMs = kTimeoutDefault;
-    }
-
-    if (m_MaxRetries < kMaxRetriesMin || m_MaxRetries > kMaxRetriesMax) {
-        m_CriticalErrors.push_back(
-            "The max retries is out of range. Allowed "
-            "range: " + to_string(kMaxRetriesMin) + "..." +
-            to_string(kMaxRetriesMax) + ". Received: " +
-            to_string(m_MaxRetries) + ". Resetting to " +
-            to_string(kMaxRetriesDefault));
-        m_MaxRetries = kMaxRetriesDefault;
     }
 
     if (m_HttpMaxBacklog <= 0) {

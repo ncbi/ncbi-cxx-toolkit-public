@@ -57,8 +57,6 @@ struct SPubseqGatewaySettings
     int64_t                             m_TcpMaxConn;
     int64_t                             m_TcpMaxConnSoftLimit;
     int64_t                             m_TcpMaxConnAlertLimit;
-    unsigned int                        m_TimeoutMs;
-    unsigned int                        m_MaxRetries;
     unsigned long                       m_SendBlobIfSmall;
     bool                                m_Log;
     int                                 m_MaxHops;
