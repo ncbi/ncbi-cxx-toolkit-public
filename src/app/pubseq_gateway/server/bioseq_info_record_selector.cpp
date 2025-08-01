@@ -85,7 +85,7 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
     size_t k = -1;
     for (size_t i = 0; i < good_idx_v_ptr->size(); ++i) {
         k = (*good_idx_v_ptr)[i];
-        auto gi = records[k].GetGI();
+        TGi gi = GI_FROM(idblob::CBioseqInfoRecord::TGI, records[k].GetGI());
         if (gi > max_gi) {
             index = k;
             max_gi = gi;
