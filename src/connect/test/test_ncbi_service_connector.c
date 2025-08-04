@@ -88,13 +88,13 @@ int main(int argc, const char* argv[])
             obuf[k++] = '\n';
             obuf[k]   = '\0';
             k = strlen(obuf);
-            if (CONN_Write(conn, obuf, k, &k, eIO_WritePersist)
-                != eIO_Success) {
+            if (CONN_Write(conn, obuf, k, &k, eIO_WritePersist) != eIO_Success) {
                 if (!n) {
                     CONN_Close(conn);
                     CORE_LOG(eLOG_Fatal, "Cannot write to connection");
-                } else
-                    break;
+                }
+                m += k;
+                break;
             }
             assert(k == strlen(obuf));
             m += k;
@@ -103,8 +103,7 @@ int main(int argc, const char* argv[])
         strncpy0(obuf, argv[2], sizeof(obuf) - 2);
         obuf[m = strlen(obuf)] = '\n';
         obuf[++m]              = '\0';
-        if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist)
-            != eIO_Success) {
+        if (CONN_Write(conn, obuf, strlen(obuf), &m, eIO_WritePersist) != eIO_Success) {
             CONN_Close(conn);
             CORE_LOG(eLOG_Fatal, "Cannot write to connection");
         }
@@ -114,45 +113,56 @@ int main(int argc, const char* argv[])
     if (CONN_GetSOCK(conn, &sock) == eIO_Success)
         verify(SOCK_Shutdown(sock, eIO_Write) == eIO_Success);
     descr = CONN_Description(conn);
+    if (m) {
+        CORE_LOGF(eLOG_Note,
+                  ("Total byte(s) sent to (%s%s%s): %lu",
+                   CONN_GetType(conn),
+                   descr ? ", " : "", descr ? descr : "",
+                   (unsigned long) m));
+    }
 
     n = 0;
     for (;;) {
         status = CONN_Wait(conn, eIO_Read, net_info->timeout);
         if (status != eIO_Success) {
             CORE_LOGF(eLOG_Fatal,
-                      ("Failed to wait for read (%s%s%s): %s",
+                      ("Failed to wait for read from (%s%s%s) at offset %lu: %s",
                        CONN_GetType(conn),
                        descr ? ", " : "", descr ? descr : "",
+                       (unsigned long) n,
                        IO_StatusStr(status)));
+            /*NOTREACHED*/
+            break;
         }
 
         status = CONN_Read(conn, ibuf, sizeof(ibuf), &k, eIO_ReadPersist);
         if (k) {
             CORE_DATAF(eLOG_Note, ibuf, k,
-                       ("%lu byte(s) read (%s%s%s)",
-                        (unsigned long) k, CONN_GetType(conn),
-                        descr ? ", " : "", descr ? descr : ""));
+                       ("Got data from (%s%s%s) at offset %lu",
+                        CONN_GetType(conn),
+                        descr ? ", " : "", descr ? descr : "",
+                        (unsigned long) n));
             n += k;
         }
         if (status != eIO_Success) {
             if (status != eIO_Closed) {
                 CORE_LOGF(n ? eLOG_Error : eLOG_Fatal,
-                          ("Read error (%s%s%s): %s",
+                          ("Read error from (%s%s%s) at offset %lu: %s",
                            CONN_GetType(conn),
                            descr ? ", " : "", descr ? descr : "",
+                           (unsigned long) n,
                            IO_StatusStr(status)));
             }
             CORE_LOGF(eLOG_Note,
-                      ("Total byte(s) read (%s%s%s): %lu",
+                      ("Total byte(s) sent to / received from (%s%s%s): %lu / %lu",
                        CONN_GetType(conn),
                        descr ? ", " : "", descr ? descr : "",
-                       (unsigned long) n));
+                       (unsigned long) m, (unsigned long) n));
             if (service == kBounce  &&  m != n) {
                 CORE_LOGF(eLOG_Fatal,
-                          ("Not entirely bounced (%s%s%s) %lu != %lu",
+                          ("Not entirely bounced (%s%s%s)",
                            CONN_GetType(conn),
-                           descr ? ", " : "", descr ? descr : "",
-                           (unsigned long) m, (unsigned long) n));
+                           descr ? ", " : "", descr ? descr : ""));
             }
             break;
         }
