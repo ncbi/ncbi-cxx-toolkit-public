@@ -917,38 +917,45 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
             /* Darwin's inet_addr() does not care for integer overflows :-/ */
             if (!SOCK_isip(host)) {
                 memset(addr, 0, sizeof(*addr));
+                parsed = 0;
                 goto done;
             }
         }
 #endif /*NCBI_OS_DARWIN*/
         if (!not_ip  &&  (ipv4 = inet_addr(host)) != htonl(INADDR_NONE)) {
             NcbiIPv4ToIPv6(addr, ipv4, 0);
+            parsed = host;
             goto done;
         }
     }
 
     if (NCBI_HasSpaces(host, len)) {
         memset(addr, 0, sizeof(*addr));
+        parsed = 0;
         goto done;
     }
 
     parsed = NcbiStringToAddr(addr, host, len);
-    if (parsed  &&  !*parsed) {
-        /* fully parsed address string */
-        if (family == AF_INET6) {
-            if (NcbiIsIPv4(addr))
+    if (!parsed) {
+        assert(NcbiIsEmptyIPv6(addr));
+    } else {
+        if (!*parsed) {
+            /* fully parsed address string */
+            if (family == AF_INET6) {
+                if (NcbiIsIPv4(addr))
+                    parsed = 0;
+            } else if (NcbiIsIPv4(addr)) {
+                if (!NcbiIPv6ToIPv4(addr, 0))
+                    parsed = 0;
+            } else if (family == AF_INET)
                 parsed = 0;
-        } else if (NcbiIsIPv4(addr)) {
-            if (!NcbiIPv6ToIPv4(addr, 0))
-                parsed = 0;
-        } else if (family == AF_INET)
-            parsed = 0;
+        } else
+            pasred = 0; /* partially parsed still can't be good */
         if (!parsed)
             memset(addr, 0, sizeof(*addr));
         goto done;
     }
 
-    assert(NcbiIsEmptyIPv6(addr));
     {{
         int error;
 #if defined(HAVE_GETADDRINFO)
@@ -1129,8 +1136,9 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
 #endif /*HAVE_GETADDRINFO*/
     }}
 
-  done:
     parsed = NcbiIsEmptyIPv6(addr) ? 0 : host;
+
+  done:
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     if (!SOCK_isipEx(host, 1/*full-quad*/)) {
         char addrstr[SOCK_ADDRSTRLEN];
