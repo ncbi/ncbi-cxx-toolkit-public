@@ -52,7 +52,9 @@
 
 #define REG_CONN_LBNULL_DEBUG       DEF_CONN_REG_SECTION "_" "LBNULL_DEBUG"
 
-#define REG_CONN_LBNULL_PORT        DEF_CONN_REG_SECTION "_" "LBNULL_PORT"
+#define REG_CONN_LBNULL_VHOST                                "LBNULL_VHOST"
+
+#define REG_CONN_LBNULL_PORT                                 "LBNULL_PORT"
 
 
 #ifdef __cplusplus
@@ -75,6 +77,7 @@ static const SSERV_VTable kLbnullOp = {
 struct SLBNULL_Data {
     unsigned       debug:1;  /* Debug output       */
     unsigned       reset:1;
+    unsigned       vhost:1;  /* If to add vhost    */
     TSERV_TypeOnly type;     /* Target server type */
     SSERV_Info*    info;     /* Resolved info avail*/
     unsigned short port;     /* Default port#      */
@@ -104,31 +107,34 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
             info->port = data->port;
     } else if (type &= fSERV_Http) {
         char port[10];
-        size_t len     = data->hostlen;
-        size_t portlen = sprintf(port, ":%hu", data->port);
-        assert(0 < len  &&  len <= CONN_HOST_LEN  &&  data->path);
+        size_t len     = data->vhost ? data->hostlen : 0;
+        size_t portlen = data->vhost ? sprintf(port, ":%hu", data->port) : 0;
+        assert(data->path  &&  (!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN)));
         info = SERV_CreateHttpInfoEx(type, ipv4, 0, data->path, 0,
-                                     len + portlen + 1);
+                                     data->vhost ? len + portlen + 1 : 0);
         if (info) {
-            char* vhost = (char*) info + SERV_SizeOfInfo(info);
             info->port = data->port
                 ? data->port
                 : info->mode & fSERV_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
-            memcpy(vhost, data->host, len);
-            if ((!(info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTP)  ||
-                ( (info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTPS)) {
-                memcpy(vhost + len, port, portlen);
-                if ((len += portlen) > CONN_HOST_LEN) {
-                    free(info);
-                    errno = ERANGE;
-                    info = 0;
+            if (data->vhost) {
+                char* vhost = (char*) info + SERV_SizeOfInfo(info);
+                memcpy(vhost, data->host, len);
+                if ((!(info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTP)  ||
+                    ( (info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTPS)) {
+                    char* x_port = vhost + len;
+                    if ((len += portlen) > CONN_HOST_LEN) {
+                        free(info);
+                        errno = ERANGE;
+                        info = 0;
+                    } else
+                        memcpy(x_port, port, portlen);
                 }
-            }
-            if (info) {
-                vhost[len] = '\0';
-                assert(len <= CONN_HOST_LEN);
-                info->vhost = (unsigned char) len;
-                assert((size_t) info->vhost == len);
+                if (info) {
+                    vhost[len] = '\0';
+                    assert(len <= CONN_HOST_LEN);
+                    info->vhost = (unsigned char) len;
+                    assert((size_t) info->vhost == len);
+                }
             }
         }
     } else if (iter->reverse_dns) {
@@ -317,22 +323,14 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  LBNULL using server type \"%s\"",
                  iter->name, SERV_TypeStr(type)));
 
-    port = 0;
-    if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_PORT,
-                                     buf, sizeof(buf), 0)) {
-        port = (unsigned long)(-1L);
-    } else if (!*buf  &&
-               !ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_PORT,
-                                             buf, sizeof(buf), 0)) {
-        port = (unsigned long)(-1L);
-    }
-    if (port/*== (unsigned long)(-1L)*/) {
+    if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
+                                      buf, sizeof(buf), 0)) {
         CORE_LOGF_X(88, eLOG_Error,
                     ("[%s]  Cannot obtain default port number from registry",
                      iter->name));
         goto out;
     }
-    assert(!port);
+    port = 0;
     if (*buf) {
         if (isdigit((unsigned char)(*buf))) {
             char* end;
@@ -350,9 +348,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         assert(port);
     } else {
         if (type & fSERV_Dns)
-            ; /*none*/
+            /*none*/;
         else if (type & fSERV_Http)
-            ; /*default*/
+            /*default*/;
         else if ((!type  ||  type == fSERV_Standalone)  &&  iter->reverse_dns)
             port = CONN_PORT_MSSQL;
         else
@@ -395,7 +393,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         goto out;
     }
     if (!*domain) {
-        ;
+        /*NOOP*/;
     } else if (!x_CheckDomain(domain)) {
         CORE_LOGF_X(94, eLOG_Error,
                     ("[%s]  Bad domain name \"%s\" for LBNULL",
@@ -435,6 +433,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
 
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBNULL_DEBUG,
+                                       buf, sizeof(buf), 0));
+    data->vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                                      (iter->name, REG_CONN_LBNULL_VHOST,
                                        buf, sizeof(buf), 0));
     data->type =                  type;
     data->port = (unsigned short) port;
