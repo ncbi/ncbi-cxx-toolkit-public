@@ -950,7 +950,7 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
             } else if (family == AF_INET)
                 parsed = 0;
         } else
-            pasred = 0; /* partially parsed still can't be good */
+            parsed = 0; /* partially parsed still can't be good */
         if (!parsed)
             memset(addr, 0, sizeof(*addr));
         goto done;
