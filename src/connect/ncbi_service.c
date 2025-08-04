@@ -96,6 +96,45 @@ static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
 }
 
 
+/* Return service name length or 0 if the name is not valid */
+static size_t x_CheckServiceName(const char* svc, int/*bool*/ ismask)
+{
+    int/*bool*/ alpha = 0/*false*/;
+    size_t n, len = strlen(svc);
+    for (n = 0;  n < len;  ++n) {
+        unsigned char c = (unsigned char)(*svc++);
+        if (isalpha(c)) {
+            alpha = 1/*true*/;
+            continue;
+        }
+        if (isdigit(c)) {
+            if (!n)
+                return 0;
+            continue;
+        }
+        switch (c) {
+        case '_':
+            continue;
+        case '-':
+            /* not leading or trailing*/
+            if (!n  ||  n == len - 1)
+                return 0;
+            continue;
+        case '?':
+        case '*':
+        case '[':
+        case ']':
+            if (ismask)
+                continue;
+            /*FALLTHRU*/
+        default:
+            return 0;
+        }
+    }
+    return alpha  ||  ismask ? len : 0;
+}
+
+
 /* "service" == the original input service name;
  * "svc"     == current service name (== "service" at first);
  * "ismask"  = 1 if "service" may contain any wildcards;
@@ -115,19 +154,19 @@ static char* x_ServiceName(unsigned int depth,
     assert(!svc == !service);
     assert(depth  ||  svc == service);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
-    if (!svc  ||  (!ismask  &&  (!*svc  ||  strpbrk(svc, "?*[")))
-        ||  (len = strlen(svc)) >= sizeof(buf)-sizeof(REG_CONN_SERVICE_NAME)
-        ||  NCBI_HasSpaces(svc, len)) {
+    if (!svc
+        ||  (!(len = x_CheckServiceName(svc, ismask))  &&  (!ismask  ||  *svc))
+        ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
+        ELOG_Level level = !svc  ||  !*svc  ||  len ? eLOG_Error : eLOG_Critical;
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
-        CORE_LOGF_X(7, eLOG_Error,
-                    ("%s%s%s%s service name%s%s",
+        CORE_LOGF_X(7, level,
+                    ("%s%s%s%s%s service name%s%s",
                      !svc  ||  !*svc ? "" : "[",
                      !svc ? "" : svc,
                      !svc  ||  !*svc ? "" : "]  ",
-                     !svc ? "NULL" : !*svc ? "Empty"
-                     : len < sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)
-                     ? "Invalid" : "Too long",
+                     level == eLOG_Critical ? "Internal program logic error: " : "",
+                     !svc ? "NULL" : !*svc ? "Empty" : len ? "Too long" : "Invalid",
                      *service ? " for: " : "", service));
         return 0/*failure*/;
     }
