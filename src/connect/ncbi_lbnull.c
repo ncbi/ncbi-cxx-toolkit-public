@@ -43,18 +43,27 @@
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
  
 
+/* Addtional "well-known" port number */
 #define CONN_PORT_LBNULL            5555
 
 
-/* LBNULL settings */
+/* Additional LBNULL settings: */
+
+/* Global only: */
 
 #define REG_CONN_LBNULL_DOMAIN      DEF_CONN_REG_SECTION "_" "LBNULL_DOMAIN"
 
 #define REG_CONN_LBNULL_DEBUG       DEF_CONN_REG_SECTION "_" "LBNULL_DEBUG"
 
+/* Regular: */
+
 #define REG_CONN_LBNULL_VHOST                                "LBNULL_VHOST"
 
 #define REG_CONN_LBNULL_PORT                                 "LBNULL_PORT"
+
+/* Service-specific only: */
+
+#define REG_CONN_LBNULL_PATH        DEF_CONN_REG_SECTION "_" "LBNULL_PATH"
 
 
 #ifdef __cplusplus
@@ -148,7 +157,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
     if (!info) {
         CORE_LOGF_ERRNO_X(84, eLOG_Error, errno,
-                          ("[%s]  Unable to create server info", iter->name));
+                          ("[%s]  LBNULL cannot create server info", iter->name));
         return 0/*failure*/;
     }
     info->time = LBSM_DEFAULT_TIME + iter->time;
@@ -165,7 +174,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         
     if (!(data->info = SERV_CopyInfoEx(info, iter->reverse_dns ? iter->name : ""))) {
         CORE_LOGF_ERRNO_X(85, eLOG_Error, errno,
-                          ("[%s]  Unable to store server info", iter->name));
+                          ("[%s]  LBNULL cannot store server info", iter->name));
     }
     free(info);
 
@@ -326,7 +335,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
                                       buf, sizeof(buf), 0)) {
         CORE_LOGF_X(88, eLOG_Error,
-                    ("[%s]  Cannot obtain default port number from registry",
+                    ("[%s]  Cannot obtain port number from registry for LBNULL",
                      iter->name));
         goto out;
     }
@@ -359,10 +368,10 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  LBNULL using port number %lu", iter->name, port));
 
     if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
-        if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_PATH,
+        if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
                                          buf, sizeof(buf), "/")) {
             CORE_LOGF_X(90, eLOG_Error,
-                        ("[%s]  Cannot obtain URL path from registry",
+                        ("[%s]  Cannot obtain URL path from registry for LBNULL",
                          iter->name));
             goto out;
         }
@@ -388,7 +397,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
                                       domain, CONN_HOST_LEN - len + 1, 0)) {
         CORE_LOGF_X(93, eLOG_Error,
-                    ("[%s]  Cannot obtain domain name from registry",
+                    ("[%s]  Cannot obtain domain name from registry for LBNULL",
                      iter->name));
         goto out;
     }
