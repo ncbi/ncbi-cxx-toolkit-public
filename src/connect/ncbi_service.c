@@ -116,6 +116,7 @@ static size_t x_CheckServiceName(const char* svc, int/*bool*/ ismask)
         case '_':
             continue;
         case '-':
+        case '/':
             /* not leading or trailing */
             if (!n  ||  n == len - 1)
                 return 0;
