@@ -81,18 +81,21 @@ static char* x_getenv(const char* name)
 #endif
 
 
-static int/*bool*/ x_tr(char* str, char a, char b, size_t len)
+/* Replace any non-alpha / non-digit with '_' */
+static int/*bool*/ x_mkenv(char* str, size_t len)
 {
-    int/*bool*/ done = 0/*false*/;
-    char* end = str + len;
-    while (str < end) {
-        if (*str == a) {
-            *str  = b;
-            done = 1/*true*/;
+    int/*bool*/ made = 0/*false*/;
+    const char* end = str + len;
+    while (str != end) {
+        unsigned char c = (unsigned char)(*str);
+        assert(!isspace(c));
+        if (!isalpha(c) && !isdigit(c) && !(c == '_')) {
+            made = 1/*true*/;
+            *str = '_';
         }
         ++str;
     }
-    return done;
+    return made;
 }
 
 
@@ -173,7 +176,7 @@ static char* x_ServiceName(unsigned int depth,
     }
     if (!ismask  &&  !*isfast) {
         char  tmp[sizeof(buf)];
-        int/*bool*/ tr = x_tr((char*) memcpy(tmp, svc, len), '-', '_', len);
+        int/*bool*/ tr = x_mkenv((char*) memcpy(tmp, svc, len), len);
         char* s = tmp + len;
         *s++ = '_';
         memcpy(s, REG_CONN_SERVICE_NAME, sizeof(REG_CONN_SERVICE_NAME));
@@ -1292,7 +1295,7 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
         free(svc);
         return 0/*failure*/;
     }
-    x_tr(strupr(buf), '-', '_', len);
+    x_mkenv(strupr(buf), len);
     memcpy(buf + len,
            "_"    CONN_IMPLICIT_SERVER_TYPE,
            sizeof(CONN_IMPLICIT_SERVER_TYPE));
