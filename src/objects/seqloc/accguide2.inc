@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul 30 10:18:59 EDT 2025; formally
+/* time_t value corresponding to Tue Aug  5 10:42:00 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1753885139UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1754404920UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -5473,6 +5473,18 @@ static const char* const kBuiltInGuide[] = {
     "special  CBFEBL000000000-CBFEBM999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CBFEQY000000000-CBFERE999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CBFGHU000000000-CBFGIE999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGKX000000000-CBFGMD999999999  embl_tpa_wgs_nuc # 6+9",
+    "special2 CBFGMM+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
+    "special  CBFGMP000000000-CBFGOU999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGOX000000000-CBFGQN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGQS000000000-CBFGYY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGZI000000000-CBFGZO999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGZQ000000000-CBFGZR999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CBFGZT000000000-CBFHAY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special2 CBFHBA+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
+    "special  CBFHBC000000000-CBFHBF999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HAZG+8 embl_tpa_tsa_nuc",
