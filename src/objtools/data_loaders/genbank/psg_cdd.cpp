@@ -176,7 +176,8 @@ SCDDIds x_GetCDDIds(const CDataLoader::TIds& ids)
             ret.gi = id;
             continue;
         }
-        if ( id.Which() == CSeq_id::e_Pdb ) {
+        if ( id.Which() == CSeq_id::e_Pdb ||
+             id.Which() == CSeq_id::e_Pir ) {
             if ( !ret.acc_ver ) {
                 ret.acc_ver = id;
             }
