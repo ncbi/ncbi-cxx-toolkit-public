@@ -53,6 +53,12 @@
 #include "huge_file_cleanup.hpp"
 #include <objects/seqset/gb_release_file.hpp>
 
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define asn_cleanup_app_main main
+#endif
+
 #include <common/ncbi_revision.h>
 
 #ifndef NCBI_SC_VERSION
@@ -1130,13 +1136,7 @@ USING_NCBI_SCOPE;
 //
 // Main
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_asn_cleanup
-asn_cleanup_app_main
-#else
-main
-#endif
-(int argc, const char** argv)
+int asn_cleanup_app_main(int argc, const char** argv)
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;

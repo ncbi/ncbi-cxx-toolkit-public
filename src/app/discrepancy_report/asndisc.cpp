@@ -45,6 +45,12 @@
 #include <corelib/rwstream.hpp>
 #include <util/multi_writer.hpp>
 
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define asndisc_app_main main
+#endif
+
 USING_NCBI_SCOPE;
 USING_SCOPE(NDiscrepancy);
 USING_SCOPE(objects);
@@ -560,13 +566,7 @@ int CDiscRepApp::Run()
 //  MAIN
 
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_asndisc
-asndisc_app_main
-#else
-main
-#endif
-(int argc, const char* argv[])
+int asndisc_app_main(int argc, const char* argv[])
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;

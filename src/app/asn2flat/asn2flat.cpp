@@ -77,6 +77,12 @@
 #include "fileset.hpp"
 #include <objtools/writers/atomics.hpp>
 
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define asn2flat_app_main main
+#endif
+
 #define USE_THREAD_POOL1
 
 #ifdef USE_THREAD_POOL
@@ -1380,13 +1386,7 @@ USING_NCBI_SCOPE;
 //
 // Main
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_asn2flat
-asn2flat_app_main
-#else
-main
-#endif
-(int argc, const char** argv)
+int asn2flat_app_main(int argc, const char** argv)
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string> split_args;

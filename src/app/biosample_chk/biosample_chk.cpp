@@ -106,8 +106,11 @@
 #include <misc/biosample_util/biosample_util.hpp>
 #include <misc/biosample_util/struc_table_column.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define biosample_chk_app_main main
+#endif
 
 using namespace ncbi;
 using namespace objects;
@@ -1429,13 +1432,7 @@ void CBiosampleChkApp::SaveFile(const string &fname, bool useBinaryOutputFormat)
 //  MAIN
 
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_biosample_chk
-biosample_chk_app_main
-#else
-main
-#endif
-(int argc, const char* argv[])
+int biosample_chk_app_main(int argc, const char* argv[])
 {
     return CBiosampleChkApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }

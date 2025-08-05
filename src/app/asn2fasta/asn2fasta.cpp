@@ -66,6 +66,11 @@
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <objtools/writers/fasta_writer.hpp>
 
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define asn2fasta_app_main main
+#endif
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -1237,14 +1242,7 @@ END_NCBI_SCOPE
 USING_NCBI_SCOPE;
 
 //  ==========================================================================
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_asn2fasta
-asn2fasta_app_main
-#else
-main
-#endif
-(int argc, const char** argv)
-//  ==========================================================================
+int asn2fasta_app_main(int argc, const char** argv)
 {
     return CAsn2FastaApp().AppMain(argc, argv);
 }

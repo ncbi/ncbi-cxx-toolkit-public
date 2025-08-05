@@ -1,6 +1,10 @@
 # $Id$
 
 NCBI_begin_app(biosample_chk)
+  if ("${NCBI_PROJECT}" IN_LIST NCBI_SUBUTILS_multicall_apps)
+    NCBI_subutils_switch_multicall()
+  endif()
+
   NCBI_sources(biosample_chk)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xbiosample_util)
   NCBI_optional_toolkit_libraries(VDB ncbi_xloader_wgs)

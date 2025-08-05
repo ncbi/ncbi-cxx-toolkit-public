@@ -1,6 +1,10 @@
 # $Id$
 
 NCBI_begin_app(asndisc)
+  if ("${NCBI_PROJECT}" IN_LIST NCBI_SUBUTILS_multicall_apps)
+    NCBI_subutils_switch_multicall()
+  endif()
+
   NCBI_sources(asndisc)
   NCBI_uses_toolkit_libraries(xcompress xdiscrepancy data_loaders_util)
 NCBI_end_app()

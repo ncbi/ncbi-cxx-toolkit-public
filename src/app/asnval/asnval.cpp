@@ -59,7 +59,11 @@
 
 #include "thread_pool.hpp"
 
-#include <common/test_assert.h>  /* This header must go last */
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define asnvalidate_app_main main
+#endif
 
 using namespace ncbi;
 USING_SCOPE(objects);
@@ -577,13 +581,7 @@ void CAsnvalApp::Setup(const CArgs& args)
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_asnvalidate
-asnvalidate_app_main
-#else
-main
-#endif
-(int argc, const char* argv[])
+int asnvalidate_app_main(int argc, const char* argv[])
 {
     // this code converts single argument into multiple, just to simplify testing
     list<string>        split_args;

@@ -90,6 +90,11 @@
 #include "suspect_feat.hpp"
 #include "annot_match.hpp"
 
+#if __has_include(<multicall/multicall.hpp>)
+    #include <multicall/multicall.hpp>
+#else
+    #define table2asn_app_main main
+#endif
 
 #include <common/ncbi_revision.h>
 
@@ -1626,13 +1631,7 @@ END_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
-int
-#ifdef NCBI_SUBUTILS_MULTICALL_table2asn
-table2asn_app_main
-#else
-main
-#endif
-(int argc, const char* argv[])
+int table2asn_app_main(int argc, const char* argv[])
 {
     #ifdef _DEBUG
     // this code converts single argument into multiple, just to simplify testing

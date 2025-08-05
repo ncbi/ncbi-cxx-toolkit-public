@@ -1,6 +1,10 @@
 # $Id$
 
 NCBI_begin_app(asn2fasta)
+  if ("${NCBI_PROJECT}" IN_LIST NCBI_SUBUTILS_multicall_apps)
+    NCBI_subutils_switch_multicall()
+  endif()
+
   NCBI_sources(asn2fasta)
   NCBI_uses_toolkit_libraries(data_loaders_util xcleanup xobjwrite)
   NCBI_project_watchers(gotvyans foleyjp)

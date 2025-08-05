@@ -1,6 +1,9 @@
 # $Id$
 
 NCBI_begin_app(asnvalidate)
+  if ("${NCBI_PROJECT}" IN_LIST NCBI_SUBUTILS_multicall_apps)
+    NCBI_subutils_switch_multicall()
+  endif()
   NCBI_sources(asnval thread_state app_config formatters message_handler)
   NCBI_uses_toolkit_libraries(data_loaders_util xmlwrapp xvalidate)
   NCBI_project_watchers(stakhovv gotvyans foleyjp)
