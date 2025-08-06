@@ -89,7 +89,7 @@ public:
         TFileSize m_pos;
         TBioseqSetList::const_iterator m_parent_set;
         TSeqPos   m_length  = static_cast<TSeqPos>(-1);
-        CConstRef<CSeq_descr> m_descr;
+        CConstRef<CSeq_descr> m_descr{};
         std::list<CConstRef<CSeq_id>> m_ids;
         CSeq_inst::TMol m_mol = CSeq_inst::eMol_not_set;
         CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
@@ -100,9 +100,9 @@ public:
         TFileSize m_pos;
         TBioseqSetList::const_iterator m_parent_set;
         CBioseq_set::TClass m_class = CBioseq_set::eClass_not_set;
-        CConstRef<CSeq_descr> m_descr;
+        CConstRef<CSeq_descr> m_descr{};
         TFileSize m_annot_pos{0};
-        optional<int> m_Level;
+        std::optional<int> m_Level = nullopt;
         bool HasAnnot() const { return m_annot_pos != 0; }
     };
 
@@ -158,7 +158,7 @@ protected:
     {
         list<CConstRef<CSeq_id>> m_ids;
         TSeqPos          m_length  = 0;
-        CRef<CSeq_descr> m_descr;
+        CRef<CSeq_descr> m_descr{};
         CSeq_inst::TMol  m_mol = CSeq_inst::eMol_not_set;
         CSeq_inst::TRepr m_repr = CSeq_inst::eRepr_not_set;
     };
@@ -170,7 +170,7 @@ protected:
     };
 
     virtual void x_SetHooks(CObjectIStream& objStream, TContext& context);
-    virtual void x_SetFeatIdHooks(CObjectIStream& objStream, TContext& context);
+    virtual void x_SetFeatIdHooks(CObjectIStream& objStream);
     virtual void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context);
     virtual void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context);
 

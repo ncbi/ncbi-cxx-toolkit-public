@@ -741,7 +741,7 @@ void CCleanupHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, TCont
 }
 
 
-void CCleanupHugeAsnReader::x_SetSeqFeatHooks(CObjectIStream& objStream, TContext& /*context*/)
+void CCleanupHugeAsnReader::x_SetSeqFeatHooks(CObjectIStream& objStream)
 {
 
     SetLocalReadHook(CType<CSeq_feat>(), objStream,
@@ -819,7 +819,7 @@ void CCleanupHugeAsnReader::x_SetHooks(CObjectIStream& objStream, TContext& cont
 {
     TParent::x_SetHooks(objStream, context);
 
-    x_SetSeqFeatHooks(objStream, context);
+    x_SetSeqFeatHooks(objStream);
 }
 
 

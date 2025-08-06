@@ -74,7 +74,7 @@ private:
     void x_SetHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqHooks(CObjectIStream& objStream, TContext& context) override;
     void x_SetBioseqSetHooks(CObjectIStream& objStream, TContext& context) override;
-    void x_SetSeqFeatHooks(CObjectIStream& objStream, TContext& context);
+    void x_SetSeqFeatHooks(CObjectIStream& objStream);
 
     void x_RecordFeatureId(const CFeat_id& featId);
 

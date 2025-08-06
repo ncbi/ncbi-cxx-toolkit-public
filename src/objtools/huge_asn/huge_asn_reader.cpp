@@ -296,7 +296,7 @@ void CHugeAsnReader::x_SetHooks(CObjectIStream& objStream, CHugeAsnReader::TCont
     });
 
 
-    x_SetFeatIdHooks(objStream, context);
+    x_SetFeatIdHooks(objStream);
 
     SetLocalReadHook(bioseqset_seqset_mi, objStream,
             [](CObjectIStream& in, const CObjectInfoMI& member)
@@ -396,10 +396,10 @@ void CHugeAsnReader::x_SetBioseqSetHooks(CObjectIStream& objStream, CHugeAsnRead
 }
 
 
-void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream, CHugeAsnReader::TContext& context)
+void CHugeAsnReader::x_SetFeatIdHooks(CObjectIStream& objStream)
 {
     SetLocalSkipHook(CType<CFeat_id>(), objStream,
-        [this, &context](CObjectIStream& in, const CObjectTypeInfo& type)
+        [this](CObjectIStream& in, const CObjectTypeInfo& type)
     {
         auto pFeatId = Ref(new CFeat_id());
         type.GetTypeInfo()->DefaultReadData(in, pFeatId);
