@@ -6785,6 +6785,13 @@ special  CBFGZQ000000000-CBFGZR999999999  embl_tpa_wgs_nuc # 6+9
 special  CBFGZT000000000-CBFHAY999999999  embl_tpa_wgs_nuc # 6+9
 special  CBFHBA000000000-CBFHBA999999999  embl_tpa_wgs_nuc # 6+9
 special  CBFHBC000000000-CBFHBF999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIDP000000000-CBFIDP999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIDR000000000-CBFIDR999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIDU000000000-CBFIDU999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIEX000000000-CBFIEX999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIFB000000000-CBFIFB999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIFH000000000-CBFIFH999999999  embl_tpa_wgs_nuc # 6+9
+special  CBFIFJ000000000-CBFIFJ999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" 8- and 10-character protein accessions are really third-party
 # annotations.
