@@ -5449,6 +5449,20 @@ special  CBFGZT000000000-CBFHAY999999999  embl_tpa_wgs_nuc # 6+9
 special2 CBFHBA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CBFHBC000000000-CBFHBF999999999  embl_tpa_wgs_nuc # 6+9
+special2 CBFIDP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIDR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIDU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIEX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIFB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIFH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CBFIFJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HAZG+8 embl_tpa_tsa_nuc
