@@ -841,7 +841,7 @@ string CDbtag::GetUrl(const string & genus,
         break;
 
     case CDbtag::eDbtagType_NCBIOrtholog:
-        tag += "/#ortholog";
+        tag += "/#orthologs";
         break;
 
     default:
