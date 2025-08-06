@@ -3437,12 +3437,6 @@ void CFeatureItem::x_AddQualsExt(
     if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() ) {
         const string& oid = field.GetLabel().GetStr();
         if ( oid == "ModelEvidence" ) {
-            FOR_EACH_GBQUAL_ON_SEQFEAT (gbq_itr, m_Feat) {
-                const CGb_qual& gbq = **gbq_itr;
-                if (gbq.IsSetQual()) {
-                    if (NStr::Equal (gbq.GetQual(), "experiment")) return;
-                }
-            }
             x_AddQual(eFQ_modelev, new CFlatModelEvQVal(ext));
         } else if ( oid == "Process" || oid == "Component" || oid == "Function" ) {
             x_AddGoQuals(field);
@@ -3477,12 +3471,6 @@ void CFeatureItem::x_AddQualsExt(
     if ( ext.IsSetType()  &&  ext.GetType().IsStr() ) {
         const string& oid = ext.GetType().GetStr();
         if ( oid == "ModelEvidence" ) {
-            FOR_EACH_GBQUAL_ON_SEQFEAT (gbq_itr, m_Feat) {
-                const CGb_qual& gbq = **gbq_itr;
-                if (gbq.IsSetQual()) {
-                    if (NStr::Equal (gbq.GetQual(), "experiment")) return;
-                }
-            }
             x_AddQual(eFQ_modelev, new CFlatModelEvQVal(ext));
         } else if ( oid == "GeneOntology" ) {
             x_AddGoQuals(ext);
