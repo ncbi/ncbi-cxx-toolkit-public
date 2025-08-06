@@ -1059,6 +1059,7 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     IPSGS_Processor *           first_proc = nullptr;
     size_t                      total_procs = 0;
     size_t                      cancel_count = 0;
+    string                      proc_names;
 
     m_GroupsLock[bucket_index].lock();
 
@@ -1079,6 +1080,12 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
             // processor. This should be taken care of. A Cancel() call will make
             // the locking processor to unlock the waiter
             for (auto &  proc: procs->second->m_Processors) {
+
+                if (!proc_names.empty())
+                    proc_names += ", ";
+                proc_names += proc.m_Processor->GetName() +
+                              "[" + IPSGS_Processor::StatusToString(proc.m_Processor->GetStatus()) + "]";
+
                 if (proc.m_DispatchStatus == ePSGS_Up) {
                     if (proc.m_Processor->GetStatus() == IPSGS_Processor::ePSGS_InProgress) {
                         to_be_canceled.push_back(proc.m_Processor.get());
@@ -1098,16 +1105,28 @@ void CPSGS_Dispatcher::NotifyRequestFinished(size_t  request_id)
     m_GroupsLock[bucket_index].unlock();
 
     if (total_procs > 0) {
+        CRequestContextResetter     context_resetter;
+        first_proc->GetRequest()->SetRequestContext();
+
+        string  request_name = first_proc->GetRequest()->GetName();
+        int64_t connection_id = first_proc->GetReply()->GetConnectionId();
+
         if (cancel_count > 0) {
             PSG_WARNING("The client connection has been closed. " +
                         to_string(cancel_count) + " out of " +
                         to_string(total_procs) +
-                        " processors were in progress and will be canceled.");
+                        " processors were in progress and will be canceled "
+                        "(connection id: " + to_string(connection_id) +
+                        "; request: " + request_name + "[" + to_string(request_id) +
+                        "]; processor(s): " + proc_names + ").");
         } else {
             PSG_WARNING("The client connection has been closed. "
                         "There were 0 processors in progress (out of " +
                         to_string(total_procs) +
-                        ") so no processors will be canceled.");
+                        ") so no processors will be canceled "
+                        "(connection id: " + to_string(connection_id) +
+                        "; request: " + request_name + "[" + to_string(request_id) +
+                        "]; processor(s): " + proc_names + ").");
         }
     }
 
