@@ -533,7 +533,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
     assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op  &&  do_namerd);
     if (iter->ismask)
-        return 0/*LINKERD doesn't support masks*/;
+        return 0/*LINKERD doesn't support masks(searches)*/;
     assert(iter->name  &&  *iter->name);
 
     types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);

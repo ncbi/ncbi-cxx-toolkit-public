@@ -1509,7 +1509,6 @@ static const char* x_CopyDomain(const char* domain)
 }
 
 
-
 /***********************************************************************
  *  EXTERNAL
  ***********************************************************************/
@@ -1523,7 +1522,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     unsigned long port;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
-    /* No wildcard or external processing */
+    /* No wildcard(search) or external processing */
     if (iter->ismask)
         return 0;
     assert(iter->name  &&  *iter->name);

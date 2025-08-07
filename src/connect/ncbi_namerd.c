@@ -521,9 +521,9 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
         static const        /*  [] [] [][__][__]   [][]   [___][]   [][] */
             char kDescrFmt[] = "%s %s:%u%s%s%s%s L=%s%s R=%.*lf%s T=%u%s";
         /*  NOTE: Some fields must not be included in certain situations
-            because SERV_ReadInfoEx() does not expect them in those
-            situations, and if they are present then SERV_ReadInfoEx()
-            will prematurely terminate processing the descriptor.
+            because SERV_ReadInfoEx() does not expect them under those
+            circumstances, and if they are present then SERV_ReadInfoEx()
+            will prematurely terminate processing of the descriptor.
             Specifically:
             do not include      when
             --------------      ---------------------
@@ -1496,7 +1496,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
     if (iter->ismask)
-        return 0/*LINKERD doesn't support masks*/;
+        return 0/*LINKERD doesn't support masks(searches)*/;
     assert(iter->name  &&  *iter->name);
 
     CORE_TRACEF(("Enter SERV_NAMERD_Open(\"%s\")", iter->name));

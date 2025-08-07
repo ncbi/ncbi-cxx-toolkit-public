@@ -301,7 +301,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     size_t len;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
-    /* No wildcard or external processing */
+    /* No wildcard(search) or external processing */
     if (iter->ismask)
         return 0;
     assert(iter->name  &&  *iter->name);

@@ -99,7 +99,11 @@ static int/*bool*/ x_mkenv(char* str, size_t len)
 }
 
 
-/* Return service name length or 0 if the name is not valid */
+/* Return the service name length or 0 if the name is not valid, */
+/* NB: NCBI C++ Tkit registry allows [A_Za-z0-9_-/.] case-insensitively.
+ * Service name must be a sequence (of one or more) of alphanumeric
+ * identifiers (which can also include interim minus signs) separated by
+ * slashes (the second and on identifiers may not include any letters). */
 static size_t x_CheckServiceName(const char* svc, int/*bool*/ ismask)
 {
     int/*bool*/ alpha = 0/*false*/;
