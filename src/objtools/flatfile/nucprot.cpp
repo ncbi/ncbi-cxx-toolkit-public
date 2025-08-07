@@ -590,8 +590,6 @@ static void GetProtRefAnnot(InfoBioseqPtr ibp, CSeq_feat& feat, CBioseq& bioseq)
 /**********************************************************/
 static void GetProtRefDescr(const CSeq_feat& feat, Uint1 method, const CBioseq& bioseq, CScope& scope, TSeqdescList& descrs)
 {
-    char* p;
-    char* q;
     bool  partial5;
     bool  partial3;
     Int4  diff_lowest;
@@ -679,9 +677,9 @@ static void GetProtRefDescr(const CSeq_feat& feat, Uint1 method, const CBioseq& 
     else if (method == eGIBB_method_concept_trans)
         mol_info->SetTech(CMolInfo::eTech_concept_trans);
 
-    CRef<CSeqdesc> descr(new CSeqdesc);
-    descr->SetMolinfo(*mol_info);
-    descrs.push_back(descr);
+    CRef<CSeqdesc> desc(new CSeqdesc);
+    desc->SetMolinfo(*mol_info);
+    descrs.push_back(desc);
 
     string s;
     for (const auto& qual : feat.GetQual()) {
@@ -699,43 +697,36 @@ static void GetProtRefDescr(const CSeq_feat& feat, Uint1 method, const CBioseq& 
         s = CpTheQualValue(feat.GetQual(), "label");
     if (s.empty())
         s = CpTheQualValue(feat.GetQual(), "standard_name");
+    string p;
     if (s.empty())
-        p = StringSave("unnamed protein product");
+        p = "unnamed protein product";
     else {
-        p = StringSave(s);
-        for (q = p; *q != '\0';)
-            q++;
-        if (q > p) {
-            for (q--; *q == ' ' || *q == ','; q--)
-                if (q == p)
-                    break;
-            if (*q != ' ' && *q != ',')
-                q++;
-            *q = '\0';
+        p = s;
+        while (! p.empty()) {
+            char c = p.back();
+            if (c == ' ' || c == ',')
+                p.pop_back();
+            else
+                break;
         }
     }
 
-    if (StringLen(p) < 511 && ! organism.empty() && ! StringStr(p, organism.c_str())) {
-        string s = p;
+    if (p.size() < 511 && ! organism.empty() && p.find(organism) == string::npos) {
+        string s;
         s.append(" [");
         s.append(organism);
         s.append("]");
-        MemFree(p);
-        p = StringSave(s);
+        p += s;
     }
 
-    if (StringLen(p) > 511) {
-        p[510] = '>';
-        p[511] = '\0';
-        q      = StringSave(p);
-        MemFree(p);
-    } else
-        q = p;
+    if (p.size() > 511) {
+        p.resize(511);
+        p.back() = '>';
+    }
 
-    descr.Reset(new CSeqdesc);
-    descr->SetTitle(q);
-    descrs.push_back(descr);
-    MemFree(q);
+    desc.Reset(new CSeqdesc);
+    desc->SetTitle(p);
+    descrs.push_back(desc);
 }
 
 /**********************************************************
@@ -2249,25 +2240,25 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         return;
     }
 
-
     auto& ftbl = annot.SetData().SetFtable();
 
     for (auto featIt = ftbl.begin(); featIt != ftbl.end();) {
-        if (! (*featIt)->IsSetData() || ! (*featIt)->GetData().IsImp()) {
+        CSeq_feat& feat = **featIt;
+        if (! feat.IsSetData() || ! feat.GetData().IsImp()) {
             ++featIt;
             continue;
         }
 
-        const CImp_feat& imp_feat = (*featIt)->GetData().GetImp();
+        const CImp_feat& imp_feat = feat.GetData().GetImp();
         if (! imp_feat.IsSetKey() || imp_feat.GetKey() != "CDS") {
             ++featIt;
             continue;
         }
 
         // remove asn2ff_generated comments 
-        StripCDSComment(**featIt);
+        StripCDSComment(feat);
 
-        const CSeq_loc& loc = (*featIt)->GetLocation();
+        const CSeq_loc& loc = feat.GetLocation();
         if (loc.IsEmpty() || loc.IsEquiv() || loc.IsBond()) {
             string loc_str = location_to_string(loc);
             FtaErrPost(SEV_REJECT, ERR_CDREGION_BadLocForTranslation, "Coding region feature has a location that cannot be processed: \"{}\".", loc_str);
@@ -2276,7 +2267,7 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         }
 
         Int4 num = 0;
-        Int2 i = CkCdRegion(pp, scope, **featIt, bioseq, &num, gene_refs);
+        Int2 i = CkCdRegion(pp, scope, feat, bioseq, &num, gene_refs);
 
         if (i == -2) {
             featIt = ftbl.erase(featIt);
@@ -2305,7 +2296,6 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
 /**********************************************************/
 static void FindCd(CRef<CSeq_entry> pEntry, CScope& scope, ParserPtr pp, GeneRefFeats& gene_refs)
 {
-
     ProtBlkPtr pbp = pp->pbp;
 
     if (pEntry->IsSet()) {
