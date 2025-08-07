@@ -461,7 +461,9 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 				}
 			}
 
-			if (db_name.empty()) {
+            if (NStr::StartsWith(sp_name, "#")) {
+                db_name = "tempdb";
+            } else if (db_name.empty()) {
 				sql = 
                     "SELECT '' from sysobjects WHERE name = @name \n"
                     "UNION \n"
@@ -533,17 +535,35 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                         CDB_SmallInt column_type;
                         CDB_SmallInt data_type;
                         CDB_Int data_len = 0;
+                        CDB_VarChar mode;
 
                         while (res->Fetch()) {
-                            res->SkipItem();
-                            res->SkipItem();
-                            res->SkipItem();
+                            res->SkipItem(); // procedure_qualifier
+                            res->SkipItem(); // procedure_owner
+                            res->SkipItem(); // procedure_name
                             res->GetItem(&column_name);
                             res->GetItem(&column_type);
                             res->GetItem(&data_type);
-                            res->SkipItem();
-                            res->SkipItem();
+                            res->SkipItem(); // type_name
+                            res->SkipItem(); // precision
                             res->GetItem(&data_len);
+                            if (server_type == CDBConnParams::eSybaseSQLServer)
+                            {
+                                res->SkipItem(); // scale
+                                res->SkipItem(); // radix
+                                res->SkipItem(); // nullable
+                                res->SkipItem(); // remarks
+                                // MSSQL diverges at this point
+                                res->SkipItem(); // ss_data_type
+                                res->SkipItem(); // colid
+                                res->SkipItem(); // column_def
+                                res->SkipItem(); // sql_data_type
+                                res->SkipItem(); // sql_datetime_sub
+                                res->SkipItem(); // char_octet_length
+                                res->SkipItem(); // ordinal_position
+                                res->SkipItem(); // is_nullable
+                                res->GetItem(&mode);
+                            }
 
                             // Decode data_type
                             EDB_Type edb_data_type(eDB_UnsupportedType);
@@ -613,7 +633,9 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 
                             if (column_type.Value() == 2 /*SQL_PARAM_TYPE_OUTPUT*/ ||
                                     column_type.Value() == 4 /*SQL_PARAM_OUTPUT*/ ||
-                                    column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ) 
+                                    column_type.Value() == 5 /*SQL_RETURN_VALUE*/ ||
+                                    (column_type.Value() == 0
+                                     &&  strcmp(mode.Value(), "in")))
                             {
                                 direction = CDBParams::eOut;
                             }
