@@ -27,5 +27,5 @@ POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Alma   : 64  : GCC.sh 7.3.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
+Linux64-Alma   : 64  : GCC.sh 13.2.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
 #Win64_17       : plain : dll 64 ReleaseDLL
