@@ -3305,7 +3305,6 @@ void CDiagContext::x_StartRequest(void)
         // duplicate request start or missing request stop
         ERR_POST_ONCE("Duplicate request-start or missing request-stop");
         ERR_POST(Warning << "Duplicate request-start or missing request-stop");
-        GetDiagContext().PrintRequestStop();
     }
 
     // Use the default client ip if no other value is set.
@@ -3408,7 +3407,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
                 // duplicate request stop or missing request start
                 ERR_POST_ONCE("Duplicate request-stop or missing request-start");
                 ERR_POST(Warning << "Duplicate request-stop or missing request-start");
-                PrintRequestStart();
             }
             str.append(to_string(ctx.GetRequestStatus())).append(1, ' ')
                 .append(ctx.GetRequestTimer().AsString()).append(1, ' ')
