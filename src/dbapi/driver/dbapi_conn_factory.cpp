@@ -893,7 +893,24 @@ void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
 const IDBServiceMapper::TOptions&
 CDBConnectionFactory::CServiceInfo::GetOptions(void)
 {
-    if (m_Options.empty()) {
+    if (m_ServiceName.find(':') != NPOS) {
+        if (m_Options.empty()) {
+            // Raw endpoint, just parse
+            Uint4 host;
+            Uint2 port;
+            try {
+                CEndpointKey key(m_ServiceName);
+                host = key.GetHost();
+                port = key.GetPort();
+            } catch (CStringException&) {
+                CTempString host_str, port_str;
+                NStr::SplitInTwo(m_ServiceName, ":", host_str, port_str);
+                NStr::StringToNumeric(port_str, &port);
+            }
+            m_Options.emplace_back(new CDBServerOption
+                                   (m_ServiceName, host, port, 1.0));
+        }
+    } else if (m_Options.empty()) {
         m_Mapper->GetServerOptions(m_ServiceName, &m_Options);
         // OK to leave empty if nothing turns up; service mappers can and
         // do take responsibility for temporarily remembering negative
