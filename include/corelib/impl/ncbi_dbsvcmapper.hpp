@@ -143,11 +143,13 @@ ostream& operator<<(ostream& os, const CEndpointKey& key);
 class NCBI_XNCBI_EXPORT CDBServer : public CObject
 {
 public:
+    static const time_t kMaxExpireTime = numeric_limits<time_t>::max();
+    
     CDBServer(void);
     CDBServer(const string& name,
               Uint4         host = 0,
               Uint2         port = 0,
-              time_t        expire_time = 0);
+              time_t        expire_time = kMaxExpireTime);
 
     const string& GetName      (void) const { return m_Name; }
     Uint4         GetHost      (void) const { return m_Host; }
@@ -192,7 +194,7 @@ public:
                     Uint2         port,
                     double        ranking,
                     TState        state = fState_Normal,
-                    time_t        expire_time = 0)
+                    time_t        expire_time = kMaxExpireTime)
         : CDBServer(name, host, port, expire_time),
           m_Ranking(ranking), m_State(state)
         { }
