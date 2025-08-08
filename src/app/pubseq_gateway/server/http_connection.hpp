@@ -263,17 +263,23 @@ private:
         list<string>                m_PreliminaryDispatchedProcessors;
         psg_time_point_t            m_BacklogStart;
     };
-
     list<SBacklogAttributes>        m_BacklogRequests;
-    list<shared_ptr<CPSGS_Reply>>   m_RunningRequests;
+
+    struct SRunningAttributes
+    {
+        shared_ptr<CPSGS_Request>   m_Request;
+        shared_ptr<CPSGS_Reply>     m_Reply;
+    };
+    list<SRunningAttributes>        m_RunningRequests;
 
     void x_CancelAll(void);
     void x_CancelBacklog(void);
 
-    using running_list_iterator_t = typename list<shared_ptr<CPSGS_Reply>>::iterator;
+    using running_list_iterator_t = typename list<SRunningAttributes>::iterator;
     using backlog_list_iterator_t = typename list<SBacklogAttributes>::iterator;
 
-    void x_RegisterRunning(shared_ptr<CPSGS_Reply>  reply);
+    void x_RegisterRunning(shared_ptr<CPSGS_Request>  request,
+                           shared_ptr<CPSGS_Reply>  reply);
     void x_UnregisterRunning(running_list_iterator_t &  it);
     void x_UnregisterBacklog(backlog_list_iterator_t &  it);
 

@@ -243,7 +243,7 @@ CHttpConnection::~CHttpConnection()
 
     while (!m_RunningRequests.empty()) {
         auto it = m_RunningRequests.begin();
-        (*it)->GetHttpReply()->CancelPending();
+        (*it).m_Reply->GetHttpReply()->CancelPending();
         x_UnregisterRunning(it);
     }
 
@@ -296,7 +296,7 @@ void CHttpConnection::ResetForReuse(void)
 
     while (!m_RunningRequests.empty()) {
         auto it = m_RunningRequests.begin();
-        (*it)->GetHttpReply()->CancelPending();
+        (*it).m_Reply->GetHttpReply()->CancelPending();
         x_UnregisterRunning(it);
     }
 
@@ -308,8 +308,8 @@ void CHttpConnection::PeekAsync(bool  chk_data_ready)
 {
     for (auto &  it: m_RunningRequests) {
         if (!chk_data_ready ||
-            it->GetHttpReply()->CheckResetDataTriggered()) {
-            it->GetHttpReply()->PeekPending();
+            it.m_Reply->GetHttpReply()->CheckResetDataTriggered()) {
+            it.m_Reply->GetHttpReply()->PeekPending();
         }
     }
 
@@ -405,7 +405,7 @@ CHttpConnection::x_Start(shared_ptr<CPSGS_Request>  request,
     }
 
     // Add the reply to the list of running replies
-    x_RegisterRunning(reply);
+    x_RegisterRunning(request, reply);
 
     // To avoid a possibility to have cancel->start in progress messages in the
     // reply in case of multiple processors due to the first one may do things
@@ -456,8 +456,19 @@ void CHttpConnection::x_CancelAll(void)
 {
     x_CancelBacklog();
     for (auto &  it: m_RunningRequests) {
-        if (!it->IsFinished()) {
-            auto    http_reply = it->GetHttpReply();
+        if (!it.m_Reply->IsFinished()) {
+            auto    http_reply = it.m_Reply->GetHttpReply();
+            CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                    nullptr, CPSGSCounters::ePSGS_CancelRunning);
+
+            {
+                CRequestContextResetter     context_resetter;
+                it.m_Request->SetRequestContext();
+                PSG_WARNING("Cancelling running " + it.m_Request->GetName() +
+                            " request (id: " + to_string(it.m_Request->GetRequestId()) +
+                            ") due to closed connection");
+            }
+
             http_reply->CancelPending();
             http_reply->PeekPending();
         }
@@ -466,16 +477,17 @@ void CHttpConnection::x_CancelAll(void)
 }
 
 
-void CHttpConnection::x_RegisterRunning(shared_ptr<CPSGS_Reply>  reply)
+void CHttpConnection::x_RegisterRunning(shared_ptr<CPSGS_Request>  request,
+                                        shared_ptr<CPSGS_Reply>  reply)
 {
-    m_RunningRequests.push_back(reply);
+    m_RunningRequests.push_back(SRunningAttributes{request, reply});
     m_RunTimeProps.UpdateLastRequestTimestamp();
 }
 
 
 void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
 {
-    size_t request_id = (*it)->GetRequestId();
+    size_t request_id = (*it).m_Reply->GetRequestId();
 
     // Note: without this call there will be memory leaks.
     // The infrastructure holds a shared_ptr to the reply, the pending
@@ -486,7 +498,7 @@ void CHttpConnection::x_UnregisterRunning(running_list_iterator_t &  it)
     // The call below resets a shared_ptr to the pending operation. It is
     // safe to do it here because this point is reached only when all
     // activity on processing a request is over.
-    (*it)->GetHttpReply()->ResetPendingRequest();
+    (*it).m_Reply->GetHttpReply()->ResetPendingRequest();
 
     m_RunningRequests.erase(it);
 
@@ -515,6 +527,17 @@ void CHttpConnection::x_CancelBacklog(void)
         auto it = m_BacklogRequests.begin();
         shared_ptr<CPSGS_Reply>  reply = it->m_Reply;
 
+        CPubseqGatewayApp::GetInstance()->GetCounters().Increment(
+                nullptr, CPSGSCounters::ePSGS_CancelBacklogged);
+
+        {
+            CRequestContextResetter     context_resetter;
+            it->m_Request->SetRequestContext();
+            PSG_WARNING("Cancelling backlogged " + it->m_Request->GetName() +
+                        " request (id: " + to_string(it->m_Request->GetRequestId()) +
+                        ") due to closed connection");
+        }
+
         reply->GetHttpReply()->CancelPending();
         x_UnregisterBacklog(it);
     }
@@ -525,7 +548,7 @@ void CHttpConnection::x_MaintainFinished(void)
 {
     running_list_iterator_t     it = m_RunningRequests.begin();
     while (it != m_RunningRequests.end()) {
-        if ((*it)->IsCompleted()) {
+        if ((*it).m_Reply->IsCompleted()) {
             auto    next = it;
             ++next;
             x_UnregisterRunning(it);

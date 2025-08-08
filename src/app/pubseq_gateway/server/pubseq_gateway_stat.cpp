@@ -382,6 +382,14 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "OldConnThrottled", "Number of times an old connection was closed due to throttling",
             "Number of times an old connection was closed due to throttling");
+    m_Counters[ePSGS_CancelRunning] =
+        new SCounterInfo(
+            "CancelRunning", "Number of times a running request was canceled due to a closed connection",
+            "Number of times a running request was canceled due to a closed connection");
+    m_Counters[ePSGS_CancelBacklogged] =
+        new SCounterInfo(
+            "CancelBacklogged", "Number of times a backlogged request was canceled due to a closed connection",
+            "Number of times a backlogged request was canceled due to a closed connection");
     m_Counters[ePSGS_100] =
         new SCounterInfo(
             "RequestStop100", "Request stop counter with status 100",
