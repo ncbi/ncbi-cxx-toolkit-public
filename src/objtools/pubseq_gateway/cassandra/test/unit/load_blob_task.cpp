@@ -164,6 +164,7 @@ TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
         EXPECT_EQ(CCassandraException::eQueryFailed, code);
         EXPECT_EQ(eDiag_Error, severity);
         string message_x = regex_replace(message, regex(" line \\d+: Error"), " line N: Error");
+        message_x = regex_replace(message_x, regex("[^\"]+cass_driver\\.cpp"), "cass_driver.cpp");
         EXPECT_EQ("NCBI C++ Exception:\n    T0 \"cass_driver.cpp\","
                   " line N: Error: (CCassandraException::eQueryFailed) "
                   "idblob::CCassQuery::ProcessFutureResult() - "
