@@ -635,7 +635,7 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
  *  meaning, so "\\\\" matches one graphical backslash in the "text").  Within
  *  a character class, to have its literal meaning a closing square bracket ']'
  *  must be used at the first position, whereas '?', '*', '[, and '\\' stand
- *  just for themselves.  Two characters separated by a minus sign '-' denote
+ *  just for themselves.  Two characters separated by the minus sign '-' denote
  *  a range that can be used for contraction to include all characters in
  *  between:  "[A-F]" is equivalent to "[ABCDEF]".  For its literal meaning,
  *  the minus sign '-' can be used either at the very first position, or the
@@ -651,7 +651,7 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
  *  "[?*\\]"   matches either '?', or '*', or a backslash '\\';
  *  "[]-\\]"   matches nothing as it defines an empty range (from ']' to '\\');
  *  "\\[a]\\*" matches a literal substring "[a]*";
- *  "[![a-]"   matches any char but '[', 'a' or '-' (same as "[!-[a]"; but not
+ *  "[![a-]"   matches any char but '[', 'a' or '-' (same as "[!-[a]"; but NOT
  *             "[![-a]", which defines an empty range, thus matches any char!);
  *  "[]A]"     matches either ']' or 'A' (NB: "[A]]" matches a substring "A]");
  *  "[0-9-]"   matches any decimal digit or a minus sign '-' (same: "[-0-9]");
