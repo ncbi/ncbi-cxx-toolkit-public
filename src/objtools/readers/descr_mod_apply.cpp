@@ -465,8 +465,8 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             const size_t num_names = names.size();
             if (num_names <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for (auto name_it = names.rbegin(); name_it != names.rend(); ++name_it) {
-                    s_SetPrimerNames(*name_it, (*it++)->SetReverse());
+                for(int i=num_names-1; i>=0; --i) { // don't use auto here. i stops when at -1.
+                    s_SetPrimerNames(names[i], (*it++)->SetReverse());
                 }
             } else {
 
@@ -498,8 +498,8 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
             const size_t num_seqs = seqs.size();
             if (num_seqs <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for (auto seq_it = seqs.rbegin(); seq_it != seqs.rend(); ++seq_it) {
-                    s_SetPrimerSeqs(*seq_it, (*it++)->SetReverse());
+                for(int i=num_seqs-1; i>=0; --i) { // don't use auto here. i stops at -1.
+                    s_SetPrimerSeqs(seqs[i], (*it++)->SetReverse());
                 }
             } else {
                 auto it = pcr_reaction_set.Set().begin();
@@ -1187,7 +1187,7 @@ CDescrCache::TSubtype& CDescrCache::SetSubtype()
 {
     if (!m_pSubtype) {
         m_pSubtype = &(SetBioSource().SetSubtype());
-        m_pSubtype->clear();
+        // m_pSubtype->clear();
     }
 
     return *m_pSubtype;
@@ -1198,7 +1198,7 @@ CDescrCache::TOrgMods& CDescrCache::SetOrgMods()
 {
     if (!m_pOrgMods) {
         m_pOrgMods = &(SetBioSource().SetOrg().SetOrgname().SetMod());
-        m_pOrgMods->clear();
+        // m_pOrgMods->clear();
     }
 
     return *m_pOrgMods;
@@ -1210,7 +1210,7 @@ CPCRReactionSet& CDescrCache::SetPCR_primers()
 {
     if (!m_pPCRReactionSet) {
         m_pPCRReactionSet = &(SetBioSource().SetPcr_primers());
-        m_pPCRReactionSet->Set().clear();
+        // m_pPCRReactionSet->Set().clear();
     }
     return *m_pPCRReactionSet;
 }
