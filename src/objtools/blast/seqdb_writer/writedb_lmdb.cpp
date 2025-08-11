@@ -52,7 +52,8 @@ CWriteDB_LMDB::CWriteDB_LMDB(const string& dbname,  Uint8 map_size, Uint8 capaci
                              m_Env(CBlastLMDBManager::GetInstance().GetWriteEnv(dbname, map_size)),
                              m_ListCapacity(capacity),
                              m_MaxEntryPerTxn(DEFAULT_MAX_ENTRY_PER_TXN),
-                             m_TotalIdsLength(0)
+                             m_TotalIdsLength(0),
+                             m_MaxOid(0)
 {
 	m_list.reserve(m_ListCapacity);
 	char* max_entry_str = getenv("MAX_LMDB_TXN_ENTRY");
@@ -119,6 +120,7 @@ int CWriteDB_LMDB::InsertEntries(const vector<CRef<CSeq_id>> & seqids, const bla
 void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOid oid)
 {
     
+	m_MaxOid = oid;
     if(seqid->IsGi()) {
     	return;
     }
@@ -275,6 +277,7 @@ void CWriteDB_LMDB::x_CommitTransaction()
 	if(m_list.size() == 0) {
 		return;
 	}
+
 #ifdef _OPENMP
 	unsigned int min_split_size = DEFAULT_MIN_SPLIT_SORT_SIZE;
 	unsigned int chunk_size = DEFAULT_MIN_SPLIT_CHUNK_SIZE;
@@ -328,7 +331,6 @@ void CWriteDB_LMDB::x_CommitTransaction()
     		}
     		blastdb::TOid & oid = m_list[i].oid;
     		string & id = m_list[i].id;
-    		//cerr << m_list[i].id << endl;
 			lmdb::val value{&oid, sizeof(oid)};
 			lmdb::val key{id.c_str(), strlen(id.c_str())};
 			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
@@ -369,7 +371,7 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 	if(m_list.size() == 0) {
 		return;
 	}
-	Uint8 total_num_oids = m_list.back().oid + 1;
+	Uint8 total_num_oids = m_MaxOid + 1;
 	string filename = GetFileNameFromExistingLMDBFile(m_Db, ELMDBFileType::eOid2SeqIds);
 	Uint8 offset = 0;
 	CNcbiOfstream os(filename.c_str(), IOS_BASE::out | IOS_BASE::binary);
@@ -386,12 +388,17 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 	vector<string> tmp_ids;
 	for(unsigned int i = 0; i < m_list.size(); i++) {
 		if(i > 0 && m_list[i].oid != m_list[i-1].oid ) {
-			if((m_list[i].oid - m_list[i-1].oid) != 1) {
+            
+			if(m_list[i].oid < m_list[i-1].oid) {
 		 		NCBI_THROW( CSeqDBException, eArgErr, "Input id list not in ascending oid order");
 			}
 			offsets[count] = s_WirteIds(os, tmp_ids);
 			count++;
 			tmp_ids.clear();
+			while (count <m_list[i].oid) {
+				offsets[count] = 0;
+				count++;
+			}
 		}
 		m_TotalIdsLength +=m_list[i].id.size();
 		if(!m_list[i].saveToOidList) {
@@ -401,7 +408,11 @@ void CWriteDB_LMDB::x_CreateOidToSeqidsLookupFile()
 
 	}
 	offsets[count] = s_WirteIds(os, tmp_ids);
-	_ASSERT(count == m_list.back().oid);
+	while (count <= m_MaxOid) {
+		offsets[count] = 0;
+		count++;
+	}
+	_ASSERT(count == total_num_oids);
 
 	os.flush();
 	os.seekp(8);
@@ -507,7 +518,6 @@ void CWriteDB_TaxID::x_CommitTransaction()
     	for(; i < j; i++){
     		Uint8 & offset = m_TaxId2OffsetsList[i].value;
             TTaxId & tax_id = m_TaxId2OffsetsList[i].tax_id;
-    		//cerr << m_list[i].id << endl;
 			lmdb::val value{&offset, sizeof(offset)};
 			lmdb::val key{&tax_id, sizeof(tax_id)};
 			bool rc = lmdb::dbi_put(txn, dbi.handle(), key, value, MDB_APPENDDUP);
