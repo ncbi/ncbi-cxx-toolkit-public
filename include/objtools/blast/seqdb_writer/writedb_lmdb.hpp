@@ -127,6 +127,7 @@ private:
     	}
     };
     vector<SKeyValuePair> m_list;
+    blastdb::TOid m_MaxOid;
     void x_Split(vector<SKeyValuePair>::iterator  b, vector<SKeyValuePair>::iterator e, const unsigned int min_chunk_size);
 };
 
