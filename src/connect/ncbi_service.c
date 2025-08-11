@@ -85,11 +85,11 @@ static char* x_getenv(const char* name)
 static int/*bool*/ x_mkenv(char* str, size_t len)
 {
     int/*bool*/ made = 0/*false*/;
-    const char* end = str + len;
+    const char* end  = str + len;
     while (str != end) {
         unsigned char c = (unsigned char)(*str);
         assert(!isspace(c));
-        if (!isalpha(c) && !isdigit(c) && !(c == '_')) {
+        if (!isalpha(c)  &&  !isdigit(c)  &&  !(c == '_')) {
             made = 1/*true*/;
             *str = '_';
         }
@@ -99,47 +99,65 @@ static int/*bool*/ x_mkenv(char* str, size_t len)
 }
 
 
-/* Return the service name length or 0 if the name is not valid, */
-/* NB: NCBI C++ Tkit registry allows [A_Za-z0-9_-/.] case-insensitively.
- * Service name must be a sequence (of one or more) of alphanumeric
- * identifiers (which can also include interim minus signs) separated by
- * slashes (the second and on identifiers may not include any letters). */
-static size_t x_CheckServiceName(const char* svc, int/*bool*/ ismask)
+/* Return the service name length or 0 if the name is not valid. */
+/* NB: NCBI C++ Tkit registry allows [A_Za-z0-9_-/.] in section names
+ * (case-insensitively, by default).
+ * A service name must start with a letter or underscore and be a sequence of
+ * (one or more) alphanumeric identifiers (which may include non-consecutive
+ * interior minus signs, not adjacent to any underscore) separated by single
+ * slashes.  The first identifier must include at least one letter.
+ * The following identifier(s), if any, may be composed w/o any letters.
+ */
+static size_t x_CheckServiceName(const char* svc)
 {
     int/*bool*/ alpha = 0/*false*/;
+    int/*bool*/ under = 0/*false*/;
+    int/*bool*/ delim = 0/*false*/;
+    int/*bool*/ minus = 0/*false*/;
     size_t n, len = strlen(svc);
     for (n = 0;  n < len;  ++n) {
         unsigned char c = (unsigned char)(*svc++);
+        if (!n) {
+            if (!(under = c == '_')  &&  !(alpha = isalpha(c)))
+                return 0;   /* must start with one of the above */
+            continue;
+        }
         if (isalpha(c)) {
             alpha = 1/*true*/;
+            under = delim = minus = 0/*false*/;
             continue;
         }
         if (isdigit(c)) {
-            if (!n)
-                return 0;
+            under = delim = minus = 0/*false*/;
             continue;
         }
         switch (c) {
         case '_':
+            if (minus)
+                return 0;   /* can't follow a '-' */
+            under = 1/*true*/;
+            delim = minus = 0/*false*/;
             continue;
         case '-':
-        case '/':
-            /* not leading or trailing */
-            if (!n  ||  n == len - 1)
-                return 0;
+            if (under  ||  delim  ||  n == len - 1)
+                return 0;   /* can't follow [_-/] or be trailing */
+            delim = minus = 1/*true*/;
+            under = 0/*false*/;
             continue;
-        case '?':
-        case '*':
-        case '[':
-        case ']':
-            if (ismask)
-                continue;
-            /*FALLTHRU*/
+        case '/':
+            if (!alpha)
+                return 0;   /* must follow at least one alpha */
+            if (delim  ||  n == len - 1)
+                return 0;   /* can't follow [-/] or be trailing */
+            under = minus = 0/*false*/;
+            delim = 1/*true*/;
+            continue;
         default:
+            /* all other characters illegal */
             return 0;
         }
     }
-    return alpha  ||  ismask ? len : 0;
+    return alpha ? len : 0;
 }
 
 
@@ -162,9 +180,9 @@ static char* x_ServiceName(unsigned int depth,
     assert(!svc == !service);
     assert(depth  ||  svc == service);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
-    if (!svc
-        ||  (!(len = x_CheckServiceName(svc, ismask))  &&  (!ismask  ||  *svc))
-        ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
+    if (!svc  ||  (!ismask
+                   &&  (!(len = x_CheckServiceName(svc))
+                        ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)))) {
         ELOG_Level level = !svc  ||  !*svc  ||  len ? eLOG_Error : eLOG_Critical;
         if (!service  ||  strcasecmp(service, svc) == 0)
             service = "";
