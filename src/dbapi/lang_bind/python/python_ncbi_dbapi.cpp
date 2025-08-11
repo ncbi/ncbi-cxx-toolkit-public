@@ -4600,10 +4600,6 @@ void CPythonDiagHandler::Post(const SDiagMessage& mess)
                 ||  CompareDiagPostLevel(mess.m_Severity, eDiag_Warning) < 0) {
                 return;
             }
-            pythonpp::CString warning
-                ("python_ncbi_dbapi: Allowing automatic logging.basicConfig");
-            args.SetItem(2, warning);
-            m_LoggingFunctions[eDiag_Warning].Apply(args);
         }
     }
 #endif
