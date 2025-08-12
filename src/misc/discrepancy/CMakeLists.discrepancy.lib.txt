@@ -19,7 +19,7 @@ set(_discrepancy_modules
     deprecated_quals
 )
 
-set(_discrepancy_testnames_inc ../../../include/misc/discrepancy/testnames.inc)
+set(_discrepancy_testnames_inc ${NCBITK_INC_ROOT}/misc/discrepancy/testnames.inc)
 
 NCBI_begin_lib(xdiscrepancy)
     NCBI_sources(
