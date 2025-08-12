@@ -116,14 +116,14 @@ if(NOT NCBI_PTBCFG_COLLECT_REQUIRES)
 # Basic checks
 if(NOT DEFINED NCBI_EXTERNAL_BUILD_ROOT)
     NCBI_util_elapsed(_elapsed)
-    message("${_elapsed}: Basic checks...")
+    NCBI_notice("${_elapsed}: Basic checks...")
     include(${NCBI_TREE_CMAKECFG}/CMakeChecks.basic-checks.cmake)
 endif()
 
 #############################################################################
 # External libraries
 NCBI_util_elapsed(_elapsed)
-message("${_elapsed}: External libraries...")
+NCBI_notice("${_elapsed}: External libraries...")
 include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 
 #############################################################################

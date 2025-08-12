@@ -11,7 +11,11 @@
 
 string(TIMESTAMP NCBI_TIMESTAMP_START "%s")
 string(TIMESTAMP _start)
-message("Started: ${_start}")
+macro(NCBI_notice)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${ARGN}")
+#   message("${ARGN}")
+endmacro()
+NCBI_notice("Started: ${_start}")
 
 #############################################################################
 if("${CMAKE_GENERATOR}" STREQUAL "Xcode")

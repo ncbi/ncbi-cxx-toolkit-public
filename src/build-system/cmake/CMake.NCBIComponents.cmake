@@ -25,7 +25,7 @@ set(NCBI_ALL_DISABLED_LEGACY "")
 #############################################################################
 macro(NCBIcomponent_report _name)
     if (NCBI_COMPONENT_${_name}_DISABLED)
-        message("DISABLED ${_name}")
+        NCBI_notice("DISABLED ${_name}")
     endif()
     if (NOT ${_name} IN_LIST NCBI_ALL_COMPONENTS AND
         NOT ${_name} IN_LIST NCBI_ALL_REQUIRES AND
