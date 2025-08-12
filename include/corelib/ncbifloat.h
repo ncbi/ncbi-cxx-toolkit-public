@@ -82,6 +82,9 @@ namespace std {
     inline ISNAN_CONSTEXPR bool bool_isnan(float x)       { return isnan(x); }
     inline ISNAN_CONSTEXPR bool bool_isnan(double x)      { return isnan(x); }
     inline ISNAN_CONSTEXPR bool bool_isnan(long double x) { return isnan(x); }
+    namespace __math {
+        using std::bool_isnan;
+    }
 }
 // Unbreak <boost/math/special_functions/fpclassify.hpp>.
 namespace boost {
