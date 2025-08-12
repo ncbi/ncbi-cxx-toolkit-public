@@ -1,4 +1,4 @@
-NCBI_begin_lib(gui_utils SHARED)
+NCBI_begin_lib(gui_opengl SHARED)
   NCBI_hosts_projects(
     gui/opengl/gui_opengl
     gui/print/gui_print
