@@ -119,7 +119,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         size_t len     = data->vhost ? data->hostlen : 0;
         size_t portlen = data->vhost ? sprintf(port, ":%hu", data->port) : 0;
         assert(data->path  &&  (!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN)));
-        info = SERV_CreateHttpInfoEx(type, ipv4, 0, data->path, 0,
+        info = SERV_CreateHttpInfoEx(type, ipv4, 0/*port*/, data->path, 0/*args*/,
                                      data->vhost ? len + portlen + 1 : 0);
         if (info) {
             info->port = data->port
@@ -355,16 +355,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
             goto out;
         }
         assert(port);
-    } else {
-        if (type & fSERV_Dns)
-            /*none*/;
-        else if (type & fSERV_Http)
-            /*default*/;
-        else if ((!type  ||  type == fSERV_Standalone)  &&  iter->reverse_dns)
-            port = CONN_PORT_MSSQL;
-        else
-            port = CONN_PORT_LBNULL;
-    }
+    } else if (!(type & (fSERV_Dns | fSERV_Http)))
+        port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number %lu", iter->name, port));
 
     if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
