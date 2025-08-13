@@ -77,6 +77,9 @@ function(define_discrepancy_testnames_target)
         )
         #${_source_dir}/CMakeLists.txt
 
+    add_custom_target(xdiscrepancy.testnames.inc DEPENDS ${_discrepancy_testnames_inc})
+    add_dependencies(xdiscrepancy xdiscrepancy.testnames.inc)
+
 endfunction()
 
 if (TARGET xdiscrepancy)
