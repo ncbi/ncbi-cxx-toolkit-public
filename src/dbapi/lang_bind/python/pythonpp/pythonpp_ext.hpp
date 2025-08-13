@@ -197,6 +197,10 @@ public:
     {
         tp_getattr = func;
     }
+    void SupportSetAttr( setattrfunc func )
+    {
+        tp_setattr = func;
+    }
 
 private:
     void BasicInit( void )
@@ -663,6 +667,7 @@ public:
             type.SetDescription(descr);
         }
         type.SupportGetAttr(GetAttrImpl);
+        type.SupportSetAttr(SetAttrImpl);
         if (GetMethodHndlList().size() <= GetMethodList().size())
             GetMethodHndlList().resize(GetMethodList().size() + 1);
         type.tp_methods = &GetMethodHndlList().front();
@@ -744,6 +749,11 @@ protected:
     {
         m_AttrList[ name ] = new bind::CString( value, bind::eReadWrite );
     }
+    void RWAttr( const string& name, CObject& value )
+    {
+        m_AttrList[name]
+            = new bind::CObject<CObject>(value, &CObject::Get, &CObject::Set);
+    }
 
 private:
     static PyTypeObject* sm_Base;
@@ -771,6 +781,21 @@ private:
         // Classic python implementation ...
         // It will do a linear search within the m_MethodHndlList table ...
         return Py_FindMethod( &GetMethodHndlList().front(), self, name );
+    }
+
+    static int SetAttrImpl( PyObject* self, char* name, PyObject * value )
+    {
+        _ASSERT( self != NULL );
+        CExtObject<T>* obj_ptr = static_cast<CExtObject<T>* >( self );
+        TAttrList::const_iterator citer = obj_ptr->m_AttrList.find( name );
+
+        if ( citer != obj_ptr->m_AttrList.end() ) {
+            citer->second->Set(value);
+            return 0;
+        }
+        CAttributeError(string("'") + GetType().tp_name
+                        + "'object has no attribute '" + name + "'");
+        return -1;
     }
 
 private:

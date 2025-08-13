@@ -1276,6 +1276,7 @@ CConnection::CConnection(
     }
 
     ROAttr( "__class__", GetTypeObject() );
+    RWAttr( "errorhandler", m_ErrorHandler );
     PrepareForPython(this);
 
     try {
@@ -1318,6 +1319,9 @@ CConnection::MakeDBConnection(void) const
     // !!! eTakeOwnership !!!
     IConnection* connection = m_DS->CreateConnection( eTakeOwnership );
     connection->Connect(m_Params);
+    pythonpp::CObject self(const_cast<CConnection*>(this));
+    connection->GetCDB_Connection()
+        ->PushMsgHandler(new CUserHandler(nullptr, self), eTakeOwnership);
     return connection;
 }
 
@@ -2558,9 +2562,46 @@ MakeTupleFromResult(CVariantSet& rs)
 }
 
 
-bool CInfoHandler_CursorCollect::HandleIt(CDB_Exception* ex)
+bool CUserHandler::HandleIt(CDB_Exception* ex)
 {
-    if (ex->GetSybaseSeverity() <= 10) {
+    unique_ptr<pythonpp::CCalable> error_handler;
+    if (pythonpp::g_CleaningUp) {
+        return false;
+    } else if (m_Cursor != nullptr) {
+        auto cursor_handler = m_Cursor->m_ErrorHandler.Get();
+        if (pythonpp::CCalable::HasExactSameType(cursor_handler)) {
+            error_handler.reset(new pythonpp::CCalable(cursor_handler));
+        }
+    } else {
+        auto conn_handler = m_PythonConnection.GetAttr("errorhandler");
+        if (pythonpp::CCalable::HasExactSameType(conn_handler)) {
+            error_handler.reset(new pythonpp::CCalable(conn_handler));
+        }
+    }
+    if (error_handler.get() != nullptr) {
+        pythonpp::CTuple args(4);
+        args.SetItem(0, m_PythonConnection);
+        if (m_Cursor == nullptr) {
+            args.SetItem(1, pythonpp::CNone());
+        } else {
+            args.SetItem(1, m_Cursor);
+        }
+        try {
+            s_ThrowDatabaseError(*ex);
+        } catch (CError& e) {
+            PyObject *type, *value, *traceback;
+            PyErr_Fetch(&type, &value, &traceback);
+            args.SetItem(2, type);
+            args.SetItem(3, value);
+            // error_handler->Apply(args); // insists on a return value
+            PyObject_CallObject(error_handler->Get(), args.Get());
+            Py_XDECREF(type);
+            Py_XDECREF(value);
+            Py_XDECREF(traceback);
+            return true;
+        }
+    }
+    if (m_Cursor != nullptr  &&  ex->GetSybaseSeverity() <= 10) {
         m_Cursor->AddInfoMessage(ex->GetMsg());
         return true;
     }
@@ -2576,10 +2617,11 @@ CCursor::CCursor(CTransaction* trans)
 , m_ParentTransaction( trans )
 , m_NumOfArgs( 0 )
 , m_RowsNum( -1 )
-, m_InfoHandler( this )
+, m_UserHandler( this, m_PythonConnection )
 , m_ArraySize( 1 )
 , m_StmtHelper( trans )
 , m_CallableStmtHelper( trans )
+, m_ErrorHandler( m_PythonConnection.GetAttr("errorhandler") )
 , m_AllDataFetched( false )
 , m_AllSetsFetched( false )
 , m_Closed( false )
@@ -2594,6 +2636,7 @@ CCursor::CCursor(CTransaction* trans)
     ROAttr( "rowcount", m_RowsNum );
     ROAttr( "messages", m_InfoMessages );
     ROAttr( "description", m_Description );
+    RWAttr( "errorhandler", m_ErrorHandler );
 
     IncRefCount(m_InfoMessages);
     IncRefCount(m_DescrList);
@@ -2658,7 +2701,7 @@ CCursor::callproc(const pythonpp::CTuple& args)
             }
 
             m_StmtHelper.Close();
-            m_CallableStmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
+            m_CallableStmtHelper.SetStr(m_StmtStr, &m_UserHandler);
 
             // Setup parameters ...
             if ( args_size > 1 ) {
@@ -2801,7 +2844,7 @@ CCursor::execute(const pythonpp::CTuple& args, const pythonpp::CDict& kwargs)
             }
 
             m_CallableStmtHelper.Close();
-            m_StmtHelper.SetStr(m_StmtStr, &m_InfoHandler);
+            m_StmtHelper.SetStr(m_StmtStr, &m_UserHandler);
 
             // Setup parameters ...
             if ( args_size > 1 ) {
@@ -3039,7 +3082,7 @@ CCursor::executemany(const pythonpp::CTuple& args,
 
                     //
                     m_CallableStmtHelper.Close();
-                    m_StmtHelper.SetStr( m_StmtStr, &m_InfoHandler );
+                    m_StmtHelper.SetStr( m_StmtStr, &m_UserHandler );
                     m_RowsNum = 0;
                     m_InfoMessages.Clear();
 
@@ -4852,8 +4895,10 @@ PyObject* init_common(const string& module_name)
 
     pythonpp::CExtType* extt = &python::CConnection::GetType();
     static char str_class[] = "__class__";
+    static char str_errorhandler[] = "errorhandler";
     static PyMemberDef conn_members[] = {
         {str_class, T_OBJECT_EX, 0, READONLY, NULL},
+        {str_errorhandler, T_OBJECT_EX, 0, 0, NULL},
         {NULL}
     };
     extt->tp_members = conn_members;
@@ -4880,6 +4925,7 @@ PyObject* init_common(const string& module_name)
         {str_rowcount, T_LONG, 0, READONLY, NULL},
         {str_messages, T_OBJECT_EX, 0, READONLY, NULL},
         {str_description, T_OBJECT_EX, 0, READONLY, NULL},
+        {str_errorhandler, T_OBJECT_EX, 0, 0, NULL},
         {str_class, T_OBJECT_EX, 0, READONLY, NULL},
         {NULL}
     };
