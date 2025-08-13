@@ -220,16 +220,10 @@ esac
 
 : ${GMOCK_PATH=$NCBI/googletest-1.8.1}
 
-case "$ncbi_platform" in
-    Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
-    *MAC       ) : ${GMP_PATH=$NCBI/gmp-6.3.0}  ;;
-esac
+: ${GMP_PATH=$NCBI/gmp-6.3.0}
 
 # NB: now used only when explicitly configured --with-gnutls
-case "$ncbi_platform" in
-    Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
-    *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
-esac
+: ${GNUTLS_PATH=$NCBI/gnutls-3.8.10-ncbi1}
 
 : ${GOOGLE_CLOUD_PATH=$NCBI/google-cloud-cpp-1.31.1-ncbi1}
 
@@ -307,10 +301,7 @@ esac
 
 : ${NCBICRYPT_PATH=$NCBI/ncbicrypt-20230516}
 
-case "$ncbi_platform" in
-    Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
-    *MAC       ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
-esac
+: ${NETTLE_PATH=$NCBI/nettle-3.10.2}
 
 : ${NGHTTP2_PATH=$NCBI/nghttp2-1.40.0}
 

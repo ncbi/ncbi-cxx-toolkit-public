@@ -59,8 +59,8 @@ set(NCBI_ThirdParty_UV        ${NCBI_TOOLS_ROOT}/libuv-1.44.2 CACHE PATH "UV roo
 set(NCBI_ThirdParty_NGHTTP2   ${NCBI_TOOLS_ROOT}/nghttp2-1.40.0 CACHE PATH "NGHTTP2 root")
 set(NCBI_ThirdParty_GL2PS     ${NCBI_TOOLS_ROOT}/gl2ps-1.4.0 CACHE PATH "GL2PS root")
 set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.3.0 CACHE PATH "GMP root")
-set(NCBI_ThirdParty_NETTLE    ${NCBI_TOOLS_ROOT}/nettle-3.1.1 CACHE PATH "NETTLE root")
-set(NCBI_ThirdParty_GNUTLS    ${NCBI_TOOLS_ROOT}/gnutls-3.4.0 CACHE PATH "GNUTLS root")
+set(NCBI_ThirdParty_NETTLE    ${NCBI_TOOLS_ROOT}/nettle-3.10.2 CACHE PATH "NETTLE root")
+set(NCBI_ThirdParty_GNUTLS    ${NCBI_TOOLS_ROOT}/gnutls-3.8.10-ncbi1 CACHE PATH "GNUTLS root")
 set(NCBI_ThirdParty_NCBICRYPT ${NCBI_TOOLS_ROOT}/ncbicrypt-20230516 CACHE PATH "NCBICRYPT root")
 
 #############################################################################
