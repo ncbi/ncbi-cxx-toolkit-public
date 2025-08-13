@@ -310,19 +310,20 @@ private:
 
 class CCursor;
 
-class CInfoHandler_CursorCollect : public CDB_UserHandler
+class CUserHandler : public CDB_UserHandler
 {
 public:
-    CInfoHandler_CursorCollect(CCursor* cursor)
-        : m_Cursor(cursor)
+    CUserHandler(CCursor* cursor, pythonpp::CObject python_connection)
+        : m_Cursor(cursor), m_PythonConnection(python_connection)
     {}
 
-    virtual ~CInfoHandler_CursorCollect(void) {}
+    virtual ~CUserHandler(void) {}
 
     virtual bool HandleIt(CDB_Exception* ex);
 
 private:
-    CCursor* m_Cursor;
+    CCursor*          m_Cursor;
+    pythonpp::CObject m_PythonConnection;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -330,6 +331,7 @@ private:
 class CCursor : public pythonpp::CExtObject<CCursor>
 {
     friend class CTransaction;
+    friend class CUserHandler;
 
 protected:
     CCursor(CTransaction* trans);
@@ -480,7 +482,7 @@ private:
     int                        m_NumOfArgs;         //< Number of arguments in a callable statement
     long                       m_RowsNum;
     pythonpp::CList            m_InfoMessages;
-    CInfoHandler_CursorCollect m_InfoHandler;
+    CUserHandler               m_UserHandler;
     IResultSet*                m_RS;
     pythonpp::CObject          m_Description;
     pythonpp::CList            m_DescrList;
@@ -488,6 +490,7 @@ private:
     CStmtStr                   m_StmtStr;
     CStmtHelper                m_StmtHelper;
     CCallableStmtHelper        m_CallableStmtHelper;
+    pythonpp::CObject          m_ErrorHandler;
     bool                       m_AllDataFetched;
     bool                       m_AllSetsFetched;
     bool                       m_Closed;
@@ -717,6 +720,7 @@ private:
     IDataSource*            m_DS;
     CTransaction*           m_DefTransaction;   //< The lifetime of the default transaction will be managed by Python
     TTransList              m_TransList;        //< List of user-defined transactions
+    pythonpp::CObject       m_ErrorHandler;
     EConnectionMode         m_ConnectionMode;
     string                  m_ModuleName;
 };

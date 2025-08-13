@@ -111,7 +111,7 @@ public:
     {
         IncRefCount(Get());
     }
-    explicit CObject(PyObject* obj, EOwnership ownership = eAcquireOwnership)
+    CObject(PyObject* obj, EOwnership ownership = eAcquireOwnership)
     : m_PyObject(obj)
     // , m_Ownership(eAcquireOwnership ? eAcquired : eOwned)  // !!! Currently this parameter does not much value of "ownership"
     {
@@ -160,7 +160,7 @@ public:
         return m_PyObject;
     }
     /// Not exception-safe this time
-    void Set(PyObject* obj, EOwnership ownership = eAcquireOwnership)
+    void Set(PyObject* obj, EOwnership ownership)
     {
         _ASSERT(obj);
 
@@ -170,6 +170,11 @@ public:
         {
             IncRefCount(*this);
         }
+    }
+    // Formally split to allow usage by CExtObject::RWAttr
+    void Set(PyObject* obj)
+    {
+        Set(obj, eAcquireOwnership);
     }
     void Release(void)
     {
