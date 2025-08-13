@@ -866,7 +866,8 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
     if(NCBI_COMPONENT_IDN_LIBS)
         set(NCBI_COMPONENT_IDN_FOUND YES)
     endif()
-    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE IDN Z)
+    NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls
+      ADD_COMPONENT NETTLE IDN Z ZSTD)
 endif()
 NCBIcomponent_report(GNUTLS)
 

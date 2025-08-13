@@ -622,7 +622,7 @@ NCBIcomponent_report(NETTLE)
 
 #############################################################################
 # GNUTLS
-NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE)
+NCBI_define_Xcomponent(NAME GNUTLS LIB gnutls ADD_COMPONENT NETTLE Z ZSTD)
 NCBIcomponent_report(GNUTLS)
 
 #############################################################################

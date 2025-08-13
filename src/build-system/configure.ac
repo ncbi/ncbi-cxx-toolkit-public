@@ -5101,8 +5101,15 @@ case "${with_gnutls=no}" in
    *   ) GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$GNUTLS_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         GNUTLS_PATH=$vpath
+         break
+      fi
+   done
    NCBI_FIX_DIR(GNUTLS_PATH)
-   gnutls_config_path=${GNUTLS_BIN-$GNUTLS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/bin}:$GNUTLS_PATH/bin${bit64_sfx}:$GNUTLS_PATH/bin
+   gnutls_config_path=${GNUTLS_BIN-$GNUTLS_PATH/bin${bit64_sfx}}:$GNUTLS_PATH/bin
 else
    gnutls_config_path=$PATH
 fi
@@ -5115,22 +5122,33 @@ if test "x$with_gnutls" != xno; then
          test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
       fi
    else
-      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib$bit64_sfx/pkgconfig:$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls --static"
+      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib$bit64_sfx/pkgconfig:$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls"
       $LIBGNUTLS_CONFIG --exists >/dev/null 2>&1 ||  LIBGNUTLS_CONFIG=no
    fi
    case "$LIBGNUTLS_CONFIG" in
        eval\ *)
            NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
              [$LIBGNUTLS_CONFIG --libs-only-L])
+           gnutls_b_flags=`$LIBGNUTLS_CONFIG --libs-only-L \
+                           | sed -e 's/^/ /; s/ -L/ -B/'`
+           if test -f "`$CC $gnutls_b_flags -print-file-name=libgnutls.a \
+                           2>/dev/null`"; then
+              LIBGNUTLS_CONFIG="$LIBGNUTLS_CONFIG --static"
+           fi
            GNUTLS_CONFIG_LIBS=`$LIBGNUTLS_CONFIG --libs-only-l`
-           GNUTLS_CONFIG_LIBS="$GNUTLS_LIBPATH $GNUTLS_CONFIG_LIBS $Z_LIBS"
+	   GNUTLS_CONFIG_LIBS=`echo " $GNUTLS_CONFIG_LIBS " | \
+	      sed -e '/ -lhogweed /s/ -lnettle / /' \
+	          -e "s@ -lhogweed @ $NETTLE_LIBS @"`
+	   GNUTLS_CONFIG_LIBS=`echo "$GNUTLS_CONFIG_LIBS" | \
+	      sed -e "s@ -lgmp @ $GMP_LIBS @"`
+           GNUTLS_CONFIG_LIBS="$GNUTLS_LIBPATH$GNUTLS_CONFIG_LIBS$Z_LIBS"
            ;;
        no)
            ;;
        *)
            NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBPATH,
              [$LIBGNUTLS_CONFIG --exec-prefix], [s,^,-L,; s,$,/lib,;])
-           GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS"
+           GNUTLS_CONFIG_LIBS="`$LIBGNUTLS_CONFIG --libs` $Z_LIBS $ZSTD_LIBS"
            ;;
    esac
 
