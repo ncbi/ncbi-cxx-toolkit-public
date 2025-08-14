@@ -1733,10 +1733,7 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
 
     char* p;
     char* q;
-    char* r = nullptr;
-    char* t;
-    char* u;
-    Char  ch;
+    char* nl = nullptr;
 
     if (! str || *str == '\0') {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
@@ -1759,24 +1756,26 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
     biosample  = false;
     bioproject = false;
 
+    nl = str;
     for (p = str; *p != '\0'; got_nl = false) {
         while (*p == ' ' || *p == '\n' || *p == ':' || *p == ',') {
-            if (*p == '\n')
+            if (*p == '\n') {
+                nl     = p;
                 got_nl = true;
+            }
             p++;
         }
 
         if (got_nl) {
-            t = StringChr(p, ':');
+            char* t = StringChr(p, ':');
             if (t) {
-                r = StringChr(p, '\n');
-                u = StringChr(p, ',');
+                char* r = StringChr(p, '\n');
+                char* u = StringChr(p, ',');
 
                 if ((! u || u > t) && (! r || r > t)) {
-                    ch = *++t;
-                    *t = '\0';
+                    ++t;
 
-                    string tag(p);
+                    string tag(p, t);
                     if (! (tag == "Project:") &&
                         ! (tag == "Assembly:") &&
                         ! (tag == "BioSample:") &&
@@ -1810,7 +1809,6 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
 
                     tvnp   = res.insert_after(tvnp, std::move(tag));
                     tagvnp = tvnp;
-                    *t     = ch;
                     p      = t;
                     continue;
                 }
@@ -1823,14 +1821,7 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
         if (*p == ':') {
             while (*p != '\0' && *p != '\n')
                 p++;
-            ch = *p;
-            *p = '\0';
-            while (*r != '\n' && r > str)
-                r--;
-            while (*r == ' ' || *r == '\n')
-                r++;
-            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Too many delimiters/fields for DBLINK line: \"{}\". Entry dropped.", r);
-            *p  = ch;
+            FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Too many delimiters/fields for DBLINK line: \"{}\". Entry dropped.", string_view(nl, p));
             bad = true;
             break;
         }
