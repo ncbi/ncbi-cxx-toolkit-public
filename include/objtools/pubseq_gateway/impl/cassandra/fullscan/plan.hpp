@@ -30,6 +30,7 @@
 #define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__FULLSCAN__PLAN_HPP
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbireg.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 
@@ -46,8 +47,9 @@ public:
     using TQueryPtr = shared_ptr<CCassQuery>;
 
     virtual TQueryPtr GetNextQuery() = 0;
-    virtual size_t    GetQueryCount() const = 0;
-    virtual void      Generate() = 0;
+    virtual size_t GetQueryCount() const = 0;
+    virtual void Generate() = 0;
+    virtual void ApplyConfiguration(IRegistry const* registry, string const& section) {};
     virtual ~ICassandraFullscanPlan() = default;
 };
 
@@ -86,6 +88,7 @@ public:
     void Generate() override;
     TQueryPtr GetNextQuery() override;
     size_t GetQueryCount() const override;
+    void ApplyConfiguration(IRegistry const* registry, string const& section) override;
 
 protected:
     CCassConnection::TTokenRanges& GetTokenRanges();

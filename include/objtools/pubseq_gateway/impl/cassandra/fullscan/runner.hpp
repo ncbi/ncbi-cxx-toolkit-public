@@ -30,6 +30,7 @@
 #define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__FULLSCAN__RUNNER_HPP
 
 #include <corelib/ncbistl.hpp>
+#include <corelib/ncbireg.hpp>
 
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -50,6 +51,8 @@ public:
     static constexpr unsigned int kPageSizeDefault{4096};
     static constexpr unsigned int kMaxActiveStatementsDefault{256};
     static constexpr unsigned int kMaxRetryCountDefault{5};
+    static constexpr size_t kThreadCountDefault{1};
+    static constexpr string_view kConsistencyDefault{"LOCAL_QUORUM"};
 
     CCassandraFullscanRunner();
     CCassandraFullscanRunner(const CCassandraFullscanRunner&) = delete;
@@ -66,11 +69,20 @@ public:
     CCassandraFullscanRunner& SetMaxRetryCount(unsigned int max_retry_count);
     CCassandraFullscanRunner& SetConsumerCreationPolicy(ECassandraFullscanConsumerPolicy policy);
 
+    void ApplyConfiguration(IRegistry const* registry, string const& section);
+    bool Execute(IRegistry const* registry, string const& section);
     bool Execute();
 
+protected:
+    size_t GetThreadCount() const;
+    TCassConsistency GetConsistency() const;
+    unsigned int GetPageSize() const;
+    unsigned int GetMaxActiveStatements() const;
+    unsigned int GetMaxRetryCount() const;
+
 private:
-    size_t m_ThreadCount{1};
-    TCassConsistency m_Consistency{CCassConsistency::kLocalQuorum};
+    size_t m_ThreadCount{kThreadCountDefault};
+    TCassConsistency m_Consistency{CCassConsistency::FromString(kConsistencyDefault)};
     unsigned int m_PageSize{kPageSizeDefault};
     unsigned int m_MaxActiveStatements{kMaxActiveStatementsDefault};
     TCassandraFullscanConsumerFactory m_ConsumerFactory{nullptr};

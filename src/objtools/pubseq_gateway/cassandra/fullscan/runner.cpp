@@ -42,6 +42,14 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+namespace {
+    constexpr char const * const kParamThreadCount = "runner_thread_count";
+    constexpr char const * const kParamConsistency = "runner_consistency";
+    constexpr char const * const kParamPageSize = "runner_page_size";
+    constexpr char const * const kParamMaxActiveStatements = "runner_max_active_statements";
+    constexpr char const * const kParamMaxRetryCount = "runner_max_retry_count";
+}
+
 CCassandraFullscanRunner::CCassandraFullscanRunner() = default;
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetThreadCount(size_t value)
 {
@@ -106,12 +114,59 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetMaxRetryCount(
     return *this;
 }
 
+size_t CCassandraFullscanRunner::GetThreadCount() const
+{
+    return m_ThreadCount;
+}
+
+TCassConsistency CCassandraFullscanRunner::GetConsistency() const
+{
+    return m_Consistency;
+}
+
+unsigned int CCassandraFullscanRunner::GetPageSize() const
+{
+    return m_PageSize;
+}
+
+unsigned int CCassandraFullscanRunner::GetMaxActiveStatements() const
+{
+    return m_MaxActiveStatements;
+}
+
+unsigned int CCassandraFullscanRunner::GetMaxRetryCount() const
+{
+    return m_MaxRetryCount;
+}
+
+void CCassandraFullscanRunner::ApplyConfiguration(IRegistry const* registry, string const& section)
+{
+    if (registry) {
+        SetThreadCount(registry->GetInt(section, kParamThreadCount, kThreadCountDefault));
+        SetConsistency(CCassConsistency::FromString(
+            registry->GetString(section, kParamConsistency, string(kConsistencyDefault))
+        ));
+        SetPageSize(registry->GetInt(section, kParamPageSize, kPageSizeDefault));
+        SetMaxActiveStatements(registry->GetInt(section, kParamMaxActiveStatements, kMaxActiveStatementsDefault));
+        SetMaxRetryCount(registry->GetInt(section, kParamMaxRetryCount, kMaxRetryCountDefault));
+    }
+}
+
 bool CCassandraFullscanRunner::Execute()
+{
+    return Execute(nullptr, "");
+}
+
+bool CCassandraFullscanRunner::Execute(IRegistry const* registry, string const& section)
 {
     if (!m_ExecutionPlan) {
         NCBI_THROW(CCassandraException, eSeqFailed,
            "Invalid sequence of operations, execution plan should be provided"
         );
+    }
+    if (registry) {
+        m_ExecutionPlan->ApplyConfiguration(registry, section);
+        ApplyConfiguration(registry, section);
     }
     m_ExecutionPlan->Generate();
     ICassandraFullscanPlan* plan = m_ExecutionPlan.get();
