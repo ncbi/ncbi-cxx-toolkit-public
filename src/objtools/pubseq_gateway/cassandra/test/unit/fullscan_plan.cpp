@@ -45,9 +45,6 @@
 #include <limits>
 
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/fullscan/runner.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/fullscan/seg_plan.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/fullscan/filtered_plan.hpp>
 
 #include "fullscan_plan_mock.hpp"
 
@@ -59,13 +56,13 @@ USING_IDBLOB_SCOPE;
 class CCassandraFullscanPlanTest
     : public testing::Test
 {
- public:
+public:
     CCassandraFullscanPlanTest()
-     : m_KeyspaceName("test_mlst_storage")
-     , m_TableName("allele_data")
+        : m_KeyspaceName("test_mlst_storage")
+        , m_TableName("allele_data")
     {}
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
@@ -112,6 +109,24 @@ TEST_F(CCassandraFullscanPlanTest, CheckEmptyPlan) {
         plan.Generate(),
         CCassandraException
     ) << "Generate should throw without established connection";
+}
+
+TEST_F(CCassandraFullscanPlanTest, CheckRegistrySettings) {
+    CNcbiRegistry r;
+    r.Set("PLAN_CONFIG", "plan_partitions_for_subrange_scan", "5");
+    r.Set("PLAN_CONFIG", "plan_partition_count_per_query", "53");
+    class CTestPlan : public CCassandraFullscanPlan
+    {
+    public:
+        int64_t GetPartitionPerQuery() const
+        {
+            return GetPartitionCountPerQueryLimit();
+        }
+    };
+    CTestPlan plan;
+    plan.ApplyConfiguration(&r, "PLAN_CONFIG");
+    EXPECT_EQ(5, plan.GetMinPartitionsForSubrangeScan());
+    EXPECT_EQ(53, plan.GetPartitionPerQuery());
 }
 
 TEST_F(CCassandraFullscanPlanTest, CheckQuery) {

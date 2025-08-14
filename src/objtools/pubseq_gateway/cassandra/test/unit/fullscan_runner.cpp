@@ -59,13 +59,13 @@ using ::testing::Return;
 class CCassandraFullscanRunnerTest
     : public testing::Test
 {
- public:
+public:
     CCassandraFullscanRunnerTest()
-     : m_KeyspaceName("test_ipg_storage_entrez")
-     , m_TableName("ipg_report")
+        : m_KeyspaceName("test_ipg_storage_entrez")
+        , m_TableName("ipg_report")
     {}
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
@@ -117,7 +117,7 @@ struct SConsumeContext {
 class CSimpleRowConsumer
     : public ICassandraFullscanConsumer
 {
- public:
+public:
     explicit CSimpleRowConsumer(SConsumeContext * context)
         : m_Context(context)
     {
@@ -192,9 +192,9 @@ class CSimpleRowConsumer
 };
 
 class CCassandraFullscanPlanCaching
-  : public CCassandraFullscanPlan
+    : public CCassandraFullscanPlan
 {
- public:
+public:
     TQueryPtr GetNextQuery() override
     {
         auto query = CCassandraFullscanPlan::GetNextQuery();
@@ -212,7 +212,7 @@ class CCassandraFullscanPlanCaching
             m_Generated = true;
         }
     }
- private:
+private:
     bool m_Generated{false};
 };
 
@@ -555,6 +555,50 @@ TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
         total_rows += ipg_block.second;
     }
     EXPECT_EQ(35425UL, total_rows);
+}
+
+TEST_F(CCassandraFullscanRunnerTest, CheckRegistrySettings)
+{
+    string section = "RUNNER_CONFIG";
+    CNcbiRegistry r;
+    r.Set(section, "runner_thread_count", "15");
+    r.Set(section, "runner_consistency", "ANY");
+    r.Set(section, "runner_page_size", "45");
+    r.Set(section, "runner_max_active_statements", "450");
+    r.Set(section, "runner_max_retry_count", "8");
+
+    class CTestRunner : public CCassandraFullscanRunner
+    {
+    public:
+        int64_t ThreadCount() const
+        {
+            return GetThreadCount();
+        }
+        TCassConsistency Consistency() const
+        {
+            return GetConsistency();
+        }
+        int64_t PageSize() const
+        {
+            return GetPageSize();
+        }
+        int64_t MaxActiveStatements() const
+        {
+            return GetMaxActiveStatements();
+        }
+        int64_t MaxRetryCount() const
+        {
+            return GetMaxRetryCount();
+        }
+    };
+
+    CTestRunner runner;
+    runner.ApplyConfiguration(&r, section);
+    EXPECT_EQ(15, runner.ThreadCount());
+    EXPECT_EQ(TCassConsistency::CASS_CONSISTENCY_ANY, runner.Consistency());
+    EXPECT_EQ(45, runner.PageSize());
+    EXPECT_EQ(450, runner.MaxActiveStatements());
+    EXPECT_EQ(8, runner.MaxRetryCount());
 }
 
 }  // namespace

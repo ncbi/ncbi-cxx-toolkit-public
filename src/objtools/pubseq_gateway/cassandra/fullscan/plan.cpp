@@ -110,6 +110,9 @@ void VerifySizeEstimates(vector<SCassSizeEstimate> const & estimates)
     }
 }
 
+constexpr char const * const kParamMinPartitionsForSubrangeScan = "plan_partitions_for_subrange_scan";
+constexpr char const * const kParamPartitionCountPerQuery = "plan_partition_count_per_query";
+
 }
 
 CCassandraFullscanPlan::CCassandraFullscanPlan() = default;
@@ -305,6 +308,14 @@ void CCassandraFullscanPlan::SplitTokenRangesForLimits()
         }
     }
     swap(result_ranges, m_TokenRanges);
+}
+
+void CCassandraFullscanPlan::ApplyConfiguration(IRegistry const* registry, string const& section)
+{
+    if (registry) {
+        SetMinPartitionsForSubrangeScan(registry->GetInt(section, kParamMinPartitionsForSubrangeScan, kMinPartitionsForSubrangeScanDefault));
+        SetPartitionCountPerQueryLimit(registry->GetInt(section, kParamPartitionCountPerQuery, 0));
+    }
 }
 
 void CCassandraFullscanPlan::Generate()
