@@ -444,6 +444,9 @@ void CValidError_bioseqset::ValidateNucProtSet(
     int  prot_biosource = 0;
     bool is_nm          = false;
 
+    bool has_Primary    = false;
+    bool has_TPA        = false;
+
     sequence::CDeflineGenerator defline_generator;
 
     if (seqset.IsSetSeq_set()) {
@@ -499,6 +502,10 @@ void CValidError_bioseqset::ValidateNucProtSet(
                                 if (NStr::StartsWith(acc, "NM_")) {
                                     is_nm = true;
                                 }
+                            } else if (id.IsGenbank() || id.IsEmbl() || id.IsDdbj()) {
+                                has_Primary = true;
+                            } else if (id.IsTpg() || id.IsTpe() || id.IsTpd()) {
+                                has_TPA = true;
                             }
                         }
                     }
@@ -509,6 +516,16 @@ void CValidError_bioseqset::ValidateNucProtSet(
                                 "Protein bioseq should be product of CDS "
                                 "feature on contig, but is not",
                                 seq);
+                    }
+                    if (seq.IsSetId()) {
+                        for (const auto& id_it : seq.GetId()) {
+                            const CSeq_id& id = *id_it;
+                            if (id.IsGenbank() || id.IsEmbl() || id.IsDdbj()) {
+                                has_Primary = true;
+                            } else if (id.IsTpg() || id.IsTpe() || id.IsTpd()) {
+                                has_TPA = true;
+                            }
+                        }
                     }
                     string instantiated;
                     if (seq.IsSetDescr()) {
@@ -629,6 +646,11 @@ void CValidError_bioseqset::ValidateNucProtSet(
     if (has_refgenetracking && (! is_nm)) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
                 "Nuc-prot set should not have RefGeneTracking user object", seqset);
+    }
+
+    if (has_Primary && has_TPA) {
+        PostErr(eDiag_Error, eErr_SEQ_INST_PrimaryAndThirdPartyMixture,
+                "Nuc-prot set should not have a mixture of Primary and TPA accession types", seqset);
     }
 }
 
