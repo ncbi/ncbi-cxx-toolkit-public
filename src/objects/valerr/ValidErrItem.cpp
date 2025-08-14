@@ -375,6 +375,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_BadSeqIdLength,
     { "BadSeqIdLength",
     "A sequence identifier field is longer than the allowed maximum length." } },
+    { eErr_SEQ_INST_PrimaryAndThirdPartyMixture,
+    { "PrimaryAndThirdPartyMixture",
+    "There is an improper mixture of primary and third party databases within a nuc-prot set." } },
 
     /* SEQ_DESCR */
 
