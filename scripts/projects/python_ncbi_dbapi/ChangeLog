@@ -1,3 +1,13 @@
+Version 1.27.0 (2025-08-14):
+* Advance to GCC 13.2 and to version 29.0 of the stable C++ Toolkit
+  components, notably switching the default "ftds" driver to version
+  1.4; "ftds100" remains available as an alternative.
+* Correctly recognize stored procedure output parameters under Sybase and
+  temporary stored procedure parameters under Microsoft SQL Server.
+* Implement PEP 249's optional error handling extension (albeit passing
+  exceptions themselves as "exception values" for simplicity).
+* Drop Python 3.9, no longer supported.
+
 Version 1.26.2 (2025-02-06):
 * Add a Python 3.13 build alongside those for 3.9 and 3.11.
 
