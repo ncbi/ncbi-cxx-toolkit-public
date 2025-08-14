@@ -485,7 +485,7 @@ int main(int argc, char* argv[])
                 xcred = (gnutls_certificate_credentials_t) cred->data;
                 if (net_info->debug_printout == eDebugPrintout_Data) {
                     x_GnuTlsSetupCB(xcred);
-                    CORE_LOG(eLOG_Note, "Debug certificate credentials set");
+                    CORE_LOG(eLOG_Note, "File certificate credentials set");
                 }
             }
 #    endif /*HAVE_LIBGNUTLS*/
@@ -551,7 +551,7 @@ int main(int argc, char* argv[])
                 CORE_LOGF(eLOG_Note, ("PKCS#12 %s credentials loaded from"
                                       " \"%s\"", type, file));
             } else
-                CORE_LOG(eLOG_Note, "Debug certificate credentials set");
+                CORE_LOG(eLOG_Note, "Dummy debug certificate credentials set");
             net_info->credentials = cred;
         }
 #else
