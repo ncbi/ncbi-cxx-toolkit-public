@@ -1722,43 +1722,36 @@ bool fta_if_valid_biosample(string_view id, bool dblink)
 }
 
 /**********************************************************/
-static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource source)
+static forward_list<string> fta_tokenize_dblink(string str, Parser::ESource source)
 {
     bool got_nl;
-    bool bad;
     bool sra;
     bool assembly;
     bool biosample;
     bool bioproject;
 
-    char* p;
-    char* q;
-    char* nl = nullptr;
-
-    if (! str || *str == '\0') {
+    if (str.empty()) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
         return {};
     }
 
-    for (p = str; *p != '\0'; p++)
-        if (*p == ';' || *p == '\t')
-            *p = ' ';
+    for (char& c : str)
+        if (c == ';' || c == '\t')
+            c = ' ';
 
     forward_list<string> res;
-    res.push_front("dummy");
-    auto tvnp   = res.begin();
+    auto tvnp   = res.before_begin();
     auto tagvnp = res.end();
 
-    bad        = false;
     got_nl     = true;
     sra        = false;
     assembly   = false;
     biosample  = false;
     bioproject = false;
 
-    nl = str;
-    for (p = str; *p != '\0'; got_nl = false) {
-        while (*p == ' ' || *p == '\n' || *p == ':' || *p == ',') {
+    auto nl = str.begin();
+    for (auto p = str.begin(); p != str.end(); got_nl = false) {
+        while (p != str.end() && (*p == ' ' || *p == '\n' || *p == ':' || *p == ',')) {
             if (*p == '\n') {
                 nl     = p;
                 got_nl = true;
@@ -1767,15 +1760,14 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
         }
 
         if (got_nl) {
-            char* t = StringChr(p, ':');
-            if (t) {
-                char* r = StringChr(p, '\n');
-                char* u = StringChr(p, ',');
+            auto t = std::find(p, str.end(), ':');
+            if (t != str.end()) {
+                ++t;
+                string tag(p, t);
 
-                if ((! u || u > t) && (! r || r > t)) {
-                    ++t;
+                if ((tag.find(',') == string::npos) && (tag.find('\n') == string::npos)) {
+                    p = t;
 
-                    string tag(p, t);
                     if (! (tag == "Project:") &&
                         ! (tag == "Assembly:") &&
                         ! (tag == "BioSample:") &&
@@ -1783,8 +1775,7 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
                         ! (tag == "Sequence Read Archive:") &&
                         ! (tag == "Trace Assembly Archive:")) {
                         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Invalid DBLINK tag encountered: \"{}\". Entry dropped.", tag);
-                        bad = true;
-                        break;
+                        return {};
                     }
 
                     bioproject = (tag == "BioProject:");
@@ -1792,38 +1783,32 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
                     biosample  = (tag == "BioSample:");
                     assembly   = (tag == "Assembly:");
 
-                    if (! tvnp->empty() && tvnp->find(':') != string::npos) {
+                    if (! res.empty() && tvnp->find(':') != string::npos) {
                         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
-                        bad = true;
-                        break;
+                        return {};
                     }
 
-                    for (auto uvnp = next(res.cbegin()); uvnp != res.cend(); ++uvnp)
+                    for (auto uvnp = res.cbegin(); uvnp != res.cend(); ++uvnp)
                         if (*uvnp == tag) {
                             FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Multiple DBLINK tags found: \"{}\". Entry dropped.", tag);
-                            bad = true;
-                            break;
+                            return {};
                         }
-                    if (bad)
-                        break;
 
                     tvnp   = res.insert_after(tvnp, std::move(tag));
                     tagvnp = tvnp;
-                    p      = t;
                     continue;
                 }
             }
         }
 
-        q = p;
-        while (*p != ',' && *p != '\n' && *p != ':' && *p != '\0')
+        auto q = p;
+        while (p != str.end() && *p != ',' && *p != '\n' && *p != ':')
             p++;
-        if (*p == ':') {
-            while (*p != '\0' && *p != '\n')
+        if (p != str.end() && *p == ':') {
+            while (p != str.end() && *p != '\n')
                 p++;
             FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Too many delimiters/fields for DBLINK line: \"{}\". Entry dropped.", string_view(nl, p));
-            bad = true;
-            break;
+            return {};
         }
 
         if (q == p)
@@ -1832,16 +1817,16 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
         string name(q, p);
 
         if (tagvnp != res.end() && ! tagvnp->empty()) {
-            auto uvnp = next(tagvnp);
-            for (; uvnp != res.end(); ++uvnp) {
-                if (uvnp->empty() || *uvnp != name)
-                    continue;
-
-                FtaErrPost(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"{}\" from \"{}\" link removed.", name, *tagvnp);
-                break;
+            bool dup = false;
+            for (auto uvnp = next(tagvnp); uvnp != res.end(); ++uvnp) {
+                if (! uvnp->empty() && *uvnp == name) {
+                    dup = true;
+                    break;
+                }
             }
 
-            if (uvnp != res.end()) {
+            if (dup) {
+                FtaErrPost(SEV_WARNING, ERR_DBLINK_DuplicateIdentifierRemoved, "Duplicate identifier \"{}\" from \"{}\" link removed.", name, *tagvnp);
                 continue;
             }
         }
@@ -1849,7 +1834,7 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
         if ((bioproject && ! fta_validate_bioproject(name, source)) ||
             (biosample && ! fta_if_valid_biosample(name, true)) ||
             (sra && ! fta_if_valid_sra(name, true))) {
-            bad = true;
+            return {};
         }
 
         if (assembly)
@@ -1858,21 +1843,12 @@ static forward_list<string> fta_tokenize_dblink(char* str, Parser::ESource sourc
         tvnp = res.insert_after(tvnp, std::move(name));
     }
 
-    if (! bad && ! tvnp->empty() && tvnp->find(':') != string::npos) {
+    if (! res.empty() && tvnp->find(':') != string::npos) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
-        bad = true;
+        return {};
     }
 
-    res.pop_front();
-
-    if (res.empty())
-        return {};
-
-    if (! bad)
-        return res;
-
-    res.clear();
-    return {};
+    return res;
 }
 
 /**********************************************************/
@@ -1881,11 +1857,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     if (! offset)
         return;
 
-    char* str1                   = StringSave(offset + ParFlat_COL_DATA);
-    str1[len - ParFlat_COL_DATA] = '\0';
-    auto vnp                     = fta_tokenize_dblink(str1, source);
-    MemFree(str1);
-
+    auto vnp = fta_tokenize_dblink(string(offset + ParFlat_COL_DATA, len - ParFlat_COL_DATA), source);
     if (vnp.empty()) {
         *drop = true;
         return;
