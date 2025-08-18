@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = test_bm
+APP_PROJ = test_bm test_bm_ev
 PROJ_TAG = test
 
 srcdir = @srcdir@
