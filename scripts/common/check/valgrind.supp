@@ -846,6 +846,13 @@
    fun:strdup
    fun:_ZN11CTestRegApp12TestApp_InitEv
 }
+{
+   corelib/CUsedTlsBases::GetUsedTlsBases
+   Memcheck:Leak
+   fun:_Znwm
+   ...
+   fun:_ZN4ncbi13CUsedTlsBases15GetUsedTlsBasesEv
+}
 
 
 #===============================================================================
