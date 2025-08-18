@@ -7,6 +7,6 @@ LIB = xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 
-# CHECK_CMD = test_bm_ev
+CHECK_CMD = 
 
 WATCHERS = kuznets vasilche
