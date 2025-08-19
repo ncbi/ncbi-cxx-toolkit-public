@@ -1540,7 +1540,7 @@ xflatfile needs3party $(GENBANK_THIRD_PARTY_LIBS)
 xformat needs gbseq
 xformat needs xalnmgr
 xformat needs xcleanup
-xgencoll needs gc_utils
+xgencoll needs gc_load_utils
 xgencoll needs gencoll_client
 xgp_manifest needs xser
 xgridcgi needs xcgi
