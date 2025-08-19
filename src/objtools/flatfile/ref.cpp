@@ -311,47 +311,43 @@ static TEntrezId get_embl_pmid(char* str)
  *                                              12-4-93
  *
  **********************************************************/
-static char* check_book_tit(char* title)
+static string_view check_book_tit(string_view& title)
 {
-    char* p;
-    char* q;
-    char* r;
+    auto p = title.rfind("Vol");
+    if (p == string_view::npos)
+        return {};
 
-    p = StringRStr(title, "Vol");
-    if (! p)
-        return nullptr;
-
-    if (p[3] == '.')
-        q = p + 4;
-    else if (StringEquN(p + 3, "ume", 3))
-        q = p + 6;
+    string_view q = title.substr(p + 3);
+    if (q.starts_with('.'))
+        q.remove_prefix(1);
+    else if (q.starts_with("ume"sv))
+        q.remove_prefix(3);
     else
-        return nullptr;
+        return {};
 
-    while (*q == ' ' || *q == '\t')
-        q++;
-    for (r = q; *r >= '0' && *r <= '9';)
-        r++;
+    while (! q.empty() && (q.front() == ' ' || q.front() == '\t'))
+        q.remove_prefix(1);
 
-    if (r == q || *r != '\0')
-        return nullptr;
+    if (q.empty() || ! std::all_of(q.begin(), q.end(), [](char c) { return '0' <= c && c <= '9'; }))
+        return {};
 
-    if (p > title) {
+    if (p > 0) {
         p--;
-        if (*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
-            return nullptr;
+        auto is_ws = [](char c) { return c == ' ' || c == '\t' || c == ',' || c == ';' || c == '.'; };
+        if (! is_ws(title[p]))
+            return {};
 
-        while (*p == ' ' || *p == '\t' || *p == ',' || *p == ';' || *p == '.') {
-            if (p == title)
+        while (is_ws(title[p])) {
+            if (p == 0)
                 break;
             p--;
         }
-        if (*p != ' ' && *p != '\t' && *p != ',' && *p != ';' && *p != '.')
+        if (! is_ws(title[p]))
             p++;
     }
-    *p = '\0';
+    title = title.substr(0, p);
 
-    return (q);
+    return q;
 }
 
 /**********************************************************
@@ -973,7 +969,6 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
     char* s;
     char* ss;
     char* tit;
-    char* volume;
     char* pages;
     char* press;
 
@@ -1057,11 +1052,11 @@ static CRef<CCit_art> get_book(char* bptr, CRef<CAuth_list>& auth_list, CRef<CTi
 
         book_title->SetName("");
         if (*tit != '\0') {
-            volume = check_book_tit(tit);
-            if (volume)
-                cit_book.SetImp().SetVolume(volume);
-
-            book_title->SetName(NStr::Sanitize(tit));
+            string_view name(tit);
+            auto volume = check_book_tit(name);
+            if (! volume.empty())
+                cit_book.SetImp().SetVolume(string(volume));
+            book_title->SetName(NStr::Sanitize(name));
         }
 
         if (c == ':') {

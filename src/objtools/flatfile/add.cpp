@@ -1418,21 +1418,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 }
 
 /**********************************************************/
-char* StringRStr(char* where, const char* what)
-{
-    if (! where || ! what || *where == '\0' || *what == '\0')
-        return nullptr;
-
-    size_t i   = StringLen(what);
-    char*  res = nullptr;
-    for (char* p = where; *p != '\0'; p++)
-        if (StringEquN(p, what, i))
-            res = p;
-
-    return (res);
-}
-
-/**********************************************************/
 CRef<CSeq_loc> fta_get_seqloc_int_whole(const CSeq_id& seq_id, size_t len)
 {
     CRef<CSeq_loc> ret;
