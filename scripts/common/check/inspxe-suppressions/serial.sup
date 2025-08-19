@@ -228,3 +228,23 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "ReadStdSigned"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=objistrasnb.cpp,func="ncbi::ReadStdSigned<int>(class ncbi::CObjectIStreamAsnBinary &,int &)";
+		}
+	}
+}
+suppression = {
+	name = "ReadStdUnsigned"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=objistrasnb.cpp,func="ncbi::ReadStdUnsigned<unsigned int>(class ncbi::CObjectIStreamAsnBinary &,unsigned int &)";
+		}
+	}
+}

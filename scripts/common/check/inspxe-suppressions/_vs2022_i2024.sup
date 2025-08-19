@@ -1,7 +1,20 @@
 
 # Visual Studio 2022 + Intel Inspector 2024 specific suppressions | false positives
 
-
+suppression = {
+	name = "WSAPoll / poll"
+	type = {invalid_memory_access}
+	stacks = {
+		{
+			...;
+			mod=ntdll.dll,func=RtlInitializeResource;
+			...;
+			mod=ntdll.dll,func=RtlEnterCriticalSection;
+			...;
+			mod=ws2_32.dll,func=WSAPoll;
+		}
+	}
+}
 suppression = {
 	name = "vector / __std_find_trivial_impl - 1"
 	type = {invalid_memory_access_partial}
@@ -77,6 +90,17 @@ suppression = {
 		{
 			!!!;
 			src=vector_algorithms.cpp,func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_1,unsigned char>(const void *, const void *, unsigned char)";
+		}
+	}
+}
+suppression = {
+	name = "vector / push_back"
+	type = {uninitialized_memory_access_partial}
+	stacks = {
+		{
+			...;
+			func="`anonymous namespace'::__std_find_trivial_impl<`anonymous namespace'::_Find_traits_8,unsigned __int64>(const void *, const void *, unsigned __int64)",src=vector_algorithms.cpp;
+			func=_Find_vectorized;
 		}
 	}
 }
