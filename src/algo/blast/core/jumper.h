@@ -56,7 +56,7 @@ typedef struct { int dcp, dcq, lng, ok; } JUMP;
 #define JUMPER_DELETION (-2)
 
 /** Jumper edit script operation */
-typedef Int2 JumperOpType;
+typedef Int4 JumperOpType;
 
 /** Internal alignment edit script */
 typedef struct JumperPrelimEditBlock
