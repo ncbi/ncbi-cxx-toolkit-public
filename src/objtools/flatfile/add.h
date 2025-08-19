@@ -72,7 +72,6 @@ bool fta_if_valid_sra(string_view id, bool dblink);
 void StripECO(string&);
 void fta_add_hist(ParserPtr pp, objects::CBioseq& bioseq, objects::CGB_block::TExtra_accessions& extra_accs, Parser::ESource source, objects::CSeq_id::E_Choice acctype, bool pricon, const char* acc);
 
-char* StringRStr(char* where, const char* what);
 bool  fta_dblink_has_sra(const CRef<objects::CUser_object>& uop);
 
 namespace objects
