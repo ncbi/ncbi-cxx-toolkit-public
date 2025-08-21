@@ -96,3 +96,58 @@ $ yes 2 |head -1000 | pv -lL50 |psg_client resolve -service tonka1:2180 -https -
 -1000 => 1000 requests
 pv -lL50 => 50 requests per second
 
+
+
+How to build locally libuv/libh2o/datastax for experiments
+----------------------------------------------------------
+
+cd /export/home/satskyse
+mkdir psglibs
+cd psglibs
+
+-- Download libuv, unpack it
+cd libuv-1.51.0
+bash autogen.sh
+./configure --prefix=/export/home/satskyse/psglibs/
+make
+make install
+-- there could be some warnings but they could be ignored, at least for 1.51.0 version
+
+
+-- download libh2o, unpack it
+-- or (better) copy from /netopt/ncbi_tools64/h2o-2.2.6-ncbi3+a8/src
+-- Copying is better because it is an NCBI patched version
+
+cd /export/home/satskyse/psglibs/h2o-2.2.6-ncbi3/src
+mkdir build
+cd build
+
+-- default compile flags
+PKG_CONFIG_PATH=/export/home/satskyse/psglibs/lib/pkgconfig/   cmake --fresh -DWITH_BUNDLED_SSL=off -DCMAKE_INSTALL_PREFIX=/export/home/satskyse/psglibs/ -DWITH_MRUBY=off -DCMAKE_BUILD_TYPE=Debug ..
+-- or
+PKG_CONFIG_PATH=/export/home/satskyse/psglibs/lib/pkgconfig/   cmake --fresh -DWITH_BUNDLED_SSL=off -DCMAKE_INSTALL_PREFIX=/export/home/satskyse/psglibs/ -DWITH_MRUBY=off -DCMAKE_BUILD_TYPE=Release ..
+
+-- sanitizer compile flags
+PKG_CONFIG_PATH=/export/home/satskyse/psglibs/lib/pkgconfig/   cmake --fresh -DWITH_BUNDLED_SSL=off -DCMAKE_INSTALL_PREFIX=/export/home/satskyse/psglibs/ -DWITH_MRUBY=off -DCMAKE_C_FLAGS="-fsanitize=address -fno-stack-protector -fno-omit-frame-pointer" -DCMAKE_BUILD_TYPE=Debug ..
+
+-- There will be a warning about WSLAY. It can be ignored
+cd ..
+make
+make install
+
+
+-- download datastax, unpack it
+
+cd /export/home/satskyse/psglibs/datastax/cpp-driver-2.17.1
+mkdir build
+cd build
+PKG_CONFIG_PATH=/export/home/satskyse/psglibs/lib/ cmake -DCMAKE_INSTALL_PREFIX=/export/home/satskyse/psglibs/ -DCMAKE_BUILD_TYPE=Debug -DLIBUV_INCLUDE_DIR=/export/home/satskyse/psglibs/include/ ..
+make
+make install
+
+
+-- copy everything from /export/home/satskyse/psglibs/lib64 to /export/home/satskyse/psglibs/lib
+-- rename /export/home/satskyse/psglibs/lib64 to /export/home/satskyse/psglibs/lib64-orig
+-- otherwise it messes up the toolkit configure
+
+
