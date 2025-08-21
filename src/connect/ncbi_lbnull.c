@@ -312,8 +312,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!(type & (fSERV_Standalone | fSERV_Http | fSERV_Dns)))
         return 0;
 
-    /* Can process fSERV_Any (basically meaning fSERV_Standalone),
-     * and explicit fSERV_Standalone, fSERV_Http and fSERV_Dns only */
+    /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
+     * fSERV_Standalone, fSERV_Http and fSERV_Dns only, which all, as a matter
+     * of fact, are also included in fSERV_All. */
     types = iter->types & ~fSERV_Stateless;
     if (types  &&  !(type &= types))
         return 0;
@@ -357,7 +358,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         assert(port);
     } else if (!(type & (fSERV_Dns | fSERV_Http)))
         port = CONN_PORT_LBNULL;
-    CORE_TRACEF(("[%s]  LBNULL using port number %lu", iter->name, port));
+    CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
     if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
         if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
