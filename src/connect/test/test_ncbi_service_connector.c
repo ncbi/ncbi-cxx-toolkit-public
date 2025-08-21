@@ -145,19 +145,19 @@ int main(int argc, const char* argv[])
             n += k;
         }
         if (status != eIO_Success) {
+            CORE_LOGF(eLOG_Note,
+                      ("Total byte(s) sent to / received from (%s%s%s): %lu / %lu",
+                       CONN_GetType(conn),
+                       descr ? ", " : "", descr ? descr : "",
+                       (unsigned long) m, (unsigned long) n));
             if (status != eIO_Closed) {
-                CORE_LOGF(n ? eLOG_Error : eLOG_Fatal,
+                CORE_LOGF(eLOG_Fatal,
                           ("Read error from (%s%s%s) at offset %lu: %s",
                            CONN_GetType(conn),
                            descr ? ", " : "", descr ? descr : "",
                            (unsigned long) n,
                            IO_StatusStr(status)));
             }
-            CORE_LOGF(eLOG_Note,
-                      ("Total byte(s) sent to / received from (%s%s%s): %lu / %lu",
-                       CONN_GetType(conn),
-                       descr ? ", " : "", descr ? descr : "",
-                       (unsigned long) m, (unsigned long) n));
             if (service == kBounce  &&  m != n) {
                 CORE_LOGF(eLOG_Fatal,
                           ("Not entirely bounced (%s%s%s)",
