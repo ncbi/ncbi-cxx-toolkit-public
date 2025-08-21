@@ -67,6 +67,7 @@ int main(int argc, const char* argv[])
     SOCK_SetupSSL(NcbiSetupTls);
 
     net_info = ConnNetInfo_Create(service);
+    /* Some bogus values / extras (to check overrides) */
     ConnNetInfo_AppendArg(net_info, "testarg",  "val");
     ConnNetInfo_AppendArg(net_info, "service",  "none");
     ConnNetInfo_AppendArg(net_info, "platform", "none");
