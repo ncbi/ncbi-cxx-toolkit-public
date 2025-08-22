@@ -1581,7 +1581,13 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
                 m_NewItem(item);
             }
 
-            items.emplace_back(std::move(item));
+            auto status = item->GetStatus(CDeadline::eNoWait);
+
+            if (status == EPSG_Status::eInProgress) {
+                items.emplace_back(std::move(item));
+            } else {
+                m_ItemComplete(status, item);
+            }
         }
 
         for (auto j = items.begin(); j != items.end();) {
