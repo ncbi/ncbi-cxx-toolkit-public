@@ -196,4 +196,14 @@ suppression = {
 		}
 	}
 }
+suppression = {
+	name = "CFile::Compare() / false positione on memcmp()"
+	type = {uninitialized_memory_access}
+	stacks = {
+		{
+			!!!;
+			src=ncbifile.cpp,func="ncbi::CFile::Compare(class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,unsigned __int64)";
+		}
+	}
+}
 
