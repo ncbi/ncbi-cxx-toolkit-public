@@ -464,7 +464,7 @@ static bool CkDateFormat(string_view date)
 }
 
 /**********************************************************/
-int CheckSTRAND(const string& str)
+int CheckSTRAND(string_view str)
 {
     static const vector<string_view> strandSpecs = {
         "   ", "ss-", "ds-", "ms-"
@@ -498,7 +498,7 @@ Int2 XMLCheckTPG(string_view str)
 }
 
 /**********************************************************/
-int CheckTPG(const string& str)
+int CheckTPG(string_view str)
 {
     static const vector<string_view> topologies = {
         "         ", "linear   ", "circular ", "tandem   "
@@ -515,19 +515,19 @@ int CheckTPG(const string& str)
 }
 
 /**********************************************************/
-Int2 CheckNADDBJ(const char* str)
+Int2 CheckNADDBJ(string_view str)
 {
     return (fta_StringMatch(ParFlat_NA_array_DDBJ, str));
 }
 
 /**********************************************************/
-Int2 CheckNA(const char* str)
+Int2 CheckNA(string_view str)
 {
     return (fta_StringMatch(ParFlat_NA_array, str));
 }
 
 /**********************************************************/
-Int2 CheckDIV(const char* str)
+Int2 CheckDIV(string_view str)
 {
     return (fta_StringMatch(ParFlat_DIV_array, str));
 }
@@ -987,23 +987,20 @@ inline bool sIsUpperAlpha(char c)
     return (c >= 'A' && c <= 'Z');
 }
 
-Int4 IsNewAccessFormat(const Char* acnum)
+Int4 IsNewAccessFormat(string_view p)
 {
-    const Char* p = acnum;
+    auto len = p.size();
 
-    if (! p || *p == '\0')
-        return 0;
-
-    if (sIsUpperAlpha(p[0]) && sIsUpperAlpha(p[1])) {
+    if (len >= 3 && sIsUpperAlpha(p[0]) && sIsUpperAlpha(p[1])) {
         if (isdigit(p[2]))
             return 1;
 
         if (p[2] == '_') {
-            if (isdigit(p[3])) {
+            if (len >= 4 && isdigit(p[3])) {
                 return 2;
             }
-            if (sIsUpperAlpha(p[3]) && sIsUpperAlpha(p[4])) {
-                if (sIsUpperAlpha(p[5]) && sIsUpperAlpha(p[6]) &&
+            if (len >= 6 && sIsUpperAlpha(p[3]) && sIsUpperAlpha(p[4])) {
+                if (len >= 8 && sIsUpperAlpha(p[5]) && sIsUpperAlpha(p[6]) &&
                     isdigit(p[7]))
                     return 4;
                 if (isdigit(p[5]))
@@ -1012,10 +1009,10 @@ Int4 IsNewAccessFormat(const Char* acnum)
             return 0;
         }
 
-        if (sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
-            if (sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
+        if (len >= 5 && sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
+            if (len >= 7 && sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
                 isdigit(p[6])) {
-                if (isdigit(p[7]) && p[8] == 'S' &&
+                if (len >= 10 && isdigit(p[7]) && p[8] == 'S' &&
                     isdigit(p[9])) {
                     return 9;
                 }
@@ -1023,14 +1020,14 @@ Int4 IsNewAccessFormat(const Char* acnum)
             }
 
             if (isdigit(p[4])) {
-                if (isdigit(p[5]) && p[6] == 'S' &&
+                if (len >= 8 && isdigit(p[5]) && p[6] == 'S' &&
                     isdigit(p[7])) {
                     return 7;
                 }
                 return 3;
             }
 
-            if (sIsUpperAlpha(p[4]) && isdigit(p[5]))
+            if (len >= 6 && sIsUpperAlpha(p[4]) && isdigit(p[5]))
                 return 5;
         }
     }
@@ -1039,7 +1036,7 @@ Int4 IsNewAccessFormat(const Char* acnum)
 
 
 /**********************************************************/
-static bool IsValidAccessPrefix(const char* acc, const char** accpref)
+static bool IsValidAccessPrefix(string_view acc, const char** accpref)
 {
     Int4 i = IsNewAccessFormat(acc);
     if (i == 0 || ! accpref)
@@ -1048,9 +1045,8 @@ static bool IsValidAccessPrefix(const char* acc, const char** accpref)
     if (2 < i && i < 10)
         return true;
 
-    const char** b = accpref;
-    for (; *b; b++) {
-        if (StringEquN(acc, *b, StringLen(*b)))
+    for (const char** b = accpref; *b; b++) {
+        if (acc.starts_with(*b))
             return true;
     }
 
@@ -1249,22 +1245,17 @@ int fta_if_wgs_acc(string_view accession)
 }
 
 /**********************************************************/
-bool IsSPROTAccession(const char* acc)
+bool IsSPROTAccession(string_view acc)
 {
-    const char** b;
-
-    if (! acc || acc[0] == '\0')
-        return false;
-    size_t len = StringLen(acc);
+    size_t len = acc.size();
     if (len != 6 && len != 8 && len != 10)
         return false;
     if (len == 8) {
-        for (b = sprot_accpref; *b; b++) {
-            if (StringEquN(*b, acc, 2))
-                break;
+        for (const char** b = sprot_accpref; *b; b++) {
+            if (acc.starts_with(*b))
+                return true;
         }
-
-        return (*b != nullptr);
+        return false;
     }
 
     if (acc[0] < 'A' || acc[0] > 'Z' || acc[1] < '0' || acc[1] > '9' ||
