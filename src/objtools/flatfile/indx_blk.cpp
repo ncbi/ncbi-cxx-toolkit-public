@@ -931,7 +931,7 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
 
 /**********************************************************
  *
- *   void DelNoneDigitTail(str):
+ *   void DelNonDigitTail(str):
  *
  *      Delete any non digit characters from tail
  *   of string "str".
@@ -939,20 +939,6 @@ IndexblkPtr InitialEntry(ParserPtr pp, FinfoBlk& finfo)
  *                                              3-25-93
  *
  **********************************************************/
-void DelNoneDigitTail(char* str)
-{
-    char* p;
-
-    if (! str || *str == '\0')
-        return;
-
-    for (p = str; *str != '\0'; str++)
-        if (*str >= '0' && *str <= '9')
-            p = str + 1;
-
-    *p = '\0';
-}
-
 void DelNonDigitTail(string& str)
 {
     if (str.empty()) {
@@ -1604,17 +1590,15 @@ static inline bool sIsAccPrefixChar(char c)
  *                                              3-4-93
  *
  **********************************************************/
-bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned skip)
+bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigned skip)
 {
-    Char   acc[200]; // string
-    bool   get = true;
+    bool get = true;
 
     if ((skip != 2 && pp->source == Parser::ESource::Flybase) ||
         pp->source == Parser::ESource::USPTO)
         return true;
 
-    string line(str);
-    auto   tokens = TokenString(line.c_str(), ';');
+    auto tokens = TokenString(line, ';');
 
     if (skip != 2) {
         get = ParseAccessionRange(tokens, skip);
@@ -1638,7 +1622,6 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
     }
 
     entry->is_tpa = false;
-    acc[0]        = '\0';
     if (tokens.num < 2) {
         if (pp->mode != Parser::EMode::Relaxed) {
             FtaErrPost(SEV_ERROR, ERR_ACCESSION_NoAccessNum, "No accession # for this entry, about line {}", (long int)entry->linenum);
@@ -1647,13 +1630,13 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         return false;
     }
 
-    StringCpy(acc, next(tokens.list.begin())->c_str()); /* get first accession */
+    string acc(*next(tokens.list.begin())); // get first accession
 
     if (pp->mode != Parser::EMode::Relaxed) {
-        DelNoneDigitTail(acc);
+        DelNonDigitTail(acc);
     }
 
-    StringCpy(entry->acnum, acc);
+    StringCpy(entry->acnum, acc.c_str());
 
     if (pp->format != Parser::EFormat::XML) {
         string temp = acc;
@@ -1675,34 +1658,33 @@ bool GetAccession(const Parser* pp, string_view str, IndexblkPtr entry, unsigned
         return true;
     }
 
-    if ((StringLen(acc) < 2) &&
-        pp->mode != Parser::EMode::Relaxed) {
-        FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [{}] for this entry.", acc);
-        entry->drop = true;
-        return false;
-    }
-
     if (pp->mode != Parser::EMode::Relaxed) {
+        auto len = acc.size();
+        if (len < 2) {
+            FtaErrPost(SEV_ERROR, ERR_ACCESSION_BadAccessNum, "Wrong accession [{}] for this entry.", acc);
+            entry->drop = true;
+            return false;
+        }
         if (sIsAccPrefixChar(acc[0]) && sIsAccPrefixChar(acc[1])) {
             if (pp->accpref && ! IsValidAccessPrefix(acc, pp->accpref))
                 get = false;
-            if (sIsAccPrefixChar(acc[2]) && sIsAccPrefixChar(acc[3])) {
-                if (sIsAccPrefixChar(acc[4])) {
-                    acc[5] = '\0';
+            if (len >= 4 && sIsAccPrefixChar(acc[2]) && sIsAccPrefixChar(acc[3])) {
+                if (len >= 5 && sIsAccPrefixChar(acc[4])) {
+                    acc.resize(5);
                 } else {
-                    acc[4] = '\0';
+                    acc.resize(4);
                 }
-            } else if (acc[2] == '_') {
-                acc[3] = '\0';
+            } else if (len >= 3 && acc[2] == '_') {
+                acc.resize(3);
             } else {
-                acc[2] = '\0';
+                acc.resize(2);
             }
         } else {
             /* Processing of accession numbers in old format */
             /* check valid prefix accession number */
             if (pp->acprefix && ! StringChr(pp->acprefix, acc[0]))
                 get = false;
-            acc[1] = '\0';
+            acc.resize(1);
         }
     }
 
