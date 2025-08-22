@@ -2506,7 +2506,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
         CSeq_hist_rec::TIds rep_ids;
 
         for (const string& cur_acc : spb->GetExtra_acc()) {
-            if (cur_acc.empty() || ! IsSPROTAccession(cur_acc.c_str()))
+            if (cur_acc.empty() || ! IsSPROTAccession(cur_acc))
                 continue;
 
             CRef<CTextseq_id> text_id(new CTextseq_id);

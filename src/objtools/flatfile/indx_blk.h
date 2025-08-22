@@ -69,20 +69,17 @@ bool FlatFileIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, In
 void ResetParserStruct(ParserPtr pp);
 bool QSIndex(ParserPtr pp, const TIndBlkList& ibl, unsigned ibl_size);
 
-// bool IsValidAccessPrefix(char* acc, char** accpref);
-
-void DelNoneDigitTail(char* str);
 void DelNonDigitTail(string& str);
 int  fta_if_wgs_acc(string_view accession);
-int  CheckSTRAND(const string& str);
-int  CheckTPG(const string& str);
-Int2 CheckDIV(const char* str);
-Int4 IsNewAccessFormat(const char* acnum);
-bool IsSPROTAccession(const char* acc);
+int  CheckSTRAND(string_view str);
+int  CheckTPG(string_view str);
+Int2 CheckDIV(string_view str);
+Int4 IsNewAccessFormat(string_view);
+bool IsSPROTAccession(string_view acc);
 Int2 XMLCheckSTRAND(string_view str);
 Int2 XMLCheckTPG(string_view str);
-Int2 CheckNADDBJ(const char* str);
-Int2 CheckNA(const char* str);
+Int2 CheckNADDBJ(string_view str);
+Int2 CheckNA(string_view str);
 
 bool CkLocusLinePos(char* offset, Parser::ESource source, LocusContPtr lcp, bool is_mga);
 
