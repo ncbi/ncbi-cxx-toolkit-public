@@ -232,7 +232,7 @@ public:
 
     void SubmitblockBC (CSubmit_block& sb);
 
-    void SeqsetBC (CBioseq_set& bss);
+    void SetClass(const CBioseq_set_Handle& bssh);
     void ProtSeqBC (const CBioseq_Handle& bsh);
 
     bool BasicCleanupSeqIds(const CBioseq_Handle& bsh);
@@ -472,9 +472,9 @@ private:
     void x_TranslateITSNameAndFlag( string &in_out_name ) ;
 
     void x_PCRPrimerSetBC( CPCRPrimerSet &primer_set );
-
-    void x_CopyGBBlockDivToOrgnameDiv( CSeq_entry &seq_entry);
-
+public:
+    void CopyGBBlockDivToOrgnameDiv(const CSeq_entry_Handle& entry_handle);
+private:
     void x_AuthListBCWithFixInitials( CAuth_list& al );
 
     // After we've traversed the hierarchy of objects, there may be some
@@ -482,11 +482,8 @@ private:
     // This function does that processing.
     void x_PostProcessing(void);
 
-    void xUpdateSeqfeatCitPub(CSeq_entry& entry);
-    void xUpdateSeqfeatCitPub(CBioseq_set& bioset);
-    void xUpdateSeqfeatCitPub(CBioseq& bioseq);
-    void xUpdateSeqfeatCitPub(CSeq_annot& annot);
-
+    void xUpdateSeqfeatCitPub(const CSeq_entry_Handle& seh);
+    void xUpdateSeqfeatCitPub(const CBioseq_set_Handle& bssh);
     void xUpdateSeqfeatCitPub(const CBioseq_Handle& bsh);
     void xUpdateSeqfeatCitPub(const CSeq_annot_Handle& annotHandle);
     bool xUpdateSeqfeatCitGenLabel(CPub& pub);
@@ -496,6 +493,7 @@ private:
     void x_ClearEmptyDescr( CBioseq& bioseq );
 public:
     void ClearEmptyDescr(const CBioseq_Handle& bsh);
+    void ClearEmptyDescr(const CBioseq_set_Handle& bssh);
     // removes single-strandedness from non-viral nucleotide sequences
     bool RemoveSingleStrand(const CBioseq_Handle& bsh);
     void LabelMapAppend(const vector<string>& old_labels, const vector<string>& new_labels);

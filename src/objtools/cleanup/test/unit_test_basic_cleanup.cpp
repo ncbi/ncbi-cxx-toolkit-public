@@ -2362,9 +2362,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4508)
     
     auto feat_handle = scope->GetSeq_featHandle(*prot);
 
-    CCleanup cleanup;
-
-    cleanup.SetScope(scope);
+    CCleanup cleanup(scope, CCleanup::eScope_UseInPlace);
     auto changes = cleanup.BasicCleanup(entry->SetSet());
 
     BOOST_CHECK_EQUAL(feat_handle.GetData().GetProt().GetName().front(), "a b");
@@ -2402,6 +2400,8 @@ BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC)
     auto changes = cleanup.BasicCleanup(*entry);
 
     CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    cds = GetCDSFromGoodNucProtSet(entry);
+
     BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
     BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
 }
@@ -2419,6 +2419,8 @@ BOOST_AUTO_TEST_CASE(Test_SeqFeatCDSGBQualBC_BioseqSetHandle)
     auto changes = cleanup.BasicCleanup(bssh);
 
     CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    cds = GetCDSFromGoodNucProtSet(entry);
+
     BOOST_CHECK_EQUAL(prot->GetComment(), "xyz");
     BOOST_CHECK_EQUAL(cds->IsSetQual(), false);
 }
@@ -2440,6 +2442,7 @@ BOOST_AUTO_TEST_CASE(Test_CommentRedundantWithEc)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
+    cds = GetCDSFromGoodNucProtSet(entry);
     BOOST_CHECK_EQUAL(cds->IsSetComment(), false);
 }
 
@@ -2463,7 +2466,9 @@ BOOST_AUTO_TEST_CASE(Test_MoveXrefToProt)
     cleanup.SetScope(scope);
     auto changes = cleanup.BasicCleanup(*entry);
 
+    cds = GetCDSFromGoodNucProtSet(entry);
     BOOST_CHECK_EQUAL(cds->IsSetXref(), false);
+    prot = GetProtFeatFromGoodNucProtSet(entry);
     BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetName().front(), "fake protein name");
 }
 
