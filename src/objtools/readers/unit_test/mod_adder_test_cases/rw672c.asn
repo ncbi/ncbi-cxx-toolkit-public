@@ -24,6 +24,10 @@ Seq-entry ::= set {
         orgname {
           mod {
             {
+              subtype cultivar,
+              subname "dummy"
+            },
+            {
               subtype breed,
               subname "breed"
             },
@@ -60,6 +64,10 @@ Seq-entry ::= set {
         }
       },
       subtype {
+        {
+          subtype other,
+          name "dummy"
+        },
         {
           subtype subclone,
           name "sub-clone"
