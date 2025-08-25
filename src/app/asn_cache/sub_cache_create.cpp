@@ -1188,7 +1188,7 @@ size_t CAsnSubCacheCreateApplication::WriteBlobsInSubCache(const vector<CDir>& m
         /// genbank is more up-to-date and needs to be fetched; give it the
         /// most up-to-date timestamp, so blobs not found in the main cache
         /// will not be eliminated
-        blob_locations.begin()->m_Timestamp = static_cast<CAsnIndex::TTimestamp>(timestamp);
+        blob_locations.begin()->m_Timestamp = static_cast<CAsnIndex::TTimestamp>(timestamp + 10000);
         x_EliminateIdsAlreadyInCache(index_map, subcache_main_index);
     }
     LOG_POST(Error << index_map.size() << " new records in "
