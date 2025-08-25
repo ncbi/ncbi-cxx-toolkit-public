@@ -112,45 +112,37 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         ipv4 = (unsigned int)(-1);
     if (type & fSERV_Dns) {
         info = SERV_CreateDnsInfo(ipv4);
-        if (info)
-            info->port = data->port;
     } else if (type &= fSERV_Http) {
         char port[10];
-        size_t len     = data->vhost ? data->hostlen : 0;
+        size_t len     = data->vhost ? data->hostlen                     : 0;
         size_t portlen = data->vhost ? sprintf(port, ":%hu", data->port) : 0;
-        assert(data->path  &&  (!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN)));
+        assert(data->port  &&  data->path);
+        assert(!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN));
         info = SERV_CreateHttpInfoEx(type, ipv4, 0/*port*/, data->path, 0/*args*/,
                                      data->vhost ? len + portlen + 1 : 0);
-        if (info) {
-            info->port = data->port
-                ? data->port
-                : info->mode & fSERV_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
-            if (data->vhost) {
-                char* vhost = (char*) info + SERV_SizeOfInfo(info);
-                memcpy(vhost, data->host, len);
-                if ((!(info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTP)  ||
-                    ( (info->mode & fSERV_Secure)  &&  info->port != CONN_PORT_HTTPS)) {
-                    char* x_port = vhost + len;
-                    if ((len += portlen) > CONN_HOST_LEN) {
-                        free(info);
-                        errno = ERANGE;
-                        info = 0;
-                    } else
-                        memcpy(x_port, port, portlen);
-                }
-                if (info) {
-                    vhost[len] = '\0';
-                    assert(len <= CONN_HOST_LEN);
-                    info->vhost = (unsigned char) len;
-                    assert((size_t) info->vhost == len);
-                }
+        if (info  &&  data->vhost) {
+            char* vhost = (char*) info + SERV_SizeOfInfo(info);
+            memcpy(vhost, data->host, len);
+            if ((!(info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTP)  ||
+                ( (info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTPS)) {
+                char* x_port = vhost + len;
+                if ((len += portlen) > CONN_HOST_LEN) {
+                    free(info);
+                    errno = ERANGE;
+                    info = 0;
+                } else
+                    memcpy(x_port, port, portlen);
+            }
+            if (info) {
+                vhost[len] = '\0';
+                assert(len <= CONN_HOST_LEN);
+                info->vhost = (unsigned char) len;
+                assert((size_t) info->vhost == len);
             }
         }
     } else if (iter->reverse_dns) {
         assert(data->port);
         info = SERV_CreateDnsInfo(ipv4);
-        if (info)
-            info->port = data->port;
     } else {
         assert(data->port);
         info = SERV_CreateStandaloneInfo(ipv4, data->port);
@@ -160,6 +152,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                           ("[%s]  LBNULL cannot create server info", iter->name));
         return 0/*failure*/;
     }
+    info->port = data->port;
     info->time = LBSM_DEFAULT_TIME + iter->time;
     info->rate = LBSM_DEFAULT_RATE;
     memcpy(&info->addr, &ipv6, sizeof(info->addr)); 
@@ -356,7 +349,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
             goto out;
         }
         assert(port);
-    } else if (!(type & (fSERV_Dns | fSERV_Http)))
+    } else if (!(type & fSERV_Dns))
         port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
