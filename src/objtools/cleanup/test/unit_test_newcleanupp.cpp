@@ -55,8 +55,10 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
+#include <objects/seqblock/GB_block.hpp>
 
 #include "../newcleanupp.hpp"
+
 
 
 USING_NCBI_SCOPE;
@@ -363,4 +365,61 @@ BOOST_AUTO_TEST_CASE(Test_BasicCleanupDeltaExt) // RW-2507
     BOOST_CHECK_EQUAL(changes->ChangeCount(), 1); // just a single change
     BOOST_CHECK(changes->IsChanged(CCleanupChange::eCleanDeltaExt));
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CopyGBBlockDivToOrgnameDiv)
+{
+    auto pBioseq = s_MakeNucSeq();
+    auto pGenbankDesc = Ref(new CSeqdesc());
+    pGenbankDesc->SetGenbank().SetDiv() = "dummy_div";
+    pBioseq->SetDescr().Set().push_back(pGenbankDesc);
+
+    auto pOrgDesc = Ref(new CSeqdesc());
+    pOrgDesc->SetOrg().SetOrgname();
+    pBioseq->SetDescr().Set().push_back(pOrgDesc);
+
+    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
+    auto pEntry = Ref(new CSeq_entry());
+    pEntry->SetSeq().Assign(*pBioseq);
+
+    auto seh = pScope->AddTopLevelSeqEntry(*pEntry);
+    auto changes = Ref(new CCleanupChange());
+    CNewCleanup_imp cleanup_imp(changes);
+    cleanup_imp.CopyGBBlockDivToOrgnameDiv(seh);
+   
+    // Check that 
+    BOOST_CHECK_EQUAL(seh.GetDescr().Get().back()->GetOrg().GetOrgname().GetDiv(), "dummy_div");
+    BOOST_CHECK_EQUAL(pEntry->GetDescr().Get().back()->GetOrg().GetOrgname().GetDiv(), "dummy_div");
+    BOOST_CHECK_EQUAL(changes->ChangeCount(), 1);
+    BOOST_CHECK(changes->IsChanged(CCleanupChange::eChangeQualifiers));
+
+    // Check that existing OrgName div doesn't change
+    auto pOldOrgDesc = seh.GetDescr().Get().back();
+    pOrgDesc->SetOrg().SetOrgname().SetDiv() = "other_div";
+    seh.GetEditHandle().ReplaceSeqdesc(*pOldOrgDesc, *pOrgDesc);
+
+    cleanup_imp.CopyGBBlockDivToOrgnameDiv(seh);
+
+    BOOST_CHECK_EQUAL(seh.GetDescr().Get().back()->GetOrg().GetOrgname().GetDiv(), "other_div");
+
+
+    // Now check on a Biosource descriptor on a set
+    pScope->ResetDataAndHistory();
+    pEntry->SetSeq().ResetDescr();
+    auto pSetEntry = Ref(new CSeq_entry());
+    pSetEntry->SetSet().SetSeq_set().push_back(pEntry);
+
+    auto pSrcDesc = Ref(new CSeqdesc());
+    pSrcDesc->SetSource().SetOrg().SetOrgname().SetDiv() = "";
+    pSetEntry->SetDescr().Set().push_back(pSrcDesc);
+    pSetEntry->SetDescr().Set().push_back(pGenbankDesc);
+    seh = pScope->AddTopLevelSeqEntry(*pSetEntry);
+
+    BOOST_CHECK(seh.GetDescr().Get().front()->GetSource().GetOrg().GetOrgname().GetDiv().empty());
+    
+    cleanup_imp.CopyGBBlockDivToOrgnameDiv(seh);
+
+    BOOST_CHECK_EQUAL(seh.GetDescr().Get().front()->GetSource().GetOrg().GetOrgname().GetDiv(), "dummy_div");
+}
+
 
