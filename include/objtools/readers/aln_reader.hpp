@@ -221,13 +221,16 @@ public:
         TReadFlags = fReadDefaults,
         objects::ILineErrorListener* pErrorListener=nullptr);
 
+    using TDim = objects::CDense_seg::TDim;
+
+
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_IdStrings;};
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
     NCBI_DEPRECATED const vector<string>& GetOrganisms(void) const {return m_Organisms;};
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
     const vector<TLineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
-    int                   GetDim(void)       const {return m_Dim;};
+    TDim                   GetDim(void)       const {return m_Dim;};
     EAlignFormat GetLastAlignmentFileFormat(void) const;
 
     NCBI_DEPRECATED
@@ -294,7 +297,7 @@ private:
     CNcbiIstream&             m_IS;
     bool                      m_ReadDone;
     bool                      m_ReadSucceeded;
-    int                       m_Dim;
+    TDim                      m_Dim;
     CRef<objects::CSeq_align> m_Aln;
     CRef<objects::CSeq_entry> m_Entry;
     vector<string>            m_SeqVec;
@@ -311,7 +314,7 @@ private:
     typedef vector<TAlignMiddleInterval> TAlignMiddles;
     TAlignMiddles m_MiddleSections;
     void x_CalculateMiddleSections();
-    typedef objects::CDense_seg::TDim TNumrow;
+    using TNumrow = TDim;
     bool x_IsGap(TNumrow row, TSeqPos pos, const string& residue);
     void x_AssignDensegIds(
         TFastaFlags fasta_flags,

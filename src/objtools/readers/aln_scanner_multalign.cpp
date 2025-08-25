@@ -61,7 +61,6 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerMultAlign::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -100,7 +99,7 @@ CAlnScannerMultAlign::xImportAlignmentData(
     bool inFirstBlock = true;
     size_t expectedDataSize = 0;
     size_t expectedNumSequences = 0;
-    int lineInBlock = 0;
+    size_t lineInBlock = 0;
     while (iStr.ReadLine(line, lineCount)) {
         NStr::TruncateSpacesInPlace(line);
 

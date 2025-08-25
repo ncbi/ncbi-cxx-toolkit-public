@@ -37,21 +37,15 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
 
 //  ============================================================================
 class CAlnScannerSequin:
     public CAlnScanner
     //  ============================================================================
 {
-public:
-    CAlnScannerSequin() {};
-    ~CAlnScannerSequin() {};
-
-protected:
+private:
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     void
@@ -59,15 +53,15 @@ protected:
         CSequenceInfo&) override;
 
     static bool
-    xIsSequinOffsetsLine(
+    sIsSequinOffsetsLine(
         const string& line);
 
     static bool
-    xIsSequinTerminationLine(
+    sIsSequinTerminationLine(
         const string& line);
 
     static bool
-    xExtractSequinSequenceData(
+    sExtractSequinSequenceData(
         const string& line,
         string& seqId,
         string& seqData);

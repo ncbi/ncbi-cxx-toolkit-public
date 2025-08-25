@@ -38,11 +38,10 @@ BEGIN_SCOPE(objects);
 
 class CLineInput;
 class CSequenceInfo;
-struct SAlignFileRaw;
 
 //  ============================================================================
 class CAlnScanner
-    //  ============================================================================
+//  ============================================================================
 {
 protected:
     using TLineInfo = SLineInfo;
@@ -50,9 +49,7 @@ protected:
 public:
     using TDeflines = vector<TLineInfo>;
 
-    CAlnScanner() {};
-
-    virtual ~CAlnScanner() {};
+    virtual ~CAlnScanner() = default;
 
     virtual void
     ProcessAlignmentFile(
@@ -61,7 +58,6 @@ public:
         SAlignmentFile&);
 
 protected:
-
     enum class ESeqIdComparison {
         eIdentical,
         eDifferByCase,
@@ -71,8 +67,7 @@ protected:
 
     virtual void
     xImportAlignmentData(
-        CSequenceInfo&,
-        CLineInput&);
+        CLineInput&) = 0;
 
     virtual void
     xAdjustSequenceInfo(
@@ -89,22 +84,22 @@ protected:
     virtual void
     xVerifySingleSequenceData(
         const CSequenceInfo&,
-        const TLineInfo& seqId,
+        const TLineInfo&        seqId,
         const vector<TLineInfo> seqData);
 
     ESeqIdComparison
     xGetExistingSeqIdInfo(
         const string& seqId,
-        TLineInfo& existingInfo);
+        TLineInfo&    existingInfo);
 
     bool
     xSeqIdIsEqualToInfoAt(
         const string& seqId,
-        int index);
+        size_t        index);
 
-    vector<TLineInfo> mSeqIds;
+    vector<TLineInfo>         mSeqIds;
     vector<vector<TLineInfo>> mSequences;
-    vector<TLineInfo> mDeflines;
+    vector<TLineInfo>         mDeflines;
 };
 
 END_SCOPE(objects)

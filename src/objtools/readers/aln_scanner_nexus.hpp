@@ -37,58 +37,35 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
-
 //  ============================================================================
-struct SNexusCommand
-//  ============================================================================
-{
-    using TArgs = list<SLineInfo>;
-    string name;
-    int startLineNum=-1;
-    TArgs args;
-};
-
-
-//  ============================================================================
-class CAlnScannerNexus:
-    public CAlnScanner
+class CAlnScannerNexus : public CAlnScanner
 //  ============================================================================
 {
 public:
-//    CAlnScannerNexus():
-//        mGapChar(0), mMissingChar(0), mMatchChar(0) {};
-    ~CAlnScannerNexus() {};
-
     TDeflines& SetDeflines(void) { return mDeflines; }
 
-    using TCommand = SNexusCommand;
-    using TCommandArgs = TCommand::TArgs;
+private:
+    struct SNexusCommand {
+        using TArgs = list<SLineInfo>;
+        string name;
+        int    startLineNum = -1;
+        TArgs  args;
+    };
+
+    using TCommand       = SNexusCommand;
+    using TCommandArgs   = TCommand::TArgs;
     using TCommandTokens = TCommandArgs;
-protected:
 
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     virtual void
     xAdjustSequenceInfo(
         CSequenceInfo&) override;
-/*
-    virtual void
-    xVerifySingleSequenceData(
-        const CSequenceInfo&,
-        const TLineInfo& seqId,
-        const vector<TLineInfo> seqData) override;
-    using TCommand = SNexusCommand;
-    using TCommandArgs = TCommand::TArgs;
-    using TCommandTokens = TCommandArgs;
 
-*/
     void
-    xProcessCommand(const TCommandTokens& commandTokens,
-            CSequenceInfo& sequenceInfo);
+    xProcessCommand(const TCommandTokens& commandTokens);
 
     void
     xProcessDimensions(const TCommandArgs& args);
@@ -102,17 +79,11 @@ protected:
     void
     xProcessMatrix(const TCommandArgs& args);
 
-    void
-    xProcessNCBIBlockCommand(TCommand& command,
-            CSequenceInfo& sequenceInfo);
+    void xProcessNCBIBlockCommand(TCommand& command);
 
-    void
-    xProcessDataBlockCommand(TCommand& command,
-            CSequenceInfo& sequenceInfo);
+    void xProcessDataBlockCommand(TCommand& command);
 
-    void
-    xProcessTaxaBlockCommand(TCommand& command,
-            CSequenceInfo& sequenceInfo);
+    void xProcessTaxaBlockCommand(TCommand& command);
 
     void
     xBeginBlock(const TCommandArgs& command);
@@ -125,35 +96,35 @@ protected:
 
     pair<TCommandArgs::const_iterator, size_t>
     xGetArgPos(const TCommandArgs& args,
-            const string& token) const;
+               const string&       token) const;
 
     pair<string, int>
     xGetKeyVal(const TCommandArgs& command,
-        const string& key);
+               const string&       key);
 
     static void sStripCommentsOutsideCommand(
         string& line,
-        int &numUnmatchedLeftBrackets,
-        bool &inCommand);
+        int&    numUnmatchedLeftBrackets,
+        bool&   inCommand);
 
     static size_t sFindCharOutsideComment(
-        char c,
+        char          c,
         const string& line,
-        int &numUnmatchedLeftBrackets,
-        size_t startPos=0);
+        int&          numUnmatchedLeftBrackets,
+        size_t        startPos = 0);
 
 
     static void sStripNexusCommentsFromCommand(
         TCommandArgs& command);
 
-    int mNumSequences = 0;
-    int mSequenceSize = 0;
-    char mMatchChar=0;
-    char mMissingChar=0;
-    char mGapChar=0;
-    bool mInBlock=false;
-    string mCurrentBlock;
-    int mBlockStartLine;
+    size_t mNumSequences = 0;
+    size_t mSequenceSize = 0;
+    char   mMatchChar    = 0;
+    char   mMissingChar  = 0;
+    char   mGapChar      = 0;
+    bool   mInBlock      = false;
+    string mCurrentBlock{};
+    int    mBlockStartLine = 0;
 };
 
 END_SCOPE(objects)

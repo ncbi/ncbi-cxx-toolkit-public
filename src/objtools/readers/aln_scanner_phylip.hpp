@@ -38,29 +38,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ============================================================================
-class CAlnScannerPhylip:
-    public CAlnScanner
+class CAlnScannerPhylip : public CAlnScanner
 //  ============================================================================
 {
-public:
-    CAlnScannerPhylip():
-        mSequenceCount(0),
-        mSequenceLength(0) {};
-
-    ~CAlnScannerPhylip() {};
-
-protected:
+private:
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     virtual void
     xVerifyAlignmentData(
         const CSequenceInfo&) override;
 
-    int mSequenceCount;
-    int mSequenceLength;
+    size_t mSequenceCount{ 0 };
+    size_t mSequenceLength{ 0 };
 };
 
 END_SCOPE(objects)
