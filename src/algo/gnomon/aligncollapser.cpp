@@ -194,11 +194,11 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
     arg_desc->SetCurrentGroup("Collapsing and filtering");
 
     arg_desc->AddFlag("filtersr","Filter SR");
-    arg_desc->AddFlag("filterest","Filter EST");
+    arg_desc->AddFlag("filterest","Filter EST (includes long read SRA alignments)");
     arg_desc->AddFlag("no_lr_only_introns","Filter introns supported only by LR");
     arg_desc->AddFlag("filtermrna","Filter mRNA");
     arg_desc->AddFlag("filterprots","Filter proteins");
-    arg_desc->AddFlag("collapsest","Collaps EST");
+    arg_desc->AddFlag("collapsest","Collaps EST (includes long read SRA alignments)");
     arg_desc->AddFlag("collapssr","Collaps SR");
     arg_desc->AddFlag("fillgenomicgaps","Use provided selfspecies cDNA for genomic gap filling");
 
@@ -2299,6 +2299,8 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                         ai.m_weight += aj.m_weight;
                         if(aj.m_range.GetTo() > ai.m_range.GetTo())
                             ai.m_range.SetTo(aj.m_range.GetTo());
+						if(aj.m_align_id > 0)
+							ai.m_align_id = abs(ai.m_align_id); // if one is not changed drop ChangedByFilter
                         collapsed = true;
                     }
                 }
