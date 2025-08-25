@@ -51,29 +51,17 @@ CAlnScanner::ProcessAlignmentFile(
     SAlignmentFile& alignInfo)
 //  ----------------------------------------------------------------------------
 {
-    xImportAlignmentData(sequenceInfo, iStr);
+    xImportAlignmentData(iStr);
     xAdjustSequenceInfo(sequenceInfo);
     xVerifyAlignmentData(sequenceInfo);
     xExportAlignmentData(alignInfo);
 }
 
-//  ----------------------------------------------------------------------------
-void
-CAlnScanner::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
-    CLineInput& iStr)
-//  ----------------------------------------------------------------------------
-{
-    throw SShowStopper(
-        -1,
-        eAlnSubcode_UnsupportedFileFormat,
-        "Input file format not recognized.");
-}
 
 //  ----------------------------------------------------------------------------
 void
 CAlnScanner::xAdjustSequenceInfo(
-    CSequenceInfo& sequenceInfo)
+    CSequenceInfo& /*sequenceInfo*/)
 //  ----------------------------------------------------------------------------
 {
 }
@@ -89,7 +77,7 @@ CAlnScanner::xVerifyAlignmentData(
 
     // make sure all sequence characters are legal, and legal in the places where
     //  they show up:
-    for (auto i=0; i < mSequences.size(); ++i) {
+    for (size_t i=0; i < mSequences.size(); ++i) {
         const auto& seqData = mSequences[i];
         const auto& seqId = mSeqIds[i];
          xVerifySingleSequenceData(sequenceInfo, seqId, seqData);
@@ -228,7 +216,7 @@ bool
 //  ----------------------------------------------------------------------------
 CAlnScanner::xSeqIdIsEqualToInfoAt(
     const string& seqId,
-    int index)
+    size_t index)
 {
     if (index >= mSeqIds.size()) {
         return false;

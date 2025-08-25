@@ -104,14 +104,11 @@ string ErrorPrintf(const char *format, ...)
     return NStr::FormatVarargs(format, args);
 }
 
-//  ----------------------------------------------------------------------------
-string BadCharCountPrintf(int expectedCount, int actualCount)
-//  ----------------------------------------------------------------------------
+string GetBadCharCountString(size_t expectedCount, size_t actualCount)
 {
-    return
-        ("Number of characters on sequence line is different from expected. " +
-        ErrorPrintf("Expected number of characters is %d. Actual number of characters is %d.",
-                expectedCount, actualCount));
+    return "Number of characters on sequence line is different from expected. "s +
+           "Expected number of characters is "s + NStr::SizetToString(expectedCount) + "." +
+           "Actual number of characters is "s + NStr::SizetToString(actualCount) + ".";
 }
 
 END_SCOPE(objects)

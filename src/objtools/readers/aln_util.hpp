@@ -67,7 +67,7 @@ namespace AlnUtil
     void CheckId(
         const string& seqId,
         const vector<SLineInfo>& orderedIds,
-        int idCount,
+        size_t idCount,
         int lineNum,
         bool firstBlock);
 

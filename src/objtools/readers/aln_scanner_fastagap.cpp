@@ -64,11 +64,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
 //  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::sSplitFastaDef(
+void CAlnScannerFastaGap::sSplitFastaDef(
     const string& rawDefStr,
-    string& seqId,
-    string& defLine)
+    string&       seqId,
+    string&       defLine)
 //  ----------------------------------------------------------------------------
 {
     string defStr = rawDefStr.substr(1);
@@ -77,49 +76,43 @@ CAlnScannerFastaGap::sSplitFastaDef(
 }
 
 //  ----------------------------------------------------------------------------
-void
-CAlnScannerFastaGap::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
+void CAlnScannerFastaGap::xImportAlignmentData(
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
-    bool waitingForSeqData = false;
-    vector<unsigned> expectedDataSizes;
-    unsigned currentDataLineIndex = 0;
-    bool processingFirstSequence = true;
-    unsigned expectedNumLines = 0;
+    bool           waitingForSeqData = false;
+    vector<size_t> expectedDataSizes;
+    size_t         currentDataLineIndex    = 0;
+    bool           processingFirstSequence = true;
+    size_t         expectedNumLines        = 0;
 
     string line;
-    int lineNumber = 0;
-    while(iStr.ReadLine(line, lineNumber)) {
+    int    lineNumber = 0;
+    while (iStr.ReadLine(line, lineNumber)) {
         NStr::TruncateSpacesInPlace(line);
 
         string seqId;
         string defLine;
 
         if (waitingForSeqData) {
-            if (line.empty()  ||  NStr::StartsWith(line, ">")) {
-                waitingForSeqData = false;
+            if (line.empty() || NStr::StartsWith(line, ">")) {
+                waitingForSeqData       = false;
                 processingFirstSequence = false;
-            }
-            else {
+            } else {
                 string seqData;
                 AlnUtil::StripBlanks(line, seqData);
                 if (processingFirstSequence) {
                     expectedDataSizes.push_back(seqData.size());
-                }
-                else {
+                } else {
 
-                    if (!expectedNumLines) {
-                        expectedNumLines = static_cast<unsigned>(expectedDataSizes.size());
+                    if (! expectedNumLines) {
+                        expectedNumLines = expectedDataSizes.size();
                     }
-                    auto currentDataSize = seqData.size();
-                    auto expectedDataSize = (currentDataLineIndex < expectedNumLines) ?
-                        expectedDataSizes[currentDataLineIndex] :
-                        0;
+                    auto currentDataSize  = seqData.size();
+                    auto expectedDataSize = (currentDataLineIndex < expectedNumLines) ? expectedDataSizes[currentDataLineIndex] : 0;
                     if (currentDataSize != expectedDataSize) {
                         string description =
-                            BadCharCountPrintf(expectedDataSize, currentDataSize);
+                            GetBadCharCountString(expectedDataSize, currentDataSize);
                         throw SShowStopper(
                             lineNumber,
                             eAlnSubcode_BadDataCount,
@@ -127,7 +120,7 @@ CAlnScannerFastaGap::xImportAlignmentData(
                             mSeqIds.back().mData);
                     }
                 }
-                mSequences.back().push_back({seqData, lineNumber});
+                mSequences.back().push_back({ seqData, lineNumber });
                 currentDataLineIndex++;
                 continue;
             }
@@ -146,19 +139,20 @@ CAlnScannerFastaGap::xImportAlignmentData(
         }
 
         TLineInfo existingInfo;
-        auto idComparison
-            = xGetExistingSeqIdInfo(seqId, existingInfo);
+        auto      idComparison = xGetExistingSeqIdInfo(seqId, existingInfo);
         if (idComparison != ESeqIdComparison::eDifferentChars) {
             string description;
             if (idComparison == ESeqIdComparison::eIdentical) {
                 description = ErrorPrintf(
-                "Duplicate ID: \"%s\" has already appeared at line %d.",
-                seqId.c_str(), existingInfo.mNumLine);
-            }
-             else { // ESeqIdComparison::eDifferByCase
+                    "Duplicate ID: \"%s\" has already appeared at line %d.",
+                    seqId.c_str(),
+                    existingInfo.mNumLine);
+            } else { // ESeqIdComparison::eDifferByCase
                 description = ErrorPrintf(
-                "Conflicting IDs: \"%s\" differs only in case from \"%s\" at line %d.",
-                seqId.c_str(), existingInfo.mData.c_str(), existingInfo.mNumLine);
+                    "Conflicting IDs: \"%s\" differs only in case from \"%s\" at line %d.",
+                    seqId.c_str(),
+                    existingInfo.mData.c_str(),
+                    existingInfo.mNumLine);
             }
 
             throw SShowStopper(
@@ -166,10 +160,10 @@ CAlnScannerFastaGap::xImportAlignmentData(
                 EAlnSubcode::eAlnSubcode_UnexpectedSeqId,
                 description);
         }
-        mSeqIds.push_back({seqId, lineNumber});
-        mDeflines.push_back({defLine, lineNumber});
+        mSeqIds.push_back({ seqId, lineNumber });
+        mDeflines.push_back({ defLine, lineNumber });
         mSequences.push_back(vector<TLineInfo>());
-        waitingForSeqData = true;
+        waitingForSeqData    = true;
         currentDataLineIndex = 0;
     }
 }

@@ -63,11 +63,10 @@ BEGIN_SCOPE(objects);
 //  ============================================================================
 
 
-struct SBlockInfo
-{
-    int seqCount = 0;
-    int lineLength = 0;
-    bool first = true;
+struct SBlockInfo {
+    int    seqCount{ 0 };
+    size_t lineLength{ 0 };
+    bool   first{ true };
 };
 
 //  ----------------------------------------------------------------------------
@@ -103,7 +102,6 @@ static void sTerminateBlock(
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerClustal::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -173,7 +171,7 @@ CAlnScannerClustal::xImportAlignmentData(
             inBlock = true;
         }
 
-        sProcessClustalDataLine(
+        xProcessClustalDataLine(
              tokens, lineCount,
              blockInfo.seqCount,
              numSeqs,
@@ -207,13 +205,13 @@ CAlnScannerClustal::sIsConservationLine(
 
 //  ----------------------------------------------------------------------------
 void
-CAlnScannerClustal::sProcessClustalDataLine(
+CAlnScannerClustal::xProcessClustalDataLine(
     const vector<string>& tokens,
     int lineNum,
     int seqCount,
     int numSeqs,
     bool firstBlock,
-    int& blockLineLength)
+    size_t& blockLineLength)
 //  ----------------------------------------------------------------------------
 {
     auto seqId = tokens[0];
@@ -295,7 +293,7 @@ CAlnScannerClustal::sProcessClustalDataLine(
     auto currentLineLength = tokens[1].size();
     if (currentLineLength != blockLineLength) {
         string description =
-            BadCharCountPrintf(blockLineLength, currentLineLength);
+            GetBadCharCountString(blockLineLength, currentLineLength);
         throw SShowStopper(
             lineNum,
             EAlnSubcode::eAlnSubcode_BadDataCount,

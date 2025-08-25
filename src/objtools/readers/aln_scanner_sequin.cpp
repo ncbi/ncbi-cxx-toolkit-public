@@ -54,7 +54,6 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerSequin::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -63,7 +62,7 @@ CAlnScannerSequin::xImportAlignmentData(
 
     bool processingData = true;
     bool inFirstBlock = false;
-    int lineInBlock = 0;
+    size_t lineInBlock = 0;
     string refSeqData;
 
     while (iStr.ReadLine(line, lineCount)) {
@@ -89,7 +88,7 @@ CAlnScannerSequin::xImportAlignmentData(
             continue;
         }
 
-        if (xIsSequinOffsetsLine(line)) {
+        if (sIsSequinOffsetsLine(line)) {
             if (processingData) {
                 throw SShowStopper(
                     lineCount,
@@ -99,7 +98,7 @@ CAlnScannerSequin::xImportAlignmentData(
             continue;
         }
 
-        if (xIsSequinTerminationLine(line)) {
+        if (sIsSequinTerminationLine(line)) {
             if (processingData) {
                 throw SShowStopper(
                     lineCount,
@@ -119,7 +118,7 @@ CAlnScannerSequin::xImportAlignmentData(
             }
         }
         string seqId, seqData;
-        if (!xExtractSequinSequenceData(line, seqId, seqData)) {
+        if (!sExtractSequinSequenceData(line, seqId, seqData)) {
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_IllegalDataLine,
@@ -183,7 +182,7 @@ CAlnScannerSequin::xImportAlignmentData(
                     EAlnSubcode::eAlnSubcode_BadDataCount,
                     description);
             }
-            for (auto i = 0; i < seqData.size(); ++i) {
+            for (size_t i = 0; i < seqData.size(); ++i) {
                 if (seqData[i] == '.') {
                     seqData[i] = refSeqData[i];
                 }
@@ -208,7 +207,7 @@ CAlnScannerSequin::xAdjustSequenceInfo(
 
 //  ----------------------------------------------------------------------------
 bool
-CAlnScannerSequin::xIsSequinOffsetsLine(
+CAlnScannerSequin::sIsSequinOffsetsLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
@@ -227,7 +226,7 @@ CAlnScannerSequin::xIsSequinOffsetsLine(
 
 //  ----------------------------------------------------------------------------
 bool
-CAlnScannerSequin::xIsSequinTerminationLine(
+CAlnScannerSequin::sIsSequinTerminationLine(
     const string& line)
 //  ----------------------------------------------------------------------------
 {
@@ -236,7 +235,7 @@ CAlnScannerSequin::xIsSequinTerminationLine(
 
 //  ----------------------------------------------------------------------------
 bool
-CAlnScannerSequin::xExtractSequinSequenceData(
+CAlnScannerSequin::sExtractSequinSequenceData(
     const string& line,
     string& seqId,
     string& seqData)
@@ -256,12 +255,12 @@ CAlnScannerSequin::xExtractSequinSequenceData(
             // error: need at least ID and one block of sequence data and bounds
             return false;
         }
-        for (auto curBlock = 3; curBlock < tokens.size() - 1; ++curBlock) {
+        for (size_t curBlock = 3; curBlock < tokens.size() - 1; ++curBlock) {
             seqData += tokens[curBlock];
         }
     }
     else {
-        for (auto curBlock = 1; curBlock < tokens.size(); ++curBlock) {
+        for (size_t curBlock = 1; curBlock < tokens.size(); ++curBlock) {
             seqData += tokens[curBlock];
         }
     }

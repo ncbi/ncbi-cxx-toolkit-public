@@ -41,7 +41,7 @@ extern thread_local unique_ptr<CAlnErrorReporter> theErrorReporter;
 
 string ErrorPrintf(const char *format, ...);
 
-string BadCharCountPrintf(int expectedCount, int actualCount);
+string GetBadCharCountString(size_t expectedCount, size_t actualCount);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

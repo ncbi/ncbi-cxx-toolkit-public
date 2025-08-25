@@ -1,0 +1,166 @@
+%YAML 1.2
+---
+Language: Cpp
+# See: DVT-31, LLVM and WebKit are closest to NCBI Style, subjective choice.
+BasedOnStyle: WebKit
+
+# See: DVT-31, contradictory (BABY/CLIN/FCS/KIS vs POPFREQ).
+AlignAfterOpenBracket: Align
+AlignOperands: Align
+
+# See: The NCBI C++ Toolkit Book.
+#     4-space indentation only!
+#     Tabulation symbol must not be used for indentation.
+# INHERITED: BasedOnStyle: WebKit (TabWidth: 4)
+
+# See: The NCBI C++ Toolkit Book.
+#     class CFooClass
+#     {
+#     public:
+# INHERITED: BasedOnStyle: WebKit (AccessModifierOffset: -4)
+
+# See: The NCBI C++ Toolkit Book.
+#     #if defined(NCBI_FOOBAR)
+#     #  define NCBI_FOO 1
+#     #else if NCBI_BARFOO > 1001
+#     #  include <bar/foo.hpp>
+#     #  if NCBI_BARFOO_VER > 12345
+#     #    define NCBI_FOO "bar"
+#     #  else
+#     #    define NCBI_FOO "foo"
+#     #  endif
+#     #else
+#     #  define NCBI_FOO ""
+#     #endif
+IndentPPDirectives: AfterHash
+PPIndentWidth: 2
+
+# See: DVT-31, POPFREQ.
+ForEachMacros:
+  - foreach
+  - Q_FOREACH
+  - BOOST_FOREACH
+  - ITERATE
+  - CONST_ITERATE
+
+# See: The NCBI C++ Toolkit Book.
+#     When reasonably possible, use spaces to align
+#     corresponding elements vertically.
+#     (This overrides most of the rules below.)
+AlignConsecutiveAssignments: AcrossComments
+# CHANGE: Nested configuration in Clang-Format 15.
+#  Enabled: true
+#  AcrossEmptyLines: false
+#  AcrossComments: true
+#  AlignCompound: true
+AlignConsecutiveBitFields: AcrossComments
+# CHANGE: Nested configuration in Clang-Format 15.
+#  Enabled: true
+#  AcrossEmptyLines: false
+#  AcrossComments: true
+#  AlignCompound: true
+#  PadOperators: true
+AlignConsecutiveDeclarations: AcrossComments
+# CHANGE: Nested configuration in Clang-Format 15.
+#  Enabled: true
+#  AcrossEmptyLines: false
+#  AcrossComments: true
+#  AlignCompound: true
+#  PadOperators: true
+AlignConsecutiveMacros: AcrossComments
+# CHANGE: Nested configuration in Clang-Format 15.
+#  Enabled: true
+#  AcrossEmptyLines: false
+#  AcrossComments: true
+#  AlignCompound: true
+#  PadOperators: true
+AlignTrailingComments: true
+
+# See: DVT-31, HSMART vs POPFREQ.
+AlignEscapedNewlines: Left
+
+# See: The NCBI C++ Toolkit Book.
+#     string* arg2
+# INHERITED: BasedOnStyle: WebKit (PointerAlignment: Left)
+
+# See: The NCBI C++ Toolkit Book.
+#     long    arg3 = 12
+# INHERITED: BasedOnStyle: WebKit (SpaceBeforeAssignmentOperators: true)
+
+# See: The NCBI C++ Toolkit Book.
+#     class CFooClass
+#     {
+#
+# See: clang-format
+#        case FormatStyle::BS_Linux:
+#        Expanded.BraceWrapping.AfterClass = true;
+#        Expanded.BraceWrapping.AfterFunction = true;
+#        Expanded.BraceWrapping.AfterNamespace = true;
+BreakBeforeBraces: Linux
+
+# See: DVT-31, sorting includes may alter behavior.
+SortIncludes: Never
+SortUsingDeclarations: false
+
+# See: The NCBI C++ Toolkit Book.
+#     Leave one space on either side of most binary operators,
+#     and two spaces on either side of boolean && and ||.
+# UNSUPPORTED
+
+# See: The NCBI C++ Toolkit Book.
+#     Put one space between the names of flow-control keywords
+#     and macros and their arguments, but no space after the names
+#     of functions except when necessary for alignment.
+#
+#     if (x) {
+#     CFooClass(int init_int);
+# UNSUPPORTED for macros
+# INHERITED: BasedOnStyle: WebKit (SpaceBeforeParens: ControlStatements)
+
+# See: The NCBI C++ Toolkit Book.
+#     Leave two spaces after the semicolons in for (...; ...; ...).
+# UNSUPPORTED
+
+# See: The NCBI C++ Toolkit Book.
+#     Leave whitespace around negated conditions so that
+#     the ! stands out better.
+SpaceAfterLogicalNot: true
+
+# See: The NCBI C++ Toolkit Book.
+#     Leave two blank lines between function definitions.
+MaxEmptyLinesToKeep: 2
+
+# See: DVT-31, BABY/CLIN/FCS/KIS.
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: None
+BreakConstructorInitializers: AfterColon
+
+# See: CXX-8820 C++ Toolkit coding style -- remove the
+#     limitation of the line length?
+#     https://bitbucket.ncbi.nlm.nih.gov/users/holmesbr/repos/
+#         psg_perf_test/raw/.clang-format?at=refs%2Fheads%2Fmaster
+# See DVT-31, BABY/CLIN/FCS/KIS (ColumnLimit: 120),
+#     ALFA (ex POPFREQ): ColumnLimit: 80
+# INHERITED: BasedOnStyle: WebKit (ColumnLimit: 0)
+
+# See: The NCBI C++ Toolkit Book.
+#     namespace ncbi {
+#         // Indented code etc.
+#     }
+# https://ncbi.github.io/cxx-toolkit/pages/ch_core#ch_core.namespace_concat
+NamespaceIndentation: All
+
+# See: DVT-31, BABY/CLIN/FCS/KIS.
+PackConstructorInitializers: CurrentLine
+
+# See: DVT-31, de facto most prevalent.
+Cpp11BracedListStyle: false
+
+# See: DVT-31, de facto most prevalent.
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyBlock: false
+
+# See: Slack #tmp-clang-format 3/22/2022.
+# Never allow single-line if statements.
+# INHERITED: BasedOnStyle: WebKit (AllowShortIfStatementsOnASingleLine: Never)

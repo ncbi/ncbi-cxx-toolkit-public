@@ -37,21 +37,14 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerMultAlign:
-    public CAlnScanner
-    //  ============================================================================
+class CAlnScannerMultAlign : public CAlnScanner
+//  ============================================================================
 {
-public:
-    CAlnScannerMultAlign() {};
-    ~CAlnScannerMultAlign() {};
-
-protected:
+private:
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     virtual void
@@ -61,14 +54,14 @@ protected:
     virtual void
     xVerifySingleSequenceData(
         const CSequenceInfo&,
-        const TLineInfo& seqId,
+        const TLineInfo&        seqId,
         const vector<TLineInfo> seqData) override;
 
     void
     xGetExpectedDataSize(
         const string& line,
-        int lineNumber,
-        size_t& dataSize);
+        int           lineNumber,
+        size_t&       dataSize);
 };
 
 END_SCOPE(objects)

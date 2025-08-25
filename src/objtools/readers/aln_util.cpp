@@ -43,15 +43,13 @@ BEGIN_SCOPE(objects);
 
 
 //  --------------------------------------------------------------------------
-void
-AlnUtil::CheckId(const string& seqId,
-        const vector<SLineInfo>& orderedIds,
-        int idCount,
-        int lineNum,
-        bool firstBlock)
+void AlnUtil::CheckId(const string&            seqId,
+                      const vector<SLineInfo>& orderedIds,
+                      size_t                   idCount,
+                      int                      lineNum,
+                      bool                     firstBlock)
 //  --------------------------------------------------------------------------
 {
-    string description;
 
     if ((orderedIds.size() > idCount) &&
         seqId == orderedIds[idCount].mData) {
@@ -62,8 +60,9 @@ AlnUtil::CheckId(const string& seqId,
     string seqIdLower(seqId);
     NStr::ToLower(seqIdLower);
 
-    auto it = orderedIds.begin();
-    bool exactCopy = false;
+    auto   it = orderedIds.begin();
+    bool   exactCopy{ false };
+    size_t idPos{ 0 };
     while (it != orderedIds.end()) {
         if (it->mData == seqId) {
             exactCopy = true;
@@ -74,25 +73,28 @@ AlnUtil::CheckId(const string& seqId,
         if (orderedIdLower == seqIdLower) {
             break;
         }
+        ++idPos;
         ++it;
     }
 
 
+    string description;
     if (firstBlock) {
         if (it != orderedIds.end()) {
             if (exactCopy) {
                 description = ErrorPrintf(
                     "Duplicate ID: \"%s\" has already appeared in this block, on line %d.", seqId.c_str(), it->mNumLine);
-            }
-            else {
+            } else {
                 description = ErrorPrintf(
-                "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), it->mData.c_str(), it->mNumLine);
+                    "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.",
+                    seqId.c_str(),
+                    it->mData.c_str(),
+                    it->mNumLine);
             }
             throw SShowStopper(
                 lineNum,
                 eAlnSubcode_UnexpectedSeqId,
                 description);
-
         }
         return;
     }
@@ -107,26 +109,25 @@ AlnUtil::CheckId(const string& seqId,
     }
 
 
-    auto idPos = distance(orderedIds.begin(), it);
     if (idPos < idCount) {
         if (exactCopy) {
             description = ErrorPrintf(
                 "Duplicate ID: \"%s \" has already appeared in this block, on line %d.",
-                seqId.c_str(), it->mNumLine);
-        }
-        else {
+                seqId.c_str(),
+                it->mNumLine);
+        } else {
             description = ErrorPrintf(
-            "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.", seqId.c_str(), it->mData.c_str(), it->mNumLine);
+                "Conflicting IDs: \"%s\" differs only in case from \"%s\", which has already appeared in this block, on line %d.",
+                seqId.c_str(),
+                it->mData.c_str(),
+                it->mNumLine);
         }
-    }
-    else
-    if (idPos == idCount) { //
+    } else if (idPos == idCount) {
         description = ErrorPrintf(
             "Inconsistent ID case: \"%s\" differs in case from \"%s\" used to identify this sequence in the first block.",
-            seqId.c_str(), it->mData.c_str());
-    }
-    else
-    {
+            seqId.c_str(),
+            it->mData.c_str());
+    } else {
         description = "Sequence_IDs are in different orders in the data blocks in your file. The sequences and sequence_IDs are expected to be in the same order in each block.";
     }
     throw SShowStopper(

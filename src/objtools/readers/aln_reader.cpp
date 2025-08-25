@@ -311,7 +311,7 @@ void CAlnReader::Read(
         return;
     }
 
-    m_Dim = m_IdStrings.size();
+    m_Dim = static_cast<TDim>(m_IdStrings.size());
     m_ReadDone = true;
     m_ReadSucceeded = true;
 }
@@ -333,7 +333,7 @@ void CAlnReader::Read(
         theErrorReporter->Fatal(showStopper);
         return;
     }
-    m_Dim = m_IdStrings.size();
+    m_Dim = static_cast<TDim>(m_IdStrings.size());
     m_ReadDone = true;
     m_ReadSucceeded = true;
 }
@@ -544,10 +544,10 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
         x_AssignDensegIds(fasta_flags, ds);
 
         // get the length of the alignment
-        TSeqPos aln_stop = m_Seqs[0].size();
+        TSeqPos aln_stop = static_cast<TSeqPos>(m_Seqs[0].size());
         for (TNumrow row_i = 1; row_i < m_Dim; row_i++) {
             if (m_Seqs[row_i].size() > aln_stop) {
-                aln_stop = m_Seqs[row_i].size();
+                aln_stop = static_cast<TSeqPos>(m_Seqs[row_i].size());
             }
         }
 
@@ -667,7 +667,7 @@ CAlnReader::x_GetSequenceMolType(
                 seqChars.end());
     }
 
-    auto formatGuess = CFormatGuess::SequenceType(seqChars.data(), seqChars.length());
+    auto formatGuess = CFormatGuess::SequenceType(seqChars.data(), static_cast<unsigned>(seqChars.length()));
     if (formatGuess == CFormatGuess::eProtein) {
         return CSeq_inst::eMol_aa;
     }
@@ -707,7 +707,7 @@ CRef<CSeq_inst> CAlnReader::x_GetSeqInst(
     auto pSeqInst = Ref(new CSeq_inst());
     pSeqInst->SetRepr(CSeq_inst::eRepr_raw);
     pSeqInst->SetMol(mol);
-    pSeqInst->SetLength(seqData.size());
+    pSeqInst->SetLength(static_cast<CSeq_inst::TLength>(seqData.size()));
     CSeq_data& data = pSeqInst->SetSeq_data();
     if (mol == CSeq_inst::eMol_aa) {
         data.SetIupacaa().Set(seqData);

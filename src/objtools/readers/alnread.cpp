@@ -56,7 +56,10 @@ GetScannerForFormat(
 {
     switch(format) {
     default:
-        return new CAlnScanner();
+        throw SShowStopper(
+            -1,
+            eAlnSubcode_UnsupportedFileFormat,
+            "Input file format not recognized.");
     case EAlignFormat::PHYLIP:
         return new CAlnScannerPhylip();
     case EAlignFormat::FASTAGAP:
@@ -70,6 +73,8 @@ GetScannerForFormat(
     case EAlignFormat::MULTALIN:
         return new CAlnScannerMultAlign();
     }
+
+    return nullptr;
 }
 
 

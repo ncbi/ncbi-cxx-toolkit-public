@@ -67,7 +67,6 @@ BEGIN_SCOPE(objects);
 //  ----------------------------------------------------------------------------
 void
 CAlnScannerPhylip::xImportAlignmentData(
-    CSequenceInfo& sequenceInfo,
     CLineInput& iStr)
 //  ----------------------------------------------------------------------------
 {
@@ -80,8 +79,8 @@ CAlnScannerPhylip::xImportAlignmentData(
     vector<string> tokens;
     NStr::TruncateSpacesInPlace(line);
     NStr::Split(line,  " \t", tokens, NStr::fSplit_MergeDelimiters);
-    mSequenceCount =  NStr::StringToInt(tokens[0]);
-    mSequenceLength = NStr::StringToInt(tokens[1]);
+    mSequenceCount =  NStr::StringToSizet(tokens[0]);
+    mSequenceLength = NStr::StringToSizet(tokens[1]);
 
 
     size_t dataLineCount(0);
@@ -175,8 +174,7 @@ CAlnScannerPhylip::xImportAlignmentData(
         }
         else
         if (currentLineLength != blockLineLength) {
-            string description =
-                BadCharCountPrintf(blockLineLength,currentLineLength);
+            auto description = GetBadCharCountString(blockLineLength, currentLineLength);
             throw SShowStopper(
                 lineCount,
                 EAlnSubcode::eAlnSubcode_BadDataCount,
@@ -217,7 +215,7 @@ CAlnScannerPhylip::xVerifyAlignmentData(
             EAlnSubcode::eAlnSubcode_BadSequenceCount,
             description);
     }
-    auto actualSequenceLength = 0;
+    size_t actualSequenceLength = 0;
     for (auto sequenceData: mSequences[0]) {
         actualSequenceLength += sequenceData.mData.size();
     }

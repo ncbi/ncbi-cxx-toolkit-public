@@ -37,18 +37,15 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-struct SAlignFileRaw;
 
 //  ============================================================================
-class CAlnScannerClustal:
-    public CAlnScanner
+class CAlnScannerClustal : public CAlnScanner
 //  ============================================================================
 {
 
 private:
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     static bool
@@ -56,13 +53,13 @@ private:
         const string& line);
 
     void
-    sProcessClustalDataLine(
+    xProcessClustalDataLine(
         const vector<string>& tokens,
-        int lineNum,
-        int seqCount,
-        int numSeqs,
-        bool firstBlock,
-        int& blockLineLength);
+        int                   lineNum,
+        int                   seqCount,
+        int                   numSeqs,
+        bool                  firstBlock,
+        size_t&               blockLineLength);
 };
 
 END_SCOPE(objects)

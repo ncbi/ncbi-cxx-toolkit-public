@@ -38,30 +38,20 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-class CPeekAheadStream;
-class CSequenceInfo;
-struct SAlignFileRaw;
-
 //  ============================================================================
-class CAlnScannerFastaGap:
-    public CAlnScanner
-    //  ============================================================================
+class CAlnScannerFastaGap : public CAlnScanner
+//  ============================================================================
 {
-public:
-    CAlnScannerFastaGap() {};
-    ~CAlnScannerFastaGap() {};
-
-protected:
+private:
     void
     xImportAlignmentData(
-        CSequenceInfo&,
         CLineInput&) override;
 
     static void
     sSplitFastaDef(
         const string& rawDefStr,
-        string& seqId,
-        string& defLine);
+        string&       seqId,
+        string&       defLine);
 };
 
 END_SCOPE(objects)
