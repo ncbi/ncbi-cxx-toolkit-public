@@ -135,8 +135,28 @@ public:
                 CRef<CSeq_id> id(new CSeq_id(line, (CSeq_id::fParse_AnyRaw | 
 							CSeq_id::fParse_ValidLocal)));
 		if (id->IsLocal()  &&  !NStr::StartsWith(line, "lcl|") ) {
-                    // Expected to throw an exception.
+            if (m_ReadProteins) {
+                // For protein queries try a PIR accession, some of these are
+                // are not recognized from a bare accession.
+                string pir_id = "pir|" + line;
+                id.Reset(new CSeq_id(pir_id));
+                try {
+                    CRef<CBioseq> bioseq(x_CreateBioseq(id));
+                    CRef<CSeq_entry> retval(new CSeq_entry());
+                    retval->SetSeq(*bioseq);
+                    return retval;
+                }
+                catch (CException& e) {
+                    // If a sequence could not be retrieved, the accession
+                    // is not a PIR. Execute the line below to throw a proper
+                    // exception to return to the original code path.
                     id.Reset(new CSeq_id(line));
+                }
+            }
+            else {
+                // Expected to throw an exception.
+                id.Reset(new CSeq_id(line));
+            }
 		}
                 CRef<CBioseq> bioseq(x_CreateBioseq(id));
                 CRef<CSeq_entry> retval(new CSeq_entry());
