@@ -453,6 +453,7 @@ public:
         eAcc_ddbj_est            = NCBI_ACC(ddbj, est,            nuc),  // C
         eAcc_ddbj_dirsub         = NCBI_ACC(ddbj, dirsub,         nuc),  // D
         eAcc_ddbj_patent         = NCBI_ACC(ddbj, div_patent,     nuc),  // E
+        eAcc_ddbj_patent_prot    = NCBI_ACC(ddbj, div_patent,     prot), // ZAA
         eAcc_ddbj_mrna           = NCBI_ACC(ddbj, mrna,           nuc),  // AK
         eAcc_ddbj_tsa_nuc        = NCBI_ACC(ddbj, tsa,            nuc),  // FX
         eAcc_ddbj_tsa_prot       = NCBI_ACC(ddbj, tsa,            prot), // LAA

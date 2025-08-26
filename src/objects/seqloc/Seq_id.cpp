@@ -657,6 +657,7 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     { "ddbj_other",              CSeq_id::eAcc_ddbj_other },
     { "ddbj_other_nuc",          CSeq_id::eAcc_ddbj_other_nuc },
     { "ddbj_patent",             CSeq_id::eAcc_ddbj_patent },
+    { "ddbj_patent_prot",        CSeq_id::eAcc_ddbj_patent_prot },
     { "ddbj_prot",               CSeq_id::eAcc_ddbj_prot },
     { "ddbj_targeted_nuc",       CSeq_id::eAcc_ddbj_targeted_nuc },
     { "ddbj_targetedm_nuc",      CSeq_id::eAcc_ddbj_targetedm_nuc },
