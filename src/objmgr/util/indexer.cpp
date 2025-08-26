@@ -878,14 +878,18 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Taxname.clear();
     m_Common.clear();
     m_Lineage.clear();
+    m_Div.clear();
     m_Taxid = ZERO_TAX_ID;
     m_UsingAnamorph = false;
+    m_Origin = CBioSource::eOrigin_unknown;
     m_Genus.clear();
     m_Species.clear();
     m_Multispecies = false;
     m_Genome = NCBI_GENOME(unknown);
     m_IsPlasmid = false;
     m_IsChromosome = false;
+
+    m_BestProteinFeat.Reset();
 
     m_Organelle.clear();
 
@@ -900,6 +904,8 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Map.clear();
     m_Plasmid.clear();
     m_Segment.clear();
+    m_IsTransgenic = false;
+    m_IsEnvSample = false;
 
     m_Breed.clear();
     m_Cultivar.clear();
@@ -1352,10 +1358,19 @@ void CBioseqIndex::x_InitSource (void)
                 if (onp.CanGetLineage()) {
                     m_Lineage = onp.GetLineage();
                 }
+                if (onp.CanGetDiv()) {
+                    m_Div = onp.GetDiv();
+                }
+            }
+            if (m_BioSource->CanGetOrigin()) {
+                m_Origin = m_BioSource->GetOrigin();
             }
             if (m_BioSource->CanGetOrg()) {
                 const COrg_ref& org = m_BioSource->GetOrg();
                 m_Taxid = org.GetTaxId();
+                if (org.IsSetDivision()) {
+                    m_Div = org.GetDivision();
+                }
             }
             if (m_BioSource->IsSetGenome()) {
                 m_Genome = m_BioSource->GetGenome();
@@ -1366,6 +1381,15 @@ void CBioseqIndex::x_InitSource (void)
             // process SubSource
             FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_BioSource) {
                 const CSubSource& sbs = **sbs_itr;
+                if (sbs.IsSetSubtype()) {
+                    CSubSource::TSubtype typ = sbs.GetSubtype();
+                    if (typ == CSubSource::eSubtype_transgenic) {
+                        m_IsTransgenic = true;
+                    }
+                    if (typ == CSubSource::eSubtype_environmental_sample) {
+                        m_IsEnvSample = true;
+                    }
+                }
                 if (! sbs.IsSetName()) continue;
                 const string& str = sbs.GetName();
                 SWITCH_ON_SUBSOURCE_CHOICE (sbs) {
@@ -1783,6 +1807,9 @@ void CBioseqIndex::x_InitDescs (void)
                     const CGB_block& gbk = desc_it->GetGenbank();
                     if (gbk.IsSetKeywords()) {
                         keywords = &gbk.GetKeywords();
+                    }
+                    if (gbk.CanGetDiv()) {
+                        m_GBDiv = gbk.GetDiv();
                     }
                     break;
                 }
@@ -2246,6 +2273,10 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                         m_BestProteinFeature = sfx;
                         longest = prot_length;
                         bestprocessed = processed;
+                        for (auto name: prp.GetName()) {
+                            m_BestProtName = name;
+                            break;
+                        }
                     } else if (prot_length == longest) {
                         // unprocessed 0 > preprotein 1 > mat peptide 2
                         if (processed < bestprocessed) {
@@ -2253,6 +2284,10 @@ void CBioseqIndex::x_InitFeats (CSeq_loc* slpp)
                             m_BestProteinFeature = sfx;
                             longest = prot_length;
                             bestprocessed = processed;
+                            for (auto name: prp.GetName()) {
+                                m_BestProtName = name;
+                                break;
+                            }
                         }
                     }
                     continue;
@@ -2535,6 +2570,16 @@ const string& CBioseqIndex::GetLineage (void)
     return m_Lineage;
 }
 
+const string& CBioseqIndex::GetDiv (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Div;
+}
+
 TTaxId CBioseqIndex::GetTaxid (void)
 
 {
@@ -2553,6 +2598,16 @@ bool CBioseqIndex::IsUsingAnamorph (void)
     }
 
     return m_UsingAnamorph;
+}
+
+CBioSource::TOrigin CBioseqIndex::GetOrigin (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_Origin;
 }
 
 CTempString CBioseqIndex::GetGenus (void)
@@ -2693,6 +2748,26 @@ bool CBioseqIndex::HasClone (void)
     }
 
     return m_has_clone;
+}
+
+bool CBioseqIndex::IsTransgenic (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_IsTransgenic;
+}
+
+bool CBioseqIndex::IsEnvSample (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_IsEnvSample;
 }
 
 CTempString CBioseqIndex::GetMap (void)

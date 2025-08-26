@@ -455,6 +455,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
 
     m_IsSeg = false;
     m_IsDelta = bsx->IsDelta();
+    m_IsDeltaLitOnly = bsx->IsDeltaLitOnly();
     m_IsVirtual = bsx->IsVirtual();
     m_IsMap = bsx->IsMap();
 
@@ -507,6 +508,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Unordered = bsx->IsUnordered();
 
     m_PDBCompound = bsx->GetPDBCompound();
+    m_GBDiv = bsx->GetGBDiv();
 
     m_Source = bsx->GetBioSource();
     m_Taxname = bsx->GetTaxname();
@@ -516,6 +518,12 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Genome = bsx->GetGenome();
     m_IsPlasmid = bsx->IsPlasmid();
     m_IsChromosome = bsx->IsChromosome();
+    m_Div = bsx->GetDiv();
+    m_Origin = bsx->GetOrigin();
+    m_Taxid = bsx->GetTaxid();
+    m_Protein.clear();
+
+    m_BestProteinFeat = bsx->GetBestProteinFeature();
 
     m_Organelle = bsx->GetOrganelle();
 
@@ -530,6 +538,8 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Map = bsx->GetMap();
     m_Plasmid = bsx->GetPlasmid();
     m_Segment = bsx->GetSegment();
+    m_IsTransgenic = bsx->IsTransgenic();
+    m_IsEnvSample = bsx->IsEnvSample();
 
     m_Breed = bsx->GetBreed();
     m_Cultivar = bsx->GetCultivar();
@@ -632,6 +642,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_IsSeg = false;
     m_IsDelta = false;
+    m_IsDeltaLitOnly = false;
     m_IsVirtual = false;
     m_IsMap = false;
 
@@ -680,6 +691,7 @@ void CDeflineGenerator::x_SetFlags (
     m_Unordered = false;
 
     m_PDBCompound.clear();
+    m_GBDiv.clear();
 
     m_Source.Reset();
     m_Taxname.clear();
@@ -689,6 +701,12 @@ void CDeflineGenerator::x_SetFlags (
     m_Genome = NCBI_GENOME(unknown);
     m_IsPlasmid = false;
     m_IsChromosome = false;
+    m_Div.clear();
+    m_Origin = CBioSource::eOrigin_unknown;
+    m_Taxid = ZERO_TAX_ID;
+    m_Protein.clear();
+
+    m_BestProteinFeat.Reset();
 
     m_Organelle.clear();
 
@@ -703,6 +721,8 @@ void CDeflineGenerator::x_SetFlags (
     m_Map.clear();
     m_Plasmid.clear();
     m_Segment.clear();
+    m_IsTransgenic = false;
+    m_IsEnvSample = false;
 
     m_Breed.clear();
     m_Cultivar.clear();
@@ -3447,11 +3467,159 @@ static const char* s_tpaPrefixList [] = {
   "UNVERIFIED_CONTAM:",
   "UNVERIFIED:"
 };
+
+string CDeflineGenerator::x_GetDivision(const CBioseq_Handle & bsh)
+{
+    if (m_IsDelta && !m_IsDeltaLitOnly) {
+        return "CON";
+    }
+
+    string division;
+
+    division = m_Div;
+
+    switch (m_MITech) {
+    case CMolInfo::eTech_est:
+        division = "EST";
+        break;
+    case CMolInfo::eTech_sts:
+        division = "STS";
+        break;
+    case CMolInfo::eTech_survey:
+        division = "GSS";
+        break;
+    case CMolInfo::eTech_htgs_0:
+    case CMolInfo::eTech_htgs_1:
+    case CMolInfo::eTech_htgs_2:
+        division = "HTG";
+        break;
+    case CMolInfo::eTech_htc:
+        division = "HTC";
+        break;
+    case CMolInfo::eTech_tsa:
+        division = "TSA";
+        break;
+    default:
+        break;
+    }
+
+    if (m_Origin == CBioSource::eOrigin_synthetic ||
+        m_Origin == CBioSource::eOrigin_mut ||
+        m_Origin == CBioSource::eOrigin_artificial ||
+        m_IsTransgenic) {
+        division = "SYN";
+    } else if (m_IsEnvSample) {
+        switch (m_MITech) {
+        case CMolInfo::eTech_unknown :
+        case CMolInfo::eTech_standard :
+        case CMolInfo::eTech_htgs_3 :
+        case CMolInfo::eTech_wgs :
+        case CMolInfo::eTech_concept_trans :
+        case CMolInfo::eTech_seq_pept :
+        case CMolInfo::eTech_both :
+        case CMolInfo::eTech_seq_pept_overlap :
+        case CMolInfo::eTech_seq_pept_homol :
+        case CMolInfo::eTech_concept_trans_a :
+        case CMolInfo::eTech_other:
+            division = "ENV";
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (m_IsTransgenic && m_MITech == CMolInfo::eTech_survey) {
+        division = "GSS";
+    }
+
+    if (m_IsPatent) {
+        division = "PAT";
+    }
+
+    if (m_IsAA) {
+        CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+        if (bsx) {
+            CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
+            auto nucx = bsxp.Lock();
+            if (nucx && nucx->IsPatent()) {
+                division = "PAT";
+            }
+        }
+    }
+
+    if (division.empty() || m_GBDiv == "SYN" || m_GBDiv == "PAT") {
+        division = m_GBDiv;
+    }
+
+    // Set a default value (3 spaces)
+    if ( division.empty() ) {
+        division = "   ";
+    }
+
+    return division;
+}
+
+string CDeflineGenerator::x_GetProtein(const CBioseq_Handle & bsh)
+{
+    if (!m_IsAA) {
+        return m_Protein;
+    }
+
+    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
+    if (!bsx) {
+        return m_Protein;
+    }
+
+    string bestprotname = bsx->GetBestProteinName();
+    if (! bestprotname.empty()) {
+        m_Protein = bestprotname;
+        return m_Protein;
+    }
+
+    CRef<CFeatureIndex> pfx = bsx->GetBestProteinFeature();
+    if (!pfx) {
+        return m_Protein;
+    }
+
+    const CMappedFeat& protFeat = pfx->GetMappedFeat();
+    if (!protFeat) {
+        return m_Protein;
+    }
+
+    const CProt_ref& protRef = protFeat.GetData().GetProt();
+
+    for (auto name: protRef.GetName()) {
+        m_Protein = name;
+        return m_Protein;
+    }
+
+    return m_Protein;
+}
+
 string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
 {
     CDefLineJoiner joiner(true);
 
     x_SetBioSrc (bsh);
+
+    if (m_Taxid > 0) {
+        string taxVal = NStr::IntToString(m_Taxid);
+        joiner.Add("taxid", taxVal);
+    }
+
+    string div = x_GetDivision(bsh);
+    if (!div.empty()) {
+        joiner.Add("div", div);
+    }
+
+    if (m_IsAA) {
+        if (m_Protein.empty()) {
+            x_GetProtein(bsh);
+        }
+        if (!m_Protein.empty()) {
+            joiner.Add("protein", m_Protein);
+        }
+    }
 
     joiner.Add("location", m_Organelle);
     if (m_IsChromosome || !m_Chromosome.empty()) {
