@@ -3608,7 +3608,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
     }
 
     string div = x_GetDivision(bsh);
-    if (!div.empty() && div != "   ") {
+    if (!div.empty() && !NStr::IsBlank(div)) {
         joiner.Add("div", div);
     }
 
