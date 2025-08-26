@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Aug 26 15:29:15 EDT 2025; formally
+/* time_t value corresponding to Tue Aug 26 15:48:12 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1756236555UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1756237692UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -136,10 +136,16 @@ static const char* const kBuiltInGuide[] = {
     "3+7  X??  gb_prot",
     "3+9  X??  gb_prot",
     "3+11 X??  gb_prot",
-    "3+5  ???  unreserved_prot",
-    "3+7  ???  unreserved_prot",
-    "3+9  ???  unreserved_prot",
-    "3+11 ???  unreserved_prot",
+    "3+5  Y??  gb_prot",
+    "3+7  Y??  gb_prot",
+    "3+9  Y??  gb_prot",
+    "3+11 Y??  gb_prot",
+    "3+5  Z??  ddbj_prot # fallback to placate older clients",
+    "3+5  Z??  ddbj_patent_prot",
+    "3+7  Z??  ddbj_prot # fallback to placate older clients",
+    "3+7  Z??  ddbj_patent_prot",
+    "3+9  Z??  ddbj_prot",
+    "3+11 Z??  ddbj_prot",
     "",
     "# Genome pipeline accessions",
     "4+9  GPC_  gpipe_chromosome",
@@ -1491,6 +1497,12 @@ static const char* const kBuiltInGuide[] = {
     "2+6  QO  embl_patent",
     "2+8  QO  embl_other_nuc",
     "2+10 QO  embl_other_nuc",
+    "2+6  QP  ddbj_patent",
+    "2+8  QP  ddbj_other_nuc",
+    "2+10 QP  ddbj_other_nuc",
+    "2+6  QQ  ddbj_patent",
+    "2+8  QQ  ddbj_other_nuc",
+    "2+10 QQ  ddbj_other_nuc",
     "2+6  TI  unreserved_nuc # deliberately skipped",
     "2+8  TI  unreserved_nuc # deliberately skipped",
     "2+10 TI  unreserved_nuc # deliberately skipped",

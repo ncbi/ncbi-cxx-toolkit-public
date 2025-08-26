@@ -108,10 +108,16 @@ version  1 # of file format
 3+7  X??  gb_prot
 3+9  X??  gb_prot
 3+11 X??  gb_prot
-3+5  ???  unreserved_prot
-3+7  ???  unreserved_prot
-3+9  ???  unreserved_prot
-3+11 ???  unreserved_prot
+3+5  Y??  gb_prot
+3+7  Y??  gb_prot
+3+9  Y??  gb_prot
+3+11 Y??  gb_prot
+3+5  Z??  ddbj_prot # fallback to placate older clients
+3+5  Z??  ddbj_patent_prot # some from Korea
+3+7  Z??  ddbj_prot # fallback to placate older clients
+3+7  Z??  ddbj_patent_prot # some from Korea
+3+9  Z??  ddbj_prot
+3+11 Z??  ddbj_prot
 
 # Genome pipeline accessions
 4+9  GPC_  gpipe_chromosome
@@ -1620,6 +1626,12 @@ version  1 # of file format
 2+6  QO  embl_patent
 2+8  QO  embl_other_nuc
 2+10 QO  embl_other_nuc
+2+6  QP  ddbj_patent
+2+8  QP  ddbj_other_nuc
+2+10 QP  ddbj_other_nuc
+2+6  QQ  ddbj_patent
+2+8  QQ  ddbj_other_nuc
+2+10 QQ  ddbj_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
