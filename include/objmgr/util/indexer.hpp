@@ -458,7 +458,8 @@ public:
     CWeakRef<CBioseqIndex> GetBioseqForProduct (void);
 
     // Get best (longest) protein feature on this protein Bioseq
-    CRef<CFeatureIndex> GetBestProteinFeature(void);
+    CRef<CFeatureIndex> GetBestProteinFeature (void);
+    string GetBestProteinName (void) const { return m_BestProtName; }
 
     // Flag to indicate failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure (void) const { return m_FetchFailure; }
@@ -529,8 +530,10 @@ public:
 
     const string& GetCommon (void);
     const string& GetLineage (void);
+    const string& GetDiv (void);
     TTaxId GetTaxid (void);
     bool IsUsingAnamorph (void);
+    CBioSource::TOrigin GetOrigin (void);
 
     CTempString GetGenus (void);
     CTempString GetSpecies (void);
@@ -552,6 +555,8 @@ public:
     CTempString GetMap (void);
     CTempString GetPlasmid (void);
     CTempString GetSegment (void);
+    bool IsTransgenic (void);
+    bool IsEnvSample (void);
 
     CTempString GetBreed (void);
     CTempString GetCultivar (void);
@@ -593,6 +598,8 @@ public:
     bool HasSource (void);
 
     string GetrEnzyme (void);
+
+    string GetGBDiv (void) const { return m_GBDiv; }
 
 private:
     // Common gap collection, delayed until actually needed
@@ -639,6 +646,7 @@ private:
 
     bool m_BestProtFeatInitialized;
     CRef<CFeatureIndex> m_BestProteinFeature;
+    string m_BestProtName;
 
     // CFeatureIndex from CMappedFeat for use with GetBestGene
     typedef map<CMappedFeat, CRef<CFeatureIndex> > TFeatIndexMap;
@@ -716,7 +724,9 @@ private:
 
     string m_Common;
     string m_Lineage;
+    string m_Div;
     TTaxId m_Taxid;
+    CBioSource::TOrigin m_Origin;
     bool m_UsingAnamorph;
 
     CTempString m_Genus;
@@ -740,6 +750,8 @@ private:
     CTempString m_Map;
     CTempString m_Plasmid;
     CTempString m_Segment;
+    bool m_IsTransgenic;
+    bool m_IsEnvSample;
 
     // Orgmod fields
     CTempString m_Breed;
@@ -758,6 +770,8 @@ private:
     bool m_TPAInf;
     bool m_TPAReasm;
     bool m_Unordered;
+
+    CTempString m_GBDiv;
 
     // PDB block fields
     CTempString m_PDBCompound;
@@ -785,6 +799,8 @@ private:
     bool m_HasGene;
     bool m_HasMultiIntervalGenes;
     bool m_HasSource;
+
+    CRef<CFeatureIndex> m_BestProteinFeat;
 
     // Map fields
     string m_rEnzyme;

@@ -140,6 +140,8 @@ public:
         TUserFlags flags = 0
     );
 
+    string x_GetDivision(const CBioseq_Handle & bsh);
+    string x_GetProtein(const CBioseq_Handle & bsh);
     string x_GetModifiers(const CBioseq_Handle & handle);
 
 public:
@@ -257,6 +259,7 @@ private:
 
     bool m_IsSeg;
     bool m_IsDelta;
+    bool m_IsDeltaLitOnly;
     bool m_IsVirtual;
     bool m_IsMap;
 
@@ -307,6 +310,8 @@ private:
     bool m_TPAReasm;
     bool m_Unordered;
 
+    CTempString m_GBDiv;
+
     /// pdb block fields
     CTempString m_PDBCompound;
 
@@ -319,6 +324,10 @@ private:
     CBioSource::TGenome m_Genome;
     bool m_IsPlasmid;
     bool m_IsChromosome;
+    CTempString m_Div;
+    CBioSource::TOrigin m_Origin;
+    TTaxId m_Taxid;
+    string m_Protein;
 
     CTempString m_Organelle;
 
@@ -334,6 +343,8 @@ private:
     CTempString m_Map;
     CTempString m_Plasmid;
     CTempString m_Segment;
+    bool m_IsTransgenic;
+    bool m_IsEnvSample;
 
     /// orgmod fields
     CTempString m_Breed;
@@ -354,6 +365,8 @@ private:
     /// comment fields
     CTempString m_Comment;
     bool m_IsPseudogene;
+
+    CRef<CFeatureIndex> m_BestProteinFeat;
 
     /// map fields
     string m_rEnzyme;
