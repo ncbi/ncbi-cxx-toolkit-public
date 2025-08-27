@@ -67,9 +67,8 @@ g_BiomolStringToEnum;
 
 
 extern const
-unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol>
-g_BiomolEnumToMolEnum;
-
+TStringToEnumMap<CSeq_inst::EMol>
+g_BiomolStringToInstMolEnum;
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
