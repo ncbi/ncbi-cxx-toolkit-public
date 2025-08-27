@@ -246,7 +246,7 @@ if(CustomRPath IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
 endif()
 
 # see also
-#    CfgMT, CfgProps, AVX2 in WIN32
+#    MaxDebug, CfgMT, CfgProps, AVX2 in WIN32
 #    MaxDebug, Coverage, OpenMP, Profiling in UNIX
 
 #----------------------------------------------------------------------------
@@ -369,6 +369,15 @@ if (WIN32)
     NCBI_add_debug_definitions()
     if(AVX2 IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
         add_compile_options("/arch:AVX2")
+    endif()
+
+    if(MaxDebug IN_LIST NCBI_PTBCFG_PROJECT_FEATURES)
+        if(DEFINED NCBI_COMPILER_FLAGS_MAXDEBUG)
+            add_compile_options("${NCBI_COMPILER_FLAGS_MAXDEBUG}")
+        else()
+            add_compile_options("/fsanitize=address")
+        endif()
+        add_link_options("/DEBUG")
     endif()
 
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
