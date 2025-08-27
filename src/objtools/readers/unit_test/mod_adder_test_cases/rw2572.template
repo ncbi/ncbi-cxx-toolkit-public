@@ -1,0 +1,21 @@
+Seq-entry ::= seq {
+  id {
+    local str "SeqId"
+  },
+  descr {
+    molinfo {
+      biomol ncRNA
+    },
+    create-date std {
+      year 2025,
+      month 8,
+      day 27
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 15,
+    seq-data ncbi2na '16502554'H
+  }
+}

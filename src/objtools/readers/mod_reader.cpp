@@ -56,52 +56,49 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-//MAKE_CONST_MAP(s_ModNameMap, NStr::eCase, const char*, const char*,
 
-static const unordered_map<string, string> s_ModNameMap =
-{{"top","topology"},
- {"mol","molecule"},
- {"moltype", "mol-type"},
- {"fwd-pcr-primer-name", "fwd-primer-name"},
- {"fwd-pcr-primer-names", "fwd-primer-name"},
- {"fwd-primer-names", "fwd-primer-name"},
- {"fwd-pcr-primer-seq","fwd-primer-seq"},
- {"fwd-pcr-primer-seqs","fwd-primer-seq"},
- {"fwd-primer-seqs","fwd-primer-seq"},
- {"rev-pcr-primer-name", "rev-primer-name"},
- {"rev-pcr-primer-names", "rev-primer-name"},
- {"rev-primer-names", "rev-primer-name"},
- {"rev-pcr-primer-seq", "rev-primer-seq"},
- {"rev-pcr-primer-seqs", "rev-primer-seq"},
- {"rev-primer-seqs", "rev-primer-seq"},
- {"org", "taxname"},
- {"organism", "taxname"},
- {"div", "division"},
- {"notes", "note"},
- {"completedness", "completeness"},
- {"gene-syn", "gene-synonym"},
- {"genesyn", "gene-synonym"},
- {"genesynonym", "gene-synonym"},
- {"prot", "protein"},
- {"prot-desc", "protein-desc"},
- {"function", "activity"},
- {"secondary", "secondary-accession"},
- {"secondary-accessions", "secondary-accession"},
- {"keywords", "keyword"},
- {"primary", "primary-accession"},
- {"primary-accessions", "primary-accession"},
- {"projects", "project"},
- {"db-xref", "dbxref"},
- {"pubmed", "pmid"},
- {"ft-url-mod", "ft-mod"},
- {"ft-url", "ft-map"},
- {"geo-loc-name", "country"}
- };
-//);
+static const unordered_map<string, string> s_ModNameMap = {
+    { "top", "topology" },
+    { "mol", "molecule" },
+    { "moltype", "mol-type" },
+    { "fwd-pcr-primer-name", "fwd-primer-name" },
+    { "fwd-pcr-primer-names", "fwd-primer-name" },
+    { "fwd-primer-names", "fwd-primer-name" },
+    { "fwd-pcr-primer-seq", "fwd-primer-seq" },
+    { "fwd-pcr-primer-seqs", "fwd-primer-seq" },
+    { "fwd-primer-seqs", "fwd-primer-seq" },
+    { "rev-pcr-primer-name", "rev-primer-name" },
+    { "rev-pcr-primer-names", "rev-primer-name" },
+    { "rev-primer-names", "rev-primer-name" },
+    { "rev-pcr-primer-seq", "rev-primer-seq" },
+    { "rev-pcr-primer-seqs", "rev-primer-seq" },
+    { "rev-primer-seqs", "rev-primer-seq" },
+    { "org", "taxname" },
+    { "organism", "taxname" },
+    { "div", "division" },
+    { "notes", "note" },
+    { "completedness", "completeness" },
+    { "gene-syn", "gene-synonym" },
+    { "genesyn", "gene-synonym" },
+    { "genesynonym", "gene-synonym" },
+    { "prot", "protein" },
+    { "prot-desc", "protein-desc" },
+    { "function", "activity" },
+    { "secondary", "secondary-accession" },
+    { "secondary-accessions", "secondary-accession" },
+    { "keywords", "keyword" },
+    { "primary", "primary-accession" },
+    { "primary-accessions", "primary-accession" },
+    { "projects", "project" },
+    { "db-xref", "dbxref" },
+    { "pubmed", "pmid" },
+    { "ft-url-mod", "ft-mod" },
+    { "ft-url", "ft-map" },
+    { "geo-loc-name", "country" }
+};
 
 
-const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
-{
+const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers{
     "dosage",
     "transposon-name",
     "plastid-name",
@@ -115,16 +112,15 @@ const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
 };
 
 
-const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
-{
+const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden = {
     "topology", // Seq-inst
     "molecule",
     "strand",
-    "gene",  // Gene-ref
+    "gene", // Gene-ref
     "allele",
     "locus-tag",
-    "protein-desc",// Protein-ref
-    "mol-type", // MolInfo descriptor
+    "protein-desc", // Protein-ref
+    "mol-type",     // MolInfo descriptor
     "tech",
     "completeness",
     "location", // Biosource descriptor
@@ -140,56 +136,29 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 };
 
 
-//MAKE_CONST_MAP(s_StrandStringToEnum, NStr::eCase, const char*, CSeq_inst::EStrand,
-static const unordered_map<string, CSeq_inst::EStrand> s_StrandStringToEnum =
-{{"single", CSeq_inst::eStrand_ss},
- {"double", CSeq_inst::eStrand_ds},
- {"mixed", CSeq_inst::eStrand_mixed},
- {"other", CSeq_inst::eStrand_other}
- };
-//);
+static const unordered_map<string, CSeq_inst::EStrand> s_StrandStringToEnum = {
+    { "single", CSeq_inst::eStrand_ss },
+    { "double", CSeq_inst::eStrand_ds },
+    { "mixed", CSeq_inst::eStrand_mixed },
+    { "other", CSeq_inst::eStrand_other }
+};
 
 
-//MAKE_CONST_MAP(s_MolStringToEnum, NStr::eCase, const char*, CSeq_inst::EMol,
-static const unordered_map<string, CSeq_inst::EMol> s_MolStringToEnum =
-{{"dna", CSeq_inst::eMol_dna},
- {"rna", CSeq_inst::eMol_rna},
- {"aa", CSeq_inst::eMol_aa},
- {"na", CSeq_inst::eMol_na},
- {"other", CSeq_inst::eMol_other}
- };
- //);
+static const unordered_map<string, CSeq_inst::EMol> s_MolStringToEnum = {
+    { "dna", CSeq_inst::eMol_dna },
+    { "rna", CSeq_inst::eMol_rna },
+    { "aa", CSeq_inst::eMol_aa },
+    { "na", CSeq_inst::eMol_na },
+    { "other", CSeq_inst::eMol_other }
+};
 
 
-//MAKE_CONST_MAP(s_TopologyStringToEnum, NStr::eCase, const char*, CSeq_inst::ETopology,
-static const unordered_map<string, CSeq_inst::ETopology> s_TopologyStringToEnum =
-{{"linear", CSeq_inst::eTopology_linear},
- {"circular", CSeq_inst::eTopology_circular},
- {"tandem", CSeq_inst::eTopology_tandem},
- {"other", CSeq_inst::eTopology_other}
- };
- //);
-
-/*
-MAKE_CONST_MAP(s_BiomolEnumToMolEnum, NStr::eNocase, CMolInfo::TBiomol, CSeq_inst::EMol,
-{{ CMolInfo::eBiomol_genomic, CSeq_inst::eMol_dna},
- { CMolInfo::eBiomol_pre_RNA,  CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_mRNA,  CSeq_inst::eMol_rna },
- { CMolInfo::eBiomol_rRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_tRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_snRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_scRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_genomic_mRNA, CSeq_inst::eMol_rna },
- { CMolInfo::eBiomol_cRNA, CSeq_inst::eMol_rna },
- { CMolInfo::eBiomol_snoRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_ncRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_tmRNA, CSeq_inst::eMol_rna},
- { CMolInfo::eBiomol_peptide, CSeq_inst::eMol_aa},
- { CMolInfo::eBiomol_other_genetic, CSeq_inst::eMol_other},
- { CMolInfo::eBiomol_other, CSeq_inst::eMol_other}
-});
-*/
+static const unordered_map<string, CSeq_inst::ETopology> s_TopologyStringToEnum = {
+    { "linear", CSeq_inst::eTopology_linear },
+    { "circular", CSeq_inst::eTopology_circular },
+    { "tandem", CSeq_inst::eTopology_tandem },
+    { "other", CSeq_inst::eTopology_other }
+};
 
 
 CModHandler::CModHandler(){}
@@ -641,14 +610,13 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry,
 void CModAdder::x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
     string value = x_GetModValue(mod_entry);
-    auto it = g_BiomolStringToEnum.find(g_GetNormalizedModVal(value));
-    if (it == g_BiomolStringToEnum.end()) {
+    auto it = g_BiomolStringToInstMolEnum.find(g_GetNormalizedModVal(value));
+    if (it == g_BiomolStringToInstMolEnum.end()) {
         // No need to report an error here.
         // The error is reported in x_SetMolInfoType
         return;
     }
-    CSeq_inst::EMol mol = g_BiomolEnumToMolEnum.at(it->second);
-    seq_inst.SetMol(mol);
+    seq_inst.SetMol(it->second);
 }
 
 
