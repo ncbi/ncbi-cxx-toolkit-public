@@ -295,7 +295,7 @@ endif()
 #############################################################################
 # Boost.Test
 if(NOT NCBI_COMPONENT_Boost.Test_FOUND)
-    NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang-darwin)
+    NCBI_define_Xcomponent(NAME Boost.Test LIB boost_unit_test_framework-clang)
 endif()
 
 #############################################################################
