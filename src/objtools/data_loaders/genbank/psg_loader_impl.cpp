@@ -226,7 +226,7 @@ void CPSGDataLoader_Impl::CPSG_PrefetchCDD_Task::AddRequest(const CDataLoader::T
 //#define NCBI_PSGLOADER_RETRY_COUNT "retry_count"
 
 NCBI_PARAM_DECL(string, PSG_LOADER, SERVICE_NAME);
-NCBI_PARAM_DEF_EX(string, PSG_LOADER, SERVICE_NAME, "PSG2",
+NCBI_PARAM_DEF_EX(string, PSG_LOADER, SERVICE_NAME, "",
                   eParam_NoThread, PSG_LOADER_SERVICE_NAME);
 typedef NCBI_PARAM_TYPE(PSG_LOADER, SERVICE_NAME) TPSG_ServiceName;
 
