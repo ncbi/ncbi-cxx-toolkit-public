@@ -1212,8 +1212,12 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessionsFromMemory)
     // Fails in entrez, we implemented regex for this in CBlastInputReader
     accession_lengths.push_back(make_pair(string("sp|P01012.2"), 386));
 
-    // This we're not even going to try to fix...
-    //accession_lengths.push_back(make_pair(string("0705172A"), 385));
+    // bare PRF accession
+    accession_lengths.push_back(make_pair(string("0705172A"), 385));
+    // bare PIR that has a corresponding nucleotide accession
+    accession_lengths.push_back(make_pair(string("C24693"), 146));
+    // bare PIR that does not have a corresponding nucleotide accession
+    accession_lengths.push_back(make_pair(string("AB0819"), 212));
 
     string user_input;
     ITERATE(TStringIntVector, itr, accession_lengths) {
