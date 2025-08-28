@@ -39,6 +39,8 @@
 
 USING_NCBI_SCOPE;
 
+const static char* query_asthma = "asthma AND 1780/01/01:1968/01/01[pdat]";
+
 NCBITEST_AUTO_INIT()
 {
 }
@@ -52,7 +54,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistory)
     CEutilsClient cli;
     stringstream content;
 
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    cli.Search("pubmed", query_asthma, content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -74,7 +76,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
     // one cannot use RetStart to overcome this limit.
     // See: https://ncbiinsights.ncbi.nlm.nih.gov/2022/11/22/updated-pubmed-eutilities-live/
     cli.SetMaxReturn(101); 
-    cli.Search("pubmed", "asthma AND 1780/01/01:1968/01/01[pdat]", content, CEutilsClient::eUseHistoryEnabled);
+    cli.Search("pubmed", query_asthma, content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -106,7 +108,7 @@ BOOST_AUTO_TEST_CASE(TestSearchHistoryIterate)
         if ( retstart + retmax < count ) {
             int next_start = count - retmax;
             stringstream next_chunk;
-            cli.SearchHistory("pubmed", "asthma", web_env, query_key, next_start, next_chunk);
+            cli.SearchHistory("pubmed", query_asthma, web_env, query_key, next_start, next_chunk);
 
             string body = next_chunk.str();
             xml::document doc(body.c_str(), body.size(), NULL);
@@ -125,7 +127,7 @@ BOOST_AUTO_TEST_CASE(TestSummaryHistory)
     stringstream content;
 
     cli.SetMaxReturn(101); 
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    cli.Search("pubmed", query_asthma, content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
@@ -159,7 +161,7 @@ BOOST_AUTO_TEST_CASE(TestFetchHistory)
     stringstream content;
 
     cli.SetMaxReturn(101);
-    cli.Search("pubmed", "asthma", content, CEutilsClient::eUseHistoryEnabled);
+    cli.Search("pubmed", query_asthma, content, CEutilsClient::eUseHistoryEnabled);
     string body = content.str();
     xml::document doc(body.c_str(), body.size(), NULL);
     const xml::node& root = doc.get_root_node();
