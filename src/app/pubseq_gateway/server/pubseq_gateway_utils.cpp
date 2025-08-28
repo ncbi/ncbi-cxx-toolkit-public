@@ -373,7 +373,7 @@ string  GetBioseqCompletionHeader(size_t  item_id,
                                   const string &  processor_id,
                                   size_t  chunk_count)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=meta&n_chunks=1
+   // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=meta&n_chunks=1
     string      reply(s_ReplyBegin);
     char        buf[64];
     long        len;
@@ -386,6 +386,41 @@ string  GetBioseqCompletionHeader(size_t  item_id,
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
 
+    len = PSGToString(chunk_count, buf);
+    reply.append(buf, len)
+         .append(1, '\n');
+    return reply;
+}
+
+
+
+static string s_AndBioseqInfoItemAndDataAndMetaChunkAndSize = s_AndBioseqInfoItem +
+                                                              s_AndDataAndMetaChunk +
+                                                              s_AndSize;
+string GetBioseqInfoHeaderAndCompletion(size_t  item_id,
+                                        const string &  processor_id,
+                                        size_t  bioseq_info_size,
+                                        SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format,
+                                        size_t  chunk_count)
+{
+    string      reply(s_ReplyBegin);
+    char        buf[64];
+    long        len;
+
+    len = PSGToString(item_id, buf);
+    reply.append(buf, len)
+         .append(s_AndProcessorId)
+         .append(NStr::URLEncode(processor_id))
+         .append(s_AndBioseqInfoItemAndDataAndMetaChunkAndSize);
+
+    len = PSGToString(bioseq_info_size, buf);
+    reply.append(buf, len);
+    if (output_format == SPSGS_ResolveRequest::ePSGS_JsonFormat)
+        reply.append(s_AndFmtJson);
+    else
+        reply.append(s_AndFmtProtobuf);
+
+    reply.append(s_AndNChunks);
     len = PSGToString(chunk_count, buf);
     reply.append(buf, len)
          .append(1, '\n');

@@ -175,6 +175,11 @@ string  GetBioseqInfoHeader(size_t  item_id,
                             const string &  processor_id,
                             size_t  bioseq_info_size,
                             SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format);
+string GetBioseqInfoHeaderAndCompletion(size_t  item_id,
+                                        const string &  processor_id,
+                                        size_t  bioseq_info_size,
+                                        SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format,
+                                        size_t  chunk_count);
 string  GetBioseqMessageHeader(size_t  item_id,
                                const string &  processor_id,
                                size_t  msg_size,

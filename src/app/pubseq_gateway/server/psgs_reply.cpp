@@ -456,6 +456,32 @@ void CPSGS_Reply::PrepareBioseqCompletion(size_t  item_id,
 }
 
 
+void CPSGS_Reply::PrepareBioseqDataAndCompletion(
+                    size_t  item_id,
+                    const string &  processor_id,
+                    const string &  content,
+                    SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format,
+                    size_t  chunk_count)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    string  header_and_completion = GetBioseqInfoHeaderAndCompletion(
+                        item_id, processor_id, content.size(), output_format,
+                        chunk_count);
+
+    lock_guard<mutex>       guard(m_ChunksLock);
+    x_UpdateLastActivity();
+
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header_and_completion.data()),
+                header_and_completion.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPSGS_Reply::PrepareBlobPropMessage(size_t                 item_id,
                                          const string &         processor_id,
                                          const string &         msg,

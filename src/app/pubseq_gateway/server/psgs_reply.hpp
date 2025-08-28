@@ -178,6 +178,12 @@ public:
     void PrepareBioseqCompletion(size_t  item_id,
                                  const string &  processor_id,
                                  size_t  chunk_count);
+    void PrepareBioseqDataAndCompletion(
+                    size_t  item_id,
+                    const string &  processor_id,
+                    const string &  content,
+                    SPSGS_ResolveRequest::EPSGS_OutputFormat  output_format,
+                    size_t  chunk_count);
     void PrepareBlobPropMessage(size_t  item_id,
                                 const string &  processor_id,
                                 const string &  msg,

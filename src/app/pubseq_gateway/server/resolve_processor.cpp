@@ -200,11 +200,11 @@ CPSGS_ResolveProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
     }
 
     size_t              item_id = IPSGS_Processor::m_Reply->GetItemId();
-    IPSGS_Processor::m_Reply->PrepareBioseqData(item_id, kResolveProcessorName,
-                                                data_to_send,
-                                                effective_output_format);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
-                                                      kResolveProcessorName, 2);
+
+    // Data chunk and meta chunk are merged into one
+    IPSGS_Processor::m_Reply->PrepareBioseqDataAndCompletion(
+            item_id, kResolveProcessorName,
+            data_to_send, effective_output_format, 1);
 }
 
 

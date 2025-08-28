@@ -856,8 +856,9 @@ void CPSGS_WGSProcessor::x_RegisterTimingNotFound(EPSGOperation operation)
 void CPSGS_WGSProcessor::x_SendResult(const string& data_to_send, EOutputFormat output_format)
 {
     size_t item_id = GetReply()->GetItemId();
-    GetReply()->PrepareBioseqData(item_id, GetName(), data_to_send, output_format);
-    GetReply()->PrepareBioseqCompletion(item_id, GetName(), 2);
+
+    // Data chunk and meta chunk are merged into one
+    GetReply()->PrepareBioseqDataAndCompletion(item_id, GetName(), data_to_send, output_format, 1);
 }
 
 

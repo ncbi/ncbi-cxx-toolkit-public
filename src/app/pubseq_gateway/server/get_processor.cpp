@@ -233,11 +233,10 @@ CPSGS_GetProcessor::x_SendBioseqInfo(SBioseqResolution &  bioseq_resolution)
     auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
                                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
-    IPSGS_Processor::m_Reply->PrepareBioseqData(
+    // Data chunk and meta chunk are merged into one
+    IPSGS_Processor::m_Reply->PrepareBioseqDataAndCompletion(
             item_id, kGetProcessorName, data_to_send,
-            SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id,
-                                                      kGetProcessorName, 2);
+            SPSGS_ResolveRequest::ePSGS_JsonFormat, 1);
 }
 
 

@@ -244,11 +244,10 @@ CPSGS_AccessionVersionHistoryProcessor::x_SendBioseqInfo(
     auto    data_to_send = ToJsonString(bioseq_resolution.GetBioseqInfo(),
                                         SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
 
-    IPSGS_Processor::m_Reply->PrepareBioseqData(
+    // Data chunk and meta chunk are merged into one
+    IPSGS_Processor::m_Reply->PrepareBioseqDataAndCompletion(
             item_id, kAccVerHistProcessorName, data_to_send,
-            SPSGS_ResolveRequest::ePSGS_JsonFormat);
-    IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
-            item_id, kAccVerHistProcessorName, 2);
+            SPSGS_ResolveRequest::ePSGS_JsonFormat, 1);
 }
 
 
