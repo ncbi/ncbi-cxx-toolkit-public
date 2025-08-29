@@ -107,7 +107,7 @@ using SeqLocIdsPtr = SeqLocIds*;
 struct FTATpaBlock {
     Int4              from1     = 0;
     Int4              to1       = 0;
-    char*             accession = nullptr;
+    string            accession;
     Int4              version   = 0;
     Int4              from2     = 0;
     Int4              to2       = 0;
@@ -116,11 +116,6 @@ struct FTATpaBlock {
 
     FTATpaBlock(Int4 f, Int4 t) :
         from1(f), to1(t) {}
-    ~FTATpaBlock()
-    {
-        if (accession)
-            MemFree(accession);
-    }
 };
 using FTATpaBlockList = forward_list<FTATpaBlock>;
 
@@ -1121,11 +1116,8 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     FTATpaBlockList ftbp;
 
     string      buf;
-    char*       p;
     char*       q;
-    char*       r;
-    char*       t;
-    const char* bad_accession;
+    optional<string> bad_accession;
     bool        bad_line;
     bool        bad_interval;
 
@@ -1138,6 +1130,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     if (col_data == 0) /* HACK: XML format */
     {
+        char* p;
         for (p = offset; *p != '\0'; p++)
             if (*p == '~')
                 *p = '\n';
@@ -1147,45 +1140,42 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         buf.assign(p + 1);
         buf.append("\n");
     } else {
-        p = SrchTheChar(string_view(offset, len), '\n');
-        if (! p) {
+        auto n = string_view(offset, len).find('\n');
+        if (n == string_view::npos)
             return false;
-        }
-        buf.assign(p + 1, offset + len);
+        buf.assign(offset + n + 1, offset + len);
     }
 
     ftbp.emplace_front(0, 0); // dummy
 
     bad_line      = false;
     bad_interval  = false;
-    bad_accession = nullptr;
-    p             = buf.data();
+
+    char* p = buf.data();
     for (q = StringChr(p, '\n'); q; p = q + 1, q = StringChr(p, '\n')) {
         *q = '\0';
         if ((Int2)StringLen(p) < col_data)
             break;
-        for (p += col_data; *p == ' ';)
+        p += col_data;
+        while (*p == ' ')
             p++;
-        for (r = p; *p >= '0' && *p <= '9';)
+        char* r = p;
+        while (*p >= '0' && *p <= '9')
             p++;
         if (*p != '-') {
             bad_interval = true;
             break;
         }
 
-        *p++  = '\0';
-        Int4 from1 = fta_atoi(r);
-
-        for (r = p; *p >= '0' && *p <= '9';)
+        Int4 from1 = fta_atoi(string_view(r, p++));
+        r = p;
+        while (*p >= '0' && *p <= '9')
             p++;
-        if (*p != ' ' && *p != '\n' && *p != '\0') {
+        if (*p != ' ' && *p != '\0') {
             bad_interval = true;
             break;
         }
-        if (*p != '\0')
-            *p++ = '\0';
-        Int4 to1 = fta_atoi(r);
-
+        Int4 to1 = fta_atoi(string_view(r, p));
         if (from1 >= to1) {
             bad_interval = true;
             break;
@@ -1202,43 +1192,45 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
         while (*p == ' ')
             p++;
-        for (r = p; *p != '\0' && *p != ' ' && *p != '\n';)
+        r = p;
+        while (*p != '\0' && *p != ' ')
             p++;
-        if (*p != '\0')
-            *p++ = '\0';
-        tftbp->accession = StringSave(r);
-        r                = StringChr(tftbp->accession, '.');
-        if (r) {
-            *r++ = '\0';
-            for (t = r; *t >= '0' && *t <= '9';)
-                t++;
-            if (*t != '\0') {
-                *--r          = '.';
-                bad_accession = tftbp->accession;
+        tftbp->accession = string(r, p);
+
+        auto& acc = tftbp->accession;
+        if (auto n = acc.find('.'); n != string::npos) {
+            auto i = acc.begin() + n + 1;
+            auto j = i;
+            while (j != acc.end() && *j >= '0' && *j <= '9')
+                j++;
+            if (j != acc.end()) {
+                bad_accession = acc;
                 break;
             }
-            tftbp->version = fta_atoi(r);
+            tftbp->version = fta_atoi(string_view(i, j));
+            tftbp->accession.resize(n);
         }
 
-        if (StringEquNI(tftbp->accession, "ti", 2)) {
-            for (r = tftbp->accession + 2; *r == '0';)
+        if (NStr::StartsWith(acc, "ti", NStr::eNocase)) {
+            auto r = acc.begin() + 2;
+            while (r != acc.end() && *r == '0')
                 r++;
-            if (*r == '\0') {
-                bad_accession = tftbp->accession;
+            if (r == acc.end()) {
+                bad_accession = acc;
                 break;
             }
-            while (*r >= '0' && *r <= '9')
+            while (r != acc.end() && *r >= '0' && *r <= '9')
                 r++;
-            if (*r != '\0') {
-                bad_accession = tftbp->accession;
+            if (r != acc.end()) {
+                bad_accession = acc;
                 break;
             }
         } else {
-            tftbp->sicho = GetNucAccOwner(tftbp->accession);
+            tftbp->sicho = GetNucAccOwner(acc);
             if ((tftbp->sicho != CSeq_id::e_Genbank && tftbp->sicho != CSeq_id::e_Embl &&
                  tftbp->sicho != CSeq_id::e_Ddbj &&
                  (tftbp->sicho != CSeq_id::e_Tpg || tpa == false))) {
-                bad_accession = tftbp->accession;
+                bad_accession = acc;
                 break;
             }
         }
@@ -1251,24 +1243,23 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             tftbp->from2 = 1;
             tftbp->to2   = 1;
         } else {
-            for (r = p; *p >= '0' && *p <= '9';)
+            r = p;
+            while (*p >= '0' && *p <= '9')
                 p++;
             if (*p != '-') {
                 bad_interval = true;
                 break;
             }
-            *p++         = '\0';
-            tftbp->from2 = fta_atoi(r);
+            tftbp->from2 = fta_atoi(string_view(r, p++));
 
-            for (r = p; *p >= '0' && *p <= '9';)
+            r = p;
+            while (*p >= '0' && *p <= '9')
                 p++;
-            if (*p != ' ' && *p != '\n' && *p != '\0') {
+            if (*p != ' ' && *p != '\0') {
                 bad_interval = true;
                 break;
             }
-            if (*p != '\0')
-                *p++ = '\0';
-            tftbp->to2 = fta_atoi(r);
+            tftbp->to2 = fta_atoi(string_view(r, p));
 
             if (tftbp->from2 >= tftbp->to2) {
                 bad_interval = true;
@@ -1289,8 +1280,8 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             break;
         }
     }
-
     buf.clear();
+
     if (bad_line || bad_interval || bad_accession) {
         if (bad_interval) {
             if (tpa)
@@ -1299,9 +1290,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimarySpan, "Intervals from primary records on which a TSA record is based must be of form X-Y, where X is less than Y and both X and Y are integers. Entry dropped.");
         } else if (bad_accession) {
             if (tpa)
-                FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
+                FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", *bad_accession);
             else
-                FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", bad_accession);
+                FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimarySeqId, "\"{}\" is not a GenBank/EMBL/DDBJ/Trace sequence identifier. Entry dropped.", *bad_accession);
         } else {
             if (tpa)
                 FtaErrPost(SEV_REJECT, ERR_TPA_InvalidPrimaryBlock, "Supplied PRIMARY block for TPA record is incorrect. Cannot parse. Entry dropped.");
@@ -1309,7 +1300,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 FtaErrPost(SEV_REJECT, ERR_TSA_InvalidPrimaryBlock, "Supplied PRIMARY block for TSA record is incorrect. Cannot parse. Entry dropped.");
         }
 
-        ftbp.clear();
         return false;
     }
 
@@ -1381,22 +1371,25 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         SetTextId(choice, *id, *text_id);
         seg.SetIds().push_back(id);
 
-        if (StringEquNI(it->accession, "ti", 2)) {
+        auto& acc = it->accession;
+        if (NStr::StartsWith(acc, "ti", NStr::eNocase)) {
             CRef<CSeq_id> gen_id(new CSeq_id);
             CDbtag&       tag = gen_id->SetGeneral();
 
-            for (r = it->accession + 2; *r == '0';)
+            auto r = acc.begin() + 2;
+            while (r != acc.end() && *r == '0')
                 r++;
-            if (fta_number_is_huge(r) == false)
-                tag.SetTag().SetId(fta_atoi(r));
+            string s(r, acc.end());
+            if (fta_number_is_huge(s.c_str()) == false)
+                tag.SetTag().SetId(fta_atoi(s));
             else
-                tag.SetTag().SetStr(r);
+                tag.SetTag().SetStr(std::move(s));
 
             tag.SetDb("ti");
             seg.SetIds().push_back(gen_id);
         } else {
             CRef<CTextseq_id> otext_id(new CTextseq_id);
-            otext_id->SetAccession(it->accession);
+            otext_id->SetAccession(acc);
 
             if (it->version > 0)
                 otext_id->SetVersion(it->version);
@@ -1413,7 +1406,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
     assembly.push_back(root_align);
 
-    ftbp.clear();
     return true;
 }
 
