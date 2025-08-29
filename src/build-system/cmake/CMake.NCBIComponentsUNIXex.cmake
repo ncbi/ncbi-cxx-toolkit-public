@@ -704,7 +704,7 @@ if(NCBI_TRACE_COMPONENT_GRPC OR NCBI_TRACE_ALLCOMPONENTS)
 endif()
 
 # Explicitly cover a subset of Abseil, for the potential sake of OpenTelemetry
-NCBI_define_Xcomponent(NAME Abseil CMAKE_PACKAGE absl
+NCBI_define_Xcomponent(NAME Abseil CMAKE_PACKAGE absl PACKAGE absl
   CMAKE_LIB strings bad_variant_access any base bits city)
 
 # Explicitly cover GFlags (from an older installation), for the
