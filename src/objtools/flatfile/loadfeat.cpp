@@ -5010,36 +5010,41 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static CMolInfo::EBiomol GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, char* snRNA, char* scRNA, char* uRNA, char* snoRNA)
+static CMolInfo::EBiomol GetBiomolFromToks(size_t mRNA, size_t tRNA, size_t rRNA, size_t snRNA, size_t scRNA, size_t uRNA, size_t snoRNA)
 {
-    char* p = nullptr;
+    size_t p = string_view::npos;
+    CMolInfo::EBiomol r = CMolInfo::eBiomol_unknown;
 
-    if (mRNA)
+    if (mRNA != string_view::npos) {
         p = mRNA;
-    if (! p || (tRNA && tRNA < p))
+        r = CMolInfo::eBiomol_mRNA;
+    }
+    if (p == string_view::npos || (tRNA != string_view::npos && tRNA < p)) {
         p = tRNA;
-    if (! p || (rRNA && rRNA < p))
+        r = CMolInfo::eBiomol_tRNA;
+    }
+    if (p == string_view::npos || (rRNA != string_view::npos && rRNA < p)) {
         p = rRNA;
-    if (! p || (snRNA && snRNA < p))
+        r = CMolInfo::eBiomol_rRNA;
+    }
+    if (p == string_view::npos || (snRNA != string_view::npos && snRNA < p)) {
         p = snRNA;
-    if (! p || (scRNA && scRNA < p))
+        r = CMolInfo::eBiomol_snRNA;
+    }
+    if (p == string_view::npos || (scRNA != string_view::npos && scRNA < p)) {
         p = scRNA;
-    if (! p || (uRNA && uRNA < p))
+        r = CMolInfo::eBiomol_scRNA;
+    }
+    if (p == string_view::npos || (uRNA != string_view::npos && uRNA < p)) {
         p = uRNA;
-    if (! p || (snoRNA && snoRNA < p))
+        r = CMolInfo::eBiomol_snRNA;
+    }
+    if (p == string_view::npos || (snoRNA != string_view::npos && snoRNA < p)) {
         p = snoRNA;
+        r = CMolInfo::eBiomol_snoRNA;
+    }
 
-    if (p == mRNA)
-        return (CMolInfo::eBiomol_mRNA);
-    if (p == tRNA)
-        return (CMolInfo::eBiomol_tRNA);
-    if (p == rRNA)
-        return (CMolInfo::eBiomol_rRNA);
-    if (p == snRNA || p == uRNA)
-        return (CMolInfo::eBiomol_snRNA);
-    if (p == snoRNA)
-        return (CMolInfo::eBiomol_snoRNA);
-    return (CMolInfo::eBiomol_scRNA);
+    return r;
 }
 
 /**********************************************************/
@@ -5057,13 +5062,6 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
     char* q;
     char* r;
-    char* mRNA   = nullptr;
-    char* tRNA   = nullptr;
-    char* rRNA   = nullptr;
-    char* snRNA  = nullptr;
-    char* scRNA  = nullptr;
-    char* uRNA   = nullptr;
-    char* snoRNA = nullptr;
     bool  stage;
     bool  techok;
     bool  same;
@@ -5481,28 +5479,35 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         return;
     }
 
+    auto mRNA   = string_view::npos;
+    auto tRNA   = string_view::npos;
+    auto rRNA   = string_view::npos;
+    auto snRNA  = string_view::npos;
+    auto scRNA  = string_view::npos;
+    auto uRNA   = string_view::npos;
+    auto snoRNA = string_view::npos;
     count      = 0;
     size_t len = 0;
     if (SrchNodeType(entry, ParFlat_DE, &len, &offset)) {
         string_view sv(offset, len);
-        mRNA   = SrchTheStr(sv, "mRNA");
-        tRNA   = SrchTheStr(sv, "tRNA");
-        rRNA   = SrchTheStr(sv, "rRNA");
-        snRNA  = SrchTheStr(sv, "snRNA");
-        scRNA  = SrchTheStr(sv, "scRNA");
-        uRNA   = SrchTheStr(sv, "uRNA");
-        snoRNA = SrchTheStr(sv, "snoRNA");
-        if (mRNA)
+        mRNA   = sv.find("mRNA");
+        tRNA   = sv.find("tRNA");
+        rRNA   = sv.find("rRNA");
+        snRNA  = sv.find("snRNA");
+        scRNA  = sv.find("scRNA");
+        uRNA   = sv.find("uRNA");
+        snoRNA = sv.find("snoRNA");
+        if (mRNA != string_view::npos)
             count++;
-        if (tRNA)
+        if (tRNA != string_view::npos)
             count++;
-        if (rRNA)
+        if (rRNA != string_view::npos)
             count++;
-        if (snRNA || uRNA)
+        if (snRNA != string_view::npos || uRNA != string_view::npos)
             count++;
-        if (scRNA)
+        if (scRNA != string_view::npos)
             count++;
-        if (snoRNA)
+        if (snoRNA != string_view::npos)
             count++;
     }
 
@@ -5515,8 +5520,8 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             FtaErrPost(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
         }
 
-        if (tRNA) {
-            for (p = tRNA + 4; *p == ' ' || *p == '\t';)
+        if (tRNA != string_view::npos) {
+            for (p = offset + tRNA + 4; *p == ' ' || *p == '\t';)
                 p++;
             if (*p == '\n') {
                 p++;
