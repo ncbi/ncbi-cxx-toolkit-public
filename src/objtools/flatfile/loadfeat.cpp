@@ -98,21 +98,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#define Seq_descr_GIBB_mol_unknown       CMolInfo::eBiomol_unknown
-#define Seq_descr_GIBB_mol_genomic       CMolInfo::eBiomol_genomic
-#define Seq_descr_GIBB_mol_preRNA        CMolInfo::eBiomol_pre_RNA
-#define Seq_descr_GIBB_mol_mRNA          CMolInfo::eBiomol_mRNA
-#define Seq_descr_GIBB_mol_rRNA          CMolInfo::eBiomol_rRNA
-#define Seq_descr_GIBB_mol_tRNA          CMolInfo::eBiomol_tRNA
-#define Seq_descr_GIBB_mol_uRNA          CMolInfo::eBiomol_snRNA
-#define Seq_descr_GIBB_mol_snRNA         CMolInfo::eBiomol_snRNA
-#define Seq_descr_GIBB_mol_scRNA         CMolInfo::eBiomol_scRNA
-#define Seq_descr_GIBB_mol_other_genetic CMolInfo::eBiomol_other_genetic
-#define Seq_descr_GIBB_mol_cRNA          CMolInfo::eBiomol_cRNA
-#define Seq_descr_GIBB_mol_snoRNA        CMolInfo::eBiomol_snoRNA
-#define Seq_descr_GIBB_mol_trRNA         CMolInfo::eBiomol_transcribed_RNA
-#define Seq_descr_GIBB_mol_other         CMolInfo::eBiomol_other
-
 struct TrnaAa {
     const char* name;
     Uint1       aa;
@@ -5045,16 +5030,16 @@ static CMolInfo::EBiomol GetBiomolFromToks(char* mRNA, char* tRNA, char* rRNA, c
         p = snoRNA;
 
     if (p == mRNA)
-        return (Seq_descr_GIBB_mol_mRNA);
+        return (CMolInfo::eBiomol_mRNA);
     if (p == tRNA)
-        return (Seq_descr_GIBB_mol_tRNA);
+        return (CMolInfo::eBiomol_tRNA);
     if (p == rRNA)
-        return (Seq_descr_GIBB_mol_rRNA);
+        return (CMolInfo::eBiomol_rRNA);
     if (p == snRNA || p == uRNA)
-        return (Seq_descr_GIBB_mol_snRNA);
+        return (CMolInfo::eBiomol_snRNA);
     if (p == snoRNA)
-        return (Seq_descr_GIBB_mol_snoRNA);
-    return (Seq_descr_GIBB_mol_scRNA);
+        return (CMolInfo::eBiomol_snoRNA);
+    return (CMolInfo::eBiomol_scRNA);
 }
 
 /**********************************************************/
@@ -5108,7 +5093,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         if (pp->source == Parser::ESource::DDBJ && molstr && NStr::StartsWith(molstr, "PRT"sv, NStr::eNocase))
             return;
 
-        biomol = Seq_descr_GIBB_mol_genomic;
+        biomol = CMolInfo::eBiomol_genomic;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
         if (molstr) {
@@ -5133,7 +5118,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
 
         same = true;
         if (ibp->moltype == "genomic DNA") {
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5143,7 +5128,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "DNA"))
                 same = false;
         } else if (ibp->moltype == "genomic RNA") {
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5152,7 +5137,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "mRNA") {
-            biomol = Seq_descr_GIBB_mol_mRNA;
+            biomol = CMolInfo::eBiomol_mRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5161,7 +5146,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "mRNA"))
                 same = false;
         } else if (ibp->moltype == "tRNA") {
-            biomol = Seq_descr_GIBB_mol_tRNA;
+            biomol = CMolInfo::eBiomol_tRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5170,7 +5155,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "tRNA"))
                 same = false;
         } else if (ibp->moltype == "rRNA") {
-            biomol = Seq_descr_GIBB_mol_rRNA;
+            biomol = CMolInfo::eBiomol_rRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5179,7 +5164,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "rRNA"))
                 same = false;
         } else if (ibp->moltype == "snoRNA") {
-            biomol = Seq_descr_GIBB_mol_snoRNA;
+            biomol = CMolInfo::eBiomol_snoRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5188,7 +5173,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "snoRNA"))
                 same = false;
         } else if (ibp->moltype == "snRNA") {
-            biomol = Seq_descr_GIBB_mol_snRNA;
+            biomol = CMolInfo::eBiomol_snRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5197,7 +5182,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "snRNA"))
                 same = false;
         } else if (ibp->moltype == "scRNA") {
-            biomol = Seq_descr_GIBB_mol_scRNA;
+            biomol = CMolInfo::eBiomol_scRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5206,7 +5191,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "scRNA"))
                 same = false;
         } else if (ibp->moltype == "pre-RNA") {
-            biomol = Seq_descr_GIBB_mol_preRNA;
+            biomol = CMolInfo::eBiomol_pre_RNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5215,7 +5200,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "RNA"))
                 same = false;
         } else if (ibp->moltype == "pre-mRNA") {
-            biomol = Seq_descr_GIBB_mol_preRNA;
+            biomol = CMolInfo::eBiomol_pre_RNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5225,9 +5210,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 same = false;
         } else if (ibp->moltype == "other RNA") {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_other;
+                biomol = CMolInfo::eBiomol_other;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5237,9 +5222,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 same = false;
         } else if (ibp->moltype == "other DNA") {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_other;
+                biomol = CMolInfo::eBiomol_other;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5249,9 +5234,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 same = false;
         } else if (ibp->moltype == "unassigned RNA") {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_unknown;
+                biomol = CMolInfo::eBiomol_unknown;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5261,9 +5246,9 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
                 same = false;
         } else if (ibp->moltype == "unassigned DNA") {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_unknown;
+                biomol = CMolInfo::eBiomol_unknown;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5272,7 +5257,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "DNA"))
                 same = false;
         } else if (ibp->moltype == "viral cRNA") {
-            biomol = Seq_descr_GIBB_mol_cRNA;
+            biomol = CMolInfo::eBiomol_cRNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5283,7 +5268,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             } else if (! NStr::EqualNocase(q, "cRNA"))
                 same = false;
         } else if (ibp->moltype == "transcribed RNA") {
-            biomol = Seq_descr_GIBB_mol_trRNA;
+            biomol = CMolInfo::eBiomol_transcribed_RNA;
             bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
 
             if (pp->source == Parser::ESource::EMBL) {
@@ -5359,14 +5344,14 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (tech == CMolInfo::eTech_est) {
-        biomol = Seq_descr_GIBB_mol_mRNA;
+        biomol = CMolInfo::eBiomol_mRNA;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
         return;
     }
 
     if (pp->source == Parser::ESource::DDBJ || pp->source == Parser::ESource::LANL ||
         pp->source == Parser::ESource::NCBI) {
-        biomol = Seq_descr_GIBB_mol_genomic;
+        biomol = CMolInfo::eBiomol_genomic;
         bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
     } else {
         biomol = CMolInfo::eBiomol_unknown;
@@ -5430,55 +5415,55 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     if (genomic != 6) /* Not just RNA */
     {
         if (genomic < 2) /* "   ", "NA" or "cDNA" */
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
         else if (genomic == 2) /* DNA */
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
         else if (genomic == 3) /* genomic DNA */
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
         else if (genomic == 4) /* other DNA */
         {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_other;
+                biomol = CMolInfo::eBiomol_other;
         } else if (genomic == 5) /* unassigned DNA */
         {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_unknown;
+                biomol = CMolInfo::eBiomol_unknown;
         } else if (genomic == 7) /* mRNA */
-            biomol = Seq_descr_GIBB_mol_mRNA;
+            biomol = CMolInfo::eBiomol_mRNA;
         else if (genomic == 8) /* rRNA */
-            biomol = Seq_descr_GIBB_mol_rRNA;
+            biomol = CMolInfo::eBiomol_rRNA;
         else if (genomic == 9) /* tRNA */
-            biomol = Seq_descr_GIBB_mol_tRNA;
+            biomol = CMolInfo::eBiomol_tRNA;
         else if (genomic == 10 || genomic == 12) /* uRNA -> snRNA */
-            biomol = Seq_descr_GIBB_mol_snRNA;
+            biomol = CMolInfo::eBiomol_snRNA;
         else if (genomic == 11) /* scRNA */
-            biomol = Seq_descr_GIBB_mol_scRNA;
+            biomol = CMolInfo::eBiomol_scRNA;
         else if (genomic == 13) /* snoRNA */
-            biomol = Seq_descr_GIBB_mol_snoRNA;
+            biomol = CMolInfo::eBiomol_snoRNA;
         else if (genomic == 14) /* pre-RNA */
-            biomol = Seq_descr_GIBB_mol_preRNA;
+            biomol = CMolInfo::eBiomol_pre_RNA;
         else if (genomic == 15) /* pre-mRNA */
-            biomol = Seq_descr_GIBB_mol_preRNA;
+            biomol = CMolInfo::eBiomol_pre_RNA;
         else if (genomic == 16) /* genomic RNA */
-            biomol = Seq_descr_GIBB_mol_genomic;
+            biomol = CMolInfo::eBiomol_genomic;
         else if (genomic == 17) /* other RNA */
         {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_other;
+                biomol = CMolInfo::eBiomol_other;
         } else if (genomic == 18) /* unassigned RNA */
         {
             if (is_syn)
-                biomol = Seq_descr_GIBB_mol_other_genetic;
+                biomol = CMolInfo::eBiomol_other_genetic;
             else
-                biomol = Seq_descr_GIBB_mol_unknown;
+                biomol = CMolInfo::eBiomol_unknown;
         } else if (genomic == 19 || genomic == 20) /* cRNA or viral cRNA */
-            biomol = Seq_descr_GIBB_mol_cRNA;
+            biomol = CMolInfo::eBiomol_cRNA;
         return;
     }
 
@@ -5489,7 +5474,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
         div = org_ref->GetOrgname().GetDiv().c_str();
 
     if (pp->source != Parser::ESource::EMBL || pp->format != Parser::EFormat::EMBL) {
-        biomol = Seq_descr_GIBB_mol_genomic;
+        biomol = CMolInfo::eBiomol_genomic;
         if (! div || ! fta_StartsWith(div, "VRL"sv)) {
             FtaErrPost(SEV_ERROR, ERR_LOCUS_NonViralRNAMoltype, "Genomic RNA implied by presence of RNA moltype, but sequence is non-viral.");
         }
@@ -5524,7 +5509,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     /* Non-viral division
      */
     if (! div || ! fta_StartsWith(div, "VRL"sv)) {
-        biomol = Seq_descr_GIBB_mol_mRNA;
+        biomol = CMolInfo::eBiomol_mRNA;
 
         if (count > 1) {
             FtaErrPost(SEV_WARNING, ERR_DEFINITION_DifferingRnaTokens, "More than one of mRNA, tRNA, rRNA, snRNA (uRNA), scRNA, snoRNA present in defline.");
@@ -5570,7 +5555,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
             i++;
     }
     if (i > 1) {
-        biomol = Seq_descr_GIBB_mol_genomic;
+        biomol = CMolInfo::eBiomol_genomic;
         if (! stage) {
             FtaErrPost(SEV_WARNING, ERR_SOURCE_GenomicViralRnaAssumed, "This sequence is assumed to be genomic due to multiple coding region but lack of a DNA stage is not indicated in taxonomic lineage.");
         }
@@ -5578,7 +5563,7 @@ void GetFlatBiomol(CMolInfo::TBiomol& biomol, CMolInfo::TTech tech, char* molstr
     }
 
     if (count == 0) {
-        biomol = Seq_descr_GIBB_mol_genomic;
+        biomol = CMolInfo::eBiomol_genomic;
         if (! stage) {
             FtaErrPost(SEV_ERROR, ERR_SOURCE_UnclassifiedViralRna, "Cannot determine viral molecule type (genomic vs a specific type of RNA) based on definition line, CDS content, or taxonomic lineage. So this sequence has been classified as genomic by default (perhaps in error).");
         } else {
