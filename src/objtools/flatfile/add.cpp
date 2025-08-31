@@ -276,7 +276,7 @@ bool check_cds(const DataBlk& entry, Parser::EFormat format)
             continue;
 
         auto dbp = subblocks.cbegin();
-        if (SrchTheStr(string_view(dbp->mBuf.ptr, len), str))
+        if (fta_contains(string_view(dbp->mBuf.ptr, len), str))
             break;
     }
     if (temp == chain.cend())
