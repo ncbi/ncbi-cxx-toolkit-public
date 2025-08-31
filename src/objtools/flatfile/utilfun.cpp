@@ -671,24 +671,6 @@ char* SrchTheChar(string_view sv, Char letter)
         return nullptr;
 }
 
-/**********************************************************
- *
- *   char* SrchTheStr(bptr, eptr, leadstr):
- *
- *      Search The leading string.
- *      Return NULL if not found; otherwise, return
- *   a pointer points first occurrence The leading string.
- *
- **********************************************************/
-char* SrchTheStr(string_view sv, string_view leadstr)
-{
-    auto i = sv.find(leadstr);
-    if (i != string_view::npos)
-        return const_cast<char*>(sv.data() + i);
-    else
-        return nullptr;
-}
-
 /**********************************************************/
 void CpSeqId(InfoBioseqPtr ibp, const CSeq_id& id)
 {

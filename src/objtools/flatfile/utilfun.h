@@ -115,7 +115,10 @@ char* SrchTheChar(string_view where, Char letter);
  * Return NULL if not found; otherwise, return a pointer points first
  * occurrence The string.
  */
-char* SrchTheStr(string_view where, string_view what);
+inline bool fta_contains(string_view where, string_view what)
+{
+    return (where.find(what) != string_view::npos);
+}
 
 void CpSeqId(InfoBioseq* ibp, const objects::CSeq_id& id);
 

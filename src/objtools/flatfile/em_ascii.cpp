@@ -648,28 +648,26 @@ static CTextseq_id& SetTextIdRef(CSeq_id& id)
 /**********************************************************/
 static void GetReleaseInfo(const DataBlk& entry)
 {
-    EntryBlkPtr ebp;
-
     char* offset;
-    char* bptr;
-    char* eptr;
-
     size_t len;
 
-    ebp                 = entry.GetEntryData();
+    EntryBlk*    ebp    = entry.GetEntryData();
     CBioseq&     bioseq = ebp->seq_entry->SetSeq();
     CTextseq_id& id     = SetTextIdRef(*(bioseq.SetId().front()));
 
     if (! SrchNodeType(entry, ParFlat_DT, &len, &offset))
         return;
 
-    eptr   = offset + len;
-    offset = SrchTheChar(string_view(offset, eptr), '\n');
-    if (! offset)
+    char* bptr = offset;
+    char* eptr = offset + len;
+    if (auto i = string_view(bptr, eptr).find('\n'); i != string_view::npos)
+        bptr += i;
+    else
         return;
 
-    bptr = SrchTheStr(string_view(offset, eptr), "Version");
-    if (! bptr)
+    if (auto i = string_view(bptr, eptr).find("Version"); i != string_view::npos)
+        bptr += i;
+    else
         return;
 
     PointToNextToken(bptr); /* bptr points to next token */

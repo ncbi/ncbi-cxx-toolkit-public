@@ -685,13 +685,13 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     }
 
     const string str = " 1-" + to_string(bases);
-    if (SrchTheStr(string_view(bptr, eptr), str)) {
+    if (fta_contains(string_view(bptr, eptr), str)) {
         dbp.mType = ParFlat_REF_END;
         return;
     }
 
     if (source == Parser::ESource::EMBL) {
-        if (SrchTheStr(string_view(bptr, eptr), " 0-0")) {
+        if (fta_contains(string_view(bptr, eptr), " 0-0")) {
             dbp.mType = ParFlat_REF_NO_TARGET;
             return;
         }
@@ -701,7 +701,7 @@ static void GetEmblRefType(size_t bases, Parser::ESource source, DataBlk& dbp)
     if (source == Parser::ESource::NCBI) {
         for (sptr = bptr + 1; sptr < eptr && *sptr != 'R';)
             sptr++;
-        if (SrchTheStr(string_view(bptr, sptr), "sites"))
+        if (fta_contains(string_view(bptr, sptr), "sites"))
             dbp.mType = ParFlat_REF_SITES;
     }
 }
@@ -1125,7 +1125,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             continue;
 
         if (! within) {
-            if (SrchTheStr(string_view(bptr, p), "-START##"))
+            if (fta_contains(string_view(bptr, p), "-START##"))
                 within = true;
         }
 
@@ -1163,7 +1163,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
             *str++ = ' ';
 
         if (within) {
-            if (SrchTheStr(string_view(bptr, p), "-END##"))
+            if (fta_contains(string_view(bptr, p), "-END##"))
                 within = false;
         }
     }
