@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Feb 14 13:22:03 EST 2023
-; formally
+/* time_t value corresponding to Thu Aug 28 19:11:16 EDT 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long s_Defaultvalidrules_Timestamp = 1755276736UL;
+static const unsigned long s_Defaultvalidrules_Timestamp = 1756422676UL;
 static const char* const s_Defaultvalidrules[] = {
     "Comment-set ::= {",
     "  {",
@@ -932,7 +931,7 @@ static const char* const s_Defaultvalidrules[] = {
     "      {",
     "        field-name \"Sequencing Technology\" ,",
     "        required TRUE } } ,",
-    "    allow-unlisted TRUE ,",
+    "    allow-unlisted FALSE ,",
     "    dependent-rules {",
     "      {",
     "        match-name \"Sequencing Technology\" ,",

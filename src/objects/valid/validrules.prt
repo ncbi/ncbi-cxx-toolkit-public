@@ -895,7 +895,7 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
       {
         field-name "Sequencing Technology" ,
         required TRUE } } ,
-    allow-unlisted TRUE ,
+    allow-unlisted FALSE ,
     dependent-rules {
       {
         match-name "Sequencing Technology" ,
