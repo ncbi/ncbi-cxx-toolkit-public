@@ -2534,6 +2534,7 @@ endif()
             if ("${ARGC}" GREATER "0")
                 set(${ARGV0} FALSE PARENT_SCOPE)
             endif()
+            return()
         endif()
     endif()
 
