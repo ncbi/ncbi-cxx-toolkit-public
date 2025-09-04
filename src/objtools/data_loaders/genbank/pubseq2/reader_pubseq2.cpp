@@ -63,7 +63,6 @@
 #include <strstream>
 
 #define BINARY_REQUESTS     1
-#define LONG_REQUESTS       1
 
 #if BINARY_REQUESTS
 # include <serial/objostrasnb.hpp>
@@ -71,11 +70,6 @@
 #else
 # include <serial/objostrasn.hpp>
 #define CRequestSerializer CObjectOStreamAsn
-#endif
-#if LONG_REQUESTS
-# define MAX_ASN_IN          (20*1024)
-#else
-# define MAX_ASN_IN          255
 #endif
 
 #define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC_GI64"
@@ -582,37 +576,22 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
                              TConn conn,
                              const CID2_Request_Packet& packet)
 {
-    char buffer[MAX_ASN_IN];
-    size_t size;
+    string buffer;
     {{
-        // NOT CNcbiOstrstream, because that can be ostringstream, which
-        // doesn't support setting up a fixed-length buffer in this manner.
-        ostrstream mem_str(buffer, sizeof(buffer));
+        ostringstream mem_str;
         {{
             CRequestSerializer obj_str(mem_str);
             obj_str << packet;
         }}
-        if ( !mem_str ) {
-            NCBI_THROW(CLoaderException, eOtherError,
-                       "CPubseq2Reader: packet size overflow");
-        }
-        size = mem_str.pcount();
+        buffer = mem_str.str();
     }}
     CDB_VarChar service("ID2");
-    CDB_VarChar short_asn;
-    CDB_LongBinary long_asn(size);
-    if ( LONG_REQUESTS ) {
-        long_asn.SetValue(buffer, size);
-    }
-    else {
-        short_asn.SetValue(buffer, size);
-    }
+    CDB_LongBinary long_asn(buffer.size(), buffer.data(), buffer.size());
     CDB_TinyInt text_in(!BINARY_REQUESTS);
     CDB_TinyInt text_out(0);
     
     AutoPtr<CDB_RPCCmd> cmd(db_conn.RPC("os_asn_request"));
     cmd->SetParam("@service", &service);
-    cmd->SetParam("@asnin", &short_asn);
     cmd->SetParam("@text", &text_in);
     cmd->SetParam("@out_text", &text_out);
     cmd->SetParam("@asnin_long", &long_asn);
