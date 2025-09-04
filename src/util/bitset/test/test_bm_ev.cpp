@@ -10,7 +10,7 @@ USING_NCBI_SCOPE;
 
 typedef bm::bvector<> bvector;
 
-static const size_t ids[] = {
+static const bvector::size_type ids[] = {
     1, 1171
 };
 
