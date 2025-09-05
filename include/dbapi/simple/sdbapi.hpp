@@ -1156,7 +1156,6 @@ public:
     static string GetApplicationName(void);
 
     enum EDriver {
-        eDriver_FTDS100,
         eDriver_FTDS14
     };
     /// Use the specified driver for all connections.

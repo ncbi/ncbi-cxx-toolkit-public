@@ -915,7 +915,6 @@ public:
     {
         DBLB_INSTALL_DEFAULT();
         DBAPI_RegisterDriver_FTDS();
-        DBAPI_RegisterDriver_FTDS100();
         DBAPI_RegisterDriver_FTDS14();
 
         if (s_DriverName.get() == NULL) {
@@ -929,7 +928,6 @@ public:
                     = app->GetConfig().GetString("sdbapi", "use_driver",
                                                  s_DriverName.get());
                 if (driver_name == kDefaultDriverName
-                    ||  driver_name == "ftds100"
                     ||  driver_name == "ftds14") {
                     s_DriverName.reset(strdup(driver_name.c_str()));
                 } else {
@@ -1370,7 +1368,6 @@ void CSDBAPI::UseDriver(EDriver driver)
                    "CSDBAPI::UseDriver called with SDBAPI already in use.");
     }
     switch (driver) {
-    case eDriver_FTDS100: s_DriverName.reset(strdup("ftds100")); break;
     case eDriver_FTDS14: s_DriverName.reset(strdup("ftds14")); break;
     }
 }
@@ -2188,11 +2185,10 @@ CSDBAPI::EDriver CDatabase::GetDriverVersion(void) const
     const CVersionInfo& ver = m_Impl->GetConnection()->GetVersionInfo();
     _ASSERT(ver.GetMajor() == 1);
     switch (ver.GetMinor()) {
-    case 0: return CSDBAPI::eDriver_FTDS100;
     case 4: return CSDBAPI::eDriver_FTDS14;
     default: _TROUBLE;
     }
-    return CSDBAPI::eDriver_FTDS100;
+    return CSDBAPI::eDriver_FTDS14;
 }
 
 

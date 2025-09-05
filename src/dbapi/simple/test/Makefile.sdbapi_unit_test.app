@@ -20,13 +20,9 @@ CHECK_COPY = sdbapi_unit_test.ini
 
 CHECK_TIMEOUT = 600
 
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S MsSql
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S MsSql -V 7.4
 CHECK_CMD = sdbapi_unit_test -dr ftds14 -S MsSql
 CHECK_CMD = sdbapi_unit_test -dr ftds14 -S MsSql -V 7.4
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S Sybase
 CHECK_CMD = sdbapi_unit_test -dr ftds14 -S Sybase
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S DBAPI_DEV16_16K -T Sybase
 CHECK_CMD = sdbapi_unit_test -dr ftds14 -S DBAPI_DEV16_16K -T Sybase
 
 WATCHERS = ucko satskyse

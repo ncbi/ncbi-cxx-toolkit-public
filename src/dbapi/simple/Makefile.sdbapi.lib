@@ -7,5 +7,5 @@ WATCHERS = ucko satskyse
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBICRYPT_INCLUDE)
 
-USES_LIBRARIES = ncbi_xdbapi_ftds ncbi_xdbapi_ftds100 \
+USES_LIBRARIES = ncbi_xdbapi_ftds ncbi_xdbapi_ftds14 \
                  dbapi $(XCONNEXT) xconnect
