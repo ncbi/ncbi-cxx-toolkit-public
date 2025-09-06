@@ -1062,9 +1062,7 @@ sample_asn needs general
 sasl2 needs3party $(ORIG_LIBS)
 scoremat needs seqset
 sdbapi needs $(DBAPI_FTDS)
-sdbapi needs $(DBAPI_FTDS100)
 sdbapi needs $(DBAPI_FTDS14)
-sdbapi needs $(FTDS100_LIB)
 sdbapi needs $(FTDS_LIB)
 sdbapi needs $(XCONNEXT)
 sdbapi needs dbapi
