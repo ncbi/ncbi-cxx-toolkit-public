@@ -132,7 +132,9 @@ int CWalkAsnCacheApplication::Run(void)
             
             output_stream << "Blob " << count << " at offset "
                 << chunk_object_stream.GetStreamPos() << '\n';
-            if ( CCache_blob::kMagicNum != the_blob.GetMagic() ) {
+            if ( CCache_blob::kZstdMagicNum != the_blob.GetMagic() &&
+                 CCache_blob::kGzipMagicNum != the_blob.GetMagic() )
+            {
                 LOG_POST( Error << "Blob number " << count << " has a bad magic number of 0x"
                             << std::hex << the_blob.GetMagic() );
             }

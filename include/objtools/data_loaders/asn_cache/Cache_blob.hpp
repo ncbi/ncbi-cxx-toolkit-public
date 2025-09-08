@@ -47,6 +47,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CCompressionStreamProcessor;
+
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_entry;
@@ -59,7 +61,8 @@ public:
 
     enum {
         kVersion = 1,
-        kMagicNum = 0x05D705DD,
+        kGzipMagicNum = 0x05D705DD,
+        kZstdMagicNum = 0x0B3AFB33,
         kMD5Size = 16
     };
 
@@ -73,6 +76,8 @@ public:
     void UnPack(vector<unsigned char>& raw_bytes) const;
 
 private:
+    CCompressionStreamProcessor *Decompressor() const;
+
     // Prohibit copy constructor and assignment operator
     CCache_blob(const CCache_blob& value);
     CCache_blob& operator=(const CCache_blob& value);

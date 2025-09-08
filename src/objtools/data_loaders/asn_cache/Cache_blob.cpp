@@ -43,6 +43,7 @@
 #include <corelib/rwstream.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
+#include <util/compress/zstd.hpp>
 
 #include "md5_writer.hpp"
 
@@ -58,7 +59,6 @@
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
-
 
 // constructor
 CCache_blob::CCache_blob(void)
@@ -78,7 +78,7 @@ void CCache_blob::Pack(const CSeq_entry& entry)
 
     {{
         CWStream flatten_stream(&md5_buffer);
-        CZipStreamCompressor comp;
+        CZstdStreamCompressor comp;
         CCompressionOStream compress_stream(flatten_stream, &comp);
         CObjectOStreamAsnBinary asn_stream(compress_stream);
         asn_stream << entry;
@@ -91,7 +91,7 @@ void CCache_blob::Pack(const CSeq_entry& entry)
     vector<char>& blob_md5_digest = SetMd5_digest();
     blob_md5_digest.resize(md5_digest.size());
     memcpy(&blob_md5_digest[0], &md5_digest[0], md5_digest.size());
-    SetMagic(kMagicNum);
+    SetMagic(kZstdMagicNum);
 }
 
 
@@ -101,8 +101,8 @@ void CCache_blob::UnPack(CSeq_entry& entry) const
 
     istrstream istr(&raw_data[0], raw_data.size() );
 
-    CZipStreamDecompressor decomp;
-    CCompressionIStream decomp_str(istr, &decomp);
+    unique_ptr<CCompressionStreamProcessor> decomp(Decompressor());
+    CCompressionIStream decomp_str(istr, decomp.get());
     CObjectIStreamAsnBinary asn_str(decomp_str);
     asn_str >> entry;
 }
@@ -114,8 +114,8 @@ void CCache_blob::UnPack(vector<unsigned char>& raw_bytes) const
 
     istrstream istr(&raw_data[0], raw_data.size() );
 
-    CZipStreamDecompressor decomp;
-    CCompressionIStream decomp_str(istr, &decomp);
+    unique_ptr<CCompressionStreamProcessor> decomp(Decompressor());
+    CCompressionIStream decomp_str(istr, decomp.get());
 
     raw_bytes.clear();
     raw_bytes.reserve(raw_data.size() * 4);
@@ -131,6 +131,17 @@ void CCache_blob::UnPack(vector<unsigned char>& raw_bytes) const
     }
 }
 
+CCompressionStreamProcessor *CCache_blob::Decompressor() const
+{
+    switch (GetMagic()) {
+    case kZstdMagicNum:
+        return new CZstdStreamDecompressor;
+    case kGzipMagicNum:
+        return new CZipStreamDecompressor;
+    default:
+        NCBI_THROW(CException, eUnknown, "Blob's magic number not recognized");
+    }
+}
 
 
 
