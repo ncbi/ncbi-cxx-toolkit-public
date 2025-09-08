@@ -23,7 +23,7 @@ set(CMAKE_C_FLAGS_RELEASE "-ggdb1 -O3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO  "-ggdb3 -O3")
 
 set(CMAKE_CXX_FLAGS_INIT
-    "-isystem /opt/ncbi/gcc/13.2.0/include/c++/13.2.0 \
+    "-nostdinc++ -isystem /opt/ncbi/gcc/13.2.0/include/c++/13.2.0 \
     -isystem /opt/ncbi/gcc/13.2.0/include/c++/13.2.0/x86_64-redhat-linux-gnu \
     -isystem /opt/ncbi/gcc/13.2.0/include/c++/13.2.0/backward \
     -gdwarf-4"
