@@ -146,7 +146,6 @@ public:
 
     // Each thread should have its own context
     struct TFFContext {
-        CCleanup                            m_cleanup;
         CRef<CScope>                        m_Scope;
         CRef<CFlatFileGenerator>            m_FFGenerator; // Flat-file generator
         CFFMultiSourceFileSet::fileset_type m_streams;     // multiple streams for each of eFlatFileCodes
@@ -816,7 +815,8 @@ bool CAsn2FlatApp::HandleSeqSubmit(TFFContext& context, CSeq_submit& sub) const
         if ( m_do_html) {
             options |= CCleanup::eClean_FlatfileHTMLMode;
         }
-        context.m_cleanup.BasicCleanup(sub, options);
+        CCleanup xcleanup;
+        xcleanup.BasicCleanup(sub, options);
     }
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
@@ -911,7 +911,8 @@ bool CAsn2FlatApp::HandleSeqEntryHandle(TFFContext& context, CSeq_entry_Handle s
         if ( m_do_html) {
             options |= CCleanup::eClean_FlatfileHTMLMode;
         }
-        context.m_cleanup.BasicCleanup(*tmp_se, options);
+        CCleanup xcleanup;
+        xcleanup.BasicCleanup(*tmp_se, options);
 
         if (tmp_se->IsSet()) {
             tseh.SelectSet(bseth);
