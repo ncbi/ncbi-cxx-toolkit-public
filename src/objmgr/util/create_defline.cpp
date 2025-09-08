@@ -1298,6 +1298,16 @@ void CDeflineGenerator::x_SetBioSrc (
             m_IsPlasmid = (m_Genome == NCBI_GENOME(plasmid));
             m_IsChromosome = (m_Genome == NCBI_GENOME(chromosome));
         }
+        if (m_Source->CanGetOrigin()) {
+            m_Origin = m_Source->GetOrigin();
+        }
+        if (m_Source->CanGetOrg()) {
+            const COrg_ref & org = m_Source->GetOrg();
+            m_Taxid = org.GetTaxId();
+            if (org.IsSetDivision()) {
+                m_Div = org.GetDivision();
+            }
+        }
 
         // process SubSource
         FOR_EACH_SUBSOURCE_ON_BIOSOURCE (sbs_itr, *m_Source) {
@@ -3561,34 +3571,21 @@ string CDeflineGenerator::x_GetDivision(const CBioseq_Handle & bsh)
 
 string CDeflineGenerator::x_GetProtein(const CBioseq_Handle & bsh)
 {
+    CConstRef<CProt_ref>  prot;
+    CConstRef<CSeq_feat>  prot_feat;
+
     if (!m_IsAA) {
         return m_Protein;
     }
 
-    CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
-    if (!bsx) {
+    prot_feat = x_GetLongestProtein (bsh);
+    if (!prot_feat) {
         return m_Protein;
     }
 
-    string bestprotname = bsx->GetBestProteinName();
-    if (! bestprotname.empty()) {
-        m_Protein = bestprotname;
-        return m_Protein;
-    }
+    prot = &prot_feat->GetData().GetProt();
 
-    CRef<CFeatureIndex> pfx = bsx->GetBestProteinFeature();
-    if (!pfx) {
-        return m_Protein;
-    }
-
-    const CMappedFeat& protFeat = pfx->GetMappedFeat();
-    if (!protFeat) {
-        return m_Protein;
-    }
-
-    const CProt_ref& protRef = protFeat.GetData().GetProt();
-
-    for (auto name: protRef.GetName()) {
+    for (auto name: prot->GetName()) {
         m_Protein = name;
         return m_Protein;
     }
@@ -3612,7 +3609,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
         joiner.Add("div", div);
     }
 
-    if (m_Idx && m_IsAA) {
+    if (m_IsAA) {
         if (m_Protein.empty()) {
             x_GetProtein(bsh);
         }
