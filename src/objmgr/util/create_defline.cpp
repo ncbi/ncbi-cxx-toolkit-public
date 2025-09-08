@@ -3536,7 +3536,7 @@ string CDeflineGenerator::x_GetDivision(const CBioseq_Handle & bsh)
         division = "PAT";
     }
 
-    if (m_IsAA) {
+    if (m_Idx && m_IsAA) {
         CRef<CBioseqIndex> bsx = m_Idx->GetBioseqIndex (bsh);
         if (bsx) {
             CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
@@ -3612,7 +3612,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
         joiner.Add("div", div);
     }
 
-    if (m_IsAA) {
+    if (m_Idx && m_IsAA) {
         if (m_Protein.empty()) {
             x_GetProtein(bsh);
         }
