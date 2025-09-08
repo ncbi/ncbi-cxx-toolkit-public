@@ -97,7 +97,11 @@ echo:
 
 set generatorfound=
 for /f "tokens=* delims=" %%a in ('"%CMAKE_CMD%" --help') do (
-  call :PRINTGENERATOR "%%a"
+  set ttt=%%a
+  set ttt=!ttt:"=!
+  set ttt=!ttt:^<=!
+  set ttt=!ttt:^>=!
+  call :PRINTGENERATOR "!ttt!"
 )
 goto :eof
 
