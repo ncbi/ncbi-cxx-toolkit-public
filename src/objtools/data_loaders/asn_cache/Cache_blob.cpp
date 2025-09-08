@@ -76,6 +76,7 @@ void CCache_blob::Pack(const CSeq_entry& entry)
 {
     CMD5StreamWriter<TBlob> md5_buffer(SetBlob());
 
+#ifdef HAVE_LIBZSTD
     {{
         CWStream flatten_stream(&md5_buffer);
         CZstdStreamCompressor comp;
@@ -86,6 +87,10 @@ void CCache_blob::Pack(const CSeq_entry& entry)
         compress_stream.flush();
         md5_buffer.Flush();
     }}
+#else
+        NCBI_THROW(CException, eUnknown, "This executable can't run, because "
+                                         "it compiled without ZSTD library");
+#endif
 
     vector<unsigned char> md5_digest(md5_buffer.GetMD5Sum() );
     vector<char>& blob_md5_digest = SetMd5_digest();
@@ -135,7 +140,12 @@ CCompressionStreamProcessor *CCache_blob::Decompressor() const
 {
     switch (GetMagic()) {
     case kZstdMagicNum:
+#ifdef HAVE_LIBZSTD
         return new CZstdStreamDecompressor;
+#else
+        NCBI_THROW(CException, eUnknown, "This executable can't run, because "
+                                         "it compiled without ZSTD library");
+#endif
     case kGzipMagicNum:
         return new CZipStreamDecompressor;
     default:
