@@ -67,12 +67,12 @@
 #include <objtools/readers/mod_error.hpp>
 #include "mod_to_enum.hpp"
 #include "descr_mod_apply.hpp"
-//#include <util/compile_time.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-//MAKE_CONST_MAP(s_TechStringToEnum, NStr::eCase, const char*, CMolInfo::TTech,
 static const unordered_map<string,CMolInfo::TTech> s_TechStringToEnum =
 {   { "?",                  CMolInfo::eTech_unknown },
     { "barcode",            CMolInfo::eTech_barcode },
@@ -100,10 +100,8 @@ static const unordered_map<string,CMolInfo::TTech> s_TechStringToEnum =
     { "tsa",                CMolInfo::eTech_tsa },
     { "wgs",                CMolInfo::eTech_wgs }
 };
-//);
 
 
-//MAKE_CONST_MAP(s_CompletenessStringToEnum, NStr::eCase, const char*, CMolInfo::TCompleteness,
 
 static const unordered_map<string,CMolInfo::TCompleteness> s_CompletenessStringToEnum =
 {   { "complete",  CMolInfo::eCompleteness_complete  },
@@ -114,7 +112,6 @@ static const unordered_map<string,CMolInfo::TCompleteness> s_CompletenessStringT
     { "noright",   CMolInfo::eCompleteness_no_right  },
     { "partial",   CMolInfo::eCompleteness_partial  }
 };
-//);
 
 
 static const auto s_OrgModStringToEnum = g_InitModNameOrgSubtypeMap();
@@ -304,24 +301,31 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
 void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
 {
     const auto& mod_name = x_GetModName(mod_entry);
-    const auto subtype = s_SubSourceStringToEnum.at(mod_name);
+    const auto  subtype  = s_SubSourceStringToEnum.at(mod_name);
     if (subtype == CSubSource::eSubtype_plasmid_name) {
         m_pDescrCache->SetBioSource().SetGenome(CBioSource::eGenome_plasmid);
     }
     const auto needs_no_text = CSubSource::NeedsNoText(subtype);
-    CBioSource::TSubtype subsources;
+
     for (const auto& mod : mod_entry.second) {
         const auto& value = mod.GetValue();
         if (needs_no_text &&
-            !NStr::EqualNocase(value, "true")) {
+            ! NStr::EqualNocase(value, "true")) {
             x_ReportInvalidValue(mod);
             return;
         }
-        auto pSubSource = Ref(new CSubSource(subtype,value));
+        auto pSubSource = Ref(new CSubSource(subtype, value));
         if (mod.IsSetAttrib()) {
             pSubSource->SetAttrib(mod.GetAttrib());
         }
-        m_pDescrCache->SetSubtype().push_back(std::move(pSubSource));
+
+        auto& subtypes = m_pDescrCache->SetSubtype();
+    
+        if (! m_PreviousSubSourceSubtypes.contains(subtype)) {
+            subtypes.remove_if([subtype](const auto& subsource) { return subsource->GetSubtype() == subtype; });
+            m_PreviousSubSourceSubtypes.insert(subtype);
+        }
+        subtypes.push_back(std::move(pSubSource));
     }
 }
 
@@ -650,13 +654,21 @@ bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry)
 void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry)
 {
     const auto& subtype = s_OrgModStringToEnum.at(x_GetModName(mod_entry));
+
     for (const auto& mod : mod_entry.second) {
         const auto& subname = mod.GetValue();
-        auto pOrgMod = Ref(new COrgMod(subtype,subname));
+        auto        pOrgMod = Ref(new COrgMod(subtype, subname));
         if (mod.IsSetAttrib()) {
             pOrgMod->SetAttrib(mod.GetAttrib());
         }
-        m_pDescrCache->SetOrgMods().push_back(std::move(pOrgMod));
+
+        auto& orgmods = m_pDescrCache->SetOrgMods();
+    
+        if (! m_PreviousOrgModSubtypes.contains(subtype)) {
+            orgmods.remove_if([subtype](const auto& orgmod) { return orgmod->GetSubtype() == subtype; });
+            m_PreviousOrgModSubtypes.insert(subtype);
+        }
+        orgmods.push_back(std::move(pOrgMod));
     }
 }
 
@@ -1185,9 +1197,8 @@ CBioSource& CDescrCache::SetBioSource()
 
 CDescrCache::TSubtype& CDescrCache::SetSubtype()
 {
-    if (!m_pSubtype) {
+    if (! m_pSubtype) {
         m_pSubtype = &(SetBioSource().SetSubtype());
-        // m_pSubtype->clear();
     }
 
     return *m_pSubtype;
@@ -1196,21 +1207,18 @@ CDescrCache::TSubtype& CDescrCache::SetSubtype()
 
 CDescrCache::TOrgMods& CDescrCache::SetOrgMods()
 {
-    if (!m_pOrgMods) {
+    if (! m_pOrgMods) {
         m_pOrgMods = &(SetBioSource().SetOrg().SetOrgname().SetMod());
-        // m_pOrgMods->clear();
     }
 
     return *m_pOrgMods;
 }
 
 
-
 CPCRReactionSet& CDescrCache::SetPCR_primers()
 {
-    if (!m_pPCRReactionSet) {
+    if (! m_pPCRReactionSet) {
         m_pPCRReactionSet = &(SetBioSource().SetPcr_primers());
-        // m_pPCRReactionSet->Set().clear();
     }
     return *m_pPCRReactionSet;
 }

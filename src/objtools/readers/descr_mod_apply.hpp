@@ -32,6 +32,9 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/mod_reader.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -87,6 +90,8 @@ private:
 
 
     TSkippedMods& m_SkippedMods;
+    set<COrgMod::ESubtype> m_PreviousOrgModSubtypes;
+    set<CSubSource::ESubtype> m_PreviousSubSourceSubtypes;
 };
 
 
