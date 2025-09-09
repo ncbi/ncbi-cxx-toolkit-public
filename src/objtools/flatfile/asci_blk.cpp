@@ -1105,18 +1105,16 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
  *                                              4-28-93
  *
  **********************************************************/
-char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat)
+char* GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat)
 {
-    char* p;
-    char* q;
-    char* str;
+    const char* bptr = offset;
+    const char* eptr = bptr + len;
+    string com;
+    com.reserve(len);
+    bool within = false;
 
-    bool  within = false;
-    char* bptr   = offset;
-    char* eptr   = bptr + len;
-    char* com    = StringNew(len);
-
-    for (str = com; bptr < eptr; bptr = p + 1) {
+    const char* p;
+    for (; bptr < eptr; bptr = p + 1) {
         p = SrchTheChar(string_view(bptr, eptr), '\n');
 
         /* skip HTG generated comments starting with '*' */
@@ -1129,7 +1127,7 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
                 within = true;
         }
 
-        q = bptr;
+        auto q = bptr;
         if (*q == 'C')
             q++;
         if (*q == 'C')
@@ -1137,9 +1135,9 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
         while (*q == ' ')
             q++;
         if (q == p) {
-            if (*(str - 1) != '~')
-                *str++ = '~';
-            *str++ = '~';
+            if (com.empty() || com.back() != '~')
+                com += '~';
+            com += '~';
             continue;
         }
 
@@ -1149,18 +1147,17 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
         bptr += col_data;
         size_t size = p - bptr;
 
-        if (*bptr == ' ' && *(str - 1) != '~')
-            *str++ = '~';
-        MemCpy(str, bptr, size);
-        str += size;
-        if (is_pat && size > 4 &&
+        if (*bptr == ' ' && (com.empty() || com.back() != '~'))
+            com += '~';
+        com.append(bptr, size);
+        if (is_pat && size >= 5 &&
             q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
-            fta_StartsWith(q + 2, "   "sv))
-            *str++ = '~';
+            q[2] == ' ' && q[3] == ' ' && q[4] == ' ')
+            com += '~';
         else if (size < 50 || within)
-            *str++ = '~';
+            com += '~';
         else
-            *str++ = ' ';
+            com += ' ';
 
         if (within) {
             if (fta_contains(string_view(bptr, p), "-END##"))
@@ -1168,45 +1165,55 @@ char* GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, boo
         }
     }
 
-    for (p = com;;) {
-        p = StringStr(p, "; ");
-        if (! p)
+    for (size_t i = 0;;) {
+        i = com.find("; ", i);
+        if (i == string::npos)
             break;
-        for (p += 2, eptr = p; *eptr == ' ';)
-            eptr++;
-        if (eptr > p)
-            fta_StringCpy(p, eptr);
+        i += 2;
+        size_t j = i;
+        while (j < com.size() && com[j] == ' ')
+            j++;
+        if (j > i)
+            com.erase(i, j - i);
     }
-    for (p = com; *p == ' ';)
-        p++;
-    if (p > com)
-        fta_StringCpy(com, p);
-    for (p = com; *p != '\0';)
-        p++;
-    if (p > com) {
-        for (p--;; p--) {
-            if (*p == ' ' || *p == '\t' || *p == ';' || *p == ',' ||
-                *p == '.' || *p == '~') {
-                if (p > com)
-                    continue;
-                *p = '\0';
+
+    {
+        size_t j = 0;
+        for (char c : com)
+            if (c == ' ')
+                j++;
+            else
+                break;
+        if (j > 0)
+            com.erase(0, j);
+    }
+
+    if (! com.empty()) {
+        size_t i = com.size();
+        for (auto rit = com.rbegin(); rit != com.crend(); ++rit) {
+            char c = *rit;
+            if (c == ' ' || c == '\t' || c == ';' || c == ',' ||
+                c == '.' || c == '~') {
+                --i;
+                continue;
             }
             break;
         }
-        if (*p != '\0') {
-            p++;
-            if (StringEquN(p, "...", 3))
-                p[3] = '\0';
-            else if (StringChr(p, '.')) {
-                *p   = '.';
-                p[1] = '\0';
+        if (i > 0) {
+            string_view tail(com.begin() + i, com.end());
+            if (tail.starts_with("..."))
+                com.resize(i + 3);
+            else if (fta_contains(tail, ".")) {
+                com[i] = '.';
+                com.resize(i + 1);
             } else
-                *p = '\0';
-        }
+                com.resize(i);
+        } else
+            com.clear();
     }
-    if (*com != '\0')
-        return (com);
-    MemFree(com);
+
+    if (! com.empty())
+        return StringSave(com);
     return nullptr;
 }
 
