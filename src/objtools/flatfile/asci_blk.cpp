@@ -889,37 +889,38 @@ CRef<CPatent_seq_id> MakeUsptoPatSeqId(const char* acc)
  *                                              9-16-93
  *
  **********************************************************/
-static Uint1 ValidSeqType(const char* accession, Uint1 type)
+static Uint1 ValidSeqType(const char* accession, Uint1 type, bool is_tpa)
 {
-    // CSeq_id::E_Choice cho;
-
     if (type == CSeq_id::e_Swissprot || type == CSeq_id::e_Pir || type == CSeq_id::e_Prf ||
         type == CSeq_id::e_Pdb || type == CSeq_id::e_Other)
-        return (type);
+        return type;
 
     if (type != CSeq_id::e_Genbank && type != CSeq_id::e_Embl && type != CSeq_id::e_Ddbj &&
-        type != CSeq_id::e_Tpg && type != CSeq_id::e_Tpe && type != CSeq_id::e_Tpd)
-        return (CSeq_id::e_not_set);
+        type != CSeq_id::e_Tpg && type != CSeq_id::e_Tpe && type != CSeq_id::e_Tpd) {
+        return CSeq_id::e_not_set;
+    }
 
-    if (! accession)
-        return (type);
+    if (! accession) {
+        return type;
+    }
 
-    const auto cho = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(accession));
-    /*
-    if (is_nuc)
-        cho = GetNucAccOwner(accession);
-    else
-        cho = GetProtAccOwner(accession);
-    */
+    auto choice = GetAccType(accession, is_tpa);
+
     if ((type == CSeq_id::e_Genbank || type == CSeq_id::e_Tpg) &&
-        (cho == CSeq_id::e_Genbank || cho == CSeq_id::e_Tpg))
-        return (cho);
-    else if ((type == CSeq_id::e_Ddbj || type == CSeq_id::e_Tpd) &&
-             (cho == CSeq_id::e_Ddbj || cho == CSeq_id::e_Tpd))
-        return (cho);
-    else if ((type == CSeq_id::e_Embl || type == CSeq_id::e_Tpe) &&
-             (cho == CSeq_id::e_Embl || cho == CSeq_id::e_Tpe))
-        return (cho);
+        (choice == CSeq_id::e_Genbank || choice == CSeq_id::e_Tpg)) {
+        return choice;
+    }
+
+    if ((type == CSeq_id::e_Ddbj || type == CSeq_id::e_Tpd) &&
+        (choice == CSeq_id::e_Ddbj || choice == CSeq_id::e_Tpd)) {
+        return choice;
+    }
+
+    if ((type == CSeq_id::e_Embl || type == CSeq_id::e_Tpe) &&
+        (choice == CSeq_id::e_Embl || choice == CSeq_id::e_Tpe)) {
+        return choice;
+    }
+
     return type;
 }
 
@@ -931,14 +932,14 @@ static Uint1 ValidSeqType(const char* accession, Uint1 type)
  *                                              5-10-93
  *
  **********************************************************/
-CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum)
+CRef<CSeq_id> MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_tpa)
 {
     CRef<CSeq_id> id;
 
     if (! acc || *acc == '\0')
         return id;
 
-    seqtype = ValidSeqType(acc, seqtype);
+    seqtype = ValidSeqType(acc, seqtype, is_tpa);
 
     if (seqtype == CSeq_id::e_not_set)
         return id;
@@ -1046,7 +1047,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
     if (pp->source == Parser::ESource::EMBL && ibp->is_tpa)
         seqtype = CSeq_id::e_Tpe;
     else
-        seqtype = ValidSeqType(acc, pp->seqtype);
+        seqtype = ValidSeqType(acc, pp->seqtype, ibp->is_tpa);
 
     if (seqtype == CSeq_id::e_not_set) {
         if (acc && ! NStr::IsBlank(acc)) {
@@ -1263,7 +1264,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     acc       = StringSave(ibp->acnum);
     is_cp     = (acc[0] == 'C' && acc[1] == 'P');
     pri_acc   = fta_if_wgs_acc(acc);
-    pri_owner = GetNucAccOwner(acc);
+    pri_owner = GetNucAccOwner(acc, ibp->is_tpa);
     if (pri_acc == 1 || pri_acc == 4) {
         char* p;
         for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
@@ -1310,7 +1311,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
                 ibp->wgssec = a;
         }
 
-        sec_owner = GetNucAccOwner(a);
+        sec_owner = GetNucAccOwner(a, ibp->is_tpa);
 
         if (sec_acc < 0 || sec_acc == 2) {
             if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
@@ -1830,7 +1831,7 @@ void GetSeqExt(ParserPtr pp, CSeq_loc& seq_loc)
 
     ibp = pp->entrylist[pp->curindx];
 
-    CRef<CSeq_id> id = MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum);
+    CRef<CSeq_id> id = MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, ibp->is_tpa);
 
     if (id.NotEmpty()) {
         CSeq_loc loc;

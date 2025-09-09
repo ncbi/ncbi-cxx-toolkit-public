@@ -1888,20 +1888,34 @@ bool isSupportedAccession(CSeq_id::E_Choice type)
 }
 
 
+static CSeq_id::E_Choice s_GetAccType(CSeq_id::EAccessionInfo info, bool force_tpe)
+{
+    if (auto type = CSeq_id::GetAccType(info);
+        isSupportedAccession(type)) {
+        if (force_tpe && type == CSeq_id::e_Embl) { // RW-2513
+            return CSeq_id::e_Tpe;
+        }
+        return type;
+    }
+    return CSeq_id::e_not_set;
+}
+
+
+CSeq_id::E_Choice GetAccType(string_view acc, bool is_tpa)
+{
+    auto info = CSeq_id::IdentifyAccession(acc);
+    return s_GetAccType(info, is_tpa);
+}
+
+
 /**********************************************************/
-CSeq_id::E_Choice GetNucAccOwner(string_view acc)
+CSeq_id::E_Choice GetNucAccOwner(string_view acc, bool is_tpa)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
         return CSeq_id::e_not_set;
     }
-
-    if (auto type = CSeq_id::GetAccType(info);
-        isSupportedAccession(type)) {
-        return type;
-    }
-
-    return CSeq_id::e_not_set;
+    return s_GetAccType(info, is_tpa);
 }
 
 
@@ -1910,12 +1924,8 @@ CSeq_id::E_Choice GetProtAccOwner(string_view acc)
 {
     auto info = CSeq_id::IdentifyAccession(acc);
     if (CSeq_id::fAcc_prot & info) {
-        if (auto type = CSeq_id::GetAccType(info);
-            isSupportedAccession(type)) {
-            return type;
-        }
+        return s_GetAccType(info, false); // Don't force TPE on protein accession, but why?
     }
-
     return CSeq_id::e_not_set;
 }
 

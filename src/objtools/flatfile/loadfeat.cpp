@@ -2867,7 +2867,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
                         for (p = q + 1; *p >= '0' && *p <= '9';)
                             p++;
                         if (*p == '\0') {
-                            if (GetNucAccOwner(string_view(val_str.c_str(), q)) > CSeq_id::e_not_set)
+                            if (GetNucAccOwner(string_view(val_str.c_str(), q), is_tpa) > CSeq_id::e_not_set)
                                 badcom = false;
                         }
                     }
@@ -2950,7 +2950,7 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
             }
             if (q == p)
                 continue;
-            i = GetNucAccOwner(string_view(q, (r ? r : p)));
+            i = GetNucAccOwner(string_view(q, (r ? r : p)), ibp->is_tpa);
             if (i == CSeq_id::e_Genbank && (q[0] == 'e' || q[0] == 'E') &&
                 (q[1] == 'z' || q[1] == 'Z') && ibp->is_tpa == false)
                 continue;
@@ -4727,7 +4727,7 @@ void LoadFeat(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     ibp = pp->entrylist[pp->curindx];
 
     CRef<CSeq_id> seq_id =
-        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum);
+        MakeAccSeqId(ibp->acnum, pp->seqtype, pp->accver, ibp->vernum, ibp->is_tpa);
     if (pp->source == Parser::ESource::USPTO) {
         pat_seq_id                  = Ref(new CSeq_id());
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(ibp->acnum);
