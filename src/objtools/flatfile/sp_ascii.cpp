@@ -1900,7 +1900,7 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 spb.SetSeqref().push_back(id);
         } else if (NStr::EqualNocase(token1, "EMBL")) {
             p = StringChr(token2, '.');
-            ntype = GetNucAccOwner(p ? string_view(token2, p) : string_view(token2));
+            ntype = GetNucAccOwner(p ? string_view(token2, p) : string_view(token2), false); // not TPA
             if (ntype == CSeq_id::e_not_set) {
                 FtaErrPost(SEV_ERROR, ERR_SPROT_DRLine, "Incorrect NA accession is used in DR line: \"{}\". Skipped...", token2);
             } else if (AddToList(acc_list, token2)) {

@@ -819,11 +819,12 @@ void fta_add_hist(ParserPtr pp, CBioseq& bioseq, CGB_block::TExtra_accessions& e
     
     list<CRef<CSeq_id>> replaces;
 
+    const bool is_tpa = pp->entrylist[pp->curindx]->is_tpa;
     for (const auto& accessionString : hist) {
         if (accessionString.empty())
             continue;
 
-        const auto idChoice = GetNucAccOwner(accessionString);
+        const auto idChoice = GetNucAccOwner(accessionString, is_tpa);
         if (idChoice == CSeq_id::e_not_set) {
             continue;
         }
@@ -1126,7 +1127,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     if (! offset || ! acnum || len < 2)
         return false;
 
-    choice = GetNucAccOwner(acnum);
+    choice = GetNucAccOwner(acnum, tpa);
 
     if (col_data == 0) /* HACK: XML format */
     {
@@ -1226,7 +1227,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 break;
             }
         } else {
-            tftbp->sicho = GetNucAccOwner(acc);
+            tftbp->sicho = GetNucAccOwner(acc, false); 
             if ((tftbp->sicho != CSeq_id::e_Genbank && tftbp->sicho != CSeq_id::e_Embl &&
                  tftbp->sicho != CSeq_id::e_Ddbj &&
                  (tftbp->sicho != CSeq_id::e_Tpg || tpa == false))) {
@@ -1996,6 +1997,8 @@ CMolInfo::TTech fta_check_con_for_wgs(CBioseq& bioseq)
     return CMolInfo::eTech_unknown;
 }
 
+
+
 /**********************************************************/
 static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_view location, string_view name, SeqLocIdsPtr slip, bool iscon, Parser::ESource source)
 {
@@ -2052,7 +2055,7 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_v
         }
     }
 
-    if (auto type = CSeq_id::GetAccType(CSeq_id::IdentifyAccession(text_id->GetAccession()));
+    if (auto type = GetAccType(text_id->GetAccession(),ibp->is_tpa);
         isSupportedAccession(type)) {
         if (type != id.Which()) {
             CRef<CTextseq_id> new_text_id(new CTextseq_id);
