@@ -409,6 +409,58 @@ if not exist "%BUILD_ROOT%\build" (
 )
 cd /d "%BUILD_ROOT%\build"
 
+for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath`) do (
+  set VSROOT=%%i
+)
+set genname=%generator_name:~0,2%
+where cmake >NUL 2>&1
+if errorlevel 1 (
+  if "%genname%"=="VS" (
+    (
+      echo @echo off
+      echo "%CMAKE_CMD%" %%*
+    ) >cmake.bat
+  ) else (
+    (
+      echo @echo off
+      echo setlocal
+      echo call "%VSROOT%\VC\Auxiliary\Build\vcvars64.bat" ^>NUL
+      echo "%CMAKE_CMD%" %%*
+      echo endlocal
+    ) >cmake.bat
+  )
+) else (
+    if exist cmake.bat (del cmake.bat)
+)
+if "%genname%"=="Ni" (
+  where ninja >NUL 2>&1
+  if errorlevel 1 (
+    set vsvars=YES
+    (
+      echo @echo off
+      echo setlocal
+      echo call "%VSROOT%\VC\Auxiliary\Build\vcvars64.bat" ^>NUL
+      echo "%VSROOT%\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja\ninja.exe" %%*
+      echo endlocal
+    ) >ninja.bat
+  ) else (
+    if exist ninja.bat (del ninja.bat)
+  )
+)
+if "%genname%"=="NM" (
+  where nmake >NUL 2>&1
+  if errorlevel 1 (
+    set vsvars=YES
+  )
+)
+if "%vsvars%"=="YES" (
+  for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath`) do (
+    if exist "%%i\VC\Auxiliary\Build\vcvars64.bat" (
+      call "%%i\VC\Auxiliary\Build\vcvars64.bat"
+    )
+  )
+)
+
 rem echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 rem goto :DONE
 if exist "%tree_root%\CMakeLists.txt" (
@@ -421,11 +473,11 @@ if errorlevel 1 (
 )
 
 :DONE
-cd /d %initial_dir%
+cd /d "%initial_dir%"
 endlocal
 exit /b 0
 
 :FAIL
-cd /d %initial_dir%
+cd /d "%initial_dir%"
 endlocal
 exit /b 1
