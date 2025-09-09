@@ -1510,6 +1510,10 @@ public:
 
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
+    void GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const;
+
+    bool CheckDuplicateIDs(vector<string> & id) const;
+
     CRef<CBlast_db_metadata> GetDBMetaData(string user_path = kEmptyStr);
 
 

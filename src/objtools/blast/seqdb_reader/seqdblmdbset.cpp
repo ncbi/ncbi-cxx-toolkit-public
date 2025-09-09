@@ -201,6 +201,29 @@ void CSeqDBLMDBEntry::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<T
 	}
 }
 
+void CSeqDBLMDBEntry::GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const
+{
+	if(m_isPartial) {
+		TOid skipped_oids = 0;
+		unsigned int j=0;
+		while(j < m_VolInfo.size() &&
+			  (m_VolInfo[j].skipped_oids > 0 || oid + skipped_oids >= m_VolInfo[j].max_oid)){
+			skipped_oids += m_VolInfo[j].skipped_oids;
+			j++;
+		}
+
+	    m_LMDB->GetAccessionsForOid(oid + skipped_oids, accs);
+	}
+	else {
+		m_LMDB->GetAccessionsForOid(oid, accs);
+	}
+}
+
+bool CSeqDBLMDBEntry::CheckDuplicateIDs(vector<string> & ids) const
+{
+	return (m_LMDB->CheckDuplicateIDs(ids));
+}
+
 CSeqDBLMDBSet::CSeqDBLMDBSet()
 {
 }
@@ -394,6 +417,32 @@ void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTa
 	}
 
 
+}
+
+void CSeqDBLMDBSet::GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const
+{
+	if (m_LMDBEntrySet.size() > 1) {
+    	blastdb::TOid t = oid;
+    	int j=0;
+	    while ((j < m_LMDBEntrySet.size()) && (oid >= m_LMDBEntrySet[j]->GetOIDEnd())){
+		   	t -= m_LMDBEntrySet[j]->GetOIDStart();
+		   	j++;
+	    }
+    	m_LMDBEntrySet[j]->GetAccessionsForOid(t, accs);
+	}
+	else {
+		m_LMDBEntrySet[0]->GetAccessionsForOid(oid, accs);
+	}
+}
+
+bool CSeqDBLMDBSet::CheckDuplicateIDs(vector<string> & ids) const
+{
+	if (m_LMDBEntrySet.size()  == 1) {
+	   return ( m_LMDBEntrySet[0]->CheckDuplicateIDs(ids));
+	}
+	else {
+		NCBI_THROW(CSeqDBException, eArgErr, "Duplicate id check not supported for db with more than one lmdb file");
+	}
 }
 
 void CSeqDBLMDBSet::GetLMDBFileNames(vector<string> & lmdb_list) const

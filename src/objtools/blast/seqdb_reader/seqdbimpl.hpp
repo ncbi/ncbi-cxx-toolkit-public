@@ -1079,6 +1079,10 @@ public:
 
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids);
 
+    void GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs);
+
+    bool CheckDuplicateIDs(vector<string> & ids) const;
+
     int GetNumOfVols() const;
 
     void GetLMDBFileNames(vector<string> & lmdb_list) const;

@@ -269,6 +269,16 @@ void CSeqDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & 
 	m_Impl->GetTaxIdsForOids(oids, tax_ids);
 }
 
+void CSeqDB::GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const
+{
+	m_Impl->GetAccessionsForOid(oid, accs);
+}
+
+bool CSeqDB::CheckDuplicateIDs(vector<string> & ids) const
+{
+	return(m_Impl->CheckDuplicateIDs(ids));
+}
+
 // This could become the primary constructor for SeqDB, and those
 // taking positive and negative lists could be deprecated.  This
 // implies refactoring of code using SeqDB, addition of the third

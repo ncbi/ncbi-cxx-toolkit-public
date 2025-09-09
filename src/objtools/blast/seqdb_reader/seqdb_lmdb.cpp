@@ -745,6 +745,48 @@ void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId
 	}
 }
 
+void CSeqDBLMDB::GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const
+{
+	CMemoryFile oid_file(m_Oid2SeqIdsFile);
+	CLookupSeqIds lookup(oid_file);
+	lookup.GetSeqIdListForOid(oid, accs);
+}
+
+bool
+CSeqDBLMDB::CheckDuplicateIDs(vector<string> & ids) const
+{
+	try {
+    {
+    MDB_dbi dbi_handle;
+	lmdb::env & env = CBlastLMDBManager::GetInstance().GetReadEnvAcc(m_LMDBFile, dbi_handle, &m_LMDBFileOpened);
+    lmdb::dbi dbi(dbi_handle);
+    auto txn = lmdb::txn::begin(env, nullptr, MDB_RDONLY);
+    auto cursor = lmdb::cursor::open(txn, dbi);
+
+    lmdb::val k, val;
+    while (cursor.get(k, val, MDB_NEXT)) {
+    	string id( (char*)k.data(),k.size());
+        while (cursor.get(k,val, MDB_NEXT_DUP)) {
+            ids.push_back(id);
+        }
+    }
+    cursor.close();
+    txn.reset();
+    }
+    CBlastLMDBManager::GetInstance().CloseEnv(m_LMDBFile);
+    } catch (lmdb::error & e) {
+   		string dbname;
+       	CSeqDB_Path(m_LMDBFile).FindBaseName().GetString(dbname);
+       	if(e.code() == MDB_NOTFOUND) {
+    		NCBI_THROW( CSeqDBException, eArgErr, "Seqid list specified but no accession table is found in " + dbname);
+       	}
+       	else {
+    		NCBI_THROW( CSeqDBException, eArgErr, "Check duplicate IDs error in " + dbname);
+       	}
+    }
+    return (ids.size()?true:false);
+}
+
 
 string BuildLMDBFileName(const string& basename, bool is_protein, bool use_index, unsigned int index)
 {

@@ -1386,6 +1386,29 @@ void CSeqDBImpl::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId
 
 }
 
+void CSeqDBImpl::GetAccessionsForOid(const blastdb::TOid  oid, vector<string> & accs)
+{
+    if (m_LMDBSet.IsBlastDBVersion5()) {
+   		m_LMDBSet.GetAccessionsForOid(oid, accs);
+    }
+    else {
+    	NCBI_THROW(CSeqDBException, eArgErr,
+    			           "GetAccessions for oid not supported for v4 BLAST db");
+    }
+
+}
+
+bool CSeqDBImpl::CheckDuplicateIDs(vector<string> & ids) const
+{
+	if (m_LMDBSet.IsBlastDBVersion5()) {
+		return(m_LMDBSet.CheckDuplicateIDs(ids));
+	}
+	else {
+	  	NCBI_THROW(CSeqDBException, eArgErr,
+	   			           "Check duplicate id not supported for v4 BLAST db");
+	}
+}
+
 void CSeqDBImpl::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids)
 {
     CHECK_MARKER();

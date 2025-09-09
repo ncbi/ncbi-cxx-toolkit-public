@@ -247,6 +247,10 @@ void CBlastDbCheckApplication::Init(void)
     arg_desc->AddFlag
         ("cdd_delta", "Do aditional tests for a CDD database for DELTA-BLAST");
 
+    arg_desc->AddFlag
+        ("duplicate_id",
+         "Check for duplicate ids.");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 }
@@ -379,6 +383,67 @@ public:
 private:
     vector< CRef<CTestAction> > m_List;
     //CRef<CWrap> m_Wrap;
+};
+
+
+
+class CCheckDuplicateIDs
+{
+public:
+	CCheckDuplicateIDs(CSeqDB & db) : m_DB (db) {}
+	bool CheckDuplicateIDs();
+	set<string> & GetDuplicateIDs() { return m_DuplicateIDs; }
+	~CCheckDuplicateIDs() {
+	    m_DuplicateIDs.clear();
+	}
+private:
+	CSeqDB & m_DB;
+	set<string> m_DuplicateIDs;
+};
+
+bool CCheckDuplicateIDs::CheckDuplicateIDs() {
+	m_DuplicateIDs.clear();
+	vector<string> ids;
+	m_DB.CheckDuplicateIDs(ids);
+	if (ids.size()) {
+		m_DuplicateIDs.insert(ids.begin(), ids.end());
+		return true;
+	}
+	return false;
+}
+
+class CDuplicateIDTest : public CTestAction {
+public:
+	CDuplicateIDTest (CBlastDbCheckLog & log, int flags)
+	    : CTestAction(log, "\nDuplicateID Test", flags) {}
+
+    virtual int DoTest(CSeqDB & db, TSeen & /*seen*/){
+        int status = 0;
+    	try {
+            CNcbiOstrstream ss;
+    		CCheckDuplicateIDs id_check(db);
+    		if (id_check.CheckDuplicateIDs()) {
+    			status = 1;
+    		   	set<string> & r = id_check.GetDuplicateIDs();
+                ss << "\nList of Duplicate Id(s): " << endl;
+    		   	ITERATE(set<string>, itr, r) {
+    		   		ss << *itr << endl;
+    		   	}
+    		}
+    		else {
+    		    ss << "No duplicate id found" << endl;
+    		}
+            Log(db, e_Summary) << CNcbiOstrstreamToString(ss) << endl;
+
+    	}catch(exception &e) {
+            Log(db, e_Brief) << "  [ERROR] caught exception." << endl;
+            Log(db, e_Details) << e.what() << endl;
+            status = 2;
+        }
+        return status;
+    }
+private:
+    set<string> m_DbDuplicateIDs;
 };
 
         
@@ -1429,6 +1494,16 @@ int CBlastDbCheckApplication::Run(void)
         // Set up testing modifiers
         
         int flags = 0;
+        CRef<CTestActionList> tests(new CTestActionList());
+
+        tests->Add(new CMetaDataTest(output, flags));
+
+        if (args["duplicate_id"]) {
+            output.Log(e_Summary)
+                << "Check duplicate ID" << endl;
+            tests->Add(new CDuplicateIDTest(output, flags));
+        }
+        else {
 
         if (!args["no_isam"]) flags |= e_IsamLookup;
         output.Log(e_Summary)
@@ -1445,11 +1520,7 @@ int CBlastDbCheckApplication::Run(void)
         //bool fork1 = !! args["fork"];
         
         // Build test actions
-        
-        CRef<CTestActionList> tests(new CTestActionList());
-        
-        tests->Add(new CMetaDataTest(output, flags));
-        
+
         bool default_set = false;
 
         if (args["full"]) {
@@ -1497,6 +1568,7 @@ int CBlastDbCheckApplication::Run(void)
             tests->Add(new CCddDeltaHeadersTest(output, flags));
         }
         
+        }
         //if (fork1) {
         //    output.Log(e_Summary)
         //        << "Using fork() before each action for safety." << endl;
@@ -1531,6 +1603,9 @@ void CBlastDbCheckApplication::x_AddCmdOptions()
     }
     else if(args["ends"].HasValue()) {
     	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "end");
+    }
+    else if(args["duplicate_id"].HasValue()) {
+    	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "duplicate_id");
     }
     else {
     	 m_UsageReport.AddParam(CBlastUsageReport::eDBTest, (string) "default");

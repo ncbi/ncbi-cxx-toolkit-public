@@ -99,6 +99,13 @@ public:
     /// @param tax_ids Output tax id list
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
+    /// Get Accessions for oid
+    /// @param oid Input oid
+    /// @param accs Output acc list
+    void GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const;
+
+    bool CheckDuplicateIDs(vector<string> & ids) const;
+
 private:
     string  m_LMDBFile;
     string  m_Oid2SeqIdsFile;

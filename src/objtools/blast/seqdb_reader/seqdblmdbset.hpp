@@ -108,6 +108,10 @@ public:
 
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
 
+    void GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const;
+
+    bool CheckDuplicateIDs(vector<string> & ids) const;
+
 private:
     void x_AdjustOidsOffset(vector<TOid> & oids) const;
     void x_AdjustOidsOffset_TaxList(vector<TOid> & oids) const;
@@ -178,6 +182,10 @@ public:
     void GetDBTaxIds(set<TTaxId> & tax_ids) const;
 
     void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const;
+
+    void GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const;
+
+    bool CheckDuplicateIDs(vector<string> & ids) const;
 
     void GetLMDBFileNames(vector<string> & lmdb_list) const;
 
