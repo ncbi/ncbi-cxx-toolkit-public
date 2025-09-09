@@ -1248,6 +1248,8 @@ trackmgrgridcli needs $(COMPRESS_LIBS)
 trackmgrgridcli needs trackmgr
 trackmgrgridcli needs xconnserv
 txclient needs xconnect
+txcscu needs txclient
+txcscu needs xregexp
 txserv needs xmlwrapp
 txxmldoc needs $(COMPRESS_LIBS)
 txxmldoc needs xutil
