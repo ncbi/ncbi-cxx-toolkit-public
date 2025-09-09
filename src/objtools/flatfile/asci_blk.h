@@ -59,7 +59,7 @@ void       GetEmblSubBlock(size_t bases, Parser::ESource source, const DataBlk& 
 void       BuildSubBlock(DataBlk& dbp, Int2 subtype, string_view subkw);
 void       GetLenSubNode(DataBlk& dbp);
 char*      SrchNodeSubType(const DataBlk& entry, Int2 type, Int2 subtype, size_t* len);
-char*      GetDescrComment(char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat);
+char*      GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat);
 void       GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
 void       GetSequenceOfKeywords(const DataBlk& entry, int type, Uint2 col_data, TKeywordList& keywords);
 
