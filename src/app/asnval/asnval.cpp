@@ -237,7 +237,7 @@ void CAsnvalApp::Init()
 \tinfo(1)\n\
 \twarning(2)\n\
 \terror(3)\n\
-\tcritical(4)\n\
+\treject(4)\n\
 \tfatal(5)\n\
 \ttrace(6)",
         CArgDescriptions::eInteger, "4");
@@ -246,7 +246,7 @@ void CAsnvalApp::Init()
 \tinfo(1)\n\
 \twarning(2)\n\
 \terror(3)\n\
-\tcritical(4)\n\
+\treject(4)\n\
 \tfatal(5)\n\
 \ttrace(6)",
         CArgDescriptions::eInteger, "3");
@@ -255,11 +255,11 @@ void CAsnvalApp::Init()
 \tinfo(1)\n\
 \twarning(2)\n\
 \terror(3)\n\
-\tcritical(4)\n\
+\treject(4)\n\
 \tfatal(5)\n\
 \ttrace(6)",
         CArgDescriptions::eInteger, "5");
-    CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
+    CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax + 1);
     arg_desc->SetConstraint("Q", constraint);
     arg_desc->SetConstraint("P", constraint);
     arg_desc->SetConstraint("R", constraint);
