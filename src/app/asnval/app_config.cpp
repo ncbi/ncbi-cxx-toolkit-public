@@ -58,13 +58,20 @@ static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
     return cfg.GetBool("asnvalidate", "UseHugeFiles", true);
 }
 
+static int x_DropByOne(int val) {
+    if (val > 0) {
+        return val -1;
+    }
+    return 0;
+}
+
 CAppConfig::CAppConfig(const CArgs& args, const CNcbiRegistry& reg)
 {
     mQuiet = args["quiet"] && args["quiet"].AsBoolean();
     mVerbosity = static_cast<CAppConfig::EVerbosity>(args["v"].AsInteger());
-    mLowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
-    mHighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
-    mReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
+    mLowCutoff = static_cast<EDiagSev>(x_DropByOne(args["Q"].AsInteger()));
+    mHighCutoff = static_cast<EDiagSev>(x_DropByOne(args["P"].AsInteger()));
+    mReportLevel = static_cast<EDiagSev>(x_DropByOne(args["R"].AsInteger()));
     mNumInstances = reg.GetInt("asnvalidate", "NumInstances", 10);
 
     mBatch = args["batch"];
