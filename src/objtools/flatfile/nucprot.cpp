@@ -1589,7 +1589,7 @@ static void fta_check_codon_quals(CSeq_feat& feat)
  *   end_stop_codon) instead.
  *
  **********************************************************/
-static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CSeq_feat& feat, unsigned char* method, Uint1 dif, GeneRefFeats& gene_refs, string& seq_data)
+static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CSeq_feat& feat, unsigned char* method, Uint1 dif, GeneRefFeats& gene_refs, string& seq_data, bool* featdrop)
 {
     string qval;
     bool  intercodon = false;
@@ -1743,9 +1743,20 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
 
         if (intercodon) {
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                FtaErrPost(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, 
-                        "Found {} internal stop codon, at AA # {}, on feature key, CDS, frame # {}, genetic code {}:{}", 
-                        static_cast<int>(num), stopmsg, static_cast<int>(cdregion.GetFrame()), gcode_str, loc);
+                if (pp->source != Parser::ESource::USPTO) {
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, 
+                               "Found {} internal stop codon, at AA # {}, on feature key, CDS, frame # {}, genetic code {}:{}", 
+                               static_cast<int>(num), stopmsg, static_cast<int>(cdregion.GetFrame()), gcode_str, loc);
+                }
+                else {
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_InternalStopCodonFound, 
+                               "Found {} internal stop codon, at AA # {}, on feature key, CDS, frame # {}, genetic code {}:{}, coding region has been dropped.", 
+                               static_cast<int>(num), stopmsg, static_cast<int>(cdregion.GetFrame()), gcode_str, loc);
+                    *featdrop = true;
+                    if (! qval.empty())
+                        qval.clear();
+                    return;
+                }
             }
 
             if (pp->debug) {
@@ -2025,6 +2036,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
     Int2  frame;
     Int2  i;
     const char* r;
+    bool featdrop = false;
 
     ProtBlkPtr pbp = pp->pbp;
     pp->buf.reset();
@@ -2150,7 +2162,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         fta_check_codon_quals(cds);
 
     string sequence_data;
-    InternalStopCodon(pp, pbp->ibp, scope, cds, &method, dif, gene_refs, sequence_data);
+    InternalStopCodon(pp, pbp->ibp, scope, cds, &method, dif, gene_refs, sequence_data, &featdrop);
 
     if (cds.GetQual().empty())
         cds.ResetQual();
@@ -2159,6 +2171,13 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         string loc = location_to_string(cds.GetLocation());
         FtaErrPost(SEV_ERROR, ERR_CDREGION_TooBad, "Input translation does not agree with parser generated one, cdregion \"{}\" is lacking /codon_start, frame not set, - so sequence will be rejected.", loc);
         return (-1);
+    }
+
+    if (pp->source == Parser::ESource::USPTO && featdrop) {
+        if(! imp_feat.Empty()) {
+            imp_feat.Reset();
+        }
+        return (-2);
     }
 
     if (! sequence_data.empty()) {
