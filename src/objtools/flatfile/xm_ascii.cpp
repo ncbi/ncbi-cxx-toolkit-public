@@ -705,66 +705,81 @@ static void XMLFakeBioSources(const TXmlIndexList& xil, const char* entry, CBios
 }
 
 /**********************************************************/
-static void XMLGetDescrComment(char* offset)
+static void XMLGetDescrComment(string& str)
 {
-    char* p;
-    char* q;
+    {
+        size_t j = 0;
+        for (char c : str)
+            if (c == '\n' || c == ' ')
+                j++;
+            else
+                break;
+        if (j > 0)
+            str.erase(0, j);
+    }
 
-    for (p = offset; *p == '\n' || *p == ' ';)
-        p++;
-    if (p > offset)
-        fta_StringCpy(offset, p);
-
-    for (p = offset, q = offset; *p != '\0';) {
-        if (*p != '\n') {
-            *q++ = *p++;
+    string com;
+    com.reserve(str.size());
+    for (auto q = str.begin(); q != str.end();) {
+        if (*q != '\n') {
+            com += *q++;
             continue;
         }
 
-        *q++ = '~';
-        for (p++; *p == ' ';)
-            p++;
-    }
-    *q = '\0';
-
-    for (p = offset;;) {
-        p = StringStr(p, "; ");
-        if (! p)
-            break;
-        for (p += 2, q = p; *q == ' ';)
+        com += '~';
+        q++;
+        while (q != str.end() && *q == ' ')
             q++;
-        if (q > p)
-            fta_StringCpy(p, q);
     }
 
-    for (p = offset; *p == ' ';)
-        p++;
-    if (p > offset)
-        fta_StringCpy(offset, p);
-    for (p = offset; *p != '\0';)
-        p++;
+    for (size_t i = 0;;) {
+        i = com.find("; ", i);
+        if (i == string::npos)
+            break;
+        i += 2;
+        size_t j = i;
+        while (j < com.size() && com[j] == ' ')
+            j++;
+        if (j > i)
+            com.erase(i, j - i);
+    }
 
-    if (p > offset) {
-        for (p--;; p--) {
-            if (*p == ' ' || *p == '\t' || *p == ';' || *p == ',' ||
-                *p == '.' || *p == '~') {
-                if (p > offset)
-                    continue;
-                *p = '\0';
+    {
+        size_t j = 0;
+        for (char c : com)
+            if (c == ' ')
+                j++;
+            else
+                break;
+        if (j > 0)
+            com.erase(0, j);
+    }
+
+    if (! com.empty()) {
+        size_t i = com.size();
+        for (auto rit = com.rbegin(); rit != com.crend(); ++rit) {
+            char c = *rit;
+            if (c == ' ' || c == '\t' || c == ';' || c == ',' ||
+                c == '.' || c == '~') {
+                --i;
+                continue;
             }
             break;
         }
-        if (*p != '\0') {
-            p++;
-            if (StringEquN(p, "...", 3))
-                p[3] = '\0';
-            else if (StringChr(p, '.')) {
-                *p   = '.';
-                p[1] = '\0';
+        if (i > 0) {
+            string_view tail(com.begin() + i, com.end());
+            if (tail.starts_with("..."))
+                com.resize(i + 3);
+            else if (fta_contains(tail, ".")) {
+                com[i] = '.';
+                com.resize(i + 1);
             } else
-                *p = '\0';
-        }
+                com.resize(i);
+        } else
+            com.clear();
     }
+
+    str.swap(com);
 }
 
 /**********************************************************/
@@ -777,7 +792,6 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     char*  offset;
     char*  str;
     char*  p;
-    char*  q;
     string gbdiv;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1004,6 +1018,8 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             MemFree(offset);
             return;
         }
+        string comment(offset);
+        MemFree(offset);
 
         for (auto& user_obj : user_objs) {
             CRef<CSeqdesc> descr(new CSeqdesc);
@@ -1011,27 +1027,32 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             bioseq.SetDescr().Set().push_back(descr);
         }
 
-        XMLGetDescrComment(offset);
+        XMLGetDescrComment(comment);
         if (pp->xml_comp) {
-            for (q = offset, p = q; *p != '\0';) {
-                if (*p == ';' && (p[1] == ' ' || p[1] == '~'))
-                    *p = ' ';
-                if (*p == '~' || *p == ' ') {
-                    *q++ = ' ';
-                    for (p++; *p == ' ' || *p == '~';)
+            string q;
+            q.reserve(comment.size());
+            for (auto p = comment.begin(); p != comment.end();) {
+                if (*p == ';') {
+                    auto p1 = p + 1;
+                    if (p1 != comment.end() && (*p1 == ' ' || *p1 == '~'))
+                        *p = ' ';
+                }
+                if (*p == ' ' || *p == '~') {
+                    q += ' ';
+                    p++;
+                    while (p != comment.end() && (*p == ' ' || *p == '~'))
                         p++;
                 } else
-                    *q++ = *p++;
+                    q += *p++;
             }
-            *q = '\0';
+            comment.swap(q);
         }
 
-        if (offset[0] != 0) {
+        if (! comment.empty()) {
             CRef<CSeqdesc> descr(new CSeqdesc);
-            descr->SetComment(offset);
+            descr->SetComment(comment);
             bioseq.SetDescr().Set().push_back(descr);
         }
-        MemFree(offset);
     }
 
     /* DATE

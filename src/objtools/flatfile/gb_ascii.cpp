@@ -1034,10 +1034,6 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
-    char* offset;
-    char* p;
-    char* q;
-
     bool is_htg;
 
     ibp = pp->entrylist[pp->curindx];
@@ -1063,6 +1059,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* DEFINITION data ==> descr_title
      */
+    char*  offset = nullptr;
     size_t len = 0;
     string title;
     if (SrchNodeType(entry, ParFlat_DEFINITION, &len, &offset)) {
@@ -1250,6 +1247,8 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 MemFree(str);
                 return;
             }
+            string comment(str);
+            MemFree(str);
 
             for (auto& user_obj : user_objs) {
                 CRef<CSeqdesc> descr(new CSeqdesc);
@@ -1258,25 +1257,30 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             }
 
             if (pp->xml_comp) {
-                for (q = str, p = q; *p != '\0';) {
-                    if (*p == ';' && (p[1] == ' ' || p[1] == '~'))
-                        *p = ' ';
-                    if (*p == '~' || *p == ' ') {
-                        *q++ = ' ';
-                        for (p++; *p == ' ' || *p == '~';)
+                string q;
+                q.reserve(comment.size());
+                for (auto p = comment.begin(); p != comment.end();) {
+                    if (*p == ';') {
+                        auto p1 = p + 1;
+                        if (p1 != comment.end() && (*p1 == ' ' || *p1 == '~'))
+                            *p = ' ';
+                    }
+                    if (*p == ' ' || *p == '~') {
+                        q += ' ';
+                        p++;
+                        while (p != comment.end() && (*p == ' ' || *p == '~'))
                             p++;
                     } else
-                        *q++ = *p++;
+                        q += *p++;
                 }
-                *q = '\0';
+                comment.swap(q);
             }
 
-            if (str[0] != 0) {
+            if (! comment.empty()) {
                 CRef<CSeqdesc> descr(new CSeqdesc);
-                descr->SetComment(str);
+                descr->SetComment(comment);
                 bioseq.SetDescr().Set().push_back(descr);
             }
-            MemFree(str);
         }
     }
 
