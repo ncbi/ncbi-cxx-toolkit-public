@@ -1103,7 +1103,8 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
 
     if (auto it = m_Requests.find(stream_id); it != m_Requests.end()) {
         if (auto [processor_id, req] = it->second.Get(); req) {
-            auto result = req->OnReplyData(processor_id, (const char*)data, len);
+            auto can_be_competitive = m_Params.competitive_after < m_Params.request_timeout;
+            auto result = req->OnReplyData(processor_id, (const char*)data, len, can_be_competitive);
 
             if (result == SPSG_Request::eContinue) {
                 it->second.ResetTime();
