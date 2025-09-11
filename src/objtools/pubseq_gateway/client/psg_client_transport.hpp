@@ -535,7 +535,7 @@ struct SPSG_Request
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
     enum EUsualResult { eContinue, eStop, eRetry };
-    EUsualResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
+    EUsualResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len, bool can_be_competitive)
     {
         while (len) {
             auto rv = (this->*m_State)(data, len);
@@ -549,7 +549,7 @@ struct SPSG_Request
             } else if (rv == eStop) {
                 return eStop;
 
-            } else if (rv == eNewItem) {
+            } else if ((rv == eNewItem) || can_be_competitive) {
                 processed_by.Set(processor_id);
                 m_Retries.Zero();
             }

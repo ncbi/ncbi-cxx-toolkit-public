@@ -219,7 +219,7 @@ bool SFixture::SReceiver::Process()
 
             if (auto read = m_Stream.gcount()) {
                 if (auto [processor_id, req] = m_Request.Get(); req) {
-                    auto result = req->OnReplyData(processor_id, m_Buf.data(), read);
+                    auto result = req->OnReplyData(processor_id, m_Buf.data(), read, false);
 
                     if (result == SPSG_Request::eContinue) {
                         return true;
