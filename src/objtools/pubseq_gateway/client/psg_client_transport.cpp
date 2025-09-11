@@ -895,9 +895,13 @@ SPSG_Request::EStateResult SPSG_Request::Add()
     const auto item_type = args.GetValue<SPSG_Args::eItemType>().first;
     auto& reply_item_ts = reply->reply_item;
 
+    EStateResult update_result = eContinue;
+
     if (item_type == SPSG_Args::eReply) {
         if (auto item_locked = reply_item_ts.GetLock()) {
-            if (auto update_result = UpdateItem(item_type, *item_locked, args); update_result == eRetry503) {
+            update_result = UpdateItem(item_type, *item_locked, args);
+
+            if (update_result == eRetry503) {
                 return eRetry;
             }
         }
@@ -927,7 +931,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
         }
 
         if (auto item_locked = item_by_id->GetLock()) {
-            auto update_result = UpdateItem(item_type, *item_locked, args);
+            update_result = UpdateItem(item_type, *item_locked, args);
 
             if (update_result == eRetry503) {
                 return eRetry;
@@ -950,7 +954,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
     reply->queue->NotifyOne();
     m_Buffer = SBuffer();
-    return eContinue;
+    return update_result;
 }
 
 SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)

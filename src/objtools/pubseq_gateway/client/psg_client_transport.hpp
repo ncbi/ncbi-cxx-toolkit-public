@@ -534,8 +534,8 @@ struct SPSG_Request
 
     SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestContext> c, const SPSG_Params& params);
 
-    enum EStateResult { eContinue, eStop, eRetry };
-    EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
+    enum EUsualResult { eContinue, eStop, eRetry };
+    EUsualResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
     {
         while (len) {
             auto rv = (this->*m_State)(data, len);
@@ -544,10 +544,14 @@ struct SPSG_Request
                 // Reduce failure counter as well (retry counter is reduced in Retry() before returning eRetry)
                 GetRetries(SPSG_Retries::eFail, false);
                 Reset();
-            }
+                return eRetry;
 
-            if (rv != eContinue) {
-                return rv;
+            } else if (rv == eStop) {
+                return eStop;
+
+            } else if (rv == eNewItem) {
+                processed_by.Set(processor_id);
+                m_Retries.Zero();
             }
         }
 
@@ -573,12 +577,14 @@ struct SPSG_Request
     void ConvertRaw();
 
 private:
+    using EStateResult = int;
+
     EStateResult StatePrefix(const char*& data, size_t& len);
     EStateResult StateArgs  (const char*& data, size_t& len);
     EStateResult StateData  (const char*& data, size_t& len);
     EStateResult Add();
 
-    enum EUpdateResult { eSuccess, eNewItem, eRetry503 };
+    enum EUpdateResult { eSuccess, eNotUsed, eRetry503, eNewItem }; // Expands EUsualResult
     EUpdateResult UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
     using TState = EStateResult (SPSG_Request::*)(const char*& data, size_t& len);
