@@ -79,11 +79,11 @@ public:
 
     virtual void Init(void);
     void ParseArgs(void);
-    void OpenCache(void);
+    bool OpenCache(void);
     bool OpenCass(void);
     void CreateMyNCBIFactory(void);
     void DoMyNCBIDnsResolve(void);
-    void TestMyNCBI(uv_loop_t *  loop);
+    bool TestMyNCBI(uv_loop_t *  loop);
 
     bool PopulateCassandraMapping(bool  initialization);
     void CheckCassMapping(void);

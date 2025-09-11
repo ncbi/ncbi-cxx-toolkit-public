@@ -108,8 +108,8 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_SplitInfoCache(nullptr),
     m_StartupDataState(ePSGS_NoCassConnection),
     m_LogFields("http"),
-    m_LastMyNCBIResolveOK(true),
-    m_LastMyNCBITestOk(true)
+    m_LastMyNCBIResolveOK(false),
+    m_LastMyNCBITestOk(false)
 {
     sm_PubseqApp = this;
 
@@ -171,7 +171,7 @@ void CPubseqGatewayApp::ParseArgs(void)
 }
 
 
-void CPubseqGatewayApp::OpenCache(void)
+bool CPubseqGatewayApp::OpenCache(void)
 {
     // It was decided to work with and without the cache even if the wrapper
     // has not been created. So the cache initialization is called once and
@@ -210,6 +210,7 @@ void CPubseqGatewayApp::OpenCache(void)
             PSG_ERROR(msg);
             m_Alerts.Register(ePSGS_OpenCache, msg);
             m_LookupCache->ResetErrors();
+            return false;
         }
     } catch (const exception &  exc) {
         string      msg = "Error initializing the LMDB cache: " +
@@ -218,13 +219,17 @@ void CPubseqGatewayApp::OpenCache(void)
         PSG_ERROR(exc);
         m_Alerts.Register(ePSGS_OpenCache, msg);
         m_LookupCache.reset(nullptr);
+        return false;
     } catch (...) {
         string      msg = "Unknown initializing LMDB cache error. "
                           "The server continues without cache.";
         PSG_ERROR(msg);
         m_Alerts.Register(ePSGS_OpenCache, msg);
         m_LookupCache.reset(nullptr);
+        return false;
     }
+
+    return true;
 }
 
 
@@ -325,7 +330,10 @@ void CPubseqGatewayApp::DoMyNCBIDnsResolve(void)
     // Called periodically from the my ncbi monitoring thread
     try {
         m_MyNCBIFactory->ResolveAccessPoint();
-        m_LastMyNCBIResolveOK = true;
+        if (m_LastMyNCBIResolveOK == false) {
+            LOG_POST("Resolving My NCBI succeded");
+            m_LastMyNCBIResolveOK = true;
+        }
     } catch (const exception &  exc) {
         string      err_msg = "Error while periodically resolving My NCBI "
                               "access point: " + string(exc.what());
@@ -342,15 +350,14 @@ void CPubseqGatewayApp::DoMyNCBIDnsResolve(void)
 }
 
 
-void CPubseqGatewayApp::TestMyNCBI(uv_loop_t *  loop)
+bool CPubseqGatewayApp::TestMyNCBI(uv_loop_t *  loop)
 {
     // Called periodically from the my ncbi monitoring thread
     if (m_Settings.m_MyNCBITestWebCubbyUser.empty()) {
         // Effectively disables the test
-        return;
+        return true;
     }
 
-    m_LastMyNCBITestOk = true;
     try {
         auto whoami_response = m_MyNCBIFactory->ExecuteWhoAmI(loop,
                                                               m_Settings.m_MyNCBITestWebCubbyUser);
@@ -361,7 +368,13 @@ void CPubseqGatewayApp::TestMyNCBI(uv_loop_t *  loop)
                 PSG_WARNING(err_msg);
                 m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
                 m_LastMyNCBITestOk = false;
+                return false;
             }
+        }
+
+        if (m_LastMyNCBITestOk == false) {
+            LOG_POST("Test My NCBI succeeded");
+            m_LastMyNCBITestOk = true;
         }
     } catch (const exception &  exc) {
         string      err_msg = "Error while periodically testing My NCBI: " +
@@ -369,13 +382,17 @@ void CPubseqGatewayApp::TestMyNCBI(uv_loop_t *  loop)
         PSG_WARNING(err_msg);
         m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
         m_LastMyNCBITestOk = false;
+        return false;
     } catch (...) {
         string      err_msg = "Unknown error while periodically testing "
                               "My NCBI.";
         PSG_WARNING(err_msg);
         m_Alerts.Register(ePSGS_MyNCBITest, err_msg);
         m_LastMyNCBITestOk = false;
+        return false;
     }
+
+    return true;
 }
 
 
@@ -420,11 +437,19 @@ int CPubseqGatewayApp::Run(void)
     bool    connected = OpenCass();
     bool    populated = false;
     if (connected) {
+        LOG_POST("Cassandra connection opened successfully");
+
         populated = PopulateCassandraMapping(true); // true => initialization stage
+        if (populated) {
+            LOG_POST("Cassandra mapping populated successfully");
+        }
     }
 
-    if (populated)
-        OpenCache();
+    if (populated) {
+        if (OpenCache()) {
+            LOG_POST("Cassandra cache opened successfully");
+        }
+    }
 
     // Creates the factory to resolve web cubby user cookie into a user info
     CreateMyNCBIFactory();

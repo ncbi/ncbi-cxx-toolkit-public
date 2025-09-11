@@ -63,21 +63,32 @@ void CassMonitorThreadedFunction(void)
         switch (app->GetStartupDataState()) {
             case ePSGS_NoCassConnection:
                 if (app->OpenCass()) {
+                    LOG_POST("Cassandra connection opened successfully");
+
                     // false => it is refresh stage (not initialization);
                     //          and the 'accept' alert is set if sucessfull
                     if (app->PopulateCassandraMapping(false)) {
-                        app->OpenCache();
+                        LOG_POST("Cassandra mapping populated successfully");
+                        if (app->OpenCache()) {
+                            LOG_POST("Cassandra cache opened successfully");
+                        }
                     }
                 }
                 break;
             case ePSGS_NoValidCassMapping:
                 // false => it is refresh stage (not initialization);
                 //          and the 'accept' alert is set if sucessfull
-                if (app->PopulateCassandraMapping(false))
-                    app->OpenCache();
+                if (app->PopulateCassandraMapping(false)) {
+                    LOG_POST("Cassandra mapping populated successfully");
+                    if (app->OpenCache()) {
+                        LOG_POST("Cassandra cache opened successfully");
+                    }
+                }
                 break;
             case ePSGS_NoCassCache:
-                app->OpenCache();
+                if (app->OpenCache()) {
+                    LOG_POST("Cassandra cache opened successfully");
+                }
                 break;
             case ePSGS_StartupDataOK:
                 app->CheckCassMapping();
