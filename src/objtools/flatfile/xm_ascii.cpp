@@ -1006,20 +1006,16 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     /* COMMENT data
      */
-    offset = StringSave(XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_COMMENT));
-    if (offset) {
+    if (auto str = XMLFindTagValue(entry.mBuf.ptr, ibp->xip, INSDSEQ_COMMENT)) {
+        string comment(*str);
         bool           bad = false;
         TUserObjVector user_objs;
 
-        fta_parse_structured_comment(offset, bad, user_objs);
-
+        fta_parse_structured_comment(comment, bad, user_objs);
         if (bad) {
             ibp->drop = true;
-            MemFree(offset);
             return;
         }
-        string comment(offset);
-        MemFree(offset);
 
         for (auto& user_obj : user_objs) {
             CRef<CSeqdesc> descr(new CSeqdesc);

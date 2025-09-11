@@ -2400,49 +2400,45 @@ static CRef<CUser_object> fta_build_structured_comment(string_view tag, string_v
 }
 
 /**********************************************************/
-void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
+void fta_parse_structured_comment(string& str, bool& bad, TUserObjVector& objs)
 {
-    forward_list<string> tagvnp;
-
-    char* start;
-    string tag;
-    char* p;
-    char* q;
-
-    if (! str || *str == '\0')
+    if (str.empty())
         return;
 
-    for (p = str;;) {
-        p = StringStr(p, "-START##");
-        if (! p)
+    forward_list<string> tagvnp;
+    string tag;
+
+    for (size_t p = 0;;) {
+        p = str.find("-START##", p);
+        if (p == string::npos)
             break;
-        for (q = p;; q--)
-            if (*q == '~' || (*q == '#' && q > str && *--q == '#') || q == str)
+        size_t q = p;
+        for (;; q--)
+            if (str[q] == '~' || (str[q] == '#' && q > 0 && str[--q] == '#') || q == 0)
                 break;
-        if (q[0] != '#' || q[1] != '#') {
+        if (str[q] != '#' || str[q + 1] != '#') {
             p += 8;
             continue;
         }
 
-        start = q;
-        tag = string(q, p);
+        auto start = q;
+        tag        = str.substr(q, p - q);
         p += 8;
 
         for (q = p;;) {
-            q = StringStr(q, tag.c_str());
-            if (! q) {
+            q = str.find(tag, q);
+            if (q == string::npos) {
                 bad = true;
                 break;
             }
             size_t i = tag.size();
-            if (! StringEquN(q + i, "-END##", 6)) {
+            if (! string_view(str).substr(q + i).starts_with("-END##")) {
                 q += (i + 6);
                 continue;
             }
-            const char* r = StringStr(p, "-START##");
-            if (r && r < q) {
+            auto r = str.find("-START##", p);
+            if (r != string::npos && r < q) {
                 bad = true;
-                break;
             }
             break;
         }
@@ -2472,7 +2468,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
             continue;
         }
 
-        string_view scomment(p, q);
+        string_view scomment(str.begin() + p, str.begin() + q);
         if (scomment.find("::") == string_view::npos) {
             FtaErrPost(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             continue;
@@ -2487,7 +2483,7 @@ void fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs)
 
         objs.push_back(cur);
 
-        fta_StringCpy(start, q + tag.size() + 6);
+        str.erase(start, q - start + tag.size() + 6);
         p = start;
     }
 

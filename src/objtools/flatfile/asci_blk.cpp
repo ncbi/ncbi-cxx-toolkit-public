@@ -1106,7 +1106,7 @@ CRef<CBioseq> CreateEntryBioseq(ParserPtr pp)
  *                                              4-28-93
  *
  **********************************************************/
-char* GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat)
+string GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_htg, bool is_pat)
 {
     const char* bptr = offset;
     const char* eptr = bptr + len;
@@ -1213,9 +1213,7 @@ char* GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_ht
             com.clear();
     }
 
-    if (! com.empty())
-        return StringSave(com);
-    return nullptr;
+    return com;
 }
 
 /**********************************************************/

@@ -59,7 +59,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 int  fta_check_con_for_wgs(objects::CBioseq& bioseq);
 
 Int4   fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, string_view name, bool iscon);
-void   fta_parse_structured_comment(char* str, bool& bad, TUserObjVector& objs);
+void   fta_parse_structured_comment(string& str, bool& bad, TUserObjVector& objs);
 string GetQSFromFile(FILE* fd, const Indexblk* ibp);
 void   fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
 void   fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);

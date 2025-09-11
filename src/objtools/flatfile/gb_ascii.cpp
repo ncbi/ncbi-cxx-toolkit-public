@@ -1236,19 +1236,16 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* COMMENT data
      */
     if (SrchNodeType(entry, ParFlat_COMMENT, &len, &offset)) {
-        char* str = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
-        if (str) {
+        string comment = GetDescrComment(offset, len, ParFlat_COL_DATA, (pp->xml_comp ? false : is_htg), ibp->is_pat);
+        if (! comment.empty()) {
             bool           bad = false;
             TUserObjVector user_objs;
 
-            fta_parse_structured_comment(str, bad, user_objs);
+            fta_parse_structured_comment(comment, bad, user_objs);
             if (bad) {
                 ibp->drop = true;
-                MemFree(str);
                 return;
             }
-            string comment(str);
-            MemFree(str);
 
             for (auto& user_obj : user_objs) {
                 CRef<CSeqdesc> descr(new CSeqdesc);
