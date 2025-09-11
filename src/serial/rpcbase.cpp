@@ -282,7 +282,7 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             }
             // If reading reply succeeded and no retry was requested by the server, break.
             if ( !m_RetryCtx.GetNeedRetry() ) {
-                diag_guard.SetSeverityCap(eDiag_Info);
+                diag_guard.SetSeverityCap(eDiag_Warning);
                 diag_guard.Release(CDiagCollectGuard::ePrintCapped);
                 break;
             }
