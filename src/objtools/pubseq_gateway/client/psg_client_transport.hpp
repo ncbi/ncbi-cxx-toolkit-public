@@ -505,7 +505,6 @@ struct SPSG_Processor
 
     bool CanBe(TId id) const { return (m_Id == id) || !m_Id; }
     void Set(TId id) { _ASSERT(CanBe(id)); m_Id = id; }
-    void Reset() { m_Id = TId{}; }
 
     static auto GetNextId() { return ++sm_NextId; }
 
@@ -537,10 +536,16 @@ struct SPSG_Request
     enum EStateResult { eContinue, eStop, eRetry };
     EStateResult OnReplyData(SPSG_Processor::TId processor_id, const char* data, size_t len)
     {
-        processed_by.Set(processor_id);
-
         while (len) {
-            if (auto rv = (this->*m_State)(data, len); rv != eContinue) {
+            auto rv = (this->*m_State)(data, len);
+
+            if (rv == eRetry) {
+                // Reduce failure counter as well (retry counter is reduced in Retry() before returning eRetry)
+                GetRetries(SPSG_Retries::eFail, false);
+                Reset();
+            }
+
+            if (rv != eContinue) {
                 return rv;
             }
         }
@@ -551,6 +556,7 @@ struct SPSG_Request
     auto& OnReplyDone(SPSG_Processor::TId processor_id)
     {
         processed_by.Set(processor_id);
+        m_Retries.Zero();
         return reply;
     }
 
@@ -840,6 +846,7 @@ private:
     bool RetryFail(SPSG_Processor::TId processor_id, shared_ptr<SPSG_Request> req, const SUvNgHttp2_Error& error, bool refused_stream = false)
     {
         if (req->Retry(error, refused_stream)) {
+            req->Reset();
             m_Queue.Emplace(req);
             m_Queue.Signal();
         }

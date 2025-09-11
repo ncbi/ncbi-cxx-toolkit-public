@@ -738,6 +738,7 @@ optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
 void SPSG_Reply::Reset()
 {
     items.GetLock()->clear();
+    new_items.GetLock()->clear();
     reply_item.GetLock()->Reset();
 }
 
@@ -766,11 +767,8 @@ SPSG_Request::SPSG_Request(string p, shared_ptr<SPSG_Reply> r, CRef<CRequestCont
 
 void SPSG_Request::Reset()
 {
-    // Reduce failure counter as well (retry counter is reduced in Retry() before returning eRetry)
-    GetRetries(SPSG_Retries::eFail, false);
-
     reply->Reset();
-    processed_by.Reset();
+    m_State = &SPSG_Request::StatePrefix;
     m_Buffer = SBuffer{};
     m_ItemsByID.clear();
 }
@@ -896,9 +894,6 @@ SPSG_Request::EStateResult SPSG_Request::Add()
         if (auto item_locked = reply_item_ts.GetLock()) {
             if (auto update_result = UpdateItem(item_type, *item_locked, args); update_result == eRetry503) {
                 return eRetry;
-            } else if (update_result == eNewItem) {
-                // No retries after returning any data to users
-                m_Retries.Zero();
             }
         }
 
@@ -938,9 +933,6 @@ SPSG_Request::EStateResult SPSG_Request::Add()
             }
 
             if (update_result == eNewItem) {
-                // No retries after returning any data to users
-                m_Retries.Zero();
-
                 reply->new_items.GetLock()->emplace_back(item_by_id);
             }
 
@@ -1114,12 +1106,11 @@ int SPSG_IoSession::OnData(nghttp2_session*, uint8_t, int32_t stream_id, const u
                 return 0;
 
             } else if (result == SPSG_Request::eRetry) {
-                req->Reset();
                 m_Queue.Emplace(req);
                 m_Queue.Signal();
 
             } else {
-                req->reply->SetComplete();
+                req->OnReplyDone(processor_id)->SetComplete();
             }
 
             server.throttling.AddFailure();
@@ -1304,6 +1295,7 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
 
     if (time == params.competitive_after) {
         if (req->Retry(error)) {
+            req->Reset();
             if (auto stats = req->reply->stats.lock()) stats->IncCounter(SPSG_Stats::eRetries, ePSG_StatsCountersRetries_Retry);
             on_retry(req);
         }
