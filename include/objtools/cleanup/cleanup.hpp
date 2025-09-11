@@ -309,12 +309,6 @@ public:
 /// @return Boolean value indicates whether any changes were made
     static bool FixECNumbers(CSeq_entry_Handle entry);
 
-/// Set partialness of gene to match longest feature contained in gene
-/// @param gene  Seq-feat to edit
-/// @param scope Scope in which to find gene
-/// @return Boolean return value indicates whether the gene changed
-    static bool SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope);
-
     static void SetProteinName(CProt_ref& prot, const string& protein_name, bool append);
     static void SetProteinName(CSeq_feat& cds, const string& protein_name, bool append, CScope& scope);
     static void SetMrnaName(CSeq_feat& mrna, const string& protein_name);
@@ -384,7 +378,7 @@ public:
 /// @param gene Seq-feat to adjust
 /// @param tse Top-level Seq-entry in which to find other features
 /// @return Boolean indicates whether anything changed
-    static bool ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse);
+    static bool ExpandGeneToIncludeChildren(CSeq_feat& gene, const CTSE_Handle& tse);
 
 /// Performs WGS specific cleanup
 /// @param entry Seq-entry to edit

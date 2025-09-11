@@ -4002,23 +4002,26 @@ bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat)
 }
 
 
-// A function to change an existing MolInfo to match a coding region
 bool CopyFeaturePartials(CSeq_feat& dst, const CSeq_feat& src)
 {
     bool any_change = false;
-    bool partial5 = src.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool partial3 = src.GetLocation().IsPartialStop(eExtreme_Biological);
-    bool prot_5 = dst.GetLocation().IsPartialStart(eExtreme_Biological);
-    bool prot_3 = dst.GetLocation().IsPartialStop(eExtreme_Biological);
-    if ((partial5 && !prot_5) || (!partial5 && prot_5)
-        || (partial3 && !prot_3) || (!partial3 && prot_3)) {
+
+    bool partial5   = src.GetLocation().IsPartialStart(eExtreme_Biological);
+    if (partial5 != dst.GetLocation().IsPartialStart(eExtreme_Biological)) {
         dst.SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+        any_change = true;
+    }
+
+    bool partial3   = src.GetLocation().IsPartialStop(eExtreme_Biological);
+    if (partial3 != dst.GetLocation().IsPartialStop(eExtreme_Biological)) {
         dst.SetLocation().SetPartialStop(partial3, eExtreme_Biological);
         any_change = true;
     }
+
     any_change |= AdjustFeaturePartialFlagForLocation(dst);
     return any_change;
 }
+
 
 // A function to change an existing MolInfo to match a coding region
 bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds)
