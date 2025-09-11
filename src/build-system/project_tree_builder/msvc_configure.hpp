@@ -59,10 +59,12 @@ private:
     TConfigSite  m_ConfigSite;
     bool         m_HaveBuildVer;
     bool         m_HaveRevision;
+    bool         m_HaveSignature;
 
     void InitializeFrom(const CMsvcSite& site);
     bool ProcessDefine (const string& define, const CMsvcSite& site, const SConfigInfo& config) const;
     void AnalyzeDefines(CMsvcSite& site, const string& root_dir, const SConfigInfo& config, const CBuildType& build_type);
+    string GetSignature(const SConfigInfo& config);
 
     CNcbiOfstream& WriteNcbiconfHeader(CNcbiOfstream& ofs) const;
     void WriteExtraDefines(CMsvcSite& site, const string& root_dir, const SConfigInfo& config);

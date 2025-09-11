@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 
 
 CMsvcConfigure::CMsvcConfigure(void)
-    : m_HaveBuildVer(false), m_HaveRevision(false)
+    : m_HaveBuildVer(false), m_HaveRevision(false), m_HaveSignature(false)
 {
 }
 
@@ -418,10 +418,11 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
         = (git_rev.empty()  &&  svn_rev != "0") ? svn_rev : git_rev;
     build_vars["NCBI_SUBVERSION_REVISION"] = svn_rev;
     build_vars["NCBI_SC_VERSION"] = sc_ver;
+    build_vars["NCBI_SIGNATURE"] = GetSignature(config);
 
     m_HaveRevision = !build_vars["NCBI_REVISION"].empty();
 
-    auto converter = [](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
+    auto converter = [&](const string& file_in, const string& file_out, const map<string,string>& vocabulary) {
         string candidate = file_out + ".candidate";
         CNcbiOfstream ofs(candidate.c_str(), IOS_BASE::out | IOS_BASE::trunc);
         if ( ofs.is_open() ) {
@@ -434,6 +435,9 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
                         string::size_type  to = line.find("@", from + 1);
                         if (to != string::npos) {
                             string key = line.substr(from+1, to-from-1);
+                            if (key == "NCBI_SIGNATURE") {
+                                m_HaveSignature = true;
+                            }
                             if (vocabulary.find(key) != vocabulary.end()) {
                                 line.replace(from, to-from+1, vocabulary.at(key));
                             } else {
@@ -497,6 +501,25 @@ void CMsvcConfigure::AnalyzeDefines(
     }
 
     string signature;
+    if (!m_HaveSignature) {
+        signature = GetSignature(config);
+    }
+    string candidate_path = filename + ".candidate";
+    CDirEntry::SplitPath(filename, &dir);
+    CDir(dir).CreatePath();
+    WriteNcbiconfMsvcSite(candidate_path, signature);
+    if (PromoteIfDifferent(filename, candidate_path)) {
+        PTB_WARNING_EX(filename, ePTB_FileModified,
+                       "Configuration file modified");
+    } else {
+        PTB_INFO_EX(filename, ePTB_NoError,
+                    "Configuration file unchanged");
+    }
+}
+
+string CMsvcConfigure::GetSignature(const SConfigInfo& config)
+{
+    string signature;
     if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
         signature = "MSVC";
     } else if (CMsvc7RegSettings::GetMsvcPlatform() > CMsvc7RegSettings::eUnix) {
@@ -520,9 +543,9 @@ void CMsvcConfigure::AnalyzeDefines(
     if (uname(&u) == 0) {
 //        signature += string(u.machine) + string("-apple-") + string(u.sysname) + string(u.release);
         signature +=
-            GetApp().GetSite().GetPlatformInfo( u.sysname, "arch", u.machine) +
+            GetApp().GetSite().GetPlatformInfo(u.sysname, "arch", u.machine) +
             string("-apple-") +
-            GetApp().GetSite().GetPlatformInfo( u.sysname, "os", u.sysname) +
+            GetApp().GetSite().GetPlatformInfo(u.sysname, "os", u.sysname) +
             string(u.release);
     } else {
         signature += HOST;
@@ -532,8 +555,8 @@ void CMsvcConfigure::AnalyzeDefines(
         char hostname[255];
         string tmp1, tmp2;
         if (0 == gethostname(hostname, 255))
-            NStr::SplitInTwo(hostname,".", tmp1, tmp2);
-            signature += tmp1;
+            NStr::SplitInTwo(hostname, ".", tmp1, tmp2);
+        signature += tmp1;
     }
 #else
     signature += "--";
@@ -548,18 +571,7 @@ void CMsvcConfigure::AnalyzeDefines(
         signature += GetApp().GetEnvironment().Get("COMPUTERNAME");
     }
 #endif
-
-    string candidate_path = filename + ".candidate";
-    CDirEntry::SplitPath(filename, &dir);
-    CDir(dir).CreatePath();
-    WriteNcbiconfMsvcSite(candidate_path, signature);
-    if (PromoteIfDifferent(filename, candidate_path)) {
-        PTB_WARNING_EX(filename, ePTB_FileModified,
-                       "Configuration file modified");
-    } else {
-        PTB_INFO_EX(filename, ePTB_NoError,
-                    "Configuration file unchanged");
-    }
+    return signature;
 }
 
 CNcbiOfstream& CMsvcConfigure::WriteNcbiconfHeader(CNcbiOfstream& ofs) const
@@ -621,7 +633,9 @@ void CMsvcConfigure::WriteNcbiconfMsvcSite(
         }
     }
     ofs << endl;
-    ofs << "#define NCBI_SIGNATURE \\" << endl << "  \"" << signature << "\"" << endl;
+    if (!signature.empty()) {
+        ofs << "#define NCBI_SIGNATURE \\" << endl << "  \"" << signature << "\"" << endl;
+    }
 
     list<string> customH;
     GetApp().GetCustomConfH(&customH);
