@@ -1742,54 +1742,69 @@ bool CCleanup::FixECNumbers(CSeq_entry_Handle entry)
 }
 
 
-bool CCleanup::SetGenePartialByLongestContainedFeature(CSeq_feat& gene, CScope& scope)
+static bool s_SetGenePartialFromChildren(CSeq_feat& gene, const list<CMappedFeat>& children)
 {
-    CBioseq_Handle bh = scope.GetBioseqHandle(gene.GetLocation());
-    if (!bh) {
-        return false;
+    bool partial5{ false };
+    bool partial3{ false };
+
+    // RW-2569
+    // If any child feature is 5' or 3' partial, the gene is also partial
+    for (const auto& child : children) {
+        if (partial5 && partial3) { // No need to consider additional features
+            break;
+        }
+        const auto& child_loc = child.GetLocation();
+        if (! partial5) {
+            partial5 = child_loc.IsPartialStart(eExtreme_Biological);
+        }
+        if (! partial3) {
+            partial3 = child_loc.IsPartialStop(eExtreme_Biological);
+        }
     }
-    CFeat_CI under(scope, gene.GetLocation());
-    size_t longest = 0;
-    CConstRef<CSeq_feat> longest_feat;
-    CConstRef<CSeq_feat> inner_gene;
 
-    while (under) {
-        // ignore genes
-        if (under->GetData().IsGene()) {
-            sequence::ECompare loc_cmp = sequence::Compare(gene.GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
-            if (loc_cmp == sequence::eContains) {
-                inner_gene.Reset(under->GetSeq_feat());
-            }
-        } else {
-            bool check_outer_gene = true;
-            if (inner_gene) {
-                sequence::ECompare loc_cmp = sequence::Compare(inner_gene->GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
-                if (loc_cmp == sequence::eContains) {
-                    // do not consider lengths of inner features in calculating outer gene partials
-                    check_outer_gene = false;
-                }
-            }
-            if (check_outer_gene) {
-                // must be contained in gene location
-                sequence::ECompare loc_cmp = sequence::Compare(gene.GetLocation(), under->GetLocation(), &scope, sequence::fCompareOverlapping);
+    bool  any_change{ false };
+    auto& gene_loc = gene.SetLocation();
+    if (partial5 != gene_loc.IsPartialStart(eExtreme_Biological)) {
+        gene_loc.SetPartialStart(partial5, eExtreme_Biological);
+        any_change = true;
+    }
 
-                if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContains) {
-                    size_t len = sequence::GetLength(under->GetLocation(), &scope);
-                    // if longer than longest, record new length and feature
-                    if (len > longest) {
-                        longest_feat.Reset(under->GetSeq_feat());
-                    }
-                }
+    if (partial3 != gene_loc.IsPartialStop(eExtreme_Biological)) {
+        gene_loc.SetPartialStop(partial3, eExtreme_Biological);
+        any_change = true;
+    }
+
+    any_change |= feature::AdjustFeaturePartialFlagForLocation(gene);
+
+    return any_change;
+}
+
+
+static bool s_SetGenePartialsFromChildren(const CSeq_entry_Handle& seh)
+{
+    bool any_changes{ false };
+
+    feature::CFeatTree feat_tree(seh, SAnnotSelector().ExcludeFeatType(CSeqFeatData::e_Prot));
+    for (CFeat_CI gene_it(seh, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
+        list<CMappedFeat> descendents;
+        const auto&       children = feat_tree.GetChildren(*gene_it);
+        for (auto child : children) {
+            descendents.push_back(child);
+            const auto& grandchildren = feat_tree.GetChildren(child);
+            for (auto grandchild : grandchildren) {
+                descendents.push_back(grandchild);
             }
         }
+        auto new_gene = Ref(new CSeq_feat());
+        new_gene->Assign(*(gene_it->GetSeq_feat()));
+        if (s_SetGenePartialFromChildren(*new_gene, descendents)) {
+            CSeq_feat_EditHandle gene_h(*gene_it);
+            gene_h.Replace(*new_gene);
+            any_changes = true;
+        }
+    }
 
-        ++under;
-    }
-    bool changed = false;
-    if (longest_feat) {
-        changed = feature::CopyFeaturePartials(gene, *longest_feat);
-    }
-    return changed;
+    return any_changes;
 }
 
 
@@ -2693,7 +2708,7 @@ bool CCleanup::RemovePseudoProduct(CSeq_feat& cds, CScope& scope)
 }
 
 
-bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
+bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, const CTSE_Handle& tse)
 {
     if (!gene.IsSetXref() || !gene.IsSetLocation() || !gene.GetLocation().IsInt()) {
         return false;
@@ -2701,13 +2716,13 @@ bool CCleanup::ExpandGeneToIncludeChildren(CSeq_feat& gene, CTSE_Handle& tse)
     bool any_change = false;
     TSeqPos gene_start = gene.GetLocation().GetStart(eExtreme_Positional);
     TSeqPos gene_stop = gene.GetLocation().GetStop(eExtreme_Positional);
-    ITERATE(CSeq_feat::TXref, xit, gene.GetXref()) {
-        if ((*xit)->IsSetId() && (*xit)->GetId().IsLocal()) {
-            const CTSE_Handle::TFeatureId& feat_id = (*xit)->GetId().GetLocal();
-            CTSE_Handle::TSeq_feat_Handles far_feats = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_any, feat_id);
-            ITERATE(CTSE_Handle::TSeq_feat_Handles, f, far_feats) {
-                TSeqPos f_start = f->GetLocation().GetStart(eExtreme_Positional);
-                TSeqPos f_stop = f->GetLocation().GetStop(eExtreme_Positional);
+    for (const auto& pXref : gene.GetXref()) {
+        if (pXref->IsSetId() && pXref->GetId().IsLocal()) {
+            const auto& feat_id = pXref->GetId().GetLocal();
+            auto far_feats = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_any, feat_id);
+            for (auto fhandle : far_feats) {
+                auto f_start = fhandle.GetLocation().GetStart(eExtreme_Positional);
+                auto f_stop = fhandle.GetLocation().GetStop(eExtreme_Positional);
                 if (f_start < gene_start) {
                     gene.SetLocation().SetInt().SetFrom(f_start);
                     gene_start = f_start;
@@ -2888,7 +2903,6 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         }
     }
 
-    CTSE_Handle tse = entry.GetTSE_Handle();
 
     for (CFeat_CI rna_it(entry, SAnnotSelector(CSeqFeatData::e_Rna)); rna_it; ++rna_it) {
 
@@ -2931,21 +2945,19 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
         }
     }
 
+    CTSE_Handle tse = entry.GetTSE_Handle();
     for (CFeat_CI gene_it(entry, SAnnotSelector(CSeqFeatData::e_Gene)); gene_it; ++gene_it) {
-        bool change_this_gene = false;
         CRef<CSeq_feat> new_gene(new CSeq_feat());
         new_gene->Assign(*(gene_it->GetSeq_feat()));
 
-        change_this_gene = ExpandGeneToIncludeChildren(*new_gene, tse);
-
-        change_this_gene |= SetGenePartialByLongestContainedFeature(*new_gene, entry.GetScope());
-
-        if (change_this_gene) {
+        if (ExpandGeneToIncludeChildren(*new_gene, tse)) {
             CSeq_feat_EditHandle gene_h(*gene_it);
             gene_h.Replace(*new_gene);
             any_changes = true;
         }
     }
+
+    any_changes |= s_SetGenePartialsFromChildren(entry);
 
     NormalizeDescriptorOrder(entry);
 
