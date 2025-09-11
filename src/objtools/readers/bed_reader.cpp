@@ -155,14 +155,19 @@ public:
     StripSpaceCharsInPlace(
         string& str)
     {
-        if (str.empty()) {
+        size_t length = str.length();
+        if ( length == 0 ) {
             return;
         }
-        auto newFirst = 0;
-        while (str[newFirst] == ' ') {
+        size_t newFirst = 0;
+        while (newFirst < length && str[newFirst] == ' ') {
             ++newFirst;
         }
-        auto newLast = str.length() - 1;
+        if ( newFirst == length ) {
+            str.clear();
+            return;
+        }
+        size_t newLast = length - 1;
         while (str[newLast] == ' ') {
             --newLast;
         }
