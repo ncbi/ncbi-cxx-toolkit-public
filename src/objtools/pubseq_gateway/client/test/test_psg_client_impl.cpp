@@ -133,6 +133,56 @@ struct SFixture
         vector<char> m_Buf;
     };
 
+    struct SReceivers
+    {
+        SReceivers(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, auto&... src) :
+            m_Request(make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params))
+        {
+            Add(src...);
+        }
+
+        void Add(auto&... src)
+        {
+            x_Add(src...);
+            x_Process();
+        }
+
+        void Complete()
+        {
+            for (auto& receiver : m_Receivers) {
+                receiver->Complete();
+            }
+        }
+
+    private:
+        void x_Add() {}
+
+        void x_Add(TIncomingData& src)
+        {
+            m_Receivers.emplace_back(make_unique<SReceiver>(src, m_Request));
+        }
+
+        void x_Add(TIncomingData& src, auto&... rest)
+        {
+            x_Add(src);
+            x_Add(rest...);
+        }
+
+        void x_Process()
+        {
+            // Receivers cannot run in parallel, each SPSG_TimedRequest needs its own reply for that
+            for (auto& receiver : m_Receivers) {
+                while (receiver->Process());
+
+                auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
+                this_thread::sleep_for(ms);
+            }
+        }
+
+        shared_ptr<SPSG_Request> m_Request;
+        vector<unique_ptr<SReceiver>> m_Receivers;
+    };
+
     static thread_local SRandom r;
     unordered_map<string, TData> src_blobs;
     TIncomingData src_chunks;
@@ -143,7 +193,6 @@ struct SFixture
 
     template <class TReadImpl>
     void MtReading();
-    void Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep);
 };
 
 thread_local SRandom SFixture::r;
@@ -223,9 +272,8 @@ bool SFixture::SReceiver::Process()
 
                     if (result == SPSG_Request::eContinue) {
                         return true;
-
-                    } else if (result == SPSG_Request::eRetry) {
-                        req->Reset();
+                    } else if (result == SPSG_Request::eStop) {
+                        req->OnReplyDone(processor_id)->SetComplete();
                     }
                 }
 
@@ -341,7 +389,7 @@ SFixture::SFixture()
     unparsable_chunks.emplace_front(src_chunks.front().substr(0, r.Get(kPrefixPartMin, kPrefixPartMax)));
 
 
-    // Generating error 503 source (splitting first chunk so parallel reading of src_chunks wouldn't succeed on retry)
+    // Generating error 503 source (splitting first chunk)
 
     auto blob_id = "id_" + to_string(r.Get());
     auto blob_meta = s_GetBlobMetaArgs(1, blob_id, 2);
@@ -372,12 +420,26 @@ void SFixture::MtReading()
     const unsigned kReadingDeadline = 300;
 
     const SPSG_Params params;
-    auto queue = make_shared<TPSG_Queue>();
-    auto reply = make_shared<SPSG_Reply>("", params, queue);
-    map<SPSG_Reply::SItem::TTS*, thread> readers;
+
+
+    // Test receiving unparsable data only
+
+    auto unparsable = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    SReceivers(params, unparsable, unparsable_chunks);
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!unparsable->GetNextItem(CDeadline::eNoWait), "Got an item from only unparsable data");
+
+
+    // Test receiving "error 503" data only
+
+    auto error_503 = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    SReceivers(params, error_503, error_503_chunks);
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!error_503->GetNextItem(CDeadline::eNoWait), "Got an item from only \"error 503\" data");
 
 
     // Reading
+
+    auto reply = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    map<SPSG_Reply::SItem::TTS*, thread> readers;
 
     auto reader_impl = [&](const TData& src, SPSG_Reply::SItem::TTS& dst) {
         TReadImpl read_impl(dst);
@@ -450,9 +512,10 @@ void SFixture::MtReading()
     thread dispatcher(dispatcher_impl);
 
 
-    // Sending
+    // Receiving normal data after unparsable and "error 503" data
 
-    Receive(params, reply, true);
+    SReceivers receivers(params, reply, unparsable_chunks, error_503_chunks, src_chunks);
+    receivers.Complete();
 
 
     // Waiting
@@ -460,68 +523,32 @@ void SFixture::MtReading()
     dispatcher.join();
 }
 
-void SFixture::Receive(const SPSG_Params& params, shared_ptr<SPSG_Reply>& reply, bool sleep)
-{
-    auto request = make_shared<SPSG_Request>(string(), reply, CDiagContext::GetRequestContext().Clone(), params);
-    vector<unique_ptr<SReceiver>> receivers;
-
-    auto receive_impl = [&]() {
-        while (count_if(receivers.begin(), receivers.end(), mem_fn(&SReceiver::Process))) {
-            if (sleep) {
-                auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
-                this_thread::sleep_for(ms);
-            }
-
-            r.Shuffle(receivers.begin(), receivers.end());
-        }
-    };
-
-
-    // Test receiving unparsable data
-
-    receivers.emplace_back(make_unique<SReceiver>(unparsable_chunks, request));
-    receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
-
-    receive_impl();
-
-    BOOST_REQUIRE_MESSAGE_MT_SAFE(!reply->GetNextItem(CDeadline::eNoWait), "Got an item from unparsable data");
-
-
-    // Test receiving "503" with a retry possible
-
-    receivers.emplace_back(make_unique<SReceiver>(error_503_chunks, request));
-    receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
-
-    receive_impl();
-
-    BOOST_REQUIRE_MESSAGE_MT_SAFE(!reply->GetNextItem(CDeadline::eNoWait), "Got an item from \"error 503\" data");
-
-
-    // Test receiving normal data
-
-    for (auto i = r.Get(kReceiversMin, kReceiversMax); i > 0; --i) {
-        receivers.emplace_back(make_unique<SReceiver>(src_chunks, request));
-    }
-
-    receive_impl();
-
-    for (auto& receiver : receivers) {
-        receiver->Complete();
-    }
-}
-
 BOOST_FIXTURE_TEST_SUITE(PSG, SFixture)
 
 BOOST_AUTO_TEST_CASE(Request)
 {
     const SPSG_Params params;
-    auto queue = make_shared<TPSG_Queue>();
-    auto reply = make_shared<SPSG_Reply>("", params, queue);
 
 
-    // Reading
+    // Test receiving unparsable data only
 
-    Receive(params, reply, false);
+    auto unparsable = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    SReceivers(params, unparsable, unparsable_chunks);
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!unparsable->GetNextItem(CDeadline::eNoWait), "Got an item from only unparsable data");
+
+
+    // Test receiving "error 503" data only
+
+    auto error_503 = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    SReceivers(params, error_503, error_503_chunks);
+    BOOST_REQUIRE_MESSAGE_MT_SAFE(!error_503->GetNextItem(CDeadline::eNoWait), "Got an item from only \"error 503\" data");
+
+
+    // Receiving normal data after unparsable and "error 503" data
+
+    auto reply = make_shared<SPSG_Reply>("", params, make_shared<TPSG_Queue>());
+    SReceivers receivers(params, reply, unparsable_chunks, error_503_chunks, src_chunks);
+    receivers.Complete();
 
 
     // Checking
