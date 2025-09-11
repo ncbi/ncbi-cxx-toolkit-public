@@ -1690,7 +1690,16 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
         if (residue != '*') {
             r = EndAdded(feat, scope, gene_refs);
             if (r > 0 && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
-                FtaErrPost(SEV_WARNING, ERR_CDREGION_TerminalStopCodonMissing, "CDS: {} |found end stop codon after {} bases added", loc, r);
+                if (pp->source != Parser::ESource::USPTO) {
+                    FtaErrPost(SEV_WARNING, ERR_CDREGION_TerminalStopCodonMissing, "CDS: {} |found end stop codon after {} bases added", loc, r);
+                }
+                else {
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "CDS: {} |found end stop codon after {} bases added, coding region has been dropped.", loc, r);
+                    *featdrop = true;
+                    if (! qval.empty())
+                        qval.clear();
+                    return;
+                }
             }
 
             if ((! feat.IsSetPartial() || feat.GetPartial() == false) && ! SeqLocHaveFuzz(feat.GetLocation())) {
@@ -1698,7 +1707,16 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
                  * doesn't have "fuzz" then output message
                  */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: {}", loc);
+                    if (pp->source != Parser::ESource::USPTO) {
+                        FtaErrPost(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: {}", loc);
+                    }
+                    else {
+                        FtaErrPost(SEV_ERROR, ERR_CDREGION_TerminalStopCodonMissing, "No end stop codon found for CDS: {}, coding region has been dropped.", loc);
+                        *featdrop = true;
+                        if (! qval.empty())
+                            qval.clear();
+                        return;
+                    }
                 }
             }
         } else /* remove termination codon from protein */
