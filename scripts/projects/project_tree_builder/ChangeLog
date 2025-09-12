@@ -407,3 +407,7 @@ November 30, 2023
 version 4.12.3, CXX-13323
 Ehanced support of Git and Subversion revision information.
 Support PTB extensions in XCode metamakefile.
+
+September 12, 2025
+version 4.13.0, CXX-14157
+Move NCBI_SIGNATURE definition of out of ncbiconf header.
