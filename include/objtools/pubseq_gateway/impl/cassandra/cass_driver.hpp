@@ -1490,13 +1490,6 @@ public:
         }
     }
 
-    NCBI_STD_DEPRECATED("SetOnExecute is deprecated, unsafe to use and will be deleted after 01/01/2023")
-    void SetOnExecute(void (*Cb)(CCassQuery&, void*), void* Data)
-    {
-        m_onexecute = Cb;
-        m_onexecute_data = Data;
-    }
-
     static const unsigned int DEFAULT_PAGE_SIZE;
 };
 
