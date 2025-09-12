@@ -281,7 +281,7 @@ public:
     bool ReadRow(CCassQuery const &query) override
     {
         using TRecordType = TFullscanFieldList::head_type::record_type;
-        TRecordType r;
+        TRecordType r{};
         impl::CFullscanHelper().ReadFields<TRecordType, TFullscanFieldList>(query, r);
         m_Buffer.push_back(r);
         return true;
@@ -302,7 +302,7 @@ protected:
 private:
     mutex *m_Mutex{nullptr};
     vector<typename TContainterType::value_type> m_Buffer;
-    TContainterType *m_Data;
+    TContainterType *m_Data{nullptr};
 };
 
 struct CFullscanEasyRunner
