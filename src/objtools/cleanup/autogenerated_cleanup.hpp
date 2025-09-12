@@ -171,7 +171,7 @@ public:
     void BasicCleanupSeqEntryHandle(const CSeq_entry_Handle& entry_handle);
     void BasicCleanupSeqSubmit(CSeq_submit& arg0);
     void BasicCleanupSeqAnnot(CSeq_annot& arg0);
-    void BasicCleanupSeqAnnot(const CSeq_annot_Handle& annotHandle);
+    void BasicCleanupSeqAnnotHandle(const CSeq_annot_Handle& annotHandle);
     void BasicCleanupBioseqHandle(const CBioseq_Handle& bsh);
     void BasicCleanupBioseqSetHandle(const CBioseq_set_Handle& bssh);
     void BasicCleanupSeqFeat(CSeq_feat& arg0_raw);
