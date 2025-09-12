@@ -72,20 +72,6 @@ public:
         eUserCancelled
     };
 
-    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024")
-    static CCassandraException s_ProduceException(CassFuture * future, CCassandraException::EErrCode error_code)
-    {
-        const char *message;
-        size_t message_length;
-        CassError rc = cass_future_error_code(future);
-        cass_future_error_message(future, &message, &message_length);
-        string msg(message, message_length);
-        msg.append(": ").append(NStr::NumericToString(static_cast<int>(rc), 0, 16));
-        CCassandraException result = NCBI_EXCEPTION(CCassandraException, eUnknown, msg);
-        result.SetErrorCode(error_code);
-        return result;
-    }
-
     void SetErrorCode(EErrCode error_code)
     {
         x_InitErrCode(static_cast<CException::EErrCode>(error_code));
@@ -115,24 +101,6 @@ public:
             case eUserCancelled:          return "eUserCancelled";
             default:                      return CException::GetErrCodeString();
         }
-    }
-
-    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
-    void SetOpTime(int64_t optimeMS)
-    {
-        m_OpTimeMs = optimeMS;
-    }
-
-    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
-    int64_t GetOpTime() const
-    {
-        return m_OpTimeMs;
-    }
-
-    NCBI_STD_DEPRECATED("Deprecated and will be deleted after 06/01/2024. Use CException::GetMsg()")
-    string TimeoutMsg() const
-    {
-        return "Failed to perform query in " + to_string(m_OpTimeMs) + "ms, timed out";
     }
 
     NCBI_EXCEPTION_DEFAULT(CCassandraException, CException);

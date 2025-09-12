@@ -125,7 +125,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckRegistrySettings) {
     };
     CTestPlan plan;
     plan.ApplyConfiguration(&r, "PLAN_CONFIG");
-    EXPECT_EQ(5, plan.GetMinPartitionsForSubrangeScan());
+    EXPECT_EQ(5UL, plan.GetMinPartitionsForSubrangeScan());
     EXPECT_EQ(53, plan.GetPartitionPerQuery());
 }
 
