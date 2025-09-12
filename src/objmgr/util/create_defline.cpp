@@ -3599,8 +3599,9 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
 
     x_SetBioSrc (bsh);
 
+    string taxVal;
     if (m_Taxid > 0) {
-        string taxVal = NStr::IntToString(m_Taxid);
+        taxVal = NStr::IntToString(m_Taxid);
         joiner.Add("taxid", taxVal);
     }
 
