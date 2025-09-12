@@ -148,11 +148,10 @@ protected:
     CHttpRetryContext        m_RetryCtx;
     CConstIRef<ICanceled>    m_Canceler;
 
-    // Retry policy; by default, just _TRACEs the event and returns
-    // true.  May reset the connection (or do anything else, really),
-    // but note that Ask() will always automatically reconnect if the
-    // stream is explicitly bad.  (Ask() also takes care of enforcing
-    // m_TryLimit.)
+    // Retry policy; by default, just returns true.  May reset the
+    // connection (or do anything else, really), but note that Ask()
+    // will always automatically reconnect if the stream is explicitly
+    // bad.  (Ask() also takes care of enforcing m_TryLimit.)
     virtual bool x_ShouldRetry(unsigned int tries);
 
     // Calculate effective retry delay. Returns value from CRetryContext

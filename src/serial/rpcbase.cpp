@@ -348,6 +348,9 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
             NCBI_THROW(CRPCClientException, eFailed,
                        "Request canceled " + request_name);
         }
+        ERR_POST_XX(Serial_RPCClient, 3,
+                   Warning << "CRPCClient_Base::x_ShouldRetry: retrying after "
+                   << m_TryCount << " failure(s)");
         try {
             Reset();
         } STD_CATCH_ALL_XX(Serial_RPCClient, 1,
@@ -365,8 +368,6 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 
 bool CRPCClient_Base::x_ShouldRetry(unsigned int tries) /* NCBI_FAKE_WARNING */
 {
-    _TRACE("CRPCClient_Base::x_ShouldRetry: retrying after " << tries
-           << " failure(s)");
     return true;
 }
 
