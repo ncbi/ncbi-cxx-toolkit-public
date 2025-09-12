@@ -815,8 +815,8 @@ if(CMAKE_USE_DISTCC)
         string(APPEND _generatesrc "#if !defined(__GNUC__)  &&  !defined(offsetof)\n")
         string(APPEND _generatesrc "#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))\n")
         string(APPEND _generatesrc "#endif\n")
-        string(APPEND _generatesrc "struct S { int x; };\n")
-        string(APPEND _generatesrc "int f() { return offsetof(struct S, x); }\n")
+        string(APPEND _generatesrc "struct S { int x\; }\;\n")
+        string(APPEND _generatesrc "int f() { return offsetof(struct S, x)\; }\n")
         file(APPEND ${_testfile} ${_generatesrc})
         execute_process(
             COMMAND ${DISTCC_EXECUTABLE} ${CMAKE_C_COMPILER} -c ${_testfile}
