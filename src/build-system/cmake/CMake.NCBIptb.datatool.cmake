@@ -280,7 +280,7 @@ function(NCBI_internal_finalize_generatesrc)
     if(WIN32)
         list(APPEND _contents "if not \"%GENERATESRC_RESULT%\"==\"0\" (echo DONE WITH ERRORS& exit /b 1) else (echo DONE)\n")
     else()
-        list(APPEND _contents "if test $GENERATESRC_RESULT -ne 0; then echo DONE WITH ERRORS; exit 1; else echo DONE; fi\n")
+        list(APPEND _contents "if test $GENERATESRC_RESULT -ne 0\; then echo DONE WITH ERRORS\; exit 1\; else echo DONE\; fi\n")
     endif()
     file(WRITE ${_dest} ${_contents})
     file(COPY ${_dest} DESTINATION "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}"
