@@ -2271,56 +2271,56 @@ GetDescrSPBlock(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
  *                                              10-1-93
  *
  **********************************************************/
-static void ParseSpComment(CSeq_descr::Tdata& descrs, char* line)
+static void ParseSpComment(CSeq_descr::Tdata& descrs, string_view line)
 {
-    char* com;
-    char* p;
-    char* q;
-    Int2  i;
+    if (line.empty())
+        return;
 
-    for (p = line; *p == ' ';)
-        p++;
+    if (line.starts_with(' ')) {
+        int j = 1;
+        while (j < line.size() && line[j] == ' ')
+            j++;
+        line.remove_prefix(j);
+    }
 
-    com = StringNew(StringLen(p) + 1);
-    q   = com;
-    i   = fta_StringMatch(ParFlat_SPComTopics, p);
+    string com;
+    com.reserve(line.size());
+
+    Int2 i = fta_StringMatch(ParFlat_SPComTopics, line);
     if (i >= 0)
-        *q++ = '[';
+        com += '[';
 
-    while (*p != '\0') {
+    for (auto p = line.begin(); p != line.end();) {
         if (*p != '\n') {
-            *q++ = *p++;
+            com += *p++;
             continue;
         }
 
-        if (p > line && *(p - 1) != '-')
-            *q++ = ' ';
-        for (++p; *p == ' ';)
+        if (p != line.begin() && *(p - 1) != '-')
+            com += ' ';
+        ++p;
+        while (p != line.end() && *p == ' ')
             p++;
-        if (StringEquN(p, "CC ", 3))
-            for (p += 3; *p == ' ';)
+        if (string_view(p, line.end()).starts_with("CC ")) {
+            p += 3;
+            while (p != line.end() && *p == ' ')
                 p++;
-    }
-    if (q == com) {
-        MemFree(com);
-        return;
-    }
-    for (--q; q > com && *q == ' ';)
-        q--;
-    if (*q != ' ')
-        q++;
-    *q = '\0';
-    if (i >= 0) {
-        p  = StringChr(com, ':');
-        *p = ']';
+        }
     }
 
-    if (com[0] != 0) {
+    while (! com.empty() && com.back() == ' ')
+        com.pop_back();
+
+    if (! com.empty()) {
+        if (i >= 0) {
+            auto j = com.find(':');
+            com[j] = ']';
+        }
+
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetComment(com);
         descrs.push_back(descr);
     }
-    MemFree(com);
 }
 
 /**********************************************************
@@ -2400,9 +2400,7 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
             p--;
         if (p == bptr)
             continue;
-        *p = '\0';
-        ParseSpComment(descrs, bptr);
-        *p = '\n';
+        ParseSpComment(descrs, string_view(bptr, p));
     }
 
     ParseSpComment(descrs, bptr);
