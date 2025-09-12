@@ -29,7 +29,7 @@ Linux64-Ubuntu    : plain : GCC.sh           --without-pcre --without-libdw --wi
 
 FreeBSD64  : plain : Clang.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-pcre --without-downloaded-vdb
 
-IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb --without-pcre
+ArmMAC   : plain : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb --without-pcre
 
 Win64_22   : static-64 : static 64 ReleaseMT
 
