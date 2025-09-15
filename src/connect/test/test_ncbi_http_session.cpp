@@ -47,8 +47,7 @@ public:
     CNCBITestHttpSessionApp(void);
 
 public:
-    void Init(void);
-    int  Run (void);
+    int      Run (void);
 
 private:
     istream* GetStream(const string& url);
@@ -71,11 +70,6 @@ CNCBITestHttpSessionApp::CNCBITestHttpSessionApp(void)
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-}
-
-
-void CNCBITestHttpSessionApp::Init(void)
-{
 }
 
 
