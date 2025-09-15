@@ -1479,6 +1479,11 @@ private:
                     if (NStr::EndsWith (pos_str, ",")) {
                         pos_str = pos_str.substr (0, pos_str.length() - 1);
                     }
+                } else {
+                    if (fpReportError) {
+                        (*fpReportError)("Missing aa in anticodon clause");
+                    }
+                    return false;
                 }
                 CGetSeqLocFromStringHelper helper;
                 CRef<CSeq_loc> anticodon = GetSeqLocFromString (pos_str, &seqid, & helper);
