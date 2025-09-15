@@ -455,7 +455,7 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_TypeOnly types, const char*
     }
     net_info = &data->net_info;
     ConnNetInfo_MakeValid(net_info);
-    if (!ConnNetInfo_ParseWebURL(net_info, service)
+    if (!ConnNetInfo_ParseURL(net_info, service)
         ||  (net_info->scheme != eURL_Unspec  &&
              net_info->scheme != eURL_Https   &&
              net_info->scheme != eURL_Http)
