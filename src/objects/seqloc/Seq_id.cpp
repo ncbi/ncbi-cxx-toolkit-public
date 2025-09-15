@@ -1764,7 +1764,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
 
     SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
     SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
-    auto& guide = *s_Guide;
+    auto guide = *s_Guide;
     const EAccessionInfo& found_ai
         = guide->Find(SAccGuide::s_Key(digit_pos, digit_count), main_acc);
     EAccessionInfo ai = found_ai;
@@ -1869,9 +1869,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
     case e_General:
     {
         string db = GetGeneral().GetDb();
+        auto guide = *s_Guide;
         NStr::ToUpper(db);
-        SAccGuide::TPrefixes::const_iterator it = (*s_Guide)->general.find(db);
-        return it == (*s_Guide)->general.end() ? eAcc_general : it->second;
+        SAccGuide::TPrefixes::const_iterator it = guide->general.find(db);
+        return it == guide->general.end() ? eAcc_general : it->second;
     }
 
     default:
