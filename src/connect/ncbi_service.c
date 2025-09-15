@@ -1557,7 +1557,7 @@ extern unsigned short SERV_ServerPort(const char*  name,
      */
     if (!host  ||  host == SERV_LOCALHOST)
         host = SOCK_GetLocalHostAddress(eDefault);
-    if (!(info = SERV_GetInfoP(name, fSERV_Standalone | fSERV_Promiscuous,
+    if (!(info = SERV_GetInfoP(name, fSERV_Promiscuous | fSERV_Standalone,
                                host, 0/*pref. port*/, -1.0/*latch host*/,
                                0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
                                0/*not external*/, 0/*arg*/, 0/*val*/,
