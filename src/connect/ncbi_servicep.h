@@ -164,15 +164,30 @@ char* SERV_Print
 
 
 /* Private interface:  get the final service name, using the
- * service_CONN_SERVICE_NAME environment variable(s), then (if not found)
- * registry section [service] and a key CONN_SERVICE_NAME.  Return the
- * resultant name (perhaps, an exact copy of "service" if no override name has
- * been found in the environment/registry), which is to be 'free()'d by the
- * caller when no longer needed.  Return NULL on error.
+ * "<service>_CONN_SERVICE_NAME" environment variable(s), then (if not found)
+ * registry section "[<service>]" and a key "CONN_SERVICE_NAME".
+ * Return the resultant name (perhaps, an exact copy of "service" if no
+ * override name has been found in the environment/registry), which is to be
+ * 'free()'d by the caller when no longer needed.
+ * Return NULL on error (bad service name or recursion).
+ * NOTE:  NULL or too long service name gets an error output to the log.
  * NOTE:  This procedure can detect cyclic redefinitions, and is limited to a
  * certain search depth.
+ * NOTE:  If the service gets redefined with itself (case-blindly) then the
+ * search ends without an error, and a flag is set to use the resultant name
+ * case-sensitively (in mappers that support that).
  */
 char* SERV_ServiceName(const char* service);
+
+
+void ConnNetInfo_MakeValid(SConnNetInfo* net_info);
+
+
+/* Private interface:  Parse the URL favoring WEB-like incomplete URLs.
+ * @sa
+ *   ConnNetInfo_ParseURL
+ */
+int/*bool*/ ConnNetInfo_ParseWebURL(SConnNetInfo* net_info, const char* url);
 
 
 /* Private interface:  create SConnNetInfo for NULL, empty, or non-wildcard

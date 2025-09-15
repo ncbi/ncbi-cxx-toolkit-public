@@ -99,7 +99,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_LBSM,          304,  96);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,           305,  14);
 NCBI_C_DEFINE_ERRCODE_X(Connect_SMTP,          306,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,          307,  26);
-NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  10);
+NCBI_C_DEFINE_ERRCODE_X(Connect_Service,       308,  14);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,       309,  34);
 NCBI_C_DEFINE_ERRCODE_X(Connect_TLS,           310,  50);  /* mbedTLS: 1-20; GNUTLS: 21-40; TLS: 41-50 */
 NCBI_C_DEFINE_ERRCODE_X(Connect_Mghbn,         311,  16);

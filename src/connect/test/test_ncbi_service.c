@@ -31,54 +31,112 @@
  */
 
 #include <connect/ncbi_tls.h>
-#include "../ncbi_priv.h"
+#include "../ncbi_ansi_ext.h"
+#include "../ncbi_once.h"
 #include "../ncbi_lbsmd.h"
-#include "../ncbi_servicep.h"
 #include <stdlib.h>
-#include <string.h>
 
 #include "test_assert.h"  /* This header must go last */
 
 
+static unsigned int s_Resolve(const char* name, TSERV_Type types)
+{
+    static void* /*bool*/ s_Once = 0/*false*/;
+    SConnNetInfo* net_info = 0;
+    unsigned int  count;
+    SERV_ITER     iter;
+
+    if (CORE_Once(&s_Once))
+        SOCK_SetupSSL(NcbiSetupTls);
+    net_info = ConnNetInfo_Create(name);
+    if (name  &&  (!*name  ||  strpbrk(name, "?*[")))
+        types |= fSERV_Promiscuous;
+
+    iter = SERV_OpenP(name, types,
+                      0, 0, 0.0, net_info, NULL, 0, 0, NULL, NULL);
+    name = SERV_MapperName(iter);
+    CORE_LOGF(eLOG_Note, ("Mapper name: %s", name ? name : "<NONE>"));
+    for (count = 0;  iter;  ++count) {
+        SSERV_InfoCPtr info;
+        char*          istr;
+        if (!(info = SERV_GetNextInfo(iter)))
+            break;
+        if (!(istr = SERV_WriteInfo(info)))
+            continue;
+        CORE_LOGF(eLOG_Note, ("`%s' %s", SERV_CurrentName(iter), istr));
+        free(istr);
+    }
+    SERV_Close(iter);
+
+    ConnNetInfo_Destroy(net_info);
+    return count;
+}
+
+
+static int s_SelfTest(void)
+{
+    assert(!s_Resolve(0, fSERV_Any));
+    assert( s_Resolve("bounce", fSERV_Any));
+    assert( s_Resolve("bounce*", fSERV_Any));
+    assert( s_Resolve("http://www.ncbi/Service", fSERV_Any));
+    assert(!s_Resolve("//www.ncbi/", fSERV_Standalone));
+    assert( s_Resolve("www.ncbi:5555", fSERV_Any));
+    assert( s_Resolve("www.ncbi:5555", fSERV_Standalone));
+    assert( s_Resolve("//www.ncbi:80/", fSERV_Standalone));
+    assert(!s_Resolve("//www.ncbi:80/Service", fSERV_Standalone));
+    assert( s_Resolve("//www.ncbi/", fSERV_ReverseDns));
+    assert( s_Resolve("//www.ncbi:80/Service", fSERV_ReverseDns));
+    assert( s_Resolve("http://www.ncbi/Service", fSERV_ReverseDns));
+    return 0;
+}
+
+
 int main(int argc, char* argv[])
 {
-    SERV_ITER      iter;
-    int            count;
-    int/*bool*/    wildcard;
-    SConnNetInfo*  net_info;
-    const char*    service = argv[1];
+    const char* service = argc > 1 ? argv[1] : 0;
+    TSERV_Type  types = fSERV_Any;
+    int         n;
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
-    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
     LBSMD_FastHeapAccess(eOn);
-    wildcard
-        = service && (!*service  ||  strpbrk(service, "?*["))? 1/*T*/ : 0/*F*/;
-    if (!wildcard) {
-        net_info = ConnNetInfo_Create(service);
-        SOCK_SetupSSL(NcbiSetupTls);
-    } else
-        net_info = 0;
-    iter = SERV_OpenP(service,
-                      (fSERV_All & ~fSERV_Firewall) |
-                      (wildcard ? fSERV_Promiscuous : 0),
-                      0, 0, 0.0, net_info, NULL, 0, 0, NULL, NULL);
-    for (count = 0;  ;  ++count) {
-        SSERV_InfoCPtr info;
-        char*          str;
-        if (!(info = SERV_GetNextInfo(iter)))
-            break;
-        if (!(str = SERV_WriteInfo(info)))
-            continue;
-        CORE_LOGF(eLOG_Note, ("`%s' %s",
-                              wildcard ?SERV_NameOfInfo(info) : service, str));
-        free(str);
-    }
-    SERV_Close(iter);
-    if (net_info)
-        ConnNetInfo_Destroy(net_info);
 
-    CORE_LOGF(eLOG_Note, ("Servers found: %d", count));
+    if (!service) {
+        CORE_SetLOGFILE_Ex(stderr, eLOG_Note, eLOG_Fatal, 0/*no auto-close*/);
+        CORE_LOG(eLOG_Note, "Running a self-test, please ignore error(s) logged");
+        if (!(n = s_SelfTest()))
+            CORE_LOG(eLOG_Note, "TEST completed successfully");
+        CORE_SetLOG(0);
+        return n;
+    }
+
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
+    if (argc > 2  &&  strcasecmp(argv[2], "-r") == 0) {
+        types |= fSERV_ReverseDns;
+        n = 3;
+    } else
+        n = 2;
+    if (n >= argc)
+        types |= fSERV_All & ~fSERV_Firewall;
+    else do {
+        ESERV_Type  type;
+        const char* end;
+        if (strcasecmp(argv[n], "ANY") == 0)
+            continue;
+        if (!(end = SERV_ReadType(argv[n], &type))
+            ||  *end  ||  type == fSERV_Firewall) {
+            CORE_LOGF(eLOG_Warning,
+                        ("Bad server type `%s', %s", argv[n],
+                         types & fSERV_All ? "skipping" : "assuming ANY"));
+        } else {
+            assert(type);
+            types |= type;
+        }
+    } while (++n < argc);
+
+    n = s_Resolve(service, types);
+
+    CORE_LOGF(eLOG_Note, ("Server(s) found: %d", n));
     CORE_SetLOG(0);
-    return !count;
+    return !n;
 }

@@ -81,7 +81,7 @@ enum ESERV_TypeSpecial {
     fSERV_Stateless         = 0x00008000,  /**< Stateless servers only       */
     fSERV_Reserved          = 0x00100000,  /**< Reserved, MBZ                */
     fSERV_DelayOpen         = 0x00400000,  /**< Don't open service until use */
-    fSERV_ReverseDns        = 0x00800000,  /**< LB-DNS translation           */
+    fSERV_ReverseDns        = 0x00800000,  /**< Reverse convert to DNS-type  */
     /* The following allow to get otherwise excluded service instances       */
     fSERV_IncludeDown       = 0x08000000,
     fSERV_IncludeStandby    = 0x10000000,

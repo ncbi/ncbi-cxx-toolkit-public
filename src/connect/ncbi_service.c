@@ -44,6 +44,7 @@
 #include "ncbi_dispd.h"
 #include "ncbi_priv.h"
 #include <ctype.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -171,7 +172,8 @@ static size_t x_CheckServiceName(const char* svc)
  */
 static char* x_ServiceName(unsigned int depth,
                            const char* service, const char* svc,
-                           int/*bool*/ ismask, int* /*bool*/isfast)
+                           int/*bool*/ ismask, int* /*bool*/isfast,
+                           int/*bool*/ log)
 {
     char   buf[128];
     size_t len = 0;
@@ -183,17 +185,19 @@ static char* x_ServiceName(unsigned int depth,
     if (!svc  ||  (!ismask
                    &&  (!(len = x_CheckServiceName(svc))
                         ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)))) {
-        ELOG_Level level = !svc  ||  !*svc  ||  len ? eLOG_Error : eLOG_Critical;
-        if (!service  ||  strcasecmp(service, svc) == 0)
-            service = "";
-        CORE_LOGF_X(7, level,
-                    ("%s%s%s%s%s service name%s%s",
-                     !svc  ||  !*svc ? "" : "[",
-                     !svc ? "" : svc,
-                     !svc  ||  !*svc ? "" : "]  ",
-                     level == eLOG_Critical ? "Internal program logic error: " : "",
-                     !svc ? "NULL" : !*svc ? "Empty" : len ? "Too long" : "Invalid",
-                     *service ? " for: " : "", service));
+        if (!svc  ||  len  ||  log) {
+            ELOG_Level level = !svc  ||  !*svc  ||  len ? eLOG_Error : eLOG_Critical;
+            if (!service  ||  strcasecmp(service, svc) == 0)
+                service = "";
+            CORE_LOGF_X(7, level,
+                        ("%s%s%s%s%s service name%s%s",
+                         !svc  ||  !*svc ? "" : "[",
+                         !svc ? "" : svc,
+                         !svc  ||  !*svc ? "" : "]  ",
+                         level == eLOG_Critical ? "Internal program logic error: " : "",
+                         !svc ? "NULL" : !*svc ? "Empty" : len ? "Too long" : "Invalid",
+                         *service ? " for: " : "", service));
+        }
         return 0/*failure*/;
     }
     if (!ismask  &&  !*isfast) {
@@ -223,7 +227,7 @@ static char* x_ServiceName(unsigned int depth,
                          service, svc, s));
             if (strcasecmp(svc, s) != 0) {
                 if (depth++ < SERV_SERVICE_NAME_RECURSION_MAX)
-                    return x_ServiceName(depth, service, s, ismask, isfast);
+                    return x_ServiceName(depth, service, s, ismask, isfast, log);
                 CORE_LOGF_X(8, eLOG_Error,
                             ("[%s]  Maximal service name recursion"
                              " depth exceeded: %u", service, depth));
@@ -231,7 +235,7 @@ static char* x_ServiceName(unsigned int depth,
             } else
                 svc = s, *isfast = 1/*true*/;
         } else
-            *isfast = 0/*false*/;
+            assert(*isfast == 0/*false*/);
     } else
         *isfast = 0/*false*/;
     return strdup(svc);
@@ -239,11 +243,11 @@ static char* x_ServiceName(unsigned int depth,
 
 
 static char* s_ServiceName(const char* service,
-                           int/*bool*/ ismask, int* /*bool*/isfast)
+                           int/*bool*/ ismask, int* /*bool*/isfast, int/*bool*/ log)
 {
     char* retval;
     CORE_LOCK_READ;
-    retval = x_ServiceName(0/*depth*/, service, service, ismask, isfast);
+    retval = x_ServiceName(0/*depth*/, service, service, ismask, isfast, log);
     CORE_UNLOCK;
     return retval;
 }
@@ -252,7 +256,247 @@ static char* s_ServiceName(const char* service,
 char* SERV_ServiceName(const char* service)
 {
     int dummy = 0;
-    return s_ServiceName(service, 0/*ismask*/, &dummy/*isfast*/);
+    return s_ServiceName(service, 0/*ismask*/, &dummy/*isfast*/, 0/*nolog*/);
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif /*__cplusplus*/
+
+static SSERV_Info* x_InternalGetNextInfo(SERV_ITER, HOST_INFO*);
+static void        x_InternalReset      (SERV_ITER);
+static void        x_InternalClose      (SERV_ITER);
+
+static const SSERV_VTable kInternalOp = {
+    x_InternalGetNextInfo, 0/*Feedback*/, 0/*Update*/, x_InternalReset, x_InternalClose, "INTERNAL"
+};
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /*__cplusplus*/
+
+
+struct SINTERNAL_Data {
+    unsigned       reset:1;
+    TSERV_TypeOnly type;
+    SConnNetInfo   net_info;
+};
+
+
+static SSERV_Info* x_InternalResolve(SERV_ITER iter)
+{
+    struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
+    SConnNetInfo*      net_info = &data->net_info;
+    unsigned short     port = net_info->port;
+    SSERV_Info         *info, *rv;
+    TNCBI_IPv6Addr     ipv6;
+    unsigned int       ipv4;
+
+    assert(!data->reset);
+    if (!SOCK_gethostbyname6(&ipv6, net_info->host))
+        return 0/*failure*/;
+
+    assert(!NcbiIsEmptyIPv6(&ipv6));
+    if (!(ipv4 = NcbiIPv6ToIPv4(&ipv6, 0)))
+        ipv4 = (unsigned int)(-1);
+
+    if (iter->reverse_dns
+        ||  ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)) {
+        info = SERV_CreateDnsInfo(ipv4);
+    } else if (data->type & fSERV_Http) {
+        char* args = strchr(net_info->path, '?');
+        size_t len = SOCK_IsAddress(net_info->host) ? 0 : strlen(net_info->host);
+        assert(len <= CONN_HOST_LEN);
+        if (args)
+            *args++ = '\0';
+        info = SERV_CreateHttpInfoEx(data->type, ipv4, 0/*port*/,
+                                     net_info->path[0] ? net_info->path : "/",
+                                     args,
+                                     len ? len + 7/*:port#\0*/ : 0);
+        if (args)
+            *--args = '?';
+        if (info) {
+            switch (net_info->scheme) {
+            case eURL_Https:
+                info->mode |=  fSERV_Secure;
+                break;
+            case eURL_Http:
+                info->mode &= ~fSERV_Secure;
+                break;
+            default:
+                break;
+            }
+            if (!port)
+                port = info->mode & fSERV_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
+            if (len) {
+                char* vhost = (char*) info + SERV_SizeOfInfo(info);
+                memcpy(vhost, net_info->host, len + 1);
+                if ((!(info->mode & fSERV_Secure)  &&  port != CONN_PORT_HTTP)  ||
+                    ( (info->mode & fSERV_Secure)  &&  port != CONN_PORT_HTTPS)) {
+                    len += sprintf(vhost + len, ":%hu", port);
+                    if (len > CONN_HOST_LEN)
+                        len = 0/*oops*/;
+                }
+                assert(len <= CONN_HOST_LEN);
+                info->vhost = (unsigned char) len;
+                assert((size_t) info->vhost == len);
+            }
+        }
+    } else {
+        assert(port);
+        info = SERV_CreateStandaloneInfo(ipv4, 0/*port*/);
+    }
+
+    if (!info) {
+        CORE_LOGF_ERRNO_X(13, eLOG_Error, errno,
+                          ("[%s]  INTERNAL cannot create server info", iter->name));
+        return 0/*failure*/;
+    }
+    info->port = port;
+    info->time = LBSM_DEFAULT_TIME + iter->time;
+    info->rate = LBSM_DEFAULT_RATE;
+    memcpy(&info->addr, &ipv6, sizeof(info->addr)); 
+
+    if (!(rv = SERV_CopyInfoEx(info, iter->reverse_dns ? net_info->host : ""))) {
+        CORE_LOGF_ERRNO_X(14, eLOG_Error, errno,
+                          ("[%s]  INTERNAL cannot store server info", iter->name));
+    }
+    free(info);
+    return rv;
+}
+
+
+static SSERV_Info* x_InternalGetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
+{
+    struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
+    SSERV_Info*            info;
+
+    assert(data);
+
+    CORE_TRACEF(("Enter SERV::x_InternalGetNextInfo(\"%s\")", iter->name));
+    if (!data->reset) {
+        CORE_TRACEF(("Leave SERV::x_InternalGetNextInfo(\"%s\"): EOF", iter->name));
+        return 0;
+    }
+    data->reset = 0/*false*/;
+
+    if (!(info = x_InternalResolve(iter))) {
+        CORE_LOGF_X(12, eLOG_Error,
+                    ("[%s]  Unable to resolve", iter->name));
+    } else if (host_info)
+        *host_info = 0;
+
+    CORE_TRACEF(("Leave SERV::x_InternalGetNextInfo(\"%s\"): \"%s\" %p",
+                 iter->name, info ? SERV_NameOfInfo(info) : "", info));
+    return info;
+}
+
+
+static void x_InternalReset(SERV_ITER iter)
+{
+    struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
+    assert(data);
+    CORE_TRACEF(("Enter SERV::x_InternalReset(\"%s\")", iter->name));
+    data->reset = 1/*true*/;
+    CORE_TRACEF(("Leave SERV::x_InternalReset(\"%s\")", iter->name));
+}
+
+
+static void x_InternalClose(SERV_ITER iter)
+{
+    struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
+    assert(data  &&  data->reset); /*s_Reset() had to be called before*/
+    CORE_TRACEF(("Enter SERV::x_InternalClose(\"%s\")", iter->name));
+    iter->data = 0;
+    free(data);
+    CORE_TRACEF(("Leave SERV::x_InternalClose(\"%s\")", iter->name));
+}
+
+
+static int/*bool*/ x_IsEmptyPath(const char* path)
+{
+    if (*path == '/')
+        ++path;
+    if (*path == '?')
+        ++path;
+    return !*path  ||  *path == '#' ? 1/*T*/ : 0/*F*/;
+}
+
+
+static int/*bool*/ x_NonHttpOkay(TSERV_TypeOnly types)
+{
+    return !types  ||  (types & ~fSERV_Http);
+}
+
+
+static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
+{
+    return  types  &&  !(types & fSERV_Http);
+}
+
+
+static struct SINTERNAL_Data* s_InternalMapper(TSERV_TypeOnly types, const char* service)
+{
+    SConnNetInfo*          net_info;
+    struct SINTERNAL_Data* data;
+    char*                  frag;
+
+    if (!service  ||  !*service)
+        return 0;
+    types &= fSERV_All;
+    if (types  &&  !(types & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
+        return 0;
+    if (!(data = (struct SINTERNAL_Data*) calloc(1, sizeof(*data)))) {
+        CORE_LOGF_ERRNO_X(11, eLOG_Error, errno,
+                          ("[%s]  SERV failed to allocate for SINTERNAL_Data",
+                           service));
+        return 0;
+    }
+    net_info = &data->net_info;
+    ConnNetInfo_MakeValid(net_info);
+    if (!ConnNetInfo_ParseWebURL(net_info, service)
+        ||  (net_info->scheme != eURL_Unspec  &&
+             net_info->scheme != eURL_Https   &&
+             net_info->scheme != eURL_Http)
+        ||  !net_info->host[0]) {
+        goto out;
+    }
+    data->type = fSERV_Http;
+    if (!net_info->port) {
+        switch (net_info->scheme) {
+        case eURL_Https:
+            net_info->port = CONN_PORT_HTTPS;
+            break;
+        case eURL_Http:
+            net_info->port = CONN_PORT_HTTP;
+            break;
+        default:
+            break;            
+        }
+    } else if (!net_info->scheme/*==eURL_Unspec*/) {
+        int/*bool*/ bare = strncmp(service, "//", 2) != 0  &&  !net_info->path[0];
+        if (( bare  &&  x_NonHttpOkay(types))  ||
+            (!bare  &&  x_HttpNotOkay(types)  &&  x_IsEmptyPath(net_info->path))) {
+            data->type = fSERV_Dns | fSERV_Standalone;
+            net_info->req_method = eReqMethod_Connect;
+            net_info->path[0] = '\0';
+        }
+    }
+    if (types  &&  !(data->type &= types))
+        goto out;
+    if ((frag = strchr(net_info->path, '#')) != 0) {
+        if (frag == net_info->path  &&  (data->type & fSERV_Http))
+            *frag++ = '/';
+        *frag = '\0';
+    }
+    data->reset = 1/*true*/;
+    return data;
+
+out:
+    assert(!data->type);
+    free(data);
+    return 0;
 }
 
 
@@ -345,18 +589,39 @@ static SERV_ITER x_Open(const char*         service,
         do_namerd  = -1/*unassigned*/,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd   = -1/*unassigned*/;
+    struct SINTERNAL_Data* data;
     const SSERV_VTable* op;
     int exact = s_Fast;
     const char* svc;
     SERV_ITER iter;
 
-    if (!(svc = s_ServiceName(service, ismask, &exact)))
-        return 0;
-    assert(ismask  ||  *svc);
-    if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
-        free((void*) svc);
+    if ((data = s_InternalMapper(types, service)) != 0) {
+        char* tmp      = ConnNetInfo_URL(&data->net_info);
+        if (strncmp(tmp, "//", 2) == 0  &&  strncmp(service, "//", 2) != 0)
+            memmove(tmp, tmp + 2, strlen(tmp + 2) + 1);
+        else if ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)
+            tmp[strcspn(tmp, ":")] = '\0';
+        svc            = tmp;
+        ismask         = 0/*false*/;
+        types         &= fSERV_ReverseDns | fSERV_All;
+        preferred_host = 0;
+        preferred_port = 0;
+        preference     = 0.0;
+        net_info       = 0;
+        n_skip         = 0;
+        external       = 0;
+        arg = val      = 0;
+        exact          = 0;
+        if ( info )
+            *info      = 0;
+    } else
+        svc = s_ServiceName(service, ismask, &exact, 1/*log*/);
+    if (!svc  ||  !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
+        if (svc)
+            free((void*) svc);
         return 0;
     }
+    assert(ismask  ||  *svc);
 
     iter->name              = svc;
     iter->host              = (preferred_host == SERV_LOCALHOST
@@ -394,15 +659,13 @@ static SERV_ITER x_Open(const char*         service,
         }
     }
     iter->time              = (TNCBI_Time) time(0);
-    if (ismask)
-        svc = 0;
 
     if (n_skip) {
-        size_t i;
-        for (i = 0;  i < n_skip;  ++i) {
-            const char* name = (iter->ismask  ||  skip[i]->type == fSERV_Dns
-                                ? SERV_NameOfInfo(skip[i]) : "");
-            SSERV_Info* temp = SERV_CopyInfoEx(skip[i],
+        size_t n;
+        for (n = 0;  n < n_skip;  ++n) {
+            const char* name = (iter->ismask  ||  skip[n]->type == fSERV_Dns
+                                ? SERV_NameOfInfo(skip[n]) : "");
+            SSERV_Info* temp = SERV_CopyInfoEx(skip[n],
                                                iter->reverse_dns  &&  !*name ?
                                                iter->name             : name );
             if (temp) {
@@ -440,6 +703,14 @@ static SERV_ITER x_Open(const char*         service,
     }
     if (host_info)
         *host_info = 0;
+    if (data) {
+        iter->data = data;
+        op = &kInternalOp;
+        goto done;
+    }
+    if (ismask)
+        svc = 0;
+
     /* Ugly optimization not to access the registry more than necessary */
     if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
          !(op = SERV_LOCAL_Open(iter, info)))
@@ -527,6 +798,7 @@ static SERV_ITER x_Open(const char*         service,
         return 0;
     }
 
+ done:
     assert(op != 0);
     iter->op = op;
     return iter;
@@ -552,7 +824,7 @@ static void s_SkipSkip(SERV_ITER iter)
             }
             free((void*) temp);
         } else
-            n++;
+            ++n;
     }
 }
 
@@ -581,10 +853,10 @@ static int/*bool*/ x_Return(SSERV_Info* info,
  * Return 0 if failed (also free(info) if so);  return 1 if passed. */
 static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
 {
-    const char* name = SERV_NameOfInfo(info);
-    const char* infostr = SERV_WriteInfo(info);
+    const char*    infostr = SERV_WriteInfo(info);
+    const char*    name = SERV_NameOfInfo(info);
     TSERV_TypeOnly types;
-    size_t n;
+    size_t         n;
 
     if (!name) {
         CORE_LOGF(eLOG_Critical,
@@ -1022,7 +1294,11 @@ const char* SERV_MapperName(SERV_ITER iter)
 
 const char* SERV_CurrentName(SERV_ITER iter)
 {
-    const char* name = SERV_NameOfInfo(iter->last);
+    const char* name;
+    if (!iter)
+        return 0;
+    assert(iter->name);
+    name = SERV_NameOfInfo(iter->last);
     return name  &&  *name ? name : iter->name;
 }
 
@@ -1065,12 +1341,12 @@ extern void SERV_Reset(SERV_ITER iter)
 
 extern void SERV_Close(SERV_ITER iter)
 {
-    size_t i;
+    size_t n;
     if (!iter)
         return;
     SERV_Reset(iter);
-    for (i = 0;  i < iter->n_skip;  i++)
-        free((void*) iter->skip[i]);
+    for (n = 0;  n < iter->n_skip;  ++n)
+        free((void*) iter->skip[n]);
     iter->n_skip = 0;
     if (iter->op) {
         if (iter->op->Close)
@@ -1098,13 +1374,12 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
         char *p, *q;
         int d2;
 
-        if (!(q = (char*) malloc(len + 1)))
+        if (len  &&  s[len - 1] == '\r')
+            --len;
+        if (!len  ||  !(q = (char*) malloc(len + 1)))
             continue;
         memcpy(q, s, len);
-        if (q[len - 1] == '\r')
-            q[len - 1]  = '\0';
-        else
-            q[len    ]  = '\0';
+        q[len] = '\0';
         p = q;
         if (iter->op->Update  &&  iter->op->Update(iter, p, code))
             retval = 1/*updated*/;
@@ -1300,11 +1575,11 @@ extern unsigned short SERV_ServerPort(const char*  name,
 extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
                                               ESERV_Type  type)
 {
-    char* buf, *svc = SERV_ServiceName(service);
+    char* buf, *svc = service  &&  *service ? SERV_ServiceName(service) : 0;
     const char* typ = SERV_TypeStr(type);
     size_t len;
 
-    if (!svc)
+    if (!svc  ||  !*typ)
         return 0/*failure*/;
     /* Store service-specific setting */
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient)) {
