@@ -936,9 +936,9 @@ static TNCBI_IPv6Addr* s_gethostbyname_(TNCBI_IPv6Addr* addr,
     }
 
     parsed = NcbiStringToAddr(addr, host, len);
-    if (!parsed) {
+    if (!parsed)
         assert(NcbiIsEmptyIPv6(addr));
-    } else {
+    else {
         if (!*parsed) {
             /* fully parsed address string */
             if (family == AF_INET6) {
@@ -9691,7 +9691,7 @@ extern int SOCK_gethostnameEx(char*   buf,
 extern int SOCK_gethostname(char*  buf,
                             size_t bufsize)
 {
-    return SOCK_gethostnameEx(buf, bufsize, s_Log);
+    return SOCK_gethostnameEx(buf, bufsize, eDefault);
 }
 
 
@@ -9712,7 +9712,7 @@ extern unsigned int SOCK_gethostbynameEx(const char* host,
 
 extern unsigned int SOCK_gethostbyname(const char* host)
 {
-    return SOCK_gethostbynameEx(host, s_Log);
+    return SOCK_gethostbynameEx(host, eDefault);
 }
 
 
@@ -9731,7 +9731,7 @@ extern TNCBI_IPv6Addr* SOCK_gethostbynameEx6(TNCBI_IPv6Addr* addr,
 extern TNCBI_IPv6Addr* SOCK_gethostbyname6(TNCBI_IPv6Addr* addr,
                                            const char*     host)
 {
-    return SOCK_gethostbynameEx6(addr, host, s_Log);
+    return SOCK_gethostbynameEx6(addr, host, eDefault);
 }
 
 
@@ -9764,7 +9764,7 @@ extern const char* SOCK_gethostbyaddr(unsigned int host,
                                       char*        buf,
                                       size_t       bufsize)
 {
-    return SOCK_gethostbyaddrEx(host, buf, bufsize, s_Log);
+    return SOCK_gethostbyaddrEx(host, buf, bufsize, eDefault);
 }
 
 
@@ -9797,7 +9797,7 @@ extern const char* SOCK_gethostbyaddr6(const TNCBI_IPv6Addr* addr,
                                        char*                 buf,
                                        size_t                bufsize)
 {
-    return SOCK_gethostbyaddrEx6(addr, buf, bufsize, s_Log);
+    return SOCK_gethostbyaddrEx6(addr, buf, bufsize, eDefault);
 }
 
 
