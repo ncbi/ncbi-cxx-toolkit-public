@@ -307,6 +307,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
+#define REG_CONN_INTERNAL_DISABLE   "INTERNAL_DISABLE"
 #define REG_CONN_LOCAL_ENABLE       "LOCAL_ENABLE"
 #define REG_CONN_LBNULL_ENABLE      "LBNULL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE      "LBSMD_DISABLE"

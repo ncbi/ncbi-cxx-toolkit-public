@@ -31,6 +31,7 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_dispd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_OS_UNIX
 #  include "ncbi_lbsmd.h"
@@ -41,12 +42,10 @@
 #  include "ncbi_linkerd.h"
 #  include "ncbi_namerd.h"
 #endif /*NCBI_CXX_TOOLKIT*/
-#include "ncbi_dispd.h"
-#include "ncbi_priv.h"
+#include "ncbi_once.h"
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <time.h>
 
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
@@ -279,21 +278,22 @@ static const SSERV_VTable kInternalOp = {
 
 struct SINTERNAL_Data {
     unsigned       reset:1;
+    unsigned       reverse_dns:1;
     TSERV_TypeOnly type;
+    SSERV_Info*    info;
     SConnNetInfo   net_info;
 };
 
 
-static SSERV_Info* x_InternalResolve(SERV_ITER iter)
+static int/*bool*/ x_InternalResolve(const char* name, struct SINTERNAL_Data* data)
 {
-    struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
-    SConnNetInfo*      net_info = &data->net_info;
-    unsigned short     port = net_info->port;
-    SSERV_Info         *info, *rv;
-    TNCBI_IPv6Addr     ipv6;
-    unsigned int       ipv4;
+    SConnNetInfo*  net_info = &data->net_info;
+    unsigned short port = net_info->port;
+    TNCBI_IPv6Addr ipv6;
+    unsigned int   ipv4;
+    SSERV_Info*    info;
 
-    assert(!data->reset);
+    assert(!data->info);
     if (!SOCK_gethostbyname6(&ipv6, net_info->host))
         return 0/*failure*/;
 
@@ -301,7 +301,7 @@ static SSERV_Info* x_InternalResolve(SERV_ITER iter)
     if (!(ipv4 = NcbiIPv6ToIPv4(&ipv6, 0)))
         ipv4 = (unsigned int)(-1);
 
-    if (iter->reverse_dns
+    if (data->reverse_dns
         ||  ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)) {
         info = SERV_CreateDnsInfo(ipv4);
     } else if (data->type & fSERV_Http) {
@@ -350,20 +350,19 @@ static SSERV_Info* x_InternalResolve(SERV_ITER iter)
 
     if (!info) {
         CORE_LOGF_ERRNO_X(13, eLOG_Error, errno,
-                          ("[%s]  INTERNAL cannot create server info", iter->name));
+                          ("[%s]  INTERNAL cannot create server info", name));
         return 0/*failure*/;
     }
     info->port = port;
-    info->time = LBSM_DEFAULT_TIME + iter->time;
-    info->rate = LBSM_DEFAULT_RATE;
     memcpy(&info->addr, &ipv6, sizeof(info->addr)); 
 
-    if (!(rv = SERV_CopyInfoEx(info, iter->reverse_dns ? net_info->host : ""))) {
+    if (!(data->info = SERV_CopyInfoEx(info, data->reverse_dns ? net_info->host : ""))) {
         CORE_LOGF_ERRNO_X(14, eLOG_Error, errno,
-                          ("[%s]  INTERNAL cannot store server info", iter->name));
+                          ("[%s]  INTERNAL cannot store server info", name));
     }
     free(info);
-    return rv;
+
+    return data->info ? 1/*success*/ : 0/*failure*/;
 }
 
 
@@ -375,17 +374,27 @@ static SSERV_Info* x_InternalGetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     assert(data);
 
     CORE_TRACEF(("Enter SERV::x_InternalGetNextInfo(\"%s\")", iter->name));
-    if (!data->reset) {
+    if (!data->info  &&  !data->reset) {
         CORE_TRACEF(("Leave SERV::x_InternalGetNextInfo(\"%s\"): EOF", iter->name));
         return 0;
     }
     data->reset = 0/*false*/;
 
-    if (!(info = x_InternalResolve(iter))) {
+    if (!data->info  &&  !x_InternalResolve(iter->name, data)) {
+        assert(!data->info);
         CORE_LOGF_X(12, eLOG_Error,
                     ("[%s]  Unable to resolve", iter->name));
-    } else if (host_info)
-        *host_info = 0;
+        info = 0;
+    } else {
+        info = data->info;
+        assert(info);
+        data->info = 0;
+        info->time = LBSM_DEFAULT_TIME + iter->time;
+        info->rate = LBSM_DEFAULT_RATE;
+
+        if ( host_info )
+            *host_info = 0;
+    }
 
     CORE_TRACEF(("Leave SERV::x_InternalGetNextInfo(\"%s\"): \"%s\" %p",
                  iter->name, info ? SERV_NameOfInfo(info) : "", info));
@@ -397,7 +406,12 @@ static void x_InternalReset(SERV_ITER iter)
 {
     struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
     assert(data);
-    CORE_TRACEF(("Enter SERV::x_InternalReset(\"%s\")", iter->name));
+    CORE_TRACEF(("Enter SERV::x_InternalReset(\"%s\"): %u", iter->name,
+                 data->info ? 1 : 0));
+    if (data->info) {
+        free(data->info);
+        data->info = 0;
+    }
     data->reset = 1/*true*/;
     CORE_TRACEF(("Leave SERV::x_InternalReset(\"%s\")", iter->name));
 }
@@ -406,7 +420,8 @@ static void x_InternalReset(SERV_ITER iter)
 static void x_InternalClose(SERV_ITER iter)
 {
     struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
-    assert(data  &&  data->reset); /*s_Reset() had to be called before*/
+    /* NB: s_Reset() had to be called before */
+    assert(data  &&  !data->info  &&  data->reset);
     CORE_TRACEF(("Enter SERV::x_InternalClose(\"%s\")", iter->name));
     iter->data = 0;
     free(data);
@@ -436,14 +451,25 @@ static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
 }
 
 
-static struct SINTERNAL_Data* s_InternalMapper(TSERV_TypeOnly types, const char* service)
+static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* service)
 {
+    static int/*bool*/     do_internal = -1/*unassigned*/;
+    static void* /*bool*/  s_Once = 0/*false*/;
+    unsigned/*bool*/       reverse_dns;
     SConnNetInfo*          net_info;
     struct SINTERNAL_Data* data;
     char*                  frag;
 
-    if (!service  ||  !*service)
+    if (CORE_Once(&s_Once)) {
+        char        buf[80];
+        const char* str = ConnNetInfo_GetValueInternal(0, REG_CONN_INTERNAL_DISABLE,
+                                                       buf, sizeof(buf), "0");
+        if (str  &&  *str)
+            do_internal = !ConnNetInfo_Boolean(str);
+    }
+    if (!do_internal  ||  !service  ||  !*service)
         return 0;
+    reverse_dns = types & fSERV_ReverseDns ? 1/*T*/ : 0/*F*/;
     types &= fSERV_All;
     if (types  &&  !(types & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
         return 0;
@@ -455,7 +481,7 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_TypeOnly types, const char*
     }
     net_info = &data->net_info;
     ConnNetInfo_MakeValid(net_info);
-    if (!ConnNetInfo_ParseURL(net_info, service)
+    if (!ConnNetInfo_ParseWebURL(net_info, service)
         ||  (net_info->scheme != eURL_Unspec  &&
              net_info->scheme != eURL_Https   &&
              net_info->scheme != eURL_Http)
@@ -490,11 +516,11 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_TypeOnly types, const char*
             *frag++ = '/';
         *frag = '\0';
     }
-    data->reset = 1/*true*/;
-    return data;
+    data->reverse_dns = reverse_dns & 1;
+    if (x_InternalResolve(service, data)  ||  !x_CheckServiceName(service))
+        return data;
 
-out:
-    assert(!data->type);
+ out:
     free(data);
     return 0;
 }
@@ -701,7 +727,7 @@ static SERV_ITER x_Open(const char*         service,
 #endif /*NCBI_CXX_TOOLKIT*/
             do_dispd = 0/*false*/;
     }
-    if (host_info)
+    if ( host_info )
         *host_info = 0;
     if (data) {
         iter->data = data;
@@ -712,21 +738,21 @@ static SERV_ITER x_Open(const char*         service,
         svc = 0;
 
     /* Ugly optimization not to access the registry more than necessary */
-    if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))      ||
+    if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))    ||
          !(op = SERV_LOCAL_Open(iter, info)))
 
 #ifdef NCBI_CXX_TOOLKIT
         &&
-        (!(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))    ||
+        (!(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))  ||
          !(op = SERV_LBNULL_Open(iter, info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
 #ifdef NCBI_OS_UNIX
         &&
-        (!do_lbsmd                                                           ||
-         !(do_lbsmd = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE))    ||
+        (!do_lbsmd                                                         ||
+         !(do_lbsmd = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE))  ||
          !(op = SERV_LBSMD_Open(iter, info, host_info,
-                                (!do_dispd                                   ||
+                                (!do_dispd                                 ||
                                  !(do_dispd = !s_IsMapperConfigured
                                    (svc, REG_CONN_DISPD_DISABLE)))
 #  ifdef NCBI_CXX_TOOLKIT
@@ -736,11 +762,11 @@ static SERV_ITER x_Open(const char*         service,
                                   (svc, REG_CONN_LBDNS_ENABLE))
 #    endif /*NCBI_OS_UNIX*/
                                 &&
-                                (!do_linkerd                                 ||
+                                (!do_linkerd                               ||
                                  !(do_linkerd = s_IsMapperConfigured
                                    (svc, REG_CONN_LINKERD_ENABLE)))
                                 &&
-                                (!do_namerd                                  ||
+                                (!do_namerd                                ||
                                  !(do_namerd = s_IsMapperConfigured
                                    (svc, REG_CONN_NAMERD_ENABLE)))
 #  endif /*NCBI_CXX_TOOLKIT*/
@@ -750,27 +776,27 @@ static SERV_ITER x_Open(const char*         service,
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
         &&
-        (!do_lbdns                                                           ||
+        (!do_lbdns                                                         ||
          (do_lbdns < 0  &&  !(do_lbdns = s_IsMapperConfigured
-                              (svc, REG_CONN_LBDNS_ENABLE)))                 ||
+                              (svc, REG_CONN_LBDNS_ENABLE)))               ||
          !(op = SERV_LBDNS_Open(iter, info)))
 #  endif /*NCBI_OS_UNIX*/
         &&
-        (!do_linkerd                                                         ||
+        (!do_linkerd                                                       ||
          (do_linkerd < 0  &&  !(do_linkerd = s_IsMapperConfigured
-                                (svc, REG_CONN_LINKERD_ENABLE)))             ||
+                                (svc, REG_CONN_LINKERD_ENABLE)))           ||
          !(op = SERV_LINKERD_Open(iter, net_info, info, &do_namerd)))
         &&
-        (!do_namerd                                                          ||
+        (!do_namerd                                                        ||
          (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured
-                               (svc, REG_CONN_NAMERD_ENABLE)))               ||
+                               (svc, REG_CONN_NAMERD_ENABLE)))             ||
          !(op = SERV_NAMERD_Open(iter, net_info, info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
         &&
-        (!do_dispd                                                           ||
+        (!do_dispd                                                         ||
          (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
-                              (svc, REG_CONN_DISPD_DISABLE)))                ||
+                              (svc, REG_CONN_DISPD_DISABLE)))              ||
          !(op = SERV_DISPD_Open(iter, net_info, info)))) {
         if (!s_Fast  &&  net_info
             &&  !do_local
