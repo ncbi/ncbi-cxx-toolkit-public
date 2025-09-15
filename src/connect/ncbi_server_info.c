@@ -700,20 +700,19 @@ static SSERV_Info* s_Ncbid_Read(const char** str, size_t add)
     const char* c;
 
     assert(!isspace((unsigned char)(**str)));
-    for (c = *str;  *c;  ++c) {
-        if (isspace((unsigned char)(*c))) {
+    for (c = *str;  ;  ++c) {
+        if (!*c  ||  *c == '#'  ||  isspace((unsigned char)(*c))) {
             size_t len = (size_t)(c - *str);
-            assert(len);
-            if (!(args = strndup(*str, len)))
+            if (len  &&  !(args = strndup(*str, len)))
                 return 0;
-            while (*c  &&  isspace((unsigned char)(*c)))
+            if (*c == '#') do {
                 ++c;
+            } while (*c  &&  !isspace((unsigned char)(*c)));
             break;
         }
     }
+    *str = c;
     info = SERV_CreateNcbidInfoEx(0, 0, args, add);
-    if (info)
-        *str = c;
     if (args)
         free(args);
     return info;
@@ -855,7 +854,7 @@ static char* s_Http_Write(size_t reserve, const USERV_Info* u)
     if (str) {
         int n = sprintf(str + reserve, "%s", path);
         if (*args)
-            sprintf(str + reserve + n, "%s%s", &"?"[!(*args != '#')], args);
+            sprintf(str + reserve + n, "?%s", args);
     }
     return str;
 }
@@ -871,21 +870,20 @@ static SSERV_Info* s_HttpAny_Read(ESERV_Type type,const char** str, size_t add)
         return 0;
     assert(!isspace((unsigned char)(**str)));
     for (c = *str;  ;  ++c) {
-        if (!*c  ||  isspace((unsigned char)(*c))) {
+        if (!*c  ||  *c == '#'  ||  isspace((unsigned char)(*c))) {
             size_t len = (size_t)(c - *str);
-            assert(len);
-            if (!(path = strndup(*str, len)))
+            if (!len  ||  !(path = strndup(*str, len)))
                 return 0;
-            while (*c  &&  isspace((unsigned char)(*c)))
+            if (*c == '#') do {
                 ++c;
+            } while (*c  &&  !isspace((unsigned char)(*c)));
             break;
         }
     }
+    *str = c;
     if ((args = strchr(path, '?')) != 0)
         *args++ = '\0';
     info = SERV_CreateHttpInfoEx(type, 0, 0, path, args, add);
-    if (info)
-        *str = c;
     free(path);
     return info;
 }
@@ -937,18 +935,16 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
 
     if (type & (unsigned int)(~fSERV_Http))
         return 0;
-    if (!path  ||  !*path)
+    if (!path  ||  !*path  ||  path[strcspn(path, "?#")])
         return 0;
     else
-        path_len =               strlen(path) + 1;
-#if 1 /* NB: have to use this for ABI compatibility */
-    args_len = args  &&  *args ? strlen(args) + 1 : 1;
-#else
-    if (!args  ||  !*args)
-        path_len--, args_len = 1;
-    else
-        args_len =               strlen(args) + 1;
-#endif
+        path_len = strlen(path) + 1;
+    if (!args  ||  !*args) {
+        args = "";
+        path_len--;
+        args_len = 1;
+    } else
+        args_len = strlen(args) + 1;
     add += path_len + args_len;
     if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add)) != 0) {
         info->type   = type;
@@ -968,8 +964,8 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
         memset(&info->addr, 0, sizeof(info->addr));
         info->u.http.path = (TNCBI_Size) sizeof(info->u.http);
         info->u.http.args = (TNCBI_Size)(info->u.http.path + path_len);
-        memcpy(SERV_HTTP_PATH(&info->u.http), path ? path : "", path_len);
-        memcpy(SERV_HTTP_ARGS(&info->u.http), args ? args : "", args_len);
+        memcpy(SERV_HTTP_PATH(&info->u.http), path, path_len);
+        memcpy(SERV_HTTP_ARGS(&info->u.http), args, args_len);
     }
     return info;
 }
