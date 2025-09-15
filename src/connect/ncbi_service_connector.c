@@ -321,21 +321,21 @@ static const char* s_AdjustNetParams(const char*    service,
                                      EReqMethod     req_method,
                                      const char*    cgi_path,
                                      const char*    cgi_args,
-                                     const char*    args,
+                                     const char*    add_args,
                                      const char*    static_header,
                                      EMIME_Type     mime_t,
                                      EMIME_SubType  mime_s,
                                      EMIME_Encoding mime_e,
                                      const char*    extend_header)
 {
-    const char *retval = 0;
+    const char* retval = 0;
 
     net_info->req_method = req_method;
 
     if (cgi_path)
         ConnNetInfo_SetPath(net_info, cgi_path);
-    if (args)
-        ConnNetInfo_SetArgs(net_info, args);
+    if (add_args)
+        ConnNetInfo_SetArgs(net_info, add_args);
 
     if (ConnNetInfo_PreOverrideArg(net_info, cgi_args, 0)) {
         size_t sh_len = static_header ? strlen(static_header) : 0;
@@ -351,7 +351,7 @@ static const char* s_AdjustNetParams(const char*    service,
         } else
             len = strlen(c_t);
         if ((len += sh_len + eh_len) != 0) {
-            char* temp = (char*) malloc(++len/*w/EOL*/);
+            char* temp = (char*) malloc(len + 1/*w/EOL*/);
             if (temp) {
                 retval = temp;
                 if (static_header) {
@@ -635,6 +635,8 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     iter_header = SERV_Print(iter, 0/*net_info*/, 0);
     switch (info->type) {
     case fSERV_Ncbid:
+        net_info->scheme
+            = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
         user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
         user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         eReqMethod_Post,
@@ -648,6 +650,8 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     case fSERV_Http:
     case fSERV_HttpGet:
     case fSERV_HttpPost:
+        net_info->scheme
+            = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
         user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
         user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         info->type == fSERV_HttpPost
@@ -664,6 +668,8 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
         break;
     case fSERV_Firewall:
     case fSERV_Standalone:
+        if (!net_info->scheme)
+            net_info->scheme = eURL_Https;
         user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
         user_header = s_AdjustNetParams(uuu->name, iter->name, net_info,
                                         eReqMethod_Any, uuu->net_info->path, 0,
@@ -1290,16 +1296,19 @@ extern CONNECTOR SERVICE_CreateConnectorEx
  const SConnNetInfo*   net_info,
  const SSERVICE_Extra* extra)
 {
-    SConnNetInfo*      x_net_info;
+    SConnNetInfo*      x_net_info = 0;
     size_t             len;
     CONNECTOR          ccc;
     SServiceConnector* xxx;
 
+    if (!name  ||  !*name)
+        return 0;
     if (!net_info) {
         char* x_name = SERV_ServiceName(name);
         if (!x_name)
             return 0;
         x_net_info = ConnNetInfo_CreateInternal(x_name);
+        free(x_name);
     } else
         x_net_info = ConnNetInfo_Clone(net_info);
     if (!x_net_info)
