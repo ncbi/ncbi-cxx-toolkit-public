@@ -186,6 +186,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
     data->reset = 0/*false*/;
     if (!data->info  &&  !s_Resolve(iter)) {
+        assert(!data->info);
         CORE_LOGF_X(86, eLOG_Error,
                     ("[%s]  Unable to resolve", iter->name));
         info = 0;
@@ -194,7 +195,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         assert(info);
         data->info = 0;
 
-        if (host_info)
+        if ( host_info )
             *host_info = 0;
     }
     CORE_TRACEF(("Leave LBNULL::s_GetNextInfo(\"%s\"): \"%s\" %p",
@@ -221,7 +222,8 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLBNULL_Data* data = (struct SLBNULL_Data*) iter->data;
-    assert(data  &&  !data->info); /*s_Reset() had to be called before*/
+    /* NB: s_Reset() had to be called before */
+    assert(data  &&  !data->info  &&  data->reset);
     CORE_TRACEF(("Enter LBNULL::s_Close(\"%s\")", iter->name));
     iter->data = 0;
     if (data->path)
