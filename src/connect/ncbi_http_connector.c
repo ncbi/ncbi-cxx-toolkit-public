@@ -192,8 +192,8 @@ typedef enum {
     eHTTP_AuthDone    = -1,  /* Auth already sent       */
     eHTTP_AuthOK      =  0,  /* Success                 */
     eHTTP_AuthError   =  1,  /* Auth can't/doesn't work */
-    eHTTP_AuthIllegal =  3,  /* Auth won't work now     */
     eHTTP_AuthNotSupp =  2,  /* Unknown auth parameters */
+    eHTTP_AuthIllegal =  3,  /* Auth won't work now     */
     eHTTP_AuthConnect =  4   /* Auth with CONNECT       */
 } EHTTP_Auth;
 
@@ -339,14 +339,23 @@ static int/*bool*/ x_SamePort(unsigned short port1, EBURLScheme scheme1,
 
 static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
 {
-    int retval;
     SConnNetInfo* net_info = ConnNetInfo_CloneInternal(uuu->net_info);
+    int           retval;
+  
+    if (uuu->vhost) {
+        free((void*) uuu->vhost);
+        uuu->vhost = 0;
+    }
+
     if (!net_info)
         return 0/*failure*/;
+
     retval = uuu->adjust(uuu->net_info, uuu->user_data, arg);
+
     if (retval/*advisory of no change if < 0 but we don't trust it :-)*/) {
         int same_host = -1/*undef*/;
         int same_port = -1/*undef*/;
+        const char* str;
         if (uuu->sock) {
             int/*bool*/ close = 0/*false*/;
             if (!x_SameProxyHost(uuu->net_info->http_proxy_host,
@@ -385,18 +394,24 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                 uuu->sock = 0;
             }
         }
-        if (uuu->vhost
-            &&  (!same_port  ||  !same_host  ||
-                 (same_port < 0  &&  !x_SamePort(uuu->net_info->port,
-                                                 uuu->net_info->scheme,
-                                                      net_info->port,
-                                                      net_info->scheme))  ||
-                 (same_host < 0  &&  strcasecmp(uuu->net_info->host,
-                                                     net_info->host) != 0))) {
-            free((void*) uuu->vhost);
-            uuu->vhost = 0;
+        str = uuu->net_info->http_user_header;
+        while (str  &&  *str) {
+            int/*bool*/ first = !(str != uuu->net_info->http_user_header);
+            if (strncasecmp(str, &"\nHost:"[first], 6 - first) == 0) {
+                int/*bool*/ bare;
+                size_t      len;
+                str += 6 - first;
+                str += strspn(str, "\t ");
+                if (!(bare = (*str != '[')))
+                    ++str;
+                len = strcspn(str, bare ? ":\r\n" : "]\r\n");
+                uuu->vhost = strndup(str, len);
+                break;
+            }
+            str = strchr(++str, '\n');
         }
     }
+
     ConnNetInfo_Destroy(net_info);
     return retval;
 }
@@ -2785,12 +2800,13 @@ static const char* x_FixupUserHeader(SConnNetInfo* net_info,
             } else if (!vhost
                 &&  strncasecmp(s, &"\nHost:"[first], 6 - first) == 0) {
                 int/*bool*/ bare;
+                size_t      len;
                 vhost = s + (6 - first);
                 vhost += strspn(vhost, "\t ");
                 if (!(bare = (*vhost != '[')))
                     ++vhost;
-                vhost = strndup(vhost,
-                                strcspn(vhost, bare ? ":\r\n" : "]\r\n" ));
+                len = strcspn(vhost, bare ? ":\r\n" : "]\r\n");
+                vhost = strndup(vhost, len);
             } else if (strncasecmp(s, &"\nCAF"[first], 4 - first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
                 size_t cafoff = (size_t)(s - net_info->http_user_header);
