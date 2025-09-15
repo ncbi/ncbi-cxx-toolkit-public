@@ -674,6 +674,7 @@ EIO_Status CConnTest::ServiceOkay(string* reason)
         temp = "OK";
     else {
         char* str = net_info ? SERV_ServiceName(kBounceService) : 0;
+        _ASSERT(!str  ||  *str);
         if (str  &&  NStr::CompareNocase(str, kBounceService) == 0) {
             free(str);
             str = 0;
@@ -1385,6 +1386,7 @@ EIO_Status CConnTest::StatefulOkay(string* reason)
         temp = "OK (RTT "+NStr::NumericToString(ud(seed,time.GetTimeT()))+')';
     else {
         char* str = SERV_ServiceName(kEchoService);
+        _ASSERT(!str  ||  *str);
         if (str  &&  NStr::CompareNocase(str, kEchoService) != 0) {
             temp = n ? "Unrecognized" : "No";
             temp += " response received from substituted service;"
