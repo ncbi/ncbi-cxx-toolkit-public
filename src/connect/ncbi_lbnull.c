@@ -99,54 +99,51 @@ struct SLBNULL_Data {
 static int/*bool*/ s_Resolve(SERV_ITER iter)
 {
     struct SLBNULL_Data* data = (struct SLBNULL_Data*) iter->data;
-    TSERV_TypeOnly type = data->type;
-    TNCBI_IPv6Addr ipv6;
-    unsigned int ipv4;
-    SSERV_Info* info;
-                                 
+    TSERV_TypeOnly       type = data->type;
+    TNCBI_IPv6Addr       ipv6;
+    unsigned int         ipv4;
+    SSERV_Info*          info;
+
+    assert(!data->info);
     if (!SOCK_gethostbynameEx6(&ipv6, data->host, data->debug ? eOn : eDefault))
         return 0/*failure*/;
 
     assert(!NcbiIsEmptyIPv6(&ipv6));
     if (!(ipv4 = NcbiIPv6ToIPv4(&ipv6, 0)))
         ipv4 = (unsigned int)(-1);
-    if (type & fSERV_Dns) {
+
+    if (iter->reverse_dns  ||  (type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns) {
+        assert((type & fSERV_Dns)  ||  data->port);
         info = SERV_CreateDnsInfo(ipv4);
     } else if (type &= fSERV_Http) {
-        char port[10];
-        size_t len     = data->vhost ? data->hostlen                     : 0;
-        size_t portlen = data->vhost ? sprintf(port, ":%hu", data->port) : 0;
+        size_t len = data->vhost ? data->hostlen : 0;
         assert(data->port  &&  data->path);
         assert(!data->vhost  ||  (0 < len  &&  len <= CONN_HOST_LEN));
         info = SERV_CreateHttpInfoEx(type, ipv4, 0/*port*/, data->path, 0/*args*/,
-                                     data->vhost ? len + portlen + 1 : 0);
-        if (info  &&  data->vhost) {
+                                     len ? len + 7/*:port#\0*/ : 0);
+        if (info  &&  len) {
             char* vhost = (char*) info + SERV_SizeOfInfo(info);
-            memcpy(vhost, data->host, len);
+            memcpy(vhost, data->host, len + 1);
             if ((!(info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTP)  ||
                 ( (info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTPS)) {
-                char* x_port = vhost + len;
-                if ((len += portlen) > CONN_HOST_LEN) {
+                len += sprintf(vhost + len, ":%hu", data->port);
+                if (len > CONN_HOST_LEN) {
                     free(info);
                     errno = ERANGE;
                     info = 0;
-                } else
-                    memcpy(x_port, port, portlen);
+                }
             }
             if (info) {
-                vhost[len] = '\0';
                 assert(len <= CONN_HOST_LEN);
                 info->vhost = (unsigned char) len;
                 assert((size_t) info->vhost == len);
             }
         }
-    } else if (iter->reverse_dns) {
-        assert(data->port);
-        info = SERV_CreateDnsInfo(ipv4);
     } else {
         assert(data->port);
-        info = SERV_CreateStandaloneInfo(ipv4, data->port);
+        info = SERV_CreateStandaloneInfo(ipv4, 0/*port*/);
     }
+
     if (!info) {
         CORE_LOGF_ERRNO_X(84, eLOG_Error, errno,
                           ("[%s]  LBNULL cannot create server info", iter->name));
@@ -164,7 +161,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
         if (infostr)
             free(infostr);
     }
-        
+
     if (!(data->info = SERV_CopyInfoEx(info, iter->reverse_dns ? iter->name : ""))) {
         CORE_LOGF_ERRNO_X(85, eLOG_Error, errno,
                           ("[%s]  LBNULL cannot store server info", iter->name));
@@ -181,7 +178,6 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     SSERV_Info* info;
 
     assert(data);
-
     CORE_TRACEF(("Enter LBNULL::s_GetNextInfo(\"%s\")", iter->name));
     if (!data->info  &&  !data->reset) {
         CORE_TRACEF(("Leave LBNULL::s_GetNextInfo(\"%s\"): EOF", iter->name));
@@ -288,6 +284,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     char buf[CONN_PATH_LEN + 1];
     TSERV_TypeOnly type, types;
     struct SLBNULL_Data* data;
+    int/*bool*/ vhost = 0;
     const char* path = 0;
     unsigned long port;
     char* domain;
@@ -301,14 +298,13 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (iter->external)
         return 0;
 
-    type = SERV_GetImplicitServerTypeInternalEx(iter->name, fSERV_Standalone);
-    if (!(type & (fSERV_Standalone | fSERV_Http | fSERV_Dns)))
-        return 0;
-
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
-     * fSERV_Standalone, fSERV_Http and fSERV_Dns only, which all, as a matter
+     * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
      * of fact, are also included in fSERV_All. */
-    types = iter->types & ~fSERV_Stateless;
+    type = SERV_GetImplicitServerTypeInternalEx(iter->name, fSERV_Standalone);
+    if (!(type & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
+        return 0;
+    types = iter->types & fSERV_All;
     if (types  &&  !(type &= types))
         return 0;
 
@@ -329,7 +325,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
                                       buf, sizeof(buf), 0)) {
         CORE_LOGF_X(88, eLOG_Error,
-                    ("[%s]  Cannot obtain port number from registry for LBNULL",
+                    ("[%s]  Cannot obtain port number for LBNULL",
                      iter->name));
         goto out;
     }
@@ -357,7 +353,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
                                          buf, sizeof(buf), "/")) {
             CORE_LOGF_X(90, eLOG_Error,
-                        ("[%s]  Cannot obtain URL path from registry for LBNULL",
+                        ("[%s]  Cannot obtain URL path for LBNULL",
                          iter->name));
             goto out;
         }
@@ -368,6 +364,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
             goto out;
         }
         CORE_TRACEF(("[%s]  LBNULL using path \"%s\"", iter->name, path));
+        vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                                    (iter->name, REG_CONN_LBNULL_VHOST,
+                                     buf, sizeof(buf), 0));
     }
 
     assert(CONN_HOST_LEN + 1 < sizeof(buf));
@@ -383,7 +382,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
                                       domain, CONN_HOST_LEN - len + 1, 0)) {
         CORE_LOGF_X(93, eLOG_Error,
-                    ("[%s]  Cannot obtain domain name from registry for LBNULL",
+                    ("[%s]  Cannot obtain domain name for LBNULL",
                      iter->name));
         goto out;
     }
@@ -423,20 +422,18 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                            iter->name));
         goto out;
     }
-    data->hostlen = len;
     memcpy((char*) data->host, buf, len);
+    data->hostlen = len;
 
     data->debug = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
                                       (0, REG_CONN_LBNULL_DEBUG,
                                        buf, sizeof(buf), 0));
-    data->vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                                      (iter->name, REG_CONN_LBNULL_VHOST,
-                                       buf, sizeof(buf), 0));
-    data->type =                  type;
-    data->port = (unsigned short) port;
-    data->path =                  path;
+    data->vhost =                  vhost ? 1 : 0;
+    data->type  =                  type;
+    data->port  = (unsigned short) port;
+    data->path  =                  path;
 
-    iter->data = data;
+    iter->data  = data;
 
     if (!s_Resolve(iter)) {
         CORE_LOGF(eLOG_Trace,
@@ -452,7 +449,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", iter->name));
     return &kLbnullOp;
 
-out:
+ out:
     if (path)
         free((void*) path);
     return 0;
