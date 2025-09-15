@@ -109,6 +109,30 @@ private:
 };
 
 
+class CTempMergedFile : public CAlignSort::IAlignSortedOutput
+{
+public:
+    CTempMergedFile(const string &output_file)
+        : m_Os(CObjectOStream::Open(eSerial_AsnBinary, output_file))
+    {
+    }
+    virtual ~CTempMergedFile()   {  }
+    virtual void Write(const CAlignSort::TAlignment& aln)
+    {
+        *m_Os << *aln.second;
+    }
+    virtual void Flush()
+    {
+    }
+
+    virtual size_t GetCountProcessed() const { return 0; }
+    virtual size_t GetCountEmitted() const { return 0; }
+
+private:
+    unique_ptr<CObjectOStream>  m_Os;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 
@@ -553,12 +577,30 @@ void CAlignSort::MergeSortedFiles(const vector<string> &input_files,
 {
     LOG_POST(Error << "...performing merge sort...");
 
-    ///
-    /// Open each volume
-    /// NB: there is a hole here - if we have more than, say, 8k volumes,
-    /// the open may fail because we will run out of file descriptors
-    /// the solution to this is to do several partial merges
-    ///
+    const size_t kMaxFilesPerMerge = 5000;
+
+    if (input_files.size() > kMaxFilesPerMerge) {
+        /// Too many files to merge in one operation;
+        /// merge into multiple temporary files
+        string tmp_merged_path = CDir::GetTmpNameEx(CFile(m_TmpPath).GetDir(),
+                                                    "align_sort_merged_");
+        tmp_merged_path += ".";
+        vector<string> temp_merged_files;
+        for (unsigned i = 0; i <= input_files.size() / kMaxFilesPerMerge; ++i)
+        {
+            vector<string> files_to_merge(
+                input_files.begin() + i * kMaxFilesPerMerge,
+                input_files.begin() + min((i+1)*kMaxFilesPerMerge,
+                                          input_files.size()));
+            string merged_file = tmp_merged_path + NStr::NumericToString(i+1);
+            CTempMergedFile ostr(merged_file);
+            MergeSortedFiles(files_to_merge, ostr, remove_input_files, filtered);
+            temp_merged_files.push_back(merged_file);
+        }
+        MergeSortedFiles(temp_merged_files, sorted_output, true, true);
+        return;
+    }
+
     typedef vector< AutoPtr<CObjectIStream> > TFiles;
     TFiles files;
     files.reserve(input_files.size());
