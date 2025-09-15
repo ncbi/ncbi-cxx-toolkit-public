@@ -4,6 +4,7 @@ corelib/impl$
 util$
 util/bitset$
 util/regexp$
+util/regexp/sljit
 util/xregexp$
 util/cache$
 util/checksum
