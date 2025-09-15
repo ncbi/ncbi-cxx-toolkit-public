@@ -374,7 +374,6 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 {
     int/*bool*/ service_only;
     const char* retval;
-    size_t      svclen;
 
     if (!value  ||  !value_size)
         return 0;
@@ -382,21 +381,15 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     if (!param  ||  !*param  ||  NCBI_HasSpaces(param, strlen(param)))
         return 0;
 
-    if (service) {
-        if (!*service  ||  strpbrk(service, "?*["))
-            svclen = 0;
-        else if (!(service = SERV_ServiceName(service)))
-            return 0;
-        else
-            verify((svclen = strlen(service)) != 0);
-    } else
-        svclen = 0;
+    if (service)
+        service = *service ? SERV_ServiceName(service) : 0;
+    assert(!service  ||  *service);
 
     service_only = 0/*false*/;
-    retval = s_GetValue(service, svclen,
+    retval = s_GetValue(service, service ? strlen(service) : 0,
                         param, value, value_size, def_value,
                         &service_only, strncasecmp);
-    if (svclen)
+    if (service)
         free((void*) service);
     return retval;
 }
@@ -750,6 +743,12 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 }
 
 
+void ConnNetInfo_MakeValid(SConnNetInfo* info)
+{
+    info->magic = CONN_NET_INFO_MAGIC;
+}
+
+
 /*fwdecl*/
 static int/*bool*/ x_SetArgs(SConnNetInfo* info, const char* args);
 
@@ -759,7 +758,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
 #define REG_VALUE(name, value, def_value)                               \
     generic = 0;                                                        \
     *value = '\0';                                                      \
-    if (!s_GetValue(service, len,                                       \
+    if (!s_GetValue(service, svclen,                                    \
                     name, value, sizeof(value), def_value,              \
                     &generic, strncmp))                                 \
         goto err/*memory or truncation error*/
@@ -767,17 +766,17 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     char str[(CONN_PATH_LEN + 1)/2];
     int/*bool*/ generic;
     SConnNetInfo* info;
-    size_t len;
+    size_t svclen;
     long   val;
     double dbl;
     char*  e;
 
-    len = service  &&  *service ? strlen(service) : 0;
-    assert(!len  ||  (!NCBI_HasSpaces(service, len)
-                      &&  !strpbrk(service, "?*[")));
+    svclen = service  &&  *service ? strlen(service) : 0;
+    assert(!svclen  ||  (!NCBI_HasSpaces(service, svclen)
+                         &&  !strpbrk(service, "?*[")));
 
     /* NB: created *NOT* cleared up with all 0s */
-    if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
+    if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + svclen)))
         return 0/*failure*/;
     info->magic            = 0;
     info->unused           = 0/*MBZ*/;
@@ -786,7 +785,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     info->http_user_header = 0;
 
     /* store the service name, which this structure is being created for */
-    memcpy((char*) info->svc, service ? service : "", len + 1);
+    memcpy((char*) info->svc, service ? service : "", svclen + 1);
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -921,7 +920,7 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     info->credentials = 0;
 
     /* magic: the "info" is fully inited and ready to use */
-    info->magic = CONN_NET_INFO_MAGIC;
+    ConnNetInfo_MakeValid(info);
 
     /* args */
     REG_VALUE(REG_CONN_ARGS, str, DEF_CONN_ARGS);
@@ -985,20 +984,15 @@ void ConnNetInfo_ResetHttpProxyInternal(void)
 
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
-    const char* x_service;
     SConnNetInfo* retval;
+    
+    if (service)
+        service = *service ? SERV_ServiceName(service) : 0;
+    assert(!service  ||  *service);
+    retval = ConnNetInfo_CreateInternal(service);
 
-    if (service  &&  *service  &&  !strpbrk(service, "?*[")) {
-        if (!(x_service = SERV_ServiceName(service)))
-            return 0;
-        assert(*x_service);
-    } else
-        x_service = 0;
-
-    retval = ConnNetInfo_CreateInternal(x_service);
-
-    if (x_service)
-        free((void*) x_service);
+    if (service)
+        free((void*) service);
     return retval;
 }
 
@@ -1344,7 +1338,7 @@ static const char* x_ParseHostPort(const char* str, size_t len,
 }
 
 
-extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
+static int/*bool*/ s_ParseURL(SConnNetInfo* info, const char* url, int web)
 {
     /* URL elements and their parsed lengths as passed */
     const char *user,   *pass,   *host,   *path,   *args;
@@ -1354,12 +1348,6 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     const char* s;
     size_t len;
     char* p;
-
-    if (!s_InfoIsValid(info)  ||  !url)
-        return 0/*failure*/;
-
-    if (!*url)
-        return 1/*success*/;
 
     if ((info->req_method & ~eReqMethod_v1) == eReqMethod_Connect) {
         len = strlen(url);
@@ -1428,23 +1416,33 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
                 return 0/*failure*/;
             assert(hostlen < sizeof(info->host));
             if (port == -1L)
-                port  = 0/*default*/;
+                port  =  0/*default*/;
         }
     } else {
         long x_port = 0;
         /* the authority portion is not present */
-        s = (const char*) strchr(url, ':');
+        s = strchr(url, ':');
         if (s  &&  s != url  &&
             (scheme = x_ParseScheme(url, (size_t)(s - url))) != eURL_Unspec) {
             url = ++s;
             s = 0;
-        } else
+        } else {
             scheme  = (EURLScheme) info->scheme;
+            if (web) {
+                const char* p = strchr(url, '/');
+                if (p  &&  (!s  ||  p < s))
+                    s = p;
+                x_port = -1L;
+            }
+        }
         /* Check for special case: host:port[/path[...]] (see CXX-11455) */
         if (s  &&  s != url
             &&  !NCBI_HasSpaces(url, len = strcspn(url, "/?#"))
             &&  (host = x_ParseHostPort(url, len, &hostlen, &x_port))
             &&  hostlen  &&  x_port) {
+            assert(web  ||  x_port > 0);
+            if (x_port == -1L)
+                x_port  =  0/*default*/;
             user = pass = "";
             path = url + len;
             port = x_port;
@@ -1470,10 +1468,6 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         /* absolute path */
         p = info->path;
         len = 0;
-        if (!pathlen) {
-            path    = "/";
-            pathlen = 1;
-        }
     } else {
         /* relative path */
         len = (scheme == eURL_Https  ||  scheme == eURL_Http
@@ -1551,6 +1545,30 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     }
     info->scheme = scheme;
     return 1/*success*/;
+}
+
+
+extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
+{
+    if (!s_InfoIsValid(info) || !url)
+        return 0/*failure*/;
+
+    if (!*url)
+        return 1/*success*/;
+
+    return s_ParseURL(info, url, 0/*any*/);
+}
+
+
+int/*bool*/ ConnNetInfo_ParseWebURL(SConnNetInfo* info, const char* url)
+{
+    if (!s_InfoIsValid(info) || !url)
+        return 0/*failure*/;
+
+    if (!*url)
+        return 1/*success*/;
+
+    return s_ParseURL(info, url, 1/*web*/);
 }
 
 
@@ -2015,6 +2033,7 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
     static const char kPlatform[] = "platform";
     int/*bool*/ local_host;
     const char* s;
+    size_t len;
 
     if (!s_InfoIsValid(info))
         return 0/*failed*/;
@@ -2042,18 +2061,31 @@ extern int/*bool*/ ConnNetInfo_SetupStandardArgs(SConnNetInfo* info,
         ConnNetInfo_PreOverrideArg(info, kAddress, s);
     if (s != info->client_host)
         free((void*) s);
-    if (service) {
-        if (!*service)
-            ConnNetInfo_DeleteArg(info, kService);
-        else if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+    if (!service)
+        return 1/*succeeded*/;
+
+    if ((len = strlen(service)) != 0) {
+        size_t size = 3 * len;
+        size_t rd_len, wr_len;
+        if (!(s = (char*) malloc(size + 1)))
+            return 0/*failed*/;
+        URL_Encode(service, len, &rd_len, (char*) s, size, &wr_len);
+        assert(rd_len == len);
+        assert(wr_len <= size);
+        *((char*) s + wr_len) = '\0';
+        if (!ConnNetInfo_PreOverrideArg(info, kService, s)) {
             ConnNetInfo_DeleteArg(info, kPlatform);
-            if (!ConnNetInfo_PreOverrideArg(info, kService, service)) {
+            if (!ConnNetInfo_PreOverrideArg(info, kService, s)) {
                 ConnNetInfo_DeleteArg(info, kAddress);
-                if (!ConnNetInfo_PreOverrideArg(info, kService, service))
+                if (!ConnNetInfo_PreOverrideArg(info, kService, s)) {
+                    free((void*) s);
                     return 0/*failed*/;
+                }
             }
         }
-    }
+        free((void*) s);
+    } else
+        ConnNetInfo_DeleteArg(info, kService);
     return 1/*succeeded*/;
 }
 
@@ -2103,7 +2135,7 @@ SConnNetInfo* ConnNetInfo_CloneInternal(const SConnNetInfo* info)
     x_info->timeout               = info->timeout ? &x_info->tmo   : 0;
     memcpy((char*) x_info->svc,     info->svc, svclen + 1);
 
-    x_info->magic                 = CONN_NET_INFO_MAGIC;
+    ConnNetInfo_MakeValid(x_info);
     return x_info;
 }
 
@@ -2416,12 +2448,11 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
 extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 {
+    size_t      schlen, pathlen, len;
     TReqMethod  req_method;
     const char* scheme;
-    size_t      schlen;
     const char* path;
     int/*bool*/ bare;
-    size_t      len;
     char*       url;
 
     if (!s_InfoIsValid(info))
@@ -2434,15 +2465,17 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     bare = !memchr(info->host, ':', len);
     req_method = info->req_method & (TReqMethod)(~eReqMethod_v1);
     if (req_method == eReqMethod_Connect) {
+        pathlen = 0;
         scheme = "";
         schlen = 0;
         path = 0;
     } else {
         path = info->path;
+        pathlen = strlen(path);
         schlen = strlen(scheme);
-        len += schlen + 4/*"://",'/'*/ + strlen(path);
+        len += schlen + 4/*"://",'/'*/ + pathlen;
     }
-    len += (bare ? 0 : 2/*[]*/) + 7/*:port\0*/;
+    len += bare ? 7/*:port#\0*/ : (2/*[]*/ + 7/*:port#\0*/);
 
     url = (char*) malloc(len);
     if (url) {
@@ -2453,8 +2486,11 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
                        &"["[bare], info->host, &"]"[bare]);
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
-        sprintf(url + len,
-                "%s%s", &"/"[!(path  &&  *path != '/')], path ? path : "");
+        if (path  &&  *path) {
+            if (*path != '/')
+                url[len++] = '/';
+            memcpy(url + len, path, pathlen + 1);
+        }
     }
     assert(!url  ||  *url);
     return url;
@@ -2532,21 +2568,33 @@ extern EIO_Status URL_ConnectEx
 
     x_req_meth = (EReqMethod)(req_method & (TReqMethod)(~eReqMethod_v1));
     http = kHttp[!(req_method < eReqMethod_v1)];
-    args_len = strcspn(path, "?#")/*temp!*/;
-    path_len = path
-        ? (x_req_meth != eReqMethod_Connect  &&  !args
-           ? args_len
-           : strlen(path))
-        : 0;
+    if (path) {
+        /* "args_len" here is a preliminary path length, "path_len" is final */
+        args_len = strcspn(path, &"/?#"[!(x_req_meth == eReqMethod_Connect)]);
+        if (x_req_meth != eReqMethod_Connect) {
+            if (!args_len) {
+                path = "/";
+                path_len = 1;
+                if (!args)
+                    args_len = 1;
+            } else
+                path_len = !args ? args_len : strlen(path);
+        } else
+            path_len = strlen(path);
+    } else
+        path_len = args_len = 0;
 
     /* sanity checks */
-    if (!sock  ||  !host  ||  !*host  ||  !path_len  ||  args_len < path_len) {
-        CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Bad argument(s)");
+    if (!sock
+        ||  !host  ||  !*host  ||  (!port  &&  x_req_meth == eReqMethod_Connect)
+        ||  !path_len  ||  args_len != path_len) {
+        CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Invalid argument(s)");
         if (sock) {
             s = *sock;
             *sock = 0;
         } else
             s = 0;
+        assert(0);
         return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
     s = *sock;
@@ -2582,9 +2630,9 @@ extern EIO_Status URL_ConnectEx
                     ("[URL_Connect; http%s://%s%s%s%.*s] "
                      " Content-Length (%lu) is ignored with request method %s",
                      &"s"[!(flags & fSOCK_Secure)], host, temp,
-                     &"/"[path_len && *path == '/'], (int) path_len, path,
+                     &"/"[!(*path != '/')], (int) path_len, path,
                      (unsigned long) content_length,
-                     x_req_meth == eReqMethod_Get ? "GET" : "HEAD"));
+                     x_req_meth == eReqMethod_Head ? "HEAD" : "GET"));
         content_length  = (size_t)(-1L);
     }
     if (content_length != (size_t)(-1L)  &&  x_req_meth != eReqMethod_Connect){
@@ -2596,7 +2644,7 @@ extern EIO_Status URL_ConnectEx
         x_c_l = 0/*false*/;
 
     if (!(str = x_ReqMethod(x_req_meth, 0))) {
-        char tmp[40];
+        char x_buf[40];
         if (port)
             sprintf(temp, ":%hu", port);
         else
@@ -2605,8 +2653,8 @@ extern EIO_Status URL_ConnectEx
                     ("[URL_Connect; http%s://%s%s%s%.*s] "
                      " Unsupported request method %s",
                      &"s"[!(flags & fSOCK_Secure)], host, temp,
-                     &"/"[path_len && *path == '/'], (int) path_len, path,
-                     x_ReqMethod(req_method, tmp)));
+                     &"/"[!(*path != '/')], (int) path_len, path,
+                     x_ReqMethod(req_method, x_buf)));
         assert(0);
         return x_URLConnectErrorReturn(s, eIO_NotSupported);
     }
@@ -2649,7 +2697,7 @@ extern EIO_Status URL_ConnectEx
          &&  content_length  &&  content_length != (size_t)(-1L)
          &&  !BUF_Write(&buf, args, content_length))) {
         int x_errno = errno;
-        if (port)
+        if (port  ||  x_req_meth == eReqMethod_Connect)
             sprintf(temp, ":%hu", port);
         else
             *temp = '\0';
@@ -2657,7 +2705,7 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect; http%s://%s%s%s%.*s%s%.*s] "
                            " Cannot build HTTP header",
                            &"s"[!(flags & fSOCK_Secure)], host, temp,
-                           &"/"[path_len && *path == '/'], (int)path_len, path,
+                           &"/"[!(*path != '/')], (int) path_len, path,
                            &"?"[!args_len], (int) args_len, args));
         BUF_Destroy(buf);
         return x_URLConnectErrorReturn(s, eIO_Unknown);
@@ -2666,7 +2714,7 @@ extern EIO_Status URL_ConnectEx
     if (!(hdr = (char*) malloc(hdr_len = BUF_Size(buf)))
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
-        if (port)
+        if (port  ||  x_req_meth == eReqMethod_Connect)
             sprintf(temp, ":%hu", port);
         else
             *temp = '\0';
@@ -2674,9 +2722,9 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect; http%s://%s%s%s%.*s%s%.*s] "
                            " Cannot maintain HTTP header (%lu byte%s)",
                            &"s"[!(flags & fSOCK_Secure)], host, temp,
-                           &"/"[path_len && *path == '/'], (int)path_len, path,
+                           &"/"[!(*path != '/')], (int) path_len, path,
                            &"?"[!args_len], (int) args_len, args,
-                           (unsigned long) hdr_len, &"s"[hdr_len == 1]));
+                           (unsigned long) hdr_len, &"s"[!(hdr_len != 1)]));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
@@ -2715,7 +2763,7 @@ extern EIO_Status URL_ConnectEx
                     o_timeout->usec % 1000000);
         } else
             *timeout = '\0';
-        if (port)
+        if (port  ||  x_req_meth == eReqMethod_Connect)
             sprintf(temp, ":%hu", port);
         else
             *temp = '\0';
@@ -2723,7 +2771,7 @@ extern EIO_Status URL_ConnectEx
                     ("[URL_Connect; http%s://%s%s%s%.*s%s%.*s] "
                      " Failed to %s: %s%s",
                      &"s"[!(flags & fSOCK_Secure)], host, temp,
-                     &"/"[path_len && *path == '/'], (int) path_len, path,
+                     &"/"[!(*path != '/')], (int) path_len, path,
                      &"?"[!args_len], (int) args_len, args,
                      s ? "use connection" : "connect",
                      IO_StatusStr(status), timeout));

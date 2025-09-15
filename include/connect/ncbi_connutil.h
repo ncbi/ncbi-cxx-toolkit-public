@@ -754,6 +754,13 @@ typedef struct {
  * If "port" is not specified (0) it will be assigned automatically to a
  * well-known standard value depending on the "fSOCK_Secure" bit in the "flags"
  * parameter, when connecting to an HTTP server.
+ * 
+ * If "req_method" is not CONNECT and only if "args" is NULL, then "path" may
+ * include HTTP request arguments (and fragment) that follow the actual path.
+ * Also, if the actual path appears empty, it is auto-replaced with "/".
+ *
+ * If HTTP request parameters include a fragment (#), it is not sent to the
+ * server in the request.
  *
  * A protocol version "1.x" is selected by the "req_method"'s value, and can be
  * either 1.0 or 1.1.  METHOD can be any of those of EReqMethod.
@@ -794,7 +801,9 @@ typedef struct {
  * "Content-Length:" header tag will get added.
  *
  * If "*sock" is non-NULL, the call _does not_ create a new socket, but builds
- * an HTTP(S) data stream on top of the passed socket.  Regardless of the
+ * an HTTP(S) data stream on top of the passed socket.  Irrespective of the
+ * initial value of "*sock", the host and path arguments must not be empty,
+ * and port must be non-zero for CONNECT method.  Also, regardless of the
  * completion status, the original SOCK handle will be closed as if with
  * SOCK_Destroy().  In case of success, a new SOCK handle will be returned via
  * the same last parameter;  yet in case of errors, the last parameter will be
