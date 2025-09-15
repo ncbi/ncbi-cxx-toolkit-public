@@ -75,18 +75,23 @@ static unsigned int s_Resolve(const char* name, TSERV_Type types)
 
 static int s_SelfTest(void)
 {
+#define WWW "www.ncbi.nlm.nih.gov"
     assert(!s_Resolve(0, fSERV_Any));
     assert( s_Resolve("bounce", fSERV_Any));
     assert( s_Resolve("bounce*", fSERV_Any));
-    assert( s_Resolve("http://www.ncbi/Service", fSERV_Any));
-    assert(!s_Resolve("//www.ncbi/", fSERV_Standalone));
-    assert( s_Resolve("www.ncbi:5555", fSERV_Any));
-    assert( s_Resolve("www.ncbi:5555", fSERV_Standalone));
-    assert( s_Resolve("//www.ncbi:80/", fSERV_Standalone));
-    assert(!s_Resolve("//www.ncbi:80/Service", fSERV_Standalone));
-    assert( s_Resolve("//www.ncbi/", fSERV_ReverseDns));
-    assert( s_Resolve("//www.ncbi:80/Service", fSERV_ReverseDns));
-    assert( s_Resolve("http://www.ncbi/Service", fSERV_ReverseDns));
+    assert( s_Resolve("http://"WWW"/Service", fSERV_Any));
+    assert(!s_Resolve("//"WWW"/", fSERV_Standalone));
+    assert( s_Resolve(WWW":5555", fSERV_Any));
+    assert( s_Resolve(WWW":5555", fSERV_Standalone));
+    assert( s_Resolve("//"WWW":80/", fSERV_Standalone));
+    assert(!s_Resolve("//"WWW":80/Service", fSERV_Standalone));
+    assert( s_Resolve("//"WWW"/", fSERV_ReverseDns));
+    assert( s_Resolve("//"WWW":80/Service", fSERV_ReverseDns));
+    assert( s_Resolve("http://"WWW"/Service", fSERV_ReverseDns));
+#if !defined(NCBI_OS_MSWIN)  &&  !defined(NCBI_OS_CYGWIN)
+    SOCK_SetIPv6API(eOn);
+    assert( s_Resolve("http://jiradev01/Service", fSERV_Any));
+#endif /*!NCBI_OS_MSWIN && !NCBI_OS_CYGWIN*/
     return 0;
 }
 
