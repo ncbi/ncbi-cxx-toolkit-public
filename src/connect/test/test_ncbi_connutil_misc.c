@@ -490,11 +490,11 @@ static void TEST_ConnNetInfo(void)
     assert(net_info->port == 8080);
     assert(!*net_info->user);
     assert(!*net_info->pass);
-    assert(strcmp(net_info->path, "/") == 0);
+    assert(strcmp(net_info->path, "") == 0);
 
     str = ConnNetInfo_URL(net_info);
     assert(str);
-    assert(strcmp(str, "//130.14.29.110:8080/") == 0);
+    assert(strcmp(str, "//130.14.29.110:8080") == 0);
     free(str);
 
     x_FillupNetInfo(net_info);
@@ -553,11 +553,11 @@ static void TEST_ConnNetInfo(void)
     assert(net_info->port == 4444);
     assert(!*net_info->user);
     assert(!*net_info->pass);
-    assert(strcmp(net_info->path, "/") == 0);
+    assert(strcmp(net_info->path, "") == 0);
 
     str = ConnNetInfo_URL(net_info);
     assert(str);
-    assert(strcmp(str, "//[2607:f220:41e:4290::110]:4444/") == 0);
+    assert(strcmp(str, "//[2607:f220:41e:4290::110]:4444") == 0);
     free(str);
     
     x_FillupNetInfo(net_info);
