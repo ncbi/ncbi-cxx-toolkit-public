@@ -38,6 +38,7 @@
 
 // generated includes
 #include <ncbi_pch.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <util/line_reader.hpp>
@@ -943,9 +944,9 @@ struct SAccGuide : public CObject
     SAccGuide(const string& filename)
         : count(0)
         { x_Load(filename); }
-    SAccGuide(ILineReader& lr)
+    SAccGuide(ILineReader& lr, const CTime& t)
         : count(0)
-        { x_Load(lr); }
+        { x_Load(lr, t); }
 
     void AddRule(const CTempString& rule, SHints& hints);
     const TAccInfo& Find(TFormatCode fmt, const CTempString& acc_or_pfx,
@@ -957,10 +958,12 @@ struct SAccGuide : public CObject
     TMainMap     rules;
     TPrefixes    general;
     TFallbackMap fallbacks;
+    string       filename;
+    CTime        timestamp;
 
 private:
-    void x_Load(const string& filename);
-    void x_Load(ILineReader& lr);
+    void x_Load(const string& fname);
+    void x_Load(ILineReader& lr, const CTime& t);
     void x_CompleteInit(void);
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
@@ -1445,9 +1448,9 @@ SAccGuide::SAccGuide(void)
     : count(0)
 {
     bool file_is_old = false;
+    CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
     {{
         string file = g_FindDataFile("accguide2.txt");
-        CTime builtin_timestamp(static_cast<time_t>(kBuiltInGuide_Timestamp));
         if ( !file.empty()  &&
              !(file_is_old = g_IsDataFileOld(file, builtin_timestamp)) ) {
             try {
@@ -1456,6 +1459,7 @@ SAccGuide::SAccGuide(void)
         }
     }}
     if (count == 0) {
+        timestamp = builtin_timestamp;
         if (file_is_old) {
             ERR_POST_X(12, Info << "CSeq_id::IdentifyAccession: " // minor lie
                        "using built-in rules because accguide.txt is older.");
@@ -1497,15 +1501,19 @@ void SAccGuide::x_CompleteInit()
     }
 }
 
-void SAccGuide::x_Load(const string& filename)
+void SAccGuide::x_Load(const string& fname)
 {
+    filename = fname;
     CRef<ILineReader> in(ILineReader::New(filename));
-    x_Load(*in);
+    CTime t;
+    CFile(filename).GetTime(&t);
+    x_Load(*in, t);
 }
 
-void SAccGuide::x_Load(ILineReader& in)
+void SAccGuide::x_Load(ILineReader& in, const CTime& t)
 {
     SHints hints;
+    timestamp = t;
     do {
         AddRule(*++in, hints);
     } while ( !in.AtEOF() );
@@ -1887,9 +1895,18 @@ void CSeq_id::LoadAccessionGuide(const string& filename)
     s_Guide->Reset(new SAccGuide(filename));
 }
 
-void CSeq_id::LoadAccessionGuide(ILineReader& in)
+void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t)
 {
-    s_Guide->Reset(new SAccGuide(in));
+    s_Guide->Reset(new SAccGuide(in, t));
+}
+
+void CSeq_id::RefreshAccessionGuide()
+{
+    auto guide = *s_Guide;
+    if ( !guide->filename.empty()
+        &&  !g_IsDataFileOld(guide->filename, guide->timestamp) ) {
+        LoadAccessionGuide(guide->filename);
+    }
 }
 
 

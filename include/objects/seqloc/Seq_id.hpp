@@ -41,6 +41,7 @@
 // generated includes
 #include <objects/seqloc/Seq_id_.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbitime.hpp>
 #include <serial/serializable.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -571,7 +572,9 @@ public:
                                      = fParse_AnyRaw | fParse_AnyLocal) const;
 
     static void LoadAccessionGuide(const string& filename);
-    static void LoadAccessionGuide(ILineReader& in);
+    static void LoadAccessionGuide(ILineReader& in,
+                                   const CTime& t = CCurrentTime());
+    static void RefreshAccessionGuide();
 
     /// Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
