@@ -77,7 +77,20 @@ public:
         x_InitErrCode(static_cast<CException::EErrCode>(error_code));
     }
 
-    const char* GetErrCodeString(void) const override
+    CCassandraException& SetCassDriverErrorCode(int error_code)
+    {
+        if (error_code >= 0) {
+            m_CassDriverError = error_code;
+        }
+        return *this;
+    }
+
+    int GetCassDriverErrorCode() const
+    {
+        return m_CassDriverError;
+    }
+
+    const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
             case eUnknown:                return "eUnknown";
@@ -121,11 +134,13 @@ protected:
         const CCassandraException* src_ex = dynamic_cast<const CCassandraException*>(&src);
         if (src_ex) {
             m_OpTimeMs = src_ex->m_OpTimeMs;
+            m_CassDriverError = src_ex->m_CassDriverError;
         }
         CException::x_Assign(src);
     }
 
     int64_t m_OpTimeMs{0};
+    int m_CassDriverError{-1};
 };
 
 #define RAISE_CASS_ERROR(errc, dberr, comm)                                     \

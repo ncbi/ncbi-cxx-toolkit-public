@@ -155,7 +155,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
         catch (CCassandraException const &ex) {
             EXPECT_EQ(CCassandraException::eQueryFailed, ex.GetErrCode());
             EXPECT_EQ("CassandraErrorMessage - \"line 1:0 no viable alternative at input 'NOQUERY' ([NOQUERY])\";"
-                      " CassandraErrorCode - 2002000; SQL: \"NOQUERY\"", ex.GetMsg());
+                      " CassandraErrorCode - 0x2002000; SQL: \"NOQUERY\"", ex.GetMsg());
         }
     }
 
@@ -173,7 +173,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
         }
         catch (CCassandraException const &ex) {
             EXPECT_EQ(CCassandraException::eQueryTimeout, ex.GetErrCode());
-            EXPECT_EQ("CassandraErrorMessage - \"Request timed out\"; CassandraErrorCode - 100000E;"
+            EXPECT_EQ("CassandraErrorMessage - \"Request timed out\"; CassandraErrorCode - 0x100000E;"
                       " SQL: \"SELECT * FROM system.peers WHERE data_center = ? ALLOW FILTERING\";"
                       " Params - ('DC1'); timeout - 1ms", ex.GetMsg());
         }
@@ -190,7 +190,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
         catch (CCassandraException const &ex) {
             EXPECT_EQ(CCassandraException::eQueryFailed, ex.GetErrCode());
             EXPECT_EQ("CassandraErrorMessage - \"line 1:36 mismatched input 'WHEREE' expecting EOF "
-                      "(SELECT * FROM system.size_estimates [WHEREE]...)\"; CassandraErrorCode - 2002000;"
+                      "(SELECT * FROM system.size_estimates [WHEREE]...)\"; CassandraErrorCode - 0x2002000;"
                       " SQL: \"SELECT * FROM system.size_estimates WHEREE table_name = ? ALLOW FILTERING\"", ex.GetMsg());
         }
     }
@@ -205,7 +205,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
             EXPECT_EQ(CCassandraException::eQueryFailedRestartable, ex.GetErrCode());
             EXPECT_EQ(
                     "CassandraErrorMessage - \"All hosts in current policy attempted and were either unavailable or failed\";"
-                    " CassandraErrorCode - 100000A", ex.GetMsg());
+                    " CassandraErrorCode - 0x100000A", ex.GetMsg());
         }
     }
 }

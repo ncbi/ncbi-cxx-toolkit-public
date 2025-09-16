@@ -84,6 +84,7 @@ class CBlobTaskLoadBlobTest
 
     string m_KeyspaceName{"satncbi_extended"};
     string m_BlobChunkKeyspace{"psg_test_sat_4"};
+    string m_BigBlobKeyspace{"psg_test_sat_33"};
 };
 
 const char* CBlobTaskLoadBlobTest::m_TestClusterName = "ID_CASS_TEST";
@@ -169,7 +170,7 @@ TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
                   " line N: Error: (CCassandraException::eQueryFailed) "
                   "idblob::CCassQuery::ProcessFutureResult() - "
                   "CassandraErrorMessage - \"ANY ConsistencyLevel is only supported for writes\";"
-                  " CassandraErrorCode - 2002200; SQL: \"SELECT    last_modified,   class,   date_asn1,   div,"
+                  " CassandraErrorCode - 0x2002200; SQL: \"SELECT    last_modified,   class,   date_asn1,   div,"
                   "   flags,   hup_date,   id2_info,   n_chunks,   owner,   size,   size_unpacked,   username"
                   " FROM psg_test_sat_4.blob_prop WHERE sat_key = ? LIMIT 1\"; Params - (2155365)\n", message_x);
         errorCallbackCalled = true;
@@ -280,7 +281,7 @@ TEST_F(CBlobTaskLoadBlobTest, QueryTimeoutOverride) {
         EXPECT_EQ(eDiag_Error, severity);
     };
 
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, timeout_function);
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BigBlobKeyspace, 32435367, true, timeout_function);
     fetch.SetQueryTimeout(chrono::milliseconds(1));
     wait_function(fetch);
     EXPECT_TRUE(timeout_function_called) << "Timeout should happen";
@@ -403,6 +404,65 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
     EXPECT_TRUE(comment_finished) << "Public comment request should finish";
     EXPECT_EQ(2, event_callback->times_called) << "Error and Data callbacks should be called 2 times in total (Blob (1 data or 1 timeout) and Comment (1 data))";
     event_callback.reset();
+}
+
+TEST_F(CBlobTaskLoadBlobTest, LoadBlobRetryLogging)
+{
+    const string config_section = "TEST";
+    auto factory = CCassConnectionFactory::s_Create();
+    CNcbiRegistry r;
+    r.Set(config_section, "service", "ID_CASS_TEST", IRegistry::fPersistent);
+    // Too small value here prevents prepare operation
+    r.Set(config_section, "qtimeout", "1", IRegistry::fPersistent);
+    r.Set(config_section, "qtimeout_retry", "1", IRegistry::fPersistent);
+    r.Set(config_section, "maxretries", "3", IRegistry::fPersistent);
+    factory->LoadConfig(r, config_section);
+    auto connection = factory->CreateInstance();
+    connection->Connect();
+    bool timeout_function_called{false};
+    auto timeout_function =
+        [&timeout_function_called]
+        (CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            timeout_function_called = true;
+            EXPECT_EQ(CRequestStatus::e502_BadGateway, status);
+            EXPECT_EQ(CCassandraException::eQueryTimeout, code);
+            EXPECT_EQ(eDiag_Error, severity);
+        };
+    bool logging_function_called{false};
+    auto logging_function =
+        [&logging_function_called]
+        (EDiagSev severity, const string & message) -> void {
+            regex error_regex(R"(^CassandraQueryRetry: CQL.+; params.+; previous_retries=(\d+); max_retries=3; )"
+                              R"(error_code=eQueryTimeout; driver_error=[^;]+; decision=\(([^\)]+)\);( reason=\(([^\)]+)\))?.*)");
+            smatch match;
+            if (regex_match(message, match, error_regex)) {
+                logging_function_called = true;
+                auto retries = NStr::StringToNumeric<int>(match[1].str());
+                EXPECT_GT(3, retries) << "There should be less than 3 retries";
+                if (retries < 2) {
+                    EXPECT_EQ(eDiag_Warning, severity);
+                    EXPECT_EQ("retry_allowed", match[2].str());
+                    EXPECT_EQ(3, match.size());
+                }
+                else {
+                    EXPECT_EQ(eDiag_Error, severity);
+                    EXPECT_EQ("retry_forbidden", match[2].str());
+                    EXPECT_EQ("too_many_retries", match[4].str());
+                    EXPECT_EQ(5, match.size());
+                }
+                //cout << "Full match: " << match[0] << endl;
+            }
+        };
+    CCassBlobTaskLoadBlob fetch(connection, m_BigBlobKeyspace, 32435367, true, timeout_function);
+    fetch.SetQueryTimeout(chrono::milliseconds(1));
+    fetch.SetUsePrepared(false);
+    fetch.SetLoggingCB(logging_function);
+    testing::internal::CaptureStderr();
+    wait_function(fetch);
+    testing::internal::GetCapturedStderr();
+    EXPECT_TRUE(timeout_function_called) << "Timeout should happen";
+    EXPECT_TRUE(logging_function_called) << "Retries are expected to happen";
+    EXPECT_TRUE(fetch.HasError()) << "Request should be in failed state";
 }
 
 }  // namespace

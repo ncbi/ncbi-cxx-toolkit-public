@@ -53,16 +53,24 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-#define RAISE_CASS_QUERY_ERROR(error_code, message)                                      \
+#define THROW_CASS_EXCEPTION(error_code, driver_code, message) \
+    do {                                                       \
+        CCassandraException ex(DIAG_COMPILE_INFO, nullptr,     \
+                CCassandraException::error_code, (message));   \
+        ex.SetCassDriverErrorCode((driver_code));              \
+        throw ex;                                              \
+    } while(0)                                                 \
+
+#define RAISE_CASS_QUERY_ERROR(error_code, driver_code, message)                         \
     do {                                                                                 \
         auto macro_error_code = (error_code);                                            \
-        if (macro_error_code == CCassandraException::eQueryFailedRestartable) {      \
-            NCBI_THROW(CCassandraException, eQueryFailedRestartable, message);           \
+        if (macro_error_code == CCassandraException::eQueryFailedRestartable) {          \
+            THROW_CASS_EXCEPTION(eQueryFailedRestartable, driver_code, message);         \
         }                                                                                \
-        else if (macro_error_code == CCassandraException::eQueryTimeout) {           \
-            NCBI_THROW(CCassandraException, eQueryTimeout, message);                     \
+        else if (macro_error_code == CCassandraException::eQueryTimeout) {               \
+            THROW_CASS_EXCEPTION(eQueryTimeout, driver_code, message);                   \
         }                                                                                \
-        NCBI_THROW(CCassandraException, eQueryFailed, message);                          \
+        THROW_CASS_EXCEPTION(eQueryFailed, driver_code, message);                        \
     } while(0)                                                                           \
 
 BEGIN_SCOPE()
@@ -195,7 +203,7 @@ BEGIN_SCOPE()
         string message(message_ptr, message_len);
         CassError rc = cass_future_error_code(future);
         return "CassandraErrorMessage - " + NStr::Quote(message)
-            + "; CassandraErrorCode - " + NStr::NumericToString(static_cast<int>(rc), 0, 16);
+            + "; CassandraErrorCode - 0x" + NStr::NumericToString(static_cast<int>(rc), 0, 16);
     }
 
     string ProduceCassandraConnectionErrorMessage(CassFuture * future, unsigned int connection_timeout)
@@ -1024,14 +1032,14 @@ const CassPrepared * CCassConnection::Prepare(const string & sql)
         bool b = cass_future_wait_timed(future.get(), m_qtimeoutms * 1000L);
         if (!b) {
             RAISE_CASS_QUERY_ERROR(
-                CCassandraException::eQueryTimeout,
+                CCassandraException::eQueryTimeout, -1,
                 ProduceSyncTimeoutMessage("Failed to prepare query: " + NStr::Quote(sql), 0, m_qtimeoutms)
             );
         }
         CassError rc = cass_future_error_code(future.get());
         if (rc != CASS_OK) {
             RAISE_CASS_QUERY_ERROR(
-                GetErrorCodeByDriverRC(rc),
+                GetErrorCodeByDriverRC(rc), rc,
                 ProduceCassandraQueryErrorMessage(future.get(), nullptr, sql)
             );
         }
@@ -1611,14 +1619,15 @@ void CCassQuery::Restart(TCassConsistency c)
     if (!m_future) {
         RAISE_DB_ERROR(eSeqFailed, "Query is not in restartable state");
     }
-    string params;
+    vector<string> params;
     for (size_t i = 0; i < ParamCount(); ++i) {
-        params += (i > 0 ? "," : "" ) + ParamAsStrForDebug(i);
+        params.push_back(ParamAsStrForDebug(static_cast<int>(i)));
     }
+    string params_msg;
     if (!params.empty()) {
-        params = "; params - (" + params + ")";
+        params_msg = "; params - (" + NStr::Join(params, ",") + ")";
     }
-    ERR_POST(Warning << "Cassandra query restarted: SQL - " << NStr::Quote(m_sql, '\'') << params);
+    ERR_POST(Warning << "Cassandra query restarted: SQL - " << NStr::Quote(m_sql, '\'') << params_msg);
     if (m_results_expected) {
         RestartQuery(c);
     } else {
@@ -1727,7 +1736,7 @@ async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
         if (!m_async && timeoutmks > 0) {
             int64_t t = (gettime() - m_futuretime) / 1000L;
             RAISE_CASS_QUERY_ERROR(
-                CCassandraException::eQueryTimeout,
+                CCassandraException::eQueryTimeout, -1,
                 ProduceSyncTimeoutMessage("Failed to perform query: " + NStr::Quote(m_sql), t, timeoutmks / 1000L)
             );
         } else {
@@ -1783,7 +1792,7 @@ void CCassQuery::ProcessFutureResult()
             cass_statement_free(m_statement);
             m_statement = nullptr;
         }
-        RAISE_CASS_QUERY_ERROR(GetErrorCodeByDriverRC(rc), ProduceCassandraQueryErrorMessage(m_future, this, ""));
+        RAISE_CASS_QUERY_ERROR(GetErrorCodeByDriverRC(rc), rc, ProduceCassandraQueryErrorMessage(m_future, this, ""));
     }
 
     if (m_results_expected) {
