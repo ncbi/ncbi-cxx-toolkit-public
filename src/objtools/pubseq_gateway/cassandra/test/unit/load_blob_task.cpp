@@ -442,13 +442,13 @@ TEST_F(CBlobTaskLoadBlobTest, LoadBlobRetryLogging)
                 if (retries < 2) {
                     EXPECT_EQ(eDiag_Warning, severity);
                     EXPECT_EQ("retry_allowed", match[2].str());
-                    EXPECT_EQ(3, match.size());
+                    EXPECT_EQ(3UL, match.size());
                 }
                 else {
                     EXPECT_EQ(eDiag_Error, severity);
                     EXPECT_EQ("retry_forbidden", match[2].str());
                     EXPECT_EQ("too_many_retries", match[4].str());
-                    EXPECT_EQ(5, match.size());
+                    EXPECT_EQ(5UL, match.size());
                 }
                 //cout << "Full match: " << match[0] << endl;
             }
