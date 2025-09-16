@@ -1,5 +1,5 @@
-#ifndef CASSBLOBOP__HPP
-#define CASSBLOBOP__HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASSBLOBOP_HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASSBLOBOP_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -58,6 +58,7 @@ USING_NCBI_SCOPE;
 
 using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
 using TDataErrorCallback = function<void(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)>;
+using TLoggingCallback = function<void(EDiagSev severity, const string & message)>;
 using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
@@ -212,6 +213,11 @@ public:
         m_ErrorCb = std::move(error_cb);
     }
 
+    void SetLoggingCB(TLoggingCallback logging_cb)
+    {
+        m_LoggingCb = std::move(logging_cb);
+    }
+
     /// Set connection point parameters.
     ///
     /// @param value
@@ -252,11 +258,11 @@ protected:
         eError = -1
     };
     struct SQueryRec {
-        shared_ptr<CCassQuery> query;
-        unsigned int restart_count;
+        shared_ptr<CCassQuery> query{nullptr};
+        unsigned int restart_count{0};
     };
 
-    void CloseAll(void)
+    void CloseAll()
     {
         for (auto & it : m_QueryArr) {
             it.query->Close();
@@ -270,8 +276,7 @@ protected:
         if (DataReadyCb3) {
             query->SetOnData3(DataReadyCb3);
         } else if (IsDataReadyCallbackExpired()) {
-            char msg[1024];
-            snprintf(msg, sizeof(msg), "Failed to setup data ready callback (expired)");
+            string msg{"Failed to setup data ready callback (expired)"};
             Error(CRequestStatus::e502_BadGateway, CCassandraException::eUnknown, eDiag_Error, msg);
         }
     }
@@ -283,26 +288,27 @@ protected:
         return m_DataReadyCb3.owner_before(wt{}) || wt{}.owner_before(m_DataReadyCb3);
     }
 
-    void Error(CRequestStatus::ECode  status,
-               int  code,
-               EDiagSev  severity,
-               const string &  message)
+    void Error(CRequestStatus::ECode status, int code, EDiagSev severity, const string & message)
     {
-        assert(m_ErrorCb != nullptr);
         m_State = eError;
         m_LastError = message;
-        m_ErrorCb(status, code, severity, message);
+        if (m_ErrorCb) {
+            m_ErrorCb(status, code, severity, message);
+        }
     }
 
-    bool CanRestart(shared_ptr<CCassQuery> query, unsigned int restart_count) const
+    void Message(EDiagSev severity, const string & message) const
+    {
+        if (m_LoggingCb) {
+            m_LoggingCb(severity, message);
+        }
+    }
+
+    bool CanRestart(shared_ptr<CCassQuery> const& query, unsigned int restart_count) const
     {
         int max_retries = GetMaxRetries();
         bool is_out_of_retries = (max_retries > 0) &&
                                  (restart_count >= static_cast<unsigned int>(max_retries) - 1);
-        ERR_POST(Info << "CanRestartQ?" <<
-                 " out_of_retries=" << is_out_of_retries <<
-                 ", time=" << gettime() / 1000L <<
-                 ", timeout=" << query->Timeout() << "ms");
         return !is_out_of_retries && !m_Cancelled;
     }
 
@@ -314,7 +320,7 @@ protected:
         return CanRestart(it.query, it.restart_count);
     }
 
-    bool CheckReady(shared_ptr<CCassQuery> qry, unsigned int restart_counter, bool& need_repeat)
+    bool CheckReady(shared_ptr<CCassQuery> const& qry, unsigned int restart_counter, bool& need_repeat)
     {
         need_repeat = false;
         try {
@@ -323,17 +329,32 @@ protected:
             }
             return true;
         } catch (const CCassandraException& e) {
-            if (
-                (e.GetErrCode() == CCassandraException::eQueryTimeout
-                    || e.GetErrCode() == CCassandraException::eQueryFailedRestartable)
-                && CanRestart(qry, restart_counter))
-            {
+            vector<string> query_params;
+            for (size_t i = 0; i < qry->ParamCount(); ++i) {
+                query_params.push_back(qry->ParamAsStrForDebug(static_cast<int>(i)));
+            }
+            string retry_message = "CassandraQueryRetry: CQL - '" + NStr::Quote(qry->GetSQL(), '\'') + "'";
+            if (!query_params.empty()) {
+                retry_message += "; params - (" + NStr::Join(query_params, ",") + ")";
+            }
+            retry_message += "; retry_count=" + to_string(restart_counter)
+                + "; max_retries=" + to_string(GetMaxRetries())
+                + "; error_code=" + e.GetErrCodeString();
+            /*if (e.GetCassDriverErrorCode() >= 0) {
+                retry_message += "; driver_error=" + to_string(e.GetCassDriverErrorCode());
+            }*/
+            bool error_allows_restart = (e.GetErrCode() == CCassandraException::eQueryTimeout
+                                         || e.GetErrCode() == CCassandraException::eQueryFailedRestartable);
+            if (error_allows_restart && CanRestart(qry, restart_counter)) {
+                Message(eDiag_Warning, retry_message + "; decision=(retry_allowed)");
                 need_repeat = true;
-            } else {
+            }
+            else {
+                Message(eDiag_Error, retry_message + "; decision=(retry_forbidden)" + "; reason=("
+                    + (error_allows_restart?"error_code_forbidden":"too_many_retries") + ")");
                 Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
             }
         }
-
         return false;
     }
 
@@ -344,10 +365,10 @@ protected:
         if (!rv && need_restart) {
             try {
                 ++it.restart_count;
-                ERR_POST(Warning << "CCassBlobWaiter query retry: " + to_string(it.restart_count));
                 it.query->Restart();
-            } catch (const exception& ex) {
-                ERR_POST(NCBI_NS_NCBI::Error << "Failed to restart query (p2): " << ex.what());
+            }
+            catch (const exception& ex) {
+                Message(eDiag_Error, string("CassandraQueryRestart thrown exception with message: ") + ex.what());
                 throw;
             }
         }
@@ -367,7 +388,8 @@ protected:
     bool CheckMaxActive();
     virtual void Wait1() = 0;
 
-    TDataErrorCallback              m_ErrorCb;
+    TDataErrorCallback              m_ErrorCb{nullptr};
+    TLoggingCallback                m_LoggingCb{nullptr};
     weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
 
     // @ToDo Make it private with protected accessor
@@ -405,7 +427,7 @@ public:
     CCassBlobOp& operator=(const CCassBlobOp&) = delete;
 
     explicit CCassBlobOp(shared_ptr<CCassConnection> conn)
-        : m_Conn(conn)
+        : m_Conn(std::move(conn))
     {
         m_Keyspace = m_Conn->Keyspace();
     }
@@ -445,10 +467,10 @@ public:
     }
 
 private:
-    shared_ptr<CCassConnection> m_Conn;
+    shared_ptr<CCassConnection> m_Conn{nullptr};
     string m_Keyspace;
 };
 
 END_IDBLOB_SCOPE
 
-#endif  // CASSBLOBOP__HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__CASSBLOBOP_HPP
