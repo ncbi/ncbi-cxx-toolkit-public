@@ -222,7 +222,7 @@ bool g_IsDataFileOld(const CTempString& path, const CTime& builtin_timestamp)
 {
     CTime       file_timestamp;
     CFile(path).GetTime(&file_timestamp);
-    return file_timestamp < builtin_timestamp;
+    return file_timestamp <= builtin_timestamp;
 }
 
 END_NCBI_SCOPE
