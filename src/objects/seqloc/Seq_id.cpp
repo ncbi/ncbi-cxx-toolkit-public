@@ -961,7 +961,7 @@ struct SAccGuide : public CObject
 private:
     void x_Load(const string& filename);
     void x_Load(ILineReader& lr);
-    void x_InitGeneral(void);
+    void x_CompleteInit(void);
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
                       const string* old_name, const CTempString& new_name);
@@ -1469,7 +1469,12 @@ SAccGuide::SAccGuide(void)
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
             AddRule(kBuiltInGuide[i], hints);
         }
+        x_CompleteInit();
     }
+}
+
+void SAccGuide::x_CompleteInit()
+{
     for (auto &rit : rules) {
         ERASE_ITERATE(TSmallSpecialMap, sit, rit.second.small_specials) {
             if (sit->second.first.any()) {
@@ -1479,11 +1484,6 @@ SAccGuide::SAccGuide(void)
             }
         }
     }
-    x_InitGeneral();
-}
-
-void SAccGuide::x_InitGeneral(void)
-{
     if (general.empty()) {
         // Populate with a hard-coded list by default; there are only
         // a few tags to worry about, but listing them in accguide.txt
@@ -1509,6 +1509,7 @@ void SAccGuide::x_Load(ILineReader& in)
     do {
         AddRule(*++in, hints);
     } while ( !in.AtEOF() );
+    x_CompleteInit();
 }
 
 void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
