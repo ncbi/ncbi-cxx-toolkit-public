@@ -432,23 +432,21 @@ TEST_F(CBlobTaskLoadBlobTest, LoadBlobRetryLogging)
     auto logging_function =
         [&logging_function_called]
         (EDiagSev severity, const string & message) -> void {
-            regex error_regex(R"(^CassandraQueryRetry: CQL.+; params.+; previous_retries=(\d+); max_retries=3; )"
-                              R"(error_code=eQueryTimeout; driver_error=[^;]+; decision=\(([^\)]+)\);( reason=\(([^\)]+)\))?.*)");
+            regex error_regex(R"(^CassandraQueryRetry: SQL.+; params.+; previous_retries=(\d+); max_retries=3; )"
+                              R"(error_code=eQueryTimeout; driver_error=[^;]+; decision=([^\)]+)$)");
             smatch match;
             if (regex_match(message, match, error_regex)) {
                 logging_function_called = true;
                 auto retries = NStr::StringToNumeric<int>(match[1].str());
                 EXPECT_GT(3, retries) << "There should be less than 3 retries";
+                EXPECT_EQ(3UL, match.size());
                 if (retries < 2) {
                     EXPECT_EQ(eDiag_Warning, severity);
                     EXPECT_EQ("retry_allowed", match[2].str());
-                    EXPECT_EQ(3UL, match.size());
                 }
                 else {
                     EXPECT_EQ(eDiag_Error, severity);
                     EXPECT_EQ("retry_forbidden", match[2].str());
-                    EXPECT_EQ("too_many_retries", match[4].str());
-                    EXPECT_EQ(5UL, match.size());
                 }
                 //cout << "Full match: " << match[0] << endl;
             }

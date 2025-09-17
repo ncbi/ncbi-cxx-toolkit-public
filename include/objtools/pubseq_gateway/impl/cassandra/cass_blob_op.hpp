@@ -333,7 +333,7 @@ protected:
             for (size_t i = 0; i < qry->ParamCount(); ++i) {
                 query_params.push_back(qry->ParamAsStrForDebug(static_cast<int>(i)));
             }
-            string retry_message = "CassandraQueryRetry: CQL - " + NStr::Quote(qry->GetSQL(), '\'');
+            string retry_message = "CassandraQueryRetry: SQL - " + NStr::Quote(qry->GetSQL(), '\'');
             if (!query_params.empty()) {
                 retry_message += "; params - (" + NStr::Join(query_params, ",") + ")";
             }
@@ -343,15 +343,14 @@ protected:
             if (e.GetCassDriverErrorCode() >= 0) {
                 retry_message += "; driver_error=0x" + NStr::NumericToString(e.GetCassDriverErrorCode(), 0, 16);
             }
-            bool error_allows_restart = (e.GetErrCode() == CCassandraException::eQueryTimeout
+            bool driver_error_allows_restart = (e.GetErrCode() == CCassandraException::eQueryTimeout
                                          || e.GetErrCode() == CCassandraException::eQueryFailedRestartable);
-            if (error_allows_restart && CanRestart(qry, restart_counter)) {
-                Message(eDiag_Warning, retry_message + "; decision=(retry_allowed)");
+            if (driver_error_allows_restart && CanRestart(qry, restart_counter)) {
+                Message(eDiag_Warning, retry_message + "; decision=retry_allowed");
                 need_repeat = true;
             }
             else {
-                Message(eDiag_Error, retry_message + "; decision=(retry_forbidden)" + "; reason=("
-                    + (error_allows_restart?"too_many_retries":"error_code_forbidden") + ")");
+                Message(eDiag_Error, retry_message + "; decision=retry_forbidden");
                 Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
             }
         }
