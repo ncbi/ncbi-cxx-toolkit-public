@@ -75,10 +75,15 @@ static unsigned int s_Resolve(const char* name, TSERV_Type types)
 
 static int s_SelfTest(void)
 {
+    /* Figure out if wildcarding would work (only in-house) */
+    const char* env = getenv("FEATURES");
+    const char* ptr = env ? strchr(env, "in-house-resources") : 0;
+    if (ptr  &&  ptr > env  &&  *ptr == '-')
+        ptr = 0;
 #define WWW "www.ncbi.nlm.nih.gov"
     assert(!s_Resolve(0, fSERV_Any));
     assert( s_Resolve("bounce", fSERV_Any));
-    assert( s_Resolve("bounce*", fSERV_Any));
+    assert( s_Resolve("bounce*", fSERV_Any)  ||  !ptr);
     assert( s_Resolve("http://"WWW"/Service", fSERV_Any));
     assert(!s_Resolve("//"WWW"/", fSERV_Standalone));
     assert( s_Resolve(WWW":5555", fSERV_Any));
