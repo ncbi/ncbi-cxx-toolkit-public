@@ -574,7 +574,11 @@ public:
     static void LoadAccessionGuide(const string& filename);
     static void LoadAccessionGuide(ILineReader& in,
                                    const CTime& t = CCurrentTime());
-    static void RefreshAccessionGuide();
+
+    /// Bails (returning false) if the file hasn't changed; otherwise,
+    /// loads it and returns true (or throws an exception if loading
+    /// somehow fails).
+    static bool RefreshAccessionGuide();
 
     /// Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;

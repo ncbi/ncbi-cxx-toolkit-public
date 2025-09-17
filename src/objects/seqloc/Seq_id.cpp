@@ -1900,13 +1900,15 @@ void CSeq_id::LoadAccessionGuide(ILineReader& in, const CTime& t)
     s_Guide->Reset(new SAccGuide(in, t));
 }
 
-void CSeq_id::RefreshAccessionGuide()
+bool CSeq_id::RefreshAccessionGuide()
 {
     auto guide = *s_Guide;
     if ( !guide->filename.empty()
         &&  !g_IsDataFileOld(guide->filename, guide->timestamp) ) {
         LoadAccessionGuide(guide->filename);
+        return true;
     }
+    return false;
 }
 
 
