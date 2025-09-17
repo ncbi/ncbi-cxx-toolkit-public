@@ -181,7 +181,7 @@ typedef unsigned EBProxyType;
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create it,
  *             and then fix (hard-code) some fields using the ConnNetInfo API,
- *             or directly as the last resort if really necessary.
+ *             or directly but only as the last resort if so really necessary.
  * NOTE1:      Not every field may be fully utilized throughout the library.
  * NOTE2:      HTTP passwords can be either clear text or Base-64 encoded value
  *             enclosed in square brackets [] (which are not Base-64 charset).
@@ -210,7 +210,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            user[CONN_USER_LEN+1];  /* username (if spec'd or req'd) */
     char            pass[CONN_PASS_LEN+1];  /* password (for non-empty user) */
     char            host[CONN_HOST_LEN+1];  /* host name to connect to       */
-    unsigned short  port;                   /* port # (host byte order)      */
+    unsigned short  port;                   /* port # (host byte order,0=def)*/
     char            path[CONN_PATH_LEN+1];  /* path (incl. args and frag)    */
     char            http_proxy_host[CONN_HOST_LEN+1]; /* HTTP proxy server   */
     unsigned short  http_proxy_port;        /* port # of HTTP proxy server   */
@@ -307,7 +307,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_HTTP_REFERER       0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
-#define REG_CONN_INTERNAL_DISABLE   "INTERNAL_DISABLE"
+#define REG_CONN_INTERNAL_DISABLE   "SERVICE_PARSE_DISABLE"
 #define REG_CONN_LOCAL_ENABLE       "LOCAL_ENABLE"
 #define REG_CONN_LBNULL_ENABLE      "LBNULL_ENABLE"
 #define REG_CONN_LBSMD_DISABLE      "LBSMD_DISABLE"
@@ -372,6 +372,13 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
 
 /* Return non-zero if "str" (when non-NULL, non-empty) represents a boolean
  * true value;  return 0 otherwise.
+ * Any of the following strings is recognized as a true value:
+ *   "1", "ON", "YES", "TRUE";
+ * Any of the following strings is recognized as a false value:
+ *   "0", "OFF", "NO", "FALSE".
+ * The strings above are treated case-insensitively.
+ * Any other value (including NULL or empty string) gets returned as
+ * false(0), with a warning issued to the log.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
 (const char* str
