@@ -59,7 +59,14 @@ DECLARE_NCBI_BUILD_METADATA(TStringLiteral, TeamCityProjectName);
 #define NCBI_TEAMCITY_BUILD_ID       NCBI_BUILD_METADATA(TeamCityBuildID)
 #define NCBI_TEAMCITY_BUILD_NUMBER   NCBI_BUILD_METADATA(TeamCityBuildNumber)
 #define NCBI_TEAMCITY_PROJECT_NAME   NCBI_BUILD_METADATA(TeamCityProjectName)
-    
+
+#ifdef NCBI_SIGNATURE
+#  define NCBI_LEGACY_SIGNATURE_LOCATION 1
+#else
+DECLARE_NCBI_BUILD_METADATA(TStringLiteral, Signature);
+#  define NCBI_SIGNATURE NCBI_BUILD_METADATA(Signature)
+#endif
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

@@ -4,10 +4,6 @@
 /* This is the NCBI C++ Toolkit. */
 #define NCBI_CXX_TOOLKIT 1
 
-/* Build signature: compiler-name '_' compiler-version '-' configuration '--'
-   platform-name '-' hostname */
-#cmakedefine NCBI_SIGNATURE "@NCBI_SIGNATURE@"
-
 /* Define to the architecture size. */
 #define NCBI_PLATFORM_BITS 64
 

@@ -41,6 +41,7 @@
 #include <corelib/ncbi_base_build_ver.h>
 #undef NCBI_GIT_BRANCH
 #undef NCBI_REVISION
+#undef NCBI_SIGNATURE
 #undef NCBI_SUBVERSION_REVISION
 #undef NCBI_TEAMCITY_BUILD_NUMBER
 #undef NCBI_TEAMCITY_PROJECT_NAME
@@ -181,3 +182,7 @@ EXPOSE_METADATA(TStringLiteral, TEAMCITY_BUILDCONF_NAME, TeamCityBuildConfName)
 EXPOSE_METADATA(TStringLiteral, TEAMCITY_BUILD_ID,       TeamCityBuildID)
 EXPOSE_METADATA(int,            TEAMCITY_BUILD_NUMBER,   TeamCityBuildNumber)
 EXPOSE_METADATA(TStringLiteral, TEAMCITY_PROJECT_NAME,   TeamCityProjectName)
+
+#ifndef NCBI_LEGACY_SIGNATURE_LOCATION
+EXPOSE_METADATA(TStringLiteral, SIGNATURE, Signature)
+#endif

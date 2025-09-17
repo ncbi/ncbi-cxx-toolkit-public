@@ -3201,10 +3201,7 @@ esac
 #### Overall configuration mode summary
 signature_hostname=`(hostname || uname -n) 2>/dev/null \
     | sed 's/\..*//; s/-/_/g; 1q'`
-signature="${signature_compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
-AC_DEFINE_UNQUOTED(NCBI_SIGNATURE, "$signature",
-   [Build signature: compiler-name '_' compiler-version '-' configuration
-   '--' platform-name '-' hostname])
+NCBI_SIGNATURE="${signature_compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
 
 
 #### Check if there is "${build_root}" dir
@@ -10318,6 +10315,7 @@ AC_SUBST(COMPILER)
 AC_SUBST(OSTYPE)
 AC_SUBST(NCBI_PLATFORM_BITS)
 
+AC_SUBST(NCBI_SIGNATURE)
 AC_SUBST(NCBI_TEAMCITY_BUILD_NUMBER)
 AC_SUBST(NCBI_TEAMCITY_PROJECT_NAME)
 AC_SUBST(NCBI_TEAMCITY_BUILDCONF_NAME)

@@ -24,6 +24,8 @@
  * ===========================================================================
  */
 
+#define NCBI_SIGNATURE "@NCBI_SIGNATURE@"
+
 #if @NCBI_TEAMCITY_BUILD_NUMBER@ != 0
 #  define NCBI_TEAMCITY_BUILD_NUMBER @NCBI_TEAMCITY_BUILD_NUMBER@
 #  define NCBI_TEAMCITY_PROJECT_NAME "@NCBI_TEAMCITY_PROJECT_NAME@"

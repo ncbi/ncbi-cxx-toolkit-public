@@ -50,7 +50,3 @@
 #cmakedefine HAVE_LIBPROTOBUF 1
 
 #define HAVE_PSG_LOADER 1
-
-#define NCBI_SIGNATURE \
-  "@NCBI_SIGNATURE@"
-
