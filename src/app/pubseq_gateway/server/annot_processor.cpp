@@ -268,6 +268,9 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
                 bind(&CPSGS_AnnotProcessor::x_OnNamedAnnotError,
                      this, _1, _2, _3, _4, _5),
                 details.get()));
+        fetch_task->SetLoggingCB(
+                bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                     this, _1, _2));
         fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
 
         if (IPSGS_Processor::m_Request->NeedTrace()) {
@@ -709,6 +712,9 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
                               bind(&CPSGS_AnnotProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetPropsCallback(
         CBlobPropCallback(this,
                           bind(&CPSGS_AnnotProcessor::OnAnnotBlobProp,

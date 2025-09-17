@@ -517,6 +517,9 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
             bind(&CPSGS_IPGResolveProcessor::x_OnIPGResolveError,
                  this, _1, _2, _3, _4, _5),
             details.get()));
+    fetch_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {

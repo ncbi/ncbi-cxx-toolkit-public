@@ -446,6 +446,9 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
                                            this, _1, _2, _3, _4, _5),
                                       fetch_details.get(),
                                       eTseChunkRetrieve));
+            load_task->SetLoggingCB(
+                    bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                         this, _1, _2));
             load_task->SetPropsCallback(
                 CBlobPropCallback(this,
                                   bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
@@ -517,6 +520,9 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             bind(&CPSGS_TSEChunkProcessor::OnGetSplitHistoryError,
                  this, _1, _2, _3, _4, _5),
             fetch_details.get()));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetConsumeCallback(
         CSplitHistoryConsumeCallback(
             this,
@@ -702,6 +708,9 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get(),
                               eTseChunkRetrieve));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetPropsCallback(
         CBlobPropCallback(this,
                           bind(&CPSGS_TSEChunkProcessor::OnGetBlobProp,
@@ -1138,6 +1147,9 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
                  this, _1, _2, _3, _4, _5),
             cass_blob_fetch.get(),
             eTseChunkRetrieve));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetPropsCallback(
         CBlobPropCallback(
             this,

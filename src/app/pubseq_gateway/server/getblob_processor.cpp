@@ -299,6 +299,9 @@ void CPSGS_GetBlobProcessor::x_Process(void)
                               bind(&CPSGS_GetBlobProcessor::OnGetBlobError,
                                    this, _1, _2, _3, _4, _5),
                               fetch_details.get()));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetPropsCallback(
         CBlobPropCallback(this,
                           bind(&CPSGS_GetBlobProcessor::OnGetBlobProp,

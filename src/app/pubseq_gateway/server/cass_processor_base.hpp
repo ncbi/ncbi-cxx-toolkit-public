@@ -65,6 +65,7 @@ public:
     void CallOnData(void);
     string GetVerboseFetches(void) const;
     void EnforceWait(void) const;
+    void LoggingCallback(EDiagSev  severity, const string &  message);
 
 protected:
     IPSGS_Processor::EPSGS_Status GetStatus(void) override;

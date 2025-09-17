@@ -495,6 +495,42 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
 }
 
 
+void CPSGS_CassProcessorBase::LoggingCallback(EDiagSev  severity,
+                                              const string &  message)
+{
+    CRequestContextResetter     context_resetter;
+    IPSGS_Processor::m_Request->SetRequestContext();
+
+    switch (severity) {
+        case eDiag_Info:
+            PSG_INFO(message);
+            break;
+        case eDiag_Warning:
+            PSG_WARNING(message);
+            break;
+        case eDiag_Error:
+            PSG_ERROR(message);
+            break;
+        case eDiag_Critical:
+        case eDiag_Fatal:
+            PSG_CRITICAL(message);
+            break;
+        case eDiag_Trace:
+            PSG_TRACE(message);
+            break;
+        default:
+            PSG_ERROR("Unknown message severity (" + to_string(severity) +
+                      ")in the logging callback");
+            PSG_ERROR(message);
+            break;
+    }
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(message, m_Request->GetStartTimestamp());
+    }
+}
+
+
 bool CPSGS_CassProcessorBase::IsMyNCBIFinished(void) const
 {
     if (m_WhoAmIRequest.get() == nullptr)

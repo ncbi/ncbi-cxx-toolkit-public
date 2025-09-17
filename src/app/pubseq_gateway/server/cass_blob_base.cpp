@@ -428,6 +428,9 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
     load_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
     load_task->SetErrorCB(
         CGetBlobErrorCallback(this, m_BlobErrorCB, cass_blob_fetch.get()));
+    load_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     load_task->SetPropsCallback(nullptr);
     load_task->SetChunkCallback(
         CBlobChunkCallback(this, m_BlobChunkCB, cass_blob_fetch.get()));
@@ -600,6 +603,9 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
                      this, _1, _2, _3, _4, _5),
                 cass_blob_fetch.get()));
+        load_task->SetLoggingCB(
+                bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                     this, _1, _2));
         load_task->SetPropsCallback(
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
@@ -792,6 +798,9 @@ CPSGS_CassBlobBase::x_RequestId2SplitBlobs(CCassBlobFetch *  fetch_details)
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
                     this, _1, _2, _3, _4, _5),
                 details.get()));
+        load_task->SetLoggingCB(
+                bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                     this, _1, _2));
         load_task->SetPropsCallback(
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
@@ -1083,6 +1092,9 @@ void CPSGS_CassBlobBase::x_RequestMoreChunksForSmartTSE(CCassBlobFetch *  fetch_
                 bind(&CPSGS_CassBlobBase::x_BlobErrorCallback,
                      this, _1, _2, _3, _4, _5),
                 details.get()));
+        load_task->SetLoggingCB(
+                bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                     this, _1, _2));
         load_task->SetPropsCallback(
             CBlobPropCallback(this,
                 bind(&CPSGS_CassBlobBase::x_BlobPropsCallback,
@@ -1530,6 +1542,9 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
                 bind(&CPSGS_CassBlobBase::OnPublicCommentError,
                      this, _1, _2, _3, _4, _5),
                 comment_fetch_details.get()));
+        load_task->SetLoggingCB(
+                bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                     this, _1, _2));
         load_task->SetCommentCallback(
             CPublicCommentConsumeCallback(
                 this,

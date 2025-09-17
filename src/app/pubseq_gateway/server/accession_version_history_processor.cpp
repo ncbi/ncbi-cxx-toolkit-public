@@ -205,6 +205,9 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
             bind(&CPSGS_AccessionVersionHistoryProcessor::x_OnAccVerHistError,
                  this, _1, _2, _3, _4, _5),
             details.get()));
+    fetch_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     fetch_task->SetDataReadyCB(IPSGS_Processor::m_Reply->GetDataReadyCB());
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {

@@ -104,6 +104,7 @@ void CCassNamedAnnotFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -116,6 +117,7 @@ void CCassAccVerHistoryFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -144,6 +146,7 @@ void CCassBlobFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetErrorCB(nullptr);
         loader->SetChunkCallback(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -156,6 +159,7 @@ void CCassBioseqInfoFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -168,6 +172,7 @@ void CCassSi2csiFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -180,6 +185,7 @@ void CCassSplitHistoryFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -192,6 +198,7 @@ void CCassPublicCommentFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetCommentCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 
@@ -204,6 +211,7 @@ void CCassIPGFetch::ResetCallbacks(void)
         loader->SetDataReadyCB(nullptr);
         loader->SetConsumeCallback(nullptr);
         loader->SetErrorCB(nullptr);
+        loader->SetLoggingCB(nullptr);
     }
 }
 

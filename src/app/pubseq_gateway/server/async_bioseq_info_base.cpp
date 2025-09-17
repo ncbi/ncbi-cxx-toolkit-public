@@ -117,6 +117,9 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
     fetch_task->SetErrorCB(
         std::bind(&CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoError,
                   this, _1, _2, _3, _4));
+    fetch_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
     fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
 
 
