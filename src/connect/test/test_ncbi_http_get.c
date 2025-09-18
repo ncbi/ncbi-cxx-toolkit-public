@@ -415,10 +415,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    ConnNetInfo_GetValue(0, "HTTP11", blk, 32, 0);
-    if (ConnNetInfo_Boolean(blk))
-        net_info->http_version = 1;
-
     ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk)) {
         CORE_LOG(eLOG_Note, "Reconnect mode acknowledged");
