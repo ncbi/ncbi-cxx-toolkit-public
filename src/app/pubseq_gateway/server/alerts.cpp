@@ -43,23 +43,25 @@ struct SAlertToId
 
 
 const SAlertToId     kAlertToIdMap[] = {
-    { ePSGS_ConfigProblems,                   "ConfigProblems"},
-    { ePSGS_OpenCassandra,                    "OpenCassandra" },
-    { ePSGS_NoValidCassandraMapping,          "NoValidCassandraMapping" },
-    { ePSGS_InvalidCassandraMapping,          "InvalidCassandraMapping" },
-    { ePSGS_NewCassandraMappingAccepted,      "NewCassandraMappingAccepted"},
-    { ePSGS_NewCassandraSatNamesMapping,      "NewCassandraSatNamesMapping" },
-    { ePSGS_NewCassandraPublicCommentMapping, "NewCassandraPublicCommentMapping" },
-    { ePSGS_OpenCache,                        "OpenCache" },
-    { ePSGS_NoCassandraPublicCommentsMapping, "NoCassandraPublicCommentsMapping" },
-    { ePSGS_NoIPGKeyspace,                    "NoIPGKeyspace" },
-    { ePSGS_MyNCBIResolveDNS,                 "MyNCBIResolveDNS" },
-    { ePSGS_MyNCBITest,                       "MyNCBITest" },
-    { ePSGS_MyNCBIUvLoop,                     "MyNCBIUvLoop" },
-    { ePSGS_TcpConnHardLimitExceeded,         "TcpConnHardLimitExceeded" },
-    { ePSGS_TcpConnSoftLimitExceeded,         "TcpConnSoftLimitExceeded" },
-    { ePSGS_TcpConnAlertLimitExceeded,        "TcpConnAlertLimitExceeded" },
-    { ePSGS_Throttling,                       "Throttling" }
+    { ePSGS_ConfigProblems,                                 "ConfigProblems"},
+    { ePSGS_OpenCassandra,                                  "OpenCassandra" },
+    { ePSGS_NoValidCassandraMapping,                        "NoValidCassandraMapping" },
+    { ePSGS_InvalidCassandraMapping,                        "InvalidCassandraMapping" },
+    { ePSGS_NewCassandraMappingAccepted,                    "NewCassandraMappingAccepted"},
+    { ePSGS_NewCassandraSatNamesMapping,                    "NewCassandraSatNamesMapping" },
+    { ePSGS_NewCassandraPublicCommentMapping,               "NewCassandraPublicCommentMapping" },
+    { ePSGS_OpenCache,                                      "OpenCache" },
+    { ePSGS_NoCassandraPublicCommentsMapping,               "NoCassandraPublicCommentsMapping" },
+    { ePSGS_NoIPGKeyspace,                                  "NoIPGKeyspace" },
+    { ePSGS_MyNCBIResolveDNS,                               "MyNCBIResolveDNS" },
+    { ePSGS_MyNCBITest,                                     "MyNCBITest" },
+    { ePSGS_MyNCBIUvLoop,                                   "MyNCBIUvLoop" },
+    { ePSGS_TcpConnHardLimitExceeded,                       "TcpConnHardLimitExceeded" },
+    { ePSGS_TcpConnSoftLimitExceeded,                       "TcpConnSoftLimitExceeded" },
+    { ePSGS_TcpConnAlertLimitExceeded,                      "TcpConnAlertLimitExceeded" },
+    { ePSGS_Throttling,                                     "Throttling" },
+    { ePSGS_SeqIdClassificationConfigFilesRefreshSuccess,   "SeqIdClassificationConfigFilesRefreshSuccess" },
+    { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

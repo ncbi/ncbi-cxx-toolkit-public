@@ -53,6 +53,7 @@
 #include "shutdown_data.hpp"
 #include "cass_monitor.hpp"
 #include "myncbi_monitor.hpp"
+#include "seq_id_classification_monitor.hpp"
 #include "introspection.hpp"
 #include "backlog_per_request.hpp"
 #include "active_proc_per_request.hpp"
@@ -725,7 +726,7 @@ int CPubseqGatewayApp::Run(void)
                             m_Settings.m_IdleTimeoutSec,
                             m_Settings.m_ConnForceCloseWaitSec));
 
-    // Run the monitoring thread
+    // Run the monitoring threads
     int             ret_code = 0;
     std::thread     cass_monitoring_thread(CassMonitorThreadedFunction);
     std::thread     myncbi_monitoring_thread(MyNCBIMonitorThreadedFunction,
@@ -735,6 +736,14 @@ int CPubseqGatewayApp::Run(void)
                                              m_Settings.m_MyNCBITestFailPeriodSec,
                                              &m_LastMyNCBIResolveOK,
                                              &m_LastMyNCBITestOk);
+
+    // The classification thread is conditional
+    std::thread     seq_id_classification_monitoring_thread;
+    if (m_Settings.m_SeqIdRefreshSec > 0) {
+        seq_id_classification_monitoring_thread = std::thread(
+                            SeqIdClassificationMonitorThreadedFunction,
+                            m_Settings.m_SeqIdRefreshSec);
+    }
 
     try {
         m_HttpDaemon->Run([this](CTcpDaemon &  tcp_daemon)
@@ -777,6 +786,10 @@ int CPubseqGatewayApp::Run(void)
     // It is going to take no more than 0.1 second because the period of
     // checking the shutdown flag in the monitoring threads is 100ms
     g_ShutdownData.m_ShutdownRequested = true;
+
+    if (m_Settings.m_SeqIdRefreshSec > 0) {
+        seq_id_classification_monitoring_thread.join();
+    }
     myncbi_monitoring_thread.join();
     cass_monitoring_thread.join();
 

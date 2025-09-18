@@ -58,6 +58,7 @@ const string            kMyNCBISection = "MY_NCBI";
 const string            kCountersSection = "COUNTERS";
 const string            kLogSection = "LOG";
 const string            kH2OSection = "H2O";
+const string            kAPDATASection = "APDATA";
 
 
 const unsigned short    kWorkersDefault = 64;
@@ -154,6 +155,7 @@ const size_t            kDefaultMyNCBITestOkPeriodSec = 180;
 const size_t            kDefaultMyNCBITestFailPeriodSec = 20;
 const bool              kDefaultLogPeerIPAlways = false;
 const size_t            kDefaultIdleTimeoutSec = 100000;
+const size_t            kDefaultSeqIdRefreshSec = 300;
 
 
 SPubseqGatewaySettings::SPubseqGatewaySettings() :
@@ -231,7 +233,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_MyNCBITestOkPeriodSec(kDefaultMyNCBITestOkPeriodSec),
     m_MyNCBITestFailPeriodSec(kDefaultMyNCBITestFailPeriodSec),
     m_LogPeerIPAlways(kDefaultLogPeerIPAlways),
-    m_IdleTimeoutSec(kDefaultIdleTimeoutSec)
+    m_IdleTimeoutSec(kDefaultIdleTimeoutSec),
+    m_SeqIdRefreshSec(kDefaultSeqIdRefreshSec)
 {}
 
 
@@ -271,6 +274,7 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry)
 
     x_ReadLogSection(registry);
     x_ReadH2OSection(registry);
+    x_ReadAPDATASection(registry);
 }
 
 
@@ -773,6 +777,13 @@ void SPubseqGatewaySettings::x_ReadH2OSection(const CNcbiRegistry &   registry)
 }
 
 
+void SPubseqGatewaySettings::x_ReadAPDATASection(const CNcbiRegistry &   registry)
+{
+    m_SeqIdRefreshSec = registry.GetInt(kAPDATASection, "seq_id_refresh",
+                                       kDefaultSeqIdRefreshSec);
+}
+
+
 void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
 {
     x_ValidateServerSection();
@@ -793,6 +804,7 @@ void SPubseqGatewaySettings::Validate(CPSGAlerts &  alerts)
     x_ValidateCountersSection();
     x_ValidateLogSection();
     x_ValidateH2OSection();
+    x_ValidateAPDATASection();
 
     string      combined_msg;
     if (!m_CriticalErrors.empty()) {
@@ -1297,6 +1309,9 @@ void SPubseqGatewaySettings::x_ValidateLogSection(void)
 { /* Nothing to validate so far */ }
 
 void SPubseqGatewaySettings::x_ValidateH2OSection(void)
+{ /* Nothing to validate so far */ }
+
+void SPubseqGatewaySettings::x_ValidateAPDATASection(void)
 { /* Nothing to validate so far */ }
 
 

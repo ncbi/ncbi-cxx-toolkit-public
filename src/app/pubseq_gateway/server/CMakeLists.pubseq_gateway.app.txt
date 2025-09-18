@@ -20,6 +20,7 @@ NCBI_begin_app(pubseq_gateway)
     tcp_daemon http_daemon url_param_utils dummy_processor time_series_stat
     ipg_resolve settings my_ncbi_cache myncbi_callback backlog_per_request
     active_proc_per_request z_end_points myncbi_monitor throttling ssl
+    seq_id_classification_monitor
   )
   NCBI_uses_toolkit_libraries(cdd_access xregexp psg_client id2 seq psg_ipg psg_cassandra
     psg_protobuf psg_cache psg_myncbi xcgi xconnext connext xconnserv xconnect xcompress

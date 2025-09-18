@@ -175,6 +175,9 @@ struct SPubseqGatewaySettings
     // [H2o]
     size_t                              m_IdleTimeoutSec;
 
+    // [APDATA]
+    size_t                              m_SeqIdRefreshSec;
+
 private:
     void x_ReadServerSection(const CNcbiRegistry &   registry);
     void x_ReadStatisticsSection(const CNcbiRegistry &   registry);
@@ -194,6 +197,7 @@ private:
     void x_ReadCountersSection(const CNcbiRegistry &   registry);
     void x_ReadLogSection(const CNcbiRegistry &   registry);
     void x_ReadH2OSection(const CNcbiRegistry &   registry);
+    void x_ReadAPDATASection(const CNcbiRegistry &   registry);
 
     void x_ValidateServerSection(void);
     void x_ValidateStatisticsSection(void);
@@ -213,6 +217,7 @@ private:
     void x_ValidateCountersSection(void);
     void x_ValidateLogSection(void);
     void x_ValidateH2OSection(void);
+    void x_ValidateAPDATASection(void);
 
     unsigned long x_GetDataSize(const CNcbiRegistry &  registry,
                                 const string &  section,
