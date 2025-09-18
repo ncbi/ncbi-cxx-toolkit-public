@@ -2332,53 +2332,39 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, string_view line)
  *                                              10-1-93
  *
  **********************************************************/
-static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, char* acc, Uint1 cla)
+static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, const char* acc, Uint1 cla)
 {
     char* offset;
-    char* bptr;
-    char* eptr;
-    char* tmp;
-    char* p;
-    char* q;
-    Char  ch;
-    Int2  count;
-    Int4  i;
-
     size_t len = 0;
     if (! SrchNodeType(entry, ParFlatSP_CC, &len, &offset))
         return;
 
-    eptr  = offset + len;
-    ch    = *eptr;
-    *eptr = '\0';
-    for (count = 0, p = offset;;) {
-        p = StringStr(p, "----------");
-        if (! p)
-            break;
-        for (q = p; q > offset && *q != '\n';)
-            q--;
-        if (*q == '\n')
-            q++;
+    string buf(offset, len);
 
-        p = StringChr(p, '\n');
-        if (! p)
+    Int2 count = 0;
+    for (size_t p = 0;;) {
+        p = buf.find("----------", p);
+        if (p == string::npos)
             break;
-        for (i = 0; *p != '\0' && i < ParFlat_COL_DATA_SP + 1; i++)
-            p++;
-        if (*p == '\0')
+        auto q = buf.rfind('\n', p);
+        q = (q == string::npos) ? 0 : q + 1;
+        p = buf.find('\n', p);
+        if (p == string::npos)
             break;
-        if (! NStr::StartsWith(p, COPYRIGHT, NStr::eNocase) &&
-            ! NStr::StartsWith(p, COPYRIGHT1, NStr::eNocase))
+        p += (1 + ParFlat_COL_DATA_SP);
+        if (p >= buf.size())
             break;
-        p = StringStr(p, "----------");
-        if (! p)
+        if (! NStr::StartsWith(&buf[p], COPYRIGHT, NStr::eNocase) &&
+            ! NStr::StartsWith(&buf[p], COPYRIGHT1, NStr::eNocase))
             break;
-        p = StringChr(p, '\n');
-        if (! p)
+        p = buf.find("----------", p);
+        if (p == string::npos)
+            break;
+        p = buf.find('\n', p);
+        if (p == string::npos)
             break;
         p++;
-        len -= (p - q);
-        fta_StringCpy(q, p);
+        buf.erase(q, p - q);
         p = q;
         count++;
     }
@@ -2386,25 +2372,25 @@ static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, c
     if (count == 0 && cla != 2) /* not PRELIMINARY or UNREVIEWED */
         FtaErrPost(SEV_WARNING, ERR_FORMAT_MissingCopyright, "The expected copyright notice for UniProt/Swiss-Prot entry {} was not found.", acc);
 
-    if (len < 1) {
-        *eptr = ch;
+    if (buf.empty())
         return;
-    }
 
-    bptr = offset + ParFlat_COL_DATA_SP + 4;
-
-    for (; (tmp = StringStr(bptr, "-!-")); bptr = tmp + 4) {
+    size_t bptr = ParFlat_COL_DATA_SP + 4;
+    for (;;) {
+        auto tmp = buf.find("-!-", bptr);
+        if (tmp == string::npos)
+            break;
         /* found a new comment
          */
-        for (p = tmp; p > bptr && *p != '\n';)
+        auto p = tmp;
+        while (p > bptr && buf[p] != '\n')
             p--;
-        if (p == bptr)
-            continue;
-        ParseSpComment(descrs, string_view(bptr, p));
+        if (p > bptr)
+            ParseSpComment(descrs, string_view(&buf[bptr], &buf[p]));
+        bptr = tmp + 4;
     }
 
-    ParseSpComment(descrs, bptr);
-    *eptr = ch;
+    ParseSpComment(descrs, &buf[bptr]);
 }
 
 /**********************************************************/
