@@ -3202,6 +3202,7 @@ esac
 signature_hostname=`(hostname || uname -n) 2>/dev/null \
     | sed 's/\..*//; s/-/_/g; 1q'`
 NCBI_SIGNATURE="${signature_compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-${signature_hostname}"
+signature=$NCBI_SIGNATURE
 
 
 #### Check if there is "${build_root}" dir
