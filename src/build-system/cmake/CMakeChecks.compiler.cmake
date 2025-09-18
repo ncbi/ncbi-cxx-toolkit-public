@@ -396,6 +396,8 @@ if (WIN32)
             add_compile_options("/fsanitize=address")
         endif()
         NCBI_util_add_MaxDebug_tools()
+        add_compile_definitions(_DISABLE_VECTOR_ANNOTATION)
+        add_compile_definitions(_DISABLE_STRING_ANNOTATION)
     endif()
 
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
