@@ -78,7 +78,7 @@ static int s_SelfTest(void)
     /* Figure out if wildcarding would work (only in-house) */
     const char* env = getenv("FEATURES");
     const char* ptr = env ? strstr(env, "in-house-resources") : 0;
-    if (ptr  &&  ptr > env  &&  *ptr == '-')
+    if (ptr  &&  ptr > env  &&  ptr[-1] == '-')
         ptr = 0;
 #define WWW "www.ncbi.nlm.nih.gov"
     assert(!s_Resolve(0, fSERV_Any));
