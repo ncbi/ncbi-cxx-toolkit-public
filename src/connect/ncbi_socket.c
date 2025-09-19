@@ -9940,7 +9940,7 @@ void SOCK_SetupSSLInternal(FSSLSetup   setup,
         if (s_SSLSetup  &&  s_SSLSetup != setup) {
             const char* mess;
             if (s_SSL)
-                mess = "Cannot reset SSL while it is in use";
+                mess = "Cannot reset SSL while it is still in use";
             else if (!init)
                 mess = (const char*)(-1L)/*warn multiple*/;
             else if (setup)
