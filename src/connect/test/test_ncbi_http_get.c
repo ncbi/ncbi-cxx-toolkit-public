@@ -557,7 +557,7 @@ int main(int argc, char* argv[])
 
     url = ConnNetInfo_URL(net_info);
     CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector: %s%s%s",
-                          &"S"[net_info->scheme != eURL_Https],
+                          &"S"[!(net_info->scheme == eURL_Https)],
                           &"\""[!url], url ? url : "NULL", &"\""[!url]));
     if (url)
         free((void*) url);
