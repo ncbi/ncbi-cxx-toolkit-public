@@ -66,7 +66,7 @@ public:
 
 void CTestNetScheduleStress::Init(void)
 {
-    CONNECT_Init();
+    CONNECT_Init(&GetConfig());
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
     

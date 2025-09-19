@@ -88,7 +88,7 @@ void CNetScheduleLoader::Init(void)
                       IRegistry::fNoOverride);
 
     //
-    CONNECT_Init();
+    CONNECT_Init(&GetConfig());
     SetDiagPostFlag(eDPF_Trace);
     SetDiagPostLevel(eDiag_Info);
 
