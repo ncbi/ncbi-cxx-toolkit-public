@@ -2553,11 +2553,11 @@ extern EIO_Status URL_ConnectEx
     SOCK        s;
     BUF         buf;
     char*       hdr;
-    const char* str;  
     SSOCK_Init  init;
     const char* http;
     int/*bool*/ x_c_l;
     EIO_Status  status;
+    const char* method;
     size_t      hdr_len;
     size_t      path_len;
     size_t      args_len;
@@ -2643,7 +2643,7 @@ extern EIO_Status URL_ConnectEx
     } else
         x_c_l = 0/*false*/;
 
-    if (!(str = x_ReqMethod(x_req_meth, 0))) {
+    if (!(method = x_ReqMethod(x_req_meth, 0))) {
         char x_buf[40];
         if (port)
             sprintf(temp, ":%hu", port);
@@ -2657,7 +2657,8 @@ extern EIO_Status URL_ConnectEx
                      x_ReqMethod(req_method, x_buf)));
         assert(0);
         return x_URLConnectErrorReturn(s, eIO_NotSupported);
-    }
+    } else
+        assert(*method);
 
     x_port = port;
     if (x_req_meth != eReqMethod_Connect) {
@@ -2671,9 +2672,9 @@ extern EIO_Status URL_ConnectEx
     errno = 0;
     /* compose HTTP header */
     if (/* METHOD <path>[?<args>] HTTP/1.x\r\n */
-        !BUF_Write(&buf, str,  strlen(str))                        ||
-        !BUF_Write(&buf, " ",  1)                                  ||
-        !BUF_Write(&buf, path, path_len)                           ||
+        !BUF_Write(&buf, method,  strlen(method))                  ||
+        !BUF_Write(&buf, " ",     1)                               ||
+        !BUF_Write(&buf, path,    path_len)                        ||
         (args_len
          &&  (!BUF_Write(&buf, "?",  1)                            ||
               !BUF_Write(&buf, args, args_len)))                   ||
