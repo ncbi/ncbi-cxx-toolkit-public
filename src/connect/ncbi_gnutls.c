@@ -292,8 +292,11 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
              &&  sock->w_status != eIO_Success) {
         status = (EIO_Status) sock->w_status;
     }
-    else
-        status = *error == GNUTLS_E_SESSION_EOF ? eIO_Closed : eIO_Unknown;
+    else {
+        status = (*error == GNUTLS_E_SESSION_EOF  ||
+                  *error == GNUTLS_E_PREMATURE_TERMINATION
+                  ? eIO_Closed : eIO_Unknown);
+    }
 
     assert(*error == GNUTLS_E_AGAIN  ||  status != eIO_Success);
     CORE_TRACEF(("GNUTLS error %d%s -> CONNECT GNUTLS status %s",
