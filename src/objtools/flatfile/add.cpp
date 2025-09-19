@@ -2279,54 +2279,45 @@ Int4 fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, s
 /**********************************************************/
 static forward_list<string> fta_vnp_structured_comment(string buf)
 {
-    char*      start;
-    char*      p;
-    char*      q;
-
     if (buf.empty())
         return {};
 
-    for (p = buf.data(); *p != '\0'; p++) {
-        if (*p != '~')
-            continue;
-
-        for (p++; *p == ' ' || *p == '~'; p++)
-            *p = ' ';
-        p--;
+    for (auto p = buf.begin(); p != buf.end();) {
+        if (*p++ == '~') {
+            while (p != buf.end() && (*p == ' ' || *p == '~'))
+                *p++ = ' ';
+        }
     }
 
     forward_list<string> res;
-    auto vnp = res.before_begin();
-    for (start = buf.data();;) {
-        p = StringStr(start, "::");
-        if (! p)
-            break;
+    auto tail = res.before_begin();
+    for (size_t start = 0;;) {
+        string_view const sv(buf.begin() + start, buf.end());
 
-        q = StringStr(p + 2, "::");
-        if (! q) {
-            string s(start);
-            for (char& c : s)
-                if (c == '~')
-                    c = ' ';
+        auto p = sv.find("::");
+        if (p == string_view::npos)
+            break;
+        p += 2;
+
+        auto q = sv.find("::", p);
+        if (q == string_view::npos) {
+            string s(sv);
+            std::replace(s.begin(), s.end(), '~', ' ');
             ShrinkSpaces(s);
-            vnp = res.insert_after(vnp, s);
+            tail = res.insert_after(tail, s);
             break;
         }
 
-        *q = '\0';
-        char* r  = StringRChr(p + 2, '~');
-        *q = ':';
-        if (! r)
+        auto r = sv.rfind('~', q);
+        if (r == string_view::npos || r < p)
             return {};
 
-        string s(start, r);
-        for (char& c : s)
-            if (c == '~')
-                c = ' ';
+        string s(sv.substr(0, r));
+        std::replace(s.begin(), s.end(), '~', ' ');
         ShrinkSpaces(s);
-        vnp = res.insert_after(vnp, s);
+        tail = res.insert_after(tail, s);
 
-        start = r;
+        start += r;
     }
 
     return res;
