@@ -62,7 +62,7 @@ extern "C" {
 static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 {
     CORE_LOG_X(41, eLOG_Critical, "SSL has been explicitly disabled");
-    return eIO_NotSupported;
+    return eIO_Success;
 }
 
 
