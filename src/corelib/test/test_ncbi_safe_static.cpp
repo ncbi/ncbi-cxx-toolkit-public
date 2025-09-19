@@ -279,7 +279,7 @@ int CSafeStaticTestApp::Run(void)
     return 0;
 }
 
-int NcbiSys_main(int argc, ncbi::TXChar* argv[])
+int NcbiSys_main(int argc, const ncbi::TXChar* argv[])
 {
     return CSafeStaticTestApp().AppMain(argc, argv);
 }
