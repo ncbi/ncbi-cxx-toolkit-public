@@ -60,17 +60,17 @@ extern "C" {
  *
  * CONN_USESSL={1,0,MBEDTLS,GNUTLS}
  *
- * "No", "Off", "None", "False", case-insensitively, are also accepted for "0";
- * and "On", "Yes", "True" -- for "1".
+ * "None", "No", "Off", and "False", all case-insensitively, are also accepted
+ * for "0";  and "Yes", "On", and "True" -- for "1".
  *
  * If no provider is present in the build, "0" is assumed.  With "0", SSL
- * will not be availbale for sockets, and any secure session will fail.
+ * will not be availbale for SOCK sockets, and any secure session will fail.
  *
  * A missing setting or "1" both select the default provider as currently
  * configured within the toolkit.  
  *
- * @note GNUTLS is only available as an external 3-rd party library, and must
- * be so configured --with-gnutls at the configuration stage of the build.
+ * @note GNUTLS is only available as an external 3rd party library, and must
+ * be so configured (--with-gnutls) at the configuration stage of the build.
  * mbedTLS can also be used as an external installation, but the toolkit has
  * an embedded private copy of the library, which can be used transparently
  * without any additional dependencies.  That embedded copy will be used by
@@ -90,16 +90,16 @@ SOCKSSL NcbiSetupTls(void);
 #define REG_CONN_TLS_LOGLEVEL  "TLS_LOGLEVEL"
 #define DEF_CONN_TLS_LOGLEVEL  ""
 
-/* Provider-specific log level can be turned on by using the all-capped 
+/* Provider-specific log level can be turned on by using the all-capped
  * provider name merged with the above.  For example, for mbedTLS the setting
  * would be "MBEDTLS_LOGLEVEL" and would have priority over the generic one.
  *
  * Note that GNUTLS has also its own environment setting "GNUTLS_DEBUG_LEVEL",
- * which will be considered if none of the TLS_LOGLEVEL settings are used.
+ * which will be considered if none of the TLS_LOGLEVEL settings are found.
  */
 
 
-/** Build NCBI_CRED from memory buffers containing X.509 certificate and
+/** Build NCBI_CRED from memory buffers containing an X.509 certificate and a
  *  private key, respectively, in either PEM or DER format (independently of
  *  each other).
  *
@@ -110,14 +110,14 @@ SOCKSSL NcbiSetupTls(void);
  *  strlen(ptr) + 1, to cover the trailing '\0' byte, see below.
  *
  *  To figure out the format of cert / key, the passed buffer gets analyzed to
- *  see whether the last byte is '\0' and whether the therefore properly
+ *  see whether the last byte is '\0' as well as whether the therefore properly
  *  terminated C-string happens to contain a "-----BEGIN " substring:  if both
- *  conditions are true, then the buffer is considered in PEM format;  or DER,
+ *  conditions are met, then the buffer is considered in PEM format;  or DER,
  *  otherwise.
  *
  * @note that the size value ("certsz" / "pkeysz"), when expliciltly specified,
- * MUST account for the terminating '\0' byte for PEM formatted buffers.  It
- * MUST always be specified exact for DER formatted buffers.
+ * MUST account for the terminating '\0' byte for the PEM formatted buffers.
+ * It MUST always be specified exact for the DER formatted buffers.
  *
  * @warning Calling free() on the returned handle will cause memory leaks;  so
  * always use NcbiDeleteTlsCertCredentials() when the handle is no longer
@@ -134,13 +134,13 @@ NCBI_CRED NcbiCreateTlsCertCredentials(const void* cert,
                                        size_t      pkeysz);
 
 
-/** Delete a NCBI_CRED handle created by NcbiCreateTlsCertCredentials().
+/** Delete an NCBI_CRED handle created by NcbiCreateTlsCertCredentials().
  *
- * @warning Do not call this routine while the handle can be potentially in
- * use.
+ * @warning Do not call this routine while the handle can be potentially
+ * still in use.
  *
- * @note This routine can be safely used for handles returned by
- * NcbiCredMbedTls() and NcbiCredGnuTls(), to avoid having to delete the
+ * @note This routine can be safely used for handles returned by either
+ * NcbiCredMbedTls() or NcbiCredGnuTls(), to avoid having to delete the
  * underlying TLS-provider-specific handles passed to either call, explicitly.
  *
  * @sa
