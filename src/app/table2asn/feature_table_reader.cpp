@@ -1572,7 +1572,7 @@ bool CFeatureTableReader::xAddProteinToSeqEntry(const CBioseq& protein, CSeq_ent
     protein_entry->SetSeq().Assign(protein);
     CBioseq::TId pOriginalIds;
     if (id_match) {
-        pOriginalIds = move(protein_entry->SetSeq().SetId());
+        pOriginalIds = std::move(protein_entry->SetSeq().SetId());
         CRef<CSeq_id> product_id = GetNewProteinId(seh, bsh_match);
         protein_entry->SetSeq().ResetId();
         protein_entry->SetSeq().SetId().push_back(product_id);
@@ -1925,7 +1925,7 @@ s_GatherRegionIterators(
                 }
             }
             if (!feat_its.empty()) {
-                its.emplace_back(SRegionIterators{annot_it, move(feat_its)}); // fix this
+                its.emplace_back(SRegionIterators{annot_it, std::move(feat_its)}); // fix this
             }
         }
     }

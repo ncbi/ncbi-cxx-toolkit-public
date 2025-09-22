@@ -49,6 +49,9 @@ class NCBI_XOBJUTIL_EXPORT ILineError : public IObjtoolsMessage
 //  ============================================================================
 {
 public:
+
+    using TLineNum = unsigned long;
+
     // If you add to here, make sure to add to ProblemStr()
     enum EProblem {
         // useful when you have a problem variable, but haven't found a problem yet
@@ -116,9 +119,9 @@ public:
 
     virtual const string& SeqId(void) const = 0;
 
-    virtual unsigned int Line(void) const = 0;
+    virtual TLineNum Line(void) const = 0;
 
-    typedef vector<unsigned int> TVecOfLines;
+    typedef vector<TLineNum> TVecOfLines;
 
     virtual const TVecOfLines& OtherLines(void) const = 0;
 
@@ -177,7 +180,7 @@ public:
         EProblem           eProblem,
         EDiagSev           eSeverity,
         const std::string& strSeqId,
-        unsigned int       uLine,
+        TLineNum       uLine,
         const std::string& strFeatureName    = string(""),
         const std::string& strQualifierName  = string(""),
         const std::string& strQualifierValue = string(""),
@@ -194,7 +197,7 @@ public:
     NCBI_NORETURN void Throw(void) const;
 
     void PatchLineNumber(
-        unsigned int uLine) { m_uLine = uLine; };
+        TLineNum uLine) { m_uLine = uLine; };
 
     void PatchErrorMessage(
         const string& errorMessage)
@@ -204,7 +207,7 @@ public:
 
     // "OtherLines" not set in ctor because it's
     // use should be somewhat rare
-    void AddOtherLine(unsigned int uOtherLine)
+    void AddOtherLine(TLineNum uOtherLine)
     {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
@@ -218,7 +221,7 @@ public:
     const std::string&
     SeqId(void) const { return m_strSeqId; }
 
-    unsigned int
+    TLineNum
     Line(void) const { return m_uLine; }
 
     const TVecOfLines&
@@ -248,7 +251,7 @@ protected:
     EProblem     m_eProblem;
     EDiagSev     m_eSeverity;
     std::string  m_strSeqId;
-    unsigned int m_uLine;
+    TLineNum m_uLine;
     std::string  m_strFeatureName;
     std::string  m_strQualifierName;
     std::string  m_strQualifierValue;
@@ -260,7 +263,7 @@ protected:
         EProblem           eProblem,
         EDiagSev           eSeverity,
         const std::string& strSeqId,
-        unsigned int       uLine,
+        TLineNum       uLine,
         const std::string& strFeatureName,
         const std::string& strQualifierName,
         const std::string& strQualifierValue,
@@ -289,7 +292,7 @@ public:
         int                code,
         int                subcode,
         const std::string& strSeqId,
-        unsigned int       uLine,
+        TLineNum       uLine,
         const std::string& strErrorMessage   = string(""),
         const std::string& strFeatureName    = string(""),
         const std::string& strQualifierName  = string(""),
@@ -306,11 +309,11 @@ public:
     NCBI_NORETURN void Throw(void) const;
 
     void PatchLineNumber(
-        unsigned int uLine) { m_uLine = uLine; };
+        TLineNum uLine) { m_uLine = uLine; };
 
     // "OtherLines" not set in ctor because it's
     // use should be somewhat rare
-    void AddOtherLine(unsigned int uOtherLine)
+    void AddOtherLine(TLineNum uOtherLine)
     {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
@@ -324,7 +327,7 @@ public:
     const std::string&
     SeqId(void) const override { return m_strSeqId; }
 
-    unsigned int
+    TLineNum
     Line(void) const override { return m_uLine; }
 
     const TVecOfLines&
@@ -365,7 +368,7 @@ protected:
     int          m_Code;
     int          m_Subcode;
     std::string  m_strSeqId;
-    unsigned int m_uLine;
+    TLineNum m_uLine;
     std::string  m_strFeatureName;
     std::string  m_strQualifierName;
     std::string  m_strQualifierValue;
@@ -379,7 +382,7 @@ protected:
         int                code,
         int                subcode,
         const std::string& strSeqId,
-        unsigned int       uLine,
+        TLineNum       uLine,
         const std::string& strErrorMessage,
         const std::string& strFeatureName,
         const std::string& strQualifierName,
@@ -410,7 +413,7 @@ public:
     ///   Caller is responsible for the return value.
     static CObjReaderLineException* Create(
         EDiagSev                          eSeverity,
-        unsigned int                      uLine,
+        TLineNum                      uLine,
         const std::string&                strMessage,
         EProblem                          eProblem          = eProblem_GeneralParsingError,
         const std::string&                strSeqId          = string(""),
@@ -437,7 +440,7 @@ public:
     EProblem           Problem(void) const { return m_eProblem; }
     const std::string& SeqId(void) const { return m_strSeqId; }
     EDiagSev           Severity(void) const { return CObjReaderParseException::GetSeverity(); }
-    unsigned int       Line(void) const { return m_uLineNumber; }
+    TLineNum       Line(void) const { return m_uLineNumber; }
     const TVecOfLines& OtherLines(void) const { return m_vecOfOtherLines; }
     const std::string& FeatureName(void) const { return m_strFeatureName; }
     const std::string& QualifierName(void) const { return m_strQualifierName; }
@@ -456,11 +459,11 @@ public:
     //
     void
     SetLineNumber(
-        unsigned int uLineNumber) { m_uLineNumber = uLineNumber; }
+        TLineNum uLineNumber) { m_uLineNumber = uLineNumber; }
 
     // "OtherLines" not set in ctor because it's
     // use should be somewhat rare
-    void AddOtherLine(unsigned int uOtherLine)
+    void AddOtherLine(TLineNum uOtherLine)
     {
         m_vecOfOtherLines.push_back(uOtherLine);
     }
@@ -472,7 +475,7 @@ public:
 private:
     EProblem            m_eProblem;
     std::string         m_strSeqId;
-    unsigned int        m_uLineNumber;
+    TLineNum        m_uLineNumber;
     std::string         m_strFeatureName;
     std::string         m_strQualifierName;
     std::string         m_strQualifierValue;
@@ -483,7 +486,7 @@ private:
     /// private instead of public.  Please use the Create function instead.
     CObjReaderLineException(
         EDiagSev                          eSeverity,
-        unsigned int                      uLine,
+        TLineNum                      uLine,
         const std::string&                strMessage,
         EProblem                          eProblem          = eProblem_GeneralParsingError,
         const std::string&                strSeqId          = string(""),

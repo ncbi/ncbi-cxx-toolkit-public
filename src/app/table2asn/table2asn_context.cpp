@@ -992,7 +992,7 @@ void g_LoadLinkageEvidence(const string& linkageEvidenceFilename,
         auto evidenceSet =
             s_ProcessEvidenceString(evidenceStr, linkageEvidenceFilename, lineNumber, pEC);
         if (!evidenceSet.empty()) {
-            gapsizeToEvidence.emplace(count, move(evidenceSet));
+            gapsizeToEvidence.emplace(count, std::move(evidenceSet));
         }
     }
 }

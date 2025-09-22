@@ -43,7 +43,7 @@ CLineError* CLineError::Create(
     EProblem           eProblem,
     EDiagSev           eSeverity,
     const std::string& strSeqId,
-    unsigned int       uLine,
+    TLineNum           uLine,
     const std::string& strFeatureName,
     const std::string& strQualifierName,
     const std::string& strQualifierValue,
@@ -75,7 +75,7 @@ CLineError::CLineError(
     EProblem           eProblem,
     EDiagSev           eSeverity,
     const std::string& strSeqId,
-    unsigned int       uLine,
+    TLineNum           uLine,
     const std::string& strFeatureName,
     const std::string& strQualifierName,
     const std::string& strQualifierValue,
@@ -332,7 +332,7 @@ CLineErrorEx* CLineErrorEx::Create(
     int                code,
     int                subcode,
     const std::string& strSeqId,
-    unsigned int       uLine,
+    TLineNum           uLine,
     const std::string& strErrorMessage,
     const std::string& strFeatureName,
     const std::string& strQualifierName,
@@ -370,7 +370,7 @@ CLineErrorEx::CLineErrorEx(
     int                code,
     int                subcode,
     const std::string& strSeqId,
-    unsigned int       uLine,
+    TLineNum           uLine,
     const std::string& strErrorMessage,
     const std::string& strFeatureName,
     const std::string& strQualifierName,
@@ -416,7 +416,7 @@ ILineError* CLineErrorEx::Clone(void) const
 CObjReaderLineException*
 CObjReaderLineException::Create(
     EDiagSev                          eSeverity,
-    unsigned int                      uLine,
+    TLineNum                          uLine,
     const std::string&                strMessage,
     EProblem                          eProblem,
     const std::string&                strSeqId,
@@ -446,7 +446,7 @@ void CObjReaderLineException::Throw(void) const
 
 CObjReaderLineException::CObjReaderLineException(
     EDiagSev                          eSeverity,
-    unsigned int                      uLine,
+    TLineNum                          uLine,
     const std::string&                strMessage,
     EProblem                          eProblem,
     const std::string&                strSeqId,
