@@ -212,5 +212,5 @@ configure_ext_PreCMake()
       ;;
   esac
 
-  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(Quote "${_ext_CFLAGS}") -DCMAKE_CXX_FLAGS=$(Quote "${_ext_CXXFLAGS}") -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${_ext_EXE_LINKER_FLAGS}") -DNCBI_ThirdParty_GRPC=$NCBI/grpc-1.67.1-ncbi1 -DNCBI_ThirdParty_PROTOBUF=$NCBI/grpc-1.67.1-ncbi1"
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_FLAGS=$(Quote "${_ext_CFLAGS}") -DCMAKE_CXX_FLAGS=$(Quote "${_ext_CXXFLAGS}") -DCMAKE_EXE_LINKER_FLAGS=$(Quote "${_ext_EXE_LINKER_FLAGS}") -DNCBI_ThirdParty_GRPC=$NCBI/grpc-1.67.1-ncbi2 -DNCBI_ThirdParty_PROTOBUF=$NCBI/grpc-1.67.1-ncbi2"
 }
