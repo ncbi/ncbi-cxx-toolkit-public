@@ -69,6 +69,7 @@ try_local() {
         test -d "$d/include/hiredis"       &&  : ${HIREDIS_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -f "$d/include/influxdb.hpp"  &&  : ${INFLUXDB_PATH=$d}
+        test -f "$d/include/ips4o.hpp"     &&  : ${IPS4O_PATH=$d}
         test -d "$d/include/jaegertracing" &&  : ${JAEGER_PATH=$d}
         test -f "$d/include/jpeglib.h"     &&  : ${JPEG_PATH=$d}
         test -x "$d/bin/krb5-config"       &&  : ${KRB5_PATH=$d}
@@ -105,6 +106,7 @@ try_local() {
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
         test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
+        test -d "$d/include/tbb"           &&  : ${TBB_PATH=$d}
         test -d "$d/include/thrift"        &&  : ${THRIFT_PATH=$d}
         test -f "$d/include/tiff.h"        &&  : ${TIFF_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${UNGIF_PATH=$d}
@@ -247,6 +249,8 @@ esac
 
 : ${INFLUXDB_PATH=$NCBI/influxdb-cpp-0.0.20190416-31fe75d}
 
+: ${IPS4O_PATH=$NCBI/ips4o-0.0.20250115}
+
 : ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.7.0}
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
@@ -358,6 +362,8 @@ esac
 
 : ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
 local_sybase_root="/opt/sybase/clients"
+
+: ${TBB_PATH=/usr/local/intel/Compiler/24.0/tbb/2021.13}
 
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 

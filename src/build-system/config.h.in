@@ -306,6 +306,9 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #undef HAVE_IOS_REGISTER_CALLBACK
 
+/* Define to 1 if you have the <ips4o.hpp> header file. */
+#undef HAVE_IPS4O_HPP
+
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
 
@@ -562,6 +565,9 @@
 
 /* Define to 1 if SYBASE DBLib is available. */
 #undef HAVE_LIBSYBDB
+
+/* Define to 1 if libtbb is available. */
+#undef HAVE_LIBTBB
 
 /* Define to 1 if libthrift$THRIFT_SFX is available. */
 #undef HAVE_LIBTHRIFT

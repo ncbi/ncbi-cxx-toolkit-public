@@ -105,7 +105,7 @@ case "$with_3psw" in
                      libuv, libssh, libssh2, cassandra, nghttp2, h2o, influxdb,
                      libxlsxwriter, protobuf, grpc, msgsl, crc32c, hiredis,
                      librdkafka, cppkafka, thrift,
-                     opentracing, jaeger, opentelemetry],
+                     opentracing, jaeger, opentelemetry, tbb, ips4o],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -687,6 +687,14 @@ AC_ARG_WITH(opentelemetry,
    [ --with-opentelemetry=DIR use OpenTelemetry installation in DIR])
 AC_ARG_WITH(opentelemetry,
    [ --without-opentelemetry do not use OpenTelemetry])
+AC_ARG_WITH(tbb,
+   [ --with-tbb=DIR          use Thread Building Blocks installation in DIR])
+AC_ARG_WITH(tbb,
+   [ --without-tbb           do not use Thread Building Blocks])
+AC_ARG_WITH(ips4o,
+   [ --with-ips4o=DIR        use Inplace Parallel Superscalar Samplesort in DIR])
+AC_ARG_WITH(ips4o,
+   [ --without-ips4o         do not use Inplace Parallel Superscalar Samplesort])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw,
@@ -754,7 +762,7 @@ mongodb mongodb3 leveldb liburing rocksdb gmock lapack lmdb \
 libuv libssh libssh2 cassandra nghttp2 h2o influxdb \
 libxlsxwriter protobuf grpc msgsl aws-sdk crc32c google-cloud hiredis \
 apache-arrow librdkafka cppkafka \
-thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry \
+thrift nlohmann-json yaml-cpp opentracing jaeger opentelemetry tbb ips4o \
 3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -839,7 +847,8 @@ for x_arg in "$@" ; do
       | --with-crc32c=* | --with-google-cloud=* \
       | --with-hiredis=* | --with-librdkafka=* | --with-cppkafka=* \
       | --with-thrift=* | --with-nlohmann-json=* | --with-yaml-cpp=* \
-      | --with-opentracing=* | --with-jaeger=* | --with-opentelemetry=* )
+      | --with-opentracing=* | --with-jaeger=* | --with-opentelemetry=* \
+      | --with-tbb=* | --with-ips4o=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -9537,6 +9546,40 @@ else
 fi
 
 
+case "$with_tbb" in
+   yes | no | '' ) ;;
+   *             ) TBB_PATH=$with_tbb ;;
+esac
+if test -d "$TBB_PATH"; then
+   NCBI_FIX_DIR(TBB_PATH)
+fi
+NCBI_CHECK_THIRD_PARTY_LIB(tbb, 
+   [AC_LANG_PROGRAM([[@%:@include <tbb/tbb.h>]],
+      [[return tbb::info::default_concurrency();]])])
+if test "$with_tbb" != no -a "$with_debug" != no; then
+   TBB_LIBS="${TBB_LIBS% }_debug"
+fi
+
+
+case "$with_ips4o" in
+   yes | '' ) ;;
+   no       ) ncbi_cv_lib_ips4o=no ;;
+   *        ) IPS4O_PATH=$with_ips4o ;;
+esac
+if test -d "$IPS4O_PATH"; then
+   NCBI_FIX_DIR(IPS4O_PATH)
+fi
+if test -d "$IPS4O_PATH"; then
+   IPS4O_INCLUDE=-I$IPS4O_PATH/include
+   in_path=" in $IPS4O_PATH"
+else
+   in_path=
+fi
+CPPFLAGS="$orig_CPPFLAGS $IPS4O_INCLUDE"
+AC_CHECK_HEADERS([ips4o.hpp], [NCBI_PACKAGE(IPS4O)],
+   [IPS4O_INCLUDE=; NCBI_MISSING_PACKAGE(ips4o)])
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -10272,6 +10315,7 @@ AC_SUBST(YAML_CPP_STATIC_LIBS)
 AC_SUBST(OPENTRACING_STATIC_LIBS)
 AC_SUBST(JAEGER_STATIC_LIBS)
 AC_SUBST(OPENTELEMETRY_STATIC_LIBS)
+AC_SUBST(IPS4O_INCLUDE)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)

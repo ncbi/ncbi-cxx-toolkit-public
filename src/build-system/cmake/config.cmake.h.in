@@ -873,6 +873,9 @@
 /* Define to 1 if ICU libraries are available. */
 #define HAVE_ICU 1
 
+/* Define to 1 if ips4o.hpp is available. */
+#cmakedefine HAVE_IPS4O_HPP 1
+
 /* Define to 1 if libbackward is available. */
 #cmakedefine HAVE_LIBBACKWARD_CPP 1
 
@@ -1048,6 +1051,9 @@
 
 /* Define to 1 if SYBASE DBLib is available. */
 #define HAVE_LIBSYBDB 1
+
+/* Define to 1 if libtbb is available. */
+#cmakedefine HAVE_LIBTBB 1
 
 /* Define to 1 if libthrift$THRIFT_SFX is available. */
 #cmakedefine HAVE_LIBTHRIFT 1
