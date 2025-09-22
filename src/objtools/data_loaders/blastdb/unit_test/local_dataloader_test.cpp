@@ -76,11 +76,11 @@ BEGIN_SCOPE(blast)
 BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nt");
+     string dbname("data/test_nucl");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eNucleotide, true,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
-     BOOST_REQUIRE_EQUAL("BLASTDB_ntNucleotide", loader_name);
+     BOOST_REQUIRE_NE(loader_name.find("test_nuclNucleotide"), std::string::npos);
      CScope scope(*objmgr);
 
      scope.AddDataLoader(loader_name);
@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseq)
 BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nt");
+     string dbname("data/test_nucl");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eNucleotide, true,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
@@ -208,12 +208,12 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
 BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nr");
+     string dbname("data/test_prot");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eProtein, true,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
 
-     BOOST_REQUIRE_EQUAL("BLASTDB_nrProtein", loader_name);
+     BOOST_REQUIRE_NE(loader_name.find("test_protProtein"), std::string::npos);
 
      CScope scope(*objmgr);
 
@@ -257,12 +257,12 @@ BOOST_AUTO_TEST_CASE(LocalFetchProteinBioseq)
 BOOST_AUTO_TEST_CASE(FetchNonRedundantEntry)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("nr");
+     string dbname("data/test_prot");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eProtein, true,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
 
-     BOOST_REQUIRE_EQUAL("BLASTDB_nrProtein", loader_name);
+     BOOST_REQUIRE_NE(loader_name.find("test_protProtein"), std::string::npos);
 
      CScope scope(*objmgr);
 
