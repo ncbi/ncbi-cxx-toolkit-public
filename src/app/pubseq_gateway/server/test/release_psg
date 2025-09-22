@@ -1085,7 +1085,7 @@ def memcheck(commands, options, args):
                               True)     # pipe output
 
     # Run the tests
-    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --server localhost:{PORT1} > {artefactDir}memcheck-stress-http.log 2>&1'
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --memcheck --server localhost:{PORT1} > {artefactDir}memcheck-stress-http.log 2>&1'
     print_verbose(f'Running http stress tests: {cmdLine}')
     ret = os.system(cmdLine)
     print_verbose(f'http stress tests return code: {ret}')
@@ -1140,7 +1140,7 @@ def memcheck(commands, options, args):
                               True)     # pipe output
 
     # Run the tests
-    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --https --server localhost:{PORT1} > {artefactDir}memcheck-stress-https.log 2>&1'
+    cmdLine = f'/usr/bin/bash {testDir}stresstests.sh --https --memcheck --server localhost:{PORT1} > {artefactDir}memcheck-stress-https.log 2>&1'
     print_verbose(f'Running https stress tests: {cmdLine}')
     ret = os.system(cmdLine)
     print_verbose(f'https stress tests return code: {ret}')
