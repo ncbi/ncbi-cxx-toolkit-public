@@ -3,7 +3,7 @@
 
 usage() {
     echo "USAGE:"
-    echo "$0  [-h|--help]  [--https] --server host:port"
+    echo "$0  [-h|--help]  [--https] [--memcheck] --server host:port"
     exit 0
 }
 
@@ -15,6 +15,7 @@ outdir="`pwd`/stressoutput"
 aggregate="`pwd`/aggregate.py"
 server="tonka1:2180"
 https="0"
+memcheck="0"
 
 H2LOAD_CNT="100"
 H2LOAD_CNT_ADMIN="50"
@@ -35,6 +36,10 @@ while (( $# )); do
             (( $# > 1 )) || usage
             https="1"
             ;;
+        --memcheck)
+            (( $# > 1 )) || usage
+            memcheck="1"
+            ;;
         --help)
             usage
             ;;
@@ -48,6 +53,15 @@ done
 url="http://${server}"
 if [[ "${https}" == "1" ]]; then
     url="https://${server}"
+fi
+
+if [[ "${memcheck}" == "1" ]]; then
+    H2LOAD_CNT="10"
+    H2LOAD_CNT_ADMIN="5"
+    H2LOAD_CNT_NON_CASS="5"
+    REQ_CNT="500"
+    REQ_CNT_ADMIN="50"
+    REQ_CNT_NON_CASS="10"
 fi
 
 
