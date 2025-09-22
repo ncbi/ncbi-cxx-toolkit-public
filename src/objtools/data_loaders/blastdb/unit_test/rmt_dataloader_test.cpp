@@ -135,7 +135,7 @@ private:
 
 BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
 {
-    const string db("nt");
+    const string db("core_nt");
     const bool is_protein(false);
     const bool use_fixed_size_slice(true);
     const bool is_remote(true);
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchNucleotideBioseq)
     CObjectManager::TRegisteredNames loader_names;
     objmgr->GetRegisteredNames(loader_names);
     BOOST_REQUIRE_EQUAL(1U, loader_names.size());
-    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_ntNucleotide", loader_names.front());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_core_ntNucleotide", loader_names.front());
 
     {{ // limit the lifespan of the CScope object
         CScope scope(*objmgr);
@@ -262,28 +262,29 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
 
 BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
 {
-    const string db("nr");
+    const string db_prot("nr_cluster_seq");
     const bool is_protein(true);
     const bool kFixedSliceSize(true);
     const bool is_remote(true);
     CAutoRegistrar::RemoveAllDataLoaders();
-    CAutoRegistrar reg_prot(db, is_protein, kFixedSliceSize, is_remote);
+    CAutoRegistrar reg_prot(db_prot, is_protein, kFixedSliceSize, is_remote);
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CObjectManager::TRegisteredNames loader_names;
     objmgr->GetRegisteredNames(loader_names);
     BOOST_REQUIRE_EQUAL(1, loader_names.size());
-    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nrProtein", loader_names.front());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nr_cluster_seqProtein", loader_names.front());
 
-    CAutoRegistrar reg_nucl(db, !is_protein, kFixedSliceSize, is_remote);
+    const string db_nucl("core_nt");
+    CAutoRegistrar reg_nucl(db_nucl, !is_protein, kFixedSliceSize, is_remote);
     loader_names.clear();
     objmgr->GetRegisteredNames(loader_names);
     BOOST_REQUIRE_EQUAL(2, loader_names.size());
     bool found_prot(false), found_nucl(false);
     ITERATE(CObjectManager::TRegisteredNames, name, loader_names) {
-        if (*name == string("REMOTE_BLASTDB_nrNucleotide")) {
+        if (*name == string("REMOTE_BLASTDB_core_ntNucleotide")) {
             found_nucl = true;
         }
-        if (*name == string("REMOTE_BLASTDB_nrProtein")) {
+        if (*name == string("REMOTE_BLASTDB_nr_cluster_seqProtein")) {
             found_prot = true;
         }
     }
@@ -322,7 +323,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinsAndNucleotides_FixedSlice)
      
 BOOST_AUTO_TEST_CASE(RemoteFetchProteinBioseq)
 {          
-    const string dbname("nr");
+    const string dbname("nr_cluster_seq");
     const bool is_protein(true);
     const bool use_fixed_size_slice(true);
     const bool is_remote(true);
@@ -332,7 +333,7 @@ BOOST_AUTO_TEST_CASE(RemoteFetchProteinBioseq)
     CObjectManager::TRegisteredNames loader_names;
     objmgr->GetRegisteredNames(loader_names);
     BOOST_REQUIRE_EQUAL(1, loader_names.size());
-    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nrProtein", loader_names.front());
+    BOOST_REQUIRE_EQUAL("REMOTE_BLASTDB_nr_cluster_seqProtein", loader_names.front());
     
     {{ // limit the lifespan of the CScope object
         CScope scope(*objmgr); 
