@@ -1,0 +1,27 @@
+{
+  "version": "1.2",
+  "dbname": "test_prot",
+  "dbtype": "Protein",
+  "db-version": 5,
+  "description": "All non-redundant GenBank CDS translations+PDB+SwissProt+PIR+PRF excluding environmental samples from WGS projects",
+  "number-of-letters": 1057,
+  "number-of-sequences": 3,
+  "last-updated": "2025-09-19T11:58:00",
+  "number-of-volumes": 1,
+  "number-of-taxids": 4,
+  "bytes-total": 52397,
+  "bytes-to-cache": 1285,
+  "files": [
+    "test_prot.pdb",
+    "test_prot.phr",
+    "test_prot.pin",
+    "test_prot.pog",
+    "test_prot.pos",
+    "test_prot.pot",
+    "test_prot.ppd",
+    "test_prot.ppi",
+    "test_prot.psq",
+    "test_prot.ptf",
+    "test_prot.pto"
+  ]
+}
