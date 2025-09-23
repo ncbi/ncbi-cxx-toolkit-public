@@ -202,6 +202,8 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
      BOOST_REQUIRE_EQUAL(50818468, bioseq1->GetInst().GetLength());
+     scope.ResetDataAndHistory(CScope::eRemoveDataLoaders);
+     objmgr->RevokeDataLoader(loader_name);
 
 }
 
