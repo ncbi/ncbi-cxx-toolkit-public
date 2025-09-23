@@ -378,6 +378,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_INST_PrimaryAndThirdPartyMixture,
     { "PrimaryAndThirdPartyMixture",
     "There is an improper mixture of primary and third party databases within a nuc-prot set." } },
+    { eErr_SEQ_INST_ProkChromosomeNotCircAndComplete,
+    { "ProkChromosomeNotCircAndComplete",
+      "Bacteria or archaea chromosome should be circular and complete" } } ,
 
     /* SEQ_DESCR */
 

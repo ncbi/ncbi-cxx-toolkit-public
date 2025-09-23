@@ -165,6 +165,7 @@ enum EErrType {
     eErr_SEQ_INST_BadSeqIdCharacter,
     eErr_SEQ_INST_BadSeqIdLength,
     eErr_SEQ_INST_PrimaryAndThirdPartyMixture,
+    eErr_SEQ_INST_ProkChromosomeNotCircAndComplete,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

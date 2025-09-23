@@ -138,11 +138,18 @@ void CValidError_bioseq::x_SetupCommonFlags(CBioseq_Handle bsh)
         repr = bsh.GetInst_Repr();
     }
 
+    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+        m_is_circular = true;
+    }
+
     CSeqdesc_CI m(bsh, CSeqdesc::e_Molinfo);
     while (m) {
         const CSeqdesc::TMolinfo& mi = m->GetMolinfo();
         if (mi.IsSetTech()) {
             tech = mi.GetTech();
+        }
+        if (mi.GetCompleteness() && mi.GetCompleteness() == CMolInfo::eCompleteness_complete) {
+            m_is_complete = true;
         }
 
         ++m;
@@ -181,6 +188,11 @@ void CValidError_bioseq::x_SetupCommonFlags(CBioseq_Handle bsh)
                 m_report_missing_chromosome = false;
                 m_is_bact_or_arch = true;
             }
+            if (NStr::Find (lineage, "Borrelia") != string::npos ||
+                NStr::Find (lineage, "Streptomyces") != string::npos ||
+                NStr::Find (lineage, "Agrobacterium") != string::npos) {
+                m_may_have_linear_bact_chrom = true;
+            }
             if (NStr::StartsWith(lineage, "Viruses; ")) {
                 m_report_missing_chromosome = false;
             }
@@ -214,9 +226,12 @@ void CValidError_bioseq::ValidateBioseq(const CBioseq& seq)
     m_report_missing_chromosome = true;
     m_report_short_seq = true;
     m_is_bact_or_arch = false;
+    m_may_have_linear_bact_chrom = false;
     m_is_plasmid = false;
     m_is_chromosome = false;
     m_is_extrachrom = false;
+    m_is_circular = false;
+    m_is_complete = false;
 
     try {
         m_CurrentHandle = m_Scope->GetBioseqHandle(seq);
@@ -1098,6 +1113,14 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
                     }
                 }
             }
+
+            if (m_is_chromosome && m_is_bact_or_arch) {
+                // allow linear chromosomes in Borrelia, Streptomyces, and Agrobacterium
+                if ((! m_is_complete) || ((! m_is_circular) && (! m_may_have_linear_bact_chrom))) {
+                    PostErr(eDiag_Info, eErr_SEQ_INST_ProkChromosomeNotCircAndComplete, "Prokaryotic chromosome should be complete and circular", seq);
+                }
+            }
+
             break;
 
         case CSeq_inst::eMol_not_set:
