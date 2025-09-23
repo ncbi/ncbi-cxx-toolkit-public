@@ -11678,25 +11678,74 @@ bool CNewCleanup_imp::MolInfoBC( CMolInfo &molinfo )
 }
 
 // part of ExtendedCleanup
-void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
+
+
+static bool s_AddOrUpdateMolInfo(const CBioseq_Handle& bsh, bool is_product)
 {
-    if (seq.IsSetInst() && seq.GetInst().IsSetMol()) {
-        bool is_product = false;
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-        CFeat_CI f(bsh);
-        CBioseq_set_Handle p = bsh.GetParentBioseq_set();
-        if (p && p.IsSetClass() && p.GetClass() == CBioseq_set::eClass_nuc_prot) {
-            p = p.GetParentBioseq_set();
-        }
-        if (p && p.IsSetClass() && p.GetClass() == CBioseq_set::eClass_gen_prod_set) {
-            if (seq.IsAa() && sequence::GetCDSForProduct(seq, m_Scope)) {
-                is_product = true;
-            } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna &&
-                       sequence::GetmRNAForProduct(seq, m_Scope)) {
-                is_product = true;
+    bool change_made{ false };
+    if (bsh.IsSetDescr()) { // Different from previous behavior - assumes only one molinfo descriptor. Is this a problem?
+        const auto& descr_list = bsh.GetDescr().Get();
+        auto        it         = find_if(descr_list.begin(), descr_list.end(), [](auto pDesc) { return pDesc->IsMolinfo(); });
+        if (it != descr_list.end()) { // MolInfo descriptor exists
+            if (bsh.IsAa()) {
+                const auto& desc = **it;
+                if (! desc.GetMolinfo().IsSetBiomol() || desc.GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown) {
+                    auto pNewDesc = Ref(new CSeqdesc());
+                    pNewDesc->Assign(desc);
+                    pNewDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+                    bsh.GetEditHandle().ReplaceSeqdesc(desc, *pNewDesc);
+                    change_made = true;
+                }
             }
+            return change_made;
         }
-        if (CCleanup::AddMissingMolInfo(seq, is_product)) {
+    }
+
+    // Add Molinfo descriptor
+    if (bsh.IsAa()) {
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        if (is_product) {
+            pDesc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+        }
+        bsh.GetEditHandle().AddSeqdesc(*pDesc);
+        change_made = true;
+    } else if (is_product && bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
+        pDesc->SetMolinfo().SetTech(CMolInfo::eTech_standard);
+        bsh.GetEditHandle().AddSeqdesc(*pDesc);
+        change_made = true;
+    }
+
+    return change_made;
+}
+
+
+static bool s_IsProduct(const CBioseq_Handle& bsh)
+{
+    auto parent = bsh.GetParentBioseq_set();
+    if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_nuc_prot) {
+        parent = parent.GetParentBioseq_set();
+    }
+    if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_gen_prod_set) {
+        if (bsh.IsAa() && sequence::GetCDSForProduct(bsh)) {
+            return true;
+        } else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna &&
+                   sequence::GetmRNAForProduct(bsh)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void CNewCleanup_imp::CreateMissingMolInfo(const CBioseq_Handle& bsh)
+{
+    if (bsh.IsSetInst() && bsh.GetInst().IsSetMol()) {
+
+        auto is_product = s_IsProduct(bsh);
+        if (s_AddOrUpdateMolInfo(bsh, is_product)) {
             ChangeMade(CCleanupChange::eChangeMolInfo);
         }
     }

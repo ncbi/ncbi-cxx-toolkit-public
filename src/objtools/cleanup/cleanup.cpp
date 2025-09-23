@@ -1856,46 +1856,6 @@ bool CCleanup::SetMolinfoBiomol(CBioseq_Handle bsh, CMolInfo::EBiomol biomol)
 //LCOV_EXCL_STOP
 
 
-bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
-{
-    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol()) {
-        return false;
-    }
-    bool needs_molinfo = true;
-
-    if (seq.IsSetDescr()) {
-        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
-            if ((*it)->IsMolinfo()) {
-                needs_molinfo = false;
-                if (seq.IsAa() &&
-                    (!(*it)->GetMolinfo().IsSetBiomol() ||
-                     (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_unknown)) {
-                    (*it)->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-                }
-            }
-        }
-    }
-    if (needs_molinfo) {
-        if (seq.IsAa()) {
-            CRef<CSeqdesc> m(new CSeqdesc());
-            m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
-            if (is_product) {
-                m->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
-            }
-            seq.SetDescr().Set().push_back(m);
-        } else if (seq.GetInst().GetMol() == CSeq_inst::eMol_rna && is_product) {
-            CRef<CSeqdesc> m(new CSeqdesc());
-            m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
-            m->SetMolinfo().SetTech(CMolInfo::eTech_standard);
-            seq.SetDescr().Set().push_back(m);
-        } else {
-            needs_molinfo = false;
-        }
-    }
-
-    return needs_molinfo;
-}
-
 
 bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
 {
