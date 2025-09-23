@@ -340,9 +340,12 @@ private:
     bool m_report_missing_chromosome;
     bool m_report_short_seq;
     bool m_is_bact_or_arch;
+    bool m_may_have_linear_bact_chrom;
     bool m_is_plasmid;
     bool m_is_chromosome;
     bool m_is_extrachrom;
+    bool m_is_circular;
+    bool m_is_complete;
 };
 
 
