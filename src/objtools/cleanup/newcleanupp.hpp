@@ -292,7 +292,7 @@ public:
     void SubSourceListBC(CBioSource& biosrc);
 
     bool MolInfoBC( CMolInfo &molinfo );
-    void CreateMissingMolInfo( CBioseq& seq );
+    void CreateMissingMolInfo(const CBioseq_Handle& bsh);
 
     static bool IsInternalTranscribedSpacer(const string& name);
     static bool TranslateITSName( string &in_out_name );

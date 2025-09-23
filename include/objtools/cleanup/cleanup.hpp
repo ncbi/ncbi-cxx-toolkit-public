@@ -328,11 +328,6 @@ public:
     static bool SetMolinfoBiomol(CBioseq_Handle seq, CMolInfo::EBiomol biomol);
 
 
-/// Adds missing MolInfo descriptor to sequence
-/// @param seq Bioseq to edit
-/// @return Boolean return value indicates whether descriptor was added
-    static bool AddMissingMolInfo(CBioseq& seq, bool is_product);
-
 /// Creates missing protein title descriptor
 /// @param seq Bioseq to edit
 /// @return Boolean return value indicates whether title was added
