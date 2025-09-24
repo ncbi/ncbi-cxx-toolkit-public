@@ -433,8 +433,8 @@ struct SPSegLoc {
 using SPSegLocList = forward_list<SPSegLoc>;
 
 struct SetOfSpecies {
-    char*      fullname = nullptr;
-    char*      name     = nullptr;
+    string fullname;
+    string name;
     forward_list<string> syn;
 };
 using SetOfSpeciesPtr = SetOfSpecies*;
@@ -1066,10 +1066,10 @@ static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
 }
 
 /**********************************************************/
-static SetOfSpecies* GetSetOfSpecies(string_view line)
+static optional<SetOfSpecies> GetSetOfSpecies(string_view line)
 {
     if (line.empty())
-        return nullptr;
+        return nullopt;
 
     size_t i = 0;
     for (char c : line) {
@@ -1081,15 +1081,15 @@ static SetOfSpecies* GetSetOfSpecies(string_view line)
     if (i > 0) {
         line.remove_prefix(i);
         if (line.empty())
-            return nullptr;
+            return nullopt;
     }
 
-    SetOfSpecies* res = new SetOfSpecies;
-    res->fullname     = StringSave(line);
+    SetOfSpecies res;
+    res.fullname = line;
 
     auto lpar = line.find('(');
     if (lpar == string_view::npos)
-        res->name = StringSave(line);
+        res.name = line;
     else {
         string_view name(line.substr(0, lpar));
         while (! name.empty()) {
@@ -1098,10 +1098,10 @@ static SetOfSpecies* GetSetOfSpecies(string_view line)
             else
                 break;
         }
-        res->name = StringSave(name);
+        res.name = name;
 
         string_view temp(line.substr(lpar));
-        auto tssp = res->syn.before_begin();
+        auto tssp = res.syn.before_begin();
         for (auto p = temp.begin();;) {
             p++;
             while (p != temp.end() && (*p == ' ' || *p == '\t'))
@@ -1116,7 +1116,7 @@ static SetOfSpecies* GetSetOfSpecies(string_view line)
                     break;
             }
             if (p == temp.end()) {
-                tssp = res->syn.insert_after(tssp, string(q, p));
+                tssp = res.syn.insert_after(tssp, string(q, p));
                 break;
             }
 
@@ -1127,7 +1127,7 @@ static SetOfSpecies* GetSetOfSpecies(string_view line)
                 else
                     break;
             }
-            tssp = res->syn.emplace_after(tssp, syn);
+            tssp = res.syn.emplace_after(tssp, syn);
 
             p = std::find(p, temp.end(), '(');
             if (p == temp.end())
@@ -1161,22 +1161,19 @@ static void fix_taxname_dot(COrg_ref& org_ref)
 }
 
 /**********************************************************/
-static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
+static CRef<COrg_ref> fill_orgref(SetOfSpecies& sosp)
 {
     Uint1  num;
     size_t i;
 
     CRef<COrg_ref> org_ref;
 
-    if (! sosp)
-        return org_ref;
-
     org_ref.Reset(new COrg_ref);
 
-    if (sosp->name && sosp->name[0] != '\0')
-        org_ref->SetTaxname(sosp->name);
+    if (! sosp.name.empty())
+        org_ref->SetTaxname(sosp.name);
 
-    for (auto synsp = sosp->syn.begin(); synsp != sosp->syn.end(); ++synsp) {
+    for (auto synsp = sosp.syn.begin(); synsp != sosp.syn.end(); ++synsp) {
         auto& syn = *synsp;
         if (syn.empty())
             continue;
@@ -1282,17 +1279,6 @@ static CRef<COrg_ref> fill_orgref(SetOfSpeciesPtr sosp)
         org_ref->ResetSyn();
 
     return org_ref;
-}
-
-/**********************************************************/
-static void SetOfSpeciesFree(SetOfSpeciesPtr sosp)
-{
-    if (sosp->fullname)
-        MemFree(sosp->fullname);
-    if (sosp->name)
-        MemFree(sosp->name);
-    sosp->syn.clear();
-    delete sosp;
 }
 
 /**********************************************************/
@@ -1465,7 +1451,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
 /**********************************************************/
 static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end)
 {
-    SetOfSpeciesPtr sosp;
+    optional<SetOfSpecies> sosp;
     char*           line_OS;
     char*           line_OC;
 
@@ -1489,11 +1475,10 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end
 
     if (line_OS && line_OS[0] != '\0') {
         sosp = GetSetOfSpecies(line_OS);
-        if (sosp && sosp->name && sosp->name[0] != '\0') {
-            org_ref = fill_orgref(sosp);
+        if (sosp && ! sosp->name.empty()) {
+            org_ref = fill_orgref(*sosp);
         }
-
-        SetOfSpeciesFree(sosp);
+        sosp.reset();
         MemFree(line_OS);
     }
 
@@ -2277,7 +2262,7 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, string_view line)
         return;
 
     if (line.starts_with(' ')) {
-        int j = 1;
+        size_t j = 1;
         while (j < line.size() && line[j] == ' ')
             j++;
         line.remove_prefix(j);
@@ -2332,7 +2317,7 @@ static void ParseSpComment(CSeq_descr::Tdata& descrs, string_view line)
  *                                              10-1-93
  *
  **********************************************************/
-static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, const char* acc, Uint1 cla)
+static void GetSPDescrComment(const DataBlk& entry, CSeq_descr::Tdata& descrs, string_view acc, Uint1 cla)
 {
     char* offset;
     size_t len = 0;
@@ -2687,7 +2672,7 @@ static void GetSPInst(ParserPtr pp, const DataBlk& entry, unsigned char* protcon
 }
 
 /**********************************************************/
-static bool fta_spfeats_same(SPFeatInput& fi1, SPFeatInput& fi2)
+static bool fta_spfeats_same(const SPFeatInput& fi1, const SPFeatInput& fi2)
 {
     if (fi1.key != fi2.key ||
         fi1.from != fi2.from ||
