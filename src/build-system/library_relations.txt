@@ -513,8 +513,6 @@ gpr needs3party $(ORIG_LIBS)
 gpr needs3party $(PROTOBUF_LIBS)
 gpr needs3party $(Z_LIBS)
 gpxapi_core needs xser
-gpxlib needs gpipe_attr
-gpxlib needs gpxlib_core
 gpxlib_core needs $(COMPRESS_LIBS)
 gpxlib_core needs $(SEQ_LIBS)
 gpxlib_core needs gpxapi_core
