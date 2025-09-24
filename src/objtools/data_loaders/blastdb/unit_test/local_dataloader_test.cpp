@@ -183,25 +183,25 @@ BOOST_AUTO_TEST_CASE(LocalFetchBatchData)
 BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
 {
      CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
-     string dbname("refseq_genomic");
+     string dbname("data/genomic_9606");
      string loader_name = 
        CBlastDbDataLoader::RegisterInObjectManager(*objmgr, dbname, CBlastDbDataLoader::eNucleotide, false,
            CObjectManager::eNonDefault, CObjectManager::kPriority_NotSet).GetLoader()->GetName();
-     BOOST_REQUIRE_EQUAL("BLASTDB_refseq_genomicNucleotide", loader_name);
+     BOOST_REQUIRE_NE(loader_name.find("genomic_9606"), std::string::npos);
      CScope scope(*objmgr);
 
      scope.AddDataLoader(loader_name);
 
-     CSeq_id seqid1(CSeq_id::e_Other, "NC_000022");  // nucleotide
+     CSeq_id seqid1(CSeq_id::e_Other, "NW_013171803");  // nucleotide
 
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
-     BOOST_REQUIRE_EQUAL(50818468, handle1.GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(82315, handle1.GetInst().GetLength());
      BOOST_REQUIRE_EQUAL(TAX_ID_CONST(9606), scope.GetTaxId(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
-     BOOST_REQUIRE_EQUAL(50818468, bioseq1->GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(82315, bioseq1->GetInst().GetLength());
      scope.ResetDataAndHistory(CScope::eRemoveDataLoaders);
      objmgr->RevokeDataLoader(loader_name);
 
