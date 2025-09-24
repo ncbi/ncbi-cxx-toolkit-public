@@ -5937,6 +5937,13 @@ if test "$with_boost" != "no"; then
       in_path=
       boost_path_digits=
       BOOST_LIBPATH_=/usr/lib
+      for x in ${multiarch:+/$multiarch} $bit64_sfx ''; do
+         if test -d $BOOST_LIBPATH_$x && \
+            ls $BOOST_LIBPATH_$x/libboost_*[[!0-9]]; then
+               BOOST_LIBPATH_=$BOOST_LIBPATH_$x
+               break
+         fi
+      done
       BOOST_LIBPATH=
    fi
    if test -n "$boost_path_digits"; then
@@ -6103,7 +6110,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
                      break
                    else
                      for ext in .a .so; do
-                       name=libboost_system$base$bsfx$ext
+                       name=libboost_log$base$bsfx$ext
                        path=`$CXX -B$BOOST_LIBPATH_/ -print-file-name=$name \
                              2>/dev/null`
                        case "$path" in
