@@ -1,0 +1,30 @@
+{
+  "version": "1.2",
+  "dbname": "genomic_9606",
+  "dbtype": "Nucleotide",
+  "db-version": 5,
+  "description": "Homo sapiens GRCh38.p14 [GCF_000001405.40] chromosomes plus unplaced and unlocalized scaffolds",
+  "number-of-letters": 82315,
+  "number-of-sequences": 1,
+  "last-updated": "2025-09-24T12:51:00",
+  "number-of-volumes": 1,
+  "number-of-taxids": 1,
+  "bytes-total": 81874,
+  "bytes-to-cache": 20784,
+  "files": [
+    "genomic_9606.naa",
+    "genomic_9606.nab",
+    "genomic_9606.nac",
+    "genomic_9606.ndb",
+    "genomic_9606.nhr",
+    "genomic_9606.nin",
+    "genomic_9606.nnd",
+    "genomic_9606.nni",
+    "genomic_9606.nog",
+    "genomic_9606.nos",
+    "genomic_9606.not",
+    "genomic_9606.nsq",
+    "genomic_9606.ntf",
+    "genomic_9606.nto"
+  ]
+}
