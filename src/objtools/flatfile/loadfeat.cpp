@@ -2555,15 +2555,21 @@ static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
 /**********************************************************/
 static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
 {
-    if (! fbp1 && ! fbp2)
+    if (! fbp1 && ! fbp2) {
         return true;
+    }
+
     if (! fbp1 || ! fbp2 ||
         ! fta_strings_same(fbp1->key.c_str(), fbp2->key.c_str()) ||
-        ! fta_strings_same(fbp1->location->c_str(), fbp2->location->c_str()))
+        ! fta_strings_same(fbp1->location->c_str(), fbp2->location->c_str())) {
         return false;
+    }
 
-    if (fta_qual_a_in_b(fbp1->quals, fbp2->quals) && fta_qual_a_in_b(fbp2->quals, fbp1->quals))
+
+    if ((fbp1->quals.empty() && fbp2->quals.empty()) ||
+        (fta_qual_a_in_b(fbp1->quals, fbp2->quals) && fta_qual_a_in_b(fbp2->quals, fbp1->quals))) {
         return true;
+    }
 
     return false;
 }
