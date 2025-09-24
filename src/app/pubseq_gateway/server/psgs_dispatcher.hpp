@@ -301,6 +301,7 @@ private:
                                IPSGS_Processor *  processor,
                                shared_ptr<CPSGS_Request> request,
                                shared_ptr<CPSGS_Reply> reply);
+    void x_LogProcessorFinish(IPSGS_Processor *  processor);
 
 private:
     // Registered processors
@@ -391,6 +392,7 @@ private:
 
     SProcessorConcurrency       m_ProcessorConcurrency[MAX_PROCESSOR_GROUPS];
     vector<string>              m_RegisteredProcessorGroups;
+    map<string, string>         m_LowerCaseProcessorGroups;
 };
 
 

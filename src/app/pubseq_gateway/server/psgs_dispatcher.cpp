@@ -102,6 +102,12 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 
     m_RegisteredProcessorGroups.push_back(processor_group_name);
     m_RegisteredProcessors.push_back(std::move(processor));
+
+    // Used for faster logging in x_LogProcessorFinish()
+    string      lower_proc_group = processor_group_name;
+    std::transform(lower_proc_group.begin(), lower_proc_group.end(),
+                   lower_proc_group.begin(), ::tolower);
+    m_LowerCaseProcessorGroups[processor_group_name] = lower_proc_group;
 }
 
 
@@ -505,21 +511,28 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
 
         if (proc.m_Processor.get() == processor) {
 
-            if (source == ePSGS_Processor && processor_status == IPSGS_Processor::ePSGS_Done) {
-                // It needs to add time series for that processor (once)
-                if (proc.m_DoneStatusRegistered == false) {
-                    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
-                    timing.RegisterProcessorDone(request->GetRequestType(),
-                                                 processor);
-                    proc.m_DoneStatusRegistered = true;
-                }
-            }
-
             if (source == ePSGS_Processor) {
-                if (proc.m_ProcPerformanceRegistered == false) {
-                    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
-                    timing.RegisterProcessorPerformance(processor, processor_status);
-                    proc.m_ProcPerformanceRegistered = true;
+                if (proc.m_DoneStatusRegistered == false &&
+                    proc.m_ProcPerformanceRegistered == false) {
+                    // Nothing is registered for a processor yet so produce the
+                    // applog record with processor timing and status if needed
+                    x_LogProcessorFinish(processor);
+                }
+
+                if (processor_status == IPSGS_Processor::ePSGS_Done) {
+                    // It needs to add time series for that processor (once)
+                    if (proc.m_DoneStatusRegistered == false) {
+                        auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+                        timing.RegisterProcessorDone(request->GetRequestType(),
+                                                     processor);
+                        proc.m_DoneStatusRegistered = true;
+                    }
+                } else {
+                    if (proc.m_ProcPerformanceRegistered == false) {
+                        auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+                        timing.RegisterProcessorPerformance(processor, processor_status);
+                        proc.m_ProcPerformanceRegistered = true;
+                    }
                 }
             }
 
@@ -1027,6 +1040,35 @@ CPSGS_Dispatcher::x_SendTrace(const string &  msg,
 {
     // false: no need to update the last activity
     reply->SendTrace(msg, request->GetStartTimestamp(), false);
+}
+
+
+
+static const string     kExecTimeMksSuffix = "_exec_time_mks";
+static const string     kExecStatusSuffix = "_exec_status";
+
+void
+CPSGS_Dispatcher::x_LogProcessorFinish(IPSGS_Processor *  processor)
+{
+    bool                valid;
+    psg_time_point_t    start_timestamp = processor->GetProcessInvokeTimestamp(valid);
+
+    if (!valid)
+        return;     // Should not really happened
+                    // the start timestamp is memorized unconditionally
+
+    auto            now = psg_clock_t::now();
+    uint64_t        mks = chrono::duration_cast<chrono::microseconds>(now - start_timestamp).count();
+
+    string          proc_group_name = processor->GetGroupName();
+    string          processor_status = IPSGS_Processor::StatusToProgressMessage(processor->GetStatus());
+
+    CRequestContextResetter     context_resetter;
+    processor->GetRequest()->SetRequestContext();
+
+    string          proc_lower_case = m_LowerCaseProcessorGroups[proc_group_name];
+    GetDiagContext().Extra().Print(proc_lower_case + kExecTimeMksSuffix, mks)
+                            .Print(proc_lower_case + kExecStatusSuffix, processor_status);
 }
 
 
