@@ -1066,47 +1066,48 @@ static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
 }
 
 /**********************************************************/
-static SetOfSpeciesPtr GetSetOfSpecies(char* line)
+static SetOfSpecies* GetSetOfSpecies(string_view line)
 {
-    SetOfSpeciesPtr res;
-    char*           p;
-    char*           q;
-    char*           r;
-    char*           temp;
-    Int2            i;
-
-    if (! line || line[0] == '\0')
-        return nullptr;
-    for (p = line; *p == ' ' || *p == '\t' || *p == '.' || *p == ',';)
-        p++;
-    if (*p == '\0')
+    if (line.empty())
         return nullptr;
 
-    res           = new SetOfSpecies;
-    res->fullname = StringSave(p);
+    size_t i = 0;
+    for (char c : line) {
+        if (c == ' ' || c == '\t' || c == '.' || c == ',')
+            i++;
+        else
+            break;
+    }
+    if (i > 0) {
+        line.remove_prefix(i);
+        if (line.empty())
+            return nullptr;
+    }
 
-    temp = StringSave(res->fullname);
-    p    = StringChr(temp, '(');
-    if (! p)
-        res->name = StringSave(temp);
+    SetOfSpecies* res = new SetOfSpecies;
+    res->fullname     = StringSave(line);
+
+    auto lpar = line.find('(');
+    if (lpar == string_view::npos)
+        res->name = StringSave(line);
     else {
-        *p = '\0';
-        q  = temp;
-        if (p > q) {
-            for (r = p - 1; *r == ' ' || *r == '\t'; r--) {
-                *r = '\0';
-                if (r == q)
-                    break;
-            }
+        string_view name(line.substr(0, lpar));
+        while (! name.empty()) {
+            if (name.back() == ' ' || name.back() == '\t')
+                name.remove_suffix(1);
+            else
+                break;
         }
-        res->name = StringSave(temp);
-        *p        = '(';
+        res->name = StringSave(name);
+
+        string_view temp(line.substr(lpar));
         auto tssp = res->syn.before_begin();
-        for (;;) {
-            for (p++; *p == ' ' || *p == '\t';)
+        for (auto p = temp.begin();;) {
+            p++;
+            while (p != temp.end() && (*p == ' ' || *p == '\t'))
                 p++;
-            q = p;
-            for (i = 1; *p != '\0'; p++) {
+            auto q = p;
+            for (int i = 1; p != temp.end(); p++) {
                 if (*p == '(')
                     i++;
                 else if (*p == ')')
@@ -1114,27 +1115,26 @@ static SetOfSpeciesPtr GetSetOfSpecies(char* line)
                 if (i == 0)
                     break;
             }
-            if (*p == '\0') {
-                tssp = res->syn.insert_after(tssp, q);
+            if (p == temp.end()) {
+                tssp = res->syn.insert_after(tssp, string(q, p));
                 break;
             }
-            *p = '\0';
-            if (p > q) {
-                for (r = p - 1; *r == ' ' || *r == '\t'; r--) {
-                    *r = '\0';
-                    if (r == q)
-                        break;
-                }
+
+            string_view syn(q, p);
+            while (! syn.empty()) {
+                if (syn.back() == ' ' || syn.back() == '\t')
+                    syn.remove_suffix(1);
+                else
+                    break;
             }
-            tssp = res->syn.insert_after(tssp, q);
-            *p   = ')';
-            p    = StringChr(p, '(');
-            if (! p)
+            tssp = res->syn.emplace_after(tssp, syn);
+
+            p = std::find(p, temp.end(), '(');
+            if (p == temp.end())
                 break;
         }
     }
 
-    MemFree(temp);
     return (res);
 }
 
