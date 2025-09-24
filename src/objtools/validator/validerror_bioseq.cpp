@@ -189,8 +189,8 @@ void CValidError_bioseq::x_SetupCommonFlags(CBioseq_Handle bsh)
                 m_is_bact_or_arch = true;
             }
             if (NStr::Find (lineage, "Borrelia") != string::npos ||
-                NStr::Find (lineage, "Streptomyces") != string::npos ||
-                NStr::Find (lineage, "Agrobacterium") != string::npos) {
+                NStr::Find (lineage, "Streptomyces") != string::npos) {
+                // allow linear chromosomes in Borrelia and Streptomyces, but continue to warn about Agrobacterium linear chromosome for now
                 m_may_have_linear_bact_chrom = true;
             }
             if (NStr::StartsWith(lineage, "Viruses; ")) {
@@ -1115,7 +1115,7 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
             }
 
             if (m_is_chromosome && m_is_bact_or_arch) {
-                // allow linear chromosomes in Borrelia, Streptomyces, and Agrobacterium
+                // allow linear chromosomes in Borrelia and Streptomyces, warn about Agrobacterium linear chromosome for now
                 if ((! m_is_complete) || ((! m_is_circular) && (! m_may_have_linear_bact_chrom))) {
                     PostErr(eDiag_Info, eErr_SEQ_INST_ProkChromosomeNotCircAndComplete, "Prokaryotic chromosome should be complete and circular", seq);
                 }
