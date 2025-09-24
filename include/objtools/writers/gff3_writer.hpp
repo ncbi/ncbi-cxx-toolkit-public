@@ -234,9 +234,11 @@ protected:
     virtual bool xWriteFeatureGene(
         CGffFeatureContext&,
         const CMappedFeat& );
+
     virtual bool xWriteFeatureRna(
         CGffFeatureContext&,
         const CMappedFeat& );
+
     virtual bool xWriteFeatureCds(
         CGffFeatureContext&,
         const CMappedFeat& );
@@ -494,6 +496,12 @@ protected:
         const CMappedFeat&) override;
 
     string xNextAlignId();
+
+private:
+    bool xWriteRnaExons(
+            const CGff3FeatureRecord& rna_record,
+            const CGffFeatureContext& fc,
+            const CMappedFeat& mf);
 
 protected:
     unsigned int m_uRecordId;

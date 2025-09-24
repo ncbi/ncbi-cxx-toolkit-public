@@ -98,7 +98,7 @@ USING_SCOPE(objects);
 void
 sGetWrapInfo(
     const list<CRef<CSeq_interval> >& subInts,
-    CGffFeatureContext& fc,
+    const CGffFeatureContext& fc,
     unsigned int& wrapSize,
     unsigned int& wrapPoint)
     //  ----------------------------------------------------------------------------
@@ -111,11 +111,15 @@ sGetWrapInfo(
     // no wrapping for linear sequences:
     auto bioH = fc.BioseqHandle();
     if (bioH.CanGetInst_Topology()) {
-        auto topology = bioH.GetInst_Topology();
-        if (topology == CSeq_inst::eTopology_linear) {
+        if (bioH.GetInst_Topology() == CSeq_inst::eTopology_linear) {
             return;
         }
     }
+
+    if (! bioH.CanGetInst_Length()) {
+        return;
+    }
+
 
     // if we can't get a strand or they aren't all the same strand then don't 
     // touch it (second best is better than wrong):
@@ -134,9 +138,6 @@ sGetWrapInfo(
     }
 
 
-    if (!bioH.CanGetInst_Length()) {
-        return;
-    }
     wrapSize = bioH.GetInst_Length();
     wrapPoint = (frontStrand == eNa_strand_minus) ?
         subInts.back()->GetFrom() :
@@ -1518,7 +1519,9 @@ bool CGff3Writer::xWriteNucleotideFeature(
     try {
         switch(subtype) {
             default:
-                if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                if (mf.GetFeatType() == CSeqFeatData::e_Rna ||
+                    (mf.GetFeatType() == CSeqFeatData::e_Imp &&
+                    mf.GetData().GetImp().GetKey() == "prim_transcript")) { // RW-2481
                     return xWriteFeatureRna( fc, mf );
                 }
                 return xWriteFeatureGeneric( fc, mf );
@@ -1585,9 +1588,8 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
 
     const CSeq_loc& PackedInt = pRna->Location();
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet()) {
-        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        const auto& sublocs = PackedInt.GetPacked_int().Get();
         auto parentId = pRna->Id();
-        list< CRef< CSeq_interval > >::const_iterator it;
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
@@ -1596,17 +1598,16 @@ bool CGff3Writer::xWriteNucleotideFeatureTransSpliced(
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
-        for (it = sublocs.begin(); it != sublocs.end(); ++it) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
+        for (const auto& pSubint : sublocs) {
+            auto pChild = Ref(new CGff3FeatureRecord(*pRna));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
-            pChild->DropAttributes("Name"); //explicitely not inherited
+            pChild->DropAttributes("Name"); // explicitly not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(subint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
@@ -1635,8 +1636,9 @@ bool CGff3Writer::xWriteFeatureTrna(
     if(isTransSpliced){
         xAssignFeatureAttributeParentGene(*pRna, fc, mf);
         TSeqPos seqlength = 0;
-        if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
-            seqlength = fc.BioseqHandle().GetInst().GetLength();
+        if(fc.BioseqHandle() && fc.BioseqHandle().IsSetInst_Length()) {
+            seqlength = fc.BioseqHandle().GetInst_Length();
+        }
 
         if (!xWriteFeatureRecords( *pRna, mf.GetLocation(), seqlength ) ) {
             return false;
@@ -1651,7 +1653,7 @@ bool CGff3Writer::xWriteFeatureTrna(
     const CSeq_loc& PackedInt = pRna->Location();
 
     if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        const auto& sublocs = PackedInt.GetPacked_int().Get();
 
         unsigned int wrapSize(0), wrapPoint(0);
         if (!isTransSpliced) {
@@ -1660,12 +1662,11 @@ bool CGff3Writer::xWriteFeatureTrna(
         int partNum = 1;
         bool useParts = xIntervalsNeedPartNumbers(sublocs);
 
-        for ( auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
+        for (const auto& pSubint : sublocs) {
+            auto pChild = Ref(new CGff3FeatureRecord(*pRna));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(rnaId));
             pChild->SetType("exon");
-            pChild->SetLocation(subint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
             pChild->SetParent(rnaId);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
@@ -1823,20 +1824,20 @@ bool CGff3Writer::xAssignFeatureEndpoints(
     ENa_strand strand = record.Location().GetStrand();
     if (strand == eNa_strand_minus) {
         if (seqStart < bstop) {
-            seqStart += bsh.GetInst().GetLength();
+            seqStart += bsh.GetInst_Length();
         }
         if (seqStop < bstop) {
-            seqStop += bsh.GetInst().GetLength();
+            seqStop += bsh.GetInst_Length();
         }
         baseRecord.SetLocation(seqStart, seqStop);
         return true;
     }
     //everything else considered eNa_strand_plus
     if (seqStart < bstart) {
-        seqStart += bsh.GetInst().GetLength();
+        seqStart += bsh.GetInst_Length();
     }
     if (seqStop < bstart) {
-        seqStop += bsh.GetInst().GetLength();
+        seqStop += bsh.GetInst_Length();
     }
     baseRecord.SetLocation(seqStart, seqStop);
     return true;
@@ -2280,7 +2281,7 @@ bool CGff3Writer::xAssignFeature(
     //  intervals wrapping around the origin extend beyond the sequence length
     //  instead of breaking and restarting at the origin.
     //
-    unsigned int len = bsh.GetInst().GetLength();
+    unsigned int len = bsh.GetInst_Length();
     list< CRef< CSeq_interval > >& sublocs = pLoc->SetPacked_int().Set();
     list< CRef<CSeq_interval> >::iterator it;
     list< CRef<CSeq_interval> >::iterator it_ceil=sublocs.end();
@@ -2678,69 +2679,73 @@ bool CGff3Writer::xWriteFeatureCds(
     return true;
 }
 
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xWriteFeatureRna(
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
+
+bool CGff3Writer::xWriteRnaExons(
+    const CGff3FeatureRecord& rna_record,
+    const CGffFeatureContext& fc,
+    const CMappedFeat&        mf)
 {
-    auto subtype = mf.GetFeatSubtype();
-    //const auto& range = mf.GetLocationTotalRange();
-    //auto from = range.GetFrom();
-    //auto to = range.GetTo();
-    //const auto& loc = mf.GetLocation();
-    //if (from == 21360389  &&  to == 21377398) {
-    //    cerr << "";
-    //}
 
-    CRef<CGff3FeatureRecord> pRna(new CGff3FeatureRecord());
-    if (!xAssignFeature(*pRna, fc, mf)) {
-        return false;
-    }
-
-    if (!xWriteRecord(*pRna)) {
-        return false;
-    }
-    if (subtype == CSeqFeatData::eSubtype_mRNA) {
-        m_MrnaMapNew[mf] = pRna;
-    }
-    else
-    if (subtype == CSeqFeatData::eSubtype_preRNA) {
-        m_PrernaMapNew[mf] = pRna;
-    }
-
-    const CSeq_loc& PackedInt = pRna->Location();
-    if ( PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
-        auto parentId = pRna->Id();
-        list< CRef< CSeq_interval > >::const_iterator it;
-        int partNum = 1;
-        bool useParts = xIntervalsNeedPartNumbers(sublocs);
+    const CSeq_loc& PackedInt = rna_record.Location();
+    if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet()) {
+        const auto& sublocs  = PackedInt.GetPacked_int().Get();
+        int         partNum  = 1;
+        bool        useParts = xIntervalsNeedPartNumbers(sublocs);
 
         unsigned int wrapSize(0), wrapPoint(0);
-        if (!CWriteUtil::IsTransspliced(mf)) {
+        if (! CWriteUtil::IsTransspliced(mf)) {
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pRna));
+        auto parentId = rna_record.Id();
+        for (const auto& pSubint : sublocs) {
+            auto pChild = Ref(new CGff3FeatureRecord(rna_record));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
-            pChild->DropAttributes("Name"); //explicitely not inherited
+            pChild->DropAttributes("Name"); // explicitly not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
             pChild->DropAttributes("model_evidence");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(subint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
             if (useParts) {
                 pChild->SetAttribute("part", NStr::NumericToString(partNum++));
             }
-            if (!xWriteRecord(*pChild)) {
+            if (! xWriteRecord(*pChild)) {
                 return false;
             }
         }
-        return true;
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xWriteFeatureRna(
+    CGffFeatureContext& fc,
+    const CMappedFeat&  mf)
+//  ----------------------------------------------------------------------------
+{
+    auto pRna = Ref(new CGff3FeatureRecord());
+
+    if (! xAssignFeature(*pRna, fc, mf)) {
+        return false;
+    }
+
+    if (! xWriteRecord(*pRna)) {
+        return false;
+    }
+
+
+    auto subtype = mf.GetFeatSubtype();
+    if (subtype == CSeqFeatData::eSubtype_mRNA) {
+        m_MrnaMapNew[mf] = pRna;
+    } else if (subtype == CSeqFeatData::eSubtype_preRNA) {
+        m_PrernaMapNew[mf] = pRna;
+    }
+
+    if (! xWriteRnaExons(*pRna, fc, mf)) {
+        return false;
     }
     return true;
 }
@@ -2777,23 +2782,22 @@ bool CGff3Writer::xWriteFeatureCDJVSegment(
     const CSeq_loc& PackedInt = pSegment->Location();
     const auto parentId = pSegment->Id();
     if (PackedInt.IsPacked_int() && PackedInt.GetPacked_int().CanGet() ) {
-        const list< CRef< CSeq_interval > >& sublocs = PackedInt.GetPacked_int().Get();
+        const auto& sublocs = PackedInt.GetPacked_int().Get();
 
         unsigned int wrapSize(0), wrapPoint(0);
         if (!CWriteUtil::IsTransspliced(mf)) {
             sGetWrapInfo(sublocs, fc, wrapSize, wrapPoint);
         }
 
-        for (auto it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3FeatureRecord> pChild(new CGff3FeatureRecord(*pSegment));
+        for (const auto& pSubint : sublocs) {
+            auto pChild = Ref(new CGff3FeatureRecord(*pSegment));
             pChild->SetRecordId(m_pIdGenerator->GetNextGffExonId(parentId));
             pChild->DropAttributes("Name");
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
             pChild->SetParent(parentId);
             pChild->SetType("exon");
-            pChild->SetLocation(subint, wrapSize, wrapPoint);
+            pChild->SetLocation(*pSubint, wrapSize, wrapPoint);
             if (!xWriteRecord(*pChild)) {
                 return false;
             }
@@ -2814,8 +2818,8 @@ bool CGff3Writer::xWriteFeatureGeneric(
     }
 
     TSeqPos seqlength = 0;
-    if(fc.BioseqHandle() && fc.BioseqHandle().CanGetInst())
-        seqlength = fc.BioseqHandle().GetInst().GetLength();
+    if(fc.BioseqHandle() && fc.BioseqHandle().IsSetInst_Length())
+        seqlength = fc.BioseqHandle().GetInst_Length();
     return xWriteFeatureRecords( *pParent, mf.GetLocation(), seqlength );
 }
 

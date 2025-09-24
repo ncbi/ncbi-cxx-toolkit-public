@@ -708,8 +708,8 @@ Seq-annot ::= {
     },
     {
       id local id 32,
-      data imp {
-        key "prim_transcript"
+      data rna {
+        type premsg
       },
       location int {
         from 25386,
@@ -729,8 +729,8 @@ Seq-annot ::= {
     },
     {
       id local id 33,
-      data imp {
-        key "prim_transcript"
+      data rna {
+        type premsg
       },
       location int {
         from 25386,
