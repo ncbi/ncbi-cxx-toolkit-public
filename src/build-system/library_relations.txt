@@ -512,14 +512,6 @@ gpr needs $(Z_LIB)
 gpr needs3party $(ORIG_LIBS)
 gpr needs3party $(PROTOBUF_LIBS)
 gpr needs3party $(Z_LIBS)
-gpxapi_core needs xser
-gpxlib_core needs $(COMPRESS_LIBS)
-gpxlib_core needs $(SEQ_LIBS)
-gpxlib_core needs gpxapi_core
-gpxlib_core needs pub
-gpxlib_core needs xconnect
-gpxlib_core needs xgp_manifest
-gpxlib_core needs xregexp
 grid_wrapper needs gpipe_attr
 grid_wrapper needs gpipe_resource_req
 grid_wrapper needs3party $(SGE_LIBS)
