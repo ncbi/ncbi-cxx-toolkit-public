@@ -1156,7 +1156,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat,
             FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
         }
         else {
-            FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}, coding region has been dropped.", loc, qval);
             *featdrop = true;
         }
     }
@@ -1254,7 +1254,7 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
                     FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
                 }
                 else {
-                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "{}:{}, coding region has been dropped.", msg2, loc);
                     *featdrop = true;
                 }
             }
@@ -1747,7 +1747,13 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
                  * a ncbigap character is inserted
                  */
                 if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                    FtaErrPost(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: {}", loc);
+                    if (pp->source != Parser::ESource::USPTO) {
+                        FtaErrPost(SEV_WARNING, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: {}", loc);
+                    }
+                    else {
+                        FtaErrPost(SEV_ERROR, ERR_CDREGION_IllegalStart, "unrecognized initiation codon from CDS: {}, coding region has been dropped.", loc);
+                        *featdrop = true;
+                    }
                 }
                 if (qval.empty()) /* no /translation */
                 {
