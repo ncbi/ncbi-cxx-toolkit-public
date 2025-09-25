@@ -1030,39 +1030,35 @@ static string GetSPDescrTitle(string_view sv, bool* fragment)
 }
 
 /**********************************************************/
-static char* GetLineOSorOC(const DataBlk& dbp, const char* pattern)
+static string GetLineOSorOC(const DataBlk& dbp, string_view pattern)
 {
-    char* res;
-    char* p;
-    char* q;
+    string_view sv(dbp.mBuf.ptr);
+    if (sv.empty())
+        return {};
 
-    size_t len = dbp.mBuf.len;
-    if (len == 0)
-        return nullptr;
-    for (size_t i = 0; i < dbp.mBuf.len; i++)
-        if (dbp.mBuf.ptr[i] == '\n')
-            len -= 5;
-    res = StringNew(len - 1);
-    p   = res;
-    for (q = dbp.mBuf.ptr; *q != '\0';) {
-        if (! StringEquN(q, pattern, 5))
+    string res;
+    res.reserve(dbp.mBuf.len - 1);
+
+    for (auto q = sv.begin(); q != sv.end(); ++q) {
+        if (! string_view(q, sv.end()).starts_with(pattern))
             break;
-        if (p > res)
-            *p++ = ' ';
-        for (q += 5; *q != '\n' && *q != '\0'; q++)
-            *p++ = *q;
-        if (*q == '\n')
-            q++;
+        q += pattern.size();
+        if (! res.empty())
+            res.push_back(' ');
+        while (q != sv.end() && *q != '\n')
+            res.push_back(*q++);
     }
-    *p = '\0';
-    if (p > res)
-        p--;
-    while (*p == '.' || *p == ' ' || *p == '\t') {
-        *p = '\0';
-        if (p > res)
-            p--;
+
+    while (! res.empty()) {
+        char c = res.back();
+        if (c == '.' || c == ' ' || c == '\t')
+            res.pop_back();
+        else
+            break;
     }
-    return (res);
+
+    res.shrink_to_fit();
+    return res;
 }
 
 /**********************************************************/
@@ -1452,13 +1448,10 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
 static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end)
 {
     optional<SetOfSpecies> sosp;
-    char*           line_OS;
-    char*           line_OC;
+    string line_OS;
+    string line_OC;
 
     CRef<COrg_ref> org_ref;
-
-    line_OS = nullptr;
-    line_OC = nullptr;
 
     for (auto dbp = entry; dbp != end; ++dbp) {
         if (dbp->mType != ParFlatSP_OS)
@@ -1473,18 +1466,18 @@ static CRef<COrg_ref> GetOrganismFrom_OS_OC(DataBlkCIter entry, DataBlkCIter end
         break;
     }
 
-    if (line_OS && line_OS[0] != '\0') {
+    if (! line_OS.empty()) {
         sosp = GetSetOfSpecies(line_OS);
+        line_OS.clear();
         if (sosp && ! sosp->name.empty()) {
             org_ref = fill_orgref(*sosp);
         }
         sosp.reset();
-        MemFree(line_OS);
     }
 
-    if (org_ref.NotEmpty() && line_OC && line_OC[0] != '\0') {
+    if (org_ref.NotEmpty() && ! line_OC.empty()) {
         org_ref->SetOrgname().SetLineage(line_OC);
-        MemFree(line_OC);
+        line_OC.clear();
     }
 
     return org_ref;
