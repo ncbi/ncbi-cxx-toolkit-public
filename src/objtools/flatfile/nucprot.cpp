@@ -1136,13 +1136,15 @@ static void check_end_internal(size_t protlen, const CSeq_feat& feat, Uint1 dif,
 
 /**********************************************************
  *
- *   static void ErrByteStorePtr(ibp, sfp, bsp):
+ *   static void ErrByteStorePtr(ibp, sfp, bsp, source, featdrop):
  *
  *      For debugging, put to error logfile, it needs
  *   to delete for "buildcds.c program.
  *
  **********************************************************/
-static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const string& prot)
+static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat,
+                            const string& prot, Parser::ESource source,
+                            bool *featdrop)
 {
     string qval = CpTheQualValue(feat.GetQual(), "translation");
     if (qval.empty())
@@ -1150,7 +1152,13 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
 
     if (! feat.IsSetExcept() || feat.GetExcept() == false) {
         string loc = location_to_string(feat.GetLocation());
-        FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
+        if(source != Parser::ESource::USPTO) {
+            FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
+        }
+        else {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "Location: {}, translation: {}", loc, qval);
+            *featdrop = true;
+        }
     }
 
     ErrLogPrintStr(prot.c_str());
@@ -1170,7 +1178,7 @@ static void ErrByteStorePtr(InfoBioseqPtr ibp, const CSeq_feat& feat, const stri
  *      If intercodon = TRUE, then no comparison.
  *
  **********************************************************/
-static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, const char* qval, bool intercodon, const char* gcode, unsigned char* method)
+static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_feat& feat, const char* qval, bool intercodon, const char* gcode, unsigned char* method, bool *featdrop)
 {
     const char* ptr;
 
@@ -1242,7 +1250,13 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
                 aastr << 's'; // plural
             msg2 += aastr.str();
             if (! feat.IsSetExcept() || feat.GetExcept() == false) {
-                FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
+                if(pp->source != Parser::ESource::USPTO) {
+                    FtaErrPost(SEV_WARNING, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
+                }
+                else {
+                    FtaErrPost(SEV_ERROR, ERR_CDREGION_TranslationDiff, "{}:{}", msg2, loc);
+                    *featdrop = true;
+                }
             }
         }
 
@@ -1263,10 +1277,8 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
         }
     }
 
-    if (msgout) {
-        if (pp->debug) {
-            ErrByteStorePtr(ibp, feat, prot);
-        }
+    if (msgout && pp->debug) {
+        ErrByteStorePtr(ibp, feat, prot, pp->source, featdrop);
     }
 
     if (pp->accver == false) {
@@ -1778,7 +1790,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
             }
 
             if (pp->debug) {
-                ErrByteStorePtr(ibp, feat, prot);
+                ErrByteStorePtr(ibp, feat, prot, pp->source, featdrop);
             }
         }
     } else if (! feat.IsSetExcept() || feat.GetExcept() == false) {
@@ -1787,7 +1799,7 @@ static void InternalStopCodon(ParserPtr pp, InfoBioseqPtr ibp, CScope& scope, CS
 
     if (! qval.empty()) /* compare protein sequence */
     {
-        CkProteinTransl(pp, ibp, prot, feat, qval.c_str(), intercodon, gcode_str.c_str(), &m);
+        CkProteinTransl(pp, ibp, prot, feat, qval.c_str(), intercodon, gcode_str.c_str(), &m, featdrop);
         *method = m;
         seq_data.swap(prot);
         return;
