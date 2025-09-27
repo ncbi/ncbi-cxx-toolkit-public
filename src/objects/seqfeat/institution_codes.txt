@@ -1348,6 +1348,7 @@ CIR	s	Royal Agricultural College
 CIRAD	sb	Centre de Cooperation Internationale en Recherche Agronomique pour le Developpement			
 CIRM	s	Centre International de Ressources Microbiennes			
 CIRM-CFBP	c	French Collection for Plant-associated Bacteria			
+CIRM:BIA	c	Biological Resource Centre Food-associated bacteria			
 CIRUV	s	Coleccion Ictiologica de Referencia de la Universidad del Valle			
 CIS<CHN>	s	Academia Sinica and State Planning Commission			
 CIS<USA-CA>	s	California Insect Survey			
