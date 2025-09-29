@@ -942,7 +942,7 @@ enum EThreadDataState {
 
 const auto main_thread_id = std::this_thread::get_id();
 
-template<typename _T, typename _MainCleanup = void, typename _ThreadCleanup = _MainCleanup>
+template<typename _T, typename _Cleanup = void>
 class CTrueTlsData
 {
 // Some notes for order of destruction
@@ -954,7 +954,7 @@ class CTrueTlsData
 public:
 
     template<typename...TArgs, typename = std::enable_if_t<std::is_constructible_v<_T, TArgs...>>>
-    CTrueTlsData(const CSafeStaticLifeSpan& span, TArgs&&...args)
+    CTrueTlsData(TArgs&&...args)
     {
         void* ptr = static_cast<void*>(m_memory.data());
         // thread_local instances are pre-initialized with zeros
@@ -962,85 +962,44 @@ public:
         //memset(m_memory.data(), 0xBD, m_memory.size());
         // Non-allocating placement operator new
         auto data = new (ptr) _T(std::forward<TArgs>(args)...);
-        if (std::this_thread::get_id() == main_thread_id) {
-            // this won't work with CSafeStaticLifeSpan::GetDefault()
-            // because CSafeStaticGuard doesn't free them
-            // use standard thread_local instead
-            auto cleaner = new TMainThreadCleaner(span, data);
-            CSafeStaticGuard::Register(cleaner);
-        }
     }
 
     ~CTrueTlsData()
     {
         _T* ptr = *this;
 
-        if (std::this_thread::get_id() == main_thread_id) {
-            // live long my friend and hope CSafeStaticGuard cares about you later
-        } else {
-            if constexpr (!std::is_void_v<_ThreadCleanup>) {
-                _ThreadCleanup{}(ptr);
-            }
-            // call the destructor directly, without 'delete'
-            ptr -> ~_T();
-            //memset(m_memory.data(), 0xAA, m_memory.size());
+        if constexpr (!std::is_void_v<_Cleanup>) {
+            _Cleanup{}(ptr);
         }
+        // call the destructor directly, without 'delete'
+        ptr -> ~_T();
+        //memset(m_memory.data(), 0xAA, m_memory.size());
     }
 
     operator _T*() { return reinterpret_cast<_T*>(m_memory.data()); }
     operator _T&() { return **this; }
 
 private:
-    struct TMainThreadCleaner: CSafeStaticPtr_Base
-    {
-        TMainThreadCleaner(const CSafeStaticLifeSpan& span, _T * ptr) : CSafeStaticPtr_Base{SelfCleanup, nullptr, span}
-        {
-            // TODO: these should be initialized in the parent instead
-            m_MutexRefCount = 0;
-            m_InstanceMutex = nullptr;
-            m_Ptr = ptr;
-        }
-
-        static void SelfCleanup(CSafeStaticPtr_Base* safe_static,
-            TInstanceMutexGuard& /*guard*/)
-        {
-            if (safe_static) {
-                TMainThreadCleaner* cleaner = (TMainThreadCleaner*)safe_static;
-                _T* ptr = static_cast<_T*>(const_cast<void*>(cleaner->x_ReleasePtr()));
-                if constexpr (!std::is_void_v<_MainCleanup>) {
-                    _MainCleanup{}(ptr);
-                }
-                // TODO resolve memory leak, CSafeStaticPtr_Base::x_Cleanup calls x_ReleaseInstanceMutex after SelfCleanup
-                // and never call the destructor
-                //delete cleaner;
-                ptr->~_T();
-                //memset((void*)ptr, 0x55, sizeof(_T));
-            }
-        }
-    };
-
     // no initialized needed as CTrueTls supposed to be used as thread_local variable
     // the object is a first member to respect requested alignment
     std::array<uint8_t, sizeof(_T)> m_memory;
 };
 
-struct CDiagContextThreadData_Cleanup
+static void s_Diag_PrintAppStop(void*)
 {
-    void operator()(CDiagContextThreadData* /*data*/) const
-    {
-    {
-        // TODO: this is the last thread, do you need a mutex?
-        // TODO: why CDiagContextThreadData cares about Stop message?
+    // TODO: this is the last thread, do you need a mutex?
+    // -- Other threads can still be running even when the main one is performing cleanup.
+    // TODO: why CDiagContextThreadData cares about Stop message?
 
-        // Copy properties from the main thread's TLS to the global properties.
-        CDiagLock lock(CDiagLock::eWrite);
-        // Print stop message.
-        if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
-            GetDiagContext().PrintStop();
-        }
+    // Copy properties from the main thread's TLS to the global properties.
+    CDiagLock lock(CDiagLock::eWrite);
+    // Print stop message.
+    if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
+        GetDiagContext().PrintStop();
     }
 }
-};
+
+static CSafeStaticPtr<CDiagContextThreadData> s_MainThreadDiagContextData(s_Diag_PrintAppStop, CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
 thread_local EThreadDataState s_ThreadDataState(eUninitialized);
 thread_local CDiagContextThreadData* s_ThreadDataCache;
@@ -1127,8 +1086,16 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
         }
     }
 
-    static thread_local CTrueTlsData<CDiagContextThreadData, CDiagContextThreadData_Cleanup, void> g_thread_data(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
-    s_ThreadDataCache = g_thread_data;
+    if (std::this_thread::get_id() == main_thread_id) {
+        // In main thread use safe-static instance of data - it lives longer than normal
+        // static objects and will log 'stop' message on destruction.
+        s_ThreadDataCache = &s_MainThreadDiagContextData.Get();
+    }
+    else {
+        // For other threads use thread_local.
+        static thread_local CTrueTlsData<CDiagContextThreadData, void> g_thread_data;
+        s_ThreadDataCache = g_thread_data;
+    }
     return *s_ThreadDataCache;
 }
 
