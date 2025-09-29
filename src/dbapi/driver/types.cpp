@@ -2798,7 +2798,7 @@ CDB_Numeric::CDB_Numeric(unsigned int precision,
     m_Precision(precision),
     m_Scale(scale)
 {
-    memcpy(m_Body, arr, sizeof(m_Body));
+    x_CopyBody(arr, true);
 }
 
 
@@ -2811,7 +2811,7 @@ CDB_Numeric::CDB_Numeric(unsigned int precision,
     m_Scale(scale)
 {
     m_Body[0]= is_negative? 1 : 0;
-    memcpy(m_Body+1, arr, sizeof(m_Body)-1);
+    x_CopyBody(arr, false);
 }
 
 
@@ -2843,7 +2843,7 @@ CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
     m_Precision = precision;
     m_Scale     = scale;
     SetNULL(false);
-    memcpy(m_Body, arr, sizeof(m_Body));
+    x_CopyBody(arr, true);
     return *this;
 }
 
@@ -2857,7 +2857,7 @@ CDB_Numeric& CDB_Numeric::Assign(unsigned int precision,
     m_Scale     = scale;
     SetNULL(false);
     m_Body[0] = is_negative? 1 : 0;
-    memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
+    x_CopyBody(arr, false);
     return *this;
 }
 
@@ -2896,6 +2896,18 @@ static int s_NumericBytesPerPrec[] =
     16, 16, 16, 17, 17, 18, 18, 19, 19, 19, 20, 20, 21, 21, 21,
     22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 26
 };
+
+
+void CDB_Numeric::x_CopyBody(const unsigned char* arr, bool with_sign)
+{
+    int n = s_NumericBytesPerPrec[m_Precision];
+    if (with_sign) {
+        memcpy(m_Body, arr, n);
+    } else {
+        memcpy(m_Body + 1, arr, n - 1);
+    }
+    memset(m_Body + n, 0, sizeof(m_Body) - n);
+}
 
 
 static const unsigned int kMaxPrecision = 50;
