@@ -2118,15 +2118,20 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
     if (pp->mode != Parser::EMode::Relaxed &&
         is_transl == false && is_pseudo == false && is_stop == false) {
         string loc = location_to_string(cds.GetLocation());
-        if (pp->accver == false) {
-            r = "Feature and protein bioseq";
-            i = -2;
+        if (pp->source != Parser::ESource::USPTO) {
+            if (pp->accver == false) {
+                r = "Feature and protein bioseq";
+                i = -2;
+            } else {
+                r = "Record";
+                i = -1;
+            }
+            sev = (i == -1) ? SEV_REJECT : SEV_ERROR;
+            FtaErrPost(sev, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\". {} rejected.", loc, r);
         } else {
-            r = "Record";
-            i = -1;
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\", coding region has been dropped.", loc);
+            i = -2;
         }
-        sev = (i == -1) ? SEV_REJECT : SEV_ERROR;
-        FtaErrPost(sev, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\". {} rejected.", loc, r);
         return (i);
     }
 
