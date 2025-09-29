@@ -130,7 +130,7 @@ static const char* ncbi_accpref[] = {
     "KX", "KY", "KZ", "MF", "MG", "MH", "MI", "MJ", "MK", "ML", "MM", "MN",
     "MO", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "OK", "OL", "OM", "ON",
     "OO", "OP", "OQ", "OR", "OS", "OT", "PP", "PQ", "PR", "PS", "PT", "PU",
-    "PV", "PX", nullptr
+    "PV", "PX", "PY", nullptr
 };
 
 static const char* refseq_accpref[] = {
@@ -1404,7 +1404,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "MY"sv) || (acc == "OO"sv) ||
                  (acc == "OS"sv) || (acc == "OT"sv) ||
                  (acc == "PR"sv) || (acc == "PT"sv) ||
-                 (acc == "PU"sv)))
+                 (acc == "PU"sv) || (acc == "PY"sv)))
                 return true;
         }
         if (parseInfo.all || parseInfo.source == Parser::ESource::EMBL) {
