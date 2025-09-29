@@ -40,6 +40,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/resource_info.hpp>
+#include <common/ncbi_sanitizers.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -877,10 +878,14 @@ void BlockTEA_Encode_In_Place(Int4* data, Int4 n, const TBlockTEA_Key key)
         sum += kBlockTEA_Delta;
         e = (sum >> 2) & 3;
         for (p = 0; p < n - 1; p++) {
+            NCBI_CLANG_ANALYZER_SUPPRESS
             y = data[p + 1];
+            NCBI_CLANG_ANALYZER_SUPPRESS
             z = data[p] += TEA_MX;
         }
+        NCBI_CLANG_ANALYZER_SUPPRESS
         y = data[0];
+        NCBI_CLANG_ANALYZER_SUPPRESS
         z = data[n - 1] += TEA_MX;
     }
 }
@@ -951,6 +956,7 @@ string Int4ArrayToString(const Int4* src, size_t len)
     ret.reserve(len*sizeof(Int4));
     char buf[4];
     for (size_t i = 0; i < len; i++) {
+        NCBI_CLANG_ANALYZER_SUPPRESS
         PutInt4LE(src[i], buf);
         ret += string(buf, 4);
     }
