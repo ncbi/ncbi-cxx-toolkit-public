@@ -1200,6 +1200,7 @@ protected:
     void x_MakeFromString(unsigned int precision,
                           unsigned int scale,
                           const CTempString& s);
+    void x_CopyBody(const unsigned char* arr, bool with_sign);
     Uint1         m_Precision;
     Uint1         m_Scale;
     unsigned char m_Body[33];
