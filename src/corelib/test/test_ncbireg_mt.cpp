@@ -36,6 +36,7 @@
 #include <corelib/test_mt.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbisys.hpp>
+#include <common/ncbi_sanitizers.h>
 #include <algorithm>
 #include <fstream>
 
@@ -331,6 +332,7 @@ bool CTestRegApp::TestApp_Init(void)
         // Put some variables to test CNcbiEnvironment
         for (unsigned i = 0; i < s_NumThreads*10; i++) {
             string e = "TESTENV" + NStr::IntToString(i) + "=value";
+            NCBI_CLANG_ANALYZER_SUPPRESS
             NcbiSysChar_putenv(NcbiSysChar_strdup(e.c_str()));  // intended leak, not important
         }
     }

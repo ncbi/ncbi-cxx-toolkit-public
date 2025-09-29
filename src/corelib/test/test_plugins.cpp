@@ -153,26 +153,20 @@ static void s_TEST_PluginManager(void)
 
     try {
         ITest* itest = pm.CreateInstance();
-
         int a = itest->GetA();
-
         assert(a == 10);
-
         delete itest;
-
-
     } 
     catch (CPluginManagerException& ex)
     {
         cout << "Cannot create ITest instance. " << ex.what() << endl;
-        assert(0);
+        _TROUBLE;
     }
 
     // Try to find not yet registered driver
     try {
-        ITest* itest = pm.CreateInstance("test_driver2");
-        assert(0);
-        itest->GetA();
+        std::ignore = pm.CreateInstance("test_driver2");
+        _TROUBLE;
     } 
     catch (CPluginManagerException&)
     {
@@ -187,10 +181,8 @@ static void s_TEST_PluginManager(void)
 
         int a = itest2->GetA();
         assert(a == 15);
-
         a = itest->GetA();
         assert(a == 10);
-
 
         delete itest2;
         delete itest;
@@ -198,9 +190,10 @@ static void s_TEST_PluginManager(void)
     catch (CPluginManagerException& ex)
     {
         cout << "Cannot create ITest instance. " << ex.what() << endl;
-        assert(0);
+        _TROUBLE;
     }
 }
+
 
 /// @internal
 class CParamTreePrintFunc
@@ -237,7 +230,7 @@ public:
         }
     }
 private:
-    int            m_Level;
+    int m_Level;
 };
 
 

@@ -1138,6 +1138,7 @@ double CTestApp::GenerateDouble(void)
         if (exp<=  -2) {value /= 1.e2;   exp+=  2;}
         if (exp<=  -1) {value /= 10.;    exp+=  1;}
     }
+    std::ignore = exp; // to suppress warning about unused variable
     return value;
 }
 

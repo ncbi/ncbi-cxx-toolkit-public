@@ -93,7 +93,7 @@ int CConfigTestApplication::Run(void)
     assert(i == 15);
 
     try {
-      i = cfg.GetInt(kSection, "int_value", CConfig::eErr_Throw, 4, &int_synonyms);
+      std::ignore = cfg.GetInt(kSection, "int_value", CConfig::eErr_Throw, 4, &int_synonyms);
     } catch (CConfigException& ex) {
         if (ex.GetErrCode() != CConfigException::eSynonymDuplicate)
             throw;
@@ -112,7 +112,6 @@ int CConfigTestApplication::Run(void)
     
     return 0;
 }
-
 
   
 ///////////////////////////////////

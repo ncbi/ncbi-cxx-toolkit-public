@@ -128,8 +128,7 @@ int main()
     }
 
     unsigned char c = 10;
-    unsigned char c_max = get_limits(c).max();
-    c = c_max;  // just to eliminate "unused var" warning
+    std::ignore = get_limits(c).max();
 
     // Success
     return 0;

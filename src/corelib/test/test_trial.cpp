@@ -267,12 +267,22 @@ int CTestApplication::Run(void)
     _ASSERT(toupper('A') == 'A');
     _ASSERT(std::toupper('A') == 'A');
     _ASSERT(::toupper('A') == 'A');
+
     TGi gi = 2;
+    std::ignore = gi;
+
     gi = 3;
+    std::ignore = gi;
+
     gi = INVALID_GI;
+    std::ignore = gi;
+
     gi = GI_CONST(192377853);
+    std::ignore = gi;
+
 #ifdef NCBI_INT8_GI
     gi = GI_CONST(192377853343);
+    std::ignore = gi;
 #endif
     NcbiCout << "GI = " << gi << NcbiEndl;
     TestSafeFlags();
