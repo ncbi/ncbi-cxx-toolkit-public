@@ -6586,6 +6586,8 @@ BOOST_AUTO_TEST_CASE(Test_InvalidSexQualifier)
     STANDARD_SETUP
 
     // unexpected sex qualifier
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
         "Unexpected use of /sex qualifier"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -6594,12 +6596,20 @@ BOOST_AUTO_TEST_CASE(Test_InvalidSexQualifier)
 
     CLEAR_ERRORS
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
             "Unexpected use of /sex qualifier"));
     // AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetLineage(entry, "Archaea; foo");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "InvalidSexQualifier",
+            "Unexpected use of /sex qualifier"));
+    // AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetLineage(entry, "Eukaryota; Fungi; foo");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -6936,6 +6946,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
         "If metagenomes appears in lineage, BioSource should have metagenomic qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+
     CLEAR_ERRORS
 
 
@@ -6945,6 +6956,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetTaxon(entry, 77133);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "UnculturedNeedsEnvSample",
         "Uncultured should also have /environmental_sample"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -7045,9 +7058,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_other, "");
+    unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_genomic);
+    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     unit_test_util::SetLineage(entry, "Bacteria; foo");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, "cRNA");
-    expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+        "InconsistentVirusMoltype",
+        "cRNA note conflicts with molecule type"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -7074,6 +7096,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     entry->SetSeq().SetDescr().Set().push_back(biosample);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BacteriaMissingSourceQualifier",
                               "Bacteria should have strain or isolate or environmental sample"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DBLinkBadBioSample",
                               "Bad BioSample format - PRJNA12345"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -7086,6 +7110,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     scope.RemoveTopLevelSeqEntry(seh);
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "DBLinkBadBioSample",
         "Bad BioSample format - PRJNA12345"));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -7120,6 +7146,8 @@ BOOST_AUTO_TEST_CASE(Test_VR_173)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "Y");
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryote should not have chromosome qualifier"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InvalidTissueType",
         "Tissue-type is inappropriate for bacteria"));
     // AddChromosomeNoLocation(expected_errors, entry);

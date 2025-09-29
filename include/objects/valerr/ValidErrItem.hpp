@@ -370,6 +370,7 @@ enum EErrType {
     eErr_SEQ_DESCR_BadContigOrScaffoldChromosome,
     eErr_SEQ_DESCR_HasStrainAndIsolate,
     eErr_SEQ_DESCR_TaxonomyIsMetagenome,
+    eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
     ERR_CODE_END(SEQ_DESCR),
 
 

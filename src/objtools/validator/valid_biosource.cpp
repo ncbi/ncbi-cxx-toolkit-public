@@ -590,8 +590,8 @@ const CSeq_entry *ctx)
     }
 
     bool isViral = false, isAnimal = false, isPlant = false,
-        isBacteria = false, isArchaea = false, isFungal = false,
-        isViroid = false;
+        isBacteria = false, isArchaea = false, isBactOrArch = false,
+        isFungal = false, isViroid = false;
     if (bsrc.IsSetLineage()) {
         string lineage = bsrc.GetLineage();
         if (NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) || NStr::EqualNocase(lineage, "Viruses")) {
@@ -604,8 +604,10 @@ const CSeq_entry *ctx)
             isPlant = true;
         } else if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)) {
             isBacteria = true;
+            isBactOrArch = true;
         } else if (NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
             isArchaea = true;
+            isBactOrArch = true;
         } else if (NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase)) {
             isFungal = true;
         } else if (NStr::StartsWith(lineage, "Viroids;", NStr::eNocase)) {
@@ -678,6 +680,11 @@ const CSeq_entry *ctx)
                 }
             } else {
                 chromosome = ssit->GetPointer();
+            }
+            if (isBactOrArch) {
+                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
+                    "Prokaryote should not have chromosome qualifier",
+                    obj, ctx);
             }
             break;
 

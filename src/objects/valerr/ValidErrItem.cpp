@@ -1028,6 +1028,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_TaxonomyIsMetagenome,
     { "TaxonomyIsMetagenome",
         "Taxonomy name should not be metagenome" }},
+    { eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
+    { "ProkaryoteShouldNotHaveChromosome",
+        "Prokaryotes should not have a chromosome source qualifier" }},
 
 
     /* SEQ_GENERIC */
