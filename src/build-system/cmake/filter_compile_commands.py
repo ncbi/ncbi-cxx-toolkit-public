@@ -20,6 +20,9 @@ EXCLUDE_FILES = ['asndbld/objDbld.c',
                  'asn/objnetres.c',
                  'asn/objNabr.c',
 
+                 'msgmail2/asn/objmmail.c',
+                 'serial/test/twebenv.c',
+
                  'freetds/dblib/unittests/t0016.c',
                  'freetds/dblib/unittests/t0014.c',
                  'freetds/dblib/unittests/t0013.c',
