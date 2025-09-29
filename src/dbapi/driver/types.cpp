@@ -2900,7 +2900,11 @@ static int s_NumericBytesPerPrec[] =
 
 void CDB_Numeric::x_CopyBody(const unsigned char* arr, bool with_sign)
 {
-    int n = s_NumericBytesPerPrec[m_Precision];
+    if (m_Precision == 0) {
+        memset(m_Body, 0, sizeof(m_Body));
+        return;
+    }
+    int n = s_NumericBytesPerPrec[m_Precision-1];
     if (with_sign) {
         memcpy(m_Body, arr, n);
     } else {
