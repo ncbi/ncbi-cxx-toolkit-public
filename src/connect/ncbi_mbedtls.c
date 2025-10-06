@@ -190,7 +190,7 @@ static void x_MbedTlsLogger(void* unused, int level,
     if (message[len - 1] == '\n')
         --len;
     CORE_LOGF_X(1, eLOG_Note,
-                ("MBEDTLS%d: %.*s", level, (int) len, message));
+                ("MBEDTLS%02d: %.*s", level, (int) len, message));
 }
 
 
@@ -293,7 +293,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
            error == MBEDTLS_ERR_SSL_WANT_WRITE  ||
            status != eIO_Success);
     CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-        CORE_TRACEF(("MBEDTLS error %d -> CONNECT MBEDTLS status %s",
+        CORE_TRACEF(("MBEDTLS error %d -> CONNECT status %s",
                      error, IO_StatusStr(status)));
     return status;
 }
@@ -302,7 +302,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
+static int x_StatusToError(EIO_Status status, EIO_Event direction)
 {
     int error;
 
@@ -334,7 +334,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     {{
         int x_err = error ? error : errno;
         CORE_DEBUG_ARG(if (s_MbedTlsLogLevel))
-            CORE_TRACEF(("CONNECT MBEDTLS status %s -> %s %d",
+            CORE_TRACEF(("CONNECT status %s -> MBEDTLS %s %d",
                          IO_StatusStr(status),
                          error ? "error" : "errno", x_err));
         if (!error)
@@ -517,7 +517,7 @@ static int x_MbedTlsPull(void* ctx, unsigned char* buf, size_t size)
     } else
         status = eIO_NotSupported;
 
-    return x_StatusToError(status, sock, eIO_Read);
+    return x_StatusToError(status, eIO_Read);
 }
 
 
@@ -577,7 +577,7 @@ static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
         status = eIO_NotSupported;
 
  out:
-    return x_StatusToError(status, sock, eIO_Write);
+    return x_StatusToError(status, eIO_Write);
 }
 
 

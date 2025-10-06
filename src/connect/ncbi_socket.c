@@ -3763,7 +3763,7 @@ static EIO_Status s_Read_(SOCK    sock,
                         status != eIO_Closed  ||  !sock->eof ?
                         (void*) &error : 0,
                         status != eIO_Success ? 0 : x_read,
-                        x_read ? " [decrypt]" : 0);
+                        " [decrypt]");
             }
 
             if (status == eIO_Closed  &&  !sock->eof)
@@ -4298,7 +4298,7 @@ static EIO_Status s_WriteData(SOCK        sock,
             s_DoLog(*n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
                     status == eIO_Success ? data : (void*) &error,
                     status != eIO_Success ? 0    : *n_written,
-                    *n_written > 0 ? " [encrypt]" : 0);
+                    " [encrypt]");
         }
 
         if (status == eIO_Closed)

@@ -293,17 +293,17 @@ typedef struct SOCK_tag {
 
     /* statistics */
     TNCBI_BigCount   n_read;    /* DSOCK: total # of bytes read (in all msgs)
-                                   SOCK:  # of bytes read since last connect
+                                   SOCK:  # of raw bytes read since last connect
                                 */
     TNCBI_BigCount   n_written; /* DSOCK: total # of bytes written (all msgs)
-                                   SOCK:  # of bytes written since last connect
+                                   SOCK:  # of raw bytes written since last connect
                                 */
     TNCBI_BigCount   n_in;      /* DSOCK: total # of messages received
-                                   SOCK:  total # of bytes read in all
+                                   SOCK:  total # of raw bytes read in all
                                    completed connections in this SOCK so far
                                 */
     TNCBI_BigCount   n_out;     /* DSOCK: total # of messages sent
-                                   SOCK:  total # of bytes written in all
+                                   SOCK:  total # of raw bytes written in all
                                    completed connections in this SOCK so far
                                 */
 #ifdef NCBI_OS_UNIX

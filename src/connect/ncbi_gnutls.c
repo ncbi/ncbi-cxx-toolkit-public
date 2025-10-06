@@ -293,13 +293,15 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
         status = (EIO_Status) sock->w_status;
     }
     else {
-        status = (*error == GNUTLS_E_SESSION_EOF  ||
-                  *error == GNUTLS_E_PREMATURE_TERMINATION
-                  ? eIO_Closed : eIO_Unknown);
+        status =
+            *error == GNUTLS_E_SESSION_EOF  ||
+           (*error == GNUTLS_E_PREMATURE_TERMINATION
+            &&  sock->eof  &&  sock->r_status == eIO_Success)
+            ? eIO_Closed : eIO_Unknown;
     }
 
     assert(*error == GNUTLS_E_AGAIN  ||  status != eIO_Success);
-    CORE_TRACEF(("GNUTLS error %d%s -> CONNECT GNUTLS status %s",
+    CORE_TRACEF(("GNUTLS error %d%s -> CONNECT status %s",
                  *error, gnutls_error_is_fatal(*error) ? "(fatal)" : "",
                  IO_StatusStr(status)));
     return status;
@@ -309,7 +311,7 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
+static int x_StatusToError(EIO_Status status, EIO_Event direction)
 {
     int error;
 
@@ -341,7 +343,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
     {{
         int x_err = error ? error : errno;
         CORE_DEBUG_ARG(if (s_GnuTlsLogLevel))
-            CORE_TRACEF(("CONNECT GNUTLS status %s -> %s %d",
+            CORE_TRACEF(("CONNECT status %s -> GNUTLS %s %d",
                          IO_StatusStr(status),
                          error ? "error" : "errno", x_err));
         if (!error)
@@ -488,15 +490,6 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 }
 
 
-#ifdef __GNUC__
-inline
-#endif /*__GNUC__*/
-static int/*bool*/ x_IfToLog(void)
-{
-    return 12 < s_GnuTlsLogLevel ? 1/*T*/ : 0/*F*/;
-}
-
-
 /*ARGSUSED*/
 #ifdef __GNUC__
 inline
@@ -510,6 +503,16 @@ static void x_set_errno(gnutls_session_t session, int error)
     if (error)
         errno = error;
 #  endif /*LIBGNUTLS_VERSION>=1.5.4*/
+}
+
+
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_IfToLog(void)
+{
+    /* NB: See the LEVEL() macros in gnutls_errors.h */
+    return 13 < s_GnuTlsLogLevel ? 1/*T*/ : 0/*F*/;
 }
 
 
@@ -532,7 +535,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr, void* buf, size_t size)
     } else
         status = eIO_NotSupported;
 
-    x_error = x_StatusToError(status, ctx->sock, eIO_Read);
+    x_error = x_StatusToError(status, eIO_Read);
     if (x_error)
         x_set_errno((gnutls_session_t) ctx->sess, x_error);
     return -1;
@@ -599,7 +602,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
         status = eIO_NotSupported;
 
  out:
-    x_error = x_StatusToError(status, ctx->sock, eIO_Write);
+    x_error = x_StatusToError(status, eIO_Write);
     if (x_error)
         x_set_errno((gnutls_session_t) ctx->sess, x_error);
     return -1;
