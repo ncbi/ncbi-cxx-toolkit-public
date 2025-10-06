@@ -215,7 +215,18 @@ public:
         m_LimitedProcessors.push_back(pair<string, size_t>(name, limit));
     }
 
-    string GetLimitedProcessorsMessage(void);
+    size_t GetIPThrottledProcessorCount(void) const
+    {
+        return m_IPThrottledProcessors.size();
+    }
+
+    void AddIPThrottledProcessor(const string &  name, size_t  limit)
+    {
+        m_IPThrottledProcessors.push_back(pair<string, size_t>(name, limit));
+    }
+
+    string GetLimitedProcessorsMessage(void) const;
+    string GetThrottledProcessorsMessage(void) const;
 
     CPSGS_Request(const CPSGS_Request &) = delete;
     CPSGS_Request(CPSGS_Request &&) = delete;
@@ -255,6 +266,10 @@ private:
     // Processors which have not been instantiated due to a concurrency limit
     // together with the actual limit
     vector<pair<string, size_t>>    m_LimitedProcessors;
+
+    // Processors which have not been instantiated due to throttling by IP
+    // together with the actual limit
+    vector<pair<string, size_t>>    m_IPThrottledProcessors;
 };
 
 

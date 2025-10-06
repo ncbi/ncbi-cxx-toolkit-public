@@ -201,6 +201,8 @@ class CPSGSCounters
             ePSGS_TSEChunkNotFound,
             ePSGS_ProcUnknownError,
             ePSGS_OpTooLong,
+            ePSGS_NotInstantiatedDueConcurrencyLimit,
+            ePSGS_ThrottledByIP,
 
             // Used to calculate the number of counters per processor
             ePSGS_LastCounter

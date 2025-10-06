@@ -1303,6 +1303,8 @@ static string   kBuildDate = "BuildDate";
 static string   kStartedAt = "StartedAt";
 static string   kExcludeBlobCacheUserCount = "ExcludeBlobCacheUserCount";
 static string   kConcurrentPrefix = "ConcurrentProcCount_";
+static string   kIPThrottlingThresholdPrefix = "ProcessorIPThrottlingThreshold_";
+static string   kIPThrottlingLimitPrefix = "ProcessorIPThrottlingLimit_";
 
 int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
                               shared_ptr<CPSGS_Reply>  reply)
@@ -1464,6 +1466,16 @@ int CPubseqGatewayApp::OnInfo(CHttpRequest &  http_req,
             info.SetInteger(kConcurrentPrefix + item.first,
                             item.second);
         }
+
+        map<string, pair<size_t, size_t>>   ip_throttling_settings =
+                                    m_RequestDispatcher->GetIPThrottlingSettings();
+        for (auto item: ip_throttling_settings) {
+            info.SetInteger(kIPThrottlingThresholdPrefix + item.first,
+                            item.second.first);
+            info.SetInteger(kIPThrottlingLimitPrefix + item.first,
+                            item.second.second);
+        }
+
         PopulatePerRequestMomentousDictionary(info);
 
         string      content = info.Repr(CJsonNode::fStandardJson);

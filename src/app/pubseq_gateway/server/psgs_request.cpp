@@ -339,7 +339,7 @@ CJsonNode CPSGS_Request::Serialize(void) const
 }
 
 
-string CPSGS_Request::GetLimitedProcessorsMessage(void)
+string CPSGS_Request::GetLimitedProcessorsMessage(void) const
 {
     string      msg;
 
@@ -348,6 +348,20 @@ string CPSGS_Request::GetLimitedProcessorsMessage(void)
             msg += "; ";
         msg += "processor: " + item.first +
                ", concurrency limit: " + to_string(item.second);
+    }
+    return msg;
+}
+
+
+string CPSGS_Request::GetThrottledProcessorsMessage(void) const
+{
+    string      msg;
+
+    for (auto &  item : m_IPThrottledProcessors) {
+        if (!msg.empty())
+            msg += "; ";
+        msg += "processor: " + item.first +
+               ", throttling by ip limit: " + to_string(item.second);
     }
     return msg;
 }

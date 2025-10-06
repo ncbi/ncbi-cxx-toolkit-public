@@ -100,6 +100,10 @@ void CPSGS_Dispatcher::AddProcessor(unique_ptr<IPSGS_Processor> processor)
 
     m_ProcessorConcurrency[index].m_Limit = limit;
 
+    m_ProcessorThrottling[index].m_Threshold = app->Settings().GetProcessorIPThrottlingThreshold(processor_group_name);
+    m_ProcessorThrottling[index].m_LimitByIp = app->Settings().GetProcessorIPThrottlingLimit(processor_group_name);
+
+
     m_RegisteredProcessorGroups.push_back(processor_group_name);
     m_RegisteredProcessors.push_back(std::move(processor));
 
@@ -194,6 +198,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
     TProcessorPriority                  priority = proc_count;
     auto                                request_id = request->GetRequestId();
     unique_ptr<SProcessorGroup>         procs(new SProcessorGroup(request_id));
+    auto &                              counters = CPubseqGatewayApp::GetInstance()->GetCounters();
 
     for (auto const &  proc : m_RegisteredProcessors) {
         // First check that the processor name is in the list of those which
@@ -212,7 +217,7 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
 
         if (current_count >= limit) {
             request->AddLimitedProcessor(proc->GetName(), limit);
-            m_ProcessorConcurrency[proc_index].IncrementLimitReachedCount();
+            counters.Increment(proc.get(), CPSGSCounters::ePSGS_NotInstantiatedDueConcurrencyLimit);
 
             if (request->NeedTrace()) {
                 // false: no need to update the last activity
@@ -228,6 +233,39 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
             // Special action for the ID/get_na requests - memorize the
             // annotations which potentially could have been processed by the
             // processors which were not instantiated due to a limit
+            if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
+                auto &   annot_request = request->GetRequest<SPSGS_AnnotRequest>();
+                for (const auto &  name : proc->WhatCanProcess(request, reply)) {
+                    annot_request.ReportResultStatus(name,
+                                                     SPSGS_AnnotRequest::ePSGS_RS_Unavailable);
+                }
+            }
+
+            continue;
+        }
+
+        // Throttling by IP
+        bool    should_throttle =
+                        m_ProcessorThrottling[proc_index].ShouldThrottle(request,
+                                                                         current_count);
+        if (should_throttle) {
+            request->AddIPThrottledProcessor(proc->GetName(),
+                                             m_ProcessorThrottling[proc_index].m_LimitByIp);
+            counters.Increment(proc.get(), CPSGSCounters::ePSGS_ThrottledByIP);
+
+            if (request->NeedTrace()) {
+                // false: no need to update the last activity
+                reply->SendTrace("Processor: " + proc->GetName() +
+                                 " will not be tried to create because"
+                                 " the end client has instantiated too many processors."
+                                 " Limit: " + to_string(m_ProcessorThrottling[proc_index].m_LimitByIp),
+                                 request->GetStartTimestamp(), false);
+            }
+            --priority;
+
+            // Special action for the ID/get_na requests - memorize the
+            // annotations which potentially could have been processed by the
+            // processors which were not instantiated due to IP throttling
             if (request->GetRequestType() == CPSGS_Request::ePSGS_AnnotationRequest) {
                 auto &   annot_request = request->GetRequest<SPSGS_AnnotRequest>();
                 for (const auto &  name : proc->WhatCanProcess(request, reply)) {
@@ -280,20 +318,36 @@ CPSGS_Dispatcher::DispatchRequest(shared_ptr<CPSGS_Request> request,
         string                  msg;
         CRequestStatus::ECode   status_code;
         size_t                  limited_processor_count = request->GetLimitedProcessorCount();
+        size_t                  throttled_processor_count = request->GetIPThrottledProcessorCount();
+        size_t                  total_not_instantiated_procs = limited_processor_count + throttled_processor_count;
 
         CRequestContextResetter     context_resetter;
         request->SetRequestContext();
 
-        if (limited_processor_count == 0) {
+        if (total_not_instantiated_procs == 0) {
             msg = "No matching processors found";
             status_code = CRequestStatus::e404_NotFound;
             PSG_WARNING(msg);
         } else {
-            msg = to_string(limited_processor_count) + " of " +
+            msg = to_string(total_not_instantiated_procs) + " of " +
                   to_string(processor_names.size()) +
-                  " processor(s) were not instantiated due to the limit on "
-                  "concurrent processors is exceeded (" +
-                  request->GetLimitedProcessorsMessage() + ")";
+                  " processor";
+            if (total_not_instantiated_procs == 1) {
+                msg += " was not instantiated. ";
+            } else {
+                msg += "s were not instantiated. ";
+            }
+
+            msg += to_string(limited_processor_count) + " due to concurrent processors limit";
+            if (limited_processor_count > 0) {
+                msg += " (" + request->GetLimitedProcessorsMessage() + ")";
+            }
+
+            msg += ", " + to_string(throttled_processor_count) + " due to throttling by the end client IP address";
+            if (throttled_processor_count > 0) {
+                msg += " (" + request->GetThrottledProcessorsMessage() + ")";
+            }
+
             status_code = CRequestStatus::e503_ServiceUnavailable;
             PSG_ERROR(msg);
         }
@@ -917,8 +971,10 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
     }
 
     size_t  count_limited_procs = request->GetLimitedProcessorCount();
+    size_t  throttled_processor_count = request->GetIPThrottledProcessorCount();
+    size_t  total_not_instantiated_procs = count_limited_procs + throttled_processor_count;
     if (count_404_or_cancel == proc_statuses.size() &&
-        count_limited_procs == 0) {
+        total_not_instantiated_procs == 0) {
         // All processors not found or canceled and there were no limited
         // processors
         return CRequestStatus::e404_NotFound;
@@ -937,13 +993,24 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
         return CRequestStatus::e504_GatewayTimeout;
     }
 
-    if (count_limited_procs > 0) {
-        // At least one processor was limited due to concurrency
+    if (total_not_instantiated_procs > 0) {
+        // At least one processor was limited due to concurrency and/or
+        // throttling by the end client IP
         string  msg = "Instantiated processors found nothing and there were " +
-                      to_string(count_limited_procs) +
-                      " processor(s) which have not been tried to be instantiated "
-                      "due to their concurrency limit has been exceeded (" +
-                      request->GetLimitedProcessorsMessage() + ")";
+                      to_string(total_not_instantiated_procs) + " processor";
+        if (total_not_instantiated_procs > 1) {
+            msg += "s";
+        }
+        msg += " which have not been tried to be instantiated. " +
+               to_string(count_limited_procs) + " due to their concurrency limit has been exceeded";
+        if (count_limited_procs > 0) {
+            msg += " (" + request->GetLimitedProcessorsMessage() + ")";
+        }
+        msg += ", " + to_string(throttled_processor_count) + " due to throttling by the end client IP address";
+        if (throttled_processor_count > 0) {
+            msg += " (" + request->GetThrottledProcessorsMessage() + ")";
+        }
+
         reply->PrepareReplyMessage(msg, CRequestStatus::e503_ServiceUnavailable,
                                    ePSGS_NotFoundAndNotInstantiated, eDiag_Error);
         PSG_ERROR(msg);
@@ -1461,6 +1528,7 @@ void CPSGS_Dispatcher::x_DecrementConcurrencyCounter(IPSGS_Processor *  processo
     size_t      proc_index = proc_count - proc_priority;
 
     m_ProcessorConcurrency[proc_index].DecrementCurrentCount();
+    m_ProcessorThrottling[proc_index].Finished(processor->GetRequest());
 }
 
 
@@ -1469,12 +1537,19 @@ map<string, size_t>  CPSGS_Dispatcher::GetConcurrentCounters(void)
     map<string, size_t>     ret;    // name -> current counter
 
     for (size_t  index = 0; index < m_RegisteredProcessorGroups.size(); ++index) {
-        size_t      current_count;
-        size_t      limit_reached_count;
-        m_ProcessorConcurrency[index].GetCurrentAndLimitReachedCounts(&current_count,
-                                                                      &limit_reached_count);
-        ret[m_RegisteredProcessorGroups[index]] = current_count;
-        ret[m_RegisteredProcessorGroups[index] + "-Limit"] = limit_reached_count;
+        ret[m_RegisteredProcessorGroups[index]] = m_ProcessorConcurrency[index].GetCurrentCount();
+    }
+
+    return ret;
+}
+
+
+map<string, pair<size_t, size_t>>  CPSGS_Dispatcher::GetIPThrottlingSettings(void)
+{
+    map<string, pair<size_t, size_t>>   ret;    // Name -> (threshold, limit)
+    for (size_t  index = 0; index < m_RegisteredProcessorGroups.size(); ++index) {
+        ret[m_RegisteredProcessorGroups[index]] = make_pair(m_ProcessorThrottling[index].m_Threshold,
+                                                            m_ProcessorThrottling[index].m_LimitByIp);
     }
 
     return ret;

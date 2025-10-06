@@ -701,6 +701,28 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
                 "Operation took too long (" + proc_group + ")",
                 "The number of times an operation (like a backend retrieval) "
                 "took longer than a configurable time by " + proc_group));
+
+
+        index = static_cast<size_t>(ePSGS_NotInstantiatedDueConcurrencyLimit) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_NotInstantiatedDueConcurrencyLimit",
+                "Not instantiated because too many processors (" + proc_group + ")",
+                "The number of times a processor was not instantiated because there are too many already working " +
+                proc_group + " processors for that backend"));
+
+
+        index = static_cast<size_t>(ePSGS_ThrottledByIP) -
+                static_cast<size_t>(ePSGS_MaxIndividualCounter) - 1;
+
+        m_PerProcessorCounters[index].push_back(
+            new SCounterInfo(
+                proc_group + "_ThrottledByIP",
+                "Throttled because too many processors (" + proc_group + ") from same IP",
+                "The number of times a " + proc_group + " processor throttled "
+                "(not instantiated) because same IP activity led to instantiating too many of them"));
     }
 }
 

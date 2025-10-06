@@ -48,6 +48,9 @@ struct SPubseqGatewaySettings
     void Validate(CPSGAlerts &  alerts);
     size_t GetProcessorMaxConcurrency(const CNcbiRegistry &   registry,
                                       const string &  processor_id);
+    size_t GetProcessorIPThrottlingThreshold(const string &  processor_id) const;
+    size_t GetProcessorIPThrottlingLimit(const string &  processor_id) const;
+
     bool IsAuthProtectedCommand(const string &  cmd) const;
 
     // [SERVER]
@@ -80,6 +83,9 @@ struct SPubseqGatewaySettings
     double                              m_ConnThrottleCloseIdleSec;
     double                              m_ConnForceCloseWaitSec;
     double                              m_ThrottlingDataValidSec;
+
+    double                              m_ProcessorThrottleThresholdPercent;
+    double                              m_ProcessorThrottleByIpPercent;
 
     // [STATISTICS]
     unsigned long                       m_SmallBlobSize;
@@ -128,6 +134,8 @@ struct SPubseqGatewaySettings
     string                              m_CassandraProcessorHealthCommand;
     double                              m_CassandraHealthTimeoutSec;
     bool                                m_SeqIdResolveAlways;
+    size_t                              m_CassandraProcessorThrottleThreshold;
+    size_t                              m_CassandraProcessorThrottleByIp;
 
     // [LMDB_PROCESSOR]
     string                              m_LMDBProcessorHealthCommand;
@@ -137,16 +145,22 @@ struct SPubseqGatewaySettings
     bool                                m_CDDProcessorsEnabled;
     string                              m_CDDProcessorHealthCommand;
     double                              m_CDDHealthTimeoutSec;
+    size_t                              m_CDDProcessorThrottleThreshold;
+    size_t                              m_CDDProcessorThrottleByIp;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
     string                              m_WGSProcessorHealthCommand;
     double                              m_WGSHealthTimeoutSec;
+    size_t                              m_WGSProcessorThrottleThreshold;
+    size_t                              m_WGSProcessorThrottleByIp;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
     string                              m_SNPProcessorHealthCommand;
     double                              m_SNPHealthTimeoutSec;
+    size_t                              m_SNPProcessorThrottleThreshold;
+    size_t                              m_SNPProcessorThrottleByIp;
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
@@ -198,8 +212,14 @@ private:
     void x_ReadLogSection(const CNcbiRegistry &   registry);
     void x_ReadH2OSection(const CNcbiRegistry &   registry);
     void x_ReadAPDATASection(const CNcbiRegistry &   registry);
+    void x_ReadProcessorThrottleSettings(const CNcbiRegistry &   registry,
+                                         const string &  proc_id,
+                                         size_t &  threshold_val,
+                                         size_t &  by_ip_val);
 
     void x_ValidateServerSection(void);
+    void x_ValidateProcessorThrottlingServerSectionSettings(void);
+    void x_ValidateProcessorMaxConcurrencyServerSectionSettings(void);
     void x_ValidateStatisticsSection(void);
     void x_ValidateLmdbCacheSection(void);
     void x_ValidateAutoExcludeSection(void);

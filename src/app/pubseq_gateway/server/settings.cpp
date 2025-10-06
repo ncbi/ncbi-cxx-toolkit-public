@@ -96,6 +96,9 @@ const double            kDefaultConnThrottleCloseIdleSec = 5.0;
 const double            kDefaultConnForceCloseWaitSec = 0.1;
 const double            kDefaultThrottlingDataValidSec = 1.0;
 
+const double            kDefaultProcessorThrottleThresholdPercent = 80.0;
+const double            kDefaultProcessorThrottleByIpPercent = 25.0;
+
 const unsigned long     kDefaultSendBlobIfSmall = 10 * 1024;
 const unsigned long     kDefaultSmallBlobSize = 16;
 const bool              kDefaultLog = true;
@@ -187,6 +190,8 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_ConnThrottleCloseIdleSec(kDefaultConnThrottleCloseIdleSec),
     m_ConnForceCloseWaitSec(kDefaultConnForceCloseWaitSec),
     m_ThrottlingDataValidSec(kDefaultThrottlingDataValidSec),
+    m_ProcessorThrottleThresholdPercent(kDefaultProcessorThrottleThresholdPercent),
+    m_ProcessorThrottleByIpPercent(kDefaultProcessorThrottleByIpPercent),
     m_SmallBlobSize(kDefaultSmallBlobSize),
     m_MinStatValue(kMinStatValue),
     m_MaxStatValue(kMaxStatValue),
@@ -207,17 +212,25 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CassandraProcessorHealthCommand(kDefaultCassandraProcessorHealthCommand),
     m_CassandraHealthTimeoutSec(kDefaultCassandraHealthTimeoutSec),
     m_SeqIdResolveAlways(kDefaultSeqIdResolveAlways),
+    m_CassandraProcessorThrottleThreshold(0),
+    m_CassandraProcessorThrottleByIp(0),
     m_LMDBProcessorHealthCommand(kDefaultLMDBProcessorHealthCommand),
     m_LMDBHealthTimeoutSec(kDefaultLMDBHealthTimeoutSec),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
     m_CDDProcessorHealthCommand(kDefaultCDDProcessorHealthCommand),
     m_CDDHealthTimeoutSec(kDefaultCDDHealthTimeoutSec),
+    m_CDDProcessorThrottleThreshold(0),
+    m_CDDProcessorThrottleByIp(0),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_WGSProcessorHealthCommand(kDefaultWGSProcessorHealthCommand),
     m_WGSHealthTimeoutSec(kDefaultWGSHealthTimeoutSec),
+    m_WGSProcessorThrottleThreshold(0),
+    m_WGSProcessorThrottleByIp(0),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
     m_SNPProcessorHealthCommand(kDefaultSNPProcessorHealthCommand),
     m_SNPHealthTimeoutSec(kDefaultSNPHealthTimeoutSec),
+    m_SNPProcessorThrottleThreshold(0),
+    m_SNPProcessorThrottleByIp(0),
     m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
     m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
     m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
@@ -255,6 +268,12 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry)
     x_ReadSSLSection(registry);
 
     x_ReadServerSection(registry);
+    // Note: Some of the individual processor section values depend on the
+    //       server section values so those need to be corrected first (if out
+    //       of range)
+    x_ValidateProcessorThrottlingServerSectionSettings();
+    x_ValidateProcessorMaxConcurrencyServerSectionSettings();
+
     x_ReadStatisticsSection(registry);
     x_ReadLmdbCacheSection(registry);
     x_ReadAutoExcludeSection(registry);
@@ -362,6 +381,14 @@ void SPubseqGatewaySettings::x_ReadServerSection(const CNcbiRegistry &   registr
                                                  kDefaultConnForceCloseWaitSec);
     m_ThrottlingDataValidSec = registry.GetDouble(kServerSection, "conn_throttle_data_valid",
                                                   kDefaultThrottlingDataValidSec);
+
+    m_ProcessorThrottleThresholdPercent = x_GetPercentValue(registry, kServerSection,
+                                                            "processor_throttle_threshold",
+                                                            kDefaultProcessorThrottleThresholdPercent);
+    m_ProcessorThrottleByIpPercent = x_GetPercentValue(registry, kServerSection,
+                                                       "processor_throttle_by_ip",
+                                                       kDefaultProcessorThrottleByIpPercent);
+
     m_SendBlobIfSmall = x_GetDataSize(registry, kServerSection,
                                       "send_blob_if_small",
                                       kDefaultSendBlobIfSmall);
@@ -510,11 +537,94 @@ void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registr
     m_HealthTimeoutSec = registry.GetDouble(kHealthSection, "timeout",
                                             kDefaultHealthTimeout);
     if (m_HealthTimeoutSec <= 0) {
-        m_CriticalDataSources.push_back(
+        m_CriticalErrors.push_back(
             "The [HEALTH]/timeout value is out of range. It must be > 0. "
             "Received: " + to_string(m_HealthTimeoutSec) + ". Resetting to " +
             to_string(kDefaultHealthTimeout));
         m_HealthTimeoutSec = kDefaultHealthTimeout;
+    }
+}
+
+
+void
+SPubseqGatewaySettings::x_ReadProcessorThrottleSettings(const CNcbiRegistry &   registry,
+                                                        const string &  proc_id,
+                                                        size_t &  threshold_val,
+                                                        size_t &  by_ip_val)
+{
+    string      section = proc_id + "_PROCESSOR";
+    double      proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
+    double      proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
+    bool        proc_throttle_ok = true;
+    if (registry.HasEntry(section, "processor_throttle_threshold")) {
+        proc_throttle_threshold = x_GetPercentValue(registry, section,
+                                                    "processor_throttle_threshold",
+                                                    m_ProcessorThrottleThresholdPercent);
+        if (proc_throttle_threshold < 0.0 ||
+            proc_throttle_threshold > 100.0) {
+            m_CriticalErrors.push_back(
+                "Invalid [" + section +
+                "]/processor_throttle_threshold value (" +
+                to_string(proc_throttle_threshold) + "). "
+                "The processor throttle threshold must be [0-100]. "
+                "Resetting [" + section +
+                "]/processor_throttle_threshold to the [SERVER]/processor_throttle_threshold value (" +
+                to_string(m_ProcessorThrottleThresholdPercent) + ") and " +
+                "[" + section +
+                "]/processor_throttle_by_ip to the [SERVER]/processor_throttle_by_ip value (" +
+                to_string(m_ProcessorThrottleByIpPercent) + ")");
+            proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
+            proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
+            proc_throttle_ok = false;
+        }
+    } else {
+        // No overwriting, take it from the [SERVER] section
+        proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
+    }
+
+    if (proc_throttle_ok) {
+        if (registry.HasEntry(section, "processor_throttle_by_ip")) {
+            proc_throttle_by_ip = x_GetPercentValue(registry, section,
+                                                    "processor_throttle_by_ip",
+                                                    m_ProcessorThrottleByIpPercent);
+            if (proc_throttle_by_ip < 1.0 || proc_throttle_by_ip > 100.0) {
+                m_CriticalErrors.push_back(
+                    "Invalid [" + section +
+                    "]/processor_throttle_by_ip value (" +
+                    to_string(proc_throttle_by_ip) + "). "
+                    "The processor throttle by ip must be [1-100]. "
+                    "Resetting [" + section +
+                    "]/processor_throttle_threshold to the [SERVER]/processor_throttle_threshold value (" +
+                    to_string(m_ProcessorThrottleThresholdPercent) + ") and " +
+                    "[" + section +
+                    "]/processor_throttle_by_ip to the [SERVER]/processor_throttle_by_ip value (" +
+                    to_string(m_ProcessorThrottleByIpPercent) + ")");
+                proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
+                proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
+            }
+        } else {
+            // No overwriting, take it from the [SERVER] section
+            proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
+        }
+    }
+
+    if (proc_throttle_threshold == 0.0 || proc_throttle_threshold == 100.0) {
+        threshold_val = 0;
+        by_ip_val = 0;
+    } else {
+        size_t  proc_max_concurrency = GetProcessorMaxConcurrency(registry, proc_id);
+        threshold_val = round(double(proc_max_concurrency) * proc_throttle_threshold / 100.0);
+        by_ip_val = round(double(threshold_val) * proc_throttle_by_ip / 100.0);
+
+        if (by_ip_val == 0) {
+            m_CriticalErrors.push_back(
+                "Invalid [" + section +
+                "]/processor_throttle_by_ip value (" +
+                to_string(proc_throttle_by_ip) +
+                "). It resulted the number of allowed " + proc_id + " processors per ip as 0. "
+                "Resetting the number of allowed " + proc_id + " processors per ip to 1.");
+            by_ip_val = 1;
+        }
     }
 }
 
@@ -537,7 +647,7 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
         m_CassandraHealthTimeoutSec = m_HealthTimeoutSec;
     } else if (m_CassandraHealthTimeoutSec < 0) {
         // Error
-        m_CriticalDataSources.push_back(
+        m_CriticalErrors.push_back(
             "The [CASSANDRA]/health_timeout value is out of range. It must be >= 0. "
             "Received: " + to_string(m_CassandraHealthTimeoutSec) + ". Resetting to "
             "default from [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec));
@@ -547,6 +657,10 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
     m_SeqIdResolveAlways =
         registry.GetBool(kCassandraProcessorSection, "seq_id_resolve_always",
                          kDefaultSeqIdResolveAlways);
+
+    x_ReadProcessorThrottleSettings(registry, "CASSANDRA",
+                                    m_CassandraProcessorThrottleThreshold,
+                                    m_CassandraProcessorThrottleByIp);
 }
 
 
@@ -598,6 +712,10 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
             "default from [HEALTH]/timeout: " + to_string(m_HealthTimeoutSec));
         m_CDDHealthTimeoutSec = kDefaultHealthTimeout;
     }
+
+    x_ReadProcessorThrottleSettings(registry, "CDD",
+                                    m_CDDProcessorThrottleThreshold,
+                                    m_CDDProcessorThrottleByIp);
 }
 
 
@@ -626,6 +744,10 @@ void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   r
             to_string(m_HealthTimeoutSec));
         m_WGSHealthTimeoutSec = kDefaultHealthTimeout;
     }
+
+    x_ReadProcessorThrottleSettings(registry, "WGS",
+                                    m_WGSProcessorThrottleThreshold,
+                                    m_WGSProcessorThrottleByIp);
 }
 
 
@@ -654,6 +776,10 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
             to_string(m_HealthTimeoutSec));
         m_SNPHealthTimeoutSec = kDefaultHealthTimeout;
     }
+
+    x_ReadProcessorThrottleSettings(registry, "SNP",
+                                    m_SNPProcessorThrottleThreshold,
+                                    m_SNPProcessorThrottleByIp);
 }
 
 
@@ -1080,7 +1206,12 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
             to_string(kDefaultRequestTimeoutSec));
         m_RequestTimeoutSec = kDefaultRequestTimeoutSec;
     }
+}
 
+
+void
+SPubseqGatewaySettings::x_ValidateProcessorMaxConcurrencyServerSectionSettings(void)
+{
     if (m_ProcessorMaxConcurrency == 0) {
         m_CriticalErrors.push_back(
             "Invalid [" + kServerSection +
@@ -1088,7 +1219,44 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
             to_string(m_ProcessorMaxConcurrency) + "). "
             "The processor max concurrency must be > 0. "
             "Resetting to " + to_string(kDefaultProcessorMaxConcurrency));
-        m_RequestTimeoutSec = kDefaultProcessorMaxConcurrency;
+        m_ProcessorMaxConcurrency = kDefaultProcessorMaxConcurrency;
+    }
+}
+
+
+void
+SPubseqGatewaySettings::x_ValidateProcessorThrottlingServerSectionSettings(void)
+{
+
+    bool    proc_throttle_ok = true;
+    if (m_ProcessorThrottleThresholdPercent < 0.0 ||
+        m_ProcessorThrottleThresholdPercent > 100.0) {
+        m_CriticalErrors.push_back(
+            "Invalid [" + kServerSection +
+            "]/processor_throttle_threshold value (" +
+            to_string(m_ProcessorThrottleThresholdPercent) + "). "
+            "The processor throttle threshold must be [0-100]. "
+            "Resetting [" + kServerSection + "]/processor_throttle_threshold to " +
+            to_string(kDefaultProcessorThrottleThresholdPercent) + " and " +
+            "[" + kServerSection + "]/processor_throttle_by_ip to " +
+            to_string(kDefaultProcessorThrottleByIpPercent));
+        m_ProcessorThrottleThresholdPercent = kDefaultProcessorThrottleThresholdPercent;
+        m_ProcessorThrottleByIpPercent = kDefaultProcessorThrottleByIpPercent;
+        proc_throttle_ok = false;
+    }
+    if (proc_throttle_ok && (m_ProcessorThrottleByIpPercent < 1.0 ||
+                             m_ProcessorThrottleByIpPercent > 100)) {
+        m_CriticalErrors.push_back(
+            "Invalid [" + kServerSection +
+            "]/processor_throttle_by_ip value (" +
+            to_string(m_ProcessorThrottleByIpPercent) + "). "
+            "The processor throttle threshold must be [1-100]. "
+            "Resetting [" + kServerSection + "]/processor_throttle_threshold to " +
+            to_string(kDefaultProcessorThrottleThresholdPercent) + " and " +
+            "[" + kServerSection + "]/processor_throttle_by_ip to " +
+            to_string(kDefaultProcessorThrottleByIpPercent));
+        m_ProcessorThrottleThresholdPercent = kDefaultProcessorThrottleThresholdPercent;
+        m_ProcessorThrottleByIpPercent = kDefaultProcessorThrottleByIpPercent;
     }
 }
 
@@ -1432,12 +1600,16 @@ size_t SPubseqGatewaySettings::GetProcessorMaxConcurrency(
                                             "ProcessorMaxConcurrency",
                                             m_ProcessorMaxConcurrency);
         if (limit == 0) {
-            m_CriticalErrors.push_back(
+            string  msg = 
                 "Invalid [" + section + "]/ProcessorMaxConcurrency value (" +
                 to_string(limit) + "). "
                 "The processor max concurrency must be > 0. "
                 "Resetting to " +
-                to_string(m_ProcessorMaxConcurrency));
+                to_string(m_ProcessorMaxConcurrency);
+            if (find(m_CriticalErrors.begin(),
+                     m_CriticalErrors.end(), msg) == m_CriticalErrors.end()) {
+                m_CriticalErrors.push_back(msg);
+            }
             limit = m_ProcessorMaxConcurrency;
         }
 
@@ -1446,6 +1618,32 @@ size_t SPubseqGatewaySettings::GetProcessorMaxConcurrency(
 
     // No processor specific value => server wide (or default)
     return m_ProcessorMaxConcurrency;
+}
+
+
+size_t
+SPubseqGatewaySettings::GetProcessorIPThrottlingThreshold(const string &  processor_id) const
+{
+    if (processor_id == "CASSANDRA")    return m_CassandraProcessorThrottleThreshold;
+    if (processor_id == "WGS")          return m_WGSProcessorThrottleThreshold;
+    if (processor_id == "CDD")          return m_CDDProcessorThrottleThreshold;
+    if (processor_id == "SNP")          return m_SNPProcessorThrottleThreshold;
+
+    ERR_POST("Unknown processor group identifier " + processor_id + ". Exiting.");
+    exit(0);
+}
+
+
+size_t
+SPubseqGatewaySettings::GetProcessorIPThrottlingLimit(const string &  processor_id) const
+{
+    if (processor_id == "CASSANDRA")    return m_CassandraProcessorThrottleByIp;
+    if (processor_id == "WGS")          return m_WGSProcessorThrottleByIp;
+    if (processor_id == "CDD")          return m_CDDProcessorThrottleByIp;
+    if (processor_id == "SNP")          return m_SNPProcessorThrottleByIp;
+
+    ERR_POST("Unknown processor group identifier " + processor_id + ". Exiting.");
+    exit(0);
 }
 
 

@@ -275,6 +275,7 @@ public:
     void OnRequestTimerClose(size_t  request_id);
 
     map<string, size_t>  GetConcurrentCounters(void);
+    map<string, pair<size_t, size_t>>  GetIPThrottlingSettings(void);
     bool IsGroupAlive(size_t  request_id);
     void PopulateStatus(CJsonNode &  status);
     void RegisterProcessorsForMomentousCounters(void);
@@ -349,11 +350,10 @@ private:
     {
         size_t                  m_Limit;
         size_t                  m_CurrentCount;
-        size_t                  m_LimitReachedCount;
         mutable atomic<bool>    m_CountLock;
 
         SProcessorConcurrency() :
-            m_Limit(0), m_CurrentCount(0), m_LimitReachedCount(0),
+            m_Limit(0), m_CurrentCount(0),
             m_CountLock(false)
         {}
 
@@ -361,20 +361,6 @@ private:
         {
             CSpinlockGuard      guard(&m_CountLock);
             return m_CurrentCount;
-        }
-
-        void IncrementLimitReachedCount(void)
-        {
-            CSpinlockGuard      guard(&m_CountLock);
-            ++m_LimitReachedCount;
-        }
-
-        void GetCurrentAndLimitReachedCounts(size_t *  current,
-                                             size_t *  limit_reached)
-        {
-            CSpinlockGuard      guard(&m_CountLock);
-            *current = m_CurrentCount;
-            *limit_reached = m_LimitReachedCount;
         }
 
         void IncrementCurrentCount(void)
@@ -391,6 +377,86 @@ private:
     };
 
     SProcessorConcurrency       m_ProcessorConcurrency[MAX_PROCESSOR_GROUPS];
+
+
+    // Throttling by ip support
+    // Each ip may be allowed no more then a certain number of processors
+    struct SProcessorThrottling
+    {
+        size_t                  m_Threshold;    // 0: special value to switch off throttling
+        size_t                  m_LimitByIp;
+        size_t                  m_ThrottledCounter;
+        mutable atomic<bool>    m_ProcCountPerIpLock;
+
+        // ip -> processors taken
+        map<string, size_t>     m_ProcCountPerIp;
+
+        SProcessorThrottling() :
+            m_Threshold(0), m_LimitByIp(0), m_ProcCountPerIpLock(false)
+        {}
+
+        bool ShouldThrottle(shared_ptr<CPSGS_Request> request,
+                            size_t  current_proc_cnt)
+        {
+            if (m_Threshold == 0)
+                return false;
+
+            string      client_end_ip = request->GetRequestContext()->GetClientIP();
+            if (client_end_ip.empty())
+                return false;
+
+            map<string, size_t>::iterator   it;
+            CSpinlockGuard                  guard(&m_ProcCountPerIpLock);
+
+            it = m_ProcCountPerIp.find(client_end_ip);
+            if (it == m_ProcCountPerIp.end()) {
+                m_ProcCountPerIp.insert({client_end_ip, 1});
+                return false;     // At least one is always allowed
+            }
+
+            if (current_proc_cnt < m_Threshold) {
+                ++it->second;
+                return false;
+            }
+
+            // Threshold has been reached. Need to check the current # of proc
+            // for the client ip
+            if (it->second < m_LimitByIp) {
+                ++it->second;
+                return false;
+            }
+
+            // There will be no instantiation of the processor
+            return true;
+        }
+
+        void Finished(shared_ptr<CPSGS_Request> request)
+        {
+            if (m_Threshold == 0)
+                return;
+
+            string      client_end_ip = request->GetRequestContext()->GetClientIP();
+            if (client_end_ip.empty())
+                return;
+
+            map<string, size_t>::iterator   it;
+            CSpinlockGuard                  guard(&m_ProcCountPerIpLock);
+
+            it = m_ProcCountPerIp.find(client_end_ip);
+            if (it == m_ProcCountPerIp.end())
+                return;     // should not happened
+
+            if (it->second == 1) {
+                // Last instance for that ip => remove
+                m_ProcCountPerIp.erase(it);
+            } else {
+                --it->second;
+            }
+        }
+    };
+
+    SProcessorThrottling        m_ProcessorThrottling[MAX_PROCESSOR_GROUPS];
+
     vector<string>              m_RegisteredProcessorGroups;
     map<string, string>         m_LowerCaseProcessorGroups;
 };
