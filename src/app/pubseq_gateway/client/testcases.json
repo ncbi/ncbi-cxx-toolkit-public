@@ -60,6 +60,798 @@
     },
 
     "testcases": {
+        "resolve with seq_id_resolve = yes 8": {
+            "description": "resolve with seq_id_resolve = yes 8",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "GPS_000103663.1",
+                                "19"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "gpp|GPS_000103663.1|",
+                        "type": 19
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gi|222883023",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "dna",
+                      "length": 2739,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "36.40118"
+                      },
+                      "tax_id": 9913,
+                      "hash": -1456440327,
+                      "date_changed": "07/31/2009 13:11:00",
+                      "gi": 222883023
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 7": {
+            "description": "resolve with seq_id_resolve = yes 7",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "EATJ01000284.1",
+                                "18"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "tpd|EATJ01000284.1|",
+                        "type": 18
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gnl|WGS:EATJ01|SRR6873784_N0050711",
+                          "type": 11
+                        },
+                        {
+                          "id": "gi|2267025815",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "dna",
+                      "length": 2472,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "23.129580145"
+                      },
+                      "tax_id": 2806419,
+                      "hash": -1978125675,
+                      "date_changed": "10/03/2024 14:39:00",
+                      "gi": 2267025815
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 6": {
+            "description": "resolve with seq_id_resolve = yes 6",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "HBZQ01029051.1",
+                                "17"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "tpe|HBZQ01029051.1|",
+                        "type": 17
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gi|2435942668",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "rna",
+                      "length": 2504,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "22.279485570"
+                      },
+                      "tax_id": 175274,
+                      "hash": -1823680673,
+                      "date_changed": "01/29/2023 12:10:00",
+                      "gi": 2435942668
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 5": {
+            "description": "resolve with seq_id_resolve = yes 5",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "DUYG01000186.1",
+                                "16"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "tpg|DUYG01000186.1|",
+                        "type": 16
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gnl|WGS:DUYG01|SCF7180000076310",
+                          "type": 11
+                        },
+                        {
+                          "id": "gi|1846091892",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "dna",
+                      "length": 463,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "37.357895434"
+                      },
+                      "tax_id": 1073566,
+                      "hash": 1709905427,
+                      "date_changed": "05/28/2020 11:12:00",
+                      "gi": 1846091892
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 4": {
+            "description": "resolve with seq_id_resolve = yes 4",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "LE261202.1",
+                                "13"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "dbj|LE261202.1|",
+                        "type": 13
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gi|820489528",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "rna",
+                      "length": 994,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "3.31415243"
+                      },
+                      "tax_id": 36312,
+                      "hash": -1491498981,
+                      "date_changed": "10/24/2015 20:07:00",
+                      "gi": 820489528
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 3": {
+            "description": "resolve with seq_id_resolve = yes 3",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "WP_375742530.1",
+                                "10"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "ref|WP_375742530.1|",
+                        "type": 10
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gi|2810084561",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "aa",
+                      "length": 461,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "5.1388517873"
+                      },
+                      "tax_id": 2316720,
+                      "hash": -1577716846,
+                      "date_changed": "12/06/2024 16:59:27",
+                      "gi": 2810084561
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes 2": {
+            "description": "resolve with seq_id_resolve = yes 2",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "HBTD01004322.1",
+                                "6"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "emb|HBTD01004322.1|",
+                        "type": 6
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gi|2014506591",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "rna",
+                      "length": 2296,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "22.238116687"
+                      },
+                      "tax_id": 420556,
+                      "hash": -300465031,
+                      "date_changed": "08/01/2022 04:29:00",
+                      "gi": 2014506591
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "resolve with seq_id_resolve = yes": {
+            "description": "resolve with seq_id_resolve = yes",
+            "tags": ["id-resolve", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "AFP68756.1",
+                                "5"
+                            ],
+                            "user_args": "seq_id_resolve=yes",
+                            "include_info": [
+                                "all-info-except"
+                            ]
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                      "reply": "BioseqInfo",
+                      "canonical_id": {
+                        "id": "gb|AFP68756.1|",
+                        "type": 5
+                      },
+                      "other_ids": [
+                        {
+                          "id": "gnl|FCLEUNGHKU|ECENHK_04345",
+                          "type": 11
+                        },
+                        {
+                          "id": "gi|400173907",
+                          "type": 12
+                        }
+                      ],
+                      "molecule_type": "aa",
+                      "length": 341,
+                      "seq_state": 10,
+                      "state": 10,
+                      "blob_id": {
+                        "id": "4.327414583"
+                      },
+                      "tax_id": 208224,
+                      "hash": -868835158,
+                      "date_changed": "11/14/2024 05:11:30",
+                      "gi": 400173907
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "Admin connections status": {
+            "description": "Admin connections status",
+            "tags": ["admin-status", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/ADMIN/connections_status"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "Admin dispatcher status": {
+            "description": "Admin dispatcher status",
+            "tags": ["admin-status", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/ADMIN/dispatcher_status"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz connections": {
+            "description": "readyz connections",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz/connections?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz snp": {
+            "description": "readyz snp",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz/snp?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz wgs": {
+            "description": "readyz wgs",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz/wgs?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz lmdb": {
+            "description": "readyz lmdb",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz/lmdb?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz cassandra": {
+            "description": "readyz cassandra",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz/cassandra?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "healthz": {
+            "description": "healthz",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/healthz?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "readyz": {
+            "description": "readyz",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/readyz?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
+        "livez": {
+            "description": "livez",
+            "tags": ["z", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/livez?verbose"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
+        },
         "Admin status": {
             "description": "Admin status",
             "tags": ["admin-status", "200"],
