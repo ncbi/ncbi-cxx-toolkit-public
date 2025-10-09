@@ -317,11 +317,7 @@ void CJsonResponse::Fill(shared_ptr<CPSG_BlobData> blob_data)
     if (auto blob_id = CPSG_Misc::GetRawResponseBlobId(blob_data)) {
         if (CJson_Document json_doc; json_doc.Read(blob_data->GetStream())) {
             Set("reply", blob_id->GetId());
-
-            for (const auto& p : json_doc.GetObject()) {
-                m_JsonObj.insert(p.name,  p.value);
-            }
-
+            m_JsonObj["data"].AssignCopy(json_doc);
             return;
         }
     }
