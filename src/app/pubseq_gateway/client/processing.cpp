@@ -1534,7 +1534,18 @@ CPSG_BioId::TType SRequestBuilder::GetBioIdType(const string& type)
     if (auto index = info.FindVariantIndex(type)) return static_cast<CPSG_BioId::TType>(index);
     if (auto value = objects::CSeq_id::WhichInverseSeqId(type)) return value;
 
-    return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
+    size_t pos;
+
+    try {
+        if (auto rv = stoi(type, &pos); pos == type.size()) {
+            return static_cast<CPSG_BioId::TType>(rv);
+        }
+    }
+    catch (...) {
+    }
+
+    ERR_POST(Warning << "Discarded unknown bio ID type '" << type << '\'');
+    return CPSG_BioId::TType::e_not_set;
 }
 
 CPSG_BioId SRequestBuilder::SReader<CJson_ConstObject>::GetBioId(const CJson_ConstArray& array) const
