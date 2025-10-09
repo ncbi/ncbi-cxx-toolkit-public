@@ -343,7 +343,7 @@ void CRequestContext::SetClientIP(const string& client)
     if ( bad ) {
         m_ClientIP = kBadIP;
         x_Modify();
-        ERR_POST_X(25, "Bad client IP value: " << ip);
+        ERR_POST_X(25, Warning << "Bad client IP value: " << ip);
         return;
     }
 
