@@ -552,66 +552,6 @@
                 }
             ]
         },
-        "Admin connections status": {
-            "description": "Admin connections status",
-            "tags": ["admin-status", "200"],
-            "requests": [
-                [
-                    {
-                        "jsonrpc": "2.0",
-                        "method": "raw",
-                        "params": {
-                            "abs_path_ref": "/ADMIN/connections_status"
-                        },
-                        "id": "raw_1"
-                    }
-                ]
-            ],
-            "response": [
-                {
-                    "jsonrpc": "2.0",
-                    "id": "raw_1",
-                    "result": null
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "raw_1",
-                    "result": {
-                        "status": "Success"
-                    }
-                }
-            ]
-        },
-        "Admin dispatcher status": {
-            "description": "Admin dispatcher status",
-            "tags": ["admin-status", "200"],
-            "requests": [
-                [
-                    {
-                        "jsonrpc": "2.0",
-                        "method": "raw",
-                        "params": {
-                            "abs_path_ref": "/ADMIN/dispatcher_status"
-                        },
-                        "id": "raw_1"
-                    }
-                ]
-            ],
-            "response": [
-                {
-                    "jsonrpc": "2.0",
-                    "id": "raw_1",
-                    "result": null
-                },
-                {
-                    "jsonrpc": "2.0",
-                    "id": "raw_1",
-                    "result": {
-                        "status": "Success"
-                    }
-                }
-            ]
-        },
         "readyz connections": {
             "description": "readyz connections",
             "tags": ["z", "200"],
