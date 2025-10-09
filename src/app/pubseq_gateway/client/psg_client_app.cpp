@@ -378,6 +378,15 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
         const auto& test_identity = args["test-identity"].AsString();
         CPSG_Misc::SetTestIdentity(test_identity);
     }
+
+    auto min_severity = args["min-severity"].AsString();
+
+    if (EDiagSev value; CNcbiDiag::StrToSeverityLevel(min_severity.c_str(), value)) {
+        SetDiagPostLevel(value);
+    } else {
+        SetDiagPostLevel(eDiag_Warning);
+        ERR_POST(Warning << "Discarded unknown severity level '" << min_severity << '\'');
+    }
 }
 
 namespace NParamsBuilder
@@ -395,10 +404,7 @@ struct SBase : TParams
             std::forward<TInitArgs>(init_args)...
         }
     {
-        if (!CNcbiDiag::StrToSeverityLevel(args["min-severity"].AsString().c_str(), TParams::min_severity)) {
-            TParams::min_severity = eDiag_Warning;
-        }
-
+        TParams::min_severity = GetDiagPostLevel();
         TParams::verbose = args["verbose"].HasValue();
     }
 };
