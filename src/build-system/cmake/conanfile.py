@@ -80,10 +80,10 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         if self.settings.os == "Linux" or NCBIfound:
             self._default_requires("libdb/5.3.28")
         self._default_requires("libiconv/1.17")
-        self._default_requires("libjpeg/9e")
-        self._default_requires("libnghttp2/[>=1.51.0 <=1.61.0]")
+        self._default_requires("libjpeg/[>=9e]")
+        self._default_requires("libnghttp2/[>=1.51.0 <=1.66.0]")
         self._default_requires("libpng/[>=1.6.37 <=1.6.50]")
-        self._default_requires("libtiff/[>=4.3.0 <=4.7.0]")
+        self._default_requires("libtiff/[>=4.3.0 <=4.7.1]")
         if self.settings.os == "Linux":
             self._default_requires("libunwind/[>=1.6.2 <=1.8.1]")
         self._default_requires("libuv/[>=1.45.0 <=1.49.2]")
@@ -95,7 +95,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("pcre/8.45")
         self._default_requires("pcre2/10.42")
         self._default_requires("protobuf/[>=3.21.12 <=6.30.1]")
-        self._default_requires("sqlite3/[>=3.40.0 <=3.49.1]")
+        self._default_requires("sqlite3/[>=3.40.0 <=3.50.4]")
         self._optional_requires("wxwidgets/3.2.8")
         self._default_requires("zlib/[>=1.2.11 <2]")
         self._default_requires("zstd/[>=1.5.2 <=1.5.5]")
@@ -103,8 +103,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._internal_requires("ncbicrypt/20230516")
         if self.settings.os == "Linux":
             self._internal_requires("ncbi-fastcgi/2.4.2")
-            self._internal_requires("ncbi-fastcgipp/[>=3.1.0.4]")
-            self._internal_requires("libcurl/[>=8.8.0 <=8.12.1]")
+            self._internal_requires("ncbi-fastcgipp/[>=3.1.0.5]")
+            self._internal_requires("libcurl/[>=8.8.0 <=9]")
         self._internal_requires("ncbi-vdb/[>=3.0.1 <=3.2.1]")
 
 
