@@ -123,7 +123,7 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
             return rv;
         }
     }
-    while (m_Src.WaitUntil(deadline));
+    while (m_Src.WaitUntil(src_locked, deadline));
 
     NCBI_THROW_FMT(CPSG_Exception, eTimeout, "Timeout on reading (after " << kSeconds << " seconds)");
     return eRW_Error;
@@ -1018,7 +1018,7 @@ SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadl
             return state.GetStatus();
         }
     }
-    while (ts.WaitUntil(deadline));
+    while (ts.WaitUntil(locked, deadline));
 
     return EPSG_Status::eInProgress;
 }

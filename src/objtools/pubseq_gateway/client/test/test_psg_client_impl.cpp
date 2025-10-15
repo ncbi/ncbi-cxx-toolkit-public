@@ -871,35 +871,6 @@ BOOST_AUTO_TEST_CASE(SyncThreadSafe)
     }
 }
 
-BOOST_AUTO_TEST_CASE(CV)
-{
-    const auto kTimeout = CTimeout(0.5);
-    const auto kIterations = 10;
-    const auto kThreads = 10;
-    SRandom r;
-    SPSG_CV<void> cv;
-    atomic_int notified = 0;
-    atomic_bool stopped = false;
-
-    auto thread_impl1 = [&](barrier<>& b) { [[maybe_unused]] auto u = b.arrive(); if (cv.WaitUntil(kTimeout))          ++notified; };
-    auto thread_impl2 = [&](barrier<>& b) { [[maybe_unused]] auto u = b.arrive(); if (cv.WaitUntil(stopped, kTimeout)) ++notified; };
-
-    for (auto i = kIterations; i > 0; --i) {
-        int n = r.Get(2, kThreads);
-        {
-            auto threads = s_CreateThreadsAndWait(n, thread_impl1);
-            cv.NotifyOne();
-        }
-        BOOST_CHECK_EQUAL_MT_SAFE(notified.exchange(0), 1);
-
-        {
-            auto threads = s_CreateThreadsAndWait(n, thread_impl2);
-            cv.NotifyOne();
-        }
-        BOOST_CHECK_EQUAL_MT_SAFE(notified.exchange(0), 1);
-    }
-}
-
 BOOST_AUTO_TEST_CASE(WaitingQueue)
 {
     const auto kTimeout = CTimeout(0.5);

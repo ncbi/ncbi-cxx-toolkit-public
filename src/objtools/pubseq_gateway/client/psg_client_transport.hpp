@@ -427,7 +427,7 @@ struct SPSG_Reply
 
     struct SItem
     {
-        using TTS = SPSG_CV<SItem>;
+        using TTS = SSyncThreadSafe<SItem>;
 
         vector<SPSG_Chunk> chunks;
         SPSG_Args args;

@@ -751,7 +751,7 @@ optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
             return nullptr;
         }
     }
-    while (reply_item.WaitUntil(deadline));
+    while (reply_item.WaitUntil(locked, deadline));
 
     return nullopt;
 }
