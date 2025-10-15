@@ -396,14 +396,13 @@ struct SPSG_Reply
 
         SState() : m_InProgress(true), m_Status(EPSG_Status::eSuccess) {}
 
-        SStatus GetStatus() const volatile { return m_Status; }
+        SStatus GetStatus() const { return m_Status; }
         SPSG_Message GetMessage(EDiagSev min_severity);
-        const volatile atomic_bool& InProgress() const volatile { return m_InProgress; }
+        bool InProgress() const { return m_InProgress; }
 
-        void SetStatus(SStatus status, bool reset) volatile
+        void SetStatus(SStatus status, bool reset)
         {
-            SStatus expected = m_Status;
-            while (((expected.CanBeChangedTo(status)) || reset) && !m_Status.compare_exchange_weak(expected, status));
+            if ((m_Status.CanBeChangedTo(status)) || reset) m_Status = status;
         }
 
         void AddError(string message, SStatus status = EPSG_Status::eError, EDiagSev severity = eDiag_Error, optional<int> code = nullopt)
@@ -417,12 +416,12 @@ struct SPSG_Reply
             m_Messages.emplace_back(SPSG_Message{std::move(message), severity, code});
         }
 
-        bool SetComplete() volatile { return m_InProgress.exchange(false); }
+        void SetComplete() { m_InProgress = false; }
         void Reset();
 
     private:
-        atomic_bool m_InProgress;
-        atomic<SStatus> m_Status;
+        bool m_InProgress;
+        SStatus m_Status;
         deque<SPSG_Message> m_Messages;
     };
 

@@ -632,8 +632,8 @@ SPSG_Message SPSG_Reply::SState::GetMessage(EDiagSev min_severity)
 
 void SPSG_Reply::SState::Reset()
 {
-    m_InProgress.store(true);
-    m_Status.store(EPSG_Status::eSuccess);
+    m_InProgress = true;
+    m_Status = EPSG_Status::eSuccess;
     m_Messages.clear();
 }
 
@@ -678,11 +678,17 @@ void SPSG_Reply::SetComplete()
 
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
-            if (item->state.InProgress()) {
-                item.GetLock()->state.AddError(message);
-                if (item->state.SetComplete()) item.NotifyOne();
-                missing = true;
+            if (auto item_locked = item.GetLock()) {
+                if (auto& state = item_locked->state; state.InProgress()) {
+                    state.AddError(message);
+                    state.SetComplete();
+                } else {
+                    continue;
+                }
             }
+
+            missing = true;
+            item.NotifyOne();
         }
     }
 
@@ -691,7 +697,7 @@ void SPSG_Reply::SetComplete()
             reply_item_locked->state.AddError(message);
         }
 
-        reply_item->state.SetComplete();
+        reply_item_locked->state.SetComplete();
     }
 
     reply_item.NotifyOne();
@@ -702,26 +708,35 @@ void SPSG_Reply::SetFailed(string message, SState::SStatus status)
 {
     if (auto items_locked = items.GetLock()) {
         for (auto& item : *items_locked) {
-            if (item->state.InProgress()) {
-                item.GetLock()->state.AddError(message);
-                if (item->state.SetComplete()) item.NotifyOne();
+            if (auto item_locked = item.GetLock()) {
+                if (auto& state = item_locked->state; state.InProgress()) {
+                    state.AddError(message);
+                    state.SetComplete();
+                } else {
+                   continue;
+                }
             }
+
+            item.NotifyOne();
         }
     }
 
     if (auto reply_item_locked = reply_item.GetLock()) {
-        reply_item_locked->state.AddError(message, status);
+        auto& state = reply_item_locked->state;
+        state.AddError(message, status);
+        state.SetComplete();
     }
 
-    reply_item->state.SetComplete();
     reply_item.NotifyOne();
     queue->NotifyOne();
 }
 
 optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
 {
+    auto locked = reply_item.GetLock();
+
     do {
-        bool was_in_progress = reply_item->state.InProgress();
+        bool was_in_progress = locked->state.InProgress();
 
         if (auto new_items_locked = new_items.GetLock()) {
             if (!new_items_locked->empty()) {
@@ -736,7 +751,7 @@ optional<SPSG_Reply::SItem::TTS*> SPSG_Reply::GetNextItem(CDeadline deadline)
             return nullptr;
         }
     }
-    while (reply_item.WaitUntil(reply_item->state.InProgress(), deadline, false, true));
+    while (reply_item.WaitUntil(deadline));
 
     return nullopt;
 }

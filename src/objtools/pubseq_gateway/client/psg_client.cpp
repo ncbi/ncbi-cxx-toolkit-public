@@ -1010,7 +1010,8 @@ bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 
 SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)
 {
-    auto& state = ts->state;
+    auto locked = ts.GetLock();
+    auto& state = locked->state;
 
     do {
         if (!state.InProgress()) {
@@ -1701,7 +1702,8 @@ int CPSG_Misc::GetReplyHttpCode(const shared_ptr<CPSG_Reply>& reply)
 {
     assert(reply);
     assert(reply->m_Impl);
-    auto& state = reply->m_Impl->reply->reply_item->state;
+    auto locked = reply->m_Impl->reply->reply_item.GetLock();
+    auto& state = locked->state;
     return state.InProgress() ? 0 : state.GetStatus().GetHttpCode();
 }
 
