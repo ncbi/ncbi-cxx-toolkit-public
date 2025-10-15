@@ -295,7 +295,7 @@ struct SPSG_ParamValue : SPSG_Param<TParam>
     TValue Get() const { return m_Value; }
 
 private:
-    SPSG_ParamValue(TValue value) : m_Value(value) { _DEBUG_ARG(SPSG_Param<TParam>::sm_Used = true); }
+    explicit SPSG_ParamValue(TValue value) : m_Value(value) { _DEBUG_ARG(SPSG_Param<TParam>::sm_Used = true); }
 
     TValue m_Value;
 };
@@ -306,7 +306,8 @@ private:
 #define PSG_PARAM_VALUE_DECL_MIN(type, section, name)                                                                           \
     NCBI_PARAM_DECL(type, section, name);                                                                                       \
     template <>                                                                                                                 \
-    struct PSG_PARAM_TYPE(section, name)::SAdjust : SPSG_ParamMin<NCBI_PARAM_TYPE(section, name)> {}
+    struct PSG_PARAM_TYPE(section, name)::SAdjust : SPSG_ParamMin<NCBI_PARAM_TYPE(section, name)> {};                           \
+    template <> PSG_PARAM_TYPE(section, name)::TValue SPSG_ParamMin<NCBI_PARAM_TYPE(section, name)>::sm_MinValue
 
 #define PSG_PARAM_VALUE_DEF_MIN(type, section, name, default_value, min_value)                                                  \
     NCBI_PARAM_DEF(type, section, name, default_value);                                                                         \

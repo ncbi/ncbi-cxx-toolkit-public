@@ -146,8 +146,6 @@ struct SThreadSafe
     // All thread-safe members must be explicitly marked volatile to be available.
           volatile TType* operator->()       { return &m_Object; }
     const volatile TType* operator->() const { return &m_Object; }
-    NCBI_DEPRECATED       volatile TType& GetMTSafe()       { return m_Object; }
-    NCBI_DEPRECATED const volatile TType& GetMTSafe() const { return m_Object; }
 
 protected:
     mutable mutex m_Mutex;

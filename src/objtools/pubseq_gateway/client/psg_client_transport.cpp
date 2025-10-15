@@ -780,7 +780,7 @@ void SPSG_Request::Reset()
 
 SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& len)
 {
-    static const string kPrefix = "\n\nPSG-Reply-Chunk: ";
+    const auto kPrefix = "\n\nPSG-Reply-Chunk: "sv;
 
     auto& index = m_Buffer.prefix_index;
 
@@ -1963,7 +1963,7 @@ uint64_t s_GetDiscoveryRepeat(const CServiceDiscovery& service)
 SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
     m_StartBarrier(TPSG_NumIo::GetDefault() + 2),
-    m_StopBarrier(TPSG_NumIo::GetDefault() + 1),
+    m_StopBarrier(TPSG_NumIo::GetDefault() + 2),
     m_Discovery(m_StartBarrier, m_StopBarrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, m_Queues),
     m_RequestCounter(0),
     m_RequestId(1)
@@ -1989,6 +1989,8 @@ SPSG_IoCoordinator::~SPSG_IoCoordinator()
     for (auto& io : m_Io) {
         io->Shutdown();
     }
+
+    m_StopBarrier.Wait();
 }
 
 bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool&, const CDeadline&)
