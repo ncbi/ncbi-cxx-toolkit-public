@@ -86,7 +86,7 @@ struct SInteractiveSchema {};
 struct SPerformance {};
 struct SJsonCheck {};
 
-void s_InitPsgOptions(CArgDescriptions& arg_desc);
+void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel);
 void s_SetPsgDefaults(const CArgs& args, bool parallel);
 
 CPsgClientApp::CPsgClientApp() :
@@ -118,7 +118,7 @@ void CPsgClientApp::Init()
         arg_desc->SetUsageContext("", command.desc);
 
         if (~command.flags & SCommand::fNoApi) {
-            s_InitPsgOptions(*arg_desc);
+            s_InitPsgOptions(*arg_desc, command.flags & SCommand::fParallel);
         }
 
         command.init(*arg_desc);
@@ -137,10 +137,8 @@ int CPsgClientApp::Run()
 
     for (const auto& command : m_Commands) {
         if (command.name == name) {
-            const bool parallel = command.flags & SCommand::fParallel;
-
             if (~command.flags & SCommand::fNoApi) {
-                s_SetPsgDefaults(args, parallel);
+                s_SetPsgDefaults(args, command.flags & SCommand::fParallel);
             }
 
             return command.run(this, args);
@@ -182,10 +180,12 @@ void s_AddLatencyOptions(CArgDescriptions& arg_desc)
     arg_desc.AddAlias("latency", "last-latency");
 }
 
-void s_InitPsgOptions(CArgDescriptions& arg_desc)
+void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel)
 {
     arg_desc.AddOptionalKey("service", "SERVICE", "PSG service name or host:port pair", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("io-threads", "THREADS_NUM", "Number of I/O threads", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("max-sessions", "MAX_SESSIONS", "Maximum number of sessions per server per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
+    arg_desc.AddOptionalKey("max-queue-load", "MAX_QUEUE_LOAD", "Maximum queue load", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("requests-per-io", "REQUESTS_NUM", "Number of requests to submit consecutively per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("max-streams", "REQUESTS_NUM", "Maximum number of concurrent streams per I/O thread", CArgDescriptions::eInteger, CArgDescriptions::fHidden);
     arg_desc.AddOptionalKey("use-cache", "USE_CACHE", "Whether to use LMDB cache (no|yes|default)", CArgDescriptions::eString);
@@ -198,6 +198,11 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("https", "Enable HTTPS");
     s_AddLatencyOptions(arg_desc);
     arg_desc.AddFlag("verbose", "Verbose output");
+
+    if (parallel) {
+        arg_desc.AddDefaultKey("rate", "RATE", "DEPRECATED", CArgDescriptions::eDouble, "0.0", CArgDescriptions::fHidden);
+        arg_desc.AddDefaultKey("worker-threads", "THREADS_NUM", "Number of worker threads of each type", CArgDescriptions::eInteger, "4", CArgDescriptions::fHidden);
+    }
 }
 
 void s_InitDataOnly(CArgDescriptions& arg_desc, bool blob_only = true)
@@ -234,8 +239,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_Resolve>(CArgDescriptions& arg_de
     arg_desc.AddOptionalKey("type", "TYPE", "Type of bio ID(s)", CArgDescriptions::eString);
     arg_desc.AddOptionalKey("acc-substitution", "ACC_SUB", "ACC substitution", CArgDescriptions::eString);
     arg_desc.AddFlag("no-bio-id-resolution", "Do not try to resolve provided bio ID(s) before use");
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
-    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 
     for (const auto& f : SRequestBuilder::GetInfoFlags()) {
         arg_desc.AddFlag(f.name, f.desc);
@@ -284,8 +287,6 @@ void CPsgClientApp::s_InitRequest<CPSG_Request_IpgResolve>(CArgDescriptions& arg
     arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "ipg");
     arg_desc.SetDependency("input-file", CArgDescriptions::eExcludes, "nucleotide");
     arg_desc.AddFlag("server-mode", "Output one response per line");
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
-    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
 }
 
 template <>
@@ -305,8 +306,6 @@ void CPsgClientApp::s_InitRequest<SInteractive>(CArgDescriptions& arg_desc)
     arg_desc.AddFlag("echo", "Echo all incoming requests");
     arg_desc.AddFlag("one-server", "Use only one server from the service", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
     arg_desc.AddFlag("testing", "Testing mode adjustments", CArgDescriptions::eFlagHasValueIfSet, CArgDescriptions::fHidden);
-    arg_desc.AddDefaultKey("rate", "RATE", "Maximum number of requests to submit per second", CArgDescriptions::eDouble, "0.0");
-    arg_desc.AddDefaultKey("worker-threads", "THREADS_CONF", "Numbers of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
     arg_desc.SetDependency("preview-size", CArgDescriptions::eRequires, "data-limit");
 }
 
@@ -341,6 +340,18 @@ void s_SetPsgDefaults(const CArgs& args, bool parallel)
     if (args["io-threads"].HasValue()) {
         auto io_threads = args["io-threads"].AsInteger();
         TPSG_NumIo::SetDefault(io_threads);
+    } else if (parallel) {
+        TPSG_NumIo::SetImplicitDefault(4);
+    }
+
+    if (args["max-sessions"].HasValue()) {
+        auto max_sessions = args["max-sessions"].AsInteger();
+        TPSG_MaxSessions::SetDefault(max_sessions);
+    }
+
+    if (args["max-queue-load"].HasValue()) {
+        auto max_queue_load = args["max-queue-load"].AsInteger();
+        TPSG_MaxQueueLoad::SetDefault(max_queue_load);
     }
 
     if (args["requests-per-io"].HasValue()) {
