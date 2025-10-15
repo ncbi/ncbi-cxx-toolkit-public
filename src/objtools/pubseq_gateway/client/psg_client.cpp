@@ -76,13 +76,13 @@ SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS& src, TStats stats)
 {
 }
 
-ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
+ERW_Result SPSG_BlobReader::x_Read(SPSG_Reply::SItem& src, void* buf, size_t count, size_t* bytes_read)
 {
     assert(bytes_read);
 
     *bytes_read = 0;
 
-    CheckForNewChunks();
+    CheckForNewChunks(src.chunks);
 
     for (; m_Chunk < m_Data.size(); ++m_Chunk) {
         auto& data = m_Data[m_Chunk];
@@ -104,8 +104,7 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
         m_Index = 0;
     }
 
-    auto src_locked = m_Src.GetLock();
-    return src_locked->expected.Cmp<equal_to>(src_locked->received) ? eRW_Eof : eRW_Success;
+    return src.expected.Cmp<equal_to>(src.received) ? eRW_Eof : eRW_Success;
 }
 
 ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
@@ -114,8 +113,10 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
     const auto kSeconds = TPSG_ReaderTimeout::GetDefault();
     CDeadline deadline(kSeconds);
 
+    auto src_locked = m_Src.GetLock();
+
     do {
-        auto rv = x_Read(buf, count, &read);
+        auto rv = x_Read(*src_locked, buf, count, &read);
 
         if ((rv != eRW_Success) || (read != 0)) {
             if (bytes_read) *bytes_read = read;
@@ -134,7 +135,9 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
     *count = 0;
 
-    CheckForNewChunks();
+    if (auto src_locked = m_Src.GetLock()) {
+        CheckForNewChunks(src_locked->chunks);
+    }
 
     auto k = m_Index;
 
@@ -151,12 +154,8 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
     return eRW_Success;
 }
 
-void SPSG_BlobReader::CheckForNewChunks()
+void SPSG_BlobReader::CheckForNewChunks(vector<SPSG_Chunk>& chunks)
 {
-    auto src_locked = m_Src.GetLock();
-    auto& src = *src_locked;
-    auto& chunks = src.chunks;
-
     if (m_Data.size() < chunks.size()) m_Data.resize(chunks.size());
 
     for (size_t i = 0; i < chunks.size(); ++i) {
