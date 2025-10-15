@@ -575,15 +575,15 @@ struct SPSG_Request
     void ConvertRaw();
 
 private:
-    using EStateResult = int;
+    using EStateResult = int; enum { eNewItem = 3 }; // Expands EUsualResult
 
     EStateResult StatePrefix(const char*& data, size_t& len);
     EStateResult StateArgs  (const char*& data, size_t& len);
     EStateResult StateData  (const char*& data, size_t& len);
     EStateResult Add();
 
-    enum EUpdateResult { eSuccess, eNotUsed, eRetry503, eNewItem }; // Expands EUsualResult
-    EUpdateResult UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
+    enum EUpdateResult { eSuccess = 0, fNotify = 1, fNewItem = 3, fNotifyItem = 4, eRetry503 = 8 };
+    int UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args);
 
     using TState = EStateResult (SPSG_Request::*)(const char*& data, size_t& len);
     TState m_State;

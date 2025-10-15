@@ -813,6 +813,7 @@ SPSG_Request::EStateResult SPSG_Request::StatePrefix(const char*& data, size_t& 
     }
 
     reply->reply_item.GetLock()->state.AddError(message);
+    reply->queue->NotifyOne();
     return eStop;
 }
 
@@ -895,8 +896,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
     const auto item_type = args.GetValue<SPSG_Args::eItemType>().first;
     auto& reply_item_ts = reply->reply_item;
-
-    EStateResult update_result = eContinue;
+    int update_result = eSuccess;
 
     if (item_type == SPSG_Args::eReply) {
         if (auto item_locked = reply_item_ts.GetLock()) {
@@ -907,9 +907,6 @@ SPSG_Request::EStateResult SPSG_Request::Add()
             }
         }
 
-        // Item must be unlocked before notifying
-        reply_item_ts.NotifyOne();
-
     } else {
         if (auto reply_item_locked = reply_item_ts.GetLock()) {
             auto& reply_item = *reply_item_locked;
@@ -917,6 +914,7 @@ SPSG_Request::EStateResult SPSG_Request::Add()
 
             if (reply_item.expected.Cmp<less>(reply_item.received)) {
                 reply_item.state.AddError("Protocol error: received more than expected");
+                update_result = fNotify;
             }
         }
 
@@ -932,33 +930,36 @@ SPSG_Request::EStateResult SPSG_Request::Add()
         }
 
         if (auto item_locked = item_by_id->GetLock()) {
-            update_result = UpdateItem(item_type, *item_locked, args);
+            update_result |= UpdateItem(item_type, *item_locked, args);
 
-            if (update_result == eRetry503) {
+            if (update_result & eRetry503) {
                 return eRetry;
             }
 
             if (to_create) {
                 item_locked->args = std::move(args);
             }
-
-            if (update_result == eNewItem) {
-                reply->new_items.GetLock()->emplace_back(item_by_id);
-            }
-
-            reply_item_ts.NotifyOne();
         }
 
-        // Item must be unlocked before notifying
-        item_by_id->NotifyOne();
+        if (update_result & fNewItem) {
+            reply->new_items.GetLock()->emplace_back(item_by_id);
+        }
+
+        if (update_result & fNotifyItem) {
+            item_by_id->NotifyOne();
+        }
     }
 
-    reply->queue->NotifyOne();
+    if (update_result & (fNotify | fNotifyItem)) {
+        reply_item_ts.NotifyOne();
+        reply->queue->NotifyOne();
+    }
+
     m_Buffer = SBuffer();
-    return update_result;
+    return (update_result & fNewItem) ? static_cast<EStateResult>(eNewItem) : eContinue;
 }
 
-SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
+int SPSG_Request::UpdateItem(SPSG_Args::EItemType item_type, SPSG_Reply::SItem& item, const SPSG_Args& args)
 {
     auto get_status = [&]() { return NStr::StringToInt(args.GetValue("status"), NStr::fConvErr_NoThrow); };
     auto can_retry_503 = [&](auto s, auto m) { return (s == CRequestStatus::e503_ServiceUnavailable) && Retry(m); };
@@ -967,7 +968,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
     auto chunk_type = args.GetValue<SPSG_Args::eChunkType>();
     auto& chunk = m_Buffer.chunk;
-    auto rv = eSuccess;
+    int rv = eSuccess;
 
     if (chunk_type.first & SPSG_Args::eMeta) {
         auto n_chunks = args.GetValue("n_chunks");
@@ -977,6 +978,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
             if (item.expected.Cmp<not_equal_to>(expected)) {
                 item.state.AddError("Protocol error: contradicting n_chunks");
+                rv |= fNotifyItem;
             } else {
                 item.expected = expected;
             }
@@ -986,10 +988,11 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
             return eRetry503;
         } else if (status) {
             item.state.SetStatus(status, true);
+            rv |= fNotifyItem;
         }
 
         if ((item_type != SPSG_Args::eBlob) || item.chunks.empty()) {
-            rv = eNewItem;
+            rv |= fNewItem;
         }
 
     } else if (chunk_type.first == SPSG_Args::eUnknownChunk) {
@@ -1001,6 +1004,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
         if (TPSG_FailOnUnknownChunks::GetDefault()) {
             item.state.AddError("Protocol error: unknown chunk type '" + chunk_type.second + '\'');
+            rv |= fNotifyItem;
         }
     }
 
@@ -1016,6 +1020,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
             return eRetry503;
         } else {
             item.state.AddError(std::move(chunk), status, severity, code);
+            rv |= fNotifyItem;
         }
 
         if (auto stats = reply->stats.lock()) stats->IncCounter(SPSG_Stats::eMessage, severity);
@@ -1026,7 +1031,7 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
         if (item_type == SPSG_Args::eBlob) {
             if (!index) {
-                rv = eNewItem;
+                rv |= fNewItem;
             }
 
             if (auto stats = reply->stats.lock()) {
@@ -1044,15 +1049,18 @@ SPSG_Request::EUpdateResult SPSG_Request::UpdateItem(SPSG_Args::EItemType item_t
 
     if (item.expected.Cmp<less>(item.received)) {
         item.state.AddError("Protocol error: received more than expected");
+        rv |= fNotifyItem;
 
         // If item is not a reply itself, add the error to its reply as well
         if (is_not_reply) {
             reply->reply_item.GetLock()->state.AddError("Protocol error: received more than expected");
+            rv |= fNotifyItem;
         }
 
     // Set item complete if received everything. Reply is set complete when stream closes
     } else if (is_not_reply && item.expected.Cmp<equal_to>(item.received)) {
         item.state.SetComplete();
+        rv |= fNotifyItem;
     }
 
     return rv;
