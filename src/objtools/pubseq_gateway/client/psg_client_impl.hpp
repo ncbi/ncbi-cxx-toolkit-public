@@ -125,6 +125,7 @@ struct CPSG_Queue::SImpl
     bool SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline);
     shared_ptr<CPSG_Reply> SendRequestAndGetReply(shared_ptr<CPSG_Request> request, CDeadline deadline);
     bool WaitForEvents(CDeadline deadline);
+    auto& GetQueues() { return m_Service.ioc.queues; }
 
     bool RejectsRequests() const { return m_Service.ioc.RejectsRequests(); }
     void SetRequestFlags(CPSG_Request::TFlags request_flags) { m_RequestFlags = request_flags; }

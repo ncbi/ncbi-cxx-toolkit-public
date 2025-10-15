@@ -667,22 +667,45 @@ struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     void SignalAll() { for (auto& queue : *this) queue.Signal(); }
 
+    void Increase(size_t amount = 1)
+    {
+        if (m_MaxQueueLoad.Get()) m_Pending += amount;
+    }
+
+    void Decrease(size_t amount = 1)
+    {
+        if (auto resume_threshold = 0.8 * m_MaxQueueLoad.Get()) {
+            if (auto pending = m_Pending.fetch_sub(amount); (pending >= resume_threshold) && (pending - amount < resume_threshold)) {
+                // Only notify if it was suspended before
+                if (exchange(*m_Suspend.GetLock(), false)) {
+                    m_Suspend.NotifyAll();
+                }
+            }
+        }
+    }
+
+    void Stop() { m_Suspend.NotifyAll(); }
+
 private:
+    TPSG_MaxQueueLoad m_MaxQueueLoad;
     TPSG_RequestsPerIo m_RequestsPerIo;
     TPSG_NumIo m_NumIo;
     atomic_size_t m_RequestCounter = 0;
+    atomic_size_t m_Pending = 0;
+    SSyncThreadSafe<bool> m_Suspend = false;
 };
 
 template <class... TArgs>
 void SPSG_AsyncQueue::Emplace(TArgs&&... args)
 {
+    queues.Increase();
     m_Queue.GetLock()->emplace_back(std::forward<TArgs>(args)...);
 }
 
 inline auto SPSG_AsyncQueue::Pop()
 {
     auto locked = m_Queue.GetLock();
-    return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
+    return locked->empty() ? decltype(s_Pop(*locked)){} : (queues.Decrease(), s_Pop(*locked));
 }
 
 struct SPSG_ThrottleParams

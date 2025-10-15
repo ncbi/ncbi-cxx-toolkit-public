@@ -1325,7 +1325,7 @@ public:
     CPSG_Queue(CPSG_Queue&&);
     CPSG_Queue& operator=(CPSG_Queue&&);
 
-private:
+protected:
     struct SImpl;
     unique_ptr<SImpl> m_Impl;
 };

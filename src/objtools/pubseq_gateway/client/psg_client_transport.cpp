@@ -79,6 +79,7 @@ NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
+NCBI_PARAM_DEF(unsigned, PSG, max_queue_load,         300);
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 NCBI_PARAM_DEF_EX(string,   PSG, service,               "PSG2",             eParam_Default,     NCBI_PSG_SERVICE);
@@ -1333,6 +1334,7 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
 }
 
 SPSG_AsyncQueues::SPSG_AsyncQueues() :
+    m_MaxQueueLoad(TPSG_MaxQueueLoad::eGetDefault),
     m_RequestsPerIo(TPSG_RequestsPerIo::eGetDefault),
     m_NumIo(TPSG_NumIo::eGetDefault)
 {
@@ -1340,6 +1342,21 @@ SPSG_AsyncQueues::SPSG_AsyncQueues() :
 
 bool SPSG_AsyncQueues::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
 {
+    if (auto suspend_threshold = m_MaxQueueLoad.Get()) {
+        if (m_Pending >= suspend_threshold) {
+            auto locked = m_Suspend.GetLock();
+            auto& suspended = *locked;
+
+            while (m_Pending >= suspend_threshold) {
+                suspended = true;
+
+                if (!m_Suspend.WaitUntil(locked, deadline, [&]() { return stopped || !suspended; }) || stopped) {
+                    return false;
+                }
+            }
+        }
+    }
+
     auto& queue = operator[]((m_RequestCounter++ / m_RequestsPerIo) % m_NumIo);
     queue.Emplace(std::move(req));
     queue.Signal();
@@ -1878,18 +1895,21 @@ void SPSG_IoImpl::CheckRequestExpiration()
     auto queue_locked = m_Queue.GetLockedQueue();
     list<SPSG_TimedRequest> retries;
     SUvNgHttp2_Error error("Request timeout before submitting");
+    size_t removed = 0;
 
     auto on_retry = [&](auto req) { retries.emplace_back(req); m_Queue.Signal(); };
     auto on_fail = [&](auto processor_id, auto req) { req->Fail(processor_id, error); };
 
     for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
         if (it->CheckExpiration(m_Params, error, on_retry, on_fail)) {
+            ++removed;
             it = queue_locked->erase(it);
         } else {
             ++it;
         }
     }
 
+    m_Queue.queues.Decrease(removed - retries.size());
     queue_locked->splice(queue_locked->end(), retries);
 }
 
@@ -1908,6 +1928,7 @@ void SPSG_IoImpl::FailRequests()
         }
     }
 
+    m_Queue.queues.Decrease(queue_locked->size());
     queue_locked->clear();
 }
 

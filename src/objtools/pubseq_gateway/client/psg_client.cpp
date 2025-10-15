@@ -1526,6 +1526,7 @@ void CPSG_Queue::Stop()
     _ASSERT(m_Impl);
     _ASSERT(m_Impl->queue);
     m_Impl->queue->Stop(m_Impl->queue->eDrain);
+    m_Impl->GetQueues().Stop();
 }
 
 bool CPSG_Queue::WaitForEvents(CDeadline deadline)
@@ -1539,6 +1540,7 @@ void CPSG_Queue::Reset()
     _ASSERT(m_Impl);
     _ASSERT(m_Impl->queue);
     m_Impl->queue->Stop(m_Impl->queue->eClear);
+    m_Impl->GetQueues().Stop();
 }
 
 bool CPSG_Queue::IsEmpty() const
@@ -1599,7 +1601,11 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
         return false;
     }
 
+    _ASSERT(m_Impl);
+    auto& queues = m_Impl->GetQueues();
+
     while (auto reply = GetNextReply(CDeadline::eNoWait)) {
+        queues.Increase();
         m_Replies.emplace_back(std::move(reply), 0);
     }
 
@@ -1648,6 +1654,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
 
             if (status != EPSG_Status::eInProgress) {
                 m_ReplyComplete(status, reply);
+                queues.Decrease();
                 i = m_Replies.erase(i);
                 continue;
             }
