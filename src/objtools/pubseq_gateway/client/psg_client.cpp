@@ -979,7 +979,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
 
     auto request = make_shared<SPSG_Request>(std::move(abs_path_ref), reply, request_context->Clone(), params);
 
-    if (ioc.AddRequest(request, queue->Stopped(), deadline)) {
+    if (ioc.queues.AddRequest(request, queue->Stopped(), deadline)) {
         if (stats) stats->IncCounter(SPSG_Stats::eRequest, type);
         shared_ptr<CPSG_Reply> user_reply(new CPSG_Reply);
         user_reply->m_Impl->reply = std::move(reply);

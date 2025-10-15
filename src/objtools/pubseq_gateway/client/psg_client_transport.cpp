@@ -1332,6 +1332,20 @@ bool SPSG_TimedRequest::CheckExpiration(const SPSG_Params& params, const SUvNgHt
     return false;
 }
 
+SPSG_AsyncQueues::SPSG_AsyncQueues() :
+    m_RequestsPerIo(TPSG_RequestsPerIo::eGetDefault),
+    m_NumIo(TPSG_NumIo::eGetDefault)
+{
+}
+
+bool SPSG_AsyncQueues::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline)
+{
+    auto& queue = operator[]((m_RequestCounter++ / m_RequestsPerIo) % m_NumIo);
+    queue.Emplace(std::move(req));
+    queue.Signal();
+    return true;
+}
+
 void SPSG_IoSession::CheckRequestExpiration()
 {
     SUvNgHttp2_Error error("Request timeout for ");
@@ -1964,8 +1978,7 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     stats(s_GetStats(m_Servers)),
     m_StartBarrier(TPSG_NumIo::GetDefault() + 2),
     m_StopBarrier(TPSG_NumIo::GetDefault() + 2),
-    m_Discovery(m_StartBarrier, m_StopBarrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, m_Queues),
-    m_RequestCounter(0),
+    m_Discovery(m_StartBarrier, m_StopBarrier, 0, s_GetDiscoveryRepeat(service), service, stats, params, m_Servers, queues),
     m_RequestId(1)
 {
     const auto io_timer_period = SecondsToMs(params.io_timer_period);
@@ -1973,7 +1986,7 @@ SPSG_IoCoordinator::SPSG_IoCoordinator(CServiceDiscovery service) :
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
         try {
             // This timing cannot be changed without changes in SPSG_IoSession::CheckRequestExpiration
-            m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_StartBarrier, m_StopBarrier, io_timer_period, io_timer_period, params, m_Servers, m_Queues.emplace_back(m_Queues)));
+            m_Io.emplace_back(new SPSG_Thread<SPSG_IoImpl>(m_StartBarrier, m_StopBarrier, io_timer_period, io_timer_period, params, m_Servers, queues.emplace_back(queues)));
         } catch (const std::system_error& e) {
             ERR_POST(Fatal << "Failed to create I/O threads: " << e.what());
         }
@@ -1991,18 +2004,6 @@ SPSG_IoCoordinator::~SPSG_IoCoordinator()
     }
 
     m_StopBarrier.Wait();
-}
-
-bool SPSG_IoCoordinator::AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool&, const CDeadline&)
-{
-    if (m_Io.size() == 0) {
-        ERR_POST(Fatal << "IO is not open");
-    }
-
-    const auto idx = (m_RequestCounter++ / params.requests_per_io) % m_Io.size();
-    m_Queues[idx].Emplace(std::move(req));
-    m_Queues[idx].Signal();
-    return true;
 }
 
 

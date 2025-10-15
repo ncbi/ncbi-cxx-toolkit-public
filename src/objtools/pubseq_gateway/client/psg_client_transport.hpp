@@ -213,7 +213,6 @@ struct SPSG_Params
     TPSG_DebugPrintout debug_printout;
     TPSG_MaxConcurrentSubmits max_concurrent_submits;
     TPSG_MaxConcurrentRequestsPerServer max_concurrent_requests_per_server;
-    TPSG_RequestsPerIo requests_per_io;
     TPSG_IoTimerPeriod io_timer_period;
     const unsigned request_timeout;
     const unsigned competitive_after;
@@ -231,7 +230,6 @@ struct SPSG_Params
         debug_printout(TPSG_DebugPrintout::eGetDefault),
         max_concurrent_submits(TPSG_MaxConcurrentSubmits::eGetDefault),
         max_concurrent_requests_per_server(TPSG_MaxConcurrentRequestsPerServer::eGetDefault),
-        requests_per_io(TPSG_RequestsPerIo::eGetDefault),
         io_timer_period(TPSG_IoTimerPeriod::eGetDefault),
         request_timeout(s_GetRequestTimeout(io_timer_period)),
         competitive_after(s_GetCompetitiveAfter(io_timer_period, request_timeout)),
@@ -664,7 +662,15 @@ private:
 
 struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
 {
+    SPSG_AsyncQueues();
+
+    bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     void SignalAll() { for (auto& queue : *this) queue.Signal(); }
+
+private:
+    TPSG_RequestsPerIo m_RequestsPerIo;
+    TPSG_NumIo m_NumIo;
+    atomic_size_t m_RequestCounter = 0;
 };
 
 template <class... TArgs>
@@ -1201,20 +1207,19 @@ private:
 public:
     SPSG_Params params;
     shared_ptr<SPSG_Stats> stats;
+    SPSG_AsyncQueues queues;
 
     SPSG_IoCoordinator(CServiceDiscovery service);
     ~SPSG_IoCoordinator();
-    bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
+
     string GetNewRequestId() { return to_string(m_RequestId++); }
     bool RejectsRequests() const { return m_Servers->fail_requests; }
 
 private:
     SUv_Barrier m_StartBarrier;
     SUv_Barrier m_StopBarrier;
-    SPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
-    atomic<size_t> m_RequestCounter;
     atomic<size_t> m_RequestId;
 };
 

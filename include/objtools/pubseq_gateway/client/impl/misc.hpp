@@ -332,7 +332,7 @@ PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, max_concurrent_requests_per_server);
 using TPSG_MaxConcurrentRequestsPerServer = PSG_PARAM_VALUE_TYPE(PSG, max_concurrent_requests_per_server);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, num_io);
-using TPSG_NumIo = PSG_PARAM_TYPE(PSG, num_io);
+using TPSG_NumIo = PSG_PARAM_VALUE_TYPE(PSG, num_io);
 
 PSG_PARAM_VALUE_DECL_MIN(unsigned, PSG, reader_timeout);
 using TPSG_ReaderTimeout = PSG_PARAM_TYPE(PSG, reader_timeout);
