@@ -1841,7 +1841,7 @@ void SPSG_DiscoveryImpl::OnTimer(uv_timer_t* handle)
         }
     }
 
-    m_QueuesRef.SignalAll();
+    m_Queues.SignalAll();
 }
 
 void SPSG_IoImpl::OnTimer(uv_timer_t*)

@@ -635,20 +635,9 @@ private:
     unsigned m_Time = 0;
 };
 
-struct SPSG_AsyncQueue;
+struct SPSG_AsyncQueues;
 
-using TPSG_AsyncQueues = deque<SPSG_AsyncQueue>;
-
-struct SPSG_AsyncQueuesRef
-{
-    SPSG_AsyncQueuesRef(TPSG_AsyncQueues& queues) : m_Queues(queues) {}
-    void SignalAll();
-
-private:
-    TPSG_AsyncQueues& m_Queues;
-};
-
-struct SPSG_AsyncQueue : SUv_Async, SPSG_AsyncQueuesRef
+struct SPSG_AsyncQueue : SUv_Async
 {
 private:
     static auto s_Pop(list<SPSG_TimedRequest>& queue)
@@ -660,26 +649,35 @@ private:
     }
 
 public:
-    using SPSG_AsyncQueuesRef::SPSG_AsyncQueuesRef;
+    SPSG_AsyncQueues& queues;
 
-    auto Pop()
-    {
-        auto locked = m_Queue.GetLock();
-        return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
-    }
+    SPSG_AsyncQueue(SPSG_AsyncQueues& q) : queues(q) {}
 
     template <class... TArgs>
-    void Emplace(TArgs&&... args)
-    {
-        m_Queue.GetLock()->emplace_back(std::forward<TArgs>(args)...);
-    }
-
+    void Emplace(TArgs&&... args);
+    auto Pop();
     auto GetLockedQueue() { return m_Queue.GetLock(); }
 
+private:
     SThreadSafe<list<SPSG_TimedRequest>> m_Queue;
 };
 
-inline void SPSG_AsyncQueuesRef::SignalAll() { for (auto& queue : m_Queues) queue.Signal(); }
+struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
+{
+    void SignalAll() { for (auto& queue : *this) queue.Signal(); }
+};
+
+template <class... TArgs>
+void SPSG_AsyncQueue::Emplace(TArgs&&... args)
+{
+    m_Queue.GetLock()->emplace_back(std::forward<TArgs>(args)...);
+}
+
+inline auto SPSG_AsyncQueue::Pop()
+{
+    auto locked = m_Queue.GetLock();
+    return locked->empty() ? decltype(s_Pop(*locked)){} : s_Pop(*locked);
+}
 
 struct SPSG_ThrottleParams
 {
@@ -836,7 +834,7 @@ struct SPSG_IoSession : SUvNgHttp2_SessionBase
     {
         if (auto before = server.available_streams.fetch_add(v); (before <= 0) && (before + v > 0) ) {
             PSG_IO_TRACE("Server '" << server.address << "' became available");
-            m_Queue.SignalAll();
+            m_Queue.queues.SignalAll();
 
         } else if (IsFull()) {
             m_Queue.Signal();
@@ -1157,13 +1155,13 @@ private:
 
 struct SPSG_DiscoveryImpl
 {
-    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueuesRef queues_ref) :
+    SPSG_DiscoveryImpl(CServiceDiscovery service, shared_ptr<SPSG_Stats> stats, const SPSG_Params& params, SPSG_Servers::TTS& servers, SPSG_AsyncQueues& queues) :
         m_Params(params),
         m_NoServers(params, servers),
         m_Service(std::move(service)),
         m_Stats(std::move(stats)),
         m_Servers(servers),
-        m_QueuesRef(std::move(queues_ref))
+        m_Queues(queues)
     {}
 
 protected:
@@ -1191,7 +1189,7 @@ private:
     CServiceDiscovery m_Service;
     shared_ptr<SPSG_Stats> m_Stats;
     SPSG_Servers::TTS& m_Servers;
-    SPSG_AsyncQueuesRef m_QueuesRef;
+    SPSG_AsyncQueues& m_Queues;
     SPSG_ThrottleParams m_ThrottleParams;
 };
 
@@ -1213,7 +1211,7 @@ public:
 private:
     SUv_Barrier m_StartBarrier;
     SUv_Barrier m_StopBarrier;
-    TPSG_AsyncQueues m_Queues;
+    SPSG_AsyncQueues m_Queues;
     vector<unique_ptr<SPSG_Thread<SPSG_IoImpl>>> m_Io;
     SPSG_Thread<SPSG_DiscoveryImpl> m_Discovery;
     atomic<size_t> m_RequestCounter;
