@@ -34,8 +34,10 @@
 
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <chrono>
+#include <condition_variable>
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -148,10 +150,67 @@ struct SThreadSafe
     const volatile TType* operator->() const { return &m_Object; }
 
 protected:
+    static unique_lock<std::mutex>& GetBaseLock(auto& lock) { return lock; }
+
     mutable mutex m_Mutex;
 
 private:
     TType m_Object;
+};
+
+template <typename TType>
+struct SSyncThreadSafe : SThreadSafe<TType>
+{
+public:
+    using SThreadSafe<TType>::SThreadSafe;
+
+    void NotifyOne() volatile { GetThis().m_CV.notify_one(); }
+    void NotifyAll() volatile { GetThis().m_CV.notify_all(); }
+
+    bool WaitUntil(typename SThreadSafe<TType>::template SLock<TType>& lock, const CDeadline& deadline, auto&&... args) volatile
+    {
+        auto& t = GetThis();
+        auto& l = t.GetBaseLock(lock);
+
+        if (deadline.IsInfinite()) {
+            return t.x_Wait(l, std::forward<decltype(args)>(args)...);
+        } else {
+            return t.x_WaitUntil(l, x_GetTP(deadline), std::forward<decltype(args)>(args)...);
+        }
+    }
+
+protected:
+    using clock = chrono::system_clock;
+
+    static clock::time_point x_GetTP(const CDeadline& d)
+    {
+        time_t seconds;
+        unsigned int nanoseconds;
+
+        d.GetExpirationTime(&seconds, &nanoseconds);
+        const auto ns = chrono::duration_cast<clock::duration>(chrono::nanoseconds(nanoseconds));
+        return clock::from_time_t(seconds) + ns;
+    }
+
+    bool x_Wait(unique_lock<mutex>& lock, auto&&... args)
+    {
+        m_CV.wait(lock, std::forward<decltype(args)>(args)...);
+        return true;
+    }
+
+    bool x_WaitUntil(unique_lock<mutex>& lock, const clock::time_point& t)
+    {
+        return m_CV.wait_until(lock, t) != cv_status::timeout;
+    }
+
+    bool x_WaitUntil(unique_lock<mutex>& lock, const clock::time_point& t, auto&& check)
+    {
+        return m_CV.wait_until(lock, t, std::forward<decltype(check)>(check));
+    }
+
+    SSyncThreadSafe& GetThis() volatile { return const_cast<SSyncThreadSafe&>(*this); }
+
+    condition_variable m_CV;
 };
 
 class NCBI_XCONNECT_EXPORT CLogLatencies

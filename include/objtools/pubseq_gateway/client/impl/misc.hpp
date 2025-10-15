@@ -32,13 +32,11 @@
 
 #include <atomic>
 #include <chrono>
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <deque>
 #include <thread>
 
-#include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_param.hpp>
 
 #include <connect/impl/connect_misc.hpp>
