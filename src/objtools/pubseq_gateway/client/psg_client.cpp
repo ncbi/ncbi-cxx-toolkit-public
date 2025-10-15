@@ -954,6 +954,8 @@ void CPSG_Request_AccVerHistory::x_GetAbsPathRef(ostream& os) const
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG_Request> r, CDeadline deadline)
 {
+    const array<size_t, CPSG_Request::eAccVerHistory + 1> kWeights = {10, 3, 7, 10, 7, 200, 40};
+
     _ASSERT(queue);
 
     if (!r) {
@@ -969,7 +971,9 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SendRequestAndGetReply(shared_ptr<CPSG
     const auto request_id = user_context ? *user_context : ioc.GetNewRequestId();
     const auto type = user_request->GetType();
     const auto raw = (type == CPSG_Request::eBlob) && !dynamic_pointer_cast<const CPSG_Request_Blob>(user_request);
-    auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, queue, stats, raw);
+
+    _ASSERT(type < kWeights.size());
+    auto reply = make_shared<SPSG_Reply>(std::move(request_id), params, queue, stats, raw, kWeights[type]);
     const auto request_flags = r->m_Flags.IsNull() ? m_RequestFlags : r->m_Flags.GetValue();
     auto abs_path_ref = x_GetAbsPathRef(user_request, request_flags, raw);
     const auto& request_context = user_request->m_RequestContext;
@@ -1591,6 +1595,12 @@ CPSG_EventLoop::CPSG_EventLoop(const string&  service, TItemComplete item_comple
 
 bool CPSG_EventLoop::RunOnce(CDeadline deadline)
 {
+    auto get_reply_impl = [](const auto& reply) -> auto& {
+            _ASSERT(reply->m_Impl);
+            _ASSERT(reply->m_Impl->reply);
+            return *reply->m_Impl->reply;
+        };
+
     if (!WaitForEvents(deadline)) {
         return false;
     }
@@ -1599,7 +1609,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
     auto& queues = m_Impl->GetQueues();
 
     while (auto reply = GetNextReply(CDeadline::eNoWait)) {
-        queues.Increase();
+        queues.Increase(get_reply_impl(reply));
         m_Replies.emplace_back(std::move(reply), 0);
     }
 
@@ -1648,7 +1658,7 @@ bool CPSG_EventLoop::RunOnce(CDeadline deadline)
 
             if (status != EPSG_Status::eInProgress) {
                 m_ReplyComplete(status, reply);
-                queues.Decrease();
+                queues.Decrease(get_reply_impl(reply));
                 i = m_Replies.erase(i);
                 continue;
             }

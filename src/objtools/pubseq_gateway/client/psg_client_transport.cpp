@@ -79,7 +79,7 @@ NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_items,  false);
 NCBI_PARAM_DEF(bool,     PSG, fail_on_unknown_chunks, false);
 NCBI_PARAM_DEF(bool,     PSG, https,                  false);
 NCBI_PARAM_DEF(double,   PSG, no_servers_retry_delay, 1.0);
-NCBI_PARAM_DEF(unsigned, PSG, max_queue_load,         300);
+NCBI_PARAM_DEF(unsigned, PSG, max_queue_load,         30000);
 NCBI_PARAM_DEF(bool,     PSG, stats,                  false);
 NCBI_PARAM_DEF(double,   PSG, stats_period,           0.0);
 NCBI_PARAM_DEF_EX(string,   PSG, service,               "PSG2",             eParam_Default,     NCBI_PSG_SERVICE);
@@ -1448,7 +1448,7 @@ int SPSG_IoSession::OnFrameRecv(nghttp2_session*, const nghttp2_frame* frame)
     PSG_IO_SESSION_TRACE(this << '/' << frame->hd.stream_id << " frame: " << s_GetFrameName(frame));
 
     auto it = m_Requests.find(frame->hd.stream_id);
-    auto id = it != m_Requests.end() ? it->second.GetId() : "*"sv;
+    auto id = it != m_Requests.end() ? it->second.GetReply().debug_printout.id : "*"sv;
     ERR_POST(Message << id << ": Received "sv << s_GetFrameName(frame) << " frame"sv);
     return 0;
 }
@@ -1918,21 +1918,24 @@ void SPSG_IoImpl::CheckRequestExpiration()
     auto queue_locked = m_Queue.GetLockedQueue();
     list<SPSG_TimedRequest> retries;
     SUvNgHttp2_Error error("Request timeout before submitting");
-    size_t removed = 0;
+    size_t retried = 0, removed = 0;
 
-    auto on_retry = [&](auto req) { retries.emplace_back(req); m_Queue.Signal(); };
+    auto on_retry = [&](auto req) { retried += req->reply->weight; retries.emplace_back(req); m_Queue.Signal(); };
     auto on_fail = [&](auto processor_id, auto req) { req->Fail(processor_id, error); };
 
     for (auto it = queue_locked->begin(); it != queue_locked->end(); ) {
         if (it->CheckExpiration(m_Params, error, on_retry, on_fail)) {
-            ++removed;
+            removed += it->GetReply().weight;
             it = queue_locked->erase(it);
         } else {
             ++it;
         }
     }
 
-    m_Queue.queues.Decrease(removed - retries.size());
+    if (auto diff = removed - retried) {
+        m_Queue.queues.Decrease(diff);
+    }
+
     queue_locked->splice(queue_locked->end(), retries);
 }
 
@@ -1940,8 +1943,11 @@ void SPSG_IoImpl::FailRequests()
 {
     auto queue_locked = m_Queue.GetLockedQueue();
     SUvNgHttp2_Error error("No servers to process request");
+    size_t removed = 0;
 
     for (auto& timed_req : *queue_locked) {
+        removed += timed_req.GetReply().weight;
+
         if (auto [processor_id, req] = timed_req.Get(); req) {
             auto context_guard = req->context.Set();
             auto& debug_printout = req->reply->debug_printout;
@@ -1951,7 +1957,10 @@ void SPSG_IoImpl::FailRequests()
         }
     }
 
-    m_Queue.queues.Decrease(queue_locked->size());
+    if (removed) {
+        m_Queue.queues.Decrease(removed);
+    }
+
     queue_locked->clear();
 }
 

@@ -439,6 +439,7 @@ struct SPSG_Reply
     };
 
     const bool raw;
+    const size_t weight;
     SThreadSafe<list<SItem::TTS>> items;
     SThreadSafe<list<SItem::TTS*>> new_items;
     SItem::TTS reply_item;
@@ -446,8 +447,9 @@ struct SPSG_Reply
     shared_ptr<TPSG_Queue> queue;
     weak_ptr<SPSG_Stats> stats;
 
-    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>(), bool r = false) :
+    SPSG_Reply(string id, const SPSG_Params& params, shared_ptr<TPSG_Queue> q, weak_ptr<SPSG_Stats> s = weak_ptr<SPSG_Stats>(), bool r = false, size_t w = 1) :
         raw(r),
+        weight(w),
         debug_printout(std::move(id), params),
         queue(std::move(q)),
         stats(std::move(s))
@@ -612,10 +614,11 @@ struct SPSG_TimedRequest
         return make_pair(m_Id, m_Request->processed_by.CanBe(m_Id) ? m_Request : nullptr);
     }
 
-    string_view GetId()
+    const auto& GetReply() const
     {
         _ASSERT(m_Request);
-        return m_Request->reply->debug_printout.id;
+        _ASSERT(m_Request->reply);
+        return *m_Request->reply;
     }
 
     unsigned AddTime() { return ++m_Time; }
@@ -648,8 +651,7 @@ public:
 
     SPSG_AsyncQueue(SPSG_AsyncQueues& q) : queues(q) {}
 
-    template <class... TArgs>
-    void Emplace(TArgs&&... args);
+    void Emplace(SPSG_TimedRequest req);
     auto Pop();
     auto GetLockedQueue() { return m_Queue.GetLock(); }
 
@@ -664,12 +666,12 @@ struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
     bool AddRequest(shared_ptr<SPSG_Request> req, const atomic_bool& stopped, const CDeadline& deadline);
     void SignalAll() { for (auto& queue : *this) queue.Signal(); }
 
-    void Increase(size_t amount = 1)
+    void Increase(size_t amount)
     {
         if (m_MaxQueueLoad.Get()) m_Pending += amount;
     }
 
-    void Decrease(size_t amount = 1)
+    void Decrease(size_t amount)
     {
         if (auto resume_threshold = 0.8 * m_MaxQueueLoad.Get()) {
             if (auto pending = m_Pending.fetch_sub(amount); (pending >= resume_threshold) && (pending - amount < resume_threshold)) {
@@ -680,6 +682,9 @@ struct SPSG_AsyncQueues : deque<SPSG_AsyncQueue>
             }
         }
     }
+
+    void Increase(const SPSG_Reply& reply) { Increase(reply.weight); }
+    void Decrease(const SPSG_Reply& reply) { Decrease(reply.weight); }
 
     void Stop() { m_Suspend.NotifyAll(); }
 
@@ -692,17 +697,16 @@ private:
     SSyncThreadSafe<bool> m_Suspend = false;
 };
 
-template <class... TArgs>
-void SPSG_AsyncQueue::Emplace(TArgs&&... args)
+inline void SPSG_AsyncQueue::Emplace(SPSG_TimedRequest req)
 {
-    queues.Increase();
-    m_Queue.GetLock()->emplace_back(std::forward<TArgs>(args)...);
+    queues.Increase(req.GetReply().weight);
+    m_Queue.GetLock()->emplace_back(std::move(req));
 }
 
 inline auto SPSG_AsyncQueue::Pop()
 {
     auto locked = m_Queue.GetLock();
-    return locked->empty() ? decltype(s_Pop(*locked)){} : (queues.Decrease(), s_Pop(*locked));
+    return locked->empty() ? decltype(s_Pop(*locked)){} : (queues.Decrease(locked->front().GetReply()), s_Pop(*locked));
 }
 
 struct SPSG_ThrottleParams
