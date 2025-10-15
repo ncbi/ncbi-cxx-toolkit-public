@@ -59,11 +59,14 @@ extern "C" {
  */
 
 #define NCBILOG_HOST_MAX           256    /* string length */
+#define NCBILOG_HOST_ROLE_MAX       32    /* string length */
+#define NCBILOG_HOST_LOC_MAX        32    /* string length */
 #define NCBILOG_CLIENT_MAX         256    /* string length */
 #define NCBILOG_SESSION_MAX        256    /* string length */
 #define NCBILOG_HITID_MAX         1024    /* string length */
 #define NCBILOG_APPNAME_MAX       1024    /* string length */
 #define NCBILOG_PORT_MAX         65535    /* value */
+
 
 /* Minimum line length:
     5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)

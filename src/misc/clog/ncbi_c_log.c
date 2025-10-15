@@ -510,17 +510,25 @@ void s_SleepMicroSec(unsigned long mc_sec)
 }
 
 
-/** strdup() doesn't exists on all platforms, and we cannot check this here.
-    Will use our own implementation.
+/** strdup() doesn't exists on all platforms, will use our own implementation.
+    This variant is used when we know a string length in advance or want to copy a part of the string only.
+    <len> doesn't include a finishing '\0'.
  */
-static char* s_StrDup(const char* str)
+static char* s_StrDupLen(const char* str, size_t len)
 {
-    size_t size = strlen(str) + 1;
-    char* res = (char*) malloc(size);
+    size_t size = len + 1;
+    char* res = (char*)malloc(size);
     if (res) {
         memcpy(res, str, size);
     }
     return res;
+}
+
+/** strdup() doesn't exists on all platforms, will use our own implementation.
+ */
+static char* s_StrDup(const char* str)
+{
+    return s_StrDupLen(str, strlen(str));
 }
 
 
@@ -573,7 +581,9 @@ static const char* s_ConcatPath(
 const char* NcbiLog_GetHostName(void)
 {
     static const char* host = NULL;
-    const char* p;
+    char* pv = NULL;
+    char* p;
+    size_t len;
 #if defined(NCBI_OS_UNIX)
     struct utsname buf;
 #endif
@@ -581,32 +591,44 @@ const char* NcbiLog_GetHostName(void)
         return host;
     }
     if ( (p = getenv("NCBI_HOST")) != NULL  &&  *p ) {
-        host = s_StrDup(p);
-        return host;
+        pv = p;
     }
 #if defined(NCBI_OS_UNIX)
-    if (uname(&buf) == 0) {
-        host = s_StrDup(buf.nodename);
+    if ( !pv  &&  uname(&buf) == 0 ) {
+        pv = buf.nodename;
     }
 #elif defined(NCBI_OS_MSWIN)
     /* MSWIN - use COMPUTERNAME */
-    if ( (p = getenv("COMPUTERNAME")) != NULL  &&  *p ) {
-        host = s_StrDup(p);
+    if ( !pv  &&  (p = getenv("COMPUTERNAME")) != NULL  &&  *p ) {
+        pv = p;
     }
 #endif
+
+    if (pv) {
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(pv);
+        if (len > NCBILOG_HOST_MAX) {
+            len = NCBILOG_HOST_MAX;
+            pv[len] = '\0';
+        }
+        host = s_StrDupLen(pv, len);
+    }
     return host;
 }
 
 
-/** Read first string from specified file.
+/** Read first string from specified file (host string only).
  *  Return NULL on error.
  */
-static const char* s_ReadFileString(const char* filename)
+static const char* s_ReadHostFileString(const char* filename)
 {
     FILE*  fp;
-    char   buf[32];
+    char   buf[NCBILOG_HOST_ROLE_MAX];
     size_t len = sizeof(buf);
     char*  p = buf;
+
+    /* to allocate buf size the host role and location size should be equal */
+    assert(NCBILOG_HOST_ROLE_MAX == NCBILOG_HOST_LOC_MAX);
 
     fp = fopen(filename, "rt");
     if (!fp) {
@@ -630,15 +652,23 @@ static const char* s_ReadFileString(const char* filename)
 const char* NcbiLog_GetHostRole(void)
 {
     static const char* role = NULL;
-    const char* p = NULL;
+    char* p;
+    size_t len;
+
     if ( role ) {
         return role;
     }
     if ( (p = getenv("NCBI_ROLE")) != NULL  &&  *p ) {
-        role = s_StrDup(p);
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(p);
+        if (len > NCBILOG_HOST_ROLE_MAX) {
+            len = NCBILOG_HOST_ROLE_MAX;
+            p[len] = '\0';
+        }
+        role = s_StrDupLen(p, len);
         return role;
     }
-    role = s_ReadFileString("/etc/ncbi/role");
+    role = s_ReadHostFileString("/etc/ncbi/role");
     return role;
 }
 
@@ -648,15 +678,23 @@ const char* NcbiLog_GetHostRole(void)
 const char* NcbiLog_GetHostLocation(void)
 {
     static const char* location = NULL;
-    const char* p = NULL;
+    char* p;
+    size_t len;
+
     if ( location ) {
         return location;
     }
     if ( (p = getenv("NCBI_LOCATION")) != NULL  &&  *p ) {
-        location = s_StrDup(p);
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(p);
+        if (len > NCBILOG_HOST_LOC_MAX) {
+            len = NCBILOG_HOST_LOC_MAX;
+            p[len] = '\0';
+        }
+        location = s_StrDupLen(p, len);
         return location;
     }
-    location = s_ReadFileString("/etc/ncbi/location");
+    location = s_ReadHostFileString("/etc/ncbi/location");
     return location;
 }
 
@@ -867,9 +905,11 @@ static int/*bool*/ s_GetTimeStr
 static const char* s_GetClient_Env(void)
 {
     static const char* client = NULL;
+    char* pv = NULL;
+    char* p;
+    size_t len;
     int/*bool*/ internal, external;
-    const char* p;
-    
+
     if ( client ) {
         return client;
     }
@@ -878,27 +918,32 @@ static const char* s_GetClient_Env(void)
                 ((p = getenv("HTTP_NCBI_EXTERNAL")) != NULL  &&  *p)) ? 1 : 0;
     if ( internal  ||  !external ) {
         if ( (p = getenv("HTTP_CLIENT_HOST")) != NULL  &&  *p ) {
-            client = s_StrDup(p);
-            return client;
+            pv = p;
         }
     }
-    if ( (p = getenv("HTTP_CAF_PROXIED_HOST")) != NULL  &&  *p ) {
-        client = s_StrDup(p);
-        return client;
+    if ( !pv  &&  (p = getenv("HTTP_CAF_PROXIED_HOST")) != NULL  &&  *p ) {
+        pv = p;
     }
-    if ( (p = getenv("PROXIED_IP")) != NULL  &&  *p ) {
-        client = s_StrDup(p);
-        return client;
+    if ( !pv  &&  (p = getenv("PROXIED_IP")) != NULL  &&  *p ) {
+        pv = p;
     }
-    if ( (p = getenv("HTTP_X_REAL_IP")) != NULL  &&  *p ) {
-        client = s_StrDup(p);
-        return client;
+    if ( !pv  &&  (p = getenv("HTTP_X_REAL_IP")) != NULL  &&  *p ) {
+        pv = p;
     }
-    if ( (p = getenv("REMOTE_ADDR")) != NULL  &&  *p ) {
-        client = s_StrDup(p);
-        return client;
+    if ( !pv  &&  (p = getenv("REMOTE_ADDR")) != NULL  &&  *p ) {
+        pv = p;
     }
-    return NULL;
+
+    if (pv) {
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(pv);
+        if (len > NCBILOG_CLIENT_MAX) {
+            len = NCBILOG_CLIENT_MAX;
+            pv[len] = '\0';
+        }
+        client = s_StrDupLen(pv, len);
+    }
+    return client;
 }
 
 
@@ -908,20 +953,29 @@ static const char* s_GetClient_Env(void)
 extern const char* NcbiLogP_GetSessionID_Env(void)
 {
     static const char* session = NULL;
-    const char* p;
+    char* p;
+    char* pv = NULL;
+    size_t len;
 
     if ( session ) {
         return session;
     }
     if ( (p = getenv("HTTP_NCBI_SID")) != NULL  &&  *p ) {
-        session = s_StrDup(p);
-        return session;
+        pv = p;
     }
-    if ( (p = getenv("NCBI_LOG_SESSION_ID")) != NULL  &&  *p ) {
-        session = s_StrDup(p);
-        return session;
+    if ( !pv  &&  (p = getenv("NCBI_LOG_SESSION_ID")) != NULL  &&  *p ) {
+        pv = p;
     }
-    return NULL;
+    if (pv) {
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(pv);
+        if (len > NCBILOG_SESSION_MAX) {
+            len = NCBILOG_SESSION_MAX;
+            pv[len] = '\0';
+        }
+        session = s_StrDupLen(pv, len);
+    }
+    return session;
 }
 
 
@@ -931,20 +985,29 @@ extern const char* NcbiLogP_GetSessionID_Env(void)
 extern const char* NcbiLogP_GetHitID_Env(void)
 {
     static const char* phid = NULL;
-    const char* p;
+    char* p;
+    char* pv = NULL;
+    size_t len;
 
     if ( phid ) {
         return phid;
     }
     if ( (p = getenv("HTTP_NCBI_PHID")) != NULL  &&  *p ) {
-        phid = s_StrDup(p);
-        return phid;
+        pv = p;
     }
-    if ( (p = getenv("NCBI_LOG_HIT_ID")) != NULL  &&  *p ) {
-        phid = s_StrDup(p);
-        return phid;
+    if ( !pv  &&  (p = getenv("NCBI_LOG_HIT_ID")) != NULL  &&  *p ) {
+        pv = p;
     }
-    return NULL;
+    if (pv) {
+        // Check string length to prevent any unexpected buffer overflow later
+        len = strlen(pv);
+        if (len > NCBILOG_HITID_MAX) {
+            len = NCBILOG_HITID_MAX;
+            pv[len] = '\0';
+        }
+        phid = s_StrDupLen(pv, len);
+    }
+    return phid;
 }
 
 
@@ -1581,7 +1644,11 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name, int/*bool*/ i
     /* Check max possible file name (path.trace) */
     n = strlen(path_with_base_name);
     assert(n);
-    assert((n + 5 /*.perf*/) <= sizeof(path));
+    assert((n + 5 /*.perf*/) <= FILENAME_MAX);
+    if (!n || ((n + 5 /*.perf*/) > FILENAME_MAX) ) {
+        // path is too long
+        return 0 /*false*/;
+    }
     memcpy(path, path_with_base_name, n);
 
     strcpy(path + n, ".log");
@@ -1668,10 +1735,16 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
         filename = sx_Info->app_base_name;
         filelen  = strlen(filename);
         assert(filelen);
+        if (!filelen) {
+            return 0 /* false */;
+        }
     }
     
     /* Check max possible file name (dir/basename.trace) */
     assert((n + 1 + filelen + 5) <= sizeof(path));
+    if ((n + 1 + filelen + 5) > sizeof(path)) {
+        return 0 /* false */;
+    }
     s_ConcatPathEx(dir, n, filename, filelen, path, FILENAME_MAX + 1);
 
     /* Set logging files */
@@ -2777,6 +2850,7 @@ NcbiLog_SetDestination(ENcbiLog_Destination ds)
         if (sx_Info->destination == eNcbiLog_Default) {
             /* Special case to redirect default logging output */
             logfile = getenv("NCBI_CONFIG__LOG__FILE");
+            /* logfile value will have a sanity check at s_InitDestination(), if needed */
             if (logfile) {
                 if (!*logfile) {
                     logfile = NULL;
