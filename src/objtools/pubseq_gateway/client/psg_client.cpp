@@ -1018,7 +1018,7 @@ SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadl
             return state.GetStatus();
         }
     }
-    while (state.change.WaitUntil(deadline));
+    while (ts.WaitUntil(deadline));
 
     return EPSG_Status::eInProgress;
 }

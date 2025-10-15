@@ -680,7 +680,7 @@ void SPSG_Reply::SetComplete()
         for (auto& item : *items_locked) {
             if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item->state.SetComplete();
+                if (item->state.SetComplete()) item.NotifyOne();
                 missing = true;
             }
         }
@@ -691,7 +691,7 @@ void SPSG_Reply::SetComplete()
             reply_item_locked->state.AddError(message);
         }
 
-        reply_item_locked->state.SetComplete();
+        reply_item->state.SetComplete();
     }
 
     reply_item.NotifyOne();
@@ -704,16 +704,16 @@ void SPSG_Reply::SetFailed(string message, SState::SStatus status)
         for (auto& item : *items_locked) {
             if (item->state.InProgress()) {
                 item.GetLock()->state.AddError(message);
-                item->state.SetComplete();
+                if (item->state.SetComplete()) item.NotifyOne();
             }
         }
     }
 
     if (auto reply_item_locked = reply_item.GetLock()) {
         reply_item_locked->state.AddError(message, status);
-        reply_item_locked->state.SetComplete();
     }
 
+    reply_item->state.SetComplete();
     reply_item.NotifyOne();
     queue->NotifyOne();
 }

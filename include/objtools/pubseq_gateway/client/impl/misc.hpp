@@ -53,7 +53,7 @@ protected:
     mutex m_Mutex;
 };
 
-template <typename TType = void>
+template <typename TType>
 struct SPSG_CV : SThreadSafe<TType>
 {
 public:

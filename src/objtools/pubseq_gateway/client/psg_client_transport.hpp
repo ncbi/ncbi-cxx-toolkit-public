@@ -394,8 +394,6 @@ struct SPSG_Reply
             EPSG_Status m_Psg;
         };
 
-        SPSG_CV<> change;
-
         SState() : m_InProgress(true), m_Status(EPSG_Status::eSuccess) {}
 
         SStatus GetStatus() const volatile { return m_Status; }
@@ -419,7 +417,7 @@ struct SPSG_Reply
             m_Messages.emplace_back(SPSG_Message{std::move(message), severity, code});
         }
 
-        void SetComplete() volatile { if (m_InProgress.exchange(false)) change.NotifyOne(); }
+        bool SetComplete() volatile { return m_InProgress.exchange(false); }
         void Reset();
 
     private:
