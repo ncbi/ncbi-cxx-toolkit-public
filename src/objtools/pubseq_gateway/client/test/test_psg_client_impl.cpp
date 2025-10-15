@@ -36,6 +36,7 @@
 #include <corelib/test_boost.hpp>
 
 #include <algorithm>
+#include <barrier>
 #include <deque>
 #include <thread>
 #include <random>
@@ -793,6 +794,153 @@ BOOST_AUTO_TEST_CASE(UserArgsBuilder)
 
     BOOST_CHECK_EQUAL(s_Build(builder, {}), SPSG_UserArgs("&disable_processor=snp&enable_processor=cdd&enable_processor=osg&enable_processor=wgs&hops=3"));
     BOOST_CHECK_EQUAL(s_Build(builder, request_user_args), SPSG_UserArgs("&enable_processor=cdd&enable_processor=osg&enable_processor=snp&enable_processor=wgs&hops=3&use_cache=no"));
+}
+
+// Clang 20+ is required to support jthread by default (18+ with -fexperimental-library)
+struct SJThreads : vector<thread>
+{
+    SJThreads() = default;
+    SJThreads(SJThreads&&) = default;
+    using vector<thread>::emplace_back;
+
+    ~SJThreads() { for (auto& t : *this) t.join(); }
+};
+
+auto s_CreateThreads(auto n, auto l, auto& b)
+{
+    SJThreads rv;
+
+    while (n-- > 0) {
+        rv.emplace_back(l, ref(b));
+    }
+
+    return rv;
+}
+
+auto s_CreateThreadsAndWait(auto n, auto l)
+{
+    barrier b(n + 1);
+    auto rv = s_CreateThreads(n, l, b);
+    b.arrive_and_wait();
+    return rv;
+}
+
+BOOST_AUTO_TEST_CASE(SyncThreadSafe)
+{
+    const auto kTimeout = CTimeout(0.5);
+    const auto kSleep = chrono::milliseconds(100);
+    const auto kIterations = 10;
+    const auto kThreads = 10;
+    SRandom r;
+    SSyncThreadSafe<bool> sts;
+    atomic_int notified = 0;
+
+    auto thread_impl = [&](barrier<>& b) {
+        [[maybe_unused]] auto u = b.arrive();
+
+        auto locked = sts.GetLock();
+
+        if (sts.WaitUntil(locked, kTimeout, [&]() { return !*locked; } )) {
+            ++notified;
+        }
+    };
+
+    for (auto i = kIterations; i > 0; --i) {
+        auto n = r.Get(2, kThreads);
+        {
+            *sts.GetLock() = true;
+            notified = 0;
+            auto threads = s_CreateThreadsAndWait(n, thread_impl);
+            *sts.GetLock() = false;
+            sts.NotifyOne();
+            this_thread::sleep_for(kSleep);
+            BOOST_CHECK_MT_SAFE(notified >= 1);
+            sts.NotifyAll();
+        }
+
+        {
+            *sts.GetLock() = true;
+            notified = 0;
+            auto threads = s_CreateThreadsAndWait(n, thread_impl);
+            *sts.GetLock() = false;
+            sts.NotifyAll();
+            this_thread::sleep_for(kSleep);
+            BOOST_CHECK_MT_SAFE(notified == n);
+            sts.NotifyAll();
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CV)
+{
+    const auto kTimeout = CTimeout(0.5);
+    const auto kIterations = 10;
+    const auto kThreads = 10;
+    SRandom r;
+    SPSG_CV<void> cv;
+    atomic_int notified = 0;
+    atomic_bool stopped = false;
+
+    auto thread_impl1 = [&](barrier<>& b) { [[maybe_unused]] auto u = b.arrive(); if (cv.WaitUntil(kTimeout))          ++notified; };
+    auto thread_impl2 = [&](barrier<>& b) { [[maybe_unused]] auto u = b.arrive(); if (cv.WaitUntil(stopped, kTimeout)) ++notified; };
+
+    for (auto i = kIterations; i > 0; --i) {
+        int n = r.Get(2, kThreads);
+        {
+            auto threads = s_CreateThreadsAndWait(n, thread_impl1);
+            cv.NotifyOne();
+        }
+        BOOST_CHECK_EQUAL_MT_SAFE(notified.exchange(0), 1);
+
+        {
+            auto threads = s_CreateThreadsAndWait(n, thread_impl2);
+            cv.NotifyOne();
+        }
+        BOOST_CHECK_EQUAL_MT_SAFE(notified.exchange(0), 1);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(WaitingQueue)
+{
+    const auto kTimeout = CTimeout(0.5);
+    const auto kIterations = 10;
+    const auto kThreads = 10;
+    const auto kItems = 10000;
+    SRandom r;
+    CPSG_WaitingQueue<int> q;
+    atomic_int to_send;
+    atomic_int to_receive;
+
+    auto receiver_impl = [&](barrier<>& b) {
+        [[maybe_unused]] auto u = b.arrive();
+        int v;
+        while (to_receive-- > 0) {
+            if (!q.Pop(v, kTimeout)) {
+                to_receive++;
+            }
+        }
+        to_receive++;
+    };
+
+    auto producer_impl = [&](barrier<>& b) {
+        b.arrive_and_wait();
+        while (to_send-- > 0) {
+            q.Push(1);
+        }
+        to_send++;
+    };
+
+    for (auto i = kIterations; i > 0; --i) {
+        to_send = to_receive = (int)r.Get(1, kItems);
+        {
+            auto n = r.Get(1, kThreads), m = r.Get(1, kThreads);
+            barrier b(n + m);
+            auto receivers = s_CreateThreads(n, receiver_impl, b);
+            auto producers = s_CreateThreads(m, producer_impl, b);
+        }
+        BOOST_CHECK_EQUAL_MT_SAFE(to_send.exchange(0), 0);
+        BOOST_CHECK_EQUAL_MT_SAFE(to_receive.exchange(0), 0);
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
