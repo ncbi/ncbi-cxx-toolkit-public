@@ -1006,13 +1006,7 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<CPSG_Request> request, CDeadline 
 bool CPSG_Queue::SImpl::WaitForEvents(CDeadline deadline)
 {
     _ASSERT(queue);
-
-    if (queue->WaitUntil(queue->Stopped(), std::move(deadline), false, true)) {
-        queue->Reset();
-        return true;
-    }
-
-    return false;
+    return queue->WaitForEvents(deadline);
 }
 
 SPSG_Reply::SState::SStatus s_GetStatus(SPSG_Reply::SItem::TTS& ts, const CDeadline& deadline)

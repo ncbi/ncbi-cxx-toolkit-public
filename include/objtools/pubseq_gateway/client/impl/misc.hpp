@@ -152,30 +152,43 @@ private:
 };
 
 template <class TValue>
-struct CPSG_WaitingQueue : SPSG_CV<deque<TValue>>
+struct CPSG_WaitingQueue
 {
     CPSG_WaitingQueue() : m_Stopped(false) {}
+
+    void NotifyOne() { m_Queue.GetLock()->second++; m_Queue.NotifyOne(); }
+
+    bool WaitForEvents(const CDeadline& deadline)
+    {
+        auto locked = m_Queue.GetLock();
+
+        if (m_Queue.WaitUntil(locked, deadline, [&]() { return m_Stopped || locked->second > 0; })) {
+            if (locked->second > 0) {
+                locked->second--;
+            }
+            return true;
+        }
+
+        return false;
+    }
 
     void Push(TValue value)
     {
         if (m_Stopped) return;
 
-        this->GetLock()->push_back(std::move(value));
-        this->NotifyOne();
+        m_Queue.GetLock()->first.push_back(std::move(value));
+        m_Queue.NotifyOne();
     }
 
     bool Pop(TValue& value, const CDeadline& deadline = CDeadline::eInfinite)
     {
-        do {
-            if (auto locked = this->GetLock()) {
-                if (!locked->empty()) {
-                    value = std::move(locked->front());
-                    locked->pop_front();
-                    return true;
-                }
-            }
+        auto locked = m_Queue.GetLock();
+
+        if (m_Queue.WaitUntil(locked, deadline, [&]() { return m_Stopped || !locked->first.empty(); }) && !locked->first.empty()) {
+            value = std::move(locked->first.front());
+            locked->first.pop_front();
+            return true;
         }
-        while (this->WaitUntil(m_Stopped, deadline));
 
         return false;
     }
@@ -184,14 +197,15 @@ struct CPSG_WaitingQueue : SPSG_CV<deque<TValue>>
     void Stop(EStop stop)
     {
         m_Stopped.store(true);
-        if (stop == eClear) this->GetLock()->clear();
-        this->NotifyAll();
+        if (stop == eClear) m_Queue.GetLock()->first.clear();
+        m_Queue.NotifyAll();
     }
 
     const atomic_bool& Stopped() const { return m_Stopped; }
-    bool Empty() const { return m_Stopped && this->GetLock()->empty(); }
+    bool Empty() const { return m_Stopped && m_Queue.GetLock()->first.empty(); }
 
 private:
+    SSyncThreadSafe<pair<deque<TValue>, int>> m_Queue;
     atomic_bool m_Stopped;
 };
 
