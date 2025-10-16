@@ -883,7 +883,7 @@ static int/*bool*/ s_GetTimeStr
     }
 #endif
     /* YYYY-MM-DDThh:mm:ss.sss */
-    n = sprintf(buf, "%04u-%02u-%02uT%02u:%02u:%02u.%03u",
+    n = snprintf(buf, 24, "%04u-%02u-%02uT%02u:%02u:%02u.%03u",
         t->tm_year + 1900,
         t->tm_mon + 1,
         t->tm_mday,
@@ -1723,8 +1723,8 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir, int/*bool*/ is_applog)
             >= FILENAME_MAX) {
             return 0;
         }
-        nbuf = sprintf(filename_buf, "%s.%d", sx_Info->app_base_name, geteuid());
-        if (nbuf <= 0) {
+        nbuf = snprintf(filename_buf, FILENAME_MAX+1, "%s.%d", sx_Info->app_base_name, geteuid());
+        if (nbuf <= 0  ||  nbuf > FILENAME_MAX) {
             return 0;
         }
         filelen  = (size_t)nbuf;
@@ -1844,7 +1844,8 @@ static void s_InitDestination(const char* logfile_path)
                 }
                 /* server port */
                 if (sx_Info->server_port) {
-                    sprintf(xdir, "%s%d", kBaseLogDir, sx_Info->server_port);
+                    int n = snprintf(xdir, FILENAME_MAX+1, "%s%d", kBaseLogDir, sx_Info->server_port);
+                    VERIFY(n > 0  &&  n <= FILENAME_MAX);
                     if (s_SetLogFilesDir(xdir, TO_LOG)) {
                         return;
                     }
@@ -2307,7 +2308,7 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         x_session = sx_Info->session[0] ? (char*)sx_Info->session : UNKNOWN_SESSION;
     }
 
-    n = sprintf(sx_Info->message,
+    n = snprintf(sx_Info->message, NCBILOG_ENTRY_MAX,
         "%05" NCBILOG_UINT8_FORMAT_SPEC "/%03" NCBILOG_UINT8_FORMAT_SPEC \
         "/%04" NCBILOG_UINT8_FORMAT_SPEC "/%-2s %08X%08X %04" NCBILOG_UINT8_FORMAT_SPEC \
         "/%04" NCBILOG_UINT8_FORMAT_SPEC " %s %-15s %-15s %-24s %s ",
@@ -2324,7 +2325,8 @@ static size_t s_PrintCommonPrefix(TNcbiLog_Context ctx)
         x_session,
         x_appname
     );
-    if (n <= 0) {
+    assert(n > 0  &&  n < NCBILOG_ENTRY_MAX);
+    if (n <= 0 || n >= NCBILOG_ENTRY_MAX) {
         return 0;  /* error */
     }
     return (size_t)n;
@@ -2456,6 +2458,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     TNcbiLog_Context  ctx;
     size_t            pos, r_len, w_len;
     char*             buf;
+    int               n;
     ENcbiLog_DiagFile diag = eDiag_Trace;
 
     switch (severity) {
@@ -2488,10 +2491,12 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
 
     /* Severity */
     if (print_as_note) {
-        pos += (size_t) sprintf(buf + pos, "Note[%c]: ", sx_SeverityStr[severity][0]);
+        n = sprintf(buf + pos, "Note[%c]: ", sx_SeverityStr[severity][0]);
     } else {
-        pos += (size_t) sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
+        n = sprintf(buf + pos, "%s: ", sx_SeverityStr[severity]);
     }
+    VERIFY_CATCH(n > 0);
+    pos += (size_t)n;
 
     /* Message */
     s_EscapeNewlines(msg, strlen(msg), &r_len, buf + pos, NCBILOG_ENTRY_MAX - pos, &w_len);
@@ -3231,7 +3236,8 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
 {
     char*          hit_id = NULL;
     unsigned int*  sub_id = NULL;
-    char           buf[5*NCBILOG_HITID_MAX]; /* use much bigger buffer to avoid overflow: prefix + 3*hitid + subid */
+    #define SUBHIT_BUF_LEN (5 * NCBILOG_HITID_MAX)
+    char           buf[SUBHIT_BUF_LEN]; /* use much bigger buffer to avoid overflow: prefix + 3*hitid + subid */
     size_t         prefix_len = 0;
     int n;
 
@@ -3274,8 +3280,8 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, co
     }
 
     /* Generate sub hit ID string representation */
-    n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
-    VERIFY_CATCH(n > 0 && n <= NCBILOG_HITID_MAX);
+    n = snprintf(buf, SUBHIT_BUF_LEN, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
+    VERIFY_CATCH(n > 0 && n < SUBHIT_BUF_LEN);
     return s_StrDup(buf);
 
 CATCH:
@@ -3376,6 +3382,7 @@ extern ENcbiLog_AppState NcbiLog_GetState(void)
 static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
 {
     size_t pos;
+    int    n;
     char*  buf;
 
     /* Try to get app-wide client from environment */
@@ -3411,13 +3418,17 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     VERIFY_CATCH(pos);
 
     /* Event name */
-    pos += (size_t) sprintf(buf + pos, "%-13s", "start");
+    n = sprintf(buf + pos, "%-13s", "start");
+    VERIFY_CATCH(n > 0);
+    pos += (size_t) n;
 
     /* Walk through list of arguments */
     if (argv) {
         int i;
         for (i = 0; argv[i] != NULL; ++i) {
-            pos += (size_t) sprintf(buf + pos, " %s", argv[i]);
+            n = snprintf(buf + pos, NCBILOG_ENTRY_MAX - pos, " %s", argv[i]);
+            VERIFY_CATCH(n > 0  &&  n < (NCBILOG_ENTRY_MAX - pos));
+            pos += (size_t) n;
         }
     }
     /* Post a message */
@@ -3748,6 +3759,7 @@ CATCH:
 static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
 {
     size_t pos;
+    int    n;
     char*  buf;
 
     /* Prefix */
@@ -3755,7 +3767,9 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     pos = s_PrintCommonPrefix(ctx);
     VERIFY_CATCH(pos);
     /* Event name */
-    pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
+    n = sprintf(buf + pos, "%-13s ", "extra");
+    VERIFY_CATCH(n > 0);
+    pos += (size_t) n;
     /* Parameters */
     pos = s_PrintParams(buf, pos, params);
     /* Post a message */
@@ -3769,6 +3783,7 @@ CATCH:
 static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
 {
     size_t pos;
+    int    n;
     char*  buf;
 
     /* Prefix */
@@ -3776,7 +3791,9 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     pos = s_PrintCommonPrefix(ctx);
     VERIFY_CATCH(pos);
     /* Event name */
-    pos += (size_t) sprintf(buf + pos, "%-13s ", "extra");
+    n = sprintf(buf + pos, "%-13s ", "extra");
+    VERIFY_CATCH(n > 0);
+    pos += (size_t)n;
     /* Parameters */
     pos = s_PrintParamsStr(buf, pos, params);
     /* Post a message */
@@ -3813,6 +3830,7 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
 {
     TNcbiLog_Context ctx = NULL;
     size_t pos, pos_prev;
+    int    n;
     char*  buf;
     char*  hit_id = NULL;
 
@@ -3826,7 +3844,9 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
     VERIFY_CATCH(pos);
 
     /* Print event name, status and timespan */
-    pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
+    n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
+    VERIFY_CATCH(n > 0);
+    pos += (size_t)n;
 
     /* Parameters */
     pos_prev = pos;
@@ -3857,6 +3877,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
 {
     TNcbiLog_Context ctx = NULL;
     size_t pos, pos_prev;
+    int    n;
     char*  buf;
     char*  hit_id = NULL;
 
@@ -3870,7 +3891,9 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
     VERIFY_CATCH(pos);
 
     /* Print event name, status and timespan */
-    pos += (size_t) sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
+    n = sprintf(buf + pos, "%-13s %d %f ", "perf", status, timespan);
+    VERIFY_CATCH(n > 0);
+    pos += (size_t)n;
 
     /* Parameters */
     pos_prev = pos;
@@ -4070,7 +4093,7 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
     }
 
     /* Log ID changes */
-    n = sprintf(buf, 
+    n = snprintf(buf, kIdBufSize,
         "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
         old_guid_hi, old_guid_lo, old_pid);
     VERIFY(n > 0  &&  n < kIdBufSize);
