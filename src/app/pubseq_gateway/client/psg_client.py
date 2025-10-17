@@ -134,7 +134,7 @@ class PsgClient:
             for reply in PsgClient.receive(self):
                 if result := reply.get('result', {}):
                     if result.get('reply') == 'unknown':
-                        if version := result.get('Version'):
+                        if version := result.get('data', {}).get('Version'):
                             self._server_version = Version(version)
 
             if not self._server_version:
