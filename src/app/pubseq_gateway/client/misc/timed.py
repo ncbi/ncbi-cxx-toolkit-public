@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+#
 # ===========================================================================
 #
 #                            PUBLIC DOMAIN NOTICE
@@ -23,8 +25,6 @@
 # ===========================================================================
 #
 # Author: Rafael Sadyrov
-#
-#!/usr/bin/env python3
 
 import argparse
 import asyncio
