@@ -64,6 +64,19 @@ class RegexCounter:
         for line in file:
             self._process(line)
 
+    def process_grep(self, file):
+        file.flush()
+        grep = [shutil.which('grep'), '-ci']
+
+        for r, total in self._total.items():
+            total[0] = subprocess.Popen(grep + [r.regex.pattern.decode() if r.regex else '^', file.name], stdout=subprocess.PIPE, text=True)
+
+        for r, total in self._total.items():
+            try:
+                total[0] = int(total[0].communicate()[0])
+            except:
+                total[0] = -1
+
     @property
     def total(self):
         return self._total
@@ -146,14 +159,18 @@ def run_combination(cmd, regexes, env, args):
         await process.wait()
         assert process.returncode == 0, f"Command '{cmd}' returned non-zero exit status {process.returncode}."
 
-    def _sync():
+    def _sync(no_grep):
         with tempfile.NamedTemporaryFile(dir=args.tmp_dir) as stdout, tempfile.NamedTemporaryFile(dir=args.tmp_dir) as stderr:
             subprocess.run(cmd, stdout=stdout, stderr=stderr, env=env).check_returncode()
 
-            stdout_rc.process_sync(stdout)
-            stderr_rc.process_sync(stderr)
+            if no_grep:
+                stdout_rc.process_sync(stdout)
+                stderr_rc.process_sync(stderr)
+            else:
+                stdout_rc.process_grep(stdout)
+                stderr_rc.process_grep(stderr)
 
-    asyncio.run(_async()) if args.asyncio else _sync()
+    asyncio.run(_async()) if args.asyncio else _sync(args.no_grep)
     return (stdout_rc.total, stderr_rc.total)
 
 def print_run_details(c, run):
@@ -300,6 +317,7 @@ measure_parser.add_argument('-output-file', '-o', help='Output CSV file (default
 measure_group = measure_parser.add_mutually_exclusive_group()
 measure_group.add_argument('-tmp-dir', help='Temporary directory to use (default: %(default)s)', default='/dev/shm')
 measure_group.add_argument('-asyncio', help='Whether to use asyncio', action='store_true')
+measure_group.add_argument('-no-grep', help='Whether to use grep', action='store_true')
 measure_parser.add_argument('RUNS', help='Number of runs per command combination', type=int)
 measure_parser.add_argument('ARGS', help='Options common to all command combinations', nargs='*')
 
