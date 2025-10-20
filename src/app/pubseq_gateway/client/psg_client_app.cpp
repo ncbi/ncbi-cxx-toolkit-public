@@ -201,7 +201,7 @@ void s_InitPsgOptions(CArgDescriptions& arg_desc, bool parallel)
 
     if (parallel) {
         arg_desc.AddDefaultKey("rate", "RATE", "DEPRECATED", CArgDescriptions::eDouble, "0.0", CArgDescriptions::fHidden);
-        arg_desc.AddDefaultKey("worker-threads", "THREADS_NUM", "Number of worker threads of each type", CArgDescriptions::eInteger, "4", CArgDescriptions::fHidden);
+        arg_desc.AddDefaultKey("worker-threads", "THREADS_NUM", "Number of worker threads of each type", CArgDescriptions::eInteger, "7", CArgDescriptions::fHidden);
     }
 }
 
