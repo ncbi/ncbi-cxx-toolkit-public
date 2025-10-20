@@ -232,11 +232,11 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
        ctab2.Print();
     }
     const string ref[5] = {
-    		"XP_003443710	XP_003443710	8128;9669;47969	Oreochromis niloticus;Mustela putorius furo;Oreochromis aureus	Nile tilapia;domestic ferret;Oreochromis aureus	bony fishes;carnivores	Eukaryota",
-    		"XP_003443710	XP_004568121	8153;8154;106582;303518	Haplochromis burtoni;Astatotilapia calliptera;Maylandia zebra;Pundamilia nyererei	Burton's mouthbrooder;eastern happy;zebra mbuna;Pundamilia nyererei	bony fishes	Eukaryota",
-    		"XP_003443710	XP_030605880	63155	Archocentrus centrarchus	flier cichlid	bony fishes	Eukaryota",
-    		"XP_003443710	XP_006794996	32507	Neolamprologus brichardi	Neolamprologus brichardi	bony fishes	Eukaryota",
-    		"XP_003443710	XP_030605881	63155	Archocentrus centrarchus	flier cichlid	bony fishes	Eukaryota"
+    		"XP_003443710	XP_003443710	8128;9669;47969	Oreochromis niloticus;Mustela putorius furo;Oreochromis aureus	Nile tilapia;domestic ferret;Oreochromis aureus	carnivores;ray-finned fishes	Eukaryota",
+    		"XP_003443710	XP_004568121	8153;8154;106582;303518	Haplochromis burtoni;Astatotilapia calliptera;Maylandia zebra;Pundamilia nyererei	Burton's mouthbrooder;eastern happy;zebra mbuna;Pundamilia nyererei	ray-finned fishes	Eukaryota",
+    		"XP_003443710	XP_030605880	63155	Archocentrus centrarchus	flier cichlid	ray-finned fishes	Eukaryota",
+    		"XP_003443710	XP_006794996	32507	Neolamprologus brichardi	Neolamprologus brichardi	ray-finned fishes	Eukaryota",
+    		"XP_003443710	XP_030605881	63155	Archocentrus centrarchus	flier cichlid	ray-finned fishes	Eukaryota"
     };
 
     {
@@ -249,8 +249,8 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
     {
     	string output = CNcbiOstrstreamToString(output_stream2);
     	const string single_tax[2] = {
-    			"XP_003443710	XP_003443710	8128	Oreochromis niloticus	Nile tilapia	bony fishes	Eukaryota",
-    			"XP_003443710	XP_004568121	106582	Maylandia zebra	zebra mbuna	bony fishes	Eukaryota"
+    			"XP_003443710	XP_003443710	8128	Oreochromis niloticus	Nile tilapia	ray-finned fishes	Eukaryota",
+    			"XP_003443710	XP_004568121	106582	Maylandia zebra	zebra mbuna	ray-finned fishes	Eukaryota"
     	};
 
     	for(unsigned int i=0; i < 2; i++) {
