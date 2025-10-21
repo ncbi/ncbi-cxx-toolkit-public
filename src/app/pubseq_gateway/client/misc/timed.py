@@ -252,12 +252,16 @@ def measure(args):
     writer.writerow({})
     writer.writerow(field_names)
 
-def process(args):
+def read_csv(args):
     reader = csv.reader(args.input_file, quoting=csv.QUOTE_NONNUMERIC)
     field_names = {name: i for i, name in enumerate(next(reader))}
     data = [row for row in reader]
     field_desc = {f: d for f, d in zip(field_names, data.pop())}
     data.pop()
+    return field_names, data, field_desc
+
+def process(args):
+    field_names, data, field_desc = read_csv(args)
     data.sort()
 
     which_index = field_names['Which']
@@ -285,7 +289,7 @@ def process(args):
                 return [values[0]] * 4
             else:
                 m = mean(values)
-                return [min(values), median(values), m, stdev(values, xbar=m)]
+                return [round(v, args.round) for v in (min(values), median(values), m, stdev(values, xbar=m))]
 
         values_len += 4
         data = {m: {c: v + get_stats(m, v) for c, v in vs.items()} for m, vs in data.items()}
@@ -303,6 +307,26 @@ def process(args):
 
     writer.writerow([])
     writer.writerow(field_desc.values())
+
+def extract(args):
+    field_names, data, field_desc = read_csv(args)
+    measurements = tuple(m for m in args.MEASUREMENTS if m in field_names)
+
+    output = {}
+    for row in data:
+        s = row[field_names['Which']]
+        if s in args.statistics:
+            e = row[field_names['Executable']]
+
+            for m in measurements:
+                output.setdefault(m, {}).setdefault(e, {})[s] = row[field_names[m]]
+
+    writer = csv.writer(args.output_file, quoting=csv.QUOTE_NONNUMERIC)
+    for m, md in output.items():
+        writer.writerow([field_desc[m]] + args.statistics)
+
+        for e, ed in md.items():
+            writer.writerow([e] + list(ed.get(s) for s in args.statistics))
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
@@ -325,7 +349,15 @@ process_parser = subparsers.add_parser('process', help='Process prior measuremen
 process_parser.set_defaults(func=process)
 process_parser.add_argument('-input-file', '-i', help='Input CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType())
 process_parser.add_argument('-output-file', '-o', help='Output CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
+process_parser.add_argument('-round', help='Round numbers to specified precision after the decimal point', default=2, type=int)
 process_parser.add_argument('-empty', help='Keep zero/empty measurements', action='store_true')
+
+extract_parser = subparsers.add_parser('extract', help='Extract statistics for specified measurements', description='Extract statistics for specified measurements.')
+extract_parser.set_defaults(func=extract)
+extract_parser.add_argument('-input-file', '-i', help='Input CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType())
+extract_parser.add_argument('-output-file', '-o', help='Output CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
+extract_parser.add_argument('-statistics', help='Statistics to extract', default=['Median', 'Mean', 'StdDev'], nargs='+')
+extract_parser.add_argument('MEASUREMENTS', help='Measurements to extract', nargs='+')
 
 args = parser.parse_args()
 args.func(args)
