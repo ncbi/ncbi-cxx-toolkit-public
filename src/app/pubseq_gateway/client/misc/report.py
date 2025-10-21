@@ -304,6 +304,10 @@ def create_input(path, input_file, requests):
 
 def get_filename(path, suffix, service, user_threads, io_threads, requests_per_io, binary, rate=0):
     safe_binary = binary.replace('/', '_')
+    if io_threads is None:
+        io_threads = '-'
+    if requests_per_io is None:
+        requests_per_io = '-'
     return Path(path) / f'{service}_{user_threads}_{io_threads}_{requests_per_io}_{safe_binary}_{rate}.{suffix}.txt'
 
 def performance_cmd(args, path, input_file, iter_args):
@@ -322,10 +326,12 @@ def performance_cmd(args, path, input_file, iter_args):
 
     def performance(run_no, service, user_threads, io_threads, requests_per_io, binary):
         output_file = get_filename(path, f'raw.{run_no}', service, user_threads, io_threads, requests_per_io, binary)
+        io_threads = [] if io_threads is None else ['-io-threads', str(io_threads)]
+        requests_per_io = [] if requests_per_io is None else ['-requests-per-io', str(requests_per_io)]
         conf_file = binary + '.ini'
         conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
         verbose = [] if args.save_stderr else [ '-verbose' ]
-        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), *verbose, *conf ]
+        cmd = [ binary, 'performance', '-output-file', output_file, '-service', service, '-user-threads', str(user_threads), *io_threads, *requests_per_io, *verbose, *conf ]
 
         if delay:
             cmd.extend([ '-delay', str(delay) ])
@@ -458,7 +464,8 @@ def create_result(path, iter_args, compared_iter_args, aggregate, statistics_to_
         for i, desc in enumerate(args_descriptions.items()):
             if not compared_iter_args[i]:
                 value = next(iter(iter_args[desc[0]]))
-                writer.writerow([ desc[0], f'{desc[1]} ("{value}")' ])
+                if value is not None:
+                    writer.writerow([ desc[0], f'{desc[1]} ("{value}")' ])
 
         writer.writerows(additional_info)
 
@@ -510,8 +517,8 @@ for mode in [ 'resolve', 'interactive', 'performance' ]:
     parser_run.add_argument('RUNS', help='Number of runs', type=int)
     parser_run.add_argument('-service', help='PSG services to run against (default: %(default)s)', default=[ 'PSG2' ], nargs='+')
     parser_run.add_argument('-user-threads', help='Numbers of user threads to use (default: %(default)s)', metavar='THREADS', type=int, default=[ 6 ], nargs='+')
-    parser_run.add_argument('-io-threads', help='Numbers of I/O threads to use (default: %(default)s)', metavar='THREADS', type=int, default=[ 6 ], nargs='+')
-    parser_run.add_argument('-requests-per-io', help='Numbers of requests per I/O to use (default: %(default)s)', metavar='REQUESTS', type=int, default=[ 1 ], nargs='+')
+    parser_run.add_argument('-io-threads', help='Numbers of I/O threads to use (default: %(default)s)', metavar='THREADS', type=int, default=[ None ], nargs='+')
+    parser_run.add_argument('-requests-per-io', help='Numbers of requests per I/O to use (default: %(default)s)', metavar='REQUESTS', type=int, default=[ None ], nargs='+')
     parser_run.add_argument('-binary', help='psg_client binaries to run', nargs='+', required=True)
     parser_run.add_argument('-warm-up', help='Whether to do a warm up run', action='store_true')
     parser_run.add_argument('-save-stderr', help='Whether to save stderr', action='store_true')
