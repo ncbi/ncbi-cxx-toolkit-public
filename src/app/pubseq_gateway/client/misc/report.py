@@ -4,7 +4,6 @@ import argparse
 import contextlib
 import csv
 from enum import IntEnum, auto
-from functools import partial
 import io
 from itertools import product
 import os
@@ -12,10 +11,9 @@ from pathlib import Path
 import re
 import shutil
 import socket
-from statistics import mean, median, quantiles, stdev, StatisticsError
+from statistics import mean, quantiles, stdev, StatisticsError
 import subprocess
 import sys
-from timeit import timeit
 
 class EventType(IntEnum):
     START       = 0
@@ -376,62 +374,6 @@ def performance_cmd(args, path, input_file, iter_args):
 
     return aggregate, statistics_to_output
 
-def overall_cmd(input_file_option, args, path, input_file, iter_args):
-    statistics_to_output = {
-            'median':   'Median elapsed real time, seconds',
-            'average':  'Average time, seconds',
-            'stddev':   'Standard deviation, seconds'
-        }
-
-    def overall(run_no, service, user_threads, io_threads, requests_per_io, binary, rate):
-        conf_file = binary + '.ini'
-        conf = [ '-conffile', conf_file ] if os.path.isfile(conf_file) else []
-        rate_options = ['-rate', str(rate)] if rate else []
-        cmd = [ binary, args.command, input_file_option, input_file, '-service', service, '-worker-threads', str(user_threads), '-io-threads', str(io_threads), '-requests-per-io', str(requests_per_io), *rate_options, *conf ]
-        open_stdout = lambda: open(get_filename(path, f'raw.{run_no}', *run_args), 'w') if args.save_output else contextlib.nullcontext()
-        open_stderr = lambda: open(get_filename(path, f'err.{run_no}', *run_args), 'w') if args.save_stderr else contextlib.nullcontext()
-
-        with open_stdout() as stdout, open_stderr() as stderr:
-            stdout = stdout if args.save_output else subprocess.DEVNULL
-            stderr = stderr if args.save_stderr else subprocess.DEVNULL
-            subprocess.run(cmd, stdout=stdout, stderr=stderr)
-
-        print('.', end='', flush=True)
-
-    if args.warm_up:
-        run_args = next(product(*iter_args.values()))
-        overall('warm_up', *run_args)
-
-    results = {}
-
-    for run_no in range(args.RUNS):
-        for run_args in product(*iter_args.values()):
-            f = partial(overall, f'{run_no}', *run_args)
-            result = timeit(f, number=1)
-            results.setdefault(run_args, []).append(result)
-
-    print(flush=True)
-
-    aggregate = {}
-
-    for run_args in product(*iter_args.values()):
-        run_results = results[run_args]
-        run_results.sort()
-
-        with open(get_filename(path, 'pro', *run_args), 'w') as output_file:
-            print(*[f'{v:.3f}' for v in run_results], sep='\n', file=output_file)
-
-        m = mean(run_results)
-        aggregate[run_args] = [ median(run_results), m, stdev(run_results, xbar=m) ]
-
-    return aggregate, statistics_to_output
-
-def resolve_cmd(*args):
-    return overall_cmd('-id-file', *args)
-
-def interactive_cmd(*args):
-    return overall_cmd('-input-file', *args)
-
 args_descriptions = {
         'service':          'PSG service/server name',
         'user_threads':     'Number of user threads working with PSG client API',
@@ -509,7 +451,7 @@ parser_report.add_argument('-statistics', help='Report statistics optionally gro
 parser_report.add_argument('-progress', help='Report statistics every N requests (default: %(default)s)', metavar='N', default=0, type=int)
 parser_report.add_argument('-summary', help='Report summary', action='store_true')
 
-for mode in [ 'resolve', 'interactive', 'performance' ]:
+for mode in [ 'performance' ]:
     parser_run = subparsers.add_parser(mode, help=f'Runs "psg_client {mode}" and aggregates results', description=f'Runs "psg_client {mode}" and aggregates results')
     parser_run.set_defaults(func=run_cmd)
     parser_run.add_argument('INPUT_FILE', help='File with requests', type=argparse.FileType())
