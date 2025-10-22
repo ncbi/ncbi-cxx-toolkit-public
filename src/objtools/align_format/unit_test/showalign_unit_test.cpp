@@ -56,11 +56,13 @@ BOOST_AUTO_TEST_SUITE(showalign)
 
 BOOST_AUTO_TEST_CASE(TestPerformance)
 {
+    CTmpFile tmp_file;
     const string seqAlignFileName_in = "data/in_showalign_aln";
     CRef<CSeq_annot> san(new CSeq_annot);
   
     ifstream in(seqAlignFileName_in.c_str());
     in >> MSerial_AsnText >> *san;
+    in.close();
     
     CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);  
     fileSeqAlignSet->Set() = san->GetData().GetAlign();     
@@ -70,7 +72,7 @@ BOOST_AUTO_TEST_CASE(TestPerformance)
     TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
     CRef<CScope> scope = tmp_data_loader.NewScope();
     CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
-    CNcbiOfstream dumpster("/dev/null");  // we don't care about the output
+    CNcbiOfstream dumpster(tmp_file.GetFileName());  // we don't care about the output
     ds.DisplaySeqalign(dumpster);
     scope->GetObjectManager().RevokeAllDataLoaders();        
 }
