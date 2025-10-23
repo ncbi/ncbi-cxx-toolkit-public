@@ -189,6 +189,12 @@ CBlastOM::x_InitGenbankDataLoader()
     } catch (const CException& e) {
         m_GbLoaderName.erase();
         ERR_POST(Warning << e.GetMsg());
+    } catch (const std::bad_alloc& e) {
+        m_GbLoaderName.erase();
+        ERR_POST(Warning << "Failed to initialize GenBank data loader: " << e.what());
+    } catch (...) {
+        m_GbLoaderName.erase();
+        ERR_POST(Warning << "Failed to initialize GenBank data loader: unknown error");
     }
 }
 
