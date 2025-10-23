@@ -35,7 +35,7 @@ Linux64-Alma          : plain : GCC.sh   --without-debug --without-mt --with-sta
 FreeBSD64             : plain : Clang.sh --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release
 IntelMAC              : plain : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release --without-pcre
 ArmMAC                : plain : Clang.sh --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --with-bin-release --without-pcre
-Win64_19              : plain : static 64 ReleaseMT
+Win64_22              : plain : static 64 ReleaseMT
 
 #USE_COMPONENTS
 #
