@@ -530,8 +530,8 @@ NCBIcomponent_report(GLEW)
 # OpenGL
 if(NOT NCBI_COMPONENT_OpenGL_DISABLED)
     set(NCBI_COMPONENT_OpenGL_FOUND YES)
-    set(NCBI_COMPONENT_OpenGL_LIBS
-      "-framework AGL -framework GLKit -framework OpenGL -framework Metal -framework MetalKit")
+    set(NCBI_COMPONENT_OpenGL_LIBS # -framework AGL
+      "-framework GLKit -framework OpenGL -framework Metal -framework MetalKit")
 endif()
 NCBIcomponent_report(OpenGL)
 
