@@ -140,7 +140,6 @@ int main(int argc, const char* argv[])
     assert(info.from[0]  &&  info.from[0] != '@'  &&  strchr(info.from, '@'));
 
     if ((huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)) != 0) {
-
         strcpy(huge_body, "user8@");
         for (n = 0;  n < TEST_HUGE_BODY_SIZE - 6;  n++)
             huge_body[n + 6] = "abcdefghijklmnopqrstuvwxyz."[rand() % 27];
@@ -417,7 +416,7 @@ int main(int argc, const char* argv[])
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
-done:
+ done:
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
     return 0;
