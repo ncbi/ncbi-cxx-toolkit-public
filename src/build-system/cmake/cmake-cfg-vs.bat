@@ -38,6 +38,7 @@ REM defaults
 set BUILD_SHARED_LIBS=OFF
 set VISUAL_STUDIO=2022
 set SKIP_ANALYSIS=OFF
+set ALLOW_COMPOSITE=
 set generator_multi_cfg=
 
 goto :RUN
@@ -55,6 +56,7 @@ echo   --help                   -- print Usage
 echo   --without-dll            -- build all libraries as static ones (default)
 echo   --with-dll               -- assemble toolkit libraries into DLLs
 echo                               where requested
+echo   --with-composite         -- assemble composite static libraries
 echo   --with-projects="FILE"   -- build projects listed in %tree_root%\FILE
 echo                               FILE can also be a list of subdirectories of
 echo                               %tree_root%\src
@@ -184,6 +186,7 @@ if "%1"=="--without-debug"     (set BUILD_TYPE=Release&           goto :CONTINUE
 if "%1"=="--with-debug"        (set BUILD_TYPE=Debug&             goto :CONTINUEPARSEARGS)
 if "%1"=="--without-dll"       (set BUILD_SHARED_LIBS=OFF&        goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"          (set BUILD_SHARED_LIBS=ON&         goto :CONTINUEPARSEARGS)
+if "%1"=="--with-composite"    (set ALLOW_COMPOSITE=ON&           goto :CONTINUEPARSEARGS)
 if "%1"=="--with-components"   (set PROJECT_COMPONENTS=%~2& shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-features"     (set PROJECT_FEATURES=%~2&  shift& goto :CONTINUEPARSEARGS)
 if "%1"=="--with-build-root"   (set BUILD_ROOT=%~2&        shift& goto :CONTINUEPARSEARGS)
@@ -378,6 +381,9 @@ if not "%INSTALL_PATH%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
+if not "%ALLOW_COMPOSITE%"=="" (
+  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_ALLOW_COMPOSITE=%ALLOW_COMPOSITE%
+)
 
 if "%BUILD_ROOT%"=="" (
   if "%BUILD_TYPE%"=="" (

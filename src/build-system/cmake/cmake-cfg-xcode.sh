@@ -42,6 +42,7 @@ fi
 # defaults
 BUILD_SHARED_LIBS="OFF"
 SKIP_ANALYSIS="OFF"
+ALLOW_COMPOSITE=""
 
 ############################################################################# 
 Check_function_exists() {
@@ -62,6 +63,7 @@ OPTIONS:
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitly requested otherwise
+  --with-composite           -- assemble composite static libraries
   --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects="corelib$;serial"
@@ -132,11 +134,14 @@ while [ $# != 0 ]; do
     --caller=*)
       script_name=${1#*=}
       ;; 
-    --without-dll) 
+    --with-static|--without-dll) 
       BUILD_SHARED_LIBS=OFF
       ;; 
     --with-dll | --with-composite-dll) 
       BUILD_SHARED_LIBS=ON 
+      ;; 
+    --with-composite) 
+      ALLOW_COMPOSITE=ON
       ;; 
     --with-projects=*)
       PROJECT_LIST=${1#*=}
@@ -264,6 +269,9 @@ if [ -n "$INSTALL_PATH" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${INSTALL_PATH}")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+if [ -n "$ALLOW_COMPOSITE" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS -DNCBI_PTBCFG_ALLOW_COMPOSITE=$ALLOW_COMPOSITE"
+fi
 
 if [ -z "$BUILD_ROOT" ]; then
   if [ -z "$BUILD_TYPE" ]; then
