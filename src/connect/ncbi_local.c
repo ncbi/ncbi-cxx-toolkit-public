@@ -368,8 +368,7 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    /* NB: s_Reset() must have been called before */
-    assert(data &&  !data->n_cand  &&  data->reset);
+    assert(data  &&  !data->n_cand); /*s_Reset() had to be called before*/
     if (data->cand) {
         assert(data->a_cand);
         data->a_cand = 0;

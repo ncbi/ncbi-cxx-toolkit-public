@@ -420,8 +420,7 @@ static void x_InternalReset(SERV_ITER iter)
 static void x_InternalClose(SERV_ITER iter)
 {
     struct SINTERNAL_Data* data = (struct SINTERNAL_Data*) iter->data;
-    /* NB: s_Reset() had to be called before */
-    assert(data  &&  !data->info  &&  data->reset);
+    assert(data  &&  !data->info); /*s_Reset() had to be called before*/
     CORE_TRACEF(("Enter SERV::x_InternalClose(\"%s\")", iter->name));
     iter->data = 0;
     free(data);
