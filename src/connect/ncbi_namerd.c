@@ -1564,6 +1564,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
                      iter->arg ? iter->arg : "",
                      &"/"[!iter->arglen || !iter->val],
                      iter->val ? iter->val : ""));
+        s_Reset(iter);
         s_Close(iter);
         return 0;
     }
