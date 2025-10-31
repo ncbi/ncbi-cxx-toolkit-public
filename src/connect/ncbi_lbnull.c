@@ -27,7 +27,7 @@
  *
  * File Description:
  *   Low-level API to resolve an NCBI service name to server meta-addresses
- *   by short-cutting service names directly into DNS hostnames.
+ *   by short-cutting the service names directly into DNS hostnames.
  *
  */
 
@@ -60,6 +60,8 @@
 #define REG_CONN_LBNULL_VHOST                                "LBNULL_VHOST"
 
 #define REG_CONN_LBNULL_PORT                                 "LBNULL_PORT"
+
+#define REG_CONN_LBNULL_ASIS                                 "LBNULL_ASIS"
 
 /* Service-specific only: */
 
@@ -321,9 +323,16 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
 
     CORE_TRACEF(("SERV_LBNULL_Open(\"%s\")", iter->name));
 
+    assert(CONN_HOST_LEN + 1 < sizeof(buf));
+    if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
+        CORE_LOGF_X(87, eLOG_Error,
+                    ("[%s]  Service name too long for LBNULL",
+                     iter->name));
+        goto out;
+    }
     if (iter->arg) {
         assert(iter->arglen);
-        CORE_LOGF_X(87, eLOG_Error,
+        CORE_LOGF_X(88, eLOG_Error,
                     ("[%s]  Argument affinity lookup not supported by LBNULL:"
                      " %s%s%s%s%s", iter->name, iter->arg, &"="[!iter->val],
                      &"\""[!iter->val], iter->val ? iter->val : "",
@@ -333,9 +342,30 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     CORE_TRACEF(("[%s]  LBNULL using server type \"%s\"",
                  iter->name, SERV_TypeStr(type)));
 
+    if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
+        vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                                    (iter->name, REG_CONN_LBNULL_VHOST,
+                                     buf, sizeof(buf), 0));
+        if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
+                                         buf, sizeof(buf), "/")) {
+            CORE_LOGF_X(89, eLOG_Error,
+                        ("[%s]  Cannot obtain URL path for LBNULL",
+                         iter->name));
+            goto out;
+        }
+        if (!(path = strdup(buf))) {
+            CORE_LOGF_ERRNO_X(90, eLOG_Error, errno,
+                              ("[%s]  Cannot store path \"%s\" for LBNULL",
+                               iter->name, buf));
+            goto out;
+        }
+        CORE_TRACEF(("[%s]  LBNULL using path \"%s\"%s", iter->name, path,
+                     vhost ? " and VHost" : ""));
+    }
+
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_PORT,
                                       buf, sizeof(buf), 0)) {
-        CORE_LOGF_X(88, eLOG_Error,
+        CORE_LOGF_X(91, eLOG_Error,
                     ("[%s]  Cannot obtain port number for LBNULL",
                      iter->name));
         goto out;
@@ -350,7 +380,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                 port = 0;
         }
         if (!port) {
-            CORE_LOGF_X(89, eLOG_Error,
+            CORE_LOGF_X(92, eLOG_Error,
                         ("[%s]  Bad default port number \"%s\" for LBNULL",
                          iter->name, buf));
             goto out;
@@ -360,34 +390,12 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         port = CONN_PORT_LBNULL;
     CORE_TRACEF(("[%s]  LBNULL using port number :%lu", iter->name, port));
 
-    if (!(type & fSERV_Dns)  &&  (type & fSERV_Http)) {
-        if (!ConnNetInfo_GetValueService(iter->name, REG_CONN_LBNULL_PATH,
-                                         buf, sizeof(buf), "/")) {
-            CORE_LOGF_X(90, eLOG_Error,
-                        ("[%s]  Cannot obtain URL path for LBNULL",
-                         iter->name));
-            goto out;
-        }
-        if (!(path = strdup(buf))) {
-            CORE_LOGF_ERRNO_X(91, eLOG_Error, errno,
-                              ("[%s]  Cannot store path \"%s\" for LBNULL",
-                               iter->name, buf));
-            goto out;
-        }
-        CORE_TRACEF(("[%s]  LBNULL using path \"%s\"", iter->name, path));
-        vhost = ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
-                                    (iter->name, REG_CONN_LBNULL_VHOST,
-                                     buf, sizeof(buf), 0));
-    }
-
-    assert(CONN_HOST_LEN + 1 < sizeof(buf));
-    if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
-        CORE_LOGF_X(92, eLOG_Error,
-                    ("[%s]  Service name too long for LBNULL",
-                     iter->name));
-        goto out;
-    }
-    x_tr(buf, iter->name, len, '_', '-');
+    if (ConnNetInfo_Boolean(ConnNetInfo_GetValueInternal
+                            (iter->name, REG_CONN_LBNULL_ASIS,
+                             buf, sizeof(buf), 0))) {
+        memcpy(buf, iter->name, len);
+    } else
+        x_tr(buf, iter->name, len, '_', '-');
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
