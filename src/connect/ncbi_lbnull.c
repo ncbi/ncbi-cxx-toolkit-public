@@ -222,8 +222,7 @@ static void s_Reset(SERV_ITER iter)
 static void s_Close(SERV_ITER iter)
 {
     struct SLBNULL_Data* data = (struct SLBNULL_Data*) iter->data;
-    /* NB: s_Reset() had to be called before */
-    assert(data  &&  !data->info  &&  data->reset);
+    assert(data  &&  !data->info); /*s_Reset() had to be called before*/
     CORE_TRACEF(("Enter LBNULL::s_Close(\"%s\")", iter->name));
     iter->data = 0;
     if (data->path)
@@ -275,6 +274,16 @@ static int/*bool*/ x_CheckDomain(const char* domain)
         return 0/*false: trailing dash*/;
     return 1/*true*/;
 }
+
+
+static void x_tr(char* dst, const char* src, size_t len, char x, char y)
+{
+    while (len--) {
+        char c = *src++;
+        *dst++ = c == x ? y : c;
+    }
+}
+
 
 
 /***********************************************************************
@@ -378,7 +387,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
                      iter->name));
         goto out;
     }
-    memcpy(buf, iter->name, len);
+    x_tr(buf, iter->name, len, '_', '-');
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
