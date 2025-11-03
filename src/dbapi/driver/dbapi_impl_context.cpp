@@ -723,7 +723,7 @@ public:
 
     virtual Uint2 GetPort(void) const
     {
-        return m_Other.GetPort();
+        return CDBConnParamsBase::GetPort();
     }
 
     virtual CRef<IConnValidator> GetConnValidator(void) const
@@ -745,6 +745,7 @@ public:
     using CDBConnParamsBase::SetDatabaseName;
     using CDBConnParamsBase::SetPassword;
     using CDBConnParamsBase::SetParam;
+    using CDBConnParamsBase::SetPort;
 
 private:
     const CDBConnParams& m_Other;
@@ -1239,6 +1240,11 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetUserName(user_name);
         act_params.SetDatabaseName(db_name);
         act_params.SetPassword(password);
+        if (conf_params.IsPortSet()) {
+            act_params.SetPort(NStr::StringToNumeric<Uint2>(conf_params.port));
+        } else {
+            act_params.SetPort(params.GetPort());
+        }
 
         CDB_UserHandler::TExceptions expts;
         CGuard<CDB_UserHandler::TExceptions, SNoLock, SUnLock>
