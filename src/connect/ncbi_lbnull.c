@@ -51,11 +51,11 @@
 
 /* Global only: */
 
-#define REG_CONN_LBNULL_DOMAIN      DEF_CONN_REG_SECTION "_" "LBNULL_DOMAIN"
-
 #define REG_CONN_LBNULL_DEBUG       DEF_CONN_REG_SECTION "_" "LBNULL_DEBUG"
 
 /* Regular: */
+
+#define REG_CONN_LBNULL_DOMAIN                               "LBNULL_DOMAIN"
 
 #define REG_CONN_LBNULL_VHOST                                "LBNULL_VHOST"
 
@@ -106,7 +106,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     unsigned int         ipv4;
     SSERV_Info*          info;
 
-    assert(!data->info);
+    assert(data->hostlen  &&  data->host[0]  &&  !data->info);
     if (!SOCK_gethostbynameEx6(&ipv6, data->host, data->debug ? eOn : eDefault))
         return 0/*failure*/;
 
@@ -125,7 +125,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                                      len ? len + 7/*:port#\0*/ : 0);
         if (info  &&  len) {
             char* vhost = (char*) info + SERV_SizeOfInfo(info);
-            memcpy(vhost, data->host, len + 1);
+            memcpy(vhost, data->host, len);
             if ((!(info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTP)  ||
                 ( (info->mode & fSERV_Secure)  &&  data->port != CONN_PORT_HTTPS)) {
                 len += sprintf(vhost + len, ":%hu", data->port);
@@ -134,7 +134,8 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
                     errno = ERANGE;
                     info = 0;
                 }
-            }
+            } else
+                vhost[len] = '\0';
             if (info) {
                 assert(len <= CONN_HOST_LEN);
                 info->vhost = (unsigned char) len;
@@ -381,7 +382,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         }
         if (!port) {
             CORE_LOGF_X(92, eLOG_Error,
-                        ("[%s]  Bad default port number \"%s\" for LBNULL",
+                        ("[%s]  Bad port number \"%s\" for LBNULL",
                          iter->name, buf));
             goto out;
         }
@@ -398,7 +399,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
         x_tr(buf, iter->name, len, '_', '-');
     domain = buf + len + 1;
 
-    if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBNULL_DOMAIN,
+    if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
                                       domain, CONN_HOST_LEN - len + 1, 0)) {
         CORE_LOGF_X(93, eLOG_Error,
                     ("[%s]  Cannot obtain domain name for LBNULL",
