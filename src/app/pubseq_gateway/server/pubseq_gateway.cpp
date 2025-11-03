@@ -100,6 +100,7 @@ CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
 CPubseqGatewayApp::CPubseqGatewayApp() :
+    m_SelfRequestsLoop(nullptr),
     m_ThrottlingDataLock(false),
     m_ThrottlingDataInProgress(false),
     m_CassConnection(nullptr),
@@ -737,6 +738,21 @@ int CPubseqGatewayApp::Run(void)
                                              &m_LastMyNCBIResolveOK,
                                              &m_LastMyNCBITestOk);
 
+    // Run the self request thread (and its event loop) to support z endpoint
+    // requests
+    CPSG_EventLoop  self_requests_loop("localhost:" +
+                                       to_string(m_Settings.m_HttpPort),
+                                       &OnZEndPointItemComplete,
+                                       &OnZEndPointReplyComplete);
+    // Note: this is just for the later usage at the moment when a self request
+    // is prepared ans sent
+    m_SelfRequestsLoop = &self_requests_loop;
+
+    std::thread     self_requests_thread(&CPSG_EventLoop::Run,
+                                         ref(self_requests_loop),
+                                         CDeadline::eInfinite);
+
+
     // The classification thread is conditional
     std::thread     seq_id_classification_monitoring_thread;
     if (m_Settings.m_SeqIdRefreshSec > 0) {
@@ -790,6 +806,10 @@ int CPubseqGatewayApp::Run(void)
     if (m_Settings.m_SeqIdRefreshSec > 0) {
         seq_id_classification_monitoring_thread.join();
     }
+
+    self_requests_loop.Stop();
+    self_requests_thread.join();
+
     myncbi_monitoring_thread.join();
     cass_monitoring_thread.join();
 

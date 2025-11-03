@@ -386,6 +386,24 @@ void CPSGS_Reply::Send503(const char *  payload)
 }
 
 
+void CPSGS_Reply::Send504(const char *  payload)
+{
+    if (m_ConnectionCanceled || IsFinished())
+        return;
+
+    x_UpdateLastActivity();
+
+    m_Reply->Send504(payload);
+
+    // 504 is always the last so the reply is not needed anymore.
+    // SetCompleted() will let the framework to know that the pending op can be
+    // discarded.
+    // Typically this method would be used without the pending op so
+    // SetCompleted() would not be needed but it does not harm in those cases.
+    m_Reply->SetCompleted();
+}
+
+
 void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        const string &  processor_id,
                                        const string &  msg,

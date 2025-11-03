@@ -171,6 +171,11 @@ public:
                            m_Req->entity.len);
     }
 
+    uv_loop_t *  GetUVLoop(void)
+    {
+        return static_cast<uv_loop_t *>(m_Req->conn->ctx->loop);
+    }
+
 private:
     optional<string> x_GetCookieValue(const string &  cookie_name);
 

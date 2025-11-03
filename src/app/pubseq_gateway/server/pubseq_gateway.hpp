@@ -47,6 +47,7 @@
 #include <objtools/pubseq_gateway/impl/myncbi/myncbi_factory.hpp>
 
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
+#include <objtools/pubseq_gateway/client/impl/misc.hpp>
 
 #include "pending_operation.hpp"
 #include "http_daemon.hpp"
@@ -62,6 +63,7 @@
 #include "psgs_dispatcher.hpp"
 #include "psgs_uv_loop_binder.hpp"
 #include "settings.hpp"
+#include "z_end_points.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -189,6 +191,9 @@ public:
 
     size_t GetProcessorMaxConcurrency(const string &  processor_id)
     { return m_Settings.GetProcessorMaxConcurrency(GetConfig(), processor_id); }
+
+    uint16_t GetNumOfConnections(void) const
+    { return m_HttpDaemon->NumOfConnections(); }
 
     EPSGS_StartupDataState GetStartupDataState(void) const
     { return m_StartupDataState; }
@@ -464,27 +469,25 @@ private:
 
 private:
     // z end point support
-
-    // Pubseq gateway API lock to make it cheap to create CPSG_Queue instances.
-    // It is taken at the initialization and kept till the end of the app life.
-    CPSG_Queue::TApiLock    m_PSGAPILock;
+    friend class CPSGS_ZEndPointRequests;
 
     void x_InitialzeZEndPointData(void);
+    void x_RunChecks(size_t  request_id,
+                     CRef<CRequestContext> &  request_context,
+                     const vector<SCheckAttributes> &  checks);
+    void x_ExecuteConnectionsCheck(size_t  request_id,
+                                   const string &  check_id);
+    void x_ExecuteSelfCheck(size_t  request_id,
+                            const string &  check_id,
+                            CRef<CRequestContext> &  request_context,
+                            const string &  health_command,
+                            const CTimeout &  health_timeout);
 
     // At the moment /readyz and healthz match. The only difference is what
     // request counter to increment
     int x_ReadyzHealthzImplementation(CHttpRequest &  req,
                                       shared_ptr<CPSGS_Reply>  reply);
 
-    CRequestStatus::ECode
-    x_SelfZEndPointCheckImpl(CRef<CRequestContext> &  context,
-                             const string &  check_id,
-                             const string &  check_name,
-                             const string &  check_description,
-                             bool  verbose,
-                             const string &  health_command,
-                             const CTimeout &  health_timeout,
-                             CJsonNode &  node);
     bool x_NeedReadyZCheckPerform(const string &  check_name,
                                   bool  verbose,
                                   const vector<string> &  exclude_checks,
@@ -495,6 +498,30 @@ private:
     void x_SendZEndPointReply(CRequestStatus::ECode  http_status,
                               shared_ptr<CPSGS_Reply>  reply,
                               const string *  payload);
+
+    // z end point requests should be executed in separate threads; the class
+    // below helps to keep track of the z end point requests
+    CPSGS_ZEndPointRequests         m_ZEndPointRequests;
+
+    // Just for storage; it is needed at the stage when a self request is sent.
+    // Creation is done on stack (see Run() method)
+    CPSG_EventLoop *                m_SelfRequestsLoop;
+
+public:
+    void OnZEndPointRequestFinish(size_t  request_id,
+                                  const string &  check_id,
+                                  const string &  status,
+                                  const string &  message,
+                                  CRequestStatus::ECode  http_status)
+    {
+        m_ZEndPointRequests.OnZEndPointRequestFinish(request_id, check_id,
+                                                     status, message,
+                                                     http_status);
+    }
+    void OnFinilizeHealthZRequest(size_t  request_id)
+    { m_ZEndPointRequests.OnFinilizeHealthZRequest(request_id); }
+    void OnCleanupHealthZRequest(size_t  request_id)
+    { m_ZEndPointRequests.OnCleanupHealthZRequest(request_id); }
 
 private:
     // Throttling support

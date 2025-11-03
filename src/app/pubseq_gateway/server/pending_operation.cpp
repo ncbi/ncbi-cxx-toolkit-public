@@ -58,9 +58,11 @@ CPendingOperation::CPendingOperation(shared_ptr<CPSGS_Request>  user_request,
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
 
+    /*
     PSG_TRACE("CPendingOperation::CPendingOperation() request: " <<
               m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
               ", this: " << this);
+    */
 }
 
 
@@ -69,9 +71,11 @@ CPendingOperation::~CPendingOperation()
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
 
+    /*
     PSG_TRACE("CPendingOperation::~CPendingOperation() request: " <<
               m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
               ", this: " << this);
+    */
 }
 
 
@@ -80,9 +84,11 @@ void CPendingOperation::Clear()
     CRequestContextResetter     context_resetter;
     m_UserRequest->SetRequestContext();
 
+    /*
     PSG_TRACE("CPendingOperation::Clear() request: " <<
               m_UserRequest->Serialize().Repr(CJsonNode::fStandardJson) <<
               ", this: " << this);
+    */
 
     m_Reply->Clear();
     m_Started = false;

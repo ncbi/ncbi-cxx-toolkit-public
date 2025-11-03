@@ -229,6 +229,11 @@ void CHttpReply::x_GenericSendError(int  status,
                         h2o_send_error_503(m_Req, head ?
                             head : "Service Unavailable", payload, 0);
                         break;
+                    case 504:
+                        h2o_send_error_generic(m_Req, 504,
+                                               head ? head : "Gateway Timeout",
+                                               payload, 0);
+                        break;
                     default:
                         NCBI_THROW(CPubseqGatewayException, eLogic,
                                    "Unknown HTTP status to send");
@@ -247,7 +252,7 @@ void CHttpReply::x_GenericSendError(int  status,
 void CHttpReply::NeedOutput(void)
 {
     if (m_State == eReplyFinished) {
-        PSG_TRACE("NeedOutput -> finished -> wake");
+        // PSG_TRACE("NeedOutput -> finished -> wake");
         m_HttpProto->WakeWorker();
     } else {
         PeekPending();

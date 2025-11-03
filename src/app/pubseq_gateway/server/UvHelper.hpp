@@ -99,36 +99,36 @@ public:
         m_loop({0}),
         m_initialized(false)
     {
-        PSG_TRACE("CUvLoop::CUvLoop " << &m_loop);
+        // PSG_TRACE("CUvLoop::CUvLoop " << &m_loop);
         int rc = uv_loop_init(&m_loop);
         if (rc)
             NCBI_THROW2(CUvException, eUvLoopInitFailure, "uv_loop_init failed", rc);
         m_initialized = true;
     }
     ~CUvLoop() {
-        PSG_TRACE("CUvLoop::~CUvLoop " << &m_loop);
+        // PSG_TRACE("CUvLoop::~CUvLoop " << &m_loop);
         Close();
     }
     uv_loop_t* Handle() {
         return &m_loop;
     }
     int Close() {
-        PSG_TRACE("CUvLoop::Close " << &m_loop);
+        // PSG_TRACE("CUvLoop::Close " << &m_loop);
         int rc = 0;
         if (m_initialized) {
             rc = uv_run(&m_loop, UV_RUN_DEFAULT);
-            if (rc)
-                PSG_TRACE("uv_run returned " << rc);
+            // if (rc)
+            //     PSG_TRACE("uv_run returned " << rc);
             rc = uv_loop_close(&m_loop);
-            if (rc)
-                PSG_TRACE("uv_loop_close returned " << rc);
+            // if (rc)
+            //     PSG_TRACE("uv_loop_close returned " << rc);
             m_initialized = false;
         }
         return rc;
     }
     void Stop() {
         if (m_initialized) {
-            PSG_TRACE("CUvLoop::Stop " << &m_loop);
+            // PSG_TRACE("CUvLoop::Stop " << &m_loop);
             uv_stop(&m_loop);
         }
     }
@@ -195,7 +195,7 @@ private:
     }
     void InternalClose(void (*close_cb)(uv_handle_t* handle), bool from_dtor) {
         if (m_initialized) {
-            PSG_TRACE("CUvTcp::Close " << &m_tcp);
+            // PSG_TRACE("CUvTcp::Close " << &m_tcp);
             uv_handle_t *handle = reinterpret_cast<uv_handle_t*>(&m_tcp);
             if (from_dtor) {
                 handle->data = this;
@@ -214,11 +214,11 @@ public:
         m_tcp({0}),
         m_initialized(false)
     {
-        PSG_TRACE("CUvTcp::CUvTcp " << &m_tcp);
+        // PSG_TRACE("CUvTcp::CUvTcp " << &m_tcp);
         Init(loop);
     }
     ~CUvTcp() {
-        PSG_TRACE("CUvTcp::~CUvTcp " << &m_tcp);
+        // PSG_TRACE("CUvTcp::~CUvTcp " << &m_tcp);
         InternalClose(nullptr, true);
     }
     void Init(uv_loop_t *loop) {
@@ -271,7 +271,7 @@ public:
     }
     void StopRead() {
         if (m_initialized) {
-            PSG_TRACE("CUvTcp::StopRead " << &m_tcp);
+            // PSG_TRACE("CUvTcp::StopRead " << &m_tcp);
             uv_read_stop(reinterpret_cast<uv_stream_t*>(&m_tcp));
         }
     }

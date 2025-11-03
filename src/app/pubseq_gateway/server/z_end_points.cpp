@@ -68,18 +68,19 @@ struct SCheckDescription
 
 
 static vector<SCheckDescription>    s_CheckDescription
-{ SCheckDescription("cassandra", "Cassandra retrieval",
-                    "Check of data retrieval from Cassandra DB"),
+{
+  SCheckDescription("connections", "Connections within soft limit",
+                    "Check that the number of client connections is within the soft limit"),
   SCheckDescription("lmdb", "LMDB retrieval",
                     "Check of data retrieval from LMDB"),
-  SCheckDescription("wgs", "WGS retrieval",
-                    "Check of data retrieval from WGS"),
+  SCheckDescription("cassandra", "Cassandra retrieval",
+                    "Check of data retrieval from Cassandra DB"),
   SCheckDescription("cdd", "CDD retrieval",
                     "Check of data retrieval from CDD"),
   SCheckDescription("snp", "SNP retrieval",
                     "Check of data retrieval from SNP"),
-  SCheckDescription("connections", "Connections within soft limit",
-                    "Check that the number of client connections is within the soft limit")
+  SCheckDescription("wgs", "WGS retrieval",
+                    "Check of data retrieval from WGS")
 };
 
 SCheckDescription  FindCheckDescription(const string &  id)
@@ -95,32 +96,51 @@ SCheckDescription  FindCheckDescription(const string &  id)
 }
 
 
+static atomic<bool>     s_ZEndPointRequestIdLock(false);
+static size_t           s_ZEndPointNextRequestId = 0;
+
+
+size_t  GetNextZEndPointRequestId(void)
+{
+    CSpinlockGuard      guard(&s_ZEndPointRequestIdLock);
+    auto request_id = ++s_ZEndPointNextRequestId;
+    return request_id;
+}
+
+
 void CPubseqGatewayApp::x_InitialzeZEndPointData(void)
 {
+    double      max_timeout = -1;
+
     for (auto &  check : s_CheckDescription) {
         if (check.Id == "cassandra") {
             check.HealthCommand = m_Settings.m_CassandraProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_CassandraHealthTimeoutSec);
+            max_timeout = max(max_timeout, m_Settings.m_CassandraHealthTimeoutSec);
             continue;
         }
         if (check.Id == "lmdb") {
             check.HealthCommand = m_Settings.m_LMDBProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_LMDBHealthTimeoutSec);
+            max_timeout = max(max_timeout, m_Settings.m_LMDBHealthTimeoutSec);
             continue;
         }
         if (check.Id == "wgs") {
             check.HealthCommand = m_Settings.m_WGSProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_WGSHealthTimeoutSec);
+            max_timeout = max(max_timeout, m_Settings.m_WGSHealthTimeoutSec);
             continue;
         }
         if (check.Id == "cdd") {
             check.HealthCommand = m_Settings.m_CDDProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_CDDHealthTimeoutSec);
+            max_timeout = max(max_timeout, m_Settings.m_CDDHealthTimeoutSec);
             continue;
         }
         if (check.Id == "snp") {
             check.HealthCommand = m_Settings.m_SNPProcessorHealthCommand;
             check.HealthCommandTimeout = CTimeout(m_Settings.m_SNPHealthTimeoutSec);
+            max_timeout = max(max_timeout, m_Settings.m_SNPHealthTimeoutSec);
             continue;
         }
         if (check.Id == "connections") {
@@ -134,11 +154,7 @@ void CPubseqGatewayApp::x_InitialzeZEndPointData(void)
         TPSG_Https::SetDefault(true);
     }
 
-    // Create a queue instance to have the associated I/O initialized
-    // Then take the API lock and keep it forever. This will make the
-    // consequent creation of CPSG_Queue instances cheap.
-    CPSG_Queue  req_queue("localhost:" + to_string(m_Settings.m_HttpPort));
-    m_PSGAPILock = req_queue.GetApiLock();
+    TPSG_RequestTimeout::SetDefault(max_timeout);
 }
 
 
@@ -211,78 +227,53 @@ int CPubseqGatewayApp::x_ReadyzHealthzImplementation(CHttpRequest &  http_req,
     x_GetExcludeChecks(http_req, reply, now, exclude_checks);
 
 
-    CRequestStatus::ECode   final_critical_http_status = CRequestStatus::e200_Ok;
-    CRequestStatus::ECode   final_non_critical_http_status = CRequestStatus::e200_Ok;
-    CJsonNode               final_json_node;
-    CJsonNode               checks_node;
-    size_t                  critical_check_count = 0;
-    size_t                  non_critical_check_count = 0;
-    bool                    is_critical = false;
-
-    if (verbose) {
-        final_json_node = CJsonNode::NewObjectNode();
-        checks_node = CJsonNode::NewArrayNode();
-    }
+    bool                        is_critical = false;
+    vector<SCheckAttributes>    checks;
+    size_t                      z_end_point_request_id = GetNextZEndPointRequestId();
 
     for (const auto &  check : s_CheckDescription) {
         if (x_NeedReadyZCheckPerform(check.Id, verbose,
                                      exclude_checks, is_critical)) {
-            CJsonNode               check_node;
-            CRequestStatus::ECode   http_status =
-                x_SelfZEndPointCheckImpl(context, check.Id, check.Name,
-                                         check.Description,
-                                         verbose, check.HealthCommand,
-                                         check.HealthCommandTimeout,
-                                         check_node);
-
-            if (is_critical) {
-                ++critical_check_count;
-                final_critical_http_status = max(final_critical_http_status,
-                                                 http_status);
-            } else {
-                ++non_critical_check_count;
-                final_non_critical_http_status = max(final_non_critical_http_status,
-                                                     http_status);
-            }
-
-            if (verbose) {
-                checks_node.Append(check_node);
-            }
+            checks.emplace_back(SCheckAttributes(is_critical,
+                                                 check.Id, check.Name,
+                                                 check.Description,
+                                                 check.HealthCommand,
+                                                 check.HealthCommandTimeout));
         }
     }
 
-    // Conclude the overall http status
-    CRequestStatus::ECode   final_http_status = CRequestStatus::e200_Ok;
-    if ((critical_check_count + non_critical_check_count) == 0) {
-        // All the checks have been skipped
-        if (verbose) {
-            final_json_node.SetString("message", "All checks were skipped");
-        }
-    } else {
-        // Some checks have been performed
-        if (critical_check_count > 0) {
-            final_http_status = final_critical_http_status;
-        } else {
-            final_http_status = final_non_critical_http_status;
-        }
+    if (! checks.empty()) {
+        // There are some check to execute
+        m_ZEndPointRequests.RegisterRequest(z_end_point_request_id,
+                                            http_req.GetUVLoop(),
+                                            reply, verbose, context, checks);
+        x_RunChecks(z_end_point_request_id, context, checks);
+        return 0;
     }
 
+    // Here: no checks were selected for execution
     if (verbose) {
-        final_json_node.SetByKey("checks", checks_node);
+        CJsonNode   ret_node = CJsonNode::NewObjectNode();
+        CJsonNode   checks_node = CJsonNode::NewArrayNode();
 
-        string      content = final_json_node.Repr(CJsonNode::fStandardJson);
+        ret_node.SetInteger("http_status", 200);
+        ret_node.SetString("message", "All checks were skipped");
+        ret_node.SetByKey("checks", checks_node);
+
+        string      content = ret_node.Repr(CJsonNode::fStandardJson);
 
         reply->SetContentType(ePSGS_JsonMime);
         reply->SetContentLength(content.size());
-        x_SendZEndPointReply(final_http_status, reply, &content);
+        x_SendZEndPointReply(CRequestStatus::e200_Ok, reply, &content);
+
     } else {
         reply->SetContentType(ePSGS_PlainTextMime);
         reply->SetContentLength(0);
-        x_SendZEndPointReply(final_http_status, reply, nullptr);
+        x_SendZEndPointReply(CRequestStatus::e200_Ok, reply, nullptr);
     }
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                       final_http_status, reply->GetBytesSent());
+                       CRequestStatus::e200_Ok, reply->GetBytesSent());
     return 0;
 }
 
@@ -411,210 +402,60 @@ CPubseqGatewayApp::x_SelfZEndPointCheck(CHttpRequest &  req,
         }
     }
 
-    CJsonNode               check_node;
     SCheckDescription       check;
-    CRequestStatus::ECode   http_status = CRequestStatus::e200_Ok;
 
     try {
-       check = FindCheckDescription(check_id);
+        check = FindCheckDescription(check_id);
+
+        vector<SCheckAttributes>    checks;
+        checks.emplace_back(SCheckAttributes(true, check.Id, check.Name,
+                                             check.Description,
+                                             check.HealthCommand,
+                                             check.HealthCommandTimeout));
+        size_t  z_end_point_request_id = GetNextZEndPointRequestId();
+
+        m_ZEndPointRequests.RegisterRequest(z_end_point_request_id,
+                                            req.GetUVLoop(),
+                                            reply, verbose, context, checks);
+        x_RunChecks(z_end_point_request_id, context, checks);
+        return 0;
     } catch (...) {
-        http_status = CRequestStatus::e500_InternalServerError;
-
-        if (verbose) {
-            check_node = CJsonNode::NewObjectNode();
-            check_node.SetString("id", check_id);
-            check_node.SetString("name", "unknown");
-            check_node.SetString("description", "unknown");
-            check_node.SetString("status", "fail");
-            check_node.SetString("message", "Cannot find the check description");
-        }
     }
 
-    if (http_status == CRequestStatus::e200_Ok) {
-        // No exception while looking for a check description
-        http_status = x_SelfZEndPointCheckImpl(context, check.Id, check.Name,
-                                               check.Description, verbose,
-                                               check.HealthCommand,
-                                               check.HealthCommandTimeout,
-                                               check_node);
-    }
-
+    // Here: the requested check is not found; reply with an error
     if (verbose) {
+        CJsonNode       check_node = CJsonNode::NewObjectNode();
+        check_node.SetString("id", check_id);
+        check_node.SetString("name", "unknown");
+        check_node.SetString("description", "unknown");
+        check_node.SetString("status", "fail");
+        check_node.SetString("message", "Cannot find the check description");
+        check_node.SetInteger("http_status", CRequestStatus::e500_InternalServerError);
+
         CJsonNode       ret_node = CJsonNode::NewObjectNode();
         CJsonNode       checks_node = CJsonNode::NewArrayNode();
 
         checks_node.Append(check_node);
+        ret_node.SetInteger("http_status", 500);
         ret_node.SetByKey("checks", checks_node);
 
         string      content = ret_node.Repr(CJsonNode::fStandardJson);
 
         reply->SetContentType(ePSGS_JsonMime);
         reply->SetContentLength(content.size());
-        x_SendZEndPointReply(http_status, reply, &content);
+        x_SendZEndPointReply(CRequestStatus::e500_InternalServerError,
+                             reply, &content);
     } else {
         reply->SetContentType(ePSGS_PlainTextMime);
         reply->SetContentLength(0);
-        x_SendZEndPointReply(http_status, reply, nullptr);
+        x_SendZEndPointReply(CRequestStatus::e500_InternalServerError,
+                             reply, nullptr);
     }
 
     x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
-                       http_status, reply->GetBytesSent());
+                       CRequestStatus::e500_InternalServerError,
+                       reply->GetBytesSent());
     return 0;
-}
-
-
-CRequestStatus::ECode  OnReplyComplete(const shared_ptr<CPSG_Reply>&  reply,
-                                       const CTimeout &  health_timeout,
-                                       string &  err_msg)
-{
-    auto  reply_status = reply->GetStatus(health_timeout);
-
-    if (reply_status == EPSG_Status::eSuccess) {
-        return CRequestStatus::e200_Ok;
-    }
-
-    if (reply_status == EPSG_Status::eInProgress) {
-       err_msg = "Timeout on getting a reply status";
-       return CRequestStatus::e504_GatewayTimeout;
-    }
-
-    // Here: some kind of error
-    for (auto message = reply->GetNextMessage(); message;
-              message = reply->GetNextMessage()) {
-        if (!err_msg.empty()) {
-            err_msg += "\n";
-        }
-        err_msg += message;
-    }
-
-    if (err_msg.empty())
-        err_msg = "Unknown error on reply completion";
-
-    int     reply_http_code = CPSG_Misc::GetReplyHttpCode(reply);
-    if (reply_http_code >= 200) {
-        // Looks like a valid http code
-        return static_cast<CRequestStatus::ECode>(reply_http_code);
-    }
-
-    return CRequestStatus::e500_InternalServerError;
-}
-
-
-CRequestStatus::ECode
-CPubseqGatewayApp::x_SelfZEndPointCheckImpl(CRef<CRequestContext> &  request_context,
-                                            const string &  check_id,
-                                            const string &  check_name,
-                                            const string &  check_description,
-                                            bool  verbose,
-                                            const string &  health_command,
-                                            const CTimeout &  health_timeout,
-                                            CJsonNode &  node)
-{
-    if (verbose) {
-        node = CJsonNode::NewObjectNode();
-        node.SetString("id", check_id);
-        node.SetString("name", check_name);
-        node.SetString("description", check_description);
-        node.SetString("health-command", health_command);
-    }
-
-    CRequestStatus::ECode   ret_code = CRequestStatus::e200_Ok;
-
-    if (check_id == "connections") {
-        // Special case: no need to use the psg client API
-        int64_t current_conn_num = m_HttpDaemon->NumOfConnections();
-        if (current_conn_num > m_Settings.m_TcpMaxConnSoftLimit) {
-            ret_code = CRequestStatus::e503_ServiceUnavailable;
-            if (verbose) {
-                node.SetString("status", "fail");
-                node.SetString("message", "Current number of client connections is " +
-                                          to_string(current_conn_num) + ", which is "
-                                          "over the soft limit of " +
-                                          to_string(m_Settings.m_TcpMaxConnSoftLimit));
-            }
-        } else {
-            ret_code = CRequestStatus::e200_Ok;
-            if (verbose) {
-                node.SetString("status", "ok");
-                node.SetString("message", "The check has succeeded");
-            }
-        }
-        if (verbose) {
-            node.SetInteger("http_status", ret_code);
-        }
-        return ret_code;
-    }
-
-    string                  err_msg = "";
-
-    // psg client API internally tries to modify the request context.
-    // It uses GetNextSubHitID() method. To let it do it the read only
-    // property should be reset and then restored
-    bool request_context_ro = request_context->GetReadOnly();
-    if (request_context_ro)
-        request_context->SetReadOnly(false);
-
-    // Prepare request and send it
-    auto        self_request = CPSG_Misc::CreateRawRequest
-                            (health_command, nullptr, request_context);
-    CPSG_Queue  req_queue("localhost:" + to_string(m_Settings.m_HttpPort));
-
-    auto    reply = req_queue.SendRequestAndGetReply(self_request,
-                                                     health_timeout);
-    if (!reply) {
-        ret_code = CRequestStatus::e504_GatewayTimeout;
-        err_msg = "Timeout on sending a request";
-    } else {
-        for (auto item = reply->GetNextItem(health_timeout);
-                  item;
-                  item = reply->GetNextItem(health_timeout)) {
-            if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-                // Whole reply is complete
-                ret_code = OnReplyComplete(reply, health_timeout, err_msg);
-                break;
-            }
-
-            // Current item is complete
-            auto    item_status = item->GetStatus(health_timeout);
-            if (item_status == EPSG_Status::eInProgress) {
-                ret_code = CRequestStatus::e504_GatewayTimeout;
-                err_msg = "Timeout on getting an item status";
-                break;
-            }
-
-            if (item_status != EPSG_Status::eSuccess) {
-                ret_code = CRequestStatus::e500_InternalServerError;
-                for (auto message = item->GetNextMessage(); message;
-                     message = item->GetNextMessage()) {
-                    if (!err_msg.empty()) {
-                        err_msg += "\n";
-                    }
-                    err_msg += message;
-                }
-                if (err_msg.empty()) {
-                    err_msg = "Unknown error on item completion";
-                }
-                break;
-            }
-        }
-    }
-
-    // Restore the read only property after a seft request is completed
-    if (request_context_ro)
-        request_context->SetReadOnly(true);
-
-    if (verbose) {
-        if (ret_code < CRequestStatus::e400_BadRequest) {
-            node.SetString("status", "ok");
-            node.SetString("message", "The check has succeeded");
-        } else {
-            node.SetString("status", "fail");
-            node.SetString("message", err_msg);
-        }
-        node.SetInteger("http_status", ret_code);
-    }
-
-    return ret_code;
 }
 
 
@@ -693,6 +534,10 @@ void CPubseqGatewayApp::x_SendZEndPointReply(CRequestStatus::ECode  http_status,
             if (payload != nullptr) { reply->Send503(payload->c_str()); }
             else                    { reply->Send503(""); }
             break;
+        case CRequestStatus::e504_GatewayTimeout:
+            if (payload != nullptr) { reply->Send504(payload->c_str()); }
+            else                    { reply->Send504(""); }
+            break;
         default:
             {
                 string  msg = "Not supported z end pint http status " +
@@ -703,5 +548,400 @@ void CPubseqGatewayApp::x_SendZEndPointReply(CRequestStatus::ECode  http_status,
                 PSG_ERROR(msg);
             }
     }
+}
+
+
+void s_OnAsyncZEndPointFinilize(uv_async_t *  handle)
+{
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    size_t      request_id = reinterpret_cast<size_t>(handle->data);
+
+    app->OnFinilizeHealthZRequest(request_id);
+}
+
+
+
+CPSGS_ZEndPointRequests::CPSGS_ZEndPointRequests() :
+    m_RequestsLock(false)
+{}
+
+
+
+void CPSGS_ZEndPointRequests::RegisterRequest(size_t          request_id,
+                                              uv_loop_t *  loop,
+                                              shared_ptr<CPSGS_Reply>  reply,
+                                              bool  verbose,
+                                              CRef<CRequestContext> &  context,
+                                              const vector<SCheckAttributes> &  checks)
+{
+    CSpinlockGuard      guard(&m_RequestsLock);
+    m_Requests[request_id] = SRequestAttributes();
+
+    // Note: it cannot be done in the constructor because of the async event
+    // data member. This data member must not be moved in memory after
+    // initialization. So, first the attribute structure is allocated in memory
+    // (above) and then it is initialized.
+    m_Requests[request_id].Initialize(loop, verbose, reply, context, checks);
+}
+
+
+void CPubseqGatewayApp::x_RunChecks(size_t  request_id,
+                                    CRef<CRequestContext> &  request_context,
+                                    const vector<SCheckAttributes> &  checks)
+{
+    for (auto & check : checks) {
+        if (check.m_CheckId == "connections") {
+            x_ExecuteConnectionsCheck(request_id, check.m_CheckId);
+        } else {
+            x_ExecuteSelfCheck(request_id, check.m_CheckId, request_context,
+                               check.m_HealthCommand, check.m_HealthTimeout);
+        }
+    }
+}
+
+
+void CPSGS_ZEndPointRequests::SRequestAttributes::Initialize(
+                                uv_loop_t *  loop,
+                                bool  verbose, shared_ptr<CPSGS_Reply>  reply,
+                                const CRef<CRequestContext> &  request_context,
+                                const vector<SCheckAttributes> &  checks)
+{
+    m_Verbose = verbose;
+    m_Reply = reply;
+    m_RequestContext = request_context;
+    m_Checks = checks;
+    m_Closing = false;
+
+    uv_async_init(loop, &m_FinilizeEvent, s_OnAsyncZEndPointFinilize);
+}
+
+
+CRequestStatus::ECode
+CPSGS_ZEndPointRequests::SRequestAttributes::GetFinalHttpStatus(void) const
+{
+    CRequestStatus::ECode   final_critical_http_status = CRequestStatus::e200_Ok;
+    CRequestStatus::ECode   final_non_critical_http_status = CRequestStatus::e200_Ok;
+    size_t                  critical_check_count = 0;
+
+    for (auto const &  check : m_Checks) {
+        if (check.m_HttpStatus == CRequestStatus::e100_Continue) {
+            return CRequestStatus::e100_Continue;
+        }
+
+        if (check.m_CriticalCheck) {
+            ++critical_check_count;
+            final_critical_http_status = max(final_critical_http_status,
+                                             check.m_HttpStatus);
+        } else {
+            final_non_critical_http_status = max(final_non_critical_http_status,
+                                                 check.m_HttpStatus);
+        }
+    }
+
+    if (critical_check_count > 0)
+        return final_critical_http_status;
+    return final_non_critical_http_status;
+}
+
+
+void CPSGS_ZEndPointRequests::OnZEndPointRequestFinish(size_t  request_id,
+                                                       const string &  check_id,
+                                                       const string &  status,
+                                                       const string &  message,
+                                                       CRequestStatus::ECode  http_status)
+{
+    CSpinlockGuard      guard(&m_RequestsLock);
+
+    auto it = m_Requests.find(request_id);
+    if (it == m_Requests.end()) {
+        // Theoretically it is possible. E.g. item was timeouted and later
+        // there was a callback for the request finish.
+        return;
+    }
+
+    // Find the corresponding check
+    bool    found = false;
+    for (auto &  check : it->second.m_Checks) {
+        if (check.m_CheckId == check_id) {
+            if (check.m_HttpStatus == CRequestStatus::e100_Continue) {
+                check.m_Status = status;
+                check.m_Message = message;
+                check.m_HttpStatus = http_status;
+            }
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        PSG_ERROR("Design error. Self check '" + check_id +
+                  "' was not found for the request id " + to_string(request_id));
+        return;
+    }
+
+    if (it->second.GetFinalHttpStatus() == CRequestStatus::e100_Continue) {
+        // Some checks have not finished yet
+        return;
+    }
+
+    // The method could be called from:
+    // - a thread which receives replies from self checks
+    // - from the same thread which processes the z end point request in case
+    //   if it is the "connections" check (origin thread)
+    // In both cases an async event will be sent to the origin thread so that
+    // the reply is safely delivered to the client and all the associated data
+    // are released.
+
+    if (it->second.m_Closing) {
+        // The request is already in the closing state; no need to do it second
+        // time
+        return;
+    }
+
+    it->second.m_Closing = true;
+    it->second.m_FinilizeEvent.data = reinterpret_cast<void *>(request_id);
+    uv_async_send(&it->second.m_FinilizeEvent);
+}
+
+
+void s_RemoveZEndpointRequestData(uv_handle_t *  handle)
+{
+    auto *      app = CPubseqGatewayApp::GetInstance();
+    size_t      request_id = reinterpret_cast<size_t>(handle->data);
+
+    app->OnCleanupHealthZRequest(request_id);
+}
+
+
+void CPSGS_ZEndPointRequests::OnFinilizeHealthZRequest(size_t  request_id)
+{
+    CSpinlockGuard      guard(&m_RequestsLock);
+
+    auto it = m_Requests.find(request_id);
+    if (it == m_Requests.end()) {
+        PSG_ERROR("Design error: a request needs to be finilized but the "
+                  "corresponding z end point request id is not found");
+        return;
+    }
+
+    CRequestContextResetter     context_resetter;
+    CDiagContext::SetRequestContext(it->second.m_RequestContext->Clone());
+
+    // Send data back
+    CRequestStatus::ECode   final_http_status = it->second.GetFinalHttpStatus();
+    if (it->second.m_Verbose) {
+        CJsonNode       checks_node = CJsonNode::NewArrayNode();
+
+        for (auto &  check : it->second.m_Checks) {
+            if (check.m_HttpStatus != CRequestStatus::e200_Ok) {
+                PSG_ERROR(check.m_CheckName + " check error: " +
+                          check.m_Message);
+            }
+
+            CJsonNode   check_node = CJsonNode::NewObjectNode();
+            check_node.SetString("id", check.m_CheckId);
+            check_node.SetString("name", check.m_CheckName);
+            check_node.SetString("description", check.m_CheckDescription);
+            check_node.SetString("health-command", check.m_HealthCommand);
+            check_node.SetString("status", check.m_Status);
+            check_node.SetString("message", check.m_Message);
+            check_node.SetInteger("http_status", check.m_HttpStatus);
+
+            checks_node.Append(check_node);
+        }
+
+        CJsonNode   final_json_node = CJsonNode::NewObjectNode();
+        final_json_node.SetInteger("http_status", final_http_status);
+        final_json_node.SetByKey("checks", checks_node);
+
+        string      content = final_json_node.Repr(CJsonNode::fStandardJson);
+
+        it->second.m_Reply->SetContentType(ePSGS_JsonMime);
+        it->second.m_Reply->SetContentLength(content.size());
+        CPubseqGatewayApp::GetInstance()->x_SendZEndPointReply(
+                                            final_http_status,
+                                            it->second.m_Reply, &content);
+    } else {
+        if (final_http_status != CRequestStatus::e200_Ok) {
+            // At least one check had a problem. Produce an applog record
+            for (auto &  check : it->second.m_Checks) {
+                if (check.m_HttpStatus != CRequestStatus::e200_Ok) {
+                    PSG_ERROR(check.m_CheckName + " check error: " +
+                              check.m_Message);
+                }
+            }
+        }
+        it->second.m_Reply->SetContentType(ePSGS_PlainTextMime);
+        it->second.m_Reply->SetContentLength(0);
+        CPubseqGatewayApp::GetInstance()->x_SendZEndPointReply(
+                                            final_http_status,
+                                            it->second.m_Reply, nullptr);
+    }
+
+    CPubseqGatewayApp::GetInstance()->x_PrintRequestStop(
+                                            it->second.m_RequestContext,
+                                            CPSGS_Request::ePSGS_UnknownRequest,
+                                            final_http_status,
+                                            it->second.m_Reply->GetBytesSent());
+
+    // close uv_handle
+    uv_close(reinterpret_cast<uv_handle_t*>(&it->second.m_FinilizeEvent),
+             s_RemoveZEndpointRequestData);
+
+    // Note: removal of the request associated data must be done asyncronously
+    //       in the s_RemoveZEndpointRequestData()
+}
+
+
+void CPSGS_ZEndPointRequests::OnCleanupHealthZRequest(size_t  request_id)
+{
+    CSpinlockGuard      guard(&m_RequestsLock);
+
+    auto it = m_Requests.find(request_id);
+    if (it == m_Requests.end()) {
+        PSG_ERROR("Design error: a request needs to be finilized but the "
+                  "corresponding z end point request id is not found");
+        return;
+    }
+
+    m_Requests.erase(it);
+}
+
+
+void CPubseqGatewayApp::x_ExecuteConnectionsCheck(size_t  request_id,
+                                                  const string &  check_id)
+{
+    int64_t                 current_conn_num = GetNumOfConnections();
+    int64_t                 conn_limit = m_Settings.m_TcpMaxConnSoftLimit;
+
+    if (current_conn_num > conn_limit) {
+        string      msg = "Current number of client connections is " +
+                          to_string(current_conn_num) + ", which is "
+                          "over the soft limit of " +
+                          to_string(conn_limit);
+        m_ZEndPointRequests.OnZEndPointRequestFinish(request_id, check_id,
+                                                     "fail", msg,
+                                                     CRequestStatus::e503_ServiceUnavailable);
+    } else {
+        m_ZEndPointRequests.OnZEndPointRequestFinish(request_id, check_id,
+                                                     "ok", "The check has succeeded",
+                                                     CRequestStatus::e200_Ok);
+    }
+}
+
+
+void CPubseqGatewayApp::x_ExecuteSelfCheck(size_t  request_id,
+                                           const string &  check_id,
+                                           CRef<CRequestContext> &  request_context,
+                                           const string &  health_command,
+                                           const CTimeout &  health_timeout)
+{
+    // psg client API internally tries to modify the request context.
+    // It uses GetNextSubHitID() method. To let it do it the read only
+    // property should be reset and then restored
+    bool request_context_ro = request_context->GetReadOnly();
+    if (request_context_ro)
+        request_context->SetReadOnly(false);
+
+    // Prepare request and send it
+    auto    user_context = make_shared<pair<size_t, string>>(request_id, check_id);
+    auto    self_request = CPSG_Misc::CreateRawRequest(health_command,
+                                                       user_context,
+                                                       request_context);
+
+    if (!m_SelfRequestsLoop->SendRequest(self_request, health_timeout)) {
+        // Could not send a request
+        m_ZEndPointRequests.OnZEndPointRequestFinish(
+                                    request_id, check_id,
+                                    "fail", "Timeout on sending a request",
+                                    CRequestStatus::e504_GatewayTimeout);
+        return;
+    }
+
+    // Restore the read only property after a seft request is completed
+    if (request_context_ro)
+        request_context->SetReadOnly(true);
+}
+
+
+
+void OnZEndPointItemComplete(EPSG_Status  status,
+                             const shared_ptr<CPSG_ReplyItem> &  item)
+{
+    if (status == EPSG_Status::eSuccess) {
+        // All good; wait till reply completion
+        return;
+    }
+
+    // Some kind of error - report it immediately
+    auto        user_context = item->GetReply()->GetRequest()->GetUserContext<pair<size_t, string>>();
+    size_t      request_id = user_context->first;
+    string      check_id = user_context->second;
+    string      err_msg;
+
+    for (auto message = item->GetNextMessage(); message;
+              message = item->GetNextMessage()) {
+        if (!err_msg.empty()) {
+            err_msg += "\n";
+        }
+        err_msg += message;
+    }
+
+    if (err_msg.empty()) {
+        err_msg = "Unknown error on item completion";
+    }
+
+    CRequestStatus::ECode   http_code = CRequestStatus::e500_InternalServerError;
+    if (status == EPSG_Status::eNotFound) {
+        http_code = CRequestStatus::e404_NotFound;
+    }
+
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    app->OnZEndPointRequestFinish(request_id, check_id,
+                                  "fail", err_msg, http_code);
+}
+
+
+void OnZEndPointReplyComplete(EPSG_Status status,
+                              const shared_ptr<CPSG_Reply>& reply)
+{
+    auto *  app = CPubseqGatewayApp::GetInstance();
+    auto    user_context = reply->GetRequest()->GetUserContext<pair<size_t, string>>();
+    size_t  request_id = user_context->first;
+    string  check_id = user_context->second;
+
+    if (status == EPSG_Status::eSuccess) {
+        // All good
+        app->OnZEndPointRequestFinish(request_id, check_id,
+                                      "ok", "The check has succeeded",
+                                      CRequestStatus::e200_Ok);
+        return;
+    }
+
+    // Error
+    string      err_msg;
+
+    for (auto message = reply->GetNextMessage(); message;
+              message = reply->GetNextMessage()) {
+        if (!err_msg.empty()) {
+            err_msg += "\n";
+        }
+        err_msg += message;
+    }
+
+    if (err_msg.empty()) {
+        err_msg = "Unknown error on reply completion";
+    }
+
+    CRequestStatus::ECode   http_code = CRequestStatus::e500_InternalServerError;
+    int                     reply_http_code = CPSG_Misc::GetReplyHttpCode(reply);
+    if (reply_http_code >= 200) {
+        // Looks like a valid http code
+        http_code = static_cast<CRequestStatus::ECode>(reply_http_code);
+    }
+
+    app->OnZEndPointRequestFinish(request_id, check_id,
+                                  "fail", err_msg,
+                                  http_code);
 }
 

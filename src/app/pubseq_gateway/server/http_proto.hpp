@@ -91,12 +91,12 @@ public:
         m_Worker(nullptr),
         m_Daemon(daemon)
     {
-        PSG_TRACE("CHttpProto::CHttpProto");
+        // PSG_TRACE("CHttpProto::CHttpProto");
     }
 
     ~CHttpProto()
     {
-        PSG_TRACE("~CHttpProto");
+        // PSG_TRACE("~CHttpProto");
     }
 
     void BeforeStart(void)

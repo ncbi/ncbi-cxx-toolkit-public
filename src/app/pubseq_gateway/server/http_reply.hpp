@@ -43,6 +43,7 @@ static const char *    k_ReasonAccepted = "Accepted";
 static const char *    k_InternalServerError = "Internal Server Error";
 static const char *    k_BadGateway = "Bad Gateway";
 static const char *    k_ServiceUnavailable = "Service Unavailable";
+static const char *    k_GatewayTimeout = "Gateway Timeout";
 static const char *    k_Conflict = "Conflict";
 static const char *    k_NotFound = "Not Found";
 static const char *    k_Unauthorized = "Unauthorized";
@@ -90,7 +91,7 @@ public:
 
     ~CHttpReply()
     {
-        PSG_TRACE("~CHttpReply");
+        // PSG_TRACE("~CHttpReply");
         x_Clear();
     }
 
@@ -202,6 +203,9 @@ public:
 
     void Send503(const char *  payload)
     { x_GenericSendError(503, k_ServiceUnavailable, payload); }
+
+    void Send504(const char *  payload)
+    { x_GenericSendError(504, k_GatewayTimeout, payload); }
 
     CHttpConnection *  GetHttpConnection(void)
     { return m_HttpConn; }
@@ -353,11 +357,11 @@ private:
     // using this connection
     void StopCB(void)
     {
-        PSG_TRACE("CHttpReply::Stop");
+        // PSG_TRACE("CHttpReply::Stop");
         m_OutputIsReady = true;
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
-            PSG_TRACE("CHttpReply::Stop: need cancel");
+            // PSG_TRACE("CHttpReply::Stop: need cancel");
             x_DoCancel();
             NeedOutput();
         }
@@ -373,7 +377,7 @@ private:
     // it is ready for the next portion
     void ProceedCB(void)
     {
-        PSG_TRACE("CHttpReply::Proceed");
+        // PSG_TRACE("CHttpReply::Proceed");
         m_OutputIsReady = true;
         NeedOutput();
     }
@@ -434,8 +438,8 @@ private:
         if (!x_ConnectionPrecheck(count, is_last))
             return;
 
-        PSG_TRACE("x_DoSend: " << count << " chunks, "
-                  "is_last: " << is_last << ", state: " << m_State);
+        // PSG_TRACE("x_DoSend: " << count << " chunks, "
+        //           "is_last: " << is_last << ", state: " << m_State);
 
         x_HandleConnectionState(status, reason);
 

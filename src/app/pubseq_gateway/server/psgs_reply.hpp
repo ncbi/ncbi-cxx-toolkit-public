@@ -121,6 +121,7 @@ public:
     void Send500(const char *  payload);
     void Send502(const char *  payload);
     void Send503(const char *  payload);
+    void Send504(const char *  payload);
 
     void ConnectionCancel(void);
     shared_ptr<idblob::CCassDataCallbackReceiver> GetDataReadyCB(void);
