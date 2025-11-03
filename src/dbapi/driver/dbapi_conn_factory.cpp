@@ -194,7 +194,7 @@ CDB_DBLB_Delegate::CDB_DBLB_Delegate(
 : CDBConnParamsDelegate(other)
 , m_ServerName(srv_name)
 , m_Host(host)
-, m_Port(other.GetPort() ? other.GetPort() : port)
+, m_Port(/* other.GetPort() ? other.GetPort() : */ port)
 {
 }
 
