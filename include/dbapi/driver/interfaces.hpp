@@ -281,6 +281,7 @@ public:
     virtual EServerType GetServerType(void) const = 0;
     virtual Uint4  GetHost(void) const = 0;
     virtual Uint2  GetPort(void) const = 0;
+    virtual bool   IsSetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
     virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const = 0;
@@ -342,6 +343,7 @@ public:
     virtual EServerType GetServerType(void) const;
     virtual Uint4  GetHost(void) const;
     virtual Uint2  GetPort(void) const;
+    virtual bool   IsSetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
     virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const;

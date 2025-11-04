@@ -1242,7 +1242,7 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         act_params.SetPassword(password);
         if (conf_params.IsPortSet()) {
             act_params.SetPort(NStr::StringToNumeric<Uint2>(conf_params.port));
-        } else {
+        } else if (params.IsSetPort()) {
             act_params.SetPort(params.GetPort());
         }
 

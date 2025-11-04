@@ -71,6 +71,7 @@ public:
     virtual EServerType GetServerType(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2 GetPort(void) const;
+    virtual bool  IsSetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
     virtual const CDBHandlerStack& GetOpeningMsgHandlers(void) const;

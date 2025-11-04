@@ -113,6 +113,11 @@ Uint2 CDBConnParamsDelegate::GetPort(void) const
     return m_Other.GetPort();
 }
 
+bool CDBConnParamsDelegate::IsSetPort(void) const
+{
+    return m_Other.IsSetPort();
+}
+
 CRef<IConnValidator> 
 CDBConnParamsDelegate::GetConnValidator(void) const
 {

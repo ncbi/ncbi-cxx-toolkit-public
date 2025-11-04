@@ -174,6 +174,12 @@ CDBConnParamsBase::GetPort(void) const
     return m_PortNumber;
 }
 
+bool
+CDBConnParamsBase::IsSetPort(void) const
+{
+    return m_PortNumber != 0;
+}
+
 CRef<IConnValidator>
 CDBConnParamsBase::GetConnValidator(void) const
 {
