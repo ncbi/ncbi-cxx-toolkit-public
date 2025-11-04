@@ -82,11 +82,7 @@ function(NCBI_internal_AddNCBITest _variable _access)
 endfunction()
 
 ##############################################################################
-function(NCBI_internal_create_ncbi_checklist _variable _access)
-    if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS")
-        return()
-    endif()
-
+function(NCBI_internal_create_ncbi_checklist)
     get_property(_checklist GLOBAL PROPERTY NCBI_PTBPROP_CHECKLIST)
 #    if(NOT "${_checklist}" STREQUAL "")
 #        list(SORT _checklist)
@@ -291,8 +287,14 @@ endif()
 endfunction()
 
 #############################################################################
+function(NCBI_internal_FinalizeNCBITest _variable _access)
+    if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS")
+        return()
+    endif()
+    NCBI_internal_create_ncbi_checklist()
+    NCBI_internal_add_ncbi_checktarget()
+endfunction()
+
+#############################################################################
 NCBI_register_hook(TARGET_ADDED  NCBI_internal_AddNCBITest)
-NCBI_register_hook(ALL_ADDED     NCBI_internal_create_ncbi_checklist)
-
-NCBI_internal_add_ncbi_checktarget()
-
+NCBI_register_hook(ALL_ADDED     NCBI_internal_FinalizeNCBITest)
