@@ -1470,6 +1470,12 @@ version  2 # of file format
 2+6  QQ  ddbj_patent
 2+8  QQ  ddbj_other_nuc
 2+10 QQ  ddbj_other_nuc
+2+6  QR  ddbj_patent
+2+8  QR  ddbj_other_nuc
+2+10 QR  ddbj_other_nuc
+2+6  RK  embl_patent
+2+8  RK  embl_other_nuc
+2+10 RK  embl_other_nuc
 2+6  TI  unreserved_nuc # deliberately skipped
 2+8  TI  unreserved_nuc # deliberately skipped
 2+10 TI  unreserved_nuc # deliberately skipped
