@@ -41,11 +41,14 @@ class TestGapStats(unittest.TestCase):
         # never give stdin input
         (stdout_str, stderr_str) = proc.communicate('')
 
-        return (proc.returncode, stdout_str, stderr_str)
+        return (proc.returncode, 
+                stdout_str.decode().replace('\r','\n'), 
+                stderr_str.decode().replace('\r','\n')
+        )
 
     def _file_contents(self, file_path):
-        with open(file_path, 'rb') as fd:
-            return fd.read()
+        with open(file_path, 'rt') as fd:
+            return fd.read().replace('\r', '')
 
     def test_basic(self):
         (returncode, stdout_str, stderr_str) = self._run_gap_stats([
@@ -62,14 +65,14 @@ class TestGapStats(unittest.TestCase):
         (returncode, stdout_str, stderr_str) = self._run_gap_stats(['U54469'])
         self.assertEqual(returncode, 0)
         self.assertFalse(stderr_str)
-        self.assertEqual(stdout_str, b'SUMMARY:\n\n')
+        self.assertEqual(stdout_str, 'SUMMARY:\n\n')
 
     def test_with_accession_no_gbload(self):
         (returncode, _, stderr_str) = self._run_gap_stats(
             ['-no-gbload', 'U54469'])
         self.assertNotEqual(returncode, 0)
         self.assertRegex(
-            stderr_str, br'.*U54469: Accession could not be found.*')
+            stderr_str, r'.*U54469: Accession could not be found.*')
 
     def test_with_accession_that_has_gaps(self):
         (returncode, stdout_str, stderr_str) = self._run_gap_stats(
@@ -97,13 +100,13 @@ class TestGapStats(unittest.TestCase):
     def test_with_non_file_argument(self):
         (returncode, _, stderr_str) = self._run_gap_stats(['/dev/null'])
         self.assertNotEqual(returncode, 0)
-        self.assertRegex(stderr_str, br'.*not a plain file: /dev/null.*')
+        self.assertRegex(stderr_str, r'.*not a plain file: /dev/null.*')
 
     def test_with_bad_asn(self):
         (returncode, _, stderr_str) = self._run_gap_stats([
             './test_data/invalid.asn'])
         self.assertNotEqual(returncode, 0)
-        self.assertRegex(stderr_str, br'.*format is not.*supported.*')
+        self.assertRegex(stderr_str, r'.*format is not.*supported.*')
 
     def test_delta_to_other_seqs(self):
         (returncode, stdout_str, stderr_str) = self._run_gap_stats(
@@ -122,7 +125,7 @@ class TestGapStats(unittest.TestCase):
                 '-show-seqs-for-gap-lengths',
                 './test_data/delta_to_other_seqs.asn'])
         self.assertEqual(returncode, 0)
-        self.assertRegex(stderr_str, br'.*Not all segments.*')
+        self.assertRegex(stderr_str, r'.*Not all segments.*')
         self.assertEqual(
             stdout_str,
             self._file_contents(
