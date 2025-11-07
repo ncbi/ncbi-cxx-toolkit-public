@@ -176,8 +176,8 @@ typedef int (*FStrNCmp)(const char* s1, const char* s2, size_t n);
  *      "[CONN]param" registry entry (always so if "svclen" == 0).
  *
  * The "strncompar" parameter:
- *    if strncmp()'s address is passed in, "param" is assumed all-CAPS and is
- *    not uppercased unnecessarily (compared to when strncasecmp() passed in).
+ *    if strncmp()'s address is passed in, "param" is assumed all-CAPS and
+ *    not uppercased unnecessarily (versus to when strncasecmp() is used).
  */
 static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
                               const char* param, char* value,
