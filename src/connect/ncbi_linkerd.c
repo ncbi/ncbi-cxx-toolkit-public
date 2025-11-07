@@ -292,7 +292,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
 {
     struct SLINKERD_Data* data     = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*         net_info = data->net_info;
-    int/*bool*/           progress = -1/*nothing*/;
+    int/*bool*/           progress = -1/*none yet*/;
     TSERV_TypeOnly        types    = iter->types;
     const SSERV_VTable*   op       = iter->op;
     SSERV_Info*           info;
@@ -326,7 +326,8 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
             *do_namerd = 0/*false*/;
         goto err;
     }
-    progress = 0/*failure*/;
+
+    ++progress/*0, failure if have to bail out*/;
     assert(!(info->type ^ (info->type & iter->types)));
     CORE_DEBUG_ARG(temp = SERV_WriteInfo(info));
     CORE_TRACEF(("[%s]  Found a match in NAMERD: %s%s%s", iter->name,
@@ -364,7 +365,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
         }
     }
     net_info->scheme = info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
-    progress = 1/*success*/;
+    ++progress/*1, success!*/;
 
  err:
     if (info)
@@ -438,7 +439,7 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
         assert(net_info->scheme);
 
     /* N.B. Proxy configuration (including $http_proxy environment detected and
-       parsed by the toolkit) may be used to override the default host:port for
+       parsed by the Toolkit) may be used to override the default host:port for
        Linkerd.  But connections via Linkerd should be made directly to the
        Linkerd's host:port as the authority part of the URL, not by using the
        proxy settings.  Therefore, this code sets 'net_info->host', not
