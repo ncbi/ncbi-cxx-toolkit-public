@@ -336,11 +336,11 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 
 /* Lookup "param" in the registry / environment.  "param" is usually all-caps.
- * If "param" does not begin with "CONN_", then "CONN_" or "_CONN_" gets 
+ * If "param" does not already begin with "CONN_", then "CONN_" or "_CONN_" is
  * automatically injected in all lookups listed below, unless otherwise noted.
  * The order of search is the following (the first match causes to return):
  * 1. Environment variable "service_CONN_param", where "service" gets dashes
- *    (if any) replaced with underscores: first looked up converted to all
+ *    (if any) replaced with underscores:  first looked up converted to all
  *    uppercase, and if that failed, then looked up with the original case in
  *    the "service" part;
  * 2. Registry key "CONN_param" in the section '["service"]';
