@@ -227,14 +227,15 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
 
     if (!*str) {
         memset(range, 0, sizeof(*range));
-        /*range->type = eIPRange_None;*/
+        assert(range->type == eIPRange_None);
         return 1/*success*/;
     }
 
     p = NcbiIPToAddr(&range->a, str, len = strlen(str));
     if (p) {
         assert(p > str);
-        if (!*p /*p == str + len*/) {
+        if (!*p) {
+            assert(p == str + len);
             range->b    = 0;
             range->type = eIPRange_Host;
             return 1/*success*/;
@@ -294,8 +295,8 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
 
     p = str;
     dots = 0;
+    addr = 0;
     range->type = eIPRange_Host;
-    addr = 0/*not actually necessary*/;
     for (;;) {
         const char* t;
         if (*p != '*') {
