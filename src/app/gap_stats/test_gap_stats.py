@@ -13,7 +13,7 @@ if not os.path.exists(GAP_STATS_EXE):
     else:
         raise Exception("Not found: " + GAP_STATS_EXE)
 
-TEST_DATA_DIR = "./test_data"
+TEST_DATA_DIR = "test_data"
 if not os.path.exists(TEST_DATA_DIR):
     raise Exception("Not found: " + TEST_DATA_DIR)
 
@@ -42,9 +42,8 @@ class TestGapStats(unittest.TestCase):
         (stdout_str, stderr_str) = proc.communicate('')
 
         return (proc.returncode, 
-                stdout_str.decode().replace('\r','\n'), 
-                stderr_str.decode().replace('\r','\n')
-        )
+            stdout_str.decode().replace("\r", ""), 
+            stderr_str.decode().replace("\r", ""))
 
     def _file_contents(self, file_path):
         with open(file_path, 'rt') as fd:
@@ -98,6 +97,9 @@ class TestGapStats(unittest.TestCase):
                 'test_with_specified_gap_types.expected_stdout.txt'))
 
     def test_with_non_file_argument(self):
+        if os.name == 'nt':
+            return
+
         (returncode, _, stderr_str) = self._run_gap_stats(['/dev/null'])
         self.assertNotEqual(returncode, 0)
         self.assertRegex(stderr_str, r'.*not a plain file: /dev/null.*')
@@ -162,3 +164,4 @@ if __name__ == '__main__':
     os.environ['DIAG_POST_LEVEL'] = 'Warning'
 
     unittest.main()
+
