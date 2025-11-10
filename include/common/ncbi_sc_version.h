@@ -24,7 +24,7 @@
  * ===========================================================================
  */
 
-/* #define NCBI_SC_VERSION_ ... */
+#define NCBI_SC_VERSION_ 30
 #if NCBI_SC_VERSION_ != 0
 #  ifdef NCBI_SC_VERSION
 #    undef NCBI_SC_VERSION
