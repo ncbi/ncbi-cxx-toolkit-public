@@ -137,7 +137,7 @@ while [ $# != 0 ]; do
     --with-static|--without-dll) 
       BUILD_SHARED_LIBS=OFF
       ;; 
-    --with-dll | --with-composite-dll) 
+    --with-dll) 
       BUILD_SHARED_LIBS=ON 
       ;; 
     --with-composite) 
