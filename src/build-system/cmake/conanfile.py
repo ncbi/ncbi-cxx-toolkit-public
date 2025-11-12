@@ -30,6 +30,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "LZO":        ["lzo"],
         "NCBICRYPT":  ["ncbicrypt"],
         "NGHTTP2":    ["libnghttp2"],
+        "OpenSSL":    ["openssl"],
         "OPENTELEMETRY": ["opentelemetry-cpp"],
         "PCRE":       ["pcre"],
         "PCRE2":      ["pcre2"],
@@ -91,6 +92,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("libxslt/[>=1.1.34 <=1.1.42]")
         self._default_requires("lmdb/[>=0.9.29 <=0.9.32]")
         self._default_requires("lzo/2.10")
+        self._default_requires("openssl/[>=3.5.1 <=3.6.0]")
         self._optional_requires("opentelemetry-cpp/[>=1.14.2 <=1.21.0]")
         self._default_requires("pcre/8.45")
         self._default_requires("pcre2/10.42")
@@ -109,10 +111,11 @@ class NCBIToolkitWithConanRecipe(ConanFile):
 
 
     def configure(self):
-        self.options["abseil/*"].shared = False
-        self.options["grpc/*"].shared = False
-        self.options["protobuf/*"].shared = False
-        self.options["boost/*"].shared = False
+        if self.settings.os == "Windows":
+            self.options["abseil/*"].shared = False
+            self.options["grpc/*"].shared = False
+            self.options["protobuf/*"].shared = False
+            self.options["boost/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
         self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
