@@ -35,7 +35,7 @@ endmacro()
 #############################################################################
 # Stable components
 #
-set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 29)
+set(NCBI_CPP_TOOLKIT_VERSION_MAJOR 30)
 set(NCBI_CPP_TOOLKIT_VERSION_MINOR 0)
 set(NCBI_CPP_TOOLKIT_VERSION_PATCH 0)
 set(NCBI_CPP_TOOLKIT_VERSION_EXTRA "")
