@@ -77,7 +77,6 @@ OPTIONS:
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitly requested otherwise
-  --with-composite-dll       -- same as "--with-dll" plus assemble composite shared libraries
   --with-composite           -- assemble composite shared or static libraries
   --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
@@ -210,10 +209,6 @@ do
       ;; 
     --with-dll) 
       BUILD_SHARED_LIBS=ON 
-      ;; 
-    --with-composite-dll) 
-      BUILD_SHARED_LIBS=ON 
-      ALLOW_COMPOSITE=ON
       ;; 
     --with-composite) 
       ALLOW_COMPOSITE=ON
