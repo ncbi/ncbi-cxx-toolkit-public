@@ -90,7 +90,7 @@ static const char* embl_accpref[] = {
     "HD", "HE", "HF", "HG", "HH", "HI", "JA", "JB", "JC", "JD", "JE", "LK",
     "LL", "LM", "LN", "LO", "LP", "LQ", "LR", "LS", "LT", "MP", "MQ", "MR",
     "MS", "OA", "OB", "OC", "OD", "OE", "OU", "OV", "OW", "OX", "OY", "OZ",
-    nullptr
+    "RK", nullptr
 };
 
 static const char* lanl_accpref[] = {
@@ -109,7 +109,7 @@ static const char* ddbj_accpref[] = {
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
     "OJ", "PA", "PB", "PC", "PD", "PE", "PF", "PG", "PH", "PI", "PJ", "PK",
-    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", nullptr
+    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -1419,7 +1419,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "HI"sv) || (acc == "LP"sv) ||
                  (acc == "LQ"sv) || (acc == "MP"sv) ||
                  (acc == "MQ"sv) || (acc == "MR"sv) ||
-                 (acc == "MS"sv)))
+                 (acc == "MS"sv) || (acc == "RK"sv)))
                 return true;
         }
         if (parseInfo.all || parseInfo.source == Parser::ESource::DDBJ) {
@@ -1446,7 +1446,7 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "PL"sv) || (acc == "PM"sv) ||
                  (acc == "PN"sv) || (acc == "PO"sv) ||
                  (acc == "PW"sv) || (acc == "QP"sv) ||
-                 (acc == "QQ"sv)))
+                 (acc == "QQ"sv) || (acc == "QR"sv)))
                 return true;
         }
 
