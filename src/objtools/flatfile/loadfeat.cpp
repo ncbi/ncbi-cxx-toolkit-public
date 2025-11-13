@@ -2523,55 +2523,70 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
     }
 }
 
-/**********************************************************/
-static bool fta_qual_a_in_b(const TQualVector& qual1, const TQualVector& qual2)
+
+struct SCompareQuals
 {
-    bool found = false;
+    // This structure is used in the s_QualsMatch() and
+    // fta_remove_dup_quals() functions below.
+    // It is NOT used to order qualifiers in features.
+    bool operator()(const CRef<CGb_qual>& q1, const CRef<CGb_qual>& q2) const
+    {
+        _ASSERT(q1->IsSetQual() && q2->IsSetQual());
 
-    for (const auto& gbqp1 : qual1) {
-        found = false;
-        for (const auto& gbqp2 : qual2) {
-            const Char* qual_a = gbqp1->IsSetQual() ? gbqp1->GetQual().c_str() : nullptr;
-            const Char* qual_b = gbqp2->IsSetQual() ? gbqp2->GetQual().c_str() : nullptr;
-
-            const Char* val_a = gbqp1->IsSetVal() ? gbqp1->GetVal().c_str() : nullptr;
-            const Char* val_b = gbqp2->IsSetVal() ? gbqp2->GetVal().c_str() : nullptr;
-
-            if (fta_strings_same(qual_a, qual_b) && fta_strings_same(val_a, val_b)) {
-                found = true;
-                break;
-            }
+        if (q1->GetQual() != q2->GetQual()) {
+            return (q1->GetQual() < q2->GetQual());
+        } else if (! q1->IsSetVal()) {
+            return q2->IsSetVal();
+        } else if (! q2->IsSetVal()) {
+            return false;
         }
-        if (! found)
-            break;
+        return (q1->GetVal() < q2->GetVal());
+    }
+};
+
+
+static bool s_QualsMatch(const TQualVector& qv1, const TQualVector& qv2)
+{  
+    if (qv1.empty() && qv2.empty()) {
+        return true;
+    }
+    // Assumes no duplicates within a vector, since fta_remove_dup_quals()
+    // is applied to all feature before this function is invoked.
+    if (qv1.size() != qv2.size()) {
+        return false;
     }
 
-    if (! found)
-        return false;
+    set<CRef<CGb_qual>, SCompareQuals> first_set(qv1.begin(), qv1.end());
+    
+    for (const auto& gb_qual : qv2) {
+        if (! first_set.contains(gb_qual)) {
+            return false;
+        }
+    }
 
     return true;
 }
 
-/**********************************************************/
-static bool fta_feats_same(const FeatBlk* fbp1, const FeatBlk* fbp2)
-{
-    if (! fbp1 && ! fbp2) {
-        return true;
-    }
 
-    if (! fbp1 || ! fbp2 ||
-        ! fta_strings_same(fbp1->key.c_str(), fbp2->key.c_str()) ||
-        ! fta_strings_same(fbp1->location->c_str(), fbp2->location->c_str())) {
+static bool s_LocsMatch(const FeatBlk& fbp1, const FeatBlk& fbp2)
+{
+    if (fbp1.location != fbp2.location) {
         return false;
     }
 
-
-    if ((fbp1->quals.empty() && fbp2->quals.empty()) ||
-        (fta_qual_a_in_b(fbp1->quals, fbp2->quals) && fta_qual_a_in_b(fbp2->quals, fbp1->quals))) {
-        return true;
+    if (fbp1.location) {
+        return (*fbp1.location == *fbp1.location);
     }
 
     return false;
+}
+
+/**********************************************************/
+static bool fta_feats_same(const FeatBlk& fbp1, const FeatBlk& fbp2)
+{
+    return ((fbp1.key == fbp2.key) &&
+            s_LocsMatch(fbp1, fbp2) &&
+             s_QualsMatch(fbp1.quals, fbp2.quals));
 }
 
 /**********************************************************/
@@ -2657,11 +2672,12 @@ static void fta_remove_dup_feats(TDataBlkList& dbl)
 
             const FeatBlk* fbp2 = tdbp->GetFeatData();
 
-            if (fbp1->location && fbp2->location &&
-                StringCmp(fbp1->location->c_str(), fbp2->location->c_str()) < 0)
-                break;
+            if (fbp2->location && fbp2->location &&
+                (*fbp2->location > *fbp1->location)) { // Since features have already been sorted by location (see SortFeaturesByLoc()),
+                break;                                 // no need for additional checks in this loop.
+            }
 
-            if (! fta_feats_same(fbp1, fbp2)) {
+            if (! fta_feats_same(*fbp1, *fbp2)) {
                 tdbpprev = tdbp;
                 ++tdbp;
                 continue;
@@ -3095,19 +3111,13 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
     if (! fbp || fbp->quals.empty())
         return;
 
-    for (TQualVector::iterator cur = fbp->quals.begin(); cur != fbp->quals.end(); ++cur) {
-        const char* cur_qual = (*cur)->IsSetQual() ? (*cur)->GetQual().c_str() : nullptr;
-        const char* cur_val  = (*cur)->IsSetVal() ? (*cur)->GetVal().c_str() : nullptr;
+    set<CRef<CGb_qual>, SCompareQuals> existing_quals;
 
-        TQualVector::iterator next = cur;
-        for (++next; next != fbp->quals.end();) {
-            const char* next_qual = (*next)->IsSetQual() ? (*next)->GetQual().c_str() : nullptr;
-            const char* next_val  = (*next)->IsSetVal() ? (*next)->GetVal().c_str() : nullptr;
-
-            if (! fta_strings_same(cur_qual, next_qual) || ! fta_strings_same(cur_val, next_val)) {
-                ++next;
-                continue;
-            }
+    auto& quals = fbp->quals;
+    auto  new_end   = remove_if(quals.begin(), quals.end(), [&existing_quals, fbp](const CRef<CGb_qual>& gb_qual) {
+        if (existing_quals.contains(gb_qual)) {
+            
+            // Post an error message
 
             string _loc(location_or(fbp, "???"));
             if (_loc.size() > 20) {
@@ -3115,12 +3125,20 @@ static void fta_remove_dup_quals(FeatBlkPtr fbp)
                 _loc += "...";
             }
 
-            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved,
-                       "Duplicated qualifier \"{}\" in feature \"{}\" at location \"{}\" removed.", cur_qual ? cur_qual : "???", key_or(fbp, "???"), _loc);
+            FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DuplicateRemoved, 
+                    "Duplicated qualifier \"{}\" in feature \"{}\" at location \"{}\" removed.", 
+                    gb_qual->GetQual().empty() ? "???" : gb_qual->GetQual(), 
+                    key_or(fbp, "???"), 
+                    _loc);
 
-            next = fbp->quals.erase(next);
+            return true; // remove duplicate
         }
-    }
+        existing_quals.insert(gb_qual);
+        return false;
+    });
+
+    // erase duplicates
+    quals.erase(new_end, quals.end());
 }
 
 /**********************************************************/
