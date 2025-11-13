@@ -2102,8 +2102,12 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         s_ProcessCdsQuals(cds); // If found, use them to instantiate a Prot-ref Xref on the CDS
     }
 
-    if (pp->accver && is_transl && is_pseudo) {
+    if (is_transl && is_pseudo && (pp->source == Parser::ESource::USPTO || pp->accver)) {
         string loc = location_to_string(cds.GetLocation());
+        if (pp->source == Parser::ESource::USPTO) {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"{}\", coding region has been dropped.", loc);
+            return (-2);
+        }
         FtaErrPost(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"{}\".", loc);
         return (-1);
     }
