@@ -304,9 +304,8 @@ public:
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
     bool x_FixParentPartials(const CSeq_feat& sf, CSeq_feat& parent);
-    void x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const CBioseq& seq);
-    void x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq);
-    void x_ExtendSingleGeneOnMrna(CBioseq& seq);
+    void ExtendProteinFeatureOnProteinSeq(const CBioseq_Handle& bsh);
+    void ExtendSingleGeneOnMrna(const CBioseq_Handle& bsh);
     static bool IsSyntheticConstruct(const CBioSource& src);
 
     void MoveDbxrefs(CSeq_feat& sf);
@@ -315,7 +314,7 @@ public:
     void ResynchPeptidePartials( CBioseq& seq );
     void x_SetPartialsForProtein(CBioseq& prot, bool partial5, bool partial3, bool feat_partial);
     void RemoveBadProteinTitle(CBioseq& seq);
-    void MoveCitationQuals(CBioseq& seq);
+    void MoveCitationQuals(const CBioseq_Handle& bsh);
     void x_RemoveUnseenTitles(CSeq_descr& seq_descr);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
@@ -328,6 +327,7 @@ public:
     CNewCleanup_imp& operator= (const CNewCleanup_imp&);
 
 private:
+    void x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, TSeqPos seq_length);
 
     // data structures used for post-processing
 

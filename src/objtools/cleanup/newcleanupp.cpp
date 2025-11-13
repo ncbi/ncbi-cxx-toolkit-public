@@ -11944,18 +11944,18 @@ bool CNewCleanup_imp::IsSyntheticConstruct(const CBioSource& src)
 }
 
 
-void CNewCleanup_imp::x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const CBioseq& seq)
+void CNewCleanup_imp::x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, TSeqPos seq_length)
 {
     const auto& loc = fh.GetLocation();
     if (loc.IsInt() &&
         loc.GetStart(eExtreme_Biological) == 0 &&
-        loc.GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
+        loc.GetStop(eExtreme_Biological) == seq_length - 1) {
         // already full length, no need to change
         return;
     }
 
     bool partial_start = loc.IsPartialStart(eExtreme_Biological);
-    bool partial_stop = loc.IsPartialStop(eExtreme_Biological);
+    bool partial_stop  = loc.IsPartialStop(eExtreme_Biological);
 
     CRef<CSeq_feat> new_feat(new CSeq_feat());
     new_feat->Assign(*(fh.GetSeq_feat()));
@@ -11963,75 +11963,59 @@ void CNewCleanup_imp::x_ExtendFeatureToCoverSequence(CSeq_feat_Handle fh, const 
     auto& new_int = new_loc.SetInt();
     new_int.SetId().Assign(*(fh.GetLocation().GetId()));
     new_int.SetFrom(0);
-    new_int.SetTo(seq.GetLength() - 1);
+    new_int.SetTo(seq_length - 1);
     new_loc.SetPartialStart(partial_start, eExtreme_Biological);
     new_loc.SetPartialStop(partial_stop, eExtreme_Biological);
 
     CSeq_feat_EditHandle eh(fh);
     eh.Replace(*new_feat);
     ChangeMade(CCleanupChange::eChangeFeatureLocation);
-
 }
 
 
 // part of ExtendedCleanup
-void CNewCleanup_imp::x_ExtendProteinFeatureOnProteinSeq(CBioseq& seq)
+void CNewCleanup_imp::ExtendProteinFeatureOnProteinSeq(const CBioseq_Handle& bsh)
 {
-    // don't bother unless length greater than zero and protein
-    if (!seq.IsSetInst()) {
-        return;
-    }
-    const auto& inst = seq.GetInst();
-    if (!inst.IsSetLength() ||
-        inst.GetLength() == 0 ||
-        !inst.IsSetMol() ||
-        !inst.IsAa()) {
-        return;
-    }
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if (!bsh) {
+
+    if (! bsh.IsSetInst_Length() ||
+        bsh.GetInst_Length() == 0 ||
+        ! bsh.IsSetInst_Mol() ||
+        ! bsh.IsAa()) {
         return;
     }
 
+
     CFeat_CI f(bsh, CSeqFeatData::eSubtype_prot);
-    if (!f) {
+    if (! f) {
         // no feature to adjust
         return;
     }
 
-    const auto& loc = f->GetLocation();
+    const auto  seq_length = bsh.GetInst_Length();
+    const auto& loc        = f->GetLocation();
     if (loc.IsInt() &&
         loc.GetStart(eExtreme_Biological) == 0 &&
-        loc.GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
+        loc.GetStop(eExtreme_Biological) == seq_length - 1) {
         // already full length, no need to change
         return;
     }
 
-    x_ExtendFeatureToCoverSequence(*f, seq);
+    x_ExtendFeatureToCoverSequence(*f, seq_length);
 }
 
 
 // part of ExtendedCleanup
-void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
+void CNewCleanup_imp::ExtendSingleGeneOnMrna(const CBioseq_Handle& bsh)
 {
-    // don't bother unless length greater than zero and mRNA
-    if (!seq.IsSetInst()) {
-        return;
-    }
-    const auto& inst = seq.GetInst();
-    if (!inst.IsSetLength() ||
-        inst.GetLength() == 0 ||
-        !inst.IsSetMol() ||
-        !inst.IsNa()) {
-        return;
-    }
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-    if (!bsh) {
+    if (! bsh.IsSetInst_Length() ||
+        bsh.GetInst_Length() == 0 ||
+        ! bsh.IsSetInst_Mol() ||
+        ! bsh.IsNa()) {
         return;
     }
 
     CSeqdesc_CI m(bsh, CSeqdesc::e_Molinfo);
-    if (!m || !m->GetMolinfo().IsSetBiomol() || m->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_mRNA) {
+    if (! m || ! m->GetMolinfo().IsSetBiomol() || m->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_mRNA) {
         return;
     }
 
@@ -12041,53 +12025,49 @@ void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
         return;
     }
 
+
+    bool     cds_found{ false };
+    bool     mrna_found{ false };
+    CFeat_CI gene_it;
+
     CFeat_CI f(bsh);
-    size_t num_gene = 0;
-    size_t num_mrna = 0;
-    size_t num_cds = 0;
-    CConstRef<CSeq_feat> gene;
     while (f) {
         if (f->IsSetData()) {
             const auto& fdata = f->GetData();
             if (fdata.IsGene()) {
-                num_gene++;
-                if (num_gene > 1) {
-                    // bail if more than one gene
-                    break;
+                if (gene_it) {
+                    return;
                 }
-                gene.Reset(f->GetSeq_feat());
+                gene_it = f;
             } else if (fdata.IsCdregion()) {
-                num_cds++;
-                if (num_cds > 1) {
-                    // bail if more than one CDS
-                    break;
+                if (cds_found) {
+                    return;
                 }
+                cds_found = true;
             } else if (fdata.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-                num_mrna++;
-                if (num_mrna > 1) {
-                    // bail if more than one mRNA
-                    break;
+                if (mrna_found) {
+                    return;
                 }
+                mrna_found = true;
             }
         }
         ++f;
     }
 
-    if (num_gene != 1 || num_cds > 1 || num_mrna > 1) {
+    if (! gene_it) {
         return;
     }
 
-    if (!gene->GetLocation().IsInt()) {
+    if (! gene_it->GetLocation().IsInt()) {
         // bail if location is multi-interval and sequence is EMBL or DDBJ
-        ITERATE(CBioseq::TId, id, seq.GetId()) {
-            if ((*id)->IsDdbj() || (*id)->IsEmbl()) {
+        for (auto idh : bsh.GetId()) {
+            if (idh.Which() == CSeq_id::e_Ddbj || idh.Which() == CSeq_id::e_Embl) {
                 return;
             }
         }
     }
 
-    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(*gene);
-    x_ExtendFeatureToCoverSequence(fh, seq);
+    x_ExtendFeatureToCoverSequence(*gene_it, bsh.GetInst_Length());
 }
 
 
@@ -12366,12 +12346,11 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 
 
 // part of ExtendedCleanup
-void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
+void CNewCleanup_imp::MoveCitationQuals(const CBioseq_Handle& bsh)
 {
     vector<CConstRef<CPub> > pub_list;
     bool listed_pubs = false;
 
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     CFeat_CI f(bsh);
     while (f) {
         if (f->IsSetQual()) {
