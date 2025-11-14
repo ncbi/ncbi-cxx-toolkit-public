@@ -1663,7 +1663,7 @@ CRemoteBlast::LoadFromArchive()
       m_Archive.Reset(new CBlast4_archive);
       *m_ObjectStream >> *m_Archive;
 
-      m_Errs.empty();
+      m_Errs.clear();
       if(m_Archive->IsSetMessages()) {
     	  const list< CRef< CBlast4_error > >  & msgs = m_Archive->GetMessages();
     	  ITERATE(list< CRef< CBlast4_error > >, itr, msgs) {
