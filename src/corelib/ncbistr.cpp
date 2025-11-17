@@ -6339,14 +6339,14 @@ bool s_IsIPv4Address(const char* str, size_t size)
             return false;
         errno_ref = 0;
         val = strtoul(c, &e, 10);
-        if (c == e || errno_ref)
+        if (c == e || errno_ref || val > 255)
+            return false;
+        if (*c == '0' && e - c > 1) // leading zero is not allowed
             return false;
         c = e;
         if (*c != '.')
             break;
         if (++dots > 3)
-            return false;
-        if (val > 255)
             return false;
         c++;
     }
@@ -6356,7 +6356,7 @@ bool s_IsIPv4Address(const char* str, size_t size)
     if ((size_t)(c - str) != size) {
         return false;
     }
-    return !*c && dots == 3 && val < 256;
+    return !*c && dots == 3;
 }
 
 /// @internal
