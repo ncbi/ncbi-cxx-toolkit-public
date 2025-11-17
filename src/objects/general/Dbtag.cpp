@@ -374,7 +374,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_BoLD, "https://portal.boldsystems.org/record/" },
     { CDbtag::eDbtagType_CCDS, "https://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=" },
     { CDbtag::eDbtagType_CDD, "https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
-    { CDbtag::eDbtagType_CGNC, "http://birdgenenames.org/cgnc/GeneReport?id=" }, // https not available tested 7/13/2016
+    { CDbtag::eDbtagType_CGNC, "http://birdgenenames.org/GeneReport?id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_COG, "https://www.ncbi.nlm.nih.gov/research/cog/cog/" },
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
