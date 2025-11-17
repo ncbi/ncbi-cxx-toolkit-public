@@ -6323,76 +6323,23 @@ string NStr::Base64Decode(const CTempString str)
 }
 
 
-/// @internal
+BEGIN_LOCAL_NAMESPACE;
+
 static
-bool s_IsIPAddress(const char* str, size_t size)
+bool s_IsIPv4Address(const char* str, size_t size)
 {
-    _ASSERT(str[size] == '\0');
-
     const char* c = str;
-
-    // IPv6?
-    if ( strchr(str, ':') ) {
-        if (NStr::CompareNocase(str, 0, 7, "::ffff:") == 0) {
-            // Mapped IPv4 address
-            return size > 7  &&  s_IsIPAddress(str + 7, size - 7);
-        }
-
-        int colons = 0;
-        bool have_group = false;
-        const char* prev_colon = NULL;
-        int digits = 0;
-        // Continue until
-        for (; c  &&  c - str < (int)size  &&  *c != '%'; c++) {
-            if (*c == ':') {
-                colons++;
-                if (colons > 7) {
-                    // Too many separators
-                    return false;
-                }
-                if (prev_colon  &&  c - prev_colon  == 1) {
-                    // A group of zeros found
-                    if (have_group) {
-                        // Only one group is allowed
-                        return false;
-                    }
-                    have_group = true;
-                }
-                prev_colon = c;
-                digits = 0;
-                continue;
-            }
-            digits++;
-            if (digits > 4) {
-                // Too many digits between colons
-                return false;
-            }
-            char d = (char)toupper((unsigned char)(*c));
-            if (d < '0'  ||  d > 'F') {
-                // Invalid digit
-                return false;
-            }
-        }
-        // Check if zone index is present
-        if (*c == '%') {
-            // It's not clear yet what zone index may look like.
-            // Ignore it.
-        }
-        // Make sure there was at least one colon.
-        return colons > 1;
-    }
-
     unsigned long val;
     int dots = 0;
 
     int& errno_ref = errno;
     for (;;) {
         char* e;
-        if ( !isdigit((unsigned char)(*c)) )
+        if (!isdigit((unsigned char)(*c)))
             return false;
         errno_ref = 0;
         val = strtoul(c, &e, 10);
-        if (c == e  ||  errno_ref)
+        if (c == e || errno_ref)
             return false;
         c = e;
         if (*c != '.')
@@ -6409,8 +6356,58 @@ bool s_IsIPAddress(const char* str, size_t size)
     if ((size_t)(c - str) != size) {
         return false;
     }
-    return !*c  &&  dots == 3  &&  val < 256;
+    return !*c && dots == 3 && val < 256;
 }
+
+/// @internal
+static
+bool s_IsIPAddress(const char* str, size_t size)
+{
+    if (!str || !size) return false;
+    _ASSERT(str[size] == '\0');
+
+    const char* c = str;
+
+    // IPv6
+    if (strchr(str, ':')) {
+        size_t total_segs = 0;
+        const char* last_seg = nullptr;
+        const char* last_colon = nullptr;
+        const char* group_end = nullptr;
+        while (c < str + size) {
+            if (*c == '.') { // Found possible IPv4 suffix
+                if (!last_seg) return false; // No digits before dot
+                if (!s_IsIPv4Address(last_seg, str + size - last_seg)) return false; // Not a valid IPv4
+                return (total_segs == 6) || (group_end && total_segs < 6); // IPv4-compatible address
+            }
+            if (*c == ':') { // End of segment
+                if (last_colon == c - 1) {
+                    if (group_end) return false; // More than one group
+                    group_end = c;
+                }
+                last_colon = c;
+                last_seg = nullptr;
+                if (++total_segs > 8) return false; // Too many segments
+                ++c;
+                continue;
+            }
+            if (c - str == 1 && last_colon == str) return false; // Starts with single colon
+            if (!last_seg) last_seg = c;
+            if (c - last_seg > 4) return false; // Segment too long
+            if (*c < '0') return false; // Not a hex digit
+            char d = (char)toupper((unsigned char)(*c));
+            if (d > 'F' || (d > '9' && d < 'A')) return false; // Not a hex digit
+            ++c;
+        }
+        if (!last_seg && c != group_end + 1) return false; // IPv6 must end with either segment or group
+        ++total_segs;
+        return total_segs == 8 || (group_end && total_segs < 8);
+    }
+
+    return s_IsIPv4Address(str, size);
+}
+
+END_LOCAL_NAMESPACE;
 
 
 bool NStr::IsIPAddress(const CTempStringEx str)
