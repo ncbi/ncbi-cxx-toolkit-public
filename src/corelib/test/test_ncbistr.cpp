@@ -5338,6 +5338,9 @@ BOOST_AUTO_TEST_CASE(s_IpAddress)
         { "", false },
         { "abc", false },
         { "123456", false },
+        { "192.168.0\0.1", false },
+        { "192.168.1\0002.1", false },
+        { "192.168.\0003.1", false },
 
         { "127.0.0.1", true },
         { "192.168.0.146", true },
@@ -5349,6 +5352,7 @@ BOOST_AUTO_TEST_CASE(s_IpAddress)
         { "10.25..4", false }, // double dot
         { "192.168.0.1/24", false }, // subnet notation
         { "10.23.1d.5a", false }, // non-decimal numbers
+        { "192.168.01.1", false },
 
         { "::", true },
         { "::1", true },
