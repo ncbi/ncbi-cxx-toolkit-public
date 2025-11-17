@@ -125,12 +125,13 @@ int main(int argc, const char* argv[])
         printf("\"%.*s\" = %s\n", (int)(str - argv[c]), argv[c], buf);
         if (*str)
             printf("Unparsed part: \"%s\"\n", str);
-        if (sscanf(str, "/%u%n", &d, &q) >= 1  &&  !str[q]) {
+        if (sscanf(str, "/%u%n", &d, &q) >= 1  &&  !str[q]  &&  d >= 0) {
             m = d;
             a = addr;
             NcbiIPv6Subnet(&a,                          m);
             assert(NcbiAddrToString(buf, sizeof(buf), &a)  ||  *buf == '\0');
-            printf("Subnet    = %s\n", buf);
+            printf("Subnet    = %s/%u\n", buf,
+                   m >= 8*sizeof(addr) ? (unsigned int)(8*sizeof(addr)) : m);
             b = addr;
             NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - m);
             assert(NcbiAddrToString(buf, sizeof(buf), &b)  ||  *buf == '\0');
