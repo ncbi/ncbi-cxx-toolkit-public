@@ -1907,14 +1907,18 @@ static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool t
         if (source == Parser::ESource::USPTO) {
             FtaErrPost(SEV_ERROR, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region, coding region has been dropped.", loc_str);
             i = -2;
-        }
-        else {
+        } else {
             FtaErrPost(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region.", loc_str);
             i = 1;
         }
     } else {
-        FtaErrPost(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str);
-        i = -1;
+        if (source == Parser::ESource::USPTO) {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint, coding region has been dropped.", loc_str);
+            i = -2;
+        } else {
+            FtaErrPost(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str);
+            i = -1;
+        }
     }
     return (i);
 }
