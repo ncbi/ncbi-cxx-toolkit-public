@@ -669,6 +669,7 @@ PERL_INCLUDE
 UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
+IPS4O_LIBS
 IPS4O_INCLUDE
 OPENTELEMETRY_STATIC_LIBS
 JAEGER_STATIC_LIBS
@@ -37908,6 +37909,7 @@ if test -d "$IPS4O_PATH"; then
 else
    in_path=
 fi
+IPS4O_INCLUDE="$IPS4O_INCLUDE $TBB_INCLUDE"
 CPPFLAGS="$orig_CPPFLAGS $IPS4O_INCLUDE"
 for ac_header in ips4o.hpp
 do :
@@ -37916,7 +37918,7 @@ if test "x$ac_cv_header_ips4o_hpp" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_IPS4O_HPP 1
 _ACEOF
-           WithPackages="$WithPackages${WithPackagesSep}IPS4O"; WithPackagesSep=" "
+           WithPackages="$WithPackages${WithPackagesSep}IPS4O"; WithPackagesSep=" "; IPS4O_LIBS=$TBB_LIBS
 else
   IPS4O_INCLUDE=; if test "${with_ips4o:=no}" != no; then
        as_fn_error $? "--with-ips4o explicitly specified, but no usable version found." "$LINENO" 5
@@ -38402,6 +38404,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 
