@@ -1877,7 +1877,7 @@ static bool CpGeneticCodePtr(CGenetic_code& code, const CGenetic_code::C_E& gcod
 }
 
 /**********************************************************/
-static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool transl)
+static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool transl, Parser::ESource source)
 {
     Uint1 strand;
     Int4  len;
@@ -1904,8 +1904,14 @@ static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool t
         loc_str = "???";
     }
     if ((strand == 2 && stop == bioseq.GetLength()) || (strand != 2 && start == 0)) {
-        FtaErrPost(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region.", loc_str);
-        i = 1;
+        if (source == Parser::ESource::USPTO) {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region, coding region has been dropped.", loc_str);
+            i = -2;
+        }
+        else {
+            FtaErrPost(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region.", loc_str);
+            i = 1;
+        }
     } else {
         FtaErrPost(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str);
         i = -1;
@@ -2091,9 +2097,9 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
     else if (is_pseudo)
         is_stop = false;
     else {
-        i = IfOnlyStopCodon(bioseq, cds, is_transl);
+        i = IfOnlyStopCodon(bioseq, cds, is_transl, pp->source);
         if (i < 0) {
-            return -1;
+            return i;
         }
         is_stop = (i != 0);
     }
