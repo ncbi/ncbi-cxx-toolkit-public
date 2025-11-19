@@ -209,6 +209,10 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    *MAC       ) : ${GIF_PATH=$NCBI/giflib-5.2.2} ;;
+esac
+
+case "$ncbi_platform" in
     Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
     *MAC       ) : ${with_gcrypt=no} ;;
 esac
@@ -252,6 +256,10 @@ esac
 : ${IPS4O_PATH=$NCBI/ips4o-0.0.20250115}
 
 : ${JAEGER_PATH=$NCBI/jaeger-client-cpp-0.7.0}
+
+case "$ncbi_platform" in
+    *MAC       ) : ${JPEG_PATH=$NCBI/libjpeg-turbo-3.1.2} ;;
+esac
 
 : ${LEVELDB_PATH=$NCBI/leveldb-1.21}
 
@@ -368,6 +376,10 @@ local_sybase_root="/opt/sybase/clients"
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
 : ${THRIFT_PATH=$NCBI/thrift-0.11.0}
+
+case "$ncbi_platform" in
+    *MAC       ) : ${TIFF_PATH=$NCBI/tiff-4.7.1} ;;
+esac
 
 net_vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
 local_vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions

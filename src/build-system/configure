@@ -24827,7 +24827,7 @@ fi
 fi
 
 x_libraries=`echo "$x_libraries" | sed -e "s,^$usr_lib\$,,"`
-X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib"`
+X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib; s/ \$//"`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XextCreateExtension in -lXext" >&5
 $as_echo_n "checking for XextCreateExtension in -lXext... " >&6; }
 if ${ac_cv_lib_Xext_XextCreateExtension+:} false; then :
@@ -30095,10 +30095,10 @@ if test "$with_gif" != "no"; then
     GIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       GIF_LIBS="$GIF_LIBPATH -lgif $X_LIBS -lX11"
+       GIF_LIBS="$GIF_LIBPATH -lgif ${X_LIBS:+$X_LIBS -lX11}"
     else
        GIF_INCLUDE=""
-       GIF_LIBS="-lgif $X_LIBS -lX11"
+       GIF_LIBS="-lgif ${X_LIBS:+$X_LIBS -lX11}"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libgif$in_path" >&5
@@ -30227,10 +30227,10 @@ if test "$with_gif" = "no"; then
     UNGIF_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
+       UNGIF_LIBS="$UNGIF_LIBPATH -lungif ${X_LIBS:+$X_LIBS -lX11}"
     else
        UNGIF_INCLUDE=""
-       UNGIF_LIBS="-lungif $X_LIBS -lX11"
+       UNGIF_LIBS="-lungif ${X_LIBS:+$X_LIBS -lX11}"
        in_path=
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libungif$in_path" >&5

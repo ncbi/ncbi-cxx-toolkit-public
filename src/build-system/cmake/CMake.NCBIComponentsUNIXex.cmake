@@ -387,9 +387,11 @@ NCBI_define_Xcomponent(NAME PNG MODULE libpng PACKAGE PNG LIB png CHECK_INCLUDE 
 NCBIcomponent_report(PNG)
 
 #############################################################################
-# GIF (temporarily disabled)
-# NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
-# NCBIcomponent_report(GIF)
+# GIF (temporarily disabled on Linux)
+if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
+  NCBIcomponent_report(GIF)
+endif()
 
 #############################################################################
 # TIFF
