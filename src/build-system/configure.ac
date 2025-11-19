@@ -6660,7 +6660,7 @@ if test -f "$xlib" -a "${x_libraries-NONE}" = NONE \
 fi
 AC_PATH_XTRA
 x_libraries=`echo "$x_libraries" | sed -e "s,^$usr_lib\$,,"`
-X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib"`
+X_LIBS=`echo "$X_LIBS " | sed -e "$no_usr_lib; s/ \$//"`
 AC_CHECK_LIB(Xext, XextCreateExtension, Xext="-lXext", Xext=,
    [$X_PRE_LIBS -lX11 $X_EXTRA_LIBS])
 AC_CHECK_LIB(Xt, XtMainLoop, Xt="-lXt", Xt=,
@@ -8194,13 +8194,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(gif,
  [AC_LANG_PROGRAM([extern "C" {
                   @%:@include <gif_lib.h>
                   }],
-    [GifFileType* fp; return DGifSlurp(fp);])], $X_LIBS -lX11)
+    [GifFileType* fp; return DGifSlurp(fp);])], ${X_LIBS:+$X_LIBS -lX11})
 if test "$with_gif" = "no"; then
    NCBI_CHECK_THIRD_PARTY_LIB(ungif,
     [AC_LANG_PROGRAM([extern "C" {
                      @%:@include <gif_lib.h>
                      }],
-       [GifFileType* fp; return DGifSlurp(fp);])], $X_LIBS -lX11)
+       [GifFileType* fp; return DGifSlurp(fp);])], ${X_LIBS:+$X_LIBS -lX11})
 else
    AC_DEFINE(HAVE_LIBUNGIF, 1, [Define to 1 if libungif is available.])
    UNGIF_INCLUDE=$GIF_INCLUDE

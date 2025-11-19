@@ -62,6 +62,9 @@ set(NCBI_ThirdParty_GMP       ${NCBI_TOOLS_ROOT}/gmp-6.3.0 CACHE PATH "GMP root"
 set(NCBI_ThirdParty_NETTLE    ${NCBI_TOOLS_ROOT}/nettle-3.10.2 CACHE PATH "NETTLE root")
 set(NCBI_ThirdParty_GNUTLS    ${NCBI_TOOLS_ROOT}/gnutls-3.8.10-ncbi1 CACHE PATH "GNUTLS root")
 set(NCBI_ThirdParty_NCBICRYPT ${NCBI_TOOLS_ROOT}/ncbicrypt-20230516 CACHE PATH "NCBICRYPT root")
+set(NCBI_ThirdParty_GIF       ${NCBI_TOOLS_ROOT}/giflib-5.2.2 CACHE PATH "GIF root")
+set(NCBI_ThirdParty_JPEG      ${NCBI_TOOLS_ROOT}/libjpeg-turbo-3.1.2 CACHE PATH "JPEG root")
+set(NCBI_ThirdParty_TIFF      ${NCBI_TOOLS_ROOT}/tiff-4.7.1 CACHE PATH "TIFF root")
 
 #############################################################################
 #############################################################################
@@ -328,9 +331,8 @@ NCBIcomponent_report(PNG)
 
 #############################################################################
 # GIF
-#NCBI_find_package(GIF GIF)
-#set(NCBI_COMPONENT_GIF_FOUND YES)
-#list(APPEND NCBI_ALL_COMPONENTS GIF)
+NCBI_define_Xcomponent(NAME GIF PACKAGE GIF LIB gif)
+NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
