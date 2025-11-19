@@ -820,168 +820,6 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void fta_get_user_field(char* line, const Char* tag, CUser_object& user_obj)
-{
-    char* p;
-    char* q;
-    char* res;
-    Char  ch;
-
-    p = StringStr(line, "USER        ");
-    if (p)
-        res = StringSave(string_view(line, p - line));
-    else
-        res = StringSave(line);
-
-    for (q = res, p = res; *p != '\0'; p++)
-        if (*p != ' ')
-            *q++ = *p;
-    *q = '\0';
-
-    CRef<CUser_field> root_field(new CUser_field);
-    root_field->SetLabel().SetStr(tag);
-
-    for (q = res;;) {
-        q = StringStr(q, "\nACCESSION=");
-        if (! q)
-            break;
-
-        q += 11;
-        for (p = q; *p != '\0' && *p != '\n' && *p != ';';)
-            p++;
-
-        CRef<CUser_field> cur_field(new CUser_field);
-        cur_field->SetLabel().SetStr("accession");
-        cur_field->SetString(string(q, p));
-
-        CRef<CUser_field> field_set(new CUser_field);
-        field_set->SetData().SetFields().push_back(cur_field);
-
-        if (StringEquN(p, ";gi=", 4)) {
-            p += 4;
-            for (q = p; *p >= '0' && *p <= '9';)
-                p++;
-            ch = *p;
-            *p = '\0';
-
-            cur_field.Reset(new CUser_field);
-            cur_field->SetLabel().SetStr("gi");
-            cur_field->SetNum(fta_atoi(q));
-            field_set->SetData().SetFields().push_back(cur_field);
-
-            *p = ch;
-        }
-
-        root_field->SetData().SetFields().push_back(cur_field);
-    }
-
-    MemFree(res);
-
-    if (! root_field->IsSetData())
-        return;
-
-    user_obj.SetData().push_back(root_field);
-}
-
-/**********************************************************/
-static void fta_get_str_user_field(char* line, const Char* tag, CUser_object& user_obj)
-{
-    char* p;
-    char* q;
-    char* r;
-    char* res;
-    Char  ch;
-
-    p = StringStr(line, "USER        ");
-    if (! p)
-        ch = '\0';
-    else {
-        ch = 'U';
-        *p = '\0';
-    }
-
-    res = StringNew(StringLen(line));
-    for (q = line; *q == ' ' || *q == '\n';)
-        q++;
-    for (r = res; *q != '\0';) {
-        if (*q != '\n') {
-            *r++ = *q++;
-            continue;
-        }
-        while (*q == ' ' || *q == '\n')
-            q++;
-        if (*q != '\0')
-            *r++ = ' ';
-    }
-    *r = '\0';
-    if (ch == 'U')
-        *p = 'U';
-
-    if (*res == '\0') {
-        MemFree(res);
-        return;
-    }
-
-    CRef<CUser_field> field(new CUser_field);
-    field->SetLabel().SetStr(tag);
-    field->SetString(res);
-
-    MemFree(res);
-
-    user_obj.SetData().push_back(field);
-}
-
-/**********************************************************/
-static void fta_get_user_object(CSeq_entry& seq_entry, const DataBlk& entry)
-{
-    char*  p;
-    char*  q;
-    char*  r;
-    size_t l;
-
-    if (! SrchNodeType(entry, ParFlat_USER, &l, &p) || l < ParFlat_COL_DATA)
-        return;
-
-    q = StringSave(string_view(p, l - 1));
-
-    CRef<CUser_object> user_obj(new CUser_object);
-    user_obj->SetType().SetStr("RefGeneTracking");
-
-    for (p = q;;) {
-        p = StringStr(p, "USER        ");
-        if (! p)
-            break;
-        for (p += 12; *p == ' ';)
-            p++;
-        for (r = p; *p != '\0' && *p != '\n' && *p != ' ';)
-            p++;
-        if (*p == '\0' || p == r)
-            break;
-        if (fta_StartsWith(r, "Related"sv))
-            fta_get_user_field(p, "Related", *user_obj);
-        else if (fta_StartsWith(r, "Assembly"sv))
-            fta_get_user_field(p, "Assembly", *user_obj);
-        else if (fta_StartsWith(r, "Comment"sv))
-            fta_get_str_user_field(p, "Comment", *user_obj);
-        else
-            continue;
-    }
-
-    MemFree(q);
-
-    if (! user_obj->IsSetData())
-        return;
-
-    CRef<CSeqdesc> descr(new CSeqdesc);
-    descr->SetUser(*user_obj);
-
-    if (seq_entry.IsSeq())
-        seq_entry.SetSeq().SetDescr().Set().push_back(descr);
-    else
-        seq_entry.SetSet().SetDescr().Set().push_back(descr);
-}
-
-/**********************************************************/
 static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset, size_t len)
 {
     char* str;
@@ -1489,9 +1327,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         mParser.debug == false &&
         ibp->wgs_and_gi != 3 &&
         no_reference(*bioseq)) {
-        if (mParser.source == Parser::ESource::Flybase) {
-            FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
-        } else if (mParser.source == Parser::ESource::Refseq &&
+        if (mParser.source == Parser::ESource::Refseq &&
                    fta_StartsWith(ibp->acnum, "NW_"sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
         } else if (ibp->is_wgs) {
@@ -1514,10 +1350,6 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         mTotals.Dropped++;
         mParser.curindx++;
         return pResult;
-    }
-
-    if (mParser.source == Parser::ESource::Flybase) {
-        fta_get_user_object(*(ebp->seq_entry), *pEntry);
     }
 
     TEntryList  seq_entries;

@@ -86,7 +86,6 @@ struct Parser {
         LANL,
         SPROT,
         Refseq,
-        Flybase,
         USPTO,
         All
     };

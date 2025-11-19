@@ -2062,9 +2062,6 @@ static void fta_fix_seq_id(CSeq_loc& loc, CSeq_id& id, IndexblkPtr ibp, string_v
             new_text_id->Assign(*text_id);
             SetTextId(type, id, *new_text_id);
         }
-    } else if (source == Parser::ESource::Flybase) {
-        id.SetGeneral().SetDb("FlyBase");
-        id.SetGeneral().SetTag().SetStr(accession);
     } else if (source == Parser::ESource::USPTO) {
         CRef<CPatent_seq_id> pat_id = MakeUsptoPatSeqId(accession);
         id.SetPatent(*pat_id);

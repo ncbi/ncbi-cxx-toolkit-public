@@ -363,11 +363,6 @@ static void SetReleaseStr(ParserPtr pp)
                 pp->release_str = "source:lanl, format:xml";
             else
                 pp->release_str = "source:lanl, format:genbank";
-        } else if (pp->source == Parser::ESource::Flybase) {
-            if (pp->format == Parser::EFormat::XML)
-                pp->release_str = "source:flybase, format:xml";
-            else
-                pp->release_str = "source:flybase, format:genbank";
         } else if (pp->source == Parser::ESource::Refseq) {
             if (pp->format == Parser::EFormat::XML)
                 pp->release_str = "source:refseq, format:xml";
@@ -400,7 +395,7 @@ static void GetAuthorsStr(ParserPtr pp)
     else if (pp->source == Parser::ESource::SPROT)
         pp->authors_str = "UniProt KnowledgeBase";
     else
-        pp->authors_str = "FlyBase";
+        pp->authors_str = "unknown";
 }
 
 /**********************************************************/
@@ -639,14 +634,6 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.acprefix = ParFlat_DDBJ_AC;
         pp.seqtype  = CSeq_id::e_Ddbj;
         pp.source   = Parser::ESource::DDBJ;
-    } else if (NStr::EqualNocase(source, "FLYBASE")) {
-        pp.source   = Parser::ESource::Flybase;
-        pp.seqtype  = CSeq_id::e_Genbank;
-        pp.acprefix = nullptr;
-        if (pp.format != Parser::EFormat::GenBank) {
-            FtaErrPost(SEV_FATAL, 0, 0, "Source \"FLYBASE\" requires format \"GENBANK\" only. Cannot parse.");
-            return false;
-        }
     } else if (NStr::EqualNocase(source, "REFSEQ")) {
         pp.source   = Parser::ESource::Refseq;
         pp.seqtype  = CSeq_id::e_Other;
@@ -688,7 +675,7 @@ static bool FillAccsBySource(Parser& pp, const string& source, bool all)
         pp.source   = Parser::ESource::USPTO;
         pp.accver   = false;
     } else {
-        FtaErrPost(SEV_FATAL, 0, 0, "Sorry, {} is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, FLYBASE, REFSEQ, USPTO", source);
+        FtaErrPost(SEV_FATAL, 0, 0, "Sorry, {} is not a valid source. Valid source ==> PIR, SPROT, LANL, NCBI, EMBL, DDBJ, REFSEQ, USPTO", source);
         return false;
     }
 

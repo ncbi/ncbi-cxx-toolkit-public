@@ -182,7 +182,6 @@ static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::SPROT, "Swiss-Prot" },
     { Parser::ESource::NCBI, "NCBI" },
     { Parser::ESource::LANL, "GSDB" },
-    { Parser::ESource::Flybase, "FlyBase" },
     { Parser::ESource::Refseq, "RefSeq" }
 };
 
@@ -383,8 +382,7 @@ static bool CheckLocus(const char* locus, Parser::ESource source)
         (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
         p += 4;
     for (; *p != '\0'; p++) {
-        if ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z') ||
-            (*p == '.' && source == Parser::ESource::Flybase))
+        if ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z'))
             continue;
         if (((*p >= 'a' && *p <= 'z') || *p == '_' || *p == '-' || *p == '(' ||
              *p == ')' || *p == '/') &&
@@ -1595,8 +1593,7 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
 {
     bool get = true;
 
-    if ((skip != 2 && pp->source == Parser::ESource::Flybase) ||
-        pp->source == Parser::ESource::USPTO)
+    if (pp->source == Parser::ESource::USPTO)
         return true;
 
     auto tokens = TokenString(line, ';');
@@ -1653,10 +1650,6 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
                 temp = "???";
         }
         FtaInstallPrefix(PREFIX_ACCESSION, temp);
-    }
-
-    if (pp->source == Parser::ESource::Flybase) {
-        return true;
     }
 
     if (pp->mode != Parser::EMode::Relaxed) {
