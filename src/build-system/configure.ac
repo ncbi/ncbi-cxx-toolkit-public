@@ -6057,7 +6057,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
          fi
          with_boost=no
          ;;
-      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-7]]* ) ;;
+      1_3[[5-9]] | 1_3[[5-9]]_* | 1_[[4-8]]* ) ;;
       '' ) with_boost=no ;;
       * )
          AC_MSG_WARN(
@@ -9240,31 +9240,6 @@ if test "$with_crc32c" != no \
    CRC32C_STATIC_LIBS="-L$CRC32C_PATH/lib -lcrc32c-static"
 fi
 
-case "$with_google_cloud" in
-   no       ) ;;
-   yes | "" ) ;;
-   *        ) GOOGLE_CLOUD_PATH=$with_google_cloud ;;
-esac
-if test -d "$GOOGLE_CLOUD_PATH"; then
-   NCBI_FIND_ARCH_PATH(GOOGLE_CLOUD)
-   GOOGLE_CLOUD_PATH=$GOOGLE_CLOUD_ARCH_PATH
-   if test -d "$GOOGLE_CLOUD_PATH$asan_sfx"; then
-      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$asan_sfx"
-   fi
-   NCBI_FIX_DIR(GOOGLE_CLOUD_PATH)
-fi
-if test -d $GOOGLE_CLOUD_PATH/lib${bit64_sfx}; then
-   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib${bit64_sfx}
-else
-   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib
-fi
-NCBI_CHECK_THIRD_PARTY_LIB_EX(google_cloud, GOOGLE_CLOUD,
-   google_cloud_cpp_storage,
-   [AC_LANG_PROGRAM([@%:@include <google/cloud/storage/client.h>],
-       [google::cloud::storage::Client client])],
-   [-lgoogle_cloud_cpp_common],
-   [$CRC32C_LIBS $GRPC_LIBS $CURL_LIBS $OPENSSL_LIBS $Z_LIBS],
-   [$GRPC_INCLUDE])
 
 NCBI_CHECK_THIRD_PARTY_LIB(hiredis,
    [AC_LANG_PROGRAM([[@%:@include <hiredis/hiredis.h>]],
@@ -9275,6 +9250,48 @@ if test "$with_hiredis" != no \
 else
     HIREDIS_STATIC_LIBS=$HIREDIS_LIBS
 fi
+
+
+case "$with_thrift" in
+   yes | no | '' ) ;;
+   *             ) THRIFT_PATH=$with_thrift ;;
+esac
+if test -d "$THRIFT_PATH"; then
+   NCBI_FIND_ARCH_PATH(THRIFT)
+   THRIFT_PATH=$THRIFT_ARCH_PATH
+   if test -d "$THRIFT_PATH$asan_sfx"; then
+      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
+   fi
+   NCBI_FIX_DIR(THRIFT_PATH)
+fi
+
+if test -n "$D_SFX"; then
+   if ls $THRIFT_PATH/lib*/libthrift$D_SFX.* >/dev/null 2>&1; then
+      THRIFT_SFX=$D_SFX
+   else
+      for ext in .a .so .dylib; do
+         path=`$CXX -B$THRIFT_PATH/ -print-file-name=libthrift$D_SFX.$ext \
+               2>/dev/null`
+         case "$path" in
+            */* ) THRIFT_SFX=$D_SFX; break ;;
+         esac
+      done
+   fi
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(thrift, THRIFT, [thrift$THRIFT_SFX],
+  [AC_LANG_PROGRAM([[@%:@include <thrift/TApplicationException.h>]],
+      [[apache::thrift::TApplicationException().read(nullptr);]])],
+  [], [$OPENSSL_LIBS], [$BOOST_INCLUDE])
+if test "$with_thrift" != no; then
+   if test -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a"; then
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift${THRIFT_SFX}_static"
+   elif test -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a"; then
+      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift_static$THRIFT_SFX"
+   else
+      THRIFT_STATIC_LIBS=$THRIFT_LIBS
+   fi
+fi
+
 
 case "$with_apache_arrow" in
    yes | no | '' ) ;;
@@ -9301,10 +9318,10 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(apache_arrow, APACHE_ARROW, parquet,
   [AC_LANG_PROGRAM([[@%:@include <parquet/api/reader.h>]],
      [[parquet::ParquetFileReader pfr;]])],
-  [-larrow])
+  [-larrow $THRIFT_LIBS])
 if test "$with_apache_arrow" != no -a \
      -f "$APACHE_ARROW_LIBDIR/libparquet-static.a"; then
-    APACHE_ARROW_STATIC_LIBS="-L$APACHE_ARROW_LIBDIR -lparquet-static -larrow-static -larrow_bundled_dependencies-static $BZ2_LIBS $Z_LIBS -lzstd"
+    APACHE_ARROW_STATIC_LIBS="-L$APACHE_ARROW_LIBDIR -lparquet-static -larrow-static -larrow_bundled_dependencies-static $THRIFT_STATIC_LIBS $BZ2_LIBS $Z_LIBS -lzstd"
 else
     APACHE_ARROW_STATIC_LIBS=$APACHE_ARROW_LIBS
 fi
@@ -9351,47 +9368,6 @@ if test "$with_cppkafka" != no -a \
    CPPKAFKA_STATIC_LIBS="-L$CPPKAFKA_PATH/lib$bit64_sfx -lcppkafka-static $LIBRDKAFKA_STATIC_LIBS"
 else
    CPPKAFKA_STATIC_LIBS=$CPPKAFKA_LIBS
-fi
-
-
-case "$with_thrift" in
-   yes | no | '' ) ;;
-   *             ) THRIFT_PATH=$with_thrift ;;
-esac
-if test -d "$THRIFT_PATH"; then
-   NCBI_FIND_ARCH_PATH(THRIFT)
-   THRIFT_PATH=$THRIFT_ARCH_PATH
-   if test -d "$THRIFT_PATH$asan_sfx"; then
-      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
-   fi
-   NCBI_FIX_DIR(THRIFT_PATH)
-fi
-
-if test -n "$D_SFX"; then
-   if ls $THRIFT_PATH/lib*/libthrift$D_SFX.* >/dev/null 2>&1; then
-      THRIFT_SFX=$D_SFX
-   else
-      for ext in .a .so .dylib; do
-         path=`$CXX -B$THRIFT_PATH/ -print-file-name=libthrift$D_SFX.$ext \
-               2>/dev/null`
-         case "$path" in
-            */* ) THRIFT_SFX=$D_SFX; break ;;
-         esac
-      done
-   fi
-fi
-NCBI_CHECK_THIRD_PARTY_LIB_EX(thrift, THRIFT, [thrift$THRIFT_SFX],
-  [AC_LANG_PROGRAM([[@%:@include <thrift/TApplicationException.h>]],
-      [[apache::thrift::TApplicationException().read(nullptr);]])],
-  [], [$OPENSSL_LIBS], [$BOOST_INCLUDE])
-if test "$with_thrift" != no; then
-   if test -f "$THRIFT_PATH/lib/libthrift${THRIFT_SFX}_static.a"; then
-      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift${THRIFT_SFX}_static"
-   elif test -f "$THRIFT_PATH/lib/libthrift_static$THRIFT_SFX.a"; then
-      THRIFT_STATIC_LIBS="-L$THRIFT_PATH/lib -lthrift_static$THRIFT_SFX"
-   else
-      THRIFT_STATIC_LIBS=$THRIFT_LIBS
-   fi
 fi
 
 
@@ -9552,6 +9528,40 @@ if test "$with_opentelemetry" != no \
 else
    OPENTELEMETRY_STATIC_LIBS=$OPENTELEMETRY_LIBS
 fi
+
+
+case "$with_google_cloud" in
+   no       ) ;;
+   yes | "" ) ;;
+   *        ) GOOGLE_CLOUD_PATH=$with_google_cloud ;;
+esac
+if test -d "$GOOGLE_CLOUD_PATH"; then
+   NCBI_FIND_ARCH_PATH(GOOGLE_CLOUD)
+   GOOGLE_CLOUD_PATH=$GOOGLE_CLOUD_ARCH_PATH
+   if test -d "$GOOGLE_CLOUD_PATH$asan_sfx"; then
+      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$asan_sfx"
+   fi
+   NCBI_FIX_DIR(GOOGLE_CLOUD_PATH)
+fi
+if test -d $GOOGLE_CLOUD_PATH/lib${bit64_sfx}; then
+   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib${bit64_sfx}
+else
+   GOOGLE_CLOUD_LIBDIR=$GOOGLE_CLOUD_PATH/lib
+fi
+if test -n "$otel_pc"; then
+   gcl_pc=`echo $otel_pc | sed -e "s,=,=$GOOGLE_CLOUD_LIBDIR/pkgconfig:,"`
+   gcl_deps=`$gcl_pc --libs google_cloud_cpp_storage | fmt -w1 \
+      | grep -e -lgoogle_ | sed -e 1d | tr '\n' ' '`
+else
+   gcl_deps=-lgoogle_cloud_cpp_common
+fi
+NCBI_CHECK_THIRD_PARTY_LIB_EX(google_cloud, GOOGLE_CLOUD,
+   google_cloud_cpp_storage,
+   [AC_LANG_PROGRAM([@%:@include <google/cloud/storage/client.h>],
+       [google::cloud::storage::Client client])],
+   [$gcl_deps],
+   [$CRC32C_LIBS $GRPC_LIBS $CURL_LIBS $OPENSSL_LIBS $Z_LIBS],
+   [$GRPC_INCLUDE])
 
 
 case "$with_tbb" in
