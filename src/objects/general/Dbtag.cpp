@@ -374,14 +374,14 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
     { CDbtag::eDbtagType_BoLD, "https://portal.boldsystems.org/record/" },
     { CDbtag::eDbtagType_CCDS, "https://www.ncbi.nlm.nih.gov/CCDS/CcdsBrowse.cgi?REQUEST=CCDS&DATA=" },
     { CDbtag::eDbtagType_CDD, "https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=" },
-    { CDbtag::eDbtagType_CGNC, "http://birdgenenames.org/GeneReport?id=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" }, // url not found tested 7/13/2016
+    { CDbtag::eDbtagType_CGNC, "https://birdgenenames.org/GeneReport?id=" },
+    { CDbtag::eDbtagType_CK, "" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_COG, "https://www.ncbi.nlm.nih.gov/research/cog/cog/" },
     { CDbtag::eDbtagType_CollecTF, "https://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" }, // https does not result in security cert warning, but "page can't be displayed", tested 7/13/2016
     { CDbtag::eDbtagType_FANTOM_DB, "https://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_FLYBASE, "http://flybase.org/reports/" }, // https not available, http site "experiencing problems" tested 7/13/2016
+    { CDbtag::eDbtagType_FLYBASE, "https://flybase.org/reports/" },
     { CDbtag::eDbtagType_Fungorum, "http://www.indexfungorum.org/Names/NamesRecord.asp?RecordID=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_GABI, "https://www.gabipd.org/database/cgi-bin/GreenCards.pl.cgi?Mode=ShowSequence&App=ncbi&SequenceId=" },
     { CDbtag::eDbtagType_GEO, "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" },
