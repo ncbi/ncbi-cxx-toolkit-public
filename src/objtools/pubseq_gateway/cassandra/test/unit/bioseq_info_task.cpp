@@ -133,6 +133,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
         },
         error_function
     );
+    EXPECT_EQ("DC1", fetch.GetConnectionDatacenterName());
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
     ASSERT_EQ(2UL, actual_records.size());
