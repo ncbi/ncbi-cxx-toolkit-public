@@ -70,7 +70,7 @@ bool CPMCIDConverterServer::GetPmids(const vector<string>& uids)
 {
     string hostname = "www.ncbi.nlm.nih.gov";
     string path = "/pmc/utils/idconv/v1.0/";
-    string args = "tool=NCBIToolkit&email=bollin@ncbi.nlm.nih.gov&versions=no&";
+    string args = "tool=NCBIToolkit&versions=no&";
 
     m_Results.clear();
 
