@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Nov  6 10:38:01 EST 2025; formally
+/* time_t value corresponding to Wed Nov 19 11:24:48 EST 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1762443481UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1763569488UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -1509,6 +1509,39 @@ static const char* const kBuiltInGuide[] = {
     "2+6  QR  ddbj_patent",
     "2+8  QR  ddbj_other_nuc",
     "2+10 QR  ddbj_other_nuc",
+    "2+6  Q?  ddbj_other_nuc",
+    "2+8  Q?  ddbj_other_nuc",
+    "2+10 Q?  ddbj_other_nuc",
+    "2+6  RA  ddbj_other_nuc",
+    "2+8  RA  ddbj_other_nuc",
+    "2+10 RA  ddbj_other_nuc",
+    "2+6  RB  ddbj_other_nuc",
+    "2+8  RB  ddbj_other_nuc",
+    "2+10 RB  ddbj_other_nuc",
+    "2+6  RC  ddbj_other_nuc",
+    "2+8  RC  ddbj_other_nuc",
+    "2+10 RC  ddbj_other_nuc",
+    "2+6  RD  ddbj_other_nuc",
+    "2+8  RD  ddbj_other_nuc",
+    "2+10 RD  ddbj_other_nuc",
+    "2+6  RE  ddbj_other_nuc",
+    "2+8  RE  ddbj_other_nuc",
+    "2+10 RE  ddbj_other_nuc",
+    "2+6  RF  ddbj_other_nuc",
+    "2+8  RF  ddbj_other_nuc",
+    "2+10 RF  ddbj_other_nuc",
+    "2+6  RG  ddbj_other_nuc",
+    "2+8  RG  ddbj_other_nuc",
+    "2+10 RG  ddbj_other_nuc",
+    "2+6  RH  ddbj_other_nuc",
+    "2+8  RH  ddbj_other_nuc",
+    "2+10 RH  ddbj_other_nuc",
+    "2+6  RI  ddbj_other_nuc",
+    "2+8  RI  ddbj_other_nuc",
+    "2+10 RI  ddbj_other_nuc",
+    "2+6  RJ  ddbj_other_nuc",
+    "2+8  RJ  ddbj_other_nuc",
+    "2+10 RJ  ddbj_other_nuc",
     "2+6  RK  embl_patent",
     "2+8  RK  embl_other_nuc",
     "2+10 RK  embl_other_nuc",
