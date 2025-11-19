@@ -1199,7 +1199,12 @@ static void CkProteinTransl(ParserPtr pp, InfoBioseqPtr ibp, string& prot, CSeq_
     size_t blen = prot.size();
 
     if (len != blen && (! feat.IsSetExcept() || feat.GetExcept() == false)) {
-        FtaErrPost(SEV_ERROR, ERR_CDREGION_ProteinLenDiff, "Lengths of conceptual translation and translation qualifier differ : {} : {} : {}", blen, len, loc);
+        if(pp->source != Parser::ESource::USPTO) {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_ProteinLenDiff, "Lengths of conceptual translation and translation qualifier differ : {} : {} : {}", blen, len, loc);
+        } else {
+            FtaErrPost(SEV_ERROR, ERR_CDREGION_ProteinLenDiff, "Lengths of conceptual translation and translation qualifier differ : {} : {} : {}, coding region has been dropped.", blen, len, loc);
+            *featdrop = true;
+        }
     }
 
     difflen = 0;
