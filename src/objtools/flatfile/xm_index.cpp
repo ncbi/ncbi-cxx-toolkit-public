@@ -797,7 +797,7 @@ static bool XMLCheckRequiredTags(ParserPtr pp, IndexblkPtr ibp)
         ret = XMLErrField(INSDSEQ_SOURCE);
     if (got_organism == false)
         ret = XMLErrField(INSDSEQ_ORGANISM);
-    if (got_reference == false && pp->source != Parser::ESource::Flybase &&
+    if (got_reference == false &&
         ibp->is_wgs == false &&
         (pp->source != Parser::ESource::Refseq ||
          ! fta_StartsWith(ibp->acnum, "NW_"sv)))

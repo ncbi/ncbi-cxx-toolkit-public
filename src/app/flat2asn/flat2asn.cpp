@@ -239,7 +239,7 @@ void CFlat2AsnApp::Init()
     arg_descrs->AddKey("s", "SourceData", "Source of the data file", CArgDescriptions::eString);
     arg_descrs->AddAlias("source", "s");
     arg_descrs->SetConstraint("s",
-            &(*new CArgAllow_Strings, "embl", "ddbj", "lanl", "ncbi", "sprot", "flybase", "refseq", "uspto"));
+            &(*new CArgAllow_Strings, "embl", "ddbj", "lanl", "ncbi", "sprot", "refseq", "uspto"));
 
     arg_descrs->AddDefaultKey("u", "AvoidMuidLookup", "Avoid MUID lookup", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddOptionalKey("pubmed", "source", "Always eutils", CArgDescriptions::eString, CArgDescriptions::fHidden);

@@ -1271,9 +1271,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     // add PatentSeqId if patent is found in reference
     if (no_reference(*bioseq) && ! mParser.debug) {
-        if (mParser.source == Parser::ESource::Flybase) {
-            FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for entry from FlyBase. Continue anyway.");
-        } else if (mParser.source == Parser::ESource::Refseq &&
+        if (mParser.source == Parser::ESource::Refseq &&
                    fta_StartsWith(ibp->acnum, "NW_"sv)) {
             FtaErrPost(SEV_ERROR, ERR_REFERENCE_No_references, "No references for RefSeq's NW_ entry. Continue anyway.");
         } else if (ibp->is_wgs) {

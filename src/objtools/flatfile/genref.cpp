@@ -2464,74 +2464,8 @@ static void GeneQuals(CSeq_entry& entry, const char* acnum, GeneRefFeats& gene_r
 }
 
 /**********************************************************/
-static void fta_collect_genes(const CBioseq& bioseq, std::set<string>& genes)
-{
-    for (const auto& annot : bioseq.GetAnnot()) {
-        if (! annot->IsFtable())
-            continue;
-
-        for (const auto& feat : annot->GetData().GetFtable()) {
-            for (const auto& qual : feat->GetQual()) {
-                if (! qual->IsSetQual() || qual->GetQual() != "gene" ||
-                    ! qual->IsSetVal() || qual->GetVal().empty())
-                    continue;
-
-                genes.insert(qual->GetVal());
-            }
-        }
-    }
-}
-
-/**********************************************************/
-static void fta_fix_labels(CBioseq& bioseq, const std::set<string>& genes)
-{
-    if (! bioseq.IsSetAnnot())
-        return;
-
-    for (auto& annot : bioseq.SetAnnot()) {
-        if (! annot->IsFtable())
-            continue;
-
-        for (auto& feat : annot->SetData().SetFtable()) {
-
-            if (! feat->IsSetQual())
-                continue;
-
-            for (CSeq_feat::TQual::iterator qual = feat->SetQual().begin(); qual != feat->SetQual().end(); ++qual) {
-                if (! (*qual)->IsSetQual() || (*qual)->GetQual() != "label" ||
-                    ! (*qual)->IsSetVal() || (*qual)->GetVal().empty())
-                    continue;
-
-                const string&                    cur_val = (*qual)->GetVal();
-                std::set<string>::const_iterator ci      = genes.lower_bound(cur_val);
-                if (*ci == cur_val) {
-                    CRef<CGb_qual> new_qual(new CGb_qual);
-                    new_qual->SetQual("gene");
-                    new_qual->SetVal(cur_val);
-
-                    feat->SetQual().insert(qual, new_qual);
-                }
-            }
-        }
-    }
-}
-
-/**********************************************************/
 void DealWithGenes(CRef<CSeq_entry>& pEntry, ParserPtr pp)
 {
-    if (pp->source == Parser::ESource::Flybase) {
-        std::set<string> genes;
-        for (CBioseq_CI bioseq(GetScope(), *pEntry); bioseq; ++bioseq) {
-            fta_collect_genes(*bioseq->GetCompleteBioseq(), genes);
-        }
-
-        if (! genes.empty()) {
-            for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq) {
-                fta_fix_labels(*bioseq, genes);
-            }
-        }
-    }
-
     /* make GeneRefBlk if any gene qualifier exists
      */
     GeneRefFeats gene_refs;

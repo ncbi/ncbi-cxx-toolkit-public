@@ -458,8 +458,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     entry->drop = true;
                     break;
                 case ParFlat_USER:
-                    if (pp->source != Parser::ESource::Flybase) {
-                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is allowed for source \"FLYBASE\" only. Entry dropped.");
+                    {
+                        FtaErrPost(SEV_ERROR, ERR_ENTRY_InvalidLineType, "Line type \"USER\" is not allowed. Entry dropped.");
                         entry->drop = true;
                     }
                     break;
@@ -552,7 +552,7 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
                     if (after_SOURCE == false)
                         entry->drop = gb_err_field("SOURCE");
 
-                    if (after_REFER == false && pp->source != Parser::ESource::Flybase &&
+                    if (after_REFER == false &&
                         entry->is_wgs == false &&
                         (pp->source != Parser::ESource::Refseq ||
                          ! fta_StartsWith(entry->acnum, "NW_"sv))) {

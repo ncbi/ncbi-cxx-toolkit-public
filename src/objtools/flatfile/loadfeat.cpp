@@ -3988,7 +3988,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
                 /* last argument is perform_corrections if debug
                  * mode is FALSE
                  */
-                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, (source == Parser::ESource::Flybase ? false : ! deb));
+                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, ! deb);
             }
             if (ret > retval)
                 retval = ret;
@@ -4223,7 +4223,7 @@ static int XMLParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Pa
                 /* last argument is perform_corrections if debug
                  * mode is FALSE
                  */
-                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, ((source == Parser::ESource::Flybase) ? false : ! deb));
+                ret = XGBFeatKeyQualValid(subtype, fbp->quals, true, ! deb);
             }
             if (ret > retval)
                 retval = ret;
