@@ -820,21 +820,20 @@ static void FakeGenBankBioSources(const DataBlk& entry, CBioseq& bioseq)
 }
 
 /**********************************************************/
-static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset, size_t len)
+static void fta_get_mga_user_object(TSeqdescList& descrs, string_view str, size_t len)
 {
-    char* str;
-    char* p;
-
-    if (! offset)
+    if (str.size() < ParFlat_COL_DATA)
         return;
+    str.remove_prefix(ParFlat_COL_DATA);
 
-    str = StringSave(offset + ParFlat_COL_DATA);
-    p   = StringChr(str, '\n');
-    if (p)
-        *p = '\0';
-    p = StringChr(str, '-');
-    if (p)
-        *p++ = '\0';
+    if (auto p = str.find('\n'); p != string_view::npos)
+        str = str.substr(0, p);
+
+    string first(str), last;
+    if (auto p = first.find('-'); p != string::npos) {
+        last = first.substr(p + 1);
+        first.resize(p);
+    }
 
     CRef<CUser_object> user_obj(new CUser_object);
 
@@ -850,16 +849,14 @@ static void fta_get_mga_user_object(TSeqdescList& descrs, char* offset, size_t l
     field.Reset(new CUser_field);
 
     field->SetLabel().SetStr("CAGE_accession_first");
-    field->SetData().SetStr(str);
+    field->SetData().SetStr(first);
     user_obj->SetData().push_back(field);
 
     field.Reset(new CUser_field);
 
     field->SetLabel().SetStr("CAGE_accession_last");
-    field->SetData().SetStr(p);
+    field->SetData().SetStr(last);
     user_obj->SetData().push_back(field);
-
-    MemFree(str);
 
     CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser(*user_obj);
