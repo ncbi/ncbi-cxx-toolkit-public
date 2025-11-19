@@ -329,13 +329,14 @@ public:
         const std::function<bool(bool)>& OpCB
     );
 
- private:
+private:
     string                          m_hostlist;
     int16_t                         m_port;
     string                          m_user;
     string                          m_pwd;
     string                          m_blacklist;
     string                          m_keyspace;
+    string                          m_datacenter;
     CassCluster *                   m_cluster;
     CassSession *                   m_session;
     unsigned int                    m_ctimeoutms;

@@ -500,6 +500,7 @@ void CCassConnection::CloseSession()
             cass_session_free(m_session);
         }
         m_session = nullptr;
+        m_datacenter.clear();
     }
 }
 
@@ -555,6 +556,7 @@ void CCassConnection::Close()
     if (m_cluster) {
         cass_cluster_free(m_cluster);
         m_cluster = nullptr;
+        m_datacenter.clear();
     }
 }
 
@@ -883,11 +885,16 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
 
 string CCassConnection::GetDatacenterName()
 {
-    auto query = NewQuery();
-    query->SetSQL("SELECT data_center FROM system.local", 0);
-    query->Query(CCassConsistency::kLocalOne, false, false);
-    if (query->NextRow() == ar_dataready) {
-        return query->FieldGetStrValue(0);
+    if (IsConnected()) {
+        if (m_datacenter.empty()) {
+            auto query = NewQuery();
+            query->SetSQL("SELECT data_center FROM system.local", 0);
+            query->Query(CCassConsistency::kLocalOne, false, false);
+            if (query->NextRow() == ar_dataready) {
+                m_datacenter = query->FieldGetStrValue(0);
+            }
+        }
+        return m_datacenter;
     }
     return "";
 }

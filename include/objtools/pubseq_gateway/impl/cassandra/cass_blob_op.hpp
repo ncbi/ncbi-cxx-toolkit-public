@@ -191,6 +191,11 @@ public:
         m_LastError.clear();
     }
 
+    string GetConnectionDatacenterName()
+    {
+        return m_Conn ? m_Conn->GetDatacenterName() : "";
+    }
+
     string GetKeySpace() const
     {
         return m_Keyspace;

@@ -110,8 +110,10 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
 
 TEST_F(CCassConnectionTest, LocalPeersList) {
     auto connection = m_Factory->CreateInstance();
-    connection->Connect();
     string dc = connection->GetDatacenterName();
+    EXPECT_TRUE(dc.empty());
+    connection->Connect();
+    dc = connection->GetDatacenterName();
     EXPECT_FALSE(dc.empty());
     auto peer_list = connection->GetLocalPeersAddressList(dc);
     EXPECT_EQ(8UL, peer_list.size());
