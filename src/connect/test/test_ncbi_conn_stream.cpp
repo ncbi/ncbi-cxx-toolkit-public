@@ -908,7 +908,7 @@ int CNCBITestConnStreamApp::Run(void)
 
     SOCK sock;
     string hello("Hello, World!");
-    CConn_ServiceStream echo("bounce", fSERV_Standalone | fSERV_DelayOpen);
+    CConn_ServiceStream echo("bounce", TSERV_Type(fSERV_Standalone) | TSERV_Type(fSERV_DelayOpen));
     if (!echo.good())
         ERR_POST(Fatal << "Unable to build service stream");
     if (!(sock = echo.GetSOCK()))
