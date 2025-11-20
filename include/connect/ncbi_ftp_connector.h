@@ -119,23 +119,27 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * MLST[<SP>p]         Facts of curdir[or p]   Mach-readable path facts
  * FEAT                FEAT command            FEAT list as returned by server
  * OPTS<SP>opts        OPTS command            OPTS response as received
- * NOOP                NOOP command (*)        <EOF>
+ * NOOP                NOOP command (*)        <no output>
  * STOR<SP>f           Store file f on server
  * APPE<SP>f           Append/create file f
- * <empty>             See NOOP
+ * <empty>             See NOOP (+)
  *
  * All commands above must be terminated with LF('\n') to be executed
  * (otherwise, successive writes are causing the command to continue to
  * accumulate in the internal command buffer).  Only one command can be
  * executed at a time (i.g. writing something like "CDUP\nSYST..." in a single
- * write is illegal).  Note that the codes are text strings each consisting of
+ * write is illegal).  Just "\n" on its own encodes an empty string command,
+ * and is treated the same as "NOOP\n" (more below) -- both return nothing
+ * (just eIO_Closed when read).
+ *
+ * In the table above, the codes are text strings each consisting of exactly
  * 3 chars (not binary integers!) -- the "values" are chosen to be equivalent
  * to FTP response codes that the FTP servers are expected to generate upon
  * successful completion of the corresponding commands (per RFC959), but may
  * not necessarily be the actual codes as received from the server (connector
  * is somewhat flexible with accepting various codes noted in several different
- * implementation of FTP servers).  Just "\n" on its own encodes an empty
- * string command, and is treated just the same as "NOOP\n".
+ * implementation of FTP servers).  The UTC seconds can have a fraction portion
+ * preceded by a decimal point.
  *
  * <SP> denotes exactly one space character, a blank means any number of space
  * or tab characters.  Single filenames(f), directories(d), and paths(p) span
@@ -149,15 +153,14 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  *
  * Some commands (e.g. NLST, MLSD, etc) allow an optional argument, which can
  * be either present or omitted (the optional part is shown in the square
- * brakets, which are not the elements of those commands).  The UTC seconds can
- * have a fraction portion preceded by a decimal point.
+ * brakets, which are not the elements of those commands).
  *
  * Current implementation forbids file names to contain '\0', '\r', or '\n'
  * (even though FTP takes special precautions how to deal with such names).
  *
  * (*) Note that any subsequent command aborts any unfinished command (if any
  * in progress), so even "NOOP" executed in that context can cause the server
- * to terminate the current transfer (see below).
+ * to terminate the current transfer (more below).
  *
  * Normally, FTP connection operates in READ mode:  commands are written and
  * responses are read.  In this mode the connection consumes any command, but
@@ -181,8 +184,8 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * eIO_Success;  and eIO_Success would only result in the case of an empty
  * source.
  *
- * File size will be checked by the connector to see whether the download (or
- * upload, see below) was complete (sometimes, the information returned from
+ * The file sizes are checked by the connector to see whether the downloads (or
+ * uploads, see below) were complete (sometimes, the information returned from
  * the server does not allow to perform this check).  Any mismatch will result
  * in an error different from eIO_Closed.  (For buggy / noisy FTP servers, the
  * size checks can be suppressed via the connector flags.)
@@ -194,7 +197,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * distinguished from the remnants of the file data -- so such a method is not
  * very robust.
  *
- * There is a special empty command ("\n") that can be written to abort the
+ * (+) There is a special empty command ("\n") that can be written to abort the
  * transfer:  it gets converted to "NOOP" internally, produces no output (just
  * inserts eIO_Closed in data), and for it is to be a legitimate command, it
  * usually results in eIO_Success when inquired for write status (the result
@@ -212,7 +215,7 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * to be the very purpose of issuing of such commands, and hence, is not
  * mentioned above.)
  *
- * Connection is switched to SEND mode upon either APPE or STOR gets executed.
+ * Connection is switched to SEND mode when either APPE or STOR gets executed.
  * If that is successful (CONN_Status(eIO_Write) reports eIO_Success), then
  * any following writes will send the data to the file being uploaded (while
  * the file is being uploaded, CONN_Status(eIO_Write) will report the status of
@@ -222,17 +225,18 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * be read to finalize the transfer.  The result of the read will be a string
  * representing the size of the uploaded file data as a sequence of decimal
  * digits (or an empty read in case of an upload error).  Once all digits are
- * consumed (eIO_Closed seen) the connection returns to READ mode.
+ * consumed (and eIO_Closed seen on read) the connection returns to READ mode.
  * CONN_Wait(eIO_Read) will also cause the upload to finalize -- still the data
  * size is expected to be extracted (or discarded if another command follows).
  *
  * Unfinalized uploads (such as when connection gets closed before the final
- * read) get reported to the log, and also make CONN_Close() to return an
- * error.  Note that unlike file download (which occurs in READ mode), it is
- * impossible to abort an upload by writing any FTP commands (since writing in
- * SEND mode goes to file), but it is reading that will cause the cancellation.
- * So if a connection is in undetermined state, the recovery would be to do a
- * small quick read (e.g. for just 1 byte with a small timeout), then write the
+ * read) get reported to the log, and also make CONN_Close() return an error.
+ * Note that unlike file downloads (which occur in READ mode), it is impossible
+ * to abort an upload by writing any FTP commands (since writing in SEND mode
+ * goes to the file), and it is reading that will cause the cancellation.
+ *
+ * So, if a connection is in undetermined state, the recovery would be to do a
+ * small quick read (e.g. for just 1 byte with a short timeout), then write the
  * NOOP command and cause an execution (e.g. writing just "\n" does that), then
  * drain the connection by reading again until eIO_Closed.
  *
@@ -280,23 +284,23 @@ typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
  * alternative solution.
  * The callback gets activated when downloads start, and also upon successful
  * SIZE commands (without causing the file size to appear in the connection
- * data as it usually would otherwise) but the latter is only if
+ * data as it usually would, otherwise) but the latter is if, and only if,
  * fFTP_NotifySize has been set in the "flag" parameter of FTP connector
  * constructors (below).
  * Each time the size gets passed to the callback as a '\0'-terminated
- * character string.
+ * character string (representing the file size in bytes).
  * The callback remains effective for the entire lifetime of the connector.
  * As the first argument, the callback also gets a copy of the FTP command
  * that triggered it, and for compatibility with future extensions, the user
  * code is expected to check, which command it is processing, before proceeding
- * with the "arg" parameter (thus skipping unexpected commands, and returning
- * eIO_Success).  Return code non-eIO_Success causes the command terminate
+ * with the "arg" parameter (thus, skipping unsolicited commands, and returning
+ * eIO_Success).  Return code non-eIO_Success causes the command to terminate
  * with an error, with the code returned "as-is" from a CONN call.
  *
  * NOTE:  With restarted data retrievals (REST) the size reported by the server
  * in response to transfer initiation can be either the true size of the data
  * to be received or the entire size of the original file (without the restart
- * offset taken into account), and the latter should be considered as a bug.
+ * offset taken into account), and yet the latter indicates a server bug.
  */
 typedef EIO_Status (*FFTP_Callback)(void* data,
                                     const char* cmd, const char* arg);
