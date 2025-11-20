@@ -6377,17 +6377,23 @@ bool s_IsIPAddress(const char* str, size_t size)
         while (c < str + size) {
             if (*c == '.') { // Found possible IPv4 suffix
                 if (!last_seg) return false; // No digits before dot
-                if (!s_IsIPv4Address(last_seg, str + size - last_seg)) return false; // Not a valid IPv4
-                return (total_segs == 6) || (group_end && total_segs < 6); // IPv4-compatible address
+                if (total_segs > 6 || (!group_end && total_segs < 6))
+                    return false; // Too long or too short
+                return s_IsIPv4Address(last_seg, str + size - last_seg);
             }
             if (*c == ':') { // End of segment
+                if (c == str && (size < 2 || *(c + 1) != ':'))
+                    // Leading colon must start a group
+                    return false;
                 if (last_colon == c - 1) {
                     if (group_end) return false; // More than one group
                     group_end = c;
                 }
                 last_colon = c;
                 last_seg = nullptr;
-                if (++total_segs > 8) return false; // Too many segments
+                if (c > str) // Leading colon does not end a segment
+                    ++total_segs;
+                if (total_segs > 8) return false; // Too many segments
                 ++c;
                 continue;
             }
@@ -6396,11 +6402,13 @@ bool s_IsIPAddress(const char* str, size_t size)
             if (c - last_seg > 4) return false; // Segment too long
             if (*c < '0') return false; // Not a hex digit
             char d = (char)toupper((unsigned char)(*c));
-            if (d > 'F' || (d > '9' && d < 'A')) return false; // Not a hex digit
+            if (!isxdigit((unsigned char)(*c))) return false; // Not a hex digit
             ++c;
         }
         if (!last_seg && c != group_end + 1) return false; // IPv6 must end with either segment or group
-        ++total_segs;
+        // Trailing group is one segment, not two.
+        if (!group_end || group_end != c - 1)
+            ++total_segs;
         return total_segs == 8 || (group_end && total_segs < 8);
     }
 
