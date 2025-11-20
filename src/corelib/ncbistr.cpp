@@ -6400,8 +6400,6 @@ bool s_IsIPAddress(const char* str, size_t size)
             if (c - str == 1 && last_colon == str) return false; // Starts with single colon
             if (!last_seg) last_seg = c;
             if (c - last_seg > 4) return false; // Segment too long
-            if (*c < '0') return false; // Not a hex digit
-            char d = (char)toupper((unsigned char)(*c));
             if (!isxdigit((unsigned char)(*c))) return false; // Not a hex digit
             ++c;
         }
