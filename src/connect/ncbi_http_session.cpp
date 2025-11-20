@@ -915,6 +915,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
             net_info.get(),
             &x_extra));
     }
+    adjust_data.release();
     m_Response->m_Stream = m_Stream;
 }
 
