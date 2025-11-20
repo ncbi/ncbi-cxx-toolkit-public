@@ -500,7 +500,7 @@ void CCassConnection::CloseSession()
             cass_session_free(m_session);
         }
         m_session = nullptr;
-        m_datacenter.clear();
+        atomic_store(&m_datacenter, shared_ptr<string>());
     }
 }
 
@@ -556,7 +556,7 @@ void CCassConnection::Close()
     if (m_cluster) {
         cass_cluster_free(m_cluster);
         m_cluster = nullptr;
-        m_datacenter.clear();
+        atomic_store(&m_datacenter, shared_ptr<string>());
     }
 }
 
@@ -886,15 +886,21 @@ vector<string> CCassConnection::GetLocalPeersAddressList(string const & datacent
 string CCassConnection::GetDatacenterName()
 {
     if (IsConnected()) {
-        if (m_datacenter.empty()) {
+        auto datacenter = atomic_load(&m_datacenter);
+        if (datacenter == nullptr || datacenter->empty()) {
             auto query = NewQuery();
             query->SetSQL("SELECT data_center FROM system.local", 0);
             query->Query(CCassConsistency::kLocalOne, false, false);
             if (query->NextRow() == ar_dataready) {
-                m_datacenter = query->FieldGetStrValue(0);
+                string dc = query->FieldGetStrValue(0);
+                datacenter = make_shared<string>(dc);
+                atomic_store(&m_datacenter, std::move(datacenter));
+                return dc;
             }
         }
-        return m_datacenter;
+        else {
+            return *datacenter;
+        }
     }
     return "";
 }
