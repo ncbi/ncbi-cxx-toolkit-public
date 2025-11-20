@@ -2915,7 +2915,7 @@ static EIO_Status s_CreateHttpConnector
     } else
         ref = -1/*unset*/;
 
-    if (!(uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector)))) {
+    if (!(uuu = (SHttpConnector*) malloc(sizeof(*uuu)))) {
         ConnNetInfo_Destroy(xxx);
         return eIO_Unknown;
     }
