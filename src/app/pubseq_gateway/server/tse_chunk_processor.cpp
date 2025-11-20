@@ -371,7 +371,10 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
                 app->GetCounters().Increment(this,
                                              CPSGSCounters::ePSGS_TSEChunkSplitVersionCacheNotMatched);
                 PSG_WARNING("Blob " + m_IdModVerId2Info->GetTSEId().ToString() +
-                            " split version in cache does not match the requested one");
+                            " split version in cache (" +
+                            to_string(cache_id2_info->GetSplitVersion()) +
+                            ") does not match the requested one (" +
+                            to_string(m_IdModVerId2Info->GetSplitVersion()) + ")");
                 break;  // Continue with cassandra
             }
 
