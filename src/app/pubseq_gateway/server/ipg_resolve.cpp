@@ -524,7 +524,8 @@ CPSGS_IPGResolveProcessor::x_InitiateIPGFetch(
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-            ToJsonString(request),
+            ToJsonString(request,
+                         ipg_keyspace->GetConnection()->GetDatacenterName()),
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -613,7 +614,9 @@ CPSGS_IPGResolveProcessor::x_OnIPGResolveData(vector<CIpgStorageReportEntry> && 
         fetch_details->SetReadFinished();
 
         if (m_RecordCount == 0) {
-            m_NotFoundCriterias.push_back(ToJsonString(fetch_details->GetLoader()->GetRequest()));
+            m_NotFoundCriterias.push_back(
+                ToJsonString(fetch_details->GetLoader()->GetRequest(),
+                             fetch_details->GetLoader()->GetConnectionDatacenterName()));
 
             if (m_IPGStage == ePSGS_ResolveGIProtein ||
                 m_IPGStage == ePSGS_ResolveGINucleotide) {

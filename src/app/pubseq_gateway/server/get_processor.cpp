@@ -468,7 +468,7 @@ void CPSGS_GetProcessor::x_GetBlobFinalStage(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                             "Cassandra request: " +
-                            ToJsonString(*load_task),
+                            ToJsonString(*load_task, cass_connection->GetDatacenterName()),
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 

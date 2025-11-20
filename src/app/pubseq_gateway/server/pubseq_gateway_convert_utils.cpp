@@ -74,6 +74,7 @@ static const string     kStopItem = "\"stop\": ";
 static const string     kAnnotInfoItem = "\"annot_info\": ";
 static const string     kSeqAnnotInfoItem = "\"seq_annot_info\": ";
 static const string     kRequestItem = "\"request\": ";
+static const string     kDatacenterItem = "\"datacenter\": ";
 static const string     kSecSeqIdItem = "\"sec_seq_id\": ";
 static const string     kSecSeqIdTypeItem = "\"sec_seq_id_type\": ";
 static const string     kSecSeqStateItem = "\"sec_seq_state\": ";
@@ -519,7 +520,8 @@ string ToJsonString(const map<string, int> &  per_na_results)
 }
 
 
-string ToJsonString(const CBioseqInfoFetchRequest &  request)
+string ToJsonString(const CBioseqInfoFetchRequest &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -527,7 +529,13 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request)
 
     json.append(1, '{')
         .append(kRequestItem)
-        .append("\"BioseqInfo request\"");
+        .append("\"BioseqInfo request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"');
 
     if (request.HasField(CBioseqInfoFetchRequest::EFields::eAccession))
         json.append(kSep)
@@ -578,7 +586,8 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request)
 }
 
 
-string ToJsonString(const CSi2CsiFetchRequest &  request)
+string ToJsonString(const CSi2CsiFetchRequest &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -586,7 +595,13 @@ string ToJsonString(const CSi2CsiFetchRequest &  request)
 
     json.append(1, '{')
         .append(kRequestItem)
-        .append("\"Si2Csi request\"");
+        .append("\"Si2Csi request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"');
 
     if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId))
         json.append(kSep)
@@ -613,7 +628,8 @@ string ToJsonString(const CSi2CsiFetchRequest &  request)
     return json;
 }
 
-string ToJsonString(const CBlobFetchRequest &  request)
+string ToJsonString(const CBlobFetchRequest &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -621,7 +637,13 @@ string ToJsonString(const CBlobFetchRequest &  request)
 
     json.append(1, '{')
         .append(kRequestItem)
-        .append("\"Blob prop request\"");
+        .append("\"Blob prop request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"');
 
     if (request.HasField(CBlobFetchRequest::EFields::eSat)) {
         len = PSGToString(request.GetSat(), buf);
@@ -709,7 +731,8 @@ string ToJsonString(const CSI2CSIRecord &  record)
 }
 
 
-string ToJsonString(const CCassBlobTaskLoadBlob &  request)
+string ToJsonString(const CCassBlobTaskLoadBlob &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -718,6 +741,12 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"Blob request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
 
         .append(kSep)
         .append(kSatNameItem)
@@ -761,7 +790,8 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request)
 }
 
 
-string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request)
+string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -770,6 +800,12 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"Split history request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
 
         .append(kSep)
         .append(kSatNameItem)
@@ -799,7 +835,8 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request)
 }
 
 
-string ToJsonString(const CCassNAnnotTaskFetch &  request)
+string ToJsonString(const CCassNAnnotTaskFetch &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -808,6 +845,12 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"Named annotation request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
 
         .append(kSep)
         .append(kSatNameItem)
@@ -851,7 +894,8 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request)
 }
 
 
-string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request)
+string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -860,6 +904,12 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"Public comment request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
 
         .append(kSep)
         .append(kSatNameItem)
@@ -877,7 +927,8 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request)
 }
 
 
-string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
+string ToJsonString(const CCassAccVerHistoryTaskFetch &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -886,6 +937,12 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"Accession version history request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
 
         .append(kSep)
         .append(kSatNameItem)
@@ -914,7 +971,8 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request)
 }
 
 
-string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
+string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request,
+                    const string &  datacenter)
 {
     string              json;
     char                buf[64];
@@ -923,6 +981,13 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request)
     json.append(1, '{')
         .append(kRequestItem)
         .append("\"IPG resolve request\"")
+
+        .append(kSep)
+        .append(kDatacenterItem)
+        .append(1, '"')
+        .append(datacenter)
+        .append(1, '"')
+
         .append(kSep)
         .append(kProteinItem)
         .append(1, '"');

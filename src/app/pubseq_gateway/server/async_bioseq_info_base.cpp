@@ -136,12 +136,14 @@ CPSGS_AsyncBioseqInfoBase::x_MakeRequest(void)
         if (m_WithSeqIdType)
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJsonString(bioseq_info_request),
+                ToJsonString(bioseq_info_request,
+                             sat_info_entry.connection->GetDatacenterName()),
                 m_Request->GetStartTimestamp());
         else
             m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJsonString(bioseq_info_request),
+                ToJsonString(bioseq_info_request,
+                             sat_info_entry.connection->GetDatacenterName()),
                 m_Request->GetStartTimestamp());
     }
 

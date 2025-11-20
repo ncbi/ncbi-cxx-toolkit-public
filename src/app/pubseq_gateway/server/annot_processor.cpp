@@ -275,7 +275,8 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveFinished(
 
         if (IPSGS_Processor::m_Request->NeedTrace()) {
             IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-                ToJsonString(*fetch_task),
+                ToJsonString(*fetch_task,
+                             bioseq_na_keyspace.connection->GetDatacenterName()),
                 IPSGS_Processor::m_Request->GetStartTimestamp());
         }
 
@@ -727,7 +728,8 @@ void CPSGS_AnnotProcessor::x_RequestBlobProp(int32_t  sat, int32_t  sat_key,
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                             "Cassandra request: " +
-                            ToJsonString(*load_task),
+                            ToJsonString(*load_task,
+                                         blob_id.m_Keyspace->GetConnection()->GetDatacenterName()),
                             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 

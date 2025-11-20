@@ -75,7 +75,7 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJsonString(fetch_request),
+                ToJsonString(fetch_request, "CACHE"),
                 m_Request->GetStartTimestamp());
         }
 
@@ -202,7 +202,7 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                     "Cache request for INSDC types: " +
-                    ToJsonString(fetch_request),
+                    ToJsonString(fetch_request, "CACHE"),
                     m_Request->GetStartTimestamp());
         }
 
@@ -301,7 +301,7 @@ CPSGCache::x_LookupSi2csi(IPSGS_Processor *  processor,
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJsonString(fetch_request),
+                ToJsonString(fetch_request, "CACHE"),
                 m_Request->GetStartTimestamp());
         }
 
@@ -406,7 +406,7 @@ EPSGS_CacheLookupResult  CPSGCache::x_LookupBlobProp(
         if (m_NeedTrace) {
             m_Reply->SendTrace(
                 "Cache request: " +
-                ToJsonString(fetch_request),
+                ToJsonString(fetch_request, "CACHE"),
                 m_Request->GetStartTimestamp());
         }
 

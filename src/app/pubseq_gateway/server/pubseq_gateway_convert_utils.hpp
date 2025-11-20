@@ -69,18 +69,27 @@ string ToJsonString(const CNAnnotRecord &  annot_record, int32_t  sat,
 string ToJsonString(const map<string, int> &  per_na_results);
 string ToJsonString(const SAccVerHistRec &  history_record);
 
-string ToJsonString(const CBioseqInfoFetchRequest &  request);
-string ToJsonString(const CSi2CsiFetchRequest &  request);
-string ToJsonString(const CBlobFetchRequest &  request);
+string ToJsonString(const CBioseqInfoFetchRequest &  request,
+                    const string &  datacenter);
+string ToJsonString(const CSi2CsiFetchRequest &  request,
+                    const string &  datacenter);
+string ToJsonString(const CBlobFetchRequest &  request,
+                    const string &  datacenter);
 
 string ToJsonString(const CSI2CSIRecord &  record);
 
-string ToJsonString(const CCassBlobTaskLoadBlob &  request);
-string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request);
-string ToJsonString(const CCassNAnnotTaskFetch &  request);
-string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request);
-string ToJsonString(const CCassAccVerHistoryTaskFetch &  request);
-string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request);
+string ToJsonString(const CCassBlobTaskLoadBlob &  request,
+                    const string &  datacenter);
+string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request,
+                    const string &  datacenter);
+string ToJsonString(const CCassNAnnotTaskFetch &  request,
+                    const string &  datacenter);
+string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request,
+                    const string &  datacenter);
+string ToJsonString(const CCassAccVerHistoryTaskFetch &  request,
+                    const string &  datacenter);
+string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request,
+                    const string &  datacenter);
 string ToJsonString(const CIpgStorageReportEntry &  ipg_entry);
 
 string ToJsonString(const SConnectionRunTimeProperties &  conn_props);

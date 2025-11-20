@@ -212,7 +212,8 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveFinished(
 
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace("Cassandra request: " +
-            ToJsonString(*fetch_task),
+            ToJsonString(*fetch_task,
+                         sat_info.connection->GetDatacenterName()),
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 

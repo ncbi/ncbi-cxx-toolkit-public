@@ -437,7 +437,8 @@ CPSGS_CassBlobBase::x_RequestOriginalBlobChunks(CCassBlobFetch *  fetch_details,
 
     if (m_Request->NeedTrace()) {
         m_Reply->SendTrace(
-            "Cassandra request: " + ToJsonString(*load_task),
+            "Cassandra request: " + ToJsonString(*load_task,
+                                                 cass_connection->GetDatacenterName()),
             m_Request->GetStartTimestamp());
     }
 
@@ -620,7 +621,8 @@ CPSGS_CassBlobBase::x_RequestID2BlobChunks(CCassBlobFetch *  fetch_details,
 
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace("Cassandra request: " +
-                               ToJsonString(*load_task),
+                               ToJsonString(*load_task,
+                                            cass_connection->GetDatacenterName()),
                                m_Request->GetStartTimestamp());
         }
 
@@ -1556,7 +1558,8 @@ CPSGS_CassBlobBase::x_PrepareBlobPropData(CCassBlobFetch *  blob_fetch_details,
         if (m_Request->NeedTrace()) {
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJsonString(*load_task),
+                ToJsonString(*load_task,
+                             cass_connection->GetDatacenterName()),
                 m_Request->GetStartTimestamp());
         }
 

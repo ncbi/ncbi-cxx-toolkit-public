@@ -417,6 +417,13 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             }
 
             // Step 7: initiate the chunk request
+            // Note 1: the id2 chunks are not in the same cassandra cluster as
+            //         the original blob. So the initialized cass_connection
+            //         should not be used.
+            // Note 2: the id2 chunks cannot be in a secure sat so there is no
+            //         need to check if sat is secure
+            cass_connection = chunk_blob_id.m_Keyspace->GetConnection();
+
             SPSGS_RequestBase::EPSGS_Trace  trace_flag = SPSGS_RequestBase::ePSGS_NoTracing;
             if (IPSGS_Processor::m_Request->NeedTrace())
                 trace_flag = SPSGS_RequestBase::ePSGS_WithTracing;
@@ -466,7 +473,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
             if (IPSGS_Processor::m_Request->NeedTrace()) {
                 IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJsonString(*load_task),
+                    ToJsonString(*load_task,
+                                 cass_connection->GetDatacenterName()),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
             }
 
@@ -533,7 +541,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessIdModVerId2InfoFinalStage(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
             "Cassandra request: " +
-            ToJsonString(*load_task),
+            ToJsonString(*load_task,
+                         cass_connection->GetDatacenterName()),
             IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -728,7 +737,8 @@ void CPSGS_TSEChunkProcessor::x_ProcessSatInfoChunkVerId2InfoFinalStage(void)
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJsonString(*load_task),
+                    ToJsonString(*load_task,
+                                 cass_connection->GetDatacenterName()),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 
@@ -1170,7 +1180,8 @@ CPSGS_TSEChunkProcessor::x_RequestTSEChunk(
     if (IPSGS_Processor::m_Request->NeedTrace()) {
         IPSGS_Processor::m_Reply->SendTrace(
                     "Cassandra request: " +
-                    ToJsonString(*load_task),
+                    ToJsonString(*load_task,
+                                 cass_connection->GetDatacenterName()),
                     IPSGS_Processor::m_Request->GetStartTimestamp());
     }
 

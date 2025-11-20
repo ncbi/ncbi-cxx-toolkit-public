@@ -649,12 +649,14 @@ CPSGS_AsyncResolveBase::x_PreparePrimaryBioseqInfoQuery(
         if (with_seq_id_type)
             m_Reply->SendTrace(
                 "Cassandra request: " +
-                ToJsonString(bioseq_info_request),
+                ToJsonString(bioseq_info_request,
+                             bioseq_keyspace.connection->GetDatacenterName()),
                 m_Request->GetStartTimestamp());
         else
             m_Reply->SendTrace(
                 "Cassandra request for INSDC types: " +
-                ToJsonString(bioseq_info_request),
+                ToJsonString(bioseq_info_request,
+                             bioseq_keyspace.connection->GetDatacenterName()),
                 m_Request->GetStartTimestamp());
     }
 
@@ -699,7 +701,8 @@ void CPSGS_AsyncResolveBase::x_PrepareSi2csiQuery(const string &  secondary_id,
     if (m_Request->NeedTrace())
         m_Reply->SendTrace(
             "Cassandra request: " +
-            ToJsonString(si2csi_request),
+            ToJsonString(si2csi_request,
+                         bioseq_keyspace.connection->GetDatacenterName()),
             m_Request->GetStartTimestamp());
 
     fetch_task->Wait();

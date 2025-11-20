@@ -391,7 +391,9 @@ CPSGS_CassProcessorBase::CountError(CCassFetch *  fetch_details,
     string                  message_prefix;
     if (fetch_details != nullptr) {
         fetch_type = fetch_details->GetFetchType();
-        message_prefix = "Fetch context: " + fetch_details->Serialize() + "\n";
+        message_prefix = "Fetch context (datacenter: " +
+                         fetch_details->GetLoader()->GetConnectionDatacenterName() + 
+                         "): " + fetch_details->Serialize() + "\n";
     }
 
 
