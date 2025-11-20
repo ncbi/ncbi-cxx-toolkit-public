@@ -613,6 +613,12 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                                          x_data,
                                          x_adjust,
                                          x_cleanup);
+    /* NOTE: if "c" is NULL here (could not create connector -- out of memory?)
+     * then "user_data" (if any) is going to potentially leak because for the caller,
+     * the stream contruction appears "successful" (no exception thrown), meaning if
+     * the caller arranged a unique_ptr to guard "user_data", it's now going to be
+     * "released", but x_cleanup will never called to deallocate because that's done
+     * from CONNECTOR -- which does not exist! */
     return CConn_IOStream::TConnector(c);
 }
 
@@ -906,6 +912,7 @@ s_ServiceConnectorBuilder(const char*           service,
                                             types,
                                             x_net_info.get(),
                                             &xx_extra);
+    /* NB: See NOTE under the HTTP_CreateConnectorEx() call above! */
     return CConn_IOStream::TConnector(c);
 }
 
