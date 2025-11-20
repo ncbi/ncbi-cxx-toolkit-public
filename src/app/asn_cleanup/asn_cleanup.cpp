@@ -226,7 +226,8 @@ void CCleanupApp::Init()
                                                        "\tb Batch Cleanup of Multireader Output\n"
                                                        "\ta Remove Assembly Gaps\n"
                                                        "\ti Make Influenza Small Genome Sets\n"
-                                                       "\tf Make IRD misc_feats\n",
+                                                       "\tf Make IRD misc_feats\n"
+                                                       "\tv Fix Virus Moltype\n",
                                  CArgDescriptions::eString);
 
         arg_desc->AddFlag("T", "TaxonomyLookup");
@@ -315,7 +316,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     for (char c : opt) {
         if (! isspace(c)) {
             if (c != 'w' && c != 'r' && c != 'b' && c != 'a' &&
-                c != 'i' && c != 'f' && c != 'd') {
+                c != 'i' && c != 'f' && c != 'd' && c != 'v') {
                 unrecognized += c;
             }
         }
@@ -823,6 +824,10 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Ui
     }
     if (NStr::Find(opt, "d") != string::npos) {
         CCleanup::AutodefId(seh);
+        any_changes = true;
+    }
+    if (NStr::Find(opt, "v") != string::npos) {
+        CCleanup::FixViralMolInfo(seh);
         any_changes = true;
     }
     return any_changes;

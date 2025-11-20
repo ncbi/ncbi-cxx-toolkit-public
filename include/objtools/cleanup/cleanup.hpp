@@ -604,6 +604,8 @@ public:
     // for finding the correct amino acid letter given an abbreviation
     static char ValidAminoAcid(string_view abbrev);
 
+    static void FixViralMolInfo(CSeq_entry_Handle seh);
+
 private:
     CRef<CScope>            m_Scope;
 
