@@ -706,7 +706,7 @@ void SRetryProcessing::Assign(CRef<CHttpHeaders>& to, const CHttpHeaders& from)
 CHttpResponse CHttpRequest::Execute(void)
 {
     SRetryProcessing retry_processing(m_RetryProcessing, m_Deadline, m_Url,
-            m_Method, m_Headers, m_FormData);
+                                      m_Method, m_Headers, m_FormData);
     CRef<CHttpResponse> ret;
     auto protocol = m_Session->GetProtocol();
 
@@ -732,8 +732,7 @@ CHttpResponse CHttpRequest::Execute(void)
         m_Stream.reset();
         ret = m_Response;
         m_Response.Reset();
-    }
-    while (m_Session->x_Downgrade(*ret, protocol) || retry_processing(ret->Headers()));
+    } while (m_Session->x_Downgrade(*ret, protocol) || retry_processing(ret->Headers()));
 
     return *ret;
 }
@@ -911,11 +910,11 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         ConnNetInfo_OverrideUserHeader(net_info.get(), headers.c_str());
         m_Stream.reset(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields for now, set them in sx_Adjust (called with failure_count == -1 on open)
-            fSERV_Http,
+            fSERV_Http | fSERV_DelayOpen/*prevents leaking "adjust_data" when service does not exist
+                                         (and the underlying CONNECTOR couldn't be constructed, otherwise)*/,
             net_info.get(),
             &x_extra));
     }
-    adjust_data.release();
     m_Response->m_Stream = m_Stream;
 }
 
@@ -981,23 +980,24 @@ EHTTP_HeaderParse CHttpRequest::sx_ParseHeader(const char* http_header,
 //
 // For HTTP streams, the callbacks are coming in the following order:
 //   1. *while* establishing a connection with the specified HTTP server (or
-//      through the chain of redirected-to server(s), therein) sx_ParseHeader
-//      gets called for every HTTP response received from the tried HTTP
-//      server(s);  and sx_Adjust gets called for every redirect (with
-//      failure_count == 0) or HTTP request failure (failure_count contains a
-//      positive connection attempt number);
-//   2. *after* the entire HTTP response has been read out, sx_Adjust is called
-//      again with failure_count == -1 to request the next URL.
+//      through the chain of redirected-to server(s), therein) sx_ParseHeader()
+//      gets called for every HTTP response received from the attempted HTTP
+//      server(s);  and sx_Adjust() gets called for every redirect (with
+//      "failure_count" == 0) or HTTP request failure ("failure_count" contains
+//      a positive connection attempt number);
+//   2. *after* the entire HTTP response has been read out, sx_Adjust() is called
+//      again with "failure_count" == -1 to request a new URL to hit next (not
+//      applicable to the case of HTTP session here, so sx_Ajust() returns -1).
 //      NOTE that by this time CHttpRequest* may no longer be valid.
 // For service streams:
-//   1. *before* establishing HTTP connection, sx_Adjust is called with
-//      failure_count == -1 to request SConnNetInfo's setup for the 1st found
-//      HTTP server;  then sx_ParseHeader and sx_Adjust are called the same way
-//      as for the HTTP streams above (in 1.) in the process of establishing
-//      the HTTP session;  however, if the negotiation fails, sx_Adjust may be
-//      called for the next HTTP server for the service (w/failure_count == -1)
+//   1. *before* establishing an HTTP connection, sx_Adjust() gets called with
+//      "failure_count" == -1 to request SConnNetInfo's setup for the 1st found
+//      HTTP server;  then sx_ParseHeader() and sx_Adjust() are called the same
+//      way as for the HTTP streams above (in 1.) in the process of establishing
+//      the HTTP session;  however, if the negotiation fails, sx_Adjust() may be
+//      called for the next HTTP server for the service (w/"failure_count" == -1)
 //      etc -- this process repeats until a satisfactory conneciton is made;
-//   2. once the HTTP data exchange has occurred, sx_Adjust is NOT called at
+//   2. once the HTTP data exchange has occurred, sx_Adjust() is NOT called at
 //      the end of the HTTP data stream.
 // Note that adj->m_Request can only be considered valid at either of the steps
 // number 1 above because those actions get performed in the valid CHttpRequest
@@ -1012,7 +1012,7 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
 
     SAdjustData* adj = reinterpret_cast<SAdjustData*>(user_data);
     if (failure_count == (unsigned int)(-1)  &&  !adj->m_IsService)
-        return -1; // no new URL
+        return -1; // no new URL (-1=unmodified)
 
     CHttpRequest*       req  = adj->m_Request;
     CRef<CHttpResponse> resp = req->m_Response;
@@ -1317,8 +1317,8 @@ CHttpResponse g_HttpGet(const CUrl&         url,
 
 
 CHttpResponse g_HttpPost(const CUrl& url,
-    CTempString       data,
-    const CHttpParam& param)
+                         CTempString       data,
+                         const CHttpParam& param)
 {
     CRef<CHttpSession> session(new CHttpSession);
     session->SetCredentials(param.GetCredentials());

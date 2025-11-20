@@ -265,10 +265,10 @@ public:
     ///   if "direction" is not specified (eIO_Close), return status of the
     ///   last CONN I/O performed by the stream -- the intended use for the
     ///   latter is to obtain more detailed information in cases what a stream
-    ///   operation or I/O has just failed.
+    ///   operation (including stream construction) or I/O has just failed.
     /// @warning
-    ///   This method is not a status of iostream!  Neither this is the last
-    ///   EIO_Status value returned by the other stream methods.
+    ///   This method is not a status of iostream!  Neither this may be the
+    ///   last EIO_Status value returned by the other stream methods.
     /// @sa
     ///   CONN_Status
     EIO_Status         Status(EIO_Event direction = eIO_Close) const;
