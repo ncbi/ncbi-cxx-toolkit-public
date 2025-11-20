@@ -5068,6 +5068,463 @@ void CCleanup::AutodefId(CSeq_entry_Handle seh)
 }
 
 
+MAKE_CONST_MAP(kViralStrandMap, string, string,
+{
+    {"root",                                        "dsDNA"},
+    {"Acinetobacter phage vB_AbaP_100",             "unknown"},
+    {"Aeromonas phage BUCT551",                     "unknown"},
+    {"Aeromonas phage BUCT552",                     "unknown"},
+    {"Ainoaviricetes",                              "ssDNA"},
+    {"Albetovirus",                                 "ssRNA(+)"},
+    {"Alphapleolipovirus",                          "dsDNA; ssDNA"},
+    {"Alphasatellitidae",                           "ssDNA"},
+    {"Alphatetraviridae",                           "ssRNA(+)"},
+    {"Alvernaviridae",                              "ssRNA(+)"},
+    {"Amalgaviridae",                               "dsRNA"},
+    {"Anelloviridae",                               "ssDNA(-)"},
+    {"Arenaviridae",                                "ssRNA(+/-)"},
+    {"Astroviridae",                                "ssRNA(+)"},
+    {"Aumaivirus",                                  "ssRNA(+)"},
+    {"Avsunviroidae",                               "ssRNA"},
+    {"Bacilladnaviridae",                           "ssDNA"},
+    {"Bacillus phage SWEP1",                        "unknown"},
+    {"Bandavirus",                                  "ssRNA(+/-)"},
+    {"Banyangvirus",                                "ssRNA(+/-)"},
+    {"Barnaviridae",                                "ssRNA(+)"},
+    {"Beidivirus",                                  "ssRNA(-)"},
+    {"Benyviridae",                                 "ssRNA(+)"},
+    {"Betapleolipovirus",                           "dsDNA"},
+    {"Bidnaviridae",                                "ssDNA"},
+    {"Bifilivirus",                                 "ssDNA(+)"},
+    {"Birnaviridae",                                "dsRNA"},
+    {"Blubervirales",                               "dsDNA-RT"},
+    {"Botourmiaviridae",                            "ssRNA(+)"},
+    {"Botybirnavirus",                              "dsRNA"},
+    {"Bromoviridae",                                "ssRNA(+)"},
+    {"Caliciviridae",                               "ssRNA(+)"},
+    {"Campylobacter phage PC10",                    "unknown"},
+    {"Carmotetraviridae",                           "ssRNA(+)"},
+    {"Caulimoviridae",                              "dsDNA-RT"},
+    {"Chrysoviridae",                               "dsRNA"},
+    {"Circoviridae",                                "ssDNA(+/-)"},
+    {"Closteroviridae",                             "ssRNA(+)"},
+    {"Coconut foliar decay virus",                  "ssDNA(+)"},
+    {"Coguvirus eburi",                             "ssRNA(+/-)"},
+    {"Coguvirus",                                   "ssRNA(-)"},
+    {"Cronobacter phage JC03",                      "unknown"},
+    {"Cruliviridae",                                "ssRNA(-)"},
+    {"Cystoviridae",                                "dsRNA"},
+    {"Deltavirus",                                  "ssRNA(-)"},
+    {"Duplornaviricota",                            "dsRNA"},
+    {"Endornaviridae",                              "dsRNA"},
+    {"Enterococcus phage 113",                      "unknown"},
+    {"Enterococcus phage EFC-1",                    "unknown"},
+    {"Enterococcus phage vb_GEC_Ef_S_9",            "unknown"},
+    {"Erwinia phage pEa_SNUABM_4",                  "unknown"},
+    {"Erwinia phage pEa_SNUABM_6",                  "unknown"},
+    {"Erwinia phage pEa_SNUABM_9",                  "unknown"},
+    {"Erwinia phage pEa_SNUABM_10",                 "unknown"},
+    {"Erwinia phage pEa_SNUABM_29",                 "unknown"},
+    {"Erwinia phage pEa_SNUABM_42",                 "unknown"},
+    {"Escherichia phage C6",                        "unknown"},
+    {"Escherichia phage E212",                      "unknown"},
+    {"Escherichia phage P762",                      "unknown"},
+    {"Escherichia phage vB_EcoA_fTuEco01",          "unknown"},
+    {"Escherichia phage vB_EcoM-ZQ1",               "unknown"},
+    {"Fiersviridae",                                "ssRNA(+)"},
+    {"Fimoviridae",                                 "ssRNA(-)"},
+    {"Flaviviridae",                                "ssRNA(+)"},
+    {"Flavobacterium phage vB_FspP_elemoB_14-3B",   "unknown"},
+    {"Flavobacterium phage vB_FspP_elemoC_14-1A",   "unknown"},
+    {"Fusariviridae",                               "ssRNA"},
+    {"Gammapleolipovirus",                          "dsDNA"},
+    {"Geminiviridae",                               "ssDNA(+/-)"},
+    {"Genomoviridae",                               "ssDNA"},
+    {"Goukovirus",                                  "ssRNA(-)"},
+    {"Hantaviridae",                                "ssRNA(-)"},
+    {"Haploviricotina",                             "ssRNA(-)"},
+    {"Hepadnaviridae",                              "dsDNA-RT"},
+    {"Hepeviridae",                                 "ssRNA(+)"},
+    {"Horwuvirus",                                  "ssRNA(-)"},
+    {"Hudivirus",                                   "ssRNA(-)"},
+    {"Hudovirus",                                   "ssRNA(-)"},
+    {"Hypoviridae",                                 "ssRNA(+)"},
+    {"Idaeovirus",                                  "ssRNA(+)"},
+    {"Inoviridae",                                  "ssDNA(+)"},
+    {"Insthoviricetes",                             "ssRNA(-)"},
+    {"Kabutovirus",                                 "ssRNA(-)"},
+    {"Kitaviridae",                                 "ssRNA(+)"},
+    {"Kitrinoviricota",                             "ssRNA(+)"},
+    {"Klebsiella phage Kpn-11mx",                   "unknown"},
+    {"Klebsiella phage Shaphc-TDM-1124-4",          "unknown"},
+    {"Lasius neglectus virus 2",                    "ssRNA(-)"},
+    {"Laulavirus",                                  "ssRNA(-)"},
+    {"Leishbuviridae",                              "ssRNA(-)"},
+    {"Leviviridae",                                 "ssRNA(+)"},
+    {"Luteoviridae",                                "ssRNA(+)"},
+    {"Matonaviridae",                               "ssRNA(+)"},
+    {"Megabirnaviridae",                            "dsRNA"},
+    {"Microviridae",                                "ssDNA(+)"},
+    {"Mitoviridae",                                 "ssRNA(+)"},
+    {"Mobuvirus",                                   "ssRNA(-)"},
+    {"Monodnaviria",                                "ssDNA"},
+    {"Mypoviridae",                                 "ssRNA(-)"},
+    {"Nairoviridae",                                "ssRNA(-)"},
+    {"Nanoviridae",                                 "ssDNA(+)"},
+    {"Narnaviridae",                                "ssRNA(+)"},
+    {"Nidovirales",                                 "ssRNA(+)"},
+    {"Nodaviridae",                                 "ssRNA(+)"},
+    {"Ortervirales",                                "ssRNA-RT"},
+    {"Papanivirus",                                 "ssRNA(+)"},
+    {"Partitiviridae",                              "dsRNA"},
+    {"Parvoviridae",                                "ssDNA(+/-)"},
+    {"Peribunyaviridae",                            "ssRNA(-)"},
+    {"Permutotetraviridae",                         "ssRNA(+)"},
+    {"Phage CBW1004C-Prop1",                        "unknown"},
+    {"Phasivirus",                                  "ssRNA(-)"},
+    {"Phasmaviridae",                               "ssRNA(-)"},
+    {"Phlebovirus",                                 "ssRNA(+/-)"},
+    {"Picobirnaviridae",                            "dsRNA"},
+    {"Picornavirales",                              "ssRNA(+)"},
+    {"Pidchovirus",                                 "ssRNA(-)"},
+    {"Pisoniviricetes",                             "ssRNA(+)"},
+    {"Pospiviroidae",                               "ssRNA"},
+    {"Potyviridae",                                 "ssRNA(+)"},
+    {"Pseudomonas phage Medea1",                    "unknown"},
+    {"Quadriviridae",                               "dsRNA"},
+    {"Ralstonia phage RsoM2USA",                    "unknown"},
+    {"Reoviridae",                                  "dsRNA"},
+    {"Riboviria",                                   "RNA"},
+    {"Salmonella phage LPSTLL",                     "unknown"},
+    {"Salmonella phage PSDA-2",                     "unknown"},
+    {"Salmonella phage vB_SentM_sal1",              "unknown"},
+    {"Salmonella phage vB_SentM_sal2",              "unknown"},
+    {"Salmonella phage vB_SentM_sal3",              "unknown"},
+    {"Salmonella phage vB_STM-ZS",                  "unknown"},
+    {"Sarthroviridae",                              "ssRNA(+)"},
+    {"Sepolyvirales",                               "dsDNA"},
+    {"Sinaivirus",                                  "ssRNA(+)"},
+    {"Smacoviridae",                                "ssDNA"},
+    {"Solemoviridae",                               "ssRNA(+)"},
+    {"Solinviviridae",                              "ssRNA(+)"},
+    {"Spiraviridae",                                "ssDNA(+)"},
+    {"Staphylococcus phage PHB21",                  "unknown"},
+    {"Stelpaviricetes",                             "ssRNA(+)"},
+    {"Stenotrophomonas phage BUCT603",              "unknown"},
+    {"Stenotrophomonas phage BUCT609",              "unknown"},
+    {"Tenuivirus",                                  "ssRNA(-)"},
+    {"Thomixvirus",                                 "ssDNA(+)"},
+    {"Togaviridae",                                 "ssRNA(+)"},
+    {"Tolecusatellitidae",                          "ssDNA"},
+    {"Tombusviridae",                               "ssRNA(+)"},
+    {"Tospoviridae",                                "ssRNA(+/-)"},
+    {"Totiviridae",                                 "dsRNA"},
+    {"Tymovirales",                                 "ssRNA(+)"},
+    {"Uukuvirus",                                   "ssRNA(-)"},
+    {"Virgaviridae",                                "ssRNA(+)"},
+    {"Virtovirus",                                  "ssRNA(+)"},
+    {"Wenrivirus",                                  "ssRNA(-)"},
+    {"Wubeivirus",                                  "ssRNA(-)"},
+    {"Wupedeviridae",                               "ssRNA(-)"},
+    {"Zurhausenvirales",                            "dsDNA"},
+    {"DNA molecule",                                "DNA"},
+    {"DNA satellites",                              "DNA"},
+    {"dsRNA viruses",                               "dsRNA"},
+    {"environmental samples",                       "unknown"},
+    {"RNA satellites",                              "RNA"},
+    {"ssRNA viruses",                               "ssRNA"},
+    {"unclassified archaeal dsDNA viruses",         "dsDNA"},
+    {"unclassified bacterial viruses",              "unknown"},
+    {"unclassified DNA viruses",                    "DNA"},
+    {"unclassified dsDNA phages",                   "dsDNA"},
+    {"unclassified dsDNA viruses",                  "dsDNA"},
+    {"unclassified ssDNA bacterial viruses",        "ssDNA"},
+    {"unclassified ssDNA viruses",                  "ssDNA"},
+    {"unclassified ssRNA negative-strand viruses",  "ssRNA(-)"},
+    {"unclassified ssRNA positive-strand viruses",  "ssRNA(+)"},
+    {"unclassified ssRNA viruses",                  "ssRNA"},
+    {"unclassified viroids",                        "ssRNA"},
+    {"unclassified viruses",                        "unknown"},
+});
+
+static string s_GetStrandedMolStringFromLineage(const string& lineage)
+{
+    // Retroviridae no longer in list
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS) {
+        return "ssRNA-RT";
+    }
+
+    // Topsovirus (ambisense) not in list
+    if (NStr::FindNoCase(lineage, "Tospovirus") != NPOS) {
+        return "ssRNA(+/-)";
+    }
+
+    // Tenuivirus has several segments, most of which are ambisense
+    if (NStr::FindNoCase(lineage, "Tenuivirus") != NPOS) {
+        return "ssRNA(+/-)";
+    }
+
+    // Arenaviridae is ambisense, has priority over old-style checks
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != NPOS) {
+        return "ssRNA(+/-)";
+    }
+
+    // Phlebovirus is ambisense, has priority over old-style checks
+    if (NStr::FindNoCase(lineage, "Phlebovirus") != NPOS) {
+        return "ssRNA(+/-)";
+    }
+
+    // unclassified viruses have old-style lineage
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != NPOS) {
+        return "ssRNA(-)";
+    }
+    if (NStr::FindNoCase(lineage, "positive-strand viruses") != NPOS) {
+        return "ssRNA(+)";
+    }
+
+    for (const auto& x : kViralStrandMap) {
+        if (NStr::FindNoCase(lineage, x.first) != NPOS) {
+            return x.second;
+        }
+    }
+
+    // use root value for default
+    return "dsDNA";
+}
+
+static CMolInfo::TBiomol s_CheckSingleStrandedRNAViruses(
+    const string& lineage,
+    const string& division,
+    CBioSource::TOrigin origin,
+    const string& stranded_mol,
+    const CMolInfo::TBiomol biomol,
+    const CBioseq_Handle& bsh
+)
+{
+    if (NStr::FindNoCase(stranded_mol, "ssRNA") == NPOS) {
+        return CMolInfo::eBiomol_unknown;
+    }
+    if (NStr::FindNoCase(stranded_mol, "DNA") != NPOS) {
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    const bool is_ambisense = NStr::EqualNocase(stranded_mol, "ssRNA(+/-)");
+
+    // special cases
+    if (is_ambisense) {
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::EqualNocase(stranded_mol, "ssRNA-RT")) {
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    bool negative_strand_virus = false;
+    bool plus_strand_virus = false;
+    if (NStr::FindNoCase(stranded_mol, "-)") != NPOS) {
+        negative_strand_virus = true;
+    }
+    if (NStr::FindNoCase(stranded_mol, "(+") != NPOS) {
+        plus_strand_virus = true;
+    }
+    if (! negative_strand_virus && ! plus_strand_virus) {
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    bool is_synthetic = false;
+    if (NStr::EqualNocase(division, "SYN")) {
+        is_synthetic = true;
+    } else if (origin == CBioSource::eOrigin_mut
+        || origin == CBioSource::eOrigin_artificial
+        || origin == CBioSource::eOrigin_synthetic) {
+        is_synthetic = true;
+    }
+
+    bool has_cds = false;
+    bool has_plus_cds = false;
+    bool has_minus_cds = false;
+
+    CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    while (cds_ci) {
+        has_cds = true;
+        if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+            has_minus_cds = true;
+        } else {
+            has_plus_cds = true;
+        }
+        if (has_minus_cds && has_plus_cds) {
+            break;
+        }
+
+        ++cds_ci;
+    }
+
+    bool has_minus_misc_feat = false;
+    bool has_plus_misc_feat = false;
+
+    if (! has_cds) {
+        CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
+        while (misc_ci) {
+            if (misc_ci->IsSetComment()
+                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != NPOS) {
+                if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+                    has_minus_misc_feat = true;
+                } else {
+                    has_plus_misc_feat = true;
+                }
+            }
+            if (has_minus_misc_feat && has_plus_misc_feat) {
+                break;
+            }
+            ++misc_ci;
+        }
+    }
+
+    if (negative_strand_virus) {
+
+        if (has_minus_cds) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
+                // cerr << "Negative-sense single-stranded RNA virus with minus strand CDS should be genomic RNA" << endl;
+                return CMolInfo::eBiomol_genomic;
+            }
+        }
+
+        if (has_plus_cds && ! is_synthetic && ! is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_cRNA) {
+                // cerr << "Negative-sense single-stranded RNA virus with plus strand CDS should be cRNA" << endl;
+                return CMolInfo::eBiomol_cRNA;
+            }
+        }
+
+        if (has_minus_misc_feat) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
+                // cerr << "Negative-sense single-stranded RNA virus with nonfunctional minus strand misc_feature should be genomic RNA" << endl;
+                return CMolInfo::eBiomol_genomic;
+            }
+        }
+
+        if (has_plus_misc_feat && ! is_synthetic && ! is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_cRNA) {
+                // cerr << "Negative-sense single-stranded RNA virus with nonfunctional plus strand misc_feature should be cRNA" << endl;
+                return CMolInfo::eBiomol_cRNA;
+            }
+        }
+    }
+
+    if (plus_strand_virus) {
+
+        if (! is_synthetic && ! is_ambisense) {
+            if (biomol != CMolInfo::eBiomol_genomic) {
+                // cerr << "Positive-sense single-stranded RNA virus should be genomic RNA" << endl;
+                return CMolInfo::eBiomol_genomic;
+            }
+        }
+    }
+
+    return CMolInfo::eBiomol_unknown;
+}
+
+static CMolInfo::TBiomol s_ReportLineageConflictWithMol(
+    const string& lineage,
+    const string& stranded_mol,
+    const CMolInfo::TBiomol biomol,
+    CSeq_inst::EMol mol
+)
+{
+    if (mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_dna)  {
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    // special cases
+    if (NStr::FindNoCase(lineage, "Retroviridae") != NPOS && NStr::EqualNocase(stranded_mol, "ssRNA-RT")) {
+        // retrovirus can be rna or dna
+        return CMolInfo::eBiomol_unknown;
+    }
+
+    if (NStr::EqualNocase(stranded_mol, "dsRNA")) {
+        if (biomol != CMolInfo::eBiomol_genomic) {
+            // cerr << "dsRNA virus should be genomic RNA" << endl;
+            return CMolInfo::eBiomol_genomic;
+        }
+    }
+
+    return CMolInfo::eBiomol_unknown;
+}
+
+void CCleanup::FixViralMolInfo(CSeq_entry_Handle seh)
+{
+    for (CBioseq_CI b(seh); b; ++b) {
+        if (b->IsAa()) {
+            continue;
+        }
+        const CBioseq_Handle& bsh = *b;
+        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        string lineage = "";
+        string division = "";
+        CBioSource::TOrigin origin = CBioSource::eOrigin_unknown;
+
+        CConstRef<CSeqdesc> closest_biosource = bsr->GetClosestDescriptor(CSeqdesc::e_Source);
+        if (! closest_biosource) {
+            continue;
+        }
+        const CBioSource& src = closest_biosource->GetSource();
+        if (! src.IsSetOrg() || ! src.GetOrg().IsSetLineage()) {
+            continue;
+        }
+
+        lineage = src.GetOrg().GetLineage();
+        if (! NStr::StartsWith(lineage, "Viruses; ")) {
+            continue;
+        }
+
+        division = src.GetOrg().GetDivision();
+        if (src.IsSetOrigin()) {
+            origin = src.GetOrigin();
+        }
+
+        CMolInfo::TBiomol biomol = CMolInfo::eBiomol_unknown;
+
+        CConstRef<CSeqdesc> closest_molinfo = bsr->GetClosestDescriptor(CSeqdesc::e_Molinfo);
+        if (! closest_molinfo) {
+            continue;
+        }
+        const CMolInfo& molinf = closest_molinfo->GetMolinfo();
+        if (molinf.IsSetBiomol()) {
+            biomol = molinf.GetBiomol();
+        }
+
+        CSeq_inst::EMol mol = CSeq_inst::eMol_not_set;
+
+        if (bsh.IsSetInst_Mol()) {
+            mol = bsh.GetInst_Mol();
+        }
+
+        string stranded_mol = s_GetStrandedMolStringFromLineage(lineage);
+        if (NStr::FindNoCase(stranded_mol, "unknown") != NPOS) {
+            continue;
+        }
+
+        CMolInfo::TBiomol newbiomol = s_CheckSingleStrandedRNAViruses(lineage, division, origin, stranded_mol, biomol, bsh);
+
+        if (newbiomol != CMolInfo::eBiomol_unknown) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc);
+            new_desc->Assign(*closest_molinfo);
+            new_desc->SetMolinfo().SetBiomol(newbiomol);
+            bsh.GetEditHandle().ReplaceSeqdesc(*closest_molinfo, *new_desc);
+        }
+
+        newbiomol = s_ReportLineageConflictWithMol(lineage, stranded_mol, biomol, mol);
+
+        if (newbiomol != CMolInfo::eBiomol_unknown) {
+            CRef<CSeqdesc> new_desc(new CSeqdesc);
+            new_desc->Assign(*closest_molinfo);
+            new_desc->SetMolinfo().SetBiomol(newbiomol);
+            bsh.GetEditHandle().ReplaceSeqdesc(*closest_molinfo, *new_desc);
+        }
+    }
+}
+
 char CCleanup::ValidAminoAcid(string_view abbrev)
 {
     return x_ValidAminoAcid(abbrev);
