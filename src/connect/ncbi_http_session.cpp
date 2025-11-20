@@ -910,8 +910,8 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         ConnNetInfo_OverrideUserHeader(net_info.get(), headers.c_str());
         m_Stream.reset(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields for now, set them in sx_Adjust (called with failure_count == -1 on open)
-            fSERV_Http | fSERV_DelayOpen/*prevents leaking "adjust_data" when service does not exist
-                                         (and the underlying CONNECTOR couldn't be constructed, otherwise)*/,
+            TSERV_Type(fSERV_Http) | TSERV_Type(fSERV_DelayOpen)/*prevents leaking "adjust_data" when service does not exist
+                                                                 (and the underlying CONNECTOR couldn't be constructed, otherwise)*/,
             net_info.get(),
             &x_extra));
     }
