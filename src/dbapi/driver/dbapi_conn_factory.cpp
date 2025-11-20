@@ -736,6 +736,9 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
     auto& service_info = rt_data.GetServiceInfo(service_name);
     IDBServiceInfo::TGuard guard(service_info);
     service_info.SetDispatchedServer(svr);
+    if (server.empty()) {
+        service_info.CleanExcluded();
+    }
 }
 
 // Make an effort to give each request its own connection numbering.
