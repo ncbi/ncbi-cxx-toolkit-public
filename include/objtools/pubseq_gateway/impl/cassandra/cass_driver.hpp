@@ -336,7 +336,8 @@ private:
     string                          m_pwd;
     string                          m_blacklist;
     string                          m_keyspace;
-    string                          m_datacenter;
+    // access through atomic_load/atomic_store
+    shared_ptr<string>              m_datacenter;
     CassCluster *                   m_cluster;
     CassSession *                   m_session;
     unsigned int                    m_ctimeoutms;

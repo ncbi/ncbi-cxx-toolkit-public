@@ -115,6 +115,7 @@ TEST_F(CCassConnectionTest, LocalPeersList) {
     connection->Connect();
     dc = connection->GetDatacenterName();
     EXPECT_FALSE(dc.empty());
+    EXPECT_EQ("DC1", connection->GetDatacenterName());
     auto peer_list = connection->GetLocalPeersAddressList(dc);
     EXPECT_EQ(8UL, peer_list.size());
     for (auto const& peer : peer_list) {
