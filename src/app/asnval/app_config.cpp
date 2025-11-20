@@ -42,19 +42,23 @@ static bool s_IsHugeMode(const CArgs& args, const CNcbiRegistry& cfg)
     if (args["disable-huge"]) {
         return false;
     }
-    if (! args["i"]) {
+
+    if (args["i"]) {
+        string filename = args["i"].AsString();
+        if (NStr::IsBlank(filename)) {
+            return false;
+        }
+        if (! CFile(filename).IsFile(eFollowLinks)) {
+            return false;
+        }
+    } else if (! args["indir"]) {
         return false;
     }
-    string filename = args["i"].AsString();
-    if (NStr::IsBlank(filename)) {
-        return false;
-    }
-    if (! CFile(filename).IsFile(eFollowLinks)) {
-        return false;
-    }
+
     if (args["huge"]) {
         return true;
     }
+
     return cfg.GetBool("asnvalidate", "UseHugeFiles", true);
 }
 
