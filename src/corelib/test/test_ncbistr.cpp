@@ -5335,55 +5335,81 @@ BOOST_AUTO_TEST_CASE(s_JsonDecode)
 BOOST_AUTO_TEST_CASE(s_IpAddress)
 {
     list<pair<string, bool>> ips = {
-        { "", false },
-        { "abc", false },
-        { "123456", false },
-        { "192.168.0\0.1", false },
-        { "192.168.1\0002.1", false },
-        { "192.168.\0003.1", false },
-        { "192.168.123.4\0005", false },
-        { "192.168.123.123\000", false },
+        { "",                                           false },
+        { "abc",                                        false },
+        { "123456",                                     false },
 
-        { "127.0.0.1", true },
-        { "192.168.0.146", true },
-        { "8.24.176.55", true },
-        { "0.0.0.0", true },
-        { "192.168.0.267", false }, // octet > 255
-        { "192.168.3", false }, // too short
-        { "192.168.3.73.208", false }, // too long
-        { "10.25..4", false }, // double dot
-        { "192.168.0.1/24", false }, // subnet notation
-        { "10.23.1d.5a", false }, // non-decimal numbers
-        { "192.168.01.1", false },
+        // \0 in the string
+        { { "192.168.0\0.1"s },                         false },
+        { { "192.168.1\0002.1"s },                      false },
+        { { "192.168.\0003.1"s },                       false },
+        { { "192.168.123.4\0005"s },                    false },
+        { { "192.168.123.123\000"s },                   false },
 
-        { "::", true },
-        { "::1", true },
-        { "72CC:1C71:0000:481:3441:E27:A29C:23E9", true },
-        { "18CF:E5C3::E82B:F5E0:2C06:D59E:5214", true },
-        { "0E95::FD26:F904", true },
-        { "5D67::5BED", true },
-        { "::4553:0878", true },
-        { "C2EE:5669::", true },
-        { "DD2C:AF75::4CCB:528B:2C64::02C9", false }, // multiple compressions
-        { "E9A9::zD16", false }, // not a hexadecimal digit
-        { "1CC5:71AA:9DC7:019D:66D7:20CD:C842", false }, // too short
-        { "F90C:9BC7:4699:F138:ECEE:8B45:7764:0:78F0", false }, // too long
-        { ":E5CA:BA8E:C02C:C605:39EA:D24E:818F", false }, // leading colon
-        { "6CE0:53AA:8E29:4CCF::366D:", false }, // trailing colon
-        { "8D9B-2BAD-791F-2D67-117E-98F4-305D-0B09", false }, // bad separator
-        { "F2A7:8547:DE5F:C108:::F8FC", false }, // triple colon
+        { "0.0.0.0",                                    true },
+        { "127.0.0.1",                                  true },
+        { "192.168.0.146",                              true },
+        { "8.24.176.55",                                true },
+        { "192.168.0.267",                              false },    // octet > 255
+        { "192.168.3",                                  false },    // too short
+        { "192.168.3.73.208",                           false },    // too long
+        { "1.2..4",                                     false },    // double dot
+        { ".1.2.3",                                     false },    // leading dot
+        { "1.2.3.",                                     false },    // trailing dot
+        { "192.168.0.1/24",                             false },    // subnet notation
+        { "10.23.1d.5a",                                false },    // non-decimal numbers
+        { "192.168.01.1",                               false },    // leading zero
 
-        { "::ffff:192.168.1.2", true }, // mapped IPv4
-        { "0::ffff:192.168.1.2", true }, // mapped IPv4
-        { "0000::ffff:192.168.1.2", true }, // mapped IPv4
-        { "0:0:0:0:0:ffff:192.168.1.2", true }, // mapped IPv4
-        { "0:0:0:0:ffff:192.168.1.2", false }, // too short
-        { "0:0:0:0:0:0:ffff:192.168.1.2", false }, // too long
-        { "::127.0.0.1", true }, // IPv4-compatible
-        { "0:1234::5678:127.0.0.1", true }, // IPv4-compatible
-        { "0:1:23:4567:89:abcd:127.0.0.1", true }, // IPv4-compatible
-        { "1:23:4567:89:abcd:127.0.0.1", false }, // too short
-        { "0:0:1:23:4567:89:abcd:127.0.0.1", false }, // too long
+        { "72CC:1C71:0000:481:3441:E27:A29C:23E9",      true },
+        { "1::2:3:4:5:6:7",                             true },
+        { "1::2:3:4:5:6",                               true },
+        { "1::2:3:4:5",                                 true },
+        { "1::2:3:4",                                   true },
+        { "1::2:3",                                     true },
+        { "1::2",                                       true },
+        { "1::",                                        true },
+        { "::1",                                        true },
+        { "::1:2",                                      true },
+        { "1:2::",                                      true },
+        { "::1:2:3:4:5:6:7",                            true },
+        { "1:2:3:4:5:6:7::",                            true },
+        { "0:1:2:3:4:5:6:7",                            true },
+        { "1:2:3:4:5:6:7:0",                            true },
+        { "::",                                         true },
+
+        { "F90C:9BC7:4699:F138:ECEE:8B45:7764:0:78F0",  false },    // too long
+        { "::1:2:3:4:5:6:7:8",                          false },    // too long
+        { "1:2:3:4:5:6:7:8::",                          false },    // too long
+
+        { "1:2:3:4:5:6:7",                              false },    // too short
+
+        { "1:2::3:4:5::6",                              false },    // multiple compressions
+        { "1a::2z",                                     false },    // not a hexadecimal digit
+        { ":1:2:3:4:5:6:7",                             false },    // leading colon
+        { ":1::7",                                      false },    // leading colon
+        { "1:2:3:4:5:6:7:",                             false },    // trailing colon
+        { "1::7:",                                      false },    // trailing colon
+        { "1:::2:3:4:5",                                false },    // triple colon
+        { "8D9B-2BAD-791F-2D67-117E-98F4-305D-0B09",    false },    // bad separator
+
+        { "::127.0.0.1",                                true },
+        { "::ffff:192.168.1.2",                         true },
+        { "0::ffff:192.168.1.2",                        true },
+        { "0000::ffff:192.168.1.2",                     true },
+        { "0:0:0:0:0:ffff:192.168.1.2",                 true },
+        { "::1:2:3:4:5:192.168.1.2",                    true },
+        { "1:2:3:4::5:192.168.1.2",                     true },
+        { "1:2:3:4:5::192.168.1.2",                     true },
+        { "0:1234::5678:127.0.0.1",                     true },
+        { "0:1:23:4567:89:abcd:127.0.0.1",              true },
+        { "1:2:3:4:5:192.168.1.2",                      false },    // too short
+        { "1:2:3:4:5:6:7:192.168.1.2",                  false },    // too long
+        { "1::2:3:4:5:6:192.168.1.2",                   false },    // too long
+        { "::1:2:3:4:5:6:192.168.1.2",                  false },    // too long
+        { "1:2:3:4:5:6::192.168.1.2",                   false },    // too long
+        { "1:23:4567:89:abcd:127.0.0.1",                false },    // too short
+        { "0:0:1:23:4567:89:abcd:127.0.0.1",            false },    // too long
+        { "1:23:4567:89:abcd:1a.0.0.1",                 false },    // hex in IPv4 part
     };
     for (auto& ip : ips) {
         BOOST_CHECK_EQUAL(ip.second, NStr::IsIPAddress(ip.first));
