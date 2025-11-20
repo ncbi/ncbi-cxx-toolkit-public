@@ -260,23 +260,24 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
         assert(t <= maxt);
         if (n == len  ||  str[n] == ':') {
             token[t].len = (size_t)(&str[n] - token[t].ptr);
-            if (token[t].len) {
-                if (n++ == len) {
-                    if (++t > maxt)
-                        return 0/*failure*/;
-                    break;
-                }
-            } else {
-                if (n++ == len)
+            if (!token[t].len) {
+                if (n == len)
                     break;
                 if (gap++)  /*RFC 4291 2.2, 2*/
-                    return 0/*failure*/;
-            }
-            /*str[n - 1] == ':'*/
+                    return 0/*more than one contraction*/;
+            } else if (token[t].len <= 4) {
+                if (n == len) {
+                    if (++t > maxt)
+                        return 0/*too many groups*/;
+                    break;
+                }
+            } else
+                return 0/*too many digits*/;
+            assert(str[n] == ':');
             token[t].len++;
             if (++t > maxt)
-                return 0/*failure*/;
-            token[t].ptr = str + n;
+                return 0/*too many groups*/;
+            token[t].ptr = &str[n + 1];
             continue;
         }
         if (!isxdigit((unsigned char) str[n])) {
@@ -302,8 +303,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
             }
             break;
         }
-        n++;
-    } while (n <= len);
+    } while (++n <= len);
 
     assert(t <= maxt);
     if (t < maxt  &&  !gap)
@@ -318,7 +318,7 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
             assert(isxdigit((unsigned char) token[n].ptr[0]));
             errno = 0;
             val = strtol(token[n].ptr, &end, 16);
-            if (errno  ||  val ^ (val & 0xFFFF))
+            if (errno  ||  (val ^ (val & 0xFFFF)))
                 return 0/*failure*/;
             assert(end == token[n].ptr + token[n].len - (*end == ':'));
             if (*end == ':'  &&  n == t - !ipv4)
