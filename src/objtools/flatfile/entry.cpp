@@ -216,37 +216,29 @@ static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
  **********************************************************/
 DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
-    char*  eptr;
-    char*  q;
-    size_t i;
-
     pp->ffbuf.set_offs(offset);
 
-    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
-    entry->mBuf.len = len;
-    entry->mBuf.ptr = StringNew(len); /* includes nul byte */
-    entry->mBuf.len = FileReadBuf(entry->mBuf.ptr, len, pp->ffbuf);
-    entry->SetEntryData(new EntryBlk());
+    char*  bptr = StringNew(len); /* includes nul byte */
+    size_t blen = FileReadBuf(bptr, len, pp->ffbuf);
 
-    if ((size_t)entry->mBuf.len != len) /* hardware problem */
+    if (blen != len) /* hardware problem */
     {
         FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
-        MemFree(entry->mBuf.ptr);
-        delete entry;
+        MemFree(bptr);
         return nullptr;
     }
 
-    eptr       = entry->mBuf.ptr + entry->mBuf.len;
+    char* eptr = bptr + blen;
     bool  was  = false;
     char* wasx = nullptr;
-    for (q = entry->mBuf.ptr; q < eptr; q++) {
+    for (char* q = bptr; q < eptr; q++) {
         if (*q != '\n')
             continue;
 
         if (wasx) {
             fta_StringCpy(wasx, q); /* remove XX lines */
             eptr -= q - wasx;
-            entry->mBuf.len -= q - wasx;
+            blen -= q - wasx;
             q = wasx;
         }
         if (q + 3 < eptr && q[1] == 'X' && q[2] == 'X')
@@ -255,7 +247,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             wasx = nullptr;
     }
 
-    for (q = entry->mBuf.ptr; q < eptr; q++) {
+    for (char* q = bptr; q < eptr; q++) {
         if (*q == 13) {
             *q = 10;
         }
@@ -269,14 +261,15 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = false;
             continue;
         }
-        for (i = 0; q > entry->mBuf.ptr;) {
+        size_t i;
+        for (i = 0; q > bptr;) {
             i++;
             q--;
             if (*q != ' ')
                 break;
         }
         if (i > 0 &&
-            (*q == '\n' || (q - 2 >= entry->mBuf.ptr && *(q - 2) == '\n'))) {
+            (*q == '\n' || (q - 2 >= bptr && *(q - 2) == '\n'))) {
             q += i;
             i = 0;
         }
@@ -288,7 +281,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             if (i > 0) {
                 fta_StringCpy(q, q + i);
                 eptr -= i;
-                entry->mBuf.len -= i;
+                blen -= i;
             }
         }
 
@@ -302,10 +295,13 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             fta_StringCpy(q, q + 1); /* requires null byte */
             q--;
             eptr--;
-            entry->mBuf.len--;
+            blen--;
         } else
             was = true;
     }
+
+    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE, bptr, blen);
+    entry->SetEntryData(new EntryBlk());
     return entry;
 }
 
