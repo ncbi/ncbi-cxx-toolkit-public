@@ -368,7 +368,10 @@ void CGRPCServerCallbacks::BeginRequest(TGRPCServerContext* sctx,
     if (sctx != NULL) {
         SIZE_TYPE pos = sctx->peer().find(':');
         if (pos != NPOS) {
-            string peer = sctx->peer().substr(pos + 1);
+            // Discard scheme and decode the rest.  In particular,
+            // IPv6 connections may show up as ipv6:%5B...%5D:...,
+            // with URL-encoded square brackets around the address.
+            string peer = NStr::URLDecode(sctx->peer().substr(pos + 1));
             CTempString host;
             pos = peer.rfind(':');
             if (pos == NPOS  ||  peer[peer.size() - 1] == ']') {
@@ -480,7 +483,7 @@ void CGRPCServerCallbacks::EndRequest(TGRPCServerContext* sctx,
 bool CGRPCServerCallbacks::x_IsRealRequest(const TGRPCServerContext* sctx)
 {
 #ifdef HAVE_LIBGRPC
-    auto peer = sctx->peer();
+    auto peer = NStr::URLDecode(sctx->peer());
     if ( !NStr::StartsWith(peer, "ipv4:127.")
         &&  !NStr::StartsWith(peer, "ipv6:[::1]") ) {
         return true;
