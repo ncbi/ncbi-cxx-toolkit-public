@@ -303,7 +303,10 @@ void CMakeBlastDBApp::Init()
                             new CArgAllow_Integers(eBDB_Version4, eBDB_Version5));
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
-                            CArgDescriptions::eString, "3GB");
+                            CArgDescriptions::eString,
+							NStr::UInt8ToString_DataSize(kDefaultVolFileSize, kUint8ToStringFlag, 3));
+    arg_desc->SetConstraint("max_file_sz",
+                            new CArgAllow_FileSize(kMinVolFileSize, kMaxVolFileSize));
     arg_desc->AddOptionalKey("metadata_output_prefix", "",
     						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("logfile", "File_Name",
@@ -334,30 +337,6 @@ void CMakeBlastDBApp::Init()
     SetupArgDescriptions(arg_desc.release());
 }
 
-/// Converts a Uint8 into a string which contains a data size (converse to
-/// NStr::StringToUInt8_DataSize)
-/// @param v value to convert [in]
-/// @param minprec minimum precision [in]
-static string Uint8ToString_DataSize(Uint8 v, unsigned minprec = 10)
-{
-    static string kMods = "KMGTPEZY";
-
-    size_t i(0);
-    for(i = 0; i < kMods.size(); i++) {
-        if (v < Uint8(minprec)*1024) {
-            v /= 1024;
-        }
-    }
-
-    string rv = NStr::UInt8ToString(v);
-
-    if (i) {
-        rv.append(kMods, i, 1);
-        rv.append("B");
-    }
-
-    return rv;
-}
 
 void CMakeBlastDBApp::x_AddFasta(CNcbiIstream & data)
 {
@@ -1265,13 +1244,12 @@ void CMakeBlastDBApp::x_BuildDatabase()
     // Max file size
 
     Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
-    static const Uint8 MAX_VOL_FILE_SIZE = 0x100000000;
-    if (bytes >= MAX_VOL_FILE_SIZE) {
+    if (bytes > kMaxVolFileSize) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
-                "max_file_sz must be < 4 GiB");
+                "max_file_sz must be < " + NStr::UInt8ToString_DataSize(kMaxVolFileSize,  kUint8ToStringFlag, 3));
     }
     *m_LogFile << "Maximum file size: "
-               << Uint8ToString_DataSize(bytes) << endl;
+               << NStr::UInt8ToString_DataSize(bytes, kUint8ToStringFlag, 3) << endl;
 
     m_DB->SetMaxFileSize(bytes);
 

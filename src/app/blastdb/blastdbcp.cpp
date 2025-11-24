@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_input_aux.hpp>
 #include <algo/blast/blastinput/cmdline_flags.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/impl/criteria.hpp>
@@ -210,11 +211,12 @@ void BlastdbCopyApplication::Init(void)
     );
 
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
-                                "Maximum file size for the output BLAST database files",
-                                CArgDescriptions::eString, "1GB");
-    HideStdArgs(
-            fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun
-    );
+                            "Maximum file size for the output BLAST database files",
+                            CArgDescriptions::eString, NStr::UInt8ToString_DataSize(kDefaultVolFileSize, kUint8ToStringFlag, 3));
+    arg_desc->SetConstraint("max_file_sz",
+                            new CArgAllow_FileSize(kMinVolFileSize, kMaxVolFileSize));
+
+    HideStdArgs(fHideConffile | fHideFullVersion | fHideXmlHelp | fHideDryRun);
 
     SetupArgDescriptions(arg_desc.release());
 }
