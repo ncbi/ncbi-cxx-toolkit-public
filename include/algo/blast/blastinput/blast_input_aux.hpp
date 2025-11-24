@@ -193,7 +193,7 @@ private:
 
 static const int kUint8ToStringFlag = (NStr::fDS_NoDecimalPoint | NStr::fDS_ShortSuffix | NStr::fDS_PutBSuffixToo);
 
-class NCBI_XNCBI_EXPORT CArgAllow_FileSize : public CArgAllow
+class NCBI_BLASTINPUT_EXPORT CArgAllow_FileSize : public CArgAllow
 {
 public:
 
