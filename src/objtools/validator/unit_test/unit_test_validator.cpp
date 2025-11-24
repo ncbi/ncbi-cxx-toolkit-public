@@ -6359,7 +6359,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
         "BioSource is missing taxon ID"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyConsultRequired",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "TaxonomyConsultRequired",
                               "Taxonomy lookup reports taxonomy consultation needed"));
     // AddChromosomeNoLocation(expected_errors, entry);
     unit_test_util::SetTaxname(entry, "Anabaena circinalis");
@@ -6395,7 +6395,7 @@ void TestConsultRequired(const string& taxname)
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
             "BioSource is missing taxon ID"));
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyConsultRequired",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "TaxonomyConsultRequired",
         "Taxonomy lookup reports taxonomy consultation needed"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
@@ -8904,7 +8904,7 @@ void CheckUnbalancedParenthesesSubSource(CSubSource::TSubtype subtype, const str
                 "Non-viral source feature should not have a segment qualifier"));
     }
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "UnbalancedParentheses",
             "Unbalanced parentheses in subsource '" + val + "'"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -8920,7 +8920,7 @@ void CheckUnbalancedParenthesesOrgMod(COrgMod::TSubtype subtype, const string& v
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "UnbalancedParentheses",
             "Unbalanced parentheses in orgmod '" + val + "'"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
@@ -8937,7 +8937,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "UnbalancedParentheses",
                               "Unbalanced parentheses in taxname 'Malio malefi (abc'"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "OrganismNotFound",
                               "Organism not found in taxonomy database"));
@@ -8987,7 +8987,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnbalancedParentheses)
         CheckUnbalancedParenthesesOrgMod(subtype, "no right )abc");
     }
     // also check old_lineage and other
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "UnbalancedParentheses",
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "UnbalancedParentheses",
         "Unbalanced parentheses in taxname 'Malio malefi (abc'"));
     // AddChromosomeNoLocation(expected_errors, entry);
 
