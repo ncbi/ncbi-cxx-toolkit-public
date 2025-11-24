@@ -540,7 +540,7 @@ static void fta_check_pub_ids(TPubList& pub_list)
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_ArticleIdDiscarded,
                    "Article identifier was found for an unpublished, direct submission, book or unparsable article reference, and has been discarded : {} {}.",
                    (*pub)->IsMuid() ? "MUID" : "PMID",
-                   ENTREZ_ID_TO(TIntId, (*pub)->GetMuid()));
+                   ENTREZ_ID_TO(TIntId, (*pub)->IsMuid() ? (*pub)->GetMuid() : (*pub)->GetPmid()));
 
         pub = pub_list.erase(pub);
     }
