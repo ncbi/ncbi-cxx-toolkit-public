@@ -5512,6 +5512,8 @@ void CCleanup::FixViralMolInfo(CSeq_entry_Handle seh)
             new_desc->Assign(*closest_molinfo);
             new_desc->SetMolinfo().SetBiomol(newbiomol);
             bsh.GetEditHandle().ReplaceSeqdesc(*closest_molinfo, *new_desc);
+            // s_ReportLineageConflictWithMol, below, only affects double stranded molecules, not the case here, so okay to skip.
+            continue;
         }
 
         newbiomol = s_ReportLineageConflictWithMol(lineage, stranded_mol, biomol, mol);
