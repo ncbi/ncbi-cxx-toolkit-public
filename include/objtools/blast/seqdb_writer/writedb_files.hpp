@@ -169,14 +169,6 @@ protected:
     /// For convenience, a string containing one NUL character.
     string m_Nul; // init me
 
-    /// The default value for max_file_size.
-    /// @return The max file size used if otherwise unspecified.
-    Uint8 x_DefaultByteLimit()
-    {
-        // 1 gb (marketing version) - 1; about a billion
-        return 1000*1000*1000 - 1;
-    }
-
     /// This should flush any unwritten data to disk.
     ///
     /// This method must be implemented by derived classes to flush
