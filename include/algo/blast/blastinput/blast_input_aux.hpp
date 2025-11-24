@@ -190,6 +190,39 @@ private:
     bool m_Inclusive;   /**< Whether the values above should be included or not */
 };
 
+
+static const int kUint8ToStringFlag = (NStr::fDS_NoDecimalPoint | NStr::fDS_ShortSuffix | NStr::fDS_PutBSuffixToo);
+
+class NCBI_XNCBI_EXPORT CArgAllow_FileSize : public CArgAllow
+{
+public:
+
+    /// Constructor specifying range of allowed integer values.
+    CArgAllow_FileSize(Uint8 x_min, Uint8 x_max):m_Min(x_min), m_Max(x_max) {}
+
+protected:
+    /// Verify if specified value is allowed.
+    virtual bool   Verify(const string& value) const {
+    	Uint8 val = NStr::StringToUInt8_DataSize(value);
+        if (m_Min <= val && val<= m_Max) {
+            return true;
+        }
+        return false;
+	}
+
+    /// Get usage information.
+    virtual string GetUsage(void) const {
+    	string usage = NStr::UInt8ToString_DataSize(m_Min, kUint8ToStringFlag, 3) + ".."
+    			       + NStr::UInt8ToString_DataSize(m_Max, kUint8ToStringFlag, 3);
+		return usage;
+    }
+
+private:
+    Uint8 m_Min;
+    Uint8 m_Max;
+};
+
+
 /** 
  * @brief Macro to create a subclass of CArgAllow that allows the specification
  * of sets of data
