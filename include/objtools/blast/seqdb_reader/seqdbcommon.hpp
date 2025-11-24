@@ -113,6 +113,12 @@ const int kSeqDBNuclBlastNA8 = 1;
 const blastdb::TOid kSeqDBEntryNotFound = -1;
 const blastdb::TOid kSeqDBEntryDuplicate = -2;
 
+const Uint8 k1GB  = 1000000000ULL;
+
+const Uint8 kMinVolFileSize = 1000ULL;
+const Uint8 kMaxVolFileSize = 10ULL * k1GB;
+const Uint8 kDefaultVolFileSize = 3ULL * k1GB;
+
 /// Certain methods have an "Alloc" version.  When these methods are
 /// used, the following constants can be specified to indicate which
 /// libraries to use to allocate returned data, so the corresponding

@@ -176,11 +176,11 @@ CWriteDB_File::CWriteDB_File(const string & basename,
 #endif
 
     if (m_MaxFileSize == 0) {
-        m_MaxFileSize = x_DefaultByteLimit();
+        m_MaxFileSize = kDefaultVolFileSize;
     } else {
-#ifdef _DEBUG
-        _ASSERT(max_file_size <= MAX_FILE_SIZE);
-#endif
+    	if (max_file_size > kMaxVolFileSize){
+    		m_MaxFileSize = kMaxVolFileSize;
+    	}
     }
 
     m_Nul.resize(1);

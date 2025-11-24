@@ -1129,7 +1129,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
 
     // Standard 1 GB limit
 
-    m_OutputDb->SetMaxFileSize(1000*1000*1000);
+    m_OutputDb->SetMaxFileSize(kDefaultVolFileSize);
     m_OutputDbName = output_dbname;
 }
 
@@ -1197,7 +1197,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
 
     // Standard 1 GB limit
 
-    m_OutputDb->SetMaxFileSize(1000*1000*1000);
+    m_OutputDb->SetMaxFileSize(kDefaultVolFileSize);
     m_OutputDbName = output_dbname;
 }
 

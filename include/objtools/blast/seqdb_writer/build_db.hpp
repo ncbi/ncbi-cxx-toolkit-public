@@ -402,8 +402,7 @@ public:
     ///
     /// This will specify the maximum size of file that will be
     /// made as a component of a database volume manufactured by the
-    /// WriteDB library.  The default value is 10^9 (one billion
-    /// bytes.)
+    /// WriteDB library.  The default value is 3G bytes.
     ///
     /// @param max_file_size Maximum file size in bytes.
     void SetMaxFileSize(Uint8 max_file_size);
