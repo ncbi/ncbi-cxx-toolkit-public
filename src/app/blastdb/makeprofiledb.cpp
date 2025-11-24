@@ -682,7 +682,7 @@ void CMakeProfileDBApp::x_InitOutputDb(CRPS_DbInfo & rpsDbInfo)
 {
 	CWriteDB::EIndexType index_type = (m_CreateIndexFile == true ? CWriteDB::eDefault : CWriteDB::eNoIndex);
 	rpsDbInfo.output_db.Reset(new CWriteDB(rpsDbInfo.db_name, CWriteDB::eProtein, m_Title, index_type, m_CreateIndexFile, false, false, m_DbVer));
-	rpsDbInfo.output_db->SetMaxFileSize(4000000000);
+	rpsDbInfo.output_db->SetMaxFileSize(kDefaultVolFileSize);
 	return;
 }
 

@@ -418,7 +418,9 @@ void CMakeClusterDBApp::Init()
                              CArgDescriptions::eString);
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
-                            CArgDescriptions::eString, "3GB");
+                            CArgDescriptions::eString, NStr::UInt8ToString_DataSize(kDefaultVolFileSize, kUint8ToStringFlag, 3));
+    arg_desc->SetConstraint("max_file_sz",
+                            new CArgAllow_FileSize(kMinVolFileSize, kMaxVolFileSize));
     arg_desc->AddOptionalKey("metadata_output_prefix", "",
     						"Path prefix for location of database files in metadata", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("logfile", "File_Name",
@@ -549,10 +551,6 @@ void CMakeClusterDBApp::x_BuildDatabase()
 
     // Max file size
     Uint8 bytes = NStr::StringToUInt8_DataSize(args["max_file_sz"].AsString());
-    static const Uint8 MAX_VOL_FILE_SIZE = 0x100000000;
-    if (bytes >= MAX_VOL_FILE_SIZE) {
-        NCBI_THROW(CInvalidDataException, eInvalidInput, "max_file_sz must be < 4 GiB");
-    }
     *m_LogFile << "Maximum file size: " << Uint8ToString_DataSize(bytes) << endl;
 
     m_DB->SetMaxFileSize(bytes);
