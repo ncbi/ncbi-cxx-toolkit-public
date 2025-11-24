@@ -1358,7 +1358,7 @@ void CTaxValidationAndCleanup::ListTaxLookupErrors
             }
         }
         if (force_consult) {
-            errs.push_back(TTaxError{eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired,
+            errs.push_back(TTaxError{eDiag_Info, eErr_SEQ_DESCR_TaxonomyConsultRequired,
                 "Taxonomy lookup reports taxonomy consultation needed"});
         }
         if (genome == CBioSource::eGenome_nucleomorph

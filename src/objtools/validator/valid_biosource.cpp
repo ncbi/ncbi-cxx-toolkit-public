@@ -1630,7 +1630,7 @@ const bool isInfluenzaOrSars2)
         } else {
             const string& subname = subsrc.GetName();
             if (s_UnbalancedParentheses(subname)) {
-                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
+                PostObjErr(eDiag_Info, eErr_SEQ_DESCR_UnbalancedParentheses,
                     "Unbalanced parentheses in subsource '" + subname + "'",
                     obj, ctx);
             }
@@ -1756,7 +1756,7 @@ const bool is_single_cell_amplification)
             }
         }
         if (s_UnbalancedParentheses(taxname)) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
+            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_UnbalancedParentheses,
                 "Unbalanced parentheses in taxname '" + orgref.GetTaxname() + "'", obj, ctx);
         }
         if (ContainsSgml(taxname)) {
@@ -2133,7 +2133,7 @@ const CSeq_entry *ctx)
                 const string& subname = omd.GetSubname();
 
                 if (subtype != COrgMod::eSubtype_old_name && s_UnbalancedParentheses(subname)) {
-                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
+                    PostObjErr(eDiag_Info, eErr_SEQ_DESCR_UnbalancedParentheses,
                         "Unbalanced parentheses in orgmod '" + subname + "'",
                         obj, ctx);
                 }
