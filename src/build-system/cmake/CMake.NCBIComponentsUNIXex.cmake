@@ -953,10 +953,11 @@ NCBIcomponent_report(SSH)
 
 NCBI_define_Xcomponent(NAME TBB CMAKE_PACKAGE TBB CMAKE_LIB tbb)
 NCBIcomponent_report(TBB)
+get_target_property(TBB_INCLUDE_DIR TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
 
 NCBI_define_Xcomponent(NAME IPS4O)
 NCBIcomponent_report(IPS4O)
 if(NOT HAVE_IPS4O_HPP)
     check_include_file_cxx(ips4o.hpp HAVE_IPS4O_HPP
-        -I${NCBI_COMPONENT_IPS4O_INCLUDE})
+        "-I${NCBI_COMPONENT_IPS4O_INCLUDE} -I${TBB_INCLUDE_DIR}")
 endif()
