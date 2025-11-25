@@ -953,7 +953,9 @@ NCBIcomponent_report(SSH)
 
 NCBI_define_Xcomponent(NAME TBB CMAKE_PACKAGE TBB CMAKE_LIB tbb)
 NCBIcomponent_report(TBB)
-get_target_property(TBB_INCLUDE_DIR TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
+if(NCBI_COMPONENT_TBB_FOUND)
+    get_target_property(TBB_INCLUDE_DIR TBB::tbb INTERFACE_INCLUDE_DIRECTORIES)
+endif()
 
 NCBI_define_Xcomponent(NAME IPS4O)
 NCBIcomponent_report(IPS4O)
