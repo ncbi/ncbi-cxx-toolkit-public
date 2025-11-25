@@ -5,7 +5,7 @@ Seq-submit ::= {
     cit {
       authors {
         names str {
-          "FlyBase"
+          "unknown"
         }
       }
     }
