@@ -896,8 +896,13 @@ void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
                 bail = true;
             }
             if ( bail ) continue;
-            if ( dbtag.IsSetTag() && dbtag.GetTag().IsStr() ) {
+            if ( ! dbtag.IsSetTag() ) continue;
+            if ( dbtag.GetTag().IsStr() ) {
                 string tag = dbtag.GetTag().GetStr();
+                x_AddFQ(q, name, tag);
+            } else if ( dbtag.GetTag().IsId() ) {
+                int id = dbtag.GetTag().GetId();
+                string tag = NStr::IntToString(id);
                 x_AddFQ(q, name, tag);
             }
         }
