@@ -170,6 +170,12 @@ private:
 #ifdef HAVE_NCBI_VDB
     void x_Process_SRA(CNcbiIstream& istr,
                        CNcbiOstream& ostr_seqids);
+
+    void x_Process_SRA_ids(CNcbiIstream& istr,
+                           CNcbiOstream& ostr_seqids);
+
+    void x_Process_SRA(CCSraShortReadIterator iter,
+                       CNcbiOstream& ostr_seqids);
 #endif
 
     void x_Process_Fasta(CNcbiIstream& istr,
@@ -310,6 +316,7 @@ void CPrimeCacheApplication::Init(void)
                               "ids", "fasta",
 #ifdef HAVE_NCBI_VDB
                               "csra",
+                              "csra-ids",
 #endif
                               "asnb-seq-entry",
                               "asn-seq-entry"));
@@ -669,10 +676,103 @@ void CPrimeCacheApplication::x_Process_Fasta(CNcbiIstream& istr,
 }
 
 #ifdef HAVE_NCBI_VDB
+void CPrimeCacheApplication::x_Process_SRA(CCSraShortReadIterator iter,
+                                           CNcbiOstream& ostr_seqids)
+{
+    CRef<CBioseq> bs = iter.GetShortBioseq();
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*bs->GetFirstId());
+    if (m_PreviousExecutionIds.count(idh)) {
+        // This is a resumption of a previous task, and we already
+        // cached this read
+        return;
+    }
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(*bs);
+    entry->SetSeq().SetInst().SetMol(m_InstMol);
+
+    if (m_MolInfo) {
+        entry->SetSeq().SetDescr().Set().push_back(m_MolInfo);
+    }
+    if (m_Orgs.begin()->second.biosource) {
+        entry->SetSeq().SetDescr().Set().push_back(
+            m_Orgs.begin()->second.biosource);
+    }
+    if (m_other_descs.size()>0) {
+        NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
+            entry->SetSeq().SetDescr().Set().push_back(*desc); 
+        }
+    }
+
+    if (CSignal::IsSignaled()) {
+        ostr_seqids << "#Clean wrapup\n";
+        NCBI_THROW(CException, eUnknown,
+                   "trapped signal, exiting");
+    }
+
+    time_t timestamp = CTime(CTime::eCurrent).GetTimeT();
+    CCache_blob blob;
+    blob.SetTimestamp(timestamp);
+    blob.Pack(*entry);
+
+    m_MainChunk.OpenForWrite(m_CachePath);
+    size_t offset = m_MainChunk.GetOffset();
+    m_MainChunk.Write(blob);
+    size_t size = m_MainChunk.GetOffset() - offset;
+    Uint4 chunk_id = m_MainChunk.GetChunkSerialNum();
+
+    entry->Parentize();
+    x_ExtractAndIndex(*entry, timestamp, chunk_id, offset, size);
+    ostr_seqids << idh << endl;
+}
+
+void CPrimeCacheApplication::x_Process_SRA_ids(CNcbiIstream& istr,
+                                               CNcbiOstream& ostr_seqids)
+{
+    CStopWatch sw;
+    sw.Start();
+    size_t count = 0;
+
+    CVDBMgr mgr;
+    CCSraDb sra_db;
+    CCSraShortReadIterator iter;
+    string acc, seq_id;
+    while (NcbiGetlineEOL(istr, seq_id)) {
+        NStr::TruncateSpacesInPlace(seq_id);
+        if (seq_id.empty()  ||  seq_id[0] == '#') {
+            continue;
+        }
+        vector<string> id_tokens;
+        NStr::Split(seq_id.substr(8), ".", id_tokens);
+        if (!NStr::StartsWith(seq_id, "gnl|SRA|") || id_tokens.size() != 3) {
+          NCBI_THROW(CException, eUnknown, "Can't parse SRA seq id " + seq_id);
+        }
+        if (id_tokens[0] != acc) {
+            /// Starting new SRA run
+            if (!acc.empty()) {
+                ostr_seqids << "#Completed run " << acc << endl;
+            }
+            acc = id_tokens[0];
+            sra_db = CCSraDb(mgr, acc);
+            iter = CCSraShortReadIterator(sra_db);
+        }
+	iter.Select(NStr::StringToInt8(id_tokens[1]),
+                    NStr::StringToUInt(id_tokens[2]));
+        x_Process_SRA(iter, ostr_seqids);
+        ++count;
+        if (count % 100000 == 0) {
+            LOG_POST(Error << "  processed " << count << " reads...");
+        }
+    }
+    if (!acc.empty()) {
+        ostr_seqids << "#Completed run " << acc << endl;
+    }
+
+    LOG_POST(Error << "done, dumped " << count << " items");
+}
+
 void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
                                            CNcbiOstream& ostr_seqids)
 {
-    time_t timestamp = CTime(CTime::eCurrent).GetTimeT();
     CStopWatch sw;
     sw.Start();
     size_t count = 0;
@@ -690,53 +790,7 @@ void CPrimeCacheApplication::x_Process_SRA(CNcbiIstream& istr,
         CCSraShortReadIterator iter(sra_db);
 
         for ( ;  iter;  ++iter) {
-            CRef<CBioseq> bs = iter.GetShortBioseq();
-            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*bs->GetFirstId());
-            if (m_PreviousExecutionIds.count(idh)) {
-                // This is a resumption of a previous task, and we already
-                // cached this read
-                continue;
-            }
-            CRef<CSeq_entry> entry(new CSeq_entry);
-            entry->SetSeq(*bs);
-            entry->SetSeq().SetInst().SetMol(m_InstMol);
-
-            if (m_MolInfo) {
-                entry->SetSeq().SetDescr().Set().push_back(m_MolInfo);
-            }
-            if (m_Orgs.begin()->second.biosource) {
-                entry->SetSeq().SetDescr().Set().push_back(
-                    m_Orgs.begin()->second.biosource);
-            }
-            if (m_other_descs.size()>0) {
-                NON_CONST_ITERATE(list<CRef<CSeqdesc> >, desc, m_other_descs) {
-                    entry->SetSeq().SetDescr().Set().push_back(*desc); 
-                }
-            }
-
-            if (CSignal::IsSignaled()) {
-                ostr_seqids << "#Clean wrapup\n";
-                NCBI_THROW(CException, eUnknown,
-                           "trapped signal, exiting");
-            }
-
-            CCache_blob blob;
-            blob.SetTimestamp(timestamp);
-            blob.Pack(*entry);
-
-            m_MainChunk.OpenForWrite(m_CachePath);
-            size_t offset = m_MainChunk.GetOffset();
-            m_MainChunk.Write(blob);
-            size_t size = m_MainChunk.GetOffset() - offset;
-            Uint4 chunk_id = m_MainChunk.GetChunkSerialNum();
-
-            entry->Parentize();
-            x_ExtractAndIndex(*entry, timestamp, chunk_id, offset, size);
-            ostr_seqids << idh << endl;
-
-            // extract canonical IDs
-            // note that we do this without the object manager, for performance
-
+            x_Process_SRA(iter, ostr_seqids);
             ++count;
             if (count % 100000 == 0) {
                 LOG_POST(Error << "  processed " << count << " reads...");
@@ -1054,7 +1108,7 @@ int CPrimeCacheApplication::Run(void)
 
     if ((args["taxid"] || args["taxid-table"] || args["taxid-table-manifest"] ||
          args["molinfo"] || args["biosource"]  || args["submit-block-template"])
-        && ifmt != "fasta" && ifmt != "csra")
+        && ifmt != "fasta" && ifmt != "csra" && ifmt != "csra-ids")
     {
         NCBI_THROW(CException, eUnknown,
                    "metadata parameters only allowed with fasta or SRA input");
@@ -1065,7 +1119,8 @@ int CPrimeCacheApplication::Run(void)
         NCBI_THROW(CException, eUnknown,
                    "uniprot source parameters only allowed with fasta input");
     }
-    if (args["resume"] && ifmt != "fasta" && ifmt != "csra")
+    if (args["resume"] && ifmt != "fasta" && ifmt != "csra"
+                       && ifmt != "csra-ids")
     {
         NCBI_THROW(CException, eUnknown,
                    "Resume only supported with fasta or SRA input");
@@ -1323,6 +1378,9 @@ int CPrimeCacheApplication::Run(void)
             else if (ifmt == "csra") {
                 x_Process_SRA(is, ostr);
             }
+            else if (ifmt == "csra-ids") {
+                x_Process_SRA_ids(istr, ostr);
+            }
 #endif
             else if (ifmt == "asn-seq-entry") {
                 x_Process_SeqEntry(is, ostr, eSerial_AsnText, ids, count);
@@ -1347,6 +1405,9 @@ int CPrimeCacheApplication::Run(void)
 #ifdef HAVE_NCBI_VDB
             else if (ifmt == "csra") {
                 x_Process_SRA(istr, ostr);
+            }
+            else if (ifmt == "csra-ids") {
+                x_Process_SRA_ids(istr, ostr);
             }
 #endif        
         else if (ifmt == "asn-seq-entry") {
