@@ -498,7 +498,7 @@ void s_SleepMicroSec(unsigned long mc_sec)
 #elif defined(NCBI_OS_UNIX)
     struct timeval delay;
     delay.tv_sec  = (long)(mc_sec / 1000000);
-    #if defined(NCBI_OS_DARWIN)    
+    #if defined(__APPLE__)
         delay.tv_usec = (int)(mc_sec % 1000000);
     #else
         delay.tv_usec = (long)(mc_sec % 1000000);
