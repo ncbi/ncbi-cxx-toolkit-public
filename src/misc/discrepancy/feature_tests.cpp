@@ -1657,6 +1657,20 @@ DISCREPANCY_SUMMARIZE(CHECK_RNA_PRODUCTS_AND_COMMENTS)
 }
 
 
+DISCREPANCY_CASE(GENE_WITH_MULTIPLE_RRNAS, FEAT, eDisc | eOncaller | eSubmitter | eSmart | eFatal, "Check for genes with multiple rRNA features")
+{
+    set<const CSeq_feat*> parent_genes;
+    set<const CSeq_feat*> reported_genes;
+
+    for (const auto* rrna : context.FeatRRNAs()) {
+        const auto* gene = context.GetGeneForFeature(*rrna);
+        if (! parent_genes.insert(gene).second && reported_genes.insert(gene).second)  {
+            m_Objs["[n] gene[s] [has] multiple rRNA child features"].Add(*context.SeqFeatObjRef(*gene)).Fatal();
+        }
+    }
+}
+
+
 // FEATURE_LOCATION_CONFLICT
 
 const string kFeatureLocationConflictTop = "[n] feature[s] [has] inconsistent gene location[s].";
