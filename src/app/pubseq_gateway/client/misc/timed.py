@@ -311,22 +311,28 @@ def process(args):
 def extract(args):
     field_names, data, field_desc = read_csv(args)
     measurements = tuple(m for m in args.MEASUREMENTS if m in field_names)
+    reverse = lambda s: ''.join(reversed(s))
 
+    e_suffix = None
     output = {}
     for row in data:
         s = row[field_names['Which']]
         if s in args.statistics:
-            e = row[field_names['Executable']]
+            e = row[field_names['Command']]
+            e_reversed = reverse(e)
+            e_suffix = os.path.commonprefix([e_reversed, e_suffix]) if e_suffix else e_reversed
 
             for m in measurements:
                 output.setdefault(m, {}).setdefault(e, {})[s] = row[field_names[m]]
+
+    e_suffix = reverse(e_suffix)
 
     writer = csv.writer(args.output_file, quoting=csv.QUOTE_NONNUMERIC)
     for m, md in output.items():
         writer.writerow([field_desc[m]] + args.statistics)
 
         for e, ed in md.items():
-            writer.writerow([e] + list(ed.get(s) for s in args.statistics))
+            writer.writerow([e.removesuffix(e_suffix)] + list(ed.get(s) for s in args.statistics))
 
 parser = argparse.ArgumentParser()
 subparsers = parser.add_subparsers(title='available commands', metavar='COMMAND', required=True, dest='command')
