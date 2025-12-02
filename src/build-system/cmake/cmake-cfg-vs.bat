@@ -294,6 +294,10 @@ if not "%prebuilt_dir%"=="" (
 )
 
 if "%CMAKE_GENERATOR%"=="" (
+  if "%VISUAL_STUDIO%"=="2026" (
+    set CMAKE_GENERATOR=Visual Studio 18 2026
+    set CMAKE_GENERATOR_ARGS=-A x64
+  )
   if "%VISUAL_STUDIO%"=="2022" (
     set CMAKE_GENERATOR=Visual Studio 17 2022
     set CMAKE_GENERATOR_ARGS=-A x64
@@ -310,7 +314,9 @@ if "%CMAKE_GENERATOR%"=="" (
   )
 )
 set generator_name=%CMAKE_GENERATOR%
-if "%CMAKE_GENERATOR%"=="Visual Studio 17 2022" (
+if "%CMAKE_GENERATOR%"=="Visual Studio 18 2026" (
+  set generator_name=VS2026
+) else if "%CMAKE_GENERATOR%"=="Visual Studio 17 2022" (
   set generator_name=VS2022
 ) else if "%CMAKE_GENERATOR%"=="Visual Studio 16 2019" (
   set generator_name=VS2019
