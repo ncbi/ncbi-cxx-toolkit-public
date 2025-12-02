@@ -581,12 +581,12 @@ void CPSGS_Dispatcher::SignalFinishProcessing(IPSGS_Processor *  processor,
                                                      processor);
                         proc.m_DoneStatusRegistered = true;
                     }
-                } else {
-                    if (proc.m_ProcPerformanceRegistered == false) {
-                        auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
-                        timing.RegisterProcessorPerformance(processor, processor_status);
-                        proc.m_ProcPerformanceRegistered = true;
-                    }
+                }
+
+                if (proc.m_ProcPerformanceRegistered == false) {
+                    auto &  timing = CPubseqGatewayApp::GetInstance()->GetTiming();
+                    timing.RegisterProcessorPerformance(processor, processor_status);
+                    proc.m_ProcPerformanceRegistered = true;
                 }
             }
 
