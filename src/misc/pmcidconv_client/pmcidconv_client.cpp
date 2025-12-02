@@ -68,14 +68,13 @@ CPMCIDConverterServer::CPMCIDConverterServer(CPMCIDSearch::TResults& results)
 
 bool CPMCIDConverterServer::GetPmids(const vector<string>& uids)
 {
-    string hostname = "www.ncbi.nlm.nih.gov";
-    string path = "/pmc/utils/idconv/v1.0/";
+    string hostname = "pmc.ncbi.nlm.nih.gov";
+    string path = "/tools/idconv/api/v1/articles/";
     string args = "tool=NCBIToolkit&";
     auto username = CSystemInfo::GetUserName();
     if (! username.empty()) {
         args += "email=" + username + "@ncbi.nlm.nih.gov&";
     }
-    args += "versions=no&";
 
     m_Results.clear();
 
