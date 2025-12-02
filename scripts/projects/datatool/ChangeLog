@@ -212,3 +212,8 @@ Corrected list of generated files, added RPC client ones.
 April 15, 2024, CXX-13563
 version 2.24.0
 Dropped generation of empty union.
+
+December 02, 2025, CXX-14180
+version 2.25.0
+Corrected serialization of XML choice with optional variant.
+Fixed handling of integer enumeration attributes.
