@@ -684,7 +684,7 @@ static TEntrezId DoHydraSearch(const CPubData& data)
 
 static TEntrezId ConvertPMCtoPMID(TEntrezId pmc)
 {
-    static const string BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?tool=pub_report&versions=no&format=xml&ids=PMC";
+    static const string BASE_URL = "https://pmc.ncbi.nlm.nih.gov/tools/idconv/api/v1/articles/?tool=pub_report&format=xml&ids=PMC";
     static const size_t BUF_SIZE = 1024;
 
     string url = BASE_URL + NStr::IntToString(ENTREZ_ID_TO(int, pmc));
