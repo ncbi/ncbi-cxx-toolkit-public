@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Sat Nov 29 05:33:07 EST 2025; formally
+/* time_t value corresponding to Wed Dec  3 05:33:04 EST 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1764412387UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1764757984UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -5982,6 +5982,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NMTT\ts\tNational Museum and Art Gallery, Port-of-Spain\t\t\t",
 "NMU\ts\tNorthern Michigan University Museum of Zoology\t\t\t",
 "NMU:Bird\ts\tNorthern Michigan University Museum of Zoology, NMU Bird Collection\t\t\t",
+"NMU:Ento\ts\tNorthern Michigan University Museum of Zoology, NMU Invertebrates Collection\t\t\t",
 "NMU:Herb\ts\tNorthern Michigan University Museum of Zoology, NMU Herbarium collection\t\t\t",
 "NMU:Herp\ts\tNorthern Michigan University Museum of Zoology, NMU Herpetology Collection\t\t\t",
 "NMU:Mamm\ts\tNorthern Michigan University Museum of Zoology, NMU Mammal Collection\t\t\t",
@@ -8617,6 +8618,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UPVLP\ts\tLaboratorio de Paleontolgia of the Universdad del Pais Vasco/Euskal Herriko Unibersitatea\t\t\t",
 "UPVMI\ts\tUniversity of the Philippines Visayas Museum of Natural Sciences\tUPVM\t\t",
 "UPVMI:I\ts\tUniversity of the Philippines Visayas Museum of Natural Sciences , University of the Philippines Visayas Museum of Natural Sciences Ichthyological Collection\tUPVM:I,UPVMI\t\t",
+"UPVMICC\tc\tUniversity of the Philippines Visayas Miagao Culture Collection\t\t\t",
 "UQ\ts\tCentre for Mined Land Rehabilitation\t\t\t",
 "UQAM\ts\tUniversite du Quebec a Montreal, Departement des Sciences biologiques\t\t\t",
 "UQAR\ts\tUniversite du Quebec a Rimouski, Departement de biologie\t\t\t",

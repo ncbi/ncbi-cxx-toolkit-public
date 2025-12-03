@@ -5946,6 +5946,7 @@ NMTC	s	Inner Mongolia Normal University, Biology Department
 NMTT	s	National Museum and Art Gallery, Port-of-Spain			
 NMU	s	Northern Michigan University Museum of Zoology			
 NMU:Bird	s	Northern Michigan University Museum of Zoology, NMU Bird Collection			
+NMU:Ento	s	Northern Michigan University Museum of Zoology, NMU Invertebrates Collection			
 NMU:Herb	s	Northern Michigan University Museum of Zoology, NMU Herbarium collection			
 NMU:Herp	s	Northern Michigan University Museum of Zoology, NMU Herpetology Collection			
 NMU:Mamm	s	Northern Michigan University Museum of Zoology, NMU Mammal Collection			
@@ -8581,6 +8582,7 @@ UPVB	s	Departamento de Geologia,Universidad del Pais Vasco
 UPVLP	s	Laboratorio de Paleontolgia of the Universdad del Pais Vasco/Euskal Herriko Unibersitatea			
 UPVMI	s	University of the Philippines Visayas Museum of Natural Sciences	UPVM		
 UPVMI:I	s	University of the Philippines Visayas Museum of Natural Sciences , University of the Philippines Visayas Museum of Natural Sciences Ichthyological Collection	UPVM:I,UPVMI		
+UPVMICC	c	University of the Philippines Visayas Miagao Culture Collection			
 UQ	s	Centre for Mined Land Rehabilitation			
 UQAM	s	Universite du Quebec a Montreal, Departement des Sciences biologiques			
 UQAR	s	Universite du Quebec a Rimouski, Departement de biologie			
