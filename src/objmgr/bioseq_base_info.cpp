@@ -192,6 +192,23 @@ void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
 }
 
 
+void CBioseq_Base_Info::x_AddDescrChunkId(const TDescTypeMask& types,
+                                          TChunkId id,
+                                          ENeedOtherDescr other_descr)
+{
+    if ( other_descr == eNeedOtherDescr ) {
+        // mark all other chunks with matching descriptors as having all
+        // the descriptor types to force loading all of them
+        for ( auto& m : m_DescrTypeMasks ) {
+            if ( m & types ) {
+                m |= types;
+            }
+        }
+    }
+    x_AddDescrChunkId(types, id);
+}
+
+
 void CBioseq_Base_Info::x_AddAnnotChunkId(TChunkId id)
 {
     m_AnnotChunks.push_back(id);

@@ -151,6 +151,12 @@ public:
     void x_SetAnnot(const CBioseq_Base_Info& info, TObjectCopyMap* copy_map);
 
     void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id);
+    enum ENeedOtherDescr {
+        eNoNeedOtherDescr,
+        eNeedOtherDescr
+    };
+    void x_AddDescrChunkId(const TDescTypeMask& types, TChunkId chunk_id,
+                           ENeedOtherDescr other_descr);
     void x_AddAnnotChunkId(TChunkId chunk_id);
     const TChunkIds& x_GetDescrChunkIds() const;
 
