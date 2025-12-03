@@ -1461,7 +1461,7 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             continue;
         }
         if ( chunk.GetChunkId() == kMasterWGS_ChunkId ) {
-            CWGSMasterSupport::LoadWGSMaster(data_source->GetDataLoader(), it);
+            // load WGS master chunks on the second pass
             continue;
         }
         if ( chunk.GetChunkId() == kDelayedMain_ChunkId ) {
@@ -1528,9 +1528,14 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
         }
     }
     // check if all chunks are loaded
+    CDataLoader::TChunkSet wgs_master_chunks;
     ITERATE ( CDataLoader::TChunkSet, it, chunks ) {
         const CTSE_Chunk_Info & chunk = **it;
         if ( !chunk.IsLoaded() ) {
+            if ( chunk.GetChunkId() == kMasterWGS_ChunkId ) {
+                wgs_master_chunks.push_back(*it);
+                continue;
+            }
             _TRACE("CPSGDataLoader::LoadChunks(): failed to load chunk "<<
                    chunk.GetChunkId()<<" of "<<chunk.GetBlobId()->ToString());
             ++failed_count;
@@ -1539,6 +1544,9 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
     if ( failed_count ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
                        FormatBulkError("chunks", first_failed_processor));
+    }
+    for ( auto& it : wgs_master_chunks ) {
+        CWGSMasterSupport::LoadWGSMaster(data_source->GetDataLoader(), it);
     }
 }
 
