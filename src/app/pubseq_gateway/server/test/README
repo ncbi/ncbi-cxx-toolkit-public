@@ -150,4 +150,7 @@ make install
 -- rename /export/home/satskyse/psglibs/lib64 to /export/home/satskyse/psglibs/lib64-orig
 -- otherwise it messes up the toolkit configure
 
+-- configure the server, e.g.
+./compilers/unix/GCC.sh 13.2.0 --with-debug  --with-symbols --with-mt --with-flat-makefile --with-libuv=/export/home/satskyse/psglibs/ --with-cassandra=/export/home/satskyse/psglibs/ --with-h2o=/export/home/satskyse/psglibs/ --with-libssh2=$NCBI/libssh2-1.11.0 --with-lmdb=$NCBI/lmdb-0.9.24
+
 
