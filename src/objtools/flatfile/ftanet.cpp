@@ -130,7 +130,7 @@ void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
             size_t j = i + kbp->len;
             while (j < comment.size() && (comment[j] == ' ' || comment[j] == ';'))
                 j++;
-            comment.erase(i, j);
+            comment.erase(i, j - i);
         }
     }
 
