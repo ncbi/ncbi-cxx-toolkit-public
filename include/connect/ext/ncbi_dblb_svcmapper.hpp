@@ -72,6 +72,7 @@ protected:
     void ConfigureFromRegistry(const IRegistry* registry = NULL);
 
 private:
+    static CRef<CDBServerOption> x_GetLiteral(CTempString server);
     TSvrRef x_GetServer(const string&    service);
     bool x_IsEmpty(const string& service, TSERV_Type promiscuity, time_t now);
     
