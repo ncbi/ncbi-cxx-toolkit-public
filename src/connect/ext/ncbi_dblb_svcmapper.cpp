@@ -166,8 +166,50 @@ bool CDBLB_ServiceMapper::x_IsEmpty(const string& service,
 TSvrRef
 CDBLB_ServiceMapper::GetServer(const string& service)
 {
+    TSvrRef svr = x_GetLiteral(service);
+    if (svr.NotEmpty()) {
+        return svr;
+    }
     CFastMutexGuard mg(m_Mtx);
     return x_GetServer(service);
+}
+
+CRef<CDBServerOption>
+CDBLB_ServiceMapper::x_GetLiteral(CTempString server)
+{
+    CTempString orig_server = server;
+    CRef<CDBServerOption> svr;
+    SIZE_TYPE pos = server.find_last_of(".:");
+    if (pos == NPOS) {
+        return svr;
+    }
+    Uint2 port = 0;
+    if (server[pos] == ':'  &&  pos > 0
+        &&  (server[0] == '['  ||  server.find(':') == pos)) {
+        if (NStr::StringToNumeric(server.substr(pos+1), &port,
+                                  NStr::fConvErr_NoThrow)) {
+            if (server[0] == '['  &&  server[pos-1] == ']') {
+                server = server.substr(1, pos - 2);
+            } else {
+                server = server.substr(0, pos);
+            }
+        } else {
+            return svr;
+        }
+    }
+    auto host = CSocketAPI::gethostbyname(server);
+    if (host.IsEmpty()  &&  server[pos] == '.') {
+        return svr;
+    }
+    time_t expiration = CDBServer::kMaxExpireTime;
+    if ((Uint4)host != 0
+        &&  !CSocketAPI::isip(server, CSocketAPI::eIP_Any) ) {
+        expiration = time(nullptr) + 10;
+    }
+    svr.Reset(new CDBServerOption((Uint4)host ? orig_server : server,
+                                  host, port, 1.0 /* ranking */,
+                                  CDBServerOption::fState_Normal, expiration));
+    return svr;
 }
 
 TSvrRef
@@ -228,6 +270,17 @@ void
 CDBLB_ServiceMapper::GetServersList(const string& service, list<string>* serv_list) const
 {
     serv_list->clear();
+    TSvrRef svr = x_GetLiteral(service);
+    if (svr.NotEmpty()) {
+        string s;
+        if (svr->GetHost() == 0) {
+            s = service; // or svr->GetName(), equivalently
+        } else {
+            s = CSocketAPI::HostPortToString(svr->GetHost(), svr->GetPort());
+        }
+        serv_list->push_back(s);
+        return;
+    }
     SConnNetInfo* net_info = ConnNetInfo_Create(service.c_str());
     SERV_ITER srv_it = SERV_Open(service.c_str(),
                                  fSERV_Standalone
@@ -267,6 +320,12 @@ struct SRawOption : public CObject
 void
 CDBLB_ServiceMapper::GetServerOptions(const string& service, TOptions* options)
 {
+    auto svr = x_GetLiteral(service);
+    if (svr.NotEmpty()) {
+        options->clear();
+        options->push_back(svr);
+        return;
+    }
     CFastMutexGuard mg(m_Mtx);
     options->clear();
     time_t cur_time = time(NULL);
