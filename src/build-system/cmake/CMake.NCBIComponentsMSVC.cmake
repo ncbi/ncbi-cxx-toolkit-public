@@ -52,34 +52,34 @@ set(NCBI_ThirdParty_SybaseLocalPath "" CACHE PATH "SybaseLocalPath")
 
 if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_BerkeleyDB ${NCBI_ThirdPartyBasePath}/berkeleydb/${NCBI_ThirdPartyCompiler}/5.3.28-ncbi1 CACHE PATH "BerkeleyDB root")
-    set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.85.0 CACHE PATH "Boost root")
-    set(NCBI_ThirdParty_BZ2        ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.8 CACHE PATH "BZ2 root")
+    set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.89.0 CACHE PATH "Boost root")
+    set(NCBI_ThirdParty_BZ2        ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.8-ncbi1 CACHE PATH "BZ2 root")
     set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.1 CACHE PATH "FASTCGI root")
-    set(NCBI_ThirdParty_FreeType   ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.4.10 CACHE PATH "FreeType root")
-    set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3-rc5 CACHE PATH "FTGL root")
+    set(NCBI_ThirdParty_FreeType   ${NCBI_ThirdPartyBasePath}/freetype/${NCBI_ThirdPartyCompiler}/2.14.1 CACHE PATH "FreeType root")
+    set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3_rc5 CACHE PATH "FTGL root")
     set(NCBI_ThirdParty_GIF        ${NCBI_ThirdPartyBasePath}/gif/${NCBI_ThirdPartyCompiler}/4.1.3 CACHE PATH "GIF root")
-    set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.0 CACHE PATH "GL2PS root")
-    set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8 CACHE PATH "GLEW root")
+    set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.2 CACHE PATH "GL2PS root")
+    set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/2.2.0 CACHE PATH "GLEW root")
     set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.8.9 CACHE PATH "GNUTLS root")
     set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "PROTOBUF root")
     set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "GRPC root")
-    set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/9c CACHE PATH "JPEG root")
-    set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.24 CACHE PATH "LMDB root")
-    set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.10 CACHE PATH "LZO root")
-    set(NCBI_ThirdParty_NCBICRYPT  ${NCBI_ThirdPartyBasePath}/ncbicrypt/${NCBI_ThirdPartyCompiler}/20230516 CACHE PATH "NCBICRYPT root")
-    set(NCBI_ThirdParty_NGHTTP2    ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.40.0 CACHE PATH "NGHTTP2 root")
+    set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/3.1.1 CACHE PATH "JPEG root")
+    set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.33 CACHE PATH "LMDB root")
+    set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.10-ncbi1 CACHE PATH "LZO root")
+    set(NCBI_ThirdParty_NCBICRYPT  ${NCBI_ThirdPartyBasePath}/ncbicrypt/${NCBI_ThirdPartyCompiler}/1.0.1 CACHE PATH "NCBICRYPT root")
+    set(NCBI_ThirdParty_NGHTTP2    ${NCBI_ThirdPartyBasePath}/nghttp2/${NCBI_ThirdPartyCompiler}/1.67.1 CACHE PATH "NGHTTP2 root")
     set(NCBI_ThirdParty_PCRE       ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdPartyCompiler}/8.42 CACHE PATH "PCRE root")
-    set(NCBI_ThirdParty_PCRE2      ${NCBI_ThirdPartyBasePath}/pcre2/${NCBI_ThirdPartyCompiler}/10.44 CACHE PATH "PCRE2 root")
-    set(NCBI_ThirdParty_PNG        ${NCBI_ThirdPartyBasePath}/png/${NCBI_ThirdPartyCompiler}/1.6.34 CACHE PATH "PNG root")
+    set(NCBI_ThirdParty_PCRE2      ${NCBI_ThirdPartyBasePath}/pcre2/${NCBI_ThirdPartyCompiler}/10.46 CACHE PATH "PCRE2 root")
+    set(NCBI_ThirdParty_PNG        ${NCBI_ThirdPartyBasePath}/png/${NCBI_ThirdPartyCompiler}/1.6.50 CACHE PATH "PNG root")
     set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.26.0 CACHE PATH "SQLITE3 root")
-    set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/3.6.1 CACHE PATH "TIFF root")
-    set(NCBI_ThirdParty_UV         ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.48.0 CACHE PATH "UV root")
+    set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/3.6.1-ncbi1 CACHE PATH "TIFF root")
+    set(NCBI_ThirdParty_UV         ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.51.0 CACHE PATH "UV root")
     set(NCBI_ThirdParty_XALAN      ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.12 CACHE PATH "XALAN root")
     set(NCBI_ThirdParty_XERCES     ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/3.2.3 CACHE PATH "XERCES root")
-    set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/xml/${NCBI_ThirdPartyCompiler}/2.7.8 CACHE PATH "XML root")
-    set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdPartyCompiler}/1.1.26 CACHE PATH "XSLT root")
+    set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/xml/${NCBI_ThirdPartyCompiler}/2.15.1 CACHE PATH "XML root")
+    set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdPartyCompiler}/1.1.43 CACHE PATH "XSLT root")
     set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
-    set(NCBI_ThirdParty_Z          ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.12 CACHE PATH "Z root")
+    set(NCBI_ThirdParty_Z          ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.12-ncbi1 CACHE PATH "Z root")
     set(NCBI_ThirdParty_ZSTD       ${NCBI_ThirdPartyBasePath}/zstd/${NCBI_ThirdPartyCompiler}/1.5.2 CACHE PATH "ZSTD root")
     set(NCBI_ThirdParty_VDB        ${NCBI_ThirdParty_VDBROOT}/vdb-versions/3.3.0 CACHE PATH "VDB root")
     set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
@@ -318,7 +318,11 @@ set(HAVE_LIBZ ${NCBI_COMPONENT_Z_FOUND})
 
 #############################################################################
 # BZ2
-NCBI_define_Wcomponent(BZ2 libbzip2.lib)
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+    NCBI_define_Wcomponent(BZ2 bz2_static.lib)
+else()
+    NCBI_define_Wcomponent(BZ2 libbzip2.lib)
+endif()
 NCBIcomponent_report(BZ2)
 if(NOT NCBI_COMPONENT_BZ2_FOUND)
     set(NCBI_COMPONENT_BZ2_FOUND ${NCBI_COMPONENT_LocalBZ2_FOUND})
@@ -329,7 +333,11 @@ set(HAVE_LIBBZ2 ${NCBI_COMPONENT_BZ2_FOUND})
 
 #############################################################################
 # LZO
-NCBI_define_Wcomponent(LZO liblzo.lib)
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+    NCBI_define_Wcomponent(LZO lzo2.lib)
+else()
+    NCBI_define_Wcomponent(LZO liblzo.lib)
+endif()
 NCBIcomponent_report(LZO)
 
 #############################################################################
@@ -362,32 +370,44 @@ endif()
 if(NOT NCBI_COMPONENT_Boost.Test_FOUND)
     NCBI_define_Wcomponent(Boost.Test libboost_unit_test_framework.lib)
     if(NCBI_COMPONENT_Boost.Test_FOUND)
-        set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+        set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_SYSTEM)
     endif()
 endif()
 
 #############################################################################
 # Boost.Spirit
 if(NOT NCBI_COMPONENT_Boost.Spirit_FOUND)
-    NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib libboost_date_time.lib libboost_chrono.lib)
+    else()
+        NCBI_define_Wcomponent(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    endif()
     if(NCBI_COMPONENT_Boost.Spirit_FOUND)
-        set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+        set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_SYSTEM)
     endif()
 endif()
 
 #############################################################################
 # Boost.Thread
 if(NOT NCBI_COMPONENT_Boost.Thread_FOUND)
-    NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+        NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib libboost_date_time.lib libboost_chrono.lib)
+    else()
+        NCBI_define_Wcomponent(Boost.Thread libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
+    endif()
     if(NCBI_COMPONENT_Boost.Thread_FOUND)
-        set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+        set(NCBI_COMPONENT_Boost.Thread_DEFINES BOOST_AUTO_LINK_SYSTEM)
     endif()
 endif()
 
 #############################################################################
 # Boost
 if(NOT NCBI_COMPONENT_Boost_FOUND)
-    NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib boost_system.lib)
+    if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+        NCBI_define_Wcomponent(Boost libboost_filesystem.lib libboost_iostreams.lib libboost_date_time.lib libboost_regex.lib)
+    else()
+        NCBI_define_Wcomponent(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib boost_system.lib)
+    endif()
 endif()
 
 endif(NOT NCBI_COMPONENT_Boost_DISABLED AND NOT NCBI_COMPONENT_Boost_FOUND)
@@ -399,7 +419,11 @@ NCBIcomponent_report(Boost)
 
 #############################################################################
 # JPEG
-NCBI_define_Wcomponent(JPEG libjpeg.lib)
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+    NCBI_define_Wcomponent(JPEG jpeg-static.lib)
+else()
+    NCBI_define_Wcomponent(JPEG libjpeg.lib)
+endif()
 NCBIcomponent_report(JPEG)
 
 #############################################################################
@@ -456,12 +480,26 @@ NCBIcomponent_report(XML)
 
 #############################################################################
 # XSLT
-NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
+if(NOT NCBI_COMPONENT_XSLT_FOUND)
+    NCBI_define_Wcomponent(XSLT libexslt.lib libxslt.lib)
+    if (NCBI_COMPONENT_XSLT_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set (NCBI_COMPONENT_XSLT_DEFINES LIBEXSLT_STATIC LIBXSLT_STATIC)
+        endif()
+    endif()
+endif()
 NCBIcomponent_report(XSLT)
 
 #############################################################################
 # EXSLT
-NCBI_define_Wcomponent(EXSLT libexslt.lib)
+if(NOT NCBI_COMPONENT_EXSLT_FOUND)
+    NCBI_define_Wcomponent(EXSLT libexslt.lib)
+    if (NCBI_COMPONENT_EXSLT_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set (NCBI_COMPONENT_EXSLT_DEFINES LIBEXSLT_STATIC)
+        endif()
+    endif()
+endif()
 NCBIcomponent_report(EXSLT)
 
 #############################################################################
@@ -612,7 +650,7 @@ endif()
 
 ##############################################################################
 # XALAN
-NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMessages.lib)
+NCBI_define_Wcomponent(XALAN xalan-c.lib XalanMsgLib.lib)
 NCBIcomponent_report(XALAN)
 
 ##############################################################################
@@ -634,18 +672,40 @@ NCBIcomponent_report(XERCES)
 if(NOT NCBI_COMPONENT_FTGL_FOUND)
     NCBI_define_Wcomponent(FTGL ftgl.lib)
     if(NCBI_COMPONENT_FTGL_FOUND)
-        set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
+        if(NOT BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_FTGL_DEFINES FTGL_LIBRARY_STATIC)
+        endif()
     endif()
 endif()
 NCBIcomponent_report(FTGL)
 
 ##############################################################################
 # FreeType
-NCBI_define_Wcomponent(FreeType freetype.lib)
+if(NOT NCBI_COMPONENT_FreeType_FOUND)
+    NCBI_define_Wcomponent(FreeType freetype.lib)
+    if(NCBI_COMPONENT_FreeType_FOUND)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_FreeType_DEFINES DLL_IMPORT)
+        endif()
+    endif()
+endif()
 NCBIcomponent_report(FreeType)
 
 ##############################################################################
 # GLEW
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+
+if(NOT NCBI_COMPONENT_GLEW_FOUND)
+    NCBI_define_Wcomponent(GLEW libglew32.lib)
+    if(NCBI_COMPONENT_GLEW_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_STATIC)
+        endif()
+    endif()
+endif()
+
+else()
+
 if(NOT NCBI_COMPONENT_GLEW_FOUND)
     NCBI_define_Wcomponent(GLEW glew32mx.lib)
     if(NCBI_COMPONENT_GLEW_FOUND)
@@ -655,6 +715,8 @@ if(NOT NCBI_COMPONENT_GLEW_FOUND)
             set(NCBI_COMPONENT_GLEW_DEFINES GLEW_MX GLEW_STATIC)
         endif()
     endif()
+endif()
+
 endif()
 NCBIcomponent_report(GLEW)
 
@@ -674,24 +736,34 @@ if(NOT NCBI_COMPONENT_wxWidgets_FOUND)
         endif()
     endif()
 endif()
-NCBIcomponent_report( wxWidgets)
+NCBIcomponent_report(wxWidgets)
 
 ##############################################################################
 # UV
 if(NOT NCBI_COMPONENT_UV_FOUND)
     NCBI_define_Wcomponent(UV libuv.lib)
     if(NCBI_COMPONENT_UV_FOUND)
+        if(BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_UV_DEFINES USING_UV_SHARED)
+        endif()
         set(NCBI_COMPONENT_UV_LIBS ${NCBI_COMPONENT_UV_LIBS} psapi.lib Iphlpapi.lib userenv.lib)
     endif()
 endif()
-NCBIcomponent_report( UV)
+NCBIcomponent_report(UV)
 
 ##############################################################################
 # NGHTTP2
-NCBI_define_Wcomponent(NGHTTP2 nghttp2.lib)
-NCBIcomponent_report( NGHTTP2)
+if(NOT NCBI_COMPONENT_NGHTTP2_FOUND)
+    NCBI_define_Wcomponent(NGHTTP2 nghttp2.lib)
+    if(NCBI_COMPONENT_NGHTTP2_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_NGHTTP2_DEFINES NGHTTP2_STATICLIB)
+        endif()
+    endif()
+endif()
+NCBIcomponent_report(NGHTTP2)
 
 ##############################################################################
 # GL2PS
 NCBI_define_Wcomponent(GL2PS gl2ps.lib)
-NCBIcomponent_report( GL2PS)
+NCBIcomponent_report(GL2PS)
