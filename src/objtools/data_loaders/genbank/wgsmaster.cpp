@@ -386,7 +386,7 @@ public:
             if ( HasMasterId(seq) ) {
                 // register master descr chunk
                 //ERR_POST("Adding descr chunk id to "<<seq.GetId().front());
-                seq.x_AddDescrChunkId(kGoodDescrMask, kMasterWGS_ChunkId);
+                seq.x_AddDescrChunkId(kGoodDescrMask, kMasterWGS_ChunkId, seq.eNeedOtherDescr);
             }
         }
 };

@@ -1443,10 +1443,11 @@ void CGBDataLoader_Native::GetChunks(const TChunkSet& chunks)
 {
     // filter out WGS master and sort chunks
     map<CReadDispatcher::TBlobId, CReadDispatcher::TChunkIds> chunks_to_load;
+    TChunkSet wgs_master_chunks;
     for ( auto& it : chunks ) {
         auto chunk_id = it->GetChunkId();
         if ( chunk_id == kMasterWGS_ChunkId ) {
-            CWGSMasterSupport::LoadWGSMaster(this, it);
+            wgs_master_chunks.push_back(it);
         }
         else {
             chunks_to_load[GetRealBlobId(it->GetBlobId())].push_back(chunk_id);
@@ -1456,6 +1457,9 @@ void CGBDataLoader_Native::GetChunks(const TChunkSet& chunks)
                                              chunks_to_load.end());
     CGBReaderRequestResult result(this, CSeq_id_Handle());
     m_Dispatcher->LoadChunks(result, chunk_ids);
+    for ( auto& it : wgs_master_chunks ) {
+        CWGSMasterSupport::LoadWGSMaster(this, it);
+    }
 }
 
 
