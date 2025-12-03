@@ -2210,6 +2210,62 @@ BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr15)
     CRef<CScope> scope = s_InitScope();
     CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JBCEDJ010000001.1"));
     BOOST_REQUIRE(bh);
+    if ( 0 ) {
+        // first pre-fetch WGS master descriptors without touching split descriptors
+        int count = 0;
+        for ( CSeqdesc_CI it(bh, CSeqdesc::e_Pub); it; ++it ) {
+            ++count;
+        }
+        BOOST_CHECK_EQUAL(count, 2);
+    }
+    int desc_mask = 0;
+    map<string, int> user_count;
+    int comment_count = 0;
+    int pub_count = 0;
+    int total_count = 0;
+    for ( CTypeConstIterator<CSeqdesc> it(Begin(*bh.GetTSE_Handle().GetCompleteObject())); it; ++it ) {
+        if ( it->IsUser() && it->GetUser().GetType().GetStr() == "WithMasterDescr" ) {
+            LOG_POST("Got WithMasterDescr");
+            continue;
+        }
+        ++total_count;
+        desc_mask |= 1<<it->Which();
+        switch ( it->Which() ) {
+        case CSeqdesc::e_Comment:
+            ++comment_count;
+            break;
+        case CSeqdesc::e_Pub:
+            ++pub_count;
+            break;
+        case CSeqdesc::e_User:
+            ++user_count[it->GetUser().GetType().GetStr()];
+            break;
+        default:
+            break;
+        }
+    }
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Source));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Molinfo));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Pub));
+    BOOST_CHECK_EQUAL(pub_count, 2);
+    BOOST_CHECK(!(desc_mask & (1<<CSeqdesc::e_Comment)));
+    BOOST_CHECK_EQUAL(comment_count, 0);
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Create_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_Update_date));
+    BOOST_CHECK(desc_mask & (1<<CSeqdesc::e_User));
+    BOOST_CHECK_EQUAL(user_count.size(), 2u);
+    BOOST_CHECK_EQUAL(user_count["DBLink"], 1);
+    BOOST_CHECK_EQUAL(user_count["StructuredComment"], 1);
+    BOOST_CHECK_EQUAL(total_count, 8);
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckWGSMasterDescr16)
+{
+    LOG_POST("Checking WGS master sequence descriptors with split descriptors and priming");
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh = scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("JBCEDJ010000001.1"));
+    BOOST_REQUIRE(bh);
     if ( 1 ) {
         // first pre-fetch WGS master descriptors without touching split descriptors
         int count = 0;
