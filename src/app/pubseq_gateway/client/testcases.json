@@ -26226,7 +26226,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26240,8 +26240,8 @@
                 }
             ]
         },
-        "IPG gi non gi non data 2": {
-            "description": "IPG gi non gi non data 2",
+        "IPG gi non gi no data 2": {
+            "description": "IPG gi non gi no data 2",
             "tags": ["ipg-resolve", "cassandra", "404"],
             "requests": [
                 [
@@ -26268,7 +26268,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
