@@ -3407,13 +3407,16 @@ CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
     sorted_seq_ids.GetSortedIds(sorted_ids);
 
     TBioseqHandles ret;
+    const size_t kBlockSize = 100000;
     size_t count = sorted_ids.size();
     ret.resize(count);
-    if ( count > 200 ) {
+    if ( count > 2*kBlockSize ) {
         // split batch into smaller pieces to avoid problems with GC
         for ( size_t pos = 0; pos < count; ) {
             size_t cnt = count - pos;
-            if ( cnt > 150 ) cnt = 100;
+            if ( cnt > kBlockSize+kBlockSize/2 ) {
+                cnt = kBlockSize;
+            }
             x_GetBioseqHandlesSorted(sorted_ids, pos, cnt, ret);
             pos += cnt;
         }
