@@ -88,46 +88,38 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-struct KwordBlk {
-    const char* str;
-    Int2        len;
-};
-
-static const KwordBlk PubStatus[] = {
-    { "Publication Status: Available-Online prior to print", 51 },
-    { "Publication Status : Available-Online prior to print", 52 },
-    { "Publication_Status: Available-Online prior to print", 51 },
-    { "Publication_Status : Available-Online prior to print", 52 },
-    { "Publication-Status: Available-Online prior to print", 51 },
-    { "Publication-Status : Available-Online prior to print", 52 },
-    { "Publication Status: Online-Only", 31 },
-    { "Publication Status : Online-Only", 32 },
-    { "Publication_Status: Online-Only", 31 },
-    { "Publication_Status : Online-Only", 32 },
-    { "Publication-Status: Online-Only", 31 },
-    { "Publication-Status : Online-Only", 32 },
-    { "Publication Status: Available-Online", 36 },
-    { "Publication Status : Available-Online", 37 },
-    { "Publication_Status: Available-Online", 36 },
-    { "Publication_Status : Available-Online", 37 },
-    { "Publication-Status: Available-Online", 36 },
-    { "Publication-Status : Available-Online", 37 },
-    { nullptr, 0 }
+static const string_view PubStatus[] = {
+    "Publication Status: Available-Online prior to print"sv,
+    "Publication Status : Available-Online prior to print"sv,
+    "Publication_Status: Available-Online prior to print"sv,
+    "Publication_Status : Available-Online prior to print"sv,
+    "Publication-Status: Available-Online prior to print"sv,
+    "Publication-Status : Available-Online prior to print"sv,
+    "Publication Status: Online-Only"sv,
+    "Publication Status : Online-Only"sv,
+    "Publication_Status: Online-Only"sv,
+    "Publication_Status : Online-Only"sv,
+    "Publication-Status: Online-Only"sv,
+    "Publication-Status : Online-Only"sv,
+    "Publication Status: Available-Online"sv,
+    "Publication Status : Available-Online"sv,
+    "Publication_Status: Available-Online"sv,
+    "Publication_Status : Available-Online"sv,
+    "Publication-Status: Available-Online"sv,
+    "Publication-Status : Available-Online"sv,
 };
 
 /**********************************************************/
-void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
+static void fta_strip_pub_comment(string& comment)
 {
-    const char* p;
-
     ShrinkSpaces(comment);
-    for (; kbp->str; kbp++) {
+
+    for (const auto& kbp : PubStatus) {
         for (;;) {
-            p = StringIStr(comment.c_str(), kbp->str);
-            if (! p)
+            auto i = NStr::FindNoCase(comment, kbp);
+            if (i == NPOS)
                 break;
-            size_t i = p - comment.c_str();
-            size_t j = i + kbp->len;
+            size_t j = i + kbp.size();
             while (j < comment.size() && (comment[j] == ' ' || comment[j] == ';'))
                 j++;
             comment.erase(i, j - i);
@@ -136,11 +128,11 @@ void fta_strip_pub_comment(string& comment, const KwordBlk* kbp)
 
     ShrinkSpaces(comment);
 
-    p = comment.empty() ? nullptr : comment.c_str();
-    if (p && (NStr::StartsWith(p, "Publication Status"sv, NStr::eNocase) ||
-              NStr::StartsWith(p, "Publication_Status"sv, NStr::eNocase) ||
-              NStr::StartsWith(p, "Publication-Status"sv, NStr::eNocase)))
-        FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"{}\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", p);
+    if (! comment.empty() &&
+        (NStr::StartsWith(comment, "Publication Status"sv, NStr::eNocase) ||
+         NStr::StartsWith(comment, "Publication_Status"sv, NStr::eNocase) ||
+         NStr::StartsWith(comment, "Publication-Status"sv, NStr::eNocase)))
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_UnusualPubStatus, "An unusual Publication Status comment exists for this record: \"{}\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.", comment);
 }
 
 /**********************************************************/
@@ -355,7 +347,7 @@ static void fta_strip_er_remarks(CPubdesc& pub_descr)
             status == ePubStatus_ppublish ||
             status == ePubStatus_aheadofprint) {
             string comment = pub_descr.GetComment();
-            fta_strip_pub_comment(comment, PubStatus);
+            fta_strip_pub_comment(comment);
             if (! comment.empty())
                 pub_descr.SetComment(comment);
             else
