@@ -2029,7 +2029,7 @@ void CDataSource::GetBlobs(TSeqMatchMap& match_map)
 #ifdef NCBI_USE_TSAN
         const size_t limit_blobs_request = 15;
 #else
-        const size_t limit_blobs_request = 200;
+        const size_t limit_blobs_request = 100000;
 #endif
         ITERATE(TSeqMatchMap, match, match_map) {
             _ASSERT( !match->second );
