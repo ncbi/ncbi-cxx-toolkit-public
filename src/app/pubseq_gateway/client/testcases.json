@@ -25405,7 +25405,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"
+                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"}
                             }
                         ]
                     }
@@ -25446,7 +25446,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26142,7 +26142,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26184,7 +26184,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26226,7 +26226,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26268,7 +26268,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26310,7 +26310,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26352,7 +26352,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26472,7 +26472,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"}
                             }
                         ]
                     }
@@ -26514,7 +26514,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE1\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"}
                             }
                         ]
                     }
