@@ -54,6 +54,66 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 
+//#define COLLECT_PROFILE
+
+#ifdef COLLECT_PROFILE
+struct SProfiler
+{
+    atomic<const char*> name;
+    atomic<size_t> count;
+    CStopWatch sw;
+    SProfiler() : name(0), count(0) {}
+    ~SProfiler() {
+        if ( name )
+            cerr << name<<" calls: "<<count<<" time: "<<sw.Elapsed()<<endl;
+    }
+};
+struct SProfilerGuard
+{
+    SProfiler& sw;
+    SProfilerGuard(SProfiler& sw, const char* name)
+        : sw(sw)
+        {
+            sw.name = name;
+            sw.count += 1;
+            sw.sw.Start();
+        }
+    ~SProfilerGuard()
+        {
+            sw.sw.Stop();
+        }
+};
+
+static SProfiler sp_Blob_ProcessItemSlow1;
+static SProfiler sp_Blob_ProcessItemSlow2;
+static SProfiler sp_Blob_ProcessItemSlow3;
+static SProfiler sp_PostProcessBlob1;
+static SProfiler sp_PostProcessBlob2;
+static SProfiler sp_PostProcessBlob3;
+static SProfiler sp_PostProcessBlob4;
+static SProfiler sp_TSE_ToOM;
+static SProfiler sp_TSE_ToOM1;
+static SProfiler sp_TSE_ToOM2;
+static SProfiler sp_TSE_ToOM3;
+static SProfiler sp_TSE_ToOM4;
+static SProfiler sp_TSE_ToOM5;
+static SProfiler sp_TSE_ToOM6;
+static SProfiler sp_ParseTSE;
+static SProfiler sp_ParseTSE1;
+static SProfiler sp_ParseTSE2;
+static SProfiler sp_ParseTSE3;
+static SProfiler sp_ParseTSE4;
+static SProfiler sp_ParseSplitInfo;
+static SProfiler sp_ParseSplitInfo1;
+static SProfiler sp_ParseSplitInfo2;
+static SProfiler sp_ParseSplitInfo3;
+static SProfiler sp_ParseSplitInfo4;
+
+# define PROFILE(var) SProfilerGuard profile_guard##var(var, #var)
+#else
+# define PROFILE(var)
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 // CPSGL_Blob_Processor
 /////////////////////////////////////////////////////////////////////////////
@@ -526,17 +586,20 @@ CPSGL_Blob_Processor::ProcessItemSlow(EPSG_Status status,
     switch (item->GetType()) {
     case CPSG_ReplyItem::eBlobInfo:
         if ( auto blob_info = dynamic_pointer_cast<CPSG_BlobInfo>(item) ) {
+            PROFILE(sp_Blob_ProcessItemSlow1);
             return PostProcessBlob(blob_info->GetId());
         }
         break;
     case CPSG_ReplyItem::eBlobData:
         if ( auto data = dynamic_pointer_cast<CPSG_BlobData>(item) ) {
+            PROFILE(sp_Blob_ProcessItemSlow2);
             return PostProcessBlob(data->GetId());
         }
         break;
     case CPSG_ReplyItem::eSkippedBlob:
         // Only main blob can be skipped
         if ( auto skipped = dynamic_pointer_cast<CPSG_SkippedBlob>(item) ) {
+            PROFILE(sp_Blob_ProcessItemSlow3);
             return PostProcessSkippedBlob(skipped->GetId());
         }
         break;
@@ -558,6 +621,7 @@ CPSGL_Blob_Processor::PostProcessBlob(const CPSG_DataId* id)
     bool ready_object;
     bool ready_data;
     {{
+        PROFILE(sp_PostProcessBlob1);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         slot = GetBlobSlot(blob_id, chunk_id);
         _ASSERT(slot);
@@ -566,18 +630,21 @@ CPSGL_Blob_Processor::PostProcessBlob(const CPSG_DataId* id)
     }}
 
     if ( blob_id ) {
+        PROFILE(sp_PostProcessBlob2);
         if ( ready_data && !ParseTSE(blob_id, slot) ) {
             return x_Failed("cannot parse blob "+ToString(blob_id));
         }
         return TSE_ToOM(blob_id, chunk_id, slot);
     }
     else if ( chunk_id->GetId2Chunk() == kSplitInfoChunkId ) {
+        PROFILE(sp_PostProcessBlob3);
         if ( ready_data && !ParseSplitInfo(chunk_id, slot) ) {
             return x_Failed("cannot parse split "+ToString(chunk_id));
         }
         return TSE_ToOM(blob_id, chunk_id, slot);
     }
     else {
+        PROFILE(sp_PostProcessBlob4);
         _ASSERT(ready_object || ready_data);
         if ( ready_data && !ParseChunk(chunk_id, slot) ) {
             return x_Failed("cannot parse chunk "+ToString(chunk_id));
@@ -590,11 +657,13 @@ CPSGL_Blob_Processor::PostProcessBlob(const CPSG_DataId* id)
 bool CPSGL_Blob_Processor::ParseTSE(const CPSG_BlobId* blob_id,
                                     SBlobSlot* data_slot)
 {
+    PROFILE(sp_ParseTSE);
     _ASSERT(blob_id);
     _ASSERT(data_slot);
     shared_ptr<CPSG_BlobInfo> blob_info;
     shared_ptr<CPSG_BlobData> blob_data;
     {{
+        PROFILE(sp_ParseTSE1);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         if ( data_slot->m_BlobObject || !data_slot->m_BlobInfo || !data_slot->m_BlobData ) {
             return false;
@@ -602,6 +671,7 @@ bool CPSGL_Blob_Processor::ParseTSE(const CPSG_BlobId* blob_id,
         blob_info = data_slot->m_BlobInfo;
         blob_data = data_slot->m_BlobData;
     }}
+    PROFILE(sp_ParseTSE2);
     _TRACE(Descr()<<": ParseTSE("<<blob_id->GetId()<<")");
     // full TSE entry
     unique_ptr<CObjectIStream> in(GetBlobDataStream(*blob_info, *blob_data));
@@ -611,9 +681,13 @@ bool CPSGL_Blob_Processor::ParseTSE(const CPSG_BlobId* blob_id,
         return false;
     }
     CRef<CSeq_entry> object(new CSeq_entry);
-    *in >> *object;
-    in.reset();
     {{
+        PROFILE(sp_ParseTSE3);
+        *in >> *object;
+        in.reset();
+    }}
+    {{
+        PROFILE(sp_ParseTSE4);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         data_slot->m_BlobObject = std::move(object);
         data_slot->m_BlobData.reset();
@@ -625,12 +699,14 @@ bool CPSGL_Blob_Processor::ParseTSE(const CPSG_BlobId* blob_id,
 bool CPSGL_Blob_Processor::ParseSplitInfo(const CPSG_ChunkId* split_info_id,
                                           SBlobSlot* data_slot)
 {
+    PROFILE(sp_ParseSplitInfo);
     _ASSERT(split_info_id);
     _ASSERT(split_info_id->GetId2Chunk() == kSplitInfoChunkId);
     _ASSERT(data_slot);
     shared_ptr<CPSG_BlobInfo> blob_info;
     shared_ptr<CPSG_BlobData> blob_data;
     {{
+        PROFILE(sp_ParseSplitInfo1);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         if ( data_slot->m_BlobObject || !data_slot->m_BlobInfo || !data_slot->m_BlobData ) {
             return false;
@@ -638,6 +714,7 @@ bool CPSGL_Blob_Processor::ParseSplitInfo(const CPSG_ChunkId* split_info_id,
         blob_info = data_slot->m_BlobInfo;
         blob_data = data_slot->m_BlobData;
     }}
+    PROFILE(sp_ParseSplitInfo2);
     _TRACE(Descr()<<": ParseSplitInfo("<<split_info_id->GetId2Info()<<")");
     unique_ptr<CObjectIStream> in(GetBlobDataStream(*blob_info, *blob_data));
     if ( !in.get() ) {
@@ -646,9 +723,13 @@ bool CPSGL_Blob_Processor::ParseSplitInfo(const CPSG_ChunkId* split_info_id,
         return false;
     }
     CRef<CID2S_Split_Info> object(new CID2S_Split_Info);
-    *in >> *object;
-    in.reset();
     {{
+        PROFILE(sp_ParseSplitInfo3);
+        *in >> *object;
+        in.reset();
+    }}
+    {{
+        PROFILE(sp_ParseSplitInfo4);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         data_slot->m_BlobObject = std::move(object);
         data_slot->m_BlobData.reset();
@@ -697,6 +778,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
                                const CPSG_ChunkId* split_info_id,
                                SBlobSlot* data_slot)
 {
+    PROFILE(sp_TSE_ToOM);
     _ASSERT(blob_id || split_info_id);
     _ASSERT(data_slot);
     STSESlot* tse_slot;
@@ -705,6 +787,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
     CRef<CID2S_Split_Info> split_info;
     CConstRef<CPsgBlobId> dl_blob_id;
     {{
+        PROFILE(sp_TSE_ToOM1);
         _TRACE(Descr()<<": LoadTSE("<<(blob_id? blob_id->GetId(): split_info_id->GetId2Info())<<")");
         CFastMutexGuard guard(m_BlobProcessorMutex);
         if ( blob_id ) {
@@ -757,6 +840,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
         LOG_POST(Info<<"PSGBlobProcessor("<<this<<"): got TSE load lock: "<<dl_blob_id->ToString());
     }
     if ( !load_lock.IsLoaded() ) {
+        PROFILE(sp_TSE_ToOM2);
         load_lock->SetBlobVersion(tse_slot->m_PsgBlobInfo->GetBlobVersion());
         UpdateOMBlobId(load_lock, dl_blob_id);
         auto blob_state = tse_slot->m_PsgBlobInfo->blob_state_flags;
@@ -772,6 +856,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
     CTSE_Chunk_Info* delayed_main_chunk = nullptr;
     AutoPtr<CInitGuard> delayed_main_chunk_load_lock;
     if ( load_lock.IsLoaded() && load_lock->x_NeedsDelayedMainChunk() ) {
+        PROFILE(sp_TSE_ToOM3);
         // check if we need to load the delayed main chunk
         delayed_main_chunk = tse_slot->m_LockedDelayedChunkInfo;
         if ( !delayed_main_chunk ) {
@@ -793,6 +878,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
         }
     }
     if ( !load_lock.IsLoaded() || delayed_main_chunk ) {
+        PROFILE(sp_TSE_ToOM4);
         if ( entry ) {
             _ASSERT(!split_info);
             if ( s_GetDebugLevel() >= 8 ) {
@@ -843,6 +929,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
         }
     }
     {{
+        PROFILE(sp_TSE_ToOM5);
         CFastMutexGuard guard(m_BlobProcessorMutex);
         tse_slot->m_TSE_Lock = load_lock;
         _ASSERT(tse_slot->m_TSE_Lock);
@@ -851,6 +938,7 @@ CPSGL_Blob_Processor::TSE_ToOM(const CPSG_BlobId* blob_id,
             split_slot->m_BlobObject.Reset();
         }
     }}
+    PROFILE(sp_TSE_ToOM6);
     return AssignChunks(tse_slot);
 }
 

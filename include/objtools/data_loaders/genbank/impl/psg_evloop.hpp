@@ -39,6 +39,9 @@
 #include <memory>
 #include <vector>
 #include <thread>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -47,17 +50,53 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 class CPSGL_Processor;
+class CPSGL_ProcessorQueue;
 class CPSGL_Queue;
 class CPSGL_QueueGuard;
 class CPSGL_RequestTracker;
 class CPSGL_ResultGuard;
+class CPSGL_Dispatcher;
 
+
+class CPSGL_TrackerMap : public CObject
+{
+public:
+    void RegisterRequest(CPSGL_RequestTracker* tracker);
+    void DeregisterRequest(const CPSGL_RequestTracker* tracker);
+    
+    CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_Reply>& reply);
+    CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_ReplyItem>& item);
+        
+private:
+    CFastMutex m_TrackerMapMutex;
+    unordered_map<const CPSG_Request*, CPSGL_RequestTracker*> m_TrackerMap;
+};
+
+
+class CPSGL_RequestQueue : public CObject
+{
+public:
+    typedef CRef<CPSGL_RequestTracker> value_type;
+    
+    void Stop();
+    void Put(value_type v);
+    value_type Get();
+    
+private:
+    // queue of request to send
+    mutex m_Mutex;
+    condition_variable m_CV;
+    atomic<bool> m_Stopped = { false };
+    queue<CRef<CPSGL_RequestTracker>> m_Queue;
+};
 
 class CPSGL_Queue : public CObject
 {
 public:
     explicit
-    CPSGL_Queue(const string& service_name);
+    CPSGL_Queue(const string& service_name,
+                CRef<CPSGL_TrackerMap> tracker_map,
+                CRef<CPSGL_RequestQueue> request_queue);
     ~CPSGL_Queue();
 
     CPSG_EventLoop& GetPSG_Queue()
@@ -69,29 +108,27 @@ public:
 
 protected:
     friend class CPSGL_QueueGuard;
+    friend class CPSGL_Dispatcher;
     
-    void RegisterRequest(CPSGL_RequestTracker* tracker);
-    void DeregisterRequest(const CPSGL_RequestTracker* tracker);
-
-    CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_Reply>& reply);
-    CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_ReplyItem>& item);
-        
-    bool SendRequest(const CRef<CPSGL_RequestTracker>& tracker);
+    void SenderRun();
+    void SendRequest(CRef<CPSGL_RequestTracker> tracker);
 
     void ProcessItemCallback(EPSG_Status status,
                              const shared_ptr<CPSG_ReplyItem>& item);
     void ProcessReplyCallback(EPSG_Status status,
                               const shared_ptr<CPSG_Reply>& reply);
+
     
 
 private:
     friend class CPSGL_QueueGuard;
 
     CPSG_EventLoop m_EventLoop;
-    thread m_EventLoopThread;
+    CRef<CPSGL_TrackerMap> m_TrackerMap;
+    CRef<CPSGL_RequestQueue> m_RequestQueue;
     CRef<CRequestContext> m_RequestContext;
-    CFastMutex m_TrackerMapMutex;
-    unordered_map<const CPSG_Request*, CPSGL_RequestTracker*> m_TrackerMap;
+    thread m_EventLoopThread;
+    thread m_SendThread;
 };
 
 
@@ -145,6 +182,7 @@ public:
     
 protected:
     friend class CPSGL_Processor;
+    friend class CPSGL_Queue;
     friend class CPSGL_QueueGuard;
     
     class CBackgroundTask;
@@ -175,7 +213,6 @@ protected:
     void MarkAsCanceled();
     
     CPSGL_QueueGuard& m_QueueGuard;
-    CThreadPool& m_ThreadPool;
     shared_ptr<CPSG_Request> m_Request;
     CRef<CPSGL_Processor> m_Processor;
     size_t m_Index;
@@ -245,17 +282,50 @@ private:
 };
 
 
+class CPSGL_Dispatcher : public CObject
+{
+public:
+    CPSGL_Dispatcher(const string& service_name,
+                     unsigned max_pool_threads,
+                     unsigned io_event_loops);
+    ~CPSGL_Dispatcher();
+
+    CThreadPool& GetThreadPool()
+    {
+        return *m_ThreadPool;
+    }
+    
+    void SetRequestContext(const CRef<CRequestContext>& context);
+    void SetRequestFlags(CPSG_Request::TFlags flags);
+    void SetUserArgs(const SPSG_UserArgs& user_args);
+    void Stop();
+
+    void SendRequest(CRef<CPSGL_RequestTracker> tracker);
+    void ForgetRequest(const CRef<CPSGL_RequestTracker>& tracker);
+    
+private:
+    vector<CRef<CPSGL_Queue>> m_QueueSet;
+    unique_ptr<CThreadPool> m_ThreadPool;
+    CRef<CPSGL_TrackerMap> m_TrackerMap;
+    CRef<CPSGL_RequestQueue> m_RequestQueue;
+};
+
+
 class CPSGL_QueueGuard
 {
 public:
-    CPSGL_QueueGuard(CThreadPool& thread_pool,
-                     CPSGL_Queue& queue);
+    explicit
+    CPSGL_QueueGuard(CRef<CPSGL_Dispatcher>& dispatcher);
     ~CPSGL_QueueGuard();
 
     void AddRequest(const shared_ptr<CPSG_Request>& request,
                     const CRef<CPSGL_Processor>& processor,
                     size_t index = 0);
-
+    CThreadPool& GetThreadPool()
+    {
+        return m_Dispatcher->GetThreadPool();
+    }
+    
     void CancelAll();
     
     CPSGL_ResultGuard GetNextResult();
@@ -269,12 +339,12 @@ protected:
     CRef<CPSGL_RequestTracker> GetQueuedRequest();
     
     void MarkAsFinished(const CRef<CPSGL_RequestTracker>& request_processor);
-    
-    CThreadPool& m_ThreadPool;
-    CRef<CPSGL_Queue> m_Queue;
+
+    CRef<CPSGL_Dispatcher> m_Dispatcher;
 
     CFastMutex m_CompleteMutex;
     CSemaphore m_CompleteSemaphore;
+    list<CRef<CPSGL_RequestTracker>> m_RequestsToSend;
     set<CRef<CPSGL_RequestTracker>> m_QueuedRequests;
     list<CRef<CPSGL_RequestTracker>> m_CompleteRequests;
 };

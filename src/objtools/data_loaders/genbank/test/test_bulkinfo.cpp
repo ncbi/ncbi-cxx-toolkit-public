@@ -389,6 +389,7 @@ int CTestApplication::Run(void)
         vector<string> reference;
         vector<pair<CSeq_id_Handle, string> > data;
         for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
+            NcbiCout << "Testing pass "<<run_i<< NcbiEndl;
             size_t size = min(m_RunSize, m_Ids.size());
             data.clear();
             data.resize(m_Ids.size());
