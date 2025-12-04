@@ -38,6 +38,8 @@ set(PKG_CONFIG_USE_CMAKE_PREFIX_PATH TRUE)
 separate_arguments(NCBI_EXTRA_SYS_LIB_DIRS NATIVE_COMMAND ${CMAKE_EXE_LINKER_FLAGS})
 list(FILTER NCBI_EXTRA_SYS_LIB_DIRS INCLUDE REGEX "^-L")
 list(TRANSFORM NCBI_EXTRA_SYS_LIB_DIRS REPLACE "^-L" "")
+set(NCBI_EXTRA_SYS_LIB_DIRS
+    "${NCBI_EXTRA_SYS_LIB_DIRS};${CMAKE_C_IMPLICIT_LINK_DIRECTORIES}")
 
 #############################################################################
 function(NCBI_get_component_config_locations _sub _type)

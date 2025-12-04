@@ -158,13 +158,14 @@ if(UNIX)
         list(APPEND NCBI_ALL_REQUIRES Iconv)
     endif()
 
+    NCBI_find_system_library(ATOMIC_LIBS atomic)
     try_compile(NCBI_ATOMIC64_STD ${CMAKE_BINARY_DIR}
                 ${CMAKE_CURRENT_LIST_DIR}/test-atomic64.cpp)
     if(NCBI_ATOMIC64_STD)
         message(STATUS "Found 64-bit atomic<> support in standard libraries")
         set(ATOMIC64_LIBS "")
     else()
-        NCBI_find_system_library(ATOMIC64_LIBS atomic)
+        set(ATOMIC64_LIBS ${ATOMIC_LIBS})
         try_compile(NCBI_ATOMIC64_LIBATOMIC ${CMAKE_BINARY_DIR}
                     ${CMAKE_CURRENT_LIST_DIR}/test-atomic64.cpp
                     LINK_LIBRARIES ${ATOMIC64_LIBS})
