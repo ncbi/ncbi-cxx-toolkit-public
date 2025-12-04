@@ -3700,6 +3700,7 @@ IOS	s	Institute of Oceanographic Sciences
 IOUSP	c	Marine Microalgae Culture Collection			
 IOWA	s	University of Iowa, Museum of Natural History	SUI		
 IP	c	Department of Insect Pathology, Institute of Entomology			
+IP	c	Institut Pasteur (Virus)			
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA			
 IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA,	IPAgermplasm bank		
 IPAE<RUS>	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences			
