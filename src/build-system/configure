@@ -839,6 +839,7 @@ RESOLVER_LIBS
 NETWORK_PURE_LIBS
 NETWORK_LIBS
 ATOMIC64_LIBS
+ATOMIC_LIBS
 COLOR_DIAGNOSTICS
 AES_FLAG
 SSE4_1_FLAG
@@ -16600,13 +16601,55 @@ $as_echo "no" >&6; }
 fi
 
 ### Common-use system and miscellaneous libs
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for atoi in -latomic" >&5
+$as_echo_n "checking for atoi in -latomic... " >&6; }
+if ${ac_cv_lib_atomic_atoi+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-latomic  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char atoi ();
+int
+main ()
+{
+return atoi ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ac_cv_lib_atomic_atoi=yes
+else
+  ac_cv_lib_atomic_atoi=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_atomic_atoi" >&5
+$as_echo "$ac_cv_lib_atomic_atoi" >&6; }
+if test "x$ac_cv_lib_atomic_atoi" = x""yes; then :
+  ATOMIC_LIBS=-latomic
+else
+  ATOMIC_LIBS=
+fi
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking library needed for 64-bit std::atomic" >&5
 $as_echo_n "checking library needed for 64-bit std::atomic... " >&6; }
 if ${ncbi_cv_lib_atomic64+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   orig_LIBS=$LIBS
-    for x in '' -latomic; do
+    for x in '' $ATOMIC_LIBS; do
        LIBS="$x $orig_LIBS"
        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -38414,6 +38457,7 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
 
 
 

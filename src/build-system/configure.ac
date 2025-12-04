@@ -4580,9 +4580,10 @@ else
 fi
 
 ### Common-use system and miscellaneous libs
+AC_CHECK_LIB([atomic], [atoi], [ATOMIC_LIBS=-latomic], [ATOMIC_LIBS=])
 AC_CACHE_CHECK([library needed for 64-bit std::atomic], ncbi_cv_lib_atomic64,
    [orig_LIBS=$LIBS
-    for x in '' -latomic; do
+    for x in '' $ATOMIC_LIBS; do
        LIBS="$x $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
            [[@%:@include <atomic>
@@ -10162,6 +10163,7 @@ AC_SUBST(UNSAFE_MATH_FLAG)
 AC_SUBST(SSE4_1_FLAG)
 AC_SUBST(AES_FLAG)
 AC_SUBST(COLOR_DIAGNOSTICS)
+AC_SUBST(ATOMIC_LIBS)
 AC_SUBST(ATOMIC64_LIBS)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)

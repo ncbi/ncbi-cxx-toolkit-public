@@ -293,6 +293,7 @@ ncbi_java=@ncbi_java@
 #################################
 # Some platform-specific system libs that can be linked eventually
 THREAD_LIBS  = @THREAD_LIBS@
+ATOMIC_LIBS  = @ATOMIC_LIBS@
 ATOMIC64_LIBS = @ATOMIC64_LIBS@
 NETWORK_LIBS = @NETWORK_LIBS@
 MATH_LIBS    = @MATH_LIBS@
