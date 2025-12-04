@@ -1295,6 +1295,18 @@ def testcases_schema_addon():
                     '$id': '#env',
                     'type': 'object'
                 },
+                'pattern': {
+                    '$id': '#pattern',
+                    'type': 'object',
+                    'properties': {
+                        'regex': {
+                            'type': 'string'
+                        }
+                    },
+                    'required': [
+                        'regex'
+                    ]
+                },
                 'message': {
                     '$id': '#message',
                     'properties': {
@@ -1305,7 +1317,14 @@ def testcases_schema_addon():
                             'type': 'number'
                         },
                         'text': {
-                            'type': 'string'
+                            'oneOf': [
+                                {
+                                    'type': 'string'
+                                },
+                                {
+                                    '$ref': '#/definitions/pattern'
+                                }
+                            ]
                         },
                     },
                     'additionalProperties': False,
