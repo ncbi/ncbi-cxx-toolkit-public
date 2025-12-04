@@ -42,6 +42,13 @@
 #include <util/compress/compress.hpp>
 #include <util/compress/stream.hpp>
 #include <util/compress/zlib.hpp>
+// for read hooks setup
+#include <objects/general/general__.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Imp_feat.hpp>
+#include <serial/objectiter.hpp>
+#include <serial/pack_string.hpp>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -158,6 +165,50 @@ CObjectIStream* GetBlobDataStream(const CPSG_BlobInfo& blob_info,
     }
     _ASSERT(ret);
     z_stream.release();
+    if ( 0 ) {
+        static atomic<bool> s_HooksInitialized{false};
+        static CObjectTypeInfoVI* s_Object_id_str_info;
+        static CRef<CPackStringChoiceHook> s_Object_id_str_hook;
+        static CObjectTypeInfoMI s_Imp_feat_key_info;
+        static CRef<CPackStringClassHook> s_Imp_feat_key_hook;
+        static CObjectTypeInfoMI s_Dbtag_db_info;
+        static CRef<CPackStringClassHook> s_Dbtag_db_hook;
+        static CObjectTypeInfoMI s_Gb_qual_qual_info;
+        static CRef<CPackStringClassHook> s_Gb_qual_qual_hook;
+        if ( !s_HooksInitialized ) {
+            DEFINE_STATIC_FAST_MUTEX(init_mutex);
+            CFastMutexGuard init_lock(init_mutex);
+            if ( !s_HooksInitialized ) {
+                CObjectTypeInfo type;
+                
+                type = CObjectTypeInfo(CType<CObject_id>());
+                s_Object_id_str_info = new CObjectTypeInfoVI(type.FindVariant("str"));
+                s_Object_id_str_hook = new CPackStringChoiceHook;
+
+                type = CObjectTypeInfo(CType<CImp_feat>());
+                s_Imp_feat_key_info = type.FindMember("key");
+                s_Imp_feat_key_hook = new CPackStringClassHook(32, 128);
+                
+                type = CObjectTypeInfo(CType<CDbtag>());
+                s_Dbtag_db_info = type.FindMember("db");
+                s_Dbtag_db_hook = new CPackStringClassHook;
+        
+                type = CType<CGb_qual>();
+                s_Gb_qual_qual_info = type.FindMember("qual");
+                s_Gb_qual_qual_hook = new CPackStringClassHook;
+        
+                s_HooksInitialized = true;
+            }
+        }
+        s_Object_id_str_info->SetLocalReadHook(*ret, s_Object_id_str_hook);
+        s_Imp_feat_key_info.SetLocalReadHook(*ret, s_Imp_feat_key_hook);
+        s_Dbtag_db_info.SetLocalReadHook(*ret, s_Dbtag_db_hook);
+        s_Gb_qual_qual_info.SetLocalReadHook(*ret, s_Gb_qual_qual_hook);
+    }
+    if ( 0 ) {
+        CRef<CObjectMemoryPool> memoryPool(new CObjectMemoryPool(1024));
+        ret->SetMemoryPool(memoryPool);
+    }
     return ret;
 }
 

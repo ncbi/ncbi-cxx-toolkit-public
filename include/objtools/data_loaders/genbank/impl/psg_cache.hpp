@@ -38,6 +38,7 @@
 
 #if defined(HAVE_PSG_LOADER)
 #include <objmgr/bioseq_handle.hpp>
+#include <mutex>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -52,6 +53,7 @@ struct SPsgBioseqInfo
 {
     SPsgBioseqInfo(const CSeq_id_Handle& request_id,
                    const CPSG_BioseqInfo& bioseq_info);
+    SPsgBioseqInfo(SPsgBioseqInfo&& parsed);
 
     typedef underlying_type_t<CPSG_Request_Resolve::EIncludeInfo> TIncludedInfo;
     typedef vector<CSeq_id_Handle> TIds;
@@ -70,6 +72,7 @@ struct SPsgBioseqInfo
     string psg_blob_id;
 
     TIncludedInfo Update(const CPSG_BioseqInfo& bioseq_info);
+    TIncludedInfo Update(SPsgBioseqInfo& parsed);
     bool IsDead() const;
     CBioseq_Handle::TBioseqStateFlags GetBioseqStateFlags() const;
     CBioseq_Handle::TBioseqStateFlags GetChainStateFlags() const;
@@ -130,7 +133,7 @@ private:
     void x_LimitSize();
     void x_Expire();
     
-    mutable CFastMutex m_Mutex;
+    mutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
     TValues m_Values;
@@ -161,14 +164,14 @@ public:
     CPSGCache_Base& operator=(const CPSGCache_Base&) = delete;
 
     TValue Find(const TKey& key) {
-        CFastMutexGuard guard(m_Mutex);
+        lock_guard guard(m_Mutex);
         x_Expire();
         auto found = m_Values.find(key);
         return found != m_Values.end() ? found->second.value : m_Default;
     }
     
     void Add(const TKey& key, const TValue& value) {
-        CFastMutexGuard guard(m_Mutex);
+        lock_guard guard(m_Mutex);
         auto iter = m_Values.lower_bound(key);
         if ( iter != m_Values.end() && key == iter->first ) {
             // erase old value
@@ -222,7 +225,7 @@ protected:
     }
 
     TValue m_Default;
-    CFastMutex m_Mutex;
+    mutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
     TValues m_Values;
@@ -278,7 +281,7 @@ public:
 
     void DropBlob(const CPsgBlobId& blob_id) {
         //ERR_POST("DropBlob("<<blob_id.ToPsgId()<<")");
-        CFastMutexGuard guard(m_Mutex);
+        lock_guard guard(m_Mutex);
         auto iter = m_Values.find(blob_id.ToPsgId());
         if ( iter != m_Values.end() ) {
             x_Erase(iter);
@@ -359,7 +362,7 @@ private:
     void x_LimitSize();
     void x_Expire();
     
-    mutable CFastMutex m_Mutex;
+    mutex m_Mutex;
     int m_Lifespan;
     size_t m_MaxSize;
     TValues m_Values;

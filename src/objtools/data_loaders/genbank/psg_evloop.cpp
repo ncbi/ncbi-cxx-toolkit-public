@@ -39,6 +39,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <cstdlib>
+#include <format>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -49,15 +50,65 @@ BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
 
-static const int kDestructionDelay = 0;
-static const int kFailureRate = 0;
+//#define COLLECT_PROFILE
 
+#ifdef COLLECT_PROFILE
+struct SProfiler
+{
+    atomic<const char*> name = { 0 };
+    atomic<size_t> count = { 0 };
+    atomic<double> time = { 0 };
+    ~SProfiler() {
+        if ( name ) {
+            cerr << format("{} calls: {} time: {}\n", name.load(), count.load(), time.load());
+        }
+    }
+};
+struct SProfilerGuard
+{
+    SProfiler& p;
+    CStopWatch sw;
+    SProfilerGuard(SProfiler& p, const char* name)
+        : p(p),
+          sw(CStopWatch::eStart)
+        {
+            if ( !p.name ) {
+                p.name = name;
+            }
+        }
+    ~SProfilerGuard()
+        {
+            p.count += 1;
+            p.time += sw.Elapsed();
+        }
+};
+
+static SProfiler sp_AddRequest;
+static SProfiler sp_SendRequest;
+static SProfiler sp_ProcessItem;
+static SProfiler sp_ProcessItemCallback;
+static SProfiler sp_ProcessItemCallback1;
+static SProfiler sp_ProcessItemCallback2;
+static SProfiler sp_ProcessItemCallback3;
+static SProfiler sp_ProcessItemCallbackF;
+static SProfiler sp_ProcessItemCallbackE;
+static SProfiler sp_ProcessReply;
+static SProfiler sp_GetTracker;
+
+# define PROFILE(var) SProfilerGuard profile_guard##var(var, #var)
+#else
+# define PROFILE(var)
+#endif
+
+static const int kDestructionDelay = 0; // max delay in milliseconds
+static const int kFailureRate = 0; // zero or probability of failure = 1/kFailureRate
+static bool kUseBackgroundTasks = false;
 
 static inline
 void s_SimulateDelay()
 {
     if ( kDestructionDelay ) {
-        SleepMilliSec(rand()%(kDestructionDelay?kDestructionDelay:1));
+        SleepMilliSec(rand()%(kDestructionDelay?kDestructionDelay+1:1));
     }
 }
 
@@ -131,49 +182,15 @@ void s_SimulateFailure(CPSGL_Processor* processor, const char* message)
 //     - it will also request to cancel the task(s)
 //
 
+
 /////////////////////////////////////////////////////////////////////////////
-// CPSGL_Queue
+// CPSGL_TrackerMap
 /////////////////////////////////////////////////////////////////////////////
 
 
-CPSGL_Queue::CPSGL_Queue(const string& service_name)
-    : m_EventLoop(service_name,
-                  bind(&CPSGL_Queue::ProcessItemCallback, this, placeholders::_1, placeholders::_2),
-                  bind(&CPSGL_Queue::ProcessReplyCallback, this, placeholders::_1, placeholders::_2)),
-      m_EventLoopThread(&CPSG_EventLoop::Run, ref(m_EventLoop), CDeadline::eInfinite)
+CRef<CPSGL_RequestTracker> CPSGL_TrackerMap::GetTracker(const shared_ptr<CPSG_Reply>& reply)
 {
-}
-
-
-CPSGL_Queue::~CPSGL_Queue()
-{
-    m_EventLoop.Reset();
-    m_EventLoopThread.join();
-}
-
-
-void CPSGL_Queue::SetRequestContext(const CRef<CRequestContext>& context)
-{
-    m_RequestContext = context;
-}
-
-
-void CPSGL_Queue::RegisterRequest(CPSGL_RequestTracker* tracker)
-{
-    CFastMutexGuard guard(m_TrackerMapMutex);
-    _VERIFY(m_TrackerMap.insert(make_pair(tracker->GetRequest().get(), tracker)).second);
-}
-
-
-void CPSGL_Queue::DeregisterRequest(const CPSGL_RequestTracker* tracker)
-{
-    CFastMutexGuard guard(m_TrackerMapMutex);
-    m_TrackerMap.erase(tracker->GetRequest().get());
-}
-
-
-CRef<CPSGL_RequestTracker> CPSGL_Queue::GetTracker(const shared_ptr<CPSG_Reply>& reply)
-{
+    PROFILE(sp_GetTracker);
     CFastMutexGuard guard(m_TrackerMapMutex);
     auto iter = m_TrackerMap.find(reply->GetRequest().get());
     if ( iter == m_TrackerMap.end() ) {
@@ -184,26 +201,120 @@ CRef<CPSGL_RequestTracker> CPSGL_Queue::GetTracker(const shared_ptr<CPSG_Reply>&
 
 
 inline
-CRef<CPSGL_RequestTracker> CPSGL_Queue::GetTracker(const shared_ptr<CPSG_ReplyItem>& item)
+CRef<CPSGL_RequestTracker> CPSGL_TrackerMap::GetTracker(const shared_ptr<CPSG_ReplyItem>& item)
 {
     return GetTracker(item->GetReply());
 }
 
 
-bool CPSGL_Queue::SendRequest(const CRef<CPSGL_RequestTracker>& tracker)
+void CPSGL_TrackerMap::RegisterRequest(CPSGL_RequestTracker* tracker)
 {
+    CFastMutexGuard guard(m_TrackerMapMutex);
+    _VERIFY(m_TrackerMap.insert(make_pair(tracker->GetRequest().get(), tracker)).second);
+}
+
+
+void CPSGL_TrackerMap::DeregisterRequest(const CPSGL_RequestTracker* tracker)
+{
+    CFastMutexGuard guard(m_TrackerMapMutex);
+    m_TrackerMap.erase(tracker->GetRequest().get());
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPSGL_RequestQueue
+/////////////////////////////////////////////////////////////////////////////
+
+
+void CPSGL_RequestQueue::Put(value_type v)
+{
+    lock_guard lock(m_Mutex);
+    m_Queue.push(std::move(v));
+    m_CV.notify_one();
+}
+
+
+CPSGL_RequestQueue::value_type CPSGL_RequestQueue::Get()
+{
+    unique_lock lock(m_Mutex);
+    m_CV.wait(lock, [&] { return m_Stopped || !m_Queue.empty(); });
+    if ( m_Queue.empty() ) {
+        // stopped
+        return null;
+    }
+    auto v = std::move(m_Queue.front());
+    m_Queue.pop();
+    return v;
+}
+
+
+void CPSGL_RequestQueue::Stop()
+{
+    m_Stopped = true;
+    m_CV.notify_all();
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CPSGL_Queue
+/////////////////////////////////////////////////////////////////////////////
+
+
+CPSGL_Queue::CPSGL_Queue(const string& service_name,
+                         CRef<CPSGL_TrackerMap> tracker_map,
+                         CRef<CPSGL_RequestQueue> request_queue)
+    : m_EventLoop(service_name,
+                  bind(&CPSGL_Queue::ProcessItemCallback, this, placeholders::_1, placeholders::_2),
+                  bind(&CPSGL_Queue::ProcessReplyCallback, this, placeholders::_1, placeholders::_2)),
+      m_TrackerMap(tracker_map),
+      m_RequestQueue(request_queue),
+      m_EventLoopThread(&CPSG_EventLoop::Run, ref(m_EventLoop), CDeadline::eInfinite),
+      m_SendThread(&CPSGL_Queue::SenderRun, ref(*this))
+{
+}
+
+
+CPSGL_Queue::~CPSGL_Queue()
+{
+    m_EventLoop.Reset();
+    m_SendThread.join();
+    m_EventLoopThread.join();
+}
+
+
+void CPSGL_Queue::SetRequestContext(const CRef<CRequestContext>& context)
+{
+    m_RequestContext = context;
+}
+
+
+void CPSGL_Queue::SenderRun()
+{
+    while ( auto request = m_RequestQueue->Get() ) {
+        SendRequest(std::move(request));
+    }
+}
+
+
+void CPSGL_Queue::SendRequest(CRef<CPSGL_RequestTracker> tracker)
+{
+    PROFILE(sp_SendRequest);
     shared_ptr<CPSG_Request> request = tracker->GetRequest();
     if ( m_RequestContext ) {
         request->SetRequestContext(m_RequestContext);
     }
-    return m_EventLoop.SendRequest(request, CDeadline::eInfinite);
+    if ( !m_EventLoop.SendRequest(request, CDeadline::eInfinite) ) {
+        ERR_POST("CPSGDataLoader: cannot send request");
+        tracker.GetNCPointer()->MarkAsFailed();
+    }
 }
 
 
 void CPSGL_Queue::ProcessItemCallback(EPSG_Status status,
                                       const shared_ptr<CPSG_ReplyItem>& item)
 {
-    if ( auto tracker = GetTracker(item) ) {
+    PROFILE(sp_ProcessItem);
+    if ( auto tracker = m_TrackerMap->GetTracker(item) ) {
         tracker->ProcessItemCallback(status, item);
     }
 }    
@@ -212,7 +323,8 @@ void CPSGL_Queue::ProcessItemCallback(EPSG_Status status,
 void CPSGL_Queue::ProcessReplyCallback(EPSG_Status status,
                                        const shared_ptr<CPSG_Reply>& reply)
 {
-    if ( auto tracker = GetTracker(reply) ) {
+    PROFILE(sp_ProcessReply);
+    if ( auto tracker = m_TrackerMap->GetTracker(reply) ) {
         tracker->ProcessReplyCallback(status, reply);
     }
 }
@@ -228,7 +340,6 @@ CPSGL_RequestTracker::CPSGL_RequestTracker(CPSGL_QueueGuard& queue_guard,
                                            const CRef<CPSGL_Processor>& processor,
                                            size_t index)
     : m_QueueGuard(queue_guard),
-      m_ThreadPool(queue_guard.m_ThreadPool),
       m_Request(request),
       m_Processor(processor),
       m_Index(index),
@@ -465,7 +576,7 @@ void CPSGL_RequestTracker::QueueInBackground(const CRef<CBackgroundTask>& task)
             ++m_BackgroundItemTaskCount;
         }
     }}
-    m_ThreadPool.AddTask(task.GetNCPointer());
+    m_QueueGuard.GetThreadPool().AddTask(task.GetNCPointer());
 }
 
 
@@ -534,26 +645,37 @@ void CPSGL_RequestTracker::MarkAsCanceled()
 void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
                                                const shared_ptr<CPSG_ReplyItem>& item)
 {
+    PROFILE(sp_ProcessItemCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessItemCallback()");
     CCallbackGuard guard(this);
     if ( !guard ) {
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessItemCallback() - canceled");
         return;
     }
+    PROFILE(sp_ProcessItemCallback1);
     try {
+        PROFILE(sp_ProcessItemCallback2);
         s_SimulateFailure(m_Processor, "ProcessItemCallback item fast");
         _ASSERT(item);
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
-            // queue background processing
-            StartProcessItemInBackground(status, item);
+            PROFILE(sp_ProcessItemCallback3);
+            if ( kUseBackgroundTasks ) {
+                // queue background processing
+                StartProcessItemInBackground(status, item);
+                return;
+            }
+            result = m_Processor->ProcessItemSlow(status, item);
+            _ASSERT(result != CPSGL_Processor::eToNextStage);
         }
-        else if ( result != CPSGL_Processor::eProcessed ) {
+        if ( result != CPSGL_Processor::eProcessed ) {
+            PROFILE(sp_ProcessItemCallbackE);
             _TRACE("CPSGDataLoader: failed processing reply item: "<<result);
             MarkAsFailed();
         }
     }
     catch ( exception& exc ) {
+        PROFILE(sp_ProcessItemCallbackF);
         _TRACE("CPSGDataLoader: exception while processing reply item: "<<exc.what());
         m_Processor->AddError(exc.what());
         MarkAsFailed();
@@ -590,10 +712,18 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
         auto result = m_Processor->ProcessReplyFast(status, reply);
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast(): "<<result);
         if ( result == CPSGL_Processor::eToNextStage ) {
-            // queue processing
-            StartProcessReplyInBackground();
+            if ( kUseBackgroundTasks ) {
+                // queue processing
+                StartProcessReplyInBackground();
+                return;
+            }
+            result = m_Processor->ProcessReplySlow(status, reply);
+            if ( result == CPSGL_Processor::eToNextStage ) {
+                MarkAsNeedsFinalization();
+                return;
+            }
         }
-        else if ( result != CPSGL_Processor::eProcessed ) {
+        if ( result != CPSGL_Processor::eProcessed ) {
             _TRACE("CPSGDataLoader: failed processing reply: "<<result);
             MarkAsFailed();
         }
@@ -778,13 +908,90 @@ CPSGL_ResultGuard CPSGL_RequestTracker::FinalizeResult()
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CPSGL_Dispatcher
+/////////////////////////////////////////////////////////////////////////////
+
+CPSGL_Dispatcher::CPSGL_Dispatcher(const string& service_name,
+                                   unsigned max_pool_threads,
+                                   unsigned io_event_loops)
+    : m_TrackerMap(new CPSGL_TrackerMap()),
+      m_RequestQueue(new CPSGL_RequestQueue())
+{
+    if ( kUseBackgroundTasks ) {
+        static const unsigned kMinPoolThreads = 1;
+        static const unsigned kMaxPoolThreads = 32;
+        max_pool_threads = max(max_pool_threads, kMinPoolThreads);
+        max_pool_threads = min(max_pool_threads, kMaxPoolThreads);
+        m_ThreadPool = make_unique<CThreadPool>(kMax_UInt, max_pool_threads);
+    }
+    
+    static const unsigned kMinIoEventLoops = 1;
+    static const unsigned kMaxIoEventLoops = 32;
+    io_event_loops = max(io_event_loops, kMinIoEventLoops);
+    io_event_loops = min(io_event_loops, kMaxIoEventLoops);
+    for ( unsigned i = 0; i < io_event_loops; ++i ) {
+        m_QueueSet.push_back(Ref(new CPSGL_Queue(service_name, m_TrackerMap, m_RequestQueue)));
+    }
+}
+
+
+void CPSGL_Dispatcher::SetRequestContext(const CRef<CRequestContext>& context)
+{
+    for ( auto& q : m_QueueSet ) {
+        q->SetRequestContext(context);
+    }
+}
+
+
+void CPSGL_Dispatcher::SetRequestFlags(CPSG_Request::TFlags flags)
+{
+    for ( auto& q : m_QueueSet ) {
+        q->GetPSG_Queue().SetRequestFlags(flags);
+    }
+}
+
+
+void CPSGL_Dispatcher::SetUserArgs(const SPSG_UserArgs& user_args)
+{
+    for ( auto& q : m_QueueSet ) {
+        q->GetPSG_Queue().SetUserArgs(user_args);
+    }
+}
+
+
+void CPSGL_Dispatcher::Stop()
+{
+    // Make sure thread pool is destroyed before any tasks (e.g. CDD prefetch)
+    // and stops them all before the loader is destroyed.
+    m_ThreadPool.reset();
+    m_RequestQueue->Stop();
+}
+
+
+CPSGL_Dispatcher::~CPSGL_Dispatcher()
+{
+}
+
+
+void CPSGL_Dispatcher::SendRequest(CRef<CPSGL_RequestTracker> tracker)
+{
+    m_TrackerMap->RegisterRequest(tracker);
+    m_RequestQueue->Put(std::move(tracker));
+}
+
+
+void CPSGL_Dispatcher::ForgetRequest(const CRef<CPSGL_RequestTracker>& tracker)
+{
+    m_TrackerMap->DeregisterRequest(tracker);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CPSGL_QueueGuard
 /////////////////////////////////////////////////////////////////////////////
 
-CPSGL_QueueGuard::CPSGL_QueueGuard(CThreadPool& thread_pool,
-                                   CPSGL_Queue& queue)
-    : m_ThreadPool(thread_pool),
-      m_Queue(&queue),
+CPSGL_QueueGuard::CPSGL_QueueGuard(CRef<CPSGL_Dispatcher>& dispatcher)
+    : m_Dispatcher(dispatcher),
       m_CompleteSemaphore(0, kMax_UInt)
 {
 }
@@ -836,24 +1043,21 @@ void CPSGL_QueueGuard::AddRequest(const shared_ptr<CPSG_Request>& request,
                                   const CRef<CPSGL_Processor>& processor,
                                   size_t index)
 {
+    PROFILE(sp_AddRequest);
     CRef<CPSGL_RequestTracker> tracker(new CPSGL_RequestTracker(*this, request, processor, index));
     _TRACE("CPSGL_QueueGuard::AddRequest(): CPSGL_RequestTracker("<<tracker<<", "<<tracker->m_Processor<<") for requst  "<<s_GetRequestTypeName(request->GetType())<<" "<<request->GetId());
     {{
         CFastMutexGuard guard(m_CompleteMutex);
         m_QueuedRequests.insert(tracker);
     }}
-    m_Queue->RegisterRequest(tracker);
-    if ( !m_Queue->SendRequest(tracker) ) {
-        ERR_POST("CPSGDataLoader: cannot send request");
-        tracker->MarkAsFailed();
-    }
+    m_Dispatcher->SendRequest(std::move(tracker));
 }
 
 
 void CPSGL_QueueGuard::MarkAsFinished(const CRef<CPSGL_RequestTracker>& tracker)
 {
     _TRACE("CPSGL_QueueGuard::MarkAsFinished(): tracker: "<<tracker);
-    m_Queue->DeregisterRequest(tracker);
+    m_Dispatcher->ForgetRequest(tracker);
     {{
         CFastMutexGuard guard(m_CompleteMutex);
         if ( m_QueuedRequests.erase(tracker) ) {

@@ -96,7 +96,7 @@ void CPSGBioseqInfoCache::x_LimitSize()
 
 CPSGBioseqInfoCache::mapped_type CPSGBioseqInfoCache::Find(const key_type& key)
 {
-    CFastMutexGuard guard(m_Mutex);
+    lock_guard guard(m_Mutex);
     x_Expire();
     auto found = m_Values.find(key);
     return found == m_Values.end()? nullptr: found->second.value;
@@ -107,19 +107,21 @@ CPSGBioseqInfoCache::mapped_type
 CPSGBioseqInfoCache::Add(const key_type& key,
                          const CPSG_BioseqInfo& info)
 {
+    //return make_shared<SPsgBioseqInfo>(key, info);
+    SPsgBioseqInfo parsed(key, info);
     // Try to find an existing entry (though this should not be a common case).
-    CFastMutexGuard guard(m_Mutex);
+    lock_guard guard(m_Mutex);
     x_Expire();
     auto iter = m_Values.lower_bound(key);
     if ( iter != m_Values.end() && key == iter->first ) {
         if ( !iter->second.deadline.IsExpired() ) {
-            iter->second.value->Update(info);
+            iter->second.value->Update(parsed);
             return iter->second.value;
         }
         x_Erase(iter++);
     }
     // Create new entry.
-    shared_ptr<SPsgBioseqInfo> value = make_shared<SPsgBioseqInfo>(key, info);
+    shared_ptr<SPsgBioseqInfo> value = make_shared<SPsgBioseqInfo>(std::move(parsed));
     iter = m_Values.insert(iter,
                            typename TValues::value_type(key, SNode(value, m_Lifespan)));
     iter->second.remove_list_iterator = m_RemoveList.insert(m_RemoveList.end(), iter);
@@ -131,6 +133,23 @@ CPSGBioseqInfoCache::Add(const key_type& key,
 /////////////////////////////////////////////////////////////////////////////
 // SPsgBioseqInfo
 /////////////////////////////////////////////////////////////////////////////
+
+
+SPsgBioseqInfo::SPsgBioseqInfo(SPsgBioseqInfo&& parsed)
+    : request_id(std::move(parsed.request_id)),
+      included_info(parsed.included_info.load()),
+      molecule_type(parsed.molecule_type),
+      length(parsed.length),
+      state(parsed.state),
+      chain_state(parsed.chain_state),
+      tax_id(parsed.tax_id),
+      hash(parsed.hash),
+      gi(parsed.gi),
+      canonical(std::move(parsed.canonical)),
+      ids(std::move(parsed.ids)),
+      psg_blob_id(std::move(parsed.psg_blob_id))
+{
+}
 
 
 SPsgBioseqInfo::SPsgBioseqInfo(const CSeq_id_Handle& request_id,
@@ -213,6 +232,61 @@ SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(const CPSG_BioseqInfo& bios
 
     if (new_info & CPSG_Request_Resolve::fBlobId) {
         psg_blob_id = bioseq_info.GetBlobId().GetId();
+    }
+
+    included_info |= new_info;
+    return new_info;
+}
+
+
+SPsgBioseqInfo::TIncludedInfo SPsgBioseqInfo::Update(SPsgBioseqInfo& parsed)
+{
+    TIncludedInfo got_info = parsed.included_info;
+    TIncludedInfo new_info = got_info & ~included_info;
+    if ( !new_info ) {
+        return new_info;
+    }
+
+    DEFINE_STATIC_FAST_MUTEX(s_Mutex);
+    CFastMutexGuard guard(s_Mutex);
+    new_info = got_info & ~included_info;
+    if (new_info & CPSG_Request_Resolve::fMoleculeType) {
+        molecule_type = parsed.molecule_type;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fLength) {
+        length = parsed.length;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fState) {
+        state = parsed.state;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fChainState) {
+        chain_state = parsed.chain_state;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fHash) {
+        hash = parsed.hash;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fCanonicalId) {
+        canonical = std::move(parsed.canonical);
+    }
+    if (new_info & CPSG_Request_Resolve::fGi) {
+        gi = parsed.gi;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fOtherIds) {
+        ids = std::move(parsed.ids);
+    }
+
+    if (new_info & CPSG_Request_Resolve::fTaxId) {
+        tax_id = parsed.tax_id;
+    }
+
+    if (new_info & CPSG_Request_Resolve::fBlobId) {
+        psg_blob_id = parsed.psg_blob_id;
     }
 
     included_info |= new_info;
@@ -369,7 +443,7 @@ void CPSGAnnotInfoCache::x_LimitSize()
 
 CPSGAnnotInfoCache::mapped_type CPSGAnnotInfoCache::Find(const key_type& key)
 {
-    CFastMutexGuard guard(m_Mutex);
+    lock_guard guard(m_Mutex);
     x_Expire();
     auto found = m_Values.find(key);
     return found == m_Values.end()? nullptr: found->second.value;
@@ -380,7 +454,7 @@ CPSGAnnotInfoCache::mapped_type CPSGAnnotInfoCache::Add(const key_type& key,
                                                 const SPsgAnnotInfo::TInfos& infos)
 {
     // Try to find an existing entry (though this should not be a common case).
-    CFastMutexGuard guard(m_Mutex);
+    lock_guard guard(m_Mutex);
     x_Expire();
     auto iter = m_Values.lower_bound(key);
     if ( iter != m_Values.end() && key == iter->first ) {
