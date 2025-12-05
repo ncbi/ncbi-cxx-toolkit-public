@@ -2640,6 +2640,7 @@ bool XMLCheckCDS(const char* entry, const TXmlIndexList& xil)
 }
 
 /**********************************************************/
+NCBI_UNUSED
 void fta_set_strandedness(TEntryList& seq_entries)
 {
     for (auto& entry : seq_entries) {

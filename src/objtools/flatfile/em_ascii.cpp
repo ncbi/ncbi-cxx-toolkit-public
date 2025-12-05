@@ -341,8 +341,7 @@ static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& s
 
     EntryCheckDivCode(seq_entries, pp);
 
-    if (pp->xml_comp)
-        fta_set_strandedness(seq_entries);
+    // if () fta_set_strandedness(seq_entries);
 
     if (fta_EntryCheckGBBlock(seq_entries)) {
         FtaErrPost(SEV_WARNING, ERR_ENTRY_GBBlock_not_Empty, "Attention: GBBlock is not empty");
