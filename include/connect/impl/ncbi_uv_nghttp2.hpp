@@ -399,7 +399,7 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
             nghttp2_on_frame_recv_callback      on_frame_recv = nullptr);
 
     int Terminate();
-    void Del(int terminate_rv);
+    void Del();
 
     int32_t Submit(const nghttp2_nv *nva, size_t nvlen, nghttp2_data_provider* data_prd = nullptr);
     int Resume(int32_t stream_id);
@@ -418,8 +418,7 @@ private:
     TInt x_DelOnError(TInt rv)
     {
         if (rv < 0) {
-            nghttp2_session_del(m_Session);
-            m_Session = nullptr;
+            Del();
         }
 
         return rv;

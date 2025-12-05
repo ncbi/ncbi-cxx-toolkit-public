@@ -518,11 +518,12 @@ int SNgHttp2_Session::Terminate()
     return rv;
 }
 
-void SNgHttp2_Session::Del(int terminate_rv)
+void SNgHttp2_Session::Del()
 {
     if (m_Session) {
-        NCBI_NGHTTP2_SESSION_TRACE(this << " deleting");
-        x_DelOnError(terminate_rv);
+        NCBI_NGHTTP2_SESSION_TRACE(this << " deleted");
+        nghttp2_session_del(m_Session);
+        m_Session = nullptr;
     }
 }
 
@@ -586,7 +587,7 @@ ssize_t SNgHttp2_Session::Send(vector<char>& buffer)
 
     if (nghttp2_session_want_read(m_Session) == 0) {
         NCBI_NGHTTP2_SESSION_TRACE(this << " does not want to write and read");
-        x_DelOnError(-1);
+        Del();
         return eWantsClose;
     }
 
@@ -1026,7 +1027,8 @@ void SUvNgHttp2_SessionBase::OnRead(const char* buf, ssize_t nread)
         auto read_rv = m_Tls->Read(buf, nread);
 
         if (read_rv == 0) {
-            m_Session.Del(m_Session.Terminate());
+            m_Session.Terminate();
+            m_Session.Del();
             m_Tls->Close();
             m_Tcp.Close(SUv_Tcp::eNormalClose);
 
@@ -1064,10 +1066,12 @@ void SUvNgHttp2_SessionBase::Reset(SUvNgHttp2_Error error, SUv_Tcp::ECloseType c
     auto rv = m_Session.Terminate();
 
     if (!rv && shutdown) {
-        Send();
+        m_Session.Send(m_Tls->GetWriteBuffer());
+        m_Tls->Write();
+        m_Tcp.Write();
     }
 
-    m_Session.Del(rv);
+    m_Session.Del();
     m_Tls->Close();
     m_Tcp.Close(close_type);
     OnReset(std::move(error));
