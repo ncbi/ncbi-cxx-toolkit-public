@@ -1392,8 +1392,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
 
     EntryCheckDivCode(seq_entries, &mParser);
 
-    if (mParser.xml_comp)
-        fta_set_strandedness(seq_entries);
+    // if () fta_set_strandedness(seq_entries);
 
     if (fta_EntryCheckGBBlock(seq_entries)) {
         FtaErrPost(SEV_WARNING, ERR_ENTRY_GBBlock_not_Empty, "Attention: GBBlock is not empty");
