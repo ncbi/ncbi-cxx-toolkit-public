@@ -90,7 +90,6 @@ static bool InitConfig(const CArgs& args, Parser& config)
     config.convert = true;
     config.no_date = args["N"].AsBoolean();
     config.diff_lt = args["Y"].AsBoolean();
-    config.xml_comp = args["X"].AsBoolean();
     config.sp_dt_seq_ver = args["e"].AsBoolean();
     config.simple_genes = args["G"].AsBoolean();
 
@@ -268,7 +267,6 @@ void CFlat2AsnApp::Init()
 
     arg_descrs->AddDefaultKey("Y", "AllowsInconsistentPair", "Allows inconsistent pairs of /gene+/locus_tag quals, when same genes go along with different locus_tags", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("w", "AllowsUnusualWgsAccessions", "Allows unusual secondary WGS accessions with prefixes not matching the primary one", ncbi::CArgDescriptions::eBoolean, "F");
-    arg_descrs->AddDefaultKey("X", "CompatibleMode", "INSDSeq/GenBank/EMBL compatible mode. Please don't use it", ncbi::CArgDescriptions::eBoolean, "F");
     arg_descrs->AddDefaultKey("e", "SwissprotVersion", "For SwissProt \"Reviewed\" records only: parse the sequence version number from \"sequence version\" DT line into Seq-id.version slot", ncbi::CArgDescriptions::eBoolean, "T");
     arg_descrs->AddDefaultKey("g", "AllowsSingleBaseGap", "For ALL sources: allows single-base \"gap\" features (obsolete)", ncbi::CArgDescriptions::eBoolean, "T");
     arg_descrs->AddDefaultKey("G", "SimpleGeneLocations", "Always generate simple gene locations, no joined ones", ncbi::CArgDescriptions::eBoolean, "F");

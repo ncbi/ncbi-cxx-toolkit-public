@@ -1807,7 +1807,7 @@ static CRef<CPubdesc> XMLRefs(ParserPtr pp, const DataBlk& dbp, bool& no_auth, b
 
     p = StringSave(XMLConcatSubTags(dbp.mBuf.ptr, dbp.GetXmlData(), INSDREFERENCE_AUTHORS, ','));
     if (p) {
-        if (pp->xml_comp) {
+        if (false) {
             q = StringRChr(p, '.');
             if (! q || q[1] != '\0') {
                 string s = p;
