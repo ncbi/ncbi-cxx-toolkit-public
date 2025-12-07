@@ -1908,7 +1908,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* all CC data ==> comment
      */
     if (SrchNodeType(entry, ParFlat_CC, &len, &offset)) {
-        string comment = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, (pp->xml_comp ? false : is_htg), ibp->is_pat);
+        string comment = GetDescrComment(offset, len, ParFlat_COL_DATA_EMBL, is_htg, ibp->is_pat);
         if (! comment.empty()) {
             bool           bad = false;
             TUserObjVector user_objs;
@@ -1925,7 +1925,7 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 bioseq.SetDescr().Set().push_back(descr);
             }
 
-            if (pp->xml_comp) {
+            if (false) {
                 string q;
                 q.reserve(comment.size());
                 for (auto p = comment.begin(); p != comment.end();) {

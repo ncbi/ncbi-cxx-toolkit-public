@@ -824,7 +824,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             p++;
         if (p > str)
             fta_StringCpy(str, p);
-        if (pp->xml_comp && pp->source != Parser::ESource::EMBL) {
+        if (false) {
             p = StringRChr(str, '.');
             if (! p || p[1] != '\0') {
                 string s = str;
@@ -1024,7 +1024,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
         }
 
         XMLGetDescrComment(comment);
-        if (pp->xml_comp) {
+        if (false) {
             string q;
             q.reserve(comment.size());
             for (auto p = comment.begin(); p != comment.end();) {
@@ -1093,7 +1093,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     }
 
     if (std_cre_date.NotEmpty()) {
-        if (pp->xml_comp == false || pp->source == Parser::ESource::EMBL) {
+        {
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetCreate_date().SetStd(*std_cre_date);
             bioseq.SetDescr().Set().push_back(descr);
@@ -1233,7 +1233,7 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
 
     if (no_date(mParser.format, bioseq->GetDescr().Get()) &&
         mParser.debug == false && mParser.no_date == false &&
-        mParser.xml_comp == false && mParser.source != Parser::ESource::USPTO) {
+        mParser.source != Parser::ESource::USPTO) {
         ibp->drop = true;
         FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Illegal create date. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);

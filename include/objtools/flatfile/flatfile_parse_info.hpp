@@ -191,7 +191,6 @@ struct Parser {
     bool            allow_uwsec  = false;          /* Allows unusual secondary WGS accessions with prefixes not
                                      matching the primary one */
     //struct FTAOperon* operon=nullptr;
-    bool        xml_comp              = false; /* INSDSeq/GenBank/EMBL compatible */
     bool        sp_dt_seq_ver         = true;  /* For SwissProt "Reviewed" records
                                      only: puts the sequence version
                                      number from "sequence version" DT

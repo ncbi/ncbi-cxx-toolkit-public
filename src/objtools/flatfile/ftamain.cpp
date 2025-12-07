@@ -343,7 +343,7 @@ static CRef<CSerialObject> MakeSeqSubmit(ParserPtr pp)
 /**********************************************************/
 static void SetReleaseStr(ParserPtr pp)
 {
-    if (! pp->xml_comp) {
+    {
         if (pp->source == Parser::ESource::NCBI) {
             if (pp->format == Parser::EFormat::GenBank)
                 pp->release_str = "source:ncbi, format:genbank";
