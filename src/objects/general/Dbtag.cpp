@@ -488,6 +488,7 @@ MAKE_CONST_MAP(sc_UrlMap, CDbtag::EDbtagType, string,
 
     { CDbtag::eDbtagType_ENSEMBL, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  "Error 404 Page not found" tested 7/13/2016
+    { CDbtag::eDbtagType_EnsemblNew, "https://resolver.ensembl.org/id/" },
     { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
 

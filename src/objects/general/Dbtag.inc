@@ -181,4 +181,5 @@
 // https://www.insdc.org/submitting-standards/dbxref-qualifier-vocabulary/
 // This software allows both
   { "Ensembl",             { CDbtag::fGenBank, CDbtag::eDbtagType_Ensembl, "ENSEMBL" } },
+  { "EnsemblNew",          { CDbtag::fGenBank, CDbtag::eDbtagType_EnsemblNew, "EnsemblNew" } },
   { "PseudoCAP",           { CDbtag::fGenBank, CDbtag::eDbtagType_PseudoCAP, "PseudoCap" } },
