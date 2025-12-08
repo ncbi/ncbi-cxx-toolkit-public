@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(Test_High_FDs)
         // canary_bufN should surround the other local variables, so
         // whichever winds up at a lower address will take any hits.
         char                      canary_buf1[NUM_CANARIES];
-        CTempString               canary1(canary_buf1, NUM_CANARIES), canary2;
+        CTempString               canary1(canary_buf1, NUM_CANARIES), canary2; /* NCBI_FAKE_WARNING */
         int                       i, j;
         unique_ptr<CSocket>       socks[NUM_CANARY_BITS];
         unique_ptr<CTimeoutGuard> GUARD;
