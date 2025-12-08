@@ -721,7 +721,7 @@ int CNcbiSample_Dbapi_Advanced_Features::RunSample()
 
         delete conn;
     }
-    catch(out_of_range) {
+    catch(out_of_range&) {
         cout << "Exception: Out of range" << endl;
         return 1;
     }
