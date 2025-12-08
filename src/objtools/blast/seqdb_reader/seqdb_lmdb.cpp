@@ -736,8 +736,10 @@ CSeqDBLMDB::NegativeTaxIdsToOids(const set<TTaxId>& tax_ids, vector<blastdb::TOi
 
 void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId> & tax_ids) const
 {
-	CMemoryFile oid_file(m_Oid2TaxIdsFile);
-	CLookupTaxIds lookup(oid_file);
+    if (!m_CachedOid2TaxIdsFile)
+        m_CachedOid2TaxIdsFile.reset(new CMemoryFile(m_Oid2TaxIdsFile));
+
+	CLookupTaxIds lookup(*m_CachedOid2TaxIdsFile);
 	for(unsigned int i=0; i < oids.size(); i++) {
 		vector<TTaxId>  taxid_list;
 		lookup.GetTaxIdListForOid(oids[i], taxid_list);
@@ -747,8 +749,10 @@ void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<TTaxId
 
 void CSeqDBLMDB::GetAccessionsForOid(const blastdb::TOid oid, vector<string> & accs) const
 {
-	CMemoryFile oid_file(m_Oid2SeqIdsFile);
-	CLookupSeqIds lookup(oid_file);
+    if (!m_CachedOid2SeqIdsFile) 
+        m_CachedOid2SeqIdsFile.reset(new CMemoryFile(m_Oid2SeqIdsFile));
+
+	CLookupSeqIds lookup(*m_CachedOid2SeqIdsFile);
 	lookup.GetSeqIdListForOid(oid, accs);
 }
 
