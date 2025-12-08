@@ -904,16 +904,12 @@ BOOST_AUTO_TEST_CASE(TestNotJSON2)
     CFormatGuess guess(str);
     BOOST_CHECK(guess.GuessFormat() != CFormatGuess::eJSON);
 
-    static const vector<string> strandSpecs = {
- 	        "   ", "ss-", "ds-", "ms-"
- 	    };
- 	    static const auto strandSpecCount = strandSpecs.size();
+    static const vector<string> strandSpecs = { "   ", "ss-", "ds-", "ms-" };
+    static const size_t strandSpecCount = strandSpecs.size();
  	
-        for (auto i = 0; i < strandSpecCount; ++i) {
-            if (NStr::StartsWith("", strandSpecs[i])) {
-                return;
-            }
+    for (size_t i = 0; i < strandSpecCount; ++i) {
+        if (NStr::StartsWith("", strandSpecs[i])) {
+            return;
         }
-
-
+    }
 }
