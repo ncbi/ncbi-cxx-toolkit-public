@@ -33,6 +33,7 @@
 /// @file seqdb_lmdb.hpp
 /// Defines interface to interact with LMDB files
 
+#include <corelib/ncbifile.hpp>
 #include <util/lmdbxx/lmdb++.h>
 #include <objtools/blast/seqdb_reader/seqdbcommon.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -114,6 +115,8 @@ private:
     string  m_TaxId2OffsetsFile;
     mutable bool m_LMDBFileOpened;
     blastdb::TOid m_NumOids;
+    mutable unique_ptr<CMemoryFile> m_CachedOid2TaxIdsFile;
+    mutable unique_ptr<CMemoryFile> m_CachedOid2SeqIdsFile;
 };
 
 /// Build the canonical LMDB file name for BLAST databases
