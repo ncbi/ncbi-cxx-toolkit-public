@@ -102,7 +102,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("zlib/[>=1.2.11 <2]")
         self._default_requires("zstd/[>=1.5.2 <=1.5.5]")
 
-        self._internal_requires("ncbicrypt/20230516")
+        self._internal_requires("ncbicrypt/1.0.3@cxx")
         if self.settings.os == "Linux":
             self._internal_requires("ncbi-fastcgi/2.4.2")
             self._internal_requires("ncbi-fastcgipp/[>=3.1.0.5]")
