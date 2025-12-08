@@ -977,7 +977,9 @@ void CFastaOstreamEx::x_AddncRNAClassAttribute(const CSeq_feat& feat,
     x_AddDeflineAttribute("ncRNA_class", ncRNA_class, defline);
 }
 
+/*
 // Not used ???
+
 MAKE_CONST_SET(s_TrnaList, ct::tagStrNocase, {
     "tRNA-Gap",
     "tRNA-Ala",
@@ -1008,6 +1010,7 @@ MAKE_CONST_SET(s_TrnaList, ct::tagStrNocase, {
     "tRNA-Glx",
     "tRNA-TERM"
 });
+*/
 
 void CFastaOstreamEx::x_AddRNAProductAttribute(const CSeq_feat& feat,
                                                string& defline) const
