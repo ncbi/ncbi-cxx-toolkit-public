@@ -35,6 +35,7 @@
 #include <util/image/image.hpp>
 #include <util/image/image_exception.hpp>
 #include <util/error_codes.hpp>
+#include <cstdint>
 
 #define NCBI_USE_ERRCODE_X   Util_Image
 
@@ -188,7 +189,7 @@ static void s_TIFFUnmapFileHandler(thandle_t, tdata_t, toff_t)
 CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
 {
     TIFF*            tiff             = NULL;
-    uint32*          raster           = NULL;
+    uint32_t*        raster           = NULL;
     TIFFErrorHandler old_err_handler  = NULL;
     TIFFErrorHandler old_warn_handler = NULL;
     CRef<CImage> image;
@@ -232,8 +233,8 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // allocate a temporary buffer for the image
-        raster = (uint32*)_TIFFmalloc(tsize_t(width * height * sizeof(uint32)));
-        if ( !TIFFReadRGBAImage(tiff, (uint32)width, (uint32)height, raster, 1) ) {
+        raster = (uint32_t*)_TIFFmalloc(tsize_t(width * height * sizeof(uint32_t)));
+        if ( !TIFFReadRGBAImage(tiff, (uint32_t)width, (uint32_t)height, raster, 1) ) {
             _TIFFfree(raster);
 
             NCBI_THROW(CImageException, eReadError,
@@ -262,7 +263,7 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // TIFFReadRGBAImage() returns data in ABGR image,
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
-                    uint32 pixel = raster[from_idx];
+                    uint32_t pixel = raster[from_idx];
                     data[3 * to_idx + 0] = TIFFGetR(pixel);
                     data[3 * to_idx + 1] = TIFFGetG(pixel);
                     data[3 * to_idx + 2] = TIFFGetB(pixel);
@@ -277,7 +278,7 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // TIFFReadRGBAImage() returns data in ABGR image,
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
-                    uint32 pixel = raster[from_idx];
+                    uint32_t pixel = raster[from_idx];
                     data[4 * to_idx + 0] = TIFFGetR(pixel);
                     data[4 * to_idx + 1] = TIFFGetG(pixel);
                     data[4 * to_idx + 2] = TIFFGetB(pixel);
