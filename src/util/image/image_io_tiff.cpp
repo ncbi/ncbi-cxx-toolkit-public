@@ -54,7 +54,7 @@ BEGIN_NCBI_SCOPE
 
 // LibTIFF version >= 4.3.0
 #if defined(TIFFLIB_VERSION) && TIFFLIB_VERSION >= 20210416
-    typedef std::uint32_t TUInt32;
+    typedef uint32_t TUInt32;
 #else
     typedef uint32 TUInt32;
 #endif
