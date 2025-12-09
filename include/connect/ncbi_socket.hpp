@@ -998,7 +998,7 @@ public:
     /// Return empty string on error
     static string         gethostname  (ESwitch log = eOff);
 
-    /// Return 0 or empty address on error
+    /// Return empty address on error
     static CNCBI_IPAddr   gethostbyname(const string& host,
                                         ESwitch log = eOff);
 
