@@ -59,8 +59,7 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_FTGL       ${NCBI_ThirdPartyBasePath}/ftgl/${NCBI_ThirdPartyCompiler}/2.1.3_rc5 CACHE PATH "FTGL root")
     set(NCBI_ThirdParty_GIF        ${NCBI_ThirdPartyBasePath}/gif/${NCBI_ThirdPartyCompiler}/4.1.3 CACHE PATH "GIF root")
     set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.2 CACHE PATH "GL2PS root")
-#    set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/2.2.0 CACHE PATH "GLEW root")
-    set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/1.5.8 CACHE PATH "GLEW root")
+    set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/2.2.0 CACHE PATH "GLEW root")
     set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.8.9 CACHE PATH "GNUTLS root")
     set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "PROTOBUF root")
     set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "GRPC root")
@@ -752,22 +751,22 @@ NCBIcomponent_report(FreeType)
 ##############################################################################
 # GLEW
 
-#if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
-#
-#if(NOT NCBI_COMPONENT_GLEW_FOUND)
-#    if(BUILD_SHARED_LIBS)
-#        NCBI_define_Wcomponent(GLEW glew32.lib)
-#    else()
-#        NCBI_define_Wcomponent(GLEW libglew32.lib)
-#    endif()
-#    if(NCBI_COMPONENT_GLEW_FOUND)
-#        if(NOT BUILD_SHARED_LIBS)
-#            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_STATIC)
-#        endif()
-#    endif()
-#endif()
-#
-#else()
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+
+if(NOT NCBI_COMPONENT_GLEW_FOUND)
+    if(BUILD_SHARED_LIBS)
+        NCBI_define_Wcomponent(GLEW glew32.lib)
+    else()
+        NCBI_define_Wcomponent(GLEW libglew32.lib)
+    endif()
+    if(NCBI_COMPONENT_GLEW_FOUND)
+        if(NOT BUILD_SHARED_LIBS)
+            set(NCBI_COMPONENT_GLEW_DEFINES GLEW_STATIC)
+        endif()
+    endif()
+endif()
+
+else()
 
 if(NOT NCBI_COMPONENT_GLEW_FOUND)
     NCBI_define_Wcomponent(GLEW glew32mx.lib)
@@ -780,7 +779,7 @@ if(NOT NCBI_COMPONENT_GLEW_FOUND)
     endif()
 endif()
 
-#endif()
+endif()
 NCBIcomponent_report(GLEW)
 
 ##############################################################################
