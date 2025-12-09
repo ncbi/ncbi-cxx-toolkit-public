@@ -1075,6 +1075,35 @@ string SeqDB_FindBlastDBPath(const string   & file_name,
                              CSeqDBAtlas    & atlas);
 
 
+/// Index types that can be detected
+enum ESeqDBIndexType {
+    eIndexedMegablast,  ///< Indexed megablast (.idx, .shd) - nucleotide only
+    eKmerIndex,         ///< Kmer index (.pki, .pkd) - protein only
+    eProteinIndex       ///< Protein index (.pix) - protein only
+};
+
+/// Check if a BLAST database has an associated index
+///
+/// This function checks for the existence of index files associated with
+/// a BLAST database. It supports three index types:
+/// - Indexed megablast: .idx and .shd files (nucleotide databases only)
+/// - Kmer index: .pki and .pkd files (protein databases only)
+/// - Protein index: .pix files (protein databases only)
+///
+/// @param dbname
+///   Database name (with or without path). If absolute path, no resolution
+///   is performed. Otherwise, standard CSeqDB path resolution is used.
+/// @param seqtype
+///   Molecule type ('p' for protein, 'n' for nucleotide)
+/// @param index_type
+///   Type of index to check for
+/// @return
+///   True if the specified index exists for the database, false otherwise
+NCBI_XOBJREAD_EXPORT
+bool SeqDB_DBIndexExists(const string   & dbname,
+                         char             seqtype,
+                         ESeqDBIndexType  index_type);
+
 /// Join two strings with a delimiter
 ///
 /// This function returns whichever of two provided strings is

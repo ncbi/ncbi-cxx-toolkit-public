@@ -477,6 +477,138 @@ string SeqDB_ResolveDbPathForLinkoutDB(const string & filename)
     return s_SeqDB_TryPaths(pathology, filename, dbtype, false, access, true);
 }
 
+bool SeqDB_DBIndexExists(const string   & dbname,
+                         char             seqtype,
+                         ESeqDBIndexType  index_type)
+{
+    CSeqDB_SimpleAccessor access;
+    
+    // Resolve the database path
+    string db_path;
+    
+    // Check if dbname is an absolute path
+    if (CFile::IsAbsolutePath(dbname)) {
+        db_path = dbname;
+    } else {
+        // Use standard CSeqDB path resolution
+        db_path = s_SeqDB_FindBlastDBPath(dbname, seqtype, NULL, false, access);
+        if (db_path.empty()) {
+            return false;
+        }
+    }
+    
+    // Extract directory and base name from path
+    string dir_path = CDirEntry(db_path).GetDir();
+    string base_name = CDirEntry(db_path).GetBase();
+    
+    // Helper lambda to search for index files matching patterns
+    auto find_index_files = [&](const string& ext1, const string& ext2 = "") -> bool {
+        // First check for simple non-volume case
+        if (access.DoesFileExist(db_path + ext1)) {
+            if (ext2.empty() || access.DoesFileExist(db_path + ext2)) {
+                return true;
+            }
+        }
+        
+        // Check for multi-volume databases
+        // Patterns: dbname.NN.ext (2-digit) or dbname.NNN.ext (3-digit)
+        // Also check for sub-volume patterns like dbname.NN.MM.ext
+        CDir dir(dir_path);
+        CDir::TEntries entries = dir.GetEntries(base_name + ".*", CDir::eFile);
+        
+        bool found_ext1 = false;
+        bool found_ext2 = ext2.empty();  // If no second extension needed, consider it found
+        
+        for (auto& entry : entries) {
+            string filename = entry->GetName();
+            size_t first_dot = base_name.length();
+            
+            if (filename.length() <= first_dot || !NStr::StartsWith(filename.substr(first_dot), ".")) {
+                continue;
+            }
+            
+            // Find the second dot after the volume number
+            size_t second_dot = NStr::Find(filename, ".", first_dot + 1);
+            if (second_dot == NPOS) {
+                continue;
+            }
+            
+            // Check if we have a valid volume number (2 or 3 digits)
+            size_t vol_len = second_dot - first_dot - 1;
+            if (vol_len != 2 && vol_len != 3) {
+                continue;
+            }
+            
+            // Verify all characters in volume number are digits
+            string vol_num = filename.substr(first_dot + 1, vol_len);
+            bool all_digits = true;
+            for (char c : vol_num) {
+                if (!isdigit(c)) {
+                    all_digits = false;
+                    break;
+                }
+            }
+            if (!all_digits) {
+                continue;
+            }
+            
+            // Get the extension after the volume number
+            // This could be the final extension (e.g., ".pki") or another volume (e.g., ".00.idx")
+            string rest = filename.substr(second_dot);
+            
+            // Check if rest starts with another volume number (for sub-volumes like .NN.MM.idx)
+            if (rest.length() > 4 && NStr::StartsWith(rest, ".")) {
+                string sub_vol = rest.substr(1, 2);
+                bool sub_is_digits = (isdigit(sub_vol[0]) && isdigit(sub_vol[1]));
+                if (sub_is_digits) {
+                    // This might be a sub-volume pattern like .00.idx
+                    size_t third_dot = NStr::Find(rest, ".", 1);
+                    if (third_dot != NPOS) {
+                        rest = rest.substr(third_dot);  // Get the final extension
+                    }
+                }
+            }
+            
+            // Check if this matches one of our target extensions
+            if (NStr::Equal(rest, ext1)) {
+                found_ext1 = true;
+            }
+            if (!ext2.empty() && NStr::Equal(rest, ext2)) {
+                found_ext2 = true;
+            }
+        }
+        
+        return found_ext1 && found_ext2;
+    };
+    
+    // Check for the appropriate index files based on type
+    switch (index_type) {
+        case eIndexedMegablast:
+            // Nucleotide only: .idx and .shd files
+            if (seqtype != 'n') {
+                return false;
+            }
+            return find_index_files(".idx", ".shd");
+            
+        case eKmerIndex:
+            // Protein only: .pki and .pkd files
+            if (seqtype != 'p') {
+                return false;
+            }
+            return find_index_files(".pki", ".pkd");
+            
+        case eProteinIndex:
+            // Protein only: .pix file
+            if (seqtype != 'p') {
+                return false;
+            }
+            return find_index_files(".pix");
+            
+        default:
+            return false;
+    }
+}
+
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim)
 {
     if (b.empty()) {

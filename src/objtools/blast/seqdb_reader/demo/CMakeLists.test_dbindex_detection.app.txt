@@ -1,0 +1,8 @@
+# $Id$
+
+NCBI_begin_app(test_dbindex_detection)
+  NCBI_sources(test_dbindex_detection)
+  NCBI_uses_toolkit_libraries(seqdb)
+  NCBI_project_watchers(camacho)
+NCBI_end_app()
+
