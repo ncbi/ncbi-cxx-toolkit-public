@@ -1662,10 +1662,12 @@ DISCREPANCY_CASE(GENE_WITH_MULTIPLE_RRNAS, FEAT, eDisc | eOncaller | eSubmitter 
     set<const CSeq_feat*> parent_genes;
     set<const CSeq_feat*> reported_genes;
 
-    for (const auto* rrna : context.FeatRRNAs()) {
-        const auto* gene = context.GetGeneForFeature(*rrna);
-        if (! parent_genes.insert(gene).second && reported_genes.insert(gene).second)  {
-            m_Objs["[n] gene[s] [has] multiple rRNA child features"].Add(*context.SeqFeatObjRef(*gene)).Fatal();
+    for (const auto& feat : context.GetFeat()) {
+        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+            const auto* gene = context.GetGeneForFeature(feat);
+            if (gene && ! parent_genes.insert(gene).second && reported_genes.insert(gene).second)  {
+                m_Objs["[n] gene[s] [has] multiple rRNA child features"].Add(*context.SeqFeatObjRef(*gene)).Fatal();
+            }
         }
     }
 }
