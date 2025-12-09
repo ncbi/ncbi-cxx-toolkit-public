@@ -1588,8 +1588,8 @@ static size_t s_HostPortToStringEx(const TNCBI_IPv6Addr* addr,
     if (!buf  ||  !bufsize)
         return 0;
     if (addr) {
-        int/*bool*/ ipv4 = NcbiIsIPv4(addr);
-        if (!NcbiIsEmptyIPv6(addr)  ||  (!ipv4  &&  family != AF_INET)) {
+        if (!NcbiIsEmptyIPv6(addr)  ||  family != AF_INET) {
+            int/*bool*/ ipv4 = NcbiIsIPv4(addr);
             int/*bool*/ bare = (ipv4  &&  family != AF_INET6)  ||  !port;
             char* end = s_AddrToString(buf + !bare, bufsize - !bare, addr, family, 0);
             if (!end) {
