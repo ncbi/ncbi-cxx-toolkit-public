@@ -16,6 +16,7 @@ server1=""
 server2=""
 https="0"
 h2loadcount="10"
+max_sessions="200"
 
 while (( $# )); do
     case $1 in
@@ -81,12 +82,12 @@ run() {
     local path="$2"
 
     echo "${casename} for ${server1} ..."
-    for i in `seq 1 ${h2loadcount}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url1}${path}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${h2loadcount}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m ${max_sessions}  "${url1}${path}" > ${outdir}/h2load.${i}.out &); done
     echo "Finalizing ${casename} for ${server1} (old) ..."
     finilize "${casename}.old"
 
     echo "${casename} for ${server2} ..."
-    for i in `seq 1 ${h2loadcount}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m 4  "${url2}${path}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${h2loadcount}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -n 1000 -c 4 -t 4 -m ${max_sessions}  "${url2}${path}" > ${outdir}/h2load.${i}.out &); done
     echo "Finalizing ${casename} for ${server2} (new) ..."
     finilize "${casename}.new"
 }
