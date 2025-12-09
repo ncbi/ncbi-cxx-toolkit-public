@@ -52,11 +52,18 @@
 BEGIN_NCBI_SCOPE
 
 
+// LibTIFF version >= 4.3.0
+#if defined(TIFFLIB_VERSION) && TIFFLIB_VERSION >= 20210416
+    typedef std::uint32_t TUInt32;
+#else
+    typedef uint32 TUInt32;
+#endif
+
+
 //
 // TIFFlib error / warning handlers
 //
-static void s_TiffReadErrorHandler(const char* module, const char* fmt,
-                                   va_list args)
+static void s_TiffReadErrorHandler(const char* module, const char* fmt, va_list args)
 {
     string msg("Error reading TIFF image: ");
     msg += module;
@@ -66,8 +73,7 @@ static void s_TiffReadErrorHandler(const char* module, const char* fmt,
 }
 
 
-static void s_TiffWriteErrorHandler(const char* module, const char* fmt,
-                                    va_list args)
+static void s_TiffWriteErrorHandler(const char* module, const char* fmt, va_list args)
 {
     string msg("Error writing TIFF image: ");
     msg += module;
@@ -188,7 +194,7 @@ static void s_TIFFUnmapFileHandler(thandle_t, tdata_t, toff_t)
 CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
 {
     TIFF*            tiff             = NULL;
-    uint32*          raster           = NULL;
+    TUInt32*         raster           = NULL;
     TIFFErrorHandler old_err_handler  = NULL;
     TIFFErrorHandler old_warn_handler = NULL;
     CRef<CImage> image;
@@ -232,8 +238,8 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // allocate a temporary buffer for the image
-        raster = (uint32*)_TIFFmalloc(tsize_t(width * height * sizeof(uint32)));
-        if ( !TIFFReadRGBAImage(tiff, (uint32)width, (uint32)height, raster, 1) ) {
+        raster = (TUInt32*)_TIFFmalloc(tsize_t(width * height * sizeof(TUInt32)));
+        if ( !TIFFReadRGBAImage(tiff, (TUInt32)width, (TUInt32)height, raster, 1) ) {
             _TIFFfree(raster);
 
             NCBI_THROW(CImageException, eReadError,
@@ -262,7 +268,7 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // TIFFReadRGBAImage() returns data in ABGR image,
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
-                    uint32 pixel = raster[from_idx];
+                    TUInt32 pixel = raster[from_idx];
                     data[3 * to_idx + 0] = TIFFGetR(pixel);
                     data[3 * to_idx + 1] = TIFFGetG(pixel);
                     data[3 * to_idx + 2] = TIFFGetB(pixel);
@@ -277,7 +283,7 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // TIFFReadRGBAImage() returns data in ABGR image,
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
-                    uint32 pixel = raster[from_idx];
+                    TUInt32 pixel = raster[from_idx];
                     data[4 * to_idx + 0] = TIFFGetR(pixel);
                     data[4 * to_idx + 1] = TIFFGetG(pixel);
                     data[4 * to_idx + 2] = TIFFGetB(pixel);
