@@ -161,7 +161,6 @@ void CSharedHitId::x_SetHitId(const string& hit_id)
 }
 
 
-
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
@@ -405,9 +404,6 @@ bool CRequestContext::GetDefaultAutoIncRequestIDOnPost(void)
 {
     return sx_GetDefaultAutoIncRequestIDOnPost();
 }
-
-
-
 
 
 void CRequestContext::x_SetHitID(const CSharedHitId& hit_id)
@@ -784,7 +780,6 @@ void CRequestContext::x_UpdateStdContextProp(CTempString name) const
         if ( match ) return;
     }
 }
-
 
 
 shared_ptr<IRequestTracer> CRequestContext::sm_Tracer;
