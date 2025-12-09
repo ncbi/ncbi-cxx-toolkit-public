@@ -2162,7 +2162,7 @@ extern NCBI_XCONNECT_EXPORT SOCK     POLLABLE_ToSOCK   (POLLABLE);
 
 
 /******************************************************************************
- *  AUXILIARY NETWORK-SPECIFIC FUNCTIONS (added for the portability reasons)
+ *  AUXILIARY NETWORK-SPECIFIC FUNCTIONS (added for portability reasons)
  */
 
 /** Convert IP address to a string in dotted notation.
@@ -2309,8 +2309,9 @@ extern NCBI_XCONNECT_EXPORT int SOCK_gethostname
  * @param log
  *  [in]  whether to log failures
  * @return
- *  "addr" when successful and NULL when an error occurred
- * @note Both "::" and "0.0.0.0" result in an error (NULL returned)
+ *  "addr" when successful and NULL when an error occurred (non-NULL "addr"
+ *  is filled with zeroes [emptied] in this case)
+ * @note Both "::" and "0.0.0.0" result in an error (NULL) returned
  * @sa
  *  SOCK_gethostbyname6, SOCK_gethostname, NcbiStringToIPv4
  */
@@ -2343,7 +2344,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_IPv6Addr* SOCK_gethostbyname6
  *  local host, if hostname is passed as NULL / empty), which can be specified
  *  as either a domain name or an IPv4 address in the dotted notation (e.g.
  *  "123.45.67.89\0").  Return 0 on error.
- * @note "0.0.0.0" result in an error (0) returned
+ * @note "0.0.0.0" results in an error (0) returned
  * @sa
  *  SOCK_gethostbyname, SOCK_gethostname, NcbiStringToIPv4
  */
@@ -2499,7 +2500,9 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ SOCK_IsLoopbackAddress6
 
 
 /** Read (skipping leading blanks) "[host][:port]" from a string stopping
- * at either EOL or a blank character.
+ * at either EOL or a blank character (the square brackets denote that either
+ * part (but not both) is optional, but if "host" is a bare IPv4 address,
+ * then it may be enclosed in literal [] if followed by the port part).
  * @param str
  *  must not be NULL
  * @param host
@@ -2525,8 +2528,11 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort
  );
 
 
-/* If an IPv6 address is followed by a port, the address must be enclosed in
- * square brackets.
+/* Same as SOCK_StringToHostPort() but also accepts a bare IPv6 address in the
+ * "host" part of the string.  However, if the IPv6 address is followed by a
+ * port (zero or not), then the address _must_ be enclosed in square brackets.
+ * @sa
+ *   SOCK_StringToHostPort, SOCK_HostPortToString6
  */
 extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort6
 (const char*     str,
@@ -2536,10 +2542,10 @@ extern NCBI_XCONNECT_EXPORT const char* SOCK_StringToHostPort6
 
 
 /** Print numeric string "host:port" into a buffer provided, not to exceed
- * 'bufsize' bytes (including the teminating '\0' character).  Suppress
- * printing the "host" if the 'host' parameter is zero.  Suppress printing the
- * ":port" part if 'port' passed as zero, but if both the 'host' and the 'port'
- * parameters are zero, the output is the literal ":0".
+ * 'bufsize' bytes (including the terminating '\0' character).  Suppress
+ * printing the "host" part if the 'host' parameter is zero.  Suppress printing
+ * the ":port" part if 'port' is passed as zero, but if both the 'host' and the
+ * 'port' parameters are zero, then the output is literal ":0".
  * @param host
  *  IPv4 in network byte order
  * @param port
@@ -2567,6 +2573,8 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  * An empty IPv6 "addr" with zero "port" gets output as "::" if API
  * was not set to IPv4-only mode.  Otherwise, the result is ":0".
  * NULL "addr" suppresses the host part output, unconditionally.
+ * @sa
+ *   SOCK_HostPortToString, SOCK_StringToHostPort6
  */
 extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString6
 (const TNCBI_IPv6Addr* addr,
