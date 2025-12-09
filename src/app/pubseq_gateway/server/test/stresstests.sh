@@ -3,7 +3,7 @@
 
 usage() {
     echo "USAGE:"
-    echo "$0  [-h|--help]  [--https] [--memcheck] --server host:port"
+    echo "$0  [-h|--help]  [--https] [--memcheck] [--max-sessions N] --server host:port"
     exit 0
 }
 
@@ -16,6 +16,7 @@ aggregate="`pwd`/aggregate.py"
 server="tonka1:2180"
 https="0"
 memcheck="0"
+max_sessions="200"
 
 H2LOAD_CNT="100"
 H2LOAD_CNT_ADMIN="50"
@@ -31,6 +32,11 @@ while (( $# )); do
             (( $# > 1 )) || usage
             shift
             server=$1
+            ;;
+        --max-sessions)
+            (( $# > 1 )) || usage
+            shift
+            max_sessions=$1
             ;;
         --https)
             (( $# > 1 )) || usage
@@ -64,7 +70,6 @@ if [[ "${memcheck}" == "1" ]]; then
     REQ_CNT_NON_CASS="10"
 fi
 
-
 # Waits for h2load to finish; exit if failed;
 # aggregate all output; remove output files
 finilize() {
@@ -78,7 +83,7 @@ finilize() {
 # case_run "name" "url"
 case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT} -c 4 -t 4 -m 4 -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
@@ -86,14 +91,14 @@ case_run() {
 # case_run "name" "url"
 admin_case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT_ADMIN}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_ADMIN} -c 4 -t 4 -m 4 -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT_ADMIN}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_ADMIN} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
 
 non_cass_case_run() {
     echo "${1}..."
-    for i in `seq 1 ${H2LOAD_CNT_NON_CASS}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_NON_CASS} -c 4 -t 4 -m 4 -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
+    for i in `seq 1 ${H2LOAD_CNT_NON_CASS}`; do (LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./ ./h2load -T 6000000 -N 6000000 -n ${REQ_CNT_NON_CASS} -c 4 -t 4 -m ${max_sessions} -v  "${url}/${2}" > ${outdir}/h2load.${i}.out &); done
     finilize "${1}"
 }
 
@@ -124,8 +129,8 @@ case_run "comment-basic-suppressed" "ID/getblob?blob_id=4.94088756"
 case_run "get_na_smart_send_if_small_50000" "ID/get_na?fmt=json&all_info=yes&seq_id=NW_019824422&names=NA000150051.1&tse=smart&send_blob_if_small=50000"
 case_run "get_na_slim_send_if_small_50000" "ID/get_na?fmt=json&all_info=yes&seq_id=NW_024096525&names=NA000288180.1&tse=slim&send_blob_if_small=50000"
 case_run "ipg_resolve_both" "IPG/resolve?ipg=642300&protein=EGB0689184.1"
-case_run "wgs_resolve_EAB2056000" "ID/resolve?fmt=json&all_info=yes&seq_id=EAB2056000&disable_processor=osg"
 
+non_cass_case_run "wgs_resolve_EAB2056000" "ID/resolve?fmt=json&all_info=yes&seq_id=EAB2056000&disable_processor=osg"
 non_cass_case_run "cdd_getna_2222_3_na" "ID/get_na?fmt=json&all_info=yes&seq_id=2222&names=FOOBAR,SNP,CDD&disable_processor=osg"
 non_cass_case_run "snp_getna_NG_011231" "ID/get_na?fmt=json&all_info=yes&seq_id=NG_011231.1&names=SNP&disable_processor=osg"
 non_cass_case_run "wgs_get_EAB1000000" "ID/get?seq_id=EAB1000000&disable_processor=osg"
