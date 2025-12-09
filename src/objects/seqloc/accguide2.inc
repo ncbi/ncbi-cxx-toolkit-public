@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Nov 19 12:12:14 EST 2025
-; formally
+/* time_t value corresponding to Tue Dec  9 15:23:59 EST 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1763572334UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1765311839UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -6165,6 +6164,30 @@ static const char* const kBuiltInGuide[] = {
     ": 000000000-999999999",
     "special2 CCILNR+9 embl_tpa_wgs_nuc",
     ": 000000000-999999999",
+    "special2 CDRIUW+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
+    "special  CDRKJF000000000-CDRKRI999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRKRM000000000-CDRLKT999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRLKV000000000-CDRLKX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRLLH000000000-CDRLMH999999999  embl_tpa_wgs_nuc # 6+9",
+    "special2 CDRLMJ+9 embl_tpa_wgs_nuc",
+    ": 000000000-999999999",
+    "special  CDRLNP000000000-CDRLTN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRLTQ000000000-CDRLXD999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRLXL000000000-CDRLXT999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRLXZ000000000-CDRMMD999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRMMY000000000-CDRMTN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRVMB000000000-CDRVRF999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRVRH000000000-CDRVWX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRVWZ000000000-CDRWEN999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRWEP000000000-CDRWFB999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRWFD000000000-CDRWUY999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRWVA000000000-CDRWXK999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRWXM000000000-CDRXYH999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRXYJ000000000-CDRXYX999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDRXYZ000000000-CDRYAL999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDSAXG000000000-CDSAXK999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CDSAXM000000000-CDSBCZ999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HAZG+8 embl_tpa_tsa_nuc",
