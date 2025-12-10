@@ -103,7 +103,7 @@ extern int/*bool*/ NcbiIsAPIPA
  *   FCGI applications *must* use CCgiRequest::GetClientTrackingEnv() to obtain
  *   proper tracking environment per each request
  * @sa
- *   CCgiRequest::GetClientTrackingEnv()
+ *   CCgiRequest::GetClientTrackingEnv(), NcbiGetCgiClientIPv6Ex
  */
 
 typedef enum {
@@ -131,7 +131,7 @@ extern unsigned int NcbiGetCgiClientIP
 
 /**
  * Same as NcbiGetCgiClientIPEx but IPv6-aware.  IPv4 addresses packed as IPv6.
- * Returns an empty IPv6 address when NcbiGetCgiClientIPEx() would return 0.  
+ * Returns an empty IPv6 address when failed to figure out the address.
  * @sa
  *   NcbiGetCgiClientIPEx
  */
