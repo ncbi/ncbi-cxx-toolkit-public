@@ -159,7 +159,15 @@ DISCREPANCY_CASE1(SOURCE_QUALS, BIOSRC, eDisc | eOncaller | eSubmitter | eSmart 
                 const CSubSource::TSubtype& subtype = it->GetSubtype();
                 if (it->CanGetName()) {
                     const string& qual = subtype == CSubSource::eSubtype_other ? "note-subsrc" : it->GetSubtypeName(subtype, CSubSource::eVocabulary_raw);
-                    AddObjToQualMap(qual, it->GetName(), *disc_obj, m_Objs);
+                    const string& name = it->GetName();
+                    AddObjToQualMap(qual, name, *disc_obj, m_Objs);
+                    if (qual == "plasmid-name") {
+                        const CSeqdesc* molinfo = context.GetMolinfo();
+                        if (molinfo && molinfo->GetMolinfo().GetCompleteness() == CMolInfo::eCompleteness_complete) {
+                            // record plasmid-name qualifier value with complete molinfo flag
+                            AddObjToQualMap("plasmid-name-complete", name, *disc_obj, m_Objs);
+                        }
+                    }
                 }
             }
         }
@@ -367,6 +375,19 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
     bool use_geo_loc_name = CSubSource::NCBI_UseGeoLocNameForCountry();
 
+    // first pass to collect plasmid names with molinfo complete
+    vector<string> complete_plasmid_names;
+    CReportNode::TNodeMap& orig_map = m_Objs.GetMap();
+    for (auto it: orig_map) {
+        if (it.first == "plasmid-name-complete") {
+            CReportNode::TNodeMap& sub = it.second->GetMap();
+            for (auto jj: sub) {
+                string name = jj.first;
+                complete_plasmid_names.push_back(name);
+            }
+        }
+    }
+
     ConvertDuplicates(m_Objs);
 
     CReportNode report, final_report;
@@ -380,6 +401,9 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 
     for (auto it: the_map) {
         if (it.first == "all") {
+            continue;
+        }
+        if (it.first == "plasmid-name-complete") {
             continue;
         }
         string qual = it.first;
@@ -482,6 +506,26 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             }
         }
 
+        if (itfirst == "plasmid-name") {
+            CReportNode::TNodeMap& sub = it.second->GetMap();
+            for (auto jj: sub) {
+                string name = jj.first;
+                TReportObjectList& obj = jj.second->GetObjects();
+                int instances = (int) obj.size();
+                if (instances < 2) {
+                    continue;
+                }
+                for (vector<string>::iterator itc = complete_plasmid_names.begin(); itc != complete_plasmid_names.end(); itc++)  {
+                    string match = *itc;
+                    if (name == match) {
+                        // cerr << "REPORT: identical plasmid names should not include complete plasmid: " << name << endl;
+                        report[diagnosis]["Complete plasmid " + name + " should not appear multiple (" +
+                            NStr::IntToString(instances) + ") times"].Add(obj);
+                    }
+                }
+            }
+        }
+
         static const size_t MAX_NUM_STR_LEN = 20;
         for (auto item: report[diagnosis].GetMap()) {
             // It builds a key for map to be looked like "[*00000000000000000123*]<old_key>" to keep a required sort order
@@ -501,6 +545,7 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
             }
         }
     }
+
     m_ReportItems = final_report.Export(*this)->GetSubitems();
 }
 
