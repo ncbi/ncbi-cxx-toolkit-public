@@ -152,11 +152,12 @@ static int/*bool*/ s_IsPrivateIP(unsigned int ip)
 static const TNCBI_IPv6Addr* x_StringToAddr(TNCBI_IPv6Addr* addr,
                                             const char*     str)
 {
-    const char* end = NcbiStringToAddr(addr, str, 0);
-    assert(!str  ||  *str);
-    if (str  /*&&  *str*/  &&  (!end  ||  *end))
-        NcbiIPv4ToIPv6(addr, SOCK_gethostbyname(str), 0);
-    return addr;
+    const char* end;
+    if (!str)
+        return 0;
+    assert(*str);
+    end = NcbiStringToAddr(addr, str, 0);
+    return end  &&  !*end ? addr : SOCK_gethostbyname6(addr, str);
 }
 
 
