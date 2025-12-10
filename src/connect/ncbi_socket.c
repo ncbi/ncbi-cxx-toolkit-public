@@ -9677,7 +9677,6 @@ extern int SOCK_gethostnameEx(char*   buf,
 {
     if (!buf  ||  !bufsize)
         return -1/*failure*/;
-
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
         buf[0] = '\0';
