@@ -9720,9 +9720,13 @@ extern TNCBI_IPv6Addr* SOCK_gethostbynameEx6(TNCBI_IPv6Addr* addr,
                                              const char*     host,
                                              ESwitch         log)
 {
-    /* initialize internals */
-    if (!addr  ||  s_InitAPI(0) != eIO_Success)
+    if (!addr)
         return 0;
+    /* initialize internals */
+    if (s_InitAPI(0) != eIO_Success) {
+        memset(addr, 0, sizeof(*addr));
+        return 0;
+    }
 
     return s_gethostbyname(addr, host, s_IPVersion, 0, log == eDefault ? s_Log : log);
 }
@@ -9744,7 +9748,6 @@ extern const char* SOCK_gethostbyaddrEx(unsigned int host,
 
     if (!buf  ||  !bufsize)
         return 0;
-
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
         *buf = '\0';
@@ -9777,7 +9780,6 @@ extern const char* SOCK_gethostbyaddrEx6(const TNCBI_IPv6Addr* addr,
 
     if (!buf  ||  !bufsize)
         return 0;
-
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
         *buf = '\0';
@@ -9818,9 +9820,13 @@ extern unsigned int SOCK_GetLocalHostAddress(ESwitch reget)
 extern TNCBI_IPv6Addr* SOCK_GetLocalHostAddress6(TNCBI_IPv6Addr* addr,
                                                  ESwitch         reget)
 {
-    /* initialize internals */
-    if (!addr  ||  s_InitAPI(0) != eIO_Success)
+    if (!addr)
         return 0;
+    /* initialize internals */
+    if (s_InitAPI(0) != eIO_Success) {
+        memset(addr, 0, sizeof(*addr));
+        return 0;
+    }
 
     return s_getlocalhostaddress(addr, s_IPVersion, reget, s_Log);
 }
