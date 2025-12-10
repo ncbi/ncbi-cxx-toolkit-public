@@ -153,8 +153,11 @@ static const TNCBI_IPv6Addr* x_StringToAddr(TNCBI_IPv6Addr* addr,
                                             const char*     str)
 {
     const char* end;
-    if (!str)
+    assert(addr);
+    if (!str) {
+        memset(addr, 0, sizeof(*addr));
         return 0;
+    }
     assert(*str);
     end = NcbiStringToAddr(addr, str, 0);
     return end  &&  !*end ? addr : SOCK_gethostbyname6(addr, str);
