@@ -1600,8 +1600,8 @@ int CPubseqGatewayApp::OnStatus(CHttpRequest &  http_req,
 }
 
 
-static const char *     s_Shutdown = "Shutdown request accepted";
-static size_t           s_ShutdownSize = strlen(s_Shutdown);
+static string   s_Shutdown = "Shutdown request accepted";
+static size_t   s_ShutdownSize = s_Shutdown.size();
 
 int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
                                   shared_ptr<CPSGS_Reply>  reply)
@@ -1708,7 +1708,7 @@ int CPubseqGatewayApp::OnShutdown(CHttpRequest &  http_req,
         // New shutdown request or a shorter expiration request
         PSG_MESSAGE(msg);
 
-        reply->Send202(s_Shutdown, s_ShutdownSize);
+        reply->Send202(s_Shutdown.c_str(), s_ShutdownSize);
         x_PrintRequestStop(context, CPSGS_Request::ePSGS_UnknownRequest,
                            CRequestStatus::e202_Accepted,
                            reply->GetBytesSent());
