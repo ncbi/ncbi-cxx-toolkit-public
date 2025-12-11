@@ -61,8 +61,10 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.2 CACHE PATH "GL2PS root")
     set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/2.2.0 CACHE PATH "GLEW root")
     set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.8.9 CACHE PATH "GNUTLS root")
-    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "PROTOBUF root")
-    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "GRPC root")
+#    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "PROTOBUF root")
+#    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "GRPC root")
+    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "PROTOBUF root")
+    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "GRPC root")
     set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/3.1.1 CACHE PATH "JPEG root")
     set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.33 CACHE PATH "LMDB root")
     set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.10-ncbi1 CACHE PATH "LZO root")
@@ -597,7 +599,7 @@ if(NOT EXISTS "${NCBI_PROTOC_APP}")
     NCBI_notice("NOT FOUND NCBI_PROTOC_APP: ${NCBI_PROTOC_APP}")
 else()
 
-if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "__disabled__vs2022.64")
 
 NCBI_define_Wcomponent(PROTOBUF
     libprotobuf.lib absl_random_distributions.lib
