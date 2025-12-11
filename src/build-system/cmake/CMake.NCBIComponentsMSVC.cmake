@@ -72,7 +72,7 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_PCRE2      ${NCBI_ThirdPartyBasePath}/pcre2/${NCBI_ThirdPartyCompiler}/10.46 CACHE PATH "PCRE2 root")
     set(NCBI_ThirdParty_PNG        ${NCBI_ThirdPartyBasePath}/png/${NCBI_ThirdPartyCompiler}/1.6.50 CACHE PATH "PNG root")
     set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.26.0 CACHE PATH "SQLITE3 root")
-    set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/3.6.1-ncbi1 CACHE PATH "TIFF root")
+    set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/4.7.1-ncbi1 CACHE PATH "TIFF root")
     set(NCBI_ThirdParty_UV         ${NCBI_ThirdPartyBasePath}/uv/${NCBI_ThirdPartyCompiler}/1.51.0 CACHE PATH "UV root")
     set(NCBI_ThirdParty_XALAN      ${NCBI_ThirdPartyBasePath}/xalan/${NCBI_ThirdPartyCompiler}/1.12 CACHE PATH "XALAN root")
     set(NCBI_ThirdParty_XERCES     ${NCBI_ThirdPartyBasePath}/xerces/${NCBI_ThirdPartyCompiler}/3.2.3 CACHE PATH "XERCES root")
@@ -438,7 +438,11 @@ NCBIcomponent_report(GIF)
 
 #############################################################################
 # TIFF
-NCBI_define_Wcomponent(TIFF libtiff.lib)
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
+    NCBI_define_Wcomponent(TIFF tiff.lib tiffxx.lib)
+else()
+    NCBI_define_Wcomponent(TIFF libtiff.lib)
+endif()
 NCBIcomponent_report(TIFF)
 
 #############################################################################
