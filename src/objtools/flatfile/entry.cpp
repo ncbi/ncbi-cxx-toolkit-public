@@ -187,17 +187,21 @@ bool Entry::xInitSeqInst(const unsigned char* pConvert)
 
 
 /**********************************************************/
-static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
+static string FileReadBuf(FileBuf& ffbuf, size_t offset, size_t len)
 {
-    const char* p = nullptr;
-    char*       q;
-    size_t      i;
+    ffbuf.set_offs(offset);
+    const char* p = ffbuf.current;
 
-    for (p = ffbuf.current, q = to, i = 0; i < len && *p != '\0'; i++)
-        *q++ = *p++;
+    string s;
+    s.reserve(len);
+    size_t i;
+    for (i = 0; i < len && *p != '\0'; i++)
+        s.push_back(*p++);
 
     ffbuf.current = p;
-    return (i);
+    if (i != len)
+        s.clear();
+    return s;
 }
 
 /**********************************************************
@@ -216,91 +220,80 @@ static size_t FileReadBuf(char* to, size_t len, FileBuf& ffbuf)
  **********************************************************/
 DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
-    pp->ffbuf.set_offs(offset);
-
-    char*  bptr = StringNew(len); /* includes nul byte */
-    size_t blen = FileReadBuf(bptr, len, pp->ffbuf);
-
-    if (blen != len) /* hardware problem */
+    string buf = FileReadBuf(pp->ffbuf, offset, len);
+    if (buf.empty()) /* hardware problem */
     {
         FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
-        MemFree(bptr);
         return nullptr;
     }
 
-    char* eptr = bptr + blen;
-    bool  was  = false;
-    char* wasx = nullptr;
-    for (char* q = bptr; q < eptr; q++) {
-        if (*q != '\n')
+    size_t wasx = string::npos;
+    for (size_t q = 0; q < buf.size(); q++) {
+        if (buf[q] != '\n')
             continue;
 
-        if (wasx) {
-            fta_StringCpy(wasx, q); /* remove XX lines */
-            eptr -= q - wasx;
-            blen -= q - wasx;
+        if (wasx != string::npos) {
+            buf.erase(wasx, q - wasx); /* remove XX lines */
             q = wasx;
         }
-        if (q + 3 < eptr && q[1] == 'X' && q[2] == 'X')
+        if (q + 3 < buf.size() && buf[q + 1] == 'X' && buf[q + 2] == 'X')
             wasx = q;
         else
-            wasx = nullptr;
+            wasx = string::npos;
     }
 
-    for (char* q = bptr; q < eptr; q++) {
-        if (*q == 13) {
-            *q = 10;
+    bool was = false;
+    for (size_t q = 0; q < buf.size(); q++) {
+        char& c = buf[q];
+        if (c == 13) {
+            c = 10;
         }
-        if (*q > 126 || (*q < 32 && *q != 10)) {
-            FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "none-ASCII char, Decimal value {}, replaced by # ", (int)*q);
-            *q = '#';
+        if (c > 126 || (c < 32 && c != 10)) {
+            FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "non-ASCII char, Decimal value {}, replaced by # ", int(c));
+            c = '#';
         }
 
         /* Modified to skip empty line: Tatiana - 01/21/94 */
-        if (*q != '\n') {
+        if (c != '\n') {
             was = false;
             continue;
         }
-        size_t i;
-        for (i = 0; q > bptr;) {
+        size_t i = 0;
+        while (q > 0) {
             i++;
             q--;
-            if (*q != ' ')
+            if (buf[q] != ' ')
                 break;
         }
         if (i > 0 &&
-            (*q == '\n' || (q - 2 >= bptr && *(q - 2) == '\n'))) {
+            (buf[q] == '\n' || (q >= 2 && buf[q - 2] == '\n'))) {
             q += i;
             i = 0;
         }
         if (i > 0) {
-            if (*q != ' ') {
+            if (buf[q] != ' ') {
                 q++;
                 i--;
             }
             if (i > 0) {
-                fta_StringCpy(q, q + i);
-                eptr -= i;
-                blen -= i;
+                buf.erase(q, i);
             }
         }
 
-        if (q + 3 < eptr && q[3] == '.') {
-            q[3] = ' ';
+        if (q + 3 < buf.size() && buf[q + 3] == '.') {
+            buf[q + 3] = ' ';
             if (pp->source != Parser::ESource::NCBI || pp->format != Parser::EFormat::EMBL) {
                 FtaErrPost(SEV_WARNING, ERR_FORMAT_DirSubMode, "The format allowed only in DirSubMode: period after the tag");
             }
         }
         if (was) {
-            fta_StringCpy(q, q + 1); /* requires null byte */
+            buf.erase(q, 1);
             q--;
-            eptr--;
-            blen--;
         } else
             was = true;
     }
 
-    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE, bptr, blen);
+    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE, StringSave(buf), buf.size());
     entry->SetEntryData(new EntryBlk());
     return entry;
 }
