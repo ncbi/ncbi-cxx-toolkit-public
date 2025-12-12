@@ -218,13 +218,13 @@ static string FileReadBuf(FileBuf& ffbuf, size_t offset, size_t len)
  *                                              3-22-93
  *
  **********************************************************/
-DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
+unique_ptr<DataBlk> LoadEntry(ParserPtr pp, size_t offset, size_t len)
 {
     string buf = FileReadBuf(pp->ffbuf, offset, len);
     if (buf.empty()) /* hardware problem */
     {
         FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
-        return nullptr;
+        return {};
     }
 
     size_t wasx = string::npos;
@@ -293,7 +293,7 @@ DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
-    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE, StringSave(buf), buf.size());
+    auto entry = make_unique<DataBlk>(ParFlat_ENTRYNODE, StringSave(buf), buf.size());
     entry->SetEntryData(new EntryBlk());
     return entry;
 }

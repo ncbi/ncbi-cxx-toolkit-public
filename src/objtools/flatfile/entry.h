@@ -102,7 +102,7 @@ struct Entry {
 using EntryPtr = Entry*;
 
 
-DataBlk* LoadEntry(ParserPtr pp, size_t offset, size_t len);
+unique_ptr<DataBlk> LoadEntry(ParserPtr pp, size_t offset, size_t len);
 
 END_NCBI_SCOPE
 
