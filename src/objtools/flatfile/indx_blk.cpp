@@ -455,7 +455,7 @@ static bool CkDateFormat(string_view date)
         isdigit(date[0]) && isdigit(date[1]) &&
         isdigit(date[7]) && isdigit(date[8]) &&
         isdigit(date[9]) && isdigit(date[10]) &&
-        MatchArraySubString(month_name, date) >= 0)
+        MatchArrayIString(month_name, date.substr(3, 3)) >= 0)
         return true;
 
     return false;
@@ -614,12 +614,7 @@ CRef<CDate_std> GetUpdateDate(string_view str, Parser::ESource source)
         return {};
     }
 
-    if (! CkDateFormat(str)) {
-        FtaErrPost(SEV_ERROR, ERR_DATE_IllegalDate, "Invalid date: {}", str);
-        return {};
-    }
-
-    return get_full_date(str, false, source);
+    return get_full_date(str.substr(0, 11), false, source);
 }
 
 
