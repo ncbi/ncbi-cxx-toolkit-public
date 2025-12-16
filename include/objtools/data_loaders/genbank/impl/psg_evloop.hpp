@@ -86,7 +86,7 @@ private:
     // queue of request to send
     mutex m_Mutex;
     condition_variable m_CV;
-    atomic<bool> m_Stopped = { false };
+    bool m_Stopped = { false };
     queue<CRef<CPSGL_RequestTracker>> m_Queue;
 };
 

@@ -228,8 +228,10 @@ void CPSGL_TrackerMap::DeregisterRequest(const CPSGL_RequestTracker* tracker)
 
 void CPSGL_RequestQueue::Put(value_type v)
 {
-    lock_guard lock(m_Mutex);
-    m_Queue.push(std::move(v));
+    {{
+        lock_guard lock(m_Mutex);
+        m_Queue.push(std::move(v));
+    }}
     m_CV.notify_one();
 }
 
@@ -250,7 +252,10 @@ CPSGL_RequestQueue::value_type CPSGL_RequestQueue::Get()
 
 void CPSGL_RequestQueue::Stop()
 {
-    m_Stopped = true;
+    {{
+        lock_guard lock(m_Mutex);
+        m_Stopped = true;
+    }}
     m_CV.notify_all();
 }
 
