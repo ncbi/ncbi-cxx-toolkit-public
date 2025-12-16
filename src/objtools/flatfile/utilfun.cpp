@@ -77,14 +77,12 @@ static const char* ParFlat_EST_kw_array[] = {
     "EST (expressed sequence tags)",
     "EST(expressed sequence tag)",
     "transcribed sequence fragment",
-    nullptr
 };
 
 static const char* ParFlat_GSS_kw_array[] = {
     "GSS",
     "GSS (genome survey sequence)",
     "trapped exon",
-    nullptr
 };
 
 static const char* ParFlat_STS_kw_array[] = {
@@ -93,22 +91,18 @@ static const char* ParFlat_STS_kw_array[] = {
     "STS (sequence tagged site)",
     "STS sequence",
     "sequence tagged site",
-    nullptr
 };
 
 static const char* ParFlat_HTC_kw_array[] = {
     "HTC",
-    nullptr
 };
 
 static const char* ParFlat_FLI_kw_array[] = {
     "FLI_CDNA",
-    nullptr
 };
 
 static const char* ParFlat_WGS_kw_array[] = {
     "WGS",
-    nullptr
 };
 
 static const char* ParFlat_MGA_kw_array[] = {
@@ -406,13 +400,15 @@ TokenStatBlk TokenString(string_view str, Char delimiter)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 fta_StringMatch(const Char** array, string_view text)
+Int2 fta_StringMatch(const std::span<const Char*> array, string_view text)
 {
-    Int2 i;
+    Int2 i = 0;
 
-    for (i = 0; *array; i++, array++) {
-        if (NStr::EqualCase(text, 0, StringLen(*array), *array))
+    for (const Char* it : array) {
+        _ASSERT(it);
+        if (NStr::EqualCase(text, 0, StringLen(it), it))
             return i;
+        i++;
     }
 
     return -1;
@@ -427,18 +423,20 @@ Int2 fta_StringMatch(const Char** array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 StringMatchIcase(const Char** array, string_view text)
+Int2 StringMatchIcase(const std::span<const Char*> array, string_view text)
 {
-    Int2 i;
+    if (text.empty())
+        return -1;
 
-    for (i = 0; *array; i++, array++) {
-        // If string from an array is empty its length == 0 and would be equval to any other string
-        // The next 'if' statement will avoid that behavior
-        if (! text.empty() && *array[0] == 0)
-            continue;
+    Int2 i = 0;
 
-        if (NStr::EqualNocase(text, 0, StringLen(*array), *array))
-            return i;
+    for (const Char* it : array) {
+        _ASSERT(it);
+        // skip if empty
+        if (it[0] != 0)
+            if (NStr::EqualNocase(text, 0, StringLen(it), it))
+                return i;
+        i++;
     }
 
     return -1;
@@ -453,32 +451,36 @@ Int2 StringMatchIcase(const Char** array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArrayString(const char** array, string_view text)
+Int2 MatchArrayString(const std::span<const Char*> array, string_view text)
 {
-    Int2 i;
-
     if (text.empty())
-        return (-1);
+        return -1;
 
-    for (i = 0; *array; i++, array++) {
-        if (NStr::Equal(*array, text))
+    Int2 i = 0;
+
+    for (const Char* it : array) {
+        _ASSERT(it);
+        if (NStr::Equal(it, text))
             return i;
+        i++;
     }
 
     return -1;
 }
 
 /**********************************************************/
-Int2 MatchArrayIString(const Char** array, string_view text)
+Int2 MatchArrayIString(const std::span<const Char*> array, string_view text)
 {
-    Int2 i;
-
     if (text.empty())
-        return (-1);
+        return -1;
 
-    for (i = 0; *array; i++, array++) {
-        if (NStr::EqualNocase(*array, text))
+    Int2 i = 0;
+
+    for (const Char* it : array) {
+        _ASSERT(it);
+        if (NStr::EqualNocase(it, text))
             return i;
+        i++;
     }
 
     return -1;
@@ -493,13 +495,15 @@ Int2 MatchArrayIString(const Char** array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArraySubString(const Char** array, string_view text)
+Int2 MatchArraySubString(const std::span<const Char*> arrayy, string_view text)
 {
-    Int2 i;
+    Int2 i = 0;
 
-    for (i = 0; *array; i++, array++) {
-        if (NStr::Find(text, *array) != NPOS)
+    for (const Char* it : arrayy) {
+        _ASSERT(it);
+        if (NStr::Find(text, it) != NPOS)
             return i;
+        i++;
     }
 
     return -1;
@@ -538,13 +542,15 @@ Char* StringIStr(const Char* where, const Char* what)
 }
 
 /**********************************************************/
-Int2 MatchArrayISubString(const Char** array, string_view text)
+Int2 MatchArrayISubString(const std::span<const Char*> arrayy, string_view text)
 {
-    Int2 i;
+    Int2 i = 0;
 
-    for (i = 0; *array; i++, array++) {
-        if (NStr::FindNoCase(text, *array) != NPOS)
+    for (const Char* it : arrayy) {
+        _ASSERT(it);
+        if (NStr::FindNoCase(text, it) != NPOS)
             return i;
+        i++;
     }
 
     return -1;
@@ -1112,7 +1118,7 @@ void fta_keywords_check(string_view str, bool* estk, bool* stsk, bool* gssk, boo
 /**********************************************************/
 void fta_remove_keywords(CMolInfo::TTech tech, TKeywordList& kwds)
 {
-    const char** b;
+    std::span<const char*> b;
 
     if (kwds.empty())
         return;

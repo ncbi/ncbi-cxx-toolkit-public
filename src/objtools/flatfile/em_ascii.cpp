@@ -105,7 +105,6 @@ USING_SCOPE(objects);
  */
 static const char* ParFlat_Embl_dataclass_array[] = {
     "ANN", "CON", "PAT", "EST", "GSS", "HTC", "HTG", "STS", "TSA",
-    nullptr
 };
 
 /* order by EMBL-block in asn.all
@@ -114,7 +113,6 @@ static const char* ParFlat_Embl_DIV_array[] = {
     "FUN", "INV", "MAM", "ORG", "PHG", "PLN", "PRI", "PRO", "ROD",
     "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNC", "GSS",
     "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA",
-    nullptr
 };
 
 /* correspond "DIV" genbank string. Must have the same number
@@ -147,7 +145,6 @@ static const char* ParFlat_DBname_array[] = {
     "MIM",
     "ECOSEQ",
     "HIV",
-    nullptr
 };
 
 static const char* ParFlat_DRname_array[] = {

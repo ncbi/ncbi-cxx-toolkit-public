@@ -105,7 +105,7 @@ struct ParRefBlk {
 using ParRefBlkPtr = ParRefBlk*;
 
 const char* ParFlat_SPRefRcToken[] = {
-    "MEDLINE", "PLASMID", "SPECIES", "STRAIN", "TISSUE", "TRANSPOSON", nullptr
+    "MEDLINE", "PLASMID", "SPECIES", "STRAIN", "TISSUE", "TRANSPOSON",
 };
 
 

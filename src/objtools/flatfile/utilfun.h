@@ -47,6 +47,7 @@
 #include <objects/seqblock/GB_block.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/object_manager.hpp>
+#include <span>
 
 #include "ftablock.h"
 #include "entry.h"
@@ -66,28 +67,30 @@ void          UnwrapAccessionRange(const objects::CGB_block::TExtra_accessions& 
 /* Return array position of the matched length of string in array_string.
  * Return -1 if no match.
  */
-Int2 fta_StringMatch(const Char** array, string_view text);
+Int2 fta_StringMatch(const std::span<const Char*> array, string_view text);
 
 /* Return array position of the matched length of string (ignored case)
  * in array_string.
  * Return -1 if no match.
  */
-Int2 StringMatchIcase(const Char** array, string_view text);
+Int2 StringMatchIcase(const std::span<const Char*> array, string_view text);
 
 char* StringIStr(const Char* where, const Char* what);
 
 /* Return array position of the string in the array_string.
  * Return -1 if no match.
  */
-Int2 MatchArrayString(const Char** array, string_view text);
-Int2 MatchArrayIString(const Char** array, string_view text);
+Int2 MatchArrayString(const std::span<const Char*> array, string_view text);
+Int2 MatchArrayIString(const std::span<const Char*> array, string_view text);
 
 /* Return array position of the string in the array_string if any
  * array_string is in the substring of "text".
  * Return -1 if no match.
  */
-Int2 MatchArraySubString(const Char** array, string_view text);
-Int2 MatchArrayISubString(const Char** array, string_view text);
+NCBI_UNUSED
+Int2 MatchArraySubString(const std::span<const Char*> array, string_view text);
+NCBI_UNUSED
+Int2 MatchArrayISubString(const std::span<const Char*> array, string_view text);
 
 /* Return a string which replace newline to blank and skip "XX" line data.
  */

@@ -56,32 +56,32 @@ USING_SCOPE(objects);
 
 // clang-format off
 static const char* XML_STRAND_array[] = {
-    "   ", "single", "double", "mixed", nullptr
+    "   ", "single", "double", "mixed",
 };
 
 static const char* XML_TPG_array[] = {
-    "   ", "Linear", "Circular", "Tandem", nullptr
+    "   ", "Linear", "Circular", "Tandem",
 };
 
 static const char* ParFlat_NA_array_DDBJ[] = {
-    "cDNA", nullptr
+    "cDNA",
 };
 
 static const char* ParFlat_AA_array_DDBJ[] = {
-    "PRT", nullptr
+    "PRT",
 };
 
 static const char* ParFlat_NA_array[] = {
     "    ", "NA", "DNA", "genomic DNA", "other DNA", "unassigned DNA", "RNA",
     "mRNA", "rRNA", "tRNA", "uRNA", "scRNA", "snRNA", "snoRNA", "pre-RNA",
     "pre-mRNA", "genomic RNA", "other RNA", "unassigned RNA", "cRNA",
-    "viral cRNA", nullptr
+    "viral cRNA",
 };
 
 static const char* ParFlat_DIV_array[] = {
     "   ", "PRI", "ROD", "MAM", "VRT", "INV", "PLN", "BCT", "RNA",
     "VRL", "PHG", "SYN", "UNA", "EST", "PAT", "STS", "ORG", "GSS",
-    "HUM", "HTG", "CON", "HTC", "ENV", "TSA", nullptr
+    "HUM", "HTG", "CON", "HTC", "ENV", "TSA",
 };
 
 static const char* embl_accpref[] = {
@@ -147,23 +147,23 @@ static const char* refseq_prot_accpref[] = {
 static const char* acc_tsa_allowed[] = {
     "AF", "AY", "DQ", "EF", "EU", "FJ", "GQ", "HQ", "JF", "JN", "JQ", "JX",
     "KC", "KF", "KJ", "KM", "KP", "KR", "KT", "KU", "KX", "KY", "MF", "MG",
-    "MH", "MK", "MN", "MT", nullptr
+    "MH", "MK", "MN", "MT",
 };
 
 static const char* ncbi_tpa_accpref[] = {
-    "BK", "BL", "GJ", "GK", nullptr
+    "BK", "BL", "GJ", "GK"
 };
 
 static const char* ddbj_tpa_accpref[] = {
-    "BR", "HT", "HU", nullptr
+    "BR", "HT", "HU",
 };
 
 static const char* ncbi_wgs_accpref[] = {
-    "GJ", "GK", nullptr
+    "GJ", "GK",
 };
 
 static const char* ddbj_wgs_accpref[] = {
-    "HT", "HU", nullptr
+    "HT", "HU",
 };
 
 static const set<string_view> k_WgsScaffoldPrefix = {
@@ -186,7 +186,7 @@ static const map<Parser::ESource, string> sourceNames = {
 };
 
 static const char* month_name[] = {
-    "Ill", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC", nullptr
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
 };
 
 static const char* ParFlat_RESIDUE_STR[] = {
