@@ -192,8 +192,7 @@ bool CTestApplication::TestApp_Init(void)
             m_Ids.push_back(sih);
         }
         
-        NcbiCout << "Testing bulk info load (" <<
-            m_Ids.size() << " Seq-ids from file)..." << NcbiEndl;
+        LOG_POST("Testing bulk info load ("<<m_Ids.size()<<" Seq-ids from file)...");
     }
     if ( m_Ids.empty() && (args["fromgi"] || args["togi"]) ) {
         TIntId gi_from  = args["fromgi"]? args["fromgi"].AsInteger(): g_gi_from;
@@ -202,8 +201,7 @@ bool CTestApplication::TestApp_Init(void)
         for ( TIntId gi = gi_from; gi != gi_to+delta; gi += delta ) {
             m_Ids.push_back(CSeq_id_Handle::GetGiHandle(GI_FROM(TIntId, gi)));
         }
-        NcbiCout << "Testing bulk info load ("
-            "gi from " << gi_from << " to " << gi_to << ")..." << NcbiEndl;
+        LOG_POST("Testing bulk info load (gi from "<<gi_from<<" to "<<gi_to<<")...");
     }
     if ( m_Ids.empty() ) {
         TIntId count = g_gi_to-g_gi_from+1;
@@ -227,9 +225,7 @@ bool CTestApplication::TestApp_Init(void)
                 m_Ids.push_back(CSeq_id_Handle::GetHandle(seq_id));
             }
         }
-        NcbiCout << "Testing bulk info load ("
-            "accessions and gi from " <<
-            g_gi_from << " to " << g_gi_to << ")..." << NcbiEndl;
+        LOG_POST("Testing bulk info load (accessions and gi from "<<g_gi_from<<" to "<<g_gi_to<<")...");
     }
     m_Type = IBulkTester::ParseType(args);
     m_GetFlags = IBulkTester::ParseGetFlags(args);
@@ -262,9 +258,7 @@ bool CTestApplication::TestApp_Init(void)
             getline(in, *it);
         }
         if ( !in ) {
-            NcbiCerr << "Failed to read reference data from "
-                     << args["reference"].AsString()
-                     << NcbiEndl;
+            ERR_POST("Failed to read reference data from "<<args["reference"].AsString());
             return false;
         }
     }
@@ -346,7 +340,7 @@ bool CTestApplication::Thread_Run(int thread_id)
         vector<string> reference;
         vector<pair<CSeq_id_Handle, string> > data;
         for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
-            NcbiCout << "Testing pass "<<run_i<< NcbiEndl;
+            LOG_POST("Testing pass "<<run_i);
             size_t size = min(m_RunSize, m_Ids.size());
             data.clear();
             data.resize(m_Ids.size());
@@ -429,7 +423,7 @@ bool CTestApplication::ProcessBlock(const vector<CSeq_id_Handle>& ids,
     bool ok = find(errors.begin(), errors.end(), true) == errors.end();
     if ( !ok ) {
         CMutexGuard guard(IBulkTester::sm_DisplayMutex);
-        cerr << "Errors in "<<data->GetType()<<":\n";
+        ERR_POST("Errors in "<<data->GetType()<<":");
         for ( size_t i = 0; i < ids.size(); ++i ) {
             if ( errors[i] ) {
                 data->Display(cerr, i, true);
