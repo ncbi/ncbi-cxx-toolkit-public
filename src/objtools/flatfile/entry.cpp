@@ -251,6 +251,18 @@ unique_ptr<DataBlk> LoadEntry(ParserPtr pp, size_t offset, size_t len)
         if (c > 126 || (c < 32 && c != 10)) {
             FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "non-ASCII char, Decimal value {}, replaced by # ", int(c));
             c = '#';
+        } else if (buf[q] == '&' && buf[q + 1] == '#' && buf[q + 2]) {
+            size_t i;
+            for (i = q + 2; buf[i] >= '0' && buf[i] <= '9';)
+                i++;
+            if (i > q + 2 && i < q + 7 && buf[i] == ';') {
+                string_view s   = buf.substr(q, i + 1 - q);
+                IndexblkPtr ibp = pp->entrylist[pp->curindx];
+                FtaErrPost(SEV_REJECT, ERR_FORMAT_NonAsciiChar,
+                           "Non-ASCII Unicode characters are not allowed: \"{}\". Entry skipped: \"{}|{}\".",
+                           s, ibp->locusname, ibp->acnum);
+                ibp->drop = true;
+            }
         }
 
         /* Modified to skip empty line: Tatiana - 01/21/94 */
