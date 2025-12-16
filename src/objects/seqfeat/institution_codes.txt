@@ -1124,6 +1124,7 @@ CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chin
 CCM<USA-MT>	s	Carter County Museum			
 CCMA-UFSCar	c	Culture Collection of Freshwater Microalgae			
 CCMAC	c	Culture Collection of Macromycetes (Basidiomycotina and Ascomycotina)			
+CCMB	c	Collection of Cultures of Microorganisms of Bahia			
 CCMCU	c	Culture Collection of Microorganisms			
 CCMF	c	University of Portsmouth			
 CCMGE	s	Chernyshev Central Museum of Geological Explorations,Collections of the Department of Herpetology, Zoological Institute of the Russian Academy of Sciences			
@@ -8357,6 +8358,7 @@ UKKP	c	Universiti Kebangsaan Kultur Perubatan
 UKKY	s	University of Kunming			
 UKM<DEU>	s	Universitaetsklinikum Muenster			
 UKMB	s	Universiti Kebangsaan Malaysia, Botany Department			
+UKMCC	c	Universiti Kebangsaan Malaysia Culture Collection Center			
 UKMHC	s	Universiti Kebangsaan Malaysia	UKM		
 UKMHC:HC	s	Universiti Kebangsaan Malaysia, Herpetological Collection	UKM:HC		
 UKMS<MYS>	s	Universiti Kebangsaan Malaysia, Kampus Sabah			
