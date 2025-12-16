@@ -74,7 +74,6 @@ const char* ParFlat_GImod[] = {
     "Plasmid",
     "Leucoplast",
     "Apicoplast",
-    nullptr
 };
 
 const char* valid_organelle[] = {
@@ -90,7 +89,6 @@ const char* valid_organelle[] = {
     "nucleomorph",
     "plastid",
     "proplastid",
-    nullptr
 };
 
 /**********************************************************/

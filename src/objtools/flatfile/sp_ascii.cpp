@@ -118,7 +118,6 @@ const char* ParFlat_SPComTopics[] = {
     "TISSUE SPECIFICITY:",
     "TOXIC DOSE:",
     "WEB RESOURCE:",
-    nullptr
 };
 
 /* bsv : 03/04/2020 : no Seq-feat.exp-ev setting anymore
@@ -132,7 +131,6 @@ const char* ParFlat_SPFeatNoExp[] = {
     "(BY SIMILARITY).",
     "(BY SIMILARITY)",
     "BY SIMILARITY.",
-    nullptr
 };
 
 const char* ParFlat_SPFeatNoExpW[] = {
@@ -151,7 +149,6 @@ const char* ParFlat_SPFeatNoExpW[] = {
     "(BY HOMOLOGY).",
     "(BY HOMOLOGY)",
     "BY HOMOLOGY.",
-    nullptr
 };
 */
 
@@ -566,7 +563,7 @@ const char* valid_dbs[] = {
 const char* SP_organelle[] = {
     "CHLOROPLAST", "CYANELLE", "MITOCHONDRION", "PLASMID", "NUCLEOMORPH",
     "HYDROGENOSOME", "APICOPLAST", "CHROMATOPHORE",
-    "ORGANELLAR CHROMATOPHORE", nullptr
+    "ORGANELLAR CHROMATOPHORE",
 };
 
 const char* PE_values[] = {

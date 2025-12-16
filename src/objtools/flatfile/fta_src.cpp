@@ -311,7 +311,6 @@ static const char* GenomicSourceFeatQual[] = {
     "",              /* 20 */
     "",              /* 21 */
     "chromatophore", /* 22 */
-    nullptr
 };
 
 static const char* OrganelleFirstToken[] = {
@@ -320,7 +319,6 @@ static const char* OrganelleFirstToken[] = {
     "mitochondrion",
     "nucleomorph",
     "plastid",
-    nullptr
 };
 
 static const char *NullTermValues[] = {
