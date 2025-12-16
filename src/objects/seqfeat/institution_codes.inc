@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Thu Dec  4 05:33:04 EST 2025; formally
+/* time_t value corresponding to Tue Dec 16 05:33:04 EST 2025; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1764844384UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1765881184UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1160,6 +1160,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCM<USA-MT>\ts\tCarter County Museum\t\t\t",
 "CCMA-UFSCar\tc\tCulture Collection of Freshwater Microalgae\t\t\t",
 "CCMAC\tc\tCulture Collection of Macromycetes (Basidiomycotina and Ascomycotina)\t\t\t",
+"CCMB\tc\tCollection of Cultures of Microorganisms of Bahia\t\t\t",
 "CCMCU\tc\tCulture Collection of Microorganisms\t\t\t",
 "CCMF\tc\tUniversity of Portsmouth\t\t\t",
 "CCMGE\ts\tChernyshev Central Museum of Geological Explorations,Collections of the Department of Herpetology, Zoological Institute of the Russian Academy of Sciences\t\t\t",
@@ -8393,6 +8394,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UKKY\ts\tUniversity of Kunming\t\t\t",
 "UKM<DEU>\ts\tUniversitaetsklinikum Muenster\t\t\t",
 "UKMB\ts\tUniversiti Kebangsaan Malaysia, Botany Department\t\t\t",
+"UKMCC\tc\tUniversiti Kebangsaan Malaysia Culture Collection Center\t\t\t",
 "UKMHC\ts\tUniversiti Kebangsaan Malaysia\tUKM\t\t",
 "UKMHC:HC\ts\tUniversiti Kebangsaan Malaysia, Herpetological Collection\tUKM:HC\t\t",
 "UKMS<MYS>\ts\tUniversiti Kebangsaan Malaysia, Kampus Sabah\t\t\t",
