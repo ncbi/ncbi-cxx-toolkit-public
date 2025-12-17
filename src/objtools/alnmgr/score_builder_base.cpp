@@ -1011,7 +1011,8 @@ bool IsConsSplice(const string& donor, const string acc) {
            
     
 void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
-                                        CSeq_align::TScore &scores)
+                                        CSeq_align::TScore &scores,
+                                        bool splices_only)
 {
     typedef CSeq_align::TSegs::TSpliced TSpliced;
     const TSpliced & spliced (align.GetSegs().GetSpliced());
@@ -1056,6 +1057,12 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
             splices_total += 2;
             if(IsConsSplice(donor, GetAcceptor(exon))) { splices_consensus += 2; }
         }
+        donor = GetDonor(exon);
+        qprev = qstrand? qmax: qmin;
+
+        if (splices_only) {
+            continue;
+        }
 
         typedef TExon::TParts TParts;
         const TParts & parts (exon.GetParts());
@@ -1088,9 +1095,6 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
             }
             aln_length_exons += len;
         }
-
-        donor = GetDonor(exon);
-        qprev = qstrand? qmax: qmin;
     } // TExons
 
     const TSeqPos qgap (qstrand? polya - qprev - 1: qprev - polya - 1);
@@ -1107,30 +1111,28 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
                 score_type = score->second;
             }
         }
-        if (score_type >= CSeq_align::eScore_Matches &&
-            score_type <= CSeq_align::eScore_ExonIdentity)
-        {
+        switch (score_type) {
+        case CSeq_align::eScore_Matches:
+        case CSeq_align::eScore_OverallIdentity:
+        case CSeq_align::eScore_ProductCoverage:
+        case CSeq_align::eScore_ExonIdentity:
+            if (splices_only) {
+                ++it;
+                break;
+            }
+            NCBI_FALLTHROUGH;
+
+        case CSeq_align::eScore_Splices:
+        case CSeq_align::eScore_ConsensusSplices:
             it = scores.erase(it);
-        } else {
+            break;
+
+        default:
             ++it;
+            break;
         }
     }
 
-        {
-            CRef<CScore> score_matches (new CScore());
-            score_matches->SetId().SetStr(
-                CSeq_align::ScoreName(CSeq_align::eScore_Matches));
-            score_matches->SetValue().SetInt(matches);
-            scores.push_back(score_matches);
-        }
-        {
-            CRef<CScore> score_overall_identity (new CScore());
-            score_overall_identity->SetId().SetStr(
-                CSeq_align::ScoreName(CSeq_align::eScore_OverallIdentity));
-            score_overall_identity->SetValue().
-                SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
-            scores.push_back(score_overall_identity);
-        }
         {
             CRef<CScore> score_splices (new CScore());
             score_splices->SetId().SetStr(
@@ -1145,15 +1147,27 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
             score_splices_consensus->SetValue().SetInt(splices_consensus);
             scores.push_back(score_splices_consensus);
         }
-        {
+        if (!splices_only) {
+            CRef<CScore> score_matches (new CScore());
+            score_matches->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_Matches));
+            score_matches->SetValue().SetInt(matches);
+            scores.push_back(score_matches);
+
+            CRef<CScore> score_overall_identity (new CScore());
+            score_overall_identity->SetId().SetStr(
+                CSeq_align::ScoreName(CSeq_align::eScore_OverallIdentity));
+            score_overall_identity->SetValue().
+                SetReal(double(matches)/(aln_length_exons + aln_length_gaps));
+            scores.push_back(score_overall_identity);
+
             CRef<CScore> score_coverage (new CScore());
             score_coverage->SetId().SetStr(
                 CSeq_align::ScoreName(CSeq_align::eScore_ProductCoverage));
             score_coverage->SetValue().
                 SetReal(double(aligned_query_bases) / prod_length_no_polya);
             scores.push_back(score_coverage);
-        }
-        {
+
             CRef<CScore> score_exon_identity (new CScore());
             score_exon_identity->SetId().SetStr(
                 CSeq_align::ScoreName(CSeq_align::eScore_ExonIdentity));
@@ -1322,7 +1336,8 @@ double CScoreBuilderBase::ComputeScore(CScope& scope, const CSeq_align& align,
                             "splign scores not supported within a range");
              }
              CSeq_align::TScore scores;
-             AddSplignScores(align, scores);
+             AddSplignScores(align, scores, score == CSeq_align::eScore_Splices
+                               || score == CSeq_align::eScore_ConsensusSplices);
              ITERATE (CSeq_align::TScore, it, scores) {
                  if ((*it)->GetId().GetStr() == CSeq_align::ScoreName(score))
                  {
