@@ -114,8 +114,10 @@ public:
                                 CSeq_align::EScoreType score);
 
     /// Compute the six splign scores. Add them to scores object, or, if it is
-    /// not provided, to alignment itself
-    void AddSplignScores(const CSeq_align& align, CSeq_align::TScore &scores);
+    /// not provided, to alignment itself; option to compute only the splices
+    /// and consensus_splices score (the only ones possible if exons are diag)
+    void AddSplignScores(const CSeq_align& align, CSeq_align::TScore &scores,
+                         bool splices_only = false);
 
     void AddSplignScores(CSeq_align& align)
     {
