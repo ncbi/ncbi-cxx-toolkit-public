@@ -61,10 +61,8 @@ if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
     set(NCBI_ThirdParty_GL2PS      ${NCBI_ThirdPartyBasePath}/gl2ps/${NCBI_ThirdPartyCompiler}/1.4.2 CACHE PATH "GL2PS root")
     set(NCBI_ThirdParty_GLEW       ${NCBI_ThirdPartyBasePath}/glew/${NCBI_ThirdPartyCompiler}/2.2.0 CACHE PATH "GLEW root")
     set(NCBI_ThirdParty_GNUTLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.8.9 CACHE PATH "GNUTLS root")
-#    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "PROTOBUF root")
-#    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.67.1-ncbi1 CACHE PATH "GRPC root")
-    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "PROTOBUF root")
-    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.50.2-ncbi1 CACHE PATH "GRPC root")
+    set(NCBI_ThirdParty_PROTOBUF   ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.76.0 CACHE PATH "PROTOBUF root")
+    set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.76.0 CACHE PATH "GRPC root")
     set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/3.1.1 CACHE PATH "JPEG root")
     set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.33 CACHE PATH "LMDB root")
     set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.10-ncbi1 CACHE PATH "LZO root")
@@ -599,43 +597,116 @@ if(NOT EXISTS "${NCBI_PROTOC_APP}")
     NCBI_notice("NOT FOUND NCBI_PROTOC_APP: ${NCBI_PROTOC_APP}")
 else()
 
-if("${NCBI_ThirdPartyCompiler}" STREQUAL "__disabled__vs2022.64")
+if("${NCBI_ThirdPartyCompiler}" STREQUAL "vs2022.64")
 
 NCBI_define_Wcomponent(PROTOBUF
-    libprotobuf.lib absl_random_distributions.lib
-    absl_random_seed_sequences.lib absl_log_internal_check_op.lib
-    absl_leak_check.lib absl_die_if_null.lib absl_log_internal_conditions.lib
-    absl_log_internal_message.lib absl_examine_stack.lib
-    absl_log_internal_format.lib absl_log_internal_proto.lib
-    absl_log_internal_nullguard.lib absl_log_internal_log_sink_set.lib
-    absl_log_sink.lib absl_log_entry.lib  absl_log_internal_fnmatch.lib
-    absl_flags_internal.lib absl_flags_marshalling.lib
-    absl_flags_reflection.lib absl_flags_private_handle_accessor.lib
-    absl_flags_commandlineflag.lib absl_flags_commandlineflag_internal.lib
-    absl_flags_config.lib absl_flags_program_name.lib absl_log_initialize.lib
-    absl_log_globals.lib absl_log_internal_globals.lib absl_raw_hash_set.lib
-    absl_hash.lib absl_city.lib absl_low_level_hash.lib
-    absl_hashtablez_sampler.lib absl_statusor.lib absl_status.lib
-    absl_cord.lib absl_cordz_info.lib absl_cord_internal.lib
-    absl_cordz_functions.lib absl_exponential_biased.lib
-    absl_cordz_handle.lib absl_crc_cord_state.lib absl_crc32c.lib
-    absl_crc_internal.lib absl_crc_cpu_detect.lib
-    absl_bad_optional_access.lib absl_str_format_internal.lib
-    absl_strerror.lib absl_synchronization.lib absl_graphcycles_internal.lib
-    absl_kernel_timeout_internal.lib absl_stacktrace.lib absl_symbolize.lib
-    absl_debugging_internal.lib absl_demangle_internal.lib
-    absl_malloc_internal.lib absl_time.lib absl_civil_time.lib
-    absl_time_zone.lib absl_bad_variant_access.lib utf8_validity.lib
-    utf8_range.lib absl_strings.lib absl_string_view.lib
-    absl_strings_internal.lib absl_base.lib absl_spinlock_wait.lib
-    absl_int128.lib absl_throw_delegate.lib absl_raw_logging_internal.lib
-    absl_log_severity.lib absl_vlog_config_internal.lib
+    libprotobuf.lib libutf8_range.lib libutf8_validity.lib utf8_range_lib.lib
+    absl_base.lib
+    absl_city.lib
+    absl_civil_time.lib
+    absl_cord.lib
+    absl_cord_internal.lib
+    absl_cordz_functions.lib
+    absl_cordz_handle.lib
+    absl_cordz_info.lib
+    absl_cordz_sample_token.lib
+    absl_crc32c.lib
+    absl_crc_cord_state.lib
+    absl_crc_cpu_detect.lib
+    absl_crc_internal.lib
+    absl_debugging_internal.lib
+    absl_decode_rust_punycode.lib
+    absl_demangle_internal.lib
+    absl_demangle_rust.lib
+    absl_die_if_null.lib
+    absl_examine_stack.lib
+    absl_exponential_biased.lib
+    absl_failure_signal_handler.lib
+    absl_flags_commandlineflag.lib
+    absl_flags_commandlineflag_internal.lib
+    absl_flags_config.lib
+    absl_flags_internal.lib
+    absl_flags_marshalling.lib
+    absl_flags_parse.lib
+    absl_flags_private_handle_accessor.lib
+    absl_flags_program_name.lib
+    absl_flags_reflection.lib
+    absl_flags_usage.lib
+    absl_flags_usage_internal.lib
+    absl_graphcycles_internal.lib
+    absl_hash.lib
+    absl_hashtablez_sampler.lib
+    absl_int128.lib
+    absl_kernel_timeout_internal.lib
+    absl_leak_check.lib
+    absl_log_flags.lib
+    absl_log_globals.lib
+    absl_log_initialize.lib
+    absl_log_internal_check_op.lib
+    absl_log_internal_conditions.lib
+    absl_log_internal_fnmatch.lib
+    absl_log_internal_format.lib
+    absl_log_internal_globals.lib
+    absl_log_internal_log_sink_set.lib
+    absl_log_internal_message.lib
+    absl_log_internal_nullguard.lib
+    absl_log_internal_proto.lib
+    absl_log_internal_structured_proto.lib
+    absl_log_severity.lib
+    absl_log_sink.lib
+    absl_low_level_hash.lib
+    absl_malloc_internal.lib
+    absl_periodic_sampler.lib
+    absl_poison.lib
+    absl_random_distributions.lib
+    absl_random_internal_distribution_test_util.lib
+    absl_random_internal_entropy_pool.lib
+    absl_random_internal_platform.lib
+    absl_random_internal_randen.lib
+    absl_random_internal_randen_hwaes.lib
+    absl_random_internal_randen_hwaes_impl.lib
+    absl_random_internal_randen_slow.lib
+    absl_random_internal_seed_material.lib
+    absl_random_seed_gen_exception.lib
+    absl_random_seed_sequences.lib
+    absl_raw_hash_set.lib
+    absl_raw_logging_internal.lib
+    absl_scoped_set_env.lib
+    absl_spinlock_wait.lib
+    absl_stacktrace.lib
+    absl_status.lib
+    absl_statusor.lib
+    absl_str_format_internal.lib
+    absl_strerror.lib
+    absl_string_view.lib
+    absl_strings.lib
+    absl_strings_internal.lib
+    absl_symbolize.lib
+    absl_synchronization.lib
+    absl_throw_delegate.lib
+    absl_time.lib
+    absl_time_zone.lib
+    absl_tracing_internal.lib
+    absl_utf8_for_code_point.lib
+    absl_vlog_config_internal.lib
 )
 if(NOT NCBI_COMPONENT_GRPC_FOUND)
     NCBI_define_Wcomponent(GRPC
-        grpc++.lib grpc.lib gpr.lib address_sorting.lib cares.lib
-        libprotoc.lib libupb.lib boringcrypto.lib boringssl.lib re2.lib 
-        absl_random_internal_pool_urbg.lib absl_random_internal_randen.lib
+        grpc++.lib
+        gpr.lib
+        grpc.lib
+        grpc_authorization_provider.lib
+        grpc_plugin_support.lib
+        grpc_unsecure.lib
+        grpc++.lib
+        grpc++_alts.lib
+        grpc++_error_details.lib
+        grpc++_reflection.lib
+        grpc++_unsecure.lib
+        grpcpp_channelz.lib
+        address_sorting.lib cares.lib
+        libprotoc.lib libupb.lib crypto.lib ssl.lib re2.lib 
+        absl_random_internal_entropy_pool.lib absl_random_internal_randen.lib
         absl_random_internal_randen_hwaes.lib
         absl_random_internal_randen_hwaes_impl.lib
         absl_random_internal_randen_slow.lib absl_random_internal_platform.lib
