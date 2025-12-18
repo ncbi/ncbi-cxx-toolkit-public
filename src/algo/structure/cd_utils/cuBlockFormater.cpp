@@ -74,7 +74,7 @@ void BlockFormater::getOverlappingPercentages(vector<int>& percentages)
 		percentages.push_back(100);
 		start = 1;
 	}
-	for (int i = start; i < m_seqAlignVec.size(); i++)
+	for (size_t i = start; i < m_seqAlignVec.size(); i++)
 	{
 		BlockModel bm(m_seqAlignVec[i], false);
 		intersector.addOneAlignment(bm);
@@ -100,7 +100,7 @@ int BlockFormater::findIntersectingBlocks(int overlappingPercentage)
 	int minAlignedLen = 0;
 	m_goodRows.clear();
 	m_badRows.clear();
-	int start = 0;
+	size_t start = 0;
 	if (!m_refSeqAlign.Empty())
 	{
 		BlockModel bm(m_refSeqAlign,false);
@@ -115,7 +115,7 @@ int BlockFormater::findIntersectingBlocks(int overlappingPercentage)
 		start = 1;
 		m_goodRows.push_back(0);
 	}
-	for (int i = start; i < m_seqAlignVec.size(); i++)
+	for (size_t i = start; i < m_seqAlignVec.size(); i++)
 	{
 		BlockModel bm(m_seqAlignVec[i], false);
 		m_intersector->addOneAlignment(bm);
@@ -155,7 +155,7 @@ void BlockFormater::formatBlocksForQualifiedRows(list< CRef< CSeq_align > > & se
 	{
 		(*lit) = formatOneRow(*finalBM, *lit);
 	}
-	for (int i = 0; i < m_goodRows.size(); i++)
+	for (size_t i = 0; i < m_goodRows.size(); i++)
 	{
 		seqAlignList.push_back(formatOneRow(*finalBM, m_seqAlignVec[m_goodRows[i]]));
 	}

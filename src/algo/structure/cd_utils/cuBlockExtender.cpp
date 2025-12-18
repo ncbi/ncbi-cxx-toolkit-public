@@ -262,7 +262,7 @@ double BlockExtender::scoreBlockPair(const ScoringTerm& term1, const ScoringTerm
 bool BlockExtender::getScoringTerm(BlockModel& bm, int blockNum, int nExt, int cExt, ScoringTerm& st)
 {
 	const vector<Block>& blocks = bm.getBlocks();
-	if (blockNum >= blocks.size() || blockNum < 0 || blocks.size() == 0)
+	if (blockNum >= static_cast<int>(blocks.size()) || blockNum < 0 || blocks.size() == 0)
 		return false;
 	const Block& src = blocks[blockNum];
 	Block block = src.extend(nExt, cExt);
@@ -273,9 +273,9 @@ bool BlockExtender::getScoringTerm(BlockModel& bm, int blockNum, int nExt, int c
 		extFootprintLo = 0;
 	int minStart = (blockNum == 0) ? extFootprintLo : blocks[blockNum-1].getEnd() + 1;
 	int extFootprintHi = bm.getLastAlignedPosition() + m_cExt;
-	if (extFootprintHi > m_sequences[st.second].size() - 1)
-		extFootprintHi = m_sequences[st.second].size() -1;
-	int maxEnd = (blockNum == blocks.size()-1) ?  extFootprintHi : blocks[blockNum+1].getStart() - 1;
+	if (extFootprintHi > static_cast<int>(m_sequences[st.second].size() - 1))
+		extFootprintHi = static_cast<int>(m_sequences[st.second].size() - 1);
+	int maxEnd = (blockNum == static_cast<int>(blocks.size()-1)) ?  extFootprintHi : blocks[blockNum+1].getStart() - 1;
 	if (block.getStart() < minStart || block.getEnd() > maxEnd)
 		return false;
 	st.first = block;
