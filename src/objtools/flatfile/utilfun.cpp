@@ -109,7 +109,6 @@ static const char* ParFlat_MGA_kw_array[] = {
     "MGA",
     "CAGE (Cap Analysis Gene Expression)",
     "5'-SAGE",
-    nullptr
 };
 
 static const char* ParFlat_MGA_more_kw_array[] = {
@@ -118,7 +117,6 @@ static const char* ParFlat_MGA_more_kw_array[] = {
     "5'-end tag",
     "unspecified tag",
     "small RNA",
-    nullptr
 };
 
 /* Any change of contents of next array below requires proper
@@ -127,7 +125,6 @@ static const char* ParFlat_MGA_more_kw_array[] = {
 static const char* ParFlat_TSA_kw_array[] = {
     "TSA",
     "Transcriptome Shotgun Assembly",
-    nullptr
 };
 
 /* Any change of contents of next array below requires proper
@@ -136,7 +133,6 @@ static const char* ParFlat_TSA_kw_array[] = {
 static const char* ParFlat_TLS_kw_array[] = {
     "TLS",
     "Targeted Locus Study",
-    nullptr
 };
 
 /* Any change of contents of next 2 arrays below requires proper
@@ -151,25 +147,21 @@ static const char* ParFlat_TPA_kw_array[] = {
     "TPA:REASSEMBLY",
     "TPA:ASSEMBLY",
     "TPA:SPECIALIST_DB",
-    nullptr
 };
 
 static const char* ParFlat_TPA_kw_array_to_remove[] = {
     "TPA",
     "THIRD PARTY ANNOTATION",
     "THIRD PARTY DATA",
-    nullptr
 };
 
 static const char* ParFlat_ENV_kw_array[] = {
     "ENV",
-    nullptr
 };
 
 static const char* ParFlat_MAG_kw_array[] = {
     "Metagenome Assembled Genome",
     "MAG",
-    nullptr
 };
 
 /**********************************************************/

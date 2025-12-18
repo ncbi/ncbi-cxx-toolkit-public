@@ -335,7 +335,6 @@ static const char *NullTermValues[] = {
     "missing: data agreement established pre-2023",
     "missing: endangered species",
     "missing: human-identifiable",
-    nullptr
 };
 
 /**********************************************************/
