@@ -73,30 +73,12 @@ private:
 };
 
 
-class CPSGL_RequestQueue : public CObject
-{
-public:
-    typedef CRef<CPSGL_RequestTracker> value_type;
-    
-    void Stop();
-    void Put(value_type v);
-    value_type Get();
-    
-private:
-    // queue of request to send
-    mutex m_Mutex;
-    condition_variable m_CV;
-    bool m_Stopped = { false };
-    queue<CRef<CPSGL_RequestTracker>> m_Queue;
-};
-
 class CPSGL_Queue : public CObject
 {
 public:
     explicit
     CPSGL_Queue(const string& service_name,
-                CRef<CPSGL_TrackerMap> tracker_map,
-                CRef<CPSGL_RequestQueue> request_queue);
+                CRef<CPSGL_TrackerMap> tracker_map);
     ~CPSGL_Queue();
 
     CPSG_EventLoop& GetPSG_Queue()
@@ -104,14 +86,13 @@ public:
         return m_EventLoop;
     }
 
-    void SetRequestContext(const CRef<CRequestContext>& context);
-
 protected:
     friend class CPSGL_QueueGuard;
     friend class CPSGL_Dispatcher;
     
-    void SenderRun();
     void SendRequest(CRef<CPSGL_RequestTracker> tracker);
+    bool TrySendRequest(CRef<CPSGL_RequestTracker> tracker,
+                        CDeadline deadline);
 
     void ProcessItemCallback(EPSG_Status status,
                              const shared_ptr<CPSG_ReplyItem>& item);
@@ -125,10 +106,7 @@ private:
 
     CPSG_EventLoop m_EventLoop;
     CRef<CPSGL_TrackerMap> m_TrackerMap;
-    CRef<CPSGL_RequestQueue> m_RequestQueue;
-    CRef<CRequestContext> m_RequestContext;
     thread m_EventLoopThread;
-    thread m_SendThread;
 };
 
 
@@ -304,10 +282,11 @@ public:
     void ForgetRequest(const CRef<CPSGL_RequestTracker>& tracker);
     
 private:
+    CRef<CRequestContext> m_RequestContext;
+    atomic<size_t> m_NextQueue = {0};
     vector<CRef<CPSGL_Queue>> m_QueueSet;
     unique_ptr<CThreadPool> m_ThreadPool;
     CRef<CPSGL_TrackerMap> m_TrackerMap;
-    CRef<CPSGL_RequestQueue> m_RequestQueue;
 };
 
 
