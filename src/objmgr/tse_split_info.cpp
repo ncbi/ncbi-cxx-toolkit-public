@@ -465,7 +465,7 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
         CMutexGuard guard(m_SeqIdToChunksMutex);
         for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
               iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-            if ( bioseq || GetChunk(iter->second).ContainsBioseq(id) ) {
+            if ( GetChunk(iter->second).ContainsBioseq(id) ) {
                 chunk_ids.push_back(iter->second);
             }
         }
@@ -487,7 +487,7 @@ void CTSE_Split_Info::x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool 
         for ( auto& [ i, id ] : ids ) {
             for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
                   iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-                if ( bioseq || GetChunk(iter->second).ContainsBioseq(id) ) {
+                if ( GetChunk(iter->second).ContainsBioseq(id) ) {
                     chunk_ids.push_back(iter->second);
                 }
             }
