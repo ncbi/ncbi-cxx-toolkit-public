@@ -1889,7 +1889,7 @@ string CShowBlastDefline::x_FormatDeflineTableHeaderText(void)
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"score_hd1",kMax,m_MaxScoreLen);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"total_hd1",kTotal,m_MaxTotalScoreLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"querycov_hd1",kQueryCov,m_MaxQueryCoverLen);
-        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",string("  ") + kE + "  ",m_MaxEvalueLen);    
+        descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"evalue_hd1",string("  ") + kE + "  ", static_cast<unsigned int>(m_MaxEvalueLen));
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"percident_hd1",kPerc,kMaxPercentIdentityLen);
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acclen_hd1",kAccAbbr,kMaxDispNumberLength);        
         descrHeader = CAlignFormatUtil::MapSpaceTemplate(descrHeader,"acc_hd1"," ",kMaxAccLength);        
