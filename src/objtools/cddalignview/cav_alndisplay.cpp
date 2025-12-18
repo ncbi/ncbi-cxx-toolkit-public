@@ -446,7 +446,7 @@ private:
 
 public:
     CondensedColumnUnaligned(int nRows, string color) : CondensedColumn(nRows, color) { nDigits = 1; }
-    int GetDisplayWidth(void) const { return strlen(prefix) + nDigits + strlen(postfix); }
+    int GetDisplayWidth(void) const { return static_cast<int>(strlen(prefix) + nDigits + strlen(postfix)); }
     int GetNResidues(int row) const { return info[row]; }
     void DumpRow(CNcbiOstream& os, int row) const;
     void AddRowChar(int row, char ch);
