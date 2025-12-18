@@ -720,8 +720,22 @@ s_FillDiscMBTable(BLAST_SequenceBlk* query, BlastSeqLoc* location,
                                       sizeof(Uint4));
       if (mb_lt->hashtable2 == NULL ||
           mb_lt->next_pos2 == NULL ||
-          helper_array2 == NULL)
-         return -1;
+          helper_array2 == NULL) {
+
+          if (mb_lt->hashtable2) {
+              free(mb_lt->hashtable2);
+          }
+          if (mb_lt->next_pos2) {
+              free(mb_lt->next_pos2);
+          }
+          if (helper_array) {
+              free(helper_array);
+          }
+          if (helper_array2) {
+              free(helper_array2);
+          }
+          return -1;
+      }
    }
 
    mb_lt->discontiguous = TRUE;
@@ -1337,6 +1351,9 @@ Int2 BlastMBLookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
 
         if (status) {
             BlastMBLookupTableDestruct(mb_lt);
+            if (counts) {
+                free(counts);
+            }
             return -1;
         }
    }
@@ -2296,6 +2313,9 @@ Int4 BlastNaHashLookupTableNew(BLAST_SequenceBlk* query,
     /* it will store 1-based offsets, hence length + 1 */
     offsets = calloc(query->length + 1, sizeof(Int4));
     if (!offsets) {
+        if (thin_backbone) {
+            free(thin_backbone);
+        }
         return BLASTERR_MEMORY;
     }
 
