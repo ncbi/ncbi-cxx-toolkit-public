@@ -522,13 +522,13 @@ int CNcbiSample_Dbapi_Advanced_Features::RunSample()
         while (stmt->HasMoreResults()) { 
             if (stmt->HasRows()) {
                 IResultSet *rs = stmt->GetResultSet();
-                int size = 0;
                 while (rs->Next()) { 
                     cout << "Reading: " << rs->GetVariant(1).GetString() << endl;
                     istream& in1 = rs->GetBlobIStream();
                     int c = 0; 
                     cout << "Reading first blob with stream..." << endl;
-                    for ( ;(c = in1.get()) != CT_EOF; ++size ) {
+                    // int size = 0;
+                    for ( ;(c = in1.get()) != CT_EOF; /* ++size */ ) {
                         blob.push_back(c);
                     }
                     IReader *ir = rs->GetBlobReader();
