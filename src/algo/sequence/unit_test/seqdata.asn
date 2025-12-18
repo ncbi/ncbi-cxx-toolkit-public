@@ -6505,20 +6505,20 @@ CA127C838B97E117133A793D4C5D2E0825828E78444B8EE8A93D68807FE412ECF0EE3EBFDFFEFF
                   value real { 96911099949774, 10, -12 }
                 },
                 {
-                  id str "matches",
-                  value int 3851
-                },
-                {
-                  id str "identity",
-                  value real { 967101958814666, 10, -15 }
-                },
-                {
                   id str "splices",
                   value int 42
                 },
                 {
                   id str "consensus_splices",
                   value int 40
+                },
+                {
+                  id str "matches",
+                  value int 3851
+                },
+                {
+                  id str "identity",
+                  value real { 967101958814666, 10, -15 }
                 },
                 {
                   id str "product_coverage",
@@ -9752,20 +9752,20 @@ BF508EF830BF1C0DEB742D12FE7C7939E3583E52D9F1C0201E28C0'H
                   value real { 585427935093859, 10, -13 }
                 },
                 {
-                  id str "matches",
-                  value int 1823
-                },
-                {
-                  id str "identity",
-                  value real { 579097839898348, 10, -15 }
-                },
-                {
                   id str "splices",
                   value int 26
                 },
                 {
                   id str "consensus_splices",
                   value int 22
+                },
+                {
+                  id str "matches",
+                  value int 1823
+                },
+                {
+                  id str "identity",
+                  value real { 579097839898348, 10, -15 }
                 },
                 {
                   id str "product_coverage",
@@ -11249,20 +11249,20 @@ FE95E25248D0903B737F993ABEFFFFFFF7FF3DC7EB49FEA18CB927FAB8DF80340C735CC75279F0
                   value real { 549475023862552, 10, -13 }
                 },
                 {
-                  id str "matches",
-                  value int 1727
-                },
-                {
-                  id str "identity",
-                  value real { 549300254452926, 10, -15 }
-                },
-                {
                   id str "splices",
                   value int 20
                 },
                 {
                   id str "consensus_splices",
                   value int 20
+                },
+                {
+                  id str "matches",
+                  value int 1727
+                },
+                {
+                  id str "identity",
+                  value real { 549300254452926, 10, -15 }
                 },
                 {
                   id str "product_coverage",
@@ -11752,20 +11752,20 @@ FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF422142141144448221482188481121848288821
                   value real { 951347305389222, 10, -13 }
                 },
                 {
-                  id str "matches",
-                  value int 2488
-                },
-                {
-                  id str "identity",
-                  value real { 931137724550898, 10, -15 }
-                },
-                {
                   id str "splices",
                   value int 0
                 },
                 {
                   id str "consensus_splices",
                   value int 0
+                },
+                {
+                  id str "matches",
+                  value int 2488
+                },
+                {
+                  id str "identity",
+                  value real { 931137724550898, 10, -15 }
                 },
                 {
                   id str "product_coverage",
