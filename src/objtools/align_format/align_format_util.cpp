@@ -932,8 +932,8 @@ string CAlignFormatUtil::GetLabel(CConstRef<CSeq_id> id,bool with_version)
 void CAlignFormatUtil::AddSpace(CNcbiOstream& out, size_t number)
 
 {
-    for(auto i=0; i<number; i++){
-        out<<" ";
+    for (size_t i = 0; i < number; i++){
+        out << " ";
     }
 }
 
