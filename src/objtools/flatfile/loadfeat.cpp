@@ -245,7 +245,6 @@ const char* ParFlat_ESTmod[] = {
     "putatively transcribed partial sequence",
     "UK putts",
     "Plastid",
-    nullptr
 };
 
 static const char* ParFlat_RNA_array[] = {
@@ -259,7 +258,6 @@ static const char* ParFlat_RNA_array[] = {
     "ncRNA",
     "tmRNA",
     "misc_RNA",
-    nullptr
 };
 
 static const char* DbxrefTagAny[] = {
@@ -270,7 +268,6 @@ static const char* DbxrefTagAny[] = {
     "GDB",
     "HMP",
     "MAIZEGDB",
-    nullptr
 };
 
 static const char* DbxrefObsolete[] = {
@@ -281,7 +278,6 @@ static const char* DbxrefObsolete[] = {
     "SWISS-PROT",
     "SPTREMBL",
     "TREMBL",
-    nullptr
 };
 
 static const char* EMBLDbxrefTagStr[] = {
@@ -295,7 +291,6 @@ static const char* EMBLDbxrefTagStr[] = {
     "PROTEOMES",
     "UNITE",
     "WBPARASITE",
-    nullptr
 };
 
 static const char* DbxrefTagStr[] = {
@@ -383,7 +378,6 @@ static const char* DbxrefTagStr[] = {
     "WORMBASE",
     "XENBASE",
     "ZFIN",
-    nullptr
 };
 
 static const char* DbxrefTagInt[] = {
@@ -408,7 +402,6 @@ static const char* DbxrefTagInt[] = {
     "RGD",
     "UNILIB",
     "UNISTS",
-    nullptr
 };
 
 static const char* EmptyQuals[] = {
@@ -469,14 +462,12 @@ const char* ncRNA_class_values[] = {
     "vault_RNA",
     "Y_RNA",
     "other",
-    nullptr
 };
 
 const char* SatelliteValues[] = {
     "satellite",
     "minisatellite",
     "microsatellite",
-    nullptr
 };
 
 const char* PseudoGeneValues[] = {
@@ -485,7 +476,6 @@ const char* PseudoGeneValues[] = {
     "unitary",
     "unknown",
     "unprocessed",
-    nullptr
 };
 
 const char* RegulatoryClassValues[] = {
@@ -526,7 +516,6 @@ const char *MobileElementQualValues[] = {
     "MITE",
     "LINE",
     "other",
-    NULL
 };
 
 // clang-format off
