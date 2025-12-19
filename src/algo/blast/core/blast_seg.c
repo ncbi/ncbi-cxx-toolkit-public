@@ -2281,8 +2281,8 @@ void SegParametersFree(SegParameters* sparamsp)
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
                      SegParameters* sparamsp, BlastSeqLoc** seg_locs)
 {
-   SSequence* seqwin;
-   SSeg* segs;
+   SSequence* seqwin = NULL;
+   SSeg* segs = NULL;
    Boolean params_allocated = FALSE;
    Int2 status = 0;
 
@@ -2314,6 +2314,7 @@ Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
    {
      seqwin->seq = NULL;
      s_SSequenceFree (seqwin);
+     s_SegFree (segs);
      return status;
    }
 
