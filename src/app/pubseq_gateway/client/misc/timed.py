@@ -320,7 +320,7 @@ def extract(args):
         if s in args.statistics:
             e = row[field_names['Command']]
             e_reversed = reverse(e)
-            e_suffix = os.path.commonprefix([e_reversed, e_suffix]) if e_suffix else e_reversed
+            e_suffix = os.path.commonprefix([e_reversed, e_suffix]) if e_suffix is not None else e_reversed
 
             for m in measurements:
                 output.setdefault(m, {}).setdefault(e, {})[s] = row[field_names[m]]
