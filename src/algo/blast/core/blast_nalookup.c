@@ -292,6 +292,7 @@ static Int4 s_BlastSmallNaLookupFinalize(Int4 **thin_backbone,
                     thin_backbone[i][j + 2];
             }
 
+            ASSERT(lookup->overflow != NULL);
             /* we don't have the room to store the number of hits,
                so append a null to the end of the list to signal
                that the current chain is finished */
@@ -517,6 +518,7 @@ static void s_BlastNaLookupFinalize(Int4 **thin_backbone,
 #ifdef LOOKUP_VERBOSE
             num_overflows++;
 #endif
+            ASSERT(lookup->overflow != NULL);
             lookup->thick_backbone[i].payload.overflow_cursor =
                                          overflow_cursor;
             for (j = 0; j < num_hits; j++) {
@@ -922,7 +924,7 @@ static Int2 s_RemovePolyAWords(BlastMBLookupTable* mb_lt)
 
     /* remove As and Ts */
     mb_lt->hashtable[0] = 0;
-    mb_lt->hashtable[(Int8)((1 << (2 * word_size)) - 1)] = 0;
+    mb_lt->hashtable[(Int8)((1l << (2 * word_size)) - 1)] = 0;
 
     if (word_size < 16) {
         return 0;
