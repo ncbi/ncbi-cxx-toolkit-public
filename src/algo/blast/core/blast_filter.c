@@ -305,8 +305,9 @@ s_SafeStrCat(char** dest, unsigned int* dest_size, const char* string2append)
     size_t string2append_length = strlen(string2append);
     if ((dest_length + string2append_length + 1) > *dest_size) {
         size_t target_size = MAX(string2append_length, dest_length) * 2;
-        *dest = (char*)realloc((void*)*dest, target_size);
-        if (*dest) {
+        char* new_dest = (char*)realloc((void*)*dest, target_size);
+        if (new_dest) {
+            *dest = new_dest;
             (*dest_size) = (unsigned int)target_size;
         } else {
             sfree(*dest);
@@ -713,6 +714,7 @@ void BlastSeqLocListReverse(BlastSeqLoc** head)
 
     ptrs = s_BlastSeqLocListToArrayOfPointers(*head, &num_elems);
     if (num_elems == 0) {
+        sfree(ptrs);
         return;
     }
     ASSERT(ptrs);
@@ -738,7 +740,7 @@ BlastSeqLoc* BlastSeqLocFree(BlastSeqLoc* loc)
 {
     while (loc) {
         BlastSeqLoc* next_loc = loc->next;
-        loc = BlastSeqLocNodeFree(loc);
+        BlastSeqLocNodeFree(loc);
         loc = next_loc;
     }
     return NULL;
@@ -977,6 +979,7 @@ BlastSeqLocCombine(BlastSeqLoc** mask_loc, Int4 link_value)
     /* Break up the list into an array of pointers and sort it */
     ptrs = s_BlastSeqLocListToArrayOfPointers(*mask_loc, &num_elems);
     if (num_elems == 0) {
+        sfree(ptrs);
         return;
     }
     ASSERT(ptrs);
