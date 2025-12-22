@@ -1416,7 +1416,7 @@ version  2 # of file format
 2+6  PY  gb_patent
 2+8  PY  gb_other_nuc
 2+10 PY  gb_other_nuc
-2+6  PZ  gb_other_nuc
+2+6  PZ  gb_dirsub
 2+8  PZ  gb_other_nuc
 2+10 PZ  gb_other_nuc
 2+6  QA  gb_other_nuc
