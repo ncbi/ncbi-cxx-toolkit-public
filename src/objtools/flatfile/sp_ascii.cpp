@@ -4579,7 +4579,6 @@ static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* pr
 
     TEntryList entries;
     entries.push_back(ebp->seq_entry);
-    fta_find_pub_explore(pp, entries);
 
     if (pp->citat) {
         StripSerialNumbers(entries);

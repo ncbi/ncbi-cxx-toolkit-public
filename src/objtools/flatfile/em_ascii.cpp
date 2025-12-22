@@ -66,7 +66,6 @@
 #include "embl.h"
 
 #include <objtools/flatfile/flatdefn.h>
-#include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"
@@ -316,8 +315,6 @@ static CRef<CSeq_entry> OutputEmblAsn(bool seq_long, ParserPtr pp, TEntryList& s
         GetScope().ResetDataAndHistory();
         return result;
     }
-
-    fta_find_pub_explore(pp, seq_entries);
 
     /* change qual "citation" on features to SeqFeat.cit find citation
      * in the list by serial_number. If serial number not found remove
