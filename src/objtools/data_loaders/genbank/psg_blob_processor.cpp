@@ -46,6 +46,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqsplit/ID2S_Split_Info.hpp>
 #include <objects/seqsplit/ID2S_Chunk.hpp>
+#include <format>
 
 #if defined(HAVE_PSG_LOADER)
 
@@ -59,28 +60,31 @@ BEGIN_NAMESPACE(psgl);
 #ifdef COLLECT_PROFILE
 struct SProfiler
 {
-    atomic<const char*> name;
-    atomic<size_t> count;
-    CStopWatch sw;
-    SProfiler() : name(0), count(0) {}
+    atomic<const char*> name = { 0 };
+    atomic<size_t> count = { 0 };
+    atomic<double> time = { 0 };
     ~SProfiler() {
-        if ( name )
-            cerr << name<<" calls: "<<count<<" time: "<<sw.Elapsed()<<endl;
+        if ( name ) {
+            cerr << format("{} calls: {} time: {}\n", name.load(), count.load(), time.load());
+        }
     }
 };
 struct SProfilerGuard
 {
-    SProfiler& sw;
-    SProfilerGuard(SProfiler& sw, const char* name)
-        : sw(sw)
+    SProfiler& p;
+    CStopWatch sw;
+    SProfilerGuard(SProfiler& p, const char* name)
+        : p(p),
+          sw(CStopWatch::eStart)
         {
-            sw.name = name;
-            sw.count += 1;
-            sw.sw.Start();
+            if ( !p.name ) {
+                p.name = name;
+            }
         }
     ~SProfilerGuard()
         {
-            sw.sw.Stop();
+            p.count += 1;
+            p.time += sw.Elapsed();
         }
 };
 
