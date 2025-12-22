@@ -87,12 +87,25 @@ static SProfiler sp_AddRequest;
 static SProfiler sp_SendRequest;
 static SProfiler sp_ProcessItem;
 static SProfiler sp_ProcessItemCallback;
-static SProfiler sp_ProcessItemCallback1;
-static SProfiler sp_ProcessItemCallback2;
-static SProfiler sp_ProcessItemCallback3;
+static SProfiler sp_ProcessItemCallbackM;
+static SProfiler sp_ProcessItemCallbackS;
 static SProfiler sp_ProcessItemCallbackF;
 static SProfiler sp_ProcessItemCallbackE;
+static SProfiler sp_BgProcessItemCallback;
+static SProfiler sp_BgProcessItemCallbackS;
+static SProfiler sp_BgProcessItemCallbackR;
+static SProfiler sp_BgProcessItemCallbackRS;
+static SProfiler sp_BgProcessItemCallbackF;
 static SProfiler sp_ProcessReply;
+static SProfiler sp_ProcessReplyCallback;
+static SProfiler sp_ProcessReplyCallbackW;
+static SProfiler sp_ProcessReplyCallbackM;
+static SProfiler sp_ProcessReplyCallbackS;
+static SProfiler sp_ProcessReplyCallbackF;
+static SProfiler sp_ProcessReplyCallbackE;
+static SProfiler sp_BgProcessReplyCallback;
+static SProfiler sp_BgProcessReplyCallbackM;
+static SProfiler sp_BgProcessReplyCallbackF;
 static SProfiler sp_GetTracker;
 
 # define PROFILE(var) SProfilerGuard profile_guard##var(var, #var)
@@ -102,7 +115,7 @@ static SProfiler sp_GetTracker;
 
 static const int kDestructionDelay = 0; // max delay in milliseconds
 static const int kFailureRate = 0; // zero or probability of failure = 1/kFailureRate
-static bool kUseBackgroundTasks = false;
+static bool kUseBackgroundTasks = true;
 
 static inline
 void s_SimulateDelay()
@@ -603,14 +616,13 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessItemCallback() - canceled");
         return;
     }
-    PROFILE(sp_ProcessItemCallback1);
     try {
-        PROFILE(sp_ProcessItemCallback2);
+        PROFILE(sp_ProcessItemCallbackM);
         s_SimulateFailure(m_Processor, "ProcessItemCallback item fast");
         _ASSERT(item);
         auto result = m_Processor->ProcessItemFast(status, item);
         if ( result == CPSGL_Processor::eToNextStage ) {
-            PROFILE(sp_ProcessItemCallback3);
+            PROFILE(sp_ProcessItemCallbackS);
             if ( kUseBackgroundTasks ) {
                 // queue background processing
                 StartProcessItemInBackground(status, item);
@@ -637,6 +649,7 @@ void CPSGL_RequestTracker::ProcessItemCallback(EPSG_Status status,
 void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
                                                 const shared_ptr<CPSG_Reply>& reply)
 {
+    PROFILE(sp_ProcessReplyCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback()");
     CCallbackGuard guard(this);
     if ( !guard ) {
@@ -646,6 +659,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
     try {
         _ASSERT(reply);
         {{
+            PROFILE(sp_ProcessReplyCallbackW);
             // items may be still being processed in background
             // and we cannot yet process reply in this case
             CFastMutexGuard guard(GetTrackerMutex());
@@ -658,11 +672,13 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
                 return;
             }
         }}
+        PROFILE(sp_ProcessReplyCallbackM);
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast()");
         s_SimulateFailure(m_Processor, "ProcessReplyCallback reply fast");
         auto result = m_Processor->ProcessReplyFast(status, reply);
         _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::ProcessReplyCallback(): ProcessReplyFast(): "<<result);
         if ( result == CPSGL_Processor::eToNextStage ) {
+            PROFILE(sp_ProcessReplyCallbackS);
             if ( kUseBackgroundTasks ) {
                 // queue processing
                 StartProcessReplyInBackground();
@@ -674,6 +690,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
                 return;
             }
         }
+        PROFILE(sp_ProcessReplyCallbackE);
         if ( result != CPSGL_Processor::eProcessed ) {
             _TRACE("CPSGDataLoader: failed processing reply: "<<result);
             MarkAsFailed();
@@ -683,6 +700,7 @@ void CPSGL_RequestTracker::ProcessReplyCallback(EPSG_Status status,
         }
     }
     catch ( exception& exc ) {
+        PROFILE(sp_ProcessReplyCallbackF);
         _TRACE("CPSGDataLoader: exception while processing reply: "<<exc.what());
         m_Processor->AddError(exc.what());
         MarkAsFailed();
@@ -695,6 +713,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
                                                     EPSG_Status status,
                                                     const shared_ptr<CPSG_ReplyItem>& item)
 {
+    PROFILE(sp_BgProcessItemCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback()");
     CCallbackGuard guard(this);
     if ( !guard ) {
@@ -711,6 +730,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             }
         }}
         {{
+            PROFILE(sp_BgProcessItemCallbackS);
             // process item
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessItemSlow()");
             s_SimulateFailure(m_Processor, "BackgroundProcessItemCallback item slow");
@@ -737,6 +757,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             _ASSERT(m_BackgroundItemTaskCount == 0);
         }}
         {{
+            PROFILE(sp_BgProcessItemCallbackR);
             // process reply, first 'fast' call
             _ASSERT(m_Reply);
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReplyFast()");
@@ -754,6 +775,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
             }
         }}
         {{
+            PROFILE(sp_BgProcessItemCallbackRS);
             // process reply, regular call
             _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessItemCallback(): ProcessReply()");
             s_SimulateFailure(m_Processor, "BackgroundProcessItemCallback reply slow");
@@ -775,6 +797,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
         }}
     }
     catch ( exception& exc ) {
+        PROFILE(sp_BgProcessItemCallbackF);
         _TRACE("CPSGDataLoader: exception while processing reply item: "<<exc.what());
         m_Processor->AddError(exc.what());
         MarkAsFailed();
@@ -786,6 +809,7 @@ CPSGL_RequestTracker::BackgroundProcessItemCallback(CBackgroundTask* task,
 CThreadPool_Task::EStatus
 CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
 {
+    PROFILE(sp_BgProcessReplyCallback);
     _TRACE("CPSGL_RequestTracker("<<this<<", "<<m_Processor<<")::BackgroundProcessReplyCallback()");
     CCallbackGuard guard(this);
     if ( !guard ) {
@@ -793,6 +817,7 @@ CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
         return m_Status;
     }
     try {
+        PROFILE(sp_BgProcessReplyCallbackM);
         {{
             CFastMutexGuard guard(GetTrackerMutex());
             if ( s_IsAborted(m_Status) ) {
@@ -820,6 +845,7 @@ CPSGL_RequestTracker::BackgroundProcessReplyCallback(CBackgroundTask* task)
         }
     }
     catch ( exception& exc ) {
+        PROFILE(sp_BgProcessReplyCallbackF);
         _TRACE("CPSGDataLoader: exception while processing reply: "<<exc.what());
         m_Processor->AddError(exc.what());
         MarkAsFailed();
@@ -926,18 +952,21 @@ void CPSGL_Dispatcher::SendRequest(CRef<CPSGL_RequestTracker> tracker)
     if ( m_RequestContext ) {
         tracker->GetRequest()->SetRequestContext(m_RequestContext);
     }
+    size_t q = 0;
     size_t q_count = m_QueueSet.size();
-    for ( size_t k = 0; k < q_count; ++k ) {
-        size_t q_tmp = m_NextQueue++;
-        size_t q = q_tmp % q_count;
-        if ( q_tmp > 1000*q_count ) {
-            m_NextQueue = q+1;
+    if ( q_count > 1 ) {
+        for ( size_t k = 0; k < q_count; ++k ) {
+            size_t q_tmp = m_NextQueue++;
+            size_t q = q_tmp % q_count;
+            if ( q_tmp > 1000*q_count ) {
+                m_NextQueue = q+1;
+            }
+            if ( m_QueueSet[q]->TrySendRequest(tracker, CDeadline::eNoWait) ) {
+                return;
+            }
         }
-        if ( m_QueueSet[q]->TrySendRequest(tracker, CDeadline::eNoWait) ) {
-            return;
-        }
+        q = m_NextQueue++ % q_count;
     }
-    size_t q = m_NextQueue++ % q_count;
     m_QueueSet[q]->SendRequest(tracker);
 }
 
