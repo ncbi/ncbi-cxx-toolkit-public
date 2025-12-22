@@ -496,13 +496,9 @@ public:
     }
 
     using TEntryList = list<CRef<CSeq_entry>>;
-    void Apply(TEntryList& entries);
+    void fix_pub_equiv(CPub_equiv& pub_equiv, bool er);
 
 private:
-    void fix_pub_equiv(CPub_equiv& pub_equiv, bool er);
-    void fix_pub_annot(CPub& pub, bool er);
-    void find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs);
-
     Parser*                            m_pParser;
     unique_ptr<CPubFixMessageListener> m_pPubFixListener;
     unique_ptr<edit::CPubFix>          m_pPubFix;
@@ -654,116 +650,30 @@ void CFindPub::fix_pub_equiv(CPub_equiv& pub_equiv, bool er)
 }
 
 /**********************************************************/
-void CFindPub::fix_pub_annot(CPub& pub, bool er)
+void fta_pub_lookup(ParserPtr pp, CRef<CPubdesc> desc)
 {
-    if (! m_pParser)
-        return;
+    bool er;
 
-    if (pub.IsEquiv()) {
-        fix_pub_equiv(pub.SetEquiv(), er);
-        if (m_pParser->qamode)
-            fta_fix_imprint_language(pub.SetEquiv().Set());
-        fta_fix_affil(pub.SetEquiv().Set(), m_pParser->source);
-        return;
-    }
-
-    m_pPubFix->FixPub(pub);
-}
-
-
-/**********************************************************/
-void CFindPub::find_pub(list<CRef<CSeq_annot>>& annots, CSeq_descr& descrs)
-{
-    bool er = any_of(begin(descrs.Get()), end(descrs.Get()), [](CRef<CSeqdesc> pDesc) {
-        if (pDesc->IsPub()) {
-            const auto& pubdesc = pDesc->GetPub();
-            return (pubdesc.IsSetComment() &&
-                    fta_remark_is_er(pubdesc.GetComment()));
-        }
-        return false;
-    });
-
-
-    for (auto& pDescr : descrs.Set()) {
-        if (! pDescr->IsPub())
-            continue;
-
-        CPubdesc& pub_descr = pDescr->SetPub();
-        fix_pub_equiv(pub_descr.SetPub(), er);
-        if (m_pParser->qamode)
-            fta_fix_imprint_language(pub_descr.SetPub().Set());
-        fta_fix_affil(pub_descr.SetPub().Set(), m_pParser->source);
-        fta_strip_er_remarks(pub_descr);
-    }
-
-    for (auto& pAnnot : annots) {
-        if (! pAnnot->IsSetData() || ! pAnnot->GetData().IsFtable()) /* feature table */
-            continue;
-
-        for (auto& pFeat : pAnnot->SetData().SetFtable()) {
-            if (pFeat->IsSetData() && pFeat->GetData().IsPub()) /* pub feature */
-            {
-                CPubdesc& pub_descr = pFeat->SetData().SetPub();
-                fix_pub_equiv(pub_descr.SetPub(), er);
-                if (m_pParser->qamode)
-                    fta_fix_imprint_language(pub_descr.SetPub().Set());
-                fta_fix_affil(pub_descr.SetPub().Set(), m_pParser->source);
-                fta_strip_er_remarks(pub_descr);
-            }
-
-            if (! pFeat->IsSetCit()) {
-                continue;
-            }
-
-            for (auto& pPub : pFeat->SetCit().SetPub()) {
-                if (pPub) {
-                    fix_pub_annot(*pPub, er);
-                }
-            }
-        }
-    }
-}
-
-/**********************************************************/
-// static void fta_find_pub(ParserPtr pp, TEntryList& seq_entries)
-void CFindPub::Apply(list<CRef<CSeq_entry>>& seq_entries)
-{
-    for (auto& pEntry : seq_entries) {
-        for (CTypeIterator<CBioseq_set> bio_set(Begin(*pEntry)); bio_set; ++bio_set) {
-            find_pub(bio_set->SetAnnot(), bio_set->SetDescr());
-
-            if (bio_set->GetDescr().Get().empty())
-                bio_set->ResetDescr();
-
-            if (bio_set->SetAnnot().empty())
-                bio_set->ResetAnnot();
-        }
-
-        for (CTypeIterator<CBioseq> bioseq(Begin(*pEntry)); bioseq; ++bioseq) {
-            find_pub(bioseq->SetAnnot(), bioseq->SetDescr());
-
-            if (bioseq->GetDescr().Get().empty())
-                bioseq->ResetDescr();
-
-            if (bioseq->SetAnnot().empty())
-                bioseq->ResetAnnot();
-        }
-    }
-}
-
-/**********************************************************/
-void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries)
-{
-    if (pp->medserver == 0)
+    if (desc.Empty() || pp->medserver == 0)
         return;
 
     if (pp->medserver == 2)
         pp->medserver = fta_init_med_server(pp->normalize);
 
-    if (pp->medserver == 1) {
-        CFindPub find_pub(pp);
-        find_pub.Apply(seq_entries);
-    }
+    if (pp->medserver != 1)
+        return;
+
+    if (desc->IsSetComment() && fta_remark_is_er(desc->GetComment()))
+        er = true;
+    else
+        er = false;
+
+    CFindPub find_pub(pp);
+    find_pub.fix_pub_equiv(desc->SetPub(), er);
+    if (pp->qamode)
+        fta_fix_imprint_language(desc->SetPub().Set());
+    fta_fix_affil(desc->SetPub().Set(), pp->source);
+    fta_strip_er_remarks(*desc);
 }
 
 #if 0

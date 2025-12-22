@@ -65,6 +65,7 @@
 
 #include <objtools/flatfile/flatdefn.h>
 #include "ftamed.h"
+#include "ftanet.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
@@ -2461,6 +2462,8 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data)
 
         fta_propagate_pmid_muid(desc->SetPub());
     }
+
+    fta_pub_lookup(pp, desc);
 
     return desc;
 }

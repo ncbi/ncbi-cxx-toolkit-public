@@ -60,7 +60,6 @@
 
 #include "index.h"
 
-#include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 #include <objtools/flatfile/flatdefn.h>
 
@@ -1307,8 +1306,6 @@ CRef<CSeq_entry> CXml2Asn::xGetEntry()
     TEntryList seq_entries;
     seq_entries.push_back(ebp->seq_entry);
     ebp->seq_entry.Reset();
-
-    fta_find_pub_explore(&mParser, seq_entries);
 
     // change qual "citation' on features to SeqFeat.cit
     // find citation in the list by serial_number.
