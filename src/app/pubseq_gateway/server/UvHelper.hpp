@@ -116,7 +116,7 @@ public:
         // PSG_TRACE("CUvLoop::Close " << &m_loop);
         int rc = 0;
         if (m_initialized) {
-            rc = uv_run(&m_loop, UV_RUN_DEFAULT);
+            /* rc = */ uv_run(&m_loop, UV_RUN_DEFAULT);
             // if (rc)
             //     PSG_TRACE("uv_run returned " << rc);
             rc = uv_loop_close(&m_loop);

@@ -554,7 +554,10 @@ SPubseqGatewaySettings::x_ReadProcessorThrottleSettings(const CNcbiRegistry &   
 {
     string      section = proc_id + "_PROCESSOR";
     double      proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
+
+    // By default it comes from the [SERVER] section
     double      proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
+
     bool        proc_throttle_ok = true;
     if (registry.HasEntry(section, "processor_throttle_threshold")) {
         proc_throttle_threshold = x_GetPercentValue(registry, section,
@@ -577,9 +580,6 @@ SPubseqGatewaySettings::x_ReadProcessorThrottleSettings(const CNcbiRegistry &   
             proc_throttle_by_ip = m_ProcessorThrottleByIpPercent;
             proc_throttle_ok = false;
         }
-    } else {
-        // No overwriting, take it from the [SERVER] section
-        proc_throttle_threshold = m_ProcessorThrottleThresholdPercent;
     }
 
     if (proc_throttle_ok) {
@@ -1136,7 +1136,7 @@ void SPubseqGatewaySettings::x_ValidateServerSection(void)
     }
 
     if (connection_config_good && m_ConnThrottleByUserAgent > m_ConnThrottleThreshold) {
-        connection_config_good = false;
+        /* connection_config_good = false; */
         m_CriticalErrors.push_back(
             "Inconsistent [SERVER]/conn_throttle_by_user_agent value. It must be "
             "<= [SERVER]/conn_throttle_threshold value. "
