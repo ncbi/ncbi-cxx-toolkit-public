@@ -3830,8 +3830,12 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       tree = Blast_IntervalTreeInit(0, query->length+1,
                                     0, subject->length+1);
    }
-   if (!tree)
-     return BLASTERR_MEMORY;
+   if (!tree) {
+       if (restricted_align_array) {
+           sfree(restricted_align_array);
+       }
+       return BLASTERR_MEMORY;
+   }
 
 
    init_hsp_array = init_hitlist->init_hsp_array;
