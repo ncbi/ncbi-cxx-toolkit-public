@@ -136,6 +136,12 @@
 #  define UNUSED_ARG(x)  x##_UNUSED
 #endif
 
+#ifdef __clang_analyzer__
+#  define NCBI_CLANG_ANALYZER_SUPPRESS __attribute__((suppress))
+#else
+#  define NCBI_CLANG_ANALYZER_SUPPRESS
+#endif
+
 /* min() */
 #define min_value(a,b) ((a) < (b) ? (a) : (b))
 
@@ -255,7 +261,7 @@ static void s_ReportError(long line, const char* msg)
 int/*bool*/ NcbiLog_Default_MTLock_Handler
     (void*                  UNUSED_ARG(user_data),
      ENcbiLog_MTLock_Action action
-     )
+    )
 {
 #if defined(NCBI_POSIX_THREADS)
     switch (action) {
@@ -1877,18 +1883,18 @@ static void s_InitDestination(const char* logfile_path)
             }
             /* Try current directory -- eNcbiLog_Stdlog, eNcbiLog_Cwd */
             if (sx_Info->destination != eNcbiLog_Default) {
+                /* Use FILENAME_MAX to avoid PATH_MAX/MAX_PATH variations */
+                char cwd_buf[FILENAME_MAX]; 
                 char* cwd;
                 #if defined(NCBI_OS_UNIX)
-                    cwd = getcwd(NULL, 0);
+                    cwd = getcwd(cwd_buf, FILENAME_MAX);
                 #elif defined(NCBI_OS_MSWIN)
-                    cwd = _getcwd(NULL, 0);
+                    cwd = _getcwd(cwd_buf, FILENAME_MAX);
                 #endif
                 if (cwd  &&  s_SetLogFilesDir(cwd, NO_LOG)) {
                     sx_Info->destination = eNcbiLog_Cwd;
-                    free(cwd);
                     return;
                 }
-                free(cwd);
             }
             /* Fallback - use stderr */
             sx_Info->destination = eNcbiLog_Stderr;
@@ -2486,6 +2492,7 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
 
     /* Prefix */
     buf = sx_Info->message;
+    VERIFY_CATCH(buf);
     pos = s_PrintCommonPrefix(ctx);
     VERIFY_CATCH(pos);
 
@@ -2624,6 +2631,8 @@ extern void NcbiLog_Init(const char*               appname,
 
 extern void NcbiLog_InitMT(const char* appname)
 {
+    /* This call creates an intentional memory leak */
+    NCBI_CLANG_ANALYZER_SUPPRESS
     TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, NcbiLog_Default_MTLock_Handler);
     NcbiLog_Init(appname, mt_lock, eNcbiLog_MT_TakeOwnership);
 }
@@ -3647,7 +3656,7 @@ void NcbiLog_ReqStart(const SNcbiLog_Param* params)
         sx_Info->message[pos++] = '&';
     }
     /* User request parameters */
-    pos = s_PrintParams(sx_Info->message, pos, params);
+    /*pos = */ s_PrintParams(sx_Info->message, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3675,7 +3684,7 @@ extern void NcbiLogP_ReqStartStr(const char* params)
         sx_Info->message[pos++] = '&';
     }
     /* Parameters */
-    pos = s_PrintParamsStr(sx_Info->message, pos, params);
+    /*pos =*/ s_PrintParamsStr(sx_Info->message, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3771,7 +3780,7 @@ static void s_Extra(TNcbiLog_Context ctx, const SNcbiLog_Param* params)
     VERIFY_CATCH(n > 0);
     pos += (size_t) n;
     /* Parameters */
-    pos = s_PrintParams(buf, pos, params);
+    /*pos =*/ s_PrintParams(buf, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3795,7 +3804,7 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params)
     VERIFY_CATCH(n > 0);
     pos += (size_t)n;
     /* Parameters */
-    pos = s_PrintParamsStr(buf, pos, params);
+    /* pos =*/ s_PrintParamsStr(buf, pos, params);
     /* Post a message */
     s_Post(ctx, eDiag_Log);
 
@@ -3863,7 +3872,7 @@ extern void NcbiLog_Perf(int status, double timespan, const SNcbiLog_Param* para
         if ((pos > pos_prev)  &&  (pos < NCBILOG_ENTRY_MAX - 1)) {
             buf[pos++] = '&';
         }
-        pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
+        /*pos =*/ s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
     }
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
@@ -3910,7 +3919,7 @@ extern void NcbiLogP_PerfStr(int status, double timespan, const char* params)
         if ((pos > pos_prev)  &&  (pos < NCBILOG_ENTRY_MAX - 1)) {
             buf[pos++] = '&';
         }
-        pos = s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
+        /*pos =*/ s_PrintParamsPair(buf, pos, "ncbi_phid", hit_id);
     }
     /* Post a message */
     s_Post(ctx, eDiag_Perf);
@@ -4057,6 +4066,8 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
 
     MT_LOCK_API;
     
+    /* Call to s_GetContext() creates an intentional memory leak */
+    NCBI_CLANG_ANALYZER_SUPPRESS
     ctx = s_GetContext();
     TNcbiLog_PID old_pid = sx_PID;
 
