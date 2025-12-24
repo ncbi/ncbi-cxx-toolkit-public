@@ -695,7 +695,7 @@ protected:
 
 protected:
     FILE* m_FileStream; ///< File stream, can be based on m_fd
-    int   m_fd;         ///< File/socket descriptor
+    int   m_fd;         ///< File/socket descriptor (if created from fd)
 
 private:
     // Prohibit assignment and copy
