@@ -2886,7 +2886,7 @@ NcbiLog_SetDestinationFile(const char* logfile_base)
     /* Close current destination */
     s_CloseLogFiles(CLOSE_CLEANUP);
    
-    if (!logfile  &&  !*logfile ) {
+    if (!logfile  ||  !*logfile ) {
         sx_Info->destination = eNcbiLog_Disable; /* error */
         MT_UNLOCK;
         return sx_Info->destination;
