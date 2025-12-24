@@ -1262,11 +1262,19 @@ CArchiveCompressionFileStream::CArchiveCompressionFileStream(EFormat format, int
     : CArchive(format)
 {  
     m_Location = IArchive::eFileStream;
-    m_fd = fd;
-    m_FileStream = NcbiSys_fdopen(NcbiSys_dup(fd), _T_XCSTRING("ab"));  // binary, appending from a current position
-    if (!m_FileStream) {
-        ARCHIVE_THROW(eOpen, "Cannot create file stream from the file descriptor");
+    m_fd = -1;
+    int dup_fd = NcbiSys_dup(fd);
+    if (dup_fd < 0) {
+        int x_errno = errno;
+        ARCHIVE_THROW(eOpen, "Cannot duplicate file descriptor " + to_string(fd) + s_OSReason(x_errno));
     }
+    m_FileStream = NcbiSys_fdopen(dup_fd, _T_XCSTRING("ab"));  // binary, appending from a current position
+    if (!m_FileStream) {
+        int x_errno = errno;
+        NcbiSys_close(dup_fd);
+        ARCHIVE_THROW(eOpen, "Cannot create file stream from the file descriptor "+ to_string(fd) + s_OSReason(x_errno));
+    }
+    m_fd = fd;
     Create();
 }
 
@@ -1283,6 +1291,7 @@ CArchiveCompressionFileStream::~CArchiveCompressionFileStream(void)
 {
     if (m_fd != -1  &&  m_FileStream) {
         // Close duplicated file stream
+        // It automatically closes associated file descriptor
         fclose(m_FileStream);
     }
 }
