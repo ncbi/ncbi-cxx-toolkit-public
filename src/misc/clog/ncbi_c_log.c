@@ -2487,6 +2487,9 @@ static void s_PrintMessage(ENcbiLog_Severity severity, const char* msg, int/*boo
     }
 
     MT_LOCK_API;
+
+    /* Call to s_GetContext() creates an intentional memory leak */
+    NCBI_CLANG_ANALYZER_SUPPRESS
     ctx = s_GetContext();
     CHECK_APP_START(ctx);
 
@@ -4065,7 +4068,7 @@ extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
     TNcbiLog_Context ctx = NULL;
 
     MT_LOCK_API;
-    
+
     /* Call to s_GetContext() creates an intentional memory leak */
     NCBI_CLANG_ANALYZER_SUPPRESS
     ctx = s_GetContext();
