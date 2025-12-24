@@ -264,6 +264,9 @@ void CTest::RunTest(CTempString name, FTestCase testcase)
     // Redirect stderr to file
     ::fflush(stderr);
     int saved_stderr = NcbiSys_dup(NcbiSys_fileno(stderr));
+    if (saved_stderr < 0) {
+        _TROUBLE;
+    }
     if (!::freopen(log_path.c_str(), "w", stderr)) {
         _TROUBLE;
     }
