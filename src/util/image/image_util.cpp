@@ -77,10 +77,11 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
                             for (size_t k = 0;  k < image.GetDepth();  ++k) {
                                 vals[k] += from_pixel[k];
                             }
-
                             ++count;
                         }
                     }
+                    if (!count)
+                        break;
                     for (size_t k = 0;  k < new_image->GetDepth();  ++k) {
                         to[k] = (unsigned char)((vals[k] / count) & 0xff);
                     }
@@ -142,13 +143,10 @@ CImage* CImageUtil::Scale(const CImage& image, size_t width, size_t height,
             default:
                 break;
             }
-
             w_offs += w_step;
         }
-
         h_offs += h_step;
     }
-
     return new_image.Release();
 }
 
