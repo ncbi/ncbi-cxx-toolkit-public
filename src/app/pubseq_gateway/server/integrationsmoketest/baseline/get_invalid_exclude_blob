@@ -35,11 +35,16 @@
     "id": {
     "id2_info": "",
     "is_dead": false,
+    "is_edit_blocked": false,
     "is_suppressed": true,
+    "is_suppressed_temporarily": false,
     "is_withdrawn": false,
+    "is_withdrawn_base": false,
+    "is_withdrawn_permanently": false,
     "length": 117,
     "molecule_type": "aa",
     "n_chunks": 1
+    "no_incremental_processing": false,
     "original_load_date": "01/19/1994 00:54:27",
     "other_ids": [
     "owner": 2,

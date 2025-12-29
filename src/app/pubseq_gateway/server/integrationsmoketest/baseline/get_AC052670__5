@@ -28,11 +28,16 @@
     "id": {
     "id2_info": "",
     "is_dead": false,
+    "is_edit_blocked": false,
     "is_suppressed": false,
+    "is_suppressed_temporarily": false,
     "is_withdrawn": false,
+    "is_withdrawn_base": false,
+    "is_withdrawn_permanently": false,
     "length": 956,
     "molecule_type": "dna",
     "n_chunks": 1
+    "no_incremental_processing": false,
     "original_load_date": "04/15/2000 20:57:57",
     "other_ids": [
     "owner": 18,
