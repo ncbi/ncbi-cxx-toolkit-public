@@ -1337,7 +1337,8 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
     {
         if (program_number == eBlastTypeBlastp ||
             program_number == eBlastTypeTblastn ||
-            program_number == eBlastTypeBlastx)
+            program_number == eBlastTypeBlastx ||
+            program_number == eBlastTypeTblastx)
         {
             if (options->word_size > 7) {
                 Blast_MessageWrite(blast_msg, eBlastSevError, 
@@ -1375,7 +1376,8 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 
     if (program_number == eBlastTypeBlastp ||
         program_number == eBlastTypeTblastn ||
-        program_number == eBlastTypeBlastx)
+        program_number == eBlastTypeBlastx ||
+        program_number == eBlastTypeTblastx)
     {
         if (options->word_size > 5 &&
             options->lut_type != eCompressedAaLookupTable) {
