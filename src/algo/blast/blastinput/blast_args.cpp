@@ -598,6 +598,9 @@ s_IsDefaultWordThreshold(EProgram program, double threshold)
     } else if (program == eTblastn &&
                word_threshold != BLAST_WORD_THRESHOLD_TBLASTN) {
         retval = false;
+    } else if (program == eTblastx &&
+               word_threshold != BLAST_WORD_THRESHOLD_TBLASTX) {
+        retval = false;
     }
     return retval;
 }
