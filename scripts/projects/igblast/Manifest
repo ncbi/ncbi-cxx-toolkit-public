@@ -40,9 +40,9 @@ DEFAULT_CONFIGURE_FLAGS:  --without-debug --with-strip --with-openmp --with-mt -
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-#Linux64-Centos   : icc : ICC.sh 21.0       --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0 --without-python
+#Linux64-Centos   : icc : ICC.sh 21.0       --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-vdb=/netmnt/vast01/sra/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0 --without-python
 
-Linux64-Alma     : gcc : GCC.sh    --with-static --without-dll --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0 --without-python
+Linux64-Alma     : gcc : GCC.sh    --with-static --without-dll --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-vdb=/netmnt/vast01/sra/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt --with-nghttp2=/netopt/ncbi_tools64/nghttp2-1.40.0 --without-python
 
 DEFAULT_CONFIGURATIONS: Linux64-Alma:gcc
 
