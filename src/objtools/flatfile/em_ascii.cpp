@@ -2110,15 +2110,17 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
     err_install(ibp, mParser.accver);
     if (! ibp->drop) {
-        auto pEntry(LoadEntry(&mParser, ibp));
-        if (! pEntry) {
+        string sEntry(LoadEntry(&mParser, ibp));
+        if (sEntry.empty()) {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
             NCBI_THROW(CException, eUnknown, "Unable to load entry");
         }
-        auto  ebp   = pEntry->GetEntryData();
-        char* ptr   = pEntry->mBuf.ptr; /* points to beginning of the
+        auto  pEntry(MakeEntry(std::move(sEntry)));
+        auto& entry = *pEntry;
+        auto  ebp   = entry.GetEntryData();
+        char* ptr   = entry.mBuf.ptr; /* points to beginning of the
                                        memory line */
-        char* eptr  = ptr + pEntry->mBuf.len;
+        char* eptr  = ptr + entry.mBuf.len;
         Int2  curkw = ParFlat_ID;
 
         // TODO: below is a potentially infinite cycle!!!!
@@ -2128,9 +2130,9 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
         }
 
         if (ibp->embl_new_ID)
-            EmblGetDivisionNewID(ibp, *pEntry);
+            EmblGetDivisionNewID(ibp, entry);
         else
-            EmblGetDivision(ibp, *pEntry);
+            EmblGetDivision(ibp, entry);
 
         if (StringEqu(ibp->division, "TSA")) {
             if (ibp->tsa_allowed == false)
@@ -2152,20 +2154,19 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
             mParser.curindx++;
             return pResult;
         }
-        GetEmblSubBlock(ibp->bases, mParser.source, *pEntry);
+        GetEmblSubBlock(ibp->bases, mParser.source, entry);
 
         CRef<CBioseq> bioseq = CreateEntryBioseq(&mParser);
-        AddNIDSeqId(*bioseq, *pEntry, ParFlat_NI, ParFlat_COL_DATA_EMBL, mParser.source);
+        AddNIDSeqId(*bioseq, entry, ParFlat_NI, ParFlat_COL_DATA_EMBL, mParser.source);
 
         ebp->seq_entry.Reset(new CSeq_entry);
         ebp->seq_entry->SetSeq(*bioseq);
 
         if (! mParser.accver) {
-            GetReleaseInfo(*pEntry);
+            GetReleaseInfo(entry);
         }
-        
 
-        if (! s_GetEmblInst(&mParser, *pEntry, GetDNAConvTable())) {
+        if (! s_GetEmblInst(&mParser, entry, GetDNAConvTable())) {
             ibp->drop = true;
             FtaErrPost(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data, entry dropped");
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
@@ -2174,10 +2175,10 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
         }
 
 
-        FakeEmblBioSources(*pEntry, *bioseq);
+        FakeEmblBioSources(entry, *bioseq);
         GetScope().AddBioseq(*bioseq);
 
-        LoadFeat(&mParser, *pEntry, *bioseq);
+        LoadFeat(&mParser, entry, *bioseq);
 
         if (! bioseq->IsSetAnnot() && ibp->drop) {
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
@@ -2185,7 +2186,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
             return pResult;
         }
 
-        GetEmblDescr(&mParser, *pEntry, *bioseq);
+        GetEmblDescr(&mParser, entry, *bioseq);
 
         if (ibp->drop) {
             FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
@@ -2212,16 +2213,16 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
                 AssemblyGapsToDelta(*bioseq, ibp->gaps, &ibp->drop);
         }
 
-        if (pEntry->mpQscore.empty() && mParser.accver) {
+        if (entry.mpQscore.empty() && mParser.accver) {
             if (mParser.ff_get_qscore)
-                pEntry->mpQscore = (*mParser.ff_get_qscore)(ibp->acnum, ibp->vernum);
+                entry.mpQscore = (*mParser.ff_get_qscore)(ibp->acnum, ibp->vernum);
             else if (mParser.ff_get_qscore_pp)
-                pEntry->mpQscore = (*mParser.ff_get_qscore_pp)(ibp->acnum, ibp->vernum, &mParser);
+                entry.mpQscore = (*mParser.ff_get_qscore_pp)(ibp->acnum, ibp->vernum, &mParser);
             if (mParser.qsfd && ibp->qslength > 0)
-                pEntry->mpQscore = GetQSFromFile(mParser.qsfd, ibp);
+                entry.mpQscore = GetQSFromFile(mParser.qsfd, ibp);
         }
 
-        if (! QscoreToSeqAnnot(pEntry->mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
+        if (! QscoreToSeqAnnot(entry.mpQscore, *bioseq, ibp->acnum, ibp->vernum, false, false)) {
             if (mParser.ign_bad_qs == false) {
                 ibp->drop = true;
                 FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore. Entry dropped.");
@@ -2232,7 +2233,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
             FtaErrPost(SEV_ERROR, ERR_QSCORE_FailedToParse, "Error while parsing QScore.");
         }
 
-        pEntry->mpQscore.clear();
+        entry.mpQscore.clear();
 
         /* add PatentSeqId if patent is found in reference
          */

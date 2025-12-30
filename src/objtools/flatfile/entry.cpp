@@ -218,7 +218,7 @@ static string FileReadBuf(FileBuf& ffbuf, size_t offset, size_t len)
  *                                              3-22-93
  *
  **********************************************************/
-unique_ptr<DataBlk> LoadEntry(ParserPtr pp, Indexblk* ibp)
+string LoadEntry(ParserPtr pp, Indexblk* ibp)
 {
     string buf = FileReadBuf(pp->ffbuf, ibp->offset, ibp->len);
     if (buf.empty()) /* hardware problem */
@@ -305,7 +305,7 @@ unique_ptr<DataBlk> LoadEntry(ParserPtr pp, Indexblk* ibp)
             was = true;
     }
 
-    return MakeEntry(buf);
+    return buf;
 }
 
 unique_ptr<DataBlk> MakeEntry(string buf)
