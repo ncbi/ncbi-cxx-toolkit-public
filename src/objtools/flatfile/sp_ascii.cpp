@@ -4596,7 +4596,7 @@ CRef<CSeq_entry> CSwissProt2Asn::xGetEntry()
     err_install(ibp, mParser.accver);
 
     if (! ibp->drop) {
-        auto entry = LoadEntry(&mParser, ibp->offset, ibp->len);
+        auto entry = LoadEntry(&mParser, ibp);
         if (! entry) {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
             NCBI_THROW(CException, eUnknown, "Unable to load entry");

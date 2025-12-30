@@ -218,7 +218,7 @@ bool SprotIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int4 
             entry->len = pp->ffbuf.get_offs() - entry->offset;
 
             if (fun) {
-                unique_ptr<DataBlk> data(LoadEntry(pp, entry->offset, entry->len));
+                auto data(LoadEntry(pp, entry));
                 (*fun)(entry, data->mBuf.ptr, static_cast<Int4>(data->mBuf.len));
             }
         } /* if, entry */

@@ -218,9 +218,9 @@ static string FileReadBuf(FileBuf& ffbuf, size_t offset, size_t len)
  *                                              3-22-93
  *
  **********************************************************/
-unique_ptr<DataBlk> LoadEntry(ParserPtr pp, size_t offset, size_t len)
+unique_ptr<DataBlk> LoadEntry(ParserPtr pp, Indexblk* ibp)
 {
-    string buf = FileReadBuf(pp->ffbuf, offset, len);
+    string buf = FileReadBuf(pp->ffbuf, ibp->offset, ibp->len);
     if (buf.empty()) /* hardware problem */
     {
         FtaErrPost(SEV_FATAL, ERR_INPUT_CannotReadEntry, "FileRead failed, in LoadEntry routine.");
@@ -305,6 +305,13 @@ unique_ptr<DataBlk> LoadEntry(ParserPtr pp, size_t offset, size_t len)
             was = true;
     }
 
+    return MakeEntry(buf);
+}
+
+unique_ptr<DataBlk> MakeEntry(string buf)
+{
+    if (buf.empty())
+        return {};
     auto entry = make_unique<DataBlk>(ParFlat_ENTRYNODE, StringSave(buf), buf.size());
     entry->SetEntryData(new EntryBlk());
     return entry;
