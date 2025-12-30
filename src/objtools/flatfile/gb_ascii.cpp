@@ -1174,23 +1174,25 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    auto pEntry(LoadEntry(&mParser, ibp));
-    if (! pEntry) {
+    string sEntry(LoadEntry(&mParser, ibp));
+    if (sEntry.empty()) {
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
         NCBI_THROW(CException, eUnknown, "Unable to load entry");
     }
 
-    EntryBlkPtr ebp   = pEntry->GetEntryData();
-    char*       ptr   = pEntry->mBuf.ptr;
-    char*       eptr  = ptr + pEntry->mBuf.len;
-    Int2        curkw = ParFlat_LOCUS;
+    auto  pEntry(MakeEntry(std::move(sEntry)));
+    auto& entry(*pEntry);
+    EntryBlk* ebp   = entry.GetEntryData();
+    char*     ptr   = entry.mBuf.ptr;
+    char*     eptr  = ptr + entry.mBuf.len;
+    Int2      curkw = ParFlat_LOCUS;
     while (curkw != ParFlat_END && ptr < eptr) {
         ptr = GetGenBankBlock(ebp->chain, ptr, &curkw, eptr);
     }
 
     auto ppCurrentEntry = mParser.entrylist[mParser.curindx];
     if (ppCurrentEntry->lc.div > -1) {
-        GenBankGetDivision(ppCurrentEntry->division, ppCurrentEntry->lc.div, *pEntry);
+        GenBankGetDivision(ppCurrentEntry->division, ppCurrentEntry->lc.div, entry);
         if (StringEqu(ibp->division, "TSA")) {
             if (ibp->tsa_allowed == false)
                 FtaErrPost(SEV_WARNING, ERR_TSA_UnexpectedPrimaryAccession, "The record with accession \"{}\" is not expected to have a TSA division code.", ibp->acnum);
@@ -1214,20 +1216,20 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         mParser.curindx++;
         return pResult;
     }
-    GetGenBankSubBlock(*pEntry, ibp->bases);
+    GetGenBankSubBlock(entry, ibp->bases);
 
     CRef<CBioseq> bioseq = CreateEntryBioseq(&mParser);
     ebp->seq_entry.Reset(new CSeq_entry);
     ebp->seq_entry->SetSeq(*bioseq);
 
-    AddNIDSeqId(*bioseq, *pEntry, ParFlat_NCBI_GI, ParFlat_COL_DATA, mParser.source);
+    AddNIDSeqId(*bioseq, entry, ParFlat_NCBI_GI, ParFlat_COL_DATA, mParser.source);
 
     ibp->is_prot = fta_StartsWith(pEntry->mBuf.ptr + ibp->lc.bp, "aa"sv);
 
     unsigned char* const conv = ibp->is_prot ? GetProtConvTable() : GetDNAConvTable();
 
 
-    if (! GetGenBankInst(&mParser, *pEntry, conv)) {
+    if (! GetGenBankInst(&mParser, entry, conv)) {
         ibp->drop = true;
         FtaErrPost(SEV_REJECT, ERR_SEQUENCE_BadData, "Bad sequence data. Entry dropped.");
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
@@ -1236,10 +1238,10 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    FakeGenBankBioSources(*pEntry, *bioseq);
+    FakeGenBankBioSources(entry, *bioseq);
     
     GetScope().AddBioseq(*bioseq);
-    LoadFeat(&mParser, *pEntry, *bioseq);
+    LoadFeat(&mParser, entry, *bioseq);
 
     if (! bioseq->IsSetAnnot() && ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
@@ -1248,7 +1250,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    GetGenBankDescr(&mParser, *pEntry, *bioseq);
+    GetGenBankDescr(&mParser, entry, *bioseq);
     if (ibp->drop) {
         FtaErrPost(SEV_ERROR, ERR_ENTRY_Skipped, "Entry skipped: \"{}|{}\".", ibp->locusname, ibp->acnum);
         mTotals.Dropped++;

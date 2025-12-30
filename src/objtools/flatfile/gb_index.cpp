@@ -597,8 +597,8 @@ bool GenBankIndex(ParserPtr pp, void (*fun)(IndexblkPtr entry, char* offset, Int
 
             dbl.clear();
             if (fun) {
-                auto data(LoadEntry(pp, entry));
-                (*fun)(entry, data->mBuf.ptr, static_cast<Int4>(data->mBuf.len));
+                string data(LoadEntry(pp, entry));
+                (*fun)(entry, data.data(), static_cast<Int4>(data.size()));
             }
         } /* if, entry */
         else {
