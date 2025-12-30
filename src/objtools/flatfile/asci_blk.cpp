@@ -1977,25 +1977,25 @@ bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_
 }
 
 /**********************************************************/
-CRef<CSeq_id> StrToSeqId(const char* pch, bool pid)
+CRef<CSeq_id> StrToSeqId(string_view s, bool pid)
 {
-    long  lID;
-    char* pchEnd;
-
     CRef<CSeq_id> id;
 
-    /* Figure out--what source is it */
-    if (*pch == 'd' || *pch == 'e') {
-        /* Get ID */
-        errno = 0; /* clear errors, the error flag from stdlib */
-        lID   = strtol(pch + 1, &pchEnd, 10);
+    if (s.empty())
+        return id;
 
-        if (! ((lID == 0 && pch + 1 == pchEnd) || (lID == LONG_MAX && errno == ERANGE))) {
+    /* Figure out--what source is it */
+    if (s.front() == 'd' || s.front() == 'e') {
+        /* Get ID */
+        long lID;
+        auto r = std::from_chars(s.data() + 1, s.data() + s.size(), lID);
+
+        if (r.ec == std::errc()) {
             /* Allocate new SeqId */
 
             id = new CSeq_id;
             CRef<CObject_id> tag(new CObject_id);
-            tag->SetStr(string(pch, pchEnd - pch));
+            tag->SetStr(string(s.data(), r.ptr));
 
             CRef<CDbtag> dbtag(new CDbtag);
             dbtag->SetTag(*tag);
