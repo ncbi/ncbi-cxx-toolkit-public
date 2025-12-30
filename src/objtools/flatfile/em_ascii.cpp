@@ -2110,7 +2110,7 @@ CRef<CSeq_entry> CEmbl2Asn::xGetEntry()
 
     err_install(ibp, mParser.accver);
     if (! ibp->drop) {
-        unique_ptr<DataBlk> pEntry(LoadEntry(&mParser, ibp->offset, ibp->len));
+        auto pEntry(LoadEntry(&mParser, ibp));
         if (! pEntry) {
             FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
             NCBI_THROW(CException, eUnknown, "Unable to load entry");

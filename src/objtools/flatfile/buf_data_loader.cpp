@@ -351,22 +351,11 @@ CRef<CBioseq> get_bioseq(ParserPtr pp, const DataBlk& entry, const CSeq_id& id)
     return bioseq;
 }
 
-static DataBlk* make_entry(char* entry_str)
-{
-    DataBlk* entry = new DataBlk(ParFlat_ENTRYNODE);
-
-    entry->mBuf.ptr = entry_str;
-    entry->mBuf.len = StringLen(entry->mBuf.ptr);
-    entry->SetEntryData(new EntryBlk);
-
-    return entry;
-}
-
 static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& accession, int ver, const CSeq_id& id)
 {
     CRef<CBioseq> ret;
 
-    DataBlk* entry = make_entry(entry_str);
+    auto entry = MakeEntry(entry_str);
     if (! entry)
         return ret;
 
@@ -380,7 +369,6 @@ static CRef<CBioseq> parse_entry(ParserPtr pp, char* entry_str, const string& ac
     }
 
     ret = get_bioseq(pp, *entry, id);
-    delete entry;
     pp->curindx = old_indx;
 
     return ret;
@@ -437,7 +425,7 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
     if (! entry_str)
         return -1;
 
-    DataBlk* entry = objects::make_entry(entry_str);
+    auto entry = MakeEntry(entry_str);
     if (! entry)
         return -1;
 
@@ -458,7 +446,6 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
         pp->entrylist[pp->curindx]->drop = true;
         FtaErrPost(SEV_ERROR, ERR_FORMAT_MissingEnd, "Missing end of the entry, entry dropped.");
         MemFree(entry->mBuf.ptr);
-        delete entry;
         return (-1);
     }
 
@@ -466,7 +453,6 @@ size_t CheckOutsideEntry(ParserPtr pp, const char* acc, Int2 vernum)
         objects::AddToIndexBlk(*entry, pp->entrylist[ix], pp->format);
     }
 
-    delete entry;
     pp->curindx = old_indx;
     return pp->entrylist[ix]->bases;
 }

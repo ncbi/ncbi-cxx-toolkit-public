@@ -1174,7 +1174,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
         return pResult;
     }
 
-    unique_ptr<DataBlk> pEntry(LoadEntry(&mParser, ibp->offset, ibp->len));
+    auto pEntry(LoadEntry(&mParser, ibp));
     if (! pEntry) {
         FtaDeletePrefix(PREFIX_LOCUS | PREFIX_ACCESSION);
         NCBI_THROW(CException, eUnknown, "Unable to load entry");
