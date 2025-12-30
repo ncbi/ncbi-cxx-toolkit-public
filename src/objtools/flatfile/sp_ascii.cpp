@@ -1565,36 +1565,34 @@ static char* GetDRToken(char** ptr)
 }
 
 /**********************************************************/
-static CRef<CSeq_id> AddPIDToSeqId(char* str, char* acc)
+static CRef<CSeq_id> AddPIDToSeqId(string_view str, string_view acc)
 {
-    long long lID;
-    char*     end = nullptr;
-
     CRef<CSeq_id> sid;
 
-    if (! str || *str == '\0')
+    if (str.empty())
         return sid;
 
-    if (str[0] == '-') {
+    if (str.front() == '-') {
         FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Not annotated CDS [ACC:{}, PID:{}]", acc, str);
         return sid;
     }
-    errno = 0; /* clear errors, the error flag from stdlib */
-    lID   = strtoll(str + 1, &end, 10);
-    if ((lID == 0 && str + 1 == end) || (lID == LLONG_MAX && errno == ERANGE)) {
+
+    long long lID;
+    auto r = std::from_chars(str.data() + 1, str.data() + str.size(), lID);
+    if (r.ec != std::errc()) {
         /* Bad or too large number
          */
         FtaErrPost(SEV_WARNING, ERR_SPROT_DRLine, "Invalid PID value [ACC:{}, PID:{}]", acc, str);
         return sid;
     }
 
-    if (*str == 'G') {
+    if (str.front() == 'G') {
         sid.Reset(new CSeq_id);
         sid->SetGi(GI_FROM(long long, lID));
-    } else if (*str == 'E' || *str == 'D') {
+    } else if (str.front() == 'E' || str.front() == 'D') {
         CRef<CDbtag> tag(new CDbtag);
         tag->SetDb("PID");
-        tag->SetTag().SetStr(str);
+        tag->SetTag().SetStr(string(str));
 
         sid.Reset(new CSeq_id);
         sid->SetGeneral(*tag);

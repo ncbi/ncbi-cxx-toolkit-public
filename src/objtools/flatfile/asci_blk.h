@@ -40,7 +40,7 @@
 
 BEGIN_NCBI_SCOPE
 
-CRef<objects::CSeq_id>        StrToSeqId(const char* pch, bool pid);
+CRef<objects::CSeq_id>        StrToSeqId(string_view, bool pid);
 CRef<objects::CSeq_id>        MakeAccSeqId(const char* acc, Uint1 seqtype, bool accver, Int2 vernum, bool is_tpa=false);
 CRef<objects::CPatent_seq_id> MakeUsptoPatSeqId(const char* acc);
 CRef<objects::CSeq_id>        MakeLocusSeqId(const char* locus, objects::CSeq_id::E_Choice seqtype);
