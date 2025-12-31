@@ -199,7 +199,7 @@ using GeneNodePtr = GeneNode*;
 
 /* The list of feature which are not allowed to have gene qual
  */
-const char* feat_no_gene[] = { "gap", "operon", "source", nullptr };
+const char* feat_no_gene[] = { "gap", "operon", "source", };
 
 const char* leave_imp_feat[] = {
     "LTR",
@@ -207,15 +207,13 @@ const char* leave_imp_feat[] = {
     "rep_origin",
     "repeat_region",
     "satellite",
-    nullptr
 };
 
 Int2 leave_rna_feat[] = {
-    3, /* tRNA */
-    4, /* rRNA */
-    5, /* snRNA */
-    6, /* scRNA */
-    -1
+    CRNA_ref::eType_tRNA,
+    CRNA_ref::eType_rRNA,
+    CRNA_ref::eType_snRNA,
+    CRNA_ref::eType_scRNA,
 };
 
 /**********************************************************/
@@ -1474,36 +1472,26 @@ static CRef<CSeq_id> CpSeqIdAcOnly(const CSeq_id& id, bool accver)
 /**********************************************************/
 static bool WeDontNeedToJoinThis(const CSeqFeatData& data)
 {
-    const Char** b;
-    short*       i;
-
     if (data.IsRna()) {
         const CRNA_ref& rna_ref = data.GetRna();
 
-        i = nullptr;
         if (rna_ref.IsSetType()) {
-            for (i = leave_rna_feat; *i != -1; i++) {
-                if (rna_ref.GetType() == *i)
-                    break;
+            for (auto i : leave_rna_feat) {
+                if (rna_ref.GetType() == i)
+                    return true;
             }
         }
-
-        if (i && *i != -1)
-            return true;
 
         if (rna_ref.GetType() == CRNA_ref::eType_other && rna_ref.IsSetExt() && rna_ref.GetExt().IsName() &&
             rna_ref.GetExt().GetName() == "ncRNA")
             return true;
     } else if (data.IsImp()) {
-        b = nullptr;
         if (data.GetImp().IsSetKey()) {
-            for (b = leave_imp_feat; *b; b++) {
-                if (data.GetImp().GetKey() == *b)
-                    break;
+            for (auto b : leave_imp_feat) {
+                if (data.GetImp().GetKey() == b)
+                    return true;
             }
         }
-        if (b && *b)
-            return true;
     }
     return false;
 }
