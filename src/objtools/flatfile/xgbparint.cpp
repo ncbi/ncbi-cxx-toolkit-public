@@ -206,13 +206,14 @@ static void xgbparse_error(string_view front, const TTokens& tokens, TTokenConst
 
 
 /*------------------ xgbcheck_range()-------------*/
-static void xgbcheck_range(TSeqPos num, const CSeq_id& id, bool& keep_rawPt, int& numErrors, const TTokens& tokens, TTokenConstIt current)
+static void xgbcheck_range(TSeqPos num, const CRef<CSeq_id>& id, bool& keep_rawPt, int& numErrors, const TTokens& tokens, TTokenConstIt current)
 {
     if (! Range_func) {
         return;
     }
 
-    const auto len = (*Range_func)(xgbparse_range_data, id);
+    CSeq_id dummy;
+    const auto len = (*Range_func)(xgbparse_range_data, id ? *id : dummy);
     if (len != -1 && num >= (Uint4)len) {
         xgbparse_error("range error", tokens, current);
         keep_rawPt = true;
@@ -1056,7 +1057,7 @@ static CRef<CSeq_loc> xgbint_ver(
             if (ret->GetInt().GetFuzz_from().Which() == CInt_fuzz::e_not_set)
                 ret->SetInt().ResetFuzz_from();
 
-            xgbcheck_range(ret->GetInt().GetFrom(), *new_id, keep_rawPt, numErrors, tokens, currentPt);
+            xgbcheck_range(ret->GetInt().GetFrom(), new_id, keep_rawPt, numErrors, tokens, currentPt);
 
             if (numErrors) {
                 return {};
@@ -1139,7 +1140,7 @@ static CRef<CSeq_loc> xgbint_ver(
                     if (ret->GetInt().GetFuzz_to().Which() == CInt_fuzz::e_not_set)
                         ret->SetInt().ResetFuzz_to();
 
-                    xgbcheck_range(ret->GetInt().GetTo(), *new_id, keep_rawPt, numErrors, tokens, currentPt);
+                    xgbcheck_range(ret->GetInt().GetTo(), new_id, keep_rawPt, numErrors, tokens, currentPt);
 
                     /*----------
                      *  The caret location implies a place (point) between two location.
