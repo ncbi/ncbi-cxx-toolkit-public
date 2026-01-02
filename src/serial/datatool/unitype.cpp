@@ -174,6 +174,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
     int indent, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
+    _ASSERT(typeElem);
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     const CStaticDataType* typeStatic =
@@ -444,6 +445,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
 void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
 {
     const CDataType* typeElem = GetElementType();
+    _ASSERT(typeElem);
     if (!contents_only) {
         typeElem->PrintDTDTypeComments(out,0);
     }
@@ -512,6 +514,7 @@ void CUniSequenceDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only
 void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
 {
     const CDataType* typeElem = GetElementType();
+    _ASSERT(typeElem);
     const CReferenceDataType* typeRef =
         dynamic_cast<const CReferenceDataType*>(typeElem);
     string tag(XmlTagName());
