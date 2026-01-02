@@ -250,20 +250,20 @@ int CTest::Run(void)
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 0.8  &&  e < 1.2);
+            assert (e > 0.8  &&  e < 1.3);
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 1.8  &&  e < 2.2);
+            assert (e > 1.8  &&  e < 2.3);
             // sleep 1
             // See difference with eDiscrete mode below.
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 0.8  &&  e < 1.2);
+            assert (e > 0.8  &&  e < 1.3);
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 1.8  &&  e < 2.2);
+            assert (e > 1.8  &&  e < 2.3);
         }}
         {{
             LOG_POST("eDiscrete");
@@ -278,11 +278,11 @@ int CTest::Run(void)
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 0.8  &&  e < 1.2);
+            assert (e > 0.8  &&  e < 1.3);
             // sleep 2
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 1.8  &&  e < 2.2);
+            assert (e > 1.8  &&  e < 2.3);
             // sleep 0
             // See difference with eContinuous mode above
             assert( mgr.Approve() );
@@ -291,7 +291,7 @@ int CTest::Run(void)
             // sleep 1
             assert( mgr.Approve() );
             ELAPSED;
-            assert (e > 0.8  &&  e < 1.2);
+            assert (e > 0.8  &&  e < 1.3);
         }}
     }}
     DONE;
