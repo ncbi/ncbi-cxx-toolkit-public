@@ -104,7 +104,7 @@ struct ParRefBlk {
 };
 using ParRefBlkPtr = ParRefBlk*;
 
-const char* ParFlat_SPRefRcToken[] = {
+static string_view ParFlat_SPRefRcToken[] = {
     "MEDLINE", "PLASMID", "SPECIES", "STRAIN", "TISSUE", "TRANSPOSON",
 };
 

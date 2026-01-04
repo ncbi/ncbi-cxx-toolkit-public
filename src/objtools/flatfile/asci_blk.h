@@ -93,7 +93,7 @@ bool GetEmblInstContig(const DataBlk& entry, objects::CBioseq& bioseq, ParserPtr
 bool fta_orgref_has_taxid(const objects::COrg_ref::TDb& dbtags);
 void fta_fix_orgref_div(const objects::CBioseq::TAnnot& annots, objects::COrg_ref* org_ref, objects::CGB_block& gbb);
 
-const char*                GetEmblDiv(Uint1 num);
+string_view                GetEmblDiv(Uint1 num);
 const objects::CSeq_descr& GetDescrPointer(const objects::CSeq_entry& entry);
 
 END_NCBI_SCOPE

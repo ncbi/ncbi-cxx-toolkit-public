@@ -287,7 +287,7 @@ static const CharUInt1 SourceOrgMods[] = {
 };
 // clang-format on
 
-static const char* GenomicSourceFeatQual[] = {
+static string_view GenomicSourceFeatQual[] = {
     "unknown", // CBioSource::eGenome_unknown, etc.
     "unknown", // ?
     "chloroplast",
@@ -313,7 +313,7 @@ static const char* GenomicSourceFeatQual[] = {
     "chromatophore", /* 22 */
 };
 
-static const char* OrganelleFirstToken[] = {
+static string_view OrganelleFirstToken[] = {
     "chromatophore",
     "hydrogenosome",
     "mitochondrion",
@@ -321,7 +321,7 @@ static const char* OrganelleFirstToken[] = {
     "plastid",
 };
 
-static const char *NullTermValues[] = {
+static string_view NullTermValues[] = {
     "missing",
     "not applicable",
     "not collected",

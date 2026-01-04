@@ -55,30 +55,30 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 // clang-format off
-static const char* XML_STRAND_array[] = {
+static string_view XML_STRAND_array[] = {
     "   ", "single", "double", "mixed",
 };
 
-static const char* XML_TPG_array[] = {
+static string_view XML_TPG_array[] = {
     "   ", "Linear", "Circular", "Tandem",
 };
 
-static const char* ParFlat_NA_array_DDBJ[] = {
+static string_view ParFlat_NA_array_DDBJ[] = {
     "cDNA",
 };
 
-static const char* ParFlat_AA_array_DDBJ[] = {
+static string_view ParFlat_AA_array_DDBJ[] = {
     "PRT",
 };
 
-static const char* ParFlat_NA_array[] = {
+static string_view ParFlat_NA_array[] = {
     "    ", "NA", "DNA", "genomic DNA", "other DNA", "unassigned DNA", "RNA",
     "mRNA", "rRNA", "tRNA", "uRNA", "scRNA", "snRNA", "snoRNA", "pre-RNA",
     "pre-mRNA", "genomic RNA", "other RNA", "unassigned RNA", "cRNA",
     "viral cRNA",
 };
 
-static const char* ParFlat_DIV_array[] = {
+static string_view ParFlat_DIV_array[] = {
     "   ", "PRI", "ROD", "MAM", "VRT", "INV", "PLN", "BCT", "RNA",
     "VRL", "PHG", "SYN", "UNA", "EST", "PAT", "STS", "ORG", "GSS",
     "HUM", "HTG", "CON", "HTC", "ENV", "TSA",
@@ -144,25 +144,25 @@ static const char* refseq_prot_accpref[] = {
 };
 */
 
-static const char* acc_tsa_allowed[] = {
+static string_view acc_tsa_allowed[] = {
     "AF", "AY", "DQ", "EF", "EU", "FJ", "GQ", "HQ", "JF", "JN", "JQ", "JX",
     "KC", "KF", "KJ", "KM", "KP", "KR", "KT", "KU", "KX", "KY", "MF", "MG",
     "MH", "MK", "MN", "MT",
 };
 
-static const char* ncbi_tpa_accpref[] = {
+static string_view ncbi_tpa_accpref[] = {
     "BK", "BL", "GJ", "GK"
 };
 
-static const char* ddbj_tpa_accpref[] = {
+static string_view ddbj_tpa_accpref[] = {
     "BR", "HT", "HU",
 };
 
-static const char* ncbi_wgs_accpref[] = {
+static string_view ncbi_wgs_accpref[] = {
     "GJ", "GK",
 };
 
-static const char* ddbj_wgs_accpref[] = {
+static string_view ddbj_wgs_accpref[] = {
     "HT", "HU",
 };
 
@@ -185,7 +185,7 @@ static const map<Parser::ESource, string> sourceNames = {
     { Parser::ESource::Refseq, "RefSeq" }
 };
 
-static const char* month_name[] = {
+static string_view month_name[] = {
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
 };
 
@@ -498,13 +498,13 @@ Int2 XMLCheckTPG(string_view str)
 /**********************************************************/
 int CheckTPG(string_view str)
 {
-    static const vector<string_view> topologies = {
+    static const string_view topologies[4] = {
         "         ", "linear   ", "circular ", "tandem   "
     };
 
     string compare(str);
     NStr::ToLower(compare);
-    for (unsigned i = 0; i < topologies.size(); ++i) {
+    for (unsigned i = 0; i < 4; ++i) {
         if (compare.starts_with(topologies[i])) {
             return int(i);
         }

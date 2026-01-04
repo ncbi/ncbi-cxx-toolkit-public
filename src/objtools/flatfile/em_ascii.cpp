@@ -102,13 +102,13 @@ USING_SCOPE(objects);
 /* For new stile of ID line in EMBL data check the "data class"
  * field first to figure out division code
  */
-static const char* ParFlat_Embl_dataclass_array[] = {
+static string_view ParFlat_Embl_dataclass_array[] = {
     "ANN", "CON", "PAT", "EST", "GSS", "HTC", "HTG", "STS", "TSA",
 };
 
 /* order by EMBL-block in asn.all
  */
-static const char* ParFlat_Embl_DIV_array[] = {
+static string_view ParFlat_Embl_DIV_array[] = {
     "FUN", "INV", "MAM", "ORG", "PHG", "PLN", "PRI", "PRO", "ROD",
     "SYN", "UNA", "VRL", "VRT", "PAT", "EST", "STS", "UNC", "GSS",
     "HUM", "HTG", "HTC", "CON", "ENV", "MUS", "TGN", "TSA",
@@ -126,7 +126,7 @@ static const char* ParFlat_GBDIV_array[] = {
 
 // clang-format on
 
-static const char* ParFlat_DBname_array[] = {
+static string_view ParFlat_DBname_array[] = {
     "EMBL",
     "GENBANK",
     "DDBJ",
@@ -2293,10 +2293,10 @@ void CEmbl2Asn::PostTotals()
 
 
 /**********************************************************/
-const char* GetEmblDiv(Uint1 num)
+string_view GetEmblDiv(Uint1 num)
 {
     if (num > 15)
-        return nullptr;
+        return {};
     return ParFlat_Embl_DIV_array[num];
 }
 

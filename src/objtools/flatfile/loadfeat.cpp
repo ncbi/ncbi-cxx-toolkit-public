@@ -247,7 +247,7 @@ const char* ParFlat_ESTmod[] = {
     "Plastid",
 };
 
-static const char* ParFlat_RNA_array[] = {
+static string_view ParFlat_RNA_array[] = {
     "precursor_RNA",
     "mRNA",
     "tRNA",
@@ -260,7 +260,7 @@ static const char* ParFlat_RNA_array[] = {
     "misc_RNA",
 };
 
-static const char* DbxrefTagAny[] = {
+static string_view DbxrefTagAny[] = {
     "ASAP",
     "CDD",
     "DBEST",
@@ -270,7 +270,7 @@ static const char* DbxrefTagAny[] = {
     "MAIZEGDB",
 };
 
-static const char* DbxrefObsolete[] = {
+static string_view DbxrefObsolete[] = {
     "BHB",
     "BIOHEALTHBASE",
     "GENEW",
@@ -280,7 +280,7 @@ static const char* DbxrefObsolete[] = {
     "TREMBL",
 };
 
-static const char* EMBLDbxrefTagStr[] = {
+static string_view EMBLDbxrefTagStr[] = {
     "BIOMUTA",
     "DEPOD",
     "ENSEMBLGENOMES-GN",
@@ -293,7 +293,7 @@ static const char* EMBLDbxrefTagStr[] = {
     "WBPARASITE",
 };
 
-static const char* DbxrefTagStr[] = {
+static string_view DbxrefTagStr[] = {
     "ACEVIEW/WORMGENES",
     "APHIDBASE",
     "APIDB",
@@ -380,7 +380,7 @@ static const char* DbxrefTagStr[] = {
     "ZFIN",
 };
 
-static const char* DbxrefTagInt[] = {
+static string_view DbxrefTagInt[] = {
     "ATCC",
     "ATCC(DNA)",
     "ATCC(IN HOST)",
@@ -440,7 +440,7 @@ const char* TransSplicingFeats[] = {
     nullptr
 };
 
-const char* ncRNA_class_values[] = {
+static string_view ncRNA_class_values[] = {
     "antisense_RNA",
     "autocatalytically_spliced_intron",
     "hammerhead_ribozyme",
@@ -464,13 +464,13 @@ const char* ncRNA_class_values[] = {
     "other",
 };
 
-const char* SatelliteValues[] = {
+static string_view SatelliteValues[] = {
     "satellite",
     "minisatellite",
     "microsatellite",
 };
 
-const char* PseudoGeneValues[] = {
+static string_view PseudoGeneValues[] = {
     "allelic",
     "processed",
     "unitary",
@@ -506,7 +506,7 @@ const char* RegulatoryClassValues[] = {
     nullptr
 };
 
-const char *MobileElementQualValues[] = {
+static string_view MobileElementQualValues[] = {
     "transposon",
     "retrotransposon",
     "integron",

@@ -87,7 +87,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char* ParFlat_SPComTopics[] = {
+static string_view ParFlat_SPComTopics[] = {
     "ALLERGEN:",
     "ALTERNATIVE PRODUCTS:",
     "BIOPHYSICOCHEMICAL PROPERTIES:",
@@ -560,19 +560,18 @@ const char* valid_dbs[] = {
     "XENBASE",                "ZFIN",                   nullptr
 };
 
-const char* SP_organelle[] = {
+static string_view SP_organelle[] = {
     "CHLOROPLAST", "CYANELLE", "MITOCHONDRION", "PLASMID", "NUCLEOMORPH",
     "HYDROGENOSOME", "APICOPLAST", "CHROMATOPHORE",
     "ORGANELLAR CHROMATOPHORE",
 };
 
-const char* PE_values[] = {
+static string_view PE_values[] = {
     "Evidence at protein level",
     "Evidence at transcript level",
     "Inferred from homology",
     "Predicted",
     "Uncertain",
-    nullptr
 };
 // clang-format on
 

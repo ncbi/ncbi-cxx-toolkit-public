@@ -69,7 +69,7 @@ CScope& GetScope()
 }
 
 
-static const char* ParFlat_EST_kw_array[] = {
+static string_view ParFlat_EST_kw_array[] = {
     "EST",
     "EST PROTO((expressed sequence tag)",
     "expressed sequence tag",
@@ -79,13 +79,13 @@ static const char* ParFlat_EST_kw_array[] = {
     "transcribed sequence fragment",
 };
 
-static const char* ParFlat_GSS_kw_array[] = {
+static string_view ParFlat_GSS_kw_array[] = {
     "GSS",
     "GSS (genome survey sequence)",
     "trapped exon",
 };
 
-static const char* ParFlat_STS_kw_array[] = {
+static string_view ParFlat_STS_kw_array[] = {
     "STS",
     "STS(sequence tagged site)",
     "STS (sequence tagged site)",
@@ -93,25 +93,25 @@ static const char* ParFlat_STS_kw_array[] = {
     "sequence tagged site",
 };
 
-static const char* ParFlat_HTC_kw_array[] = {
+static string_view ParFlat_HTC_kw_array[] = {
     "HTC",
 };
 
-static const char* ParFlat_FLI_kw_array[] = {
+static string_view ParFlat_FLI_kw_array[] = {
     "FLI_CDNA",
 };
 
-static const char* ParFlat_WGS_kw_array[] = {
+static string_view ParFlat_WGS_kw_array[] = {
     "WGS",
 };
 
-static const char* ParFlat_MGA_kw_array[] = {
+static string_view ParFlat_MGA_kw_array[] = {
     "MGA",
     "CAGE (Cap Analysis Gene Expression)",
     "5'-SAGE",
 };
 
-static const char* ParFlat_MGA_more_kw_array[] = {
+static string_view ParFlat_MGA_more_kw_array[] = {
     "CAGE (Cap Analysis Gene Expression)",
     "5'-SAGE",
     "5'-end tag",
@@ -122,7 +122,7 @@ static const char* ParFlat_MGA_more_kw_array[] = {
 /* Any change of contents of next array below requires proper
  * modifications in function fta_tsa_keywords_check().
  */
-static const char* ParFlat_TSA_kw_array[] = {
+static string_view ParFlat_TSA_kw_array[] = {
     "TSA",
     "Transcriptome Shotgun Assembly",
 };
@@ -130,7 +130,7 @@ static const char* ParFlat_TSA_kw_array[] = {
 /* Any change of contents of next array below requires proper
  * modifications in function fta_tls_keywords_check().
  */
-static const char* ParFlat_TLS_kw_array[] = {
+static string_view ParFlat_TLS_kw_array[] = {
     "TLS",
     "Targeted Locus Study",
 };
@@ -138,7 +138,7 @@ static const char* ParFlat_TLS_kw_array[] = {
 /* Any change of contents of next 2 arrays below requires proper
  * modifications in function fta_tpa_keywords_check().
  */
-static const char* ParFlat_TPA_kw_array[] = {
+static string_view ParFlat_TPA_kw_array[] = {
     "TPA",
     "THIRD PARTY ANNOTATION",
     "THIRD PARTY DATA",
@@ -149,17 +149,17 @@ static const char* ParFlat_TPA_kw_array[] = {
     "TPA:SPECIALIST_DB",
 };
 
-static const char* ParFlat_TPA_kw_array_to_remove[] = {
+static string_view ParFlat_TPA_kw_array_to_remove[] = {
     "TPA",
     "THIRD PARTY ANNOTATION",
     "THIRD PARTY DATA",
 };
 
-static const char* ParFlat_ENV_kw_array[] = {
+static string_view ParFlat_ENV_kw_array[] = {
     "ENV",
 };
 
-static const char* ParFlat_MAG_kw_array[] = {
+static string_view ParFlat_MAG_kw_array[] = {
     "Metagenome Assembled Genome",
     "MAG",
 };
@@ -392,13 +392,12 @@ TokenStatBlk TokenString(string_view str, Char delimiter)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 fta_StringMatch(const std::span<const Char*> array, string_view text)
+Int2 fta_StringMatch(std::span<string_view> array, string_view text)
 {
     Int2 i = 0;
 
-    for (const Char* it : array) {
-        _ASSERT(it);
-        if (NStr::EqualCase(text, 0, StringLen(it), it))
+    for (auto it : array) {
+        if (text.starts_with(it))
             return i;
         i++;
     }
@@ -415,18 +414,17 @@ Int2 fta_StringMatch(const std::span<const Char*> array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 StringMatchIcase(const std::span<const Char*> array, string_view text)
+Int2 StringMatchIcase(std::span<string_view> array, string_view text)
 {
     if (text.empty())
         return -1;
 
     Int2 i = 0;
 
-    for (const Char* it : array) {
-        _ASSERT(it);
+    for (auto it : array) {
         // skip if empty
-        if (it[0] != 0)
-            if (NStr::EqualNocase(text, 0, StringLen(it), it))
+        if (! it.empty())
+            if (NStr::StartsWith(text, it, NStr::eNocase))
                 return i;
         i++;
     }
@@ -443,15 +441,14 @@ Int2 StringMatchIcase(const std::span<const Char*> array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArrayString(const std::span<const Char*> array, string_view text)
+Int2 MatchArrayString(std::span<string_view> array, string_view text)
 {
     if (text.empty())
         return -1;
 
     Int2 i = 0;
 
-    for (const Char* it : array) {
-        _ASSERT(it);
+    for (auto it : array) {
         if (NStr::Equal(it, text))
             return i;
         i++;
@@ -461,15 +458,14 @@ Int2 MatchArrayString(const std::span<const Char*> array, string_view text)
 }
 
 /**********************************************************/
-Int2 MatchArrayIString(const std::span<const Char*> array, string_view text)
+Int2 MatchArrayIString(std::span<string_view> array, string_view text)
 {
     if (text.empty())
         return -1;
 
     Int2 i = 0;
 
-    for (const Char* it : array) {
-        _ASSERT(it);
+    for (auto it : array) {
         if (NStr::EqualNocase(it, text))
             return i;
         i++;
@@ -487,12 +483,11 @@ Int2 MatchArrayIString(const std::span<const Char*> array, string_view text)
  *      Return -1 if no match.
  *
  **********************************************************/
-Int2 MatchArraySubString(const std::span<const Char*> arrayy, string_view text)
+Int2 MatchArraySubString(std::span<string_view> array, string_view text)
 {
     Int2 i = 0;
 
-    for (const Char* it : arrayy) {
-        _ASSERT(it);
+    for (auto it : array) {
         if (NStr::Find(text, it) != NPOS)
             return i;
         i++;
@@ -534,12 +529,11 @@ Char* StringIStr(const Char* where, const Char* what)
 }
 
 /**********************************************************/
-Int2 MatchArrayISubString(const std::span<const Char*> arrayy, string_view text)
+Int2 MatchArrayISubString(std::span<string_view> array, string_view text)
 {
     Int2 i = 0;
 
-    for (const Char* it : arrayy) {
-        _ASSERT(it);
+    for (auto it : array) {
         if (NStr::FindNoCase(text, it) != NPOS)
             return i;
         i++;
@@ -1110,7 +1104,7 @@ void fta_keywords_check(string_view str, bool* estk, bool* stsk, bool* gssk, boo
 /**********************************************************/
 void fta_remove_keywords(CMolInfo::TTech tech, TKeywordList& kwds)
 {
-    std::span<const char*> b;
+    std::span<string_view> b;
 
     if (kwds.empty())
         return;
