@@ -2329,7 +2329,7 @@ static void CleanVisStringList(list<string>& str_list)
 /**********************************************************/
 static void CheckGBBlock(TSeqdescList& descrs, bool& got)
 {
-    const Char* div = nullptr;
+    string_view div;
 
     for (const auto& descr : descrs) {
         if (! descr->IsEmbl())
@@ -2349,7 +2349,7 @@ static void CheckGBBlock(TSeqdescList& descrs, bool& got)
         }
 
         CGB_block& gb_block = (*descr)->SetGenbank();
-        if (div && gb_block.IsSetDiv() && NStr::EqualNocase(div, gb_block.GetDiv()))
+        if (! div.empty() && gb_block.IsSetDiv() && NStr::EqualNocase(div, gb_block.GetDiv()))
             gb_block.ResetDiv();
 
         if (gb_block.IsSetSource()) {

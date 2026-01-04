@@ -62,7 +62,7 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const char* ParFlat_GImod[] = {
+static string_view ParFlat_GImod[] = {
     "Mitochondr",
     "Chloroplast",
     "Kinetoplas",
@@ -76,7 +76,7 @@ const char* ParFlat_GImod[] = {
     "Apicoplast",
 };
 
-const char* valid_organelle[] = {
+static string_view valid_organelle[] = {
     "apicoplast",
     "chloroplast",
     "chromatophore",

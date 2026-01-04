@@ -199,7 +199,7 @@ using GeneNodePtr = GeneNode*;
 
 /* The list of feature which are not allowed to have gene qual
  */
-const char* feat_no_gene[] = { "gap", "operon", "source", };
+static string_view feat_no_gene[] = { "gap", "operon", "source", };
 
 const char* leave_imp_feat[] = {
     "LTR",
