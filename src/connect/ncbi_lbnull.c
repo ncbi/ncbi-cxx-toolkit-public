@@ -235,50 +235,6 @@ static void s_Close(SERV_ITER iter)
 }
 
 
-#define isdash(s)  ((s) == '-'  ||  (s) == '_')
-
-static int/*bool*/ x_CheckDomain(const char* domain)
-{
-    int/*bool*/ dot = *domain == '.' ? 1/*true*/ : 0/*false*/;
-    const char* ptr = dot ? ++domain : domain;
-    int/*bool*/ alpha = 0/*false*/;
-    size_t len;
-
-    if (!*ptr)
-        return 0/*false: just dot(root) or empty*/;
-    for ( ;  *ptr;  ++ptr) {
-        if (*ptr == '.') {
-            if (dot  ||  (alpha  &&  isdash(ptr[-1])))
-                return 0/*false: double dot or trailing dash*/;
-            dot = 1/*true*/;
-            continue;
-        }
-        if ((dot  ||  ptr == domain)  &&  isdash(*ptr))
-            return 0/*false: leading dash */;
-        dot = 0/*false*/;
-        if (isdigit((unsigned char)(*ptr)))
-            continue;
-        if (!isalpha((unsigned char)(*ptr))  &&  !isdash(*ptr))
-            return 0/*false: bad character*/;
-        /* at least one regular "letter" seen */
-        alpha = 1/*true*/;
-    }
-    len = (size_t)(ptr - domain);
-    assert(len);
-    if (domain[len - 1] == '.')
-        verify(--len);
-    if (!alpha) {
-        unsigned int temp;
-        ptr = NcbiStringToIPv4(&temp, domain, len);
-        assert(!ptr  ||  ptr > domain);
-        if (ptr == domain + len)
-            return 0/*false: IPv4 instead of domain*/;
-    } else if (isdash(ptr[-1]))
-        return 0/*false: trailing dash*/;
-    return 1/*true*/;
-}
-
-
 static void x_tr(char* dst, const char* src, size_t len, char x, char y)
 {
     while (len--) {
@@ -293,7 +249,8 @@ static void x_tr(char* dst, const char* src, size_t len, char x, char y)
  *  EXTERNAL
  ***********************************************************************/
 
-const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
+const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
+                                     const char* default_domain, SSERV_Info** info)
 {
     char buf[CONN_PATH_LEN + 1];
     TSERV_TypeOnly type, types;
@@ -301,10 +258,12 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     int/*bool*/ vhost = 0;
     const char* path = 0;
     unsigned long port;
+    size_t len, domlen;
     char* domain;
-    size_t len;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(!default_domain
+           ||  (*default_domain  &&  *default_domain != '.'));
     /* No wildcard(search) or external processing */
     if (iter->ismask)
         return 0;
@@ -322,7 +281,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (types  &&  !(type &= types))
         return 0;
 
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\")", iter->name));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"/\"%s\")", iter->name,
+                 default_domain ? default_domain : ""));
 
     assert(CONN_HOST_LEN + 1 < sizeof(buf));
     if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
@@ -400,7 +360,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
-                                      domain, CONN_HOST_LEN - len + 1, 0)) {
+                                      domain, CONN_HOST_LEN - len + 1, default_domain)) {
         CORE_LOGF_X(93, eLOG_Error,
                     ("[%s]  Cannot obtain domain name for LBNULL",
                      iter->name));
@@ -408,16 +368,14 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     }
     if (!*domain) {
         /*NOOP*/;
-    } else if (!x_CheckDomain(domain)) {
+    } else if (!(domlen = SERV_CheckDomain(domain))) {
         CORE_LOGF_X(94, eLOG_Error,
                     ("[%s]  Bad domain name \"%s\" for LBNULL",
                      iter->name, domain));
         goto out;
     } else {
-        size_t domlen = strlen(domain);
-        assert(domlen > 1  ||  *domain != '.');
-        if (domain[domlen - 1] == '.')
-            --domlen;
+        assert(domlen > 1  ||  domain[0] != '.');
+        assert(domain[domlen - 1] != '.');
         if (domain[ 0] != '.') {
             domain[-1]  = '.';
             ++domlen;
@@ -458,7 +416,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     if (!s_Resolve(iter)) {
         CORE_LOGF(eLOG_Trace,
                   ("SERV_LBNULL_Open(\"%s\"): Service not found",
-                   iter->name));
+                   data->host));
         s_Close(iter);
         return 0;
     }
@@ -466,7 +424,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER iter, SSERV_Info** info)
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)
         *info = 0;
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", iter->name));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", data->host));
     return &kLbnullOp;
 
  out:

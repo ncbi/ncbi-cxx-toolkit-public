@@ -180,10 +180,19 @@ char* SERV_Print
 char* SERV_ServiceName(const char* service);
 
 
+/* Private interface:  check a string to be a valid domain name and return
+ * its length (not couting any leading and / or trailing dot);  or return
+ * 0 if the domain name is not valid.  Note that "." is not accepted as a
+ * valid domain name.
+ */
+size_t SERV_CheckDomain(const char* domain);
+
+
+/* Private interface:  validate SConnNetInfo by setting its magic cookie */
 void ConnNetInfo_MakeValid(SConnNetInfo* net_info);
 
 
-/* Private interface:  Parse the URL favoring WEB-like incomplete URLs.
+/* Private interface: parse the URL favoring WEB-like incomplete URLs.
  * @sa
  *   ConnNetInfo_ParseURL
  */
