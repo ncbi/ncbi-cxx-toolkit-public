@@ -360,7 +360,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
-                                      domain, CONN_HOST_LEN - len + 1, default_domain)) {
+                                      domain, CONN_HOST_LEN - len + 1,
+                                      default_domain)) {
         CORE_LOGF_X(93, eLOG_Error,
                     ("[%s]  Cannot obtain domain name for LBNULL",
                      iter->name));
