@@ -149,7 +149,9 @@ static size_t x_CheckServiceName(const char* svc, size_t len, int/*bool*/ dns)
             under = 0/*false*/;
             continue;
         case '/':
-            if (dns  ||  !alpha)
+            if (dns)
+                return 0;   /* not allowed */
+            if (!alpha)
                 return 0;   /* must follow at least one alpha */
             if (delim  ||  n == len - 1)
                 return 0;   /* can't follow [-/] or be trailing */
