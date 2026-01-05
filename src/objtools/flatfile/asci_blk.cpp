@@ -1152,7 +1152,7 @@ string GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_h
             com += '~';
         com.append(bptr, size);
         if (is_pat && size >= 5 &&
-            q[0] >= 'A' && q[0] <= 'Z' && q[1] >= 'A' && q[1] <= 'Z' &&
+            IS_UPPER(q[0]) && IS_UPPER(q[1]) &&
             q[2] == ' ' && q[3] == ' ' && q[4] == ' ')
             com += '~';
         else if (size < 50 || within)
@@ -1265,7 +1265,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
     pri_owner = GetNucAccOwner(acc, ibp->is_tpa);
     if (pri_acc == 1 || pri_acc == 4) {
         char* p;
-        for (p = acc; (*p >= 'A' && *p <= 'Z') || *p == '_';)
+        for (p = acc; IS_UPPER(*p) || *p == '_';)
             p++;
         *p = '\0';
         i  = StringLen(acc);
@@ -1383,7 +1383,7 @@ void GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source
         }
 
         if (pri_acc == 1 || pri_acc == 5 || pri_acc == 11) {
-            if (StringEquN(acc, a.c_str(), i) && a[i] >= '0' && a[i] <= '9') {
+            if (StringEquN(acc, a.c_str(), i) && IS_DIGIT(a[i])) {
                 if (sec_acc == 1 || sec_acc == 5 || pri_acc == 11)
                     accessions.push_back(a);
             } else if (allow_uwsec) {
@@ -1420,8 +1420,8 @@ static void fta_fix_tpa_keywords(TKeywordList& keywords)
             buf += p;
             if (fta_is_tpa_keyword(buf)) {
                 for (string::iterator p = buf.begin() + 4; p != buf.end(); ++p) {
-                    if (*p >= 'A' && *p <= 'Z')
-                        *p |= 040;
+                    if (IS_UPPER(*p))
+                        TO_LOWER(*p);
                 }
             }
 
@@ -1621,11 +1621,11 @@ bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodety
             return false;
         if (pp->source != Parser::ESource::USPTO || ! ibp->is_prot)
             for (char& c : *tmp)
-                if (c >= 'A' && c <= 'Z')
-                    c |= 040; // tolower
-        seqptr = StringSave(*tmp);
+                if (IS_UPPER(c))
+                    TO_LOWER(c);
+        str    = StringSave(*tmp);
+        seqptr = str;
         len    = tmp->length();
-        str    = seqptr;
     } else {
         if (! SrchNodeType(entry, nodetype, &len, &seqptr))
             return false;
@@ -2172,7 +2172,7 @@ void DefVsHTGKeywords(CMolInfo::TTech tech, const DataBlk& entry, Int2 what, Int
     StringNCpy(r, dbp->mBuf.ptr, dbp->mBuf.len);
     r[dbp->mBuf.len] = '\0';
     for (p = r, q = r; *p != '\0'; p++)
-        if (*p >= 'a' && *p <= 'z')
+        if (IS_LOWER(*p))
             *q++ = *p;
     *q = '\0';
 

@@ -857,7 +857,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
 
     ++p;
     title = string(ptr, p);
-    for (q += 3, p = q; *q >= '0' && *q <= '9';)
+    for (q += 3, p = q; IS_DIGIT(*q);)
         q++;
     if (q == p || (*q != ':' && *q != '-')) {
         return false;
@@ -866,7 +866,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     if (*q == ':') {
         volume = StringSave(string_view(p, q - p));
         q++;
-        for (p = q; *q >= '0' && *q <= '9';)
+        for (p = q; IS_DIGIT(*q);)
             q++;
         if (q == p || *q != '-') {
             MemFree(volume);
@@ -878,7 +878,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
         q++;
     }
 
-    while (*q >= '0' && *q <= '9')
+    while (IS_DIGIT(*q))
         q++;
     if (*(q - 1) == '-') {
         if (volume)
@@ -923,7 +923,7 @@ static bool GetCitBook(ParRefBlkPtr prbp, CCit_art& article)
     publisher = StringSave(string_view(q, p - q));
 
     p = StringChr(q, '(');
-    for (p++, q = p; *p >= '0' && *p <= '9';)
+    for (p++, q = p; IS_DIGIT(*p);)
         p++;
     if (p - q != 4 || *p != ')') {
         MemFree(pages);
@@ -992,12 +992,12 @@ static bool GetCitPatent(ParRefBlkPtr prbp, Parser::ESource source, CCit_pat& pa
     *q  = ch;
 
     for (char& c : num)
-        if ('a' <= c && c <= 'z')
-            c &= ~040; // toupper
+        if (IS_LOWER(c))
+            TO_UPPER(c);
 
     unsigned j = 0;
     for (char c : num) {
-        if (! ('A' <= c && c <= 'Z'))
+        if (! IS_UPPER(c))
             break;
         j++;
     }

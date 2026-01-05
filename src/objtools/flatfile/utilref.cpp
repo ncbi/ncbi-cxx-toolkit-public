@@ -328,16 +328,16 @@ static Int4 check_mix_pages_range(char* pages)
     page1 = pages;
     page2 = dash + 1;
 
-    if ((*page1 >= 'a' && *page1 <= 'z') || (*page1 >= 'A' && *page1 <= 'Z')) {
-        for (p = page1; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
+    if (IS_ALPHA(*page1)) {
+        for (p = page1; IS_ALPHA(*p);)
             p++;
 
-        if ((*page2 < 'a' || *page2 > 'z') && (*page2 < 'A' || *page2 > 'Z')) {
+        if (! IS_ALPHA(*page2)) {
             *dash = '-';
             return (-1);
         }
 
-        for (q = page2; (*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z');)
+        for (q = page2; IS_ALPHA(*q);)
             q++;
         ch1 = *p;
         *p  = '\0';
@@ -352,9 +352,9 @@ static Int4 check_mix_pages_range(char* pages)
             *dash = '-';
             return (-1);
         }
-        for (page1 = p; *p >= '0' && *p <= '9';)
+        for (page1 = p; IS_DIGIT(*p);)
             p++;
-        for (page2 = q; *q >= '0' && *q <= '9';)
+        for (page2 = q; IS_DIGIT(*q);)
             q++;
 
         i = fta_atoi(page1) - fta_atoi(page2);
@@ -369,14 +369,14 @@ static Int4 check_mix_pages_range(char* pages)
         return (0);
     }
 
-    if (*page1 < '0' || *page1 > '9' || *page2 < '0' || *page2 > '9') {
+    if (! IS_DIGIT(*page1) || ! IS_DIGIT(*page2)) {
         *dash = '-';
         return (-1);
     }
 
-    for (p = page1; *p >= '0' && *p <= '9';)
+    for (p = page1; IS_DIGIT(*p);)
         p++;
-    for (q = page2; *q >= '0' && *q <= '9';)
+    for (q = page2; IS_DIGIT(*q);)
         q++;
     ch1 = *p;
     *p  = '\0';
@@ -386,9 +386,9 @@ static Int4 check_mix_pages_range(char* pages)
     *p  = ch1;
     *q  = ch2;
 
-    for (page1 = p; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z');)
+    for (page1 = p; IS_ALPHA(*p);)
         p++;
-    for (page2 = q; (*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z');)
+    for (page2 = q; IS_ALPHA(*q);)
         q++;
     if (*p != '\0' || *q != '\0' || ! StringEqu(page1, page2)) {
         *dash = '-';
@@ -429,8 +429,7 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
 
     p = StringChr(pages, '-');
     if (! p) {
-        for (q = pages; (*q >= 'a' && *q <= 'z') || (*q >= 'A' && *q <= 'Z') ||
-                        (*q >= '0' && *q <= '9');)
+        for (q = pages; IS_ALPHA(*q) || IS_DIGIT(*q);)
             q++;
         if (*q == '\0')
             return (0);
@@ -451,9 +450,9 @@ Int4 valid_pages_range(char* pages, const Char* title, Int4 er, bool inpress)
                     p[1] == ' ' || p[1] == '\t'))
         return (1);
 
-    for (q = p + 1; *q >= '0' && *q <= '9';)
+    for (q = p + 1; IS_DIGIT(*q);)
         q++;
-    for (p = pages; *p >= '0' && *p <= '9';)
+    for (p = pages; IS_DIGIT(*p);)
         p++;
     if (*p == '-' && *q == '\0') {
         *p  = '\0';
@@ -495,8 +494,8 @@ CRef<CDate> get_date(const Char* year)
         return ret;
     }
 
-    if (year[0] < '0' || year[0] > '9' || year[1] < '0' || year[1] > '9' ||
-        year[2] < '0' || year[2] > '9' || year[3] < '0' || year[3] > '9') {
+    if (! IS_DIGIT(year[0]) || ! IS_DIGIT(year[1]) ||
+        ! IS_DIGIT(year[2]) || ! IS_DIGIT(year[3])) {
         FtaErrPost(SEV_ERROR, ERR_REFERENCE_IllegalDate, "Illegal year: \"{}\".", year);
         return ret;
     }

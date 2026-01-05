@@ -210,7 +210,7 @@ Uint1 GetQualValueAa(string_view qval, bool checkseq)
         i++;
 
     auto j = i;
-    for (char c; j < qval.size() && (c = qval[j], (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));)
+    for (char c; j < qval.size() && (c = qval[j], IS_ALPHA(c));)
         j++;
 
     if (checkseq && qval.find("seq:", j) == string_view::npos)
