@@ -1413,7 +1413,7 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
     CORE_LOCK_READ;
     if ((p = getenv("LOCALDOMAIN")) != 0) {
         size_t n = strlen(p);
-        if (1 < n  &&  n < domainsize)
+        if (n  &&  n < domainsize)
             memcpy(domain, p, n + 1);
         else
             p = 0;
@@ -1424,8 +1424,7 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
 
 #if defined(NCBI_OS_CYGWIN)  ||  defined(NCBI_OS_IRIX)
     if (getdomainname(domain, domainsize) == 0
-        &&  domain[0]  &&  domain[1]
-        &&  strcasecmp(domain, "(none)") != 0) {
+        &&  *domain  &&  strcasecmp(domain, "(none)") != 0) {
         return domain;
     }
 #endif /*NCBI_OS_CYGWIN || NCBI_OS_IRIX*/
@@ -1439,19 +1438,21 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
 }
 
 
-/* Assumes domain has been verified.  Skips the initial "[.]lb." (if any).
- * Return a copy of "domain" stripped of any leading and trailing dot(s). */
+/* Assumes "domain" has been verified.  Skips the initial "lb." (if any).
+ * Return a copy of "domain" stripped of any leading and trailing dot(s).
+ * Top-Level Domains (TLD) are *not* allowed to be copied / used. */
 static const char* x_CopyDomain(const char* domain, size_t* len)
 {
-    assert(*domain);
-    if (*len > 1  &&  strncasecmp(domain, "lb", 2) == 0
-        &&  (!domain[2]  ||  domain[2] == '.')) {
-        if (!domain[2]  ||  *len <= 3) {
-            errno = EINVAL;
-            return 0/*failure*/;
-        }
+    assert(*domain  &&  *len
+           &&  domain[0] != '.'  &&  domain[*len - 1] != '.');
+    if (strncasecmp(domain, "lb", 2) == 0  &&  domain[2] == '.') {
+        assert(*len > 3);
         *len   -= 3;
         domain += 3;
+    }
+    if (!memchr(domain, '.', *len)) {
+        errno = EINVAL; /*TLD*/
+        return 0/*failure*/;
     }
     assert(*len  &&  domain[0] != '.'  &&  domain[*len - 1] != '.');
     return strndup(domain, *len);
@@ -1524,27 +1525,31 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     }
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
-        if (!domain  ||  (len = SERV_CheckDomain(domain)) <= 1  ||  NS_MAXCDNAME < len) {
+        assert(!domain  ||  *domain);
+        if (!domain  ||  !(len = SERV_CheckDomain(domain))  ||  NS_MAXCDNAME < len) {
             CORE_LOG_X(81, eLOG_Critical,
                        "LBDNS cannot figure out system domain name");
             goto out;
         }
+        if (*domain == '.')
+            ++domain;
         CORE_TRACEF(("LBDNS found system domain \"%s\"", domain));
-    } else if ((len = SERV_CheckDomain(val)) <= 1  ||  NS_MAXCDNAME < len) {
+    } else if (!(len = SERV_CheckDomain(val))  ||  NS_MAXCDNAME < len) {
         CORE_LOGF_X(82, eLOG_Error, ("LBDNS %s domain name \"%s\"",
-                                     len <= 1 ? "bad" : "too long", val));
+                                     len ? "too long" : "bad", val));
         goto out;
     } else
         domain = *val == '.' ? val + 1 : val;
     if (!(data->domain = x_CopyDomain(domain, &len))) {
         CORE_LOGF_ERRNO_X(83, eLOG_Error, errno,
-                          ("LBDNS failed to store domain name \"%s\"", domain));
+                          ("LBDNS cannot use domain name \"%s\"", domain));
         goto out;
     }
     data->domlen = len;
     assert(len == strlen(data->domain));
-    assert(1 < data->domlen  &&  data->domlen <= NS_MAXCDNAME);
-    assert(data->domain[0] != '.'  &&  data->domain[data->domlen - 1] != '.');
+    assert(memchr(data->domain, '.', len));
+    assert(0 < len  &&  len <= NS_MAXCDNAME);
+    assert(data->domain[0] != '.'  &&  data->domain[len - 1] != '.');
 
     if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LBDNS_PORT,
                                       val, sizeof(val), 0)) {
