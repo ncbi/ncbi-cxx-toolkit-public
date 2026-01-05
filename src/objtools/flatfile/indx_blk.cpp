@@ -382,9 +382,9 @@ static bool CheckLocus(const char* locus, Parser::ESource source)
         (source == Parser::ESource::NCBI || source == Parser::ESource::DDBJ))
         p += 4;
     for (; *p != '\0'; p++) {
-        if ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z'))
+        if (IS_DIGIT(*p) || IS_UPPER(*p))
             continue;
-        if (((*p >= 'a' && *p <= 'z') || *p == '_' || *p == '-' || *p == '(' ||
+        if ((IS_LOWER(*p) || *p == '_' || *p == '-' || *p == '(' ||
              *p == ')' || *p == '/') &&
             source == Parser::ESource::Refseq)
             continue;
@@ -423,7 +423,7 @@ static bool CheckLocusSP(const char* locus)
     Int2 y;
 
     for (p = locus, x = y = 0; *p != '\0'; p++) {
-        if ((*p >= '0' && *p <= '9') || (*p >= 'A' && *p <= 'Z')) {
+        if (IS_DIGIT(*p) || IS_UPPER(*p)) {
             if (! underscore)
                 x++;
             else
@@ -961,16 +961,11 @@ void DelNonDigitTail(string& str)
  *
  */
 
-inline bool sIsUpperAlpha(char c)
-{
-    return (c >= 'A' && c <= 'Z');
-}
-
 Int4 IsNewAccessFormat(string_view p)
 {
     auto len = p.size();
 
-    if (len >= 3 && sIsUpperAlpha(p[0]) && sIsUpperAlpha(p[1])) {
+    if (len >= 3 && IS_UPPER(p[0]) && IS_UPPER(p[1])) {
         if (isdigit(p[2]))
             return 1;
 
@@ -978,8 +973,8 @@ Int4 IsNewAccessFormat(string_view p)
             if (len >= 4 && isdigit(p[3])) {
                 return 2;
             }
-            if (len >= 6 && sIsUpperAlpha(p[3]) && sIsUpperAlpha(p[4])) {
-                if (len >= 8 && sIsUpperAlpha(p[5]) && sIsUpperAlpha(p[6]) &&
+            if (len >= 6 && IS_UPPER(p[3]) && IS_UPPER(p[4])) {
+                if (len >= 8 && IS_UPPER(p[5]) && IS_UPPER(p[6]) &&
                     isdigit(p[7]))
                     return 4;
                 if (isdigit(p[5]))
@@ -988,8 +983,8 @@ Int4 IsNewAccessFormat(string_view p)
             return 0;
         }
 
-        if (len >= 5 && sIsUpperAlpha(p[2]) && sIsUpperAlpha(p[3])) {
-            if (len >= 7 && sIsUpperAlpha(p[4]) && sIsUpperAlpha(p[5]) &&
+        if (len >= 5 && IS_UPPER(p[2]) && IS_UPPER(p[3])) {
+            if (len >= 7 && IS_UPPER(p[4]) && IS_UPPER(p[5]) &&
                 isdigit(p[6])) {
                 if (len >= 10 && isdigit(p[7]) && p[8] == 'S' &&
                     isdigit(p[9])) {
@@ -1006,7 +1001,7 @@ Int4 IsNewAccessFormat(string_view p)
                 return 3;
             }
 
-            if (len >= 6 && sIsUpperAlpha(p[4]) && isdigit(p[5]))
+            if (len >= 6 && IS_UPPER(p[4]) && isdigit(p[5]))
                 return 5;
         }
     }
@@ -1046,7 +1041,7 @@ static bool fta_if_master_wgs_accession(const char* acnum, Int4 accformat)
     else
         return false;
 
-    if (p[0] >= '0' && p[0] <= '9' && p[1] >= '0' && p[1] <= '9') {
+    if (IS_DIGIT(p[0]) && IS_DIGIT(p[1])) {
         for (p += 2; *p == '0';)
             p++;
         if (*p == '\0')
@@ -1237,16 +1232,16 @@ bool IsSPROTAccession(string_view acc)
         return false;
     }
 
-    if (acc[0] < 'A' || acc[0] > 'Z' || acc[1] < '0' || acc[1] > '9' ||
-        ((acc[3] < '0' || acc[3] > '9') && (acc[3] < 'A' || acc[3] > 'Z')) ||
-        ((acc[4] < '0' || acc[4] > '9') && (acc[4] < 'A' || acc[4] > 'Z')) ||
-        acc[5] < '0' || acc[5] > '9')
+    if (! IS_UPPER(acc[0]) || ! IS_DIGIT(acc[1]) ||
+        ! (IS_DIGIT(acc[3]) || IS_UPPER(acc[3])) ||
+        ! (IS_DIGIT(acc[4]) || IS_UPPER(acc[4])) ||
+        ! IS_DIGIT(acc[5]))
         return false;
 
     if (acc[0] >= 'O' && acc[0] <= 'Q') {
-        if ((acc[2] < '0' || acc[2] > '9') && (acc[2] < 'A' || acc[2] > 'Z'))
+        if (! IS_DIGIT(acc[2]) && ! IS_UPPER(acc[2]))
             return false;
-    } else if (acc[2] < 'A' || acc[2] > 'Z')
+    } else if (! IS_UPPER(acc[2]))
         return false;
 
     if (len == 6)
@@ -1255,9 +1250,9 @@ bool IsSPROTAccession(string_view acc)
     if (acc[0] >= 'O' && acc[0] <= 'Q')
         return false;
 
-    if (acc[6] < 'A' || acc[6] > 'Z' || acc[9] < '0' || acc[9] > '9' ||
-        ((acc[7] < 'A' || acc[7] > 'Z') && (acc[7] < '0' || acc[7] > '9')) ||
-        ((acc[8] < 'A' || acc[8] > 'Z') && (acc[8] < '0' || acc[8] > '9')))
+    if (! IS_UPPER(acc[6]) || ! IS_DIGIT(acc[9]) ||
+        ! (IS_UPPER(acc[7]) || IS_DIGIT(acc[7])) ||
+        ! (IS_UPPER(acc[8]) || IS_DIGIT(acc[8])))
         return false;
 
     return true;
@@ -1340,8 +1335,8 @@ static bool CheckAccession(
             badac = (len != 12) || sNotAllDigits(acnum + 5, acnum + len);
         } else if (accformat == 6) {
             badac = (len != 11 || acnum[0] != 'N' || acnum[1] != 'Z' ||
-                     acnum[2] != '_' || acnum[3] < 'A' || acnum[3] > 'Z' ||
-                     acnum[4] < 'A' || acnum[4] > 'Z') ||
+                     acnum[2] != '_' || ! IS_UPPER(acnum[3]) ||
+                     ! IS_UPPER(acnum[4])) ||
                     sNotAllDigits(acnum + 5, acnum + len);
         } else if (accformat == 7) {
             badac = (len < 13 || len > 15) || sNotAllDigits(acnum + 7, acnum + len);
@@ -1350,7 +1345,7 @@ static bool CheckAccession(
         } else if (accformat == 0) {
             if (len != 6 && len != 10)
                 badac = true;
-            else if (sIsUpperAlpha(acnum[0])) {
+            else if (IS_UPPER(acnum[0])) {
                 if (source == Parser::ESource::SPROT) {
                     if (! IsSPROTAccession(acnum))
                         badac = true;
@@ -1567,11 +1562,6 @@ static void IsTLSAccPrefix(const Parser& parseInfo, string_view acc, IndexblkPtr
             ibp->is_tls = true;
 }
 
-static inline bool sIsAccPrefixChar(char c)
-{
-    return (c >= 'A' && c <= 'Z');
-}
-
 /**********************************************************
  *
  *   bool GetAccession(pp, str, entry, skip):
@@ -1654,11 +1644,11 @@ bool GetAccession(const Parser* pp, string_view line, IndexblkPtr entry, unsigne
             entry->drop = true;
             return false;
         }
-        if (sIsAccPrefixChar(acc[0]) && sIsAccPrefixChar(acc[1])) {
+        if (IS_UPPER(acc[0]) && IS_UPPER(acc[1])) {
             if (pp->accpref && ! IsValidAccessPrefix(acc, pp->accpref))
                 get = false;
-            if (len >= 4 && sIsAccPrefixChar(acc[2]) && sIsAccPrefixChar(acc[3])) {
-                if (len >= 5 && sIsAccPrefixChar(acc[4])) {
+            if (len >= 4 && IS_UPPER(acc[2]) && IS_UPPER(acc[3])) {
+                if (len >= 5 && IS_UPPER(acc[4])) {
                     acc.resize(5);
                 } else {
                     acc.resize(4);

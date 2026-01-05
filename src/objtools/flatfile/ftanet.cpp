@@ -316,8 +316,8 @@ static void fta_fix_imprint_language(TPubList& pub_list)
             char*  p;
             char*  lang = language.data();
             for (p = lang; *p != '\0'; p++)
-                if (*p >= 'A' && *p <= 'Z')
-                    *p |= 040; // tolower()
+                if (IS_UPPER(*p))
+                    TO_LOWER(*p);
             journal.SetImp().SetLanguage(lang);
         }
     }

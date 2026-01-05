@@ -205,7 +205,7 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
         size_t acclen = first.size();
 
         const Char* p = first.c_str();
-        for (; (*p >= 'A' && *p <= 'Z') || *p == '_';)
+        for (; IS_UPPER(*p) || *p == '_';)
             p++;
 
         size_t preflen = p - first.c_str();
@@ -215,13 +215,13 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
             p++;
 
         const Char* q;
-        for (q = p; *p >= '0' && *p <= '9';)
+        for (q = p; IS_DIGIT(*p);)
             p++;
         num1 = fta_atoi(q);
 
         for (p = last.c_str() + preflen; *p == '0';)
             p++;
-        for (q = p; *p >= '0' && *p <= '9';)
+        for (q = p; IS_DIGIT(*p);)
             p++;
         num2 = fta_atoi(q);
 
@@ -248,16 +248,16 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
 
 static inline bool sIsPrefixChar(char c)
 {
-    return ('A' <= c && c <= 'Z') || c == '_';
+    return IS_UPPER(c) || c == '_';
 }
 
 inline bool IsLeadPrefixChar(char c)
 {
-    return ('A' <= c && c <= 'Z');
+    return IS_UPPER(c);
 }
 inline bool IsDigit(char c)
 {
-    return ('0' <= c && c <= '9');
+    return IS_DIGIT(c);
 }
 /**********************************************************/
 bool ParseAccessionRange(TokenStatBlk& tsbp, unsigned skip)
@@ -511,10 +511,10 @@ Char* StringIStr(const Char* where, const Char* what)
             if (*q == *p)
                 continue;
 
-            if (*q >= 'A' && *q <= 'Z') {
+            if (IS_UPPER(*q)) {
                 if (*q + 32 == *p)
                     continue;
-            } else if (*q >= 'a' && *q <= 'z') {
+            } else if (IS_LOWER(*q)) {
                 if (*q - 32 == *p)
                     continue;
             }
@@ -749,7 +749,7 @@ CRef<CDate_std> get_full_date(string_view date_view, bool is_ref, Parser::ESourc
     int cur_year   = CCurrentTime().Year();
     if (1900 <= year && year <= cur_year) {
         // all set
-    } else if (0 <= year && year <= 99 && '0' <= date_view[1] && date_view[1] <= '9') {
+    } else if (0 <= year && year <= 99 && IS_DIGIT(date_view[1])) {
         // insist that short form year has exactly two digits
         (year < 70) ? (year += 2000) : (year += 1900);
     } else {
@@ -798,7 +798,7 @@ bool CheckLineType(string_view str, Int4 type, const vector<string>& keywordList
 {
     if (after_origin) {
         for (char c : str) {
-            if (c >= '0' && c <= '9')
+            if (IS_DIGIT(c))
                 continue;
             if (c == ' ')
                 return true;

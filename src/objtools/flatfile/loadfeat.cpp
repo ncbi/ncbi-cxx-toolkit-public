@@ -755,7 +755,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
 
     const Char* p = tail.c_str();
     if (MatchArrayIString(DbxrefTagAny, line) > -1) {
-        for (strid = p; *p >= '0' && *p <= '9';)
+        for (strid = p; IS_DIGIT(*p);)
             p++;
         if (*p == '\0' && *strid != '0') {
             intid = fta_atoi(strid);
@@ -764,7 +764,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
     } else if (MatchArrayIString(DbxrefTagStr, line) > -1 ||
                (source == Parser::ESource::EMBL &&
                 MatchArrayIString(EMBLDbxrefTagStr, line) > -1)) {
-        for (strid = p; *p >= '0' && *p <= '9';)
+        for (strid = p; IS_DIGIT(*p);)
             p++;
         if (*p == '\0') {
             FtaErrPost(SEV_WARNING, ERR_QUALIFIER_DbxrefWrongType,
@@ -785,7 +785,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
         }
 
         const Char* r = q;
-        for (; *r >= '0' && *r <= '9';)
+        while (IS_DIGIT(*r))
             r++;
         if (*r != '\0') {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DbxrefWrongType,
@@ -810,7 +810,7 @@ static CRef<CDbtag> DbxrefQualToDbtag(const CGb_qual& qual, Parser::ESource sour
             q++;
 
         const Char* r;
-        for (r = q; *r >= '0' && *r <= '9';)
+        for (r = q; IS_DIGIT(*r);)
             r++;
         if (*q == '\0' || *r != '\0') {
             FtaErrPost(SEV_ERROR, ERR_QUALIFIER_DbxrefShouldBeNumeric,
@@ -1491,7 +1491,7 @@ static void fta_parse_rrna_feat(CSeq_feat& feat, CRNA_ref& rna_ref)
     p = StringIStr(qval, "s ribosomal RNA");
     if (p && p > qval && p[15] == '\0') {
         p--;
-        if (*p >= '0' && *p <= '9')
+        if (IS_DIGIT(*p))
             *++p = 'S';
     }
 
@@ -1614,10 +1614,10 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
     bool digits = false;
     prod        = StringSave(product);
     for (p = prod; *p != '\0'; p++) {
-        if (*p >= 'a' && *p <= 'z')
-            *p &= ~040;
-        else if ((*p < 'A' || *p > 'Z') && *p != '(' && *p != ')') {
-            if (*p >= '0' && *p <= '9')
+        if (IS_LOWER(*p))
+            TO_UPPER(*p);
+        else if (! IS_UPPER(*p) && *p != '(' && *p != ')') {
+            if (IS_DIGIT(*p))
                 digits = true;
             *p = ' ';
         }
@@ -1658,7 +1658,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
         p += 5;
     else if (StringEquN(p, "F MT", 4))
         p += 4;
-    while (*p >= 'A' && *p <= 'Z')
+    while (IS_UPPER(*p))
         p++;
     if (p > q) {
         if (*p != '\0')
@@ -1667,7 +1667,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
     }
     while (*p == ' ' || *p == ')' || *p == '(')
         p++;
-    for (q = p; *p >= 'A' && *p <= 'Z';)
+    for (q = p; IS_UPPER(*p);)
         p++;
     if (p > q) {
         if (*p != '\0')
@@ -1675,7 +1675,7 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
         if (q[1] == '\0') {
             while (*p == ' ' || *p == ')' || *p == '(')
                 p++;
-            for (q = p; *p >= 'A' && *p <= 'Z';)
+            for (q = p; IS_UPPER(*p);)
                 p++;
             if (p > q) {
                 if (*p != '\0')
@@ -1706,10 +1706,10 @@ static CRef<CTrna_ext> fta_get_trna_from_product(CSeq_feat& feat, const string& 
             }
         }
         if (p > prod) {
-            for (q = p++; *q >= 'A' && *q <= 'Z'; q--)
+            for (q = p++; IS_UPPER(*q); q--)
                 if (q == prod)
                     break;
-            if (*q < 'A' || *q > 'Z')
+            if (! IS_UPPER(*q))
                 q++;
             if (p > q) {
                 *p    = '\0';
@@ -1770,9 +1770,9 @@ static CRef<CTrna_ext> fta_get_trna_from_comment(const string& comment, unsigned
 
     comm = StringSave(comment);
     for (p = comm; *p != '\0'; p++) {
-        if (*p >= 'a' && *p <= 'z')
-            *p &= ~040;
-        else if (*p < 'A' || *p > 'Z')
+        if (IS_LOWER(*p))
+            TO_UPPER(*p);
+        else if (! IS_UPPER(*p))
             *p = ' ';
     }
     ShrinkSpaces(comm);
@@ -2497,8 +2497,7 @@ static void fta_sort_quals(FeatBlkPtr fbp, bool qamode)
                         continue;
 
                     if (! tq_val.empty()) {
-                        if (q_val[0] >= '0' && q_val[0] <= '9' &&
-                            tq_val[0] >= '0' && tq_val[0] <= '9') {
+                        if (IS_DIGIT(q_val[0]) && IS_DIGIT(tq_val[0])) {
                             if (fta_atoi(q_val.c_str()) <= fta_atoi(tq_val.c_str()))
                                 continue;
                         } else if (q_val <= tq_val)
@@ -2589,14 +2588,14 @@ static bool fta_check_rpt_unit_span(const char* val, size_t length)
     if (! val || *val == '\0')
         return false;
 
-    for (p = val; *p >= '0' && *p <= '9';)
+    for (p = val; IS_DIGIT(*p);)
         p++;
 
     if (p == val || p[0] != '.' || p[1] != '.')
         return false;
 
     i1 = fta_atoi(val);
-    for (p += 2, q = p; *q >= '0' && *q <= '9';)
+    for (p += 2, q = p; IS_DIGIT(*q);)
         q++;
     if (q == p || *q != '\0')
         return false;
@@ -2875,7 +2874,7 @@ static void fta_check_compare_qual(TDataBlkList& dbl, bool is_tpa)
                     const char* q = StringChr(val_str.c_str(), '.');
                     if (q && q[1] != '\0') {
                         const char* p;
-                        for (p = q + 1; *p >= '0' && *p <= '9';)
+                        for (p = q + 1; IS_DIGIT(*p);)
                             p++;
                         if (*p == '\0') {
                             if (GetNucAccOwner(string_view(val_str.c_str(), q), is_tpa) > CSeq_id::e_not_set)
@@ -2940,8 +2939,7 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
                 continue;
             for (r = nullptr, q = p - 1;; q--) {
                 if (q == location) {
-                    if (*q != '_' && (*q < '0' || *q > '9') &&
-                        (*q < 'a' || *q > 'z') && (*q < 'A' || *q > 'Z'))
+                    if (*q != '_' && ! IS_DIGIT(*q) && ! IS_ALPHA(*q))
                         q++;
                     break;
                 }
@@ -2953,8 +2951,7 @@ static void fta_check_non_tpa_tsa_tls_locations(TDataBlkList& dbl,
                     q++;
                     break;
                 }
-                if (*q != '_' && (*q < '0' || *q > '9') &&
-                    (*q < 'a' || *q > 'z') && (*q < 'A' || *q > 'Z')) {
+                if (*q != '_' && ! IS_DIGIT(*q) && ! IS_ALPHA(*q)) {
                     q++;
                     break;
                 }
@@ -3657,8 +3654,8 @@ static bool CheckLegalQual(string_view val, Char ch, string* qual)
 static void fta_convert_to_lower_case(string& str)
 {
     for (char& c : str)
-        if (c >= 'A' && c <= 'Z')
-            c |= 040;
+        if (IS_UPPER(c))
+            TO_LOWER(c);
 }
 
 /**********************************************************/
@@ -4580,7 +4577,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
     if (seqtype == 1 || seqtype == 5 || seqtype == 7 || seqtype == 8 ||
         seqtype == 9 || seqtype == 11) {
         prefix = StringSave(ibp->acnum);
-        if (prefix[4] >= '0' && prefix[4] <= '9')
+        if (IS_DIGIT(prefix[4]))
             prefix[6] = '\0';
         else
             prefix[8] = '\0';
@@ -4597,7 +4594,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         if (! prefix)
             prefix = StringSave(*tbp);
         else {
-            i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
+            i = IS_DIGIT(prefix[4]) ? 6 : 8;
             if (! StringEquN(prefix, tbp->c_str(), i)) {
                 ok = false;
                 break;
@@ -4610,7 +4607,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
         if (seqtype == 0 || seqtype == 1 || seqtype == 4 || seqtype == 5 ||
             seqtype == 7 || seqtype == 8 || seqtype == 9 || seqtype == 10 ||
             seqtype == 11) {
-            if (prefix[4] >= '0' && prefix[4] <= '9')
+            if (IS_DIGIT(prefix[4]))
                 prefix[6] = '\0';
             else
                 prefix[8] = '\0';
@@ -4659,7 +4656,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
                 if (! prefix)
                     prefix = StringSave(p);
                 else {
-                    i = (prefix[4] >= '0' && prefix[4] <= '9') ? 6 : 8;
+                    i = IS_DIGIT(prefix[4]) ? 6 : 8;
                     if (! StringEquN(prefix, p, i))
                         break;
                 }
@@ -4673,7 +4670,7 @@ static void fta_create_wgs_seqid(CBioseq&        bioseq,
             if (seqtype == 0 || seqtype == 1 || seqtype == 4 || seqtype == 5 ||
                 seqtype == 7 || seqtype == 8 || seqtype == 9 || seqtype == 10 ||
                 seqtype == 11) {
-                if (prefix[4] >= '0' && prefix[4] <= '9')
+                if (IS_DIGIT(prefix[4]))
                     prefix[6] = '\0';
                 else
                     prefix[8] = '\0';

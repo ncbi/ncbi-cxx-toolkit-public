@@ -1336,7 +1336,7 @@ static ViralHostList GetViralHostsFrom_OH(DataBlkCIter dbp, DataBlkCIter dbp_end
             for (p--; *p == ';' || *p == ' ';)
                 p--;
             p++;
-            for (r = q; *r >= '0' && *r <= '9';)
+            for (r = q; IS_DIGIT(*r);)
                 r++;
             *p = '\0';
             if (r != p) {
@@ -1421,7 +1421,7 @@ static TTaxId GetTaxIdFrom_OX(DataBlkCIter dbp, DataBlkCIter dbp_end)
                 MemFree(line);
                 break;
             }
-            for (q = p; *q >= '0' && *q <= '9';)
+            for (q = p; IS_DIGIT(*q);)
                 q++;
             if (*q == ' ' || *q == '\0')
                 taxid = TAX_ID_FROM(int, fta_atoi(p));
@@ -1696,7 +1696,7 @@ static void fta_check_embl_drxref_dups(const TEmblAccList& embl_acc_list)
         auto        dot = pid.find('.');
         if (dot != string_view::npos) {
             for (auto p = pid.begin() + dot + 1; p != pid.end(); ++p) {
-                if (*p >= '0' && *p <= '9')
+                if (IS_DIGIT(*p))
                     continue;
                 dot = string::npos;
                 break;
@@ -1885,12 +1885,11 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
                 *p = '\0';
 
             ptype = CSeq_id::e_not_set;
-            if (token3[0] >= 'A' && token3[0] <= 'Z' &&
-                token3[1] >= 'A' && token3[1] <= 'Z') {
+            if (IS_UPPER(token3[0]) && IS_UPPER(token3[1])) {
                 p = StringChr(token3, '.');
                 if (p) {
                     ptype = GetProtAccOwner(string_view(token3, p));
-                    for (q = p + 1; *q >= '0' && *q <= '9';)
+                    for (q = p + 1; IS_DIGIT(*q);)
                         q++;
                     if (q == p + 1 || *q != '\0')
                         p = nullptr;
@@ -1949,12 +1948,11 @@ static void GetDRlineDataSP(const DataBlk& entry, CSP_block& spb, bool* drop, Pa
             }
         } else if (NStr::EqualNocase(token1, "REFSEQ")) {
             ptype = CSeq_id::e_not_set;
-            if (token2[0] >= 'A' && token2[0] <= 'Z' &&
-                token2[1] >= 'A' && token2[1] <= 'Z') {
+            if (IS_UPPER(token2[0]) && IS_UPPER(token2[1])) {
                 p = StringChr(token2, '.');
                 if (p) {
                     ptype = GetProtAccOwner(string_view(token2, p));
-                    for (q = p + 1; *q >= '0' && *q <= '9';)
+                    for (q = p + 1; IS_DIGIT(*q);)
                         q++;
                     if (q == p + 1 || *q != '\0')
                         p = nullptr;
@@ -2082,7 +2080,7 @@ static bool GetSPDate(Parser::ESource source, const DataBlk& entry, CDate& crdat
                         while (p < e && *p == ' ')
                             p++;
                         auto q = p;
-                        while (p < e && *p >= '0' && *p <= '9')
+                        while (p < e && IS_DIGIT(*p))
                             p++;
                         if (p + 1 == e && *p == '.') {
                             *ver_num = fta_atoi(string_view(q, p));
@@ -2408,11 +2406,11 @@ static bool IfOHTaxIdMatchOHName(const char* orpname, const char* ohname)
 
     for (p = orpname, q = ohname; *p != '\0' && *q != '\0'; p++, q++) {
         chp = *p;
-        if (chp >= 'a' && chp <= 'z')
-            chp &= ~040;
+        if (IS_LOWER(chp))
+            TO_UPPER(chp);
         chq = *q;
-        if (chq >= 'a' && chq <= 'z')
-            chq &= ~040;
+        if (IS_LOWER(chq))
+            TO_UPPER(chq);
         if (chp != chq)
             break;
     }
@@ -2711,21 +2709,21 @@ static void SPPostProcVarSeq(string& varseq)
 
     for (p--; p > temp && (*p == ' ' || *p == '\n');)
         p--;
-    if (*p < 'A' || *p > 'Z') {
+    if (! IS_UPPER(*p)) {
         NStr::ReplaceInPlace(varseq, "\n", " ");
         MemFree(temp);
         return;
     }
 
     end = p + 1;
-    while (p > temp && (*p == '\n' || (*p >= 'A' && *p <= 'Z')))
+    while (p > temp && (*p == '\n' || IS_UPPER(*p)))
         p--;
     if (p > temp)
         p++;
     while (*p == '\n')
         p++;
     for (;;) {
-        while (*p >= 'A' && *p <= 'Z' && p < end)
+        while (p < end && IS_UPPER(*p))
             p++;
         if (p == end)
             break;
@@ -2739,13 +2737,13 @@ static void SPPostProcVarSeq(string& varseq)
     for (p += 2; *p == ' ' || *p == '\n';)
         p++;
 
-    if (*p < 'A' || *p > 'Z') {
+    if (! IS_UPPER(*p)) {
         NStr::ReplaceInPlace(varseq, "\n", " ");
         MemFree(temp);
         return;
     }
 
-    for (q = p; *q == '\n' || (*q >= 'A' && *q <= 'Z');)
+    for (q = p; *q == '\n' || IS_UPPER(*q);)
         q++;
     if (q > p && *(q - 1) == '\n') {
         for (q--; *q == '\n' && q > p;)
@@ -2756,7 +2754,7 @@ static void SPPostProcVarSeq(string& varseq)
     end = q;
 
     for (;;) {
-        while (*p >= 'A' && *p <= 'Z' && p < end)
+        while (IS_UPPER(*p) && p < end)
             p++;
         if (p == end)
             break;
@@ -2833,16 +2831,15 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
 
         location = bptr;
 
-        if (((*bptr >= 'a' && *bptr <= 'z') || (*bptr >= 'A' && *bptr <= 'Z')) &&
-            bptr[6] == '-') {
-            for (bptr += 7; *bptr >= '0' && *bptr <= '9' && bptr <= endline;)
+        if (IS_ALPHA(*bptr) && bptr[6] == '-') {
+            for (bptr += 7; bptr <= endline && IS_DIGIT(*bptr);)
                 bptr++;
-            for (; *bptr == ':' && bptr <= endline;)
+            while (bptr <= endline && *bptr == ':')
                 bptr++;
         }
 
         for (ptr1 = bptr; *ptr1 == '?' || *ptr1 == '>' || *ptr1 == '<' ||
-                          (*ptr1 >= '0' && *ptr1 <= '9');)
+                          IS_DIGIT(*ptr1);)
             ptr1++;
 
         if (bptr < ptr1 && ptr1 <= endline) {
@@ -2876,7 +2873,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
             if (*bptr == '.')
                 new_format = true;
         for (ptr1 = bptr; *ptr1 == '?' || *ptr1 == '>' || *ptr1 == '<' ||
-                          (*ptr1 >= '0' && *ptr1 <= '9');)
+                          IS_DIGIT(*ptr1);)
             ptr1++;
 
         p = (char*)temp.from.c_str();
@@ -2958,7 +2955,7 @@ static SPFeatInputList ParseSPFeat(const DataBlk& entry, size_t seqlen)
                 quotes = bptr + 4;
             else {
                 if (*bptr == '/') {
-                    for (p = bptr + 1; (*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || (*p >= '0' && *p <= '9') || *p == '_';)
+                    for (p = bptr + 1; IS_ALPHA(*p) || IS_DIGIT(*p) || *p == '_';)
                         p++;
                     if (*p == '=' && p[1] == '\"') {
                         *p      = '\0';
@@ -3878,7 +3875,7 @@ static void SPValidateEcnum(string& ecnum)
                 break;
             }
         }
-        while (*p >= '0' && *p <= '9')
+        while (IS_DIGIT(*p))
             p++;
         if (*q == 'n' && (*p == '.' || *p == '\0')) {
             fta_StringCpy(q + 1, p);

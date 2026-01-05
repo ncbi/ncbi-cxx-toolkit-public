@@ -665,7 +665,7 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     if (q)
         *q = '-';
 
-    for (p = master; *p != '\0' && (*p < '0' || *p > '9');)
+    for (p = master; *p != '\0' && ! IS_DIGIT(*p);)
         p++;
     if (*p != '\0')
         p++;
@@ -674,7 +674,7 @@ static bool fta_ranges_to_hist(const CGB_block::TExtra_accessions& extra_accs)
     ch1 = *p;
     *p  = '\0';
 
-    for (q = range; *q != '\0' && (*q < '0' || *q > '9');)
+    for (q = range; *q != '\0' && ! IS_DIGIT(*q);)
         q++;
     if (*q != '\0')
         q++;
@@ -1161,7 +1161,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         while (*p == ' ')
             p++;
         char* r = p;
-        while (*p >= '0' && *p <= '9')
+        while (IS_DIGIT(*p))
             p++;
         if (*p != '-') {
             bad_interval = true;
@@ -1170,7 +1170,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
 
         Int4 from1 = fta_atoi(string_view(r, p++));
         r = p;
-        while (*p >= '0' && *p <= '9')
+        while (IS_DIGIT(*p))
             p++;
         if (*p != ' ' && *p != '\0') {
             bad_interval = true;
@@ -1202,7 +1202,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         if (auto n = acc.find('.'); n != string::npos) {
             auto i = acc.begin() + n + 1;
             auto j = i;
-            while (j != acc.end() && *j >= '0' && *j <= '9')
+            while (j != acc.end() && IS_DIGIT(*j))
                 j++;
             if (j != acc.end()) {
                 bad_accession = acc;
@@ -1220,7 +1220,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 bad_accession = acc;
                 break;
             }
-            while (r != acc.end() && *r >= '0' && *r <= '9')
+            while (r != acc.end() && IS_DIGIT(*r))
                 r++;
             if (r != acc.end()) {
                 bad_accession = acc;
@@ -1245,7 +1245,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             tftbp->to2   = 1;
         } else {
             r = p;
-            while (*p >= '0' && *p <= '9')
+            while (IS_DIGIT(*p))
                 p++;
             if (*p != '-') {
                 bad_interval = true;
@@ -1254,7 +1254,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             tftbp->from2 = fta_atoi(string_view(r, p++));
 
             r = p;
-            while (*p >= '0' && *p <= '9')
+            while (IS_DIGIT(*p))
                 p++;
             if (*p != ' ' && *p != '\0') {
                 bad_interval = true;
@@ -1433,7 +1433,7 @@ static void fta_validate_assembly(string_view name)
 {
     bool bad_format = false;
 
-    auto is_digit = [](char c) { return '0' <= c && c <= '9'; };
+    auto is_digit = [](char c) { return IS_DIGIT(c); };
 
     if (name.empty() || name.size() < 7)
         bad_format = true;
@@ -1467,13 +1467,13 @@ static bool fta_validate_bioproject(string_view name, Parser::ESource source)
 {
     bool  bad_format = false;
 
-    auto is_digit = [](char c) { return '0' <= c && c <= '9'; };
+    auto is_digit = [](char c) { return IS_DIGIT(c); };
 
     if (name.size() < 6)
         bad_format = true;
     else if (name[0] != 'P' || name[1] != 'R' || name[2] != 'J' ||
              (name[3] != 'E' && name[3] != 'N' && name[3] != 'D') ||
-             name[4] < 'A' || name[4] > 'Z' || ! is_digit(name[5]))
+             ! IS_UPPER(name[4]) || ! is_digit(name[5]))
         bad_format = true;
     else {
         if (! std::all_of(name.begin() + 6, name.end(), is_digit))
@@ -1532,7 +1532,7 @@ static forward_list<string> fta_tokenize_project(string str, Parser::ESource sou
 
         string_view name(q, p);
         if (! newstyle) {
-            if (! std::all_of(name.begin(), name.end(), [](char c) { return '0' <= c && c <= '9'; })) {
+            if (! std::all_of(name.begin(), name.end(), [](char c) { return IS_DIGIT(c); })) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", name);
                 return {};
             }
@@ -1670,7 +1670,7 @@ bool fta_if_valid_sra(string_view id, bool dblink)
         (id[0] == 'E' || id[0] == 'S' || id[0] == 'D') && id[1] == 'R' &&
         (id[2] == 'A' || id[2] == 'P' || id[2] == 'R' || id[2] == 'S' ||
          id[2] == 'X' || id[2] == 'Z')) {
-        if (std::all_of(id.begin() + 3, id.end(), [](char c) { return '0' <= c && c <= '9'; }))
+        if (std::all_of(id.begin() + 3, id.end(), [](char c) { return IS_DIGIT(c); }))
             return true;
     }
 
@@ -1689,7 +1689,7 @@ bool fta_if_valid_biosample(string_view id, bool dblink)
         auto p = id.begin() + 4;
         if (*p == 'A' || *p == 'G')
             ++p;
-        if (std::all_of(p, id.end(), [](char c) { return '0' <= c && c <= '9'; }))
+        if (std::all_of(p, id.end(), [](char c) { return IS_DIGIT(c); }))
             return true;
     }
 
@@ -1866,7 +1866,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             continue;
 
         if (*str != '0')
-            while (*str >= '0' && *str <= '9')
+            while (IS_DIGIT(*str))
                 str++;
         if (*str != '\0') {
             FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", *tvnp);

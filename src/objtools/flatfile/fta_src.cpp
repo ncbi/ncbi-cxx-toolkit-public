@@ -803,7 +803,7 @@ static bool CheckSourceFeatLocFuzz(const SourceFeatBlkList& sfbl)
             else if (*p == '.' && p[1] == '.')
                 p++;
             else if (*p == '.' && p[1] != '.') {
-                for (q = p + 1; *q >= '0' && *q <= '9';)
+                for (q = p + 1; IS_DIGIT(*q);)
                     q++;
                 if (q == p || *q != ':')
                     invalid = true;
@@ -836,8 +836,7 @@ static char* CheckSourceFeatLocAccs(const SourceFeatBlkList& sfbl, char* acc)
                 continue;
             for (r = nullptr, q = p - 1;; q--) {
                 if (q == sfbp->location) {
-                    if (*q != '_' && (*q < '0' || *q > '9') &&
-                        (*q < 'a' || *q > 'z') && (*q < 'A' || *q > 'Z'))
+                    if (*q != '_' && ! IS_DIGIT(*q) && ! IS_ALPHA(*q))
                         q++;
                     break;
                 }
@@ -849,8 +848,7 @@ static char* CheckSourceFeatLocAccs(const SourceFeatBlkList& sfbl, char* acc)
                     q++;
                     break;
                 }
-                if (*q != '_' && (*q < '0' || *q > '9') &&
-                    (*q < 'a' || *q > 'z') && (*q < 'A' || *q > 'Z')) {
+                if (*q != '_' && ! IS_DIGIT(*q) && ! IS_ALPHA(*q)) {
                     q++;
                     break;
                 }
@@ -942,7 +940,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkList& sfbl, MinMaxList& mml, si
             p   = StringChr(p, ' ');
             if (p)
                 *p++ = '\0';
-            for (r = q; *r >= '0' && *r <= '9';)
+            for (r = q; IS_DIGIT(*r);)
                 r++;
             if (*r == '\0') {
                 i = fta_atoi(q);
@@ -954,7 +952,7 @@ static Int4 CheckSourceFeatCoverage(SourceFeatBlkList& sfbl, MinMaxList& mml, si
                 *r++ = '\0';
                 min  = fta_atoi(q);
                 if (min > 0) {
-                    for (q = ++r; *r >= '0' && *r <= '9';)
+                    for (q = ++r; IS_DIGIT(*r);)
                         r++;
                     if (*r == '\0')
                         max = fta_atoi(q);
@@ -2731,7 +2729,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                     for (q = val; *q == '0';)
                         q++;
                     for (p = (char*)q; *p != '\0'; p++)
-                        if (*p < '0' || *p > '9')
+                        if (! IS_DIGIT(*p))
                             break;
                     if (*p != '\0')
                         bad = 1;
@@ -2744,12 +2742,12 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         p    = val;
                         p[3] = '\0';
                         if (source == Parser::ESource::DDBJ) {
-                            if (p[0] >= 'a' && p[0] <= 'z')
-                                p[0] &= ~040;
-                            if (p[1] >= 'A' && p[1] <= 'Z')
-                                p[1] |= 040;
-                            if (p[2] >= 'A' && p[2] <= 'Z')
-                                p[2] |= 040;
+                            if (IS_LOWER(p[0]))
+                                TO_UPPER(p[0]);
+                            if (IS_UPPER(p[1]))
+                                TO_LOWER(p[1]);
+                            if (IS_UPPER(p[2]))
+                                TO_LOWER(p[2]);
                         }
                         for (b = Mmm, month = 1; *b; b++, month++)
                             if (StringEqu(*b, p))
@@ -2762,7 +2760,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         for (q = val + 4; *q == '0';)
                             q++;
                         for (p = (char*)q; *p != '\0'; p++)
-                            if (*p < '0' || *p > '9')
+                            if (! IS_DIGIT(*p))
                                 break;
                         if (*p != '\0')
                             bad = 1;
@@ -2780,7 +2778,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                         p      = val;
                         val[2] = '\0';
                         val[6] = '\0';
-                        if (p[0] < '0' || p[0] > '3' || p[1] < '0' || p[1] > '9')
+                        if (p[0] < '0' || p[0] > '3' || ! IS_DIGIT(p[1]))
                             bad = 1;
                         else {
                             if (*p == '0')
@@ -2788,12 +2786,12 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             day = fta_atoi(p);
                             p   = val + 3;
                             if (source == Parser::ESource::DDBJ) {
-                                if (p[0] >= 'a' && p[0] <= 'z')
-                                    p[0] &= ~040;
-                                if (p[1] >= 'A' && p[1] <= 'Z')
-                                    p[1] |= 040;
-                                if (p[2] >= 'A' && p[2] <= 'Z')
-                                    p[2] |= 040;
+                                if (IS_LOWER(p[0]))
+                                    TO_UPPER(p[0]);
+                                if (IS_UPPER(p[1]))
+                                    TO_LOWER(p[1]);
+                                if (IS_UPPER(p[2]))
+                                    TO_LOWER(p[2]);
                             }
                             for (b = Mmm, month = 1; *b; b++, month++)
                                 if (StringEqu(*b, p))
@@ -2813,7 +2811,7 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                             for (q = val + 7; *q == '0';)
                                 q++;
                             for (p = (char*)q; *p != '\0'; p++)
-                                if (*p < '0' || *p > '9')
+                                if (! IS_DIGIT(*p))
                                     break;
                             if (*p != '\0')
                                 bad = 1;
@@ -2834,9 +2832,8 @@ static void CheckCollectionDate(const SourceFeatBlkList& sfbl, Parser::ESource s
                     num_Z     = 0;
                     num_colon = 0;
                     for (p = val; *p != '\0'; p++) {
-                        if ((*p < 'a' || *p > 'z') && (*p < 'A' || *p > 'Z') &&
-                            (*p < '0' || *p > '9') && *p != '-' && *p != '/' &&
-                            *p != ':') {
+                        if (! IS_ALPHA(*p) && ! IS_DIGIT(*p)
+                            && *p != '-' && *p != '/' && *p != ':') {
                             bad = 3;
                             break;
                         }

@@ -69,7 +69,7 @@ USING_SCOPE(objects);
 /* Defines
  */
 
-#define IS_DIGIT_OR_NA(c) ((c) == 'N' || (c) == 'A' || ('0' <= (c) && (c) <= '9'))
+#define IS_DIGIT_OR_NA(c) ((c) == 'N' || (c) == 'A' || IS_DIGIT(c))
 
 #define QSBUF_MAXLINE      256 /* Maximum length for a line of data   \
                                   read from a buffer of quality-score \

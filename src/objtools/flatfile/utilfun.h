@@ -170,6 +170,12 @@ namespace objects
 
 objects::CScope& GetScope();
 
+#define IS_DIGIT(c) (('0' <= (c)) && ((c) <= '9'))
+#define IS_ALPHA(c) ((('A' <= (c)) && ((c) <= 'Z')) || (('a' <= (c)) && ((c) <= 'z')))
+#define IS_UPPER(c) (('A' <= (c)) && ((c) <= 'Z'))
+#define IS_LOWER(c) (('a' <= (c)) && ((c) <= 'z'))
+#define TO_UPPER(c) ((c) &= ~040)
+#define TO_LOWER(c) ((c) |= 040)
 
 END_NCBI_SCOPE
 
