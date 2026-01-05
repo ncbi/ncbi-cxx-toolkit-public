@@ -1439,73 +1439,22 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
 }
 
 
-#define isdash(s)  ((s) == '-'  ||  (s) == '_')
-
-static int/*bool*/ x_CheckDomain(const char* domain)
-{
-    int/*bool*/ dot = *domain == '.' ? 1/*true*/ : 0/*false*/;
-    const char* ptr = dot ? ++domain : domain;
-    int/*bool*/ alpha = 0/*false*/;
-    size_t len;
-
-    if (!*ptr)
-        return 0/*false: just dot(root) or empty*/;
-    for ( ;  *ptr;  ++ptr) {
-        if (*ptr == '.') {
-            if (dot  ||  (alpha  &&  isdash(ptr[-1])))
-                return 0/*false: double dot or trailing dash*/;
-            dot = 1/*true*/;
-            continue;
-        }
-        if ((dot  ||  ptr == domain)  &&  isdash(*ptr))
-            return 0/*false: leading dash */;
-        dot = 0/*false*/;
-        if (isdigit((unsigned char)(*ptr)))
-            continue;
-        if (!isalpha((unsigned char)(*ptr))  &&  !isdash(*ptr))
-            return 0/*false: bad character*/;
-        /* at least one regular "letter" seen */
-        alpha = 1/*true*/;
-    }
-    len = (size_t)(ptr - domain);
-    assert(len);
-    if (domain[len - 1] == '.')
-        verify(--len);
-    if (!alpha) {
-        unsigned int temp;
-        ptr = NcbiStringToIPv4(&temp, domain, len);
-        assert(!ptr  ||  ptr > domain);
-        if (ptr == domain + len)
-            return 0/*false: IPv4 instead of domain*/;
-    } else if (isdash(ptr[-1]))
-        return 0/*false: trailing dash*/;
-    return 1 < len  &&  len <= NS_MAXCDNAME ? 1/*true*/ : 0/*false: bad size*/;
-}
-
-
 /* Assumes domain has been verified.  Skips the initial "[.]lb." (if any).
  * Return a copy of "domain" stripped of any leading and trailing dot(s). */
-static const char* x_CopyDomain(const char* domain)
+static const char* x_CopyDomain(const char* domain, size_t* len)
 {
-    size_t len;
     assert(*domain);
-    if (*domain == '.')
-        ++domain;
-    len = strlen(domain);
-    if (len > 1  &&  strncasecmp(domain, "lb", 2) == 0
+    if (*len > 1  &&  strncasecmp(domain, "lb", 2) == 0
         &&  (!domain[2]  ||  domain[2] == '.')) {
-        if (!domain[2]  ||  !(len -= 3)) {
+        if (!domain[2]  ||  *len <= 3) {
             errno = EINVAL;
             return 0/*failure*/;
         }
+        *len   -= 3;
         domain += 3;
-    } else
-        assert(len);
-    assert(*domain);
-    if (domain[len - 1] == '.')
-        --len;
-    assert(len  &&  domain[0] != '.'  &&  domain[len - 1] != '.');
-    return strndup(domain, len);
+    }
+    assert(*len  &&  domain[0] != '.'  &&  domain[*len - 1] != '.');
+    return strndup(domain, *len);
 }
 
 
@@ -1520,6 +1469,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     TSERV_TypeOnly types;
     const char* domain;
     unsigned long port;
+    size_t len;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
     /* No wildcard(search) or external processing */
@@ -1574,23 +1524,25 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     }
     if (!*val) {
         domain = s_SysGetDomainName(val, sizeof(val));
-        if (!domain  ||  !x_CheckDomain(domain)) {
+        if (!domain  ||  (len = SERV_CheckDomain(domain)) <= 1  ||  NS_MAXCDNAME < len) {
             CORE_LOG_X(81, eLOG_Critical,
                        "LBDNS cannot figure out system domain name");
             goto out;
         }
         CORE_TRACEF(("LBDNS found system domain \"%s\"", domain));
-    } else if (!x_CheckDomain(val)) {
-        CORE_LOGF_X(82, eLOG_Error, ("LBDNS bad domain name \"%s\"", val));
+    } else if ((len = SERV_CheckDomain(val)) <= 1  ||  NS_MAXCDNAME < len) {
+        CORE_LOGF_X(82, eLOG_Error, ("LBDNS %s domain name \"%s\"",
+                                     len <= 1 ? "bad" : "too long", val));
         goto out;
     } else
-        domain = val;
-    if (!(data->domain = x_CopyDomain(domain))) {
+        domain = *val == '.' ? val + 1 : val;
+    if (!(data->domain = x_CopyDomain(domain, &len))) {
         CORE_LOGF_ERRNO_X(83, eLOG_Error, errno,
                           ("LBDNS failed to store domain name \"%s\"", domain));
         goto out;
     }
-    data->domlen = strlen(data->domain);
+    data->domlen = len;
+    assert(len == strlen(data->domain));
     assert(1 < data->domlen  &&  data->domlen <= NS_MAXCDNAME);
     assert(data->domain[0] != '.'  &&  data->domain[data->domlen - 1] != '.');
 

@@ -99,26 +99,28 @@ static int/*bool*/ x_mkenv(char* str, size_t len)
 }
 
 
-/* Return the service name length or 0 if the name is not valid. */
-/* NB: NCBI C++ Tkit registry allows [A_Za-z0-9_-/.] in section names
- * (case-insensitively, by default).
+/* Return the service name length or 0 if the name is not valid.
  * A service name must start with a letter or underscore and be a sequence of
- * (one or more) alphanumeric identifiers (which may include non-consecutive
- * interior minus signs, not adjacent to any underscore) separated by single
- * slashes.  The first identifier must include at least one letter.
- * The following identifier(s), if any, may be composed w/o any letters.
- */
-static size_t x_CheckServiceName(const char* svc)
+ * (one or more) alphanumeric [incl. underscores] identifiers (which may also
+ * include non-consecutive interior minus signs, not adjacent to any underscore)
+ * separated by single slashes.  The first identifier must include at least one
+ * letter.  Any subsequent identifier(s) may be composed without them.
+ * If DNS validation is on ("dns" != 0), then the underscore cannot
+ * be the first character, nor can it be in sequence or trailing, or follow
+ * a minus sign.  Also, exactly only one identifier is allowed (no slashes).
+ * NB:  The NCBI C++ Toolkit registry allows [A_Za-z0-9_-/.] in section names
+ * (case-insensitively, by default). */
+static size_t x_CheckServiceName(const char* svc, size_t len, int/*bool*/ dns)
 {
-    int/*bool*/ alpha = 0/*false*/;
-    int/*bool*/ under = 0/*false*/;
-    int/*bool*/ delim = 0/*false*/;
-    int/*bool*/ minus = 0/*false*/;
-    size_t n, len = strlen(svc);
+    int/*bool*/ alpha = 0/*false*/;  /* there was a letter */
+    int/*bool*/ minus = 0/*false*/;  /* previous char is a minus sign */
+    int/*bool*/ under = 0/*false*/;  /* previous char is an underscore */
+    int/*bool*/ delim = 0/*false*/;  /* previous char is either [-/] */
+    size_t n;
     for (n = 0;  n < len;  ++n) {
         unsigned char c = (unsigned char)(*svc++);
         if (!n) {
-            if (!(under = c == '_')  &&  !(alpha = isalpha(c)))
+            if ((dns  ||  !(under = (c == '_')))  &&  !(alpha = isalpha(c)))
                 return 0;   /* must start with one of the above */
             continue;
         }
@@ -135,6 +137,8 @@ static size_t x_CheckServiceName(const char* svc)
         case '_':
             if (minus)
                 return 0;   /* can't follow a '-' */
+            if (dns  &&  (under  ||  n == len - 1))
+                return 0;   /* for DNS, can't follow a '_' or be trailing */
             under = 1/*true*/;
             delim = minus = 0/*false*/;
             continue;
@@ -145,7 +149,7 @@ static size_t x_CheckServiceName(const char* svc)
             under = 0/*false*/;
             continue;
         case '/':
-            if (!alpha)
+            if (dns  ||  !alpha)
                 return 0;   /* must follow at least one alpha */
             if (delim  ||  n == len - 1)
                 return 0;   /* can't follow [-/] or be trailing */
@@ -161,42 +165,94 @@ static size_t x_CheckServiceName(const char* svc)
 }
 
 
+#define isdash(s)  ((s) == '-'  ||  (s) == '_')
+
+size_t SERV_CheckDomain(const char* domain)
+{
+    int/*bool*/ dot = *domain == '.' ? 1/*true*/ : 0/*false*/;
+    const char* ptr = dot ? ++domain : domain;
+    int/*bool*/ alpha = 0/*false*/;
+    size_t len;
+
+    if (!*ptr)
+        return 0/*false: just dot(root) or empty*/;
+    for ( ;  *ptr;  ++ptr) {
+        if (*ptr == '.') {
+            if (dot  ||  (alpha  &&  isdash(ptr[-1])))
+                return 0/*false: double dot or trailing dash*/;
+            dot = 1/*true*/;
+            continue;
+        }
+        if ((dot  ||  ptr == domain)  &&  isdash(*ptr))
+            return 0/*false: leading dash */;
+        dot = 0/*false*/;
+        if (isdigit((unsigned char)(*ptr)))
+            continue;
+        if (!isalpha((unsigned char)(*ptr))  &&  !isdash(*ptr))
+            return 0/*false: bad character*/;
+        /* at least one regular "letter" seen */
+        alpha = 1/*true*/;
+    }
+    len = (size_t)(ptr - domain);
+    assert(len);
+    if (domain[len - 1] == '.')
+        verify(--len);
+    if (!alpha) {
+        unsigned int temp;
+        ptr = NcbiStringToIPv4(&temp, domain, len);
+        assert(!ptr  ||  ptr > domain);
+        if (ptr == domain + len)
+            return 0/*false: IPv4 instead of domain*/;
+    } else if (isdash(ptr[-1]))
+        return 0/*false: trailing dash*/;
+    return len;
+}
+
+
 /* "service" == the original input service name;
- * "svc"     == current service name (== "service" at first);
+ * "svc"     == current service name (NULL at first, init to "service");
+ * "equiv"   == opt ptr to store what "svc" resolved to (via env/reg)
+ *              in case it's not a valid service name (retval == NULL);
  * "ismask"  = 1 if "service" may contain any wildcards;
  * "*isfast" = 1 on input if not to do environment scan;
  * "*isfast" = 1 on output if the service was substituted with itself (but may
  *               be different case);  otherwise, "*isfast" == 0.  This is used
  *               (only) in namerd searches, which are case-sensitive.
  */
-static char* x_ServiceName(unsigned int depth,
-                           const char* service, const char* svc,
-                           int/*bool*/ ismask, int* /*bool*/isfast,
-                           int/*bool*/ log)
+static char* x_ServiceName(unsigned int* depth,
+                           const char* service, const char* svc, char** equiv,
+                           int/*bool*/ ismask, int*/*bool*/ isfast)
 {
     char   buf[128];
     size_t len = 0;
 
-    assert(isfast);
-    assert(!svc == !service);
-    assert(depth  ||  svc == service);
+    assert(depth  &&  isfast);
     assert(sizeof(buf) > sizeof(REG_CONN_SERVICE_NAME));
+
+    if (!*depth) {
+        assert(!svc);
+        svc = service;
+        if (equiv)
+            *equiv = 0;
+    } else
+        assert(service  &&  svc  &&  service != svc  &&  (!equiv  ||  !*equiv));
     if (!svc  ||  (!ismask
-                   &&  (!(len = x_CheckServiceName(svc))
+                   &&  (!(len = strcspn(svc, "."))
+                        ||  !x_CheckServiceName(svc, len, svc[len])
+                        ||  (svc[len]  &&  !SERV_CheckDomain(svc + len))
                         ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)))) {
-        if (!svc  ||  len  ||  log) {
-            ELOG_Level level = !svc  ||  !*svc  ||  len ? eLOG_Error : eLOG_Critical;
-            if (!service  ||  strcasecmp(service, svc) == 0)
+        if (!svc  ||  !len  ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
+            if (!*depth  ||  strcasecmp(service, svc) == 0)
                 service = "";
-            CORE_LOGF_X(7, level,
-                        ("%s%s%s%s%s service name%s%s",
+            CORE_LOGF_X(7, eLOG_Error,
+                        ("%s%s%s%s service name%s%s",
                          !svc  ||  !*svc ? "" : "[",
                          !svc ? "" : svc,
                          !svc  ||  !*svc ? "" : "]  ",
-                         level == eLOG_Critical ? "Internal program logic error: " : "",
-                         !svc ? "NULL" : !*svc ? "Empty" : len ? "Too long" : "Invalid",
+                         !svc ? "NULL" : !*svc ? "Empty" : !len ? "Invalid" : "Too long",
                          *service ? " for: " : "", service));
-        }
+        } else if (equiv)
+            *equiv = strdup(svc);
         return 0/*failure*/;
     }
     if (!ismask  &&  !*isfast) {
@@ -225,12 +281,16 @@ static char* x_ServiceName(unsigned int depth,
             CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
             if (strcasecmp(svc, s) != 0) {
-                if (depth++ < SERV_SERVICE_NAME_RECURSION_MAX)
-                    return x_ServiceName(depth, service, s, ismask, isfast, log);
-                CORE_LOGF_X(8, eLOG_Error,
-                            ("[%s]  Maximal service name recursion"
-                             " depth exceeded: %u", service, depth));
-                return 0/*failure*/;
+                if (++(*depth) < SERV_SERVICE_NAME_RECURSION_MAX) {
+                    char* rv = x_ServiceName(depth, service, s, equiv, ismask, isfast);
+                    if (rv  ||  *depth >= SERV_SERVICE_NAME_RECURSION_MAX)
+                        return rv;
+                } else {
+                    CORE_LOGF_X(8, eLOG_Error,
+                                ("[%s]  Maximum service name recursion"
+                                 " depth exceeded: %u", service, *depth));
+                    return 0/*failure*/;
+                }
             } else
                 svc = s, *isfast = 1/*true*/;
         } else
@@ -241,12 +301,13 @@ static char* x_ServiceName(unsigned int depth,
 }
 
 
-static char* s_ServiceName(const char* service,
-                           int/*bool*/ ismask, int* /*bool*/isfast, int/*bool*/ log)
+static char* s_ServiceName(const char* service, char** equiv,
+                           int/*bool*/ ismask, int*/*bool*/ isfast)
 {
+    unsigned int depth = 0;
     char* retval;
     CORE_LOCK_READ;
-    retval = x_ServiceName(0/*depth*/, service, service, ismask, isfast, log);
+    retval = x_ServiceName(&depth, service, 0, equiv, ismask, isfast);
     CORE_UNLOCK;
     return retval;
 }
@@ -255,7 +316,7 @@ static char* s_ServiceName(const char* service,
 char* SERV_ServiceName(const char* service)
 {
     int dummy = 0;
-    return s_ServiceName(service, 0/*ismask*/, &dummy/*isfast*/, 0/*nolog*/);
+    return s_ServiceName(service, 0/*equiv*/, 0/*ismask*/, &dummy/*isfast*/);
 }
 
 
@@ -387,8 +448,8 @@ static SSERV_Info* x_InternalGetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         info = 0;
     } else {
         info = data->info;
-        assert(info);
         data->info = 0;
+        assert(info);
         info->time = LBSM_DEFAULT_TIME + iter->time;
         info->rate = LBSM_DEFAULT_RATE;
 
@@ -440,17 +501,19 @@ static int/*bool*/ x_IsEmptyPath(const char* path)
 
 static int/*bool*/ x_NonHttpOkay(TSERV_TypeOnly types)
 {
-    return !types  ||  (types & ~fSERV_Http);
+    return !types  ||   (types & ~fSERV_Http);
 }
 
 
 static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
 {
-    return  types  &&  !(types & fSERV_Http);
+    return  types  &&  !(types &  fSERV_Http);
 }
 
 
-static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* service)
+static struct SINTERNAL_Data* s_InternalMapper(const char* name,
+                                               TSERV_Type  types,
+                                               const char* url)
 {
     static int/*bool*/     do_internal = -1/*unassigned*/;
     static void* /*bool*/  s_Once = 0/*false*/;
@@ -459,6 +522,8 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* ser
     struct SINTERNAL_Data* data;
     char*                  frag;
 
+    assert((!name  ||  *name)  &&  url  &&  *url);
+
     if (CORE_Once(&s_Once)) {
         char        buf[80];
         const char* str = ConnNetInfo_GetValueInternal(0, REG_CONN_INTERNAL_DISABLE,
@@ -466,21 +531,23 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* ser
         if (str  &&  *str)
             do_internal = !ConnNetInfo_Boolean(str);
     }
-    if (!do_internal  ||  !service  ||  !*service)
+    if (!do_internal)
         return 0;
+    if (!name)
+        name = url;
+
     reverse_dns = types & fSERV_ReverseDns ? 1/*T*/ : 0/*F*/;
     types &= fSERV_All;
     if (types  &&  !(types & (fSERV_Dns | fSERV_Http | fSERV_Standalone)))
         return 0;
     if (!(data = (struct SINTERNAL_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOGF_ERRNO_X(11, eLOG_Error, errno,
-                          ("[%s]  SERV failed to allocate for SINTERNAL_Data",
-                           service));
+                          ("[%s]  SERV failed to allocate for SINTERNAL_Data", name));
         return 0;
     }
     net_info = &data->net_info;
     ConnNetInfo_MakeValid(net_info);
-    if (!ConnNetInfo_ParseWebURL(net_info, service)
+    if (!ConnNetInfo_ParseWebURL(net_info, url)
         ||  (net_info->scheme != eURL_Unspec  &&
              net_info->scheme != eURL_Https   &&
              net_info->scheme != eURL_Http)
@@ -500,7 +567,7 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* ser
             break;            
         }
     } else if (!net_info->scheme/*==eURL_Unspec*/) {
-        int/*bool*/ bare = strncmp(service, "//", 2) != 0  &&  !net_info->path[0];
+        int/*bool*/ bare = strncmp(url, "//", 2) != 0  &&  !net_info->path[0];
         if (( bare  &&  x_NonHttpOkay(types))  ||
             (!bare  &&  x_HttpNotOkay(types)  &&  x_IsEmptyPath(net_info->path))) {
             data->type = fSERV_Dns | fSERV_Standalone;
@@ -516,7 +583,7 @@ static struct SINTERNAL_Data* s_InternalMapper(TSERV_Type types, const char* ser
         *frag = '\0';
     }
     data->reverse_dns = reverse_dns & 1;
-    if (x_InternalResolve(service, data)  ||  !x_CheckServiceName(service))
+    if (x_InternalResolve(name, data))
         return data;
 
  out:
@@ -600,6 +667,7 @@ static SERV_ITER x_Open(const char*         service,
                         SSERV_Info**        info,
                         HOST_INFO*          host_info)
 {
+    int exact = s_Fast;
     int/*bool*/
         do_local,
 #ifdef NCBI_OS_UNIX
@@ -614,19 +682,26 @@ static SERV_ITER x_Open(const char*         service,
         do_namerd  = -1/*unassigned*/,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd   = -1/*unassigned*/;
-    struct SINTERNAL_Data* data;
+    struct SINTERNAL_Data* data = 0;
     const SSERV_VTable* op;
-    int exact = s_Fast;
+    char* domain = 0;
     const char* svc;
     SERV_ITER iter;
+    char* url;
 
-    if ((data = s_InternalMapper(types, service)) != 0) {
-        char* tmp      = ConnNetInfo_URL(&data->net_info);
-        if (strncmp(tmp, "//", 2) == 0  &&  strncmp(service, "//", 2) != 0)
-            memmove(tmp, tmp + 2, strlen(tmp + 2) + 1);
-        else if ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)
-            tmp[strcspn(tmp, ":")] = '\0';
-        svc            = tmp;
+    svc = s_ServiceName(service, &url, ismask, &exact);
+    assert((!svc  ||  *svc)  &&  (!url  ||  *url));
+    if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
+        /* Service resolved to some parsable URL -- proceed internally */
+        if (!svc) {
+            char* tmp  = ConnNetInfo_URL(&data->net_info);
+            if (strncmp(tmp, "//", 2) == 0  &&  strncmp(service, "//", 2) != 0)
+                memmove(tmp, tmp + 2, strlen(tmp + 2) + 1);
+            else if ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)
+                tmp[strcspn(tmp, ":")] = '\0';
+            svc        = tmp;
+        } else
+            assert(*svc);
         ismask         = 0/*false*/;
         types         &= fSERV_ReverseDns | fSERV_All;
         preferred_host = 0;
@@ -639,8 +714,33 @@ static SERV_ITER x_Open(const char*         service,
         exact          = 0;
         if ( info )
             *info      = 0;
-    } else
-        svc = s_ServiceName(service, ismask, &exact, 1/*log*/);
+    } else if (svc  &&  !url) {
+        /* Service name was entirely valid -- use resolver(s) */
+        domain = strchr(svc, '.');
+        if (domain) {
+#ifdef NCBI_OS_UNIX
+            do_lbsmd = 0;
+#endif /*NCBI_OS_UNIX*/
+#ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+            do_lbdns = 0;
+#  endif /*NCBI_OS_UNIX*/
+            do_linkerd = 0;
+            do_namerd  = 0;
+#endif /*NCBI_CXX_TOOLKIT*/
+            do_dispd   = 0;
+            *domain++ = '\0';
+            assert(*domain  &&  *domain != '.');
+        }
+    } else if (svc  ||  url) {
+        /* Bad service name or bad URL -- prepare to bail out */
+        if (svc)
+            free((void*) svc);
+        svc = 0;
+    } /* else "service" was NULL/empty (already logged) or no memory, just bail out */
+    if (url)
+        free((void*) url);
+
     if (!svc  ||  !(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         if (svc)
             free((void*) svc);
@@ -743,7 +843,7 @@ static SERV_ITER x_Open(const char*         service,
 #ifdef NCBI_CXX_TOOLKIT
         &&
         (!(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))  ||
-         !(op = SERV_LBNULL_Open(iter, info)))
+         !(op = SERV_LBNULL_Open(iter, domain, info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
 #ifdef NCBI_OS_UNIX
@@ -1601,10 +1701,10 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
                                               ESERV_Type  type)
 {
     char* buf, *svc = service  &&  *service ? SERV_ServiceName(service) : 0;
-    const char* typ = SERV_TypeStr(type);
+    const char* typ;
     size_t len;
 
-    if (!svc  ||  !*typ)
+    if (!svc  ||  !*(typ = SERV_TypeStr(type)))
         return 0/*failure*/;
     /* Store service-specific setting */
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient)) {
