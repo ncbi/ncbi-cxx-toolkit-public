@@ -1473,6 +1473,15 @@ version  2 # of file format
 2+6  QR  ddbj_patent
 2+8  QR  ddbj_other_nuc
 2+10 QR  ddbj_other_nuc
+2+6  QS  ddbj_patent
+2+8  QS  ddbj_other_nuc
+2+10 QS  ddbj_other_nuc
+2+6  QT  ddbj_patent
+2+8  QT  ddbj_other_nuc
+2+10 QT  ddbj_other_nuc
+2+6  QU  ddbj_patent
+2+8  QU  ddbj_other_nuc
+2+10 QU  ddbj_other_nuc
 2+6  Q?  ddbj_other_nuc
 2+8  Q?  ddbj_other_nuc
 2+10 Q?  ddbj_other_nuc
