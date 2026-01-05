@@ -375,7 +375,6 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
         goto out;
     } else {
         assert(domlen > 1  ||  domain[0] != '.');
-        assert(domain[domlen - 1] != '.');
         if (domain[ 0] != '.') {
             domain[-1]  = '.';
             ++domlen;
