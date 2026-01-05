@@ -1429,9 +1429,9 @@ static int/*bool*/ s_ParseURL(SConnNetInfo* info, const char* url, int web)
         } else {
             scheme  = (EURLScheme) info->scheme;
             if (web) {
-                const char* p = strchr(url, '/');
-                if (p  &&  (!s  ||  p < s))
-                    s = p;
+                const char* x = strchr(url, '/');
+                if (x  &&  (!s  ||  x < s))
+                    s = x;
                 x_port = -1L;
             }
         }
@@ -1550,7 +1550,7 @@ static int/*bool*/ s_ParseURL(SConnNetInfo* info, const char* url, int web)
 
 extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 {
-    if (!s_InfoIsValid(info) || !url)
+    if (!s_InfoIsValid(info)  ||  !url)
         return 0/*failure*/;
 
     if (!*url)
@@ -1562,7 +1562,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
 
 int/*bool*/ ConnNetInfo_ParseWebURL(SConnNetInfo* info, const char* url)
 {
-    if (!s_InfoIsValid(info) || !url)
+    if (!s_InfoIsValid(info)  ||  !url)
         return 0/*failure*/;
 
     if (!*url)
