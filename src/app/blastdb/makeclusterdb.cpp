@@ -60,6 +60,10 @@
 #include "../blast/blast_app_util.hpp"
 #include "masked_range_set.hpp"
 
+#if defined(HAVE_IPS4O_HPP)
+#include <ips4o.hpp>
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -91,7 +95,7 @@ private:
 class CCluster : public CObject {
 public:
 	CCluster (unsigned int cluster_id) : m_ClusterId(cluster_id) {}
-	unsigned int GetClusterId() { return m_ClusterId; }
+	unsigned int GetClusterId() const { return m_ClusterId; }
 	CRef<CClusterSeq> & GetRefSeq() { return m_RefSeq; }
 	const string & GetRefSeqId() { return(m_RefSeq.Empty() ? kEmptyStr : m_RefSeq->GetId()); }
 	void SetRefSeq(CRef<CClusterSeq> & r) {
@@ -100,7 +104,7 @@ public:
 	void AddMemSeq(CRef<CClusterSeq> & m) {
 		m_MemSeqs.push_back(m);
 	}
-	int64_t GetRefSeqOid() {
+	int64_t GetRefSeqOid() const {
 		if(m_RefSeq.NotEmpty()) {
 			return m_RefSeq->GetOid();
 		}
@@ -113,12 +117,12 @@ private:
 
 };
 
-bool SortClusterSeqs(CRef<CClusterSeq> & a, CRef<CClusterSeq> & b)
+bool SortClusterSeqs(const CRef<CClusterSeq> & a, const CRef<CClusterSeq> & b)
 {
 	return (a->GetId() < b->GetId());
 }
 
-bool SortCluster(CRef<CCluster> & a, CRef<CCluster> & b)
+bool SortCluster(const CRef<CCluster> & a, const CRef<CCluster> & b)
 {
 	return (a->GetRefSeqOid() < b->GetRefSeqOid());
 }
@@ -269,7 +273,17 @@ CClusterDBSource::GetNext(CTempString               & sequence,
     		}
     		mem_oids.push_back(mem_oid);
     	}
+#ifdef HAVE_IPS4O_HPP
+
+#ifdef HAVE_LIBTBB
+        ips4o::parallel::sort(mem_oids.begin(), mem_oids.end());
+#else
+        ips4o::sort(mem_oids.begin(), mem_oids.end());
+#endif /* HAVE_LIBTBB */
+
+#else
     	std::sort(mem_oids.begin(), mem_oids.end());
+#endif /* HAVE_IPS4O_HPP */
     	set<TTaxId> mem_ts;
     	m_Source->GetTaxIdsForOids(mem_oids, mem_ts);
     	taxids.insert(mem_ts.begin(), mem_ts.end());
@@ -491,7 +505,17 @@ void CMakeClusterDBApp::x_ProcessInputFile(const string & input_file)
 
 	 LOG_POST(Info <<"Num of Reference Seqs: " << cluster_id);
 	 LOG_POST(Info <<"Num of Cluster Seqs: " << m_ClusterSeqs.size());
+#ifdef HAVE_IPS4O_HPP
+
+#ifdef HAVE_LIBTBB
+        ips4o::parallel::sort(m_ClusterSeqs.begin(), m_ClusterSeqs.end(), SortClusterSeqs);
+#else
+        ips4o::sort(m_ClusterSeqs.begin(), m_ClusterSeqs.end(), SortClusterSeqs);
+#endif /* HAVE_LIBTBB */
+
+#else
 	 std::sort(m_ClusterSeqs.begin(), m_ClusterSeqs.end(), SortClusterSeqs);
+#endif /* HAVE_IPS4O_HPP */
 }
 
 void CMakeClusterDBApp::x_ProcessInputData(const string & source_db, bool is_protein)
@@ -515,7 +539,17 @@ void CMakeClusterDBApp::x_ProcessInputData(const string & source_db, bool is_pro
 	for (uint64_t i=0; i < oids.size(); i++) {
 		m_ClusterSeqs[i]->SetOid(oids[i]);
 	}
+#ifdef HAVE_IPS4O_HPP
+
+#ifdef HAVE_LIBTBB
+        ips4o::parallel::sort(m_Clusters.begin(), m_Clusters.end(), SortCluster);
+#else
+        ips4o::sort(m_Clusters.begin(), m_Clusters.end(), SortCluster);
+#endif /* HAVE_LIBTBB */
+
+#else
 	std::sort(m_Clusters.begin(), m_Clusters.end(), SortCluster);
+#endif /* HAVE_IPS4O_HPP */
 }
 
 void CMakeClusterDBApp::x_BuildDatabase()
