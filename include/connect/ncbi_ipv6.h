@@ -116,6 +116,8 @@ TNCBI_IPv6Addr* NcbiIPv4ToIPv6(TNCBI_IPv6Addr* addr,
  *  character (which is neither a digit nor a dot);  return 0 if conversion
  *  failed and no IPv4 address had been found.
  * @note
+ *  This call skips all leading whitespace before conversion begins.
+ * @note
  *  Unlike SOCK_gethostbyname[Ex], this call can handle "0.0.0.0" correctly.
  * @sa
  *  NcbiIPToAddr, NcbiIPv4ToIPv6, NcbiStringToAddr,
@@ -131,6 +133,8 @@ const char*  NcbiStringToIPv4(unsigned int* addr,
  *  full-quad trailing IPv4).  Return a non-zero string pointer to the first
  *  non-converted character (which is neither a hex-digit, nor a colon, nor a
  *  dot);  return 0 if conversion failed and no IPv6 address had been found.
+ * @note
+ *  This call skips all leading whitespace before conversion begins.
  * @sa
  *  NcbiIPToAddr, NcbiStringToAddr
  */
@@ -144,6 +148,8 @@ const char*  NcbiStringToIPv6(TNCBI_IPv6Addr* addr,
  *  colon-separated IPv6.  Return a non-zero string pointer to the first
  *  non-converted character (which is neither a [hex-]digit, nor a colon, nor a
  *  dot);  return 0 if no conversion can be made.
+ * @note
+ *  This call skips all leading whitespace before conversion begins.
  * @sa
  *  NcbiStringToIPv4, NcbiStringToIPv6, NcbiStingToAddr, NcbiAddrToString
  */
@@ -156,6 +162,8 @@ const char*  NcbiIPToAddr(TNCBI_IPv6Addr* addr,
  *  0) bytes of "str", which can be either an .in-addr.arpa- or an
  *  .in6.arpa-domain names.  Return a non-zero string pointer to the first
  *  non-converted character;  return 0 if no conversion can be made.
+ * @note
+ *  This call skips all leading whitespace before conversion begins.
  * @sa
  *  NcbiAddrToDNS, NcbiStringToAddr
  */
@@ -170,6 +178,8 @@ const char*  NcbiDNSIPToAddr(TNCBI_IPv6Addr* addr,
  *  names.  Return a non-zero string pointer to the first non-converted
  *  character (which is neither a [hex-]digit, nor a colon, nor a dot);  return
  *  0 if no conversion can be made.
+ * @note
+ *  This call skips all leading whitespace before conversion begins.
  * @sa
  *  NcbiAddrToString, NcbiAddrToDNS
  */
@@ -260,11 +270,9 @@ int/*bool*/  NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
 /** Retain first "bits" in a given "addr", resetting all remaining bits to 0.
  *  Return non-zero(true) if the resultant "addr" is non-empty;  return a
  *  zero(false) otherwise.
- * @note "addr" remains unmodified for "bits" larger than 127, so this call
- *  becomes functionally (but less efficiently) equivalent to negation of
- *  NcbiIsEmptyIPv6().
+ * @note "addr" remains unmodified for "bits" larger than 127.
  * @sa
- *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network, NcbiIPv6Suffix
+ *  NcbiIsEmptyIPv6, NcbiIsInIPv6Network, NcbiIPv6Suffix, NcbiIPv4Subnet
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv6Subnet(TNCBI_IPv6Addr* addr,
@@ -274,14 +282,36 @@ int/*bool*/  NcbiIPv6Subnet(TNCBI_IPv6Addr* addr,
 /** Retain last "bits" in a given "addr", resetting all remaining bits to 0.
  *  Return non-zero(true) if the resultant "addr" is non-empty;  return a
  *  zero(false) otherwise.
- * @note "addr" remains unmodified for "bits" larger than 127, so this call
- *  becomes functionally (but less efficiently) equivalent to negation of
- *  NcbiIsEmptyIPv6().
+ * @note "addr" remains unmodified for "bits" larger than 127.
  * @sa
- *  NcbiIsEmptyIPv6, NcbiIPv6Subnet
+ *  NcbiIsEmptyIPv6, NcbiIPv6Subnet, NcbiIPv4Suffix
  */
 extern NCBI_XCONNECT_EXPORT
 int/*bool*/  NcbiIPv6Suffix(TNCBI_IPv6Addr* addr,
+                            unsigned int    bits);
+
+
+/** Same as NcbiIPv6Subnet() but operates on "addr", which is IPv4.
+ *  Return non-zero(true) if the resultant "addr" is a non-empty IPv4;
+ *  return a zero(false) otherwise (empty or non-IPv4).
+ * @note "addr" remains unmodified for "bits" larger than 31.
+ * @sa
+ *  NcbiIsIPv4Ex, NcbiIPv6Subnet
+ */
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/  NcbiIPv4Subnet(TNCBI_IPv6Addr* addr,
+                            unsigned int    bits);
+
+
+/** Same as NcbiIPv6Suffix() but operates on "addr", which is IPv4.
+ *  Return non-zero(true) if the resultant "addr" is a non-empty IPv4;
+ *  return a zero(false) otherwise (empty or non-IPv4).
+ * @note "addr" remains unmodified for "bits" larger than 31.
+ * @sa
+ *  NcbiIsIPv4Ex, NcbiIPv6Suffix
+ */
+extern NCBI_XCONNECT_EXPORT
+int/*bool*/  NcbiIPv4Suffix(TNCBI_IPv6Addr* addr,
                             unsigned int    bits);
 
 
