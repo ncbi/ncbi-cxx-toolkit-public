@@ -623,6 +623,7 @@ void CMakeClusterDBApp::x_BuildDatabase()
         out << NcbiEndl;
     }
 #endif
+    (void)success; // to pacify compiler warning
 }
 
 int CMakeClusterDBApp::Run(void)
