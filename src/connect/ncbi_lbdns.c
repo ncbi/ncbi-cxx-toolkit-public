@@ -1472,12 +1472,8 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     unsigned long port;
     size_t len;
 
-    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
     assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
-
-    /* No external services */
-    if (iter->external)
-        return 0;
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */

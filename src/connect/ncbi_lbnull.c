@@ -262,13 +262,9 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
     size_t len, domlen;
     char* domain;
 
-    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(iter  &&  !iter->data  &&  !iter->op  &&  !iter->external);
     assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
     assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
-
-    /* No external */
-    if (iter->external)
-        return 0;
 
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Dns, fSERV_Http and fSERV_Standalone only, which all, as a matter
