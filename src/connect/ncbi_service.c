@@ -84,18 +84,18 @@ static char* x_getenv(const char* name)
 /* Replace any non-alpha / non-digit with '_' */
 static int/*bool*/ x_mkenv(char* str, size_t len)
 {
-    int/*bool*/ made = 0/*false*/;
-    const char* end  = str + len;
+    int/*bool*/ mod = 0/*false*/;
+    const char* end = str + len;
     while (str != end) {
         unsigned char c = (unsigned char)(*str);
         assert(!isspace(c));
         if (!isalpha(c)  &&  !isdigit(c)  &&  !(c == '_')) {
-            made = 1/*true*/;
+            mod  = 1/*true*/;
             *str = '_';
         }
         ++str;
     }
-    return made;
+    return mod;
 }
 
 
@@ -222,7 +222,7 @@ size_t SERV_CheckDomain(const char* domain)
 
 /* "service" == the original input service name;
  * "svc"     == current service name (NULL at first, init to "service");
- * "equiv"   == opt ptr to store what "svc" converted to (thru env/reg)
+ * "url"     == opt ptr to store what "svc" converted to (thru env/reg)
  *              in case it's not a valid service name (retval == NULL);
  * "ismask"  = 1 if "service" is a wildcard pattern to match;
  * "*isfast" = 1 on input if not to perform any env/reg scan;
@@ -231,7 +231,7 @@ size_t SERV_CheckDomain(const char* domain)
  *               (only) for namerd searches, which are case-sensitive.
  */
 static char* x_ServiceName(unsigned int* depth,
-                           const char* service, const char* svc, char** equiv,
+                           const char* service, const char* svc, char** url,
                            int/*bool*/ ismask, int*/*bool*/ isfast)
 {
     char   buf[128];
@@ -243,10 +243,10 @@ static char* x_ServiceName(unsigned int* depth,
     if (!*depth) {
         assert(!svc);
         svc = service;
-        if (equiv)
-            *equiv = 0;
+        if ( url )
+            *url = 0;
     } else
-        assert(service  &&  svc  &&  service != svc  &&  !ismask  &&  (!equiv  ||  !*equiv));
+        assert(service  &&  svc  &&  service != svc  &&  !ismask  &&  (!url  ||  !*url));
     if (!svc  ||  (!ismask
                    &&  (!(len = strcspn(svc, "."))
                         ||  !x_CheckServiceName(svc, len, svc[len])
@@ -262,8 +262,8 @@ static char* x_ServiceName(unsigned int* depth,
                          !svc  ||  !*svc ? "" : "]  ",
                          !svc ? "NULL" : !*svc ? "Empty" : !len ? "Invalid" : "Too long",
                          *service ? " for: " : "", service));
-        } else if (equiv)
-            *equiv = strdup(svc);
+        } else if (url)
+            *url = strdup(svc);
         return 0/*failure*/;
     }
     if (!ismask  &&  !*isfast) {
@@ -293,7 +293,7 @@ static char* x_ServiceName(unsigned int* depth,
                          service, svc, s));
             if (strcasecmp(svc, s) != 0) {
                 if (++(*depth) < SERV_SERVICE_NAME_RECURSION_MAX) {
-                    char* rv = x_ServiceName(depth, service, s, equiv, ismask, isfast);
+                    char* rv = x_ServiceName(depth, service, s, url, ismask, isfast);
                     if (rv  ||  *depth >= SERV_SERVICE_NAME_RECURSION_MAX)
                         return rv;
                 } else {
@@ -312,13 +312,13 @@ static char* x_ServiceName(unsigned int* depth,
 }
 
 
-static char* s_ServiceName(const char* service, char** equiv,
+static char* s_ServiceName(const char* service, char** url,
                            int/*bool*/ ismask, int*/*bool*/ isfast)
 {
     unsigned int depth = 0;
     char* retval;
     CORE_LOCK_READ;
-    retval = x_ServiceName(&depth, service, 0, equiv, ismask, isfast);
+    retval = x_ServiceName(&depth, service, 0/*svc*/, url, ismask, isfast);
     CORE_UNLOCK;
     return retval;
 }
@@ -327,7 +327,7 @@ static char* s_ServiceName(const char* service, char** equiv,
 char* SERV_ServiceName(const char* service)
 {
     int dummy = 0;
-    return s_ServiceName(service, 0/*equiv*/, 0/*ismask*/, &dummy/*isfast*/);
+    return s_ServiceName(service, 0/*url*/, 0/*ismask*/, &dummy/*isfast*/);
 }
 
 
@@ -732,7 +732,7 @@ static SERV_ITER x_Open(const char*         service,
             svc        = tmp;
         } else
             assert(*svc);
-        ismask         = 0/*false*/;
+        assert(ismask == 0/*false*/);
         types         &= fSERV_ReverseDns | fSERV_All;
         preferred_host = 0;
         preferred_port = 0;
@@ -985,7 +985,7 @@ static SERV_ITER x_Open(const char*         service,
             CORE_LOGF_X(1, eLOG_Error,
                         ("%s%s%s%s%sNo service mappers available",
                          &"["[!*service], service,
-                         &"/"[!svc], svc ? svc : "",
+                         &"|"[!svc], svc ? svc : "",
                          *service ? "]  " : ""));
         }
         SERV_Close(iter);

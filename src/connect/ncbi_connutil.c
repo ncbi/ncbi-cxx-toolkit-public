@@ -128,6 +128,9 @@ static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src, int/*bool*/ pre)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 {
     size_t src_len = strlen(src);
@@ -145,18 +148,18 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 /* Replace any non-alpha / non-digit with '_' */
 static int/*bool*/ x_mkenv(char* str, size_t len)
 {
-    int/*bool*/ made = 0/*false*/;
-    const char* end  = str + len;
+    int/*bool*/ mod = 0/*false*/;
+    const char* end = str + len;
     while (str != end) {
         unsigned char c = (unsigned char)(*str);
         assert(!isspace(c));
         if (!isalpha(c)  &&  !isdigit(c)  &&  !(c == '_')) {
-            made = 1/*true*/;
+            mod  = 1/*true*/;
             *str = '_';
         }
         ++str;
     }
-    return made;
+    return mod;
 }
 
 
@@ -496,6 +499,9 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_ProxyStr(EBProxyType proxy)
 {
     switch (proxy) {
@@ -1982,6 +1988,9 @@ extern int/*bool*/ ConnNetInfo_PostOverrideArg(SConnNetInfo* info,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_IsSufficientAddress(const char* addr)
 {
     const char* c;
@@ -2163,6 +2172,9 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_BadMagic(unsigned int magic, char buf[])
 {
     sprintf(buf, "0x%08lX (INVALID != 0x%08lX)",
@@ -2171,6 +2183,9 @@ static const char* x_BadMagic(unsigned int magic, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_Num(unsigned int num, char buf[])
 {
     sprintf(buf, "(#%u)", num);
@@ -2178,6 +2193,9 @@ static const char* x_Num(unsigned int num, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_Scheme(EURLScheme scheme, char buf[])
 {
     switch (scheme) {
@@ -2198,6 +2216,9 @@ static const char* x_Scheme(EURLScheme scheme, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_Port(unsigned short port, char buf[])
 {
     assert(port);
@@ -2206,6 +2227,9 @@ static const char* x_Port(unsigned short port, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_ReqMethod(TReqMethod req_method, char buf[])
 {
     int/*bool*/ v1 = req_method & eReqMethod_v1 ? 1/*true*/ : 0/*false*/;
@@ -2238,6 +2262,9 @@ static const char* x_ReqMethod(TReqMethod req_method, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* x_Firewall(unsigned int firewall)
 {
     switch ((EFWMode) firewall) {
@@ -2287,6 +2314,9 @@ static const char* x_CredInfo(NCBI_CRED cred, char buf[])
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void s_SaveStringQuot(char* s, const char* name,
                              const char* str, int/*bool*/ quote)
 {
@@ -2296,22 +2326,34 @@ static void s_SaveStringQuot(char* s, const char* name,
             str  &&  quote ? "\"" : "");
 }
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void s_SaveString(char* s, const char* name, const char* str)
 {
     s_SaveStringQuot(s, name, str, 1);
 }
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void s_SaveKeyval(char* s, const char* name, const char* str)
 {
     assert(str  &&  *str);
     s_SaveStringQuot(s, name, str, 0);
 }
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void s_SaveBool(char* s, const char* name, unsigned int/*bool*/ bbb)
 {
     s_SaveKeyval(s, name, bbb ? "TRUE" : "FALSE");
 }
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static void s_SaveULong(char* s, const char* name, unsigned long lll)
 {
     sprintf(s + strlen(s), "%-16.16s: %lu\n", name, lll);
@@ -3152,6 +3194,9 @@ extern EIO_Status BUF_StripToPattern
 /* Return integer (0..15) corresponding to the "ch" as a hex digit.
  * Return -1 on error.
  */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int s_HexChar(char ch)
 {
     unsigned int rc = (unsigned int)(ch - '0');
