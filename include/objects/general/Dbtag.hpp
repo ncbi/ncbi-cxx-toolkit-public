@@ -219,7 +219,7 @@ public:
         eDbtagType_PeptideAtlas,
         eDbtagType_EPDnew,
         eDbtagType_Ensembl,
-        eDbtagType_EnsemblNew,
+        eDbtagType_EnsemblBeta,
         eDbtagType_PseudoCAP,
         eDbtagType_MarpolBase,
         eDbtagType_dbVar,
