@@ -33,14 +33,14 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#ifdef NCBI_OS_MSWIN
+#  include "../ncbi_socketp.h"          /* gettimeofday() for MSWIN */
+#endif /*NCBI_OS_MSWIN*/
 #include <connect/ncbi_tls.h>
 #include <stdlib.h>
-#include <time.h>
-#ifdef NCBI_OS_MSWIN
-#  include <windows.h>
-#else
-#  include <sys/time.h>
-#endif /*NCBI_OS_MSWIN*/
+#ifndef NCBI_OS_MSWIN
+#  include <sys/time.h>                 /* gettimeofday() for others */
+#endif /*!NCBI_OS_MSWIN*/
 
 #include "test_assert.h"  /* This header must go last */
 
@@ -100,37 +100,6 @@ static const char* x_Bits(TNcbiCapacity capacity)
 }
 
 
-#ifdef NCBI_OS_MSWIN
-
-static int x_gettimeofday(struct timeval* tv)
-{
-    FILETIME         systime;
-    unsigned __int64 sysusec;
-
-    if (!tv)
-        return -1;
-
-    GetSystemTimeAsFileTime(&systime);
-
-    sysusec   = systime.dwHighDateTime;
-    sysusec <<= 32;
-    sysusec  |= systime.dwLowDateTime;
-    sysusec  += 5;
-    sysusec  /= 10;
-
-    tv->tv_usec = (long)(sysusec % 1000000);
-    tv->tv_sec  = (long)(sysusec / 1000000 - 11644473600Ui64);
-
-    return 0;
-}
-
-#else
-
-#  define x_gettimeofday(tv)  gettimeofday(tv, 0)
-
-#endif
-
-
 static double x_TimeDiff(const struct timeval* end,
                          const struct timeval* beg)
 {
@@ -161,9 +130,9 @@ static int x_ComparePortUsage(const void* p1, const void* p2)
  */
 int main(int argc, const char* argv[])
 {
-    static const char kParameter[] = "test_parameter";
     const char* service = argc > 1 ? argv[1] : "bounce";
     TSERV_Type types = fSERV_All & ~fSERV_Firewall;
+    const char* parameter = 0;
     SConnNetInfo* net_info;
     const SSERV_Info* info;
     const char* arg, *val;
@@ -176,30 +145,30 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
 
+    /* Make sure can talk HTTPS (DISPD) */
     SOCK_SetupSSL(NcbiSetupTls);
 
     arg = 0;
     if (argc > 2) {
+        int a = 2;
         int/*bool*/ okay = 0/*false*/;
-        if (strcasecmp(argv[2],"heap") == 0 || strcasecmp(argv[2],"all") == 0){
+        if (strcasecmp(argv[a],"heap") == 0 || strcasecmp(argv[a],"all") == 0){
             HEAP_Options(eOff, eDefault);
             CORE_LOG(eLOG_Note, "Using slow heap walks with checks");
             okay = 1/*true*/;
         }
-        if (strcasecmp(argv[2],"lbsm") == 0 || strcasecmp(argv[2],"all") == 0){
+        if (strcasecmp(argv[a],"lbsm") == 0 || strcasecmp(argv[a],"all") == 0){
 #ifdef NCBI_OS_MSWIN
-            if (strcasecmp(argv[2],"lbsm") == 0) {
-                CORE_LOG(eLOG_Warning,
-                         "Option \"lbsm\" has no useful effect on MS-Windows");
-            }
+            if (strcasecmp(argv[a],"lbsm") == 0)
+                CORE_LOG(eLOG_Warning, "Option \"lbsm\" has no use on MSWIN");
 #else
             LBSMD_FastHeapAccess(eOn);
             CORE_LOG(eLOG_Note, "Using live (faster) LBSM heap access");
 #endif /*NCBI_OS_MSWIN*/
             okay = 1/*true*/;
         }
-        if ((val = strchr(argv[2], '=')) != 0) {
-            arg = argv[2];
+        if ((val = strchr(argv[a], '=')) != 0) {
+            arg = argv[a];
             *((char*) val) = '\0';
             if (strcmp(++val, "-") == 0)
                 val = 0;
@@ -207,26 +176,55 @@ int main(int argc, const char* argv[])
                                   val ? "\"" : "",
                                   val ? val  : "NULL",
                                   val ? "\"" : ""));
-            // okay = 1/*true*/;
-        } else {
+            okay = 1/*true*/;
+        }
+        for (a += okay;  a < argc;  ++a) {
             ESERV_Type type;
-            if ((value = SERV_ReadType(argv[2], &type)) != 0  &&  !*value
-                &&  type != fSERV_Firewall) {
-                types = type;
-                // okay = 1/*true*/;
-            } else if (!okay)
-                CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[2]));
+            if (strcasecmp(argv[a], "ANY") == 0) {
+                CORE_LOG(eLOG_Note, "Resetting service type to ANY");
+                types &= ~fSERV_All;
+                continue;
+            }
+            if ((value = SERV_ReadType(argv[a], &type)) != 0
+                &&  !*value  &&  type != fSERV_Firewall) {
+                if (a == 2 + okay) {
+                    CORE_LOGF(eLOG_Note,
+                              ("Resetting service type to %s", argv[a]));
+                    types  = type;
+                } else {
+                    CORE_LOGF(eLOG_Note,
+                              ("Including service type %s", argv[a]));
+                    types |= type;
+                }
+                continue;
+            }
+            if (strcmp(argv[a], "-r") == 0) {
+                if (!(types & fSERV_ReverseDns)) {
+                    types |= fSERV_ReverseDns;
+                    CORE_LOG(eLOG_Note, "Using reverse DNS search");
+                }
+                continue;
+            }
+            if (!parameter) {
+                parameter = argv[a];
+                CORE_LOGF(eLOG_Note,
+                          ("Taking `%s' for LBSM environment search",
+                           parameter));
+                continue;
+            }
+            CORE_LOGF(eLOG_Fatal, ("Unknown option `%s'", argv[a]));
         }
     } else
         val = 0;
 
-    CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
+    CORE_LOGF(eLOG_Note, ("Looking for service `%s' type 0x%04X",
+                          service, types & fSERV_All));
     verify((net_info = ConnNetInfo_Create(service)));
 
-    if (!net_info->lb_disable  &&  argc != 2) {
-        value = LBSMD_GetHostParameter(SERV_LOCALHOST, kParameter);
-        CORE_LOGF(eLOG_Note, ("Querying host parameter `%s': %s%s%s",
-                              kParameter,
+    if (!net_info->lb_disable  &&  parameter) {
+        value = LBSMD_GetHostParameter(SERV_LOCALHOST, parameter);
+        CORE_LOGF(eLOG_Note, ("Querying LBSM host environment `%s': %s%s%s",
+                              parameter,
                               &"`"[!value],
                               value ? value : "Not found",
                               &"'"[!value]));
@@ -235,7 +233,7 @@ int main(int argc, const char* argv[])
     }
 
     CORE_LOG(eLOG_Trace, "Opening service mapper");
-    if (x_gettimeofday(&start) != 0)
+    if (gettimeofday(&start, 0) != 0)
         memset(&start, 0, sizeof(start));
     iter = SERV_OpenP(service,
                       types | (strpbrk(service,"?*[") ? fSERV_Promiscuous : 0),
@@ -251,7 +249,7 @@ int main(int argc, const char* argv[])
             struct timeval stop;
             double elapsed;
             char* info_str;
-            if (x_gettimeofday(&stop) != 0)
+            if (gettimeofday(&stop, 0) != 0)
                 memset(&stop, 0, sizeof(stop));
             elapsed = x_TimeDiff(&stop, &start);
             info_str = SERV_WriteInfo(info);
@@ -348,7 +346,7 @@ int main(int argc, const char* argv[])
             }
             if (info_str)
                 free(info_str);
-            if (x_gettimeofday(&start) != 0)
+            if (gettimeofday(&start, 0) != 0)
                 memcpy(&start, &stop, sizeof(start));
         }
         if (SERV_GetNextInfo(iter)  ||  SERV_GetNextInfo(iter))
@@ -366,24 +364,6 @@ int main(int argc, const char* argv[])
         CORE_LOGF(eLOG_Note, ("%d server(s) found", n_found));
     else
         CORE_LOG(eLOG_Fatal, "Requested service not found");
-
-#if 0
-    {{
-        SConnNetInfo* net_info;
-        verify((net_info = ConnNetInfo_Create(service)));
-        iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
-        ConnNetInfo_Destroy(net_info);
-    }}
-    if (iter) {
-        for (n_found = 1;  (info = SERV_GetNextInfo(iter)) != 0;  ++n_found) {
-            char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("HTTP server #%-2d `%s' = %s",
-                                  n_found, service, info_str));
-            free(info_str);
-        }
-        SERV_Close(iter);
-    }
-#endif
 
     CORE_LOG(eLOG_Note, "TEST completed successfully");
     CORE_SetLOG(0);
