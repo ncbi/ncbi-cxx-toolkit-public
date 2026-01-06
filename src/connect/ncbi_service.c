@@ -1239,7 +1239,6 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
     x_RETURN(1/*success*/);
 }
 
-
 #undef x_RETURN
 
 #endif /*_DEBUG && !NDEBUG*/
