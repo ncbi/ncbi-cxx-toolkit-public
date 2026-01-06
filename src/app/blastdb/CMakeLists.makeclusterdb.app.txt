@@ -1,10 +1,14 @@
 # $Id$
 
+NCBI_optional_components(IPS4O TBB)
 NCBI_begin_app(makeclusterdb)
   NCBI_sources(makeclusterdb)
   NCBI_uses_toolkit_libraries(blastinput writedb)
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
   NCBI_requires(-Cygwin)
   NCBI_project_watchers(fongah2)
+  if(NCBI_COMPONENT_TBB_FOUND)
+    NCBI_uses_external_libraries(TBB::tbb atomic)
+  endif()
 NCBI_end_app()
 
