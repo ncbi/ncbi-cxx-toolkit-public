@@ -871,7 +871,15 @@ static SERV_ITER x_Open(const char*         service,
 #endif /*NCBI_CXX_TOOLKIT*/
         do_dispd   = 0/*false*/;
     }
-
+    if (iter->external) {
+        /* disable all resolvers that can't do external */
+#ifdef NCBI_CXX_TOOLKIT
+#  ifdef NCBI_OS_UNIX
+        do_lbdns   =
+#  endif /*NCBI_OS_UNIX*/
+        do_lbnull  = 0/*false*/;
+#endif /*NCBI_CXX_TOOLKIT*/
+    }
     if (ismask) {
         /* disable all resolvers that cannot handle service wildcards */
 #ifdef NCBI_CXX_TOOLKIT
