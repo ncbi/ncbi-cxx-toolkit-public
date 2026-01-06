@@ -396,7 +396,7 @@ EIO_Status SOCK_SetupSSLInternalEx(FSSLSetup setup, int/*bool*/ init);
 #ifdef NCBI_OS_MSWIN
 /* Utility */
 
-int gettimeofday(struct timeval* tp, void* unused);
+NCBI_XCONNECT_EXPORT int gettimeofday(struct timeval* tp, void* unused);
 #endif /*NCBI_OS_MSWIN*/
 
 

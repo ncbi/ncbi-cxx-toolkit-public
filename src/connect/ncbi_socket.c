@@ -10004,7 +10004,7 @@ extern const char* SOCK_SSLName(void)
 #ifdef NCBI_OS_MSWIN
 
 /*ARGSUSED*/
-extern int gettimeofday(struct timeval* tp, void* unused)
+int gettimeofday(struct timeval* tp, void* unused)
 {
     struct timespec ts;
     if (timespec_get(&ts, TIME_UTC) == TIME_UTC) {
