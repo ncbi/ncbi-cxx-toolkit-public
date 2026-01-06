@@ -249,8 +249,9 @@ static void x_tr(char* dst, const char* src, size_t len, char x, char y)
  *  EXTERNAL
  ***********************************************************************/
 
-const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
-                                     const char* default_domain, SSERV_Info** info)
+const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
+                                     SSERV_Info** info,
+                                     const char*  default_domain)
 {
     char buf[CONN_PATH_LEN + 1];
     TSERV_TypeOnly type, types;
@@ -262,12 +263,10 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
     char* domain;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
-    assert(!default_domain
-           ||  (*default_domain  &&  *default_domain != '.'));
-    /* No wildcard(search) or external processing */
-    if (iter->ismask)
-        return 0;
-    assert(iter->name  &&  *iter->name);
+    assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
+    assert(!default_domain  ||  (*default_domain  &&  *default_domain != '.'));
+
+    /* No external */
     if (iter->external)
         return 0;
 
@@ -281,8 +280,8 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
     if (types  &&  !(type &= types))
         return 0;
 
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"/\"%s\")", iter->name,
-                 default_domain ? default_domain : ""));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s%s%s\")", iter->name,
+                 &"."[!default_domain], default_domain ? default_domain : ""));
 
     assert(CONN_HOST_LEN + 1 < sizeof(buf));
     if ((len = strlen(iter->name)) > CONN_HOST_LEN) {
@@ -416,15 +415,15 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER   iter,
     if (!s_Resolve(iter)) {
         CORE_LOGF(eLOG_Trace,
                   ("SERV_LBNULL_Open(\"%s\"): Service not found",
-                   data->host));
+                   data->host/*trace full host, not iter->name*/));
         s_Close(iter);
         return 0;
     }
 
-    /* call GetNextInfo subsequently if info is actually needed */
+    /* call GetNextInfo() subsequently if info is actually needed */
     if (info)
         *info = 0;
-    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", data->host));
+    CORE_TRACEF(("SERV_LBNULL_Open(\"%s\"): success", iter->name));
     return &kLbnullOp;
 
  out:

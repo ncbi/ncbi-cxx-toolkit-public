@@ -46,7 +46,7 @@ extern "C" {
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
-                                    int/*bool*/  no_dispd);
+                                    int/*bool*/  no_dispd_follows);
 
 
 /* Get configuration file name.  Returned '\0'-terminated string is to be

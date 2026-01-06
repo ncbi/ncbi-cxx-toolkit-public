@@ -43,8 +43,8 @@ extern "C" {
 
 
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
-                                             const SConnNetInfo* net_info,
                                              SSERV_Info**        info,
+                                             const SConnNetInfo* net_info,
                                              int*                do_namerd);
 
 #ifdef __cplusplus

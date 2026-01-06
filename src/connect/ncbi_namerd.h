@@ -42,8 +42,8 @@ extern "C" {
 #endif
 
 extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
-                                            const SConnNetInfo* net_info,
-                                            SSERV_Info**        info);
+                                            SSERV_Info**        info,
+                                            const SConnNetInfo* net_info);
 
 extern int SERV_NAMERD_SetConnectorSource(const char* mock_body);
 

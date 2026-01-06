@@ -43,8 +43,8 @@ extern "C" {
 
 
 const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
-                                     const char*  domain,
-                                     SSERV_Info** info);
+                                     SSERV_Info** info,
+                                     const char*  domain);
 
 
 #ifdef __cplusplus

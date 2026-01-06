@@ -311,7 +311,7 @@ static int/*tri-state bool*/ x_SetupFromNamerd(SERV_ITER iter, int* do_namerd)
     assert(iter->types);
 
     /* Try to open NAMERD on our own iterator */
-    if ( ! (iter->op = SERV_NAMERD_Open(iter, data->net_info, 0))) {
+    if ( ! (iter->op = SERV_NAMERD_Open(iter, 0, data->net_info))) {
         CORE_TRACEF(("[%s]  Failed to open NAMERD", iter->name));
         if (iter->types == data->types)
             *do_namerd = 0/*false*/;
@@ -525,17 +525,16 @@ static int/*bool*/ x_SetupConnectionParams(SERV_ITER iter, int* do_namerd)
  ***********************************************************************/
 
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
-                                             const SConnNetInfo* net_info,
                                              SSERV_Info**        info,
+                                             const SConnNetInfo* net_info,
                                              int*                do_namerd)
 {
     struct SLINKERD_Data* data;
     TSERV_TypeOnly types;
 
-    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op  &&  do_namerd);
-    if (iter->ismask)
-        return 0/*LINKERD doesn't support masks(searches)*/;
-    assert(iter->name  &&  *iter->name);
+    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(!iter->ismask  &&  *iter->name);
+    assert(net_info  &&  do_namerd);
 
     types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
     if ( ! (net_info->scheme == eURL_Http   ||
@@ -588,7 +587,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         return 0;
     }
 
-    /* call GetNextInfo subsequently if info is actually needed */
+    /* call GetNextInfo() subsequently if info is actually needed */
     if (info)
         *info = 0;
     CORE_TRACEF(("Leave SERV_LINKERD_Open(\"%s\"): success", iter->name));

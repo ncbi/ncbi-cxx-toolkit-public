@@ -167,34 +167,43 @@ static size_t x_CheckServiceName(const char* svc, size_t len, int/*bool*/ dns)
 }
 
 
-#define isdash(s)  ((s) == '-'  ||  (s) == '_')
+#define isdash(s)      ((s) == '-'  ||  (s) == '_')
+#ifndef   NS_MAXLABEL
+#  define NS_MAXLABEL  63  /* RFC1035, 2.3.4 */
+#endif /*!NS_MAXLABEL*/
 
 size_t SERV_CheckDomain(const char* domain)
 {
     int/*bool*/ dot = *domain == '.' ? 1/*true*/ : 0/*false*/;
     const char* ptr = dot ? ++domain : domain;
     int/*bool*/ alpha = 0/*false*/;
-    size_t len;
+    size_t len = 0;
 
     if (!*ptr)
-        return 0/*false: just dot(root) or empty*/;
+        return 0/*failure: just dot(root) or empty*/;
     for ( ;  *ptr;  ++ptr) {
         if (*ptr == '.') {
             if (dot  ||  (alpha  &&  isdash(ptr[-1])))
-                return 0/*false: double dot or trailing dash*/;
+                return 0/*failure: double dot or trailing dash*/;
+            if (len > NS_MAXLABEL)
+                return 0;
             dot = 1/*true*/;
+            len = 0;
             continue;
         }
         if ((dot  ||  ptr == domain)  &&  isdash(*ptr))
-            return 0/*false: leading dash */;
+            return 0/*failure: leading dash*/;
         dot = 0/*false*/;
+        ++len;
         if (isdigit((unsigned char)(*ptr)))
             continue;
         if (!isalpha((unsigned char)(*ptr))  &&  !isdash(*ptr))
-            return 0/*false: bad character*/;
+            return 0/*failure: bad character*/;
         /* at least one regular "letter" seen */
         alpha = 1/*true*/;
     }
+    if (len > NS_MAXLABEL)
+        return 0/*failure: DNS label too long*/;
     len = (size_t)(ptr - domain);
     assert(len);
     if (domain[len - 1] == '.')
@@ -204,22 +213,22 @@ size_t SERV_CheckDomain(const char* domain)
         ptr = NcbiStringToIPv4(&temp, domain, len);
         assert(!ptr  ||  ptr > domain);
         if (ptr == domain + len)
-            return 0/*false: IPv4 instead of domain*/;
+            return 0/*failure: IPv4 instead of domain*/;
     } else if (isdash(ptr[-1]))
-        return 0/*false: trailing dash*/;
+        return 0/*failure: trailing dash*/;
     return len;
 }
 
 
 /* "service" == the original input service name;
  * "svc"     == current service name (NULL at first, init to "service");
- * "equiv"   == opt ptr to store what "svc" resolved to (via env/reg)
+ * "equiv"   == opt ptr to store what "svc" converted to (thru env/reg)
  *              in case it's not a valid service name (retval == NULL);
- * "ismask"  = 1 if "service" may contain any wildcards;
- * "*isfast" = 1 on input if not to do environment scan;
+ * "ismask"  = 1 if "service" is a wildcard pattern to match;
+ * "*isfast" = 1 on input if not to perform any env/reg scan;
  * "*isfast" = 1 on output if the service was substituted with itself (but may
  *               be different case);  otherwise, "*isfast" == 0.  This is used
- *               (only) in namerd searches, which are case-sensitive.
+ *               (only) for namerd searches, which are case-sensitive.
  */
 static char* x_ServiceName(unsigned int* depth,
                            const char* service, const char* svc, char** equiv,
@@ -585,8 +594,13 @@ static struct SINTERNAL_Data* s_InternalMapper(const char* name,
         *frag = '\0';
     }
     data->reverse_dns = reverse_dns & 1;
-    if (x_InternalResolve(name, data))
+    if (x_InternalResolve(name, data)) {
+        size_t len = SERV_CheckDomain(net_info->host);
+        assert(net_info->host[0] != '.');
+        if (len)
+            net_info->host[len] = '\0';
         return data;
+    }
 
  out:
     free(data);
@@ -676,7 +690,7 @@ static SERV_ITER x_Open(const char*         service,
         do_lbsmd   = -1/*unassigned*/,
 #endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
-        do_lbnull,
+        do_lbnull  = -1/*unassigned*/,
 #  ifdef NCBI_OS_UNIX
         do_lbdns   = -1/*unassigned*/,
 #  endif /*NCBI_OS_UNIX*/
@@ -691,13 +705,18 @@ static SERV_ITER x_Open(const char*         service,
     SERV_ITER iter;
     char* url;
 
+    if ( host_info )
+        *host_info = 0;
+
     svc = s_ServiceName(service, &url, ismask, &exact);
-    assert((!svc  ||  *svc)  &&  (!url  ||  *url));
+    assert((!svc  ||  *svc  ||  ismask)  &&  (!url  ||  (*url  &&  !ismask)));
     if (url  &&  (data = s_InternalMapper(svc, types, url)) != 0) {
         /* Service resolved to some parsable URL -- proceed internally */
         if (!svc) {
             char* tmp  = ConnNetInfo_URL(&data->net_info);
-            if (strncmp(tmp, "//", 2) == 0  &&  strncmp(service, "//", 2) != 0)
+            if (!tmp)
+                /*oops*/;
+            else if (strncmp(tmp, "//", 2) == 0  &&  strncmp(url, "//", 2) != 0)
                 memmove(tmp, tmp + 2, strlen(tmp + 2) + 1);
             else if ((data->type & (fSERV_Dns | fSERV_Standalone)) == fSERV_Dns)
                 tmp[strcspn(tmp, ":")] = '\0';
@@ -720,25 +739,40 @@ static SERV_ITER x_Open(const char*         service,
         /* Service name was entirely valid -- use resolver(s) */
         domain = strchr(svc, '.');
         if (domain) {
+            /* disable all domain-unaware resolvers */
 #ifdef NCBI_OS_UNIX
-            do_lbsmd = 0;
+            do_lbsmd   =
 #endif /*NCBI_OS_UNIX*/
 #ifdef NCBI_CXX_TOOLKIT
 #  ifdef NCBI_OS_UNIX
-            do_lbdns = 0;
+            do_lbdns   =
 #  endif /*NCBI_OS_UNIX*/
-            do_linkerd = 0;
-            do_namerd  = 0;
+            do_linkerd =
+            do_namerd  =
 #endif /*NCBI_CXX_TOOLKIT*/
-            do_dispd   = 0;
+            do_dispd   = 0/*false*/;
             *domain++ = '\0';
             assert(*domain  &&  *domain != '.');
         }
+        if (strchr(svc, '/')) {
+            /* disable all resolvers that cannot handle compound service names*/
+#ifdef NCBI_OS_UNIX
+            do_lbsmd   =
+#endif /*NCBI_OS_UNIX*/
+#ifdef NCBI_CXX_TOOLKIT
+            do_lbnull  =
+#  ifdef NCBI_OS_UNIX
+            do_lbdns   =
+#  endif /*NCBI_OS_UNIX*/
+#endif /*NCBI_CXX_TOOLKIT*/
+            do_dispd   = 0/*false*/;
+        }
     } else if (svc  ||  url) {
         /* Bad service name or bad URL -- prepare to bail out */
-        if (svc)
+        if (svc) {
             free((void*) svc);
-        svc = 0;
+            svc = 0;
+        }
     } /* else "service" was NULL/empty (already logged) or no memory, just bail out */
     if (url)
         free((void*) url);
@@ -754,7 +788,7 @@ static SERV_ITER x_Open(const char*         service,
     iter->host              = (preferred_host == SERV_LOCALHOST
                                ? SOCK_GetLocalHostAddress(eDefault)
                                : preferred_host);
-    iter->port              = preferred_port;
+    iter->port              =  preferred_port;
     iter->pref              = (preference < 0.0
                                ? -1.0
                                :  0.01 * (preference > 100.0
@@ -790,7 +824,7 @@ static SERV_ITER x_Open(const char*         service,
     if (n_skip) {
         size_t n;
         for (n = 0;  n < n_skip;  ++n) {
-            const char* name = (iter->ismask  ||  skip[n]->type == fSERV_Dns
+            const char* name = (ismask  ||  skip[n]->type == fSERV_Dns
                                 ? SERV_NameOfInfo(skip[n]) : "");
             SSERV_Info* temp = SERV_CopyInfoEx(skip[n],
                                                iter->reverse_dns  &&  !*name ?
@@ -811,6 +845,12 @@ static SERV_ITER x_Open(const char*         service,
     assert(n_skip == iter->n_skip);
     iter->o_skip = iter->n_skip;
 
+    if (data) {
+        iter->data = data;
+        op = &kInternalOp;
+        goto done;
+    }
+
     if (net_info) {
         if (net_info->external)
             iter->external = 1;
@@ -819,48 +859,59 @@ static SERV_ITER x_Open(const char*         service,
         if (net_info->stateless)
             iter->types |= fSERV_Stateless;
 #ifdef NCBI_OS_UNIX
+        /* special case of LBSM control */
         if (net_info->lb_disable)
             do_lbsmd = 0/*false*/;
 #endif /*NCBI_OS_UNIX*/
     } else {
+        /* disable all HTTP-based resolvers */
 #ifdef NCBI_CXX_TOOLKIT
-        do_linkerd = do_namerd =
+        do_linkerd =
+        do_namerd  =
 #endif /*NCBI_CXX_TOOLKIT*/
+        do_dispd   = 0/*false*/;
+    }
+
+    if (ismask) {
+        /* disable all resolvers that cannot handle service wildcards */
+#ifdef NCBI_CXX_TOOLKIT
+        do_lbnull  =
+#  ifdef NCBI_OS_UNIX
+        do_lbdns   =
+#  endif /*NCBI_OS_UNIX*/
+        do_linkerd =
+        do_namerd  = 0/*false*/;
+#endif /*NCBI_CXX_TOOLKIT*/
+        if (!*svc)
             do_dispd = 0/*false*/;
-    }
-    if ( host_info )
-        *host_info = 0;
-    if (data) {
-        iter->data = data;
-        op = &kInternalOp;
-        goto done;
-    }
-    if (ismask)
         svc = 0;
+    }
 
     /* Ugly optimization not to access the registry more than necessary */
-    if ((!(do_local = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))    ||
+    if ((!(do_local  = s_IsMapperConfigured(svc, REG_CONN_LOCAL_ENABLE))   ||
          !(op = SERV_LOCAL_Open(iter, info)))
 
 #ifdef NCBI_CXX_TOOLKIT
         &&
-        (!(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))  ||
-         !(op = SERV_LBNULL_Open(iter, domain, info)))
+        (!do_lbnull                                                        ||
+         !(do_lbnull = s_IsMapperConfigured(svc, REG_CONN_LBNULL_ENABLE))  ||
+         !(op = SERV_LBNULL_Open(iter, info, domain)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
 #ifdef NCBI_OS_UNIX
         &&
         (!do_lbsmd                                                         ||
-         !(do_lbsmd = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE))  ||
+         !(do_lbsmd  = !s_IsMapperConfigured(svc, REG_CONN_LBSMD_DISABLE)) ||
          !(op = SERV_LBSMD_Open(iter, info, host_info,
                                 (!do_dispd                                 ||
-                                 !(do_dispd = !s_IsMapperConfigured
+                                 !(do_dispd   = !s_IsMapperConfigured
                                    (svc, REG_CONN_DISPD_DISABLE)))
 #  ifdef NCBI_CXX_TOOLKIT
 #    ifdef NCBI_OS_UNIX
                                 &&
-                                !(do_lbdns = s_IsMapperConfigured
-                                  (svc, REG_CONN_LBDNS_ENABLE))
+                                (!do_lbdns                                 ||
+                                 !(do_lbdns   = s_IsMapperConfigured
+                                   (svc, REG_CONN_LBDNS_ENABLE)))
 #    endif /*NCBI_OS_UNIX*/
                                 &&
                                 (!do_linkerd                               ||
@@ -868,7 +919,7 @@ static SERV_ITER x_Open(const char*         service,
                                    (svc, REG_CONN_LINKERD_ENABLE)))
                                 &&
                                 (!do_namerd                                ||
-                                 !(do_namerd = s_IsMapperConfigured
+                                 !(do_namerd  = s_IsMapperConfigured
                                    (svc, REG_CONN_NAMERD_ENABLE)))
 #  endif /*NCBI_CXX_TOOLKIT*/
                                 )))
@@ -878,27 +929,27 @@ static SERV_ITER x_Open(const char*         service,
 #  ifdef NCBI_OS_UNIX
         &&
         (!do_lbdns                                                         ||
-         (do_lbdns < 0  &&  !(do_lbdns = s_IsMapperConfigured
-                              (svc, REG_CONN_LBDNS_ENABLE)))               ||
+         (do_lbdns < 0    &&  !(do_lbdns   = s_IsMapperConfigured
+                                (svc, REG_CONN_LBDNS_ENABLE)))             ||
          !(op = SERV_LBDNS_Open(iter, info)))
 #  endif /*NCBI_OS_UNIX*/
         &&
         (!do_linkerd                                                       ||
          (do_linkerd < 0  &&  !(do_linkerd = s_IsMapperConfigured
                                 (svc, REG_CONN_LINKERD_ENABLE)))           ||
-         !(op = SERV_LINKERD_Open(iter, net_info, info, &do_namerd)))
+         !(op = SERV_LINKERD_Open(iter, info, net_info, &do_namerd)))
         &&
         (!do_namerd                                                        ||
-         (do_namerd < 0  &&  !(do_namerd = s_IsMapperConfigured
-                               (svc, REG_CONN_NAMERD_ENABLE)))             ||
-         !(op = SERV_NAMERD_Open(iter, net_info, info)))
+         (do_namerd < 0   &&  !(do_namerd  = s_IsMapperConfigured
+                                (svc, REG_CONN_NAMERD_ENABLE)))            ||
+         !(op = SERV_NAMERD_Open(iter, info, net_info)))
 #endif /*NCBI_CXX_TOOLKIT*/
 
         &&
         (!do_dispd                                                         ||
-         (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
-                              (svc, REG_CONN_DISPD_DISABLE)))              ||
-         !(op = SERV_DISPD_Open(iter, net_info, info)))) {
+         (do_dispd < 0    &&  !(do_dispd   = !s_IsMapperConfigured
+                                (svc, REG_CONN_DISPD_DISABLE)))            ||
+         !(op = SERV_DISPD_Open(iter, info, net_info)))) {
         if (!s_Fast  &&  net_info
             &&  !do_local
 #ifdef NCBI_OS_UNIX
@@ -910,8 +961,7 @@ static SERV_ITER x_Open(const char*         service,
 #  endif /*NCBI_OS_UNIX*/
             &&  !do_lbnull  &&  !do_linkerd  &&  !do_namerd
 #endif /*NCBI_CXX_TOOLKIT*/
-            &&  !do_dispd
-            ) {
+            &&  !do_dispd) {
             if (svc  &&  strcasecmp(service, svc) == 0)
                 svc = 0;
             assert(*service  ||  !svc);
@@ -959,7 +1009,6 @@ static void s_SkipSkip(SERV_ITER iter)
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
 
 #define x_RETURN(retval)  return x_Return((SSERV_Info*) info, infostr, retval)
-
 
 #  ifdef __GNUC__
 inline
