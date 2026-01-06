@@ -246,7 +246,7 @@ static char* x_ServiceName(unsigned int* depth,
         if (equiv)
             *equiv = 0;
     } else
-        assert(service  &&  svc  &&  service != svc  &&  (!equiv  ||  !*equiv));
+        assert(service  &&  svc  &&  service != svc  &&  !ismask  &&  (!equiv  ||  !*equiv));
     if (!svc  ||  (!ismask
                    &&  (!(len = strcspn(svc, "."))
                         ||  !x_CheckServiceName(svc, len, svc[len])
@@ -500,6 +500,9 @@ static void x_InternalClose(SERV_ITER iter)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_IsEmptyPath(const char* path)
 {
     if (*path == '/')
@@ -510,12 +513,18 @@ static int/*bool*/ x_IsEmptyPath(const char* path)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_NonHttpOkay(TSERV_TypeOnly types)
 {
     return !types  ||   (types & ~fSERV_Http);
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_HttpNotOkay(TSERV_TypeOnly types)
 {
     return  types  &&  !(types &  fSERV_Http);
