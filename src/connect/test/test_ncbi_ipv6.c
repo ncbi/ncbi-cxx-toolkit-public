@@ -126,14 +126,17 @@ int main(int argc, const char* argv[])
         if (*str)
             printf("Unparsed part: \"%s\"\n", str);
         if (sscanf(str, "/%u%n", &d, &q) >= 1  &&  !str[q]  &&  d >= 0) {
+            int/*bool*/ ipv4 = NcbiIsIPv4(&addr);
+            unsigned int maxm = (unsigned int)
+                (ipv4 ? sizeof(unsigned int) : sizeof(addr.octet)) * 8;
             m = d;
             a = addr;
-            NcbiIPv6Subnet(&a,                          m);
+            (ipv4 ? NcbiIPv4Subnet : NcbiIPv6Subnet)(&a, m);
             assert(NcbiAddrToString(buf, sizeof(buf), &a)  ||  *buf == '\0');
             printf("Subnet    = %s/%u\n", buf,
-                   m >= 8*sizeof(addr) ? (unsigned int)(8*sizeof(addr)) : m);
+                   m >= maxm ? (unsigned int) maxm : m);
             b = addr;
-            NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - m);
+            (ipv4 ? NcbiIPv4Suffix : NcbiIPv6Suffix)(&b, maxm - m);
             assert(NcbiAddrToString(buf, sizeof(buf), &b)  ||  *buf == '\0');
             printf("Suffix    = %s\n", buf);
         }
