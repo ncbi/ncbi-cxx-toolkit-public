@@ -610,6 +610,9 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_OkDNSEnd(const char* end)
 {
     if (isalnum((unsigned char) end[0]))
