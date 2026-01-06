@@ -389,6 +389,7 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter, SSERV_Info** info)
     struct SLOCAL_Data* data;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
+
     if (!(data = (struct SLOCAL_Data*) calloc(1, sizeof(*data))))
         return 0;
     iter->data = data;
@@ -407,7 +408,7 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter, SSERV_Info** info)
     if (data->n_cand > 1)
         qsort(data->cand, data->n_cand, sizeof(*data->cand), s_Sort);
 
-    /* call GetNextInfo subsequently if info is actually needed */
+    /* call GetNextInfo() subsequently if info is actually needed */
     if (info)
         *info = 0;
     return &s_op;

@@ -1104,8 +1104,11 @@ static void* x_memlwrcpy(void* dst, const void* src, size_t n)
 {
     const unsigned char* s = (const unsigned char*) src;
     unsigned char*       d = (unsigned char*)       dst;
-    while (n--)
-        *d++ = tolower(*s++);
+    while (n--) {
+        unsigned char c = (unsigned char) tolower(*s);
+        *d++ = c;
+        ++s;
+    }
     return dst;
 }
 
@@ -1488,16 +1491,14 @@ static int/*bool*/ x_SetupConnectionParams(const SERV_ITER iter)
  ***********************************************************************/
 
 extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
-                                            const SConnNetInfo* net_info,
-                                            SSERV_Info**        info)
+                                            SSERV_Info**        info,
+                                            const SConnNetInfo* net_info)
 {
     struct SNAMERD_Data* data;
     TSERV_TypeOnly types;
 
-    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
-    if (iter->ismask)
-        return 0/*LINKERD doesn't support masks(searches)*/;
-    assert(iter->name  &&  *iter->name);
+    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(!iter->ismask  &&  *iter->name  &&  net_info);
 
     CORE_TRACEF(("Enter SERV_NAMERD_Open(\"%s\")", iter->name));
 
@@ -1569,7 +1570,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         return 0;
     }
 
-    /* call GetNextInfo subsequently if info is actually needed */
+    /* call GetNextInfo() subsequently if info is actually needed */
     if (info)
         *info = 0;
     CORE_TRACEF(("Leave SERV_NAMERD_Open(\"%s\"): success", iter->name));
@@ -1577,7 +1578,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 }
 
 
-/* This API is for debugging purposes ONLY! */
+/* This entry is for debugging purposes ONLY! */
 extern int SERV_NAMERD_SetConnectorSource(const char* mock_body)
 {
     if ( ! mock_body  ||  ! *mock_body) {

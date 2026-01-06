@@ -396,12 +396,14 @@ static void s_Close(SERV_ITER iter)
  ***********************************************************************/
 
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
-                                    const SConnNetInfo* net_info,
-                                    SSERV_Info**        info)
+                                    SSERV_Info**        info,
+                                    const SConnNetInfo* net_info)
 {
     struct SDISPD_Data* data;
 
-    assert(iter  &&  net_info  &&  !iter->data  &&  !iter->op);
+    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(*iter->name  &&  !strchr(iter->name, '/')  &&  net_info);
+
     if (!(data = (struct SDISPD_Data*) calloc(1, sizeof(*data))))
         return 0;
     iter->data = data;
@@ -448,7 +450,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER           iter,
         return 0;
     }
 
-    /* call GetNextInfo subsequently if info is actually needed */
+    /* call GetNextInfo() subsequently if info is actually needed */
     if (info)
         *info = 0;
     return &kDispdOp;

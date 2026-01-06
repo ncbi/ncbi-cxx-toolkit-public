@@ -1075,6 +1075,9 @@ const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
 {
     SSERV_Info* tmp;
 
+    assert(iter  &&  !iter->data  &&  !iter->op);
+    assert(!strchr(iter->name, '/'));
+
     if (!s_IfDaemon()  &&  !s_LBSMD())
         return 0;
 
@@ -1341,8 +1344,9 @@ int LBSM_LBSMD(int/*bool*/ check_n_lock)
 const SSERV_VTable* SERV_LBSMD_Open(SERV_ITER    iter,
                                     SSERV_Info** info,
                                     HOST_INFO*   host_info,
-                                    int/*bool*/  dispd_to_follow)
+                                    int/*bool*/  no_dispd_follows)
 {
+    assert(iter  &&  !iter->data  &&  !iter->op);
     return 0/*failure*/;
 }
 

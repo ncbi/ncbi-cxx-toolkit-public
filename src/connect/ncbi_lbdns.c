@@ -1473,12 +1473,12 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     size_t len;
 
     assert(iter  &&  !iter->data  &&  !iter->op);
-    /* No wildcard(search) or external processing */
-    if (iter->ismask)
-        return 0;
-    assert(iter->name  &&  *iter->name);
+    assert(!iter->ismask  &&  *iter->name  &&  !strchr(iter->name, '/'));
+
+    /* No external services */
     if (iter->external)
         return 0;
+
     /* Can process fSERV_Any (basically meaning fSERV_Standalone), and explicit
      * fSERV_Standalone and/or fSERV_Dns only */
     types = iter->types & ~fSERV_Stateless;
@@ -1590,7 +1590,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
               ("LBDNS using domain = \"%s\"", data->domain));
 
     if (s_Resolve(iter)) {
-        /* call GetNextInfo subsequently if info is actually needed */
+        /* call GetNextInfo() subsequently if info is actually needed */
         if (info)
             *info = 0;
         CORE_TRACEF(("LBDNS open(\"%s\"): okay", iter->name));
@@ -1614,6 +1614,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
 {
     /* NB: This should never be called on a non-UNIX platform */
     static void* volatile /*bool*/ s_Once = 0/*false*/;
+    assert(iter  &&  !iter->data  &&  !iter->op);
     if (CORE_Once(&s_Once))
         CORE_LOG_X(31, eLOG_Critical, "LBDNS only available on UNIX platform(s)");
     return 0;
