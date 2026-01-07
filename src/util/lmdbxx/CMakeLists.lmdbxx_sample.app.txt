@@ -2,7 +2,7 @@
 
 NCBI_begin_app(lmdbxx_sample)
   NCBI_sources(example.cpp)
-  NCBI_add_include_directories(${includedir}/util/lmdbxx)
+  NCBI_add_include_directories(${NCBITK_INC_ROOT}/util/lmdbxx)
   NCBI_uses_external_libraries(${CMAKE_THREAD_LIBS_INIT})
   NCBI_project_tags(demo)
   NCBI_project_watchers(ivanov)
