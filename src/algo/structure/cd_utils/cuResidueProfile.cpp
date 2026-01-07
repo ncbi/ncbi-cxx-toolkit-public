@@ -122,13 +122,14 @@ int ColumnResidueProfile::getSumCount() const
 char ColumnResidueProfile::getMostFrequentResidue(int& count) const
 {
 	unsigned int max = 0;
-	count = m_residueRowsMap.count(kResidues[max]);
+	count = static_cast<int>(m_residueRowsMap.count(kResidues[max]));
 	for (unsigned int i = 1; i < kResiduesSize; i++)
 	{
-		if ((int)m_residueRowsMap.count(kResidues[i]) > count)
+        int count_i = static_cast<int>(m_residueRowsMap.count(kResidues[i]));
+		if (count_i > count)
 		{
 			max = i;
-			count = m_residueRowsMap.count(kResidues[i]);
+			count = count_i;
 		}
 	}
 	return kResidues[max];
@@ -136,28 +137,35 @@ char ColumnResidueProfile::getMostFrequentResidue(int& count) const
 	 
 double ColumnResidueProfile::calculateColumnWeight(char residue, bool countGap, int numRows)const
 {
-	if (m_residueRowsMap.count(residue) == 0)
-		return 0;
-	else
+    double w = 0.0;
+    double denom = 0.0;
+    
+	if (m_residueRowsMap.count(residue) > 0)
 	{
 		if (!countGap)
 		{
-			double  denom = (double)(m_residueTypeCount *  (m_residueRowsMap.count(residue)));
-			double w = 1.0/denom;
-			return w;
+			denom = (double)(m_residueTypeCount *  (m_residueRowsMap.count(residue)));
 		}
 		else
 		{
 			int numGap = numRows - getSumCount();
-			double denom = 0.0;
 			if (numGap > 0)
+			{
 				denom = (double)((m_residueTypeCount+1) *  (m_residueRowsMap.count(residue)));
+			}
 			else
+			{
 				denom = (double)(m_residueTypeCount *  (m_residueRowsMap.count(residue)));
-				double w = 1.0/denom;
-			return w;
+			}
+		}
+
+        if (denom > 0.0)
+		{
+            w = 1.0/denom;
 		}
 	}
+    
+    return w;
 }
 
 //return the total weights for this column, which should be 1
@@ -339,7 +347,7 @@ double ColumnResidueProfile::calcInformationContent()
 	
     for (unsigned int i = 0; i < kResiduesSize; i++)
 	{
-		int count = m_residueRowsMap.count(kResidues[i]);
+		int count = static_cast<int>(m_residueRowsMap.count(kResidues[i]));
 		if (count > 0)
 		{
 			//double standardFreq = GetStandardProbability(kResidues[i]);
