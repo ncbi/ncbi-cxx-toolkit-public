@@ -484,12 +484,7 @@ int SNgHttp2_Session::Init()
     nghttp2_session_client_new(&m_Session, callbacks, m_UserData);
     nghttp2_session_callbacks_del(callbacks);
 
-    nghttp2_settings_entry iv[1] = {
-        {NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS, m_MaxStreams.second}
-    };
-
-    /* client 24 bytes magic string will be sent by nghttp2 library */
-    if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]))) {
+    if (auto rv = nghttp2_submit_settings(m_Session, NGHTTP2_FLAG_NONE, nullptr, 0)) {
         NCBI_NGHTTP2_SESSION_TRACE(this << " submit settings failed: " << SUvNgHttp2_Error::NgHttp2Str(rv));
         return x_DelOnError(rv);
     }
