@@ -1446,7 +1446,7 @@ int SPSG_IoSession::OnFrameRecv(nghttp2_session*, const nghttp2_frame* frame)
 {
     PSG_IO_SESSION_TRACE(this << '/' << frame->hd.stream_id << " frame: " << s_GetFrameName(frame));
 
-    if (m_Params.debug_printout >= EPSG_DebugPrintout::eFrames) {
+    if ((m_Params.client_mode != EPSG_PsgClientMode::ePerformance) && (m_Params.debug_printout >= EPSG_DebugPrintout::eFrames)) {
         auto it = m_Requests.find(frame->hd.stream_id);
         auto id = it != m_Requests.end() ? it->second.GetReply().debug_printout.id : "*"sv;
         ERR_POST(Message << id << ": Received "sv << s_GetFrameName(frame) << " frame"sv);
