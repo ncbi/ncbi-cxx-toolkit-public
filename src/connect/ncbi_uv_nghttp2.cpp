@@ -463,7 +463,7 @@ SNgHttp2_Session::SNgHttp2_Session(void* user_data, uint32_t max_streams,
     m_OnHeader(on_header),
     m_OnError(on_error),
     m_OnFrameRecv(on_frame_recv),
-    m_MaxStreams(max_streams, max_streams)
+    m_MaxStreams(0, max_streams)
 {
     NCBI_NGHTTP2_SESSION_TRACE(this << " created");
 }
@@ -489,10 +489,14 @@ int SNgHttp2_Session::Init()
         return x_DelOnError(rv);
     }
 
+    return 0;
+}
+
+void SNgHttp2_Session::x_UpdateMaxStreams()
+{
     auto max_streams = nghttp2_session_get_remote_settings(m_Session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
     m_MaxStreams.first = min(max_streams, m_MaxStreams.second);
-    NCBI_NGHTTP2_SESSION_TRACE(this << " initialized: " << m_MaxStreams.first);
-    return 0;
+    NCBI_NGHTTP2_SESSION_TRACE(this << " max streams received: " << max_streams << ", set: " << m_MaxStreams.first);
 }
 
 int SNgHttp2_Session::Terminate()
