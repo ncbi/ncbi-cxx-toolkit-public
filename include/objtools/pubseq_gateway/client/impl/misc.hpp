@@ -57,7 +57,7 @@ struct CPSG_WaitingQueue
     {
         auto locked = m_Queue.GetLock();
 
-        if (m_Queue.WaitUntil(locked, deadline, [&]() { return m_Stopped || locked->second > 0; })) {
+        if (m_Queue.WaitUntil(locked, deadline, [&]() { return m_Stopped || !locked->first.empty() || locked->second > 0; })) {
             if (locked->second > 0) {
                 locked->second--;
             }
