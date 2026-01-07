@@ -876,6 +876,7 @@ protected:
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
     int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
             const uint8_t* value, size_t valuelen, uint8_t flags);
+    int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
 
 private:
     enum EHeaders { eMethod, eScheme, eAuthority, ePath, eUserAgent, ePeerID, eSessionID, eSubHitID, eCookie, eClientIP, eSize };
@@ -896,13 +897,6 @@ private:
     }
 
     void OnReset(SUvNgHttp2_Error error) override;
-    int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
-
-    static int s_OnFrameRecv(nghttp2_session* session, const nghttp2_frame* frame, void* user_data)
-    {
-        _ASSERT(user_data);
-        return static_cast<SPSG_IoSession*>(user_data)->OnFrameRecv(session, frame);
-    }
 
     SPSG_Params m_Params;
     array<SNgHttp2_Header<NGHTTP2_NV_FLAG_NO_COPY_NAME>, eSize> m_Headers;

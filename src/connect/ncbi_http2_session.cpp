@@ -302,8 +302,7 @@ SH2S_Session::SH2S_Session(uv_loop_t* loop, const TAddrNCred& addr_n_cred, bool 
             kWriteBufSize,
             https,
             kMaxStreams,
-            std::forward<TNgHttp2Cbs>(callbacks)...,
-            s_OnFrameRecv),
+            std::forward<TNgHttp2Cbs>(callbacks)...),
     m_SessionsByQueues(sessions_by_queues)
 {
 }

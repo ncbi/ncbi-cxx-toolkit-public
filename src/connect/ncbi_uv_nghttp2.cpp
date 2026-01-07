@@ -479,7 +479,7 @@ int SNgHttp2_Session::Init()
     nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks, m_OnStreamClose);
     nghttp2_session_callbacks_set_on_header_callback(         callbacks, m_OnHeader);
     nghttp2_session_callbacks_set_error_callback2(            callbacks, m_OnError);
-    if (m_OnFrameRecv) nghttp2_session_callbacks_set_on_frame_recv_callback(callbacks, m_OnFrameRecv);
+    nghttp2_session_callbacks_set_on_frame_recv_callback(     callbacks, m_OnFrameRecv);
 
     nghttp2_session_client_new(&m_Session, callbacks, m_UserData);
     nghttp2_session_callbacks_del(callbacks);

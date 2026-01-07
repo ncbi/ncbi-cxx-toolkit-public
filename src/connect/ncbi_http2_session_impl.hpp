@@ -181,6 +181,7 @@ protected:
     int OnStreamClose(nghttp2_session* session, int32_t stream_id, uint32_t error_code);
     int OnHeader(nghttp2_session* session, const nghttp2_frame* frame, const uint8_t* name, size_t namelen,
             const uint8_t* value, size_t valuelen, uint8_t flags);
+    int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
 
 private:
     using TStreams = list<SH2S_IoStream>;
@@ -197,7 +198,6 @@ private:
         return it == m_StreamsByQueues.end() ? m_Streams.end() : it->second;
     }
 
-    int OnFrameRecv(nghttp2_session *session, const nghttp2_frame *frame);
     void OnReset(SUvNgHttp2_Error error) override;
 
     void Push(TH2S_WeakResponseQueue& response_queue, TH2S_ResponseEvent event)
@@ -207,12 +207,6 @@ private:
             H2S_SESSION_TRACE(this << '/' << response_queue << " push " << event);
             queue->GetLock()->emplace(std::move(event));
         }
-    }
-
-    static int s_OnFrameRecv(nghttp2_session* session, const nghttp2_frame* frame, void* user_data)
-    {
-        _ASSERT(user_data);
-        return static_cast<SH2S_Session*>(user_data)->OnFrameRecv(session, frame);
     }
 
     static ssize_t s_DataSourceRead(nghttp2_session*, int32_t,
