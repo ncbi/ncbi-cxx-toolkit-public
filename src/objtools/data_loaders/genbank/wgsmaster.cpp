@@ -461,6 +461,7 @@ public:
 
     void AddChunkToWait(TChunkId chunk_id, CTSE_Split_Info& split_info, int mask)
         {
+            CMutexGuard guard(m_Mutex);
             m_ChunksToWait.insert(chunk_id);
             if ( mask ) {
                 split_info.GetChunk(chunk_id).x_AddDescInfo(mask, kTSE_Place_id);
@@ -469,6 +470,7 @@ public:
 
     void AddChunksToWait(const CBioseq_Base_Info& info, CTSE_Split_Info& split_info, int mask)
         {
+            CMutexGuard guard(m_Mutex);
             for ( auto chunk_id : info.x_GetDescrChunkIds() ) {
                 AddChunkToWait(chunk_id, split_info, mask);
             }
@@ -476,6 +478,7 @@ public:
 
     void RegisterCallbacks(CTSE_Split_Info& split_info)
         {
+            CMutexGuard guard(m_Mutex);
             vector<TChunkId> ids(m_ChunksToWait.begin(), m_ChunksToWait.end());
             for ( auto chunk_id : ids ) {
                 //ERR_POST("CWGSMasterDescrSetter: waiting for "<<chunk_id<<" to be loaded");
@@ -499,6 +502,7 @@ public:
     virtual void Loaded(CTSE_Chunk_Info& chunk) override
         {
             //ERR_POST("CWGSMasterDescrSetter::Loaded("<<chunk.GetChunkId()<<")");
+            CMutexGuard guard(m_Mutex);
             m_ChunksToWait.erase(chunk.GetChunkId());
             if ( !m_ChunksToWait.empty() ) {
                 // still needs more chunks to be loaded
@@ -541,6 +545,7 @@ public:
         }
     
 private:
+    CMutex m_Mutex;
     CRef<CWGSMasterInfo> m_MasterInfo;
     CConstRef<CBioseq_set_Info> m_BioseqSet;
     set<TChunkId> m_ChunksToWait;
