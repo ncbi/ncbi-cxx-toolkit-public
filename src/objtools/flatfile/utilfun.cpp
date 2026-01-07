@@ -499,33 +499,14 @@ Int2 MatchArraySubString(std::span<string_view> array, string_view text)
 /**********************************************************/
 Char* StringIStr(const Char* where, const Char* what)
 {
-    const Char* p;
-    const Char* q;
-
     if (! where || *where == '\0' || ! what || *what == '\0')
         return nullptr;
 
-    q = nullptr;
-    for (; *where != '\0'; where++) {
-        for (q = what, p = where; *q != '\0' && *p != '\0'; q++, p++) {
-            if (*q == *p)
-                continue;
-
-            if (IS_UPPER(*q)) {
-                if (*q + 32 == *p)
-                    continue;
-            } else if (IS_LOWER(*q)) {
-                if (*q - 32 == *p)
-                    continue;
-            }
-            break;
-        }
-        if (*p == '\0' || *q == '\0')
-            break;
-    }
-    if (q && *q == '\0')
-        return const_cast<char*>(where);
-    return nullptr;
+    SIZE_TYPE pos = NStr::FindNoCase(where, what);
+    if (pos != NPOS)
+        return const_cast<char*>(where) + pos;
+    else
+        return nullptr;
 }
 
 /**********************************************************/
