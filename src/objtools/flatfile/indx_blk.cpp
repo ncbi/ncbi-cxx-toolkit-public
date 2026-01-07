@@ -109,7 +109,7 @@ static const char* ddbj_accpref[] = {
     "LA", "LB", "LC", "LD", "LE", "LF", "LG", "LH", "LI", "LJ", "LU", "LV",
     "LX", "LY", "LZ", "MA", "MB", "MC", "MD", "ME", "OF", "OG", "OH", "OI",
     "OJ", "PA", "PB", "PC", "PD", "PE", "PF", "PG", "PH", "PI", "PJ", "PK",
-    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", nullptr
+    "PL", "PM", "PN", "PO", "PW", "QP", "QQ", "QR", "QS", "QT", "QU", nullptr
 };
 
 static const char* ncbi_accpref[] = {
@@ -1434,7 +1434,9 @@ static bool IsPatentedAccPrefix(const Parser& parseInfo, string_view acc)
                  (acc == "PL"sv) || (acc == "PM"sv) ||
                  (acc == "PN"sv) || (acc == "PO"sv) ||
                  (acc == "PW"sv) || (acc == "QP"sv) ||
-                 (acc == "QQ"sv) || (acc == "QR"sv)))
+                 (acc == "QQ"sv) || (acc == "QR"sv) ||
+                 (acc == "QS"sv) || (acc == "QT"sv) ||
+                 (acc == "QU"sv)))
                 return true;
         }
 
