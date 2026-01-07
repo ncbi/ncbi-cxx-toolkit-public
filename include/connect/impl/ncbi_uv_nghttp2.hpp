@@ -507,7 +507,7 @@ struct SUvNgHttp2_Session : TImpl
 {
     template <class... TArgs>
     SUvNgHttp2_Session(TArgs&&... args) :
-        TImpl(std::forward<TArgs>(args)..., s_OnData, s_OnStreamClose, s_OnHeader, s_OnError)
+        TImpl(std::forward<TArgs>(args)..., s_OnData, s_OnStreamClose, s_OnHeader, s_OnError, s_OnFrameRecv)
     {}
 
 private:
@@ -535,6 +535,11 @@ private:
     static int s_OnError(nghttp2_session* session, int lib_error_code, const char* msg, size_t len, void* user_data)
     {
         return GetThat(user_data)->OnError(session, lib_error_code, msg, len);
+    }
+
+    static int s_OnFrameRecv(nghttp2_session* session, const nghttp2_frame* frame, void* user_data)
+    {
+        return GetThat(user_data)->OnFrameRecv(session, frame);
     }
 };
 
