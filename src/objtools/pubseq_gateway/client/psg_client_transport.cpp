@@ -58,7 +58,7 @@ BEGIN_NCBI_SCOPE
 
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, rd_buf_size,                   64 * 1024,          1024    );
 PSG_PARAM_VALUE_DEF_MIN(size_t,         PSG, wr_buf_size,                   64 * 1024,          1024    );
-PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        100,                10      );
+PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_streams,        200,                10      );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_submits,        150,                1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_sessions,                  1,                  1       );
 PSG_PARAM_VALUE_DEF_MIN(unsigned,       PSG, max_concurrent_requests_per_server, 500,           100     );

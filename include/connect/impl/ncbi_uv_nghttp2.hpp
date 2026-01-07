@@ -409,10 +409,17 @@ struct NCBI_XXCONNECT2_EXPORT SNgHttp2_Session
     ssize_t Send(vector<char>& buffer);
     ssize_t Recv(const uint8_t* buffer, size_t size);
 
-    uint32_t GetMaxStreams() const { return m_MaxStreams.first; }
+    uint32_t GetMaxStreams() const { return m_MaxStreams.first ? m_MaxStreams.first : m_MaxStreams.second; }
+
+    void UpdateMaxStreams() {
+        if (!m_MaxStreams.first) {
+            x_UpdateMaxStreams();
+        }
+    }
 
 private:
     int Init();
+    void x_UpdateMaxStreams();
 
     template <typename TInt, enable_if_t<is_signed<TInt>::value, TInt> = 0>
     TInt x_DelOnError(TInt rv)
@@ -539,6 +546,10 @@ private:
 
     static int s_OnFrameRecv(nghttp2_session* session, const nghttp2_frame* frame, void* user_data)
     {
+        if (frame->hd.type == NGHTTP2_SETTINGS) {
+            GetThat(user_data)->m_Session.UpdateMaxStreams();
+        }
+
         return GetThat(user_data)->OnFrameRecv(session, frame);
     }
 };
