@@ -3882,7 +3882,7 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
             ptr1++;
         if (*ptr1 == '\n') {
             if (ibp->is_mga == false) {
-                FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location missing");
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing, "Location missing");
                 dbp.mDrop = true;
                 retval    = GB_FEAT_ERR_DROP;
                 continue;
@@ -3890,9 +3890,9 @@ int ParseFeatureBlock(IndexblkPtr ibp, bool deb, TDataBlkList& dbl, Parser::ESou
         } else {
             i = ptr1 - bptr;
             if (i < ParFlat_COL_FEATDAT)
-                FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the left");
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing, "Location data is shifted to the left");
             else if (i > ParFlat_COL_FEATDAT)
-                FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "Location data is shifted to the right");
+                FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing, "Location data is shifted to the right");
         }
 
         for (ptr2 = ptr1; *ptr2 != '/' && ptr2 < eptr;)

@@ -104,6 +104,13 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+enum class ECdRegionCheck {
+    eGood,
+    eDrop_cdregion,
+    eReject_record,
+    eOther,
+};
+
 typedef list<CRef<CCode_break>> TCodeBreakList;
 
 const char* GBExceptionQualVals[] = {
@@ -998,7 +1005,7 @@ static string_view SimpleValuePos(const string_view& qval)
 
 /**********************************************************
  *
- *   static CodeBreakPtr GetCdRegionCB(ibp, sfp, accver):
+ *   static CodeBreakPtr GetCdRegionCB(pp, ibp, sfp, dif, drop):
  *
  *      If protein translation (InternalStopCodon) O.K.,
  *   then this qualifier will be deleted ==> different from
@@ -1008,9 +1015,12 @@ static string_view SimpleValuePos(const string_view& qval)
  *      CodeBreakPtr->aa.choice = 1  ==>  for ncbieaa;
  *      CodeBreakPtr->aa.value.intvalue = (Int4)'X'  ==>
  *   for unknown.
+ *      The value "drop" is getting set to ECdRegionCheck::eDrop_cdregion
+ *   if cdregion and protein bioseq will be dropped, and to
+ *   ECdRegionCheck::eReject_record if whole record will be rejected.
  *
  **********************************************************/
-static TCodeBreakList GetCdRegionCB(const InfoBioseq* ibp, const CSeq_feat& feat, unsigned char* dif, bool accver)
+static TCodeBreakList GetCdRegionCB(ParserPtr pp, const InfoBioseq* ibp, const CSeq_feat& feat, unsigned char* dif, ECdRegionCheck& drop)
 {
     Int4 feat_start = -1;
     Int4 feat_stop  = -1;
@@ -1042,7 +1052,7 @@ static TCodeBreakList GetCdRegionCB(const InfoBioseq* ibp, const CSeq_feat& feat
             int  num_errs = 0;
             bool locmap   = false;
 
-            CRef<CSeq_loc> location = xgbparseint_ver(pos, locmap, num_errs, ibp->ids, accver);
+            CRef<CSeq_loc> location = xgbparseint_ver(pos, locmap, num_errs, ibp->ids, pp->accver);
             if (location.NotEmpty())
                 code_break->SetLoc(*location);
 
@@ -1069,7 +1079,13 @@ static TCodeBreakList GetCdRegionCB(const InfoBioseq* ibp, const CSeq_feat& feat
                 pos_range = ! itis;
 
             if (num_errs > 0 || pos_range) {
-                FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "transl_except range is wrong, {}, drop the transl_except", pos);
+                if (pp->source == Parser::ESource::USPTO) {
+                    FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing, "transl_except range is wrong, \"{}\". Coding region and protein bioseq has been dropped.", pos);
+                    drop = ECdRegionCheck::eDrop_cdregion;
+                } else {
+                    FtaErrPost(SEV_REJECT, ERR_FEATURE_LocationParsing, "transl_except range is wrong, \"{}\". Entry dropped.", pos);
+                    drop = ECdRegionCheck::eReject_record;
+                }
                 break;
             }
 
@@ -1079,7 +1095,7 @@ static TCodeBreakList GetCdRegionCB(const InfoBioseq* ibp, const CSeq_feat& feat
 
                 sequence::ECompare cmp_res = sequence::Compare(feat.GetLocation(), code_break->GetLoc(), nullptr, sequence::fCompareOverlapping);
                 if (cmp_res != sequence::eContains) {
-                    FtaErrPost(SEV_WARNING, ERR_FEATURE_LocationParsing, "/transl_except not in CDS: {}", qval);
+                    FtaErrPost(SEV_ERROR, ERR_FEATURE_LocationParsing, "/transl_except not in CDS: {}", qval);
                 }
             }
 
@@ -1882,25 +1898,25 @@ static bool CpGeneticCodePtr(CGenetic_code& code, const CGenetic_code::C_E& gcod
 }
 
 /**********************************************************/
-static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool transl, Parser::ESource source)
+static ECdRegionCheck IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool transl, Parser::ESource source)
 {
     Uint1 strand;
     Int4  len;
-    Int4  i;
+    ECdRegionCheck i;
 
     if (! feat.IsSetLocation() || transl)
-        return (0);
+        return (ECdRegionCheck::eGood);
 
     const CSeq_loc& loc   = feat.GetLocation();
     TSeqPos         start = loc.GetStart(eExtreme_Positional),
             stop          = loc.GetStop(eExtreme_Positional) + 1;
 
     if (start == kInvalidSeqPos || stop == kInvalidSeqPos)
-        return (0);
+        return (ECdRegionCheck::eGood);
 
     len = stop - start;
     if (len < 1 || len > 5)
-        return (0);
+        return (ECdRegionCheck::eGood);
 
     strand = loc.IsSetStrand() ? loc.GetStrand() : 0;
 
@@ -1911,18 +1927,18 @@ static Int4 IfOnlyStopCodon(const CBioseq& bioseq, const CSeq_feat& feat, bool t
     if ((strand == 2 && stop == bioseq.GetLength()) || (strand != 2 && start == 0)) {
         if (source == Parser::ESource::USPTO) {
             FtaErrPost(SEV_ERROR, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region, coding region has been dropped.", loc_str);
-            i = -2;
+            i = ECdRegionCheck::eDrop_cdregion;
         } else {
             FtaErrPost(SEV_INFO, ERR_CDREGION_StopCodonOnly, "Assuming coding region at \"{}\" annotates the stop codon of an upstream or downstream coding region.", loc_str);
-            i = 1;
+            i = ECdRegionCheck::eOther;
         }
     } else {
         if (source == Parser::ESource::USPTO) {
             FtaErrPost(SEV_ERROR, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint, coding region has been dropped.", loc_str);
-            i = -2;
+            i = ECdRegionCheck::eDrop_cdregion;
         } else {
             FtaErrPost(SEV_REJECT, ERR_CDREGION_StopCodonBadInterval, "Coding region at \"{}\" appears to annotate a stop codon, but its location does not include a sequence endpoint.", loc_str);
-            i = -1;
+            i = ECdRegionCheck::eReject_record;
         }
     }
     return (i);
@@ -2076,7 +2092,7 @@ static void s_ProcessCdsQuals(CSeq_feat& cds)
  *   sfp->data.choice = SEQFEAT_CDREGION
  *
  **********************************************************/
-static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBioseq& bioseq, int* num, GeneRefFeats& gene_refs)
+static ECdRegionCheck CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBioseq& bioseq, int* num, GeneRefFeats& gene_refs)
 {
     bool  is_stop;
     ErrSev sev;
@@ -2085,14 +2101,18 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
     Uint1 dif;
     Uint1 codon_start;
     Int2  frame;
-    Int2  i;
+    ECdRegionCheck i;
     const char* r;
     bool featdrop = false;
 
     ProtBlkPtr pbp = pp->pbp;
     pp->buf.reset();
 
-    TCodeBreakList code_breaks = GetCdRegionCB(pbp->ibp, cds, &dif, pp->accver);
+    i = ECdRegionCheck::eGood;
+    TCodeBreakList code_breaks = GetCdRegionCB(pp, pbp->ibp, cds, &dif, i);
+    if (i == ECdRegionCheck::eDrop_cdregion ||
+        i == ECdRegionCheck::eReject_record)
+        return (i);
 
     bool is_pseudo = cds.IsSetPseudo() ? cds.GetPseudo() : false;
     bool is_transl = (! cds.GetNamedQual("translation").empty());
@@ -2107,10 +2127,11 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         is_stop = false;
     else {
         i = IfOnlyStopCodon(bioseq, cds, is_transl, pp->source);
-        if (i < 0) {
+        if (i == ECdRegionCheck::eDrop_cdregion ||
+            i == ECdRegionCheck::eReject_record) {
             return i;
         }
-        is_stop = (i != 0);
+        is_stop = (i != ECdRegionCheck::eGood);
     }
 
     if (! is_transl) { // Check for product, function, EC_number quals
@@ -2121,17 +2142,17 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         string loc = location_to_string(cds.GetLocation());
         if (pp->source == Parser::ESource::USPTO) {
             FtaErrPost(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"{}\", coding region has been dropped.", loc);
-            return (-2);
+            return (ECdRegionCheck::eDrop_cdregion);
         }
         FtaErrPost(SEV_ERROR, ERR_CDREGION_PseudoWithTranslation, "Coding region flagged as /pseudo has a /translation qualifier : \"{}\".", loc);
-        return (-1);
+        return (ECdRegionCheck::eReject_record);
     }
 
     if (pp->mode != Parser::EMode::Relaxed &&
         pp->accver && is_transl == false && !cds.GetNamedQual("protein_id").empty()) {
         string loc = location_to_string(cds.GetLocation());
         FtaErrPost(SEV_ERROR, ERR_CDREGION_UnexpectedProteinId, "CDS without /translation should not have a /protein_id qualifier. CDS = \"{}\".", loc);
-        return (-1);
+        return (ECdRegionCheck::eReject_record);
     }
 
     if (pp->mode != Parser::EMode::Relaxed &&
@@ -2140,23 +2161,23 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         if (pp->source != Parser::ESource::USPTO) {
             if (pp->accver == false) {
                 r = "Feature and protein bioseq";
-                i = -2;
+                i = ECdRegionCheck::eDrop_cdregion;
             } else {
                 r = "Record";
-                i = -1;
+                i = ECdRegionCheck::eReject_record;
             }
-            sev = (i == -1) ? SEV_REJECT : SEV_ERROR;
+            sev = (i == ECdRegionCheck::eReject_record) ? SEV_REJECT : SEV_ERROR;
             FtaErrPost(sev, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\". {} rejected.", loc, r);
         } else {
             FtaErrPost(SEV_ERROR, ERR_CDREGION_MissingTranslation, "Missing /translation qualifier for CDS \"{}\", coding region has been dropped.", loc);
-            i = -2;
+            i = ECdRegionCheck::eDrop_cdregion;
         }
         return (i);
     }
 
     /* check exception qualifier */
     if (! fta_check_exception(cds, pp->source))
-        return (-1);
+        return (ECdRegionCheck::eReject_record);
 
     CRef<CImp_feat> imp_feat(new CImp_feat);
     if (cds.IsSetData() && cds.GetData().IsImp())
@@ -2212,7 +2233,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
 
     if (! is_transl) {
         imp_feat.Reset();
-        return (0);
+        return (ECdRegionCheck::eGood);
     }
 
     CBioseq::TId ids;
@@ -2230,14 +2251,14 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
     if (cdregion->IsSetConflict() && cdregion->GetConflict() && codon_start == 0) {
         string loc = location_to_string(cds.GetLocation());
         FtaErrPost(SEV_ERROR, ERR_CDREGION_TooBad, "Input translation does not agree with parser generated one, cdregion \"{}\" is lacking /codon_start, frame not set, - so sequence will be rejected.", loc);
-        return (-1);
+        return (ECdRegionCheck::eReject_record);
     }
 
     if (pp->source == Parser::ESource::USPTO && featdrop) {
         if(! imp_feat.Empty()) {
             imp_feat.Reset();
         }
-        return (-2);
+        return (ECdRegionCheck::eDrop_cdregion);
     }
 
     if (! sequence_data.empty()) {
@@ -2245,7 +2266,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         CRef<CBioseq> new_bioseq = BldProtRefSeqEntry(pbp, cds, sequence_data, method, pp, bioseq, scope, ids);
 
         if (new_bioseq.Empty()) {
-            return (-1);
+            return (ECdRegionCheck::eReject_record);
         }
 
         scope.AddBioseq(*new_bioseq);
@@ -2277,7 +2298,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
                     }
                 }
             }
-            return (0);
+            return (ECdRegionCheck::eGood);
         }
 
         CSeq_id& first_id = *(*new_bioseq->SetId().begin());
@@ -2285,7 +2306,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
 
         AddProtRefSeqEntry(pbp, *new_bioseq);
 
-        return (1);
+        return (ECdRegionCheck::eOther);
     }
 
     /* no protein sequence, or there is no translation qualifier
@@ -2304,7 +2325,7 @@ static Int2 CkCdRegion(ParserPtr pp, CScope& scope, CSeq_feat& cds, const CBiose
         string loc = location_to_string(cds.GetLocation());
         FtaErrPost(SEV_ERROR, ERR_CDREGION_ConvertToImpFeat, "non-pseudo CDS with data problems is converted to ImpFeat{}", loc);
     }
-    return (0);
+    return (ECdRegionCheck::eGood);
 }
 
 /**********************************************************
@@ -2347,19 +2368,19 @@ static void SrchCdRegion(ParserPtr pp, CScope& scope, CBioseq& bioseq, CSeq_anno
         }
 
         Int4 num = 0;
-        Int2 i = CkCdRegion(pp, scope, feat, bioseq, &num, gene_refs);
+        ECdRegionCheck i = CkCdRegion(pp, scope, feat, bioseq, &num, gene_refs);
 
-        if (i == -2) {
+        if (i == ECdRegionCheck::eDrop_cdregion) {
             featIt = ftbl.erase(featIt);
             continue;
         }
 
-        if (i == -1) {
+        if (i == ECdRegionCheck::eReject_record) {
             pp->entrylist[pp->curindx]->drop = true;
             break;
         }
 
-        if (i != 1) {
+        if (i != ECdRegionCheck::eOther) {
             ++featIt;
             continue;
         }
