@@ -285,6 +285,7 @@ enum EMatchesMaskResult {
     eMismatch = -1    // mismatch, stop search
 };
 
+
 // Implements the same logic as UTIL_MatchesMask() from 'include/connect/ncbi_util.h',
 // but for CTempString instead of char*.
 
@@ -328,7 +329,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             if (!(m = mask[++mask_pos]))
                 return eMismatch; // mismatch, pattern error
             if (m == '!') {
-                m = 1 /*complement*/;
+                m = 1; // complement
                 ++mask_pos;
             } else
                 m = 0;
@@ -351,7 +352,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
                         b = (char) tolower((unsigned char) b);
                     }
                     if (a <= s  &&  s <= b)
-                        s = 0 /*mark as found*/;
+                        s = 0; // mark as found
                 }
             } while (mask[mask_pos] != ']');
             if (m == !s)
@@ -542,6 +543,7 @@ private:
     int  m_Errno;      // errno value to set
 };
 
+
 string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTempString msg)
 {
     string s;
@@ -556,6 +558,7 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
     }
     return s;
 }
+
 
 /// Regular guard
 #define S2N_CONVERT_GUARD(flags)                \
@@ -720,6 +723,7 @@ enum ESkipMode {
     eSkipSpacesOnly     // whitespace characters only 
 };
 
+
 static inline
 bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
 {
@@ -735,6 +739,7 @@ bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
     struct lconv* conv = localeconv();
     return ch == *(conv->decimal_point);
 }
+
 
 static inline
 void s_SkipAllowedSymbols(const CTempString       str,
@@ -1402,6 +1407,7 @@ double NStr::StringToDouble(const CTempStringEx str, TStringToNumFlags flags)
     }
 }
 
+
 /// @internal
 static Uint8 s_DataSizeConvertQual(const CTempString       str,
                                    SIZE_TYPE&              pos, 
@@ -1942,7 +1948,6 @@ void NStr::ULongToString(string&          out_str,
     }
     errno = 0;
 }
-
 
 
 // On some platforms division of Int8 is very slow,
@@ -3046,8 +3051,7 @@ const string* NStr::Find(const vector <string>& vec, const CTempString val,
 
 /// @internal
 // Check that symbol 'ch' is a word boundary character (don't matches [a-zA-Z0-9_]).
-static inline
-bool s_IsWordBoundaryChar(char ch)
+static inline bool s_IsWordBoundaryChar(char ch)
 {
     return !(ch == '_'  ||  isalnum((unsigned char)ch));
 }
@@ -4193,9 +4197,9 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
             break;
         default:
             if ((unsigned int)c < 0x20) {
-                const char* charmap = "0123456789abcdef";
+                static const char charmap[] = "0123456789abcdef";
                 result.append("&#x");
-                Uint1 ch = c;
+                Uint1 ch = Uint1(c);
                 unsigned hi = ch >> 4;
                 unsigned lo = ch & 0xF;
                 if ( hi ) {
@@ -4509,6 +4513,7 @@ const s_HtmlEntities[] = {
     {    0, 0 }
 };
 
+
 string NStr::HtmlEntity(TUnicodeSymbol uch)
 {
     const struct tag_HtmlEntities* p = s_HtmlEntities;
@@ -4519,6 +4524,7 @@ string NStr::HtmlEntity(TUnicodeSymbol uch)
     }
     return kEmptyStr;
 }
+
 
 string NStr::HtmlDecode(const CTempString str, EEncoding encoding, THtmlDecode* result_flags)
 {
@@ -5078,11 +5084,12 @@ static SIZE_TYPE s_VisibleHtmlWidth(const string& str)
     return width;
 }
 
-static
-inline bool _isspace(unsigned char c)
+
+static inline bool _isspace(unsigned char c)
 {
     return ((c>=0x09 && c<=0x0D) || (c==0x20));
 }
+
 
 template<typename _D>
 void NStr::WrapIt(const string& str, SIZE_TYPE width,
@@ -6055,6 +6062,7 @@ static const char s_EncodeCookie[256][4] = {
     "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
 };
 
+
 string NStr::URLEncode(const CTempString str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
@@ -6159,8 +6167,7 @@ CStringUTF8 NStr::SQLEncode(const CStringUTF8& str, ESqlEncode flag)
 }
 
 
-static
-void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode flag)
+static void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode flag)
 {
     SIZE_TYPE len = src.length();
     if ( !len ) {
@@ -6325,8 +6332,7 @@ string NStr::Base64Decode(const CTempString str)
 
 BEGIN_LOCAL_NAMESPACE;
 
-static
-bool s_IsIPv4Address(const char* str, size_t size)
+static bool s_IsIPv4Address(const char* str, size_t size)
 {
     const char* c = str;
     unsigned long val;
@@ -6359,9 +6365,9 @@ bool s_IsIPv4Address(const char* str, size_t size)
     return !*c && dots == 3;
 }
 
+
 /// @internal
-static
-bool s_IsIPAddress(const char* str, size_t size)
+static bool s_IsIPAddress(const char* str, size_t size)
 {
     if (!str || !size) return false;
     _ASSERT(str[size] == '\0');
@@ -6568,6 +6574,7 @@ CTempString NStr::GetField_Unsafe(const CTempString str,
          merge);
 }
 
+
 bool NStr::x_ReportLimitsError(const CTempString str, TStringToNumFlags flags)
 {
     if (flags & NStr::fConvErr_NoThrow) {
@@ -6589,8 +6596,8 @@ bool NStr::x_ReportLimitsError(const CTempString str, TStringToNumFlags flags)
 /////////////////////////////////////////////////////////////////////////////
 //  CStringUTF8 / CUtf8
 
-#if defined(__EXPORT_CTOR_STRINGUTF8__)
 
+#if defined(__EXPORT_CTOR_STRINGUTF8__)
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 }
@@ -6600,7 +6607,6 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const char* src ) {
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const string& src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 }
-
 
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
     const CTempString src, EEncoding encoding,EValidate validate) {
@@ -6667,6 +6673,7 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
 }
 #endif // __EXPORT_CTOR_STRINGUTF8__
 
+
 SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
      CTempString::const_iterator& src)
 {
@@ -6686,6 +6693,7 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
     return count;
 }
 
+
 CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
 {
     CTempString::const_iterator err;
@@ -6697,6 +6705,7 @@ CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
     CTempString::const_iterator to   = min(err + 16, src.end());
     return CTempString(from, to - from);
 }
+
 
 SIZE_TYPE CUtf8::GetSymbolCount(const CTempString& str)
 {
@@ -6710,6 +6719,7 @@ SIZE_TYPE CUtf8::GetSymbolCount(const CTempString& str)
     }
     return count;
 }
+
 
 EEncoding CUtf8::GuessEncoding(const CTempString& src)
 {
@@ -6798,6 +6808,7 @@ bool CUtf8::MatchEncoding(const CTempString& src, EEncoding encoding)
     return matches;
 }
 
+
 string  CUtf8::EncodingToString(EEncoding encoding)
 {
     switch (encoding) {
@@ -6813,6 +6824,7 @@ string  CUtf8::EncodingToString(EEncoding encoding)
     }
     return "UTF-8";
 }
+
 
 // see http://www.iana.org/assignments/character-sets
 EEncoding CUtf8::StringToEncoding(const CTempString& str)
@@ -6859,6 +6871,7 @@ static const TUnicodeSymbol s_cp1252_table[] = {
     0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x003F, 0x017E, 0x0178
 };
 
+
 TUnicodeSymbol CUtf8::CharToSymbol(char c, EEncoding encoding)
 {
     Uint1 ch = c;
@@ -6884,6 +6897,7 @@ TUnicodeSymbol CUtf8::CharToSymbol(char c, EEncoding encoding)
     return (TUnicodeSymbol)ch;
 }
 
+
 char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
 {
     if( encoding == eEncoding_UTF8 || encoding == eEncoding_CESU8 || encoding == eEncoding_Unknown) {
@@ -6907,11 +6921,13 @@ char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
     return (char)cp;
 }
 
+
 struct SCharEncoder
 {
     virtual TUnicodeSymbol ToUnicode(char ch) const = 0;
     virtual char ToChar(TUnicodeSymbol sym) const = 0;
 };
+
 
 struct SEncEncoder : public SCharEncoder
 {
@@ -6924,6 +6940,7 @@ struct SEncEncoder : public SCharEncoder
     }
     EEncoding m_Encoding;
 };
+
 
 #if defined(HAVE_WSTRING)
 struct SLocaleEncoder : public SCharEncoder
@@ -6960,10 +6977,12 @@ TUnicodeSymbol CUtf8::CharToSymbol(char ch, const locale& lcl)
     return SLocaleEncoder(lcl).ToUnicode(ch);
 }
 
+
 char CUtf8::SymbolToChar(TUnicodeSymbol sym, const locale& lcl)
 {
     return SLocaleEncoder(lcl).ToChar(sym);
 }
+
 
 CStringUTF8& CUtf8::x_Append(CStringUTF8& self, const CTempString& src, const locale& lcl)
 {
@@ -6979,6 +6998,7 @@ CStringUTF8& CUtf8::x_Append(CStringUTF8& self, const CTempString& src, const lo
     return self;
 }
 #endif
+
 
 string x_AsSingleByteString(const CTempString& str,
     const SCharEncoder& enc, const char* substitute_on_error)
@@ -7003,6 +7023,7 @@ string x_AsSingleByteString(const CTempString& str,
     return result;
 }
 
+
 string CUtf8::AsSingleByteString(const CTempString& str,
     EEncoding encoding, const char* substitute_on_error, EValidate validate)
 {
@@ -7019,6 +7040,7 @@ string CUtf8::AsSingleByteString(const CTempString& str,
     return x_AsSingleByteString(str, SEncEncoder(encoding), substitute_on_error);
 }
 
+
 #if defined(HAVE_WSTRING)
 string CUtf8::AsSingleByteString(const CTempString& str,
     const locale& lcl, const char* substitute_on_error, EValidate validate)
@@ -7030,6 +7052,7 @@ string CUtf8::AsSingleByteString(const CTempString& str,
 }
 #endif
 
+
 void CUtf8::x_Validate(const CTempString& str)
 {
     if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
@@ -7039,6 +7062,7 @@ void CUtf8::x_Validate(const CTempString& str)
             GetValidBytesCount(str));
     }
 }
+
 
 CStringUTF8& CUtf8::x_AppendChar( CStringUTF8& self, TUnicodeSymbol c)
 {
@@ -7061,6 +7085,7 @@ CStringUTF8& CUtf8::x_AppendChar( CStringUTF8& self, TUnicodeSymbol c)
     }
     return self;
 }
+
 
 CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
     EEncoding encoding, EValidate validate)
@@ -7118,6 +7143,7 @@ CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
     return self;
 }
 
+
 SIZE_TYPE CUtf8::x_BytesNeeded(TUnicodeSymbol c)
 {
     Uint4 ch = c;
@@ -7131,6 +7157,7 @@ SIZE_TYPE CUtf8::x_BytesNeeded(TUnicodeSymbol c)
     return 4;
 }
 
+
 SIZE_TYPE CUtf8::EvaluateSymbolLength(const CTempString& str)
 {
     CTempString::const_iterator src = str.begin();
@@ -7142,6 +7169,7 @@ SIZE_TYPE CUtf8::EvaluateSymbolLength(const CTempString& str)
     }
     return good ? (src - str.begin() + 1) : 0;
 }
+
 
 bool CUtf8::x_EvalFirst(char ch, SIZE_TYPE& more)
 {
@@ -7173,6 +7201,7 @@ bool CUtf8::x_EvalNext(char ch)
 {
     return (ch & 0xC0) == 0x80;
 }
+
 
 TUnicodeSymbol CUtf8::DecodeFirst(char ch, SIZE_TYPE& more)
 {
@@ -7208,6 +7237,7 @@ TUnicodeSymbol CUtf8::DecodeNext(TUnicodeSymbol chU, char ch)
     return 0;
 }
 
+
 bool CUtf8::IsWhiteSpace(TUnicodeSymbol chU)
 {
 /*
@@ -7226,6 +7256,7 @@ bool CUtf8::IsWhiteSpace(TUnicodeSymbol chU)
     return iswspace(chU)!=0;
 }
 
+
 CStringUTF8& CUtf8::TruncateSpacesInPlace( CStringUTF8& str, NStr::ETrunc side)
 {
     if (!str.empty()) {
@@ -7238,6 +7269,7 @@ CStringUTF8& CUtf8::TruncateSpacesInPlace( CStringUTF8& str, NStr::ETrunc side)
     }
     return str;
 }
+
 
 CTempString CUtf8::TruncateSpaces_Unsafe(
     const CTempString& str, NStr::ETrunc side)
@@ -7275,6 +7307,7 @@ CTempString CUtf8::TruncateSpaces_Unsafe(
     }
     return res;
 }
+
 
 const char* CStringException::GetErrCodeString(void) const
 {
@@ -7362,7 +7395,6 @@ CTempString::CTempString(const string& str, size_type len)
     : m_String(str.data()), m_Length(min(len, str.size()))
 {
 } // NCBI_FAKE_WARNING
-
 
 
 void CTempStringList::Join(string* s) const
