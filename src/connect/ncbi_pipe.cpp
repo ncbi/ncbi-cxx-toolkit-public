@@ -47,6 +47,7 @@
 
 #ifdef NCBI_OS_MSWIN
 
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 
 #elif defined NCBI_OS_UNIX
@@ -61,7 +62,7 @@
 #  include <sys/wait.h>
 
 #else
-#  error "The CPipe class is supported only on Windows and Unix"
+#  error "The CPipe class is supported on Windows and Unix only"
 #endif
 
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
