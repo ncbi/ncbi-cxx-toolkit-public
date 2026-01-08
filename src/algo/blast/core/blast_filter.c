@@ -713,7 +713,7 @@ void BlastSeqLocListReverse(BlastSeqLoc** head)
     }
 
     ptrs = s_BlastSeqLocListToArrayOfPointers(*head, &num_elems);
-    if (num_elems == 0) {
+    if (num_elems == 0 || !ptrs) {
         sfree(ptrs);
         return;
     }
@@ -762,10 +762,18 @@ BlastSeqLoc* BlastSeqLocListDup(BlastSeqLoc* head)
 BlastMaskLoc* BlastMaskLocNew(Int4 total)
 {
     BlastMaskLoc* retval = (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
+    if (!retval) {
+        return NULL;
+    }
     retval->total_size = total;
-    if (total > 0)
+    if (total > 0) {
         retval->seqloc_array = (BlastSeqLoc **) calloc(total, 
                                                        sizeof(BlastSeqLoc *));
+        if (!retval->seqloc_array) {
+            sfree(retval);
+            return NULL;
+        }
+    }
     return retval;
 }
 
@@ -1279,6 +1287,9 @@ BlastSetUp_GetFilteringLocations(BLAST_SequenceBlk* query_blk,
     ASSERT(kNumContexts == 
            query_info->num_queries*BLAST_GetNumberOfContexts(program_number));
     *filter_maskloc = BlastMaskLocNew(kNumContexts);
+    if (!*filter_maskloc) {
+        return -1;
+    }
 
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
