@@ -50,7 +50,14 @@
 #define NCBI_USE_ERRCODE_X   Connect_Service
 
 
-/*
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
+ /*
  * FIXME FIXME FIXME FIXME FIXME ---->
  *
  * NOTE:  For fSERV_ReverseDns lookups the following rules apply to "skip"
@@ -65,20 +72,8 @@
 #define CONN_IMPLICIT_SERVER_TYPE        DEF_CONN_REG_SECTION               \
                                          "_" REG_CONN_IMPLICIT_SERVER_TYPE
 
+
 static ESwitch s_Fast = eOff;
-
-
-#if 0
-static char* x_getenv(const char* name)
-{
-    char* env = getenv(name);
-    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
-                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
-    return env;
-}
-#else
-#  define x_getenv  getenv
-#endif
 
 
 /* Replace any non-alpha / non-digit with '_' */
@@ -312,6 +307,9 @@ static char* x_ServiceName(unsigned int* depth,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static char* s_ServiceName(const char* service, char** url,
                            int/*bool*/ ismask, int*/*bool*/ isfast)
 {
@@ -1268,7 +1266,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
         while ((info = iter->op->GetNextInfo(iter, host_info)) != 0) {
             int/*bool*/ go;
             CORE_DEBUG_ARG(if (!x_ConsistencyCheck(iter, info)) return 0);
-            /* This should never be actually used for LBSMD dispatcher,
+            /* NB:  This should never be actually used for LBSM mapper,
              * as all exclusion logic is already done in it internally. */
             go =
                 !info->host  ||  iter->pref >= 0.0  ||
