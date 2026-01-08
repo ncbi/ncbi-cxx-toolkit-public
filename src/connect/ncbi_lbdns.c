@@ -38,6 +38,13 @@
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #ifdef NCBI_OS_UNIX
 
 #include "ncbi_lb.h"
@@ -1411,7 +1418,7 @@ static const char* s_SysGetDomainName(char* domain, size_t domainsize)
     assert(domain  &&  domainsize);
 
     CORE_LOCK_READ;
-    if ((p = getenv("LOCALDOMAIN")) != 0) {
+    if ((p = x_getenv("LOCALDOMAIN")) != 0) {
         size_t n = strlen(p);
         if (n  &&  n < domainsize)
             memcpy(domain, p, n + 1);
@@ -1612,7 +1619,7 @@ const SSERV_VTable* SERV_LBDNS_Open(SERV_ITER iter, SSERV_Info** info)
     static void* volatile /*bool*/ s_Once = 0/*false*/;
     assert(iter  &&  !iter->data  &&  !iter->op);
     if (CORE_Once(&s_Once))
-        CORE_LOG_X(31, eLOG_Critical, "LBDNS only available on UNIX platform(s)");
+        CORE_LOG_X(31, eLOG_Critical, "LBDNS only available on UNIX platforms");
     return 0;
 }
 
