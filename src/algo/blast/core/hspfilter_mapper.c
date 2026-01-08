@@ -3759,38 +3759,25 @@ static HSPChain* s_FindBestPath(HSPNode* nodes, Int4 num, HSPPath* path,
                 (double)subj_overlap_len / hsp_len < 0.75 &&
                 (double)subj_overlap_len / newhsp_len < 0.75) {
 
-                /* FIXME: this condition may not be necessary */
-                if (newhsp->subject.offset - hsp->subject.end > 1) {
-                    /* The function that finds splice signals modifies
-                       HSPs, so we need to clone HSPs here. */
-                    BlastHSP* hsp_copy = Blast_HSPClone(hsp);
-                    BlastHSP* newhsp_copy = Blast_HSPClone(newhsp);
+                /* The function that finds splice signals modifies
+                   HSPs, so we need to clone HSPs here. */
+                BlastHSP* hsp_copy = Blast_HSPClone(hsp);
+                BlastHSP* newhsp_copy = Blast_HSPClone(newhsp);
 
-                    HSPChain* chain = HSPChainNew(hsp->context);
-                    chain->hsps = HSPContainerNew(&hsp_copy);
-                    chain->hsps->next = HSPContainerNew(&newhsp_copy);
+                HSPChain* chain = HSPChainNew(hsp->context);
+                chain->hsps = HSPContainerNew(&hsp_copy);
+                chain->hsps->next = HSPContainerNew(&newhsp_copy);
 
-                    s_FindSpliceJunctions(chain, query_blk, query_info,
-                                          scoring_opts);
+                s_FindSpliceJunctions(chain, query_blk, query_info,
+                                      scoring_opts);
                     
-                    /* update score: add the difference between sum of
-                       two HSP scores minus overalp and the new score
-                       for the merged HSP */
-                    new_score += chain->score + overlap_cost - 
-                        (newhsp->score + self_score);
+                /* update score: add the difference between sum of
+                   two HSP scores minus overalp and the new score
+                   for the merged HSP */
+                new_score += chain->score + overlap_cost - 
+                    (newhsp->score + self_score);
 
-                    chain = HSPChainFree(chain);
-                }
-                else if (newhsp->query.offset - hsp->query.end == 1) {
-                    /* FIXME: this is a temporary hack, we need to increase
-                       the score of combining two HSP into one with a
-                       mismatch so that it is scored the same as the one with
-                       splice signal */
-                    new_score++;
-                }
-                else {
-                    new_score = 0;
-                }
+                chain = HSPChainFree(chain);
 
                 if (new_score > nodes[i].best_score) {
                     nodes[i].best_score = new_score;
