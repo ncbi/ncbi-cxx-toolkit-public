@@ -45,8 +45,10 @@ struct SIPDNSsfx {
     const char*  sfx;  /* special domain suffix */
     const size_t ssz;  /* sizeof(sfx)           */
 };
-static const struct SIPDNSsfx kIPv6DNS = { "ip6.arpa",      9 };
-static const struct SIPDNSsfx kIPv4DNS = { "in-addr.arpa", 13 };
+#define NCBI_IPV6_DNS_SIZE  9
+static const struct SIPDNSsfx kIPv6DNS = { "ip6.arpa",     NCBI_IPV6_DNS_SIZE };
+#define NCBI_IPV4_DNS_SIZE  13
+static const struct SIPDNSsfx kIPv4DNS = { "in-addr.arpa", NCBI_IPV4_DNS_SIZE };
 
 
 static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
@@ -631,6 +633,11 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
                                   const char* str, size_t len,
                                   TNcbiIP_Form how)
 {
+    /* IPv6 DNS addresses always require 4*16 = 64 char leading numeric portion;
+     * IPv4 DNS addresses require between 7 and 15 char leading numeric portion
+     * -- all that while IPv4 literal suffix is longer than that of IPv6. */
+    static const size_t kMaxDnsLen = 4 * sizeof(addr->octet) + NCBI_IPV6_DNS_SIZE;
+    static const size_t kMinDnsLen = 7 + NCBI_IPV4_DNS_SIZE;
     unsigned int ipv4;
     const char* tmp;
     size_t n;
@@ -657,35 +664,33 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     if (!(len = n))
         return 0/*failure*/;
 
+    /* these are static assert()s, actually */
+    assert(kMinDnsLen   <= kMaxDnsLen);
     assert(kIPv6DNS.ssz <= kIPv4DNS.ssz);
-    /* IPv6 DNS addresses always require 4*16 = 64 char leading numeric portion;
-     * IPv4 DNS addresses require between 7 and 15 char leading numeric portion
-     * -- all that while IPv4 literal suffix is longer than that of IPv6. */
-    if ((how & eNcbiIP_Dns)  &&  len >= (7 + kIPv4DNS.ssz)/*shortest DNS*/) {
+    if ((how & eNcbiIP_Dns)  &&  len >= kMinDnsLen) {
         /* scan matching from the end, for better efficiency and performance */
-        size_t m = kIPv6DNS.ssz;  /* tracks tail length (increasing)    */
-        n   = len >= 64 + kIPv6DNS.ssz ? 64 + kIPv6DNS.ssz : len;
-        n  -= m;                  /* tracks head length (decreasing)    */
-        tmp = str + n;            /* tracks the domain suffix start dot */
+        size_t m = NCBI_IPV6_DNS_SIZE;  /* tracks tail length (increasing)   */
+        n   = len > kMaxDnsLen ? kMaxDnsLen : len;
+        n  -= m;                        /* tracks head length (decreasing)   */
+        tmp = str + n;                  /* tracks domain suffix starting dot */
         do {
             if (*tmp == '.') {
-                const char*    dom = tmp + 1;
                 const char*    end;
                 TNCBI_IPv6Addr temp;
                 assert(len - n >= m);
                 /* CORE_TRACEF(("%.*s %.*s", (int) n, str, (int)(len - n), tmp)); */
-                if (m >= kIPv4DNS.ssz
+                if (m >= NCBI_IPV4_DNS_SIZE
                     &&  7/*"x.x.x.x"*/ <= n  &&  n <= 15/*xxx.xxx.xxx.xxx*/
-                    &&  x_OkDNSEnd(end = tmp + kIPv4DNS.ssz)
-                    &&  strncasecmp(dom, kIPv4DNS.sfx, kIPv4DNS.ssz - 1) == 0
+                    &&  x_OkDNSEnd(end = tmp + NCBI_IPV4_DNS_SIZE)
+                    &&  strncasecmp(tmp + 1, kIPv4DNS.sfx, NCBI_IPV4_DNS_SIZE - 1) == 0
                     &&  x_DNSToIPv4(&ipv4, str, n) == tmp) {
                     NcbiIPv4ToIPv6(addr, ipv4, 0);
                     return &end[!(*end != '.')];
                 }
-                if (m >= kIPv6DNS.ssz
+                if (m >= NCBI_IPV6_DNS_SIZE
                     &&  n == 4 * sizeof(temp.octet) - 1
-                    &&  x_OkDNSEnd(end = tmp + kIPv6DNS.ssz)
-                    &&  strncasecmp(dom, kIPv6DNS.sfx, kIPv6DNS.ssz - 1) == 0
+                    &&  x_OkDNSEnd(end = tmp + NCBI_IPV6_DNS_SIZE)
+                    &&  strncasecmp(tmp + 1, kIPv6DNS.sfx, NCBI_IPV6_DNS_SIZE - 1) == 0
                     &&  x_DNSToIPv6(&temp, str, n) == tmp) {
                     *addr = temp;
                     return &end[!(*end != '.')];
