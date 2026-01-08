@@ -42,11 +42,11 @@
 
 
 struct SIPDNSsfx {
-    const char*  sfx;
-    const size_t len;
+    const char*  sfx;  /* special domain suffix */
+    const size_t ssz;  /* sizeof(sfx)           */
 };
-static const struct SIPDNSsfx kIPv6DNS = { ".ip6.arpa",      9 };
-static const struct SIPDNSsfx kIPv4DNS = { ".in-addr.arpa", 13 };
+static const struct SIPDNSsfx kIPv6DNS = { "ip6.arpa",      9 };
+static const struct SIPDNSsfx kIPv4DNS = { "in-addr.arpa", 13 };
 
 
 static int/*bool*/ x_NcbiIsIPv4(const TNCBI_IPv6Addr* addr, int/*bool*/ compat)
@@ -536,11 +536,11 @@ extern const char* NcbiAddrToDNS(char* buf, size_t bufsize,
             --src;
         }
     }
-    if (len + sfx->len <= bufsize) {
-        memcpy(buf, tmp,               len);
+    if (len + sfx->ssz <= bufsize) {
+        memcpy(buf, tmp,      len);
         buf += len;
-        memcpy(buf, sfx->sfx + 1, sfx->len);
-        buf += sfx->len;
+        memcpy(buf, sfx->sfx, sfx->ssz);
+        buf += sfx->ssz;
     } else
         buf = 0;
     return buf;
@@ -555,9 +555,8 @@ static const char* x_DNSToIPv4(unsigned int* addr,
     CORE_DEBUG_ARG(const char* end = str + len;)
     size_t n;
 
-    assert(*end == '.');
-    if (len < 7/*"x.x.x.x"*/  ||  15/*xxx.xxx.xxx.xxx*/ < len)
-        return 0/*failure*/;
+    assert(*end == '.'
+           &&  7/*"x.x.x.x"*/ <= len  &&  len <= 15/*xxx.xxx.xxx.xxx*/);
 
     for (n = 0;  n < sizeof(*addr);  ++n) {
         char  s[4];
@@ -586,17 +585,15 @@ static const char* x_DNSToIPv6(TNCBI_IPv6Addr* addr,
     CORE_DEBUG_ARG(const char* end = str + len;)
     size_t n;
 
-    assert(*end == '.');
-    if (len != 4 * sizeof(addr->octet) - 1)
-        return 0/*failure*/;
+    assert(*end == '.'  &&  len == 4 * sizeof(addr->octet) - 1);
 
     for (n = 0;  n < 2 * sizeof(addr->octet);  ++n) {
         static const char xdigits[] = "0123456789abcdef";
         int c = tolower((unsigned char)(*str));
         unsigned char val;
         const char*   ptr ;
-        assert(str < end);
-        if (!c  ||  !(ptr = strchr(xdigits, c))  ||  *++str != '.')
+        assert(c  &&  str < end);
+        if (*++str != '.'  ||  !(ptr = strchr(xdigits, c)))
             return 0/*failure*/;
         val = (unsigned char)(ptr - xdigits);
         if (n & 1) {
@@ -654,42 +651,49 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     str += n;
     len -= n;
     for (n = 0;  n < len;  ++n) {
-        if (isspace((unsigned char) str[n]))
+        if (!str[n]  ||  isspace((unsigned char) str[n]))
             break;
     }
     if (!(len = n))
         return 0/*failure*/;
 
-    if ((how & eNcbiIP_Dns)  &&  len > 7/*.in-addr.arpa min*/ + kIPv6DNS.len) {
-        const char *end4, *end6;
-        tmp  = str + 7;
-        end4 = tmp + kIPv4DNS.len;
-        end6 = tmp + kIPv6DNS.len;
-        for (n = 7;  n <= len - kIPv6DNS.len;  ++n) {
-            size_t m = len - n;
-            if (m >= kIPv4DNS.len) {
-                if (x_OkDNSEnd(end4)
-                    &&  strncasecmp(tmp, kIPv4DNS.sfx, kIPv4DNS.len) == 0) {
-                    if (x_DNSToIPv4(&ipv4, str, n) == tmp) {
-                        NcbiIPv4ToIPv6(addr, ipv4, 0);
-                        return &end4[!(*end4 != '.')];
-                    }
+    assert(kIPv6DNS.ssz <= kIPv4DNS.ssz);
+    /* IPv6 DNS addresses always require 4*16 = 64 char leading numeric portion;
+     * IPv4 DNS addresses require between 7 and 15 char leading numeric portion
+     * -- all that while IPv4 literal suffix is longer than that of IPv6. */
+    if ((how & eNcbiIP_Dns)  &&  len >= (7 + kIPv4DNS.ssz)/*shortest DNS*/) {
+        /* scan matching from the end, for better efficiency and performance */
+        size_t m = kIPv6DNS.ssz;  /* tracks tail length (increasing)    */
+        n   = len >= 64 + kIPv6DNS.ssz ? 64 + kIPv6DNS.ssz : len;
+        n  -= m;                  /* tracks head length (decreasing)    */
+        tmp = str + n;            /* tracks the domain suffix start dot */
+        do {
+            if (*tmp == '.') {
+                const char*    dom = tmp + 1;
+                const char*    end;
+                TNCBI_IPv6Addr temp;
+                assert(len - n >= m);
+                /* CORE_TRACEF(("%.*s %.*s", (int) n, str, (int)(len - n), tmp)); */
+                if (m >= kIPv4DNS.ssz
+                    &&  7/*"x.x.x.x"*/ <= n  &&  n <= 15/*xxx.xxx.xxx.xxx*/
+                    &&  x_OkDNSEnd(end = tmp + kIPv4DNS.ssz)
+                    &&  strncasecmp(dom, kIPv4DNS.sfx, kIPv4DNS.ssz - 1) == 0
+                    &&  x_DNSToIPv4(&ipv4, str, n) == tmp) {
+                    NcbiIPv4ToIPv6(addr, ipv4, 0);
+                    return &end[!(*end != '.')];
                 }
-                ++end4;
-            }
-            if (m >= kIPv6DNS.len) {
-                if (x_OkDNSEnd(end6)
-                    &&  strncasecmp(tmp, kIPv6DNS.sfx, kIPv6DNS.len) == 0) {
-                    TNCBI_IPv6Addr temp;
-                    if (x_DNSToIPv6(&temp, str, n) == tmp) {
-                        *addr = temp;
-                        return &end6[!(*end6 != '.')];
-                    }
+                if (m >= kIPv6DNS.ssz
+                    &&  n == 4 * sizeof(temp.octet) - 1
+                    &&  x_OkDNSEnd(end = tmp + kIPv6DNS.ssz)
+                    &&  strncasecmp(dom, kIPv6DNS.sfx, kIPv6DNS.ssz - 1) == 0
+                    &&  x_DNSToIPv6(&temp, str, n) == tmp) {
+                    *addr = temp;
+                    return &end[!(*end != '.')];
                 }
-                ++end6;
             }
-            ++tmp;
-        }
+            --tmp;
+            ++m;
+        } while (--n >= 7);
     }
     if (!(how & eNcbiIP_Dot))
         return 0/*failure*/;
