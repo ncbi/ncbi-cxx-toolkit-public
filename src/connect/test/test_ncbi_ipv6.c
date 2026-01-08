@@ -49,23 +49,35 @@ int main(int argc, const char* argv[])
     char buf[150];
     int c;
 
+    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Short   |
+                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*no auto-close*/);
+
     assert(sizeof(addr) == sizeof(addr.octet));
     if (argc != 2) {
-        printf("(internal self-test begins)\n");
+        CORE_LOG(eLOG_Note, "(internal self-test begins)");
         g_NCBI_ConnectRandomSeed
             = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
+        memset(&addr, 0, sizeof(addr));
         if (rand() % 13) {
-            for (n = 0;  n < sizeof(addr.octet);  ++n)
+            m = rand() & 1 ? 0 : sizeof(addr.octet) - 4;  /* if IPv4 */
+            for (n = m;  n < sizeof(addr.octet);  ++n)
                 addr.octet[n] = rand() & 0xFF;
-        } else
-            memset(&addr, 0, sizeof(addr));
+            if (m  &&  (rand() & 1))  /* if mapped IPv4 */
+                memset(&addr.octet[10], '\xFF', 2 * sizeof(addr.octet[10]));
+            assert(!m  ||  NcbiIsIPv4Ex(&addr, 1/*compat okay*/));
+        } else {
+            m = 0;
+            if (rand() & 1)
+                memset(&addr, '\xFF', sizeof(addr));
+        }
         if (rand() % 11)
-            m = rand() % (sizeof(addr.octet) * 8 + 1);
+            m = rand() % ((sizeof(addr.octet) * 8) + 1);
         else
             m = (rand() & 1) * 0xFF;
         assert(NcbiAddrToString(buf, sizeof(buf), &addr)  ||  *buf == '\0');
-        printf("Address   = %s/%u\n", buf, m);
+        CORE_LOGF(eLOG_Note, ("Address   = %s/%u", buf, m));
         if (rand() & 1) {
             char* p;
             for (p = buf;  *p;  ++p) {
@@ -74,26 +86,26 @@ int main(int argc, const char* argv[])
                     if (rand() & 1)
                         *p = toupper((unsigned char)(*p));
                 } else
-                    assert(*p == ':'  ||  isdigit((unsigned char)(*p)));
+                    assert(*p == ':'  ||  *p == '.'  ||  isdigit((unsigned char) (*p)));
             }
-            printf("Reparsing = %s\n", buf);
+            CORE_LOGF(eLOG_Note, ("Reparsing = %s", buf));
             assert(NcbiStringToAddr(&a, buf, 0));
             assert(memcmp(&addr, &a, sizeof(addr)) == 0);
         } else
             a = addr;
         NcbiIPv6Subnet(&a,                          m);
         assert(NcbiAddrToString(buf, sizeof(buf), &a)  ||  *buf == '\0');
-        printf("Subnet    = %s\n", buf);
+        CORE_LOGF(eLOG_Note, ("Subnet    = %s", buf));
         b = addr;
         NcbiIPv6Suffix(&b, sizeof(addr.octet) * 8 - m);
         assert(NcbiAddrToString(buf, sizeof(buf), &b)  ||  *buf == '\0');
-        printf("Suffix    = %s\n", buf);
+        CORE_LOGF(eLOG_Note, ("Suffix    = %s", buf));
         for (n = 0;  n < sizeof(addr.octet);  ++n) {
             /* XOR here (instead of OR) to test that there's no overlap */
             temp.octet[n] = a.octet[n] ^ b.octet[n];
         }
         assert(NcbiAddrToString(buf, sizeof(buf), &temp)  ||  *buf == '\0');
-        printf("Combined  = %s\n", buf);
+        CORE_LOGF(eLOG_Note, ("Combined  = %s", buf));
         if (m > sizeof(addr.octet) * 8) {
             /* Because "first" and "last" bit are the same in this case */
             assert(memcmp(&a, &addr, sizeof(addr)) == 0);
@@ -106,47 +118,57 @@ int main(int argc, const char* argv[])
                 assert(NcbiIsEmptyIPv6(&b));
             assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
         }
-        printf("(internal self-test ends)\n\n");
+        CORE_LOG(eLOG_Note, "(internal self-test ends)\n");
     }
 
     n = 0;
     for (c = 1;  c < argc;  ++c) {
         int d, q;
         if (!(str = NcbiStringToAddr(&addr, argv[c], 0))) {
-            printf("\"%s\" is not a valid IPv6 address\n", argv[c]);
+            CORE_LOGF(eLOG_Error,
+                      ("\"%s\" is not a valid IPv6 address", argv[c]));
             ++n;
             continue;
         }
         if (!NcbiAddrToString(buf, sizeof(buf), &addr)) {
-            printf("Cannot print IPv6 address for \"%s\"\n", argv[c]);
+            CORE_LOGF(eLOG_Error,
+                      ("Cannot print IPv6 address for \"%s\"", argv[c]));
             ++n;
             continue;
         }
-        printf("\"%.*s\" = %s\n", (int)(str - argv[c]), argv[c], buf);
+        CORE_LOGF(eLOG_Note,
+                  ("\"%.*s\" = %s", (int)(str - argv[c]), argv[c], buf));
         if (*str)
-            printf("Unparsed part: \"%s\"\n", str);
+            CORE_LOGF(eLOG_Note, ("Unparsed part: \"%s\"\n", str));
         if (sscanf(str, "/%u%n", &d, &q) >= 1  &&  !str[q]  &&  d >= 0) {
             int/*bool*/ ipv4 = NcbiIsIPv4(&addr);
-            unsigned int maxm = (unsigned int)
+            unsigned int width = (unsigned int)
                 (ipv4 ? sizeof(unsigned int) : sizeof(addr.octet)) * 8;
-            m = d;
+            m = (unsigned int) d;
             a = addr;
             (ipv4 ? NcbiIPv4Subnet : NcbiIPv6Subnet)(&a, m);
             assert(NcbiAddrToString(buf, sizeof(buf), &a)  ||  *buf == '\0');
-            printf("Subnet    = %s/%u\n", buf,
-                   m >= maxm ? (unsigned int) maxm : m);
+            CORE_LOGF(eLOG_Note,
+                      ("Subnet    = %s/%u", buf,
+                       m >= width ? (unsigned int) width : m));
             b = addr;
-            (ipv4 ? NcbiIPv4Suffix : NcbiIPv6Suffix)(&b, maxm - m);
+            (ipv4 ? NcbiIPv4Suffix : NcbiIPv6Suffix)(&b, (unsigned int)(width - m));
             assert(NcbiAddrToString(buf, sizeof(buf), &b)  ||  *buf == '\0');
-            printf("Suffix    = %s\n", buf);
+            CORE_LOGF(eLOG_Note,
+                      ("Suffix    = %s", buf));
         }
         if (NcbiAddrToDNS(buf, sizeof(buf), &addr)) {
-            printf("Domain    = %s\n", buf);
+            CORE_LOGF(eLOG_Note,
+                      ("Domain    = %s", buf));
             str = NcbiStringToAddr(&temp, buf, 0);
             assert(str  &&  !*str);
             assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
-        }
+        } else
+            assert(*buf == '\0');
     }
+    if (argc != 2  &&  n == 0)
+        CORE_LOG(eLOG_Note, "TEST completed successfully");
 
-    return n ? 1/*failure*/ : 0/*success*/;
+    CORE_SetLOG(0);
+    return n ? EXIT_FAILURE/*failure*/ : EXIT_SUCCESS/*success*/;
 }
