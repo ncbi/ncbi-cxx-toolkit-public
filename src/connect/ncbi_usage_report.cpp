@@ -637,22 +637,22 @@ void CUsageReport::Wait(EWait how, CTimeout timeout)
         // BIG FAT NOTE 1:
         //
         // Scope {{...}} below is necessary for guards to work correctly,
-        // otherwise deadlock can occurs (Linux, GCC).
+        // otherwise deadlock can occur (Linux, GCC).
         {{
             // BIG FAT NOTE 2:
             //
-            // Signal reporting thread to unlock its wait() and process 
+            // Signal reporting thread to unlock its wait() and process the
             // remaining queue. Ideally 'mt_signal_guard' below should
             // do this, and unlock conditional variable wait() on locking
-            // signal mutex there, but sometimes it doesn't happens (???), 
-            // that lead to deadlock. Noticed on Linux with GCC 5.4 and 7.3.
-            // Mostly repeatable on slow machines, where Wait() probably 
-            // starts earlier than reporting thread is up and ready to process queue.
+            // signal mutex there, but sometimes that doesn't happen (???),
+            // which leads to deadlock. Noticed on Linux with GCC 5.4 and 7.3.
+            // Most reproducible on slow machines, where Wait() probably starts
+            // earlier than the reporting thread is up and ready to process the queue.
             //
             // So, we use both, notify*() reporting thread and lock signal mutex
             // at the same time. Locking signal mutex is not really necessary
-            // after that, but allow to minimize spinning in this loop,
-            // and allow to check queue between sending jobs only.
+            // after that, but allows to minimize spinning in this loop,
+            // and allows to check the queue between sending jobs only.
             //
             m_ThreadSignal.notify_all();
             std::lock_guard<std::mutex> mt_signal_guard(m_ThreadSignal_Mutex);
@@ -660,7 +660,7 @@ void CUsageReport::Wait(EWait how, CTimeout timeout)
             // Check queue size
             MT_GUARD;
             if (!m_IsWaiting) {
-                // Wait has canceled in the thread handler
+                // Wait has been canceled in the thread handler
                 return;
             }
             if (m_Queue.empty()) {
