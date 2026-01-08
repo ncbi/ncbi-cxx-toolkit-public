@@ -31,10 +31,11 @@
  */
 
 #include "ncbi_priv.h"
-#if   defined(NCBI_OS_UNIX)
-#  include <unistd.h>
-#elif defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
+#elif defined(NCBI_OS_UNIX)
+#  include <unistd.h>
 #else
 #  include <connect/ncbi_socket.h>
 #endif /*NCBI_OS*/
@@ -66,10 +67,10 @@ FSockHasSocket      g_MONKEY_SockHasSocket   = 0;
 
 extern unsigned int g_NCBI_ConnectSrandAddend(void)
 {
-#if   defined(NCBI_OS_UNIX)
-    return (unsigned int) getpid(); 
-#elif defined(NCBI_OS_MSWIN)
+#if   defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
     return (unsigned int) GetCurrentProcessId();
+#elif defined(NCBI_OS_UNIX)
+    return (unsigned int) getpid(); 
 #else
     return SOCK_GetLocalHostAddress(eDefault);
 #endif /*NCBI_OS*/ 
@@ -161,4 +162,13 @@ extern int/*bool*/ g_CORE_RegistrySET
                      section, name, value, storage);
     CORE_UNLOCK;
     return retval;
+}
+
+
+char* g_CORE_getenv(const char* name)
+{
+    char* env = getenv(name);
+    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
+                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
+    return env;
 }

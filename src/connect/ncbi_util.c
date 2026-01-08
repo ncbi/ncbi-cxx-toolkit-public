@@ -78,23 +78,17 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #define NCBI_USE_PRECOMPILED_CRC32_TABLES 1
 
 
 static const char kOutOfMemory[] = "Ouch! Out of memory";
-
-
-#if 0
-static char* x_getenv(const char* name)
-{
-    char* env = getenv(name);
-    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
-                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
-    return env;
-}
-#else
-#  define x_getenv  getenv
-#endif
 
 
 /******************************************************************************
@@ -947,7 +941,7 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         pwd = 0;
     }
 #    else
-#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected."
+#      error "Unknown value of NCBI_HAVE_GETPWUID_R: 4 or 5 expected"
 #    endif /*NCBI_HAVE_GETPWUID_R*/
     if (pwd  &&  pwd->pw_name)
         return x_SaveStr(pwd->pw_name, buf, bufsize);
@@ -1041,7 +1035,7 @@ extern void CORE_Msdelay(unsigned long ms)
     (void) select(0, 0, 0, 0, &tv);
 #  endif /*HAVE_NANOSLEEP*/
 #else
-#  error "Unsupported platform."
+#  error "Unsupported platform"
 #endif /*NCBI_OS*/
 }
 

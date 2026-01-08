@@ -53,7 +53,8 @@
  *                     g_CORE_GetReferer
  *                     g_CORE_GetRequestID
  *                     g_CORE_GetRequestDtab
- *
+ * Getenv tracking:
+ *                     g_CORE_getenv
  */
 
 /*#define NCBI_MONKEY*/
@@ -389,6 +390,16 @@ extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
 #  define likely(x)    (x)
 #  define unlikely(x)  (x)
 #endif /*__GNUC__*/
+
+
+/* Must be getenv()-compatible proto */
+char* g_CORE_getenv(const char* name);
+
+#if defined(NDEBUG)  &&  !defined(_DEBUG)
+#  define NCBI_CORE_GETENV  getenv
+#else
+#  define NCBI_CORE_GETENV  gCORE_getenv
+#endif /*NDEBUG  && !_DEBUG*/
 
 
 
