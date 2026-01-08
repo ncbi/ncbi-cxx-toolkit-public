@@ -50,6 +50,13 @@
 #define NCBI_FWD_BEMD  "130.14.29.112"
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -515,7 +522,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 temp += "[" DEF_CONN_REG_SECTION "]HTTP_PROXY_{HOST|PORT}";
             temp += " is correct";
             if (!net_info->http_proxy_mask  &&   net_info->http_proxy_skip
-                &&  (getenv("http_proxy")  ||  getenv("https_proxy"))) {
+                &&  (x_getenv("http_proxy")  ||  x_getenv("https_proxy"))) {
                 temp += ": the proxy location was loaded this way because "
                     "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_SKIP
                     " is set, and that prevents reading 'http_proxy' and/or"
@@ -549,7 +556,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 }
                 temp += ")\n";
             } else if (net_info->http_proxy_skip
-                       &&  (getenv("http_proxy")  ||  getenv("https_proxy"))) {
+                       &&  (x_getenv("http_proxy")  ||  x_getenv("https_proxy"))) {
                 temp += "Even though you seem to have 'http_proxy' and/or"
                     " 'https_proxy' defined in your environment, "
                     "[" DEF_CONN_REG_SECTION "]" REG_CONN_HTTP_PROXY_SKIP
