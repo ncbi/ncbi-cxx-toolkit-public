@@ -43,6 +43,13 @@
 #define NCBI_USE_ERRCODE_X   Connect_Util
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #define CONN_NET_INFO_MAGIC  0x600DCAFE
 
 #define SizeOf(arr)  (sizeof(arr) / sizeof((arr)[0]))
@@ -57,19 +64,6 @@ const STimeout g_NcbiDefConnTimeout = {
 
 
 static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
-
-
-#if 0
-static char* x_getenv(const char* name)
-{
-    char* env = getenv(name);
-    CORE_TRACEF(("getenv(\"%s\") = %s%s%s", name,
-                 &"\""[!env], env ? env : "NULL", &"\""[!env]));
-    return env;
-}
-#else
-#  define x_getenv  getenv
-#endif
 
 
 

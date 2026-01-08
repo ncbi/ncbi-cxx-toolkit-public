@@ -42,9 +42,17 @@
 #define NCBI_USE_ERRCODE_X   Connect_SMTP
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #ifdef NCBI_OS_MSWIN
 #  define SENDMAIL_LOCALTIME_MT_SAFE  1
 #endif /*NCBI_OS_MSWIN*/
+
 
 #define MX_SENDMAIL_MAGIC  0xBA8ADEDA
 #define MX_CRLF            "\r\n"
@@ -257,7 +265,7 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
                 &&  SOCK_gethostname(buf, size) != 0) {
                 const char* host;
                 CORE_LOCK_READ;
-                if ((!(host = getenv("HOSTNAME")) && !(host = getenv("HOST")))
+                if ((!(host = x_getenv("HOSTNAME"))  &&  !(host = x_getenv("HOST")))
                     ||  (len = strlen(host)) >= size) {
                     *--buf = '\0';
                 } else
