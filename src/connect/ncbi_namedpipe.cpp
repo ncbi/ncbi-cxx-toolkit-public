@@ -45,7 +45,7 @@
 #  include <sys/types.h>
 
 #elif !defined(NCBI_OS_MSWIN)
-#  error "The CNamedPipe class is supported only on Windows and Unix"
+#  error "The CNamedPipe class is supported on Windows and Unix only"
 #endif
 
 #define NCBI_USE_ERRCODE_X   Connect_Pipe
