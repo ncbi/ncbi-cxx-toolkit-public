@@ -51,15 +51,22 @@ public:
     {
         x_SetProgramName(prog_name);
     	// Initialize the Python interpreter.  Required.
+#if PY_VERSION_HEX >= 0x03080000
+        Py_InitializeFromConfig(&m_Config);
+        PyConfig_Clear(&m_Config);
+#else
     	Py_Initialize();
+#endif
     }
     CEngine(int argc, char *argv[])
     {
 	    // Pass argv[0] to the Python interpreter
         x_SetProgramName(argv[0]);
 
+#if PY_VERSION_HEX < 0x03080000
     	// Initialize the Python interpreter.  Required.
     	Py_Initialize();
+#endif
 
 	    // Define sys.argv.  It is up to the application if you
 	    // want this; you can also let it undefined (since the Python
@@ -72,7 +79,13 @@ public:
             m_Args[i] = CUtf8::AsBasicString<wchar_t>(argv[i]);
             m_Argv[i] = const_cast<wchar_t*>(m_Args[i].c_str());
         }
+#  if PY_VERSION_HEX >= 0x03080000
+        PyConfig_SetArgv(&m_Config, argc, m_Argv.data());
+        Py_InitializeFromConfig(&m_Config);
+        PyConfig_Clear(&m_Config);
+#  else
         PySys_SetArgv(argc, m_Argv.data());
+#  endif
 #else
 	    PySys_SetArgv(argc, argv);
 #endif
@@ -107,10 +120,17 @@ public:
 private:
     void x_SetProgramName(const char* prog_name)
     {
+#if PY_VERSION_HEX >= 0x03080000
+        PyConfig_InitPythonConfig(&m_Config);
+#endif
         if ( prog_name ) {
 #if PY_MAJOR_VERSION >= 3
             m_ProgName = CUtf8::AsBasicString<wchar_t>(prog_name);
+#  if PY_VERSION_HEX >= 0x03080000
+            m_Config.program_name = const_cast<wchar_t*>(m_ProgName.c_str());
+#  else
             Py_SetProgramName(const_cast<wchar_t*>(m_ProgName.c_str()));
+#  endif
 #else
             Py_SetProgramName(const_cast<char*>(prog_name));
 #endif
@@ -118,6 +138,9 @@ private:
     }
 
 #if PY_MAJOR_VERSION >= 3
+#  if PY_VERSION_HEX >= 0x03080000
+    PyConfig        m_Config;
+#  endif
     wstring         m_ProgName;
     vector<wstring> m_Args;
     vector<wchar_t*> m_Argv;
