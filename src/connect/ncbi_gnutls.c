@@ -41,6 +41,13 @@
 #define NCBI_USE_ERRCODE_X   Connect_TLS
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #ifdef HAVE_LIBGNUTLS
 
 #  include <gnutls/gnutls.h>
@@ -798,7 +805,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
                                            DEF_CONN_TLS_LOGLEVEL);
     }
     if (!val  ||  !*val)
-        val = getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */
+        val = x_getenv("GNUTLS_DEBUG_LEVEL"); /* GNUTLS proprietary setting */
     if (val  &&  *val) {
         ELOG_Level level;
         s_GnuTlsLogLevel = atoi(val);
