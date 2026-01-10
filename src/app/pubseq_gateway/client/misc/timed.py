@@ -362,7 +362,7 @@ extract_parser = subparsers.add_parser('extract', help='Extract statistics for s
 extract_parser.set_defaults(func=extract)
 extract_parser.add_argument('-input-file', '-i', help='Input CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType())
 extract_parser.add_argument('-output-file', '-o', help='Output CSV file (default: %(default)s)', metavar='FILE', default='-', type=argparse.FileType('w'))
-extract_parser.add_argument('-statistics', help='Statistics to extract', default=['Median', 'Mean', 'StdDev'], nargs='+')
+extract_parser.add_argument('-statistics', help='Statistics to extract (default: %(default)s)', default=['Median', 'Mean', 'StdDev'], nargs='+')
 extract_parser.add_argument('MEASUREMENTS', help='Measurements to extract', nargs='+')
 
 args = parser.parse_args()
