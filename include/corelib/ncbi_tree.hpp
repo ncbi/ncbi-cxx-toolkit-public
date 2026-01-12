@@ -623,15 +623,14 @@ Fun TreeBreadthFirstTraverse(TTreeNode& tree_node, Fun func)
         tr = *it;
         tree_queue.pop(); // take oldest node off
         stop_scan = eTreeTraverse;
-        if (tr) {
-            stop_scan = func(*tr);
-            switch(stop_scan) {
-                case eTreeTraverseStop:
-                    return func;
-                case eTreeTraverse:
-                case eTreeTraverseStepOver:
-                    break;
-            }
+        if (!tr) continue;
+        stop_scan = func(*tr);
+        switch(stop_scan) {
+            case eTreeTraverseStop:
+                return func;
+            case eTreeTraverse:
+            case eTreeTraverseStepOver:
+                break;
         }
         // Add children (if any) of node to queue
         if (stop_scan != eTreeTraverseStepOver  &&  !tr->IsLeaf()) { 
