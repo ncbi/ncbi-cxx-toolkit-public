@@ -129,7 +129,7 @@ public:
 
     struct SFindBeforesIterFrame {
         TMergeNode Curr;
-        bool Returned;
+        bool Returned { true };
     
         int VisitCount;
         vector<TFrameRef> ChildFrames;
