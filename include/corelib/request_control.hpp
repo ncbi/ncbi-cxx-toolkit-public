@@ -29,12 +29,13 @@
  * Authors:  Denis Vakatov, Vladimir Ivanov, Victor Joukov
  *
  * File Description:
- *   Manage request rate to some shared resource
+ *   Manage request rate to some shared resource.
  *
  */
 
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbitime.hpp>
+#include <atomic>
 #include <deque>
 
 /** @addtogroup Utility
@@ -77,7 +78,9 @@ public:
 ///
 /// CRequestRateControl --
 ///
-/// Manage request rate to some shared resource, for example.
+/// Manage request rate to some shared resource.
+///
+/// Note, this class is not MT-safe, except IsEnabled/Enable/Disable methods.
 
 class NCBI_XNCBI_EXPORT CRequestRateControl
 {
@@ -140,8 +143,10 @@ public:
     ///
     /// @param num_requests_allowed
     ///   Maximum number of allowed requests per 'per_period'.
-    ///   Can be kNoLimit for unlimited number of requests (throttler is disabled,
-    ///   Approve() always returns TRUE).
+    ///   Can be kNoLimit for unlimited number of requests:
+    ///     - throttler switching to disabled state, 
+    ///     - Aprove() always returns TRUE.
+    ///   It have the same effect as Disable().
     /// @param per_period
     ///   Time span in which only 'num_requests_allowed' requests can be
     ///   approved.
@@ -153,7 +158,7 @@ public:
     ///   Set throttle action by default. The eDefault means eSleep here.
     /// For backward compatibility, use eContinuous mode by default.
     /// @sa
-    ///   Approve, ApproveTime
+    ///   Approve, ApproveTime, Enable, Disable, IsEnabled
     void Reset(unsigned int     num_requests_allowed,
                CTimeSpan        per_period                = CTimeSpan(1,0),
                CTimeSpan        min_time_between_requests = CTimeSpan(0,0),
@@ -171,7 +176,7 @@ public:
     ///   Return FALSE if some requirements are not passed, or
     ///   throw exception if throttle action was set to eException.
     /// @sa
-    ///   Reset, ApproveTime
+    ///   Approve, ApproveTime, Enable, Disable, IsEnabled
     bool Approve(EThrottleAction action = eDefault);
 
     /// Get a time span in which request can be approved.
@@ -189,6 +194,15 @@ public:
     ///   Reset, Approve
     CTimeSpan ApproveTime(void);
 
+    /// Enable throttling.
+    void Enable(void) { m_Enabled = true; }
+
+    /// Disable throttling.
+    void Disable(void) { m_Enabled = false; }
+
+    /// Check if throttling is enabled.
+    bool IsEnabled(void) const { return m_Enabled; }
+
     /// Sleep for CTimeSpan.
     ///
     /// @param sleep_time
@@ -202,19 +216,18 @@ public:
     void Lock()   { Approve(eSleep); }
     void Unlock() { /* do nothing */ }
 
-    /// Check if throttling is enabled.
-    bool IsEnabled(void) const { return m_NumRequestsAllowed != kNoLimit; }
-
 private:
     typedef double TTime;
 
-    ///
+    /// Internal version of Approve()
     bool x_Approve(EThrottleAction action, CTimeSpan *sleeptime);
 
     /// Remove from the list of approved requests all expared items.
     void x_CleanTimeLine(TTime now);
 
 private:
+    std::atomic<bool> m_Enabled;       ///< TRUE is throttling is enabled
+     
     // Saved parameters
     EThrottleMode    m_Mode;
     unsigned int     m_NumRequestsAllowed;
@@ -238,16 +251,18 @@ private:
 inline
 bool CRequestRateControl::Approve(EThrottleAction action)
 {
-    return x_Approve(action, 0);
+    return IsEnabled() ? x_Approve(action, 0) : true;
 }
 
 inline
 CTimeSpan CRequestRateControl::ApproveTime()
 {
-    CTimeSpan sleeptime;
-    bool res = x_Approve(eSleep, &sleeptime);
-    if ( !res ) {
-        return sleeptime;
+    if (IsEnabled()) {
+        CTimeSpan sleeptime;
+        bool res = x_Approve(eSleep, &sleeptime);
+        if ( !res ) {
+            return sleeptime;
+        }
     }
     // Approve request
     return CTimeSpan(0, 0);
