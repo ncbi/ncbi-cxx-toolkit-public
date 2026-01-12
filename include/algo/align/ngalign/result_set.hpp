@@ -103,7 +103,7 @@ private:
     CRef<objects::CSeq_id> m_QueryId;
 
 	CRef<objects::CGC_Assembly> m_GenColl;
-    bool m_AllowDupes;
+    bool m_AllowDupes { true};
 
 	TAssemblyToSubjectSet m_AssemblyMap;
 
@@ -153,7 +153,7 @@ public:
 
 private:
 
-    bool m_AllowDupes;
+    bool m_AllowDupes {true};
 
     TQueryToSubjectSet m_QueryMap;
 
