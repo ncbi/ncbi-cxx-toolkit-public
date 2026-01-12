@@ -26,7 +26,7 @@
  * Authors:  Denis Vakatov, Vladimir Ivanov, Victor Joukov
  *
  * File Description:
- *   Test for request test control classes.
+ *   Manage request rate to some shared resource,
  *
  */
 
@@ -50,6 +50,7 @@ CRequestRateControl::CRequestRateControl(
         CTimeSpan       min_time_between_requests,
         EThrottleAction throttle_action,
         EThrottleMode   throttle_mode)
+    : m_Enabled(false)
 {
     Reset(num_requests_allowed, per_period, min_time_between_requests,
           throttle_action, throttle_mode);
@@ -63,6 +64,14 @@ void CRequestRateControl::Reset(
         EThrottleAction throttle_action,
         EThrottleMode   throttle_mode)
 {
+    // Pre-check enabled -> disabled state switching, and disable
+    // immediately before updating any parameters to avoid throttling
+    // with incorrect parameters for any other thread.
+    // Could be useful in MT environments, even this class is not MT safe.
+    //
+    if (m_Enabled && (num_requests_allowed == kNoLimit)) {
+        m_Enabled = false;
+    }
     // Save parameters
     m_NumRequestsAllowed     = num_requests_allowed;
     m_PerPeriod              = per_period.GetAsDouble();
@@ -79,6 +88,9 @@ void CRequestRateControl::Reset(
     m_LastApproved = -1;
     m_TimeLine.clear();
     m_StopWatch.Restart();
+
+    // Enable/disable
+    m_Enabled = (num_requests_allowed != kNoLimit);
 }
 
 
