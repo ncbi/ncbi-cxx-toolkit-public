@@ -494,6 +494,10 @@ if [ -z "$BUILD_ROOT" ]; then
     fi
 #BUILD_ROOT="$BUILD_ROOT"64
   fi
+else
+  if test "$generator_multi_cfg" = "yes"; then
+    BUILD_TYPE=""
+  fi
 fi
 
 cd ${tree_root}
