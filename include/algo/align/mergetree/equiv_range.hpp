@@ -51,7 +51,7 @@ typedef vector<CEquivRange> TEquivList;
 class CEquivRange
 {
 public:
-    CEquivRange() : AlignId(0),SegmtId(0),SplitId(0), Strand(objects::eNa_strand_unknown) { ; }
+    CEquivRange() : Strand(objects::eNa_strand_unknown), AlignId(0),SegmtId(0),SplitId(0) { ; }
     
 	CRange<TSeqPos> Query;
 	CRange<TSeqPos> Subjt;
