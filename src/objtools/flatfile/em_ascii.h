@@ -59,7 +59,7 @@ private:
 
 using TStringList = std::list<std::string>;
 
-CRef<objects::CEMBL_block> XMLGetEMBLBlock(Parser* pp, const char* entry, objects::CMolInfo& mol_info, string& gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample);
+CRef<objects::CEMBL_block> XMLGetEMBLBlock(Parser* pp, const char* entry, objects::CMolInfo& mol_info, string& gbdiv, objects::CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample, TStringList& dr_pubmed);
 
 void fta_build_ena_user_object(list<CRef<objects::CSeqdesc>>& descrs, TStringList& dr_ena, TStringList& dr_biosample, CRef<objects::CUser_object>& dbuop);
 

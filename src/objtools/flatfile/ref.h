@@ -67,6 +67,7 @@ CRef<objects::CPub>     journal(ParserPtr pp, char* bptr, char* eptr, CRef<objec
 Int4                    fta_remark_is_er(const string& str);
 CRef<objects::CPubdesc> sp_refs(ParserPtr pp, const DataBlk& dbp, Uint2 col_data);
 CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data);
+CRef<objects::CPubdesc> EmblDescrRefsDr(ParserPtr pp, TEntrezId pmid);
 void                    fta_pub_lookup(ParserPtr pp, CRef<objects::CPubdesc> desc);
 
 END_NCBI_SCOPE
