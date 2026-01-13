@@ -2468,4 +2468,21 @@ CRef<CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data)
     return desc;
 }
 
+/**********************************************************/
+CRef<CPubdesc> EmblDescrRefsDr(ParserPtr pp, TEntrezId pmid)
+{
+    if (pmid <= ZERO_ENTREZ_ID)
+        return {};
+
+    CRef<CCit_art> cit_art = FetchPubPmId(pmid);
+    if (cit_art.Empty())
+        return {};
+
+    CRef<CPub> pub(new CPub);
+    pub->SetArticle(*cit_art);
+    CRef<CPubdesc> desc(new CPubdesc);
+    desc->SetPub().Set().push_back(pub);
+    return desc;
+}
+
 END_NCBI_SCOPE

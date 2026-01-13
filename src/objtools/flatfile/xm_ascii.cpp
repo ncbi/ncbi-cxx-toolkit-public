@@ -910,13 +910,34 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     dbl.clear();
 
     TStringList dr_ena,
-        dr_biosample;
+        dr_biosample,
+        dr_pubmed;
 
     CRef<CEMBL_block> embl;
     CRef<CGB_block>   gbb;
 
-    if (pp->source == Parser::ESource::EMBL)
-        embl = XMLGetEMBLBlock(pp, entry.mBuf.ptr, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
+    if (pp->source == Parser::ESource::EMBL) {
+        embl = XMLGetEMBLBlock(pp, entry.mBuf.ptr, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample, dr_pubmed);
+        if (! pp->medserver && ! dr_pubmed.empty()) {
+            FtaErrPost(SEV_WARNING, ERR_DRXREF_PMIDsNotProcessed,
+                       "DR-Line cross-references to PubMed exist, but cannot be processed because PubMed Lookups are disabled.");
+        }
+        if (pp->medserver == 1) {
+            for (const string& val : dr_pubmed) {
+                CRef<CPubdesc> pubdesc = EmblDescrRefsDr(pp, ENTREZ_ID_FROM(int, fta_atoi(val)));
+                if (! pubdesc) {
+                    FtaErrPost(SEV_ERROR, ERR_DRXREF_PMIDNotFoundInPubMed,
+                               "PMID \"{}\" cited by DR-Line cross reference does not exist in PubMed.",
+                               val);
+                    continue;
+                }
+
+                CRef<CSeqdesc> descr(new CSeqdesc);
+                descr->SetPub(*pubdesc);
+                bioseq.SetDescr().Set().push_back(descr);
+            }
+        }
+    }
     else
         gbb = XMLGetGBBlock(pp, entry.mBuf.ptr, *mol_info, bio_src);
 

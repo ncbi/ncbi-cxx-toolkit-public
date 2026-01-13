@@ -214,6 +214,7 @@ static const char* ParFlat_DRname_array[] = {
     "PR2",
     "PRO",
     "PROTEOMES",
+    "PUBMED",
     "RFAM",
     "RZPD",
     "SABIO-RK",
@@ -394,13 +395,13 @@ static void SetXrefObjId(CEMBL_xref& xref, const string& str)
  *   static void GetEmblBlockXref(entry, xip,
  *                                chentry, dr_ena,
  *                                dr_biosample,
- *                                drop):
+ *                                drop, dr_pubmed):
  *
  *      Return a list of EMBLXrefPtr, one EMBLXrefPtr per
  *   type (DR) line.
  *
  **********************************************************/
-static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl)
+static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl, TStringList& dr_pubmed)
 {
     const char** b;
 
@@ -561,6 +562,18 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                 } else {
                     dr_ena.push_back(id);
                 }
+            }
+        } else if (name == "PUBMED" && ! id.empty()) {
+            bool found = false;
+            for (const string& val : dr_pubmed) {
+                if (val == id) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (! found) {
+                dr_pubmed.push_back(id);
             }
         } else {
             CRef<CEMBL_xref> new_xref(new CEMBL_xref);
@@ -905,7 +918,8 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
  *
  *   static CRef<CEMBL_block> GetDescrEmblBlock(pp, entry, mfp,
  *                                         gbdiv, biosp,
- *                                         dr_ena, dr_biosample):
+ *                                         dr_ena, dr_biosample,
+ *                                         dr_pubmed):
  *
  *      class is 2nd token of ID line.
  *      div :
@@ -920,7 +934,7 @@ static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* con
  *
  **********************************************************/
 static CRef<CEMBL_block> GetDescrEmblBlock(
-    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, string& gbdiv, const CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+    ParserPtr pp, const DataBlk& entry, CMolInfo& mol_info, string& gbdiv, const CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample, TStringList& dr_pubmed)
 {
     CRef<CEMBL_block> ret, embl(new CEMBL_block);
 
@@ -1321,7 +1335,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     ibp->wgssec[0] = '\0';
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, embl->SetExtra_acc());
 
-    GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl);
+    GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 &&
@@ -1778,10 +1792,32 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     CRef<CMolInfo> mol_info = GetEmblMolInfo(pp, entry, org_ref);
 
     TStringList dr_ena,
-        dr_biosample;
+        dr_biosample,
+        dr_pubmed;
 
     CRef<CEMBL_block> embl_block =
-        GetDescrEmblBlock(pp, entry, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample);
+        GetDescrEmblBlock(pp, entry, *mol_info, gbdiv, bio_src, dr_ena, dr_biosample, dr_pubmed);
+
+    if (! pp->medserver && ! dr_pubmed.empty()) {
+        FtaErrPost(SEV_WARNING, ERR_DRXREF_PMIDsNotProcessed,
+                   "DR-Line cross-references to PubMed exist, but cannot be processed because PubMed Lookups are disabled.");
+    }
+
+    if (pp->medserver == 1) {
+        for (const string& val : dr_pubmed) {
+            CRef<CPubdesc> pubdesc = EmblDescrRefsDr(pp, ENTREZ_ID_FROM(int, fta_atoi(val)));
+            if (! pubdesc) {
+                FtaErrPost(SEV_ERROR, ERR_DRXREF_PMIDNotFoundInPubMed,
+                           "PMID \"{}\" cited by DR-Line cross reference does not exist in PubMed.",
+                           val);
+                continue;
+            }
+
+            CRef<CSeqdesc> descr(new CSeqdesc);
+            descr->SetPub(*pubdesc);
+            bioseq.SetDescr().Set().push_back(descr);
+        }
+    }
 
     if (pp->source == Parser::ESource::EMBL && embl_block.NotEmpty())
         fta_create_imgt_misc_feat(bioseq, *embl_block, ibp);
@@ -2301,7 +2337,7 @@ string_view GetEmblDiv(Uint1 num)
 }
 
 /**********************************************************/
-CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, string& gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample)
+CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol_info, string& gbdiv, CBioSource* bio_src, TStringList& dr_ena, TStringList& dr_biosample, TStringList& dr_pubmed)
 {
     CRef<CEMBL_block> embl(new CEMBL_block),
         ret;
@@ -2634,7 +2670,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     if (std_update_date.Empty() && std_creation_date.NotEmpty())
         embl->SetUpdate_date().SetStd(*std_creation_date);
 
-    GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl);
+    GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 && fta_StartsWith(ibp->acnum, "CT"sv)) {

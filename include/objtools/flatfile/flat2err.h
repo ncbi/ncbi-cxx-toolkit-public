@@ -601,6 +601,8 @@
 #define ERR_DRXREF_DuplicatedBioSamples                34,3
 #define ERR_DRXREF_InvalidSRA                          34,4
 #define ERR_DRXREF_DuplicatedSRA                       34,5
+#define ERR_DRXREF_PMIDNotFoundInPubMed                34,6
+#define ERR_DRXREF_PMIDsNotProcessed                   34,7
 
 #define ERR_TSA                                        35,0
 #define ERR_TSA_InvalidPrimarySpan                     35,1
