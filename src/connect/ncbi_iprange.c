@@ -271,11 +271,11 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                     assert(d > 0);
                     for (n = sizeof(range->a.octet);  n > 0;  --n) {
                         if (d >= 8) {
-                            if (range->a.octet[n - 1] & ~0)
+                            if (range->a.octet[n - 1] & ~0U)
                                 return 0/*failure*/;
                             d -= 8;
                         } else if (d) {
-                            if (range->a.octet[n - 1] & ~(~0 << d))
+                            if (range->a.octet[n - 1] & ~(~0U << d))
                                 return 0/*failure*/;
                             break;
                         } else
