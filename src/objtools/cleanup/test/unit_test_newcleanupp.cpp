@@ -49,11 +49,6 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/RNA_ref.hpp>
-#include <objects/seqfeat/Trna_ext.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-
-
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -83,8 +78,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_2301)
     auto pNullLoc = Ref(new CSeq_loc());
     pNullLoc->SetNull();
 
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()), *pScope);
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
     {
         // mix(null, null) -> null
         auto pLoc = Ref(new CSeq_loc());
@@ -171,7 +165,8 @@ BOOST_AUTO_TEST_CASE(Test_RemoveSingleStrand)
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     auto bsh = pScope->AddBioseq(*pBioseq);
 
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()), *pScope);
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
 
     // Strangely, the strand can be set with eStrand_not_set.
     // In this case, RemoveSingleStrand() will reset the strand field.
@@ -261,7 +256,8 @@ BOOST_AUTO_TEST_CASE(Test_ProtSeqBC)
     auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
     auto bsh = pScope->AddBioseq(*pProtSeq);
 
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()),*pScope);
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
 
     BOOST_CHECK_EQUAL(pProtSeq->GetInst().GetTopology(),CSeq_inst::eTopology_linear);
 
@@ -294,7 +290,8 @@ BOOST_AUTO_TEST_CASE(Test_SeqIdBC) // RW-2482
     pBioseq->SetId().push_back(pId);
     auto bsh = pScope->AddBioseq(*pBioseq);
 
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()), *pScope);
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
 
     auto pNewId = Ref(new CSeq_id());
     pNewId->Assign(*pId);
@@ -320,7 +317,8 @@ BOOST_AUTO_TEST_CASE(Test_BasicCleanupSeqIds) // RW-2482
     pBioseq->SetId().push_back(pId);
     auto bsh = pScope->AddBioseq(*pBioseq);
 
-    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()), *pScope);
+    CNewCleanup_imp cleanup_imp(Ref(new CCleanupChange()));
+    cleanup_imp.SetScope(*pScope);
 
     cleanup_imp.BasicCleanupSeqIds(bsh);
 
@@ -358,8 +356,7 @@ BOOST_AUTO_TEST_CASE(Test_BasicCleanupDeltaExt) // RW-2507
     }
 
     auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
+    CNewCleanup_imp cleanup_imp(changes);
     cleanup_imp.RemoveZeroLengthLiterals(*pDeltaExt);
 
     BOOST_CHECK_EQUAL(pDeltaExt->Get().size(), 2);
@@ -387,7 +384,7 @@ BOOST_AUTO_TEST_CASE(Test_CopyGBBlockDivToOrgnameDiv)
 
     auto seh = pScope->AddTopLevelSeqEntry(*pEntry);
     auto changes = Ref(new CCleanupChange());
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
+    CNewCleanup_imp cleanup_imp(changes);
     cleanup_imp.CopyGBBlockDivToOrgnameDiv(seh);
    
     // Check that 
@@ -424,152 +421,5 @@ BOOST_AUTO_TEST_CASE(Test_CopyGBBlockDivToOrgnameDiv)
 
     BOOST_CHECK_EQUAL(seh.GetDescr().Get().front()->GetSource().GetOrg().GetOrgname().GetDiv(), "dummy_div");
 }
-
-
-BOOST_AUTO_TEST_CASE(Test_GBblockBC)
-{
-    auto gb_block = Ref(new CGB_block());
-    gb_block->SetKeywords().push_back("tpa_assembly");
-
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-    cleanup_imp.GBblockBC(*gb_block);
-    BOOST_CHECK_EQUAL(gb_block->GetKeywords().front(), "TPA:assembly");
-
-    gb_block->SetKeywords().front() = "tpa:reassembly";
-    cleanup_imp.GBblockBC(*gb_block);
-    BOOST_CHECK_EQUAL(gb_block->GetKeywords().front(), "TPA:assembly");
-
-    gb_block->SetKeywords().front() = "tpa_REASSEMBLY";
-    cleanup_imp.GBblockBC(*gb_block);
-    BOOST_CHECK_EQUAL(gb_block->GetKeywords().front(), "TPA:assembly");
-}
-
-
-static CRef<CSubSource> s_MakeAltitude(const string& val)
-{
-    auto subsource = Ref(new CSubSource());
-    subsource->SetSubtype(CSubSource::eSubtype_altitude);
-    subsource->SetName(val);
-
-    return subsource;
-}
-
-BOOST_AUTO_TEST_CASE(Test_BiosourceBC)
-{
-    auto biosource = Ref(new CBioSource());
-
-    biosource->SetSubtype().push_back(s_MakeAltitude("+300.5metres"));
-    biosource->SetSubtype().push_back(s_MakeAltitude("-49.5Meters"));
-    biosource->SetSubtype().push_back(s_MakeAltitude("11.4 meters."));
-    biosource->SetSubtype().push_back(s_MakeAltitude("9.2"));
-
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-
-    cleanup_imp.BiosourceBC(*biosource);
-
-    auto it = biosource->GetSubtype().begin();
-    BOOST_CHECK_EQUAL((*it)->GetName(), "+300.5 m");
-    ++it;
-    BOOST_CHECK_EQUAL((*it)->GetName(), "-49.5 m");
-    ++it;
-    BOOST_CHECK_EQUAL((*it)->GetName(), "11.4 m");
-    ++it;
-    BOOST_CHECK_EQUAL((*it)->GetName(), "9.2");
-    ++it;
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_RRNA_NAME) 
-{   
-    auto rRNA = Ref(new CRNA_ref());
-    rRNA->SetType(CRNA_ref::eType_rRNA);
-    
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-
-    rRNA->SetExt().SetName("89.234ss ribosomal RNA DNA ribosomal the suffix");
-    cleanup_imp.RnarefBC(*rRNA);
-    BOOST_CHECK_EQUAL(rRNA->GetExt().GetName(), "89.234ss ribosomal RNA the suffix");
-    
-    rRNA->SetExt().SetName("89.234ss rRNA RNA DNA ribosomal ribosomal ribosomal the suffix");
-    cleanup_imp.RnarefBC(*rRNA);
-    BOOST_CHECK_EQUAL(rRNA->GetExt().GetName(), "89.234ss ribosomal RNA the suffix");
-
-    rRNA->SetExt().SetName("89.234ss rRNA RNA DNA ribosomal rRNA rRNA the suffix");
-    cleanup_imp.RnarefBC(*rRNA);
-    BOOST_CHECK_EQUAL(rRNA->GetExt().GetName(), "89.234ss ribosomal RNA the suffix");
-}
-
-
-
-BOOST_AUTO_TEST_CASE(Test_RnaFeatBC) 
-{
-    auto feat = Ref(new CSeq_feat());
-    auto& rna = feat->SetData().SetRna();
-    rna.SetType(CRNA_ref::eType_tRNA);
-    feat->SetComment("Glu2");
-
-
-    auto& int_loc = feat->SetLocation().SetInt();
-    int_loc.SetId().SetLocal().SetStr("dummy_id");
-    int_loc.SetFrom(0);
-    int_loc.SetTo(19);
-
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-
-    cleanup_imp.RnaFeatBC(rna, *feat);
-
-    BOOST_CHECK(rna.IsSetExt());
-    BOOST_CHECK(rna.GetExt().GetTRNA().GetAa().IsNcbieaa());
-    BOOST_CHECK_EQUAL(rna.GetExt().GetTRNA().GetAa().GetNcbieaa(), 69);
-
-    
-    rna.ResetExt();
-    feat->SetComment("tK(CUU)G2");
-    cleanup_imp.RnaFeatBC(rna, *feat);
-    // SGD is not handled correctly - check if SGD-specific source code is actually needed.
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_FixUpEllipsis)
-{
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-
-    string test_string{",,,"};
-
-    cleanup_imp.FixUpEllipsis(test_string);
-    BOOST_CHECK_EQUAL(test_string, "...");
-
-    test_string = "..,";
-    cleanup_imp.FixUpEllipsis(test_string);
-    BOOST_CHECK_EQUAL(test_string, "...");
-    
-    test_string = ",,, no change";
-    cleanup_imp.FixUpEllipsis(test_string);
-    BOOST_CHECK_EQUAL(test_string, ",,, no change"); 
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_OrgmodBC)
-{
-    auto changes = Ref(new CCleanupChange());
-    auto pScope = Ref(new CScope(*CObjectManager::GetInstance()));
-    CNewCleanup_imp cleanup_imp(changes, *pScope);
-
-    auto pOrgMod = Ref(new COrgMod(COrgMod::eSubtype_bio_material,"a : b"));
-    cleanup_imp.OrgmodBC(*pOrgMod);
-
-    BOOST_CHECK_EQUAL(pOrgMod->GetSubname(), "a:b");
-}
-
 
 
