@@ -543,15 +543,15 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
                 case eTreeTraverseStepOver:
                     break;
             }
-        }
-        if ( (stop_scan != eTreeTraverseStepOver) &&
-             (delta_level >= 0) && 
-             (!tr->IsLeaf())) {  // sub-node, going down
-            tree_stack.push(it);
-            it = tr->SubNodeBegin();
-            it_end = tr->SubNodeEnd();
-            delta_level = 1;
-            continue;
+            if ( (stop_scan != eTreeTraverseStepOver) &&
+                 (delta_level >= 0) && 
+                 (!tr->IsLeaf())) {  // sub-node, going down
+                tree_stack.push(it);
+                it = tr->SubNodeBegin();
+                it_end = tr->SubNodeEnd();
+                delta_level = 1;
+                continue;
+            }
         }
         ++it;
         if (it == it_end) { // end of level, going up
