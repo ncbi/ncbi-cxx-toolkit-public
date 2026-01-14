@@ -19,7 +19,7 @@ if (NOT WIN32)
         set(NCBI_ASNDIR /Volumes/ncbiapdata/asn)
     endif()
 else()
-    set(NCBI_ASNTOOL //snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2017.64/c.current/bin/asntool.exe)
+    set(NCBI_ASNTOOL //snowman/win-coremake/Lib/Ncbi/C_Toolkit/vs2017.64/c.sc-30/bin/asntool.exe)
 endif()
 
 ##############################################################################

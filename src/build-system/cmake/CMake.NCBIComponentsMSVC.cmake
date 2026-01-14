@@ -42,7 +42,7 @@ endif()
 
 set(NCBI_ThirdPartyBasePath ${NCBI_TOOLS_ROOT}/Lib/ThirdParty)
 set(NCBI_ThirdPartyAppsPath ${NCBI_TOOLS_ROOT}/App/ThirdParty)
-set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
+set(NCBI_ThirdParty_NCBI_C  ${NCBI_TOOLS_ROOT}/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.sc-30)
 
 set(NCBI_ThirdParty_VDBROOT    //snowman/trace_software/vdb)
 set(NCBI_ThirdParty_SQLServer "C:/Program Files/Microsoft SQL Server/Client SDK/ODBC/180/SDK")
