@@ -66,6 +66,8 @@ public:
     
     CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_Reply>& reply);
     CRef<CPSGL_RequestTracker> GetTracker(const shared_ptr<CPSG_ReplyItem>& item);
+
+    static shared_ptr<void> CreateUserContext();
         
 private:
     CFastMutex m_TrackerMapMutex;
@@ -78,6 +80,7 @@ class CPSGL_Queue : public CObject
 public:
     explicit
     CPSGL_Queue(const string& service_name,
+                size_t event_loops,
                 CRef<CPSGL_TrackerMap> tracker_map);
     ~CPSGL_Queue();
 
@@ -99,7 +102,8 @@ protected:
     void ProcessReplyCallback(EPSG_Status status,
                               const shared_ptr<CPSG_Reply>& reply);
 
-    
+    class CCallbackQueue;
+    static void CallbackQueueRun(CRef<CCallbackQueue> queue);
 
 private:
     friend class CPSGL_QueueGuard;
@@ -107,6 +111,8 @@ private:
     CPSG_EventLoop m_EventLoop;
     CRef<CPSGL_TrackerMap> m_TrackerMap;
     thread m_EventLoopThread;
+    CRef<CCallbackQueue> m_CallbackQueue;
+    vector<thread> m_CallbackQueueThreads;
 };
 
 
@@ -200,6 +206,10 @@ protected:
     shared_ptr<CPSG_Reply> m_Reply;
 
     CRef<CObjectFor<CFastMutex>> m_TrackerMutex;
+    // track queued callbacks
+    unsigned m_CallbackItemCount; // queued callback 'item' events
+    EPSG_Status m_CallbackReplyStatus;
+    shared_ptr<CPSG_Reply> m_CallbackReply;
     // track background tasks to prevent premature destruction
     CSemaphore m_InCallbackSemaphore; // wait for safe destructtion
     typedef set<CRef<CBackgroundTask>> TBackgroundTasks;

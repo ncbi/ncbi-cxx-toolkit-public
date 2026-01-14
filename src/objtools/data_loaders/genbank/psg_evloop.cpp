@@ -49,6 +49,9 @@ BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 BEGIN_NAMESPACE(psgl);
 
+static const int kDestructionDelay = 0; // max delay in milliseconds
+static const int kFailureRate = 0; // zero or probability of failure = 1/kFailureRate
+static bool kUseBackgroundTasks = true;
 
 //#define COLLECT_PROFILE
 
@@ -112,10 +115,6 @@ static SProfiler sp_GetTracker;
 #else
 # define PROFILE(var)
 #endif
-
-static const int kDestructionDelay = 0; // max delay in milliseconds
-static const int kFailureRate = 0; // zero or probability of failure = 1/kFailureRate
-static bool kUseBackgroundTasks = true;
 
 static inline
 void s_SimulateDelay()
@@ -201,11 +200,32 @@ void s_SimulateFailure(CPSGL_Processor* processor, const char* message)
 /////////////////////////////////////////////////////////////////////////////
 
 
+const bool kUseUserContextForTrackerMap = false;
+
+static mutex s_UserContextMutex;
+
+
+shared_ptr<void> CPSGL_TrackerMap::CreateUserContext()
+{
+    if ( kUseUserContextForTrackerMap ) {
+        return make_shared<CRef<CPSGL_Processor>>();
+    }
+    return nullptr;
+}
+
+
 CRef<CPSGL_RequestTracker> CPSGL_TrackerMap::GetTracker(const shared_ptr<CPSG_Reply>& reply)
 {
     PROFILE(sp_GetTracker);
+    const CPSG_Request* request = reply->GetRequest().get();
+    if ( kUseUserContextForTrackerMap ) {
+        if ( auto ref_ptr = request->GetUserContext<CRef<CPSGL_RequestTracker>>() ) {
+            lock_guard lock(s_UserContextMutex);
+            return *ref_ptr;
+        }
+    }
     CFastMutexGuard guard(m_TrackerMapMutex);
-    auto iter = m_TrackerMap.find(reply->GetRequest().get());
+    auto iter = m_TrackerMap.find(request);
     if ( iter == m_TrackerMap.end() ) {
         return null;
     }
@@ -222,15 +242,33 @@ CRef<CPSGL_RequestTracker> CPSGL_TrackerMap::GetTracker(const shared_ptr<CPSG_Re
 
 void CPSGL_TrackerMap::RegisterRequest(CPSGL_RequestTracker* tracker)
 {
+    const CPSG_Request* request = tracker->GetRequest().get();
+    if ( kUseUserContextForTrackerMap ) {
+        if ( auto ref_ptr = request->GetUserContext<CRef<CPSGL_RequestTracker>>() ) {
+            lock_guard lock(s_UserContextMutex);
+            _ASSERT(!*ref_ptr);
+            *ref_ptr = tracker;
+            return;
+        }
+    }
     CFastMutexGuard guard(m_TrackerMapMutex);
-    _VERIFY(m_TrackerMap.insert(make_pair(tracker->GetRequest().get(), tracker)).second);
+    _VERIFY(m_TrackerMap.insert(make_pair(request, tracker)).second);
 }
 
 
 void CPSGL_TrackerMap::DeregisterRequest(const CPSGL_RequestTracker* tracker)
 {
+    const CPSG_Request* request = tracker->GetRequest().get();
+    if ( kUseUserContextForTrackerMap ) {
+        if ( auto ref_ptr = request->GetUserContext<CRef<CPSGL_RequestTracker>>() ) {
+            lock_guard lock(s_UserContextMutex);
+            _ASSERT(*ref_ptr == tracker);
+            *ref_ptr = null;
+            return;
+        }
+    }
     CFastMutexGuard guard(m_TrackerMapMutex);
-    m_TrackerMap.erase(tracker->GetRequest().get());
+    m_TrackerMap.erase(request);
 }
 
 
@@ -239,7 +277,70 @@ void CPSGL_TrackerMap::DeregisterRequest(const CPSGL_RequestTracker* tracker)
 /////////////////////////////////////////////////////////////////////////////
 
 
+class CPSGL_Queue::CCallbackQueue : public CObject
+{
+public:
+    struct SEvent {
+        CRef<CPSGL_RequestTracker> m_Tracker;
+        EPSG_Status m_Status;
+        shared_ptr<CPSG_Reply> m_Reply;
+        shared_ptr<CPSG_ReplyItem> m_ReplyItem;
+
+        explicit operator bool() const { return m_Reply || m_ReplyItem; }
+    };
+    typedef SEvent value_type;
+    
+    void Stop();
+    void Put(value_type v);
+    value_type Get();
+    
+private:
+    // queue of request to send
+    mutex m_Mutex;
+    condition_variable m_CV;
+    bool m_Stopped = { false };
+    queue<value_type> m_Queue;
+};
+
+
+void CPSGL_Queue::CCallbackQueue::Put(value_type v)
+{
+    _ASSERT(v);
+    {{
+        lock_guard lock(m_Mutex);
+        m_Queue.push(std::move(v));
+    }}
+    m_CV.notify_one();
+}
+
+
+CPSGL_Queue::CCallbackQueue::value_type CPSGL_Queue::CCallbackQueue::Get()
+{
+    unique_lock lock(m_Mutex);
+    m_CV.wait(lock, [&] { return m_Stopped || !m_Queue.empty(); });
+    if ( m_Queue.empty() ) {
+        // stopped
+        return SEvent{};
+    }
+    auto v = std::move(m_Queue.front());
+    m_Queue.pop();
+    _ASSERT(v);
+    return v;
+}
+
+
+void CPSGL_Queue::CCallbackQueue::Stop()
+{
+    {{
+        lock_guard lock(m_Mutex);
+        m_Stopped = true;
+    }}
+    m_CV.notify_all();
+}
+
+
 CPSGL_Queue::CPSGL_Queue(const string& service_name,
+                         size_t event_loops,
                          CRef<CPSGL_TrackerMap> tracker_map)
     : m_EventLoop(service_name,
                   bind(&CPSGL_Queue::ProcessItemCallback, this, placeholders::_1, placeholders::_2),
@@ -247,6 +348,12 @@ CPSGL_Queue::CPSGL_Queue(const string& service_name,
       m_TrackerMap(tracker_map),
       m_EventLoopThread(&CPSG_EventLoop::Run, ref(m_EventLoop), CDeadline::eInfinite)
 {
+    if ( event_loops > 0 ) {
+        m_CallbackQueue = new CCallbackQueue;
+        for ( size_t i = 0; i < event_loops; ++i ) {
+            m_CallbackQueueThreads.emplace_back(&CPSGL_Queue::CallbackQueueRun, m_CallbackQueue);
+        }
+    }
 }
 
 
@@ -254,6 +361,12 @@ CPSGL_Queue::~CPSGL_Queue()
 {
     m_EventLoop.Reset();
     m_EventLoopThread.join();
+    if ( m_CallbackQueue ) {
+        m_CallbackQueue->Stop();
+        for ( auto& t : m_CallbackQueueThreads ) {
+            t.join();
+        }
+    }
 }
 
 
@@ -279,7 +392,16 @@ void CPSGL_Queue::ProcessItemCallback(EPSG_Status status,
 {
     PROFILE(sp_ProcessItem);
     if ( auto tracker = m_TrackerMap->GetTracker(item) ) {
-        tracker->ProcessItemCallback(status, item);
+        if ( m_CallbackQueue ) {
+            {{
+                CFastMutexGuard guard(tracker->GetTrackerMutex());
+                ++tracker->m_CallbackItemCount;
+            }}
+            m_CallbackQueue->Put(CCallbackQueue::SEvent{std::move(tracker), status, nullptr, item});
+        }
+        else {
+            tracker->ProcessItemCallback(status, item);
+        }
     }
 }    
 
@@ -289,7 +411,44 @@ void CPSGL_Queue::ProcessReplyCallback(EPSG_Status status,
 {
     PROFILE(sp_ProcessReply);
     if ( auto tracker = m_TrackerMap->GetTracker(reply) ) {
-        tracker->ProcessReplyCallback(status, reply);
+        if ( m_CallbackQueue ) {
+            {{
+                CFastMutexGuard guard(tracker->GetTrackerMutex());
+                if ( tracker->m_CallbackItemCount != 0 ) {
+                    // wait for all items' callbacks
+                    tracker->m_CallbackReplyStatus = status;
+                    tracker->m_CallbackReply = reply;
+                    return;
+                }
+            }}
+            m_CallbackQueue->Put(CCallbackQueue::SEvent{std::move(tracker), status, reply});
+        }
+        else {
+            tracker->ProcessReplyCallback(status, reply);
+        }
+    }
+}
+
+
+void CPSGL_Queue::CallbackQueueRun(CRef<CCallbackQueue> queue)
+{
+    while ( auto event = queue->Get() ) {
+        auto& tracker = *event.m_Tracker;
+        if ( event.m_ReplyItem ) {
+            _ASSERT(tracker.m_CallbackItemCount > 0);
+            tracker.ProcessItemCallback(event.m_Status, event.m_ReplyItem);
+            {{
+                CFastMutexGuard guard(tracker.GetTrackerMutex());
+                if ( --tracker.m_CallbackItemCount > 0 || !tracker.m_CallbackReply ) {
+                    // more item callbacks
+                    continue;
+                }
+            }}
+            tracker.ProcessReplyCallback(tracker.m_CallbackReplyStatus, tracker.m_CallbackReply);
+        }
+        else {
+            tracker.ProcessReplyCallback(event.m_Status, event.m_Reply);
+        }
     }
 }
 
@@ -311,6 +470,7 @@ CPSGL_RequestTracker::CPSGL_RequestTracker(CPSGL_QueueGuard& queue_guard,
       m_ReplyStatus(EPSG_Status::eInProgress),
       m_NeedsFinalization(false),
       m_TrackerMutex(new CObjectFor<CFastMutex>()),
+      m_CallbackItemCount(0),
       m_InCallbackSemaphore(0, kMax_UInt),
       m_BackgroundItemTaskCount(0),
       m_InCallbackCount(0)
@@ -901,13 +1061,7 @@ CPSGL_Dispatcher::CPSGL_Dispatcher(const string& service_name,
         m_ThreadPool = make_unique<CThreadPool>(kMax_UInt, max_pool_threads);
     }
     
-    static const unsigned kMinIoEventLoops = 1;
-    static const unsigned kMaxIoEventLoops = 32;
-    io_event_loops = max(io_event_loops, kMinIoEventLoops);
-    io_event_loops = min(io_event_loops, kMaxIoEventLoops);
-    for ( unsigned i = 0; i < io_event_loops; ++i ) {
-        m_QueueSet.push_back(Ref(new CPSGL_Queue(service_name, m_TrackerMap)));
-    }
+    m_QueueSet.push_back(Ref(new CPSGL_Queue(service_name, io_event_loops, m_TrackerMap)));
 }
 
 
