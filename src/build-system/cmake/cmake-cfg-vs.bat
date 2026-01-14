@@ -419,7 +419,7 @@ for /f "tokens=* USEBACKQ" %%i IN (`%VSWHERE% -latest -property installationPath
   set VSROOT=%%i
 )
 set genname=%generator_name:~0,2%
-where cmake >NUL 2>&1
+where cmake.exe >NUL 2>&1
 if errorlevel 1 (
   if "%genname%"=="VS" (
     (
@@ -439,7 +439,7 @@ if errorlevel 1 (
     if exist cmake.bat (del cmake.bat)
 )
 if "%genname%"=="Ni" (
-  where ninja >NUL 2>&1
+  where ninja.exe >NUL 2>&1
   if errorlevel 1 (
     set vsvars=YES
     (
