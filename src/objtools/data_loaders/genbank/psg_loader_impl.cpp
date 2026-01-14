@@ -199,7 +199,8 @@ void CPSGDataLoader_Impl::CPSG_PrefetchCDD_Task::AddRequest(const CDataLoader::T
         bio_ids.push_back(CPSG_BioId(id));
     }
     CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names({kCDDAnnotName});
-    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names);
+    auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names,
+                                                            CPSGL_TrackerMap::CreateUserContext());
     // TODO: do we need full CDD entry in prefetch?
     //request->IncludeData(CPSG_Request_Biodata::eWholeTSE);
     request->IncludeData(CPSG_Request_Biodata::eNoTSE);
@@ -870,7 +871,8 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     CPSGL_QueueGuard queue(m_Dispatcher);
     {{
         CPSG_BioId bio_id(idh);
-        auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+        auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
+                                                         CPSGL_TrackerMap::CreateUserContext());
         if ( data_source ) {
             CDataSource::TLoadedBlob_ids loaded_blob_ids;
             data_source->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
@@ -954,7 +956,8 @@ CConstRef<CPsgBlobId> CPSGDataLoader_Impl::GetBlobIdOnce(const CSeq_id_Handle& i
         CPSGL_QueueGuard queue(m_Dispatcher);
         {{
             CPSG_BioId bio_id(idh);
-            auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+            auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
+                                                             CPSGL_TrackerMap::CreateUserContext());
             request->IncludeData(CPSG_Request_Biodata::eNoTSE);
             CRef<CPSGL_Get_Processor> processor
                 (new CPSGL_Get_Processor(idh,
@@ -1038,8 +1041,8 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
     else {
         CPSGL_QueueGuard queue((m_Dispatcher));
         {{
-            CPSG_BlobId bid(blob_id.ToPsgId());
-            auto request = make_shared<CPSG_Request_Blob>(bid);
+            auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(blob_id.ToPsgId()),
+                                                          CPSGL_TrackerMap::CreateUserContext());
             request->IncludeData(m_TSERequestMode);
             CRef<CPSGL_GetBlob_Processor> processor
                 (new CPSGL_GetBlob_Processor(blob_id,
@@ -1193,7 +1196,8 @@ CPSGDataLoader_Impl::CGetRequests::CreateGetRequests(const CSeq_id_Handle& idh)
     
     // create full 'get' request
     CPSG_BioId bio_id(idh);
-    auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+    auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
+                                                     CPSGL_TrackerMap::CreateUserContext());
     {{
         CDataSource::TLoadedBlob_ids loaded_blob_ids;
         m_DataSource->GetLoadedBlob_ids(idh, CDataSource::fKnown_bioseqs, loaded_blob_ids);
@@ -1266,7 +1270,8 @@ CPSGDataLoader_Impl::CGetRequests::CreateReGetRequest(const CSeq_id_Handle& idh,
     if ( s_GetDebugLevel() >= 5 ) {
         LOG_POST(Info<<"PSG loader: Re-loading blob: " << blob_id<<" for "<<idh);
     }
-    auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(blob_id));
+    auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(blob_id),
+                                                  CPSGL_TrackerMap::CreateUserContext());
     request->IncludeData(m_IncludeData);
     CRef<CPSGL_GetBlob_Processor> processor2
         (new CPSGL_GetBlob_Processor(*dl_blob_id,
@@ -1495,7 +1500,8 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                 CPSG_BioId bio_id = x_LocalCDDEntryIdToBioId(cdd_ids); // back to Seq id
                 CPSG_Request_NamedAnnotInfo::TAnnotNames names = { kCDDAnnotName };
                 _ASSERT(bio_id.GetId().find('|') == NPOS);
-                auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names);
+                auto request = make_shared<CPSG_Request_NamedAnnotInfo>(bio_id, names,
+                                                                        CPSGL_TrackerMap::CreateUserContext());
                 request->IncludeData(m_TSERequestMode);
                 CPSGL_NA_Processor::TSeq_ids ids;
                 ids.push_back(cdd_ids.gi);
@@ -1511,7 +1517,8 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
                 queue.AddRequest(request, processor, eRequestCDD);
             }
             else {
-                auto request = make_shared<CPSG_Request_Blob>(blob_id.ToPsgId());
+                auto request = make_shared<CPSG_Request_Blob>(blob_id.ToPsgId(),
+                                                              CPSGL_TrackerMap::CreateUserContext());
                 request->IncludeData(m_TSERequestMode);
                 CRef<CPSGL_GetBlob_Processor> processor
                     (new CPSGL_GetBlob_Processor(blob_id,
@@ -1526,7 +1533,8 @@ void CPSGDataLoader_Impl::LoadChunksOnce(CDataSource* data_source,
             const CPsgBlobId& blob_id = dynamic_cast<const CPsgBlobId&>(*chunk.GetBlobId());
             _ASSERT(!blob_id.GetId2Info().empty());
             auto request = make_shared<CPSG_Request_Chunk>(CPSG_ChunkId(chunk.GetChunkId(),
-                                                                        blob_id.GetId2Info()));
+                                                                        blob_id.GetId2Info()),
+                                                           CPSGL_TrackerMap::CreateUserContext());
             CRef<CPSGL_GetChunk_Processor> processor
                 (new CPSGL_GetChunk_Processor(chunk,
                                               data_source,
@@ -1753,7 +1761,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
 
             CPSGL_QueueGuard queue(m_Dispatcher);
             {{
-                auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names);
+                auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names,
+                                                                        CPSGL_TrackerMap::CreateUserContext());
                 request->SetSNPScaleLimit(snp_scale_limit);
                 CRef<CPSGL_NA_Processor> processor
                     (new CPSGL_NA_Processor(ids,
@@ -1782,7 +1791,8 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
                         }
                         else {
                             CPSG_BlobId blob_id(r.m_Blob_id);
-                            auto request = make_shared<CPSG_Request_Blob>(std::move(blob_id));
+                            auto request = make_shared<CPSG_Request_Blob>(std::move(blob_id),
+                                                                          CPSGL_TrackerMap::CreateUserContext());
                             request->IncludeData(m_TSERequestMode);
                             CRef<CPsgBlobId> dl_blob_id(new CPsgBlobId(r.m_Blob_id));
                             dl_blob_id->SetTSEName(r.m_NA);
@@ -1908,7 +1918,8 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         for (auto& id : ids) {
             bio_ids.push_back(CPSG_BioId(id));
         }
-        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names);
+        auto request = make_shared<CPSG_Request_NamedAnnotInfo>(std::move(bio_ids), annot_names,
+                                                                CPSGL_TrackerMap::CreateUserContext());
         request->IncludeData(CPSG_Request_Biodata::eWholeTSE);
         CRef<CPSGL_CDDAnnot_Processor> processor
             (new CPSGL_CDDAnnot_Processor(cdd_ids[i],
@@ -2214,7 +2225,8 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
 
     {{
         CPSG_BioId bio_id(idh);
-        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
+        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id),
+                                                                                     CPSGL_TrackerMap::CreateUserContext());
         request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
         CRef<CPSGL_BioseqInfo_Processor> processor
             (new CPSGL_BioseqInfo_Processor(idh, m_Caches.get()));
@@ -2275,7 +2287,9 @@ TTaxId CPSGDataLoader_Impl::x_GetIpgTaxId(const CSeq_id_Handle& idh)
     CPSGL_QueueGuard queue(m_Dispatcher);
 
     {{
-        shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
+        shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver,
+                                                                                           0, null,
+                                                                                           CPSGL_TrackerMap::CreateUserContext());
         CRef<CPSGL_IpgTaxId_Processor> processor(
             new CPSGL_IpgTaxId_Processor(idh, is_wp_acc, m_Caches.get()));
         queue.AddRequest(request, processor);
@@ -2319,7 +2333,9 @@ CPSGDataLoader_Impl::x_GetIpgTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& r
             continue;
         }
         
-        shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver);
+        shared_ptr<CPSG_Request_IpgResolve> request = make_shared<CPSG_Request_IpgResolve>(acc_ver,
+                                                                                           0, null,
+                                                                                           CPSGL_TrackerMap::CreateUserContext());
         CRef<CPSGL_IpgTaxId_Processor> processor(
             new CPSGL_IpgTaxId_Processor(ids[i], is_wp_acc, m_Caches.get()));
         queue.AddRequest(request, processor, i);
@@ -2419,7 +2435,8 @@ CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
         }
         // ask by blob_id
         CPSG_BlobId bid(bioseq_info->GetPSGBlobId());
-        shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
+        shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid),
+                                                                               CPSGL_TrackerMap::CreateUserContext());
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_BlobInfo_Processor> processor
             (new CPSGL_BlobInfo_Processor(idh, bioseq_info->GetPSGBlobId(), m_Caches.get()));
@@ -2434,7 +2451,8 @@ CPSGDataLoader_Impl::x_CreateBioseqAndBlobInfoRequests(CPSGL_QueueGuard& queue,
     else {
         // ask for both bioseq info and blob info
         CPSG_BioId bio_id(idh);
-        auto blob_request = make_shared<CPSG_Request_Biodata>(std::move(bio_id));
+        auto blob_request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
+                                                              CPSGL_TrackerMap::CreateUserContext());
         blob_request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_Info_Processor> blob_processor
             (new CPSGL_Info_Processor(idh, m_Caches.get()));
@@ -2485,7 +2503,8 @@ CPSGDataLoader_Impl::x_ProcessBioseqAndBlobInfoResult(CPSGL_QueueGuard& queue,
             }
             // re-try with getblob request
             CPSG_BlobId bid(ret.first->GetPSGBlobId());
-            shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
+            shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid),
+                                                                                   CPSGL_TrackerMap::CreateUserContext());
             request->IncludeData(CPSG_Request_Biodata::eNoTSE);
             CRef<CPSGL_BlobInfo_Processor> processor2
                 (new CPSGL_BlobInfo_Processor(processor->GetSeq_id(), ret.first->GetPSGBlobId(), m_Caches.get()));
@@ -2553,7 +2572,8 @@ shared_ptr<SPsgBlobInfo> CPSGDataLoader_Impl::x_GetBlobInfo(CDataSource* data_so
 
     {{
         CPSG_BlobId bid(blob_id);
-        shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid));
+        shared_ptr<CPSG_Request_Blob> request = make_shared<CPSG_Request_Blob>(std::move(bid),
+                                                                               CPSGL_TrackerMap::CreateUserContext());
         request->IncludeData(CPSG_Request_Biodata::eNoTSE);
         CRef<CPSGL_BlobInfo_Processor> processor
             (new CPSGL_BlobInfo_Processor(blob_id, m_Caches.get()));
@@ -2626,7 +2646,8 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
             continue;
         }
         CPSG_BioId bio_id(ids[i]);
-        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id));
+        shared_ptr<CPSG_Request_Resolve> request = make_shared<CPSG_Request_Resolve>(std::move(bio_id),
+                                                                                     CPSGL_TrackerMap::CreateUserContext());
         request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
         CRef<CPSGL_BioseqInfo_Processor> processor
             (new CPSGL_BioseqInfo_Processor(id, m_Caches.get()));
