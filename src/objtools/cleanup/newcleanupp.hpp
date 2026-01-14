@@ -117,31 +117,22 @@ class CSeq_feat_Handle;
 class CObjectManager;
 class CScope;
 
+class CGBQualCleanup;
+
 class NCBI_CLEANUP_EXPORT CNewCleanup_imp
 {
 public:
 
     static const int NCBI_CLEANUP_VERSION = 1;
 
-    // some cleanup functions will return a value telling you whether
-    // to erase the cleaned value ( or whatever action may be
-    // required ).
-    enum EAction {
-        eAction_Nothing = 1,
-        eAction_Erase
-    };
-
     // Constructor
-    CNewCleanup_imp (CRef<CCleanupChange> changes, Uint4 options = 0);
+    CNewCleanup_imp(CRef<CCleanupChange> changes, CScope& scope, Uint4 options=0);
 
     // Destructor
     virtual ~CNewCleanup_imp ();
 
     /// Main methods
 
-    void SetScope(CScope& scope);
-
-    /// Basic Cleanup methods
 
     void BasicCleanupSeqEntry (
         CSeq_entry& se
@@ -355,15 +346,8 @@ private:
     typedef std::vector<string> TPubdescCitGenLabelVec;
     TPubdescCitGenLabelVec m_PubdescCitGenLabelVec;
 
-    enum EGBQualOpt {
-        eGBQualOpt_normal,
-        eGBQualOpt_CDSMode
-    };
-
-    // Gb_qual cleanup.
     void x_ConvertGoQualifiers(CSeq_feat& sf);
     void x_CleanSeqFeatQuals(CSeq_feat& sf);
-    EAction GBQualSeqFeatBC(CGb_qual& gbq, CSeq_feat& seqfeat);
 
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );
 
@@ -378,67 +362,50 @@ private:
 
     void x_ChangeTransposonToMobileElement(CGb_qual& gbq);
     void x_ChangeInsertionSeqToMobileElement(CGb_qual& gbq);
-    void x_ExpandCombinedQuals(CSeq_feat::TQual& quals);
-    EAction x_GeneGBQualBC( CGene_ref& gene, const CGb_qual& gb_qual );
-    EAction x_SeqFeatCDSGBQualBC(CSeq_feat& feat, CCdregion& cds, const CGb_qual& gb_qual);
-    EAction x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& product);
-    EAction x_HandleStandardNameRnaGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& standard_name);
-    EAction x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& gb_qual);
-    EAction x_ProtGBQualBC(CProt_ref& prot, const CGb_qual& gb_qual, EGBQualOpt opt );
+
     void x_AddEnvSamplOrMetagenomic(CBioSource& biosrc);
     void x_CleanupOldName(COrg_ref& org);
     void x_CleanupOrgModNoteEC(COrg_ref& org);
-    void x_AddToComment(CSeq_feat& feat, const string& comment);
 
-    // publication-related cleanup
-//    void x_FlattenPubEquiv(CPub_equiv& pe);
-
-    // Date-related
-    bool DateStdBC(CDate_std& date);
 
     void x_AddReplaceQual(CSeq_feat& feat, const string& str);
 
     void x_SeqPointBC(CSeq_point & seq_point);
     void x_SeqIntervalBC( CSeq_interval & seq_interval );
-    void x_BothStrandBC( CSeq_loc &loc );
     void x_BothStrandBC( CSeq_interval & seq_interval );
-
     void x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_new_dbtags );
-
-    void x_SeqFeatTRNABC( CSeq_feat& feat, CTrna_ext & tRNA );
-
-    // modernize PCR Primer
-    void x_ModernizePCRPrimers( CBioSource &biosrc );
-
-    void x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioSource &biosrc );
 
     void x_OrgnameModBC( COrgName &orgname, const string &org_ref_common );
 
-    void x_SubSourceBC( CSubSource & subsrc );
-    void x_OrgModBC( COrgMod & orgmod );
-
 public:
+    void AddToComment(CSeq_feat& feat, const string& comment);
+    void SeqFeatTRNABC(CTrna_ext & tRNA);
+    void ExpandCombinedQuals(CSeq_feat::TQual& quals);
+    bool DateStdBC(CDate_std& date);
+    void BothStrandBC( CSeq_loc &loc );
+
+    // modernize PCR Primer
+    void ModernizePCRPrimers( CBioSource &biosrc );
+    void CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioSource &biosrc );
+    void SubSourceBC( CSubSource & subsrc );
+    void OrgModBC( COrgMod & orgmod );
+
     void FixUnsetMolFromBiomol(CMolInfo::TBiomol biomol, const CBioseq_Handle& bsh);
 
     void AddPartialToProteinTitle(const CBioseq_Handle& bsh);
+    void CleanupECNumberList( CProt_ref::TEc & ec_num_list );
+    // e.g. if ends with ",..", turn into "..."
+    void FixUpEllipsis( string &str );
+    void RemoveFlankingQuotes( string &val );
+    void CleanupECNumber( string &ec_num );
 private:
 
     string x_ExtractSatelliteFromComment( string &comment );
 
     void x_RRNANameBC( string &name );
 
-    void x_CleanupECNumber( string &ec_num );
-    void x_CleanupECNumberList( CProt_ref::TEc & ec_num_list );
     void x_CleanupECNumberListEC( CProt_ref::TEc & ec_num_list );
 
-    void x_CleanupAndRepairInference( string &inference );
-
-    void x_MendSatelliteQualifier( string &val );
-
-    // e.g. if ends with ",..", turn into "..."
-    void x_FixUpEllipsis( string &str );
-
-    void x_RemoveFlankingQuotes( string &val );
 
     void x_MoveCdregionXrefsToProt(CSeq_feat& seqfeat);
     bool x_InGpsGenomic( const CSeq_feat& seqfeat );
@@ -448,34 +415,34 @@ private:
         const char *qual,
         const char *val );
 
-    void x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat );
     void x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc );
     void x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat );
 
     void x_MoveCDSFromNucAnnotToSetAnnot( CBioseq_set &set );
 
+public:
+    void GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat );
     // string cleanup funcs
-    void x_CleanupStringMarkChanged( std::string &str );
-    void x_CleanupStringJunkMarkChanged( std::string &str );
-    void x_ConvertDoubleQuotesMarkChanged( std::string &str );
-    bool x_CompressSpaces( string &str );
-    void x_CompressStringSpacesMarkChanged( std::string &str );
-    void x_StripSpacesMarkChanged( std::string& str );
-    void x_RemoveSpacesBetweenTildesMarkChanged( std::string & str );
+    void CleanupStringMarkChanged( std::string &str );
+    void CleanupStringJunkMarkChanged( std::string &str );
+    void ConvertDoubleQuotesMarkChanged( std::string &str );
+    bool CompressSpaces( string &str );
+    void CompressStringSpacesMarkChanged( std::string &str );
+    void StripSpacesMarkChanged( std::string& str );
+    void RemoveSpacesBetweenTildesMarkChanged( std::string & str );
+    void TrimInternalSemicolonsMarkChanged( std::string & str );
+
+    void PostSeqFeat( CSeq_feat& seq_feat );
+    void PostOrgRef( COrg_ref& org );
+    void PostBiosource( CBioSource& biosrc );
+    void CopyGBBlockDivToOrgnameDiv(const CSeq_entry_Handle& entry_handle);
+    void AuthListBCWithFixInitials( CAuth_list& al );
+
+private:
     bool x_TruncateSpacesMarkChanged( std::string & str );
-    void x_TrimInternalSemicolonsMarkChanged( std::string & str );
-
-    void x_PostSeqFeat( CSeq_feat& seq_feat );
-    void x_PostOrgRef( COrg_ref& org );
-    void x_PostBiosource( CBioSource& biosrc );
-
     void x_TranslateITSNameAndFlag( string &in_out_name ) ;
 
     void x_PCRPrimerSetBC( CPCRPrimerSet &primer_set );
-public:
-    void CopyGBBlockDivToOrgnameDiv(const CSeq_entry_Handle& entry_handle);
-private:
-    void x_AuthListBCWithFixInitials( CAuth_list& al );
 
     // After we've traversed the hierarchy of objects, there may be some
     // processing that can only be done after the traversal is complete.
@@ -498,16 +465,16 @@ public:
     bool RemoveSingleStrand(const CBioseq_Handle& bsh);
     void LabelMapAppend(const vector<string>& old_labels, const vector<string>& new_labels);
 
-private:
     // functions that prepare for post-processing while traversing
-    void x_NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
+    void NotePubdescOrAnnotPubs( const CPub_equiv &pub_equiv );
+    void RememberPubOldLabel( CPub &pub );
+    void RememberMuidThatMightBeConvertibleToPmid(CPub &pub );
+
+    void RememberSeqFeatCitPubs( CPub &pub );
+    void DecodeXMLMarkChanged( std::string & str );
+private:
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
         const CPub_equiv &pub_equiv, TEntrezId &muid, TEntrezId &pmid );
-    void x_RememberPubOldLabel( CPub &pub );
-    void x_RememberMuidThatMightBeConvertibleToPmid(CPub &pub );
-    void x_RememberSeqFeatCitPubs( CPub &pub );
-
-    void x_DecodeXMLMarkChanged( std::string & str );
     void AddMolInfo(CBioseq_set& set, const CMolInfo& mol);
     void AddMolInfo(CBioseq& seq, const CMolInfo& mol);
 
@@ -588,6 +555,7 @@ private:
 
     void x_ExtendedCleanupExtra(CSeq_entry_Handle seh);
 
+    CGBQualCleanup& x_GetGBQualCleanup();    
 private:
 
     // variables used for the whole cleaning process
@@ -621,10 +589,10 @@ private:
     bool m_KeepTopNestedSet { false };
     bool m_KeepSingleSeqSet { false };
 
-    friend class CAutogeneratedCleanup;
+    unique_ptr<CGBQualCleanup> m_GBQualCleanup;
+
     friend class CAutogeneratedExtendedCleanup;
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
