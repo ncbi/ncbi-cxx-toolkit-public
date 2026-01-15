@@ -127,8 +127,7 @@ CRef<CCleanupChange> makeCleanupChange(Uint4 options)
 
 #define CLEANUP_SETUP \
     auto changes = makeCleanupChange(options); \
-    CNewCleanup_imp clean_i(changes, options); \
-    clean_i.SetScope(*m_Scope);
+    CNewCleanup_imp clean_i(changes, *m_Scope, options); 
 
 CCleanup::TChanges CCleanup::BasicCleanup(CSeq_entry& se, Uint4 options)
 {
@@ -189,18 +188,16 @@ CCleanup::TChanges CCleanup::BasicCleanup(CBioSource& src, Uint4 options)
 CCleanup::TChanges CCleanup::BasicCleanup(CSeq_entry_Handle& seh, Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(seh.GetScope());
+    CNewCleanup_imp clean_i(changes, seh.GetScope(), options);
     clean_i.BasicCleanupSeqEntryHandle(seh);
     return changes;
 }
 
 
-CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_Handle& bsh,    Uint4 options)
+CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_Handle& bsh, Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(bsh.GetScope());
+    CNewCleanup_imp clean_i(changes, bsh.GetScope(), options);
     clean_i.BasicCleanupBioseqHandle(bsh);
     return changes;
 }
@@ -209,8 +206,7 @@ CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_Handle& bsh,    Uint4 options)
 CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_set_Handle& bssh, Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(bssh.GetScope());
+    CNewCleanup_imp clean_i(changes, bssh.GetScope(), options);
     clean_i.BasicCleanupBioseqSetHandle(bssh);
     return changes;
 }
@@ -219,8 +215,7 @@ CCleanup::TChanges CCleanup::BasicCleanup(CBioseq_set_Handle& bssh, Uint4 option
 CCleanup::TChanges CCleanup::BasicCleanup(CSeq_annot_Handle& sah, Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(sah.GetScope());
+    CNewCleanup_imp clean_i(changes, sah.GetScope(), options);
     clean_i.BasicCleanupSeqAnnotHandle(sah);
     return changes;
 }
@@ -229,8 +224,7 @@ CCleanup::TChanges CCleanup::BasicCleanup(CSeq_annot_Handle& sah, Uint4 options)
 CCleanup::TChanges CCleanup::BasicCleanup(CSeq_feat_Handle& sfh,  Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
-    clean_i.SetScope(sfh.GetScope());
+    CNewCleanup_imp clean_i(changes, sfh.GetScope(), options);
     clean_i.BasicCleanupSeqFeatHandle(sfh);
     return changes;
 }
@@ -284,7 +278,7 @@ CCleanup::TChanges CCleanup::ExtendedCleanup(CSeq_annot& sa,  Uint4 options)
 CCleanup::TChanges CCleanup::ExtendedCleanup(CSeq_entry_Handle& seh,  Uint4 options)
 {
     auto changes = makeCleanupChange(options);
-    CNewCleanup_imp clean_i(changes, options);
+    CNewCleanup_imp clean_i(changes, seh.GetScope(), options);
     clean_i.ExtendedCleanupSeqEntryHandle(seh); // (m_Scope->GetSeq_annotHandle(sa));
     return changes;
 }
@@ -679,8 +673,7 @@ bool CCleanup::MoveFeatToProtein(CSeq_feat_Handle fh)
     CSeq_feat_EditHandle edh(fh);
     edh.Replace(*new_feat);
     auto changes= makeCleanupChange(0);
-    CNewCleanup_imp clean_i(changes, 0);
-    clean_i.SetScope(fh.GetScope());
+    CNewCleanup_imp clean_i(changes, fh.GetScope(), 0);
     clean_i.BasicCleanupSeqFeat(*new_feat);
 
     CSeq_annot_Handle ah = fh.GetAnnot();
@@ -3603,7 +3596,7 @@ bool CCleanup::RescueSiteRefPubs(CSeq_entry_Handle seh)
                     d->SetPub().SetReftype(CPubdesc::eReftype_feats);
                 }
                 auto changes = makeCleanupChange(0);
-                CNewCleanup_imp pubclean(changes, 0);
+                CNewCleanup_imp pubclean(changes, seh.GetScope(), 0);
                 pubclean.BasicCleanup(d->SetPub(), ShouldStripPubSerial(*(b->GetCompleteBioseq())));
                 if (!IsMinPub(d->SetPub(), is_refseq_prot)) {
                     MoveOneFeatToPubdesc(*p, d, *b, false);
@@ -3862,6 +3855,7 @@ bool CCleanup::x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add)
 bool CCleanup::MergeDupBioSources(CSeq_descr & seq_descr)
 {
     bool any_change = false;
+    CRef<CScope> pScope;
     CSeq_descr::Tdata::iterator src1 = seq_descr.Set().begin();
     while (src1 != seq_descr.Set().end()) {
         if ((*src1)->IsSource() && (*src1)->GetSource().IsSetOrg() && (*src1)->GetSource().GetOrg().IsSetTaxname()) {
@@ -3873,7 +3867,10 @@ bool CCleanup::MergeDupBioSources(CSeq_descr & seq_descr)
                     MergeDupBioSources((*src1)->SetSource(), (*src2)->GetSource());
 
                     auto changes = makeCleanupChange(0);
-                    CNewCleanup_imp srcclean(changes, 0);
+                    if (! pScope) {
+                        pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+                    }
+                    CNewCleanup_imp srcclean(changes, *pScope, 0);
                     srcclean.ExtendedCleanup((*src1)->SetSource());
                     src2 = seq_descr.Set().erase(src2);
                     any_change = true;
@@ -3944,7 +3941,8 @@ CRef<CBioSource> CCleanup::BioSrcFromFeat(const CSeq_feat& f)
         }
     }
     auto changes = makeCleanupChange(0);
-    CNewCleanup_imp srcclean(changes, 0);
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    CNewCleanup_imp srcclean(changes, *pScope, 0);
     srcclean.ExtendedCleanup(*src);
 
     return src;
