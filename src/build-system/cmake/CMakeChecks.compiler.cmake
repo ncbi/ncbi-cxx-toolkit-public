@@ -799,6 +799,9 @@ if(CMAKE_USE_CCACHE)
 endif()
 
 if(CMAKE_USE_DISTCC)
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang|IntelLLVM")
+        set(DISTCC_CPPFLAGS "-frewrite-includes")
+    endif()
     find_program(DISTCC_EXECUTABLE
                  NAMES distcc.sh distcc
                  HINTS $ENV{NCBI}/bin )
@@ -815,11 +818,15 @@ if(CMAKE_USE_DISTCC)
         string(APPEND _generatesrc "#if !defined(__GNUC__)  &&  !defined(offsetof)\n")
         string(APPEND _generatesrc "#  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))\n")
         string(APPEND _generatesrc "#endif\n")
+        string(APPEND _generatesrc "#ifndef FOO\n")
+        string(APPEND _generatesrc "#define f() g(0)\n")
+        string(APPEND _generatesrc "#endif\n")
         string(APPEND _generatesrc "struct S { int x\; }\;\n")
         string(APPEND _generatesrc "int f() { return offsetof(struct S, x)\; }\n")
         file(APPEND ${_testfile} ${_generatesrc})
         execute_process(
-            COMMAND ${DISTCC_EXECUTABLE} ${CMAKE_C_COMPILER} -c ${_testfile}
+            COMMAND ${DISTCC_EXECUTABLE} ${CMAKE_C_COMPILER} -DFOO 
+                    ${DISTCC_CPPFLAGS} -c ${_testfile}
             WORKING_DIRECTORY ${_testdir}
             RESULT_VARIABLE FAILED_DISTCC
             OUTPUT_QUIET ERROR_QUIET
