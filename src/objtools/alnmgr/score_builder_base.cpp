@@ -1016,12 +1016,15 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
 {
     typedef CSeq_align::TSegs::TSpliced TSpliced;
     const TSpliced & spliced (align.GetSegs().GetSpliced());
-    if(spliced.GetProduct_type() != CSpliced_seg::eProduct_type_transcript) {
+    if(!splices_only &&
+       spliced.GetProduct_type() != CSpliced_seg::eProduct_type_transcript)
+    {
         NCBI_THROW(CSeqalignException, eUnsupported,
                    "CScoreBuilderBase::AddSplignScores(): Unsupported product type");
     }
 
-    const bool qstrand (spliced.GetProduct_strand() != eNa_strand_minus);
+    const bool qstrand  = !(spliced.CanGetProduct_strand() &&
+                            spliced.GetProduct_strand() == eNa_strand_minus);
 
     typedef TSpliced::TExons TExons;
     const TExons & exons (spliced.GetExons());
@@ -1033,7 +1036,10 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
         splices_total (0),        // twice the number of introns
         splices_consensus (0);
 
-    const TSeqPos  qlen (spliced.GetProduct_length());
+    TSeqPos  qlen (spliced.GetProduct_length());
+    if (spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein) {
+        qlen *= 3;
+    }
     const TSeqPos polya (spliced.CanGetPoly_a()?
                          spliced.GetPoly_a(): (qstrand? qlen: TSeqPos(-1)));
     const TSeqPos prod_length_no_polya (qstrand? polya: qlen - 1 - polya);
@@ -1044,8 +1050,8 @@ void CScoreBuilderBase::AddSplignScores(const CSeq_align& align,
     ITERATE(TExons, ii2, exons) {
 
         const TExon & exon (**ii2);
-        const TSeqPos qmin (exon.GetProduct_start().GetNucpos()),
-            qmax (exon.GetProduct_end().GetNucpos());
+        const TSeqPos qmin (exon.GetProduct_start().AsSeqPos()),
+            qmax (exon.GetProduct_end().AsSeqPos());
 
         const TSeqPos qgap (qstrand? qmin - qprev - 1: qprev - qmax - 1);
 
