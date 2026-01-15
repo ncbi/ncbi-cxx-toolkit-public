@@ -1280,6 +1280,12 @@ case "$host_os:/$CXX" in
          NCBI_FIX_DIR(d)         
          LDFLAGS="-L$d -B$d $LDFLAGS"
       fi
+      ### Avoid spurious warnings under distcc (quite possibly by
+      ### doing without it altogether :-/)
+      DISTCC_CPPFLAGS=-frewrite-includes
+      ;;
+   *)
+      DISTCC_CPPFLAGS=
       ;;
 esac
 
@@ -2911,6 +2917,9 @@ if test "$with_distcc" = "yes" ; then
 @%:@if !defined(__GNUC__)  &&  !defined(offsetof)
 @%:@  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
 @%:@endif
+@%:@ifndef FOO
+@%:@define f() g(0)
+@%:@endif
 struct S { int x; };
 int f() { return offsetof(struct S, x); }
 EOF
@@ -2918,7 +2927,7 @@ EOF
       export DISTCC_FALLBACK
       AC_CACHE_CHECK([whether any distcc servers are available],
          ncbi_cv_prog_distcc_servers,
-         [$DISTCC $CC -c distcctest.c 2>&AS_MESSAGE_LOG_FD
+         [$DISTCC $CC -DFOO -c distcctest.c 2>&AS_MESSAGE_LOG_FD
           case $? in
             # 102: bind failed
             # 103: connect failed
@@ -2936,9 +2945,10 @@ EOF
          AS_UNSET(DISTCC)
       fi
       if test -n "$DISTCC" ; then
-         AC_CACHE_CHECK([whether $DISTCC is compatible with $CC],
+         AC_CACHE_CHECK([whether $DISTCC is compatible with $CC $DISTCC_CPPFLAGS],
             ncbi_cv_prog_distcc_vs_cc,
-            [if $DISTCC $CC -c distcctest.c 2>&AS_MESSAGE_LOG_FD ; then
+            [if $DISTCC $CC -DFOO $DISTCC_CPPFLAGS -c distcctest.c \
+              2>&AS_MESSAGE_LOG_FD ; then
                 ncbi_cv_prog_distcc_vs_cc=yes
              else
                 ncbi_cv_prog_distcc_vs_cc=no
@@ -2950,10 +2960,11 @@ EOF
          fi
       fi
       if test -n "$DISTCC" ; then
-         AC_CACHE_CHECK([whether $DISTCC is compatible with $CXX],
+         AC_CACHE_CHECK([whether $DISTCC is compatible with $CXX $DISTCC_CPPFLAGS],
             ncbi_cv_prog_distcc_vs_cxx,
             [mv distcctest.c distcctest.cpp
-             if $DISTCC $CXX -c distcctest.cpp 2>&AS_MESSAGE_LOG_FD ; then
+             if $DISTCC $CXX -DFOO $DISTCC_CPPFLAGS -c distcctest.cpp \
+             2>&AS_MESSAGE_LOG_FD ; then
                 ncbi_cv_prog_distcc_vs_cxx=yes
              else
                 ncbi_cv_prog_distcc_vs_cxx=no
@@ -9984,16 +9995,16 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXX="$icc_CXX"
 fi
 
-### Avoid spurious warnings when using Clang (or Clang-based ICC) in
-### conjunction with distcc (and quite possibly also ccache).
-case "$gccdir:$CC_WRAPPER" in
-   /*:*distcc*ccache* )
-      CPPFLAGS="$CPPFLAGS --ccache-skip -frewrite-includes"
-      ;;
-   /*:*distcc* )
-      CPPFLAGS="$CPPFLAGS -frewrite-includes"
-      ;;
-esac
+if test -n "$DISTCC_CPPFLAGS"; then
+   case "$CC_WRAPPER" in
+      *ccache* )
+         CPPFLAGS="$CPPFLAGS --ccache-skip $DISTCC_CPPFLAGS"
+         ;;
+      * )
+         CPPFLAGS="$CPPFLAGS $DISTCC_CPPFLAGS"
+         ;;
+   esac
+fi
 
 
 ### Adjust paths to wrapper.*.sh
