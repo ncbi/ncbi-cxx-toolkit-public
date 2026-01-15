@@ -115,6 +115,7 @@ static bool InitConfig(const CArgs& args, Parser& config)
         config.qsfile = nullptr;
 
     config.qamode = args["Q"].AsBoolean();
+    config.ignore_pubmed_dr = args["Z"].AsBoolean();
 
     if (args["y"].AsString() == "Bioseq-set")
         config.output_format = Parser::EOutput::BioseqSet;
@@ -283,6 +284,7 @@ void CFlat2AsnApp::Init()
     arg_descrs->SetConstraint("y",
             &(*new  CArgAllow_Strings,
                 "Bioseq-set", "Seq-submit"));
+    arg_descrs->AddDefaultKey("Z", "IgnorePubmedDr", "Ignore PUBMED DR line xrefs", ncbi::CArgDescriptions::eBoolean, "F");
 
     SetupArgDescriptions(arg_descrs.release());
 }

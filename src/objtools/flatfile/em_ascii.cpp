@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -395,13 +394,14 @@ static void SetXrefObjId(CEMBL_xref& xref, const string& str)
  *   static void GetEmblBlockXref(entry, xip,
  *                                chentry, dr_ena,
  *                                dr_biosample,
- *                                drop, dr_pubmed):
+ *                                drop, dr_pubmed,
+ *                                ignore_pubmed_dr):
  *
  *      Return a list of EMBLXrefPtr, one EMBLXrefPtr per
  *   type (DR) line.
  *
  **********************************************************/
-static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl, TStringList& dr_pubmed)
+static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, const char* chentry, TStringList& dr_ena, TStringList& dr_biosample, bool* drop, CEMBL_block& embl, TStringList& dr_pubmed, bool ignore_pubmed_dr)
 {
     const char** b;
 
@@ -564,16 +564,18 @@ static void GetEmblBlockXref(const DataBlk& entry, const TXmlIndexList* xil, con
                 }
             }
         } else if (name == "PUBMED" && ! id.empty()) {
-            bool found = false;
-            for (const string& val : dr_pubmed) {
-                if (val == id) {
-                    found = true;
-                    break;
+            if (! ignore_pubmed_dr) {
+                bool found = false;
+                for (const string& val : dr_pubmed) {
+                    if (val == id) {
+                        found = true;
+                        break;
+                    }
                 }
-            }
 
-            if (! found) {
-                dr_pubmed.push_back(id);
+                if (! found) {
+                    dr_pubmed.push_back(id);
+                }
             }
         } else {
             CRef<CEMBL_xref> new_xref(new CEMBL_xref);
@@ -1335,7 +1337,7 @@ static CRef<CEMBL_block> GetDescrEmblBlock(
     ibp->wgssec[0] = '\0';
     GetExtraAccession(ibp, pp->allow_uwsec, pp->source, embl->SetExtra_acc());
 
-    GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed);
+    GetEmblBlockXref(entry, nullptr, nullptr, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed, pp->ignore_pubmed_dr);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 &&
@@ -2670,7 +2672,7 @@ CRef<CEMBL_block> XMLGetEMBLBlock(ParserPtr pp, const char* entry, CMolInfo& mol
     if (std_update_date.Empty() && std_creation_date.NotEmpty())
         embl->SetUpdate_date().SetStd(*std_creation_date);
 
-    GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed);
+    GetEmblBlockXref(DataBlk(), &ibp->xip, entry, dr_ena, dr_biosample, &ibp->drop, *embl, dr_pubmed, pp->ignore_pubmed_dr);
 
     if (StringEqu(dataclass, "ANN") || StringEqu(dataclass, "CON")) {
         if (StringLen(ibp->acnum) == 8 && fta_StartsWith(ibp->acnum, "CT"sv)) {
