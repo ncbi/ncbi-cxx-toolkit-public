@@ -91,6 +91,10 @@ race:^SERV_LBSMD_Open
 race:^tds_socket_write$
 race:^tds_socket_read$
 
+# multiple initialization under some circumstances, declared harmless by upstream:
+# https://github.com/FreeTDS/freetds/pull/397#issuecomment-822190479.
+race:^tds_iconv_info_init$
+
 
 ################################################################
 # satskyse CXX-11623
