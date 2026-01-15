@@ -1122,6 +1122,17 @@
     fun:_ZN4ncbi12CStdTypeInfo*CreateTypeInfo*
 }
 
+#===============================================================================
+# utils
+{
+   bitvector serializer error - still an issue - not fixed - CXX-14135,SCI-1319
+   Memcheck:Cond
+   fun:_ZN2bm9gap_splitItEEbPKT_jjPKjS5_PS1_S6_S6_RjS7_
+   fun:_ZN2bm10serializerINS_7bvectorINS_9mem_allocINS_15block_allocatorENS_13ptr_allocatorENS_10alloc_poolIS3_S4_EEEEEEE32interpolated_encode_gap_block_v3EPKtRNS_7encoderEj
+   fun:_ZN2bm10serializerINS_7bvectorINS_9mem_allocINS_15block_allocatorENS_13ptr_allocatorENS_10alloc_poolIS3_S4_EEEEEEE29interpolated_encode_gap_blockEPKtRNS_7encoderEj
+}
+
+
 
 ################################################################################
 #
