@@ -42,6 +42,7 @@
 #include <objtools/blast/seqdb_reader/impl/seqdbvol.hpp>
 #include "seqdbfilter.hpp"
 #include <algo/blast/core/ncbi_std.h>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 
@@ -636,7 +637,7 @@ private:
     /// 2. Secondly, the range is always checked.
     /// 3. It is always treated as a hint; there is always fallback
     ///    code to search for the correct volume.
-    mutable volatile int m_RecentVol;
+    mutable std::atomic<int> m_RecentVol;
 };
 
 END_NCBI_SCOPE
