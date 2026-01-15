@@ -128,9 +128,8 @@ include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 
 #############################################################################
 # Final tuneups, deferred due to the potential need for --ccache-skip
-if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE
-    AND "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang|IntelLLVM")
-    add_compile_options("SHELL:${CCACHE_SKIP} -frewrite-includes")
+if (CMAKE_USE_DISTCC AND DISTCC_EXECUTABLE AND DISTCC_CPPFLAGS)
+    add_compile_options("SHELL:${CCACHE_SKIP} ${DISTCC_CPPFLAGS}")
 endif()
 
 #############################################################################

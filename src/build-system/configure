@@ -7010,6 +7010,12 @@ case "$host_os:/$CXX" in
  esac
          LDFLAGS="-L$d -B$d $LDFLAGS"
       fi
+      ### Avoid spurious warnings under distcc (quite possibly by
+      ### doing without it altogether :-/)
+      DISTCC_CPPFLAGS=-frewrite-includes
+      ;;
+   *)
+      DISTCC_CPPFLAGS=
       ;;
 esac
 
@@ -11921,6 +11927,9 @@ fi
 #if !defined(__GNUC__)  &&  !defined(offsetof)
 #  define offsetof(T, F) ((size_t)((char*) &(((T*) 0)->F) - (char*) 0))
 #endif
+#ifndef FOO
+#define f() g(0)
+#endif
 struct S { int x; };
 int f() { return offsetof(struct S, x); }
 EOF
@@ -11931,7 +11940,7 @@ $as_echo_n "checking whether any distcc servers are available... " >&6; }
 if ${ncbi_cv_prog_distcc_servers+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  $DISTCC $CC -c distcctest.c 2>&5
+  $DISTCC $CC -DFOO -c distcctest.c 2>&5
           case $? in
             # 102: bind failed
             # 103: connect failed
@@ -11952,12 +11961,13 @@ $as_echo "$ncbi_cv_prog_distcc_servers" >&6; }
          { DISTCC=; unset DISTCC;}
       fi
       if test -n "$DISTCC" ; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $DISTCC is compatible with $CC" >&5
-$as_echo_n "checking whether $DISTCC is compatible with $CC... " >&6; }
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $DISTCC is compatible with $CC $DISTCC_CPPFLAGS" >&5
+$as_echo_n "checking whether $DISTCC is compatible with $CC $DISTCC_CPPFLAGS... " >&6; }
 if ${ncbi_cv_prog_distcc_vs_cc+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if $DISTCC $CC -c distcctest.c 2>&5 ; then
+  if $DISTCC $CC -DFOO $DISTCC_CPPFLAGS -c distcctest.c \
+              2>&5 ; then
                 ncbi_cv_prog_distcc_vs_cc=yes
              else
                 ncbi_cv_prog_distcc_vs_cc=no
@@ -11972,13 +11982,14 @@ $as_echo "$ncbi_cv_prog_distcc_vs_cc" >&6; }
          fi
       fi
       if test -n "$DISTCC" ; then
-         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $DISTCC is compatible with $CXX" >&5
-$as_echo_n "checking whether $DISTCC is compatible with $CXX... " >&6; }
+         { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $DISTCC is compatible with $CXX $DISTCC_CPPFLAGS" >&5
+$as_echo_n "checking whether $DISTCC is compatible with $CXX $DISTCC_CPPFLAGS... " >&6; }
 if ${ncbi_cv_prog_distcc_vs_cxx+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   mv distcctest.c distcctest.cpp
-             if $DISTCC $CXX -c distcctest.cpp 2>&5 ; then
+             if $DISTCC $CXX -DFOO $DISTCC_CPPFLAGS -c distcctest.cpp \
+             2>&5 ; then
                 ncbi_cv_prog_distcc_vs_cxx=yes
              else
                 ncbi_cv_prog_distcc_vs_cxx=no
@@ -38389,16 +38400,16 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXX="$icc_CXX"
 fi
 
-### Avoid spurious warnings when using Clang (or Clang-based ICC) in
-### conjunction with distcc (and quite possibly also ccache).
-case "$gccdir:$CC_WRAPPER" in
-   /*:*distcc*ccache* )
-      CPPFLAGS="$CPPFLAGS --ccache-skip -frewrite-includes"
-      ;;
-   /*:*distcc* )
-      CPPFLAGS="$CPPFLAGS -frewrite-includes"
-      ;;
-esac
+if test -n "$DISTCC_CPPFLAGS"; then
+   case "$CC_WRAPPER" in
+      *ccache* )
+         CPPFLAGS="$CPPFLAGS --ccache-skip $DISTCC_CPPFLAGS"
+         ;;
+      * )
+         CPPFLAGS="$CPPFLAGS $DISTCC_CPPFLAGS"
+         ;;
+   esac
+fi
 
 
 ### Adjust paths to wrapper.*.sh
