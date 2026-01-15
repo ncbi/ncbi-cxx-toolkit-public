@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -210,6 +209,7 @@ struct Parser {
 
     FILE*   qsfd          = nullptr;
     bool    qamode        = false;
+    bool    ignore_pubmed_dr = false;
     optional<string> buf;                       /* Temporary storage for locations checks */
     EOutput output_format = EOutput::BioseqSet; /* Bioseq-set or Seq-submit */
 
