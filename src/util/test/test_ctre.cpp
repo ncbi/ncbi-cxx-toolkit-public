@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(test_ctre_2)
 
 
 // This test requires C++ 20 semantics, which is expected to be default
-#if __cpp_nontype_template_args > 201411L
+#if NCBI_CNTTP_COMPILER_CHECK
 namespace ncbi
 {
     // string literal to use as "The word"_fs or L"Hello"_fs

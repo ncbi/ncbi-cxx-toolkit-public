@@ -42,8 +42,8 @@
 #include <type_traits>
 
 // Let's allow C++ 17 compilations for awhile
-#if __cpp_nontype_template_args > 201411L
-    #define ct_fixed_string_input_param ::ct::fixed_string
+#if NCBI_CNTTP_COMPILER_CHECK
+#define ct_fixed_string_input_param ::ct::fixed_string
 #else
     #define ct_fixed_string_input_param const auto&
 #endif
@@ -333,7 +333,7 @@ struct build_actions_chain
                 return tup;
             } else
             if constexpr (cmd.cmd == e_action::group_name) {
-#if __cpp_nontype_template_args > 201411L
+#if NCBI_CNTTP_COMPILER_CHECK
                 constexpr size_t len = cmd.detail;
                 ct::fixed_string group_name = compiled.extract_string(begin+1, std::integral_constant<size_t, len>{});
                 group_name_op op{group_name};
@@ -341,7 +341,7 @@ struct build_actions_chain
                 auto res = std::tuple_cat(tup, newcode);
                 return x_build_next_action<begin+1+len>(res);
 #else
-                static_assert(__cpp_nontype_template_args <= 201411L, "group names are only allowed with C++-20 enabled");
+                static_assert(0, "group names are only allowed with C++-20 enabled");
                 return tup;
 #endif
             } else

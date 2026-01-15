@@ -44,6 +44,39 @@
 #include <corelib/impl/std_backport.hpp>
 
 
+// These macros copied from CTRE
+#if defined __cpp_nontype_template_parameter_class
+    #define NCBI_CNTTP_COMPILER_CHECK 1
+#elif defined __cpp_nontype_template_args
+// compiler which defines correctly feature test macro (not you clang)
+    #if __cpp_nontype_template_args >= 201911L
+        #define NCBI_CNTTP_COMPILER_CHECK 1
+    #elif __cpp_nontype_template_args >= 201411L
+// appleclang 13+
+      #if defined __apple_build_version__
+        #if defined __clang_major__ && __clang_major__ >= 13
+// but only in c++20 and more
+          #if __cplusplus > 201703L
+              #define NCBI_CNTTP_COMPILER_CHECK 1
+          #endif
+        #endif
+      #else
+// clang 12+
+        #if defined __clang_major__ && __clang_major__ >= 12
+// but only in c++20 and more
+          #if __cplusplus > 201703L
+              #define NCBI_CNTTP_COMPILER_CHECK 1
+          #endif
+        #endif
+      #endif
+    #endif
+#endif
+
+#ifndef NCBI_CNTTP_COMPILER_CHECK
+    #define NCBI_CNTTP_COMPILER_CHECK 0
+#endif
+
+
 // forward declarations to avoid unnecessary includes
 namespace ncbi
 {
