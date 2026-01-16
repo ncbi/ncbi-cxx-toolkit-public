@@ -455,7 +455,7 @@ public:
 protected:
     CGridRPCBaseClient(const CGridRPCBaseClient&) = delete;
     CGridRPCBaseClient(CGridRPCBaseClient&& c)
-        : m_NS_api(move(c.m_NS_api)), m_NC_api(move(c.m_NC_api)),
+        : m_NS_api(std::move(c.m_NS_api)), m_NC_api(std::move(c.m_NC_api)),
           m_Timeout(c.m_Timeout)
     {
     }
