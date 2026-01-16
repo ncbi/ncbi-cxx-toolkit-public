@@ -1494,11 +1494,11 @@ class CGenbankFormatterWrapDest : public NStr::IWrapDest
 public:
     CGenbankFormatterWrapDest(IFlatTextOStream& s) : m_text_os(s) {};
     IFlatTextOStream& m_text_os;
-    virtual void Append(const string& s)
+    void Append(const string& s) override
     {
         Append(CTempString(s));
     }
-    virtual void Append(const CTempString& s)
+    void Append(const CTempString& s) override
     {
         CTempString t = NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_End);
         if (t.find_first_not_of(" ") == NPOS  &&  s.size() == 22) {

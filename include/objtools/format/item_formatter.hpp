@@ -87,7 +87,7 @@ public:
     void End(IFlatTextOStream&) override;
 
     // Format methods
-    void Format(const IFlatItem& item, IFlatTextOStream& text_os);
+    void Format(const IFlatItem& item, IFlatTextOStream&) override;
     void FormatLocus(const CLocusItem&, IFlatTextOStream&) override {}
     void FormatDefline(const CDeflineItem&, IFlatTextOStream&) override {}
     void FormatAccession(const CAccessionItem&, IFlatTextOStream&) override {}
