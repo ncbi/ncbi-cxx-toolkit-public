@@ -429,7 +429,8 @@ bool is_sorted(Iter first, Iter last)
 class PNocase_LessChar
 {
 public:
-    bool operator()( const char ch1, const char ch2 ) const {
+    bool operator()(const char ch1, const char ch2) const
+    {
         return toupper(ch1) < toupper(ch2);
     }
 };
@@ -439,9 +440,9 @@ const multimap<char, const char*, PNocase_LessChar>& g_GetTrnaInverseKeys();
 class CCleanupUtils
 {
 public:
-    static bool IsAllDigits(const string& str);
+    static bool          IsAllDigits(const string& str);
     static optional<int> GetIupacAa(const string& key);
-    static char ParseSeqFeatTRnaString(const string &comment, bool *out_justTrnaText, string &tRNA_codon, bool noSingleLetter);
+    static char          ParseSeqFeatTRnaString(const string& comment, bool* out_justTrnaText, string& tRNA_codon, bool noSingleLetter);
 };
 
 END_SCOPE(objects)
