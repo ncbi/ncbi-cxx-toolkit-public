@@ -1,9 +1,9 @@
 # $Id$
 
 NCBI_begin_lib(gencoll_client)
-  NCBI_sources(cached_assembly genomic_collections_cli.cpp)
-  NCBI_generated_sources(genomic_collections_cli_.cpp)
-  NCBI_dataspecs(gencoll_client.asn)
+  NCBI_sources(cached_assembly)
+  NCBI_headers(cached_assembly.hpp gencoll_client__.hpp)
+  NCBI_dataspecs(gencoll_client.asn gencoll_client.def)
   NCBI_uses_toolkit_libraries(genome_collection sqlitewrapp xcompress xconnect)
   NCBI_requires(SQLITE3)
   NCBI_project_watchers(shchekot dicuccio zherikov)
