@@ -8,7 +8,7 @@
 
 APP = asnvalidate
 SRC = asnval thread_state app_config formatters message_handler
-LIB = xvalidate taxon1 xmlwrapp xhugeasn $(OBJEDIT_LIBS) \
+LIB = xvalidate taxon1 xmlwrapp xhugeasn $(OBJEDIT_LIBS) $(XFORMAT_LIBS) \
       xalnmgr xobjutil \
       valerr tables xregexp $(PCRE_LIB) $(DATA_LOADERS_UTIL_LIB) $(OBJMGR_LIBS)
 LIBS = $(LIBXSLT_LIBS) $(DATA_LOADERS_UTIL_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \

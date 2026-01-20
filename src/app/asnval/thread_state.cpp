@@ -65,6 +65,7 @@
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/valid_cmdargs.hpp>
 #include <objtools/validator/validator_context.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
 
