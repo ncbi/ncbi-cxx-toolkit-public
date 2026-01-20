@@ -47,7 +47,6 @@
 
 #include <objtools/validator/validator.hpp>
 #include <objtools/validator/validator_context.hpp>
-#include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/huge_file_process.hpp>
 #include <objtools/validator/huge_file_validator.hpp>
 #include <util/message_queue.hpp>
@@ -156,8 +155,6 @@ protected:
 
     size_t m_Level = 0;
     std::atomic<size_t> m_Reported {0};
-
-    CCleanup m_Cleanup;
 
     CHugeFileValidator::TGlobalInfo m_GlobalInfo;
 
