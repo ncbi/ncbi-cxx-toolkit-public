@@ -67,6 +67,8 @@
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objmgr/util/objutil.hpp>
 
+#include <util/regexp/ctre/replace.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -1665,14 +1667,19 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << "\">" << data_str << "</a>";
         return result.str();
     } else if ( NStr::Equal (label_str, "Evidence Accession") && NStr::Equal (source, "NCBI SPARCLE") ) {
-        string fst;
-        string snd;
-        string thd;
+        // string fst;
+        // string snd;
+        // string thd;
         string fth;
+        string thd = data_str;
+        ct::search_replace<"(Domain|Specific|Superfamily) architecture ID ", "">(thd);
+        NStr::Replace( thd, " ", "_", fth );
+        /*
         NStr::Replace( data_str, "Domain architecture ID ", "", fst );
         NStr::Replace( fst, "Specific architecture ID ", "", snd );
         NStr::Replace( snd, "Superfamily architecture ID ", "", thd );
         NStr::Replace( thd, " ", "_", fth );
+        */
         result << "<a href=\"https://www.ncbi.nlm.nih.gov/Structure/sparcle/archview.html?archid="
                << fth
                << "\">" << data_str << "</a>";
