@@ -9,7 +9,7 @@ NCBI_begin_app(unit_test_validator)
     NCBI_set_test_timeout(3000)
     NCBI_add_test()
 
-    NCBI_project_watchers(stakhovv kans foleyjp asztalos gotvyans)
+    NCBI_project_watchers(stakhovv kans foleyjp gotvyans)
 
 NCBI_end_app()
 
