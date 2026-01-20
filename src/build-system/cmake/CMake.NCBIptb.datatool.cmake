@@ -60,37 +60,6 @@ endif()
 endif(NOT DEFINED NCBI_DATATOOL)
 
 ##############################################################################
-function(NCBI_internal_process_defoutput _spec _files)
-    set(_res)
-    get_filename_component(_path ${_spec} DIRECTORY)
-    if(EXISTS "${_spec}")
-        FILE(STRINGS "${_spec}" _contents)
-        foreach(_line IN LISTS _contents)
-            string(FIND "${_line}" "clients" _pos)
-            if(NOT ${_pos} EQUAL -1)
-                STRING(REPLACE " " ";" _line "${_line}")
-                set(_found NO)
-                foreach(_key IN LISTS _line)
-                    if("${_key}" STREQUAL "" OR "${_key}" STREQUAL "=")
-                        continue()
-                    endif()
-                    if("${_key}" STREQUAL "clients")
-                        set(_found YES)
-                        continue()
-                    elseif(NOT _found)
-                        break()
-                    endif()
-                    list(APPEND _res ${_path}/${_key}.cpp)
-                    list(APPEND _res ${_path}/${_key}_.cpp)
-                endforeach()
-                break()
-            endif()
-        endforeach()
-    endif()
-    set(${_files} ${_res} PARENT_SCOPE)
-endfunction()
-
-##############################################################################
 function(NCBI_internal_process_dataspec _variable _access _value)
     if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
         return()
@@ -136,7 +105,35 @@ function(NCBI_internal_process_dataspec _variable _access _value)
             set(_imports -M ${_module_imports})
         endif()
     endif()
-    NCBI_internal_process_defoutput( "${_path}/${_basename}.def" _byproducts)
+    set(_byproducts "")
+    if(EXISTS "${_path}/${_basename}.def")
+        FILE(STRINGS "${_path}/${_basename}.def" _contents)
+        foreach(_line IN LISTS _contents)
+            string(FIND "${_line}" "clients" _pos)
+            if(NOT ${_pos} EQUAL -1)
+                STRING(REPLACE " " ";" _line "${_line}")
+                set(_found NO)
+                foreach(_key IN LISTS _line)
+                    if("${_key}" STREQUAL "" OR "${_key}" STREQUAL "=")
+                        continue()
+                    endif()
+                    if("${_key}" STREQUAL "clients")
+                        set(_found YES)
+                        continue()
+                    elseif(NOT _found)
+                        break()
+                    endif()
+                    if(NOT EXISTS "${_path}/${_key}.cpp")
+                        list(APPEND _byproducts ${_path}/${_key}.cpp)
+                    endif()
+                    if(NOT EXISTS "${_path}/${_key}_.cpp")
+                        list(APPEND _byproducts ${_path}/${_key}_.cpp)
+                    endif()
+                endforeach()
+                break()
+            endif()
+        endforeach()
+    endif()
     set(_opm)
     set(_dir)
     if(DEFINED NCBI_EXTERNAL_TREE_ROOT)
@@ -177,7 +174,7 @@ function(NCBI_internal_process_dataspec _variable _access _value)
         WORKING_DIRECTORY ${NCBI_TREE_ROOT}
         COMMENT "Generate C++ classes from ${DT_DATASPEC}"
         DEPENDS ${_depends}
-#        BYPRODUCTS ${_byproducts}
+        BYPRODUCTS ${_byproducts}
         VERBATIM
     )
 
@@ -219,51 +216,6 @@ function(NCBI_internal_process_dataspec _variable _access _value)
             file(APPEND "${NCBI_GENERATESRC_DATATOOL}.${_rand}" "${_generatesrc}")
         endif()
     endif()
-endfunction()
-
-##############################################################################
-function(NCBI_internal_process_defspec _variable _access _value)
-    if(NOT "${_access}" STREQUAL "MODIFIED_ACCESS" OR "${_value}" STREQUAL "")
-        return()
-    endif()
-    cmake_parse_arguments(DT "GENERATE" "DATASPEC;RETURN" "REQUIRES" ${_value})
-
-    get_filename_component(_path     ${DT_DATASPEC} DIRECTORY)
-    get_filename_component(_basename ${DT_DATASPEC} NAME_WE)
-    get_filename_component(_ext      ${DT_DATASPEC} EXT)
-# datatool expects src tree to look as "root/src, root/include"
-#    file(RELATIVE_PATH     _relpath  ${NCBI_SRC_ROOT} ${_path})
-    file(RELATIVE_PATH     _relpath  ${NCBI_TREE_ROOT}/src ${_path})
-    if("${_relpath}" STREQUAL "")
-        set(_relpath .)
-    endif()
-
-    set(_specfiles  ${DT_DATASPEC})
-    NCBI_internal_process_defoutput( "${_specfiles}" _srcfiles)
-    set(_incfiles)
-    foreach(_file IN LISTS _srcfiles)
-        get_filename_component(_b ${_file} NAME_WE)
-        get_filename_component(_i "${NCBI_TREE_ROOT}/include/${_relpath}/${_b}.hpp"  ABSOLUTE)
-        list(APPEND _incfiles "${_i}")
-    endforeach()
-    if(NOT "${DT_RETURN}" STREQUAL "")
-        set(${DT_RETURN} DATASPEC ${_specfiles} SOURCES ${_srcfiles} HEADERS ${_incfiles} PARENT_SCOPE)
-    endif()
-
-    if(NOT DT_GENERATE)
-        return()
-    endif()
-
-    set(_cmd ${NCBI_DATATOOL} -version)
-    set(_depends ${DT_DATASPEC})
-    add_custom_command(
-        OUTPUT ${_srcfiles}
-        COMMAND ${_cmd} VERBATIM
-        WORKING_DIRECTORY ${NCBI_TREE_ROOT}
-        COMMENT "Generate C++ classes from ${DT_DATASPEC}"
-        DEPENDS ${_depends}
-        VERBATIM
-    )
 endfunction()
 
 #############################################################################
@@ -345,7 +297,6 @@ if(NOT IS_ABSOLUTE "${NCBI_DATATOOL}")
     endif()
 endif()
 NCBI_register_hook(DATASPEC NCBI_internal_process_dataspec ".asn;.dtd;.xsd;.wsdl;.jsd;.json")
-NCBI_register_hook(DATASPEC NCBI_internal_process_defspec ".def")
 
 if(NCBI_PTBCFG_CREATE_GENERATESRC)
     set(NCBI_GENERATESRC_DATATOOL   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/CMakeFiles/generate_sources)
