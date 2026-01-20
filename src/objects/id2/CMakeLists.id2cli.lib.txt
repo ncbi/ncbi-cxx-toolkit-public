@@ -1,8 +1,7 @@
 # $Id$
 
 NCBI_begin_lib(id2cli)
-  NCBI_sources(id2_client.cpp)
-  NCBI_generated_sources(id2_client_.cpp)
+  NCBI_dataspecs(id2.def)
   NCBI_uses_toolkit_libraries(id2 xconnect)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
