@@ -2,7 +2,6 @@
 
 NCBI_begin_lib(genome_collection)
   NCBI_dataspecs(genome_collection.asn)
-  NCBI_headers(genome_collection__.hpp)
   NCBI_uses_toolkit_libraries(seq)
   NCBI_project_watchers(dicuccio shchekot zherikov)
 NCBI_end_lib()
