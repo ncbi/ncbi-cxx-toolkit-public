@@ -1,8 +1,8 @@
 # $Id$
 
 NCBI_begin_lib(gencoll_client)
-  NCBI_sources(cached_assembly genomic_collections_cli.cpp)
-  NCBI_generated_sources(genomic_collections_cli_.cpp)
+  NCBI_sources(cached_assembly)
+  NCBI_generated_sources(genomic_collections_cli.cpp genomic_collections_cli_.cpp)
   NCBI_dataspecs(gencoll_client.asn)
   NCBI_uses_toolkit_libraries(genome_collection sqlitewrapp xcompress xconnect)
   NCBI_requires(SQLITE3)
