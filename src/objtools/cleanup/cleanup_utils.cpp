@@ -675,7 +675,7 @@ bool s_OrgrefSynEqual( const string & syn1, const string & syn2 )
 {
     return NStr::EqualNocase(syn1, syn2);
 }
-
+ 
 
 bool CCleanupUtils::IsAllDigits(const string& str)
 {
@@ -683,8 +683,8 @@ bool CCleanupUtils::IsAllDigits(const string& str)
         return false;
     }
     bool all_digits = true;
-    ITERATE (string, s, str) {
-        if (! isdigit(*s)) {
+    ITERATE(string, s, str) {
+        if (!isdigit(*s)) {
             all_digits = false;
             break;
         }
@@ -692,17 +692,15 @@ bool CCleanupUtils::IsAllDigits(const string& str)
     return all_digits;
 }
 
-class CCharInSet
-{
+class CCharInSet {
 public:
-    CCharInSet(const string& list_of_characters)
-    {
-        copy(list_of_characters.begin(), list_of_characters.end(), inserter(char_set, char_set.begin()));
+    CCharInSet( const string &list_of_characters ) {
+        copy( list_of_characters.begin(), list_of_characters.end(),
+            inserter( char_set, char_set.begin() ) );
     }
 
-    bool operator()(const char ch) const
-    {
-        return (char_set.find(ch) != char_set.end());
+    bool operator()( const char ch ) const {
+        return ( char_set.find(ch) != char_set.end() );
     }
 
 private:
@@ -710,11 +708,11 @@ private:
 };
 
 
-static void s_TokenizeTRnaString(const string& tRNA_string, list<string>& out_string_list)
+static
+void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_list )
 {
     out_string_list.clear();
-    if (tRNA_string.empty())
-        return;
+    if ( tRNA_string.empty() ) return;
 
     // SGD Tx(NNN)c or Tx(NNN)c#, where x is the amino acid, c is the chromosome (A-P, Q for mito),
     // and optional # is presumably for individual tRNAs with different anticodons and the same
@@ -722,36 +720,36 @@ static void s_TokenizeTRnaString(const string& tRNA_string, list<string>& out_st
     if (ctre::match<"[Tt][A-Za-z]\\(...\\)[A-Za-z]\\d?\\d?">(tRNA_string)) {
         // parse SGD tRNA anticodon
         out_string_list.push_back(kEmptyStr);
-        string& new_SGD_tRNA_anticodon = out_string_list.back();
-        string  raw_codon_part         = tRNA_string.substr(3, 3);
-        NStr::ToUpper(raw_codon_part);
+        string &new_SGD_tRNA_anticodon = out_string_list.back();
+        string raw_codon_part = tRNA_string.substr(3,3);
+        NStr::ToUpper( raw_codon_part );
         string reverse_complement;
-        CSeqManip::ReverseComplement(raw_codon_part, CSeqUtil::e_Iupacna, 0, 3, reverse_complement);
+        CSeqManip::ReverseComplement( raw_codon_part, CSeqUtil::e_Iupacna, 0, 3, reverse_complement );
         new_SGD_tRNA_anticodon = string("(") + reverse_complement + ')';
 
         // parse SGD tRNA amino acid
-        out_string_list.push_back(tRNA_string.substr(1, 1));
+        out_string_list.push_back(tRNA_string.substr(1,1));
         return;
     }
 
     string tRNA_string_copy = tRNA_string;
     // Note that we do NOT remove "*", since it might be a terminator tRNA symbol
-    replace_if(tRNA_string_copy.begin(), tRNA_string_copy.end(), CCharInSet("-,;:()=\'_~"), ' ');
+    replace_if( tRNA_string_copy.begin(), tRNA_string_copy.end(),
+        CCharInSet("-,;:()=\'_~"), ' ' );
 
     vector<string> tRNA_tokens;
     // " \t\n\v\f\r" are the standard whitespace chars
     // ( source: http://www.cplusplus.com/reference/clibrary/cctype/isspace/ )
     NStr::Split(tRNA_string_copy, " \t\n\v\f\r", tRNA_tokens, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
-    EDIT_EACH_STRING_IN_VECTOR(tRNA_token_iter, tRNA_tokens)
-    {
-        string& tRNA_token = *tRNA_token_iter;
+    EDIT_EACH_STRING_IN_VECTOR( tRNA_token_iter, tRNA_tokens ) {
+        string &tRNA_token = *tRNA_token_iter;
         // remove initial "tRNA", if any
-        if (NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase)) {
+        if ( NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase) ) {
             tRNA_token = tRNA_token.substr(4);
         }
 
-        if (! tRNA_token.empty()) {
+        if (! tRNA_token.empty() ) {
             if (ctre::match<"[A-Za-z][A-Za-z][A-Za-z]\\d*">(tRNA_token)) {
                 tRNA_token = tRNA_token.substr(0, 3);
             }
@@ -760,7 +758,7 @@ static void s_TokenizeTRnaString(const string& tRNA_string, list<string>& out_st
     }
 }
 
-typedef SStaticPair<const char*, int> TTrnaKey;
+typedef SStaticPair<const char *, int> TTrnaKey;
 
 static constexpr TTrnaKey trna_key_to_subtype [] = {
     {  "Ala",            'A'  },
@@ -828,18 +826,27 @@ static constexpr TTrnaKey trna_key_to_subtype [] = {
 };
 
 
-typedef CStaticPairArrayMap<const char*, int, PNocase_CStr> TTrnaMap;
+typedef CStaticPairArrayMap <const char*, int, PNocase_CStr> TTrnaMap;
 DEFINE_STATIC_ARRAY_MAP(TTrnaMap, sm_TrnaKeys, trna_key_to_subtype);
 
+/*
+class PNocase_LessChar
+{
+public:
+    bool operator()( const char ch1, const char ch2 ) const {
+        return toupper(ch1) < toupper(ch2);
+    }
+};
+*/
 
 // This maps in the opposite direction of sm_TrnaKeys
 class CAminoAcidCharToSymbol : public multimap<char, const char*, PNocase_LessChar>
 {
 public:
-    CAminoAcidCharToSymbol(const TTrnaKey keys[], size_t num_keys)
+    CAminoAcidCharToSymbol( const TTrnaKey keys[], size_t num_keys )
     {
-        for (size_t ii = 0; ii < num_keys; ++ii) {
-            insert(value_type(keys[ii].second, keys[ii].first));
+        for(size_t ii=0; ii < num_keys; ++ii ) {
+            insert(value_type( keys[ii].second, keys[ii].first ));
         }
     }
 };
@@ -848,31 +855,31 @@ public:
 const multimap<char, const char*, PNocase_LessChar>& g_GetTrnaInverseKeys()
 {
     static auto trna_inverse_keys =
-        CAminoAcidCharToSymbol(trna_key_to_subtype,
-                               (sizeof(trna_key_to_subtype) / sizeof(trna_key_to_subtype[0])));
+        CAminoAcidCharToSymbol(trna_key_to_subtype, 
+            (sizeof(trna_key_to_subtype) / sizeof(trna_key_to_subtype[0])) );
 
     return trna_inverse_keys;
 }
 
 
-static char s_FindTrnaAA(const string& str)
+static
+char s_FindTrnaAA( const string &str )
 {
-    if (str.empty())
-        return '\0';
+    if ( str.empty() ) return '\0';
     string tmp = str;
     NStr::TruncateSpacesInPlace(tmp);
 
-    if (tmp.length() == 1) {
+    if( tmp.length() == 1 ) {
         // if the string is a valid one-letter code, just return that
-        const auto& inverse_keys    = g_GetTrnaInverseKeys();
-        const char  aminoAcidLetter = toupper(tmp[0]);
-        if (inverse_keys.find(aminoAcidLetter) != inverse_keys.end()) {
+        const auto& inverse_keys = g_GetTrnaInverseKeys();
+        const char aminoAcidLetter = toupper(tmp[0]);
+        if( inverse_keys.find(aminoAcidLetter) != inverse_keys.end() ) {
             return aminoAcidLetter;
         }
     } else {
         // translate 3-letter codes and full-names to one-letter codes
-        TTrnaMap::const_iterator trna_iter = sm_TrnaKeys.find(tmp.c_str());
-        if (trna_iter != sm_TrnaKeys.end()) {
+        TTrnaMap::const_iterator trna_iter = sm_TrnaKeys.find (tmp.c_str ());
+        if( trna_iter != sm_TrnaKeys.end() ) {
             return trna_iter->second;
         }
     }
@@ -881,62 +888,61 @@ static char s_FindTrnaAA(const string& str)
 }
 
 
-optional<int> CCleanupUtils::GetIupacAa(const string& key)
-{
+optional<int> CCleanupUtils::GetIupacAa(const string& key) {
     if (auto it = sm_TrnaKeys.find(key.c_str()); it != sm_TrnaKeys.end()) {
         return it->second;
     }
+
     return {};
 }
 
 // based on C's ParseTRnaString
-char CCleanupUtils::ParseSeqFeatTRnaString(const string& comment, bool* out_justTrnaText, string& tRNA_codon, bool noSingleLetter)
+char CCleanupUtils::ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, string &tRNA_codon, bool noSingleLetter )
 {
     if (out_justTrnaText) {
         *out_justTrnaText = false;
     }
     tRNA_codon.clear();
 
-    if (comment.empty())
-        return '\0';
+    if ( comment.empty() ) return '\0';
 
-    CRef<CTrna_ext> tr(new CTrna_ext);
+    CRef<CTrna_ext> tr( new CTrna_ext );
 
-    char         aa = '\0';
+    char aa = '\0';
     list<string> head;
-    s_TokenizeTRnaString(comment, head);
-    bool                         justt     = true;
+    s_TokenizeTRnaString (comment, head);
+    bool justt = true;
     list<string>::const_iterator head_iter = head.begin();
-    bool                         is_ambig  = false;
-    for (; head_iter != head.end(); ++head_iter) {
-        const string& str = *head_iter;
-        if (str.empty())
-            continue;
+    bool is_ambig = false;
+    for( ; head_iter != head.end(); ++head_iter ) {
+        const string &str = *head_iter;
+        if( str.empty() ) continue;
         char curraa = '\0';
         if (noSingleLetter && str.length() == 1) {
             curraa = '\0';
         } else {
-            curraa = s_FindTrnaAA(str);
+            curraa = s_FindTrnaAA (str);
         }
-        if (curraa != '\0') {
+        if(curraa != '\0') {
             if (aa == '\0') {
                 aa = curraa;
-            } else if (curraa != aa) {
+            } else if( curraa != aa) {
                 is_ambig = true;
             }
-        } else if (! NStr::EqualNocase("tRNA", str) &&
-                   ! NStr::EqualNocase("transfer", str) &&
-                   ! NStr::EqualNocase("RNA", str) &&
-                   ! NStr::EqualNocase("product", str)) {
+        } else if ( ! NStr::EqualNocase ("tRNA", str) &&
+            ! NStr::EqualNocase ("transfer", str) &&
+            ! NStr::EqualNocase ("RNA", str) &&
+            ! NStr::EqualNocase ("product", str) )
+        {
             justt = false;
         }
     }
-    if (is_ambig) {
+    if( is_ambig ) {
         aa = 0;
     }
 
     if (justt) {
-        if (comment.find_first_of("0123456789") != string::npos) {
+        if( comment.find_first_of("0123456789") != string::npos ) {
             justt = false;
         }
     }
@@ -945,6 +951,8 @@ char CCleanupUtils::ParseSeqFeatTRnaString(const string& comment, bool* out_just
     }
     return aa;
 }
+
+
 
 
 END_SCOPE(objects)
