@@ -178,6 +178,15 @@ CGRPCInitializer::CGRPCInitializer(void)
     // NB: on the client side, we encourage the use of
     // CGRPCClientContext rather than setting global callbacks, to
     // avoid sending inappropriate metadata to non-NCBI services.
+#if defined(NCBI_OS_DARWIN) && defined(NCBI_DLL_SUPPORT)
+    if (google::protobuf::UnknownFieldSet::default_instance().SpaceUsed() < 0)
+    {
+        grpc::CreateCustomChannel("", grpc::InsecureChannelCredentials(),
+                                  grpc::ChannelArguments());
+        gpr_timespec ts;
+        grpc::Timepoint2Timespec(grpc::Timespec2Timepoint(ts), &ts);
+    }
+#endif
 }
 
 #endif
