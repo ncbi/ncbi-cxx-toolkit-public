@@ -1700,7 +1700,7 @@ bool fta_if_valid_biosample(string_view id, bool dblink)
 }
 
 /**********************************************************/
-static forward_list<string> fta_tokenize_dblink(string str, Parser::ESource source)
+static forward_list<string> fta_tokenize_dblink(string_view s, Parser::ESource source)
 {
     bool got_nl;
     bool sra;
@@ -1708,11 +1708,12 @@ static forward_list<string> fta_tokenize_dblink(string str, Parser::ESource sour
     bool biosample;
     bool bioproject;
 
-    if (str.empty()) {
+    if (s.empty()) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Empty DBLINK line type supplied. Entry dropped.");
         return {};
     }
 
+    string str(s);
     for (char& c : str)
         if (c == ';' || c == '\t')
             c = ' ';
@@ -1830,13 +1831,14 @@ static forward_list<string> fta_tokenize_dblink(string str, Parser::ESource sour
 }
 
 /**********************************************************/
-void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<CUser_object>& dbuop)
+void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESource source, bool* drop, CRef<CUser_object>& dbuop)
 {
-    if (! offset)
+    if (s.size() < ParFlat_COL_DATA)
         return;
+    s.remove_prefix(ParFlat_COL_DATA);
 
-    auto vnp = fta_tokenize_dblink(string(offset + ParFlat_COL_DATA, len - ParFlat_COL_DATA), source);
-    if (vnp.empty()) {
+    const auto tokens = fta_tokenize_dblink(s, source);
+    if (tokens.empty()) {
         *drop = true;
         return;
     }
@@ -1844,12 +1846,12 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     CRef<CUser_object> user_obj;
     CRef<CUser_field>  user_field;
 
-    for (auto tvnp = vnp.begin(); tvnp != vnp.end(); ++tvnp) {
-        if (tvnp->find(':') != string::npos) {
+    for (string_view tok : tokens) {
+        if (tok.find(':') != string::npos) {
             if (user_obj.NotEmpty())
                 break;
 
-            if (*tvnp == "Project:") {
+            if (tok == "Project:"sv) {
                 user_obj.Reset(new CUser_object);
                 CObject_id& id = user_obj->SetType();
 
@@ -1861,22 +1863,18 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
         if (user_obj.Empty())
             continue;
 
-        const char* str = tvnp->c_str();
-        if (! str || *str == '\0')
+        if (tok.empty())
             continue;
 
-        if (*str != '0')
-            while (IS_DIGIT(*str))
-                str++;
-        if (*str != '\0') {
-            FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", *tvnp);
+        if (tok.front() == '0' || ! std::all_of(tok.cbegin(), tok.cend(), [](char c) { return IS_DIGIT(c); })) {
+            FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", tok);
             continue;
         }
 
         user_field.Reset(new CUser_field);
 
         user_field->SetLabel().SetStr("ProjectID");
-        user_field->SetData().SetInt(fta_atoi(*tvnp));
+        user_field->SetData().SetInt(fta_atoi(tok));
         user_obj->SetData().push_back(user_field);
 
         user_field.Reset(new CUser_field);
@@ -1900,9 +1898,10 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
     user_field.Reset();
 
     bool inpr = false;
-    for (auto tvnp = vnp.begin(); tvnp != vnp.end(); ++tvnp) {
-        if (tvnp->find(':') != string::npos) {
-            if (*tvnp == "Project:") {
+    for (auto it_tok = tokens.begin(); it_tok != tokens.end(); ++it_tok) {
+        string_view tok = *it_tok;
+        if (tok.find(':') != string::npos) {
+            if (tok == "Project:"sv) {
                 inpr = true;
                 continue;
             }
@@ -1915,13 +1914,13 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
             }
 
             CUser_field::TNum i = 0;
-            for (auto uvnp = next(tvnp); uvnp != vnp.end(); ++uvnp, ++i)
+            for (auto uvnp = next(it_tok); uvnp != tokens.end(); ++uvnp, ++i)
                 if (uvnp->find(':') != string::npos)
                     break;
 
             user_field.Reset(new CUser_field);
 
-            string lstr(*tvnp);
+            string lstr(tok);
             lstr.pop_back();
             user_field->SetLabel().SetStr(lstr);
             user_field->SetNum(i);
@@ -1929,11 +1928,9 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, 
 
             user_obj->SetData().push_back(user_field);
         } else if (! inpr && user_obj.NotEmpty()) {
-            user_field->SetData().SetStrs().push_back(*tvnp);
+            user_field->SetData().SetStrs().push_back(string(tok));
         }
     }
-
-    vnp.clear();
 
     if (user_obj.NotEmpty()) {
         CRef<CSeqdesc> descr(new CSeqdesc);
