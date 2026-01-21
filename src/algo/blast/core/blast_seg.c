@@ -2089,6 +2089,7 @@ s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg **segs,
             if (status < 0)
 	    {
    		sfree(H);
+                s_SegFree(leftsegs);
                 return status;
 	    }
 
