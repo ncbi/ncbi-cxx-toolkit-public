@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -63,12 +62,16 @@ enum ERefBlockType {
 
 BEGIN_NCBI_SCOPE
 
+using TStringList = std::list<std::string>;
+
 CRef<objects::CPub>     journal(ParserPtr pp, char* bptr, char* eptr, CRef<objects::CAuth_list>& auth_list, CRef<objects::CTitle::C_E>& title, bool has_muid, CRef<objects::CCit_art>& cit_art, Int4 er);
 Int4                    fta_remark_is_er(const string& str);
 CRef<objects::CPubdesc> sp_refs(ParserPtr pp, const DataBlk& dbp, Uint2 col_data);
 CRef<objects::CPubdesc> DescrRefs(ParserPtr pp, DataBlk& dbp, Uint2 col_data);
 CRef<objects::CPubdesc> EmblDescrRefsDr(ParserPtr pp, TEntrezId pmid);
 void                    fta_pub_lookup(ParserPtr pp, CRef<objects::CPubdesc> desc);
+void                    GetCitSubLastNames(const objects::CPub_equiv& pube, TStringList& names);
+void                    CitSubPubmedDrNamesCheck(const objects::CPub_equiv& pube, TStringList& names, string_view pmid);
 
 END_NCBI_SCOPE
 #endif

@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -315,6 +314,7 @@
 #define ERR_REFERENCE_PmidIgnored                      16,48
 #define ERR_REFERENCE_ArticleIdDiscarded               16,49
 #define ERR_REFERENCE_UnusualPubStatus                 16,50
+#define ERR_REFERENCE_AuthorNameCrossCheckProblem      16,51
 
 #define ERR_FEATURE                                    17,0
 #define ERR_FEATURE_MultFocusedFeats                   17,1
