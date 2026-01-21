@@ -1751,6 +1751,8 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
     /* RN data ==> pub  should be before GBblock because we need patent ref
      */
     auto& chain = TrackNodes(entry);
+
+    TStringList names;
     for (auto& ref_blk : chain) {
         if (ref_blk.mType != ParFlat_REF_END)
             continue;
@@ -1760,6 +1762,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
+            if (pp->medserver > 0) {
+                GetCitSubLastNames(descr->GetPub().GetPub(), names);
+            }
         }
     }
 
@@ -1772,9 +1777,11 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
+            if (pp->medserver > 0) {
+                GetCitSubLastNames(descr->GetPub().GetPub(), names);
+            }
         }
     }
-
     /* OS data ==> descr_org
      */
     CBioSource* bio_src = nullptr;
@@ -1818,6 +1825,9 @@ static void GetEmblDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
+            if (! names.empty()) {
+                CitSubPubmedDrNamesCheck(descr->GetPub().GetPub(), names, val);
+            }
         }
     }
 

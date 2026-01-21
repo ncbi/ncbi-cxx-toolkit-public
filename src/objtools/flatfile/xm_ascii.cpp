@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -887,6 +886,7 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
      */
     /* pub should be before GBblock because we need patent ref
      */
+    TStringList names;
     TDataBlkList dbl = XMLBuildRefDataBlk(entry.mBuf.ptr, ibp->xip, ParFlat_REF_END);
     for (auto& dbp : dbl) {
         CRef<CPubdesc> pubdesc = DescrRefs(pp, dbp, 0);
@@ -894,6 +894,9 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
+            if (pp->medserver > 0) {
+                GetCitSubLastNames(descr->GetPub().GetPub(), names);
+            }
         }
     }
     dbl.clear();
@@ -905,6 +908,9 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
             CRef<CSeqdesc> descr(new CSeqdesc);
             descr->SetPub(*pubdesc);
             bioseq.SetDescr().Set().push_back(descr);
+            if (pp->medserver > 0) {
+                GetCitSubLastNames(descr->GetPub().GetPub(), names);
+            }
         }
     }
     dbl.clear();
@@ -935,6 +941,9 @@ static void XMLGetDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
                 CRef<CSeqdesc> descr(new CSeqdesc);
                 descr->SetPub(*pubdesc);
                 bioseq.SetDescr().Set().push_back(descr);
+                if (! names.empty()) {
+                    CitSubPubmedDrNamesCheck(descr->GetPub().GetPub(), names, val);
+                }
             }
         }
     }

@@ -1,5 +1,4 @@
-/* $Id$
- * ===========================================================================
+/* ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -2483,6 +2482,96 @@ CRef<CPubdesc> EmblDescrRefsDr(ParserPtr pp, TEntrezId pmid)
     CRef<CPubdesc> desc(new CPubdesc);
     desc->SetPub().Set().push_back(pub);
     return desc;
+}
+
+/**********************************************************/
+void GetCitSubLastNames(const CPub_equiv& pube, TStringList& names)
+{
+    for (const auto& pub : pube.Get()) {
+        if (! pub->IsSub())
+            continue;
+
+        const CCit_sub& sub = pub->GetSub();
+        if (! sub.IsSetAuthors() || ! sub.CanGetAuthors())
+            continue;
+
+        const CAuth_list& authors = sub.GetAuthors();
+        if (! authors.IsSetNames() || ! authors.CanGetNames() ||
+            authors.GetNames().Which() != CAuth_list::TNames::e_Std)
+            continue;
+
+        const CAuth_list::TNames::TStd& stdnames = authors.GetNames().GetStd();
+        for (auto& it : stdnames) {
+            if (! it->IsSetName() || ! it->CanGetName() ||
+                ! it->GetName().IsName())
+                continue;
+
+            const CName_std& namestd = it->GetName().GetName();
+            if (! namestd.IsSetLast())
+                continue;
+
+            const string& lastname = namestd.GetLast();
+            bool found = false;
+            for (const string& val : names) {
+                if (val != lastname)
+                    continue;
+                found = true;
+                break;
+            }
+            if (! found) {
+                names.push_back(lastname);
+            }
+        }
+    }
+}
+
+/**********************************************************/
+void CitSubPubmedDrNamesCheck(const CPub_equiv& pube, TStringList& names, string_view pmid)
+{
+    bool found = false;
+
+    for (const auto& pub : pube.Get()) {
+        if (! pub->IsArticle())
+            continue;
+
+        const CCit_art& art = pub->GetArticle();
+        if (! art.IsSetAuthors() || ! art.CanGetAuthors())
+            continue;
+
+        const CAuth_list& authors = art.GetAuthors();
+        if (! authors.IsSetNames() || ! authors.CanGetNames() ||
+            authors.GetNames().Which() != CAuth_list::TNames::e_Std)
+            continue;
+
+        const CAuth_list::TNames::TStd& stdnames = authors.GetNames().GetStd();
+        for (auto& it : stdnames) {
+            if (! it->IsSetName() || ! it->CanGetName() ||
+                ! it->GetName().IsName())
+                continue;
+
+            const CName_std& namestd = it->GetName().GetName();
+            if (! namestd.IsSetLast())
+                continue;
+
+            const string& lastname = namestd.GetLast();
+            for (const string& val : names) {
+                if (val != lastname)
+                    continue;
+                found = true;
+                break;
+            }
+            if (found)
+                break;
+        }
+        if (found)
+            break;
+    }
+
+    if (! found) {
+        FtaErrPost(SEV_WARNING, ERR_REFERENCE_AuthorNameCrossCheckProblem,
+                   "No authors in common between PubMed article \"{}\" and submission references.",
+                   pmid);
+    }
 }
 
 END_NCBI_SCOPE
