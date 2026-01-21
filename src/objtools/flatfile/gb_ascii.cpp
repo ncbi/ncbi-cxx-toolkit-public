@@ -936,7 +936,7 @@ static void GetGenBankDescr(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq)
 
     CRef<CUser_object> dbuop;
     if (SrchNodeType(entry, ParFlat_DBLINK, &len, &offset))
-        fta_get_dblink_user_object(bioseq.SetDescr().Set(), offset, len, pp->source, &ibp->drop, dbuop);
+        fta_get_dblink_user_object(bioseq.SetDescr().Set(), string_view(offset, len), pp->source, &ibp->drop, dbuop);
     else {
         SrchNodeType(entry, ParFlat_PROJECT, &len, &offset);
         if (offset)

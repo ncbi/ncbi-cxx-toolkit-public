@@ -55,7 +55,7 @@ bool fta_strings_same(const char* s1, const char* s2);
 bool fta_check_htg_kwds(TKeywordList& kwds, IndexblkPtr ibp, objects::CMolInfo& mol_info);
 bool fta_parse_tpa_tsa_block(objects::CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa);
 void fta_get_project_user_object(TSeqdescList& descrs, const char* offset, Parser::EFormat format, bool* drop, Parser::ESource source);
-void fta_get_dblink_user_object(TSeqdescList& descrs, char* offset, size_t len, Parser::ESource source, bool* drop, CRef<objects::CUser_object>& dbuop);
+void fta_get_dblink_user_object(TSeqdescList& descrs, string_view, Parser::ESource source, bool* drop, CRef<objects::CUser_object>& dbuop);
 int  fta_check_con_for_wgs(objects::CBioseq& bioseq);
 
 Int4   fta_fix_seq_loc_id(TSeqLocList& locs, ParserPtr pp, string_view location, string_view name, bool iscon);
