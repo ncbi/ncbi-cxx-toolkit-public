@@ -364,12 +364,16 @@ BlastSaveInitHsp(BlastInitHitList * ungapped_hsps, Int4 q_start, Int4 s_start,
 
     ungapped_data = (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
 
-    ungapped_data->q_start = q_start;
-    ungapped_data->s_start = s_start;
-    ungapped_data->length = len;
-    ungapped_data->score = score;
+    if (ungapped_data) {
+    	ungapped_data->q_start = q_start;
+    	ungapped_data->s_start = s_start;
+    	ungapped_data->length = len;
+    	ungapped_data->score = score;
 
-    BLAST_SaveInitialHit(ungapped_hsps, q_off, s_off, ungapped_data);
+    	if (!BLAST_SaveInitialHit(ungapped_hsps, q_off, s_off, ungapped_data)) {
+    		sfree (ungapped_data);
+    	}
+    }
 
     return;
 }
