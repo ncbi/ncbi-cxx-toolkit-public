@@ -128,14 +128,14 @@ public:
 
     // Mark object as "unlocked" for deletion,
     // delete it if last lock was removed.
-    void NCBI_OBJECT_LOCKER_EXPORT Unlock(const CObject* object) const;
+    void NCBI_OBJECT_LOCKER_EXPORT Unlock(const CObject* object) const noexcept;
 
     // Mark object as "unlocked" for deletion, but do not delete it.
     void NCBI_OBJECT_LOCKER_EXPORT UnlockRelease(const CObject* object) const;
 
     // Transfer lock from other locker
     void NCBI_OBJECT_LOCKER_EXPORT TransferLock(const CObject* object,
-                                                const CObjectCounterLocker& old_locker) const;
+                                                const CObjectCounterLocker& old_locker) const noexcept;
 
     NCBI_NORETURN static
     void NCBI_XNCBI_EXPORT ReportIncompatibleType(const type_info& type);
@@ -194,25 +194,25 @@ public:
     virtual ~CObject(void);
 
     /// Assignment operator.
-    CObject& operator=(const CObject& src) THROWS_NONE;
+    CObject& operator=(const CObject& src) noexcept;
 
     /// Check if object can be deleted.
-    bool CanBeDeleted(void) const THROWS_NONE;
+    bool CanBeDeleted(void) const noexcept;
 
     /// Check if object is allocated in memory pool (not system heap)
-    bool IsAllocatedInPool(void) const THROWS_NONE;
+    bool IsAllocatedInPool(void) const noexcept;
 
     /// Check if object is referenced.
-    bool Referenced(void) const THROWS_NONE;
+    bool Referenced(void) const noexcept;
 
     /// Check if object is referenced only once.
-    bool ReferencedOnlyOnce(void) const THROWS_NONE;
+    bool ReferencedOnlyOnce(void) const noexcept;
 
     /// Add reference to object.
     void AddReference(void) const;
 
     /// Remove reference to object.
-    void RemoveReference(void) const;
+    void RemoveReference(void) const noexcept;
 
     /// Remove reference without deleting object.
     NCBI_XNCBI_EXPORT
@@ -306,8 +306,8 @@ protected:
     virtual void DeleteThis(void);
 
 public:
-    typedef atomic<Uint8>    TCounter;  ///< Counter type is CAtomiCounter
-    typedef Uint8            TCount;    ///< Alias for value type of counter
+    typedef atomic<Uint8>        TCounter; ///< Counter type is std::atomic<>
+    typedef TCounter::value_type TCount;   ///< Alias for value type of counter
 
     /// Define possible object states.
     /// 
@@ -362,29 +362,29 @@ private:
     // special methods for parsing object state number
 
     /// Check if object state is valid.
-    static bool ObjectStateValid(TCount count);
+    static bool ObjectStateValid(TCount count) noexcept;
 
     /// Check if object can be deleted.
-    static bool ObjectStateCanBeDeleted(TCount count);
+    static bool ObjectStateCanBeDeleted(TCount count) noexcept;
 
     /// Check if object is allocated in memory pool.
-    static bool ObjectStateIsAllocatedInPool(TCount count);
+    static bool ObjectStateIsAllocatedInPool(TCount count) noexcept;
 
     /// Check if object can be referenced.
-    static bool ObjectStateUnreferenced(TCount count);
+    static bool ObjectStateUnreferenced(TCount count) noexcept;
 
     /// Check if object can be referenced.
-    static bool ObjectStateReferenced(TCount count);
+    static bool ObjectStateReferenced(TCount count) noexcept;
 
     /// Check if object can be referenced only once.
-    static bool ObjectStateReferencedOnlyOnce(TCount count);
+    static bool ObjectStateReferencedOnlyOnce(TCount count) noexcept;
 
     /// Initialize counter. 
     void InitCounter(void);
 
     /// Remove the last reference.
     NCBI_XNCBI_EXPORT
-    void RemoveLastReference(TCount count) const;
+    void RemoveLastReference(TCount count) const noexcept;
 
     // report different kinds of error
 
@@ -407,7 +407,7 @@ private:
 
 
 inline
-bool CObject::ObjectStateCanBeDeleted(TCount count)
+bool CObject::ObjectStateCanBeDeleted(TCount count) noexcept
 {
     // check only 'CanBeDeleted' bit, include both plain heap and memory pool
     return (count & eCounterBitsCanBeDeleted) != 0;
@@ -415,7 +415,7 @@ bool CObject::ObjectStateCanBeDeleted(TCount count)
 
 
 inline
-bool CObject::ObjectStateIsAllocatedInPool(TCount count)
+bool CObject::ObjectStateIsAllocatedInPool(TCount count) noexcept
 {
     // check if 'CanBeDeleted' is set and InPlainHeap is not set
     return (count & eCounterBitsPlaceMask) == eCounterBitsCanBeDeleted;
@@ -423,63 +423,63 @@ bool CObject::ObjectStateIsAllocatedInPool(TCount count)
 
 
 inline
-bool CObject::ObjectStateValid(TCount count)
+bool CObject::ObjectStateValid(TCount count) noexcept
 {
     return count >= eCounterValid;
 }
 
 
 inline
-bool CObject::ObjectStateReferenced(TCount count)
+bool CObject::ObjectStateReferenced(TCount count) noexcept
 {
     return count >= eCounterValid + eCounterStep;
 }
 
 
 inline
-bool CObject::ObjectStateUnreferenced(TCount count)
+bool CObject::ObjectStateUnreferenced(TCount count) noexcept
 {
     return (count & ~eCounterBitsPlaceMask) == eCounterValid;
 }
 
 
 inline
-bool CObject::ObjectStateReferencedOnlyOnce(TCount count)
+bool CObject::ObjectStateReferencedOnlyOnce(TCount count) noexcept
 {
     return (count & ~eCounterBitsPlaceMask) == eCounterValid + eCounterStep;
 }
 
 
 inline
-bool CObject::CanBeDeleted(void) const THROWS_NONE
+bool CObject::CanBeDeleted(void) const noexcept
 {
     return ObjectStateCanBeDeleted(m_Counter);
 }
 
 
 inline
-bool CObject::IsAllocatedInPool(void) const THROWS_NONE
+bool CObject::IsAllocatedInPool(void) const noexcept
 {
     return ObjectStateIsAllocatedInPool(m_Counter);
 }
 
 
 inline
-bool CObject::Referenced(void) const THROWS_NONE
+bool CObject::Referenced(void) const noexcept
 {
     return ObjectStateReferenced(m_Counter);
 }
 
 
 inline
-bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
+bool CObject::ReferencedOnlyOnce(void) const noexcept
 {
     return ObjectStateReferencedOnlyOnce(m_Counter);
 }
 
 
 inline
-CObject& CObject::operator=(const CObject& ) THROWS_NONE
+CObject& CObject::operator=(const CObject& ) noexcept
 {
     return *this;
 }
@@ -497,7 +497,7 @@ void CObject::AddReference(void) const
 
 
 inline
-void CObject::RemoveReference(void) const
+void CObject::RemoveReference(void) const noexcept
 {
     TCount newCount = (m_Counter -= eCounterStep);
     if ( !ObjectStateReferenced(newCount) ) {
@@ -527,7 +527,7 @@ void CObjectCounterLocker::Relock(const CObject* object) const
 
 
 inline
-void CObjectCounterLocker::Unlock(const CObject* object) const
+void CObjectCounterLocker::Unlock(const CObject* object) const noexcept
 {
     object->RemoveReference();
 }
@@ -542,7 +542,7 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 
 inline
 void CObjectCounterLocker::TransferLock(const CObject* /*object*/,
-                                        const CObjectCounterLocker& /*old_locker*/) const
+                                        const CObjectCounterLocker& /*old_locker*/) const noexcept
 {
 }
 #endif
@@ -572,7 +572,7 @@ public:
             CObjectCounterLocker::Relock(cobject);
         }
 
-    void Unlock(const Interface* object) const
+    void Unlock(const Interface* object) const noexcept
         {
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
@@ -588,13 +588,13 @@ public:
 
 #ifdef NCBI_OBJECT_LOCKER_INLINE
     void TransferLock(const Interface* /*object*/,
-                      const CInterfaceObjectLocker<Interface>& /*old_locker*/) const
+                      const CInterfaceObjectLocker<Interface>& /*old_locker*/) const noexcept
         {
         }
 #else
     // only non-inline method does something
     void TransferLock(const Interface* object,
-                      const CInterfaceObjectLocker<Interface>& old_locker) const
+                      const CInterfaceObjectLocker<Interface>& old_locker) const noexcept
         {
             const CObject* cobject = dynamic_cast<const CObject*>(object);
             _ASSERT(cobject);
@@ -631,13 +631,13 @@ public:
     
     /// Constructor for null pointer.
     inline
-    CRef(void) THROWS_NONE
+    CRef(void) noexcept
         {
         }
 
     /// Constructor for ENull pointer.
     inline
-    CRef(ENull /*null*/) THROWS_NONE
+    CRef(ENull /*null*/) noexcept
         {
         }
 
@@ -672,7 +672,7 @@ public:
         }
 
     /// Move constructor from an existing CRef object
-    CRef(TThisType&& ref)
+    CRef(TThisType&& ref) noexcept
         : m_Data(ref.m_Data)
         {
             x_LockFromMoveConstructor(ref.m_Data.first());
@@ -682,7 +682,7 @@ public:
     /// Move constructor from an existing CRef object of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CRef(CRef<TDerived, Locker>&& ref)
+    CRef(CRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetNCPointerOrNull())
         {
             x_LockFromMoveConstructor(ref.m_Data.first());
@@ -696,7 +696,7 @@ public:
         }
 
     /// Get reference to locker object
-    const locker_type& GetLocker(void) const
+    const locker_type& GetLocker(void) const noexcept
         {
             return m_Data.first();
         }
@@ -706,7 +706,7 @@ public:
     ///
     /// @sa
     ///   Empty(), IsNull()
-    bool operator!(void) const THROWS_NONE
+    bool operator!(void) const noexcept
         {
             return m_Data.second() == 0;
         }
@@ -716,14 +716,14 @@ public:
     ///
     /// @sa
     ///   IsNull(), operator!()
-    bool Empty(void) const THROWS_NONE
+    bool Empty(void) const noexcept
         {
             return m_Data.second() == 0;
         }
 
     /// Check if CRef is not empty -- pointing to an object and has
     /// a non-null value. 
-    bool NotEmpty(void) const THROWS_NONE
+    bool NotEmpty(void) const noexcept
         {
             return m_Data.second() != 0;
         }
@@ -732,7 +732,7 @@ public:
     ///
     /// @sa
     ///   Empty(), operator!()
-    bool IsNull(void) const THROWS_NONE
+    bool IsNull(void) const noexcept
         {
             return m_Data.second() == 0;
         }
@@ -741,7 +741,7 @@ public:
     ///
     /// @sa
     ///   NotEmpty()
-    bool NotNull(void) const THROWS_NONE
+    bool NotNull(void) const noexcept
         {
             return m_Data.second() != 0;
         }
@@ -751,7 +751,7 @@ public:
     /// @sa
     ///   Swap(CRef<>&)
     inline
-    void Swap(TThisType& ref)
+    void Swap(TThisType& ref) noexcept
         {
             swap(m_Data, ref.m_Data);
             if ( TObjectType* ptr = m_Data.second() ) {
@@ -770,7 +770,7 @@ public:
     /// @sa
     ///   Reset(TObjectType*)
     inline
-    void Reset(void)
+    void Reset(void) noexcept
         {
             TObjectType* ptr = m_Data.second();
             if ( ptr ) {
@@ -916,7 +916,7 @@ public:
         }
 
     /// Move assignment operator for references.
-    TThisType& operator=(TThisType&& ref)
+    TThisType& operator=(TThisType&& ref) noexcept
         {
 #ifdef NCBI_COMPILER_MSVC
             // extra check on MSVC
@@ -933,7 +933,7 @@ public:
     /// Move assignment operator for references of derived types
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CRef<TDerived, Locker>&& ref)
+    TThisType& operator=(CRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
             ref.m_Data.second() = 0;
@@ -949,7 +949,7 @@ public:
         }
 
     /// Assignment operator with right hand side set to ENull.
-    TThisType& operator=(ENull /*null*/)
+    TThisType& operator=(ENull /*null*/) noexcept
         {
             Reset();
             return *this;
@@ -983,7 +983,7 @@ public:
     /// @sa
     ///   GetNonNullPointer()
     inline
-    TObjectType* GetPointerOrNull(void) THROWS_NONE
+    TObjectType* GetPointerOrNull(void) noexcept
         {
             return m_Data.second();
         }
@@ -995,7 +995,7 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    TObjectType* GetPointer(void) THROWS_NONE
+    TObjectType* GetPointer(void) noexcept
         {
             return GetPointerOrNull();
         }
@@ -1061,7 +1061,7 @@ public:
     ///
     /// @sa
     ///   GetNonNullPointer()
-    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+    const TObjectType* GetPointerOrNull(void) const noexcept
         {
             return m_Data.second();
         }
@@ -1073,7 +1073,7 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    const TObjectType* GetPointer(void) const THROWS_NONE
+    const TObjectType* GetPointer(void) const noexcept
         {
             return GetPointerOrNull();
         }
@@ -1116,7 +1116,7 @@ public:
     /// @sa
     ///   GetPointer()
     inline
-    operator TObjectType*(void)
+    operator TObjectType*(void) noexcept
         {
             return GetPointerOrNull();
         }
@@ -1126,7 +1126,7 @@ public:
     /// @sa
     ///   GetPointer()
     inline
-    operator const TObjectType*(void) const
+    operator const TObjectType*(void) const noexcept
         {
             return GetPointerOrNull();
         }
@@ -1159,7 +1159,7 @@ public:
     /// @sa
     ///   GetNonNullPointer()
     inline
-    TObjectType* GetNCPointerOrNull(void) const THROWS_NONE
+    TObjectType* GetNCPointerOrNull(void) const noexcept
         {
             return m_Data.second();
         }
@@ -1171,7 +1171,7 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    TObjectType* GetNCPointer(void) const THROWS_NONE
+    TObjectType* GetNCPointer(void) const noexcept
         {
             return GetNCPointerOrNull();
         }
@@ -1205,7 +1205,7 @@ private:
             }
         }
     // lock after move construction from another ref
-    void x_LockFromMoveConstructor(const Locker& src_locker)
+    void x_LockFromMoveConstructor(const Locker& src_locker) noexcept
         {
             if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, src_locker);
@@ -1224,7 +1224,7 @@ private:
             }
         }
     // move-assign from another ref
-    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr) noexcept
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
@@ -1278,13 +1278,13 @@ public:
 
     /// Constructor for null pointer.
     inline
-    CConstRef(void) THROWS_NONE
+    CConstRef(void) noexcept
         {
         }
 
     /// Constructor for ENull pointer.
     inline
-    CConstRef(ENull /*null*/) THROWS_NONE
+    CConstRef(ENull /*null*/) noexcept
         {
         }
 
@@ -1319,7 +1319,7 @@ public:
         }
 
     /// Move constructor from an existing CConstRef object
-    CConstRef(TThisType&& ref)
+    CConstRef(TThisType&& ref) noexcept
         : m_Data(ref.m_Data)
         {
             x_LockFromMoveConstructor(ref.m_Data.first());
@@ -1329,7 +1329,7 @@ public:
     /// Move constructor from an existing CConstRef object of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CConstRef(CConstRef<TDerived, Locker>&& ref)
+    CConstRef(CConstRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
             x_LockFromMoveConstructor(ref.m_Data.first());
@@ -1348,7 +1348,7 @@ public:
     /// Move constructor from an existing CRef object of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CConstRef(CRef<TDerived, Locker>&& ref)
+    CConstRef(CRef<TDerived, Locker>&& ref) noexcept
         : m_Data(ref.GetLocker(), ref.GetPointerOrNull())
         {
             x_LockFromMoveConstructor(ref.m_Data.first());
@@ -1372,7 +1372,7 @@ public:
     ///
     /// @sa
     ///   Empty(), IsNull()
-    bool operator!(void) const THROWS_NONE
+    bool operator!(void) const noexcept
         {
             return m_Data.second() == 0;
         }
@@ -1382,14 +1382,14 @@ public:
     ///
     /// @sa
     ///   IsNull(), operator!()
-    bool Empty(void) const THROWS_NONE
+    bool Empty(void) const noexcept
         {
             return m_Data.second() == 0;
         }
 
     /// Check if CConstRef is not empty -- pointing to an object and has
     /// a non-null value. 
-    bool NotEmpty(void) const THROWS_NONE
+    bool NotEmpty(void) const noexcept
         {
             return m_Data.second() != 0;
         }
@@ -1398,7 +1398,7 @@ public:
     ///
     /// @sa
     ///   Empty(), operator!()
-    bool IsNull(void) const THROWS_NONE
+    bool IsNull(void) const noexcept
         {
             return m_Data.second() == 0;
         }
@@ -1407,7 +1407,7 @@ public:
     ///
     /// @sa
     ///   NotEmpty()
-    bool NotNull(void) const THROWS_NONE
+    bool NotNull(void) const noexcept
         {
             return m_Data.second() != 0;
         }
@@ -1417,7 +1417,7 @@ public:
     /// @sa
     ///   Swap(ConstRef<>&)
     inline
-    void Swap(TThisType& ref)
+    void Swap(TThisType& ref) noexcept
         {
             swap(m_Data, ref.m_Data);
             if ( TObjectType* ptr = m_Data.second() ) {
@@ -1436,7 +1436,7 @@ public:
     /// @sa
     ///   Reset(TObjectType*)
     inline
-    void Reset(void)
+    void Reset(void) noexcept
         {
             TObjectType* ptr = m_Data.second();
             if ( ptr ) {
@@ -1583,7 +1583,7 @@ public:
         }
 
     /// Move assignment operator for const references.
-    TThisType& operator=(TThisType&& ref)
+    TThisType& operator=(TThisType&& ref) noexcept
         {
 #ifdef NCBI_COMPILER_MSVC
             // extra check on MSVC
@@ -1600,7 +1600,7 @@ public:
     /// Move assignment operator for const references of derived types
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CConstRef<TDerived, Locker>&& ref)
+    TThisType& operator=(CConstRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
             ref.m_Data.second() = 0;
@@ -1619,7 +1619,7 @@ public:
     /// Move assignment operator for assigning a reference of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CRef<TDerived, Locker>&& ref)
+    TThisType& operator=(CRef<TDerived, Locker>&& ref) noexcept
         {
             x_MoveAssign(ref.m_Data.first(), ref.m_Data.second());
             ref.m_Data.second() = 0;
@@ -1669,7 +1669,7 @@ public:
     /// @sa
     ///   GetNonNullPointer()
     inline
-    TObjectType* GetPointerOrNull(void) const THROWS_NONE
+    TObjectType* GetPointerOrNull(void) const noexcept
         {
             return m_Data.second();
         }
@@ -1681,7 +1681,7 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    TObjectType* GetPointer(void) const THROWS_NONE
+    TObjectType* GetPointer(void) const noexcept
         {
             return GetPointerOrNull();
         }
@@ -1745,7 +1745,7 @@ private:
             }
         }
     // lock after move construction from another ref
-    void x_LockFromMoveConstructor(const Locker& src_locker)
+    void x_LockFromMoveConstructor(const Locker& src_locker) noexcept
         {
             if ( TObjectType* ptr = m_Data.second() ) {
                 m_Data.first().TransferLock(ptr, src_locker);
@@ -1764,7 +1764,7 @@ private:
             }
         }
     // move-assign from another ref
-    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr)
+    void x_MoveAssign(const Locker& src_locker, TObjectType* newPtr) noexcept
         {
             TObjectType* oldPtr = m_Data.second();
             if ( newPtr ) {
@@ -2045,12 +2045,12 @@ public:
     // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
-    CIRef(void) THROWS_NONE
+    CIRef(void) noexcept
         {
         }
 
     /// Constructor for ENull pointer.
-    CIRef(ENull /*null*/) THROWS_NONE
+    CIRef(ENull /*null*/) noexcept
         {
         }
 
@@ -2075,15 +2075,15 @@ public:
         }
 
     /// Move constructor from existing ref
-    CIRef(TThisType&& ref)
-        : TParent(static_cast<TParent&&>(ref))
+    CIRef(TThisType&& ref) noexcept
+        : TParent(std::move(ref))
         {
         }
     
     /// Move constructor from existing ref of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CIRef(CIRef<TDerived>&& ref)
+    CIRef(CIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
             ref.ReleaseOrNull();
@@ -2112,16 +2112,16 @@ public:
         }
 
     /// Move assignment operator for references.
-    TThisType& operator=(TThisType&& ref)
+    TThisType& operator=(TThisType&& ref) noexcept
         {
-            TParent::operator=(static_cast<TParent&&>(ref));
+            TParent::operator=(std::move(ref));
             return *this;
         }
 
     /// Move assignment operator for references of derived types
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CIRef<TDerived>&& ref)
+    TThisType& operator=(CIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetNCPointerOrNull());
             ref.ReleaseOrNull();
@@ -2137,7 +2137,7 @@ public:
         }
 
     /// Assignment operator with right hand side set to ENull.
-    TThisType& operator=(ENull null)
+    TThisType& operator=(ENull null) noexcept
         {
             TParent::operator=(null);
             return *this;
@@ -2147,7 +2147,7 @@ public:
     ///
     /// @sa
     ///   Swap(CRef<>&)
-    void Swap(TThisType& ref)
+    void Swap(TThisType& ref) noexcept
         {
             TParent::Swap(ref);
         }
@@ -2171,12 +2171,12 @@ public:
     // We have to redefine all constructors and assignment operators
 
     /// Constructor for null pointer.
-    CConstIRef(void) THROWS_NONE
+    CConstIRef(void) noexcept
         {
         }
 
     /// Constructor for ENull pointer.
-    CConstIRef(ENull /*null*/) THROWS_NONE
+    CConstIRef(ENull /*null*/) noexcept
         {
         }
 
@@ -2207,15 +2207,15 @@ public:
         }
 
     /// Move constructor from an existing CConstRef object
-    CConstIRef(TThisType&& ref)
-        : TParent(static_cast<TParent&&>(ref))
+    CConstIRef(TThisType&& ref) noexcept
+        : TParent(std::move(ref))
         {
         }
     
     /// Move constructor from an existing CConstRef object of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CConstIRef(CConstIRef<TDerived>&& ref)
+    CConstIRef(CConstIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
             ref.ReleaseOrNull();
@@ -2232,7 +2232,7 @@ public:
     /// Move constructor from an existing CRef object of derived type
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    CConstIRef(CIRef<TDerived>&& ref)
+    CConstIRef(CIRef<TDerived>&& ref) noexcept
         : TParent(ref.GetPointerOrNull())
         {
             ref.ReleaseOrNull();
@@ -2255,16 +2255,16 @@ public:
         }
 
     /// Move assignment operator for references.
-    TThisType& operator=(TThisType&& ref)
+    TThisType& operator=(TThisType&& ref) noexcept
         {
-            TParent::operator=(static_cast<TParent&&>(ref));
+            TParent::operator=(std::move(ref));
             return *this;
         }
 
     /// Move assignment operator for references of derived types
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CConstIRef<TDerived>&& ref)
+    TThisType& operator=(CConstIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetPointerOrNull());
             ref.ReleaseOrNull();
@@ -2283,7 +2283,7 @@ public:
     /// Move assignment operator for assigning a reference to a const reference.
     template<class TDerived,
              class = typename enable_if_derived<TDerived>::type>
-    TThisType& operator=(CIRef<TDerived>&& ref)
+    TThisType& operator=(CIRef<TDerived>&& ref) noexcept
         {
             TParent::operator=(ref.GetPointerOrNull());
             ref.ReleaseOrNull();
@@ -2343,13 +2343,13 @@ public:
         }
 
     /// Get data as a reference.
-    T& GetData(void)
+    T& GetData(void) noexcept
         {
             return m_Data;
         }
 
     /// Get data as a reference -- const version.
-    const T& GetData(void) const
+    const T& GetData(void) const noexcept
         {
             return m_Data;
         }
@@ -2367,7 +2367,7 @@ public:
     ///
     /// @sa
     ///   GetData()
-    operator const T& (void) const
+    operator const T& (void) const noexcept
         {
             return GetData();
         }
@@ -2667,12 +2667,12 @@ public:
 
 
     /// Constructor for null pointer
-    CWeakRef(void)
+    CWeakRef(void) noexcept
     {
     }
 
     /// Constructor for ENull pointer
-    CWeakRef(ENull /*null*/)
+    CWeakRef(ENull /*null*/) noexcept
     {
     }
 
@@ -2719,13 +2719,13 @@ public:
     }
 
     /// Reset the containing pointer to null
-    void Reset(void)
+    void Reset(void) noexcept
     {
         m_Proxy.Reset();
     }
 
     /// Reset the containing pointer to null
-    void Reset(ENull /*null*/)
+    void Reset(ENull /*null*/) noexcept
     {
         m_Proxy.Reset();
     }
@@ -2745,14 +2745,14 @@ public:
     }
 
     /// Swap values of this reference with another
-    void Swap(TThisType& ref)
+    void Swap(TThisType& ref) noexcept
     {
         m_Proxy.Swap(ref.m_Proxy);
         swap(m_Locker, ref.m_Locker);
     }
 
     /// Assignment from ENull pointer
-    TThisType& operator= (ENull /*null*/)
+    TThisType& operator= (ENull /*null*/) noexcept
     {
         Reset();
         return *this;
@@ -2766,13 +2766,13 @@ public:
     }
 
     /// operator== to compare with another CWeakRef
-    bool operator== (const TThisType& right)
+    bool operator== (const TThisType& right) noexcept
     {
         return m_Proxy == right.m_Proxy;
     }
 
     /// operator!= to compare with another CWeakRef
-    bool operator!= (const TThisType& right)
+    bool operator!= (const TThisType& right) noexcept
     {
         return !(*this == right);
     }
@@ -2813,12 +2813,12 @@ public:
 
 
     /// Constructor for null pointer
-    CWeakIRef(void)
+    CWeakIRef(void) noexcept
     {
     }
 
     /// Constructor for ENull pointer
-    CWeakIRef(ENull /*null*/)
+    CWeakIRef(ENull /*null*/) noexcept
     {
     }
 
@@ -2838,7 +2838,7 @@ public:
 
 
     /// Assignment from ENull pointer
-    TThisType& operator= (ENull null)
+    TThisType& operator= (ENull null) noexcept
     {
         TParent::operator= (null);
         return *this;
@@ -2853,7 +2853,7 @@ public:
 
 
     /// Swap values of this reference with another
-    void Swap(TThisType& ref)
+    void Swap(TThisType& ref) noexcept
     {
         TParent::Swap(ref);
     }
@@ -2881,7 +2881,7 @@ BEGIN_STD_SCOPE
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
-          NCBI_NS_NCBI::CRef<C,L>& ref2)
+          NCBI_NS_NCBI::CRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2890,7 +2890,7 @@ void swap(NCBI_NS_NCBI::CRef<C,L>& ref1,
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CConstIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CConstIRef<C,L>& ref2)
+          NCBI_NS_NCBI::CConstIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2899,7 +2899,7 @@ void swap(NCBI_NS_NCBI::CConstIRef<C,L>& ref1,
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CIRef<C,L>& ref2)
+          NCBI_NS_NCBI::CIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2908,7 +2908,7 @@ void swap(NCBI_NS_NCBI::CIRef<C,L>& ref1,
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
-          NCBI_NS_NCBI::CConstRef<C,L>& ref2)
+          NCBI_NS_NCBI::CConstRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2917,7 +2917,7 @@ void swap(NCBI_NS_NCBI::CConstRef<C,L>& ref1,
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
-          NCBI_NS_NCBI::CWeakRef<C,L>& ref2)
+          NCBI_NS_NCBI::CWeakRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }
@@ -2926,7 +2926,7 @@ void swap(NCBI_NS_NCBI::CWeakRef<C,L>& ref1,
 template<class C, class L>
 inline
 void swap(NCBI_NS_NCBI::CWeakIRef<C,L>& ref1,
-          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2)
+          NCBI_NS_NCBI::CWeakIRef<C,L>& ref2) noexcept
 {
     ref1.Swap(ref2);
 }

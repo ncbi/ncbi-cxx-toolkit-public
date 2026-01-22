@@ -166,7 +166,7 @@ DEFINE_STATIC_FAST_MUTEX(sm_ObjectMutex);
 // goes here instead.
 DEFINE_STATIC_FAST_MUTEX(sm_AtomicCounterMutex);
 
-CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
+CAtomicCounter::TValue CAtomicCounter::Add(int delta) noexcept
 {
     CFastMutexGuard LOCK(sm_AtomicCounterMutex);
     return m_Value += delta;
@@ -821,7 +821,7 @@ void CObject::DeleteThis(void)
 }
 
 
-void CObject::RemoveLastReference(TCount count) const
+void CObject::RemoveLastReference(TCount count) const noexcept
 {
     if ( ObjectStateCanBeDeleted(count) ) {
         // last reference to heap object -> delete it
@@ -1135,7 +1135,7 @@ private:
 
 static CSafeStatic<CLocksMonitor> sx_LocksMonitor;
 
-inline bool MonitoredType(const CObject* object)
+inline bool MonitoredType(const CObject* object) noexcept
 {
     return sx_MonitorType && *sx_MonitorType == typeid(*object);
 }
@@ -1155,7 +1155,7 @@ void CObjectCounterLocker::Relock(const CObject* object) const
 }
 
 
-void CObjectCounterLocker::Unlock(const CObject* object) const
+void CObjectCounterLocker::Unlock(const CObject* object) const noexcept
 {
     if ( MonitoredType(object) ) {
         sx_LocksMonitor.Get().Unlocked(this, object);
@@ -1177,7 +1177,7 @@ void CObjectCounterLocker::UnlockRelease(const CObject* object) const
 
 
 void CObjectCounterLocker::TransferLock(const CObject* object,
-                                        const CObjectCounterLocker& old_locker) const
+                                        const CObjectCounterLocker& old_locker) const noexcept
 {
     if ( MonitoredType(object) ) {
         sx_LocksMonitor.Get().Locked(this, object);
