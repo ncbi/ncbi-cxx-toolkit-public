@@ -752,8 +752,12 @@ s_BlastnDiagTableExtendInitialHit(BLAST_SequenceBlk * query,
             if (off_found || ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
                     (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
-                *final_data = *ungapped_data;
-                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+                if (final_data) {
+                	*final_data = *ungapped_data;
+                	if (!BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data)) {
+                		sfree(final_data);
+                	}
+                }
                 s_end_pos = ungapped_data->length + ungapped_data->s_start
                           + diag_table->offset;
             } else {
@@ -923,8 +927,12 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
             if (off_found || ungapped_data->score >= cutoffs->cutoff_score) {
                 BlastUngappedData *final_data =
                     (BlastUngappedData *) malloc(sizeof(BlastUngappedData));
-                *final_data = *ungapped_data;
-                BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data);
+                if (final_data) {
+                	*final_data = *ungapped_data;
+                	if (!BLAST_SaveInitialHit(init_hitlist, q_off, s_off, final_data)) {
+                		sfree(final_data);
+                	}
+                }
                 s_end_pos = ungapped_data->length + ungapped_data->s_start 
                           + hash_table->offset;
             } else {
