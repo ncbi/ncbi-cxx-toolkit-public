@@ -74,7 +74,7 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
         CSequenceIStreamBlastDB( 
                 const string & dbname, 
                 bool use_filter, 
-                string const & filter_algo_name = 0 );
+                string const & filter_algo_name = {} );
 
         /** Object destructor. */
         virtual ~CSequenceIStreamBlastDB() {}
