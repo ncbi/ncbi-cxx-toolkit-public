@@ -80,17 +80,17 @@ public:
 #endif
 
     /// Get atomic counter value.
-    TValue Get(void) const THROWS_NONE;
+    TValue Get(void) const noexcept;
 
     /// Set atomic counter value.
-    void   Set(TValue new_value) THROWS_NONE;
+    void   Set(TValue new_value) noexcept;
 
     /// Atomically add value (=delta), and return new counter value.
-    TValue Add(int delta) THROWS_NONE;
+    TValue Add(int delta) noexcept;
     
     /// Define NCBI_COUNTER_ADD if one has not been defined.
 #if defined(NCBI_COUNTER_USE_ASM)
-    static TValue x_Add(volatile TValue* value, int delta) THROWS_NONE;
+    static TValue x_Add(volatile TValue* value, int delta) noexcept;
 #  if !defined(NCBI_COUNTER_ADD)
 #     define NCBI_COUNTER_ADD(value, delta) NCBI_NS_NCBI::CAtomicCounter::x_Add((value), (delta))
 #  endif
@@ -141,15 +141,15 @@ public:
     typedef CAtomicCounter::TValue TValue; ///< Alias TValue simplifies syntax
 
     /// Get atomic counter value.
-    TValue Get(void) const THROWS_NONE
+    TValue Get(void) const noexcept
         { return m_Counter.Get(); }
 
     /// Set atomic counter value.
-    void   Set(TValue new_value) const THROWS_NONE
+    void   Set(TValue new_value) const noexcept
         { m_Counter.Set(new_value); }
 
     /// Atomically add value (=delta), and return new counter value.
-    TValue Add(int delta) const THROWS_NONE
+    TValue Add(int delta) const noexcept
         { return m_Counter.Add(delta); }
 
 private:
@@ -165,7 +165,7 @@ private:
 // Inline methods
 
 inline
-CAtomicCounter::TValue CAtomicCounter::Get(void) const THROWS_NONE
+CAtomicCounter::TValue CAtomicCounter::Get(void) const noexcept
 {
 #ifdef NCBI_COUNTER_RESERVED_VALUE
     TValue value = m_Value;
@@ -182,7 +182,7 @@ CAtomicCounter::TValue CAtomicCounter::Get(void) const THROWS_NONE
 
 
 inline
-void CAtomicCounter::Set(CAtomicCounter::TValue new_value) THROWS_NONE
+void CAtomicCounter::Set(CAtomicCounter::TValue new_value) noexcept
 {
     m_Value = new_value;
 }
@@ -197,7 +197,7 @@ inline
 #  endif
 CAtomicCounter::TValue
 CAtomicCounter::x_Add(volatile CAtomicCounter::TValue* value_p, int delta)
-THROWS_NONE
+noexcept
 {
     TValue result;
     TValue* nv_value_p = const_cast<TValue*>(value_p);
@@ -275,7 +275,7 @@ THROWS_NONE
 #  ifndef NCBI_COUNTER_USE_EXTERN_ASM
 inline
 #  endif
-CAtomicCounter::TValue CAtomicCounter::Add(int delta) THROWS_NONE
+CAtomicCounter::TValue CAtomicCounter::Add(int delta) noexcept
 {
     TData* nv_value_p = const_cast<TData*>(&m_Value);
     return NCBI_COUNTER_ADD(nv_value_p, delta);
