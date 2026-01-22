@@ -1154,6 +1154,50 @@ BOOST_AUTO_TEST_CASE(TestCRefMove)
 }
 
 
+// allows only one lock
+struct CSingleObjectCounterLocker : public CObjectCounterLocker
+{
+    static size_t s_TotalLockCount;
+    void Lock(const CObject* object) const
+    {
+        BOOST_REQUIRE(!object->Referenced());
+        ++s_TotalLockCount;
+        CObjectCounterLocker::Lock(object);
+    }
+    void Relock(const CObject* object) const
+    {
+        BOOST_REQUIRE(!object->Referenced());
+        ++s_TotalLockCount;
+        CObjectCounterLocker::Relock(object);
+    }
+};
+size_t CSingleObjectCounterLocker::s_TotalLockCount = 0;
+
+BOOST_AUTO_TEST_CASE(TestVectorCRefMove)
+{
+    NcbiCout << "Test CRef move in vector<>"
+             << NcbiEndl;
+    
+    typedef CRef<CObject, CSingleObjectCounterLocker> TRef;
+    BOOST_CHECK_EQUAL(CSingleObjectCounterLocker::s_TotalLockCount, 0);
+    const size_t COUNT = 1000;
+    {{
+        vector<TRef> v;
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            v.push_back(TRef(new CObject));
+        }
+    }}
+    BOOST_CHECK_EQUAL(CSingleObjectCounterLocker::s_TotalLockCount, COUNT);
+    {{
+        vector<TRef> v;
+        for ( size_t i = 0; i < COUNT; ++i ) {
+            v.emplace_back(new CObject);
+        }
+    }}
+    BOOST_CHECK_EQUAL(CSingleObjectCounterLocker::s_TotalLockCount, 2*COUNT);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
