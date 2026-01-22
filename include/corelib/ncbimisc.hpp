@@ -264,31 +264,36 @@ public:
         {
         }
     
+    explicit pair_base_member(member_type&& member_value) noexcept
+        : base_type(), m_Member(std::move(member_value))
+        {
+        }
+    
     explicit pair_base_member(const first_type& first_value,
                               const second_type& second_value)
         : base_type(first_value), m_Member(second_value)
         {
         }
     
-    const first_type& first() const
+    const first_type& first() const noexcept
         {
             return *this;
         }
-    first_type& first()
+    first_type& first() noexcept
         {
             return *this;
         }
 
-    const second_type& second() const
+    const second_type& second() const noexcept
         {
             return m_Member;
         }
-    second_type& second()
+    second_type& second() noexcept
         {
             return m_Member;
         }
 
-    void Swap(pair_base_member<first_type, second_type>& p)
+    void Swap(pair_base_member<first_type, second_type>& p) noexcept
         {
             if (static_cast<void*>(&first()) != static_cast<void*>(&second())){
                 // work around an IBM compiler bug which causes it to perform
