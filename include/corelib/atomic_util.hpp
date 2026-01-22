@@ -115,7 +115,7 @@ public:
     typedef C element_type;             ///< Define alias element_type
     typedef element_type TObjectType;   ///< Define alias TObjectType
     
-    /// Constructor for explicit type conversion from pointer to object.
+    /// Default constructor with null initialization
     COneTimeSetRef()
         : m_Ptr(0)
         {
@@ -127,6 +127,17 @@ public:
             if ( ptr ) {
                 ptr->AddReference();
             }
+        }
+    /// Copy constructor
+    explicit COneTimeSetRef(const COneTimeSetRef& ref)
+        : COneTimeSetRef(ref.GetNCPointerOrNull())
+        {
+        }
+    /// Assignment
+    COneTimeSetRef& operator=(const COneTimeSetRef& ref)
+        {
+            Reset(ref.GetNonNullNCPointer());
+            return *this;
         }
     
     /// Destructor.
@@ -143,7 +154,7 @@ public:
     ///
     /// @sa
     ///   Empty(), operator!()
-    bool IsNull(void) const THROWS_NONE
+    bool IsNull(void) const noexcept
         {
             return GetPointerOrNull() == nullptr;
         }
@@ -152,7 +163,7 @@ public:
     ///
     /// @sa
     ///   NotEmpty()
-    bool NotNull(void) const THROWS_NONE
+    bool NotNull(void) const noexcept
         {
             return !IsNull();
         }
@@ -162,14 +173,14 @@ public:
     ///
     /// @sa
     ///   IsNull(), operator!()
-    bool Empty(void) const THROWS_NONE
+    bool Empty(void) const noexcept
         {
             return IsNull();
         }
 
     /// Check if CRef is not empty -- pointing to an object and has
     /// a non-null value. 
-    bool NotEmpty(void) const THROWS_NONE
+    bool NotEmpty(void) const noexcept
         {
             return NotNull();
         }
@@ -235,6 +246,25 @@ public:
             return ptr;
         }
 
+    /// Get pointer value and throw a null pointer exception if pointer
+    /// is null.
+    ///
+    /// Similar to GetPointerOrNull() except that this method throws a null
+    /// pointer exception if pointer is null, whereas GetPointerOrNull()
+    /// returns a null value.
+    ///
+    /// @sa
+    ///   GetPointerOrNull(), GetPointer(), GetObject()
+    inline
+    TObjectType* GetNonNullNCPointer(void) const
+        {
+            auto ptr = GetPointerOrNull();
+            if ( !ptr ) {
+                CObject::ThrowNullPointerException();
+            }
+            return ptr;
+        }
+
     /// Get pointer value.
     ///
     /// Similar to GetNonNullPointer() except that this method returns a null
@@ -244,7 +274,7 @@ public:
     /// @sa
     ///   GetNonNullPointer()
     inline
-    TObjectType* GetPointerOrNull(void) THROWS_NONE
+    TObjectType* GetPointerOrNull(void) noexcept
         {
             return x_GetPtr();
         }
@@ -258,21 +288,7 @@ public:
     /// @sa
     ///   GetNonNullPointer()
     inline
-    TObjectType* GetNCPointerOrNull(void) const THROWS_NONE
-        {
-            return x_GetPtr();
-        }
-
-    /// Get pointer value.
-    ///
-    /// Similar to GetNonNullPointer() except that this method returns a null
-    /// if the pointer is null, whereas GetNonNullPointer() throws a null
-    /// pointer exception.
-    ///
-    /// @sa
-    ///   GetNonNullPointer()
-    inline
-    const TObjectType* GetPointerOrNull(void) const THROWS_NONE
+    TObjectType* GetNCPointerOrNull(void) const noexcept
         {
             return x_GetPtr();
         }
@@ -284,7 +300,46 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    TObjectType* GetPointer(void) THROWS_NONE
+    TObjectType* GetNCPointer(void) const noexcept
+        {
+            return GetNCPointerOrNull();
+        }
+
+    /// Get object.
+    ///
+    /// Similar to GetNonNullPointer(), except that this method returns the
+    /// object whereas GetNonNullPointer() returns a pointer to the object.
+    /// 
+    /// @sa
+    ///   GetNonNullPointer()
+    inline
+    TObjectType& GetNCObject(void) const
+        {
+            return *GetNonNullNCPointer();
+        }
+
+    /// Get pointer value.
+    ///
+    /// Similar to GetNonNullPointer() except that this method returns a null
+    /// if the pointer is null, whereas GetNonNullPointer() throws a null
+    /// pointer exception.
+    ///
+    /// @sa
+    ///   GetNonNullPointer()
+    inline
+    const TObjectType* GetPointerOrNull(void) const noexcept
+        {
+            return x_GetPtr();
+        }
+
+    /// Get pointer,
+    ///
+    /// Same as GetPointerOrNull().
+    ///
+    /// @sa
+    ///   GetPointerOrNull()
+    inline
+    TObjectType* GetPointer(void) noexcept
         {
             return GetPointerOrNull();
         }
@@ -296,7 +351,7 @@ public:
     /// @sa
     ///   GetPointerOrNull()
     inline
-    const TObjectType* GetPointer(void) const THROWS_NONE
+    const TObjectType* GetPointer(void) const noexcept
         {
             return GetPointerOrNull();
         }
@@ -387,7 +442,7 @@ public:
         }
 
 protected:
-    TObjectType* x_GetPtr() const
+    TObjectType* x_GetPtr() const noexcept
         {
             return m_Ptr.load(memory_order_acquire);
         }
