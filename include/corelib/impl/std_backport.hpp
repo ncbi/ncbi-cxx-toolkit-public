@@ -84,7 +84,7 @@ namespace compile_time_bits
     struct array_size<T[N]>: std::integral_constant<size_t, N> {};
 
     template<typename T>
-    constexpr size_t get_array_size(T&&)
+    constexpr size_t get_array_size(T&&) noexcept
     {
         return array_size<T>::value;
     }
