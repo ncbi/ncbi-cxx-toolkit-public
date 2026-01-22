@@ -3135,6 +3135,7 @@ HNHM<HUN>:Moll	s	Hungarian Natural History Museum (Termeszettudomanyi Muzeum), M
 HNHM<KOR>	s	Hannam University, Department of Biology			
 HNHPS	s	Hunan Hupingshan National Nature Reserve			
 HNHR	s	University of California, Hastings Natural History Reservation			
+HNIBR	c	Honam National Institute of Biological Resources			
 HNIM	s	Instituto Federal de Educacao, Ciencia e Tecnologia Farroupilha			
 HNIP	s	Hanoi College of Pharmacy			
 HNL	s	Conseil National des Sciences			
