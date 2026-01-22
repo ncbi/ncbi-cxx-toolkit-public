@@ -248,6 +248,7 @@ TIMING_CLASS_DEF(CWGSVDBLookupTiming);
 TIMING_CLASS_DEF(CResolutionTiming);
 TIMING_CLASS_DEF(CBacklogTiming);
 TIMING_CLASS_DEF(CProcessorPerformanceTiming);
+TIMING_CLASS_DEF(COpTooLongTiming);
 
 
 CBlobRetrieveTiming::CBlobRetrieveTiming(size_t  min_blob_size,
@@ -320,10 +321,8 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
                                    const string &  stat_type,
                                    unsigned long  small_blob_size,
                                    const string &  only_for_processor,
-                                   size_t  log_timing_threshold,
                                    const map<string, size_t> &  proc_group_to_index) :
     m_OnlyForProcessor(only_for_processor),
-    m_LogTimingThresholdMks(log_timing_threshold * 1000),
     m_ProcGroupToIndex(proc_group_to_index)
 {
     auto        scale_type = TOnePSGTiming::eLog2;
@@ -740,6 +739,10 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
     string      proc_group_names[m_ProcGroupToIndex.size()];
     for (const auto &  item : m_ProcGroupToIndex) {
         proc_group_names[item.second] = item.first;
+
+        // Prepare individual processor thresholds for the processor indexes
+        // for faster access
+        m_ProcIndexToLogTimingThreshold[item.second] = x_GetLogThreshold(item.first);
     }
 
     for (size_t  req_index = 0;
@@ -943,6 +946,17 @@ COperationTiming::COperationTiming(unsigned long  min_stat_value,
         m_IdResolveDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
         m_IdGetTSEChunkDoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
         m_IdGetNADoneByProc.push_back(unique_ptr<CProcessorRequestTimeSeries>(new CProcessorRequestTimeSeries()));
+
+        m_OpTooLongByProc.push_back(unique_ptr<CMonotonicCounterSeries>(new CMonotonicCounterSeries()));
+
+        m_OpTooLongTimingByProc.push_back(
+            unique_ptr<COpTooLongTiming>(
+                new COpTooLongTiming(min_stat_value, max_stat_value,
+                                     n_bins, scale_type, reset_to_default)));
+            m_NamesMap[proc_group + "_OpTooLongTiming"] =
+                SInfo(m_OpTooLongTimingByProc.back().get(),
+                      proc_group + " operation took too long",
+                      "The timing of too long operations performed by " + proc_group);
     }
 
 
@@ -1229,12 +1243,18 @@ uint64_t COperationTiming::Register(IPSGS_Processor *  processor,
     // backlog time. Thus 'backlog_time_mks' is registerd outside of this
     // method at CHttpConnection::x_MaintainBacklog and it will be logged (if
     // log is switched on) regardless of the threshold.
-    if (m_LogTimingThresholdMks > 0) {
-        if (mks > m_LogTimingThresholdMks) {
-            if (processor != nullptr) {
+    if (processor != nullptr) {
+        size_t      proc_index = m_ProcGroupToIndex[processor->GetGroupName()];
+        size_t      log_threshold = m_ProcIndexToLogTimingThreshold[proc_index];
+        if (log_threshold > 0) {
+            if (mks > log_threshold) {
                 auto        app = CPubseqGatewayApp::GetInstance();
                 app->GetCounters().Increment(processor,
                                              CPSGSCounters::ePSGS_OpTooLong);
+
+                // Add an event to a time series separately for each processor
+                m_OpTooLongByProc[proc_index]->Add();
+                m_OpTooLongTimingByProc[proc_index]->Add(mks);
 
                 auto    request = processor->GetRequest();
 
@@ -1256,14 +1276,21 @@ void COperationTiming::RegisterForTimeSeries(
                             CPSGS_Request::EPSGS_Type  request_type,
                             CRequestStatus::ECode  status)
 {
-    if (status == CRequestStatus::e500_InternalServerError ||
-        status == CRequestStatus::e501_NotImplemented ||
-        status == CRequestStatus::e502_BadGateway ||
-        status == CRequestStatus::e503_ServiceUnavailable ||
-        status == CRequestStatus::e504_GatewayTimeout ||
-        status == CRequestStatus::e505_HTTPVerNotSupported) {
+    int     status_as_int = static_cast<int>(status);
+    if (status_as_int >= 500) {
+        // CRequestStatus::e500_InternalServerError
+        // CRequestStatus::e501_NotImplemented
+        // CRequestStatus::e502_BadGateway
+        // CRequestStatus::e503_ServiceUnavailable
+        // CRequestStatus::e504_GatewayTimeout
+        // CRequestStatus::e505_HTTPVerNotSupported
         // The same condition GRID Dashboard uses
         m_ErrorTimeSeries.Add();
+    } else {
+        if (status_as_int >= 400 && status_as_int < 500 && status_as_int != 404 ) {
+            // The same condition GRID Dashboard uses
+            m_WarningTimeSeries.Add();
+        }
     }
 
     if (request_type == CPSGS_Request::ePSGS_UnknownRequest)
@@ -1477,11 +1504,14 @@ void COperationTiming::RotateRequestStat(void)
         item->Rotate();
     for (auto &  item : m_IdGetNADoneByProc)
         item->Rotate();
+    for (auto &  item : m_OpTooLongByProc)
+        item->Rotate();
 
     m_TCPConnectionsStat.Rotate();
     m_ActiveRequestsStat.Rotate();
     m_BacklogStat.Rotate();
     m_ErrorTimeSeries.Rotate();
+    m_WarningTimeSeries.Rotate();
 }
 
 
@@ -1669,6 +1699,7 @@ void COperationTiming::Reset(void)
     m_ActiveRequestsStat.Reset();
     m_BacklogStat.Reset();
     m_ErrorTimeSeries.Reset();
+    m_WarningTimeSeries.Reset();
 
     for (auto &  item : m_IdGetDoneByProc)
         item->Reset();
@@ -1679,6 +1710,8 @@ void COperationTiming::Reset(void)
     for (auto &  item : m_IdGetTSEChunkDoneByProc)
         item->Reset();
     for (auto &  item : m_IdGetNADoneByProc)
+        item->Reset();
+    for (auto &  item : m_OpTooLongByProc)
         item->Reset();
 
     for (size_t  req_index = 0;
@@ -1887,12 +1920,23 @@ COperationTiming::Serialize(int  most_ancient_time,
                                                                          most_ancient_time,
                                                                          most_recent_time,
                                                                          loop, current_index));
+
+                ret.SetByKey(item.first + "_op_too_long_time_series",
+                             m_OpTooLongByProc[item.second]->Serialize(time_series,
+                                                                       most_ancient_time,
+                                                                       most_recent_time,
+                                                                       loop, current_index));
             }
             ret.SetByKey("error_time_series",
                          m_ErrorTimeSeries.Serialize(time_series,
                                                      most_ancient_time,
                                                      most_recent_time,
                                                      loop, current_index));
+            ret.SetByKey("warning_time_series",
+                         m_WarningTimeSeries.Serialize(time_series,
+                                                       most_ancient_time,
+                                                       most_recent_time,
+                                                       loop, current_index));
         }
     } else {
         lock_guard<mutex>       guard(m_Lock);
@@ -1956,5 +2000,24 @@ COperationTiming::x_UpdateMaxReqsStat(size_t  index,
     max_errors = max(max_errors, errors);
     max_warnings = max(max_warnings, warnings);
     max_not_found = max(max_not_found, not_found);
+}
+
+
+size_t COperationTiming::x_GetLogThreshold(const string &  proc_group_name)
+{
+    auto        app = CPubseqGatewayApp::GetInstance();
+    auto        settings = app->Settings();
+
+    // Note: the setting is in ms however the timing is collected in mks so
+    //       there is ... * 1000 in the return statements
+
+    if (proc_group_name == "CASSANDRA") return settings.m_CassandraProcessorLogTimingThreshold * 1000;
+    if (proc_group_name == "CDD")       return settings.m_CDDProcessorLogTimingThreshold * 1000;
+    if (proc_group_name == "WGS")       return settings.m_WGSProcessorLogTimingThreshold * 1000;
+    if (proc_group_name == "SNP")       return settings.m_SNPProcessorLogTimingThreshold * 1000;
+
+    PSG_WARNING("No individual timing log threshold found for " + proc_group_name +
+                " processor. Server wide will be used.");
+    return settings.m_LogTimingThreshold * 1000;
 }
 

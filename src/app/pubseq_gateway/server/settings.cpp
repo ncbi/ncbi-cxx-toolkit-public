@@ -214,6 +214,7 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_SeqIdResolveAlways(kDefaultSeqIdResolveAlways),
     m_CassandraProcessorThrottleThreshold(0),
     m_CassandraProcessorThrottleByIp(0),
+    m_CassandraProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
     m_LMDBProcessorHealthCommand(kDefaultLMDBProcessorHealthCommand),
     m_LMDBHealthTimeoutSec(kDefaultLMDBHealthTimeoutSec),
     m_CDDProcessorsEnabled(kDefaultCDDProcessorsEnabled),
@@ -221,16 +222,19 @@ SPubseqGatewaySettings::SPubseqGatewaySettings() :
     m_CDDHealthTimeoutSec(kDefaultCDDHealthTimeoutSec),
     m_CDDProcessorThrottleThreshold(0),
     m_CDDProcessorThrottleByIp(0),
+    m_CDDProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
     m_WGSProcessorsEnabled(kDefaultWGSProcessorsEnabled),
     m_WGSProcessorHealthCommand(kDefaultWGSProcessorHealthCommand),
     m_WGSHealthTimeoutSec(kDefaultWGSHealthTimeoutSec),
     m_WGSProcessorThrottleThreshold(0),
     m_WGSProcessorThrottleByIp(0),
+    m_WGSProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
     m_SNPProcessorsEnabled(kDefaultSNPProcessorsEnabled),
     m_SNPProcessorHealthCommand(kDefaultSNPProcessorHealthCommand),
     m_SNPHealthTimeoutSec(kDefaultSNPHealthTimeoutSec),
     m_SNPProcessorThrottleThreshold(0),
     m_SNPProcessorThrottleByIp(0),
+    m_SNPProcessorLogTimingThreshold(kDefaultLogTimingThreshold),
     m_MyNCBIOKCacheSize(kDefaultMyNCBIOKCacheSize),
     m_MyNCBINotFoundCacheSize(kDefaultMyNCBINotFoundCacheSize),
     m_MyNCBINotFoundCacheExpirationSec(kDefaultMyNCBINotFoundCacheExpirationSec),
@@ -282,11 +286,11 @@ void SPubseqGatewaySettings::Read(const CNcbiRegistry &   registry)
     x_ReadHealthSection(registry);
     x_ReadAdminSection(registry);
 
-    x_ReadCassandraProcessorSection(registry);  // Must be after x_ReadHealthSection()
-    x_ReadLMDBProcessorSection(registry);       // Must be after x_ReadHealthSection()
-    x_ReadCDDProcessorSection(registry);        // Must be after x_ReadHealthSection()
-    x_ReadWGSProcessorSection(registry);        // Must be after x_ReadHealthSection()
-    x_ReadSNPProcessorSection(registry);        // Must be after x_ReadHealthSection()
+    x_ReadCassandraProcessorSection(registry);  // Must be after x_ReadHealthSection() and x_ReadServerSection()
+    x_ReadLMDBProcessorSection(registry);       // Must be after x_ReadHealthSection() and x_ReadServerSection()
+    x_ReadCDDProcessorSection(registry);        // Must be after x_ReadHealthSection() and x_ReadServerSection()
+    x_ReadWGSProcessorSection(registry);        // Must be after x_ReadHealthSection() and x_ReadServerSection()
+    x_ReadSNPProcessorSection(registry);        // Must be after x_ReadHealthSection() and x_ReadServerSection()
 
     x_ReadMyNCBISection(registry);
     x_ReadCountersSection(registry);
@@ -547,6 +551,23 @@ void SPubseqGatewaySettings::x_ReadHealthSection(const CNcbiRegistry &   registr
 
 
 void
+SPubseqGatewaySettings::x_ReadProcessorLogTimingThreshold(const CNcbiRegistry &   registry,
+                                                          const string &  proc_id,
+                                                          size_t &  log_timing_threshold_val)
+{
+    string      section = proc_id + "_PROCESSOR";
+
+    // Default is what was read in the [SERVER] section
+    log_timing_threshold_val = registry.GetInt(section, "log_timing_threshold",
+                                               m_LogTimingThreshold);
+
+    // 0 is a valid value which means the logging is disabled
+    // all positive is also valid
+    // So there is nothing to check
+}
+
+
+void
 SPubseqGatewaySettings::x_ReadProcessorThrottleSettings(const CNcbiRegistry &   registry,
                                                         const string &  proc_id,
                                                         size_t &  threshold_val,
@@ -661,6 +682,9 @@ void SPubseqGatewaySettings::x_ReadCassandraProcessorSection(const CNcbiRegistry
     x_ReadProcessorThrottleSettings(registry, "CASSANDRA",
                                     m_CassandraProcessorThrottleThreshold,
                                     m_CassandraProcessorThrottleByIp);
+
+    x_ReadProcessorLogTimingThreshold(registry, "CASSANDRA",
+                                      m_CassandraProcessorLogTimingThreshold);
 }
 
 
@@ -716,6 +740,8 @@ void SPubseqGatewaySettings::x_ReadCDDProcessorSection(const CNcbiRegistry &   r
     x_ReadProcessorThrottleSettings(registry, "CDD",
                                     m_CDDProcessorThrottleThreshold,
                                     m_CDDProcessorThrottleByIp);
+    x_ReadProcessorLogTimingThreshold(registry, "CDD",
+                                      m_CDDProcessorLogTimingThreshold);
 }
 
 
@@ -748,6 +774,8 @@ void SPubseqGatewaySettings::x_ReadWGSProcessorSection(const CNcbiRegistry &   r
     x_ReadProcessorThrottleSettings(registry, "WGS",
                                     m_WGSProcessorThrottleThreshold,
                                     m_WGSProcessorThrottleByIp);
+    x_ReadProcessorLogTimingThreshold(registry, "WGS",
+                                      m_WGSProcessorLogTimingThreshold);
 }
 
 
@@ -780,6 +808,8 @@ void SPubseqGatewaySettings::x_ReadSNPProcessorSection(const CNcbiRegistry &   r
     x_ReadProcessorThrottleSettings(registry, "SNP",
                                     m_SNPProcessorThrottleThreshold,
                                     m_SNPProcessorThrottleByIp);
+    x_ReadProcessorLogTimingThreshold(registry, "SNP",
+                                      m_SNPProcessorLogTimingThreshold);
 }
 
 

@@ -489,7 +489,6 @@ int CPubseqGatewayApp::Run(void)
                                         m_Settings.m_StatScaleType,
                                         m_Settings.m_SmallBlobSize,
                                         m_Settings.m_OnlyForProcessor,
-                                        m_Settings.m_LogTimingThreshold,
                                         m_RequestDispatcher->GetProcessorGroupToIndexMap()));
     m_Counters.reset(new CPSGSCounters(m_RequestDispatcher->GetProcessorGroupToIndexMap()));
     // m_IdToNameAndDescription was populated at the time of

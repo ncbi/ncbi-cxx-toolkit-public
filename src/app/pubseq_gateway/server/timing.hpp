@@ -289,6 +289,9 @@ TIMING_CLASS(CBacklogTiming);
 // Time staying in the backlog
 TIMING_CLASS(CProcessorPerformanceTiming);
 
+// Time spent in the too long operations
+TIMING_CLASS(COpTooLongTiming);
+
 
 // Blob retrieval depends on a blob size
 class CBlobRetrieveTiming : public CPSGTimingBase
@@ -337,7 +340,6 @@ class COperationTiming
                          const string &  stat_type,
                          unsigned long  small_blob_size,
                          const string &  only_for_processor,
-                         size_t  log_timing_threshold,
                          const map<string, size_t> &  proc_group_to_index);
         ~COperationTiming() {}
 
@@ -382,10 +384,10 @@ class COperationTiming
                                  uint64_t &  max_errors,
                                  uint64_t &  max_warnings,
                                  uint64_t &  max_not_found) const;
+        size_t x_GetLogThreshold(const string &  proc_group_name);
 
     private:
         string                                              m_OnlyForProcessor;
-        size_t                                              m_LogTimingThresholdMks;
         string                                              m_TooLongIDs[eOperationLast];
 
         // Note: 2 items, found and not found
@@ -480,6 +482,7 @@ class COperationTiming
         map<string, SInfo>          m_NamesMap;
 
         map<string, size_t>         m_ProcGroupToIndex;
+        map<size_t, size_t>         m_ProcIndexToLogTimingThreshold;
 
         mutable mutex               m_Lock; // reset-rotate-serialize lock
 
@@ -505,6 +508,9 @@ class COperationTiming
         vector<unique_ptr<CProcessorRequestTimeSeries>>     m_IdGetNADoneByProc;
 
         CMonotonicCounterSeries                             m_ErrorTimeSeries;
+        CMonotonicCounterSeries                             m_WarningTimeSeries;
+        vector<unique_ptr<CMonotonicCounterSeries>>         m_OpTooLongByProc;
+        vector<unique_ptr<COpTooLongTiming>>                m_OpTooLongTimingByProc;
 
         // The first index is a request kind
         // The second index is a processor kind

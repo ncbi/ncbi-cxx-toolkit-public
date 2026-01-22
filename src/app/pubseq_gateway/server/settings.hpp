@@ -136,6 +136,7 @@ struct SPubseqGatewaySettings
     bool                                m_SeqIdResolveAlways;
     size_t                              m_CassandraProcessorThrottleThreshold;
     size_t                              m_CassandraProcessorThrottleByIp;
+    size_t                              m_CassandraProcessorLogTimingThreshold;
 
     // [LMDB_PROCESSOR]
     string                              m_LMDBProcessorHealthCommand;
@@ -147,6 +148,7 @@ struct SPubseqGatewaySettings
     double                              m_CDDHealthTimeoutSec;
     size_t                              m_CDDProcessorThrottleThreshold;
     size_t                              m_CDDProcessorThrottleByIp;
+    size_t                              m_CDDProcessorLogTimingThreshold;
 
     // [WGS_PROCESSOR]
     bool                                m_WGSProcessorsEnabled;
@@ -154,6 +156,7 @@ struct SPubseqGatewaySettings
     double                              m_WGSHealthTimeoutSec;
     size_t                              m_WGSProcessorThrottleThreshold;
     size_t                              m_WGSProcessorThrottleByIp;
+    size_t                              m_WGSProcessorLogTimingThreshold;
 
     // [SNP_PROCESSOR]
     bool                                m_SNPProcessorsEnabled;
@@ -161,6 +164,7 @@ struct SPubseqGatewaySettings
     double                              m_SNPHealthTimeoutSec;
     size_t                              m_SNPProcessorThrottleThreshold;
     size_t                              m_SNPProcessorThrottleByIp;
+    size_t                              m_SNPProcessorLogTimingThreshold;
 
     // [COUNTERS]
     // Configured counter/statistics ID to name/description
@@ -216,6 +220,9 @@ private:
                                          const string &  proc_id,
                                          size_t &  threshold_val,
                                          size_t &  by_ip_val);
+    void x_ReadProcessorLogTimingThreshold(const CNcbiRegistry &   registry,
+                                           const string &  proc_id,
+                                           size_t &  log_timing_threshold_val);
 
     void x_ValidateServerSection(void);
     void x_ValidateProcessorThrottlingServerSectionSettings(void);
