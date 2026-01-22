@@ -76,11 +76,7 @@ esac
 
 # Second run
 unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
-if $CHECK_EXEC ./test_sub_reg -dryrun; then
-    export NCBI_DONT_USE_LOCAL_CONFIG=1
-else
-    unset HOME # still need ., since executable is elsewhere
-fi
+export NCBI_DONT_USE_LOCAL_CONFIG=1
 
 case "$unamestr" in
   MINGW* | CYGWIN* )
@@ -97,7 +93,7 @@ esac
 
 cp test_sub_reg_1strun.out.ini test_sub_reg.ini
 
-$CHECK_EXEC test_sub_reg -out test_sub_reg_2ndrun.out.ini
+$CHECK_EXEC test_sub_reg -conffile `pwd`/test_sub_reg.ini -out test_sub_reg_2ndrun.out.ini
 sort test_sub_reg_1strun.out.ini -o test_sub_reg_1strun.sorted.out.ini
 sort test_sub_reg_2ndrun.out.ini -o test_sub_reg_2ndrun.sorted.out.ini
 echo "Comparing second run and first run"
