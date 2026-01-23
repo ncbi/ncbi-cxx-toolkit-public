@@ -177,6 +177,8 @@ objects::CScope& GetScope();
 #define TO_UPPER(c) ((c) &= ~040)
 #define TO_LOWER(c) ((c) |= 040)
 
+inline bool is_digit(char c) { return '0' <= c && c <= '9'; }
+
 END_NCBI_SCOPE
 
 #endif
