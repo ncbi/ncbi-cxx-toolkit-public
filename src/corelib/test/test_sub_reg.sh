@@ -78,11 +78,13 @@ esac
 unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
 export NCBI_DONT_USE_LOCAL_CONFIG=1
 
+wd=`pwd`
 case "$unamestr" in
   MINGW* | CYGWIN* )
     unset NCBI_CONFIG_E__TEST NCBI_CONFIG__TEST__E NCBI_CONFIG__TEST__EX
     unset NCBI_CONFIG__ENVIRONMENT_DOT_INDIRECTENV__EX_IE NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OB_E NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OBX_E 
     unset NCBI_CONFIG__ENVIRONMENT_DOT_INDIRECTENV__E_IE NCBI_CONFIG__A_DOT_B__C_DOT_D
+    wd="$(cygpath -w $wd)"
     ;;
   * )
     unset NCBI_CONFIG_e__test NCBI_CONFIG__test__e NCBI_CONFIG__test__ex 
@@ -93,7 +95,7 @@ esac
 
 cp test_sub_reg_1strun.out.ini test_sub_reg.ini
 
-$CHECK_EXEC test_sub_reg -conffile `pwd`/test_sub_reg.ini -out test_sub_reg_2ndrun.out.ini
+$CHECK_EXEC test_sub_reg -conffile ${wd}/test_sub_reg.ini -out test_sub_reg_2ndrun.out.ini
 sort test_sub_reg_1strun.out.ini -o test_sub_reg_1strun.sorted.out.ini
 sort test_sub_reg_2ndrun.out.ini -o test_sub_reg_2ndrun.sorted.out.ini
 echo "Comparing second run and first run"
