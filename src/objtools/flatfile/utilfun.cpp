@@ -246,19 +246,6 @@ void UnwrapAccessionRange(const CGB_block::TExtra_accessions& extra_accs, CGB_bl
     ret.swap(hist);
 }
 
-static inline bool sIsPrefixChar(char c)
-{
-    return IS_UPPER(c) || c == '_';
-}
-
-inline bool IsLeadPrefixChar(char c)
-{
-    return IS_UPPER(c);
-}
-inline bool IsDigit(char c)
-{
-    return IS_DIGIT(c);
-}
 /**********************************************************/
 bool ParseAccessionRange(TokenStatBlk& tsbp, unsigned skip)
 {
@@ -288,18 +275,22 @@ bool ParseAccessionRange(TokenStatBlk& tsbp, unsigned skip)
 
         string_view first(tok_view.substr(0, dash));
         string_view last(tok_view.substr(dash + 1));
-        if (! IsLeadPrefixChar(first.front()) || ! IsLeadPrefixChar(last.front())) {
+        if (! IS_UPPER(first.front()) || ! IS_UPPER(last.front())) {
             bad = true;
             break;
         }
 
+        auto sIsPrefixChar = [](char c) -> bool
+            {
+                return IS_UPPER(c) || c == '_';
+            };
         auto first_it = find_if_not(first.begin(), first.end(), sIsPrefixChar);
-        if (first_it == first.end() || ! IsDigit(*first_it)) {
+        if (first_it == first.end() || ! IS_DIGIT(*first_it)) {
             bad = true;
             break;
         }
         auto last_it = find_if_not(last.begin(), last.end(), sIsPrefixChar);
-        if (last_it == last.end() || ! IsDigit(*last_it)) {
+        if (last_it == last.end() || ! IS_DIGIT(*last_it)) {
             bad = true;
             break;
         }
@@ -317,8 +308,8 @@ bool ParseAccessionRange(TokenStatBlk& tsbp, unsigned skip)
 
         string_view first_digits = first.substr(preflen);
         string_view last_digits  = last.substr(preflen);
-        if (! all_of(first_digits.begin(), first_digits.end(), IsDigit) ||
-            ! all_of(last_digits.begin(), last_digits.end(), IsDigit)) {
+        if (! all_of(first_digits.begin(), first_digits.end(), is_digit) ||
+            ! all_of(last_digits.begin(), last_digits.end(), is_digit)) {
             bad = true;
             break;
         }

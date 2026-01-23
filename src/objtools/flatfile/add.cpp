@@ -1433,8 +1433,6 @@ static void fta_validate_assembly(string_view name)
 {
     bool bad_format = false;
 
-    auto is_digit = [](char c) { return IS_DIGIT(c); };
-
     if (name.empty() || name.size() < 7)
         bad_format = true;
     else if (name[0] != 'G' || name[1] != 'C' || (name[2] != 'F' && name[2] != 'A') ||
@@ -1466,8 +1464,6 @@ static void fta_validate_assembly(string_view name)
 static bool fta_validate_bioproject(string_view name, Parser::ESource source)
 {
     bool  bad_format = false;
-
-    auto is_digit = [](char c) { return IS_DIGIT(c); };
 
     if (name.size() < 6)
         bad_format = true;
@@ -1532,7 +1528,7 @@ static forward_list<string> fta_tokenize_project(string str, Parser::ESource sou
 
         string_view name(q, p);
         if (! newstyle) {
-            if (! std::all_of(name.begin(), name.end(), [](char c) { return IS_DIGIT(c); })) {
+            if (! std::all_of(name.begin(), name.end(), is_digit)) {
                 FtaErrPost(SEV_REJECT, ERR_FORMAT_InvalidBioProjectAcc, "BioProject accession number is not validly formatted: \"{}\". Entry dropped.", name);
                 return {};
             }
@@ -1670,7 +1666,7 @@ bool fta_if_valid_sra(string_view id, bool dblink)
         (id[0] == 'E' || id[0] == 'S' || id[0] == 'D') && id[1] == 'R' &&
         (id[2] == 'A' || id[2] == 'P' || id[2] == 'R' || id[2] == 'S' ||
          id[2] == 'X' || id[2] == 'Z')) {
-        if (std::all_of(id.begin() + 3, id.end(), [](char c) { return IS_DIGIT(c); }))
+        if (std::all_of(id.begin() + 3, id.end(), is_digit))
             return true;
     }
 
@@ -1683,13 +1679,12 @@ bool fta_if_valid_sra(string_view id, bool dblink)
 /**********************************************************/
 bool fta_if_valid_biosample(string_view id, bool dblink)
 {
-
     if (id.size() > 5 && id[0] == 'S' && id[1] == 'A' &&
         id[2] == 'M' && (id[3] == 'N' || id[3] == 'E' || id[3] == 'D')) {
         auto p = id.begin() + 4;
         if (*p == 'A' || *p == 'G')
             ++p;
-        if (std::all_of(p, id.end(), [](char c) { return IS_DIGIT(c); }))
+        if (std::all_of(p, id.end(), is_digit))
             return true;
     }
 
@@ -1866,7 +1861,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESo
         if (tok.empty())
             continue;
 
-        if (tok.front() == '0' || ! std::all_of(tok.cbegin(), tok.cend(), [](char c) { return IS_DIGIT(c); })) {
+        if (tok.front() == '0' || ! std::all_of(tok.cbegin(), tok.cend(), is_digit)) {
             FtaErrPost(SEV_ERROR, ERR_FORMAT_IncorrectDBLINK, "Skipping invalid \"Project:\" value on the DBLINK line: \"{}\".", tok);
             continue;
         }
