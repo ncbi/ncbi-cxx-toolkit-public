@@ -260,6 +260,9 @@ public:
     void Cut(TSignedSeqRange hole);
     void Clear();
 
+	TSignedSeqRange UpstreamStart() const { return m_upstream_start; }
+    void SetUpstreamStart(TSignedSeqRange r) { m_upstream_start = r; }	
+
     int Strand() const; // -1 (minus), 0 (unknown), 1 (plus)
 
     enum EStatus {eSelenocysteine, eGenomeNotCorrect, eGenomeCorrect, eUnknown};
@@ -343,6 +346,7 @@ private:
     TSignedSeqRange m_reading_frame;
     TSignedSeqRange m_reading_frame_from_proteins;
     TSignedSeqRange m_max_cds_limits;
+	TSignedSeqRange m_upstream_start;
 
     bool m_confirmed_start, m_confirmed_stop;
     TPStops m_p_stops;

@@ -149,6 +149,7 @@ private:
     map<string, pair<bool,bool> > prot_complet;
     double mininframefrac;
     bool no5pextension;
+	bool obeystart;
 
     int min_cap_weight;
     int min_cap_blob;
@@ -322,8 +323,8 @@ public:
     void AddAllMembersAndCoverage(SChainMember& mbr);
 
     void RestoreTrimmedEnds(int trim);
-    void RemoveFshiftsFromUTRs();
-    bool RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
+    bool RemoveFshiftsFromUTRs();
+    bool RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns, map<string, pair<bool,bool>>& prot_complet);
     void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet);
     pair<bool,bool> ValidPolyA(int pos, const CResidueVec& contig);
     void ClipToCap(int min_cap_blob, int max_dist, int min_flank_exon, double secondary_peak, bool recalulate_support = true );
@@ -1642,7 +1643,7 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 chain.ClipLowCoverageUTR(0.1);
             _ASSERT(chain.Limits().NotEmpty());
             if(chain.ReadingFrame().NotEmpty()) {
-                m_gnomon->GetScore(chain, !no5pextension);
+                m_gnomon->GetScore(chain, !no5pextension, obeystart&chain.ConfirmedStart());
                 CCDSInfo cds = chain.GetCdsInfo();
                 if(wasopen != chain.OpenCds() && (wasopen == false || cds.HasStart())) {
                     cds.SetScore(cds.Score(),wasopen);
@@ -2231,7 +2232,7 @@ void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
         CGeneModel& algn = *mbr.m_align;
         if(algn.Limits().GetFrom() > right || algn.Limits().GetTo() < left)
             continue;
-        if((algn.Type()&CGeneModel::eProt) && !algn.PStop())
+        if((algn.Type()&CGeneModel::eProt) && !algn.PStop() && !algn.HasStop())
             continue;
         if(algn.Status()&(CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible))
             continue;
@@ -2243,6 +2244,8 @@ void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
         if(algn.Type()&CGeneModel::eProt) {
             CCDSInfo cds = algn.GetCdsInfo();
             CCDSInfo::TPStops pstops = cds.PStops();
+			if(algn.HasStop())
+				pstops.emplace_back(algn.GetCdsInfo().Stop() ,CCDSInfo::eUnknown);
             NON_CONST_ITERATE(CCDSInfo::TPStops, s, pstops) {
                 ITERATE(TPstopIntron, si, pstops_with_intron) {
                     if(si->second.GetLength() == 1) {  // no split
@@ -2257,9 +2260,23 @@ void CChainer::CChainerImpl::ReplicatePStops(CChainMembers& pointers)
                     }
                 }
             }
-            cds.ClearPStops();
-            ITERATE(CCDSInfo::TPStops, s, pstops)
-                cds.AddPStop(*s);
+
+			cds.ClearPStops();
+			if(algn.HasStop() && (pstops.back().m_status == CCDSInfo::eSelenocysteine || pstops.back().m_status == CCDSInfo::eGenomeCorrect)) {
+				cds.SetStop(TSignedSeqRange());
+				cds.SetReadingFrame(cds.ReadingFrame()+pstops.back(), true);
+				if(algn.Strand() == eMinus) {
+					cds.AddPStop(pstops.back());
+					pstops.pop_back();
+				}
+				ITERATE(CCDSInfo::TPStops, stp, pstops)
+					cds.AddPStop(*stp);				
+			} else {
+				if(algn.HasStop())
+					pstops.pop_back();
+				ITERATE(CCDSInfo::TPStops, s, pstops)
+					cds.AddPStop(*s);
+			}
             algn.SetCdsInfo(cds);
         } else if(algn.ReadingFrame().Empty()) {
             CCDSInfo cds;
@@ -3434,6 +3451,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     LOG_POST("Find contained in " << sw.Elapsed());
     sw.Restart();
 
+
     TContained pointers;
     ITERATE(TContained, ip, allpointers) {
         _ASSERT((*ip)->m_orig_align);
@@ -3623,7 +3641,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         CChain chain(mi, false);
         bool has_trusted = chain.HasTrustedEvidence();
         {
-            if(!chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns))
+            if(!chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns, prot_complet))
                 m_gnomon->GetScore(chain);
 
             if(!has_trusted)
@@ -3646,7 +3664,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
 
-        m_gnomon->GetScore(chain, !no5pextension); // this will return CDS to best/longest depending on no5pextension
+        m_gnomon->GetScore(chain, !no5pextension, obeystart&chain.ConfirmedStart()); 
         chain.CheckSecondaryCapPolyAEnds();
         if(!has_trusted)
             RemovePoorCds(chain, GoodCDNAScore(chain));
@@ -4353,7 +4371,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
 
-        if(!chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns))
+        if(!chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns, prot_complet))
             m_gnomon->GetScore(chain);
         if(chain.Score() == BadScore())
             continue;
@@ -4372,7 +4390,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         chain.ClipLowCoverageUTR(minscor.m_utr_clip_threshold, false);
         if(!chain.SetConfirmedEnds(*m_gnomon, confirmed_ends))
             continue;
-        m_gnomon->GetScore(chain, !no5pextension); // this will return CDS to best/longest depending on no5pextension
+        m_gnomon->GetScore(chain, !no5pextension, obeystart&chain.ConfirmedStart());
         chain.CheckSecondaryCapPolyAEnds();
         chain.CalculateSupportAndWeightFromMembers(false);
 		chain.CalculateDropLimits();
@@ -4433,7 +4451,7 @@ void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
         CChain& chain = *it;
         //        chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
         chain.SetOpenForPartialyAlignedProteins(prot_complet);
-        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, minscor);
+		//        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, minscor);
         chain.CollectTrustedmRNAsProts(orig_aligns, minscor, scope, matrix, contig);
         chain.SetBestPlacement(orig_aligns);
         chain.SetConsistentCoverage();
@@ -5241,192 +5259,263 @@ void CChain::SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& pr
     return;
 }
 
-bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns)
+bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns, map<string, pair<bool,bool>>& prot_complet)
 {
     //    if(ReadingFrame().Empty() || ConfirmedStart())
     if(ReadingFrame().Empty())
         return false;
 
-    TSignedSeqRange conf_start;
-    TSignedSeqPos rf=0; 
-    bool trusted = false;
+	CAlignMap amap = GetAlignMap();
+	TSignedSeqPos llimit_on_transcript = -1;
+	for(auto& stp : GetCdsInfo().PStops()) {
+		if(stp.m_status != CCDSInfo::eGenomeNotCorrect && stp.m_status != CCDSInfo::eSelenocysteine) {
+			TSignedSeqPos llim = Strand() == ePlus ? amap.MapOrigToEdited(stp.GetTo())+1 : amap.MapOrigToEdited(stp.GetFrom())+1;
+			llimit_on_transcript = max(llimit_on_transcript, llim);
+		}
+	}
+	for(auto& indel : FrameShifts()) {
+        TSignedSeqPos llim;
+        // position may be in intron
+        if(Strand() == ePlus) {
+            llim = amap.ShrinkToRealPoints(TSignedSeqRange(indel.InDelEnd(), Limits().GetTo())).GetFrom();
+        } else {
+            llim = amap.ShrinkToRealPoints(TSignedSeqRange(Limits().GetFrom(), indel.Loc()-1)).GetTo();
+        }
+        llim = amap.MapOrigToEdited(llim);
+		llimit_on_transcript = max(llimit_on_transcript, llim);
+	}
 
-    CAlignMap amap = GetAlignMap();
+    TSignedSeqRange conf_start;
+    TSignedSeqPos rf = 0;
+	string acc;
+    TSignedSeqRange conf_start_after;
+    TSignedSeqPos rf_after = 0;
+	string acc_after;
+
+	CCDSInfo cds_trans = GetCdsInfo().MapFromOrigToEdited(amap);
+
+	TSignedSeqPos max_protein_clip = 0.2*RealCdsLen();
+	TSignedSeqPos max_not_aligned = 90;
+	TSignedSeqPos max_fuzz = 15;
+
     ITERATE(TOrigAligns, it, orig_aligns) {
         const CAlignModel& align = *it->second;
         if(align.Strand() != Strand() || !align.ConfirmedStart() || (align.TrustedProt().empty() && align.TrustedmRNA().empty()) || !(align.Status()&CGeneModel::eBestPlacement))
             continue;
             
         TSignedSeqRange start = align.GetCdsInfo().Start();
+		TSignedSeqRange start_trans = amap.MapRangeOrigToEdited(start, false);
 
-        int a = amap.MapOrigToEdited(start.GetFrom());
-        int b = amap.MapOrigToEdited(start.GetTo());
-        if(a < 0 || b < 0 || abs(a-b) != 2)
+		// check consistency
+		if(start_trans.GetLength() != 3)
+			continue;
+        if(!Include(cds_trans.MaxCdsLimits(),start_trans) || abs(start_trans.GetFrom()-cds_trans.Cds().GetFrom())%3 != 0) 
             continue;
-            
-        int l = GetCdsInfo().Cds().GetFrom();
-        int r = start.GetFrom();
-        if(l > r)
-            swap(l,r);
-        if(!Include(GetCdsInfo().MaxCdsLimits(),start) || amap.FShiftedLen(l,r)%3 != 1) 
-            continue;
+		if(cds_trans.Cds().GetTo()-start_trans.GetTo() < 75)
+			continue;
 
         list<TSignedSeqRange> align_introns;
         for(int i = 1; i < (int)align.Exons().size(); ++i) {
             TSignedSeqRange intron(align.Exons()[i-1].Limits().GetTo(),align.Exons()[i].Limits().GetFrom());
-            if(Include(start,intron))
+            if(Include(start,intron))             // start is split by intron
                 align_introns.push_back(intron);
         }
-
         list<TSignedSeqRange> introns;
         bool hole = false;
-        int len = start.GetLength();
         for(int i = 1; i < (int)Exons().size(); ++i) {
             TSignedSeqRange intron(Exons()[i-1].Limits().GetTo(),Exons()[i].Limits().GetFrom());
             if(Include(start,intron)) {
                 introns.push_back(intron);
-                len -= intron.GetLength()+2;
                 if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice)
                     hole = true;
             }
         }
-
-        if(len !=3 || hole || align_introns != introns)
+        if(hole || align_introns != introns)
             continue;
 
-        if(Strand() == ePlus) {
-            if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
-                bool found = false;
-                for(int i = 0; i < (int)Exons().size() && !found; ++i) {
-                    if(Include(Exons()[i].Limits(),start.GetTo())) {
-                        if(Exons()[i].Limits().GetTo() > start.GetTo()) {
-                            rf = start.GetTo()+1;
-                            found = true;
-                        } else if(i != (int)Exons().size()-1) {
-                            rf = Exons()[i+1].Limits().GetFrom();
-                            found = true;
-                        }
-                    }
-                }
-                    
-                if(found && amap.FShiftedLen(rf,GetCdsInfo().Cds().GetTo()) > 75) {
-                    conf_start = start;
-                    trusted = true;
-                }
-            }
-        } else {
-            if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
-                bool found = false;
-                for(int i = 0; i < (int)Exons().size() && !found; ++i) {
-                    if(Include(Exons()[i].Limits(),start.GetFrom())) {
-                        if(Exons()[i].Limits().GetFrom() < start.GetFrom()) {
-                            rf = start.GetFrom()-1;
-                            found = true;
-                        } else if(i != 0) {
-                            rf = Exons()[i-1].Limits().GetTo();
-                            found = true;
-                        }
-                    }
-                }
+		bool after = (start_trans.GetFrom() >= llimit_on_transcript);
 
-                if(found && amap.FShiftedLen(GetCdsInfo().Cds().GetFrom(),rf) > 75) {
-                    conf_start = start;
-                    trusted = true;
-                }
-            }
-        }            
-    }
+		TSignedSeqPos extra_cds = 0;
+		if(cds_trans.ProtReadingFrame().NotEmpty())
+			extra_cds = start_trans.GetFrom()-cds_trans.ProtReadingFrame().GetFrom();
 
-    
-    if(conf_start.Empty()) {
+		if(extra_cds < max_protein_clip && (conf_start.Empty() || start_trans.GetFrom() < conf_start.GetFrom())) {
+			rf = start_trans.GetTo()+1;
+			conf_start = start_trans;
+			acc = "trusted "+align.TargetAccession();
+		}
+		if(after && (conf_start_after.Empty() || start_trans.GetFrom() < conf_start_after.GetFrom())) {
+			rf_after = start_trans.GetTo()+1;
+			conf_start_after = start_trans;
+			acc_after = "trusted "+align.TargetAccession();
+		}			
+	}
+
+	bool need_conf_start = conf_start.Empty();
+	bool need_conf_start_after = conf_start_after.Empty();
+
+	if(need_conf_start || need_conf_start_after) {
         ITERATE (TContained, it, m_members) {
             CAlignModel* orig_align = (*it)->m_orig_align;
             _ASSERT(orig_align);
         
-            if(orig_align->ConfirmedStart() && Include((*it)->m_align->Limits(),orig_align->GetCdsInfo().Start())) {    // right part of orig is included
+            if(orig_align->ConfirmedStart() && Include((*it)->m_align->Limits(),orig_align->GetCdsInfo().Start())) {    // has start and right part of orig is included
                 TSignedSeqRange start = orig_align->GetCdsInfo().Start();
-                int l = GetCdsInfo().Cds().GetFrom();
-                int r = start.GetFrom();
-                if(l > r)
-                    swap(l,r);
-                if(!Include(GetCdsInfo().MaxCdsLimits(),start) || amap.FShiftedLen(l,r)%3 != 1) // orig_align could be dropped beacause it was modified and have frameshifts between its start and 'best' start
-                    continue;
-                
-                if(Strand() == ePlus) {
-                    if(conf_start.Empty() || start.GetFrom() < conf_start.GetFrom()) {
-                        conf_start = start;
-                        rf = orig_align->ReadingFrame().GetFrom();
-                    }
-                } else {
-                    if(conf_start.Empty() || start.GetTo() > conf_start.GetTo()) {
-                        conf_start = start;
-                        rf = orig_align->ReadingFrame().GetTo();
-                    }
-                }
+				TSignedSeqRange start_trans = amap.MapRangeOrigToEdited(start, false);
+
+				// check consistency
+				if(start_trans.GetLength() != 3)
+					continue;
+				if(!Include(cds_trans.MaxCdsLimits(),start_trans) || abs(start_trans.GetFrom()-cds_trans.Cds().GetFrom())%3 != 0) 
+					continue;
+				if(cds_trans.Cds().GetTo()-start_trans.GetTo() < 75)
+					continue;
+
+				bool after = (start_trans.GetFrom() >= llimit_on_transcript);
+
+				TSignedSeqPos extra_cds = 0;
+				if(cds_trans.ProtReadingFrame().NotEmpty())
+					extra_cds = start_trans.GetFrom()-cds_trans.ProtReadingFrame().GetFrom();
+
+				if(extra_cds < max_protein_clip && need_conf_start && (conf_start.Empty() || start_trans.GetFrom() < conf_start.GetFrom())) {
+					rf = start_trans.GetTo()+1;
+					conf_start = start_trans;
+					acc = "internal "+orig_align->TargetAccession();
+				}
+				if(after && need_conf_start_after && (conf_start_after.Empty() || start_trans.GetFrom() < conf_start_after.GetFrom())) {
+					rf_after = start_trans.GetTo()+1;
+					conf_start_after = start_trans;
+					acc_after = "internal "+orig_align->TargetAccession();
+				}
             }
+		}
+	}
+
+	need_conf_start = conf_start.Empty();
+	need_conf_start_after = conf_start_after.Empty();
+
+	if(need_conf_start || need_conf_start_after) {
+		const CResidueVec& contig = gnomon.GetSeq();
+		CResidueVec transcript;
+		amap.EditedSequence(contig, transcript);
+        ITERATE (TContained, it, m_members) {
+            CAlignModel* orig_align = (*it)->m_orig_align;
+            _ASSERT(orig_align);
+
+			if((orig_align->Type()&CGeneModel::eProt) && prot_complet.find(orig_align->TargetAccession())->second.first) {
+				TSignedSeqPos p = (Strand() == ePlus ? orig_align->Limits().GetFrom() : orig_align->Limits().GetTo());
+				if(!Include((*it)->m_align->Limits(), p))
+					continue;
+				TSignedSeqPos not_aligned5p = orig_align->TranscriptLimits().GetFrom();
+				_ASSERT(not_aligned5p%3 == 0);
+				if(not_aligned5p > max_not_aligned)
+					continue;
+				TSignedSeqPos p_trans = amap.MapOrigToEdited(p);
+				if(p_trans < 0 || abs(p_trans-cds_trans.Cds().GetFrom())%3 != 0)
+					continue;
+				p_trans -= not_aligned5p;
+				TSignedSeqPos right = p_trans+max_fuzz+3;
+				TSignedSeqPos left = p_trans-max_fuzz;
+				while(left < 0 || left < cds_trans.MaxCdsLimits().GetFrom()) left += 3;
+				if(left > right)
+					continue;
+
+				TSignedSeqRange start_trans;
+				for(TSignedSeqPos i = left; i <= right; i += 3) {
+					if(cds_trans.Cds().GetTo()-i < 75)
+						break;
+					if(IsStartCodon(&transcript[i])) {
+						start_trans.SetFrom(i);
+						start_trans.SetTo(i+2);
+						break;
+					}
+				}
+				if(start_trans.Empty())
+					continue;
+
+				bool after = (start_trans.GetFrom() >= llimit_on_transcript);
+
+				TSignedSeqPos extra_cds = 0;
+				if(cds_trans.ProtReadingFrame().NotEmpty())
+					extra_cds = start_trans.GetFrom()-cds_trans.ProtReadingFrame().GetFrom();
+
+				if(extra_cds < max_protein_clip && need_conf_start && (conf_start.Empty() || start_trans.GetFrom() < conf_start.GetFrom())) {
+					rf = start_trans.GetTo()+1;
+					conf_start = start_trans;
+					acc = "partial "+orig_align->TargetAccession();
+				}
+				if(after && need_conf_start_after && (conf_start_after.Empty() || start_trans.GetFrom() < conf_start_after.GetFrom())) {
+					rf_after = start_trans.GetTo()+1;
+					conf_start_after = start_trans;
+					acc_after = "partial "+orig_align->TargetAccession();
+				}				
+			}			
         }
     }
 
+	if(conf_start_after.NotEmpty() && llimit_on_transcript >= 0) {
+		swap(conf_start_after, conf_start);
+		swap(rf_after, rf);
+		swap(acc_after, acc);
+		AddComment("Removed fshifts or pstops");
+	}	
 
-    if(conf_start.NotEmpty()) {
-        TSignedSeqRange extra_cds;
+	if(conf_start.NotEmpty()) {
+		rf = amap.MapEditedToOrig(rf);
+		conf_start = amap.MapRangeEditedToOrig(conf_start, false);
+		_ASSERT(rf >= 0 && conf_start.NotEmpty());		
+
         CCDSInfo cds = GetCdsInfo();
-        if(cds.ProtReadingFrame().NotEmpty()) {
-            if(Strand() == ePlus && cds.ProtReadingFrame().GetFrom() < conf_start.GetFrom())
-                extra_cds = TSignedSeqRange(cds.ProtReadingFrame().GetFrom(), conf_start.GetFrom());
-            else if(Strand() == eMinus && cds.ProtReadingFrame().GetTo() > conf_start.GetTo())
-                extra_cds = TSignedSeqRange(conf_start.GetTo(), cds.ProtReadingFrame().GetTo());
-        }
-        if(extra_cds.Empty() || FShiftedLen(extra_cds) < 0.2*RealCdsLen()) {
-            TSignedSeqRange reading_frame = cds.ReadingFrame();
-            if(Strand() == ePlus) 
-                reading_frame.SetFrom(rf);
-            else
-                reading_frame.SetTo(rf);
-            TSignedSeqRange protreadingframe = cds.ProtReadingFrame();
-            TSignedSeqRange stop = cds.Stop();
-            bool confirmed_stop = cds.ConfirmedStop();
-            CCDSInfo::TPStops pstops = cds.PStops();
-            cds.Clear();
+		TSignedSeqRange reading_frame = cds.ReadingFrame();
+		if(Strand() == ePlus) 
+			reading_frame.SetFrom(rf);
+		else
+			reading_frame.SetTo(rf);
+		TSignedSeqRange protreadingframe = cds.ProtReadingFrame();
+		TSignedSeqRange stop = cds.Stop();
+		bool confirmed_stop = cds.ConfirmedStop();
+		CCDSInfo::TPStops pstops = cds.PStops();
+		cds.Clear();
 
-            if(protreadingframe.NotEmpty()) 
-                cds.SetReadingFrame(reading_frame&protreadingframe, true);
-            cds.SetReadingFrame(reading_frame);
-            cds.SetStart(conf_start,true);
-            if(stop.NotEmpty())
-                cds.SetStop(stop,confirmed_stop);
-            ITERATE(CCDSInfo::TPStops, s, pstops) {
-                if(Include(reading_frame, *s))
-                    cds.AddPStop(*s);
-            }
-            SetCdsInfo(cds);          
+		if(protreadingframe.NotEmpty()) 
+			cds.SetReadingFrame(reading_frame&protreadingframe, true);
+		cds.SetReadingFrame(reading_frame);
+		cds.SetStart(conf_start,true);
+		if(stop.NotEmpty())
+			cds.SetStop(stop,confirmed_stop);
+		ITERATE(CCDSInfo::TPStops, s, pstops) {
+			if(Include(reading_frame, *s))
+				cds.AddPStop(*s);
+		}
+		SetCdsInfo(cds);          
 
-            TSignedSeqRange new_lim = Limits();
-            for(int i = 1; i < (int)Exons().size(); ++i) {
-                if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice) {
-                    TSignedSeqRange hole(Exons()[i-1].GetTo(),Exons()[i].GetFrom());
-                    if(Precede(hole,reading_frame)) {
-                        new_lim.SetFrom(hole.GetTo());
-                    } else if(Precede(reading_frame,hole)) {
-                        new_lim.SetTo(hole.GetFrom());
-                        break;
-                    }
-                }
-            }
-            if(new_lim != Limits())
-                ClipChain(new_lim, false);   // remove holes from new UTRs            
+		TSignedSeqRange new_lim = Limits();
+		for(int i = 1; i < (int)Exons().size(); ++i) {
+			if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice) {
+				TSignedSeqRange hole(Exons()[i-1].GetTo(),Exons()[i].GetFrom());
+				if(Precede(hole,reading_frame)) {
+					new_lim.SetFrom(hole.GetTo());
+				} else if(Precede(reading_frame,hole)) {
+					new_lim.SetTo(hole.GetFrom());
+					break;
+				}
+			}
+		}
+		if(new_lim != Limits())
+			ClipChain(new_lim, false);   // remove holes from new UTRs            
           
-            AddComment("Restored confirmed start");
-            gnomon.GetScore(*this, false, trusted);
-            RemoveFshiftsFromUTRs();
-            return true;
-        }
+		gnomon.GetScore(*this, false, true);
+		if(RemoveFshiftsFromUTRs())
+            gnomon.GetScore(*this, false, true); // upstream start can change
+		AddComment("Restored confirmed start by "+acc);
+		
+		return true;        
     }
 
     return false;
 }
 
-void CChain::RemoveFshiftsFromUTRs()
+bool CChain::RemoveFshiftsFromUTRs()
 {
     TInDels fs;
     ITERATE(TInDels, i, FrameShifts()) {   // removing fshifts in UTRs
@@ -5442,6 +5531,9 @@ void CChain::RemoveFshiftsFromUTRs()
             int mrna_len = AlignLen();
             m_coverage.resize(mrna_len, m_coverage.back());   // this will slightly shift values compared to recalculation from scratch but will keep better ends
         }
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -5500,6 +5592,10 @@ void CChain::ClipChain(TSignedSeqRange limits, bool recalulate_support) {
                 changed = true;
             }            
         }
+		if(cds.UpstreamStart().NotEmpty() && !Include(limits, cds.UpstreamStart())) {
+			cds.SetUpstreamStart(TSignedSeqRange::GetEmpty());
+			changed = true;
+		}
 
         if(changed)
             SetCdsInfo(cds);
@@ -6983,13 +7079,14 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
 
         CAlignModel* orig = m_data->orig_aligns[align.ID()];
         CSeqVector protein_seqvec(scope.GetBioseqHandle(*orig->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
-
         CAlignMap amap = align.GetAlignMap();
         CAlignMap origmap = orig->GetAlignMap();
 
         //find selenoproteins and stops 'confirmed' on genome
-        if(align.PStop()) {
+        if(align.PStop() || align.HasStop()) {
             CCDSInfo::TPStops pstops = align.GetCdsInfo().PStops();
+			if(align.HasStop())
+				pstops.emplace_back(align.GetCdsInfo().Stop() ,CCDSInfo::eUnknown);
             NON_CONST_ITERATE(CCDSInfo::TPStops, stp, pstops) {
                 TInDels fs = StrictlyContainedInDels(align.FrameShifts(), *stp);
                 if(!fs.empty())
@@ -6999,21 +7096,35 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
                 amap.EditedSequence(contig, mrna);
                 if(tstop.GetLength() == 3 && mrna[tstop.GetFrom()] == 'T' && mrna[tstop.GetFrom()+1] == 'G' && mrna[tstop.GetFrom()+2] == 'A') {
                     TSignedSeqRange ostop = origmap.MapRangeOrigToEdited(*stp,false);
-                    if(ostop.GetLength() == 3 && protein_seqvec[ostop.GetFrom()/3] == 'U') {
+					TSignedSeqPos p = ostop.GetFrom()/3;
+                    if(p < (TSignedSeqPos)protein_seqvec.size() && ostop.GetLength() == 3 && protein_seqvec[p] == 'U') {
                         stp->m_status = CCDSInfo::eSelenocysteine;
                     }
                 }
                 if(stp->m_status != CCDSInfo::eSelenocysteine) {
                     TIntMap::iterator conf = m_confirmed_bases_len.upper_bound(stp->GetTo()); // confirmed on the right
                     if(conf != m_confirmed_bases_len.begin() && (--conf)->first <= stp->GetFrom() && conf->first+conf->second > stp->GetTo())
-                        stp->m_status =  CCDSInfo::eGenomeCorrect;
+                        stp->m_status =  CCDSInfo::eGenomeCorrect; 
                 }
             }
 
             CCDSInfo cds = align.GetCdsInfo();
             cds.ClearPStops();
-            ITERATE(CCDSInfo::TPStops, stp, pstops)
-                cds.AddPStop(*stp);
+			if(align.HasStop() && pstops.back().m_status == CCDSInfo::eSelenocysteine) { // terminal stop is ces - convert it to pstop
+				cds.SetStop(TSignedSeqRange());
+				cds.SetReadingFrame(cds.ReadingFrame()+pstops.back(), true);
+				if(align.Strand() == eMinus) {
+					cds.AddPStop(pstops.back());
+					pstops.pop_back();
+				}
+				ITERATE(CCDSInfo::TPStops, stp, pstops)
+					cds.AddPStop(*stp);				
+			} else {
+				if(align.HasStop())
+					pstops.pop_back();
+				ITERATE(CCDSInfo::TPStops, stp, pstops)
+					cds.AddPStop(*stp);
+			}
             align.SetCdsInfo(cds);
         }
 
@@ -7032,6 +7143,8 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             int threepclip = maxclip-(orig->TargetLen()-tlim.GetTo()-1);
 
             bool skip = false;
+			bool intact5p = true;
+			bool intact3p = true;
 
             int fivepshift = 0;
             int threepshift = 0;
@@ -7068,6 +7181,11 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             if(skip)
                 continue;
 
+			if(fivepshift != 0)
+				intact5p = false;
+			if(threepshift != 0)
+				intact3p = false;
+
             if(fivepshift >= 0)                
                 fivepshift %= 3;
             else
@@ -7080,7 +7198,6 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             CGeneModel editedm = align;
             editedm.FrameShifts().clear();
             editedm.SetCdsInfo(CCDSInfo());
-            //CAlignMap edited_map = editedm.GetAlignMap();
             TSignedSeqRange edited_tlim = editedm.TranscriptLimits();
             edited_tlim.SetFrom(edited_tlim.GetFrom()+fivepshift);
             edited_tlim.SetTo(edited_tlim.GetTo()-threepshift);
@@ -7095,22 +7212,36 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             tlen = 3*(int)protseq.size();
             int fivep_problem = -1;
             int first_stop = tlen;
- 
-            for(int p = 0; !skip && p < (int)protseq.size(); ++p) {
-                if(protseq[p] == '*') {                    
-                    int tpa = p*3;
-                    int tpb = tpa+2;
-                    if(tpb < fivepclip)                                           // clipable 5' stop
-                        fivep_problem = max(fivep_problem, tpb);
-                    else if(tpa >= tlen-threepclip || p == (int)protseq.size()-1) // leftmost 3' stop
-                        first_stop = min(first_stop, tpa);
-                    else                                                          // stop in main body
-                        skip = true;
-                } 
-            }
-            if(skip)
-                continue;
 
+			CCDSInfo::TPStops selenocesteins;
+			{
+				CCDSInfo::TPStops pstops = align.GetCdsInfo().PStops();				
+				CAlignMap edited_map = editedm.GetAlignMap();
+ 				for(int p = 0; !skip && p < (int)protseq.size(); ++p) {
+					if(protseq[p] == '*') {                    
+						int tpa = p*3;
+						int tpb = tpa+2;
+
+						TSignedSeqRange stop = edited_map.MapRangeEditedToOrig(TSignedSeqRange(tpa, tpb), false);
+						if(stop.NotEmpty()) {
+							auto rslt = find(pstops.begin(), pstops.end(), stop);
+							if(rslt != pstops.end() && rslt->m_status == CCDSInfo::eSelenocysteine)
+								selenocesteins.push_back(*rslt);
+							continue;
+						}
+
+						if(tpb < fivepclip)                                           // clipable 5' stop
+							fivep_problem = max(fivep_problem, tpb);
+						else if(tpa >= tlen-threepclip || p == (int)protseq.size()-1) // leftmost 3' stop
+							first_stop = min(first_stop, tpa);
+						else                                                          // stop in main body
+							skip = true;
+					} 
+				}
+				if(skip)
+					continue;
+			}
+			
             int fivep_limit = 0;
             auto m = protseq.find("M", (fivep_problem+1)/3);   // first start after possible stop/frameshift
             skip = true;
@@ -7123,13 +7254,17 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             
             int threep_limit = tlen-1;
             skip = true;
-            if(first_stop+2 < threep_limit) {
+			if(first_stop+2 <= threep_limit) {
                 threep_limit =  first_stop+2;
                 skip = false;               
             }
             if(skip)
                 continue;
 
+			if(fivep_limit != 0)
+				intact5p = false;
+			if(threep_limit != tlen-1)
+				intact3p = false;
             TSignedSeqRange clip(fivep_limit, threep_limit);
             tlen = clip.GetLength();
             clip = editedm.GetAlignMap().MapRangeEditedToOrig(clip, false);
@@ -7146,10 +7281,16 @@ void CChainer::FindSelenoproteinsClipProteinsToStartStop(TGeneModelList& clust) 
             TSignedSeqRange rf(start.GetTo()+1,stop.GetFrom()-1);
             CCDSInfo edited_cds(false);
             edited_cds.SetReadingFrame(rf,true);
-            edited_cds.SetStart(start,true);
-            edited_cds.SetStop(stop,true);
+            edited_cds.SetStart(start,align.ConfirmedStart()&&intact5p);
+            edited_cds.SetStop(stop,align.ConfirmedStop()&&intact3p);
             edited_cds.SetScore(align.Score());
             edited_cds = edited_cds.MapFromEditedToOrig(editedm.GetAlignMap());
+
+			for(auto& sec : selenocesteins) {
+				if(Include(edited_cds.ReadingFrame(), sec)) {
+					edited_cds.AddPStop(sec);
+				}
+			}
             editedm.SetCdsInfo(edited_cds);
 
 #ifdef _DEBUG 
@@ -7806,6 +7947,7 @@ void CChainerArgUtil::SetupArgDescriptions(CArgDescriptions* arg_desc)
     arg_desc->AddFlag("partialalts","Allows partial alternative variants. In combination with -nognomon will allow partial genes");
     arg_desc->AddDefaultKey("tolerance","tolerance","if models exon boundary differ only this much only one model will survive",CArgDescriptions::eInteger,"5");
     arg_desc->AddFlag("no5pextension","Don't extend chain CDS to the leftmost start");
+    arg_desc->AddFlag("useproteinstarts","Use protein starts as ConfirmedStarts");
 
     arg_desc->SetCurrentGroup("Heuristic parameters for score evaluation");
     arg_desc->AddDefaultKey("i5p", "i5p",
@@ -7935,6 +8077,7 @@ void CChainerArgUtil::ArgsToChainer(CChainer* chainer, const CArgs& args, CScope
     chainer->m_data->allow_partialalts = args["partialalts"];
     chainer->m_data->tolerance = args["tolerance"].AsInteger();
     chainer->m_data->no5pextension =  args["no5pextension"];
+	chainer->m_data->obeystart = args["useproteinstarts"];
  
     chainer->m_data->min_cap_weight = args["min-cap-weight"].AsInteger();
     chainer->m_data->min_cap_blob = args["min-cap-blob"].AsInteger();
