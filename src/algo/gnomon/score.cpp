@@ -1760,6 +1760,14 @@ void CGnomonEngine::GetScore(CGeneModel& model, bool extend5p, bool obeystart, b
         }
     }
 
+    cds_info.SetUpstreamStart(TSignedSeqRange());
+    for(int i = upstream_stop+3; i < best_start; i += 3) {
+		if(IsStartCodon(&mrna[i])) {			
+			cds_info.SetUpstreamStart(TSignedSeqRange(i,i+2));
+            break;
+		}
+	}
+
     cds_info.SetScore(best_score, is_open);
     cds_info = cds_info.MapFromEditedToOrig(mrnamap); // returns empty cds with badscore if con't map
     model.SetCdsInfo(cds_info);
