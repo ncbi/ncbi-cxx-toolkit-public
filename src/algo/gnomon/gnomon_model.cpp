@@ -324,7 +324,11 @@ CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
         else
             return empty_cds;        
     }
-
+	if(UpstreamStart().NotEmpty()) {
+        TSignedSeqRange upstart = amap.MapRangeEditedToOrig(UpstreamStart(), false);
+        _ASSERT(upstart.NotEmpty());
+        new_cds.SetUpstreamStart(upstart);
+	}
     if(HasStart()) {
         if(Precede(Start(), ReadingFrame()) && MaxCdsLimits().GetFrom() != TSignedSeqRange::GetWhole().GetFrom())
             new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(MaxCdsLimits().GetFrom()));
@@ -367,6 +371,10 @@ CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
         TSignedSeqRange p = amap.MapRangeOrigToEdited(*i, false);
         _ASSERT(p.NotEmpty());
         new_cds.AddPStop(p, i->m_status);
+    }
+	if(UpstreamStart().NotEmpty()) {
+        new_cds.SetUpstreamStart(amap.MapRangeOrigToEdited(UpstreamStart(), false));
+        _ASSERT(new_cds.UpstreamStart().NotEmpty());
     }
     if(HasStart()) {
         if(Precede(Start(), ReadingFrame()) && MaxCdsLimits().GetFrom() != TSignedSeqRange::GetWhole().GetFrom())  // 5p limited + strand
@@ -574,6 +582,9 @@ int CCDSInfo::Strand() const
 
 void CCDSInfo::Clip(TSignedSeqRange limits)
 {
+	if(m_upstream_start.NotEmpty() && !Include(limits, m_upstream_start))
+		m_upstream_start = TSignedSeqRange::GetEmpty();
+
     if (ReadingFrame().Empty())
         return;
 
@@ -609,6 +620,14 @@ void CCDSInfo::Clip(TSignedSeqRange limits)
 }
 
 void CCDSInfo::Cut(TSignedSeqRange hole) {
+	if(m_upstream_start.NotEmpty()) {
+        _ASSERT(m_start.NotEmpty());
+        if(m_upstream_start.GetFrom() < m_start.GetTo() && hole.IntersectingWith(TSignedSeqRange(m_upstream_start.GetFrom(),m_start.GetTo()))) // + strand
+            m_upstream_start = TSignedSeqRange::GetEmpty();
+        if(m_start.GetFrom() < m_upstream_start.GetTo() && hole.IntersectingWith(TSignedSeqRange(m_start.GetFrom(),m_upstream_start.GetTo()))) // - strand
+            m_upstream_start = TSignedSeqRange::GetEmpty();            
+    }
+
     if((Cds() & hole).Empty())
         return;
 
@@ -660,7 +679,7 @@ void CCDSInfo::Cut(TSignedSeqRange hole) {
 
 void CCDSInfo::Clear()
 {
-    m_start = m_stop = m_reading_frame = m_reading_frame_from_proteins = m_max_cds_limits = TSignedSeqRange::GetEmpty();
+    m_start = m_stop = m_reading_frame = m_reading_frame_from_proteins = m_max_cds_limits = m_upstream_start = TSignedSeqRange::GetEmpty();
     m_confirmed_start = false;
     m_confirmed_stop = false;
     m_p_stops.clear();
@@ -771,12 +790,14 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
 {
     if (ReadingFrame().NotEmpty()) {
         TSignedSeqRange cds_hole = hole;
+        /*
         for(int i = 0; i < (int)MyExons().size(); ++i) {
             if(i > 0 && hole.GetFrom() == MyExons()[i].GetFrom())
                 cds_hole.SetFrom(MyExons()[i].GetTo()+1);
             if(i < (int)MyExons().size()-1 && hole.GetTo() ==  MyExons()[i].GetTo())
                 cds_hole.SetTo(MyExons()[i].GetFrom()-1);
         }
+        */
         m_cds_info.Cut(cds_hole);
     }
 
@@ -818,6 +839,9 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
 void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_cds_invariant)
 {
     if (ReadingFrame().NotEmpty()) {
+		if(m_cds_info.UpstreamStart().NotEmpty() && !Include(clip_limits, m_cds_info.UpstreamStart()))
+			m_cds_info.SetUpstreamStart(TSignedSeqRange::GetEmpty());
+		
         TSignedSeqRange cds_clip_limits = Limits();
         if (mode == eRemoveExons)
             cds_clip_limits &= clip_limits;
@@ -1908,6 +1932,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         TSignedSeqRange tlim = a.TranscriptLimits();
         TSignedSeqRange cds = cds_info.Cds();  // cdsinfo already in tcoords
         TSignedSeqRange start = cds_info.Start();
+        TSignedSeqRange upstart = cds_info.UpstreamStart();
         TSignedSeqRange maxcdslim = tlim & cds_info.MaxCdsLimits();
         TSignedSeqRange protcds = cds_info.ProtReadingFrame();
 
@@ -1919,6 +1944,10 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 
         bool tCoords = false;
 
+		if(upstart.NotEmpty()) {
+			attributes["UpstreamStart"] =  NStr::NumericToString(upstart.GetFrom()+1)+" "+NStr::NumericToString(upstart.GetTo()+1);
+            tCoords = true;
+        }
         if(start.NotEmpty() && (start.GetFrom() != maxcdslim.GetFrom() && start.GetTo() != maxcdslim.GetTo())) {
             attributes["maxCDS"] = NStr::NumericToString(maxcdslim.GetFrom()+1)+" "+NStr::NumericToString(maxcdslim.GetTo()+1);
             tCoords = true;
@@ -2147,6 +2176,13 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
                 cds_info.AddPStop(pstop, status);
             }
         }
+
+        if(!attributes["UpstreamStart"].empty()) {
+			TSignedSeqRange upstart = StringToRange(attributes["UpstreamStart"]);
+			if(!tcoords)
+				upstart = a.GetAlignMap().MapRangeOrigToEdited(upstart, false);
+			cds_info.SetUpstreamStart(upstart);
+		}
 
         TSignedSeqRange max_cds_limits;
         TSignedSeqRange tlim = a.TranscriptLimits();
