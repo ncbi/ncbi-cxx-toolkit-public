@@ -34,6 +34,8 @@
 1.2.5.n	With a quinone or similar compound as acceptor
 1.2.7.-	With an iron-sulfur protein as acceptor
 1.2.7.n	With an iron-sulfur protein as acceptor
+1.2.8.-	With a flavin or flavoprotein as acceptor
+1.2.8.n	With a flavin or flavoprotein as acceptor
 1.2.98.-	With other, known, acceptors
 1.2.98.n	With other, known, acceptors
 1.2.99.-	With other acceptors
@@ -250,6 +252,8 @@
 1.16.n.n	Oxidizing metal ions
 1.16.1.-	With NAD(+) or NADP(+) as acceptor
 1.16.1.n	With NAD(+) or NADP(+) as acceptor
+1.16.2.-	With a cytochrome as acceptor.
+1.16.2.n	With a cytochrome as acceptor.
 1.16.3.-	With oxygen as acceptor
 1.16.3.n	With oxygen as acceptor
 1.16.5.-	With a quinone or similar compound as acceptor
