@@ -30,10 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Jul  9 16:29:57 EDT 2025
-; formally
+/* time_t value corresponding to Wed Jan 28 11:47:00 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kECNum_ambiguous_Timestamp = 1766444182UL;
+static const unsigned long kECNum_ambiguous_Timestamp = 1769618820UL;
 static const char* const kECNum_ambiguous[] = {
     "1.-.-.-\tOxidoreductases",
     "1.n.n.n\tOxidoreductases",
@@ -71,6 +70,8 @@ static const char* const kECNum_ambiguous[] = {
     "1.2.5.n\tWith a quinone or similar compound as acceptor",
     "1.2.7.-\tWith an iron-sulfur protein as acceptor",
     "1.2.7.n\tWith an iron-sulfur protein as acceptor",
+    "1.2.8.-\tWith a flavin or flavoprotein as acceptor",
+    "1.2.8.n\tWith a flavin or flavoprotein as acceptor",
     "1.2.98.-\tWith other, known, acceptors",
     "1.2.98.n\tWith other, known, acceptors",
     "1.2.99.-\tWith other acceptors",
@@ -287,6 +288,8 @@ static const char* const kECNum_ambiguous[] = {
     "1.16.n.n\tOxidizing metal ions",
     "1.16.1.-\tWith NAD(+) or NADP(+) as acceptor",
     "1.16.1.n\tWith NAD(+) or NADP(+) as acceptor",
+    "1.16.2.-\tWith a cytochrome as acceptor.",
+    "1.16.2.n\tWith a cytochrome as acceptor.",
     "1.16.3.-\tWith oxygen as acceptor",
     "1.16.3.n\tWith oxygen as acceptor",
     "1.16.5.-\tWith a quinone or similar compound as acceptor",
