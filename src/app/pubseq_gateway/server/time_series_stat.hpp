@@ -51,6 +51,8 @@ class CTimeSeriesBase
 {
     public:
         CTimeSeriesBase();
+        virtual ~CTimeSeriesBase() {}
+
         virtual void Rotate(void) = 0;
         virtual void Reset(void) = 0;
 
