@@ -36,6 +36,7 @@
 #include <misc/data_loaders_util/data_loaders_util.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/macro/Suspect_rule_set.hpp>
 #include <objmgr/object_manager.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
@@ -44,6 +45,7 @@
 #include <util/line_reader.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/multi_writer.hpp>
+
 
 #if __has_include(<multicall/multicall.hpp>)
     #include <multicall/multicall.hpp>
@@ -72,6 +74,7 @@ protected:
     unsigned x_ProcessAll(const string& outname);
     void x_Output(const string& fname, CDiscrepancyProduct& tests, unsigned short flags);
     void x_Autofix(CDiscrepancySet& tests);
+    unsigned int x_CheckProductNameList(const string& input_file, CNcbiOstream& ostream);
 
     CRef<CScope> m_Scope;
     string m_SuspectRules;
@@ -157,7 +160,12 @@ void CDiscRepApp::Init()
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
+    
     arg_desc->AddFlag("N", "Check Product Names");
+    arg_desc->SetDependency("N", CArgDescriptions::eExcludes, "e");
+    arg_desc->SetDependency("N", CArgDescriptions::eExcludes, "d");
+
+
     arg_desc->AddFlag("F", "Autofix");
     arg_desc->AddFlag("XML", "Generate XML output");
     arg_desc->AddFlag("STDOUT", "Copy the output to STDOUT");
@@ -272,16 +280,36 @@ void CDiscRepApp::x_ParseDirectory(const string& dirname, bool recursive)
 }
 
 
+unsigned int CDiscRepApp::x_CheckProductNameList(const string& input_file, CNcbiOstream& ostream)
+{
+    CNcbiIfstream istr(input_file);
+    if (! istr) {
+        NCBI_THROW(CException, eUnknown, "Unable to read " + input_file);
+    }
+
+    auto rules = GetProductRules(m_SuspectRules);
+
+    CStreamLineReader reader(istr);
+    unsigned int      max_sev{ 0 };
+    while (! reader.AtEOF()) {
+        reader.ReadLine();
+        auto product_name = reader.GetCurrentLine();
+        if (auto sev = g_CheckProductName(product_name, *rules, ostream); sev > max_sev) {
+            max_sev = sev;
+        }
+    }
+    return max_sev;
+}
+
+
 unsigned CDiscRepApp::x_ProcessOne(const string& fname)
 {
     unsigned severity;
     CRef<CDiscrepancyProduct> product;
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
-    if (m_SuspectProductNames) {
-        Tests->AddTest(eTestNames::_SUSPECT_PRODUCT_NAMES);
-        Tests->ParseStrings(fname);
-        severity = Tests->Summarize();
+    if (m_SuspectProductNames) { // RW-2606 - Write to standard output
+        return x_CheckProductNameList(fname, std::cout);
     }
     else {
         for (auto tname : m_Tests) {
@@ -322,15 +350,15 @@ unsigned CDiscRepApp::x_ProcessAll(const string& outname)
     CRef<CDiscrepancySet> Tests = CDiscrepancySet::New(*m_Scope);
     Tests->SetSuspectRules(m_SuspectRules, false);
     if (m_SuspectProductNames) {
-        Tests->AddTest(eTestNames::_SUSPECT_PRODUCT_NAMES);
+        CNcbiOfstream ostr(outname);
         for (const string& fname : m_Files) {
             ++count;
             if (m_Files.size() > 1) {
                 PrintMsg(eDiag_Info, "Processing file " + to_string(count) + " of " + to_string(m_Files.size()));
             }
-            Tests->ParseStrings(fname);
+            severity = std::max(x_CheckProductNameList(fname, ostr), severity);
         }
-        severity = Tests->Summarize();
+        return severity;
     } else if (m_AutoFix) {
         for (auto tname : m_Tests) {
             Tests->AddTest(tname);
@@ -404,10 +432,6 @@ int CDiscRepApp::Run()
     // constructing the test list
     TTestNamesSet Tests;
     if (args["e"]) {
-        if (args["N"]) {
-            PrintMsg(eDiag_Error, "Options -N and -e are mutually exclusive");
-            return 1;
-        }
         list<string> List;
         NStr::Split(args["e"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         for (const string& s : List) {
@@ -444,11 +468,8 @@ int CDiscRepApp::Run()
         }
         Tests += AllTests;
     }
+
     if (args["d"]) {
-        if (args["N"]) {
-            PrintMsg(eDiag_Error, "Options -N and -d are mutually exclusive");
-            return 1;
-        }
         list<string> List;
         NStr::Split(args["d"].AsString(), ", ", List, NStr::fSplit_Tokenize);
         for (const string& s : List) {

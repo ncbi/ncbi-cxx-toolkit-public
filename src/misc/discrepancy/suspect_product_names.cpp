@@ -39,6 +39,7 @@
 #include <objects/macro/Search_func.hpp>
 #include <objects/macro/Replace_func.hpp>
 #include <objects/macro/Simple_replace.hpp>
+#include <objects/macro/String_constraint.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
 
@@ -55,37 +56,43 @@ USING_SCOPE(objects);
 string GetTwoFieldSubfield(const string& str, unsigned subfield)
 {
     string strtmp;
-    if (str.empty() || subfield > 2)  return "";
-    if (!subfield) return str;
+    if (str.empty() || subfield > 2)
+        return "";
+    if (! subfield)
+        return str;
     else {
         size_t pos = str.find(':');
         if (pos == string::npos) {
-            if (subfield == 1) return str;
-            else return kEmptyStr;
-        }
-        else {
-            if (subfield == 1) return str.substr(0, pos);
+            if (subfield == 1)
+                return str;
+            else
+                return kEmptyStr;
+        } else {
+            if (subfield == 1)
+                return str.substr(0, pos);
             else {
                 strtmp = CTempString(str).substr(pos + 1).empty();
-                if (!strtmp.empty()) return strtmp;
-                else return "";
+                if (! strtmp.empty())
+                    return strtmp;
+                else
+                    return "";
             }
         }
     }
 }
 
 
-static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = nullptr)
+static string GetFirstGBQualMatch(const vector<CRef<CGb_qual>>& quals, const string& qual_name, unsigned subfield = 0, const CString_constraint* str_cons = nullptr)
 {
     string str;
     for (auto it : quals) {
         if (NStr::EqualNocase(it->GetQual(), qual_name)) {
             str = it->GetVal();
             str = GetTwoFieldSubfield(str, subfield);
-            if ( str.empty() || (str_cons && !str_cons->Empty() && !(str_cons->Match(str))) ) {
+            if (str.empty() || (str_cons && ! str_cons->Empty() && ! (str_cons->Match(str)))) {
                 str.clear();
-            }
-            else break;
+            } else
+                break;
         }
     }
     return str;
@@ -95,28 +102,28 @@ static string GetFirstGBQualMatch (const vector <CRef <CGb_qual> >& quals, const
 static string GetRNAProductString(const CSeq_feat& seq_feat)
 {
     const CRNA_ref& rna = seq_feat.GetData().GetRna();
-    string rna_str;
-    if (!rna.CanGetExt()) {
+    string          rna_str;
+    if (! rna.CanGetExt()) {
         rna_str = seq_feat.GetNamedQual("product");
-    }
-    else {
+    } else {
         const CRNA_ref::C_Ext& ext = rna.GetExt();
         switch (ext.Which()) {
-            case CRNA_ref::C_Ext::e_Name:
-                    rna_str = ext.GetName();
-                    if (seq_feat.CanGetQual() && (rna_str.empty() || rna_str== "ncRNA" || rna_str== "tmRNA" || rna_str== "misc_RNA")) {
-                        rna_str = GetFirstGBQualMatch(seq_feat.GetQual(), (string)"product");
-                    }
-                    break;
-            case CRNA_ref::C_Ext::e_TRNA:
-                    GetLabel(seq_feat, &rna_str, feature::fFGL_Content);
-                    rna_str = "tRNA-" + rna_str;
-                    break;
-            case CRNA_ref::C_Ext::e_Gen:
-                    if (ext.GetGen().CanGetProduct()) {
-                        rna_str = ext.GetGen().GetProduct();
-                    }
-            default: break;
+        case CRNA_ref::C_Ext::e_Name:
+            rna_str = ext.GetName();
+            if (seq_feat.CanGetQual() && (rna_str.empty() || rna_str == "ncRNA" || rna_str == "tmRNA" || rna_str == "misc_RNA")) {
+                rna_str = GetFirstGBQualMatch(seq_feat.GetQual(), (string) "product");
+            }
+            break;
+        case CRNA_ref::C_Ext::e_TRNA:
+            GetLabel(seq_feat, &rna_str, feature::fFGL_Content);
+            rna_str = "tRNA-" + rna_str;
+            break;
+        case CRNA_ref::C_Ext::e_Gen:
+            if (ext.GetGen().CanGetProduct()) {
+                rna_str = ext.GetGen().GetProduct();
+            }
+        default:
+            break;
         }
     }
     return rna_str;
@@ -145,63 +152,130 @@ static string GetRuleText(const CSuspect_rule& rule)
     return rule_type[rule.GetRule_type()];
 }
 
-
-static string GetRuleMatch(const CSuspect_rule& rule)
-{
-    if (rule.IsSetDescription()) {
-        string desc = rule.GetDescription();
-        NStr::ReplaceInPlace(desc, "contains", "contain[s]");
-        return "[n] feature[s] " + desc;
+template <bool add_brackets>
+static constexpr string s_GetStringLocStub(EString_location string_loc)
+{ // Safe to return string_view because of string literals
+    switch (string_loc) {
+    case eString_location_starts:
+        return add_brackets ? "start[S] with" : "starts with";
+    case eString_location_ends:
+        return add_brackets ? "end[S] with" : "ends with";
+    case eString_location_equals:
+        return add_brackets ? "equal[S]" : "equals";
+    default:
+        break;
     }
-    if (rule.CanGetFind()) {
-        const CSearch_func& find = rule.GetFind();
-        switch (find.Which()) {
-            case CSearch_func::e_String_constraint:
-            {   string s = "[n] feature[s] ";
-                switch (find.GetString_constraint().GetMatch_location()) {
-                    case eString_location_starts:
-                        s += "start[S] with";
-                        break;
-                    case eString_location_ends:
-                        s += "end[S] with";
-                        break;
-                    case eString_location_equals:
-                        s += "equal[S]";
-                        break;
-                    default:
-                        s += "contain[S]";
-                }
-                return s+ " [*(*]\'" + find.GetString_constraint().GetMatch_text()
-                    + (rule.CanGetRule_type() && (rule.GetRule_type() == eFix_type_typo || rule.GetRule_type() == eFix_type_quickfix) &&
-                        rule.CanGetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace() && rule.GetReplace().GetReplace_func().GetSimple_replace().CanGetReplace()
-                        ? "\'[*)*], Replace with [*(*]\'" + rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace() : "")
-                    + "\'[*)*]";
-            }
-            case CSearch_func::e_Contains_plural:
-                return "[n] feature[s] May contain plural";
-            case CSearch_func::e_N_or_more_brackets_or_parentheses:
-                return "[n] feature[s] violate[S] e_N_or_more_brackets_or_parentheses !!!";
-            case CSearch_func::e_Three_numbers:
-                //return "[n] feature[s] contain[S] three or more numbers together, but not contain[S] \'methyltransferas\'";
-                return "[n] feature[s] Three or more numbers together but not contain[S] \'methyltransferas\'"; // from C Toolkit
-            case CSearch_func::e_Underscore:
-                return "[n] feature[s] contain[S] underscore";
-            case CSearch_func::e_Prefix_and_numbers:
-                return "[n] feature[s] violate[S] e_Prefix_and_numbers !!!";
-            case CSearch_func::e_All_caps:
-                return "[n] feature[s] [is] all capital letters";
-            case CSearch_func::e_Unbalanced_paren:
-                return "[n] feature[s] contain[S] unbalanced brackets or parentheses";
-            case CSearch_func::e_Too_long:
-                return "[n] feature[s] violate[S] e_Too_long !!!";
-            case CSearch_func::e_Has_term:
-                return "[n] feature[s] violate[S] e_Has_term !!!";
-            default:
-                break;
+
+    return add_brackets ? "contain[S]" : "contains";
+}
+
+
+static bool s_SuggestReplacement(const CSuspect_rule& rule)
+{
+    return ((rule.GetRule_type() == eFix_type_typo || rule.GetRule_type() == eFix_type_quickfix) &&
+            rule.IsSetReplace() && rule.GetReplace().GetReplace_func().IsSimple_replace() &&
+            rule.GetReplace().GetReplace_func().GetSimple_replace().IsSetReplace());
+}
+
+
+template <bool add_brackets>
+static string s_GetStringConstraintMatch(const CSuspect_rule& rule)
+{
+    const auto& find = rule.GetFind();
+    _ASSERT(find.Which() == CSearch_func::e_String_constraint);
+
+    const auto& string_constraint = find.GetString_constraint();
+
+    string match_text = s_GetStringLocStub<add_brackets>(string_constraint.GetMatch_location());
+    if constexpr (add_brackets) {
+        match_text += " [*(*]\'" + string_constraint.GetMatch_text() + "\'[*)*]";
+    } else {
+        match_text += " \'" + string_constraint.GetMatch_text() + "\'";
+    }
+
+    if (s_SuggestReplacement(rule)) {
+        auto replacement = rule.GetReplace().GetReplace_func().GetSimple_replace().GetReplace();
+        if constexpr (add_brackets) {
+            match_text += ", Replace with [*(*]\'" + replacement + "\'[*)*]";
+        } else {
+            match_text += ", Replace with \'" + replacement + "\'";
         }
     }
-    return "[n] feature[s] violate[S] some other mysterious rule!";
+    return match_text;
 }
+
+
+template <bool add_brackets>
+static string s_Format(const string& term)
+{
+    if constexpr (add_brackets) {
+        if (term == "violates") {
+            return "violate[S]";
+        }
+        if (term == "contains") {
+            return "contain[S]";
+        }
+        if (term == "is") {
+            return "[is]";
+        }
+        // Unrecognized term:
+        NCBI_THROW(CException, eUnknown, "Unable to format: \'" + term + "\'");
+    } else {
+        return term;
+    }
+}
+
+template <bool add_brackets = false>
+static string s_GetRuleMatch(const CSuspect_rule& rule)
+{
+    if (rule.IsSetDescription()) {
+        if constexpr (add_brackets) {
+            return NStr::Replace(rule.GetDescription(), "contains", "contain[S]");
+        } else {
+            return rule.GetDescription();
+        }
+    }
+
+    const CSearch_func& find = rule.GetFind();
+    switch (find.Which()) {
+    case CSearch_func::e_String_constraint:
+        return s_GetStringConstraintMatch<add_brackets>(rule);
+    case CSearch_func::e_Contains_plural:
+        return "May contain plural";
+    case CSearch_func::e_N_or_more_brackets_or_parentheses:
+        return s_Format<add_brackets>("violates") + " e_N_or_more_brackets_or_parentheses !!!";
+    case CSearch_func::e_Three_numbers:
+        return "Three or more numbers together but not " + s_Format<add_brackets>("contains") + " \'methyltransferas\'"; // from C Toolkit
+    case CSearch_func::e_Underscore:
+        return s_Format<add_brackets>("contains") + " underscore";
+    case CSearch_func::e_Prefix_and_numbers:
+        return s_Format<add_brackets>("violates") + " e_Prefix_and_numbers !!!";
+    case CSearch_func::e_All_caps:
+        return s_Format<add_brackets>("is") + " all capital letters";
+    case CSearch_func::e_Unbalanced_paren:
+        return s_Format<add_brackets>("contains") + " unbalanced brackets or parentheses";
+    case CSearch_func::e_Too_long:
+        return s_Format<add_brackets>("violates") + " e_Too_long !!!";
+    case CSearch_func::e_Has_term:
+        return s_Format<add_brackets>("violates") + " e_Has_term !!!";
+
+    default:
+        break;
+    }
+
+    return "";
+}
+
+
+static string GetRuleMatch(const CSuspect_rule& rule) // Used on ASN.1 input
+{
+    auto text = s_GetRuleMatch<true>(rule);
+    if (text.empty()) {
+        text = "violate[S] some other mysterious rule!";
+    }
+    return "[n] feature[s] " + text;
+}
+
 
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
 
@@ -227,37 +301,35 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
         if (context.IsPseudo(feat)) {
             continue;
         }
-        const CSeqFeatData &data = feat.GetData();
+        const CSeqFeatData&    data    = feat.GetData();
         CSeqFeatData::ESubtype subtype = data.GetSubtype();
-        if (subtype == CSeqFeatData::eSubtype_prot && data.GetProt().IsSetName() && !data.GetProt().GetName().empty()) {
-            CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-            string prot_name = *data.GetProt().GetName().begin();
-            vector<char> Hits(rules->Get().size());
+        if (subtype == CSeqFeatData::eSubtype_prot && data.GetProt().IsSetName() && ! data.GetProt().GetName().empty()) {
+            CConstRef<CSuspect_rule_set> rules     = context.GetProductRules();
+            string                       prot_name = *data.GetProt().GetName().begin();
+            vector<char>                 Hits(rules->Get().size());
             std::fill(Hits.begin(), Hits.end(), 0);
             rules->Screen(prot_name, Hits.data());
-            if (!ContainsLetters(prot_name)) {
-                const CSeq_feat* cds = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope()));    // consider different implementation
-                CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
+            if (! ContainsLetters(prot_name)) {
+                const CSeq_feat* cds  = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope())); // consider different implementation
+                CReportNode&     node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
                 node.Add(*context.SeqFeatObjRef(cds ? *cds : feat)).Fatal();
-            }
-            else {
+            } else {
                 size_t rule_num = 0;
                 for (auto rule : rules->Get()) {
                     if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
                         string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-                        size_t rule_type = rule->GetRule_type();
-                        string rule_name = "[*";
+                        size_t rule_type     = rule->GetRule_type();
+                        string rule_name     = "[*";
                         if (rule_type < 10) {
                             rule_name += " ";
                         }
                         rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
-                        string rule_text = leading_space + GetRuleMatch(*rule);
-                        CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-                        const CSeq_feat* cds = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope())); // needs to optimize
+                        string           rule_text = leading_space + GetRuleMatch(*rule);
+                        CReportNode&     node      = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                        const CSeq_feat* cds       = sequence::GetCDSForProduct(context.CurrentBioseq(), &(context.GetScope())); // needs to optimize
                         if (rule->CanGetReplace()) {
                             node.Add(*context.SeqFeatObjRef(cds ? *cds : feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
-                        }
-                        else {
+                        } else {
                             node.Add(*context.SeqFeatObjRef(cds ? *cds : feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
                         }
                     }
@@ -268,36 +340,34 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
             if (feat.IsSetXref()) {
                 ITERATE (CSeq_feat::TXref, it, feat.GetXref()) {
                     const CSeqFeatXref& xref = **it;
-                    if (xref.IsSetData() && xref.GetData().IsProt() ) {
+                    if (xref.IsSetData() && xref.GetData().IsProt()) {
                         const CProt_ref& pref = xref.GetData().GetProt();
                         ITERATE (CProt_ref::TName, it, pref.GetName()) {
-                            if ( !it->empty() ) {
-                                string prot_name = *it;
-                                CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-                                vector<char> Hits(rules->Get().size());
+                            if (! it->empty()) {
+                                string                       prot_name = *it;
+                                CConstRef<CSuspect_rule_set> rules     = context.GetProductRules();
+                                vector<char>                 Hits(rules->Get().size());
                                 std::fill(Hits.begin(), Hits.end(), 0);
                                 rules->Screen(prot_name, Hits.data());
-                                if (!ContainsLetters(prot_name)) {
+                                if (! ContainsLetters(prot_name)) {
                                     CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
                                     node.Add(*context.SeqFeatObjRef(feat)).Fatal();
-                                }
-                                else {
+                                } else {
                                     size_t rule_num = 0;
                                     for (auto rule : rules->Get()) {
                                         if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
                                             string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-                                            size_t rule_type = rule->GetRule_type();
-                                            string rule_name = "[*";
+                                            size_t rule_type     = rule->GetRule_type();
+                                            string rule_name     = "[*";
                                             if (rule_type < 10) {
                                                 rule_name += " ";
                                             }
                                             rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
-                                            string rule_text = leading_space + GetRuleMatch(*rule);
-                                            CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                                            string       rule_text = leading_space + GetRuleMatch(*rule);
+                                            CReportNode& node      = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
                                             if (rule->CanGetReplace()) {
                                                 node.Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
-                                            }
-                                            else {
+                                            } else {
                                                 node.Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
                                             }
                                         }
@@ -314,32 +384,30 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, FEAT, eDisc | eOncaller | eSubmitter | e
             if (rna.IsSetExt()) {
                 const CRNA_ref::C_Ext& ext = rna.GetExt();
                 if (ext.Which() == CRNA_ref::C_Ext::e_Name) {
-                    string mrna_name = ext.GetName();
-                    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-                    vector<char> Hits(rules->Get().size());
+                    string                       mrna_name = ext.GetName();
+                    CConstRef<CSuspect_rule_set> rules     = context.GetProductRules();
+                    vector<char>                 Hits(rules->Get().size());
                     std::fill(Hits.begin(), Hits.end(), 0);
                     rules->Screen(mrna_name, Hits.data());
-                    if (!ContainsLetters(mrna_name)) {
+                    if (! ContainsLetters(mrna_name)) {
                         CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
                         node.Add(*context.SeqFeatObjRef(feat)).Fatal();
-                    }
-                    else {
+                    } else {
                         size_t rule_num = 0;
                         for (auto rule : rules->Get()) {
                             if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(mrna_name)) {
                                 string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-                                size_t rule_type = rule->GetRule_type();
-                                string rule_name = "[*";
+                                size_t rule_type     = rule->GetRule_type();
+                                string rule_name     = "[*";
                                 if (rule_type < 10) {
                                     rule_name += " ";
                                 }
                                 rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
-                                string rule_text = leading_space + GetRuleMatch(*rule);
-                                CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+                                string       rule_text = leading_space + GetRuleMatch(*rule);
+                                CReportNode& node      = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
                                 if (rule->CanGetReplace()) {
                                     node.Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
-                                }
-                                else {
+                                } else {
                                     node.Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
                                 }
                             }
@@ -357,7 +425,7 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 {
     string find = search;
     NStr::TruncateSpacesInPlace(find);
-    if (!find.length()) {
+    if (! find.length()) {
         return input;
     }
     size_t p;
@@ -371,17 +439,17 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 
 static void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& prot, CSeq_feat*& mrna)
 {
-    prot = 0;
-    mrna = 0;
+    prot               = 0;
+    mrna               = 0;
     CBioseq_Handle bsh = scope.GetBioseqHandle(cds.GetProduct());
-    if (!bsh) {
+    if (! bsh) {
         return;
     }
     CFeat_CI pr(bsh, CSeqFeatData::eSubtype_prot);
     if (pr) {
-        prot = (CSeq_feat*)&pr->GetMappedFeature();
-        string name = *prot->GetData().GetProt().GetName().begin();
-        const CSeq_feat* rna = sequence::GetBestMrnaForCds(cds, scope);
+        prot                  = (CSeq_feat*)&pr->GetMappedFeature();
+        string           name = *prot->GetData().GetProt().GetName().begin();
+        const CSeq_feat* rna  = sequence::GetBestMrnaForCds(cds, scope);
         if (rna && rna->GetData().GetRna().CanGetExt() && rna->GetData().GetRna().GetExt().GetName() == name) {
             mrna = (CSeq_feat*)rna;
         }
@@ -389,8 +457,8 @@ static void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*&
 }
 
 
-typedef std::function < CRef<CSeq_feat>() > GetFeatureFunc;
-string FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
+typedef std::function<CRef<CSeq_feat>()> GetFeatureFunc;
+string                                   FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
 {
     string newtext;
     string orig_prot_name;
@@ -401,20 +469,18 @@ string FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, Get
         const CSimple_replace& repl = rf.GetSimple_replace();
         if (repl.GetWhole_string()) {
             newtext = repl.GetReplace();
-        }
-        else {
-            const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+        } else {
+            const string& find  = rule->GetFind().GetString_constraint().GetMatch_text();
             const string& subst = repl.GetReplace();
-            newtext = ReplaceNoCase(prot_name, find, subst);
+            newtext             = ReplaceNoCase(prot_name, find, subst);
         }
-    }
-    else if (rf.IsHaem_replace()) {
+    } else if (rf.IsHaem_replace()) {
         newtext = ReplaceNoCase(prot_name, "haem", "hem");
     }
-    if (!newtext.empty() && newtext != prot_name) {
+    if (! newtext.empty() && newtext != prot_name) {
         orig_prot_name = std::move(prot_name);
-        prot_name = std::move(newtext);
-        auto mrna = get_mrna();
+        prot_name      = std::move(newtext);
+        auto mrna      = get_mrna();
         if (mrna) {
             mrna->SetData().SetRna().SetExt().SetName() = prot_name;
         }
@@ -431,18 +497,18 @@ string FixProductName(const CSuspect_rule* rule, CScope&, string& prot_name, Get
 DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 {
     CRef<CAutofixReport> ret;
-    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    const CSeq_feat*     sf   = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
     const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj->GetMoreInfo().GetPointer());
 
-    const CSeqFeatData &data = sf->GetData();
+    const CSeqFeatData&    data    = sf->GetData();
     CSeqFeatData::ESubtype subtype = data.GetSubtype();
     if (subtype == CSeqFeatData::eSubtype_cdregion && ! sf->IsSetProduct()) {
-       if (sf->IsSetXref()) {
+        if (sf->IsSetXref()) {
             ITERATE (CSeq_feat::TXref, it, sf->GetXref()) {
                 const CSeqFeatXref& xref = **it;
-                if (xref.IsSetData() && xref.GetData().IsProt() ) {
+                if (xref.IsSetData() && xref.GetData().IsProt()) {
                     string prot_name = xref.GetData().GetProt().GetName().front();
-                    if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+                    if (! rule->StringMatchesSuspectProductRule(prot_name)) {
                         return ret;
                     }
 
@@ -455,26 +521,24 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
                         const CSimple_replace& repl = rf.GetSimple_replace();
                         if (repl.GetWhole_string()) {
                             newtext = repl.GetReplace();
-                        }
-                        else {
-                            const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+                        } else {
+                            const string& find  = rule->GetFind().GetString_constraint().GetMatch_text();
                             const string& subst = repl.GetReplace();
-                            newtext = ReplaceNoCase(prot_name, find, subst);
+                            newtext             = ReplaceNoCase(prot_name, find, subst);
                         }
-                    }
-                    else if (rf.IsHaem_replace()) {
+                    } else if (rf.IsHaem_replace()) {
                         newtext = ReplaceNoCase(prot_name, "haem", "hem");
                     }
-                    if (!newtext.empty() && newtext != prot_name) {
-                        old_prot_name = std::move(prot_name);
-                        prot_name = std::move(newtext);
+                    if (! newtext.empty() && newtext != prot_name) {
+                        old_prot_name                                                   = std::move(prot_name);
+                        prot_name                                                       = std::move(newtext);
                         const_cast<string&>(xref.GetData().GetProt().GetName().front()) = prot_name;
                     }
-                    if (prot_name != old_prot_name && !prot_name.empty()) {
+                    if (prot_name != old_prot_name && ! prot_name.empty()) {
                         string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
                         obj->SetFixed();
                         ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
-                        CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+                        CRef<CAutofixReport>         report(new CAutofixReport(s, 1));
                         vector<CRef<CAutofixReport>> reports;
                         reports.push_back(report);
                         ret->AddSubitems(reports);
@@ -489,7 +553,7 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
             const CRNA_ref::C_Ext& ext = rna.GetExt();
             if (ext.Which() == CRNA_ref::C_Ext::e_Name) {
                 string mrna_name = ext.GetName();
-                if (!rule->StringMatchesSuspectProductRule(mrna_name)) {
+                if (! rule->StringMatchesSuspectProductRule(mrna_name)) {
                     return ret;
                 }
 
@@ -502,29 +566,27 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
                     const CSimple_replace& repl = rf.GetSimple_replace();
                     if (repl.GetWhole_string()) {
                         newtext = repl.GetReplace();
-                    }
-                    else {
-                        const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+                    } else {
+                        const string& find  = rule->GetFind().GetString_constraint().GetMatch_text();
                         const string& subst = repl.GetReplace();
-                        newtext = ReplaceNoCase(mrna_name, find, subst);
+                        newtext             = ReplaceNoCase(mrna_name, find, subst);
                     }
-                }
-                else if (rf.IsHaem_replace()) {
+                } else if (rf.IsHaem_replace()) {
                     newtext = ReplaceNoCase(mrna_name, "haem", "hem");
                 }
-                if (!newtext.empty() && newtext != mrna_name) {
-                    old_mrna_name = std::move(mrna_name);
-                    mrna_name = std::move(newtext);
+                if (! newtext.empty() && newtext != mrna_name) {
+                    old_mrna_name        = std::move(mrna_name);
+                    mrna_name            = std::move(newtext);
                     CRef<CSeq_feat> mrna = CRef<CSeq_feat>((CSeq_feat*)sf);
                     if (mrna) {
                         mrna->SetData().SetRna().SetExt().SetName() = mrna_name;
                     }
                 }
-                if (mrna_name != old_mrna_name && !mrna_name.empty()) {
+                if (mrna_name != old_mrna_name && ! mrna_name.empty()) {
                     string s = "Changed \'" + old_mrna_name + "\' to \'" + mrna_name + "\' at " + obj->GetLocation();
                     obj->SetFixed();
                     ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
-                    CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+                    CRef<CAutofixReport>         report(new CAutofixReport(s, 1));
                     vector<CRef<CAutofixReport>> reports;
                     reports.push_back(report);
                     ret->AddSubitems(reports);
@@ -539,18 +601,16 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
     GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
     if (prot) {
         string& prot_name = prot->SetData().SetProt().SetName().front();
-        if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+        if (! rule->StringMatchesSuspectProductRule(prot_name)) {
             return ret;
         }
-        string old_prot_name = FixProductName(rule, context.GetScope(),
-            prot_name,
-            [&mrna] { return CRef<CSeq_feat>(mrna); },
-            [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
-        if (prot_name != old_prot_name && !prot_name.empty()) {
+        string old_prot_name = FixProductName(
+            rule, context.GetScope(), prot_name, [&mrna] { return CRef<CSeq_feat>(mrna); }, [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
+        if (prot_name != old_prot_name && ! prot_name.empty()) {
             string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
             obj->SetFixed();
             ret.Reset(new CAutofixReport("SUSPECT_PRODUCT_NAMES", 0));
-            CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+            CRef<CAutofixReport>         report(new CAutofixReport(s, 1));
             vector<CRef<CAutofixReport>> reports;
             reports.push_back(report);
             ret->AddSubitems(reports);
@@ -566,7 +626,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
 {
     const CSeqdesc* biosrc = context.GetBiosource();
     if (biosrc) {
-        const CBioSource& src = biosrc->GetSource();
+        const CBioSource&   src    = biosrc->GetSource();
         CBioSource::TGenome genome = src.GetGenome();
         if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid || context.IsViral(&src) || context.IsBacterial(&src)) {
             return;
@@ -576,10 +636,10 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
         }
     }
     for (auto& feat : context.GetFeat()) {
-        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot && feat.GetData().GetProt().IsSetName() && !feat.GetData().GetProt().GetName().empty() && !context.IsPseudo(feat)) {
-            string prot_name = *feat.GetData().GetProt().GetName().begin();
-            CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
-            vector<char> Hits(rules->Get().size());
+        if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_prot && feat.GetData().GetProt().IsSetName() && ! feat.GetData().GetProt().GetName().empty() && ! context.IsPseudo(feat)) {
+            string                       prot_name = *feat.GetData().GetProt().GetName().begin();
+            CConstRef<CSuspect_rule_set> rules     = context.GetOrganelleProductRules();
+            vector<char>                 Hits(rules->Get().size());
             std::fill(Hits.begin(), Hits.end(), 0);
             rules->Screen(prot_name, Hits.data());
             size_t rule_num = 0;
@@ -587,8 +647,7 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
                 if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
                     if (rule->CanGetReplace()) {
                         m_Objs["[n] suspect product[s] not organelle"].Add(*context.SeqFeatObjRef(feat, CDiscrepancyContext::eFixSet, (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
-                    }
-                    else {
+                    } else {
                         m_Objs["[n] suspect product[s] not organelle"].Add(*context.SeqFeatObjRef(feat)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
                     }
                 }
@@ -602,32 +661,30 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, FEAT, eOncaller, "Organelle products on non
 DISCREPANCY_AUTOFIX(ORGANELLE_PRODUCTS) // There are currently no autofixable rules for ORGANELLE_PRODUCTS
 {
     CRef<CAutofixReport> ret;
-    const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
+    const CSeq_feat*     sf   = dynamic_cast<const CSeq_feat*>(context.FindObject(*obj));
     const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj->GetMoreInfo().GetPointer());
-    CSeq_feat* prot;
-    CSeq_feat* mrna;
+    CSeq_feat*           prot;
+    CSeq_feat*           mrna;
     GetProtAndRnaForCDS(*sf, context.GetScope(), prot, mrna);
     if (prot) {
         string& prot_name = prot->SetData().SetProt().SetName().front();
-        if (!rule->StringMatchesSuspectProductRule(prot_name)) {
+        if (! rule->StringMatchesSuspectProductRule(prot_name)) {
             return ret;
         }
-        string old_prot_name = FixProductName(rule, context.GetScope(),
-            prot_name,
-            [&mrna] { return CRef<CSeq_feat>(mrna); },
-            [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
-        if (prot_name != old_prot_name && !prot_name.empty()) {
+        string old_prot_name = FixProductName(
+            rule, context.GetScope(), prot_name, [&mrna] { return CRef<CSeq_feat>(mrna); }, [&sf] { return CRef<CSeq_feat>((CSeq_feat*)sf); });
+        if (prot_name != old_prot_name && ! prot_name.empty()) {
             string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj->GetLocation();
             obj->SetFixed();
             ret.Reset(new CAutofixReport("ORGANELLE_PRODUCTS", 0));
-            CRef<CAutofixReport> report(new CAutofixReport(s, 1));
+            CRef<CAutofixReport>         report(new CAutofixReport(s, 1));
             vector<CRef<CAutofixReport>> reports;
             reports.push_back(report);
             ret->AddSubitems(reports);
         }
     }
     return ret;
-} 
+}
 
 
 static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet()
@@ -636,7 +693,7 @@ static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet()
     CFastMutexGuard guard(sx_RuleMutex);
 
     static CAutoInitRef<CSuspect_rule_set> rrna_products_suspect_rule_set;
-    if( rrna_products_suspect_rule_set.IsInitialized() ) {
+    if (rrna_products_suspect_rule_set.IsInitialized()) {
         // already built
         return ConstRef(&*rrna_products_suspect_rule_set);
     }
@@ -664,9 +721,9 @@ static CConstRef<CSuspect_rule_set> s_GetrRNAProductsSuspectRuleSet()
 // only bare minimum implementation and raises an exception if it the
 // input goes beyond its capability
 static void s_SummarizeStringConstraint(
-    ostream & out_strm, const CString_constraint & string_constraint )
+    ostream& out_strm, const CString_constraint& string_constraint)
 {
-    if( string_constraint.IsSetMatch_location() ||
+    if (string_constraint.IsSetMatch_location() ||
         string_constraint.IsSetCase_sensitive() ||
         string_constraint.IsSetIgnore_space() ||
         string_constraint.IsSetIgnore_punct() ||
@@ -677,15 +734,14 @@ static void s_SummarizeStringConstraint(
         string_constraint.IsSetIs_all_punct() ||
         string_constraint.IsSetIgnore_weasel() ||
         string_constraint.IsSetIs_first_cap() ||
-        string_constraint.IsSetIs_first_each_cap() )
-    {
+        string_constraint.IsSetIs_first_each_cap()) {
         NCBI_USER_THROW(
             "s_SummarizeStringConstraint input too complex.  "
             "Please expand the function or find/create a better one.");
     }
 
     out_strm << "contains '" << string_constraint.GetMatch_text() << "'";
-    if( GET_FIELD_OR_DEFAULT(string_constraint, Whole_word, false) ) {
+    if (GET_FIELD_OR_DEFAULT(string_constraint, Whole_word, false)) {
         out_strm << " (whole word)";
     }
 }
@@ -695,9 +751,9 @@ static void s_SummarizeStringConstraint(
 // only bare minimum implementation and raises an exception if it the
 // input goes beyond its capability
 static void s_SummarizeSearchFunc(
-    ostream & out_strm, const CSearch_func & search_func)
+    ostream& out_strm, const CSearch_func& search_func)
 {
-    if( ! search_func.IsString_constraint() ) {
+    if (! search_func.IsString_constraint()) {
         NCBI_USER_THROW(
             "s_SummarizeSearchFunc input too complex.  "
             "Please expand the function or find/create a better one.");
@@ -719,14 +775,13 @@ static void s_SummarizeSearchFunc(
 // Raises an exception if the input is beyond its ability to handle.
 //
 static void s_SummarizeSuspectRule(
-    ostream & out_strm, const CSuspect_rule & rule)
+    ostream& out_strm, const CSuspect_rule& rule)
 {
-    if( rule.IsSetFeat_constraint() ||
+    if (rule.IsSetFeat_constraint() ||
         rule.IsSetRule_type() ||
         rule.IsSetReplace() ||
         rule.IsSetDescription() ||
-        rule.IsSetFatal() )
-    {
+        rule.IsSetFatal()) {
         NCBI_USER_THROW(
             "s_SummarizeSuspectRule input too complex.  "
             "Please expand the function or find/create a better one.");
@@ -734,7 +789,7 @@ static void s_SummarizeSuspectRule(
 
     _ASSERT(rule.IsSetFind());
     s_SummarizeSearchFunc(out_strm, rule.GetFind());
-    if( rule.IsSetExcept() ) {
+    if (rule.IsSetExcept()) {
         out_strm << " but not ";
         s_SummarizeSearchFunc(out_strm, rule.GetExcept());
     }
@@ -746,9 +801,9 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, FEAT, eDisc | eSubmitter | eSmart, "rRNA
     static const string kMsg = "[n] rRNA product name[s] contain[S] suspect phrase";
     for (auto& feat : context.GetFeat()) {
         if (feat.IsSetData() && feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
-            const string product = GetRNAProductString(feat);
-            CConstRef<CSuspect_rule_set> rules = s_GetrRNAProductsSuspectRuleSet();
-            vector<char> Hits(rules->Get().size());
+            const string                 product = GetRNAProductString(feat);
+            CConstRef<CSuspect_rule_set> rules   = s_GetrRNAProductsSuspectRuleSet();
+            vector<char>                 Hits(rules->Get().size());
             std::fill(Hits.begin(), Hits.end(), 0);
             rules->Screen(product, Hits.data());
             size_t rule_num = 0;
@@ -766,36 +821,29 @@ DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, FEAT, eDisc | eSubmitter | eSmart, "rRNA
 }
 
 
-// _SUSPECT_PRODUCT_NAMES - used for asndisc -N option
-
-DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, STRING, 0, "Suspect Product Names for asndisc -N option")
+// Used for asndisc -N option
+unsigned int g_CheckProductName(const string& product_name, const CSuspect_rule_set& rules, CNcbiOstream& ostream)
 {
-    CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
-    vector<char> Hits(rules->Get().size());
-    std::fill(Hits.begin(), Hits.end(), 0);
-    const string& str = context.CurrentText();
-    rules->Screen(str, Hits.data());
+    vector<char> hits(rules.Get().size(), 0);
+    rules.Screen(product_name, hits.data());
+    size_t       rule_num{ 0 };
+    unsigned int max_sev{ 0 };
 
-    if (!ContainsLetters(str)) {
-        CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
-        node.Add(*context.StringObjRef()).Fatal();
+    if (! ContainsLetters(product_name)) {
+        ostream << product_name << '\t' << "does not contain letters\tNone\n";
     }
-    size_t rule_num = 0;
-    for (auto rule : rules->Get()) {
-        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(str)) {
-            string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-            size_t rule_type = rule->GetRule_type();
-            string rule_name = "[*";
-            if (rule_type < 10) {
-                rule_name += " ";
+
+    for (auto rule : rules.Get()) {
+        if (hits[rule_num] && rule->StringMatchesSuspectProductRule(product_name)) {
+            ostream << product_name << '\t' << s_GetRuleMatch(*rule) << '\t' << GetRuleText(*rule) << '\n';
+            unsigned int sev = rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning;
+            if (sev > max_sev) {
+                max_sev = sev;
             }
-            rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
-            string rule_text = leading_space + GetRuleMatch(*rule);
-            CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-            node.Add(*context.StringObjRef()).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
         }
-        rule_num++;
+        ++rule_num;
     }
+    return max_sev;
 }
 
 END_SCOPE(NDiscrepancy)
