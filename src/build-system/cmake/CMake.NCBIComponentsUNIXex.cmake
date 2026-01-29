@@ -121,7 +121,7 @@ set(NCBI_ThirdParty_OPENTRACING   ${NCBI_TOOLS_ROOT}/opentracing-cpp-1.6.0 CACHE
 set(NCBI_ThirdParty_JAEGER        ${NCBI_TOOLS_ROOT}/jaeger-client-cpp-0.7.0 CACHE PATH "JAEGER root")
 set(NCBI_ThirdParty_OPENTELEMETRY ${NCBI_TOOLS_ROOT}/opentelemetry-cpp-1.14.2+grpc150 CACHE PATH "OPENTELEMETRY root")
 set(NCBI_ThirdParty_AWS_SDK       ${NCBI_TOOLS_ROOT}/aws-sdk-cpp-1.8.14 CACHE PATH "AWS_SDK root")
-set(NCBI_ThirdParty_TBB           /usr/local/intel/Compiler/24.0/tbb/2021.13 CACHE PATH "(one)TBB root")
+set(NCBI_ThirdParty_TBB           ${NCBI_TOOLS_ROOT}/oneTBB-2022.3.0 CACHE PATH "(one)TBB root")
 set(NCBI_ThirdParty_IPS4O         ${NCBI_TOOLS_ROOT}/ips4o-0.0.20250115 CACHE PATH "IPS4o root")
 
 #############################################################################

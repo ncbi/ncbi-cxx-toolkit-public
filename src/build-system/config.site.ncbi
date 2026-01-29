@@ -371,7 +371,7 @@ esac
 : ${SYBASE_PATH=/opt/sybase/clients/16.0-64bit}
 local_sybase_root="/opt/sybase/clients"
 
-: ${TBB_PATH=/usr/local/intel/Compiler/24.0/tbb/2021.13}
+: ${TBB_PATH=$NCBI/oneTBB-2022.3.0}
 
 : ${TCHECK_FALLBACK=/opt/intel/itt/bin/32e:/usr/local/intel/itt-3.1/tcheck/bin/32e}
 
