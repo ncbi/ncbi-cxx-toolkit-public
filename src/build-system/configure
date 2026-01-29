@@ -669,8 +669,10 @@ PERL_INCLUDE
 UNLESS_PUBSEQOS
 ncbi_xreader_pubseqos2
 ncbi_xreader_pubseqos
+IPS4O_STATIC_LIBS
 IPS4O_LIBS
 IPS4O_INCLUDE
+TBB_STATIC_LIBS
 OPENTELEMETRY_STATIC_LIBS
 JAEGER_STATIC_LIBS
 OPENTRACING_STATIC_LIBS
@@ -37797,6 +37799,16 @@ case "$with_tbb" in
    *             ) TBB_PATH=$with_tbb ;;
 esac
 if test -d "$TBB_PATH"; then
+   TBB_ARCH_PATH=$TBB_PATH
+for d in "$TBB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$TBB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
+         "$TBB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
+         "$TBB_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx"; do
+   if test -d "$d"; then
+      TBB_ARCH_PATH=$d
+      break
+   fi
+done
    ncbi_fix_dir_tmp=`if cd $TBB_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $TBB_PATH && $smart_pwd 2>/dev/null`
@@ -37811,6 +37823,11 @@ if test -d "$TBB_PATH"; then
          ;;
     /*) TBB_PATH=$ncbi_fix_dir_tmp ;;
  esac
+fi
+if test -d $TBB_PATH/lib${bit64_sfx}; then
+   TBB_LIBDIR=$TBB_PATH/lib${bit64_sfx}
+else
+   TBB_LIBDIR=$TBB_PATH/lib
 fi
 if test "$with_tbb" != "no"; then
     case "$TBB_PATH:$with_tbb" in
@@ -37941,8 +37958,17 @@ $as_echo "#define HAVE_LIBTBB 1" >>confdefs.h
 
 
 
-if test "$with_tbb" != no -a "$with_debug" != no; then
-   TBB_LIBS="${TBB_LIBS% }_debug"
+if test "$with_tbb" = no; then
+   TBB_STATIC_LIBS=
+else
+   if test "$with_debug" != no -a -f "$TBB_LIBDIR/libtbb_debug.so"; then
+      TBB_LIBS="${TBB_LIBS% }_debug"
+   fi
+   if test -f "$TBB_LIBDIR/libtbb-static.a"; then
+      TBB_STATIC_LIBS="${TBB_LIBS% }-static"
+   else
+      TBB_STATIC_LIBS=$TBB_LIBS
+   fi
 fi
 
 
@@ -37982,7 +38008,7 @@ if test "x$ac_cv_header_ips4o_hpp" = x""yes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_IPS4O_HPP 1
 _ACEOF
-           WithPackages="$WithPackages${WithPackagesSep}IPS4O"; WithPackagesSep=" "; IPS4O_LIBS=$TBB_LIBS
+           WithPackages="$WithPackages${WithPackagesSep}IPS4O"; WithPackagesSep=" "; IPS4O_LIBS=$TBB_LIBS; IPS4O_STATIC_LIBS=$TBB_STATIC_LIBS
 else
   IPS4O_INCLUDE=; if test "${with_ips4o:=no}" != no; then
        as_fn_error $? "--with-ips4o explicitly specified, but no usable version found." "$LINENO" 5
@@ -38468,6 +38494,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
