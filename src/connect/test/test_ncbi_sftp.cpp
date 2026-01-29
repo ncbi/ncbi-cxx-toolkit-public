@@ -401,10 +401,10 @@ BOOST_AUTO_TEST_CASE(LIST, * utf::precondition(SGlobalFixture::CanRun))
 {
     array<set<string>, 2> current_dir{
             set<string>{
-                "pr--r--r--    1 coremake coreprog        0 Apr  3  2025 fifo\\r",
-                "dr-xr-xr-x    4 coremake coreprog     4096 Apr  3  2025 dir\\r",
-                "-r--r--r--    1 coremake coreprog        4 Apr  3  2025 file\\r",
-                "lrwxrwxrwx    1 coremake coreprog        4 Apr  3  2025 link\\r",
+                "pr--r--r--    1 coremake 511             0 Apr  3  2025 fifo\\r",
+                "dr-xr-xr-x    4 coremake 511          4096 Apr  3  2025 dir\\r",
+                "-r--r--r--    1 coremake 511             4 Apr  3  2025 file\\r",
+                "lrwxrwxrwx    1 coremake 511             4 Apr  3  2025 link\\r",
             },
             set<string>{
                 "dr-xr-xr-x   4 coremake 511          4096 Apr  3  2025 dir\\r",
@@ -415,10 +415,10 @@ BOOST_AUTO_TEST_CASE(LIST, * utf::precondition(SGlobalFixture::CanRun))
         },
         dir{
             set<string>{
-                "-r--r--r--    1 coremake cppcore        12 Apr  3  2025 another_file\\r",
-                "dr-xr-xr-x    2 coremake coreprog     4096 Apr  3  2025 another_dir\\r",
-                "lrwxrwxrwx    1 coremake cppcore        12 Apr  3  2025 another_link\\r",
-                "pr--r--r--    1 coremake coreprog        0 Apr  3  2025 another_fifo\\r",
+                "-r--r--r--    1 coremake 5333           12 Apr  3  2025 another_file\\r",
+                "dr-xr-xr-x    2 coremake 511          4096 Apr  3  2025 another_dir\\r",
+                "lrwxrwxrwx    1 coremake 5333           12 Apr  3  2025 another_link\\r",
+                "pr--r--r--    1 coremake 511             0 Apr  3  2025 another_fifo\\r",
             },
             set<string>{
                 "dr-xr-xr-x   2 coremake 511          4096 Apr  3  2025 another_dir\\r",
