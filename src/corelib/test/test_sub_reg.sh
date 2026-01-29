@@ -13,6 +13,8 @@ for x in `printenv | sed -ne 's/^\(NCBI_CONFIG_[^=]*\)=.*/\1/p'`; do
     unset $x
 done
 
+wd=`pwd`
+
 # Set environment variables with registry values (Windows version has capitalized value names)
 export NCBI_CONFIG_PATH=`dirname $0`/test_sub_reg_data
 unamestr=`uname -s`
@@ -25,6 +27,7 @@ case "$unamestr" in
         ;;
       * )
         echo "compiler is MSVC"
+        wd="$(cygpath -w $wd)"
         ;;
     esac
     export NCBI_CONFIG_OVERRIDES=$NCBI_CONFIG_PATH/indirect_env.win.ini
@@ -78,13 +81,11 @@ esac
 unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
 export NCBI_DONT_USE_LOCAL_CONFIG=1
 
-wd=`pwd`
 case "$unamestr" in
   MINGW* | CYGWIN* )
     unset NCBI_CONFIG_E__TEST NCBI_CONFIG__TEST__E NCBI_CONFIG__TEST__EX
     unset NCBI_CONFIG__ENVIRONMENT_DOT_INDIRECTENV__EX_IE NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OB_E NCBI_CONFIG__OVERRIDESBASE_DOT_ENVIRONMENT__OBX_E 
     unset NCBI_CONFIG__ENVIRONMENT_DOT_INDIRECTENV__E_IE NCBI_CONFIG__A_DOT_B__C_DOT_D
-    wd="$(cygpath -w $wd)"
     ;;
   * )
     unset NCBI_CONFIG_e__test NCBI_CONFIG__test__e NCBI_CONFIG__test__ex 
