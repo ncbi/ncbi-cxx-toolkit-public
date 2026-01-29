@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 class CSerialObject;
 class CObjectIStream;
 
+
 BEGIN_SCOPE(objects)
 class CSuspect_rule_set;
 class CSuspect_rule;
@@ -291,6 +292,8 @@ NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetOrganelleProduc
 NCBI_DISCREPANCY_EXPORT CConstRef<objects::CSuspect_rule_set> GetProductRules(const string& name = "");
 
 NCBI_DISCREPANCY_EXPORT std::ostream& operator<<(std::ostream& str, NDiscrepancy::eTestNames name);
+
+NCBI_DISCREPANCY_EXPORT unsigned int g_CheckProductName(const string& product_name, const objects::CSuspect_rule_set& rules, CNcbiOstream& ostream);
 
 END_SCOPE(NDiscrepancy)
 

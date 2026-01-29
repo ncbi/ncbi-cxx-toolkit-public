@@ -199,7 +199,6 @@ enum class eTestNames
     VERY_LONG_NO_ANNOTATION,
     ZERO_BASECOUNT,
     _CDS_TRNA_OVERLAP,
-    _SUSPECT_PRODUCT_NAMES,
     max_test_names,
     notset,
 };
