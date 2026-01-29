@@ -9581,13 +9581,28 @@ case "$with_tbb" in
    *             ) TBB_PATH=$with_tbb ;;
 esac
 if test -d "$TBB_PATH"; then
+   NCBI_FIND_ARCH_PATH(TBB)
    NCBI_FIX_DIR(TBB_PATH)
+fi
+if test -d $TBB_PATH/lib${bit64_sfx}; then
+   TBB_LIBDIR=$TBB_PATH/lib${bit64_sfx}
+else
+   TBB_LIBDIR=$TBB_PATH/lib
 fi
 NCBI_CHECK_THIRD_PARTY_LIB(tbb, 
    [AC_LANG_PROGRAM([[@%:@include <tbb/tbb.h>]],
       [[return tbb::info::default_concurrency();]])])
-if test "$with_tbb" != no -a "$with_debug" != no; then
-   TBB_LIBS="${TBB_LIBS% }_debug"
+if test "$with_tbb" = no; then
+   TBB_STATIC_LIBS=
+else
+   if test "$with_debug" != no -a -f "$TBB_LIBDIR/libtbb_debug.so"; then
+      TBB_LIBS="${TBB_LIBS% }_debug"
+   fi
+   if test -f "$TBB_LIBDIR/libtbb-static.a"; then
+      TBB_STATIC_LIBS="${TBB_LIBS% }-static"
+   else
+      TBB_STATIC_LIBS=$TBB_LIBS
+   fi
 fi
 
 
@@ -9607,7 +9622,8 @@ else
 fi
 IPS4O_INCLUDE="$IPS4O_INCLUDE $TBB_INCLUDE"
 CPPFLAGS="$orig_CPPFLAGS $IPS4O_INCLUDE"
-AC_CHECK_HEADERS([ips4o.hpp], [NCBI_PACKAGE(IPS4O); IPS4O_LIBS=$TBB_LIBS],
+AC_CHECK_HEADERS([ips4o.hpp],
+   [NCBI_PACKAGE(IPS4O); IPS4O_LIBS=$TBB_LIBS; IPS4O_STATIC_LIBS=$TBB_STATIC_LIBS],
    [IPS4O_INCLUDE=; NCBI_MISSING_PACKAGE(ips4o)])
 
 
@@ -10347,8 +10363,10 @@ AC_SUBST(YAML_CPP_STATIC_LIBS)
 AC_SUBST(OPENTRACING_STATIC_LIBS)
 AC_SUBST(JAEGER_STATIC_LIBS)
 AC_SUBST(OPENTELEMETRY_STATIC_LIBS)
+AC_SUBST(TBB_STATIC_LIBS)
 AC_SUBST(IPS4O_INCLUDE)
 AC_SUBST(IPS4O_LIBS)
+AC_SUBST(IPS4O_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
