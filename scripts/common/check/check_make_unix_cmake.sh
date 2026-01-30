@@ -32,6 +32,9 @@
 #
 ###########################################################################
 
+set +o errexit
+
+
 # Load configuration options
 x_check_scripts_dir=`dirname "$0"`
 x_scripts_dir=`dirname "$x_check_scripts_dir"`

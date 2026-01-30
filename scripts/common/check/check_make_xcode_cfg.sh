@@ -24,6 +24,8 @@
 #
 ###########################################################################
 
+set +o errexit
+
 
 # Get script directory
 script_dir=`dirname $0`
