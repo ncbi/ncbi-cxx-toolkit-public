@@ -26,10 +26,12 @@
 #
 ###########################################################################
 
+set +o errexit
+
+
 # Load configuration options
 x_check_scripts_dir=`dirname "$0"`
 . ${x_check_scripts_dir}/check_setup.cfg
-
 
 # Field delimiters in the list (this symbols used directly in the "sed" command)
 x_tmp="/tmp"
@@ -179,6 +181,8 @@ done
 
 cat > $x_out <<EOF
 #! /bin/bash
+
+set +o errexit
 
 root_dir="$x_root_dir"
 build_dir="$x_build_dir"

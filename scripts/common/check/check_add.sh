@@ -1,4 +1,5 @@
 #! /bin/sh
+
 # $Id$
 # Author:  Vladimir Ivanov, NCBI 
 #
@@ -22,6 +23,9 @@
 #       will be skipped. By default this variable is 'Y'.
 #
 ###########################################################################
+
+set +o errexit
+
 
 # Parameters
 x_out=$CHECK_RUN_LIST

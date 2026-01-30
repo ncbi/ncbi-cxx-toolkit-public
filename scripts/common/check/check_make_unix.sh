@@ -32,6 +32,9 @@
 #
 ###########################################################################
 
+set +o errexit
+
+
 # Load configuration options
 x_check_scripts_dir=`dirname "$0"`
 x_scripts_dir=`dirname "$x_check_scripts_dir"`
@@ -155,6 +158,8 @@ done
 
 cat > $x_out <<EOF
 #! /bin/sh
+
+set +o errexit
 
 root_dir="$x_root_dir"
 build_dir="$x_build_dir"
@@ -507,8 +512,8 @@ if test -f "$x_conf_dir/status/MaxDebug.enabled"; then
 fi
 if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  \$is_max_debug = false; then
    ulimit -c 1000000
-   ulimit -n 8192
    if [ \$cygwin = false ]; then
+       ulimit -n 8192
        if test "\$NCBI_CHECK_TOOLS" = "regular"; then
           ulimit -v 200000000
        else
