@@ -691,6 +691,7 @@ BKNU	s	Kunsan National University
 BKUCH	s	Bacha Khan University Charsadda			
 BLA	s	Fundacao Estadual de Pesquisa Agropecuaria			
 BLAT	s	St. Xavier's College, Botany Department			
+BLCC	c	Berthold-Laughinghouse Culture Collection			
 BLCU	s	Bee Biology and Systematics Laboratory			
 BLFU	s	University of the Free State, Department of Botany and Genetics			
 BLGA	s	Burgenlandisches Landesmuseum			
