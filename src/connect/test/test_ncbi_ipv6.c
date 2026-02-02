@@ -61,13 +61,19 @@ int main(int argc, const char* argv[])
         srand(g_NCBI_ConnectRandomSeed);
         memset(&addr, 0, sizeof(addr));
         if (rand() % 13) {
-            m = rand() & 1 ? 0 : sizeof(addr.octet) - 4;  /* if IPv4 */
+            /* non-empty address, IPv6 or IPv4 */
+            m = rand() & 1 ? 0/*IPv6*/ : sizeof(addr.octet) - 4/*IPv4*/;
             for (n = m;  n < sizeof(addr.octet);  ++n)
                 addr.octet[n] = rand() & 0xFF;
-            if (m  &&  (rand() & 1))  /* if mapped IPv4 */
-                memset(&addr.octet[10], '\xFF', 2 * sizeof(addr.octet[10]));
+            if (m) {
+                if (rand() & 1)  /* if mapped IPv4 */
+                    memset(&addr.octet[10], '\xFF', 2 * sizeof(addr.octet[10]));
+                else if (!addr.octet[m])
+                    addr.octet[m]++;  /* make sure compat IPv6 starts with non-0 */
+            }
             assert(!m  ||  NcbiIsIPv4Ex(&addr, 1/*compat okay*/));
         } else {
+            /* empty or full */
             m = 0;
             if (rand() & 1)
                 memset(&addr, '\xFF', sizeof(addr));
@@ -86,7 +92,7 @@ int main(int argc, const char* argv[])
                     if (rand() & 1)
                         *p = toupper((unsigned char)(*p));
                 } else
-                    assert(*p == ':'  ||  *p == '.'  ||  isdigit((unsigned char) (*p)));
+                    assert(*p == ':'  ||  *p == '.'  ||  isdigit((unsigned char)(*p)));
             }
             CORE_LOGF(eLOG_Note, ("Reparsing = %s", buf));
             assert(NcbiStringToAddr(&a, buf, 0));
