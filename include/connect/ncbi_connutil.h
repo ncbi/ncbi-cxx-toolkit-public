@@ -350,9 +350,10 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  * Steps 1 & 2 skipped for "service" passed as either NULL or empty ("").
  * Steps 3 & 4 skipped for a non-empty "service" and a "param" that already
  *             begins with "CONN_".
- * If the found match's value has enveloping quotes (either single '' or
- * double ""), then they are stripped from the result, which can then become
- * empty.
+ * The outer white space is then trimmed (from the beginning and the trailing
+ * positions of the string).  Next, if the result has enveloping quotes
+ * (either single '' or double ""), then they are stripped, too -- that can
+ * make the result to become empty (e.g. for the literal "" string).
  * Up to "value_size" bytes (including the terminating '\0') of the result get
  * copied into the "value" buffer (which may cause truncation!).  When no match
  * is found, the "value" gets filled up to "value_size" bytes with "def_value"
