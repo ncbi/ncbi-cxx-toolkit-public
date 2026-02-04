@@ -48,8 +48,13 @@
 #  define DEV_NULL "NUL"
 #endif // NCBI_OS_UNIX
 
-#define CONN_NCBI_FTP_PUBLIC_HOST   "ftp-ext.ncbi.nlm.nih.gov"
-#define CONN_NCBI_FTP_PRIVATE_HOST  "ftp-private.ncbi.nlm.nih.gov"
+
+#define DEF_FTP_REG_SECTION        "_FTP"
+#define REG_FTP_NCBI_PUBLIC_HOST   "NCBI_PUBLIC_HOST"
+#define DEF_FTP_NCBI_PUBLIC_HOST   "ftp-ext.ncbi.nlm.nih.gov"
+#define REG_FTP_NCBI_PRIVATE_HOST  "NCBI_PRIVATE_HOST"
+#define DEF_FTP_NCBI_PRIVATE_HOST  "ftp-private.ncbi.nlm.nih.gov"
+
 #define N                           12
 
 #define _STR(X)                         #X
@@ -429,21 +434,28 @@ int CNCBITestConnStreamApp::Run(void)
 
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
-    if (!(net_info = ConnNetInfo_Create("_FTP")))
+    if (!(net_info = ConnNetInfo_Create(DEF_FTP_REG_SECTION)))
         ERR_POST(Fatal << "Cannot create net info");
     if (net_info->debug_printout == eDebugPrintout_Some)
         flag |= fFTP_LogControl;
     else if (net_info->debug_printout == eDebugPrintout_Data) {
-        char val[32];
-        ConnNetInfo_GetValue("_FTP", REG_CONN_DEBUG_PRINTOUT, val, sizeof(val),
+        ConnNetInfo_GetValue(DEF_FTP_REG_SECTION,
+                             REG_CONN_DEBUG_PRINTOUT,
+                             tmp, sizeof(tmp),
                              DEF_CONN_DEBUG_PRINTOUT);
-        flag |= strcasecmp(val, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
+        flag |= strcasecmp(tmp, "all") == 0 ? fFTP_LogAll : fFTP_LogData;
     }
 
 
     LOG_POST(Info << "Test 3 of " STR(N) ": FTP download");
 
-    CConn_FTPDownloadStream download(CONN_NCBI_FTP_PUBLIC_HOST,
+    const char* ftphost = ConnNetInfo_GetValue(DEF_FTP_REG_SECTION,
+                                               REG_FTP_NCBI_PUBLIC_HOST,
+                                               tmp, sizeof(tmp),
+                                               DEF_FTP_NCBI_PUBLIC_HOST);
+    if (!ftphost)
+        ftphost = DEF_FTP_NCBI_PUBLIC_HOST;
+    CConn_FTPDownloadStream download(ftphost,
                                      "Misc/test_ncbi_conn_stream.FTP.data",
                                      "ftp"/*default*/, "-none"/*default*/,
                                      "/toolbox/ncbi_tools++/DATA",
@@ -497,8 +509,11 @@ int CNCBITestConnStreamApp::Run(void)
             flag |= fFTP_UseFeatures;
         if (rand() & 1)
             flag |= fFTP_UseActive;
-        CConn_FTPUploadStream upload(CONN_NCBI_FTP_PRIVATE_HOST,
-                                     ftpuser, ftppass, ftpfile,
+        ftphost = ConnNetInfo_GetValue(DEF_FTP_REG_SECTION,
+                                       REG_FTP_NCBI_PRIVATE_HOST,
+                                       tmp, sizeof(tmp),
+                                       DEF_FTP_NCBI_PRIVATE_HOST);
+        CConn_FTPUploadStream upload(ftphost, ftpuser, ftppass, ftpfile,
                                      "test_upload",
                                      0/*port = default*/, flag,
                                      0/*offset*/, net_info->timeout);
@@ -506,7 +521,7 @@ int CNCBITestConnStreamApp::Run(void)
         while (size < (10<<20)  &&  upload.good()) {
             char buf[4096];
             n = (size_t) rand() % sizeof(buf) + 1;
-            for (i = 0;  i < n;  i++)
+            for (i = 0;  i < n;  ++i)
                 buf[i] = rand() & 0xFF;
             if (upload.write(buf, n))
                 size += n;
@@ -575,12 +590,11 @@ int CNCBITestConnStreamApp::Run(void)
     LOG_POST(Info << "Test 5 of " STR(N) ": FTP peculiarities");
 
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
-        _ASSERT(!ftpfile.empty());
+        _ASSERT(ftphost  &&  *ftphost  &&  !ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
         // responses;  for file xfers the use of read() and write() does
-        // the adequate buffering at user-level (and FTP connection).
-        CConn_FtpStream ftp(CONN_NCBI_FTP_PRIVATE_HOST,
-                            ftpuser, ftppass, "test_download",
+        // the adequate buffering at the user-level (and FTP connection).
+        CConn_FtpStream ftp(ftphost, ftpuser, ftppass, "test_download",
                             0/*port = default*/, flag, 0/*cmcb*/,
                             net_info->timeout);
         s_FTPStat(ftp);
