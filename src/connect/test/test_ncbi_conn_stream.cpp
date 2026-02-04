@@ -49,13 +49,15 @@
 #endif // NCBI_OS_UNIX
 
 
-#define DEF_FTP_REG_SECTION        "_FTP"
-#define REG_FTP_NCBI_PUBLIC_HOST   "NCBI_PUBLIC_HOST"
-#define DEF_FTP_NCBI_PUBLIC_HOST   "ftp-ext.ncbi.nlm.nih.gov"
-#define REG_FTP_NCBI_PRIVATE_HOST  "NCBI_PRIVATE_HOST"
-#define DEF_FTP_NCBI_PRIVATE_HOST  "ftp-private.ncbi.nlm.nih.gov"
+#define DEF_FTP_REG_SECTION             "_FTP"
+#define REG_FTP_NCBI_PUBLIC_HOST        "NCBI_PUBLIC_HOST"
+#define DEF_FTP_NCBI_PUBLIC_HOST        "ftp-ext.ncbi.nlm.nih.gov"
+#define REG_FTP_NCBI_PRIVATE_HOST       "NCBI_PRIVATE_HOST"
+#define DEF_FTP_NCBI_PRIVATE_HOST       "ftp-private.ncbi.nlm.nih.gov"
 
-#define N                           12
+#define FTP_TEST_OFFSET                 999
+
+#define N                               12
 
 #define _STR(X)                         #X
 #define  STR(X)                     _STR(X)
@@ -429,6 +431,7 @@ int CNCBITestConnStreamApp::Run(void)
     LOG_POST(Info << "Test 2 passed\n");
 
 
+    flag |= fFTP_UseActive;
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create(DEF_FTP_REG_SECTION)))
@@ -457,7 +460,7 @@ int CNCBITestConnStreamApp::Run(void)
                                      "ftp"/*default*/, "-none"/*default*/,
                                      "/toolbox/ncbi_tools++/DATA",
                                      0/*port = default*/, flag, 0/*cmcb*/,
-                                     1024/*offset*/, net_info->timeout);
+                                     FTP_TEST_OFFSET, net_info->timeout);
     size_t pos1 = (size_t) download.tellg();
     size = NcbiStreamToString(0, download);
     if (!size)
@@ -473,15 +476,15 @@ int CNCBITestConnStreamApp::Run(void)
     download.Close();
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
-    if (n  &&  n != size + 1024)
-        ERR_POST(Fatal << "File size mismatch: 1024+" << size << "!=" << n);
+    if (n  &&  n != size + FTP_TEST_OFFSET)
+        ERR_POST(Fatal << "File size mismatch: " STR(FTP_TEST_OFFSET) "+" << size << " != " << n);
     else if (pos1 == (size_t)(-1L)  ||  pos2 == (size_t)(-1L)) 
         ERR_POST(Fatal << "Bad stream posision(s): " << pos1 << ',' << pos2);
     else if (size != pos2 - pos1) {
         ERR_POST(Fatal << "Size mismatch: " << size << "!="
                  << pos2 << '-' <<  pos1);
     }
-    LOG_POST(Info << "Test 3 passed: 1024+" << size << '=' << n
+    LOG_POST(Info << "Test 3 passed: " STR(FTP_TEST_OFFSET) "+" << size << '=' << n
              << " byte(s) downloaded via FTP\n");
 
 
