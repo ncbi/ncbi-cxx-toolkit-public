@@ -154,6 +154,32 @@ TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
     blob->VerifyBlobSize();
 }
 
+TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInThePast) {
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 38748105, false, error_function);
+    wait_function(fetch);
+    EXPECT_TRUE(fetch.IsBlobPropsFound());
+    auto blob = fetch.ConsumeBlobRecord();
+    EXPECT_EQ(38748105, blob->GetKey());
+    EXPECT_EQ(1232LL, blob->GetSize());
+    EXPECT_EQ(1737435600000LL, blob->GetHupDate());
+    EXPECT_EQ("2025-01-21 00:00:00.000", TimeTmsToString(blob->GetHupDate()));
+    EXPECT_FALSE(blob->IsConfidential());
+    EXPECT_EQ(1, blob->GetNChunks());
+}
+
+TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInTheFuture) {
+    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 38748106, false, error_function);
+    wait_function(fetch);
+    EXPECT_TRUE(fetch.IsBlobPropsFound());
+    auto blob = fetch.ConsumeBlobRecord();
+    EXPECT_EQ(38748106, blob->GetKey());
+    EXPECT_EQ(1232LL, blob->GetSize());
+    EXPECT_EQ(2116126800000LL, blob->GetHupDate());
+    EXPECT_EQ("2037-01-21 00:00:00.000", TimeTmsToString(blob->GetHupDate()));
+    EXPECT_TRUE(blob->IsConfidential());
+    EXPECT_EQ(1, blob->GetNChunks());
+}
+
 TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
 {
     bool errorCallbackCalled{false};

@@ -35,6 +35,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_exception.hpp>
 
 #include <corelib/ncbistr.hpp>
+#include <chrono>
 #include <sstream>
 #include <utility>
 #include <string>
@@ -372,10 +373,12 @@ string CBlobRecord::GetUserName() const
 
 bool CBlobRecord::IsConfidential() const
 {
-   if (m_HupDate == 0)
-      return false;
+   if (m_HupDate == 0) {
+       return false;
+   }
 
-   return (m_HupDate > CCurrentTime().GetTimeT());
+   TTimestamp current_time_ms = chrono::system_clock::now().time_since_epoch() / chrono::milliseconds{1};
+   return (m_HupDate > current_time_ms);
 }
 
 
