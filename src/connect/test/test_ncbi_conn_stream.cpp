@@ -431,7 +431,6 @@ int CNCBITestConnStreamApp::Run(void)
     LOG_POST(Info << "Test 2 passed\n");
 
 
-    flag |= fFTP_UseActive;
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create(DEF_FTP_REG_SECTION)))
