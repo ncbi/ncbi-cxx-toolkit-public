@@ -55,21 +55,28 @@ int main(int argc, const char* argv[])
 
     assert(sizeof(addr) == sizeof(addr.octet));
     if (argc != 2) {
-        CORE_LOG(eLOG_Note, "(internal self-test begins)");
-        g_NCBI_ConnectRandomSeed
-            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        if (!(str = getenv("NCBI_TEST_RANDOM_SEED"))) {
+            g_NCBI_ConnectRandomSeed
+                = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        } else
+            g_NCBI_ConnectRandomSeed = (unsigned int) atoi(str);
+        CORE_LOGF(eLOG_Note,
+                  ("(internal self-test, seed %u)", g_NCBI_ConnectRandomSeed));
         srand(g_NCBI_ConnectRandomSeed);
         memset(&addr, 0, sizeof(addr));
         if (rand() % 13) {
-            /* non-empty address, IPv6 or IPv4 */
+            /* non-empty address IPv6 (may be empty IPv4, though) */
             m = rand() & 1 ? 0/*IPv6*/ : sizeof(addr.octet) - 4/*IPv4*/;
-            for (n = m;  n < sizeof(addr.octet);  ++n)
-                addr.octet[n] = rand() & 0xFF;
+            if (!m  ||  (rand() % 11)) {
+                for (n = m;  n < sizeof(addr.octet);  ++n)
+                    addr.octet[n] = rand() & 0xFF;
+            } else
+                memset(&addr.octet[m], '\xFF', sizeof(addr.octet) - m);
             if (m) {
                 if (rand() & 1)  /* if mapped IPv4 */
                     memset(&addr.octet[10], '\xFF', 2 * sizeof(addr.octet[10]));
                 else if (!addr.octet[m])
-                    addr.octet[m]++;  /* make sure compat IPv6 starts with non-0 */
+                    addr.octet[m]++;  /* make sure compat IPv4 starts w/non-0 */
             }
             assert(!m  ||  NcbiIsIPv4Ex(&addr, 1/*compat okay*/));
         } else {
@@ -78,7 +85,7 @@ int main(int argc, const char* argv[])
             if (rand() & 1)
                 memset(&addr, '\xFF', sizeof(addr));
         }
-        if (rand() % 11)
+        if (rand() % 17)
             m = rand() % ((sizeof(addr.octet) * 8) + 1);
         else
             m = (rand() & 1) * 0xFF;
@@ -124,7 +131,7 @@ int main(int argc, const char* argv[])
                 assert(NcbiIsEmptyIPv6(&b));
             assert(memcmp(&temp, &addr, sizeof(addr)) == 0);
         }
-        CORE_LOG(eLOG_Note, "(internal self-test ends)\n");
+        CORE_LOG(eLOG_Note, "(internal self-test done)");
     }
 
     n = 0;
