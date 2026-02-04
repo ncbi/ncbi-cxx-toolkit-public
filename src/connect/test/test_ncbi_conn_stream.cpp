@@ -512,6 +512,8 @@ int CNCBITestConnStreamApp::Run(void)
                                        REG_FTP_NCBI_PRIVATE_HOST,
                                        tmp, sizeof(tmp),
                                        DEF_FTP_NCBI_PRIVATE_HOST);
+        if (!ftphost)
+            ftphost = DEF_FTP_NCBI_PRIVATE_HOST;
         CConn_FTPUploadStream upload(ftphost, ftpuser, ftppass, ftpfile,
                                      "test_upload",
                                      0/*port = default*/, flag,
