@@ -13,7 +13,7 @@ NCBI_begin_lib(xcd_utils)
     cuSeqtree cuSeqTreeAlg cuSeqTreeAPI cuSeqTreeAsnizer cuSeqTreeFactory
     cuSeqTreeNj cuSeqTreeRootedLayout cuSeqTreeSlc cuSeqTreeStream
     cuSequence cuSequenceTable cuSimpleB2SWrapper cuSort cuStdAnnotTypes
-    cuTaxClient cuTaxNRCriteria cuTaxTree cuUtils
+    cuTaxClient cuTaxNRCriteria cuTaxTree cuUtils cuGiLookup
   )
   NCBI_uses_toolkit_libraries(
     blast_services entrez2cli id1cli
