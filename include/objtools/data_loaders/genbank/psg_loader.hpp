@@ -156,7 +156,7 @@ public:
 
     void GetBlobs(TTSE_LockSets& tse_sets) override;
 
-    void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret) override;
+    void GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret) override;
 
     void GetIds(const CSeq_id_Handle& idh, TIds& ids) override;
     SAccVerFound GetAccVerFound(const CSeq_id_Handle& idh) override;

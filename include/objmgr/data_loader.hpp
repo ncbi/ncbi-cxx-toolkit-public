@@ -393,7 +393,7 @@ public:
     typedef vector<int> TSequenceHashes;
     typedef vector<bool> THashKnown;
     typedef map<CSeq_id_Handle, TTSE_LockSet> TTSE_LockSets;
-    typedef vector<vector<CSeq_id_Handle>> TSeqIdSets;
+    typedef vector< CConstRef<CBioseq_Info> > TBioseq_InfoSet;
     typedef vector<CTSE_Lock> TCDD_Locks;
 
     /// Bulk request for all Seq-ids of a set of sequences.
@@ -418,7 +418,7 @@ public:
     /// Bulk request for hashes of a set of sequences.
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
                                    TSequenceHashes& ret, THashKnown& known);
-    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+    virtual void GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret);
 
     // Load multiple seq-ids. Same as GetRecords() for multiple ids
     // with choise set to eBlob. The map should be initialized with
@@ -499,7 +499,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 9, 0, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 9, 1, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>

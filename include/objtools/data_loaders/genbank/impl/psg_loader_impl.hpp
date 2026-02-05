@@ -123,12 +123,12 @@ public:
     typedef set<CSeq_id_Handle> TLoadedSeqIds;
     void GetBlobsOnce(CDataSource* data_source, TLoadedSeqIds& loaded, TTSE_LockSets& tse_sets);
 
-    typedef CDataLoader::TSeqIdSets TSeqIdSets;
+    typedef CDataLoader::TBioseq_InfoSet TBioseq_InfoSet;
     typedef CDataLoader::TCDD_Locks TCDD_Locks;
     void GetCDDAnnots(CDataSource* data_source,
-                      const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+                      const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret);
     void GetCDDAnnotsOnce(CDataSource* data_source,
-                          const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+                          const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret);
 
     CDataLoader::TTSE_LockSet GetAnnotRecordsNA(CDataSource* data_source,
                                                 const TIds& ids,

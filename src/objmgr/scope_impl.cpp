@@ -3446,9 +3446,9 @@ CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& unsort
     vector<bool> loaded(count);
     CDataSource::TCDD_Locks cdd_locks(count);
 
-    CDataSource::TSeqIdSets id_sets;
+    CDataSource::TBioseq_InfoSet seq_set;
     for (const auto& bh : bhs) {
-        id_sets.push_back(bh.x_GetScopeInfo().GetIds());
+        seq_set.emplace_back(&bh.x_GetScopeInfo().GetObjectInfo());
     }
 
     TConfReadLockGuard rguard(m_ConfLock);
@@ -3457,7 +3457,7 @@ CScope_Impl::TCDD_Entries CScope_Impl::GetCDDAnnots(const TBioseqHandles& unsort
             break;
         }
         CPrefetchManager::IsActive();
-        it->GetDataSource().GetCDDAnnots(id_sets, loaded, cdd_locks);
+        it->GetDataSource().GetCDDAnnots(seq_set, loaded, cdd_locks);
         remaining = sx_CountFalse(loaded);
     }
     TCDD_Entries ret(count);

@@ -1548,25 +1548,29 @@ static bool x_IsEmptyCDD(const CTSE_Info& tse)
 }
 
 
-void CGBDataLoader_Native::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+void CGBDataLoader_Native::GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret)
 {
     //return CDataLoader::GetCDDAnnots(id_sets, loaded, ret);
     CGBReaderRequestResult result(this, CSeq_id_Handle());
     vector<CSeq_id_Handle> best_ids;
     CReadDispatcher::TIds ids;
     // first select ids that we can process
-    for ( auto& id_set : id_sets) {
-        SBetterId score_func;
+    for ( auto& seq : seq_set) {
         CSeq_id_Handle best_id;
-        int best_score = -1;
-        for ( auto& id : id_set ) {
-            if ( CReadDispatcher::CannotProcess(id) ) {
-                continue;
-            }
-            int score = score_func.GetScore(id);
-            if ( score > best_score ) {
-                best_score = score;
-                best_id = id;
+        // skip CDDs for non-GenBank sequences
+        if ( m_AlwaysLoadExternal ||
+             (seq->HasDataSource() && seq->GetDataSource().GetDataLoader() == this) ) {
+            SBetterId score_func;
+            int best_score = -1;
+            for ( auto& id : seq->GetId() ) {
+                if ( CReadDispatcher::CannotProcess(id) ) {
+                    continue;
+                }
+                int score = score_func.GetScore(id);
+                if ( score > best_score ) {
+                    best_score = score;
+                    best_id = id;
+                }
             }
         }
         best_ids.push_back(best_id);
@@ -1634,7 +1638,7 @@ void CGBDataLoader_Native::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& load
     }
 
     // now collect all non-empty CDD blobs
-    for ( size_t i = 0; i < id_sets.size(); ++i ) {
+    for ( size_t i = 0; i < seq_set.size(); ++i ) {
         auto& id = best_ids[i];
         if ( !id ) {
             continue;

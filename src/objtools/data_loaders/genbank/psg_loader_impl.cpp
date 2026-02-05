@@ -1395,12 +1395,12 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
 
 
 void CPSGDataLoader_Impl::GetCDDAnnots(CDataSource* data_source,
-                                       const TSeqIdSets& id_sets,
+                                       const TBioseq_InfoSet& seq_set,
                                        TLoaded& loaded,
                                        TCDD_Locks& ret)
 {
     CallWithRetry(bind(&CPSGDataLoader_Impl::GetCDDAnnotsOnce, this,
-                       data_source, id_sets, ref(loaded), ref(ret)),
+                       data_source, ref(seq_set), ref(loaded), ref(ret)),
                   "GetCDDAnnots",
                   m_BulkRetryCount);
 }
@@ -1836,25 +1836,29 @@ CDataLoader::TTSE_LockSet CPSGDataLoader_Impl::GetAnnotRecordsNAOnce(
 
 
 void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
-                                           const TSeqIdSets& id_sets,
+                                           const TBioseq_InfoSet& seq_set,
                                            TLoaded& loaded,
                                            TCDD_Locks& ret)
 {
-    if (id_sets.empty()) return;
-    _ASSERT(id_sets.size() == loaded.size());
-    _ASSERT(id_sets.size() == ret.size());
+    if (seq_set.empty()) return;
+    _ASSERT(seq_set.size() == loaded.size());
+    _ASSERT(loaded.size() == ret.size());
 
     CPSG_Request_NamedAnnotInfo::TAnnotNames annot_names{kCDDAnnotName};
 
     CPSGL_QueueGuard queue(m_Dispatcher);
 
-    vector<SCDDIds> cdd_ids(id_sets.size());
-    for (size_t i = 0; i < id_sets.size(); ++i) {
+    vector<SCDDIds> cdd_ids(seq_set.size());
+    for (size_t i = 0; i < seq_set.size(); ++i) {
         if ( loaded[i] ) {
             // already loaded
             continue;
         }
-        const TIds& ids = id_sets[i];
+        // skip CDDs for non-GenBank sequences
+        if ( !(seq_set[i]->HasDataSource() && &seq_set[i]->GetDataSource() == data_source) ) {
+            continue;
+        }
+        const TIds& ids = seq_set[i]->GetId();
         if ( ids.empty() ) {
             // no ids -> no CDDs
             continue;
@@ -1923,7 +1927,7 @@ void CPSGDataLoader_Impl::GetCDDAnnotsOnce(CDataSource* data_source,
         request->IncludeData(CPSG_Request_Biodata::eWholeTSE);
         CRef<CPSGL_CDDAnnot_Processor> processor
             (new CPSGL_CDDAnnot_Processor(cdd_ids[i],
-                                          id_sets[i],
+                                          seq_set[i]->GetId(),
                                           data_source,
                                           m_Caches.get()));
         queue.AddRequest(request, processor, i);

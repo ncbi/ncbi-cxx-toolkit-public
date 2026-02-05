@@ -475,6 +475,12 @@ static ostream& s_Format(ostream& out, const Container& container)
 }
 
 
+static ostream& s_Format(ostream& out, const CConstRef<CBioseq_Info>& seq)
+{
+    return s_Format(out, seq->GetId());
+}
+
+
 static string s_FormatCall(const char* method_name,
                            const CSeq_id_Handle& seq_id)
 {
@@ -496,11 +502,11 @@ static string s_FormatCall(const char* method_name,
 
 
 static string s_FormatCall(const char* method_name,
-                           const CDataSource::TSeqIdSets& id_sets)
+                           const CDataSource::TBioseq_InfoSet& seq_set)
 {
     ostringstream out;
     out << method_name << '(';
-    s_Format(out, id_sets);
+    s_Format(out, seq_set);
     out << ')';
     return out.str();
 }
@@ -1963,7 +1969,7 @@ void CDataSource::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 }
 
 
-void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+void CDataSource::GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret)
 {
     if (!m_Loader) return;
 #ifdef NCBI_USE_TSAN
@@ -1971,25 +1977,25 @@ void CDataSource::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_
 #else
     const size_t limit_cdds_request = 200;
 #endif
-    _ASSERT(id_sets.size() == loaded.size());
-    _ASSERT(id_sets.size() == ret.size());
-    size_t current_size = min(limit_cdds_request, id_sets.size());
-    for (size_t current_start = 0; current_start < id_sets.size(); current_start += current_size) {
-        if (current_size > id_sets.size() - current_start) current_size = id_sets.size() - current_start;
-        TSeqIdSets current_id_sets(current_size);
+    _ASSERT(seq_set.size() == loaded.size());
+    _ASSERT(loaded.size() == ret.size());
+    size_t current_size = limit_cdds_request;
+    for (size_t current_start = 0; current_start < seq_set.size(); current_start += current_size) {
+        current_size = min(current_size, seq_set.size() - current_start);
+        TBioseq_InfoSet current_seq_set(current_size);
         size_t current_end = current_start + current_size;
-        TLoaded current_loaded(current_id_sets.size());
-        TCDD_Locks current_ret(current_id_sets.size());
-        copy(id_sets.begin() + current_start, id_sets.begin() + current_end, current_id_sets.begin());
+        TLoaded current_loaded(current_size);
+        TCDD_Locks current_ret(current_size);
+        copy(seq_set.begin() + current_start, seq_set.begin() + current_end, current_seq_set.begin());
         copy(loaded.begin() + current_start, loaded.begin() + current_end, current_loaded.begin());
         copy(ret.begin() + current_start, ret.begin() + current_end, current_ret.begin());
         try {
-            m_Loader->GetCDDAnnots(current_id_sets, current_loaded, current_ret);
+            m_Loader->GetCDDAnnots(current_seq_set, current_loaded, current_ret);
             copy(current_loaded.begin(), current_loaded.end(), loaded.begin() + current_start);
             copy(current_ret.begin(), current_ret.end(), ret.begin() + current_start);
         }
         catch ( CLoaderException& exc ) {
-            exc.SetFailedCall(s_FormatCall("GetCDDAnnots", current_id_sets));
+            exc.SetFailedCall(s_FormatCall("GetCDDAnnots", current_seq_set));
             throw;
         }
     }
