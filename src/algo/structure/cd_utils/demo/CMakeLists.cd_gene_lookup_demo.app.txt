@@ -1,0 +1,7 @@
+# $Id$
+
+NCBI_begin_app(cd_gene_lookup_demo)
+  NCBI_sources(cd_gene_lookup_demo)
+  NCBI_uses_toolkit_libraries(xcd_utils)
+NCBI_end_app()
+
