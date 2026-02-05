@@ -5888,11 +5888,11 @@ void CNewCleanup_imp::x_MoveSeqdescOrgToSourceOrg(CSeqdesc& seqdesc)
 }
 
 
-void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg(CSeq_feat& seqfeat)
+void CNewCleanup_imp::MoveSeqfeatOrgToSourceOrg(CSeq_feat& seqfeat)
 {
-    if (FIELD_IS_SET_AND_IS(seqfeat, Data, Org)) {
+    if (seqfeat.IsSetData() && seqfeat.GetData().IsOrg()) {
         // wrap Org_ref in BioSource
-        CRef<COrg_ref> org(&GET_MUTABLE(seqfeat.SetData(), Org));
+        CRef<COrg_ref> org(&(seqfeat.SetData().SetOrg()));
         seqfeat.SetData().SetBiosrc().SetOrg(*org);
         ChangeMade(CCleanupChange::eConvertFeature);
     }
@@ -7601,7 +7601,7 @@ void CNewCleanup_imp::x_RemoveRedundantComment(CGene_ref& gene, CSeq_feat& seq_f
     }
 }
 
-void CNewCleanup_imp::x_ExceptTextEC(string& except_text)
+void CNewCleanup_imp::ExceptTextEC(string& except_text)
 {
     if (NStr::EqualNocase(except_text, "reasons cited in publication")) {
         except_text = "reasons given in citation";
@@ -7610,7 +7610,7 @@ void CNewCleanup_imp::x_ExceptTextEC(string& except_text)
 }
 
 
-bool CNewCleanup_imp::x_IsCodonCorrect(int codon_index, int gcode, unsigned char aa)
+static bool s_IsCodonCorrect(int codon_index, int gcode, unsigned char aa)
 {
     if (codon_index > 63) {
         return false;
@@ -7737,16 +7737,17 @@ static bool s_IsRealTrna(const CSeq_feat& seq_feat)
 }
 
 
-void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
+void CNewCleanup_imp::tRNACodonEC(CSeq_feat& seq_feat)
 {
     if (! s_IsRealTrna(seq_feat)) {
         return;
     }
+
     CTrna_ext& trna = seq_feat.SetData().SetRna().SetExt().SetTRNA();
     if (! trna.IsSetAa() || ! trna.IsSetCodon()) {
         return;
     }
-    // Retrive the Genetic code id for the tRNA
+    // Retrieve the Genetic code id for the tRNA
     int            gcode = 1;
     CBioseq_Handle bsh   = m_Scope->GetBioseqHandle(seq_feat.GetLocation());
     if (bsh) {
@@ -7762,22 +7763,26 @@ void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
         return;
     }
 
-    NON_CONST_ITERATE(CTrna_ext::TCodon, c, trna.SetCodon())
-    {
-        if (*c == 255)
+    for (int& c : trna.SetCodon()) {
+        if (c == 255) {
             continue; // universal
-        if (*c > 63)
-            continue; // invalid, cannot correct
+        }
 
-        if (x_IsCodonCorrect(*c, gcode, aa))
+        if (c > 63) {
+            continue; // invalid, cannot correct
+        }
+
+        if (s_IsCodonCorrect(c, gcode, aa)) {
             continue; // already correct
-        string codon = CGen_code_table::IndexToCodon(*c);
+        }
+
+        string codon = CGen_code_table::IndexToCodon(c);
 
         // try reverse complement
         string revcomp   = s_ReverseComplement(codon);
         int    new_codon = CGen_code_table::CodonToIndex(revcomp);
-        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
-            *c = new_codon;
+        if (s_IsCodonCorrect(new_codon, gcode, aa)) {
+            c = new_codon;
             ChangeMade(CCleanupChange::eChange_tRna);
             continue;
         }
@@ -7785,8 +7790,8 @@ void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
         // try complement
         string comp = s_Complement(codon);
         new_codon   = CGen_code_table::CodonToIndex(comp);
-        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
-            *c = new_codon;
+        if (s_IsCodonCorrect(new_codon, gcode, aa)) {
+            c = new_codon;
             ChangeMade(CCleanupChange::eChange_tRna);
             continue;
         }
@@ -7794,10 +7799,9 @@ void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
         // try reverse
         string reverse = s_Reverse(codon);
         new_codon      = CGen_code_table::CodonToIndex(reverse);
-        if (x_IsCodonCorrect(new_codon, gcode, aa)) {
-            *c = new_codon;
+        if (s_IsCodonCorrect(new_codon, gcode, aa)) {
+            c = new_codon;
             ChangeMade(CCleanupChange::eChange_tRna);
-            continue;
         }
     }
 
@@ -7814,15 +7818,6 @@ void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
     REMOVE_IF_EMPTY_CODON_ON_TRNAEXT(trna);
 }
 
-
-void CNewCleanup_imp::x_tRNAEC(CSeq_feat& seq_feat)
-{
-    if (! s_IsRealTrna(seq_feat)) {
-        return;
-    }
-
-    x_tRNACodonEC(seq_feat);
-}
 
 void CNewCleanup_imp::x_RemoveEmptyUserObject(CSeq_descr& seq_descr)
 {
@@ -8556,7 +8551,7 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot)
 
 
 // if bond is other and comment can be used to set bond type, do so.
-void CNewCleanup_imp::x_BondEC(CSeq_feat& feat)
+void CNewCleanup_imp::BondEC(CSeq_feat& feat)
 {
     if (! feat.IsSetData()) {
         return;
@@ -8894,6 +8889,32 @@ void CNewCleanup_imp::x_RemoveEmptyFeatures(CSeq_annot& seq_annot)
     }
 }
 
+void CNewCleanup_imp::RemoveEmptyFeatures(const CSeq_annot_Handle& sah)
+{
+    if (! sah.IsFtable()) {
+        return;
+    }
+
+    list<CMappedFeat> to_remove;
+    for (CFeat_CI feat_it(sah); feat_it; ++feat_it) {
+        auto editable = Ref(new CSeq_feat());
+        editable->Assign(*(feat_it->GetSeq_feat()));
+        bool changed = x_CleanEmptyFeature(*editable);
+        if (x_ShouldRemoveEmptyFeature(*editable)) {
+            to_remove.push_back(*feat_it);
+        } else if (changed) { // Why is this change not reported?
+            CSeq_feat_EditHandle(*feat_it).Replace(*editable);
+        }
+    }
+
+    if (! to_remove.empty()) {
+        for (auto mapped_feat : to_remove) {
+            CSeq_feat_EditHandle(mapped_feat).Remove();
+        }
+        ChangeMade(CCleanupChange::eRemoveFeat);
+    }
+}
+
 
 bool s_IsGenomeAnnotationStart(const CUser_object& user)
 {
@@ -8939,35 +8960,39 @@ bool CNewCleanup_imp::ShouldRemoveAnnot(const CSeq_annot& annot)
 }
 
 
-void CNewCleanup_imp::x_RemoveEmptyFeatureTables(CBioseq& bioseq)
+void CNewCleanup_imp::RemoveEmptyFeatureTables(const CBioseq_Handle& bsh)
 {
-    if (bioseq.IsSetAnnot()) {
-        bool any_erasures = true;
-        while (any_erasures) {
-            any_erasures                 = false;
-            CBioseq::TAnnot::iterator it = bioseq.SetAnnot().begin();
-            while (it != bioseq.SetAnnot().end()) {
-                if ((*it)->IsFtable()) {
-                    x_RemoveEmptyFeatures(**it);
-                }
-                if (ShouldRemoveAnnot(**it)) {
-                    CSeq_annot_Handle     ah = m_Scope->GetSeq_annotHandle(**it);
-                    CSeq_annot_EditHandle eh(ah);
-                    eh.Remove();
-                    any_erasures = true;
-                    ChangeMade(CCleanupChange::eChangeOther);
-                    break;
-                } else {
-                    ++it;
-                }
-            }
-        }
-        if (bioseq.GetAnnot().empty()) {
-            bioseq.ResetAnnot();
+    if (! bsh.HasAnnots()) {
+        auto pBioseq = bsh.GetCompleteBioseq();
+        if (pBioseq->IsSetAnnot()) {
+            const_cast<CBioseq&>(*pBioseq).ResetAnnot(); // Shouldn't affect OM indexing
             ChangeMade(CCleanupChange::eChangeOther);
         }
+        return;
+    }
+
+    list<CSeq_annot_Handle> to_remove;
+    CSeq_annot_CI           annot_it(bsh.GetParentEntry(), CSeq_annot_CI::eSearch_entry);
+    for (; annot_it; ++annot_it) {
+        if (! annot_it->IsFtable()) {
+            continue;
+        }
+
+        RemoveEmptyFeatures(*annot_it);
+
+        if (ShouldRemoveAnnot(*(annot_it->GetCompleteSeq_annot()))) {
+            to_remove.push_back(*annot_it);
+        }
+    }
+
+    if (! to_remove.empty()) {
+        for (auto sah : to_remove) {
+            CSeq_annot_EditHandle(sah).Remove(); // Remove() will also call ResetAnnot() on parent bioseq as required
+        }
+        ChangeMade(CCleanupChange::eChangeOther);
     }
 }
+
 
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables(CBioseq_set& bioseq_set)
 {
@@ -9013,44 +9038,63 @@ bool s_IsMergeableFeatureTable(const CSeq_annot& annot)
     }
 }
 
-
-void CNewCleanup_imp::x_MergeAdjacentFeatureTables(list<CRef<CSeq_annot>>& annot_list)
+static void s_MergeAnnots(const CSeq_annot& dst, const CSeq_annot& src, CScope& scope)
 {
-    if (annot_list.size() < 2) {
-        return;
-    }
-    bool any_erased = true;
-    while (any_erased) {
-        any_erased                        = false;
-        CBioseq::TAnnot::iterator it      = annot_list.begin();
-        CBioseq::TAnnot::iterator it_next = it;
-        ++it_next;
-        while (it_next != annot_list.end()) {
-            if (s_IsMergeableFeatureTable(**it) &&
-                s_IsMergeableFeatureTable(**it_next)) {
-                CSeq_annot_EditHandle eh1 = m_Scope->GetSeq_annotEditHandle(**it);
-                CSeq_annot_EditHandle eh2 = m_Scope->GetSeq_annotEditHandle(**it_next);
-                while ((*it_next)->IsSetData() && ! (*it_next)->GetData().GetFtable().empty()) {
-                    CSeq_feat_Handle     fh = m_Scope->GetSeq_featHandle(*((*it_next)->GetData().GetFtable().front()));
-                    CSeq_feat_EditHandle efh(fh);
-                    eh1.TakeFeat(efh);
-                }
-                eh2.Remove();
-                ChangeMade(CCleanupChange::eRemoveAnnot);
-                any_erased = true;
-                break;
-            }
-            ++it_next;
-            ++it;
-        }
+    CSeq_annot_EditHandle eh = scope.GetSeq_annotEditHandle(dst);
+    while (src.IsSetData() && ! src.GetData().GetFtable().empty()) {
+        auto fh = scope.GetSeq_featHandle(*(src.GetData().GetFtable().front()));
+        eh.TakeFeat(CSeq_feat_EditHandle(fh));
     }
 }
 
 
-void CNewCleanup_imp::x_MergeAdjacentFeatureTables(CBioseq& bioseq)
+void CNewCleanup_imp::x_MergeAdjacentFeatureTables(const list<CRef<CSeq_annot>>& annot_list)
+{
+    if (annot_list.size() < 2) {
+        return;
+    }
+
+    auto it = find_if(annot_list.begin(), annot_list.end(), [](const CRef<CSeq_annot>& pAnnot) { return s_IsMergeableFeatureTable(*pAnnot); });
+
+    if (it == annot_list.end()) { // No mergeable feature tables
+        return;
+    }
+
+    bool                    current_mergeable{ true };
+    list<CSeq_annot_Handle> to_remove;
+    for (auto it_next = next(it); it_next != annot_list.end(); ++it_next) {
+        bool next_mergeable = s_IsMergeableFeatureTable(**it_next);
+        if (current_mergeable && next_mergeable) {
+            s_MergeAnnots(**it, **it_next, *m_Scope);
+            auto annot_handle = m_Scope->GetSeq_annotHandle(**it_next);
+            to_remove.push_back(annot_handle);
+        } else {
+            it                = it_next;
+            current_mergeable = next_mergeable;
+        }
+    }
+
+
+    if (! to_remove.empty()) {
+        for (auto annot_handle : to_remove) {
+            CSeq_annot_EditHandle(annot_handle).Remove();
+        }
+        ChangeMade(CCleanupChange::eRemoveAnnot);
+    }
+}
+
+
+void CNewCleanup_imp::MergeAdjacentFeatureTables(CBioseq& bioseq)
 {
     if (bioseq.IsSetAnnot()) {
         x_MergeAdjacentFeatureTables(bioseq.SetAnnot());
+    }
+}
+
+void CNewCleanup_imp::MergeAdjacentFeatureTables(const CBioseq_Handle& bsh)
+{
+    if (bsh.HasAnnots()) {
+        x_MergeAdjacentFeatureTables(bsh.GetCompleteBioseq()->GetAnnot());
     }
 }
 
@@ -9118,45 +9162,30 @@ CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
 
 
 // part of extended cleanup
-void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq& bioseq)
+void CNewCleanup_imp::RemoveOldFeatures(const CBioseq_Handle& bsh)
 {
-    CBioseq_Handle bh = m_Scope->GetBioseqHandle(bioseq);
-
-    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
-    bool        any_erasures = true;
-    while (any_erasures) {
-        any_erasures = false;
-        CFeat_CI f(bh);
-        while (f) {
-            if (f->IsSetData()) {
-                const auto& fdata = f->GetData();
-                if (fdata.IsOrg() ||
-                    (fdata.IsImp() && fdata.GetImp().IsSetKey() &&
-                     NStr::Equal(fdata.GetImp().GetKey(), "source"))) {
-                    if (src) {
-                        // remove import source features if source descriptor already present
-                        CSeq_feat_Handle     fh(*f);
-                        CSeq_feat_EditHandle eh(fh);
-                        eh.Remove();
-                        any_erasures = true;
-                        ChangeMade(CCleanupChange::eRemoveFeat);
-                        break;
-                    } else {
-                        // convert imp-source feature to biosource
-                        CRef<CBioSource> bsrc = BioSourceFromImpFeat(*(f->GetSeq_feat()));
-                        if (bsrc) {
-                            BiosourceBC(*bsrc);
-                            CRef<CSeqdesc> d(new CSeqdesc());
-                            d->SetSource().Assign(*bsrc);
-                            CBioseq_EditHandle eh(bh);
-                            eh.SetDescr().Set().push_back(d);
-                            ChangeMade(CCleanupChange::eAddDescriptor);
-                        }
-                    }
-                }
-            }
-            ++f;
+    CSeqdesc_CI       src(bsh, CSeqdesc::e_Source);
+    list<CMappedFeat> to_remove;
+    CFeat_CI          f(bsh, SAnnotSelector().IncludeFeatType(CSeqFeatData::e_Org).IncludeFeatSubtype(CSeqFeatData::eSubtype_source));
+    for (; f; ++f) {
+        if (src) {
+            // remove import source features if source descriptor already present
+            to_remove.push_back(*f);
+        } else if (auto bsrc = BioSourceFromImpFeat(*(f->GetSeq_feat())); bsrc) {
+            // convert imp-source feature to biosource
+            BiosourceBC(*bsrc);
+            CRef<CSeqdesc> d(new CSeqdesc());
+            d->SetSource().Assign(*bsrc);
+            bsh.GetEditHandle().AddSeqdesc(*d);
+            ChangeMade(CCleanupChange::eAddDescriptor);
         }
+    }
+
+    if (! to_remove.empty()) {
+        for (auto mapped_feat : to_remove) {
+            CSeq_feat_EditHandle(mapped_feat).Remove();
+        }
+        ChangeMade(CCleanupChange::eRemoveFeat);
     }
 }
 
