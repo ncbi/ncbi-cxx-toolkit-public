@@ -137,10 +137,10 @@ void CNCBITestConnStreamApp::Init(void)
     // Create and populate test registry
     CNcbiRegistry& reg = GetRWConfig();
 
-    reg.Set("ID1",          DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("ID1",          DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
-    reg.Set("ID1_INTERNAL", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
-    reg.Set("ID1_INTERNAL", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg.Set("ID2",          DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("ID2",          DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
+    reg.Set("ID2_INTERNAL", DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
+    reg.Set("ID2_INTERNAL", DEF_CONN_REG_SECTION "_" REG_CONN_ARGS, DEF_CONN_ARGS);
     reg.Set("bounce",       DEF_CONN_REG_SECTION "_" REG_CONN_PATH, DEF_CONN_PATH);
     reg.Set("bounce",       DEF_CONN_REG_SECTION "_" REG_CONN_DEBUG_PRINTOUT,"DATA");
     reg.Set(DEF_CONN_REG_SECTION, REG_CONN_PORT,           "443");
@@ -715,7 +715,7 @@ int CNCBITestConnStreamApp::Run(void)
         // Silent test for timeouts and memory leaks in an unused stream
         static const STimeout tmo = {5, 0};
         unique_ptr<CConn_IOStream>
-            s(new CConn_ServiceStream("ID1", fSERV_Any, 0, 0, &tmo));
+            s(new CConn_ServiceStream("ID2", fSERV_Any, 0, 0, &tmo));
     }}
 
 
