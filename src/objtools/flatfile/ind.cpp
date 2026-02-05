@@ -84,6 +84,7 @@ static const char* ref_tag_gb[] = {
     nullptr
 };
 
+// EEmblBlockType
 static const char* ref_tag_embl[] = {
     "ID",   /*  0 = locus */
     "AC",   /*  1 = accession # */
@@ -105,16 +106,16 @@ static const char* ref_tag_embl[] = {
     "",     /* 17 */
     "",     /* 18 */
     "",     /* 19 */
-    "  OC", /* 20 = organism classification */
-    "  OG", /* 21 = organelle */
-    "  RC", /* 22 = reference comment */
-    "  RP", /* 23 = reference positions */
-    "  RX", /* 24 = Medline ID */
-    "  RG", /* 25 */
-    "  RA", /* 26 = reference authors */
-    "  RT", /* 27 = reference title */
-    "  RL", /* 28 = reference journal */
-    "  FT", /* 29 = feature table data */
+    "OC", /* 20 = organism classification */
+    "OG", /* 21 = organelle */
+    "RC", /* 22 = reference comment */
+    "RP", /* 23 = reference positions */
+    "RX", /* 24 = Medline ID */
+    "RG", /* 25 */
+    "RA", /* 26 = reference authors */
+    "RT", /* 27 = reference title */
+    "RL", /* 28 = reference journal */
+    "FT", /* 29 = feature table data */
     nullptr
 };
 
@@ -122,12 +123,6 @@ static const char* ref_tag_embl[] = {
 void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
 {
     const char** ref_tag;
-    char*        s;
-    char*        ss;
-    char*        sx;
-    int          n_rest;
-    size_t       i;
-    int          j;
 
     if (bank == Parser::EFormat::GenBank)
         ref_tag = ref_tag_gb;
@@ -136,10 +131,10 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
     else
         return;
 
-    for (j = 20; j < maxkw; j++)
+    for (int j = 20; j < maxkw; j++)
         ind[j] = nullptr;
 
-    n_rest = 0;
+    int n_rest = 0;
     for (auto& subdbp : dbp.GetSubBlocks()) {
         if (ind[subdbp.mType]) {
             if (n_rest >= 21) {
@@ -150,14 +145,16 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
         } else
             ind[subdbp.mType] = &subdbp;
 
-        i                                = StringLen(ref_tag[subdbp.mType]);
-        subdbp.mBuf.ptr[subdbp.mBuf.len - 1] = '\0';
-        for (s = subdbp.mBuf.ptr + i; isspace((int)*s) != 0; s++)
+        auto& buf(subdbp.mBuf);
+        _ASSERT(string_view(buf.ptr, buf.len).starts_with(ref_tag[subdbp.mType]));
+        size_t i             = StringLen(ref_tag[subdbp.mType]);
+        buf.ptr[buf.len - 1] = '\0';
+        for (char* s = buf.ptr + i; isspace((int)*s) != 0; s++)
             i++;
-        subdbp.mBuf.ptr += i;
-        subdbp.mBuf.len -= (i + 1);
-        sx = nullptr;
-        for (s = subdbp.mBuf.ptr; *s != '\0'; s++) {
+        buf.ptr += i;
+        buf.len -= (i + 1);
+        char* sx = nullptr;
+        for (char* s = buf.ptr; *s != '\0'; s++) {
             if (*s != '\n')
                 continue;
 
@@ -167,6 +164,7 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
                 continue;
             }
 
+            char* ss;
             for (ss = s + i; isspace((int)*ss) != 0;)
                 ss++;
             if (sx)
@@ -174,11 +172,11 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
             sx = nullptr;
             *s = ' ';
             fta_StringCpy(s + 1, ss);
-            subdbp.mBuf.len -= (ss - s - 1);
+            buf.len -= (ss - s - 1);
         }
         if (sx) {
             *sx             = '\0';
-            subdbp.mBuf.len = sx - subdbp.mBuf.ptr;
+            buf.len = sx - subdbp.mBuf.ptr;
         }
     }
 }
