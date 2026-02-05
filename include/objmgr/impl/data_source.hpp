@@ -281,9 +281,8 @@ public:
     void GetSequenceHashes(const TIds& ids, TLoaded& loaded,
                            TSequenceHashes& ret, THashKnown& known);
 
-    typedef vector<vector<CSeq_id_Handle>> TSeqIdSets;
     typedef vector<CTSE_Lock> TCDD_Locks;
-    void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret);
+    void GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret);
 
     typedef map<CSeq_id_Handle, SSeqMatch_DS>       TSeqMatchMap;
     void GetBlobs(TSeqMatchMap& match_map);

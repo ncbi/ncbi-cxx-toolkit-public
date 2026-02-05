@@ -165,7 +165,7 @@ public:
 
     virtual void GetBlobs(TTSE_LockSets& tse_sets) override;
 
-    virtual void GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret) override;
+    virtual void GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret) override;
     
     virtual TBlobId GetBlobIdFromSatSatKey(int sat,
                                            int sat_key,

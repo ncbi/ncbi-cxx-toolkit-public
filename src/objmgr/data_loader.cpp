@@ -37,6 +37,7 @@
 #include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
+#include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -735,27 +736,24 @@ void CDataLoader::GetSequenceHashes(const TIds& ids, TLoaded& loaded,
 }
 
 
-void CDataLoader::GetCDDAnnots(const TSeqIdSets& id_sets, TLoaded& loaded, TCDD_Locks& ret)
+void CDataLoader::GetCDDAnnots(const TBioseq_InfoSet& seq_set, TLoaded& loaded, TCDD_Locks& ret)
 {
     SAnnotSelector sel;
     sel.AddNamedAnnots("CDD")
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_region)
         .IncludeFeatSubtype(CSeqFeatData::eSubtype_site);
-    for (size_t i = 0; i < id_sets.size(); ++i) {
-        for (auto id : id_sets[i]) {
-            TTSE_LockSet locks = GetRecordsNoBlobState(id, eBioseqCore);
-            CConstRef<CBioseq_Info> bs_info;
-            ITERATE(TTSE_LockSet, it, locks) {
-                bs_info = (*it)->FindMatchingBioseq(id);
-                if (!bs_info) continue;
-                TProcessedNAs nas;
-                const auto& id_locks = GetExternalAnnotRecordsNA(*bs_info, &sel, &nas);
-                if (id_locks.empty()) continue;
-                ret[i] = *id_locks.begin();
-                loaded[i] = true;
-                break;
+    for (size_t i = 0; i < seq_set.size(); ++i) {
+        CConstRef<CBioseq_Info> bs_info = seq_set[i];
+        // by default load CDDs only for sequences from this data loader
+        if ( bs_info->HasDataSource() &&
+             bs_info->GetDataSource().GetDataLoader() == this ) {
+            TProcessedNAs nas;
+            const auto& id_locks = GetExternalAnnotRecordsNA(*bs_info, &sel, &nas);
+            if (id_locks.empty()) {
+                continue;
             }
-            if (loaded[i]) break;
+            ret[i] = *id_locks.begin();
+            loaded[i] = true;
         }
     }
 }
