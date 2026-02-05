@@ -1221,6 +1221,7 @@ CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Do
 CEU	s	Collage of Eastern Utah			
 CFAS	s	A Colecao de Fungos do Ambiente e Saude /The Environmental and Health Fungi Collection			
 CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista			
+CFBP	c	French Collection for Plant-associated Bacteria			
 CFCC	cb	China Forestry Culture Collection Center			
 CFGR	s	Center for Fungal Genetic Resources			
 CFIA	s	Canadian Food Inspection Agency			
@@ -1349,7 +1350,6 @@ CIQR	s	El Colegio de la Frontera Sur
 CIR	s	Royal Agricultural College			
 CIRAD	sb	Centre de Cooperation Internationale en Recherche Agronomique pour le Developpement			
 CIRM	s	Centre International de Ressources Microbiennes			
-CIRM-CFBP	c	French Collection for Plant-associated Bacteria			
 CIRM:BIA	c	Biological Resource Centre Food-associated bacteria			
 CIRUV	s	Coleccion Ictiologica de Referencia de la Universidad del Valle			
 CIS<CHN>	s	Academia Sinica and State Planning Commission			
