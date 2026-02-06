@@ -36,6 +36,7 @@ SRC = \
     cuDmBlastscore \
     cuDmIdentities \
     cuFlexiDm \
+    cuGiLookup \
     cuHitsDistributor \
     cuMatrix \
     cuNRCriteria \
