@@ -169,6 +169,7 @@ AL	s	Universite d'Alger
 AL-MNRJ	s	Adolpho Lutz collection			
 ALA<USA-AK>	s	Herbarium, University of Alaska Museum of the North			
 ALA<USA-AL>	s	University of Alabama Museum of Natural History	ALMNH		
+ALA<USA-AL>:IZ	s	Invertebrate Zoology Collection			
 ALAJ	s	Herbarium, University of Alaska SE			
 ALAM	s	Adams State College, Biology Department			
 ALB	s	Civico Museo Archeologico e di Scienze Naturali Federico Eusebio			
