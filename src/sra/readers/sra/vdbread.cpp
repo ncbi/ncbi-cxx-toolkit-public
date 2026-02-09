@@ -681,30 +681,34 @@ CTime CVDBMgr::GetURLTimestamp(const string& path) const
 }
 
 
-//#define GUARD_SDK
-#ifdef NCBI_COMPILER_MSVC
-//# define GUARD_SDK_GET
-#endif
-
-#ifdef GUARD_SDK
-# define DECLARE_SDK_GUARD() CFastMutexGuard guard(sx_SDKMutex)
+//#define DISABLE_SRA_SDK_GUARD
+#ifndef DISABLE_SRA_SDK_GUARD
+# define DECLARE_SDK_GUARD() auto sdk_guard = CSraSDKLocks::GetSDKGuard();
 #else
 # define DECLARE_SDK_GUARD() 
 #endif
 
-#ifdef GUARD_SDK_GET
-# define DECLARE_SDK_GET_GUARD() CFastMutexGuard guard(sx_SDKMutex)
-#else
-# define DECLARE_SDK_GET_GUARD() 
-#endif
 
+DEFINE_STATIC_MUTEX(s_SDKMutex);
+
+CSraSDKLocks::TSDKMutex& CSraSDKLocks::GetSDKMutex(void)
+{
+    return s_SDKMutex;
+}
+
+CSraSDKLocks::TSDKGuard CSraSDKLocks::GetSDKGuard(void)
+{
+#ifndef DISABLE_SRA_SDK_GUARD
+    return make_unique<TSDKGuardType>(s_SDKMutex);
+#else
+    return nullptr;
+#endif
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // VDB library initialization code
 // similar code is located in bamread.cpp
 /////////////////////////////////////////////////////////////////////////////
-
-DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 
 static char s_VDBVersion[32]; // enough for 255.255.65535-dev4000000000
 
@@ -863,6 +867,7 @@ static struct SReport {
 
 static void s_UpdateVDBRequestContext(void)
 {
+    DECLARE_SDK_GUARD();
     // Performance collecting code
     // CStopWatch sw(CStopWatch::eStart);
     CRequestContext& req_ctx = CDiagContext::GetRequestContext();
@@ -938,7 +943,6 @@ static void s_InitLocalKNS(KNSManager* kns_mgr)
 
 void CVDBMgr::s_VDBInit()
 {
-    CFastMutexGuard guard(sx_SDKMutex);
     static bool initialized = false;
     if ( !initialized ) {
         s_InitVDBVersion();
@@ -995,7 +999,6 @@ CVDBMgr::CRequestContextUpdater::CRequestContextUpdater()
     if ( r != 0 ) {
         return;
     }
-    DECLARE_SDK_GUARD();
     s_UpdateVDBRequestContext();
 #endif
 }
@@ -1010,7 +1013,6 @@ inline CFinalRequestContextUpdater::CFinalRequestContextUpdater()
         return;
     }
 #endif
-    DECLARE_SDK_GUARD();
     s_UpdateVDBRequestContext();
 }
 
@@ -1035,6 +1037,7 @@ inline CFinalRequestContextUpdater::~CFinalRequestContextUpdater()
 
 void CVDBMgr::x_Init(void)
 {
+    DECLARE_SDK_GUARD();
     s_VDBInit();
     if ( rc_t rc = VDBManagerMakeRead(x_InitPtr(), 0) ) {
         *x_InitPtr() = 0;
@@ -1179,7 +1182,7 @@ CVDBTable::CVDBTable(const CVDB& db,
     : m_Db(db),
       m_Name(table_name)
 {
-    DECLARE_SDK_GUARD();
+    //DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     SIMULATE_SCHEMA_ERROR();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
@@ -1211,7 +1214,7 @@ CVDBTable::CVDBTable(const CVDBMgr& mgr,
     : m_Name(acc_or_path)
 {
     *x_InitPtr() = 0;
-    DECLARE_SDK_GUARD();
+    //DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
     SIMULATE_OPEN_ERROR();
@@ -1447,7 +1450,7 @@ void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 uint32_t CVDBCursor::GetElementCount(TVDBRowId row, const CVDBColumn& column,
                                      uint32_t elem_bits) const
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
@@ -1468,7 +1471,7 @@ void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
                               uint32_t start, uint32_t count,
                               void* buffer) const
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t read_count, remaining_count;
     if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
@@ -1586,7 +1589,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
                       const char* backup_name,
                       EMissing missing)
 {
-    DECLARE_SDK_GUARD();
+    //DECLARE_SDK_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     if ( !name ) {
         if ( missing == eMissing_Throw ) {
@@ -1687,7 +1690,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CVDBValue& obj)
 
 void CVDBValue::x_Get(const CVDBCursor& cursor, const CVDBColumn& column)
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellData(cursor, column.GetIndex(),
@@ -1746,7 +1749,7 @@ void CVDBValue::x_Get(const CVDBCursor& cursor,
                       const CVDBColumn& column,
                       EMissing missing)
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
@@ -1861,7 +1864,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
                               TVDBRowId row,
                               const CVDBColumn& column)
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
@@ -1959,7 +1962,7 @@ void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
                               TVDBRowId row,
                               const CVDBColumn& column)
 {
-    DECLARE_SDK_GET_GUARD();
+    //DECLARE_SDK_GET_GUARD();
     CFinalRequestContextUpdater ctx_updater;
     uint32_t bit_offset, bit_length, elem_count;
     const void* data;
