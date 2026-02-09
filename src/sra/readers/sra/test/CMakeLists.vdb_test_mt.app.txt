@@ -1,0 +1,23 @@
+# $Id$
+
+NCBI_begin_app(vdb_test_mt)
+  NCBI_sources(vdb_test_mt)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_set_test_timeout(600)
+
+  NCBI_begin_test(vdb_test_mt_SRA)
+    NCBI_set_test_command(vdb_test_mt -acc SRR035417 -refseq_table -quality_graph -seq_entry  -scan_reads)
+  NCBI_end_test()
+  NCBI_begin_test(vdb_test_mt_cSRA_no_REF)
+    NCBI_set_test_command(vdb_test_mt -acc SRR749060 -refseq_table -quality_graph -seq_entry  -scan_reads)
+  NCBI_end_test()
+  NCBI_begin_test(vdb_test_mt_cSRA)
+    NCBI_set_test_command(vdb_test_mt -acc SRR413273 -refseq_table -q NM_004119.2:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads -repeats 10)
+  NCBI_end_test()
+  NCBI_begin_test(vdb_test_mt_cSRA_VDB)
+    NCBI_set_test_command(vdb_test_mt -acc SRR413273 -refseq_table -q NM_004119.2:0-10000 -ref_seq -stat_graph -quality_graph -seq_entry -scan_reads -repeats 10 -use_vdb)
+  NCBI_end_test()
+
+  NCBI_project_watchers(vasilche ucko grichenk)
+
+NCBI_end_app()

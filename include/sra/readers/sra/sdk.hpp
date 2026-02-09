@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <sra/readers/sra/exception.hpp>
 
 
@@ -66,6 +67,17 @@ struct CSraRefTraits
 {
 };
 
+class CSraSDKLocks
+{
+public:
+    using TSDKMutex     = SSystemMutex;
+    using TSDKGuardType = CMutexGuard;
+    using TSDKGuard     = unique_ptr<TSDKGuardType>;
+
+    static TSDKMutex& GetSDKMutex(void);
+    static TSDKGuard GetSDKGuard(void);
+};
+
 #define DECLARE_SRA_REF_TRAITS(T, Const)                                \
     template<>                                                          \
     struct CSraRefTraits<Const T>                                       \
@@ -75,7 +87,7 @@ struct CSraRefTraits
     }
 #define DEFINE_SRA_REF_TRAITS(T, Const)                                 \
     rc_t CSraRefTraits<Const T>::x_Release(const T* t)                  \
-    { return T##Release(t); }                                           \
+    { auto guard = CSraSDKLocks::GetSDKGuard(); return T##Release(t); }  \
     rc_t CSraRefTraits<Const T>::x_AddRef (const T* t)                  \
     { return T##AddRef(t); }
 

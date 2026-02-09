@@ -3,7 +3,7 @@
 PROJ_TAG = test
 
 APP_PROJ = sra_test vdb_test wgs_test csra_test_mt graph_test snp_test csra_span_check \
-	wgs_resolver_test wgs_scan
+	wgs_resolver_test wgs_scan vdb_test_mt
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
