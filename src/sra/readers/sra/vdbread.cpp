@@ -689,7 +689,8 @@ CTime CVDBMgr::GetURLTimestamp(const string& path) const
 #endif
 
 
-DEFINE_STATIC_MUTEX(s_SDKMutex);
+//DEFINE_STATIC_MUTEX(s_SDKMutex);
+static recursive_mutex s_SDKMutex;
 
 CSraSDKLocks::TSDKMutex& CSraSDKLocks::GetSDKMutex(void)
 {

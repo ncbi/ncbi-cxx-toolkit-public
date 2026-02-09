@@ -34,8 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbimtx.hpp>
 #include <sra/readers/sra/exception.hpp>
+#include <mutex>
 
 
 BEGIN_NCBI_SCOPE
@@ -70,8 +70,8 @@ struct CSraRefTraits
 class CSraSDKLocks
 {
 public:
-    using TSDKMutex     = SSystemMutex;
-    using TSDKGuardType = CMutexGuard;
+    using TSDKMutex     = recursive_mutex;
+    using TSDKGuardType = lock_guard<TSDKMutex>;
     using TSDKGuard     = unique_ptr<TSDKGuardType>;
 
     static TSDKMutex& GetSDKMutex(void);
