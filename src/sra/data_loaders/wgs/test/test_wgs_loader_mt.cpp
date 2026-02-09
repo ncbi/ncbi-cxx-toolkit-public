@@ -86,7 +86,7 @@ static EMasterDescrType s_master_descr_type = eWithoutMasterDescr;
 void sx_InitGBLoader(CObjectManager& om)
 {
     CGBDataLoader* gbloader = dynamic_cast<CGBDataLoader*>
-        (CGBDataLoader::RegisterInObjectManager(om, "id1", om.eNonDefault).GetLoader());
+        (CGBDataLoader::RegisterInObjectManager(om, "id2", om.eNonDefault).GetLoader());
     _ASSERT(gbloader);
     gbloader->SetAddWGSMasterDescr(s_master_descr_type == eWithMasterDescr);
 }
