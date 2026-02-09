@@ -56,11 +56,11 @@ done
 
 methods=""
 if test "$only_id2_test" = 0 -a "$only_vdb_wgs_test" = 0; then
-    if disabled PubSeqOS; then
+    if disabled in-house-resources; then
+        echo "Skipping PUBSEQOS and ID1 loader test (in-house resources unavailable)"
+        methods="$methods"
+    elif disabled PubSeqOS; then
         echo "Skipping PUBSEQOS loader test (loader unavailable)"
-        methods="$methods ID1"
-    elif disabled in-house-resources; then
-        echo "Skipping PUBSEQOS loader test (in-house resources unavailable)"
         methods="$methods ID1"
     else
         methods="$methods PUBSEQOS ID1"
