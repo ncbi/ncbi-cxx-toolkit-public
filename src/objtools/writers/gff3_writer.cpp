@@ -1430,6 +1430,11 @@ bool CGff3Writer::xWriteProteinSequence(
     return true;
 }
 
+#define USE_BULK_PRE_LOAD 1 // pre-load features on all local protein products of CDs
+
+#if USE_BULK_PRE_LOAD
+
+static
 void sx_CollectProductIds(CGffFeatureContext& fc,
                           CScope::TIds& product_ids,
                           const CMappedFeat& root = CMappedFeat())
@@ -1444,6 +1449,25 @@ void sx_CollectProductIds(CGffFeatureContext& fc,
     }
 }
 
+static
+bool sx_NeedCDDAnnots(const SAnnotSelector* sel)
+{
+    if ( !sel ) { // CDDs are included by default
+        return true;
+    }
+
+    if ( sel->GetExcludeExternal() ) { // all external annotations are excluded
+        return false;
+    }
+
+    if ( sel->ExcludedAnnotName("CDD") ) { // CDDs are excluded explcitly
+        return false;
+    }
+
+    return true; // CDDs are not excluded
+}
+
+#endif
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureContext(
@@ -1451,7 +1475,7 @@ bool CGff3Writer::x_WriteFeatureContext(
 //  ----------------------------------------------------------------------------
 {
     vector<CMappedFeat> vRoots = fc.FeatTree().GetRootFeatures();
-#if 1 // pre-load features on all local protein products of CDs
+#if USE_BULK_PRE_LOAD
     CScope::TBioseqHandles pre_load_prots; // save bioseqs during processing to avoid GC
     CScope::TCDD_Entries pre_load_cdd_annots; // save annots during processing to avoid GC
     CFeat_CI pre_load_features; // save features during processing to avoid GC
@@ -1471,11 +1495,13 @@ bool CGff3Writer::x_WriteFeatureContext(
                 pre_load_prots.push_back(bh);
             }
         }
-        if ( !pre_load_prots.empty() ) {
-            // bulk load cdd annots 
-            pre_load_cdd_annots = m_pScope->GetCDDAnnots(pre_load_prots);
+        if ( !empty(pre_load_prots) ) {
+            if ( sx_NeedCDDAnnots(m_Selector.get()) ) {
+                // bulk load cdd annots 
+                pre_load_cdd_annots = m_pScope->GetCDDAnnots(pre_load_prots);
+            }
             // bulk load other features
-            pre_load_features = CFeat_CI(*m_pScope, *all_prot_loc);
+            pre_load_features = CFeat_CI(*m_pScope, *all_prot_loc, SetAnnotSelector());
         }
     }
 #endif
@@ -2711,7 +2737,7 @@ bool CGff3Writer::xWriteFeatureCds(
     if (!protein_h) {
         return true;
     }
-    CFeat_CI it(protein_h);
+    CFeat_CI it(protein_h, SetAnnotSelector());
     fc.FeatTree().AddFeatures(it);
     for (; it; ++it) {
         if (!it->GetData().IsProt()) {
