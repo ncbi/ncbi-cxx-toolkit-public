@@ -563,6 +563,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     /// top level Seq-entry different from TSE with the sequence they annotate.
     /// They can be excluded from search by SetExcludeExternal() option.
     ///
+    bool GetExcludeExternal() const
+        {
+            return m_ExcludeExternal;
+        }
     /// Exclude all external annotations from the search.
     /// Effective only when no Seq-entry/Bioseq/Seq-annot limit is set.
     SAnnotSelector& SetExcludeExternal(bool exclude = true)
