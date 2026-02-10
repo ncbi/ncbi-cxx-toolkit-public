@@ -319,7 +319,7 @@ string  GetBioseqInfoHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqInfoItemAndDataChunkAndSize);
 
     len = PSGToString(bioseq_info_size, buf);
@@ -347,7 +347,7 @@ string  GetBioseqMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqInfoItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -381,7 +381,7 @@ string  GetBioseqCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqInfoItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -410,7 +410,7 @@ string GetBioseqInfoHeaderAndCompletion(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqInfoItemAndDataAndMetaChunkAndSize);
 
     len = PSGToString(bioseq_info_size, buf);
@@ -448,7 +448,7 @@ string  GetBlobPropHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobPropItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -476,7 +476,7 @@ string  GetTSEBlobPropHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobPropItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -508,7 +508,7 @@ string  GetBlobPropMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobPropItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -546,7 +546,7 @@ string  GetTSEBlobPropMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndId2Chunk);
 
     len = PSGToString(id2_chunk, buf);
@@ -584,7 +584,7 @@ string  GetBlobPropCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobPropItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -607,7 +607,7 @@ string  GetTSEBlobPropCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobPropItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -641,7 +641,7 @@ string  GetBlobChunkHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -676,7 +676,7 @@ string  GetTSEBlobChunkHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -719,7 +719,7 @@ string  GetBlobExcludeHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
          .append(s_AndBlobId)
@@ -767,7 +767,7 @@ string GetBlobExcludeHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
          .append(s_AndBlobId)
@@ -809,7 +809,7 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
 
@@ -860,7 +860,7 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
 
@@ -905,7 +905,7 @@ string  GetBlobCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -930,7 +930,7 @@ string GetTSEBlobCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -966,7 +966,7 @@ string  GetBlobMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -1007,7 +1007,7 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBlobItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -1106,7 +1106,7 @@ string  GetProcessorProgressMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndProcessorItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks)
@@ -1131,7 +1131,7 @@ string GetNamedAnnotationHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqNAItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -1161,7 +1161,7 @@ string GetNamedAnnotationMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqNAItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -1194,7 +1194,7 @@ string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqNAItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -1217,7 +1217,7 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndBioseqNAItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -1281,7 +1281,7 @@ string GetAccVerHistoryHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndAccVerHistoryItem)
          .append(s_AndDataChunk)
          .append(s_AndSize);
@@ -1304,7 +1304,7 @@ string GetIPGResolveHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndIPGInfoItem)
          .append(s_AndDataAndMetaChunk)
          .append(s_AndSize);
@@ -1331,7 +1331,7 @@ string GetIPGMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndIPGInfoItem)
          .append(s_AndMessageAndMetaChunk)
          .append(s_AndSize);
@@ -1366,7 +1366,7 @@ string GetAccVerHistCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndAccVerHistoryItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -1397,7 +1397,7 @@ string GetProcessorMessageHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndProcessorItem)
          .append(s_AndMessageChunk)
          .append(s_AndSize);
@@ -1434,7 +1434,7 @@ string GetProcessorMessageCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndProcessorItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
@@ -1460,7 +1460,7 @@ string GetPublicCommentHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndPublicCommentItem)
          .append(s_AndDataChunk)
          .append(s_AndBlobId)
@@ -1491,7 +1491,7 @@ string GetPublicCommentHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndPublicCommentItem)
          .append(s_AndDataChunk)
          .append(s_AndId2Chunk);
@@ -1520,7 +1520,7 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
     len = PSGToString(item_id, buf);
     reply.append(buf, len)
          .append(s_AndProcessorId)
-         .append(NStr::URLEncode(processor_id))
+         .append(processor_id)
          .append(s_AndPublicCommentItem)
          .append(s_AndMetaChunk)
          .append(s_AndNChunks);
