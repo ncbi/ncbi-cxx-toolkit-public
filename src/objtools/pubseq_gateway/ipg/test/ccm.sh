@@ -3,8 +3,10 @@
 DIR=$(dirname $(readlink -f $0))
 TEST_BINARY=${1}
 
+export JAVA_HOME="/usr/lib/jvm/jre-11"
+
 CLUSTER_NAME="psg_ipg_test"
-VERSION="3.11.11"
+VERSION="4.1.10"
 CQLSH="/netmnt/vast01/seqdb/id_dumps/id_software/cassandra/test/bin/cqlsh"
 CCMENV="/netmnt/vast01/seqdb/id_dumps/id_software/venvs/ccm"
 

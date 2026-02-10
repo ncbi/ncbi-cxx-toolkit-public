@@ -15,7 +15,7 @@ sys.dont_write_bytecode = True
 class CcmManager:
 
     def __init__(self):
-        self.__version = '3.11.11'
+        self.__version = '4.1.10'
         self.__cqlsh = '/netmnt/vast01/seqdb/id_dumps/id_software/cassandra/test/bin/cqlsh'
         self.__cluster_name = 'ipg_storage_test'
         self.__start_timeout = 180
