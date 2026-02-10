@@ -780,7 +780,9 @@ CDataSource_ScopeInfo::GetSeq_entry_Lock(const CBlobIdKey& blob_id)
         lock = GetDataSource().GetSeq_entry_Lock(blob_id);
     }}
     if ( lock.first ) {
-        return TSeq_entry_Lock(lock.first, GetTSE_Lock(lock.second));
+        if ( auto tse_lock = GetTSE_Lock(lock.second) ) {
+            return TSeq_entry_Lock(std::move(lock.first), std::move(tse_lock));
+        }
     }
     return TSeq_entry_Lock();
 }
@@ -795,7 +797,9 @@ CDataSource_ScopeInfo::FindSeq_entry_Lock(const CSeq_entry& entry)
         lock = GetDataSource().FindSeq_entry_Lock(entry, m_TSE_LockSet);
     }}
     if ( lock.first ) {
-        return TSeq_entry_Lock(lock.first, GetTSE_Lock(lock.second));
+        if ( auto tse_lock = GetTSE_Lock(lock.second) ) {
+            return TSeq_entry_Lock(std::move(lock.first), std::move(tse_lock));
+        }
     }
     return TSeq_entry_Lock();
 }
@@ -810,7 +814,9 @@ CDataSource_ScopeInfo::FindSeq_annot_Lock(const CSeq_annot& annot)
         lock = GetDataSource().FindSeq_annot_Lock(annot, m_TSE_LockSet);
     }}
     if ( lock.first ) {
-        return TSeq_annot_Lock(lock.first, GetTSE_Lock(lock.second));
+        if ( auto tse_lock = GetTSE_Lock(lock.second) ) {
+            return TSeq_annot_Lock(std::move(lock.first), std::move(tse_lock));
+        }
     }
     return TSeq_annot_Lock();
 }
@@ -825,7 +831,9 @@ CDataSource_ScopeInfo::FindBioseq_set_Lock(const CBioseq_set& seqset)
         lock = GetDataSource().FindBioseq_set_Lock(seqset, m_TSE_LockSet);
     }}
     if ( lock.first ) {
-        return TBioseq_set_Lock(lock.first, GetTSE_Lock(lock.second));
+        if ( auto tse_lock = GetTSE_Lock(lock.second) ) {
+            return TBioseq_set_Lock(std::move(lock.first), std::move(tse_lock));
+        }
     }
     return TBioseq_set_Lock();
 }
@@ -840,7 +848,9 @@ CDataSource_ScopeInfo::FindBioseq_Lock(const CBioseq& bioseq)
         lock = GetDataSource().FindBioseq_Lock(bioseq, m_TSE_LockSet);
     }}
     if ( lock.first ) {
-        return GetTSE_Lock(lock.second)->GetBioseqLock(null, lock.first);
+        if ( auto tse_lock = GetTSE_Lock(lock.second) ) {
+            return tse_lock->GetBioseqLock(null, lock.first);
+        }
     }
     return TBioseq_Lock();
 }
@@ -858,9 +868,14 @@ CDataSource_ScopeInfo::FindSeq_feat_Lock(const CSeq_id_Handle& loc_id,
         lock = GetDataSource().FindSeq_feat_Lock(loc_id, loc_pos, feat);
     }}
     if ( lock.first.first ) {
-        ret.first.first = lock.first.first;
+        ret.first.first = std::move(lock.first.first);
         ret.first.second = GetTSE_Lock(lock.first.second);
-        ret.second = lock.second;
+        if ( ret.first.second ) {
+            ret.second = std::move(lock.second);
+        }
+        else {
+            ret = TSeq_feat_Lock();
+        }
     }
     return ret;
 }
