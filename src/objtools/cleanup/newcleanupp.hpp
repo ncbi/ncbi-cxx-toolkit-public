@@ -457,6 +457,7 @@ public:
     void RememberSeqFeatCitPubs(CPub& pub);
     void DecodeXMLMarkChanged(std::string& str);
 
+    void FixStructuredCommentKeywords(CSeq_descr& descr);
 private:
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
         const CPub_equiv& pub_equiv, TEntrezId& muid, TEntrezId& pmid);
@@ -465,7 +466,6 @@ private:
 
     void x_SortSeqDescs(CSeq_entry& seq_entry);
 
-    void x_FixStructuredCommentKeywords(CSeq_descr& descr);
 
     void x_RemoveDupBioSource(CBioseq_set& bioseq_set);
     void x_RemoveDupBioSource(CSeq_entry& se, const CBioSource& src);

@@ -779,6 +779,33 @@ void CNewCleanup_imp::GBblockOriginBC(string& str)
 }
 
 
+static void s_SplitKeywords(list<string>& keywords)
+{
+    static const auto controlled_keywords =
+        []() {
+            set<string> keywords;
+            for (auto keyword : CComment_rule::GetKeywordList()) {
+                keywords.insert(keyword);
+            }
+            return keywords;
+        }();
+
+    list<string> processed_keywords;
+    for (auto keyword : keywords) {
+        if (controlled_keywords.contains(keyword)) {
+            processed_keywords.push_back(keyword);
+        } else {
+            list<string> split_keyword;
+            NStr::Split(keyword, ";", split_keyword);
+            processed_keywords.splice(processed_keywords.end(), split_keyword);
+        }
+    }
+
+    if (processed_keywords.size() > keywords.size()) {
+        keywords = std::move(processed_keywords);
+    }
+}
+
 void CNewCleanup_imp::GBblockBC(
     CGB_block& gbk)
 
@@ -797,9 +824,7 @@ void CNewCleanup_imp::GBblockBC(
 
     // split keywords at semicolons
     if (gbk.IsSetKeywords()) {
-        string one_string = NStr::Join(gbk.GetKeywords(), ";");
-        gbk.ResetKeywords();
-        NStr::Split(one_string, ";", gbk.SetKeywords());
+        s_SplitKeywords(gbk.SetKeywords());
     }
 
     CLEAN_STRING_LIST(gbk, Keywords);
@@ -7446,118 +7471,132 @@ void CNewCleanup_imp::x_RemoveDupPubs(CSeq_descr& descr)
     }
 }
 
-void CNewCleanup_imp::x_FixStructuredCommentKeywords(CSeq_descr& descr)
+
+static bool s_RemoveControlledKeywords(CGB_block& gb_block, set<string>& uo_keywords)
+{
+    if (! gb_block.IsSetKeywords()) {
+        return false;
+    }
+
+    static const auto controlled_keywords =
+        []() {
+            set<string> keywords;
+            for (auto keyword : CComment_rule::GetKeywordList()) {
+                keywords.insert(NStr::ToLower(keyword));
+            }
+            return keywords;
+        }();
+
+    auto& keywords     = gb_block.SetKeywords();
+    auto  start_length = keywords.size();
+
+    keywords.remove_if(
+        [&uo_keywords](string keyword) {
+            if (auto it = uo_keywords.find(keyword); it != uo_keywords.end()) {
+                uo_keywords.erase(it);
+                return false;
+            } else if (controlled_keywords.contains(NStr::ToLower(keyword))) {
+                return true;
+            }
+            return false;
+        });
+
+    auto end_length = keywords.size();
+
+    if (keywords.empty()) {
+        gb_block.ResetKeywords();
+    }
+
+    return (end_length < start_length);
+}
+
+
+static optional<string> s_GetKeywordFromUserObject(const CUser_object& usr)
+{
+    if (! CComment_rule::IsStructuredComment(usr)) {
+        return nullopt;
+    }
+
+    string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
+    if (! prefix.empty()) {
+        CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+        if (comment_rules) {
+            CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
+            if (ruler) {
+                const CComment_rule&      rule   = *ruler;
+                CComment_rule::TErrorList errors = rule.IsValid(usr);
+                if (errors.empty()) {
+                    auto keyword = CComment_rule::KeywordForPrefix(prefix);
+                    if (! keyword.empty()) {
+                        return keyword;
+                    }
+                }
+            }
+        }
+    }
+    return nullopt;
+}
+
+
+static CRef<CGB_block> s_SetGBBlock(list<CRef<CSeqdesc>>& dset)
+{
+    auto it = find_if(dset.begin(), dset.end(), [](auto pDesc) {
+        return pDesc->IsGenbank();
+    });
+
+    if (it != dset.end()) {
+        return Ref<CGB_block>(&((*it)->SetGenbank()));
+    }
+
+    return CRef<CGB_block>();
+}
+
+
+void CNewCleanup_imp::FixStructuredCommentKeywords(CSeq_descr& descr)
 {
     if (! descr.IsSet()) {
         return;
     }
 
-    vector<string> original_keywords;
-    vector<string> controlled_keywords = CComment_rule::GetKeywordList();
-
     auto& dset = descr.Set();
-    if (! dset.empty()) {
-        CBioseq::TDescr::Tdata::iterator it = dset.begin();
-        while (it != dset.end()) {
-            CSeqdesc& desc = **it;
-            if (desc.Which() != CSeqdesc::e_Genbank) {
-                ++it;
-                continue;
-            }
-            CGB_block& gb_block = desc.SetGenbank();
-            EDIT_EACH_KEYWORD_ON_GENBANKBLOCK(k_itr, gb_block)
-            {
-                original_keywords.push_back(*k_itr);
-                FOR_EACH_STRING_IN_VECTOR(s_itr, controlled_keywords)
-                {
-                    if (NStr::EqualNocase(*k_itr, *s_itr)) {
-                        ERASE_KEYWORD_ON_GENBANKBLOCK(k_itr, gb_block);
-                        break;
-                    }
-                }
-            }
-            if (gb_block.IsSetKeywords() && gb_block.GetKeywords().size() == 0) {
-                gb_block.ResetKeywords();
-            }
-            if (gb_block.IsEmpty()) {
-                it = dset.erase(it);
-            } else {
-                ++it;
-            }
-        }
+    if (dset.empty()) {
+        return;
     }
 
-    vector<string> new_keywords;
+    set<string> uo_keywords;
     for (auto pDesc : dset) {
-        if (! pDesc || ! pDesc->IsUser()) {
-            continue;
-        }
-        const CUser_object& usr = pDesc->GetUser();
-        if (! CComment_rule::IsStructuredComment(usr))
-            continue;
-        string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
-        if (! prefix.empty()) {
-            CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            if (comment_rules) {
-                CConstRef<CComment_rule> ruler = comment_rules->FindCommentRuleEx(prefix);
-                if (ruler) {
-                    const CComment_rule&      rule   = *ruler;
-                    CComment_rule::TErrorList errors = rule.IsValid(usr);
-                    if (errors.size() == 0) {
-                        string kywd = CComment_rule::KeywordForPrefix(prefix);
-                        if (! kywd.empty()) {
-                            new_keywords.push_back(kywd);
-                        }
-                    }
-                }
+        if (pDesc->IsUser()) {
+            if (auto keyword = s_GetKeywordFromUserObject(pDesc->GetUser())) {
+                uo_keywords.insert(*keyword);
             }
         }
     }
 
+    bool keyword_removed{ false };
+    auto gb_block = s_SetGBBlock(dset);
+    if (gb_block) {
+        // Remove controlled gb_block keywords that are not in user objects
+        // Remove from uo_keywords those keywords that are also in gb_block;
+        // we don't want to add these below.
+        keyword_removed = s_RemoveControlledKeywords(*gb_block, uo_keywords);
+    } else if (! uo_keywords.empty()) { // create a new GB_block object
+        auto new_desc = Ref(new CSeqdesc());
+        dset.push_back(new_desc);
+        gb_block.Reset(&(new_desc->SetGenbank()));
+    } else { // No gb_block or User-object keywords => nothing to do
+        return;
+    }
 
-    vector<string> final_keywords;
-    if (new_keywords.size() > 0) {
-        CGB_block* gb_block = nullptr;
-        for (auto itr : dset) {
-            CSeqdesc& desc = *itr;
-            if (desc.Which() != CSeqdesc::e_Genbank)
-                continue;
-            gb_block = &desc.SetGenbank();
-        }
-        if (! gb_block) {
-            CRef<CSeqdesc> new_desc(new CSeqdesc);
-            gb_block = &(new_desc->SetGenbank());
-            descr.Set().push_back(new_desc);
-        }
-        if (gb_block->IsSetKeywords()) {
-            FOR_EACH_KEYWORD_ON_GENBANKBLOCK(k_itr, *gb_block)
-            {
-                final_keywords.push_back(*k_itr);
-            }
-        }
-        FOR_EACH_STRING_IN_VECTOR(n_itr, new_keywords)
-        {
-            ADD_KEYWORD_TO_GENBANKBLOCK(*gb_block, *n_itr);
-            final_keywords.push_back(*n_itr);
-        }
+    // Add remaining User-object keywords
+    for (auto keyword : uo_keywords) {
+        gb_block->SetKeywords().push_back(keyword);
     }
-    bool                     any_change = false;
-    vector<string>::iterator orig_k     = original_keywords.begin();
-    vector<string>::iterator final_k    = final_keywords.begin();
-    while (! any_change && orig_k != original_keywords.end() && final_k != final_keywords.end()) {
-        if (! NStr::Equal(*orig_k, *final_k)) {
-            any_change = true;
-        }
-        ++orig_k;
-        ++final_k;
-    }
-    if (orig_k != original_keywords.end() || final_k != final_keywords.end()) {
-        any_change = true;
-    }
-    if (any_change) {
+
+    if (keyword_removed || ! uo_keywords.empty()) {
         ChangeMade(CCleanupChange::eChangeKeywords);
     }
 }
+
 
 void CNewCleanup_imp::x_RemoveProtDescThatDupsProtName(CProt_ref& prot)
 {
@@ -7938,11 +7977,10 @@ void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CG
     if (! block.IsSetDiv()) {
         return;
     }
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, seq_descr.Set())
-    {
-        if ((*it)->IsMolinfo() &&
-            ! (*it)->GetMolinfo().IsSetTech()) {
-            if (block.IsSetDiv() && s_SetMolinfoTechFromString((*it)->SetMolinfo(), block.GetDiv())) {
+    for (auto pDesc : seq_descr.Set()) {
+        if (pDesc->IsMolinfo() &&
+            ! (pDesc->GetMolinfo().IsSetTech())) {
+            if (block.IsSetDiv() && s_SetMolinfoTechFromString(pDesc->SetMolinfo(), block.GetDiv())) {
                 block.ResetDiv();
                 ChangeMade(CCleanupChange::eChangeMolInfo);
             }
@@ -7953,10 +7991,9 @@ void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CG
 
 void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr)
 {
-    NON_CONST_ITERATE(CSeq_descr::Tdata, it, seq_descr.Set())
-    {
-        if ((*it)->IsGenbank()) {
-            x_SetMolInfoTechFromGenBankBlock(seq_descr, (*it)->SetGenbank());
+    for (auto pDesc : seq_descr.Set()) {
+        if (pDesc->IsGenbank()) {
+            x_SetMolInfoTechFromGenBankBlock(seq_descr, pDesc->SetGenbank());
         }
     }
 }
@@ -8124,6 +8161,7 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         return;
     }
 
+    // This method can modify both molinfo and genbank block
     x_SetMolInfoTechFromGenBankBlock(seq.SetDescr());
     bool is_patent = false;
     ITERATE (CBioseq::TId, id, seq.GetId()) {
@@ -8131,27 +8169,23 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
             is_patent = true;
         }
     }
-    CBioseq_Handle        b = m_Scope->GetBioseqHandle(seq);
+    CBioseq_Handle        bsh = m_Scope->GetBioseqHandle(seq);
     CConstRef<CBioSource> biosrc;
-    CSeqdesc_CI           src(b, CSeqdesc::e_Source);
+    CSeqdesc_CI           src(bsh, CSeqdesc::e_Source);
     if (src) {
         biosrc.Reset(&(src->GetSource()));
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
-    CSeqdesc_CI     molinfo(b, CSeqdesc::e_Molinfo);
+    CSeqdesc_CI     molinfo(bsh, CSeqdesc::e_Molinfo);
     if (molinfo && molinfo->GetMolinfo().IsSetTech()) {
         tech = molinfo->GetMolinfo().GetTech();
     }
 
-    EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq.SetDescr())
-    {
-        CSeqdesc& desc = **descr_iter;
-        if (! FIELD_IS(desc, Genbank)) {
-            continue;
+    for (auto pDesc : seq.SetDescr().Set()) {
+        if (pDesc->IsGenbank()) {
+            CGB_block& gb = pDesc->SetGenbank();
+            x_CleanupGenbankBlock(gb, is_patent, biosrc, tech);
         }
-
-        CGB_block& gb = desc.SetGenbank();
-        x_CleanupGenbankBlock(gb, is_patent, biosrc, tech);
     }
 }
 
