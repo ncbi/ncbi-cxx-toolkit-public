@@ -2630,7 +2630,6 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
 
     CPSGL_QueueGuard queue(m_Dispatcher);
 
-    size_t count = 0;
     for (size_t i = 0; i < ids.size(); ++i) {
         const CSeq_id_Handle& id = ids[i];
         if ( loaded[i] ) {
@@ -2639,7 +2638,6 @@ CPSGDataLoader_Impl::x_GetBulkBioseqInfo(const TIds& ids,
         if ( CannotProcess(ids[i]) ) {
             continue;
         }
-        ++count;
         ret[i] = m_Caches->m_BioseqInfoCache.Find(ids[i]);
         if ( ret[i] ) {
             load_count += 1;
