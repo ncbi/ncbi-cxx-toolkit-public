@@ -56,7 +56,7 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type)
 
 string GetBioseqRecordId(const CBioseqInfoRecord &  record)
 {
-    char    buf[64];
+    char    buf[kPSGToStringBufferSize];
     long    len;
     string  id(record.GetAccession());
 

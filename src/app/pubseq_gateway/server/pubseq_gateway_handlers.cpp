@@ -2117,7 +2117,7 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
 
     try {
         string      content;
-        char        buf[64];
+        char        buf[kPSGToStringBufferSize];
         long        len;
 
         len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumConnHardLimitExceeded), buf);
@@ -2435,7 +2435,7 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
 
     try {
         string      json;
-        char        buf[64];
+        char        buf[kPSGToStringBufferSize];
         long        len;
         bool        some = false;
 

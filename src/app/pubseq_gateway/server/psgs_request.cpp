@@ -52,7 +52,7 @@ size_t  GetNextRequestId(void)
 
 SPSGS_BlobId::SPSGS_BlobId(int32_t  sat, int32_t  sat_key)
 {
-    char    buf[64];
+    char    buf[kPSGToStringBufferSize];
     long    len;
     len = PSGToString(sat, buf);
     m_Id.append(buf, len)

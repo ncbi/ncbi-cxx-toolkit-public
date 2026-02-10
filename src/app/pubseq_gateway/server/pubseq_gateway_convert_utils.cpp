@@ -161,7 +161,7 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
     string              json;
     bool                some = false;
 
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     // PIR and PRF seq id is moved from the 'accession' field to the 'name'
@@ -337,7 +337,7 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
 string  ToJsonString(const CBlobRecord &  blob_prop)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{');
@@ -411,7 +411,7 @@ string ToJsonString(const CNAnnotRecord &  annot_record,
                     const string &  custom_blob_id)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{');
@@ -496,7 +496,7 @@ string ToJsonString(const CNAnnotRecord &  annot_record,
 string ToJsonString(const map<string, int> &  per_na_results)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{');
@@ -524,7 +524,7 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -590,7 +590,7 @@ string ToJsonString(const CSi2CsiFetchRequest &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -632,7 +632,7 @@ string ToJsonString(const CBlobFetchRequest &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -686,7 +686,7 @@ string ToJsonString(const CBlobFetchRequest &  request,
 string ToJsonString(const CSI2CSIRecord &  record)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -735,7 +735,7 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -794,7 +794,7 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -839,7 +839,7 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -898,7 +898,7 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -931,7 +931,7 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -975,7 +975,7 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request,
                     const string &  datacenter)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{')
@@ -1026,7 +1026,7 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request,
 string ToJsonString(const SAccVerHistRec &  history_record)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     json.append(1, '{');
@@ -1079,7 +1079,7 @@ string ToJsonString(const SAccVerHistRec &  history_record)
 string ToJsonString(const CIpgStorageReportEntry &  ipg_entry)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     // The incoming parameter is 'protein' so it is returned accordingly
@@ -1167,7 +1167,7 @@ static const string     kPeerUserAgentItem = "\"peer_user_agent\": ";
 string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
 {
     string              json;
-    char                buf[64];
+    char                buf[kPSGToStringBufferSize];
     long                len;
 
     len = PSGToString(conn_props.m_Id, buf);

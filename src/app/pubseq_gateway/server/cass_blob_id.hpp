@@ -73,7 +73,7 @@ struct SCass_BlobId
 
     string ToString(void) const
     {
-        char    buf[64];
+        char    buf[kPSGToStringBufferSize];
         long    len;
         string  blob_id;
 

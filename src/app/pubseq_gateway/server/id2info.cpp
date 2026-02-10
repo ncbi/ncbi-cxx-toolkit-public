@@ -116,7 +116,7 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 
 string CPSGS_SatInfoChunksVerFlavorId2Info::Serialize(void) const
 {
-    char    buf[64];
+    char    buf[kPSGToStringBufferSize];
     long    len;
 
     string  ret;
@@ -229,7 +229,7 @@ CPSGS_IdModifiedVerFlavorId2Info::CPSGS_IdModifiedVerFlavorId2Info(
 
 string CPSGS_IdModifiedVerFlavorId2Info::Serialize(void) const
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      ret = kPrefix + kSeparator + kTseId + m_TSEId.ToString();
 

@@ -399,7 +399,12 @@ string FormatPreciseTime(const chrono::system_clock::time_point &  t_point);
 unsigned long GetTimespanToNowMks(const psg_time_point_t &  t_point);
 unsigned long GetTimespanToNowMs(const psg_time_point_t &  t_point);
 string GetCassStartupDataStateMessage(EPSGS_StartupDataState  state);
+
+// Buffer which is used by PSGToString() should be allocated by the user.
+// Here is a size which should be used
+static const size_t     kPSGToStringBufferSize = 64;
 long PSGToString(long  value, char *  buf);
+
 string SanitizeInputValue(const string &  input_val);
 string GetSiteFromIP(const string &  ip_address);
 

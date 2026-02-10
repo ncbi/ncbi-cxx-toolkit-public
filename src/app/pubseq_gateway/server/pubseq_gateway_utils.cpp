@@ -313,7 +313,7 @@ string  GetBioseqInfoHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
     string      reply(s_ReplyBegin);
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
 
     len = PSGToString(item_id, buf);
@@ -341,7 +341,7 @@ string  GetBioseqMessageHeader(size_t  item_id,
                                EDiagSev  severity)
 {
     string      reply(s_ReplyBegin);
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
 
     len = PSGToString(item_id, buf);
@@ -375,7 +375,7 @@ string  GetBioseqCompletionHeader(size_t  item_id,
 {
    // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_info&chunk_type=meta&n_chunks=1
     string      reply(s_ReplyBegin);
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
 
     len = PSGToString(item_id, buf);
@@ -404,7 +404,7 @@ string GetBioseqInfoHeaderAndCompletion(size_t  item_id,
                                         size_t  chunk_count)
 {
     string      reply(s_ReplyBegin);
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
 
     len = PSGToString(item_id, buf);
@@ -435,7 +435,7 @@ string  GetBlobPropHeader(size_t  item_id,
                           CBlobRecord::TTimestamp  last_modified)
 {
     string      reply(s_ReplyBegin);
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
 
     string      last_modified_part;
@@ -469,7 +469,7 @@ string  GetTSEBlobPropHeader(size_t  item_id,
                              size_t  blob_prop_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=2&processor_id=get+blob+proc&item_type=blob_prop&chunk_type=data&size=550
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -501,7 +501,7 @@ string  GetBlobPropMessageHeader(size_t  item_id,
                                  int  code,
                                  EDiagSev  severity)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -539,7 +539,7 @@ string  GetTSEBlobPropMessageHeader(size_t  item_id,
                                     int  code,
                                     EDiagSev  severity)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -577,7 +577,7 @@ string  GetBlobPropCompletionHeader(size_t  item_id,
                                     const string &  processor_id,
                                     size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -600,7 +600,7 @@ string  GetTSEBlobPropCompletionHeader(size_t  item_id,
                                        const string &  processor_id,
                                        size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -627,7 +627,7 @@ string  GetBlobChunkHeader(size_t  item_id,
                            CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -669,7 +669,7 @@ string  GetTSEBlobChunkHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk:
     // item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=data&size=2345&id2_chunk=11&id2_info=33.44.55&blob_chunk=37
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -705,7 +705,7 @@ string  GetBlobExcludeHeader(size_t  item_id,
                              CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -741,7 +741,7 @@ string GetBlobExcludeHeader(size_t  item_id,
                             unsigned long  until_resend_mks,
                             CBlobRecord::TTimestamp  last_modified)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -802,7 +802,7 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 const string &  id2_info)
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&blob_id=555.666&n_chunks=1&reason={excluded,inprogress,sent}
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -841,7 +841,7 @@ string  GetTSEBlobExcludeHeader(size_t  item_id,
                                 unsigned long  sent_mks_ago,
                                 unsigned long  until_resend_mks)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -898,7 +898,7 @@ string  GetBlobCompletionHeader(size_t  item_id,
                                 size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -923,7 +923,7 @@ string GetTSEBlobCompletionHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk:
     // item_id=4&processor_id=get+blob+proc&item_type=blob&chunk_type=meta&n_chunks=100
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -952,7 +952,7 @@ string  GetBlobMessageHeader(size_t  item_id,
                              CBlobRecord::TTimestamp  last_modified)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&processor_id=get+blob+proc&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1000,7 +1000,7 @@ string  GetTSEBlobMessageHeader(size_t  item_id,
                                 int  code,
                                 EDiagSev  severity)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1040,7 +1040,7 @@ string  GetReplyCompletionHeader(size_t  chunk_count,
                                  const psg_time_point_t &  create_timestamp)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153&status=200&exec_time=231
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyCompletionFixedPart);
     auto        now = psg_clock_t::now();
@@ -1068,7 +1068,7 @@ string  GetReplyMessageHeader(size_t  msg_size,
                               EDiagSev  severity)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1099,7 +1099,7 @@ string  GetProcessorProgressMessageHeader(size_t  item_id,
                                           const string &  progress_status)
 {
     // E.g. PSG-Reply-Chunk: item_id=...&processor_id=...&item_type=processor&chunk_type=meta&n_chunks=1&progress=...
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1124,7 +1124,7 @@ string GetNamedAnnotationHeader(size_t  item_id,
                                 size_t  annotation_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=get+blob+proc&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1154,7 +1154,7 @@ string GetNamedAnnotationMessageHeader(size_t  item_id,
 {
     // E.g. PSG-Reply-Chunk: item_id=5&processor_id=get+blob+proc&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
 
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1187,7 +1187,7 @@ string GetNamedAnnotationMessageCompletionHeader(size_t  item_id,
                                                  const string &  processor_id,
                                                  size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1210,7 +1210,7 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
                                           const string &  processor_id,
                                           size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1232,7 +1232,7 @@ string GetNamedAnnotationCompletionHeader(size_t  item_id,
 string GetPerNamedAnnotationResultsHeader(size_t  item_id,
                                           size_t  per_annot_result_size)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1252,7 +1252,7 @@ string GetPerNamedAnnotationResultsHeader(size_t  item_id,
 string GetPerNAResultsCompletionHeader(size_t  item_id,
                                        size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1274,7 +1274,7 @@ string GetAccVerHistoryHeader(size_t  item_id,
                               size_t  msg_size)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&processor_id=cass-acc-blob-hist&item_type=acc_ver_history&chunk_type=data&size=150
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1297,7 +1297,7 @@ string GetIPGResolveHeader(size_t  item_id,
                            const string &  processor_id,
                            size_t  msg_size)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1324,7 +1324,7 @@ string GetIPGMessageHeader(size_t  item_id,
                            EDiagSev  severity,
                            size_t  msg_size)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1359,7 +1359,7 @@ string GetAccVerHistCompletionHeader(size_t  item_id,
                                      const string &  processor_id,
                                      size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1390,7 +1390,7 @@ string GetProcessorMessageHeader(size_t  item_id,
     // severity=warning&progress=inprogress
     // <message text>
 
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1427,7 +1427,7 @@ string GetProcessorMessageCompletionHeader(size_t  item_id,
 {
     // item_id=2&processor_id=Cassandra-get&item_type=processor&chunk_type=meta&n_chunks=2
 
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1453,7 +1453,7 @@ string GetPublicCommentHeader(size_t  item_id,
                               CBlobRecord::TTimestamp  last_modified,
                               size_t  msg_size)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1484,7 +1484,7 @@ string GetPublicCommentHeader(size_t  item_id,
                               const string &  id2_info,
                               size_t  msg_size)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1513,7 +1513,7 @@ string GetPublicCommentCompletionHeader(size_t  item_id,
                                         const string &  processor_id,
                                         size_t  chunk_count)
 {
-    char        buf[64];
+    char        buf[kPSGToStringBufferSize];
     long        len;
     string      reply(s_ReplyBegin);
 
@@ -1585,38 +1585,8 @@ unsigned long GetTimespanToNowMs(const psg_time_point_t &  t_point)
 // The version below appears faster and more suitable for the PSG purposes
 long PSGToString(long  signed_value, char *  buf)
 {
-    char *          pos = buf;
-    unsigned long   value;
-    long            value_length;
-    char *          first_digit;
-    char            temp;
-
-    if (signed_value < 0) {
-        *pos++ = '-';
-        value = static_cast<unsigned long>(-signed_value);
-    } else {
-        value = static_cast<unsigned long>(signed_value);
-    }
-
-    first_digit = pos;
-
-    // Convert in reverse order
-    do {
-        *pos++ = '0' + value % 10;
-        value /= 10;
-    } while (value);
-
-    value_length = pos - buf;
-    *pos-- = 0;
-
-    // Restore the order
-    do {
-        temp = *pos;
-        *pos-- = *first_digit;
-        *first_digit++ = temp;
-    } while (first_digit < pos);
-
-    return value_length;
+    auto [ptr, ec] = std::to_chars(buf, buf + kPSGToStringBufferSize, signed_value);
+    return (ec == std::errc()) ? (ptr - buf) : 0;
 }
 
 
