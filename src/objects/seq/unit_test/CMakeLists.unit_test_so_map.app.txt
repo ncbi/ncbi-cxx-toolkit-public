@@ -2,7 +2,8 @@
 
 NCBI_begin_app(unit_test_so_map)
   NCBI_sources(unit_test_so_map)
-  NCBI_uses_toolkit_libraries(seq test_boost)
+  NCBI_uses_toolkit_libraries(seq)
+  NCBI_requires(Boost.Test.Included)
   NCBI_set_test_assets(data)
   NCBI_add_test()
   NCBI_project_watchers(gotvyans)
