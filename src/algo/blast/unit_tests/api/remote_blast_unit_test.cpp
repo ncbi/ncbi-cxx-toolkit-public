@@ -525,6 +525,7 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
 }
 
 // This tests some of the functionality in get_filter_options.[hc]pp
+BOOST_AUTO_TEST_CASE_TIMEOUT(SetFilteringOptions, 200);
 BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);
     prot_opts.SetSegFiltering(false);
@@ -569,7 +570,7 @@ BOOST_AUTO_TEST_CASE(SubmitNullQueries) {
 BOOST_AUTO_TEST_CASE_TIMEOUT(CheckPrimerBlastRID, 45);
 BOOST_AUTO_TEST_CASE(CheckPrimerBlastRID) {
     // Permanent RID provided by Jian
-    const string rid("TNNF2YHZ016"); 
+    const string rid("SPBNTBJ6011"); 
 
     CRemoteBlast rmt_blaster(rid);
     
