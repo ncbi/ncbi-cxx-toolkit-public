@@ -30,7 +30,7 @@
 *
 * ===========================================================================
 */
-
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
@@ -56,6 +56,8 @@
 #include <objtools/huge_asn/huge_file_process.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objects/general/general__.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
@@ -150,3 +152,36 @@ BOOST_AUTO_TEST_CASE(Test_RemoteSequences)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_NullPointerException)
+{
+    string filename = "./huge_asn_test_files/congo.asn";
+    CRef<CHugeAsnReader> pReader;
+    {   
+        CHugeFileProcess process;
+        process.Open(filename);
+        pReader.Reset(&process.GetReader());
+    }   
+    pReader->GetNextBlob();
+    pReader->FlattenGenbankSet();
+    // Register huge file data loader
+    edit::CHugeAsnDataLoader::RegisterInObjectManager(
+            *(CObjectManager::GetInstance()), filename, pReader.GetPointer(), CObjectManager::eNonDefault, 1); 
+    
+    auto pScope = Ref(new CScope(*(CObjectManager::GetInstance())));
+    pScope->AddDataLoader(filename);
+   
+    auto pId = Ref(new CSeq_id());
+    pId->SetLocal().SetStr("ex1");
+
+    auto bsh = pScope->GetBioseqHandle(*pId);
+    BOOST_REQUIRE(bsh);
+    auto pEntry = bsh.GetTopLevelEntry().GetCompleteSeq_entry();
+    BOOST_CHECK(pEntry);
+
+    BOOST_CHECK(pScope->GetSeq_entryHandle(*pEntry));
+
+    BOOST_CHECK(pScope->GetSeq_entryHandle(*pEntry).GetEditHandle());
+
+    BOOST_CHECK(!pScope->GetSeq_entryHandle(*pEntry, CScope::eMissing_Null));
+    BOOST_CHECK_THROW(pScope->GetSeq_entryHandle(*pEntry), CObjMgrException);
+}
