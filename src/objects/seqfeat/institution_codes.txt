@@ -451,6 +451,7 @@ BAAC	s	Musee de Beni Abbes
 BAB	s	Instituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biologicos			
 BABY	s	B. A. Bennett Herbarium, Yukon Government			
 BAC<CHN>	s	Beijing Agricultural College			
+BAC<IT>	c	Biobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)			
 BAC<UK>	s	Bacup Natural History Society			
 BACA	c	Bank of Algae and Cyanobacteria of the Azores			
 BACC	c	Brucella AFSSA Culture Collection			
@@ -8019,6 +8020,7 @@ TRGFGA	s	Gaziantep University
 TRH	s	Norwegian University of Science and Technology, Department of Natural History			
 TRIN	s	The National Herbarium of Trinidad and Tobago			
 TRM	s	Vlastivedne muzeum Trutnov			
+TRM<CHN>	c	College of Life Science, Tarim University			
 TRN	s	N. Copernicus University			
 TRO	s	Royal Horticultural Society of Cornwall			
 TROM	s	University of Tromsoe, Botanical Department			
