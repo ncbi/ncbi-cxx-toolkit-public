@@ -42,7 +42,7 @@ USING_IDBLOB_SCOPE;
 
 class CPubseqGatewayFetchIpgReportRequest
 {
- public:
+public:
     CPubseqGatewayFetchIpgReportRequest() = default;
     CPubseqGatewayFetchIpgReportRequest(CPubseqGatewayFetchIpgReportRequest const&) = default;
     CPubseqGatewayFetchIpgReportRequest(CPubseqGatewayFetchIpgReportRequest &&) = default;
@@ -146,7 +146,7 @@ class CPubseqGatewayFetchIpgReportRequest
         return m_Ipg.has_value() || m_ResolvedIpg.has_value();
     }
 
- private:
+private:
     optional<TIpg> m_Ipg;
     optional<string> m_ProteinAccession;
     optional<string> m_NucAccession;
@@ -214,6 +214,9 @@ public:
     {
         m_SubgroupsStatusOverride = value;
     }
+
+    // For testing only
+    static void ConvertTimeTMsToCTimeLocal(int64_t time_ms, CTime& t);
 
 private:
     void Wait1() override;

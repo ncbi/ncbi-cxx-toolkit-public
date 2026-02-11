@@ -87,6 +87,17 @@ string GetSelectFieldList()
     return field_list;
 }
 
+void FillCTimeLocalByTimeTMs(int64_t time_ms, CTime& t)
+{
+    using namespace std::chrono;
+    system_clock::time_point tp{milliseconds{time_ms}};
+    std::time_t tt = system_clock::to_time_t(tp);
+    std::tm tm{};
+    localtime_r(&tt, &tm);
+    t.SetTimeTM(tm);
+    t.SetMilliSecond(time_ms % 1000);
+}
+
 void PopulateEntry(shared_ptr<CCassQuery>& query, CIpgStorageReportEntry& entry)
 {
     entry.SetIpg(query->FieldGetInt64Value(FieldIndex("ipg")));
@@ -113,22 +124,25 @@ void PopulateEntry(shared_ptr<CCassQuery>& query, CIpgStorageReportEntry& entry)
     entry.SetSrcDb(query->FieldGetInt32Value(FieldIndex("src_db"), 0));
     entry.SetTaxid(TAX_ID_FROM(int, query->FieldGetInt32Value(FieldIndex("taxid"), 0)));
     entry.SetFlags(query->FieldGetInt32Value(FieldIndex("flags"), 0));
-    int64_t writetime_mc = query->FieldGetInt64Value(FieldIndex("write_time"));
-    CTime writetime(writetime_mc/1000000);
-    writetime.SetMicroSecond(writetime_mc % 1000000);
-    writetime.ToLocalTime();
+    int64_t writetime_mcs = query->FieldGetInt64Value(FieldIndex("write_time"));
+    CTime writetime;
+    FillCTimeLocalByTimeTMs(writetime_mcs/1000, writetime);
     entry.SetWriteTime(writetime);
 
     if (!query->FieldIsNull(FieldIndex("updated"))) {
-        entry.SetUpdated(CTime(query->FieldGetInt64Value(FieldIndex("updated"))/1000).ToLocalTime());
+        CTime updated;
+        FillCTimeLocalByTimeTMs(query->FieldGetInt64Value(FieldIndex("updated")), updated);
+        entry.SetUpdated(updated);
     } else {
-        entry.SetUpdated(CTime());
+        entry.SetUpdated(CTime{});
     }
 
     if (!query->FieldIsNull(FieldIndex("created"))) {
-        entry.SetCreated(CTime(query->FieldGetInt64Value(FieldIndex("created"))/1000).ToLocalTime());
+        CTime created;
+        FillCTimeLocalByTimeTMs(query->FieldGetInt64Value(FieldIndex("created")), created);
+        entry.SetCreated(created);
     } else {
-        entry.SetCreated(CTime());
+        entry.SetCreated(CTime{});
     }
 
     if (!query->FieldIsNull(FieldIndex("src_refseq"))) {
@@ -189,6 +203,11 @@ void CPubseqGatewayFetchIpgReport::SetConsistency(CassConsistency value)
 void CPubseqGatewayFetchIpgReport::SetPageSize(unsigned int value)
 {
     m_PageSize = value;
+}
+
+void CPubseqGatewayFetchIpgReport::ConvertTimeTMsToCTimeLocal(int64_t time_ms, CTime& t)
+{
+    FillCTimeLocalByTimeTMs(time_ms, t);
 }
 
 void CPubseqGatewayFetchIpgReport::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> callback)

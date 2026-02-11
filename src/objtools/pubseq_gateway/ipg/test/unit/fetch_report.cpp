@@ -135,6 +135,8 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, FetchReportWithHugeStatusNew) {
                 EXPECT_EQ("EGB0688235.1", page[0].GetAccession());
                 EXPECT_EQ("AAVJDK010000003.1", page[0].GetNucAccession());
                 EXPECT_EQ("TonB system transport protein ExbD", page[0].GetProductName());
+                EXPECT_EQ(page[0].GetCreated().AsString("Y-M-D h:m:s.l"), "2020-08-11 10:20:00.000");
+                EXPECT_TRUE(page[0].GetCreated().IsLocalTime());
             }
         }
         else {
@@ -166,6 +168,8 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, NormalWithFilter) {
             if (page.size() == 1) {
                 EXPECT_EQ("EGB0709986.1", page[0].GetAccession());
                 EXPECT_EQ("AAVJDV010000007.1", page[0].GetNucAccession());
+                EXPECT_EQ(page[0].GetCreated().AsString("Y-M-D h:m:s.l"), "2020-08-11 10:21:00.000");
+                EXPECT_TRUE(page[0].GetCreated().IsLocalTime());
             }
         }
         else {
@@ -351,6 +355,55 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeDisabled) {
         ASSERT_EQ(1UL, report.size());
         ASSERT_FALSE(report.find("EGB0689184.1") == report.end());
     }
+}
+
+TEST_F(CPubseqGatewayFetchIpgReportTest, TimeTMsToCTimeConversion) {
+    auto check_fn = [](int64_t time_ms, string const& time_formatted) {
+        CTime converted;
+        CTime created(time_ms / 1000);
+        created.SetMilliSecond(time_ms % 1000);
+        created.ToLocalTime();
+        CPubseqGatewayFetchIpgReport::ConvertTimeTMsToCTimeLocal(time_ms, converted);
+        EXPECT_EQ(created, converted);
+        EXPECT_EQ(converted.AsString("Y-M-D h:m:s.l"), time_formatted);
+    };
+    check_fn(1738299600234, "2025-01-31 00:00:00.234");
+    check_fn(1665821123000, "2022-10-15 04:05:23.000");
+    check_fn(0, "1969-12-31 19:00:00.000");
+    bool should_throw{false};
+    try {
+        check_fn(1665821123000000, "2022-10-15 04:05:23.000");
+    }
+    catch(CException const& e) {
+        should_throw = true;
+    }
+    EXPECT_TRUE(should_throw);
+}
+
+TEST_F(CPubseqGatewayFetchIpgReportTest, TimeTMsToCTimeConversionTiming) {
+    CStopWatch sw;
+    sw.Start();
+    unsigned long iterations = 1'000'000;
+
+    for (unsigned long i = 0; i < iterations; i++) {
+        CTime created(1738299600);
+        created.ToLocalTime();
+        EXPECT_TRUE(created.IsLocalTime());
+    }
+    auto created_elapsed = sw.Elapsed();
+    sw.Reset();
+    sw.Start();
+    for (unsigned long i = 0; i < iterations; i++) {
+        CTime converted;
+        CPubseqGatewayFetchIpgReport::ConvertTimeTMsToCTimeLocal(1738299600, converted);
+        EXPECT_TRUE(converted.IsLocalTime());
+    }
+    auto converted_elapsed = sw.Elapsed();
+    // If CTime is fixed, this will start failing.
+    // CPubseqGatewayFetchIpgReport::ConvertTimeTMsToCTimeLocal needs to be reverted in that case
+    EXPECT_GT(created_elapsed, 1.5 * converted_elapsed);
+    cout << "Created time: " << NStr::DoubleToString(created_elapsed)
+         << " Converted time: " << NStr::DoubleToString(converted_elapsed) << "\n";
 }
 
 }  // namespace
