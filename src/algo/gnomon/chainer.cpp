@@ -3256,6 +3256,21 @@ struct GModelOrder
 };
 
 void CChainer::CChainerImpl::CreateFlexibleAligns(TGeneModelList& clust) {
+
+    int real_caps = 0;
+    int inferred_caps = 0;
+    for(auto& align : clust) {
+        unsigned int flexible = CGeneModel::eLeftFlexible|CGeneModel::eRightFlexible;
+        if(align.Status()&CGeneModel::eCap && align.Status()&flexible) {
+            if(align.Status()&CGeneModel::eInfTSS)
+                ++inferred_caps;
+            else
+                ++real_caps;
+        }
+    }
+    if(real_caps > 0 && inferred_caps > 0)
+        clust.remove_if([](const CGeneModel& a){ return (a.Status()&CGeneModel::eInfTSS) != 0; });       
+    
     clust.sort(GModelOrder(orig_aligns));
 	map<tuple<int, int>, TGeneModelList::iterator> special_aligns; // [left/right flex|cap/polya, position] 
 	//all known flexible
@@ -5424,10 +5439,14 @@ bool CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
 				for(TSignedSeqPos i = left; i <= right; i += 3) {
 					if(cds_trans.Cds().GetTo()-i < 75)
 						break;
-					if(IsStartCodon(&transcript[i])) {
-						start_trans.SetFrom(i);
-						start_trans.SetTo(i+2);
-						break;
+					if(IsStartCodon(&transcript[i])) {                        
+                        TSignedSeqRange test_intervalt(i, i+3);
+                        TSignedSeqRange test_interval = amap.MapRangeEditedToOrig(test_intervalt, false);
+                        if(test_interval.GetLength() == 4) {                        
+                            start_trans.SetFrom(i);
+                            start_trans.SetTo(i+2);
+                            break;
+                        }
 					}
 				}
 				if(start_trans.Empty())
@@ -6043,7 +6062,15 @@ void CChain::ClipToCap(int min_cap_blob, int max_dist, int min_flank_exon, doubl
         return;
     }
 
-    Status() |= eCap;
+    unsigned int status = eCap;
+    for(auto& mi : m_members) {        
+        const CGeneModel& align = *mi->m_align;        
+        if(align.Status()&eInfTSS) {
+            status |= eInfTSS;
+            break;
+        }
+    }
+    Status() |= status;
     auto rslt1 = MainPeaks(peak_weights, secondary_peak, 0., 0., right_end);
     m_cap_peaks = get<0>(rslt1);
     TSignedSeqRange limits = get<1>(rslt1);
