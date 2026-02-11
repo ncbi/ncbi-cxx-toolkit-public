@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Feb  6 05:33:05 EST 2026; formally
+/* time_t value corresponding to Wed Feb 11 05:33:08 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1770373985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1770805988UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -487,6 +487,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BAB\ts\tInstituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biologicos\t\t\t",
 "BABY\ts\tB. A. Bennett Herbarium, Yukon Government\t\t\t",
 "BAC<CHN>\ts\tBeijing Agricultural College\t\t\t",
+"BAC<IT>\tc\tBiobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)\t\t\t",
 "BAC<UK>\ts\tBacup Natural History Society\t\t\t",
 "BACA\tc\tBank of Algae and Cyanobacteria of the Azores\t\t\t",
 "BACC\tc\tBrucella AFSSA Culture Collection\t\t\t",
@@ -8055,6 +8056,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TRH\ts\tNorwegian University of Science and Technology, Department of Natural History\t\t\t",
 "TRIN\ts\tThe National Herbarium of Trinidad and Tobago\t\t\t",
 "TRM\ts\tVlastivedne muzeum Trutnov\t\t\t",
+"TRM<CHN>\tc\tCollege of Life Science, Tarim University\t\t\t",
 "TRN\ts\tN. Copernicus University\t\t\t",
 "TRO\ts\tRoyal Horticultural Society of Cornwall\t\t\t",
 "TROM\ts\tUniversity of Tromsoe, Botanical Department\t\t\t",
