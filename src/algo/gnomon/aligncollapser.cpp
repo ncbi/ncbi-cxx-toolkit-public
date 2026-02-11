@@ -2437,17 +2437,22 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
     }
 
     size_t flex_cap = 0;
+    size_t flex_inf = 0;
     size_t flex_polya = 0;
     for(auto& status_align : m_special_aligns) {
         if(status_align.second.Limits().GetFrom() >= 0 && status_align.second.Limits().GetTo() < m_contig.FullLength() && CheckAndInsert(status_align.second, clsset)) {
-            if(status_align.second.Status()&CGeneModel::eCap)
-                ++flex_cap;
-            else
+            if(status_align.second.Status()&CGeneModel::eCap) {
+                if(status_align.second.Status()&CGeneModel::eInfTSS)
+                    ++flex_inf;
+                else                    
+                    ++flex_cap;
+            } else {
                 ++flex_polya;
+            }
         }
     }
     
-    cerr << "After collapsing: " << total << " alignments " << flex_cap << " Flexible caps " << flex_polya << " Flexible polyas" << endl;
+    cerr << "After collapsing: " << total << " alignments " << flex_cap << " Flexible caps " << flex_inf << " Inferred caps " << flex_polya << " Flexible polyas" << endl;
 }
 
 
@@ -2610,6 +2615,9 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
     int status = 0;
     if(acc.find("CAPINFO") != string::npos)
         status = CGeneModel::eCap;
+    if(acc.find("STARTINFO") != string::npos) {
+        status = CGeneModel::eCap|CGeneModel::eInfTSS;
+    }
     else if(acc.find("POLYAINFO") != string::npos)
         status = CGeneModel::ePolyA;
 
@@ -2709,7 +2717,7 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
 
         if(use_alignment) {
 			TSignedSeqPos pos;
-            status = CGeneModel::eCap;
+            status = CGeneModel::eCap|CGeneModel::eInfTSS;
             if(a.Strand() == ePlus) {
                 pos = a.Limits().GetFrom();
                 status |= CGeneModel::eRightFlexible;

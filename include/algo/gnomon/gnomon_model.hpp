@@ -395,7 +395,8 @@ public:
         eRightConfirmed = 131072,
         eLeftFlexible = 262144,
         eRightFlexible = 524288,
-	eExcludedReadthrough = 1048576
+        eExcludedReadthrough = 1048576,
+        eInfTSS = 2097152
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :

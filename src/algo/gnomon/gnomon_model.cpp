@@ -1907,8 +1907,12 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Type()  &CGeneModel::eEST)!=0)        attributes["flags"] += ",EST";
     if ((a.Type()  &CGeneModel::emRNA)!=0)       attributes["flags"] += ",mRNA";
     if ((a.Type()  &CGeneModel::eProt)!=0)       attributes["flags"] += ",Prot";
-
-    if ((a.Status()&CGeneModel::eCap)!=0)      attributes["flags"] += ",Cap";
+    if ((a.Status()&CGeneModel::eCap)!=0) {
+        if(a.Status()&CGeneModel::eInfTSS)
+            attributes["flags"] += ",infTSS";
+        else
+            attributes["flags"] += ",Cap";
+    }
     if ((a.Status()&CGeneModel::ePolyA)!=0)      attributes["flags"] += ",PolyA";
     if ((a.Status()&CGeneModel::eSkipped)!=0)    attributes["flags"] += ",Skip";
     if ((a.Status()&CGeneModel::eBestPlacement)!=0)    attributes["flags"] += ",BestPlacement";
@@ -2037,6 +2041,7 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "Pseudo")     a.Status()        |= CGeneModel::ePseudo;
         else if (*f == "PolyA")      a.Status()        |= CGeneModel::ePolyA;
         else if (*f == "Cap")        a.Status()        |= CGeneModel::eCap;
+        else if (*f == "infTSS")     a.Status()        |= (CGeneModel::eCap|CGeneModel::eInfTSS);
         else if (*f == "BestPlacement") a.Status()     |= CGeneModel::eBestPlacement;
         else if (*f == "ConsistentCoverage") a.Status()     |= CGeneModel::eConsistentCoverage;
         else if (*f == "UnknownOrientation") a.Status()|= CGeneModel::eUnknownOrientation;
