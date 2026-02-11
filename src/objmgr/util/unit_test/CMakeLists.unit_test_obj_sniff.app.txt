@@ -3,7 +3,7 @@
 NCBI_begin_app(unit_test_obj_sniff)
   NCBI_sources(unit_test_obj_sniff)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(test_boost xobjutil)
+  NCBI_uses_toolkit_libraries(xobjutil)
   NCBI_set_test_assets(test_data)
   NCBI_add_test()
   NCBI_project_watchers(vasilche)

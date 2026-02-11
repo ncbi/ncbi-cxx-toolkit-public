@@ -3,7 +3,7 @@
 NCBI_begin_app(unit_test_objmgr)
   NCBI_sources(unit_test_objmgr)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(xobjmgr test_boost)
+  NCBI_uses_toolkit_libraries(xobjmgr)
   NCBI_add_test()
   NCBI_set_test_timeout(400)
   NCBI_project_watchers(vasilche)

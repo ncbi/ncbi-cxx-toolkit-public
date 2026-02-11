@@ -2,7 +2,7 @@
 
 NCBI_begin_app(unit_test_location_constraint)
   NCBI_sources(unit_test_location_constraint)
-  NCBI_uses_toolkit_libraries(macro test_boost)
+  NCBI_uses_toolkit_libraries(macro)
   NCBI_add_test()
   NCBI_project_watchers(stakhovv)
 NCBI_end_app()

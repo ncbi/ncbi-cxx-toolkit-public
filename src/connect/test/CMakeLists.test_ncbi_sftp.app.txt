@@ -3,7 +3,7 @@
 NCBI_begin_app(test_ncbi_sftp)
   NCBI_sources(test_ncbi_sftp)
   NCBI_requires(Boost.Test.Included SSH)
-  NCBI_uses_toolkit_libraries(xconnsftp xconnect test_boost)
+  NCBI_uses_toolkit_libraries(xconnsftp xconnect)
   NCBI_project_watchers(sadyrovr)
   NCBI_add_test()
 NCBI_end_app()
