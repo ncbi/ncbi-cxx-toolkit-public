@@ -2,7 +2,7 @@
 
 NCBI_begin_app(seq_id_unit_test)
   NCBI_sources(seq_id_unit_test)
-  NCBI_uses_toolkit_libraries(seq test_boost)
+  NCBI_uses_toolkit_libraries(seq)
   NCBI_add_test()
   NCBI_project_watchers(ucko)
 NCBI_end_app()

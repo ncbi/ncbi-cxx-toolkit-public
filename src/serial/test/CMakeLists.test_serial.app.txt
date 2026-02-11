@@ -5,7 +5,7 @@ NCBI_begin_app(test_serial)
   NCBI_dataspecs(we_cpp.asn)
   NCBI_requires(Boost.Test.Included)
   NCBI_optional_components(NCBI_C)
-  NCBI_uses_toolkit_libraries(test_boost xcser)
+  NCBI_uses_toolkit_libraries(xcser)
 
   NCBI_set_test_assets(webenv.ent webenv.bin ctest_serial.asn cpptest_serial.asn ctest_serial.asb cpptest_serial.asb)
   NCBI_add_test()

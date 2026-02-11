@@ -2,7 +2,7 @@
 
 NCBI_begin_app(unit_test_dbtag)
   NCBI_sources(unit_test_dbtag)
-  NCBI_uses_toolkit_libraries(general test_boost)
+  NCBI_uses_toolkit_libraries(general)
   NCBI_add_test()
   NCBI_project_watchers(gotvyans)
 NCBI_end_app()

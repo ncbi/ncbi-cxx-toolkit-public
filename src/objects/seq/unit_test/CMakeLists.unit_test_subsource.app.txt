@@ -2,7 +2,7 @@
 
 NCBI_begin_app(unit_test_subsource)
   NCBI_sources(unit_test_subsource)
-  NCBI_uses_toolkit_libraries(seq test_boost)
+  NCBI_uses_toolkit_libraries(seq)
   NCBI_add_test()
   NCBI_project_watchers(foleyjp)
 NCBI_end_app()
