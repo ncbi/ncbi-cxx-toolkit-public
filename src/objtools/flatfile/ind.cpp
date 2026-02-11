@@ -147,12 +147,19 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
 
         auto& buf(subdbp.mBuf);
         _ASSERT(string_view(buf.ptr, buf.len).starts_with(ref_tag[subdbp.mType]));
-        size_t i             = StringLen(ref_tag[subdbp.mType]);
-        buf.ptr[buf.len - 1] = '\0';
-        for (char* s = buf.ptr + i; isspace((int)*s) != 0; s++)
-            i++;
+        _ASSERT(buf.ptr[buf.len - 1] == '\n');
+        size_t i           = StringLen(ref_tag[subdbp.mType]);
+        buf.ptr[--buf.len] = '\0';
+        for (; i < buf.len; i++) {
+            char c = buf.ptr[i];
+            if (c == '\n' || ! isspace(c))
+                break;
+        }
+        if (i > buf.len)
+            return;
         buf.ptr += i;
-        buf.len -= (i + 1);
+        buf.len -= i;
+
         char* sx = nullptr;
         for (char* s = buf.ptr; *s != '\0'; s++) {
             if (*s != '\n')
@@ -164,8 +171,8 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
                 continue;
             }
 
-            char* ss;
-            for (ss = s + i; isspace((int)*ss) != 0;)
+            char* ss = s + i;
+            while (isspace(*ss))
                 ss++;
             if (sx)
                 s = sx;
@@ -175,8 +182,8 @@ void ind_subdbp(DataBlk& dbp, DataBlk* ind[], int maxkw, Parser::EFormat bank)
             buf.len -= (ss - s - 1);
         }
         if (sx) {
-            *sx             = '\0';
-            buf.len = sx - subdbp.mBuf.ptr;
+            *sx     = '\0';
+            buf.len = sx - buf.ptr;
         }
     }
 }
