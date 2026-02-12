@@ -80,7 +80,7 @@ void CDGiLookup::x_IndexGi(const CBioseq& bioseq)
     }
 }
 
-void CDGiLookup::x_ReportGiNotFound(const CSeq_id &id)
+void CDGiLookup::x_ReportGiNotFound(const CSeq_id &id, bool on_bioseq)
 {
    switch (m_Policy) {
    case eLeaveUnchanged:
@@ -90,7 +90,8 @@ void CDGiLookup::x_ReportGiNotFound(const CSeq_id &id)
 
    case eRemove:
        ERR_POST(Warning << "Can't find gi for " << id.AsFastaString()
-                        << "; removing from set of bioseqs");
+                        << "; removing from set of "
+                        << (on_bioseq ? "bioseqs" : "alignments"));
        break;
 
    case eThrow:
@@ -110,7 +111,7 @@ void CDGiLookup::InsertGis(vector< CRef< CBioseq > >& bioseqs)
         if (!existing_gi) {
             TGi new_gi = x_LookupGi(*bioseq.GetNonLocalId());
             if (new_gi == ZERO_GI) {
-                x_ReportGiNotFound(*bioseq.GetNonLocalId());
+                x_ReportGiNotFound(*bioseq.GetNonLocalId(), true);
                 if (m_Policy == eRemove) {
                     bioseqs.erase(it--);
                 }
@@ -135,12 +136,13 @@ void CDGiLookup::InsertGis(CSeq_align_set& alignments)
         }
         bool not_found = false;
         for (CRef<CSeq_id> &id : align.SetSegs().SetDenseg().SetIds()) {
-            if (!id->IsGi() && !id->IsLocal() && !id->IsPdb() &&
+            if (!id->IsGi() && !id->IsLocal() && 
+                (!id->IsPdb() || m_ReplacePDBs) &&
                 (!id->IsGeneral() || id->GetGeneral().GetDb() != "Cdd"))
             {
                 TGi new_gi = x_LookupGi(*id);
                 if (new_gi == ZERO_GI) {
-                    x_ReportGiNotFound(*id);
+                    x_ReportGiNotFound(*id, false);
                     not_found = true;
                 } else {
                     id->SetGi(new_gi);

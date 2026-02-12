@@ -1174,7 +1174,7 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 		}
 	}
 
-        CDGiLookup gi_lookup(CDGiLookup::eRemove);
+        CDGiLookup gi_lookup(CDGiLookup::eRemove, true);
         gi_lookup.InsertGis(bioseqs);
         gi_lookup.InsertGis(alignments);
 }

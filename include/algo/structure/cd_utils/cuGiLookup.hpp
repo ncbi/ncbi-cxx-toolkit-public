@@ -46,8 +46,10 @@ class NCBI_CDUTILS_EXPORT CDGiLookup
 public:
     enum EGiNotFoundAction { eLeaveUnchanged, eRemove, eThrow};
 
-    CDGiLookup(EGiNotFoundAction policy = eLeaveUnchanged)
+    CDGiLookup(EGiNotFoundAction policy = eLeaveUnchanged,
+               bool replace_pdbs = false)
     : m_Policy(policy)
+    , m_ReplacePDBs(replace_pdbs)
     {}
 
     /// Set the scope to be used in gi lookups
@@ -67,6 +69,8 @@ public:
 private:
     EGiNotFoundAction m_Policy;
 
+    bool m_ReplacePDBs;
+
     CRef<CScope> m_Scope;
 
     map<CSeq_id_Handle, TGi> m_GiIndex;
@@ -77,7 +81,7 @@ private:
 
     void x_IndexGi(const CBioseq& bioseq);
 
-    void x_ReportGiNotFound(const CSeq_id &id);
+    void x_ReportGiNotFound(const CSeq_id &id, bool on_bioseq);
 };
 
 END_SCOPE(cd_utils)
