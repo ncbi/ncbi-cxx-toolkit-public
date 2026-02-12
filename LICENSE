@@ -85,6 +85,10 @@ Location: src/connect/parson.{c,h}
 Author:   Krzysztof Gabis
 License:  MIT [at top of files]
 
+Location: src/corelib/boost_patches/test_framework_init_observer.hpp
+Authors:  Raffi Enficiaud
+License:  Boost 1.0 [src/corelib/boost_patches/boost_license]
+
 Location: include/corelib/hash_impl
 Authors:  HP, SGI, Moscow Center for SPARC Technology, and Boris Fomitchev
 License:  MITish [as in include/corelib/hash_impl/_hashtable.h]
