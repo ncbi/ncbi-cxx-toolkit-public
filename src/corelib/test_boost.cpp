@@ -80,6 +80,13 @@ namespace std {
 }
 #  endif
 #endif
+
+#if BOOST_VERSION >= 107300 && BOOST_VERSION < 107900
+//  See JIRA: CXX-14305 and https://github.com/boostorg/test/issues/272 for explanation
+#   define BOOST_TEST_FRAMEWORK_INIT_OBSERVER_HPP_071894GER
+#   include "boost_patches/test_framework_init_observer.hpp"
+#endif
+
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/results_collector.hpp>
 #include <boost/test/results_reporter.hpp>
