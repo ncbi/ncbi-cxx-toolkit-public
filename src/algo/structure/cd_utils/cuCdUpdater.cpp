@@ -54,6 +54,7 @@
 #include <algo/structure/cd_utils/cuPssmMaker.hpp>
 #include <algo/structure/cd_utils/cuBlockIntersector.hpp>
 #include <algo/structure/cd_utils/cuBlockFormater.hpp>
+#include <algo/structure/cd_utils/cuGiLookup.hpp>
 #include <objects/scoremat/Pssm.hpp>
 #include <algo/structure/cd_utils/cuAlignmentCollection.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
@@ -1172,6 +1173,10 @@ void CDUpdater::retrieveAllSequences(CSeq_align_set& alignments, vector< CRef< C
 			}
 		}
 	}
+
+        CDGiLookup gi_lookup(CDGiLookup::eRemove);
+        gi_lookup.InsertGis(bioseqs);
+        gi_lookup.InsertGis(alignments);
 }
 
 TGi CDUpdater::getGi(CRef< CSeq_entry > seqEntry)
