@@ -25387,7 +25387,7 @@
                         "jsonrpc": "2.0",
                         "method": "ipg_resolve",
                         "params": {
-                            "ipg": 1111111111,
+                            "ipg": 9999999999,
                             "user_args": "seq_id_resolve=no"
                         },
                         "id": "resolve_1"
@@ -25405,7 +25405,7 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 1111111111}"}
+                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 9999999999}"}
                             }
                         ]
                     }
