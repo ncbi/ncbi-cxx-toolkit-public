@@ -54,7 +54,7 @@ ABT	s	Laboratoire de Biologie Vegetale et d'Ecologie Forestiere
 ABTC	s	Australian Biological Tissue Collection, South Australian Museum	SAMA:ABTC		
 ABTRI	c	Apex Biotechnology Training and Research Institute			
 ABTS	s	Andrew B.T. Smith			
-ABU<NGA>	s	Ahmadu Bello University Herbarium			
+ABU	s	Ahmadu Bello University Herbarium			
 ABUH	s	Ahmadu Bello University, Zaria			
 AC	s	Amherst College			
 ACA-DC	c	Greek Coordinated Collections of Microorganisms			
@@ -451,6 +451,7 @@ BAAC	s	Musee de Beni Abbes
 BAB	s	Instituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biologicos			
 BABY	s	B. A. Bennett Herbarium, Yukon Government			
 BAC<CHN>	s	Beijing Agricultural College			
+BAC<IT>	c	Biobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)			
 BAC<IT>	c	Biobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)			
 BAC<UK>	s	Bacup Natural History Society			
 BACA	c	Bank of Algae and Cyanobacteria of the Azores			
@@ -1024,6 +1025,7 @@ CATH	s	Catholicate College
 CATIE	s	Tropical Agricultural Research and Training Center (CATIE), Plant Production Department			
 CATU	s	Catawba College			
 CAU	s	China Agricultural University			
+CAU<KR>	c	Department of Microbiology, Chung-Ang University College of Medicine			
 CAUP<COL>	s	Universidad del Cauca			
 CAUP<CZH>	c	Collection of Algae of Charles University, Prague			
 CAUSC	s	Universidade Federal de Santa Catarina Centro de Agrarias			
@@ -4102,7 +4104,7 @@ KD	s	Kokand State Pedagogical Institute
 KDIC	s	Keith Dobry			
 KDL	s	Kendal Museum			
 KDR	s	Bewdley Museum			
-KE	s	Kent State University, Biological Sciences Department			
+KE	sc	Kent State University			
 KEF	s	Kunming Edible Fungi Institute			
 KEI	s	University of Transkei, Botany Department			
 KEIB	s	Katedra Ekologii i Biogeografii			
@@ -8659,7 +8661,7 @@ USMMC	s	Universiti Sains Malaysia Mollusc Collection
 USMP	s	Universiti Sains Malaysia			
 USMS	s	University of Southern Mississippi, Department of Biological Sciences			
 USNC	s	Smithsonian Institution, Paleobiology Department			
-USNM	sb	National Museum of Natural History, Smithsonian Institution	NMNH		
+USNM	sb	National Museum of Natural History, Smithsonian Institution			
 USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds		https://collections.nmnh.si.edu/search/birds/?nb=	
 USNM:Botany	s	National Museum of Natural History, Smithsonian Institution, Plant Collection		https://collections.nmnh.si.edu/search/botany/?nb=	
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	Entomology	https://collections.nmnh.si.edu/search/ento/?nb=	

@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Wed Feb 11 05:33:08 EST 2026; formally
+/* time_t value corresponding to Fri Feb 13 05:33:05 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1770805988UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1770978785UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -90,7 +90,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ABTC\ts\tAustralian Biological Tissue Collection, South Australian Museum\tSAMA:ABTC\t\t",
 "ABTRI\tc\tApex Biotechnology Training and Research Institute\t\t\t",
 "ABTS\ts\tAndrew B.T. Smith\t\t\t",
-"ABU<NGA>\ts\tAhmadu Bello University Herbarium\t\t\t",
+"ABU\ts\tAhmadu Bello University Herbarium\t\t\t",
 "ABUH\ts\tAhmadu Bello University, Zaria\t\t\t",
 "AC\ts\tAmherst College\t\t\t",
 "ACA-DC\tc\tGreek Coordinated Collections of Microorganisms\t\t\t",
@@ -487,6 +487,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BAB\ts\tInstituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biologicos\t\t\t",
 "BABY\ts\tB. A. Bennett Herbarium, Yukon Government\t\t\t",
 "BAC<CHN>\ts\tBeijing Agricultural College\t\t\t",
+"BAC<IT>\tc\tBiobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)\t\t\t",
 "BAC<IT>\tc\tBiobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)\t\t\t",
 "BAC<UK>\ts\tBacup Natural History Society\t\t\t",
 "BACA\tc\tBank of Algae and Cyanobacteria of the Azores\t\t\t",
@@ -1060,6 +1061,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CATIE\ts\tTropical Agricultural Research and Training Center (CATIE), Plant Production Department\t\t\t",
 "CATU\ts\tCatawba College\t\t\t",
 "CAU\ts\tChina Agricultural University\t\t\t",
+"CAU<KR>\tc\tDepartment of Microbiology, Chung-Ang University College of Medicine\t\t\t",
 "CAUP<COL>\ts\tUniversidad del Cauca\t\t\t",
 "CAUP<CZH>\tc\tCollection of Algae of Charles University, Prague\t\t\t",
 "CAUSC\ts\tUniversidade Federal de Santa Catarina Centro de Agrarias\t\t\t",
@@ -4138,7 +4140,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KDIC\ts\tKeith Dobry\t\t\t",
 "KDL\ts\tKendal Museum\t\t\t",
 "KDR\ts\tBewdley Museum\t\t\t",
-"KE\ts\tKent State University, Biological Sciences Department\t\t\t",
+"KE\tsc\tKent State University\t\t\t",
 "KEF\ts\tKunming Edible Fungi Institute\t\t\t",
 "KEI\ts\tUniversity of Transkei, Botany Department\t\t\t",
 "KEIB\ts\tKatedra Ekologii i Biogeografii\t\t\t",
@@ -8695,7 +8697,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USMP\ts\tUniversiti Sains Malaysia\t\t\t",
 "USMS\ts\tUniversity of Southern Mississippi, Department of Biological Sciences\t\t\t",
 "USNC\ts\tSmithsonian Institution, Paleobiology Department\t\t\t",
-"USNM\tsb\tNational Museum of Natural History, Smithsonian Institution\tNMNH\t\t",
+"USNM\tsb\tNational Museum of Natural History, Smithsonian Institution\t\t\t",
 "USNM:Birds\ts\tNational Museum of Natural History, Smithsonian Institution, Division of Birds\t\thttps://collections.nmnh.si.edu/search/birds/?nb=\t",
 "USNM:Botany\ts\tNational Museum of Natural History, Smithsonian Institution, Plant Collection\t\thttps://collections.nmnh.si.edu/search/botany/?nb=\t",
 "USNM:ENT\ts\tNational Museum of Natural History, Smithsonian Institution, Entomology Collection\tEntomology\thttps://collections.nmnh.si.edu/search/ento/?nb=\t",
