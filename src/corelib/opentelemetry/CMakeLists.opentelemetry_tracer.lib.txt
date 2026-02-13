@@ -2,7 +2,7 @@
 
 NCBI_begin_lib(opentelemetry_tracer)
   NCBI_sources(opentelemetry_tracer)
-  NCBI_requires(OPENTELEMETRY)
+  NCBI_requires(OPENTELEMETRY GRPC)
   NCBI_uses_toolkit_libraries(xncbi)
   NCBI_project_watchers(grichenk)
 NCBI_end_lib()
