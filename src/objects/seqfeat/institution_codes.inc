@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Fri Feb 13 05:33:05 EST 2026; formally
+/* time_t value corresponding to Sat Feb 14 05:33:04 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1770978785UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1771065184UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -224,7 +224,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ALIRU\tc\tAustralian Legume Inoculants Research Unit\t\t\t",
 "ALJAWF\ts\tNational Center for Vegetation Cover\t\t\t",
 "ALK\ts\tAlnwick Scientific and Mechanical Institution\t\t\t",
-"ALM<GBR>\ts\tArt Gallery and Museum, Central Library\t\t\t",
+"ALM\ts\tArt Gallery and Museum, Central Library\t\t\t",
 "ALMA\ts\tAlma College, Biology Department\t\t\t",
 "ALME\ts\tEstacion Experimental de Zonas Aridas\t\t\t",
 "ALN\ts\tAlnwick Botanical Society\t\t\t",
@@ -284,7 +284,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AMUZ\ts\tAligarh Muslim University\t\t\t",
 "AMWH\ts\tAmway Herbarium\t\t\t",
 "ANA\ts\tOrange County Department of Agriculture\t\t\t",
-"ANACC<AUS>\tc\tAustralian National Algae Culture Collection\tCS\t\t",
 "ANC\ts\tUniversita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali\t\t\t",
 "ANCB\ts\tMuseo Nacional de Historia Natural, La Paz\t\t\t",
 "AND\ts\tSlezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department\t\t\t",
@@ -449,7 +448,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AUM:Fish\ts\tAuburn University Museum, Fish collection\t\t\t",
 "AUM:Invertebrates\ts\tAuburn University Museum, Invertebrates Collection\t\t\t",
 "AUM:Mollusks\ts\tAuburn University Museum, Malacology Collection\t\t\t",
-"AUMC<EGY>\tc\tAssiut University Mycological Centre Culture Collection\t\t\t",
+"AUMC\tc\tAssiut University Mycological Centre Culture Collection\t\t\t",
 "AUMH\ts\tAgricultural University of Georgia\t\t\t",
 "AUR\ts\tMuseum des Volcans\t\t\t",
 "AURO\ts\tAuroville Foundation\t\t\t",
@@ -703,7 +702,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BioCC\tc\tBioCC BioCen Culture Collection\t\t\t",
 "BIOLACHC\ts\tUniversity of Belgrade, Institute of Chemistry, Technology and Metallurgy - National Institute of the Republic of Serbia\t\t\t",
 "BIOT\ts\tRegional Center for Tropical Biology\t\t\t",
-"BIOUG<CAN>\ts\tBiodiversity Institute of Ontario, University of Guelph\tBIO,UOG:BIO\t\t",
 "BIPB\ts\tBarbara I. P. Barratt\t\t\t",
 "BIRA\ts\tBirmingham Museums and Art Gallery, Curatorial Services\t\t\t",
 "Bird\ts\tBird Collection\t\t\t",
@@ -718,7 +716,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BJB\ts\tHon. Balasaheb Jadhav college Ale\t\t\t",
 "BJFC\ts\tBeijing Forestry University\tBJFU\t\t",
 "BJM\ts\tBeijing Natural History Museum\t\t\t",
-"BJRI<BGD>\tb\tGene bank at Bangladesh Jute Research Institute\t\t\t",
 "BJSC\ts\tBilly J. Smith\t\t\t",
 "BJTC\ts\tCapital Normal University, Biology Department\t\t\t",
 "BK\ts\tBangkok Herbarium\t\t\t",
@@ -804,7 +801,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BOCH\ts\tRuhr-Universitaet Bochum, Spezielle Botanik\t\t\t",
 "BOD\ts\tUniversity of Oxford\t\t\t",
 "BOG\ts\tUniversidad de La Salle\t\t\t",
-"BOGOS<DEU>\tb\tBotanical Garden of Osnabruck University\t\t\t",
 "BOIS\ts\tRocky Mountain Research Station\t\t\t",
 "BOL\ts\tBolus Herbarium, University of Cape Town\t\t\t",
 "BOLO\ts\tUniversita di Bologna\t\t\t",
