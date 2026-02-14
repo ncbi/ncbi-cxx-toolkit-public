@@ -188,7 +188,7 @@ ALGU	s	Universidade do Algarve
 ALIRU	c	Australian Legume Inoculants Research Unit			
 ALJAWF	s	National Center for Vegetation Cover			
 ALK	s	Alnwick Scientific and Mechanical Institution			
-ALM<GBR>	s	Art Gallery and Museum, Central Library			
+ALM	s	Art Gallery and Museum, Central Library			
 ALMA	s	Alma College, Biology Department			
 ALME	s	Estacion Experimental de Zonas Aridas			
 ALN	s	Alnwick Botanical Society			
@@ -248,7 +248,6 @@ AMS:R	s	Australian Museum, Reptile collection	AMSR
 AMUZ	s	Aligarh Muslim University			
 AMWH	s	Amway Herbarium			
 ANA	s	Orange County Department of Agriculture			
-ANACC<AUS>	c	Australian National Algae Culture Collection	CS		
 ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali			
 ANCB	s	Museo Nacional de Historia Natural, La Paz			
 AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department			
@@ -413,7 +412,7 @@ AUM	s	Auburn University Museum
 AUM:Fish	s	Auburn University Museum, Fish collection			
 AUM:Invertebrates	s	Auburn University Museum, Invertebrates Collection			
 AUM:Mollusks	s	Auburn University Museum, Malacology Collection			
-AUMC<EGY>	c	Assiut University Mycological Centre Culture Collection			
+AUMC	c	Assiut University Mycological Centre Culture Collection			
 AUMH	s	Agricultural University of Georgia			
 AUR	s	Museum des Volcans			
 AURO	s	Auroville Foundation			
@@ -667,7 +666,6 @@ BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologi
 BioCC	c	BioCC BioCen Culture Collection			
 BIOLACHC	s	University of Belgrade, Institute of Chemistry, Technology and Metallurgy - National Institute of the Republic of Serbia			
 BIOT	s	Regional Center for Tropical Biology			
-BIOUG<CAN>	s	Biodiversity Institute of Ontario, University of Guelph	BIO,UOG:BIO		
 BIPB	s	Barbara I. P. Barratt			
 BIRA	s	Birmingham Museums and Art Gallery, Curatorial Services			
 Bird	s	Bird Collection			
@@ -682,7 +680,6 @@ BJA	s	University of Burundi, Biology Department
 BJB	s	Hon. Balasaheb Jadhav college Ale			
 BJFC	s	Beijing Forestry University	BJFU		
 BJM	s	Beijing Natural History Museum			
-BJRI<BGD>	b	Gene bank at Bangladesh Jute Research Institute			
 BJSC	s	Billy J. Smith			
 BJTC	s	Capital Normal University, Biology Department			
 BK	s	Bangkok Herbarium			
@@ -768,7 +765,6 @@ BOC	s	Bingham Oceanographic Collection	YPM
 BOCH	s	Ruhr-Universitaet Bochum, Spezielle Botanik			
 BOD	s	University of Oxford			
 BOG	s	Universidad de La Salle			
-BOGOS<DEU>	b	Botanical Garden of Osnabruck University			
 BOIS	s	Rocky Mountain Research Station			
 BOL	s	Bolus Herbarium, University of Cape Town			
 BOLO	s	Universita di Bologna			
