@@ -5518,9 +5518,9 @@ private:
 string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
     static constexpr const char* s_BadSymbolPrefix = "[INVALID_APPLOG_SYMBOL:";
-    static constexpr size_t s_BadSymbolPrefixLen = sizeof(s_BadSymbolPrefix) - 1;
+    static const size_t s_BadSymbolPrefixLen = strlen(s_BadSymbolPrefix);
     static constexpr const char* s_BadSymbolSuffix = "]";
-    static constexpr size_t s_BadSymbolSuffixLen = sizeof(s_BadSymbolSuffix) - 1;
+    static const size_t s_BadSymbolSuffixLen = strlen(s_BadSymbolSuffix);
     static constexpr const char* s_EncodedSpace = "%20";
 
     vector<CTempString> parts;
