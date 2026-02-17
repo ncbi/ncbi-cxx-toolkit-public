@@ -62,7 +62,9 @@
 #  define NCBI_TIMEZONE_IS_UNDEFINED  1
 #endif
 
+// BAD:
 // The offset in seconds of daylight saving time.
+// We don't know real offset, so can predict only here.
 // 1 hour for most time zones.
 #if defined(NCBI_COMPILER_MSVC)
 #  define DSTBias()   _dstbias
@@ -1324,19 +1326,19 @@ time_t s_GetTimeT(const CTime& ct)
     // Correct timezone for UTC time
     if ( ct.IsUniversalTime() ) {
 
-       // Somewhat hackish, but seem to work.
-       // Local time is ambiguous and we don't know is DST on
-       // for specified date/time or not, so we call mktime()
-       // second time for GMT/UTC time:
-       // 1st - to get correct value of TimeZone().
-       // 2nd - to get value of "timer".
+        // Somewhat hackish, but seem to work.
+        // Local time is ambiguous and we don't know is DST on
+        // for specified date/time or not, so we call mktime()
+        // second time for GMT/UTC time:
+        // 1st - to get correct value of TimeZone().
+        // 2nd - to get value of "timer".
 
         t.tm_sec   = ct.Second() - (int)TimeZone();
         t.tm_min   = ct.Minute();
         t.tm_hour  = ct.Hour();
         t.tm_mday  = ct.Day();
-        t.tm_mon   = ct.Month()-1;
-        t.tm_year  = ct.Year()-1900;
+        t.tm_mon   = ct.Month() - 1;
+        t.tm_year  = ct.Year() - 1900;
         t.tm_isdst = -1;
         timer = mktime(&t);
         if ( timer == (time_t)(-1L) ) {
@@ -1347,13 +1349,17 @@ time_t s_GetTimeT(const CTime& ct)
         struct tm temp;
         localtime_r(&timer, &temp);
         ttemp = &temp;
+#  elif defined(NCBI_OS_MSWIN)
+        struct tm temp;
+        localtime_s(&temp, &timer);
+        ttemp = &temp;
 #  else
         ttemp = localtime(&timer);
 #  endif
         if (ttemp == NULL)
             return (time_t)(-1L);
         if (ttemp->tm_isdst > 0  &&  Daylight())
-            timer -= DSTBias();  // +1 hour in common case
+            timer -= DSTBias();
     }
     return timer;
 #endif
@@ -1371,6 +1377,10 @@ bool s_IsDST(const CTime& ct)
 #  if defined(HAVE_LOCALTIME_R)
     struct tm temp;
     localtime_r(&timer, &temp);
+    t = &temp;
+#  elif defined(NCBI_OS_MSWIN)
+    struct tm temp;
+    localtime_s(&temp, &timer);
     t = &temp;
 #  else
     t = localtime(&timer);
@@ -1730,6 +1740,15 @@ CTime& CTime::x_SetTime(const time_t* value)
         gmtime_r(&timer, &temp);
     }
     t = &temp;
+#  elif defined(NCBI_OS_MSWIN)
+    struct tm temp;
+    if (GetTimeZone() == eLocal) {
+        localtime_s(&temp, &timer);
+    }
+    else {
+        gmtime_s(&temp, &timer);
+    }
+    t = &temp;
 #else
     t = ( GetTimeZone() == eLocal ) ? localtime(&timer) : gmtime(&timer);
     if ( !t ) {
@@ -1748,7 +1767,7 @@ CTime& CTime::x_SetTime(const time_t* value)
     SET_SEC   (t->tm_sec);
     
     CHECK_RANGE_NSEC(ns);
-    m_Data.nanosec     = (Int4)ns;
+    m_Data.nanosec = (Int4)ns;
 
     return *this;
 }
@@ -2095,6 +2114,15 @@ CTime& CTime::ToTime(ETimeZone tz)
             gmtime_r(&timer, &temp);
         }
         t = &temp;
+#  elif defined(NCBI_OS_MSWIN)
+        struct tm temp;
+        if (tz == eLocal) {
+            localtime_s(&temp, &timer);
+        }
+        else {
+            gmtime_s(&temp, &timer);
+        }
+        t = &temp;
 #else
         t = (tz == eLocal) ? localtime(&timer) : gmtime(&timer);
         if (!t) {
@@ -2258,6 +2286,10 @@ string CTime::TimeZoneName(void)
 #if defined(HAVE_LOCALTIME_R)
     struct tm temp;
     localtime_r(&timer, &temp);
+    t = &temp;
+#  elif defined(NCBI_OS_MSWIN)
+    struct tm temp;
+    localtime_s(&temp, &timer);
     t = &temp;
 #else
     t = localtime(&timer);
