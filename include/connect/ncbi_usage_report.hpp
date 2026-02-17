@@ -51,6 +51,7 @@
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbitime.hpp>
 #include <connect/ncbi_http_session.hpp>
+#include <atomic>
 
 // API is available for MT builds only, 
 // for single thread builds all API is available but disabled.
@@ -520,7 +521,7 @@ public:
     /// for a current reporter instance. Takes into account local status and global
     /// API setting as well.
     /// @sa CUsageReportAPI::SetEnabled, SetEnabled
-    bool IsEnabled(void);
+    bool IsEnabled(void) const;
 
     /// Report usage statistics (asynchronously), default parameters.
     ///
@@ -661,21 +662,21 @@ private:
     void x_ClearQueue(void);
 
 private:
-    mutable bool  m_IsEnabled;      ///< Enable/disable status
+    std::atomic<bool> m_IsEnabled;   ///< Enable/disable status
 
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
-    mutable bool  m_IsFinishing;    ///< TRUE if Finish() has called and reporting thread should terminate
-    mutable bool  m_IsWaiting;      ///< TRUE if Wait() is active
-    string        m_DefaultParams;  ///< Default parameters to report, concatenated and URL-encoded
-    string        m_URL;            ///< Reporting URL
-    std::thread   m_Thread;         ///< Reporting thread
-    list<TJobPtr> m_Queue;          ///< Job queue
-    unsigned      m_MaxQueueSize;   ///< Maximum allowed queue size
-    std::mutex    m_Usage_Mutex;    ///< MT-protection to access members
-    size_t        m_CountTotal;     ///< Statistics: number of jobs processed
-    size_t        m_CountSent;      ///< Statistics: number of jobs successfully sent
-    EWait         m_WaitMode;       ///< Waiting mode
-    CDeadline     m_WaitDeadline;   ///< Deadline for Wait(), if active
+    std::atomic<bool> m_IsFinishing; ///< TRUE if Finish() has called and reporting thread should terminate
+    std::atomic<bool> m_IsWaiting;   ///< TRUE if Wait() is active
+    string        m_DefaultParams;   ///< Default parameters to report, concatenated and URL-encoded
+    string        m_URL;             ///< Reporting URL
+    std::thread   m_Thread;          ///< Reporting thread
+    list<TJobPtr> m_Queue;           ///< Job queue
+    unsigned      m_MaxQueueSize;    ///< Maximum allowed queue size
+    std::mutex    m_Usage_Mutex;     ///< MT-protection to access members
+    size_t        m_CountTotal;      ///< Statistics: number of jobs processed
+    size_t        m_CountSent;       ///< Statistics: number of jobs successfully sent
+    EWait         m_WaitMode;        ///< Waiting mode
+    CDeadline     m_WaitDeadline;    ///< Deadline for Wait(), if active
 
     /// Signal conditional variable for reporting thread synchronization
     std::condition_variable m_ThreadSignal;
