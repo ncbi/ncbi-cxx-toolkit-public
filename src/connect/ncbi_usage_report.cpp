@@ -476,10 +476,10 @@ CUsageReport::~CUsageReport()
 #endif
 }
 
-bool CUsageReport::IsEnabled(void)
+bool CUsageReport::IsEnabled(void) const
 {
 #if defined(NCBI_USAGE_REPORT_SUPPORTED)
-    return !m_IsFinishing  &&  m_IsEnabled  &&  CUsageReportAPI::IsEnabled();
+    return  m_IsEnabled  &&  CUsageReportAPI::IsEnabled()  &&  !m_IsFinishing;
 #else
     return false;
 #endif
