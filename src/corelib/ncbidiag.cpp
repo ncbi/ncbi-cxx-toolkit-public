@@ -5518,9 +5518,9 @@ private:
 string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
     static constexpr const char* s_BadSymbolPrefix = "[INVALID_APPLOG_SYMBOL:";
-    static constexpr size_t s_BadSymbolPrefixLen = strlen(s_BadSymbolPrefix);
+    static constexpr size_t s_BadSymbolPrefixLen = sizeof(s_BadSymbolPrefix) - 1;
     static constexpr const char* s_BadSymbolSuffix = "]";
-    static constexpr size_t s_BadSymbolSuffixLen = strlen(s_BadSymbolSuffix);
+    static constexpr size_t s_BadSymbolSuffixLen = sizeof(s_BadSymbolSuffix) - 1;
     static constexpr const char* s_EncodedSpace = "%20";
 
     vector<CTempString> parts;
@@ -5559,14 +5559,14 @@ string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
         total_len += parts.back().size();
     }
 
-    char buf[total_len];
-    char* pos = buf;
+    vector<char> buf(total_len);
+    char* pos = buf.data();
     for (size_t i = 0; i < parts.size(); ++i) {
         const CTempString& part = parts[i];
         strncpy(pos, part.data(), part.size());
         pos += part.size();
     }
-    return string(buf, total_len);
+    return string(buf.data(), total_len);
 }
 
 
