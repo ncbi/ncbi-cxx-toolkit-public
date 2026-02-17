@@ -233,7 +233,7 @@ string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
 {
     string      json;
     bool        need_comma = false;
-    json.append(1, '[');
+    json.push_back('[');
 
     for (auto &  it : m_Workers) {
         std::vector<SConnectionRunTimeProperties>   conn_props = it->GetConnProps();
@@ -253,7 +253,7 @@ string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
             }
 
             if (need_comma) {
-                json.append(1, ',');
+                json.push_back(',');
             } else {
                 need_comma = true;
             }
@@ -261,7 +261,7 @@ string CTcpWorkersList::GetConnectionsStatus(int64_t  self_connection_id)
         }
     }
 
-    json.append(1, ']');
+    json.push_back(']');
     return json;
 }
 

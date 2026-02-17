@@ -2118,87 +2118,71 @@ int CPubseqGatewayApp::OnConnectionsStatus(CHttpRequest &  http_req,
     try {
         string      content;
         char        buf[kPSGToStringBufferSize];
-        long        len;
 
-        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumConnHardLimitExceeded), buf);
-        content.append(1, '{')
-               .append("\"hard_limit_conn_refused_cnt\": ")
-               .append(buf, len);
+        content.push_back('{');
+        content.append("\"hard_limit_conn_refused_cnt\": ")
+               .append(buf, PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumConnHardLimitExceeded), buf));
 
-        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit), buf);
         content.append(", ")
                .append("\"soft_limit_req_rejected_cnt\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NumReqRefusedDueToSoftLimit), buf));
 
-        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_IncomingConnectionsCounter), buf);
         content.append(", ")
                .append("\"incoming_connections_cnt\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_IncomingConnectionsCounter), buf));
 
-        len = PSGToString(m_Counters->GetFinishedRequestsCounter(), buf);
         content.append(", ")
                .append("\"finished_requests_cnt\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Counters->GetFinishedRequestsCounter(), buf));
 
-        len = PSGToString(m_Settings.m_TcpMaxConnAlertLimit, buf);
         content.append(", ")
                .append("\"conn_alert_limit\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_TcpMaxConnAlertLimit, buf));
 
-        len = PSGToString(m_Settings.m_TcpMaxConnSoftLimit, buf);
         content.append(", ")
                .append("\"conn_soft_limit\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_TcpMaxConnSoftLimit, buf));
 
-        len = PSGToString(m_Settings.m_TcpMaxConn, buf);
         content.append(", ")
                .append("\"conn_hard_limit\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_TcpMaxConn, buf));
 
-        len = PSGToString(m_Settings.m_ConnThrottleThreshold, buf);
         content.append(", ")
                .append("\"conn_throttle_threshold\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_ConnThrottleThreshold, buf));
 
-        len = PSGToString(m_Settings.m_ConnThrottleByHost, buf);
         content.append(", ")
                .append("\"conn_throttle_by_host\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_ConnThrottleByHost, buf));
 
-        len = PSGToString(m_Settings.m_ConnThrottleBySite, buf);
         content.append(", ")
                .append("\"conn_throttle_by_site\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_ConnThrottleBySite, buf));
 
-        len = PSGToString(m_Settings.m_ConnThrottleByProcess, buf);
         content.append(", ")
                .append("\"conn_throttle_by_process\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_ConnThrottleByProcess, buf));
 
-        len = PSGToString(m_Settings.m_ConnThrottleByUserAgent, buf);
         content.append(", ")
                .append("\"conn_throttle_by_user_agent\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Settings.m_ConnThrottleByUserAgent, buf));
 
-        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NewConnThrottled), buf);
         content.append(", ")
                .append("\"new_throttled_cnt\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_NewConnThrottled), buf));
 
-        len = PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_OldConnThrottled), buf);
         content.append(", ")
                .append("\"old_throttled_cnt\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(m_Counters->GetValue(CPSGSCounters::ePSGS_OldConnThrottled), buf));
 
-        len = PSGToString(lround(m_Settings.m_ConnThrottleCloseIdleSec * 1000), buf);
         content.append(", ")
                .append("\"conn_throttle_close_idle_ms\": ")
-               .append(buf, len);
+               .append(buf, PSGToString(lround(m_Settings.m_ConnThrottleCloseIdleSec * 1000), buf));
 
         content.append(", ")
                .append("\"conn_info\": ")
                .append(m_HttpDaemon->GetConnectionsStatus(reply->GetConnectionId()))
-               .append(1, '}');
+               .push_back('}');
 
         reply->SetContentType(ePSGS_JsonMime);
         reply->SetContentLength(content.size());
@@ -2436,31 +2420,28 @@ int CPubseqGatewayApp::OnGetSatMapping(CHttpRequest &  http_req,
     try {
         string      json;
         char        buf[kPSGToStringBufferSize];
-        long        len;
         bool        some = false;
 
         shared_ptr<CSatInfoSchema>  current_schema = m_CassSchemaProvider->GetSchema();
         int32_t                     max_sat = current_schema->GetMaxBlobKeyspaceSat();
 
-        json.append(1, '{');
+        json.push_back('{');
         for (int32_t    sat_n = 0; sat_n <= max_sat; ++sat_n) {
             optional<SSatInfoEntry>     entry = current_schema->GetBlobKeyspace(sat_n);
             if (entry.has_value()) {
-                if (some)   json.append(1,',');
+                if (some)   json.push_back(',');
                 else        some = true;
 
-                len = PSGToString(sat_n, buf);
-
-                json.append(1, '"')
-                    .append(buf, len)
-                    .append(1, '"')
-                    .append(1,':')
-                    .append(1,'"')
-                    .append(entry->keyspace)
-                    .append(1,'"');
+                json.push_back('"');
+                json.append(buf, PSGToString(sat_n, buf))
+                    .push_back('"');
+                json.push_back(':');
+                json.push_back('"');
+                json.append(entry->keyspace)
+                    .push_back('"');
             }
         }
-        json.append(1, '}');
+        json.push_back('}');
 
         reply->SetContentType(ePSGS_JsonMime);
         reply->SetContentLength(json.size());

@@ -117,24 +117,19 @@ CPSGS_SatInfoChunksVerFlavorId2Info::CPSGS_SatInfoChunksVerFlavorId2Info(
 string CPSGS_SatInfoChunksVerFlavorId2Info::Serialize(void) const
 {
     char    buf[kPSGToStringBufferSize];
-    long    len;
 
     string  ret;
     ret.reserve(64);
 
-    len = PSGToString(m_Sat, buf);
-    ret.append(buf, len)
-       .append(1, '.');
-    len = PSGToString(m_Info, buf);
-    ret.append(buf, len)
-       .append(1, '.');
-    len = PSGToString(m_Chunks, buf);
-    ret.append(buf, len);
+    ret.append(buf, PSGToString(m_Sat, buf))
+       .push_back('.');
+    ret.append(buf, PSGToString(m_Info, buf))
+       .push_back('.');
+    ret.append(buf, PSGToString(m_Chunks, buf));
 
     if (m_SplitVersionPresent) {
-        len = PSGToString(m_SplitVersion, buf);
-        ret.append(1, '.')
-           .append(buf, len);
+        ret.push_back('.');
+        ret.append(buf, PSGToString(m_SplitVersion, buf));
     }
 
     return ret;

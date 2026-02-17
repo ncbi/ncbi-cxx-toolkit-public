@@ -74,14 +74,11 @@ struct SCass_BlobId
     string ToString(void) const
     {
         char    buf[kPSGToStringBufferSize];
-        long    len;
         string  blob_id;
 
-        len = PSGToString(m_Sat, buf);
-        blob_id.append(buf, len)
-               .append(1, '.');
-        len = PSGToString(m_SatKey, buf);
-        blob_id.append(buf, len);
+        blob_id.append(buf, PSGToString(m_Sat, buf))
+               .push_back('.');
+        blob_id.append(buf, PSGToString(m_SatKey, buf));
         return blob_id;
     }
 

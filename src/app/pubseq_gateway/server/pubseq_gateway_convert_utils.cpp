@@ -162,7 +162,6 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
     bool                some = false;
 
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
     // PIR and PRF seq id is moved from the 'accession' field to the 'name'
     // field so if canonical id is requested and the 'accession' field is empty
@@ -176,21 +175,19 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
         }
     }
 
-    json.append(1, '{');
+    json.push_back('{');
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_CanonicalId) {
-        len = PSGToString(bioseq_info.GetVersion(), buf);
         json.append(kAccessionItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(bioseq_info.GetAccession()))
-            .append(1, '"')
-            .append(kSep)
+            .push_back('"');
+        json.append(NStr::JsonEncode(bioseq_info.GetAccession()))
+            .push_back('"');
+        json.append(kSep)
             .append(kVersionItem)
-            .append(buf, len)
+            .append(buf, PSGToString(bioseq_info.GetVersion(), buf))
             .append(kSep)
             .append(kSeqIdTypeItem);
 
-        len = PSGToString(bioseq_info.GetSeqIdType(), buf);
-        json.append(buf, len);
+        json.append(buf, PSGToString(bioseq_info.GetSeqIdType(), buf));
         some = true;
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Name) {
@@ -198,84 +195,75 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
         else        some = true;
 
         json.append(kNameItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(bioseq_info.GetName()))
-            .append(1, '"');
+            .push_back('"');
+        json.append(NStr::JsonEncode(bioseq_info.GetName()))
+            .push_back('"');
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Gi) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetGI(), buf);
         json.append(kGiItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetGI(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_DateChanged) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetDateChanged(), buf);
         json.append(kDateChangedItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetDateChanged(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Hash) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetHash(), buf);
         json.append(kHashItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetHash(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_Length) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetLength(), buf);
         json.append(kLengthItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetLength(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_MoleculeType) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetMol(), buf);
         json.append(kMolItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetMol(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_BlobId) {
         if (some)   json.append(kSep);
         else        some = true;
 
         if (custom_blob_id.empty()) {
-            len = PSGToString(bioseq_info.GetSat(), buf);
             json.append(kSatItem)
-                .append(buf, len)
+                .append(buf, PSGToString(bioseq_info.GetSat(), buf))
                 .append(kSep)
                 .append(kSatKeyItem);
 
-            len = PSGToString(bioseq_info.GetSatKey(), buf);
-            json.append(buf, len)
+            json.append(buf, PSGToString(bioseq_info.GetSatKey(), buf))
                 .append(kSep);
 
             // Adding blob_id as a string for future replacement of the separate
             // sat and sat_key
             json.append(kBlobIdItem)
-                .append(1, '"');
+                .push_back('"');
 
-            len = PSGToString(bioseq_info.GetSat(), buf);
-            json.append(buf, len)
-                .append(1, '.');
+            json.append(buf, PSGToString(bioseq_info.GetSat(), buf))
+                .push_back('.');
 
-            len = PSGToString(bioseq_info.GetSatKey(), buf);
-            json.append(buf, len)
-                .append(1, '"');
+            json.append(buf, PSGToString(bioseq_info.GetSatKey(), buf))
+                .push_back('"');
         } else {
             // If a custom blob_id is provided then there is no need to send
             // the one from bioseq info
             json.append(kBlobIdItem)
-                .append(1, '"')
-                .append(custom_blob_id)
-                .append(1, '"');
+                .push_back('"');
+            json.append(custom_blob_id)
+                .push_back('"');
         }
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqIds) {
@@ -283,7 +271,7 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
         else        some = true;
 
         json.append(kSeqIdsItem)
-            .append(1, '[');
+            .push_back('[');
 
         bool    not_first = false;
         for (const auto &  item : bioseq_info.GetSeqIds()) {
@@ -292,44 +280,40 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
             else
                 not_first = true;
 
-            len = PSGToString(get<0>(item), buf);
-            json.append(1, '[')
-                .append(buf, len)
+            json.push_back('[');
+            json.append(buf, PSGToString(get<0>(item), buf))
                 .append(kSep)
-                .append(1, '"')
-                .append(NStr::JsonEncode(get<1>(item)))
-                .append(1, '"')
-                .append(1, ']');
+                .push_back('"');
+            json.append(NStr::JsonEncode(get<1>(item)))
+                .push_back('"');
+            json.push_back(']');
         }
-        json.append(1, ']');
+        json.push_back(']');
     }
 
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_SeqState) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetSeqState(), buf);
         json.append(kSeqStateItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetSeqState(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_State) {
         if (some)   json.append(kSep);
         else        some = true;
 
-        len = PSGToString(bioseq_info.GetState(), buf);
         json.append(kStateItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetState(), buf));
     }
     if (include_data_flags & SPSGS_ResolveRequest::fPSGS_TaxId) {
         if (some)   json.append(kSep);
         // else        some = true;     // suppress dead assignment warning
 
-        len = PSGToString(bioseq_info.GetTaxId(), buf);
         json.append(kTaxIdItem)
-            .append(buf, len);
+            .append(buf, PSGToString(bioseq_info.GetTaxId(), buf));
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -338,69 +322,58 @@ string  ToJsonString(const CBlobRecord &  blob_prop)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{');
-    len = PSGToString(blob_prop.GetKey(), buf);
+    json.push_back('{');
     json.append(kKeyItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetModified(), buf);
+        .append(buf, PSGToString(blob_prop.GetKey(), buf));
     json.append(kSep)
         .append(kLastModifiedItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetFlags(), buf);
+        .append(buf, PSGToString(blob_prop.GetModified(), buf));
     json.append(kSep)
         .append(kFlagsItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetSize(), buf);
+        .append(buf, PSGToString(blob_prop.GetFlags(), buf));
     json.append(kSep)
         .append(kSizeItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetSizeUnpacked(), buf);
+        .append(buf, PSGToString(blob_prop.GetSize(), buf));
     json.append(kSep)
         .append(kSizeUnpackedItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetClass(), buf);
+        .append(buf, PSGToString(blob_prop.GetSizeUnpacked(), buf));
     json.append(kSep)
         .append(kClassItem)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetDateAsn1(), buf);
+        .append(buf, PSGToString(blob_prop.GetClass(), buf));
     json.append(kSep)
         .append(kDateAsn1Item)
-        .append(buf, len);
-    len = PSGToString(blob_prop.GetHupDate(), buf);
+        .append(buf, PSGToString(blob_prop.GetDateAsn1(), buf));
     json.append(kSep)
         .append(kHupDateItem)
-        .append(buf, len)
+        .append(buf, PSGToString(blob_prop.GetHupDate(), buf))
 
         .append(kSep)
         .append(kDivItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(blob_prop.GetDiv()))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::JsonEncode(blob_prop.GetDiv()))
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kId2InfoItem)
-        .append(1, '"')
-        .append(blob_prop.GetId2Info())     // Cannot have chars need to escape
-        .append(1, '"');
+        .push_back('"');
+    json.append(blob_prop.GetId2Info())     // Cannot have chars need to escape
+        .push_back('"');
 
-    len = PSGToString(blob_prop.GetOwner(), buf);
     json.append(kSep)
         .append(kOwnerItem)
-        .append(buf, len)
+        .append(buf, PSGToString(blob_prop.GetOwner(), buf))
 
         .append(kSep)
         .append(kUserNameItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(blob_prop.GetUserName()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(blob_prop.GetUserName()))
+        .push_back('"');
 
-    len = PSGToString(blob_prop.GetNChunks(), buf);
     json.append(kSep)
         .append(kNChunksItem)
-        .append(buf, len)
-        .append(1, '}');
+        .append(buf, PSGToString(blob_prop.GetNChunks(), buf))
+        .push_back('}');
 
     return json;
 }
@@ -412,71 +385,61 @@ string ToJsonString(const CNAnnotRecord &  annot_record,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{');
+    json.push_back('{');
 
-    len = PSGToString(annot_record.GetModified(), buf);
     json.append(kLastModifiedItem)
-        .append(buf, len);
+        .append(buf, PSGToString(annot_record.GetModified(), buf));
 
     if (custom_blob_id.empty()) {
-        len = PSGToString(sat, buf);
         json.append(kSep)
             .append(kSatItem)
-            .append(buf, len);
+            .append(buf, PSGToString(sat, buf));
 
-        len = PSGToString(annot_record.GetSatKey(), buf);
         json.append(kSep)
             .append(kSatKeyItem)
-            .append(buf, len);
+            .append(buf, PSGToString(annot_record.GetSatKey(), buf));
 
         // Adding blob_id as a string for future replacement of the separate
         // sat and sat_key
-        len = PSGToString(sat, buf);
         json.append(kSep)
             .append(kBlobIdItem)
-            .append(1, '"')
-            .append(buf, len)
-            .append(1, '.');
-        len = PSGToString(annot_record.GetSatKey(), buf);
-        json.append(buf, len)
-            .append(1, '"');
+            .push_back('"');
+        json.append(buf, PSGToString(sat, buf))
+            .push_back('.');
+        json.append(buf, PSGToString(annot_record.GetSatKey(), buf))
+            .push_back('"');
     } else {
         // If a custom blob_id is provided then there is no need to send
         // the one from bioseq info
         json.append(kSep)
             .append(kBlobIdItem)
-            .append(1, '"')
-            .append(custom_blob_id)
-            .append(1, '"');
+            .push_back('"');
+        json.append(custom_blob_id)
+            .push_back('"');
     }
 
     json.append(kSep)
         .append(kAccessionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(annot_record.GetAccession()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(annot_record.GetAccession()))
+        .push_back('"');
 
-    len = PSGToString(annot_record.GetVersion(), buf);
     json.append(kSep)
         .append(kVersionItem)
-        .append(buf, len);
+        .append(buf, PSGToString(annot_record.GetVersion(), buf));
 
-    len = PSGToString(annot_record.GetSeqIdType(), buf);
     json.append(kSep)
         .append(kSeqIdTypeItem)
-        .append(buf, len);
+        .append(buf, PSGToString(annot_record.GetSeqIdType(), buf));
 
-    len = PSGToString(annot_record.GetStart(), buf);
     json.append(kSep)
         .append(kStartItem)
-        .append(buf, len);
+        .append(buf, PSGToString(annot_record.GetStart(), buf));
 
-    len = PSGToString(annot_record.GetStop(), buf);
     json.append(kSep)
         .append(kStopItem)
-        .append(buf, len)
+        .append(buf, PSGToString(annot_record.GetStop(), buf))
 
         .append(kSep)
         .append(kAnnotInfoItem)
@@ -484,11 +447,11 @@ string ToJsonString(const CNAnnotRecord &  annot_record,
 
         .append(kSep)
         .append(kSeqAnnotInfoItem)
-        .append(1, '"')
-        .append(NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::Base64Encode(annot_record.GetSeqAnnotInfo(), 0))
+        .push_back('"');
 
-        .append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -497,9 +460,8 @@ string ToJsonString(const map<string, int> &  per_na_results)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{');
+    json.push_back('{');
 
     bool    need_sep = false;
     for (const auto &  item : per_na_results) {
@@ -507,15 +469,14 @@ string ToJsonString(const map<string, int> &  per_na_results)
             json.append(kSep);
         need_sep = true;
 
-        len = PSGToString(item.second, buf);
-        json.append(1, '"')
-            .append(NStr::JsonEncode(item.first))
-            .append(1, '"')
-            .append(kDictValueSep)
-            .append(buf, len);
+        json.push_back('"');
+        json.append(NStr::JsonEncode(item.first))
+            .push_back('"');
+        json.append(kDictValueSep)
+            .append(buf, PSGToString(item.second, buf));
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -525,34 +486,33 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"BioseqInfo request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"');
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-    if (request.HasField(CBioseqInfoFetchRequest::EFields::eAccession))
+    if (request.HasField(CBioseqInfoFetchRequest::EFields::eAccession)) {
         json.append(kSep)
             .append(kAccessionItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(request.GetAccession()))
-            .append(1, '"');
-    else
+            .push_back('"');
+        json.append(NStr::JsonEncode(request.GetAccession()))
+            .push_back('"');
+    } else {
         json.append(kSep)
             .append(kAccessionItem)
             .append("null");
+    }
 
     if (request.HasField(CBioseqInfoFetchRequest::EFields::eVersion)) {
-        len = PSGToString(request.GetVersion(), buf);
         json.append(kSep)
             .append(kVersionItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetVersion(), buf));
     } else {
         json.append(kSep)
             .append(kVersionItem)
@@ -560,10 +520,9 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request,
     }
 
     if (request.HasField(CBioseqInfoFetchRequest::EFields::eSeqIdType)) {
-        len = PSGToString(request.GetSeqIdType(), buf);
         json.append(kSep)
             .append(kSeqIdTypeItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetSeqIdType(), buf));
     } else {
         json.append(kSep)
             .append(kSeqIdTypeItem)
@@ -571,17 +530,16 @@ string ToJsonString(const CBioseqInfoFetchRequest &  request,
     }
 
     if (request.HasField(CBioseqInfoFetchRequest::EFields::eGI)) {
-        len = PSGToString(request.GetGI(), buf);
         json.append(kSep)
             .append(kGiItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetGI(), buf));
     } else {
         json.append(kSep)
             .append(kGiItem)
             .append("null");
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -591,40 +549,39 @@ string ToJsonString(const CSi2CsiFetchRequest &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Si2Csi request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"');
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId))
+    if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqId)) {
         json.append(kSep)
             .append(kSecSeqIdItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(request.GetSecSeqId()))
-            .append(1, '"');
-    else
+            .push_back('"');
+        json.append(NStr::JsonEncode(request.GetSecSeqId()))
+            .push_back('"');
+    } else {
         json.append(kSep)
             .append(kSecSeqIdItem)
             .append("null");
+    }
 
     if (request.HasField(CSi2CsiFetchRequest::EFields::eSecSeqIdType)) {
-        len = PSGToString(request.GetSecSeqIdType(), buf);
         json.append(kSep)
             .append(kSecSeqIdTypeItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetSecSeqIdType(), buf));
     } else {
         json.append(kSep)
             .append(kSecSeqIdTypeItem)
             .append("null");
     }
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -633,23 +590,21 @@ string ToJsonString(const CBlobFetchRequest &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Blob prop request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"');
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
     if (request.HasField(CBlobFetchRequest::EFields::eSat)) {
-        len = PSGToString(request.GetSat(), buf);
         json.append(kSep)
             .append(kSatItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetSat(), buf));
     } else {
         json.append(kSep)
             .append(kSatItem)
@@ -657,10 +612,9 @@ string ToJsonString(const CBlobFetchRequest &  request,
     }
 
     if (request.HasField(CBlobFetchRequest::EFields::eSatKey)) {
-        len = PSGToString(request.GetSatKey(), buf);
         json.append(kSep)
             .append(kSatKeyItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetSatKey(), buf));
     } else {
         json.append(kSep)
             .append(kSatKeyItem)
@@ -668,17 +622,16 @@ string ToJsonString(const CBlobFetchRequest &  request,
     }
 
     if (request.HasField(CBlobFetchRequest::EFields::eLastModified)) {
-        len = PSGToString(request.GetLastModified(), buf);
         json.append(kSep)
             .append(kLastModifiedItem)
-            .append(buf, len);
+            .append(buf, PSGToString(request.GetLastModified(), buf));
     } else {
         json.append(kSep)
             .append(kLastModifiedItem)
             .append("null");
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -687,46 +640,40 @@ string ToJsonString(const CSI2CSIRecord &  record)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kSecSeqIdItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(record.GetSecSeqId()))
-        .append(1, '"');
+    json.push_back('{');
+    json.append(kSecSeqIdItem)
+        .push_back('"');
+    json.append(NStr::JsonEncode(record.GetSecSeqId()))
+        .push_back('"');
 
-    len = PSGToString(record.GetSecSeqIdType(), buf);
     json.append(kSep)
         .append(kSecSeqIdTypeItem)
-        .append(buf, len)
+        .append(buf, PSGToString(record.GetSecSeqIdType(), buf))
 
         .append(kSep)
         .append(kAccessionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(record.GetAccession()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(record.GetAccession()))
+        .push_back('"');
 
-    len = PSGToString(record.GetGI(), buf);
     json.append(kSep)
         .append(kGiItem)
-        .append(buf, len);
+        .append(buf, PSGToString(record.GetGI(), buf));
 
-    len = PSGToString(record.GetSecSeqState(), buf);
     json.append(kSep)
         .append(kSecSeqStateItem)
-        .append(buf, len);
+        .append(buf, PSGToString(record.GetSecSeqState(), buf));
 
-    len = PSGToString(record.GetSeqIdType(), buf);
     json.append(kSep)
         .append(kSeqIdTypeItem)
-        .append(buf, len);
+        .append(buf, PSGToString(record.GetSeqIdType(), buf));
 
-    len = PSGToString(record.GetVersion(), buf);
     json.append(kSep)
         .append(kVersionItem)
-        .append(buf, len);
+        .append(buf, PSGToString(record.GetVersion(), buf));
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -736,28 +683,26 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Blob request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kSatNameItem)
-        .append(1, '"')
-        .append(request.GetKeySpace())
-        .append(1, '"');
+        .push_back('"');
+    json.append(request.GetKeySpace())
+        .push_back('"');
 
-    len = PSGToString(request.GetSatKey(), buf);
     json.append(kSep)
         .append(kSatKeyItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetSatKey(), buf));
 
     auto    last_modified = request.GetModified();
     if (last_modified == CCassBlobTaskLoadBlob::kAnyModified) {
@@ -765,10 +710,9 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request,
             .append(kLastModifiedItem)
             .append("null");
     } else {
-        len = PSGToString(last_modified, buf);
         json.append(kSep)
             .append(kLastModifiedItem)
-            .append(buf, len);
+            .append(buf, PSGToString(last_modified, buf));
     }
 
     json.append(kSep)
@@ -785,7 +729,7 @@ string ToJsonString(const CCassBlobTaskLoadBlob &  request,
     else
         json.append("false");
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -795,28 +739,26 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Split history request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kSatNameItem)
-        .append(1, '"')
-        .append(request.GetKeySpace())
-        .append(1, '"');
+        .push_back('"');
+    json.append(request.GetKeySpace())
+        .push_back('"');
 
-    len = PSGToString(request.GetKey(), buf);
     json.append(kSep)
         .append(kSatKeyItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetKey(), buf));
 
     auto    split_version = request.GetSplitVersion();
     if (split_version == CCassBlobTaskFetchSplitHistory::kAllVersions) {
@@ -824,13 +766,12 @@ string ToJsonString(const CCassBlobTaskFetchSplitHistory &  request,
             .append(kSplitVersionItem)
             .append("null");
     } else {
-        len = PSGToString(split_version, buf);
         json.append(kSep)
             .append(kSplitVersionItem)
-            .append(buf, len);
+            .append(buf, PSGToString(split_version, buf));
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -840,56 +781,53 @@ string ToJsonString(const CCassNAnnotTaskFetch &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Named annotation request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kSatNameItem)
-        .append(1, '"')
-        .append(request.GetKeySpace())
-        .append(1, '"')
+        .push_back('"');
+    json.append(request.GetKeySpace())
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kAccessionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(request.GetAccession()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(request.GetAccession()))
+        .push_back('"');
 
-    len = PSGToString(request.GetVersion(), buf);
     json.append(kSep)
         .append(kVersionItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetVersion(), buf));
 
-    len = PSGToString(request.GetSeqIdType(), buf);
     json.append(kSep)
         .append(kSeqIdTypeItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetSeqIdType(), buf));
 
     json.append(kSep)
         .append(kAnnotNamesItem)
-        .append(1, '[');
+        .push_back('[');
 
     bool    is_empty_list = true;
     for (const auto &  item : request.GetAnnotNames()) {
         if (is_empty_list)  is_empty_list = false;
         else                json.append(kSep);
 
-        json.append(1, '"')
-            .append(NStr::JsonEncode(item))
-            .append(1, '"');
+        json.push_back('"');
+        json.append(NStr::JsonEncode(item))
+            .push_back('"');
     }
 
-    json.append(1, ']');
-    json.append(1, '}');
+    json.push_back(']');
+    json.push_back('}');
     return json;
 }
 
@@ -899,30 +837,28 @@ string ToJsonString(const CCassStatusHistoryTaskGetPublicComment &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Public comment request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kSatNameItem)
-        .append(1, '"')
-        .append(request.GetKeySpace())
-        .append(1, '"');
+        .push_back('"');
+    json.append(request.GetKeySpace())
+        .push_back('"');
 
-    len = PSGToString(request.GetKey(), buf);
     json.append(kSep)
         .append(kSatKeyItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetKey(), buf));
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 
@@ -932,41 +868,38 @@ string ToJsonString(const CCassAccVerHistoryTaskFetch &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"Accession version history request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kSatNameItem)
-        .append(1, '"')
-        .append(request.GetKeySpace())
-        .append(1, '"')
+        .push_back('"');
+    json.append(request.GetKeySpace())
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kAccessionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(request.GetAccession()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(request.GetAccession()))
+        .push_back('"');
 
-    len = PSGToString(request.GetVersion(), buf);
     json.append(kSep)
         .append(kVersionItem)
-        .append(buf, len);
+        .append(buf, PSGToString(request.GetVersion(), buf));
 
-    len = PSGToString(request.GetSeqIdType(), buf);
     json.append(kSep)
         .append(kSeqIdTypeItem)
-        .append(buf, len)
+        .append(buf, PSGToString(request.GetSeqIdType(), buf))
 
-        .append(1, '}');
+        .push_back('}');
     return json;
 }
 
@@ -976,48 +909,46 @@ string ToJsonString(const CPubseqGatewayFetchIpgReportRequest &  request,
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{')
-        .append(kRequestItem)
+    json.push_back('{');
+    json.append(kRequestItem)
         .append("\"IPG resolve request\"")
 
         .append(kSep)
         .append(kDatacenterItem)
-        .append(1, '"')
-        .append(datacenter)
-        .append(1, '"')
+        .push_back('"');
+    json.append(datacenter)
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kProteinItem)
-        .append(1, '"');
+        .push_back('"');
 
     if (request.HasProtein())
         json.append(SanitizeInputValue(NStr::JsonEncode(request.GetProtein())));
     else
         json.append("<null>");
 
-    json.append(1, '"')
-        .append(kSep)
+    json.push_back('"');
+    json.append(kSep)
         .append(kNucleotideItem)
-        .append(1, '"');
+        .push_back('"');
 
     if (request.HasNucleotide())
         json.append(SanitizeInputValue(NStr::JsonEncode(request.GetNucleotide())));
     else
         json.append("<null>");
 
-    json.append(1, '"')
-        .append(kSep)
+    json.push_back('"');
+    json.append(kSep)
         .append(kIPGItem);
 
     if (request.HasIpg()) {
-        len = PSGToString(request.GetIpg(), buf);
-        json.append(buf, len);
+        json.append(buf, PSGToString(request.GetIpg(), buf));
     } else {
         json.append("<null>");
     }
-    json.append(1, '}');
+    json.push_back('}');
 
     return json;
 }
@@ -1027,51 +958,43 @@ string ToJsonString(const SAccVerHistRec &  history_record)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    json.append(1, '{');
+    json.push_back('{');
 
-    len = PSGToString(history_record.gi, buf);
     json.append(kGiItem)
-        .append(buf, len)
+        .append(buf, PSGToString(history_record.gi, buf))
 
         .append(kSep)
         .append(kAccessionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(history_record.accession))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(history_record.accession))
+        .push_back('"');
 
-    len = PSGToString(history_record.version, buf);
     json.append(kSep)
         .append(kVersionItem)
-        .append(buf, len);
+        .append(buf, PSGToString(history_record.version, buf));
 
-    len = PSGToString(history_record.seq_id_type, buf);
     json.append(kSep)
         .append(kSeqIdTypeItem)
-        .append(buf, len);
+        .append(buf, PSGToString(history_record.seq_id_type, buf));
 
-    len = PSGToString(history_record.date, buf);
     json.append(kSep)
         .append(kDateItem)
-        .append(buf, len);
+        .append(buf, PSGToString(history_record.date, buf));
 
-    len = PSGToString(history_record.sat_key, buf);
     json.append(kSep)
         .append(kSatKeyItem)
-        .append(buf, len);
+        .append(buf, PSGToString(history_record.sat_key, buf));
 
-    len = PSGToString(history_record.sat, buf);
     json.append(kSep)
         .append(kSatItem)
-        .append(buf, len);
+        .append(buf, PSGToString(history_record.sat, buf));
 
-    len = PSGToString(history_record.chain, buf);
     json.append(kSep)
         .append(kChainItem)
-        .append(buf, len)
+        .append(buf, PSGToString(history_record.chain, buf))
 
-        .append(1, '}');
+        .push_back('}');
     return json;
 }
 
@@ -1080,73 +1003,68 @@ string ToJsonString(const CIpgStorageReportEntry &  ipg_entry)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
     // The incoming parameter is 'protein' so it is returned accordingly
-    json.append(1, '{')
-        .append(kProteinItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetAccession()))
-        .append(1, '"');
+    json.push_back('{');
+    json.append(kProteinItem)
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetAccession()))
+        .push_back('"');
 
-    len = PSGToString(ipg_entry.GetIpg(), buf);
     json.append(kSep)
         .append(kIPGItem)
-        .append(buf, len)
+        .append(buf, PSGToString(ipg_entry.GetIpg(), buf))
 
     // The incoming parameter is 'nucleotide' so it is returned accordingly
         .append(kSep)
         .append(kNucleotideItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetNucAccession()))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetNucAccession()))
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kProductNameItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetProductName()))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetProductName()))
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kDivisionItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetDiv()))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetDiv()))
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kAssemblyItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetAssembly()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetAssembly()))
+        .push_back('"');
 
-    len = PSGToString(ipg_entry.GetTaxid(), buf);
     json.append(kSep)
         .append(kTaxIdItem)
-        .append(buf, len)
+        .append(buf, PSGToString(ipg_entry.GetTaxid(), buf))
 
         .append(kSep)
         .append(kStrainItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetStrain()))
-        .append(1, '"')
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetStrain()))
+        .push_back('"');
 
-        .append(kSep)
+    json.append(kSep)
         .append(kBioProjectItem)
-        .append(1, '"')
-        .append(NStr::JsonEncode(ipg_entry.GetBioProject()))
-        .append(1, '"');
+        .push_back('"');
+    json.append(NStr::JsonEncode(ipg_entry.GetBioProject()))
+        .push_back('"');
 
-    len = PSGToString(ipg_entry.GetLength(), buf);
     json.append(kSep)
         .append(kLengthItem)
-        .append(buf, len);
+        .append(buf, PSGToString(ipg_entry.GetLength(), buf));
 
-    len = PSGToString(ipg_entry.GetGbState(), buf);
     json.append(kSep)
         .append(kGBStateItem)
-        .append(buf, len)
+        .append(buf, PSGToString(ipg_entry.GetGbState(), buf))
 
-        .append(1, '}');
+        .push_back('}');
     return json;
 }
 
@@ -1168,75 +1086,67 @@ string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
 {
     string              json;
     char                buf[kPSGToStringBufferSize];
-    long                len;
 
-    len = PSGToString(conn_props.m_Id, buf);
+    json.push_back('{');
+    json.append(kIdItem)
+        .append(buf, PSGToString(conn_props.m_Id, buf));
 
-    json.append(1, '{')
-        .append(kIdItem)
-        .append(buf, len);
-
-    len = PSGToString(conn_props.m_ConnCntAtOpen, buf);
     json.append(kSep)
         .append(kConnCntAtOpenItem)
-        .append(buf, len)
+        .append(buf, PSGToString(conn_props.m_ConnCntAtOpen, buf))
         .append(kSep)
         .append(kOpenTimestampItem)
-        .append(1, '"')
-        .append(FormatPreciseTime(conn_props.m_OpenTimestamp))
-        .append(1, '"');
+        .push_back('"');
+    json.append(FormatPreciseTime(conn_props.m_OpenTimestamp))
+        .push_back('"');
 
     if (conn_props.m_LastRequestTimestamp.has_value()) {
         json.append(kSep)
             .append(kLastRequestTimestampItem)
-            .append(1, '"')
-            .append(FormatPreciseTime(conn_props.m_LastRequestTimestamp.value()))
-            .append(1, '"');
+            .push_back('"');
+        json.append(FormatPreciseTime(conn_props.m_LastRequestTimestamp.value()))
+            .push_back('"');
     } else {
         json.append(kSep)
             .append(kLastRequestTimestampItem)
             .append("null");
     }
 
-    len = PSGToString(conn_props.m_NumFinishedRequests, buf);
     json.append(kSep)
         .append(kFinishedReqsCntItem)
-        .append(buf, len);
+        .append(buf, PSGToString(conn_props.m_NumFinishedRequests, buf));
 
-    len = PSGToString(conn_props.m_RejectedDueToSoftLimit, buf);
     json.append(kSep)
         .append(kRejectedDueToSoftLimitReqsCntItem)
-        .append(buf, len);
+        .append(buf, PSGToString(conn_props.m_RejectedDueToSoftLimit, buf));
 
-    len = PSGToString(conn_props.m_NumBackloggedRequests, buf);
     json.append(kSep)
         .append(kBacklogReqsCntItem)
-        .append(buf, len);
+        .append(buf, PSGToString(conn_props.m_NumBackloggedRequests, buf));
 
-    len = PSGToString(conn_props.m_NumRunningRequests, buf);
     json.append(kSep)
         .append(kRunningReqsCntItem)
-        .append(buf, len)
+        .append(buf, PSGToString(conn_props.m_NumRunningRequests, buf))
         .append(kSep)
         .append(kPeerIpItem)
-        .append(1, '"')
-        .append(conn_props.m_PeerIp)
-        .append(1, '"');
+        .push_back('"');
+    json.append(conn_props.m_PeerIp)
+        .push_back('"');
 
     if (conn_props.m_PeerId.has_value()) {
         json.append(kSep)
             .append(kPeerIdItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(conn_props.m_PeerId.value()))
-            .append(1, '"');
+            .push_back('"');
+        json.append(NStr::JsonEncode(conn_props.m_PeerId.value()))
+            .push_back('"');
     }
 
     if (conn_props.m_PeerUserAgent.has_value()) {
         json.append(kSep)
             .append(kPeerUserAgentItem)
-            .append(1, '"')
-            .append(NStr::JsonEncode(conn_props.m_PeerUserAgent.value()))
-            .append(1, '"');
+            .push_back('"');
+        json.append(NStr::JsonEncode(conn_props.m_PeerUserAgent.value()))
+            .push_back('"');
     }
 
     if (conn_props.m_ExceedSoftLimitFlag) {
@@ -1259,7 +1169,7 @@ string ToJsonString(const SConnectionRunTimeProperties &  conn_props)
             .append("false");
     }
 
-    json.append(1, '}');
+    json.push_back('}');
     return json;
 }
 

@@ -57,19 +57,15 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type)
 string GetBioseqRecordId(const CBioseqInfoRecord &  record)
 {
     char    buf[kPSGToStringBufferSize];
-    long    len;
     string  id(record.GetAccession());
 
-    id.append(1, '.');
+    id.push_back('.');
 
-    len = PSGToString(record.GetVersion(), buf);
-    id.append(buf, len)
-      .append(1, '.');
-    len = PSGToString(record.GetSeqIdType(), buf);
-    id.append(buf, len)
-      .append(1, '.');
-    len = PSGToString(record.GetGI(), buf);
-    id.append(buf, len);
+    id.append(buf, PSGToString(record.GetVersion(), buf))
+      .push_back('.');
+    id.append(buf, PSGToString(record.GetSeqIdType(), buf))
+      .push_back('.');
+    id.append(buf, PSGToString(record.GetGI(), buf));
 
     return id;
 }
