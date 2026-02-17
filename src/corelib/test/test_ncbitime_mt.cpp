@@ -35,6 +35,8 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/test_mt.hpp>
 #include <stdlib.h>
+#include <chrono>
+#include <format>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -77,6 +79,7 @@ static inline void s_assert_equal(const A& a, const B& b,
 
 #define assert_equal(a, b) s_assert_equal(a, b, #a, #b, __FILE__, __LINE__)
 
+
 //=============================================================================
 //
 // TestMisc
@@ -105,7 +108,7 @@ static void s_TestMisc(void)
         assert_equal(t.AsString(), "01/01/2000");
         t.AddDay();
         assert_equal(t.AsString(), "01/02/2000");
-        t="02/27/2000";
+        t = "02/27/2000";
         t.AddDay();
         assert_equal(t.AsString(), "02/28/2000");
         t.AddDay();
@@ -567,7 +570,7 @@ static void s_TestFormats(void)
 
 //=============================================================================
 //
-// TestGMT
+// Test UTC/GMT
 //
 //=============================================================================
 
@@ -580,15 +583,23 @@ static void s_TestGMT(void)
         assert_equal(t1.AsString(), "03/12/2001 11:22:33 GMT");
         CTime t2(2001, 3, 12, 11, 22, 33, 999, CTime::eLocal);
         assert_equal(t2.AsString(), "03/12/2001 11:22:33 ");
+
+        CTime::SetFormat(CTimeFormat("M/D/Y h:m:s Z", CTimeFormat::fConf_UTC));
+        CTime t3(2001, 3, 12, 11, 22, 33, 999, CTime::eUTC);
+        assert_equal(t1.AsString(), "03/12/2001 11:22:33 UTC");
     }}
 
     // Process timezone string
     {{   
         CTime t;
         t.SetFormat("M/D/Y h:m:s Z");
-        t="03/12/2001 11:22:33 GMT";
+        t = "03/12/2001 11:22:33 UTC";
         assert_equal(t.AsString(), "03/12/2001 11:22:33 GMT");
-        t="03/12/2001 11:22:33 ";
+        t = "03/12/2001 11:22:33 GMT";
+        assert_equal(t.AsString(), "03/12/2001 11:22:33 GMT");
+        t = "03/12/2001 11:22:33 Z";
+        assert_equal(t.AsString(), "03/12/2001 11:22:33 GMT");
+        t = "03/12/2001 11:22:33 ";
         assert_equal(t.AsString(), "03/12/2001 11:22:33 ");
     }}
 
@@ -724,6 +735,105 @@ static void s_TestGMT(void)
 }
 
 
+//============================================================================
+//
+// Test UTC/Local time against std::chrono (C++ 20)
+//
+// Calendars and Time zones available in STD lib since version 201907L:
+// https://en.cppreference.com/w/cpp/experimental/feature_test.html#cpp_lib_chrono
+//
+//============================================================================
+
+static void s_TestAgainstChrono(void)
+{
+#if __cpp_lib_chrono >= 201907L
+
+    using namespace std::chrono;
+
+    const time_zone* tz_loc;
+    try {
+        tz_loc = current_zone();
+    }
+    catch (const std::exception& e) {
+        ERR_POST(Note << "std::chrono tzdata is unavailable: " << e.what());
+        return;
+    }
+
+    // On Windows CTime works with last DST rules for a current timezone only.
+    // In the the United States they changed by the Energy Policy Act of 2005,
+    // which took effect in 2007. That law moved the start of DST to 
+    // the second Sunday in March and the end to the first Sunday in November each year
+    // — and that schedule is still in use today.
+    // The std::chrono can use full tzdata, so it produce correct local time.
+    // Unix works for full dates range too.
+
+#if defined(NCBI_OS_MSWIN)
+    // Start: 2007-01-01 11:00:00 (UTC)
+    sys_seconds start = sys_days{ year{2007}/1/1 } + 11h;
+#else
+    // Start: 1970-01-01 11:00:00 (UTC)
+    sys_seconds start = sys_days{ year{1970}/1/1 } + 11h;
+#endif
+    // End: now (rounded down to seconds)
+    sys_seconds end = floor<seconds>(system_clock::now());
+
+    CTime::SetFormat("Y-M-D h:m:s");
+
+    for (sys_seconds t = start; t <= end; t += 24h) {
+
+        sys_seconds         t_utc = t;
+        zoned_time<seconds> t_loc{ tz_loc, t };
+        string s_utc = std::format("{:%F %T}", t);
+        string s_loc = std::format("{:%F %T}", t_loc);
+
+        time_t timer = system_clock::to_time_t(t_utc);
+
+        // CTime: create as UTC time
+        CTime ct(timer);
+        string ct_utc = ct.AsString();
+        assert_equal(ct.GetTimeT(), timer);
+
+        // CTime: convert to local time
+        ct.ToLocalTime();
+        string ct_loc = ct.AsString();
+        assert_equal(ct.GetTimeT(), timer);
+        
+        // CTime: convert back to UTC
+        ct.ToUniversalTime();
+        assert_equal(ct_utc, ct.AsString());
+        assert_equal(ct.GetTimeT(), timer);
+
+        #if 0
+            // Print local times and DST status:
+
+            cout << s_loc << " - " << ct_loc << endl;
+            sys_info info = tz_loc->get_info(t);
+            if (info.save != std::chrono::minutes{ 0 }) {
+                cout << "DST is active. Saving: " << info.save.count() << " min. " 
+                        << "Offset from UTC: " << info.offset.count() / 3600 << " hours." << endl;
+            }
+            else {
+                cout << "Standard Time (no DST). " 
+                        << "Offset from UTC: " << info.offset.count() / 3600 << " hours." << endl;
+            }
+        #endif
+
+        // Compare string representations
+        if (s_utc != ct_utc) {
+            ERR_POST(Error << "UTC time mismatch: " << s_utc << " != " << ct_utc);
+        }
+        if (s_loc != ct_loc) {
+            ERR_POST(Error << "Local time mismatch: " << s_loc << " != " << ct_loc);
+        }
+        assert_equal(s_utc, ct_utc);
+        assert_equal(s_loc, ct_loc);
+    }
+#else
+    ERR_POST(Note << "s_TestAgainstChrono() is disabled on this platform/compiler");
+#endif
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  Test application
 
@@ -745,6 +855,7 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
             s_TestMisc();
             s_TestFormats();
             s_TestGMT();
+            s_TestAgainstChrono();
         }
     } catch (CException& e) {
         ERR_FATAL(e);

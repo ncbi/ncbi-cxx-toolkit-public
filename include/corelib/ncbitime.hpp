@@ -59,6 +59,13 @@
 ///     information for some year in past will get incorrect results, 
 ///     if time zone rules changes since then. This affect local time only, 
 ///     any calculations with UTC time should be fine.
+/// 
+///     For example, the most recent change to Daylight Saving Time (DST)
+///     rules in the United States was made by the Energy Policy Act of 2005, 
+///     which took effect in 2007. That law moved the start of DST to the second
+///     Sunday in March and the end to the first Sunday in November each year 
+///     - and that schedule is still in use today. So CTime uses this information
+///     even for all dates starting from 1970 and for now.
 ///
 ///  4) Do not use DataBase conversion functions for dates prior to January 1, 1900.
 

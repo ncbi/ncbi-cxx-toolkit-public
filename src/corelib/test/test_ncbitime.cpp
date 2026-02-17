@@ -29,9 +29,9 @@
  *   Test for CTime - the standard Date/Time class.
  *
  * NOTE: 
- *   The time change dates for Daylight Saving Time in the U.S. and 
+ *   The time change dates for Daylight Saving Time in the US. and 
  *   Europe are different. Because this test have hardcoded dates, it works
- *   only on the machines with the same DST standards as in the U.S. 
+ *   only on the machines with US timezones.
  *
  */
 
@@ -41,6 +41,8 @@
 #include <corelib/ncbisys.hpp>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
+#include <format>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -1141,7 +1143,7 @@ static void s_TestUTC(void)
         }
     }}
     //------------------------------------------------------------------------
-    // Test AdjusyTime -- EST timezone only
+    // Test AdjustTime -- EST timezone only
     {{   
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("03/11/2007 01:01:00");
@@ -1215,6 +1217,105 @@ static void s_TestUTC(void)
         assert(tn.AsString() == "11/04/2007 00:01:00");
         assert(te.AsString() == "11/04/2007 19:01:00");
     }}
+}
+
+
+//============================================================================
+//
+// Test UTC/Local time against std::chrono (C++ 20)
+//
+// Calendars and Time zones available in STD lib since version 201907L:
+// https://en.cppreference.com/w/cpp/experimental/feature_test.html#cpp_lib_chrono
+// 
+//============================================================================
+
+static void s_TestAgainstChrono(void)
+{
+#if __cpp_lib_chrono >= 201907L
+
+    using namespace std::chrono;
+
+    const time_zone* tz_loc;
+    try {
+        tz_loc = current_zone();
+    }
+    catch (const std::exception& e) {
+        ERR_POST(Note << "std::chrono tzdata is unavailable: " << e.what());
+        return;
+    }
+
+    // On Windows CTime works with last DST rules for a current timezone only.
+    // In the the United States they changed by the Energy Policy Act of 2005,
+    // which took effect in 2007. That law moved the start of DST to 
+    // the second Sunday in March and the end to the first Sunday in November
+    // each year - and that schedule is still in use today.
+    // The std::chrono can use full tzdata, so it produce correct local time.
+    // Unix works for full dates range too.
+
+#if defined(NCBI_OS_MSWIN)
+    // Start: 2007-01-01 11:00:00 (UTC)
+    sys_seconds start = sys_days{ year{2007}/1/1 } + 11h;
+#else
+    // Start: 1970-01-01 11:00:00 (UTC)
+    sys_seconds start = sys_days{ year{1970}/1/1 } + 11h;
+#endif
+    // End: now (rounded down to seconds)
+    sys_seconds end = floor<seconds>(system_clock::now());
+
+    CTime::SetFormat("Y-M-D h:m:s");
+
+    for (sys_seconds t = start; t <= end; t += 24h) {
+
+        sys_seconds         t_utc = t;
+        zoned_time<seconds> t_loc{ tz_loc, t };
+        string s_utc = std::format("{:%F %T}", t);
+        string s_loc = std::format("{:%F %T}", t_loc);
+
+        time_t timer = system_clock::to_time_t(t_utc);
+
+        // CTime: create as UTC time
+        CTime ct(timer);
+        string ct_utc = ct.AsString();
+        assert(ct.GetTimeT() == timer);
+
+        // CTime: convert to local time
+        ct.ToLocalTime();
+        string ct_loc = ct.AsString();
+        assert(ct.GetTimeT() == timer);
+        
+        // CTime: convert back to UTC
+        ct.ToUniversalTime();
+        assert(ct_utc == ct.AsString());
+        assert(ct.GetTimeT() == timer);
+
+        #if 0
+            // Print local times and DST status:
+
+            cout << s_loc << " - " << ct_loc << endl;
+            sys_info info = tz_loc->get_info(t);
+            if (info.save != std::chrono::minutes{ 0 }) {
+                cout << "DST is active. Saving: " << info.save.count() << " min. " 
+                        << "Offset from UTC: " << info.offset.count() / 3600 << " hours." << endl;
+            }
+            else {
+                cout << "Standard Time (no DST). " 
+                        << "Offset from UTC: " << info.offset.count() / 3600 << " hours." << endl;
+            }
+        #endif
+
+        // Compare string representations
+        if (s_utc != ct_utc) {
+            ERR_POST(Error << "UTC time mismatch: " << s_utc << " != " << ct_utc);
+        }
+        if (s_loc != ct_loc) {
+            ERR_POST(Error << "Local time mismatch: " << s_loc << " != " << ct_loc);
+        }
+        assert(s_utc == ct_utc);
+        assert(s_loc == ct_loc);
+    }
+#else
+    ERR_POST(Note << "s_TestAgainstChrono() is disabled on this platform/compiler");
+#endif
 }
 
 
@@ -2436,6 +2537,7 @@ int main()
         #if ENABLE_SPEED_TESTS
             s_TestUTCSpeed();
         #endif
+        s_TestAgainstChrono();
         s_TestTimeSpan();
         s_TestTimeSpan_AsSmartString();
         s_TestTimeSpan_AssignFromSmartString();
