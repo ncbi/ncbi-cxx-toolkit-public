@@ -55,6 +55,7 @@
 #include <thread>
 #include <unordered_set>
 #include <sstream>
+#include <charconv>
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -1742,12 +1743,31 @@ CDiagContext::TUID CDiagContext::GetUID(void) const
 }
 
 
+namespace {
+
+char* s_WriteHex8(char* ptr, uint32_t val) {
+    auto res = std::to_chars(ptr, ptr + 8, val, 16);
+    int written = res.ptr - ptr;
+    if (written < 8) {
+        std::move_backward(ptr, res.ptr, ptr + 8);
+        std::fill(ptr, ptr + (8 - written), '0');
+    }
+    for (int i = 0; i < 8; ++i) {
+        if (ptr[i] >= 'a' && ptr[i] <= 'f') ptr[i] -= 32;
+    }
+    return ptr + 8;
+}
+
+}
+
 void CDiagContext::GetStringUID(TUID uid, char* buf, size_t buflen) const
 {
     _ASSERT(buflen > 16);
     int hi = int((uid >> 32) & 0xFFFFFFFF);
     int lo = int(uid & 0xFFFFFFFF);
-    snprintf(buf, buflen, "%08X%08X", hi, lo);
+    buf = s_WriteHex8(buf, hi);
+    buf = s_WriteHex8(buf, lo);
+    *buf = '\0';
 }
 
 
@@ -1809,7 +1829,11 @@ string CDiagContext::x_GetNextHitID(bool is_default) const
     Uint4 b1 = Uint4((lo >> 32) & 0xFFFFFFFF);
     Uint4 b0 = Uint4(lo & 0xFFFFFFFF);
     char buf[33];
-    snprintf(buf, 33, "%08X%08X%08X%08X", b3, b2, b1, b0);
+    char* p = s_WriteHex8(buf, b3);
+    p = s_WriteHex8(p, b2);
+    p = s_WriteHex8(p, b1);
+    p = s_WriteHex8(p, b0);
+    *p = '\0';
     return string(buf);
 }
 
@@ -5493,14 +5517,13 @@ private:
 
 string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
-    static const char* s_BadSymbolPrefix = "[INVALID_APPLOG_SYMBOL:";
-    static const char* s_BadSymbolSuffix = "]";
-    static const size_t s_BadSymbolPrefixLen = strlen(s_BadSymbolPrefix);
-    static const CTempString s_EncodedSpace = "%20";
+    static constexpr const char* s_BadSymbolPrefix = "[INVALID_APPLOG_SYMBOL:";
+    static constexpr size_t s_BadSymbolPrefixLen = strlen(s_BadSymbolPrefix);
+    static constexpr const char* s_BadSymbolSuffix = "]";
+    static constexpr size_t s_BadSymbolSuffixLen = strlen(s_BadSymbolSuffix);
+    static constexpr const char* s_EncodedSpace = "%20";
 
     vector<CTempString> parts;
-    parts.resize(src.length() + 2); // adjust for possible invalid symbol message
-    size_t part_idx = 0;
     const char* src_data = src.data();
     const bool warn_bad_name = (stype == eName && !m_AllowBadNames);
     size_t good_start = 0;
@@ -5512,45 +5535,38 @@ string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 
         // Save good chars, if any.
         if (good_start < pos) {
-            CTempString& good_part = parts[part_idx++];
-            good_part.assign(src_data + good_start, pos - good_start);
-            total_len += good_part.size();
+            parts.push_back(CTempString(src_data + good_start, pos - good_start));
+            total_len += parts.back().size();
         }
 
         if (warn_bad_name) {
-            CTempString& warn_part = parts[part_idx++];
-            warn_part.assign(s_BadSymbolPrefix, s_BadSymbolPrefixLen);
+            parts.push_back(s_BadSymbolPrefix);
             total_len += s_BadSymbolPrefixLen;
         }
-        CTempString& enc_part = parts[part_idx++];
-        enc_part.assign((c == ' ' && warn_bad_name) ? s_EncodedSpace : enc);
-        total_len += enc_part.size();
+
+        parts.push_back((c == ' ' && warn_bad_name) ? s_EncodedSpace : enc);
+        total_len += parts.back().size();
+        
         if (warn_bad_name) {
-            CTempString& warn2_part = parts[part_idx++];
-            warn2_part.assign(s_BadSymbolSuffix, 1);
-            total_len++;
+            parts.push_back(s_BadSymbolSuffix);
+            total_len += s_BadSymbolSuffixLen;
         }
         good_start = pos + 1;
-
-        if (part_idx + 3 >= parts.size()) parts.resize(parts.size() * 2);
     }
 
     if (good_start < src.size()) {
-        CTempString& good_part = parts[part_idx++];
-        good_part.assign(src_data + good_start, src.size() - good_start);
-        total_len += good_part.size();
+        parts.push_back(CTempString(src_data + good_start, src.size() - good_start));
+        total_len += parts.back().size();
     }
 
-    char* buf = new char[total_len];
+    char buf[total_len];
     char* pos = buf;
-    for (size_t i = 0; i < part_idx; ++i) {
+    for (size_t i = 0; i < parts.size(); ++i) {
         const CTempString& part = parts[i];
         strncpy(pos, part.data(), part.size());
         pos += part.size();
     }
-    string ret(buf, total_len);
-    delete[] buf;
-    return ret;
+    return string(buf, total_len);
 }
 
 
@@ -5567,8 +5583,13 @@ string SDiagMessage::FormatExtraMessage(void) const
 // 0xFF -> 0xFF 0xFF
 void SDiagMessage::s_EscapeNewlines(string& buf)
 {
-    size_t p = buf.find_first_of("\n\v\377");
-    if (p == NPOS) return;
+    //size_t p = buf.find_first_of("\n\v\377");
+    //if (p == NPOS) return;
+    const char* b = buf.c_str();
+    const char* f = strpbrk(b, "\n\v\377");
+    if ( !f ) return;
+    size_t p = f - b;
+
     for (; p < buf.size(); p++) {
         switch (buf[p]) {
         case '\377':
