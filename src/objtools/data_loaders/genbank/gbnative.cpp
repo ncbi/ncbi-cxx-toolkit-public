@@ -1145,6 +1145,38 @@ CGBDataLoader_Native::GetBlobById(const TBlobId& id)
 }
 
 
+vector<CDataLoader::TTSE_Lock>
+CGBDataLoader_Native::GetBlobsById(const vector<TBlobId>& ids)
+{
+    vector<TTSE_Lock> tse_locks(ids.size());
+    CGBReaderRequestResult result(this, CSeq_id_Handle());
+    CReadDispatcher::TBlobInfos blobs_to_load;
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        CConstRef<CBlob_id> blob_id(&dynamic_cast<const CBlob_id&>(*ids[i]));
+        CLoadLockBlob blob(result, *blob_id);
+        if ( !blob.IsLoadedBlob() ) {
+            blobs_to_load.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
+        }
+        else {
+            tse_locks[i] = blob.GetTSE_LoadLock();
+        }
+    }
+    if ( !empty(blobs_to_load) ) {
+        m_Dispatcher->LoadBlobs(result, blobs_to_load);
+    }
+    for ( size_t i = 0; i < ids.size(); ++i ) {
+        if ( tse_locks[i] ) {
+            continue;
+        }
+        CConstRef<CBlob_id> blob_id(&dynamic_cast<const CBlob_id&>(*ids[i]));
+        CLoadLockBlob blob(result, *blob_id);
+        _ASSERT(blob.IsLoadedBlob());
+        tse_locks[i] = blob.GetTSE_LoadLock();
+    }
+    return tse_locks;
+}
+
+
 namespace {
     struct SBetterId
     {

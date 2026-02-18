@@ -176,6 +176,7 @@ public:
     virtual TBlobVersion GetBlobVersion(const TBlobId& id) override;
     virtual bool CanGetBlobById(void) const override;
     virtual TTSE_Lock GetBlobById(const TBlobId& id) override;
+    virtual vector<TTSE_Lock> GetBlobsById(const vector<TBlobId>& id) override;
 
     // Setup loader using param tree. If tree is null or failed to find params,
     // use environment or select default reader.
