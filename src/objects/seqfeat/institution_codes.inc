@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Sat Feb 14 05:33:04 EST 2026; formally
+/* time_t value corresponding to Wed Feb 18 05:33:05 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1771065184UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1771410785UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -284,6 +284,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AMUZ\ts\tAligarh Muslim University\t\t\t",
 "AMWH\ts\tAmway Herbarium\t\t\t",
 "ANA\ts\tOrange County Department of Agriculture\t\t\t",
+"ANACC\tc\tAustralian National Algae Culture Collection\t\t\t",
 "ANC\ts\tUniversita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali\t\t\t",
 "ANCB\ts\tMuseo Nacional de Historia Natural, La Paz\t\t\t",
 "AND\ts\tSlezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department\t\t\t",
@@ -702,6 +703,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BioCC\tc\tBioCC BioCen Culture Collection\t\t\t",
 "BIOLACHC\ts\tUniversity of Belgrade, Institute of Chemistry, Technology and Metallurgy - National Institute of the Republic of Serbia\t\t\t",
 "BIOT\ts\tRegional Center for Tropical Biology\t\t\t",
+"BIOUG<CAN>\ts\tBiodiversity Institute of Ontario, University of Guelph\tBIO,UOG:BIO\t\t",
 "BIPB\ts\tBarbara I. P. Barratt\t\t\t",
 "BIRA\ts\tBirmingham Museums and Art Gallery, Curatorial Services\t\t\t",
 "Bird\ts\tBird Collection\t\t\t",
@@ -716,6 +718,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BJB\ts\tHon. Balasaheb Jadhav college Ale\t\t\t",
 "BJFC\ts\tBeijing Forestry University\tBJFU\t\t",
 "BJM\ts\tBeijing Natural History Museum\t\t\t",
+"BJRI\tb\tGene bank at Bangladesh Jute Research Institute\t\t\t",
 "BJSC\ts\tBilly J. Smith\t\t\t",
 "BJTC\ts\tCapital Normal University, Biology Department\t\t\t",
 "BK\ts\tBangkok Herbarium\t\t\t",
@@ -801,6 +804,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BOCH\ts\tRuhr-Universitaet Bochum, Spezielle Botanik\t\t\t",
 "BOD\ts\tUniversity of Oxford\t\t\t",
 "BOG\ts\tUniversidad de La Salle\t\t\t",
+"BOGOS\tb\tBotanical Garden of Osnabruck University\t\t\t",
 "BOIS\ts\tRocky Mountain Research Station\t\t\t",
 "BOL\ts\tBolus Herbarium, University of Cape Town\t\t\t",
 "BOLO\ts\tUniversita di Bologna\t\t\t",
@@ -849,7 +853,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BREM\ts\tUbersee-Museum Bremen\t\t\t",
 "BRF\ts\tBlack Rock Forest\t\t\t",
 "BRFL\ts\tCity of Birmingham Reference Library\t\t\t",
-"BRFM<FRA>\tc\tBanque de Ressources Fongiques de Marseille\t\t\t",
+"BRFM\tc\tBanque de Ressources Fongiques de Marseille\t\t\t",
 "BRG\ts\tUniversity of Guyana, Biology Department\t\t\t",
 "BRGE\ts\tLaboratoire de Genetique des Plantes Superieures\t\t\t",
 "BRH\ts\tMinistry of Natural Resources, Local Government, and the Environment\t\t\t",
@@ -972,7 +976,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CAB\tc\tYeast Collection of Department of Microbiology, Stellenbosch University\t\t\t",
 "CABI\tsc\tCABI Genetic Resource Collection\tIMI\thttp://194.203.77.76/grc/DisplayResults.asp?strGRCNumber=#S#\t",
 "CACA\ts\tCarlsbad Caverns National Park\t\t\t",
-"CACC<CHN>\tc\tChina Antibiotic Culture Collection Center\t\t\t",
+"CACC\tc\tChina Antibiotic Culture Collection Center\t\t\t",
 "CACS\ts\tChicago Academy of Sciences, Department of Biology\t\t\t",
 "CAEN<FRA>\ts\tJardin Botanique de la Ville de Caen\t\t\t",
 "CAES\ts\tConnecticut Agriculture Experiment Station\t\t\t",
@@ -1178,7 +1182,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCNU\tsc\tCentral China Normal University, Biology Department\t\t\t",
 "CCNY\ts\tCity College of New York, Biology Department, New York, NY\t\t\t",
 "CCO\ts\tCarleton University, Biology Department\t\t\t",
-"CCOS<CHE>\tc\tCulture Collection of Switzerland\t\t\t",
+"CCOS\tc\tCulture Collection of Switzerland\t\t\t",
 "CCP\tc\tCulture Collection of Porto, Faculty of Pharmacy\t\t\t",
 "CCPC\ts\tCharles C. Porter\t\t\t",
 "CCPF\tc\tCollection of Phytopathogenic Fungi\t\t\t",
@@ -9479,13 +9483,13 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZUEC:REP\ts\tMuseu de Zoologia da Universidade Estadual de Campinas,\t\t\t",
 "ZUFES\ts\tUniversidad Federal do Espirito Santo\t\t\t",
 "ZUFRJ\ts\tDepartamento de Zoolgia, Instituto de Biologia\t\t\t",
-"ZUFSM<BRA>\ts\tUniversidade Federal de Santa Maria, Laboratorio de Herpetologia\t\t\t",
+"ZUFSM\ts\tUniversidade Federal de Santa Maria, Laboratorio de Herpetologia\t\t\t",
 "ZULU\ts\tUniversity of Zululand, Botany Department\t\t\t",
 "ZUMT\ts\tDepartment of Zoology, University Museum\tUMUTZ\t\t",
 "ZUTC\ts\tZoological Museum University of Tehran\t\t\t",
 "ZV\ts\tTechnical University, Department of Phytology\t\t\t",
 "ZVC\ts\tDepto. de Zoologia Vertebrados de la Facultad de Humanidades y Ciencias\t\t\t",
-"ZVCB<URY>\ts\tVertebrate Collection, Facultad de Ciencias, Universidad de la Republica\t\t\t",
+"ZVCB\ts\tVertebrate Collection, Facultad de Ciencias, Universidad de la Republica\t\t\t",
 "ZY\ts\tZunyi Normal College\t\t\t",
 "ZYTC\ts\tZhangye Teachers College, Chemistry-Biology Department\t\t\t",
 "ZZN\tc\tZavod za naravoslovje\t\t\t",
