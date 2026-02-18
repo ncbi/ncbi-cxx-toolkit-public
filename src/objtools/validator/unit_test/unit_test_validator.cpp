@@ -8483,7 +8483,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("TMC");
     ambig.push_back("HUT");
     ambig.push_back("ZMUO");
-    ambig.push_back("ALM");
     ambig.push_back("ITCC");
     ambig.push_back("TM");
     ambig.push_back("WB");
