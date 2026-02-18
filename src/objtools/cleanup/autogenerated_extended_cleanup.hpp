@@ -52,7 +52,6 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Map_ext.hpp>
@@ -100,7 +99,6 @@ private:
 
   void x_ExtendedCleanupSeqAnnots(const CBioseq_Handle& bsh);
   void x_ExtendedCleanupSeqAnnots(list<CRef<CSeq_annot>>& annots);
-  void x_ExtendedCleanupGBBlock( CGB_block & arg0 );
   void x_ExtendedCleanupSeqdesc( CSeqdesc & arg0 );
   void x_ExtendedCleanupSeqdescr( CSeq_descr & arg0 );
   void x_ExtendedCleanupBioseq_inst( CSeq_inst & arg0 );

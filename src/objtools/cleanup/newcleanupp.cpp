@@ -7920,16 +7920,15 @@ struct SKeywordChecker {
 };
 
 
-bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech)
+static bool s_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech)
 {
     if (! blk.IsSetKeywords()) {
         return false;
     }
-    bool            any_change = false;
-    auto&           keywords   = blk.SetKeywords();
-    size_t          orig       = keywords.size();
-    SKeywordChecker matcher{ tech };
-    keywords.erase(std::remove_if(keywords.begin(), keywords.end(), matcher), keywords.end());
+    bool   any_change = false;
+    auto&  keywords   = blk.SetKeywords();
+    size_t orig       = keywords.size();
+    keywords.remove_if(SKeywordChecker{ tech });
 
     if (keywords.empty()) {
         blk.ResetKeywords();
@@ -7972,60 +7971,60 @@ bool s_SetMolinfoTechFromString(CMolInfo& molinfo, const string& keyword)
 
 // if molinfo is missing tech, try to set it using GB_block.div
 // note - may want to also do this with keywords later
-void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block)
-{
-    if (! block.IsSetDiv()) {
-        return;
-    }
-    for (auto pDesc : seq_descr.Set()) {
-        if (pDesc->IsMolinfo() &&
-            ! (pDesc->GetMolinfo().IsSetTech())) {
-            if (block.IsSetDiv() && s_SetMolinfoTechFromString(pDesc->SetMolinfo(), block.GetDiv())) {
-                block.ResetDiv();
-                ChangeMade(CCleanupChange::eChangeMolInfo);
-            }
-        }
-    }
-}
-
-
 void CNewCleanup_imp::x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr)
 {
-    for (auto pDesc : seq_descr.Set()) {
+    if (! seq_descr.IsSet()) {
+        return;
+    }
+
+    CRef<CSeqdesc> pMolInfo;
+    CRef<CSeqdesc> pGBBlock;
+
+    auto& dset = seq_descr.Set();
+    auto  it   = dset.begin();
+    while ((! pMolInfo || ! pGBBlock) && it != dset.end()) {
+        auto pDesc = *it;
         if (pDesc->IsGenbank()) {
-            x_SetMolInfoTechFromGenBankBlock(seq_descr, pDesc->SetGenbank());
+            pGBBlock = pDesc;
+        } else if (pDesc->IsMolinfo()) {
+            pMolInfo = pDesc;
+        }
+        ++it;
+    }
+
+    if (pMolInfo && pGBBlock && (! pMolInfo->GetMolinfo().IsSetTech()) && pGBBlock->GetGenbank().IsSetDiv()) {
+        auto& gb_block = pGBBlock->SetGenbank();
+        if (s_SetMolinfoTechFromString(pMolInfo->SetMolinfo(), gb_block.GetDiv())) {
+            gb_block.ResetDiv();
+            ChangeMade(CCleanupChange::eChangeMolInfo);
         }
     }
 }
 
-
-void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
+// Only changes Genbank-block descriptor
+void CNewCleanup_imp::CleanupGenbankBlock(CBioseq_set& set)
 {
     if (! set.IsSetDescr()) {
         return;
     }
-    auto& dset = set.SetDescr().Set();
 
     CConstRef<CBioSource> biosrc;
     CMolInfo::TTech       tech = CMolInfo::eTech_unknown;
 
-    for (auto it : dset) {
-        if (it->IsSource()) {
-            biosrc.Reset(&(it->GetSource()));
-        } else if (it->IsMolinfo() &&
-                   it->GetMolinfo().IsSetTech()) {
-            tech = it->GetMolinfo().GetTech();
+    auto& dset = set.SetDescr().Set();
+    for (auto pDesc : dset) {
+        if (pDesc->IsSource()) {
+            biosrc.Reset(&(pDesc->GetSource()));
+        } else if (pDesc->IsMolinfo() &&
+                   pDesc->GetMolinfo().IsSetTech()) {
+            tech = pDesc->GetMolinfo().GetTech();
         }
     }
 
-    for (auto descr_iter : dset) {
-        CSeqdesc& desc = *descr_iter;
-        if (! FIELD_IS(desc, Genbank)) {
-            continue;
+    for (auto pDesc : dset) {
+        if (pDesc->IsGenbank()) {
+            x_CleanupGenbankBlock(pDesc->SetGenbank(), false, biosrc, tech);
         }
-
-        CGB_block& gb = desc.SetGenbank();
-        x_CleanupGenbankBlock(gb, false, biosrc, tech);
     }
 }
 
@@ -8048,7 +8047,7 @@ string s_GetDiv(const CBioSource& src)
 }
 
 
-void RemoveStrain(string& src, const CBioSource& biosrc)
+static void s_RemoveStrain(string& src, const CBioSource& biosrc)
 {
     if (! biosrc.IsSetOrg()) {
         return;
@@ -8080,7 +8079,7 @@ void RemoveStrain(string& src, const CBioSource& biosrc)
 }
 
 
-bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc)
+static bool s_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc)
 {
     string compare = src;
     if (NStr::EndsWith(compare, " DNA.")) {
@@ -8092,7 +8091,7 @@ bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBi
         compare = compare.substr(0, compare.length() - 1);
         NStr::TruncateSpacesInPlace(compare);
     }
-    RemoveStrain(compare, biosrc);
+    s_RemoveStrain(compare, biosrc);
 
     if (biosrc.IsSetOrg()) {
         const auto& org = biosrc.GetOrg();
@@ -8142,19 +8141,39 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, CCons
         } else if (SKeywordChecker{ tech }(gb.GetDiv())) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
+        } else if (NStr::Equal(gb.GetDiv(), "UNA") ||
+                   NStr::Equal(gb.GetDiv(), "UNC") ||
+                   NStr::IsBlank(gb.GetDiv())) {
+            gb.ResetDiv();
+            ChangeMade(CCleanupChange::eChangeOther);
         }
     }
-    if (gb.IsSetSource() && biosrc && x_CanRemoveGenbankBlockSource(gb.GetSource(), *biosrc)) {
+    if (gb.IsSetTaxonomy()) {
+        gb.ResetTaxonomy();
+        ChangeMade(CCleanupChange::eChangeOther);
+    }
+    if (gb.IsSetSource() && biosrc && s_CanRemoveGenbankBlockSource(gb.GetSource(), *biosrc)) {
         gb.ResetSource();
         ChangeMade(CCleanupChange::eChangeOther);
     }
-    if (x_CleanGenbankKeywords(gb, tech)) {
+    if (s_CleanGenbankKeywords(gb, tech)) {
         ChangeMade(CCleanupChange::eChangeKeywords);
+    }
+    
+    if (gb.IsSetOrigin()) {
+        TrimInternalSemicolonsMarkChanged(gb.SetOrigin());
     }
 }
 
 
-void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
+static bool s_IsPatent(const CBioseq& bioseq)
+{
+    const auto& ids = bioseq.GetId();
+    return find_if(ids.begin(), ids.end(), [](const CRef<CSeq_id>& pId) { return pId->IsPatent(); }) != ids.end();
+}
+
+// Modifies Genbank block and MolInfo descriptors
+void CNewCleanup_imp::CleanupGenbankBlock(CBioseq& seq)
 {
     if (! seq.IsSetDescr() ||
         ! seq.GetDescr().IsSet()) {
@@ -8163,12 +8182,6 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
 
     // This method can modify both molinfo and genbank block
     x_SetMolInfoTechFromGenBankBlock(seq.SetDescr());
-    bool is_patent = false;
-    ITERATE (CBioseq::TId, id, seq.GetId()) {
-        if ((*id)->IsPatent()) {
-            is_patent = true;
-        }
-    }
     CBioseq_Handle        bsh = m_Scope->GetBioseqHandle(seq);
     CConstRef<CBioSource> biosrc;
     CSeqdesc_CI           src(bsh, CSeqdesc::e_Source);
@@ -8176,43 +8189,15 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq& seq)
         biosrc.Reset(&(src->GetSource()));
     }
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
-    CSeqdesc_CI     molinfo(bsh, CSeqdesc::e_Molinfo);
-    if (molinfo && molinfo->GetMolinfo().IsSetTech()) {
+    CSeqdesc_CI     molinfo(bsh, CSeqdesc::e_Molinfo); // Is this actually necessary? Can we restrict the search to sequence-level descriptors?
+    if (molinfo && molinfo->GetMolinfo().IsSetTech()) { 
         tech = molinfo->GetMolinfo().GetTech();
     }
 
     for (auto pDesc : seq.SetDescr().Set()) {
         if (pDesc->IsGenbank()) {
-            CGB_block& gb = pDesc->SetGenbank();
-            x_CleanupGenbankBlock(gb, is_patent, biosrc, tech);
-        }
-    }
-}
-
-
-void CNewCleanup_imp::x_CleanupGenbankBlock(CSeq_descr& seq_descr)
-{
-    EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, seq_descr)
-    {
-        CSeqdesc& desc = **descr_iter;
-        if (! FIELD_IS(desc, Genbank)) {
-            continue;
-        }
-
-        CGB_block& gb = desc.SetGenbank();
-
-        if (gb.IsSetTaxonomy()) {
-            gb.ResetTaxonomy();
-            ChangeMade(CCleanupChange::eChangeOther);
-        }
-
-        if (gb.IsSetDiv()) {
-            if (NStr::Equal(gb.GetDiv(), "UNA") ||
-                NStr::Equal(gb.GetDiv(), "UNC") ||
-                NStr::IsBlank(gb.GetDiv())) {
-                gb.ResetDiv();
-                ChangeMade(CCleanupChange::eChangeOther);
-            }
+            bool is_patent = s_IsPatent(seq);
+            x_CleanupGenbankBlock(pDesc->SetGenbank(), is_patent, biosrc, tech);
         }
     }
 }
@@ -8291,7 +8276,7 @@ CMolInfo::TTech s_TechFromGIBBMethod(EGIBB_method method)
 }
 
 
-bool SetMolinfoFromGIBBMod(CMolInfo& mi, EGIBB_mod mod)
+static bool s_SetMolinfoFromGIBBMod(CMolInfo& mi, EGIBB_mod mod)
 {
     bool changed = false;
     switch (mod) {
@@ -8329,65 +8314,74 @@ bool SetMolinfoFromGIBBMod(CMolInfo& mi, EGIBB_mod mod)
     return changed;
 }
 
-
-void CNewCleanup_imp::x_RescueMolInfo(CBioseq& seq)
+// RescueMolInfo(CBioseq& seq)
+// Instantiates or updates MolInfo descriptor using Method, Moltype, and Modif descriptors.
+// Removes redundant Method and Moltype descriptors.
+// Note that all Method and Moltype descriptors are eventually removed in 
+// x_RemoveOldDescroptors(). Should they removed here instead.
+void CNewCleanup_imp::RescueMolInfo(CBioseq& seq)
 {
     if (! seq.IsSetDescr()) {
         return;
     }
 
-    CRef<CSeqdesc>              d;
-    CRef<CMolInfo>              mi(new CMolInfo());
-    CSeq_descr::Tdata::iterator it = seq.SetDescr().Set().begin();
-    while (it != seq.SetDescr().Set().end()) {
-        if ((*it)->IsMolinfo()) {
-            d = *it;
-            mi->Assign((*it)->GetMolinfo());
-        }
-        ++it;
+    CRef<CSeqdesc>              pMolInfoDesc;
+
+    bool update_existing_molinfo = false;
+    auto& dset = seq.SetDescr().Set();
+    auto it = dset.begin();
+    if (auto it = find_if(dset.begin(), dset.end(), [](const auto& pDesc) { return pDesc->IsMolinfo(); });
+            it != dset.end()) {
+        pMolInfoDesc = *it;
+        update_existing_molinfo = true;
+    } else  {
+        pMolInfoDesc = Ref(new CSeqdesc());
     }
+
+    auto& molinfo = pMolInfoDesc->SetMolinfo();
+
     bool any_change = false;
-    it              = seq.SetDescr().Set().begin();
-    while (it != seq.SetDescr().Set().end()) {
+    it = dset.begin();
+    while (it != dset.end()) {
         bool erase = false;
-        if ((*it)->IsMol_type()) {
-            CMolInfo::TBiomol biomol = s_BiomolFromGIBBMolType((*it)->GetMol_type());
-            if (! mi->IsSetBiomol()) {
-                mi->SetBiomol(biomol);
+        auto pDesc = *it;
+        if (pDesc->IsMol_type()) {
+            auto biomol = s_BiomolFromGIBBMolType(pDesc->GetMol_type());
+            if (! molinfo.IsSetBiomol()) {
+                molinfo.SetBiomol(biomol);
                 any_change = true;
                 erase      = true;
-            } else if (mi->GetBiomol() == biomol) {
+            } else if (molinfo.GetBiomol() == biomol) {
                 erase = true;
             }
-        } else if ((*it)->IsMethod()) {
-            CMolInfo::TTech tech = s_TechFromGIBBMethod((*it)->GetMethod());
-            if (! mi->IsSetTech()) {
-                mi->SetTech(tech);
+        } else if (pDesc->IsMethod()) {
+            auto tech = s_TechFromGIBBMethod(pDesc->GetMethod());
+            if (! molinfo.IsSetTech()) {
+                molinfo.SetTech(tech);
                 any_change = true;
                 erase      = true;
-            } else if (mi->GetTech() == tech) {
+            } else if (molinfo.GetTech() == tech) {
                 erase = true;
             }
-        } else if ((*it)->IsModif()) {
-            ITERATE (CSeqdesc::TModif, m, (*it)->GetModif()) {
-                any_change |= SetMolinfoFromGIBBMod(*mi, *m);
+        } else if (pDesc->IsModif()) {
+            for(auto mod : pDesc->GetModif()) {
+                any_change |= s_SetMolinfoFromGIBBMod(molinfo, mod);
             }
         }
+
         if (erase) {
-            it = seq.SetDescr().Set().erase(it);
+            it = dset.erase(it);
             ChangeMade(CCleanupChange::eRemoveDescriptor);
         } else {
             ++it;
         }
     }
+
     if (any_change) {
-        if (d) {
-            d->SetMolinfo().Assign(*mi);
+        if (update_existing_molinfo) {
             ChangeMade(CCleanupChange::eChangeMolInfo);
         } else {
-            d.Reset(new CSeqdesc());
-            d->SetMolinfo().Assign(*mi);
-            seq.SetDescr().Set().push_back(d);
+            dset.push_back(pMolInfoDesc);
             ChangeMade(CCleanupChange::eAddDescriptor);
         }
     }
@@ -8412,7 +8406,7 @@ void CNewCleanup_imp::x_RemoveOldDescriptors(CSeq_descr& seq_descr)
 }
 
 
-bool CNewCleanup_imp::x_IsGenbankBlockEmpty(const CGB_block& gbk)
+static bool s_IsGenbankBlockEmpty(const CGB_block& gbk)
 {
     if ((gbk.IsSetExtra_accessions() && ! gbk.GetExtra_accessions().empty()) ||
         (gbk.IsSetSource() && ! NStr::IsBlank(gbk.GetSource())) ||
@@ -8440,7 +8434,7 @@ void CNewCleanup_imp::x_RemoveEmptyDescriptors(CSeq_descr& seq_descr)
                 blk.ResetTaxonomy();
                 ChangeMade(CCleanupChange::eChangeOther);
             }
-            if (x_IsGenbankBlockEmpty(blk)) {
+            if (s_IsGenbankBlockEmpty(blk)) {
                 ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
                 ChangeMade(CCleanupChange::eRemoveDescriptor);
             }
