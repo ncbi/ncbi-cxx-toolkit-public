@@ -465,7 +465,8 @@ void CTSE_Split_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
         CMutexGuard guard(m_SeqIdToChunksMutex);
         for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
               iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-            if ( GetChunk(iter->second).ContainsBioseq(id) ) {
+            auto& chunk = GetChunk(iter->second);
+            if ( !chunk.IsLoaded() && chunk.ContainsBioseq(id) ) {
                 chunk_ids.push_back(iter->second);
             }
         }
@@ -487,7 +488,8 @@ void CTSE_Split_Info::x_GetRecords(const map<size_t, CSeq_id_Handle>& ids, bool 
         for ( auto& [ i, id ] : ids ) {
             for ( TSeqIdToChunks::const_iterator iter = x_FindChunk(id);
                   iter != m_SeqIdToChunks.end() && iter->first == id; ++iter ) {
-                if ( GetChunk(iter->second).ContainsBioseq(id) ) {
+                auto& chunk = GetChunk(iter->second);
+                if ( !chunk.IsLoaded() && chunk.ContainsBioseq(id) ) {
                     chunk_ids.push_back(iter->second);
                 }
             }
@@ -553,6 +555,9 @@ void CTSE_Split_Info::x_LoadChunk(TChunkId chunk_id) const
 
 void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
+    if ( chunk_ids.empty() ) {
+        return;
+    }
     if ( CPrefetchManager::IsActive() ) {
         ITERATE ( TChunkIds, it, chunk_ids ) {
             LoadChunk(*it);
@@ -606,6 +611,9 @@ void CTSE_Split_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 void CTSE_Split_Info::x_LoadChunks(CDataLoader* loader,
                                    const vector<CConstRef<CTSE_Chunk_Info>>& src_chunks)
 {
+    if ( src_chunks.empty() ) {
+        return;
+    }
     vector<CRef<CTSE_Chunk_Info>> sorted_chunks;
     sorted_chunks.reserve(src_chunks.size());
     for ( auto& chunk : src_chunks ) {
