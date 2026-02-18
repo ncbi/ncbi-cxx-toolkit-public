@@ -434,6 +434,7 @@ public:
 
     virtual bool CanGetBlobById(void) const;
     virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+    virtual vector<TTSE_Lock> GetBlobsById(const vector<TBlobId>& blob_ids);
 
     virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
     virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const;
@@ -499,7 +500,7 @@ private:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 9, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 10, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CDataLoader>
