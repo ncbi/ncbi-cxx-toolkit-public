@@ -351,6 +351,13 @@ CPSGDataLoader::GetBlobById(const TBlobId& blob_id)
 }
 
 
+vector<CDataLoader::TTSE_Lock>
+CPSGDataLoader::GetBlobsById(const vector<TBlobId>& blob_ids)
+{
+    return m_Impl->GetBlobsById(GetDataSource(), blob_ids);
+}
+
+
 void CPSGDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     m_Impl->GetIds(idh, ids);

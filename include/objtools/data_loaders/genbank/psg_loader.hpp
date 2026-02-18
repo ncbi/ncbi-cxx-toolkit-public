@@ -141,6 +141,7 @@ public:
 
     bool CanGetBlobById(void) const override;
     TTSE_Lock GetBlobById(const TBlobId& blob_id) override;
+    vector<TTSE_Lock> GetBlobsById(const vector<TBlobId>& blob_ids) override;
 
     TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice) override;
 

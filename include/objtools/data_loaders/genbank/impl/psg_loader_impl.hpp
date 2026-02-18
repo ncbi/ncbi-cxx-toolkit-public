@@ -112,6 +112,11 @@ public:
                           const CPsgBlobId& blob_id);
     CTSE_Lock GetBlobByIdOnce(CDataSource* data_source,
                               const CPsgBlobId& blob_id);
+    vector<CTSE_Lock> GetBlobsById(CDataSource* data_source,
+                                   const vector<CDataLoader::TBlobId>& blob_ids);
+    void GetBlobsByIdOnce(CDataSource* data_source,
+                          const vector<CDataLoader::TBlobId>& blob_ids,
+                          vector<CTSE_Lock>& ret);
     void LoadChunk(CDataSource* data_source,
                    CTSE_Chunk_Info& chunk_info);
     void LoadChunks(CDataSource* data_source,
