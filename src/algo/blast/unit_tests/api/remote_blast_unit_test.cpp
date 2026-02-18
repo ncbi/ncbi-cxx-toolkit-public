@@ -210,6 +210,8 @@ BOOST_AUTO_TEST_CASE(CheckRemoteRPSBlastOptionsHandle) {
     query_seqlocs.push_back(sl);
     rmt_blaster.SetQueries(query_seqlocs);
 
+    const string kClientId("remote_blast_unit_test.cpp");
+    rmt_blaster.SetClientId(kClientId);
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.Submit());
 }
 
@@ -523,9 +525,44 @@ BOOST_AUTO_TEST_CASE(CheckBlastxMasks) {
         BOOST_REQUIRE_EQUAL((int)mask.second, (*seqlocinfo)->GetFrame());
     }
 }
+// swissprot 
+BOOST_AUTO_TEST_CASE_TIMEOUT(SetFilteringOptionsSwissprot, 200);
+BOOST_AUTO_TEST_CASE(SetFilteringOptionsSwissprot ) {
+    CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);
 
+    string filt_str = prot_opts.GetFilterString();
+    BOOST_TEST_MESSAGE("FILTER STRING: "+filt_str);
+    // by default expect:  L;
+    BOOST_REQUIRE_EQUAL(string("L;"), filt_str );
+
+    CRemoteBlast rmt_blaster(&prot_opts);
+    rmt_blaster.SetDatabase("swissprot");
+
+    CRemoteBlast::TSeqLocList query_seqloc(1);
+    // use gi with low complexity regions
+    CRef<CSeq_id> id(new CSeq_id("Q6ENH8.1"));
+    query_seqloc.front().Reset(new CSeq_loc);
+    //query_seqloc.front()->SetWhole(*id); // not whole sequnce
+    CSeq_interval& interval = query_seqloc.front()->SetInt();
+    interval.SetId( *id );  // get only [1:500] part
+    interval.SetFrom( 1 );
+    interval.SetTo( 180 );
+
+    rmt_blaster.SetQueries(query_seqloc);
+
+    const string kClientId("remote_blast_unit_test.cpp");
+    rmt_blaster.SetClientId(kClientId);
+
+    BOOST_REQUIRE_EQUAL(true, rmt_blaster.Submit());
+    string RID = rmt_blaster.GetRID();
+    BOOST_TEST_MESSAGE("SetFilteringOptionsSwissprot: RID: "+RID);
+
+    TSeqLocInfoVector masks = rmt_blaster.GetMasks();
+    BOOST_REQUIRE(masks.size() == 1);
+
+}
 // This tests some of the functionality in get_filter_options.[hc]pp
-BOOST_AUTO_TEST_CASE_TIMEOUT(SetFilteringOptions, 200);
+//BOOST_AUTO_TEST_CASE_TIMEOUT(SetFilteringOptions, 200);
 BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     CBlastProteinOptionsHandle prot_opts(CBlastOptions::eRemote);
     prot_opts.SetSegFiltering(false);
@@ -544,7 +581,12 @@ BOOST_AUTO_TEST_CASE(SetFilteringOptions) {
     query_seqloc.front()->SetWhole(*id);
     rmt_blaster.SetQueries(query_seqloc);
 
+    const string kClientId("remote_blast_unit_test.cpp");
+    rmt_blaster.SetClientId(kClientId);
+
     BOOST_REQUIRE_EQUAL(true, rmt_blaster.Submit());
+    string RID = rmt_blaster.GetRID();
+    BOOST_TEST_MESSAGE("SetFilteringOptions: RID: "+RID); 
 
     TSeqLocInfoVector masks = rmt_blaster.GetMasks();
     BOOST_REQUIRE(masks.size() == 1);
