@@ -248,6 +248,7 @@ AMS:R	s	Australian Museum, Reptile collection	AMSR
 AMUZ	s	Aligarh Muslim University			
 AMWH	s	Amway Herbarium			
 ANA	s	Orange County Department of Agriculture			
+ANACC	c	Australian National Algae Culture Collection			
 ANC	s	Universita di Ancona, Dipartimento di Biotecnologie Agrarie ed Ambientali			
 ANCB	s	Museo Nacional de Historia Natural, La Paz			
 AND	s	Slezske zemske muzeum Opava, Arboretum Nopvy Dvur, Dendrology Department			
@@ -666,6 +667,7 @@ BIO	s	Universidad del Pais Vasco/EHU, Departamento de Biologia Vegetal y Ecologi
 BioCC	c	BioCC BioCen Culture Collection			
 BIOLACHC	s	University of Belgrade, Institute of Chemistry, Technology and Metallurgy - National Institute of the Republic of Serbia			
 BIOT	s	Regional Center for Tropical Biology			
+BIOUG<CAN>	s	Biodiversity Institute of Ontario, University of Guelph	BIO,UOG:BIO		
 BIPB	s	Barbara I. P. Barratt			
 BIRA	s	Birmingham Museums and Art Gallery, Curatorial Services			
 Bird	s	Bird Collection			
@@ -680,6 +682,7 @@ BJA	s	University of Burundi, Biology Department
 BJB	s	Hon. Balasaheb Jadhav college Ale			
 BJFC	s	Beijing Forestry University	BJFU		
 BJM	s	Beijing Natural History Museum			
+BJRI	b	Gene bank at Bangladesh Jute Research Institute			
 BJSC	s	Billy J. Smith			
 BJTC	s	Capital Normal University, Biology Department			
 BK	s	Bangkok Herbarium			
@@ -765,6 +768,7 @@ BOC	s	Bingham Oceanographic Collection	YPM
 BOCH	s	Ruhr-Universitaet Bochum, Spezielle Botanik			
 BOD	s	University of Oxford			
 BOG	s	Universidad de La Salle			
+BOGOS	b	Botanical Garden of Osnabruck University			
 BOIS	s	Rocky Mountain Research Station			
 BOL	s	Bolus Herbarium, University of Cape Town			
 BOLO	s	Universita di Bologna			
@@ -813,7 +817,7 @@ BREG	s	Vorarlberger Naturschau
 BREM	s	Ubersee-Museum Bremen			
 BRF	s	Black Rock Forest			
 BRFL	s	City of Birmingham Reference Library			
-BRFM<FRA>	c	Banque de Ressources Fongiques de Marseille			
+BRFM	c	Banque de Ressources Fongiques de Marseille			
 BRG	s	University of Guyana, Biology Department			
 BRGE	s	Laboratoire de Genetique des Plantes Superieures			
 BRH	s	Ministry of Natural Resources, Local Government, and the Environment			
@@ -936,7 +940,7 @@ CA:HERP	s	Chicago Academy of Sciences, Herpetology collection	CHAS:HERP
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University			
 CABI	sc	CABI Genetic Resource Collection	IMI	http://194.203.77.76/grc/DisplayResults.asp?strGRCNumber=#S#	
 CACA	s	Carlsbad Caverns National Park			
-CACC<CHN>	c	China Antibiotic Culture Collection Center			
+CACC	c	China Antibiotic Culture Collection Center			
 CACS	s	Chicago Academy of Sciences, Department of Biology			
 CAEN<FRA>	s	Jardin Botanique de la Ville de Caen			
 CAES	s	Connecticut Agriculture Experiment Station			
@@ -1142,7 +1146,7 @@ CCNP<POL>	c	Culture Collection of Northern Poland
 CCNU	sc	Central China Normal University, Biology Department			
 CCNY	s	City College of New York, Biology Department, New York, NY			
 CCO	s	Carleton University, Biology Department			
-CCOS<CHE>	c	Culture Collection of Switzerland			
+CCOS	c	Culture Collection of Switzerland			
 CCP	c	Culture Collection of Porto, Faculty of Pharmacy			
 CCPC	s	Charles C. Porter			
 CCPF	c	Collection of Phytopathogenic Fungi			
@@ -9443,13 +9447,13 @@ ZUEC:PIS	s	Museu de Zoologia da Universidade Estadual de Campinas, Fish collecti
 ZUEC:REP	s	Museu de Zoologia da Universidade Estadual de Campinas,			
 ZUFES	s	Universidad Federal do Espirito Santo			
 ZUFRJ	s	Departamento de Zoolgia, Instituto de Biologia			
-ZUFSM<BRA>	s	Universidade Federal de Santa Maria, Laboratorio de Herpetologia			
+ZUFSM	s	Universidade Federal de Santa Maria, Laboratorio de Herpetologia			
 ZULU	s	University of Zululand, Botany Department			
 ZUMT	s	Department of Zoology, University Museum	UMUTZ		
 ZUTC	s	Zoological Museum University of Tehran			
 ZV	s	Technical University, Department of Phytology			
 ZVC	s	Depto. de Zoologia Vertebrados de la Facultad de Humanidades y Ciencias			
-ZVCB<URY>	s	Vertebrate Collection, Facultad de Ciencias, Universidad de la Republica			
+ZVCB	s	Vertebrate Collection, Facultad de Ciencias, Universidad de la Republica			
 ZY	s	Zunyi Normal College			
 ZYTC	s	Zhangye Teachers College, Chemistry-Biology Department			
 ZZN	c	Zavod za naravoslovje			
