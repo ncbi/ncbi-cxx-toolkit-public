@@ -292,6 +292,17 @@ CDataLoader::TTSE_Lock CDataLoader::GetBlobById(const TBlobId& /*blob_id*/)
                "CDataLoader::GetBlobById() is not implemented in subclass");
 }
 
+
+vector<CDataLoader::TTSE_Lock> CDataLoader::GetBlobsById(const vector<TBlobId>& blob_ids)
+{
+    vector<TTSE_Lock> ret(blob_ids.size());
+    for ( size_t i = 0; i < blob_ids.size(); ++i ) {
+        ret[i] = GetBlobById(blob_ids[i]);
+    }
+    return ret;
+}
+
+
 CDataLoader::TBlobId CDataLoader::GetBlobIdFromString(const string& /*str*/) const
 {
     NCBI_THROW(CLoaderException, eNotImplemented,
