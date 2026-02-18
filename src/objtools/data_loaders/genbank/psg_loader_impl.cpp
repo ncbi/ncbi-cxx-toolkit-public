@@ -1039,7 +1039,7 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
         ret = x_CreateLocalCDDEntry(data_source, cdd_ids);
     }
     else {
-        CPSGL_QueueGuard queue((m_Dispatcher));
+        CPSGL_QueueGuard queue(m_Dispatcher);
         {{
             auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(blob_id.ToPsgId()),
                                                           CPSGL_TrackerMap::CreateUserContext());
@@ -1081,6 +1081,110 @@ CTSE_Lock CPSGDataLoader_Impl::GetBlobByIdOnce(CDataSource* data_source, const C
                        "CPSGDataLoader::GetBlobById("+blob_id.ToPsgId()+") failed");
     }
     return ret;
+}
+
+
+vector<CTSE_Lock> CPSGDataLoader_Impl::GetBlobsById(CDataSource* data_source,
+                                                    const vector<CDataLoader::TBlobId>& blob_ids)
+{
+    vector<CTSE_Lock> ret(blob_ids.size());
+    CallWithRetry(bind(&CPSGDataLoader_Impl::GetBlobsByIdOnce, this,
+                       data_source, cref(blob_ids), ref(ret)),
+                  "GetBlobsById",
+                  m_BulkRetryCount);
+    return ret;
+}
+
+
+void CPSGDataLoader_Impl::GetBlobsByIdOnce(CDataSource* data_source,
+                                           const vector<CDataLoader::TBlobId>& blob_ids,
+                                           vector<CTSE_Lock>& ret)
+{
+    CPSGL_QueueGuard queue(m_Dispatcher);
+    for ( size_t i = 0; i < blob_ids.size(); ++i ) {
+        if ( ret[i] ) {
+            // already loaded
+            continue;
+        }
+        const CDataSource::TBlobId& blob_id = blob_ids[i];
+        if ( 1 ) {
+            // check if the blob is already loaded in OM
+            CTSE_LoadLock load_lock = data_source->GetTSE_LoadLockIfLoaded(blob_id);
+            if ( load_lock && load_lock.IsLoaded() ) {
+                _TRACE("GetBlobsById() already loaded "<<blob_id->ToString());
+                ret[i] = load_lock;
+                continue;
+            }
+        }
+    
+        auto psg_blob_id = CPsgBlobId::GetPsgBlobId(*blob_id);
+        if ( SCDDIds cdd_ids = x_ParseLocalCDDEntryId(*psg_blob_id) ) {
+            if ( s_GetDebugLevel() >= 5 ) {
+                LOG_POST(Info<<"PSG loader: Re-loading CDD blob: " << blob_id->ToString());
+            }
+            ret[i] = x_CreateLocalCDDEntry(data_source, cdd_ids);
+            continue;
+        }
+        else {
+            auto request = make_shared<CPSG_Request_Blob>(CPSG_BlobId(psg_blob_id->ToPsgId()),
+                                                          CPSGL_TrackerMap::CreateUserContext());
+            request->IncludeData(m_TSERequestMode);
+            CRef<CPSGL_GetBlob_Processor> processor
+                (new CPSGL_GetBlob_Processor(*psg_blob_id,
+                                             data_source,
+                                             m_Caches.get(),
+                                             m_AddWGSMasterDescr));
+            queue.AddRequest(request, processor, i);
+        }
+    }
+    size_t error_count = 0;
+    ostringstream error_msg;
+    while ( auto result = queue.GetNextResult() ) {
+        _ASSERT(result);
+        auto i = result.GetIndex();
+        auto& blob_id = blob_ids[i];
+        if ( result.GetStatus() != CThreadPool_Task::eCompleted ) {
+            if ( error_count++ ) {
+                error_msg << '\n';
+            }
+            error_msg << "failed to get blob "<<blob_id->ToString()<<": "<<
+                FormatError(result.GetProcessor());
+            continue;
+        }
+        
+        auto processor = result.GetProcessor<CPSGL_GetBlob_Processor>();
+        _ASSERT(processor);
+        ret[i] = processor->GetTSE_Lock();
+        if ( !ret[i] && (processor->GotForbidden() || processor->GotUnauthorized()) ) {
+            auto psg_blob_id = CPsgBlobId::GetPsgBlobId(*blob_id);
+            CBioseq_Handle::TBioseqStateFlags state = CBioseq_Handle::fState_no_data;
+            if ( processor->GotUnauthorized() ) {
+                state |= CBioseq_Handle::fState_confidential;
+            }
+            else {
+                state |= CBioseq_Handle::fState_withdrawn;
+            }
+            state |= processor->GetBlobInfoState(psg_blob_id->ToPsgId());
+            if ( error_count++ ) {
+                error_msg << '\n';
+            }
+            error_msg << "blob state error for "+blob_id->ToString() << ": " << state;
+            continue;
+        }
+    }
+    for ( size_t i = 0; i < ret.size(); ++i ) {
+        if ( !ret[i] ) {
+            _TRACE("Failed to load blob for " << blob_ids[i]->ToString()<<" @ "<<CStackTrace());
+            if ( error_count++ ) {
+                error_msg << '\n';
+            }
+            error_msg << "CPSGDataLoader::GetBlobsById("+blob_ids[i]->ToString()+") failed";
+        }
+    }
+    if ( error_count ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "CPSGDataLoader::GetBlobsById() failed: "<<error_msg.str());
+    }
 }
 
 
