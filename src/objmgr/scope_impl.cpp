@@ -50,6 +50,8 @@
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/scope_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/bioseq_set_info.hpp>
@@ -1900,7 +1902,8 @@ void CScope_Impl::x_GetBioseqHandlesFromTSE(const TIds& ids,
 
 
 CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
-                                            int get_flag)
+                                            int get_flag,
+                                            SScopeLoadRequests* load_requests)
 {
     CBioseq_Handle ret;
     if ( id )  {
@@ -1911,7 +1914,7 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
         if ( info ) {
             ret.m_Handle_Seq_id = id;
             if ( info->HasBioseq() && !(get_flag & fNoLockFlag) ) {
-                ret.m_Info = info->GetLock(match.m_Bioseq);
+                ret.m_Info = info->GetLock(match.m_Bioseq, load_requests);
             }
             else {
                 ret.m_Info.Reset(info);
@@ -3343,10 +3346,51 @@ void CScope_Impl::x_GetBioseqHandlesSorted(const TIds&     ids,
     // Keep locks to prevent cleanup of the loaded TSEs.
     typedef CDataSource_ScopeInfo::TSeqMatchMap TSeqMatchMap;
     TSeqMatchMap match_map;
-    for ( size_t i = from; i < from + count; ++i ) {
-        ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved);
-        if ( !ret[i] ) {
-            match_map[ids[i]];
+    // max 4 passes - re-load TSE, load chunks in 2 passes (main, specific), final lookup
+    vector<CDataSource_ScopeInfo::TTSE_Lock> all_tse_locks;
+    for ( int passes_left = 4; passes_left > 0; --passes_left ) {
+        SScopeLoadRequests load_requests;
+        for ( size_t i = from; i < from + count; ++i ) {
+            size_t prev_request_count = load_requests.count;
+            ret[i] = GetBioseqHandle(ids[i], CScope::eGetBioseq_Resolved,
+                                     (passes_left == 1? nullptr: &load_requests));
+            if ( !ret[i] && load_requests.count == prev_request_count ) {
+                match_map[ids[i]];
+            }
+        }
+        if ( 0 ) {
+            LOG_POST("GetBioseqHandles(ids["<<ids.size()<<"]) "<<
+                     passes_left<<" passes left, "
+                     "counts: requests: "<<load_requests.count<<
+                     " TSEs: "<<load_requests.tses.size()<<
+                     " chunks: "<<load_requests.chunks.size()<<
+                     " resolves: "<<match_map.size());
+        }
+        if ( !empty(load_requests.tses) ) {
+            // bulk load TSEs by their ids
+            map<CDataSource_ScopeInfo*, vector<CBlobIdKey>> blob_ids;
+            for ( auto& t : load_requests.tses ) {
+                blob_ids[&t->GetDSInfo()].push_back(t->GetBlobId());
+            }
+            for ( auto& v : blob_ids ) {
+                auto tse_locks = v.first->GetDataLoader()->GetBlobsById(v.second);
+                for ( size_t i = 0; i < tse_locks.size(); ++i ) {
+                    all_tse_locks.push_back(v.first->GetTSE_Lock(tse_locks[i]));
+                }
+            }
+        }
+        else if ( !empty(load_requests.chunks) ) {
+            // bulk load chunks by their ids
+            map<CDataLoader*, vector<CConstRef<CTSE_Chunk_Info>>> chunks;
+            for ( auto& chunk : load_requests.chunks ) {
+                chunks[&chunk->GetSplitInfo().GetDataLoader()].emplace_back(chunk);
+            }
+            for ( auto& v : chunks ) {
+                CTSE_Split_Info::x_LoadChunks(v.first, v.second);
+            }
+        }
+        else {
+            break;
         }
     }
     if ( match_map.empty() ) {

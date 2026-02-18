@@ -40,6 +40,7 @@
 #include <objmgr/impl/data_source.hpp>
 
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/seq_entry_handle.hpp>
@@ -1780,11 +1781,19 @@ CTSE_ScopeInfo::GetScopeLock(const CTSE_Handle& tse,
 // Action A5.
 CTSE_ScopeInfo::TBioseq_Lock
 CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
-                              CConstRef<CBioseq_Info> bioseq)
+                              CConstRef<CBioseq_Info> bioseq,
+                              SScopeLoadRequests* load_requests)
 {
     // TODO: possible deadlock (1), m_TSE_LockMutex is taken before m_TSE_UnlockQueueMutex
     // this thread calls GetBioseqHandle()
     //CMutexGuard guard(m_TSE_LockMutex);
+    if ( load_requests ) {
+        if ( !GetTSE_Lock() ) {
+            load_requests->count += 1;
+            load_requests->tses.insert(Ref(this));
+            return TBioseq_Lock();
+        }
+    }
     CTSE_ScopeUserLock tse(this);
     _ASSERT(x_TSE_LockIsAssigned());
     if ( !info ) {
@@ -1833,6 +1842,17 @@ CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
             const CBioseq_ScopeInfo::TIds& ids = info->GetIds();
             if ( !ids.empty() ) {
                 const CSeq_id_Handle& id = *ids.begin();
+                if ( load_requests && m_TSE_Lock->HasSplitInfo() ) {
+                    auto& split_info = m_TSE_Lock->GetSplitInfo();
+                    vector<CConstRef<CTSE_Chunk_Info>> chunks;
+                    split_info.x_AddChunksForGetRecords(chunks, id);
+                    if ( !empty(chunks) ) {
+                        for ( auto& c : chunks ) {
+                            load_requests->chunks.insert(c.GetPointer());
+                        }
+                        return TBioseq_Lock();
+                    }
+                }
                 bioseq = m_TSE_Lock->FindBioseq(id);
                 _ASSERT(bioseq);
             }
@@ -2249,9 +2269,10 @@ bool CBioseq_ScopeInfo::HasBioseq(void) const
 
 
 CBioseq_ScopeInfo::TBioseq_Lock
-CBioseq_ScopeInfo::GetLock(CConstRef<CBioseq_Info> bioseq)
+CBioseq_ScopeInfo::GetLock(CConstRef<CBioseq_Info> bioseq,
+                           SScopeLoadRequests* load_requests)
 {
-    return x_GetTSE_ScopeInfo().GetBioseqLock(Ref(this), bioseq);
+    return x_GetTSE_ScopeInfo().GetBioseqLock(Ref(this), bioseq, load_requests);
 }
 
 

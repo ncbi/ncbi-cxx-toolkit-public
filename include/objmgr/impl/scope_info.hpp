@@ -66,6 +66,7 @@ class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CBioseq_Info;
 class CBioseq_set_Info;
+class CTSE_Chunk_Info;
 
 class CDataSource_ScopeInfo;
 class CTSE_ScopeInfo;
@@ -350,6 +351,14 @@ private:
 };
 
     
+struct SScopeLoadRequests
+{
+    size_t count = 0;
+    set<CRef<CTSE_ScopeInfo>> tses;
+    set<const CTSE_Chunk_Info*> chunks;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
 {
 public:
@@ -421,7 +430,8 @@ public:
 
     CRef<CBioseq_ScopeInfo> GetBioseqInfo(const SSeqMatch_Scope& match);
     TBioseq_Lock GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
-                               CConstRef<CBioseq_Info> bioseq);
+                               CConstRef<CBioseq_Info> bioseq,
+                               SScopeLoadRequests* load_requests = nullptr);
 
     void ResetEntry(CSeq_entry_ScopeInfo& info);
     void RemoveEntry(CSeq_entry_ScopeInfo& info);
@@ -593,7 +603,8 @@ public:
             return m_BlobState;
         }
 
-    TBioseq_Lock GetLock(CConstRef<CBioseq_Info> bioseq);
+    TBioseq_Lock GetLock(CConstRef<CBioseq_Info> bioseq,
+                         SScopeLoadRequests* load_requests = nullptr);
 
     // id modification methods are required because we need to update
     // index information in CTSE_ScopeInfo.
