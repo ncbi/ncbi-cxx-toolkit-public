@@ -92,7 +92,7 @@ namespace {
         }
         {
             CBlobRecord a;
-            CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT()+1000);
+            CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT() * 1000 + 1000);
             a.SetHupDate(tm);
             EXPECT_TRUE(a.IsConfidential());
             tm = tm - 1000;
@@ -103,7 +103,7 @@ namespace {
 
     TEST(BlobRecordTest, BlobProperties) {
         CBlobRecord a;
-        CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT() + 1000);
+        CBlobRecord::TTimestamp tm(CCurrentTime().GetTimeT() * 1000 + 1000);
         a.SetHupDate(tm);
         EXPECT_TRUE(a.IsConfidential());
         tm = tm - 1000;
