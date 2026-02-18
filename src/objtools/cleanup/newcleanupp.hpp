@@ -399,7 +399,7 @@ private:
         const char*             qual,
         const char*             val);
 
-    void x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc );
+    void x_MoveSeqdescOrgToSourceOrg(CSeqdesc& seqdesc);
     void x_MoveCDSFromNucAnnotToSetAnnot(CBioseq_set& set);
 
 public:
@@ -417,7 +417,7 @@ public:
     void PostSeqFeat(CSeq_feat& seq_feat);
     void PostOrgRef(COrg_ref& org);
     void PostBiosource(CBioSource& biosrc);
-    void MoveSeqfeatOrgToSourceOrg(CSeq_feat &seqfeat);
+    void MoveSeqfeatOrgToSourceOrg(CSeq_feat& seqfeat);
     void CopyGBBlockDivToOrgnameDiv(const CSeq_entry_Handle& entry_handle);
     void AuthListBCWithFixInitials(CAuth_list& al);
 
@@ -458,6 +458,7 @@ public:
     void DecodeXMLMarkChanged(std::string& str);
 
     void FixStructuredCommentKeywords(CSeq_descr& descr);
+
 private:
     void x_NotePubdescOrAnnotPubs_RecursionHelper(
         const CPub_equiv& pub_equiv, TEntrezId& muid, TEntrezId& pmid);
@@ -475,22 +476,18 @@ private:
     void x_RemoveProtDescThatDupsProtName(CProt_ref& prot);
     void x_RemoveRedundantComment(CGene_ref& gene, CSeq_feat& seq_feat);
 
-    void        x_RemoveEmptyUserObject(CSeq_descr& seq_descr);
-    void        x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block);
-    void        x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr);
-    static bool x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech);
-    void        x_CleanupGenbankBlock(CBioseq& seq);
-    void        x_CleanupGenbankBlock(CBioseq_set& set);
-    void        x_CleanupGenbankBlock(CSeq_descr& seq_descr);
-    void        x_CleanupGenbankBlock(CGB_block& block, bool is_patent, CConstRef<CBioSource> biosrc, CMolInfo::TTech tech);
-    static bool x_CanRemoveGenbankBlockSource(const string& src, const CBioSource& biosrc);
-    void        x_RescueMolInfo(CBioseq& seq);
-    void        x_RemoveOldDescriptors(CSeq_descr& seq_descr);
-    void        x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
-    void        x_RemoveEmptyFeatures(CSeq_annot& seq_annot);
-    void        x_RemoveEmptyFeatureTables(CBioseq_set& bioseq_set);
+    void x_RemoveEmptyUserObject(CSeq_descr& seq_descr);
+    void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr);
+    void x_CleanupGenbankBlock(CGB_block& block, bool is_patent, CConstRef<CBioSource> biosrc, CMolInfo::TTech tech);
+    void x_RemoveOldDescriptors(CSeq_descr& seq_descr);
+    void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
+    void x_RemoveEmptyFeatures(CSeq_annot& seq_annot);
+    void x_RemoveEmptyFeatureTables(CBioseq_set& bioseq_set);
 
 public:
+    void RescueMolInfo(CBioseq& seq);
+    void CleanupGenbankBlock(CBioseq& seq);
+    void CleanupGenbankBlock(CBioseq_set& set);
     void ExceptTextEC(string& except_text);
     void tRNACodonEC(CSeq_feat& seq_feat);
     void RemoveEmptyFeatures(const CSeq_annot_Handle& sah);
@@ -499,23 +496,23 @@ public:
     void MergeAdjacentFeatureTables(const CBioseq_Handle& bsh);
 
 private:
-    void x_MergeAdjacentFeatureTables(const list<CRef<CSeq_annot>> & annot_list);
-    void x_MergeAdjacentFeatureTables(CBioseq_set & bioseq_set);
-    bool x_CleanEmptyFeature(CSeq_feat& feat);
-    bool x_ShouldRemoveEmptyFeature(const CSeq_feat& feat );
-    bool x_CleanEmptyGene(CGene_ref& gene);
-    bool x_ShouldRemoveEmptyGene(const CGene_ref& gene, const CSeq_feat& feat);
-    bool x_CleanEmptyProt(CProt_ref& prot);
-    bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
+    void        x_MergeAdjacentFeatureTables(const list<CRef<CSeq_annot>>& annot_list);
+    void        x_MergeAdjacentFeatureTables(CBioseq_set& bioseq_set);
+    bool        x_CleanEmptyFeature(CSeq_feat& feat);
+    bool        x_ShouldRemoveEmptyFeature(const CSeq_feat& feat);
+    bool        x_CleanEmptyGene(CGene_ref& gene);
+    bool        x_ShouldRemoveEmptyGene(const CGene_ref& gene, const CSeq_feat& feat);
+    bool        x_CleanEmptyProt(CProt_ref& prot);
+    bool        x_ShouldRemoveEmptyProt(const CProt_ref& prot);
     static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);
     static bool x_IsPubContentBad(const CPub& pub);
     static bool x_IsPubContentBad(const CId_pat& pat);
     bool        x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc);
-    static bool x_IsGenbankBlockEmpty(const CGB_block& gbk);
 
 public:
     void BondEC(CSeq_feat& feat);
-    void RemoveOldFeatures(const CBioseq_Handle & bsh);
+    void RemoveOldFeatures(const CBioseq_Handle& bsh);
+
 private:
     void x_BioseqSetEC(CBioseq_set& bioseq_set);
     void x_ChangePopToPhy(CBioseq_set& bioseq_set);
