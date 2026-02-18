@@ -285,7 +285,9 @@ public:
         fUserFlagMask = 0xff,
         fNoLockFlag = 0x100
     };
-    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id, int get_flag);
+    CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id,
+                                   int get_flag,
+                                   SScopeLoadRequests* load_requests = nullptr);
 
     bool IsSameBioseq(const CSeq_id_Handle& id1,
                       const CSeq_id_Handle& id2,
