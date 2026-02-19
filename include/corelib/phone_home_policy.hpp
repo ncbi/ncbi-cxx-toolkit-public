@@ -69,7 +69,7 @@ public:
 
     /// Apply policy for an application.
     ///  
-    /// For example, iIt can get and check program arguments, and call any other methods
+    /// For example, it can get and check program arguments, and call any other methods
     /// depending on it. Automatically called from CNcbiApplication::SetPhoneHomePolicy().
     /// @param app
     ///   Pointer to the CNcbiApplicationAPI instance.
@@ -77,7 +77,7 @@ public:
     ///
     virtual void Apply(CNcbiApplicationAPI* app) = 0;
 
-    /// Print a message about collecting data, disablig tracking and privacy policies.
+    /// Print a message about collecting data, disablig telemetry and privacy policies.
     virtual void Print() = 0;
 
     /// Save policy configuration.
@@ -97,11 +97,11 @@ public:
     /// Return current policy status (enabbed/disabled).
     virtual bool IsEnabled() const { return m_IsEnabled; };
 
-    /// Set policy status (enabbed/disabled).
+    /// Set policy status (enabled/disabled).
     virtual void SetEnabled(bool enabled = true) { m_IsEnabled = enabled; };
 
 protected:
-    bool m_IsEnabled;  ///< Enable/disable tracking status
+    bool m_IsEnabled;  ///< Enable/disable telemetry status
 };
 
 
