@@ -45,19 +45,55 @@
 #include <opentelemetry/sdk/trace/simple_processor_factory.h>
 #include <opentelemetry/sdk/trace/tracer_provider_factory.h>
 #include <opentelemetry/trace/provider.h>
-#include <opentelemetry/trace/semantic_conventions.h>
+#if (OPENTELEMETRY_VERSION_MAJOR >1) || (OPENTELEMETRY_VERSION_MINOR > 21)
+#   include <opentelemetry/semconv/client_attributes.h>
+#   include <opentelemetry/semconv/server_attributes.h>
+#   include <opentelemetry/semconv/url_attributes.h>
+#   include <opentelemetry/semconv/http_attributes.h>
+#   include <opentelemetry/semconv/error_attributes.h>
+#else
+#   include <opentelemetry/trace/semantic_conventions.h>
+#endif
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_options.h>
 #include <opentelemetry/exporters/ostream/span_exporter_factory.h>
 
-
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
 
 BEGIN_NCBI_SCOPE
 
 using namespace opentelemetry;
+#if (OPENTELEMETRY_VERSION_MAJOR >1) || (OPENTELEMETRY_VERSION_MINOR > 21)
+namespace opentel_attribute_keys {
+    static constexpr const char* kSessionId             = "session.id";
+    static constexpr const char* kClientAddress         = opentelemetry::semconv::client::kClientAddress;
+    static constexpr const char* kClientPort            = opentelemetry::semconv::client::kClientPort;
+    static constexpr const char* kServerAddress         = opentelemetry::semconv::server::kServerAddress;
+    static constexpr const char* kServerPort            = opentelemetry::semconv::server::kServerPort;
+    static constexpr const char* kUrlFull               = opentelemetry::semconv::url::kUrlFull;
+    static constexpr const char* kUrlScheme             = opentelemetry::semconv::url::kUrlScheme;
+    static constexpr const char* kHttpRequestMethod     = opentelemetry::semconv::http::kHttpRequestMethod;
+    static constexpr const char* kHttpScheme            = "http.scheme";
+    static constexpr const char* kHttpResponseStatusCode= opentelemetry::semconv::http::kHttpResponseStatusCode;
+    static constexpr const char* kErrorType             = opentelemetry::semconv::error::kErrorType;
+}
+#else
+namespace opentel_attribute_keys {
+    static constexpr const char* kSessionId             = opentelemetry::trace::SemanticConventions::kSessionId;
+    static constexpr const char* kClientAddress         = opentelemetry::trace::SemanticConventions::kClientAddress;
+    static constexpr const char* kClientPort            = opentelemetry::trace::SemanticConventions::kClientPort;
+    static constexpr const char* kServerAddress         = opentelemetry::trace::SemanticConventions::kServerAddress;
+    static constexpr const char* kServerPort            = opentelemetry::trace::SemanticConventions::kServerPort;
+    static constexpr const char* kUrlFull               = opentelemetry::trace::SemanticConventions::kUrlFull;
+    static constexpr const char* kUrlScheme             = opentelemetry::trace::SemanticConventions::kUrlScheme;
+    static constexpr const char* kHttpRequestMethod     = opentelemetry::trace::SemanticConventions::kHttpRequestMethod;
+    static constexpr const char* kHttpScheme            = opentelemetry::trace::SemanticConventions::kHttpScheme;
+    static constexpr const char* kHttpResponseStatusCode= opentelemetry::trace::SemanticConventions::kHttpResponseStatusCode;
+    static constexpr const char* kErrorType             = opentelemetry::trace::SemanticConventions::kErrorType;
+}
+#endif
 
 
 namespace {
@@ -533,37 +569,37 @@ void COpentelemetryTracerSpan::SetAttribute(ESpanAttribute attr, const string& v
     if ( !m_Span ) return;
     switch (attr) {
     case eSessionId:
-        m_Span->SetAttribute(trace::SemanticConventions::kSessionId, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kSessionId, value);
         break;
     case eClientAddress:
-        m_Span->SetAttribute(trace::SemanticConventions::kClientAddress, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kClientAddress, value);
         break;
     case eClientPort:
-        m_Span->SetAttribute(trace::SemanticConventions::kClientPort, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kClientPort, value);
         break;
     case eServerAddress:
-        m_Span->SetAttribute(trace::SemanticConventions::kServerAddress, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kServerAddress, value);
         break;
     case eServerPort:
-        m_Span->SetAttribute(trace::SemanticConventions::kServerPort, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kServerPort, value);
         break;
     case eUrl:
-        m_Span->SetAttribute(trace::SemanticConventions::kUrlFull, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kUrlFull, value);
         break;
     case eRequestMethod:
-        m_Span->SetAttribute(trace::SemanticConventions::kHttpRequestMethod, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kHttpRequestMethod, value);
         break;
     case eUrlScheme:
-        m_Span->SetAttribute(trace::SemanticConventions::kUrlScheme, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kUrlScheme, value);
         break;
     case eHttpScheme:
-        m_Span->SetAttribute(trace::SemanticConventions::kHttpScheme, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kHttpScheme, value);
         break;
     case eStatusCode:
-        m_Span->SetAttribute(trace::SemanticConventions::kHttpResponseStatusCode, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kHttpResponseStatusCode, value);
         break;
     case eStatusString:
-        m_Span->SetAttribute(trace::SemanticConventions::kErrorType, value);
+        m_Span->SetAttribute(opentel_attribute_keys::kErrorType, value);
         break;
     default:
         break;
