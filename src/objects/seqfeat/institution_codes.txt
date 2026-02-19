@@ -744,8 +744,8 @@ BMSA	s	National Museum Bloemfontein
 BMSC	s	Buffalo Museum of Science			
 BMSC<CAN>	s	Bamfield Marine Science Centre			
 BMUK	s	Bolton Museum			
+BNA	s	British (Empire) Naturalists' Association			
 BNA<ESP>	c	Banco Espanol de Algas (Spanish Bank of Algae)	BEA		
-BNA<GBR>	s	British (Empire) Naturalists' Association			
 BNBE	s	YMCA Hostel			
 BNFF	s	Banff Museum			
 BNFH	s	U.S. Forest Service, Bitterroot National Forest			
@@ -942,7 +942,7 @@ CABI	sc	CABI Genetic Resource Collection	IMI	http://194.203.77.76/grc/DisplayRes
 CACA	s	Carlsbad Caverns National Park			
 CACC	c	China Antibiotic Culture Collection Center			
 CACS	s	Chicago Academy of Sciences, Department of Biology			
-CAEN<FRA>	s	Jardin Botanique de la Ville de Caen			
+CAEN	s	Jardin Botanique de la Ville de Caen			
 CAES	s	Connecticut Agriculture Experiment Station			
 CAF	s	Chinese Academy of Forestry			
 CAFB	s	Northern Forestry Centre, Canadian Forest Service	CFB		
@@ -968,7 +968,7 @@ CAM<AUST>	s	Central Australian Museum
 CAM<UK>	s	St. John's College			
 CAME	s	Universita di Camerino, Dipartimento de Botanica ed Ecologia			
 CAMP	s	Campbellsville University			
-CAMS<ZAF>	c	Centre for Applied Mycological Studies			
+CAMS	c	Centre for Applied Mycological Studies			
 CAMU	c	Collection of Algae at Bohdan Khmelnytskyi Melitopol State Pedagogical University			
 CAMU<USA>	s	Cameron University, Department of Biological Sciences			
 CAN	s	Canadian Museum of Nature, Vascular Plant Section			
@@ -1092,11 +1092,11 @@ CCCC	s	Carthage College
 CCCIEB	c	Culture Collections of Microorgansisms of Center of Genetic Engineering and Biotechnology			
 CCCM	c	Canadian Center for the Culture of Microorganisms			
 CCCR	s	Federal University of Tocantins			
-CCCryo<DEU>	sc	Culture Collection of Cryophilic Algae			
+CCCryo	sc	Culture Collection of Cryophilic Algae			
 CCCS	c	Culture Collection of Ciliates and their Symbionts			
 CCCT	c	Coleccion Chilena de Cultivos Tipo-CCCT/UFRO			
 CCCZ	s	University of Malawi			
-CCDB<BRA>	s	Crustacean Collection of the Department of Biology	USP:CCDB		
+CCDB	s	Crustacean Collection of the Department of Biology			
 CCDM<CHN>	c	Culture Collection of Department of Microbiology			
 CCDM<CZH>	c	Culture Collection of Dairy Microorganisms Laktoflora			
 CCDMBI	c	Culture Collection, Department of Microbiology			
@@ -1385,7 +1385,7 @@ CLEY	s	Coastal Ecology Research Station
 CLF	s	Institut des Universitaires et Musee Lecoq			
 CLI	s	Literary and Philosophical Institution of Chatham			
 CLIB	c	Collection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest			
-CLIOC<BRA>	c	Colecao de Leishmania do Instituto Oswaldo Cruz	IOC:CL		
+CLIOC	c	Colecao de Leishmania do Instituto Oswaldo Cruz			
 CLM	s	Cleveland Museum of Natural History, Botany Department			
 CLMP	s	Department of Conservation & Land Management			
 CLNP	s	Crater Lake National Park			
@@ -1427,7 +1427,7 @@ CML<BRA>	c	Colecao Micologica de Lavras
 CMM	s	Bradford Art Galleries and Museums, Natural Sciences Department			
 CMM<BRA>	c	Culture Collection of Phytopathogenic Fungi (Colecao de Culturas de Fungos Fitopatogenicos Prof. Maria Menezes)			
 CMMC	c	China Marine Microbe Collection			
-CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection			
+CMMED	c	Center for Marine Microbial Ecology & Diversity Collection			
 CMMEX	s	Universidad Autonoma de Baja California			
 CMMF	s	Cercle des Mycologues de Montreal Fungarium			
 CMMI	s	Chinese Academy of Traditional Medicine			
@@ -1507,7 +1507,7 @@ CNR<UKR>	s	Crimean Natural Reserve
 CNRO	s	Centre National de Recherches Oceanographiques			
 CNRS	s	Centre National de la Recherche Scientifique			
 CNRZ	c	Centre National de Recherches Zootechniques			
-CNS<AUS>	s	Australian Tropical Herbarium			
+CNS	s	Australian Tropical Herbarium			
 CNSF	s	Centre National de Semences Forestieres			
 CNU<CHN>	s	Capital Normal University, College of Life Sciences			
 CNU<KOR-TJ>	s	Chungnam National University			
@@ -1544,7 +1544,7 @@ CONC	s	Universidad de Concepcion, Departamento de Botanica
 CONCF	s	Universidad de Concepcion			
 CONN	s	University of Connecticut, Department of Ecology and Evolutionary Biology			
 CONV	s	Converse College, Biology Department			
-COP<VEN>	s	Coleccion Ornitologica Phelps			
+COP	s	Coleccion Ornitologica Phelps			
 COR	s	Universidade Federal de Mato Grosso do Sul, Departamento de Ciencias do Ambiente			
 CORB	s	Corchester School			
 CORBIDI	s	Centro de Ornitologia y Biodiversidad			
@@ -1610,7 +1610,7 @@ CRCM:Mamm	s	Washington State University, Charles R. Conner Museum, Mammal Collec
 CRCM:Paleo	s	Fossil Collection (Misc Vertebrates)			
 CRCM:Teach	s	Teaching Collection (Misc Vertebrates)			
 CRD	s	Instituto Politecnico Nacional, Coleccion Cientifica de Fauna Silvestre (Mexico)			
-CRE<USA-CA>	s	University of Southern California			
+CRE	s	University of Southern California			
 CREA-AA	c	Consiglio per la ricerca in agricoltura e lanalisi delleconomia agraria - Centro di Ricerca Agricoltura e Ambiente	CRA-CIN		
 CREG	s	Instituto Tecnologico Agropecuario de Jalisco			
 CRFS	s	Colecao de Referencia de Fauna de Solo			
@@ -1692,7 +1692,7 @@ CTC	s	Chongqing Normal University
 CTES	s	Instituto de Botanica del Nordeste			
 CTESN	s	Universidad Nacional del Nordeste			
 CTFCNG	s	United States Department of Agriculture, Caribou-Targhee National Forest and Curlew National Grassland			
-CTM<TUN>	c	Centre de Biotechnologie de Sfax culture collection			
+CTM	c	Centre de Biotechnologie de Sfax culture collection			
 CTN	s	Free Library and Museum			
 CTNRC	s	Thai National Reference Collections			
 CTR	s	Charles T. Ramsden historical collection			
@@ -1734,7 +1734,7 @@ CUPB	s	Central University of Punjab
 CURLA	s	Centro Universitario Regional del Litoral Atlantico			
 CUS	s	Cusino Wildlife Research Station, Natural Resources Department			
 CUSC	s	Clemson University, Vertebrate Collections			
-CUVC<COL>	s	Universidad del Valle, Departamento de Biologia			
+CUVC	s	Universidad del Valle, Departamento de Biologia			
 CUW	s	Clark University, Biology Department			
 CUWM	s	Clark University			
 CUZ	s	Universidad Nacional San Antonio Abad del Cusco			
@@ -1914,7 +1914,7 @@ DIS	s	Dinamation International Society
 DISCA	s	Estacion Biologica de Rancho Grande, Ministerio del Ambiente y Recursos Naturales Renovables			
 DISCOLL	s	National Oceanography Centre, Southampton			
 DISKO	s	Danish Arctic Station			
-DiSTA<ITA>	s	Phytoplasma Collection University of Bologna	DipSA		
+DiSTA	s	Phytoplasma Collection University of Bologna			
 DIX	s	Dixie College, Natural History Museum			
 DJBC	s	Denis J. Brothers			
 DKG	s	Juniper Hall Field Centre			
@@ -2023,7 +2023,7 @@ DSM<TZA>	s	University of Dar es Salaam, Botany Department
 DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture		https://www.dsmz.de/catalogues/details/culture/PV-	
 DSP	s	Fitzsimon's Snake Park			
 DSRC	s	Mohonk Preserve			
-DSSC<USA-CA>	b	Drosophila Species Stock Center			
+DSSC	b	Drosophila Species Stock Center			
 DSU	s	Dnipropetrovsk National University, Department of Geobotany, Soil, and Ecology			
 DSVC	s	David S. Verity			
 DSY	s	Dewsbury Museum			
@@ -2120,7 +2120,7 @@ ECNU	s	Museum of Biology, East China Normal University, School of Life Sciences
 ECOCH	s	Museo de Zoologia - El Colegio de la Frontera Sur, Chetumal			
 ECOCHM	s	Coleccion de Mamiferos del Museo de Zoologia-ECOSUR	ECO-CH-M		
 ECOL	s	Collection du Laborataire d'Ecologie			
-ECOMAR<FRA>	s	ECOMAR lab University of Reunion			
+ECOMAR	s	ECOMAR lab University of Reunion			
 ECON	s	Harvard University			
 ECOSC/ADN	s	Unidad San Cristobal de Las Casas			
 ECOSCM	s	Coleccion Mastozoologica de El Colegio de la Frontera Sur, Unidad San Cristobal	ECO-SC-M		
@@ -2257,7 +2257,7 @@ ERE	s	Institute of Botany of the National Academy of Sciences of Armenia, Depart
 EREM	s	Institute of Botany of the National Academy of Sciences of Armenia, Mycology Department			
 ERH	s	Borough of Erith Museum			
 ERHM	s	Yerevan State University, Botany Department			
-ERSAF<ITA>	s	Regional Agency for Agriculture and Forestry Services			
+ERSAF	s	Regional Agency for Agriculture and Forestry Services			
 ERSK	s	Erskine College			
 ERZ	s	Fuerstin-Eugenie-Institut fuer Arzneipflanzenforschung			
 ESA	s	Universidade de Sao Paulo, Departamento de Botanica			
@@ -2336,7 +2336,7 @@ FCAB	s	Pontificia Universidade Catolica do Rio de Janeiro, Nucleo Interdisciplin
 FCBP	c	First Fungal Culture Bank of Pakistan			
 FCCM	s	Fundacao Municipal da Casa da Cultura de Maraba			
 FCDA	s	Fresno County Department of Agriculture			
-FCL<POL>	c	Fungal Culture Collection of Lublin (at Biochemistry Dept., UMCS)			
+FCL	c	Fungal Culture Collection of Lublin (at Biochemistry Dept., UMCS)			
 FCLR	s	Fundacion Cientifica Los Roques			
 FCM	s	Facultad de Ciencias Marinas			
 FCME	scb	Universidad Nacional Autonoma de Mexico, Ciudad Universitaria, Departamento de Biologia			
@@ -2667,7 +2667,7 @@ GHS	s	George Heriot's School, Biology Department
 GI	s	Justus-Liebig-Universitat Giessen			
 GI-SPS	s	Geological Institute, Section of Palaeontology and Stratigraphy			
 GIB	s	Gibraltar Botanic Gardens			
-GIFU<JPN>	s	Herbarium of Gifu Pharmaceutical University			
+GIFU	s	Herbarium of Gifu Pharmaceutical University			
 GILAN	s	Agricultural and Natural Resources Research Center of Gilan			
 GINCO	s	Glomeromycota in vivo and in vitro collection (Agriculture and Agri-Food Canada)			
 GIPR	s	RSE State Design Institute of Land Management.			
@@ -2732,7 +2732,7 @@ GNH	s	Gotlands Museum
 GNHM	s	Goulandris Natural History Museum			
 GNHNA	s	Gallery of Natural History and Native Art			
 GNHS	s	Guildford Natural History Society			
-GNM<SWE>	s	Gothenburg Museum of Natural History (Goteborgs Naturhistoriska Museum)			
+GNM	s	Gothenburg Museum of Natural History (Goteborgs Naturhistoriska Museum)			
 GNNU	s	Nanling Herbarium, Gannan Normal University			
 GNU	s	Guangxi Normal University, Biology Department			
 GNUB	s	Guizhou Normal University, Biology Department			
@@ -3324,7 +3324,7 @@ HURP	s	Universidad Ricardo Palma
 HUS	s	Siauliai University			
 HUSA	s	Universidad Nacional de San Agustin de Arequipa, Facultad de Ciencias Biologicas y Agropecuarias, Area de Biomedicas			
 HUSC	s	Universidade Santa Cecilia - UNISANTA			
-HUSEC<DEU>	c	Konsiliarlabor fur Hamolytisch-Uramisches Syndrom			
+HUSEC	c	Konsiliarlabor fur Hamolytisch-Uramisches Syndrom			
 HUST	s	Hunan University of Science and Technology, School of Life Sciences			
 HUT<JPN>	c	HUT Culture Collection			
 HUT<PER>	s	Herbarium Truxillense, Universidad Nacional de La Libertad-Trujillo			
@@ -3345,7 +3345,7 @@ HWBA	s	Benedictine College, Biology Department
 HWC	s	Himalaya Wellness Company			
 HWD	s	Hollinwood Botanists' and Field Naturalists' Society			
 HWIC	s	Henk Wolda			
-HWML<USA>	s	Howard W. Manter Laboratory of Parasitology	UNSM:HWML		
+HWML	s	Howard W. Manter Laboratory of Parasitology			
 HWR	s	Federal State Budget Scientific Institution "All-Russian Institute of Plant Protection", (FSBSI VIZR)			
 HXBH	s	Fundacao CETEC			
 HXC	s	Hendrix College, Biology Department			
@@ -3354,7 +3354,7 @@ HYD	s	Heywood and District Botanical Society
 HYE	s	Conservatoire botanique national mediterraneen de Porquerolles			
 HYO	s	Museum of Nature and Human Activities			
 HZAC	s	Centro de Investigaciones de Zacatecas S.C.			
-HZI<DEU>	c	Helmholtz Zentrum fur Infektionsforschung (Helmholtz Centre for Infection Research)			
+HZI	c	Helmholtz Zentrum fur Infektionsforschung (Helmholtz Centre for Infection Research)			
 HZM	s	Museum of Natural History (Hrvatski Zooloski Muzej)			
 HZMZ	s	Hrvatski Narodni Zooloski Muzej			
 HZTC	s	Hanzhong Teachers College, Biology Department			
@@ -3364,7 +3364,7 @@ IA	s	University of Iowa, Department of Biological Sciences
 IAA	s	Instituto Antarctico Argentinao, Direccion Nacional del Antartico			
 IAAA	s	Instituto do Acucar e do Alcool			
 IABH	s	Al-Bayt University, Biology Department			
-IABHU<JPN>	scb	Institute for Amphibian Biology, Graduate School of Science, Hiroshima University			
+IABHU	scb	Institute for Amphibian Biology, Graduate School of Science, Hiroshima University			
 IAC	s	Instituto Agronomico de Campinas			
 IACC	s	Instituto Agron<eth>mico de Campinas			
 IACM	s	Instituto Agronomico			
@@ -3455,7 +3455,7 @@ IC	s	La Coleccion Ornitologica Phelps (Phelps Ornithological Collection)
 ICA	s	Instituto Colombiano Agropecuario, Tibaitata			
 ICAI	s	Pontificia Universidad Catolica del Ecuador Sede Ibarra			
 ICAR	s	ICAR-Central Arid Zone Research Institute			
-ICARDA<SYR>	sb	International Center for Agricultural Research in the Dry Areas			
+ICARDA	sb	International Center for Agricultural Research in the Dry Areas			
 ICBB	c	ICBB Culture Collection for Microorganisms and Cell Culture			
 ICBR	s	International Centre for Bamboo and Rattan			
 ICBU	s	Bishop's University,Natural History Museum			
@@ -3490,7 +3490,7 @@ ICRG	s	Institute of Entomology
 ICRI	s	Zhonghan (Sun Yat-Sen) University, Research Institute of Entomology			
 ICRISAT	b	International Crops Research for the Semi-Arid Tropics			
 ICROPS	s	University of the Philippines Los Banos			
-ICS-CC<ZAF>	c	Infection Control Services , National Health Laboratory Service 3.			
+ICS-CC	c	Infection Control Services , National Health Laboratory Service 3.			
 ICST	s	Imperial College of Science, Technology & Medicine, Department of Biological Sciences			
 ICTB	s	Florida International University			
 ICUI	s	University of Iowa			
@@ -3536,7 +3536,7 @@ IFAN	s	Institut Fondamental d'Afrique Noire
 IFBM	c	Streptokokken Sammlung			
 IFE	s	Obafemi Awolowo University, Botany Department			
 IFFB	s	Institut fuer Forstenentomologie und Forstschutz			
-IFG<USA-CA>	s	Institute of Forest Genetics			
+IFG	s	Institute of Forest Genetics			
 IFGD	s	Idaho Fish and Game			
 IFGH	s	Idaho Fish and Game Department			
 IFGP	s	Pacific Southwest Research Station, USDA Forest Service			
@@ -3555,7 +3555,7 @@ IFSH	s	Instituto Federal de Educacao, Ciencia e Tecnologia do Sul de Minas Gerai
 IG	s	Institute of Geology			
 IGA	s	Wetland Herbarium, Northeast Institute of Geography and Agroecology, Chinese Academy of Sciences			
 IGAA	s	I. G. Andrew			
-IGB<ISR>	sb	Israel Plant Gene Bank			
+IGB	sb	Israel Plant Gene Bank			
 IGBRU	s	USDA/ARS, Insect Genetics and Biochemistry Research Unit			
 IGC	c	Portuguese Yeast Culture Collection	PYCC		
 IGCAGS	s	Institute of geology, Chinese Academy of Geological Science			
@@ -3676,7 +3676,7 @@ INIFAT	c	INIFAT Fungus Collection
 INIP	s	Instituto Nacional de Investigacao das Pescas			
 INIR	s	Coleccion de Termitas Mexicanas			
 INLA	s	INIA Subestacion Experimental Control Biologico La Cruz			
-INM<JPN>	s	Ibaraki Nature Museum			
+INM	s	Ibaraki Nature Museum			
 INMI	c	Institute of Microbiology, Russian Academy of Sciences			
 INPA	s	Instituto Nacional de Pesquisas da Amazonia			
 INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection			
@@ -3710,7 +3710,7 @@ IP	c	Department of Insect Pathology, Institute of Entomology
 IP	c	Institut Pasteur (Virus)			
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA			
 IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA,	IPAgermplasm bank		
-IPAE<RUS>	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences			
+IPAE	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences			
 IPB<BRA>	s	Instituto Paranaense de Botanica			
 IPB<DEU>	s	Institut fuer Palaeontologie			
 IPBCC	c	Institut Pertanian Bogor Culture Collection			
@@ -3720,13 +3720,13 @@ IPE	s	Instituto Pirenaico de Ecologia
 IPEE RAS	s	A.N. Severtzov Institute of Ecology and Evolution, Russian Academy of Sciences			
 IPEF	s	Institut fuer Pflanzenschutzforschung			
 IPFUB	s	Institute for Paleontology of the Freie Universitat			
-IPGR<BGR>	b	Institute for Plant Genetic Resources			
+IPGR	b	Institute for Plant Genetic Resources			
 IPHG	s	Institut fur Palaontologie und Historische Geologie			
 IPK	sb	Leibniz Institute of Plant Genetics and Crop Plant Research			
 IPKUP	s	Paleontologiscsky Institute			
 IPLA	c	Instituto de Productos Lacteos de Asturias			
 IPMA	c	Portuguese Institute for the Sea and Atmosphere			
-IPMB<DEU>	s	Institut fur Pharmazie und Molekulare Biotechnologie			
+IPMB	s	Institut fur Pharmazie und Molekulare Biotechnologie			
 IPMC	s	Institut Paleontologic Dr. M. Crusfafont Sabadell			
 IPMGO	s	Institut fuer Paleontologie und Museum, Goettingen Universitaet			
 IPMM	s	Iwate Prefectural Museum			
@@ -3869,7 +3869,7 @@ IZBT	s	L'Institut de Zoologie et Botanique de Tartu
 IZCAS	s	Institute of Zoology, Chinese Academy of Sciences	ZMIOZ		
 IZCR	s	Istituto di Zoologia			
 IZEF	s	Ege Universitesi, Farmasotik Botanik Kursusu			
-IZET-UCV<VEN>	s	Instituto de Zoologia y Ecologia Tropical			
+IZET-UCV	s	Instituto de Zoologia y Ecologia Tropical			
 IZGAS	s	Georgian Academy of Sciences, Insititute of Zoology			
 IZiBB	s	Department of Entomology, Institiute of Zoology and Biomedical Research, Jagiellonian University			
 IZPAN	s	Zoological Institute, Polish Academy of Sciences			
@@ -3908,7 +3908,7 @@ JB	s	John Bowden
 JBAG	s	Jardin Botanico Atlantico, Ayuntamiento de Gijon			
 JBAL	s	Herbario Juan Baladron			
 JBB	s	Jardin Botanico Jose Celestino Mutis			
-JBC<MEX>	b	Francisco Javier Clavijero Botanic Garden	XAL		
+JBC	b	Francisco Javier Clavijero Botanic Garden			
 JBCC	s	Alaska State Museum			
 JBCVC	sb	Jardin Botanico Canario Viera y Clavijo			
 JBG	s	Johannesburg Botanic Garden			
@@ -4081,7 +4081,7 @@ KB	s	National Biological Resources Center, Department of Biological Sciences
 KBA	s	Baekdudaegan National Arboretum			
 KBAI	s	Kuban Agricultural State University, Department of Biology and Ecology			
 KBFH	s	Kurdistan Botanical Foundation			
-KBG<JPN>	b	Kyoto Botanical Garden			
+KBG	b	Kyoto Botanical Garden			
 KBHG	s	H. M. Berbekov Kabardian-Balkarian State University, Department of Botany			
 KBL	s	Kelley Botanical Library			
 KBM	s	Balaton Museum			
@@ -4159,7 +4159,7 @@ KISA	s	Institut Congolais pour la Conservation de la Nature
 KIT	c	Laboratorium voor Tropische Hygiene			
 KIUJ	s	Kyusu University			
 KIZ	s	Kunming Institute of Zoology, Chinese Academy of Sciences			
-KKFC<THA>	s	Kasetsart University Kamphaengsaen campus Fungus Collection			
+KKFC	s	Kasetsart University Kamphaengsaen campus Fungus Collection			
 KKM	s	Kirkleatham Museum			
 KKU	s	Khon Kaen University Herbarium, Department of Biology			
 KKUA	s	Khon Kaen University			
@@ -8021,8 +8021,8 @@ TRES	s	Tresco Abbey
 TRGFGA	s	Gaziantep University			
 TRH	s	Norwegian University of Science and Technology, Department of Natural History			
 TRIN	s	The National Herbarium of Trinidad and Tobago			
+TRM	c	College of Life Science, Tarim University			
 TRM	s	Vlastivedne muzeum Trutnov			
-TRM<CHN>	c	College of Life Science, Tarim University			
 TRN	s	N. Copernicus University			
 TRO	s	Royal Horticultural Society of Cornwall			
 TROM	s	University of Tromsoe, Botanical Department			
