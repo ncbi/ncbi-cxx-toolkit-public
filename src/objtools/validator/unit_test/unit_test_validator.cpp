@@ -8464,7 +8464,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PI");
     ambig.push_back("CENA");
     ambig.push_back("IBRP");
-    ambig.push_back("CRE");
     ambig.push_back("FSC");
     ambig.push_back("ENCB");
     ambig.push_back("BAS");
@@ -8501,7 +8500,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("IMT");
     ambig.push_back("MZV");
     ambig.push_back("SZE");
-    ambig.push_back("CUVC");
     ambig.push_back("LMJ");
     ambig.push_back("UC");
     ambig.push_back("ZIUS");
