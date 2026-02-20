@@ -8348,7 +8348,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("BAH");
     ambig.push_back("ACE");
     ambig.push_back("SLU");
-    ambig.push_back("UAB");
     ambig.push_back("CAIM");
     ambig.push_back("HER");
     ambig.push_back("DSC");
@@ -8374,7 +8373,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PMS");
     ambig.push_back("LE");
     ambig.push_back("GCM");
-    ambig.push_back("TMP");
     ambig.push_back("DMNH");
     ambig.push_back("ZMUH");
     ambig.push_back("SMF");
@@ -8412,7 +8410,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CBU");
     ambig.push_back("MCCM");
     ambig.push_back("NMSU");
-    ambig.push_back("OTM");
     ambig.push_back("LP");
     ambig.push_back("SME");
     ambig.push_back("PEM");
@@ -8438,7 +8435,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("YM");
     ambig.push_back("CAM");
     ambig.push_back("UA");
-    ambig.push_back("OSM");
     ambig.push_back("CPS");
     ambig.push_back("POKM");
     ambig.push_back("VSM");
@@ -8500,7 +8496,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("IMT");
     ambig.push_back("MZV");
     ambig.push_back("SZE");
-    ambig.push_back("LMJ");
     ambig.push_back("UC");
     ambig.push_back("ZIUS");
     ambig.push_back("FRI");
@@ -8530,7 +8525,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("SIAC");
     ambig.push_back("DFEC");
     ambig.push_back("CBD");
-    ambig.push_back("SWC");
     ambig.push_back("MD");
     ambig.push_back("FU");
     ambig.push_back("UV");
@@ -8555,7 +8549,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("PPCC");
     ambig.push_back("CNHM");
     ambig.push_back("IAL");
-    ambig.push_back("PCU");
     ambig.push_back("HM");
 
     for (const string& it : ambig) {
@@ -8638,7 +8631,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CDA");
     ambig.push_back("IAL");
     ambig.push_back("VI");
-    ambig.push_back("PCU");
     ambig.push_back("CVCC");
     ambig.push_back("BR");
     ambig.push_back("MSU");
