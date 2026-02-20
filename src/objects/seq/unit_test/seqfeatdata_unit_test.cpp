@@ -1995,11 +1995,11 @@ BOOST_AUTO_TEST_CASE(Test_VR_665)
     BOOST_CHECK_EQUAL(needs_country, false);
     BOOST_CHECK_EQUAL(erroneous_country, false);
 
-    inst_code = "NMNH";
+    inst_code = "CAS(SU)";
     BOOST_CHECK_EQUAL(COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country), true);
-    BOOST_CHECK_EQUAL(voucher_type, "sb");
+    BOOST_CHECK_EQUAL(voucher_type, "s");
     BOOST_CHECK_EQUAL(is_miscapitalized, false);
-    BOOST_CHECK_EQUAL(correct_cap, "NMNH");
+    BOOST_CHECK_EQUAL(correct_cap, "CAS(SU)");
     BOOST_CHECK_EQUAL(needs_country, false);
     BOOST_CHECK_EQUAL(erroneous_country, false);
 
