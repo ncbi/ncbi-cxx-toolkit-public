@@ -640,4 +640,6 @@ resolve_mult_10                         | -url "ID/resolve?seq_id=CAP20470&use_c
 resolve_mult_11                         | -url "ID/resolve?seq_id=CAP20480&use_cache=yes&fmt=json&all_info=yes&disable_processor=osg"                                                                                             | resolve with many live/not live                                | resolve
 resolve_mult_12                         | -url "ID/resolve?seq_id=CAP20480&use_cache=no&fmt=json&all_info=yes&disable_processor=osg"                                                                                             | resolve with many live/not live                                | resolve
 
+ipg_not_found_pir                       | -url "IPG/resolve?protein=pir%7CRDBP24&trace=no"                                                                                                                                      | ipg not found pir                                                                 | ipg
+ipg_found_pir                           | -url "IPG/resolve?protein=pir%7CPC4424&trace=no"                                                                                                                                      | ipg found pir                                                                     | ipg
 

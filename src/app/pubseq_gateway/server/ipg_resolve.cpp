@@ -708,6 +708,15 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveFinished(
     CRequestContextResetter     context_resetter;
     IPSGS_Processor::m_Request->SetRequestContext();
 
+    if (bioseq_resolution.m_ResolutionResult == ePSGS_BioseqDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_BioseqCache ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiDB ||
+        bioseq_resolution.m_ResolutionResult == ePSGS_Si2csiCache) {
+            bioseq_resolution.AdjustName(IPSGS_Processor::m_Request,
+                                         IPSGS_Processor::m_Reply);
+    }
+
+
     switch (m_IPGStage) {
         case ePSGS_ResolveGIProtein:
             m_ResolvedProtein = bioseq_resolution;
