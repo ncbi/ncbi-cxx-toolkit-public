@@ -1053,61 +1053,19 @@ static void fta_check_tpa_tsa_coverage(const FTATpaBlockList& ftbp, Int4 length,
 }
 
 /**********************************************************/
-bool fta_number_is_huge(const Char* s)
+bool fta_number_is_huge(string_view s)
 {
-    size_t i = StringLen(s);
+    size_t i = s.size();
     if (i > 10)
         return true;
     else if (i < 10)
         return false;
 
-    if (*s > '2')
-        return true;
-    else if (*s < '2')
-        return false;
+    Int4 n = 0;
+    auto r = std::from_chars(s.data(), s.data() + i, n);
+    if (r.ec != std::errc())
+        return true; // overflow
 
-    if (*++s > '1')
-        return true;
-    else if (*s < '1')
-        return false;
-
-    if (*++s > '4')
-        return true;
-    else if (*s < '4')
-        return false;
-
-    if (*++s > '7')
-        return true;
-    else if (*s < '7')
-        return false;
-
-    if (*++s > '4')
-        return true;
-    else if (*s < '4')
-        return false;
-
-    if (*++s > '8')
-        return true;
-    else if (*s < '8')
-        return false;
-
-    if (*++s > '3')
-        return true;
-    else if (*s < '3')
-        return false;
-
-    if (*++s > '6')
-        return true;
-    else if (*s < '6')
-        return false;
-
-    if (*++s > '4')
-        return true;
-    else if (*s < '4')
-        return false;
-
-    if (*++s > '7')
-        return true;
     return false;
 }
 
@@ -1381,7 +1339,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             while (r != acc.end() && *r == '0')
                 r++;
             string s(r, acc.end());
-            if (fta_number_is_huge(s.c_str()) == false)
+            if (! fta_number_is_huge(s))
                 tag.SetTag().SetId(fta_atoi(s));
             else
                 tag.SetTag().SetStr(std::move(s));

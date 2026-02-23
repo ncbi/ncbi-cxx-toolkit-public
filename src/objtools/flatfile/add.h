@@ -64,7 +64,7 @@ string GetQSFromFile(FILE* fd, const Indexblk* ibp);
 void   fta_remove_cleanup_user_object(objects::CSeq_entry& seq_entry);
 void   fta_tsa_tls_comment_dblink_check(const objects::CBioseq& bioseq, bool is_tsa);
 void   fta_set_molinfo_completeness(objects::CBioseq& bioseq, const Indexblk* ibp);
-bool   fta_number_is_huge(const char* s);
+bool   fta_number_is_huge(string_view);
 
 void fta_create_far_fetch_policy_user_object(objects::CBioseq& bsp, Int4 num);
 bool fta_if_valid_biosample(string_view id, bool dblink);
