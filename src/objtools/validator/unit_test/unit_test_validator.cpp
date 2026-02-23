@@ -7076,6 +7076,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetBiomol(entry, CMolInfo::eBiomol_cRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
     expected_errors[0]->SetErrMsg("cRNA note redundant with molecule type");
+    expected_errors.insert(expected_errors.begin(), 
+            new CExpectedError("lcl|good", eDiag_Fatal,
+                "InconsistentMolType",
+                "Non-viral lineage with cRNA moltype"));
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
