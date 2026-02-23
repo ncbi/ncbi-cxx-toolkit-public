@@ -9514,7 +9514,15 @@ void CValidError_bioseq::x_ValidateMolInfoForBioSource(
     }
 
     const string& lineage = src.GetOrg().GetLineage();
-    if (! NStr::StartsWith(lineage, "Viruses; ")) {
+    if (NStr::StartsWith(lineage, "Archea; ") ||
+        NStr::StartsWith(lineage, "Bacteria; ") ||
+        NStr::StartsWith(lineage, "Eukaryota; ")) {
+        if (minfo.IsSetBiomol() && minfo.GetBiomol() == CMolInfo::eBiomol_cRNA) {
+            auto context = m_CurrentHandle.GetParentEntry().GetCompleteSeq_entry();
+            m_Imp.PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_InconsistentMolType, "Non-viral lineage with cRNA moltype", desc, context.GetPointer());
+        }
+        return;
+    } else if (! NStr::StartsWith(lineage, "Viruses; ")) {
         return;
     }
 
