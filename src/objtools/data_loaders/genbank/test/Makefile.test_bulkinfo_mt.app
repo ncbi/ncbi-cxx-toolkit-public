@@ -8,7 +8,7 @@ LIB = xobjutil test_mt ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
 LIBS = $(GENBANK_THIRD_PARTY_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids supp.ids all_readers.sh ref
+CHECK_COPY = bad_len.ids wgs.ids wgs_vdb.ids wgs_prot.ids supp.ids all_readers.sh ref
 CHECK_REQUIRES = disabled
 
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -reference ref/0.gi.txt /CHECK_NAME=test_bulkinfo_mt_gi
@@ -47,6 +47,18 @@ CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type hash -idlist wgs_vdb.
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type bioseq -idlist wgs_vdb.ids -reference ref/wgs_vdb.bioseq.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_bioseq
 CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type sequence -idlist wgs_vdb.ids -reference ref/wgs_vdb.sequence.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_sequence
 CHECK_CMD = all_readers.sh -vdb-wgs -id2 test_bulkinfo_mt -type cdd -idlist wgs_vdb.ids -reference ref/wgs_vdb.cdd.txt /CHECK_NAME=test_bulkinfo_mt_wgs_vdb_cdd
+
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type gi -idlist wgs_prot.ids -reference ref/wgs_prot.gi.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_gi
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type acc -idlist wgs_prot.ids -reference ref/wgs_prot.acc.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_acc
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type label -idlist wgs_prot.ids -reference ref/wgs_prot.label.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_label
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type taxid -idlist wgs_prot.ids -reference ref/wgs_prot.taxid.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_taxid
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type length -idlist wgs_prot.ids -reference ref/wgs_prot.length.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_length
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type type -idlist wgs_prot.ids -reference ref/wgs_prot.type.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_types
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type state -idlist wgs_prot.ids /CHECK_NAME=test_bulkinfo_mt_wgs_prot_state
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type hash -idlist wgs_prot.ids -no-recalc -reference ref/wgs_prot.hash.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_hash
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type bioseq -idlist wgs_prot.ids -reference ref/wgs_prot.bioseq.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_bioseq
+CHECK_CMD = all_readers.sh -vdb-wgs test_bulkinfo_mt -type sequence -idlist wgs_prot.ids -reference ref/wgs_prot.sequence.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_sequence
+CHECK_CMD = all_readers.sh -vdb-wgs -id2 test_bulkinfo_mt -type cdd -idlist wgs_prot.ids -reference ref/wgs_prot.cdd.txt /CHECK_NAME=test_bulkinfo_mt_wgs_prot_cdd
 
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type gi -idlist bad_len.ids -reference ref/bad_len.gi.txt /CHECK_NAME=test_bulkinfo_mt_bad_gi
 CHECK_CMD = all_readers.sh test_bulkinfo_mt -type acc -idlist bad_len.ids -reference ref/bad_len.acc.txt /CHECK_NAME=test_bulkinfo_mt_bad_acc
