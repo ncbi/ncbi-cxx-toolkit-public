@@ -46,6 +46,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
 #endif
+
 static void
 s_UnregisterDataLoader(const string & dbloader_prefix)
 {
@@ -111,7 +112,7 @@ void CBlastNode::SendMsg(CBlastNodeMsg::EMsgType msg_type, void* ptr)
 void
 CBlastNode::SetDataLoaderPrefix()
 {
-	static const string kPrefixThread = "BLASTDB_THREAD";
+	constexpr std::string_view kPrefixThread = "BLASTDB_THREAD";
 	int t_id = CThread::GetSelf();
 	if (t_id !=0) {
 		m_DataLoaderPrefix = kPrefixThread + NStr::IntToString(t_id) + "_";
@@ -271,7 +272,7 @@ int CBlastMasterNode::IsFull()
 
 bool s_IsSeqID(string & line)
 {
-    static const int kMainAccSize = 32;
+    const int kMainAccSize = 32;
     size_t digit_pos = line.find_last_of("0123456789|", kMainAccSize);
     if (digit_pos != NPOS) {
     	return true;

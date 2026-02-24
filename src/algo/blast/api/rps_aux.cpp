@@ -159,7 +159,7 @@ CBlastRPSAuxInfo::x_DoDestroy()
 class CRpsAuxFile : public CObject {
 public:
     /// Extension associated with the RPS-BLAST database auxiliary file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".aux";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -175,7 +175,6 @@ private:
     CRef<CBlastRPSAuxInfo> m_Data;
 };
 
-const string CRpsAuxFile::kExtension(".aux");
 
 CRpsAuxFile::CRpsAuxFile(const string& filename_no_extn)
 {
@@ -272,7 +271,7 @@ CRpsMmappedFile::CRpsMmappedFile(const string& filename)
 class CRpsLookupTblFile : public CRpsMmappedFile {
 public:
     /// Extension associated with the RPS-BLAST database lookup table file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".loo";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -286,7 +285,6 @@ private:
     BlastRPSLookupFileHeader* m_Data;
 };
 
-const string CRpsLookupTblFile::kExtension(".loo");
 
 CRpsLookupTblFile::CRpsLookupTblFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
@@ -319,7 +317,7 @@ CRpsLookupTblFile::operator()() const
 class CRpsPssmFile : public CRpsMmappedFile {
 public:
     /// Extension associated with the RPS-BLAST database PSSM file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".rps";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -333,7 +331,6 @@ private:
     BlastRPSProfileHeader* m_Data;
 };
 
-const string CRpsPssmFile::kExtension(".rps");
 
 CRpsPssmFile::CRpsPssmFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
@@ -367,7 +364,7 @@ CRpsPssmFile::operator()() const
 class CRpsFreqsFile : public CRpsMmappedFile {
 public:
     /// Extension associated with the RPS-BLAST database PSSM file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".wcounts";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -381,7 +378,6 @@ private:
     BlastRPSProfileHeader* m_Data;
 };
 
-const string CRpsFreqsFile::kExtension(".wcounts");
 
 CRpsFreqsFile::CRpsFreqsFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
@@ -417,7 +413,7 @@ CRpsFreqsFile::operator()() const
 class CRpsObsrFile : public CRpsMmappedFile {
 public:
     /// Extension associated with the RPS-BLAST database PSSM file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".obsr";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -431,7 +427,6 @@ private:
     BlastRPSProfileHeader* m_Data;
 };
 
-const string CRpsObsrFile::kExtension(".obsr");
 
 CRpsObsrFile::CRpsObsrFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension)
@@ -465,7 +460,7 @@ CRpsObsrFile::operator()() const
 class CRpsFreqRatiosFile : public CRpsMmappedFile {
 public:
     /// Extension associated with the RPS-BLAST database PSSM file
-    static const string kExtension;
+    static inline constexpr std::string_view kExtension = ".freq";
 
     /// Parametrized constructor
     /// @param filename_no_extn name of the file without extension
@@ -481,7 +476,6 @@ private:
     BlastRPSFreqRatiosHeader* m_Data;
 };
 
-const string CRpsFreqRatiosFile::kExtension(".freq");
 
 CRpsFreqRatiosFile::CRpsFreqRatiosFile(const string& filename_no_extn)
     : CRpsMmappedFile(filename_no_extn + kExtension), m_Data(NULL)
