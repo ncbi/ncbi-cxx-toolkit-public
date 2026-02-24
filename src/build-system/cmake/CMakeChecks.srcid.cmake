@@ -51,47 +51,54 @@ else()
     set(_tree_root ${NCBITK_TREE_ROOT})
 endif()
 
-if(EXISTS ${_tree_root}/.git)
-    include(FindGit)
+if ($ENV{GITLAB_CI})
+    set(TOOLKIT_GIT_BRANCH    $ENV{CI_COMMIT_BRANCH})
+    set(TOOLKIT_GIT_REVISION  $ENV{CI_COMMIT_SHORT_SHA})
+    set(TOOLKIT_COMMIT_TAG    $ENV{CI_COMMIT_TAG})
 endif()
-if (GIT_FOUND)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} -C ${_tree_root} log -1 --format=%h
-        OUTPUT_VARIABLE TOOLKIT_GIT_REVISION ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} -C ${_tree_root} branch --show-current
-        OUTPUT_VARIABLE TOOLKIT_GIT_BRANCH ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
+if("${TOOLKIT_GIT_REVISION}" STREQUAL "")
+    if(EXISTS ${_tree_root}/.git)
+        include(FindGit)
+    endif()
+    if (GIT_FOUND)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} -C ${_tree_root} log -1 --format=%h
+            OUTPUT_VARIABLE TOOLKIT_GIT_REVISION ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} -C ${_tree_root} branch --show-current
+            OUTPUT_VARIABLE TOOLKIT_GIT_BRANCH ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+    endif()
+
+    if(NOT EXISTS ${_tree_root}/.git)
+        include(FindSubversion)
+    endif()
+    set(TOOLKIT_WC_REVISION 0)
+    if(NOT "$ENV{SVNREV}" STREQUAL "")
+        set(TOOLKIT_WC_REVISION "$ENV{SVNREV}")
+        set(TOOLKIT_WC_URL "$ENV{SVNURL}")
+    elseif (Subversion_FOUND)
+        NCBI_Subversion_WC_INFO(${_tree_root} TOOLKIT)
+    else()
+        set(TOOLKIT_WC_URL "")
+    endif()
+    if(NOT "$ENV{NCBI_SUBVERSION_REVISION}" STREQUAL "")
+        set(TOOLKIT_WC_REVISION "$ENV{NCBI_SUBVERSION_REVISION}")
+    endif()
+    set(NCBI_SUBVERSION_REVISION ${TOOLKIT_WC_REVISION})
 endif()
 if(NOT "${TOOLKIT_GIT_REVISION}" STREQUAL "")
     message(STATUS "Git revision = ${TOOLKIT_GIT_REVISION}")
 endif()
-
-if(NOT EXISTS ${_tree_root}/.git)
-    include(FindSubversion)
-endif()
-set(TOOLKIT_WC_REVISION 0)
-if(NOT "$ENV{SVNREV}" STREQUAL "")
-    set(TOOLKIT_WC_REVISION "$ENV{SVNREV}")
-    set(TOOLKIT_WC_URL "$ENV{SVNURL}")
-elseif (Subversion_FOUND)
-    NCBI_Subversion_WC_INFO(${_tree_root} TOOLKIT)
-else()
-    set(TOOLKIT_WC_URL "")
-endif()
-if(NOT "$ENV{NCBI_SUBVERSION_REVISION}" STREQUAL "")
-    set(TOOLKIT_WC_REVISION "$ENV{NCBI_SUBVERSION_REVISION}")
-endif()
-set(NCBI_SUBVERSION_REVISION ${TOOLKIT_WC_REVISION})
 if(NOT "${NCBI_SUBVERSION_REVISION}" STREQUAL "0")
     message(STATUS "SVN revision = ${NCBI_SUBVERSION_REVISION}")
-#    message(STATUS "SVN URL = ${TOOLKIT_WC_URL}")
 endif()
 
 if(NOT "${TOOLKIT_GIT_REVISION}" STREQUAL "")
     set(NCBI_GIT_BRANCH "${TOOLKIT_GIT_BRANCH}")
     set(NCBI_REVISION ${TOOLKIT_GIT_REVISION})
+    set(NCBI_COMMIT_TAG ${TOOLKIT_COMMIT_TAG})
     set(HAVE_NCBI_REVISION 1)
 elseif(NOT "${TOOLKIT_WC_REVISION}" STREQUAL "")
     set(NCBI_REVISION ${TOOLKIT_WC_REVISION})
