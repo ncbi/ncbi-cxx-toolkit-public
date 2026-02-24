@@ -107,7 +107,7 @@ void CEmblFormatter::FormatLocus
 
     string topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?
                 "circular" : kEmptyStr;
-    const string& mol = ctx.Config().UseEmblMolType() ?
+    const string_view mol = ctx.Config().UseEmblMolType() ?
         s_EmblMol[locus.GetBiomol()] : s_GenbankMol[locus.GetBiomol()];
 
     id_line.setf(IOS_BASE::left, IOS_BASE::adjustfield);

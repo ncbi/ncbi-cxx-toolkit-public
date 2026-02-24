@@ -66,13 +66,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // static members
-const string CFlatItemFormatter::s_GenbankMol[] = {
+const string_view CFlatItemFormatter::s_GenbankMol[] = {
     "    ", "DNA ", "RNA ", "mRNA", "rRNA", "tRNA", /* "snRNA" */ "RNA", /* "scRNA" */ "RNA",
     " AA ", "DNA ", "DNA ", "cRNA ", /* "snoRNA" */ "RNA", "RNA ", "RNA ", "tmRNA "
 };
 
 // static members
-const string CFlatItemFormatter::s_EmblMol[] = {
+const string_view CFlatItemFormatter::s_EmblMol[] = {
     "xxx", "DNA", "RNA", "RNA", "RNA", "RNA", "RNA",
     "RNA", "AA ", "DNA", "DNA", "RNA", "RNA", "RNA"
 };
