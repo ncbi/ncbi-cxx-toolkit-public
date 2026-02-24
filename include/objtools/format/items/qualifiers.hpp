@@ -243,7 +243,7 @@ class NCBI_FORMAT_EXPORT CFlatBoolQVal : public IFlatQVal
 {
 public:
     CFlatBoolQVal(bool value) : m_Value(value) { }
-    void Format(TFlatQuals& q, const CTempString& n, CBioseqContext&, TFlags) const
+    void Format(TFlatQuals& q, const CTempString& n, CBioseqContext&, TFlags) const override
         { if (m_Value) { x_AddFQ(q, n, kEmptyStr, CFormatQual::eEmpty); } }
 private:
     bool m_Value;
@@ -254,7 +254,7 @@ class NCBI_FORMAT_EXPORT CFlatIntQVal : public IFlatQVal
 {
 public:
     CFlatIntQVal(int value) : m_Value(value) { }
-    void Format(TFlatQuals& q, const CTempString& n, CBioseqContext&, TFlags) const;
+    void Format(TFlatQuals& q, const CTempString& n, CBioseqContext&, TFlags) const override;
 private:
     int m_Value;
 };
@@ -270,13 +270,13 @@ public:
     CFlatStringQVal(const CTempString& value, 
         TStyle style = CFormatQual::eQuoted,
         ETrim trim  = CFormatQual::eTrim_Normal );
-	CFlatStringQVal(const CTempString& value, const string& pfx, const string& sfx,
+    CFlatStringQVal(const CTempString& value, const string& pfx, const string& sfx,
         TStyle style = CFormatQual::eQuoted, ETrim trim  = CFormatQual::eTrim_Normal );
-	CFlatStringQVal(const CTempString& value,
+    CFlatStringQVal(const CTempString& value,
         ETrim trim );
-        
+
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
     const string& GetValue(void) const { return m_Value; }
     void SetAddPeriod( bool addPeriod = true ) { m_AddPeriod = ( addPeriod ? IFlatQVal::fAddPeriod : 0 ); }
@@ -295,9 +295,8 @@ public:
     CFlatNumberQVal(const string& value) :
         CFlatStringQVal(value, CFormatQual::eUnquoted)
     {}
-        
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 };
 
 
@@ -306,9 +305,8 @@ class NCBI_FORMAT_EXPORT CFlatBondQVal : public CFlatStringQVal
 public:
     CFlatBondQVal(const string& value) : CFlatStringQVal(value)
     {}
-        
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 };
 
 
@@ -317,9 +315,8 @@ class NCBI_FORMAT_EXPORT CFlatGeneQVal : public CFlatStringQVal
 public:
     CFlatGeneQVal(const string& value) : CFlatStringQVal(value, CFormatQual::eTrim_WhitespaceOnly)
     {}
-        
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 };
 
 
@@ -328,9 +325,8 @@ class NCBI_FORMAT_EXPORT CFlatSiteQVal : public CFlatStringQVal
 public:
     CFlatSiteQVal(const string& value) : CFlatStringQVal(value)
     {}
-        
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 };
 
 
@@ -347,7 +343,7 @@ public:
         TStyle style = CFormatQual::eQuoted)
         :   m_Value(begin, end), m_Style(style) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
     const TValue& GetValue(void) const { return m_Value; }
     TValue& SetValue(void) { return m_Value; }
@@ -368,7 +364,7 @@ public:
     }
 
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 };
 
 class NCBI_FORMAT_EXPORT CFlatNomenclatureQVal : public IFlatQVal
@@ -376,7 +372,7 @@ class NCBI_FORMAT_EXPORT CFlatNomenclatureQVal : public IFlatQVal
 public:
     CFlatNomenclatureQVal( const CGene_ref_Base::TFormal_name& value ) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const; 
+                TFlags flags) const override;
 
 private:
     CConstRef<CGene_ref_Base::TFormal_name> m_Value;
@@ -387,7 +383,7 @@ class NCBI_FORMAT_EXPORT CFlatCodeBreakQVal : public IFlatQVal
 public:
     CFlatCodeBreakQVal(const CCdregion::TCode_break& value) : m_Value(value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CCdregion::TCode_break m_Value;
@@ -400,7 +396,7 @@ public:
     CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_ascii = true);
     // CFlatCodonQVal(const string& value); // for imports
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     string m_Codon, m_AA;
@@ -414,7 +410,7 @@ public:
     CFlatExperimentQVal(
         const string&  = "" );
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 protected:
     string m_str;
 };
@@ -425,7 +421,7 @@ class NCBI_FORMAT_EXPORT CFlatInferenceQVal : public IFlatQVal
 public:
     CFlatInferenceQVal( const string& = "" );
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 protected:
     string m_str;
@@ -437,7 +433,7 @@ class NCBI_FORMAT_EXPORT CFlatIllegalQVal : public IFlatQVal
 public:
     CFlatIllegalQVal(const CGb_qual& value) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<CGb_qual> m_Value;
@@ -461,7 +457,7 @@ public:
 
     CFlatMolTypeQVal(TBiomol biomol, TMol mol) : m_Biomol(biomol), m_Mol(mol) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     TBiomol m_Biomol;
@@ -476,7 +472,7 @@ public:
 
     CFlatSubmitterSeqidQVal(TTech tech) : m_Tech(tech) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     TTech m_Tech;
@@ -490,7 +486,7 @@ public:
       IFlatQVal(&kSpace, &kSemicolon), m_Value(&value) { }
 
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<COrgMod> m_Value;
@@ -502,7 +498,7 @@ class NCBI_FORMAT_EXPORT CFlatOrganelleQVal : public IFlatQVal
 public:
     CFlatOrganelleQVal(CBioSource::TGenome value) : m_Value(value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CBioSource::TGenome m_Value;
@@ -514,7 +510,7 @@ class NCBI_FORMAT_EXPORT CFlatPubSetQVal : public IFlatQVal
 public:
     CFlatPubSetQVal(const CPub_set& value) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<CPub_set> m_Value;
@@ -527,7 +523,7 @@ public:
     CFlatSeqIdQVal(const CSeq_id& value, bool add_gi_prefix = false) 
         : m_Value(&value), m_GiPrefix(add_gi_prefix) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<CSeq_id> m_Value;
@@ -540,7 +536,7 @@ class NCBI_FORMAT_EXPORT CFlatSeqLocQVal : public IFlatQVal
 public:
     CFlatSeqLocQVal(const CSeq_loc& value) : m_Value(&value) { }
     void Format(TFlatQuals& q, const CTempString& n, CBioseqContext& ctx,
-                TFlags) const
+                TFlags) const override
         { x_AddFQ(q, n, CFlatSeqLoc(*m_Value, ctx).GetString()); }
 
 private:
@@ -556,7 +552,7 @@ public:
     { }
 
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<CSubSource> m_Value;
@@ -580,8 +576,8 @@ public:
         NStr::ToLower( m_rev_seq );
     }
 
-    void Format( 
-        TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx, TFlags flags) const;
+    void Format(
+        TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx, TFlags flags) const override;
 
 protected:
     string m_fwd_name;
@@ -599,7 +595,7 @@ public:
     CFlatXrefQVal(const TXref& value, const TQuals* quals = 0) 
         :   m_Value(value), m_Quals(quals) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     bool x_XrefInGeneXref(const CDbtag& dbtag) const;
@@ -614,7 +610,7 @@ class NCBI_FORMAT_EXPORT CFlatModelEvQVal : public IFlatQVal
 public:
     CFlatModelEvQVal(const CUser_object& value) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
 private:
     CConstRef<CUser_object> m_Value;
@@ -626,7 +622,7 @@ class NCBI_FORMAT_EXPORT CFlatGoQVal : public IFlatQVal
 public:
     CFlatGoQVal(const CUser_field& value) : m_Value(&value) { }
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
     bool Equals( const CFlatGoQVal &rhs ) const;
 
@@ -644,7 +640,7 @@ public:
     CFlatAnticodonQVal(const CSeq_loc& ac, const string& aa) :
         m_Anticodon(&ac), m_Aa(aa){ }
     void Format(TFlatQuals& q, const CTempString& n, CBioseqContext& ctx,
-                TFlags) const;
+                TFlags) const override;
 
 private:
     CConstRef<CSeq_loc> m_Anticodon;
@@ -659,7 +655,7 @@ public:
       IFlatQVal(&kEmptyStr, &kSemicolon), m_Value(&trna), m_Seqfeat_note(comment)
     {}
     void Format(TFlatQuals& q, const CTempString& n, CBioseqContext& ctx,
-                TFlags) const;
+                TFlags) const override;
 
 private:
     CConstRef<CTrna_ext> m_Value;
@@ -673,9 +669,8 @@ public:
     CFlatProductNamesQVal(const CProt_ref::TName& value, const string& gene) : 
         IFlatQVal(&kSpace, &kSemicolon), m_Value(value), m_Gene(gene)
     {}
-        
     void Format(TFlatQuals& quals, const CTempString& name, CBioseqContext& ctx,
-                TFlags flags) const;
+                TFlags flags) const override;
 
     const CProt_ref::TName& GetValue(void) const { return m_Value; }
     CProt_ref::TName& SetValue(void) { return m_Value; }
