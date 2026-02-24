@@ -132,8 +132,8 @@ protected:
         eBarcode
     };
 
-    static const string s_GenbankMol[];
-    static const string s_EmblMol[];
+    static const string_view s_GenbankMol[];
+    static const string_view s_EmblMol[];
 
     virtual SIZE_TYPE GetWidth(void) const { return 78; }
 

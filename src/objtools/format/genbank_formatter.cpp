@@ -385,7 +385,7 @@ void CGenbankFormatter::FormatLocus
     }
     const char* topology = (locus.GetTopology() == CSeq_inst::eTopology_circular) ?  "circular" : "linear  ";
 
-    const string& mol = s_GenbankMol[locus.GetBiomol()];
+    const string_view mol = s_GenbankMol[locus.GetBiomol()];
 
     const CFlatFileConfig& cfg = GetContext().GetConfig();
 
