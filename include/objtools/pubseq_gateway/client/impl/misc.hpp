@@ -132,7 +132,7 @@ struct SPSG_ParamMin
         return sm_MinValue;
     }
 
-    static TValue sm_MinValue;
+    static TValue sm_MinValue; /* NCBI_SAFE_STATIC : used with NCBI_PARAM_TYPE only */
     inline static bool sm_Warned = false;
 };
 
