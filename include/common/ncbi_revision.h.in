@@ -35,6 +35,10 @@
 #    undef NCBI_GIT_BRANCH
 #  endif
 #  define NCBI_GIT_BRANCH "@NCBI_GIT_BRANCH@"
+#  ifdef NCBI_COMMIT_TAG
+#    undef NCBI_COMMIT_TAG
+#  endif
+#  define NCBI_COMMIT_TAG "@NCBI_COMMIT_TAG@"
 #endif
 
 #if @NCBI_SUBVERSION_REVISION@ != 0
