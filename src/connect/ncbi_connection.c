@@ -1129,7 +1129,7 @@ extern EIO_Status CONN_ReadLine
             done = 1/*true*/;
         }
         if (i < x_read) {
-            /* pushback excess */
+            /* push back the excess */
             assert(done);
             if (conn->state == eCONN_Open
                 &&  !BUF_Pushback(&conn->buf, x_buf + i, x_read - i)) {
@@ -1230,8 +1230,8 @@ extern EIO_Status CONN_SetCallback
         return eIO_InvalidArg;
     }
 
-    /* NB: oldcb and newcb may point to the same address */
     if (newcb  ||  oldcb) {
+        /* NB: oldcb and newcb may point to the same address */
         SCONN_Callback cb = conn->cb[idx];
         if (newcb)
             conn->cb[idx] = *newcb;
