@@ -51,7 +51,6 @@ static constexpr std::initializer_list<eTestNames> g_ReportOrder1 = {
         eTestNames::STRAIN_CULTURE_COLLECTION_MISMATCH,
         eTestNames::TRINOMIAL_SHOULD_HAVE_QUALIFIER,
         eTestNames::REQUIRED_STRAIN,
-        eTestNames::BACTERIA_SHOULD_NOT_HAVE_ISOLATE,
         eTestNames::METAGENOMIC,
         eTestNames::METAGENOME_SOURCE,
         eTestNames::MAG_SHOULD_NOT_HAVE_STRAIN,

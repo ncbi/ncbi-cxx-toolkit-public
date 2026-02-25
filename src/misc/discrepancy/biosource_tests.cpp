@@ -409,79 +409,7 @@ DISCREPANCY_AUTOFIX(ATCC_CULTURE_CONFLICT)
     return CRef<CAutofixReport>();
 }
 
-
-// BACTERIA_SHOULD_NOT_HAVE_ISOLATE
-
 const string kAmplifiedWithSpeciesSpecificPrimers = "amplified with species-specific primers";
-
-DISCREPANCY_CASE(BACTERIA_SHOULD_NOT_HAVE_ISOLATE, BIOSRC, eDisc | eOncaller | eSmart, "Bacterial sources should not have isolate")
-{
-    const CSeqdesc* src = context.GetBiosource();
-    if (context.HasLineage(src ? &src->GetSource() : nullptr, "Bacteria") || context.HasLineage(src ? &src->GetSource() : nullptr, "Archaea")) {
-        for (const CBioSource* biosrc : context.GetBiosources()) {
-            bool has_bad_isolate = false;
-            bool is_metagenomic = false;
-            bool is_env_sample = false;
-            if (biosrc->IsSetSubtype()) {
-                for (const auto& s : biosrc->GetSubtype()) {
-                    if (s->IsSetSubtype()) {
-                        if (s->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
-                            is_env_sample = true;
-                            if (is_metagenomic && is_env_sample) {
-                                return;
-                            }
-                        }
-                        if (s->GetSubtype() == CSubSource::eSubtype_metagenomic) {
-                            is_metagenomic = true;
-                            if (is_metagenomic && is_env_sample) {
-                                return;
-                            }
-                        }
-                        if (s->GetSubtype() == CSubSource::eSubtype_other && s->IsSetName() && NStr::Equal(s->GetName(), kAmplifiedWithSpeciesSpecificPrimers)) {
-                            return;
-                        }
-                        if (s->GetSubtype() == CSubSource::eSubtype_isolation_source && s->IsSetName()) {
-                            string nm = s->GetName();
-                            if (NStr::StartsWith(nm, "single cell amplified") || NStr::StartsWith(nm, "a few single cells amplified")) {
-                                return;
-                            }
-                            size_t spc = nm.find(' ');
-                            if (spc != std::string::npos) {
-                                if (NStr::StartsWith(nm.substr(spc+1), "single cells amplified")) {
-                                    try {
-                                        if (NStr::StringToUInt(nm.substr(0, spc)) > 0) {
-                                            return;
-                                        }
-                                    } catch (...) {
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if (biosrc->IsSetOrg() && biosrc->GetOrg().IsSetOrgname() && biosrc->GetOrg().GetOrgname().IsSetMod()) {
-                for (const auto& m : biosrc->GetOrg().GetOrgname().GetMod()) {
-                    if (m->IsSetSubtype()) {
-                        if (m->GetSubtype() == CSubSource::eSubtype_other && m->IsSetSubname() && NStr::Equal(m->GetSubname(), kAmplifiedWithSpeciesSpecificPrimers)) {
-                            return;
-                        }
-                        if (m->GetSubtype() == COrgMod::eSubtype_isolate && m->IsSetSubname() &&
-                            !NStr::StartsWith(m->GetSubname(), "DGGE gel band") &&
-                            !NStr::StartsWith(m->GetSubname(), "TGGE gel band") &&
-                            !NStr::StartsWith(m->GetSubname(), "SSCP gel band")) {
-                            has_bad_isolate = true;
-                        }
-                    }
-                }
-            }
-            if (has_bad_isolate) {
-                m_Objs["[n] bacterial biosource[s] [has] isolate"].Add(*context.BiosourceObjRef(*biosrc));
-            }
-        }
-    }
-}
-
 
 // MAG_SHOULD_NOT_HAVE_STRAIN
 
