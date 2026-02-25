@@ -115,10 +115,10 @@ static const struct {
     /* from assigned IP ranges */
     { eIPRange_Range,   0x820E0800, 0x820E09FF }, /* 130.14.{8|9}.0/24       */
     { eIPRange_Range,   0x820E0B00, 0x820E0CFF }, /* 130.14.1{1|2}.0/24      */
-    { eIPRange_Range,   0x820E1400, 0x820E1AFF }, /* 130.14.20.0..27.255     */
-    { eIPRange_Range,   0x820E1B40, 0x820E1BFF }, /*  w/o 130.14.27.0/26     */
-    { eIPRange_Network, 0x820E1D00, 0xFFFFFF00 }, /* 130.14.29.yyy           */
-    { eIPRange_Network, 0xA5700700, 0xFFFFFF00 }, /* 165.112.7.zzz (colo)    */
+    { eIPRange_Range,   0x820E1400, 0x820E1AFF }, /* 130.14.20-27.*          */
+    { eIPRange_Range,   0x820E1B40, 0x820E1BFF }, /*   excl. 130.14.27.0/26  */
+    { eIPRange_Network, 0x820E1D00, 0xFFFFFF00 }, /* 130.14.29.0/24          */
+    { eIPRange_Network, 0xA5700700, 0xFFFFFF00 }, /* 165.112.7.0/24 (colo)   */
     /* from private IP ranges */
     { eIPRange_Network, 0x0A0A0000, 0xFFFF0000 }, /* 10.10/16 from cl.A      */
     { eIPRange_Network, 0x0A140000, 0xFFFF0000 }, /* 10.20/16 from cl.A      */
