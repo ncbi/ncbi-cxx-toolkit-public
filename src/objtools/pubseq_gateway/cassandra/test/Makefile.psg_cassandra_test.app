@@ -3,7 +3,8 @@ SRC = psg_cassandra_test unit/blob_record unit/cluster_meta unit/fullscan_plan \
     unit/fullscan_runner unit/cassandra_query unit/nannot_fetch unit/fetch_split_history \
     unit/cassandra_connection unit/bioseq_info_task unit/psg_api unit/load_blob_task \
     unit/get_public_comment unit/name_resolver unit/blob_retrieval_performance \
-    unit/sat_info_provider unit/cass_driver unit/cass_query_list unit/easy_consumer
+    unit/sat_info_provider unit/cass_driver unit/cass_query_list unit/easy_consumer \
+    unit/sync_object
 
 WATCHERS=saprykin
 REQUIRES = CASSANDRA MT Linux GCC
