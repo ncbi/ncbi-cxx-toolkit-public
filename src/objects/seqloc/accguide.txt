@@ -446,7 +446,17 @@ version  1 # of file format
 4+6  MAP_  gb_other_nuc # Fallback to placate older clients
 4+6  MAP_  gb_optical_map
 
-# 6-character accessions (mixed, but generally nucleotide)
+# PIR IDs (technically locus names) with distinctive in-scope patterns.
+# (The most common pattern is 1+5, starting with A-I, S, or T, but that
+# overlaps with some old INSDC accessions.)
+2+4  A?     pir # Just AB-AI, but not worth enumerating
+2+4  J?     pir # J[ACEGHKLPQS-X], likewise
+2+4  P?     pir # P[ACDHLNQSTUWX], likewise
+4+1  ????   pir # [CHILMN]???, likewise
+4+2  ????   pir # [ACEFHILMNQRTV]???, likewise
+5+1  ?????  pir # [AC-IK-NQ-XZ]????, likewise
+
+# Other 6-character accessions (mixed, but generally nucleotide)
 1+5  A  embl_patent
 1+5  B  gb_gss
 1+5  C  ddbj_est *
