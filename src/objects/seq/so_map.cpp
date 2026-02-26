@@ -1178,6 +1178,9 @@ bool xSoMapMapRepeatRegion(
         {"non_ltr_retrotransposon_polymeric_tract", "non_LTR_retrotransposon_polymeric_tract"},
         {"x_element_combinatorical_repeat", "X_element_combinatorical_repeat"},
         {"y_prime_element", "Y_prime_element"},
+        {"centromeric_repeat", "centromeric_repeat"},
+        {"long_terminal_repeat", "long_terminal_repeat"},
+        {"telomeric_repeat", "telomeric_repeat"},
         {"other", "repeat_region"},
     });
     TQualValue rpt_type = GetUnambiguousNamedQual(feature, "rpt_type");
