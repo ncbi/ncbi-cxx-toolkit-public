@@ -35,11 +35,13 @@
  */
 
 #include <atomic>
+#include <mutex>
 #include <thread>
 #include <signal.h>
 #include <functional>
 
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include "IdCassScope.hpp"
 
@@ -134,33 +136,25 @@ public:
     }
 
 private:
-    volatile atomic_int     m_Value;
+    atomic_int m_Value;
 };
 #endif
-
 
 class SSignalHandler
 {
 public:
-    static bool s_CtrlCPressed(void)
+    static bool s_CtrlCPressed()
     {
         return sm_CtrlCPressed != 0;
     }
 
-    static void s_WatchCtrlCPressed(bool  enable,
-                                    function<void()> on_ctrl_c_pressed = NULL);
-
+    static void s_WatchCtrlCPressed(bool enable);
 private:
-    static volatile sig_atomic_t                        sm_CtrlCPressed;
-#ifdef __linux__
-    static CFutex                                       sm_CtrlCPressedEvent;
-#endif
-    static unique_ptr<thread, function<void(thread*)> > sm_WatchThread;
-    static function<void()>                             sm_OnCtrlCPressed;
-    static volatile bool                                sm_Quit;
+    static sig_atomic_t sm_CtrlCPressed;
+    static bool sm_SignalWatcherCreated;
+    static CSafeStatic<std::mutex> sm_SignalWatcherMutex;
 };
-
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // SYNCOBJ__HPP

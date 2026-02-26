@@ -149,66 +149,26 @@ CFutex::EWaitResult CFutex::WaitWhile(int value, int timeout_mks)
 
 /** SSignalHandler */
 
-volatile sig_atomic_t SSignalHandler::sm_CtrlCPressed(0);
-#ifdef __linux__
-CFutex SSignalHandler::sm_CtrlCPressedEvent;
-#endif
+sig_atomic_t SSignalHandler::sm_CtrlCPressed{0};
+bool SSignalHandler::sm_SignalWatcherCreated{false};
+CSafeStatic<std::mutex> SSignalHandler::sm_SignalWatcherMutex;
 
-function<void()> SSignalHandler::sm_OnCtrlCPressed(NULL);
-unique_ptr<thread, function<void(thread*)> > SSignalHandler::sm_WatchThread;
-volatile bool SSignalHandler::sm_Quit(false);
-
-
-void SSignalHandler::s_WatchCtrlCPressed(bool enable, function<void()> on_ctrl_c_pressed)
+void SSignalHandler::s_WatchCtrlCPressed(bool enable)
 {
+    std::lock_guard _(sm_SignalWatcherMutex.Get());
     sm_CtrlCPressed = 0;
-    sm_OnCtrlCPressed = on_ctrl_c_pressed;
-#ifdef __linux__
-    sm_CtrlCPressedEvent.Set(0);
-#endif
-    if (sm_WatchThread) {
-        ERR_POST(Trace << "Joining Ctrl+C watcher thread");
-        sm_WatchThread = NULL;
+    if (sm_SignalWatcherCreated) {
+        ERR_POST(Trace << "Cleaning Ctrl+C watcher");
+        signal(SIGINT, SIG_DFL);
+        sm_SignalWatcherCreated = false;
     }
-
     if (enable) {
-        if (!sm_WatchThread) {
-            ERR_POST(Trace << "Creating Ctrl+C watcher thread");
-            sm_WatchThread = unique_ptr<thread, function<void(thread*)> >(new thread(
-                [](){
-                    sm_Quit = false;
-                    signal(SIGINT, [](int) {
-                        signal(SIGINT, SIG_DFL);
-                        SSignalHandler::sm_CtrlCPressed = 1;
-#ifdef __linux__
-                        SSignalHandler::sm_CtrlCPressedEvent.Inc();
-#endif
-                    });
-                    while (sm_OnCtrlCPressed && !sm_Quit) {
-#ifdef __linux__
-                        while (SSignalHandler::sm_CtrlCPressedEvent.WaitWhile(
-                                    SSignalHandler::sm_CtrlCPressedEvent.Inc(),
-                                    100000) == CFutex::eWaitResultTimeOut && !sm_Quit);
-#endif
-                        ERR_POST(Trace << "Ctr+C watcher thread woke up");
-                        if (sm_CtrlCPressed && SSignalHandler::sm_OnCtrlCPressed) {
-                            ERR_POST(Trace << "Ctr+C watcher thread: calling closure");
-                            SSignalHandler::sm_OnCtrlCPressed();
-                        }
-                        ERR_POST(Trace << "Ctr+C watcher thread finished");
-                    }
-                }),
-                [](thread* th){
-                    if (th) {
-                        sm_Quit = true;
-                        th->join();
-                        signal(SIGINT, SIG_DFL);
-                        sm_Quit = false;
-                    }
-                    delete th;
-                }
-            );
-        }
+        ERR_POST(Trace << "Creating Ctrl+C watcher");
+        signal(SIGINT, [](int) {
+            signal(SIGINT, SIG_DFL);
+            SSignalHandler::sm_CtrlCPressed = 1;
+        });
+        sm_SignalWatcherCreated = true;
     }
 }
 
