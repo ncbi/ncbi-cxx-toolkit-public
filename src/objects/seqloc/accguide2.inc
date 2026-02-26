@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Tue Feb 10 10:34:45 EST 2026; formally
+/* time_t value corresponding to Thu Feb 26 15:22:17 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1770737685UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1772137337UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -321,7 +321,19 @@ static const char* const kBuiltInGuide[] = {
     "# Unusually structured GenBank accessions",
     "4+6  MAP_  gb_optical_map",
     "",
-    "# 6-character accessions (mixed, but generally nucleotide)",
+    "# PIR IDs (technically locus names) with distinctive in-scope patterns.",
+    "# (The most common pattern is 1+5, starting with A-I, S, or T, but that",
+    "# overlaps with some old INSDC accessions.  There are also other",
+    "# patterns that don't follow this general letters-first format, handled",
+    "# directly in code.)",
+    "2+4  A?     pir # Just AB-AI, but not worth enumerating",
+    "2+4  J?     pir # J[ACEGHKLPQS-X], likewise",
+    "2+4  P?     pir # P[ACDHLNQSTUWX], likewise",
+    "4+1  ????   pir # [CHILMN]???, likewise",
+    "4+2  ????   pir # [ACEFHILMNQRTV]???, likewise",
+    "5+1  ?????  pir # [AC-IK-NQ-XZ]????, likewise",
+    "",
+    "# Other 6-character accessions (mixed, but generally nucleotide)",
     "1+5  A  embl_patent",
     "1+5  B  gb_gss",
     "1+5  C  ddbj_est *",
