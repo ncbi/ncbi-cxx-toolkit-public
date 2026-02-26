@@ -95,6 +95,14 @@ public:
         /// sufficient.  (Automatically on when calling IdentifyAccession
         /// internally.)
         fParse_FallbackOK = 0x40,
+        /// Bail on bare IDs that are potentially ambiguous even when
+        /// not treated as possibly local.  In particular, PIR locus
+        /// names overlap with INSDC nucleotide accessions in
+        /// A00001-I99999 and S00001-T99999 and with some
+        /// six-character Swissprot accessions with roughly
+        /// alternating letters and numbers, and some early Nxxxxx
+        /// accessions are ambiguous as to specific INSDC type.
+        fParse_Cautiously = 0x80,
 
         /// By default in ParseIDs and IsValid, allow raw parsable
         /// non-numeric accessions and plausible local accessions.
@@ -580,6 +588,16 @@ public:
     /// somehow fails).
     static bool RefreshAccessionGuide();
 
+    enum EAssessment {
+        eInvalid,      ///< Not even valid as a local ID
+        eLocalOnly,    ///< Valid only as a local ID
+        ePlausible,    ///< Potential general, patent, or PIR ID
+        eUnreserved,   ///< Clear INSDC format, no specific reservation known
+        eIdentifiable, ///< by IdentifyAccession and not a possible PIR ID
+        eTagged        ///< Explicitly tagged, FASTA-style
+    };
+    static EAssessment AssessAccession(const CTempString& accession);
+    
     /// Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
 

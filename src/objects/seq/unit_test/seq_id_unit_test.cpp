@@ -61,6 +61,9 @@ USING_SCOPE(objects);
 
 #define NCBI_CHECK_THROW_SEQID(s) BOOST_CHECK_THROW(s, CSeqIdException)
 
+static const auto kCautious =
+    CSeq_id::fParse_RawText | CSeq_id::fParse_Cautiously;
+
 NCBITEST_AUTO_INIT()
 {
     // force use of built-in accession guide
@@ -243,6 +246,12 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
 {
     CRef<CSeq_id> id;
 
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A12345")));
+    BOOST_CHECK(id->IsEmbl());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A12345", kCautious)));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("J12345", kCautious)));
+    BOOST_CHECK(id->IsGenbank());
+
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("BN00123")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("bn000123")));
     BOOST_CHECK(id->IsTpe());
@@ -390,6 +399,48 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
                       CSeq_id::eAcc_unknown);
 }
 
+BOOST_AUTO_TEST_CASE(s_TestInitFromPIRAcc)
+{
+    CRef<CSeq_id> id;
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A2HT")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("a2hu")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("DDRT")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("INTU2")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("F2NT4")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("KIBET")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("AC0789")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("HMIVE1")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("HMIV17")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("OBOB2M")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("W6WLRB")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("R3OB3M")));
+    BOOST_CHECK(id->IsPir());
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("YTBSRT")));
+    BOOST_CHECK(id->IsPir());
+}
+
 BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
 {
     CRef<CSeq_id> id;
@@ -397,12 +448,16 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ")));
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("q7cqj0")));
     BOOST_CHECK(id->IsSwissprot());
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO")));
+    // NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJO"))); // valid PIR
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q7CQJ01")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("07CQJ0")));
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A2ASS6.1", kCautious)));
     BOOST_CHECK(id->IsSwissprot());
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("A29SS6.1")));
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("Q3ECS7.1")));
+    BOOST_CHECK(id->IsSwissprot());
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("Q3ECS7.1", kCautious)));
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("A0A022YWF9")));
     BOOST_CHECK(id->IsSwissprot());
@@ -2473,4 +2528,24 @@ BOOST_AUTO_TEST_CASE(TestPDB)
         set<CSeq_id_Handle> idh_set_ne(begin(idh_ne), end(idh_ne));
         BOOST_CHECK_EQUAL(idh_set_ne.size(), size(idh_ne));
     }}
+}
+
+BOOST_AUTO_TEST_CASE(s_TestAssessment)
+{
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("|foo"), CSeq_id::eInvalid);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("gi|foo"), CSeq_id::eInvalid);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("foo"), CSeq_id::eLocalOnly);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("foo|bar"),
+                      CSeq_id::ePlausible);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("ABCDEF123456"),
+                      CSeq_id::ePlausible);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("ZZ123456"),
+                      CSeq_id::eUnreserved);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("1"), CSeq_id::eIdentifiable);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("AA123456"),
+                      CSeq_id::eIdentifiable);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("ATGC:1"),
+                      CSeq_id::eIdentifiable);
+    BOOST_CHECK_EQUAL(CSeq_id::AssessAccession("pir||A04056"),
+                      CSeq_id::eTagged);
 }

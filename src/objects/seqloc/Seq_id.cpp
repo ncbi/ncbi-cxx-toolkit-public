@@ -41,10 +41,12 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <util/compile_time.hpp>
 #include <util/line_reader.hpp>
 #include <util/static_map.hpp>
 #include <util/util_misc.hpp>
 #include <util/bitset/ncbi_bitset.hpp>
+#include <util/regexp/ctre/ctre.hpp>
 #include <serial/serialimpl.hpp>
 
 #include <objects/seq/Bioseq.hpp>
@@ -123,6 +125,89 @@ static const char* sc_SupportedRawDbtags[] = {
 };
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(CStaticArraySet<string>, kSupportedRawDbtags,
                                   sc_SupportedRawDbtags);
+
+// PIR IDs taking the form of valid Swissprot accessions, and in some
+// cases (the three Qs) actually colliding with them.  There are only
+// 25, but they exhibit some definite clustering, especially when sorted
+// primarily by the last four characters, so go ahead with a regex.
+static constexpr ctll::fixed_string kSPishPIR{
+    "Z3BPF1"
+    "|Z[23]BPL7"
+    "|Q[12]BPP4"
+    "|Q3ECS7"
+    "|P3IV33"
+    "|P[23]IV34"
+    "|P[123]IV61"
+    "|F2KKD2"
+    "|R5NT28"
+    "|R6UC46"
+    "|W5WLB2"
+    "|(?:P[12]|W[1-7])WLC1"
+    "|R3ZM12"
+};
+
+// Other PIR IDs that don't use generalized INSDC accession format (all
+// letters first).  They follow various other patterns, but the majority
+// consist solely of letters, and as such should be explicitly
+// enumerated to avoid false positives from 4-6 letter words.
+MAKE_CONST_SET(kMiscPIR4, ct::tagStrCase, // precapitalized as needed
+ { {"A2HU"}, {"C3NJ"}, {"CSRZ"}, {"CUAI"}, {"CVJB"}, {"DDRT"}, {"EPRZ"},
+   {"FECF"}, {"FERZ"}, {"GCPG"}, {"GKHU"}, {"HDGI"}, {"HMIV"}, {"HPBO"},
+   {"IHPC"}, {"INCD"}, {"INEL"}, {"INHY"}, {"INOS"}, {"INTK"}, {"ITBA"},
+   {"LARB"}, {"MCON"}, {"MFIV"}, {"MFVN"}, {"MHHU"}, {"MNVN"}, {"NMIV"},
+   {"QFBO"}, {"SEBO"}, {"SVIA"}, {"SVXC"}, {"TAGB"}, {"TCON"}, {"TIAC"},
+   {"TXAI"}, {"VGVN"}, {"VRBO"}, {"W4WL"} });
+MAKE_CONST_SET(kMiscPIR5, ct::tagStrCase, // precapitalized as needed
+ { {"AFKKA"}, {"AFMDB"}, {"AFMWA"}, {"AFMWB"}, {"AJHYQ"}, {"AJKXQ"}, {"BHTLA"},
+   {"BPSOP"}, {"CFKKA"}, {"CFMWB"}, {"CFXCA"}, {"CFXCB"}, {"CFYCA"}, {"DEPGC"},
+   {"DOCGA"}, {"F2NT4"}, {"FGRTA"}, {"GNNYF"}, {"GNWEC"}, {"HAMQR"}, {"HJAGI"},
+   {"HMIVF"}, {"HWGHS"}, {"KIBET"}, {"KQMSM"}, {"LABOZ"}, {"LBBCA"}, {"LBBCB"},
+   {"LFTWL"}, {"LWNTM"}, {"LWOBM"}, {"LZFER"}, {"NRBOB"}, {"PASPC"}, {"PKSMK"},
+   {"PRSAK"}, {"PWBYG"}, {"R3MD4"}, {"R3TW7"}, {"RDKBD"}, {"RFMWA"}, {"RFMWB"},
+   {"RHPGT"}, {"RKAIS"}, {"RKMDS"}, {"SUBSD"}, {"SYEXI"}, {"TISYC"}, {"TVFFS"},
+   {"TVTWG"}, {"VCTNS"}, {"VHVNN"}, {"WNBCL"}, {"WNBCM"}, {"XKARB"},
+   {"YTSOG"} });
+MAKE_CONST_SET(kMiscPIR6, ct::tagStrCase, // precapitalized as needed
+ { {"ASLJSM"}, {"AZPSDF"}, {"BNRT3S"}, {"BVBPRA"}, {"BVECIB"}, {"BVECIC"},
+   {"BVECPA"}, {"BVECRQ"}, {"CCPS5D"}, {"CFYCBB"}, {"CGRT2S"}, {"CSHYAC"},
+   {"CTYMCS"}, {"CYGCAA"}, {"CZCLCA"}, {"DAAGWT"}, {"DESPGA"}, {"DETWMA"},
+   {"DWFKTG"}, {"EDBEGA"}, {"F2KK4C"}, {"F2WT4J"}, {"FECLCE"}, {"FOLJLK"},
+   {"FOLJSA"}, {"FOLJSP"}, {"FOLJVS"}, {"FOVWLV"}, {"FWPU1B"}, {"FXCLEX"},
+   {"GNLJLK"}, {"GNLJSA"}, {"GNLJSP"}, {"GNNYHB"}, {"GNVUSR"}, {"GNVWLV"},
+   {"GNWVDF"}, {"GNWVHC"}, {"HMIVBA"}, {"HMIVBH"}, {"HMIVCV"}, {"HMIVDA"},
+   {"HMIVDE"}, {"HMIVDU"}, {"HMIVEE"}, {"HMIVET"}, {"HMIVSA"}, {"HMIVSV"},
+   {"HMIVTW"}, {"HNVZVW"}, {"IHKREV"}, {"INMKSQ"}, {"ISCLXH"}, {"ISUTTB"},
+   {"JJAGTT"}, {"KIBEFC"}, {"KIBEHS"}, {"KIBETH"}, {"LFTWWE"}, {"LNLWBA"},
+   {"LWPJ9M"}, {"MFIV1F"}, {"MFIV1K"}, {"MFIV2J"}, {"MFIVPR"}, {"MFNZBK"},
+   {"MKUT2B"}, {"MNIV1B"}, {"MNIV1F"}, {"MNIV2A"}, {"MNIV2F"}, {"MNIV2M"},
+   {"MNIV2W"}, {"MNIVXX"}, {"MNXRAD"}, {"MNXRBF"}, {"MNXRBR"}, {"MNXRDS"},
+   {"MNXRVM"}, {"N2LT1E"}, {"NGMSMG"}, {"NIZRFX"}, {"NMIVAA"}, {"NMIVAK"},
+   {"NMIVEA"}, {"NMIVEK"}, {"NMIVXL"}, {"NTSR2C"}, {"NTSR3C"}, {"OBOB2M"},
+   {"OBUTMB"}, {"OMHU1B"}, {"OZZQMY"}, {"P1XRBR"}, {"P2IVWS"}, {"P2XRUK"},
+   {"PNBS2S"}, {"PRLJSA"}, {"PSKF3U"}, {"PSKFAU"}, {"PSNJ2K"}, {"PSNJ3B"},
+   {"PSNJ3K"}, {"Q3YCRQ"}, {"Q5ECRS"}, {"QQBB2G"}, {"QQBE8H"}, {"QQBEHA"},
+   {"QQEC3R"}, {"QQEC6K"}, {"QQLJVS"}, {"QQLJVX"}, {"R3OB3M"}, {"RDBEHS"},
+   {"RGECKK"}, {"RGHYAE"}, {"RGKKOR"}, {"RKKKLC"}, {"RKKKSC"}, {"RROBHM"},
+   {"RWMSBC"}, {"SJGQBG"}, {"SYBEHS"}, {"SYBYMX"}, {"SYHYHT"}, {"SYTWMT"},
+   {"SYTWSA"}, {"TIKFBU"}, {"TNLJBR"}, {"TPHUCC"}, {"TPRBTS"}, {"TSAEAA"},
+   {"TVBEPN"}, {"TVCHLV"}, {"TVCJRA"}, {"TVDGYP"}, {"TVFVSA"}, {"TVHU2F"},
+   {"TVMVCB"}, {"TVMVNS"}, {"TVRTRR"}, {"VCLJGG"}, {"VCLJKX"}, {"VCLJLK"},
+   {"VCLJMN"}, {"VCLJSA"}, {"VCLJSC"}, {"VCLJSP"}, {"VCLJST"}, {"VCLJVS"},
+   {"VCMVFP"}, {"VCTMHR"}, {"VCTMOR"}, {"VCTMTO"}, {"VCTMVU"}, {"VCVQBY"},
+   {"VCVWFS"}, {"VCVWSF"}, {"VGBE2E"}, {"VGBEDZ"}, {"VGBEMA"}, {"VGBEMB"},
+   {"VGBEMH"}, {"VGBERB"}, {"VGBESA"}, {"VGBESM"}, {"VGNZGB"}, {"VGXRAB"},
+   {"VGXRBB"}, {"VGXRCB"}, {"VGXRDB"}, {"VGXRER"}, {"VGXRRR"}, {"VGXRST"},
+   {"VHIV8H"}, {"VHIVAK"}, {"VHIVXL"}, {"VHNZCV"}, {"VHXRBR"}, {"VKLJBR"},
+   {"VKLJND"}, {"VKLJVA"}, {"VPXRBU"}, {"VPXRDS"}, {"VPXRMN"}, {"VPXRRP"},
+   {"VPXRWA"}, {"W5WLRB"}, {"W6WLRB"}, {"W7WLRB"}, {"WMBE2E"}, {"WMBEAK"},
+   {"WMBEHA"}, {"WMBEHS"}, {"WMBEMA"}, {"WMBEMB"}, {"WMBETW"}, {"WMLJLK"},
+   {"WMLJSP"}, {"WMTM3C"}, {"WMVQBY"}, {"WMXR3B"}, {"XISR1A"}, {"XUHYMC"},
+   {"XXBYAC"}, {"XXEBCF"}, {"YTBSRT"} });
+
+// Cannot assume precapitalization
+static constexpr ctll::fixed_string kAccessionLike{
+    "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.[1-9]\\d*)?"
+};
 
 
 // CSeqIdException
@@ -1678,12 +1763,52 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
 {
     SIZE_TYPE digit_pos = main_acc.find_first_of(kDigits),
         main_size = main_acc.size();
+    const unsigned char* ucdata = (const unsigned char*)main_acc.data();
     char flag_char = '\0';
+    switch (main_size) {
+    case 4:
+        if (kMiscPIR4.find(main_acc) != kMiscPIR4.end()) {
+            return eAcc_pir;
+        }
+        break;
+    case 5:
+        if (kMiscPIR5.find(main_acc) != kMiscPIR5.end()) {
+            return eAcc_pir;
+        }
+        break;
+    case 6:
+        if (isalpha(ucdata[5])
+            &&  kMiscPIR6.find(main_acc) != kMiscPIR6.end()) {
+            return eAcc_pir;
+        }
+        break;
+    default:
+        break;
+    }
     if (digit_pos == NPOS) {
         return eAcc_unknown;
     } else {
         SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
-        const unsigned char* ucdata = (const unsigned char*)main_acc.data();
+        if (main_size == 6
+            &&  ((flags & (fParse_Cautiously | fParse_RawText))
+                 == (fParse_Cautiously | fParse_RawText))) {
+            if (non_dig_pos == NPOS) {
+                if (main_acc[0] <= 'I'
+                    ||  (main_acc[0] == 'N'  &&  main_acc[1] < '2')
+                    ||  main_acc[0] == 'S' ||  main_acc[0] == 'T') {
+                    // A-I, S, T: PIR vs. INSDC
+                    // N0, N1: internal INSDC collisions
+                    return eAcc_unknown;
+                }
+            } else if (non_dig_pos == 2  &&  isdigit(ucdata[5])
+                       &&  isalpha(ucdata[2])  &&  isalnum(ucdata[3])
+                       &&  isalnum(ucdata[4])
+                       &&  ctre::match<kSPishPIR>(main_acc)) {
+                // PIR vs. Swissprot; 25 PIR accessions, 3 overlaps as
+                // of 2026-02-25.
+                return eAcc_unknown;
+            }
+        }
         if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
             if ( !has_version  &&  digit_pos == 0  &&  main_size >= 4
                 &&  non_dig_pos < 5  &&  isalnum(ucdata[1])
@@ -1909,6 +2034,57 @@ bool CSeq_id::RefreshAccessionGuide()
         return true;
     }
     return false;
+}
+
+
+CSeq_id::EAssessment CSeq_id::AssessAccession(const CTempString& accession)
+{
+    auto pos = accession.find_first_of(":|");
+    if (pos == 0) {
+        return eInvalid;
+    } else if (pos != NPOS) {
+        CTempString s(accession, 0, pos);
+        if (accession[pos] == '|') {
+            auto choice = WhichInverseSeqId(s);
+            if (choice != e_not_set) {
+                try {
+                    CSeq_id id(accession);
+                    return eTagged;
+                } catch (CException&) {
+                }
+            } else {
+                // still plausible patent ID or dbtag; can probably be
+                // stricter (patent IDs start with two-letter issuers, as
+                // of 2026-02-24 only AT, AU, BE, CA, CH, DE, EP [EPO],
+                // FR, GB [UK], JP, KR, NL, NO, US, and WO [WIPO]; dbtags
+                // are harder to inventory but likely have at least two
+                // characters too)
+                return ePlausible;
+            }
+        } else if (pos < 16) {
+            char buf[16];
+            for (SIZE_TYPE i = 0;  i < pos;  ++i) {
+                buf[i] = toupper(accession[i]);
+            }
+            if (kSupportedRawDbtags.find(CTempString(buf, pos))
+                != kSupportedRawDbtags.end()) {
+                return eIdentifiable;
+            }
+        }
+    } else {
+        auto acc_info = IdentifyAccession(accession,
+                                          fParse_AnyRaw | fParse_Cautiously);
+        if (GetAccType(acc_info) != e_not_set) {
+            return eIdentifiable;
+        } else if (acc_info != eAcc_unknown) {
+            return eUnreserved;
+        } else if (ctre::match<kAccessionLike>(accession)) {
+            return ePlausible;
+        } else if (IsValidLocalID(accession)) {
+            return eLocalOnly;
+        }
+    }
+    return eInvalid;
 }
 
 
