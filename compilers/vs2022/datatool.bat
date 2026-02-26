@@ -34,48 +34,6 @@ REM ===========================================================================
 
 set ORIGINAL_ARGS=%*
 
-REM ---------------- begin workaround FOR MSVC2010! ---------------------------------
-set input_asn_path=
-set input_asn_name=
-set input_def_path=
-set subtree=
-set srcroot=
-:PARSEARGS
-if _%1==_ goto ENDPARSEARGS
-if "%dest%"=="inASN"    (set input_asn_path=%~1& set input_asn_name=%~n1& set dest=& goto CONTINUEPARSEARGS)
-if "%dest%"=="inDEF"    (set input_def_path=%~1& set dest=& goto CONTINUEPARSEARGS)
-if "%dest%"=="subtree"  (set subtree=%1&     set dest=& goto CONTINUEPARSEARGS)
-if "%dest%"=="srcroot"  (set srcroot=%1&     set dest=& goto CONTINUEPARSEARGS)
-if "%1"=="-m"           (set dest=inASN&                goto CONTINUEPARSEARGS)
-if "%1"=="-od"          (set dest=inDEF&                goto CONTINUEPARSEARGS)
-if "%1"=="-or"          (set dest=subtree&              goto CONTINUEPARSEARGS)
-if "%1"=="-oR"          (set dest=srcroot&              goto CONTINUEPARSEARGS)
-if "%1"=="-M"           (goto ENDPARSEARGS)
-:CONTINUEPARSEARGS
-shift
-REM echo parsing %1
-goto PARSEARGS
-:ENDPARSEARGS
-set src_subtree=%CD%\%srcroot%src\%subtree%
-set dest_spec=%BUILD_TREE_ROOT%\static\build\%subtree%
-if not exist "%dest_spec%" mkdir "%dest_spec%"
-if not exist "%dest_spec%" set dest_spec=.
-
-set copied_asn=0
-for /f %%a in ('xcopy "%input_asn_path%" "%dest_spec%" /q /d /y') do (set copied_asn=%%a)
-set copied_def=0
-if not exist "%input_def_path%" echo [-] > "%input_def_path%"
-if exist "%input_def_path%" for /f %%a in ('xcopy "%input_def_path%" "%dest_spec%" /q /d /y') do (set copied_def=%%a)
-if not "%copied_asn%"=="0" goto DOGENERATE
-if not "%copied_def%"=="0" goto DOGENERATE
-if not exist "%src_subtree%%input_asn_name%.files"   goto DOGENERATE
-if not exist "%src_subtree%%input_asn_name%__.cpp"   goto DOGENERATE
-if not exist "%src_subtree%%input_asn_name%___.cpp"  goto DOGENERATE
-echo generation NOT needed
-exit /b 0
-:DOGENERATE
-REM ----------------   end workaround --------------------------------------
-
 set DEFDT_LOCATION=\\snowman\win-coremake\App\Ncbi\cppcore\datatool
 
 for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
