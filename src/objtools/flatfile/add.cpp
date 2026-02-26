@@ -990,62 +990,73 @@ static void fta_check_tpa_tsa_coverage(const FTATpaBlockList& ftbp, Int4 length,
 
     ftsp.emplace_front(ftbp.front().from1, ftbp.front().to1);
     auto tftsp = ftsp.begin();
-    for (auto tftbp = ftbp.begin(); tftbp != ftbp.end(); ++tftbp) {
-        Int4 i1 = tftbp->to1 - tftbp->from1;
-        Int4 i2 = tftbp->to2 - tftbp->from2;
-        Int4 j  = (i2 > i1) ? (i2 - i1) : (i1 - i2);
-        i1++;
+    for (const auto& it : ftbp) {
+        Int4 len1 = it.to1 - it.from1 + 1;
+        Int4 len2 = it.to2 - it.from2 + 1;
+        Int4 d = (len2 > len1) ? (len2 - len1) : (len1 - len2);
 
-        if (i1 < 3000 && j * 10 > i1) {
+        if (len1 < 3000 && d * 10 > len1) {
             if (tpa)
                 FtaErrPost(SEV_ERROR, ERR_TPA_SpanLengthDiff,
                         "Span \"{}..{}\" of this TPA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.",
-                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
+                        it.from1, it.to1, it.from2, it.to2);
             else
                 FtaErrPost(SEV_ERROR, ERR_TSA_SpanLengthDiff,
                         "Span \"{}..{}\" of this TSA record differs from the span \"{}..{}\" of the contributing primary sequence or trace record by more than 10 percent.",
-                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
+                        it.from1, it.to1, it.from2, it.to2);
         }
 
-        if (i1 >= 3000 && j > 300) {
+        if (len1 >= 3000 && d > 300) {
             if (tpa)
                 FtaErrPost(SEV_ERROR, ERR_TPA_SpanDiffOver300bp,
                         "Span \"{}..{}\" of this TPA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.",
-                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
+                        it.from1, it.to1, it.from2, it.to2);
             else
                 FtaErrPost(SEV_ERROR, ERR_TSA_SpanDiffOver300bp,
                         "Span \"{}..{}\" of this TSA record differs from span \"{}..{}\" of the contributing primary sequence or trace record by more than 300 basepairs.",
-                        tftbp->from1, tftbp->to1, tftbp->from2, tftbp->to2);
+                        it.from1, it.to1, it.from2, it.to2);
         }
 
-        if (tftbp->from1 <= tftsp->to + 1) {
-            if (tftbp->to1 > tftsp->to)
-                tftsp->to = tftbp->to1;
+        if (it.from1 <= tftsp->to + 1) {
+            if (it.to1 > tftsp->to)
+                tftsp->to = it.to1;
             continue;
         }
 
-        tftsp = ftsp.emplace_after(tftsp, tftbp->from1, tftbp->to1);
+        tftsp = ftsp.emplace_after(tftsp, it.from1, it.to1);
     }
 
     if (ftsp.front().from - 1 > 50) {
         if (tpa)
-            FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp.front().from - 1);
+            FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage,
+                       "This TPA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                       ftsp.front().from - 1);
         else
-            FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", ftsp.front().from - 1);
+            FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage,
+                       "This TSA record contains a sequence region \"1..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                       ftsp.front().from - 1);
     }
 
     for (auto it = ftsp.begin(); it != ftsp.end();) {
         auto it_next = next(it);
         if (it_next != ftsp.end() && it_next->from - it->to - 1 > 50) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, it_next->from - 1);
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage,
+                           "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                           it->to + 1, it_next->from - 1);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, it_next->from - 1);
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage,
+                           "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                           it->to + 1, it_next->from - 1);
         } else if (it_next == ftsp.end() && length - it->to > 50) {
             if (tpa)
-                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage, "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, length);
+                FtaErrPost(SEV_ERROR, ERR_TPA_IncompleteCoverage,
+                           "This TPA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                           it->to + 1, length);
             else
-                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage, "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.", it->to + 1, length);
+                FtaErrPost(SEV_ERROR, ERR_TSA_IncompleteCoverage,
+                           "This TSA record contains a sequence region \"{}..{}\" greater than 50 basepairs long that is not accounted for by a contributing primary sequence or trace record.",
+                           it->to + 1, length);
         }
         // ftsp.pop_front();
         it = it_next;
@@ -1072,21 +1083,12 @@ bool fta_number_is_huge(string_view s)
 /**********************************************************/
 bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 vernum, size_t len, Int2 col_data, bool tpa)
 {
-    FTATpaBlockList ftbp;
-
-    string      buf;
-    char*       q;
-    optional<string> bad_accession;
-    bool        bad_line;
-    bool        bad_interval;
-
-    CSeq_id::E_Choice choice;
-
     if (! offset || ! acnum || len < 2)
         return false;
 
-    choice = GetNucAccOwner(acnum, tpa);
+    CSeq_id::E_Choice choice = GetNucAccOwner(acnum, tpa);
 
+    string buf;
     if (col_data == 0) /* HACK: XML format */
     {
         char* p;
@@ -1105,32 +1107,35 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         buf.assign(offset + n + 1, offset + len);
     }
 
-    ftbp.emplace_front(0, 0); // dummy
+    FTATpaBlockList ftbp;
 
-    bad_line      = false;
-    bad_interval  = false;
+    optional<string> bad_accession;
+    bool             bad_line     = false;
+    bool             bad_interval = false;
 
-    char* p = buf.data();
-    for (q = StringChr(p, '\n'); q; p = q + 1, q = StringChr(p, '\n')) {
-        *q = '\0';
-        if ((Int2)StringLen(p) < col_data)
+    size_t bol = 0;
+    size_t eol = buf.find('\n', bol);
+    for (; eol != string::npos; bol = eol + 1, eol = buf.find('\n', bol)) {
+        string_view line(&buf[bol], &buf[eol]);
+        if ((Int2)line.size() <= col_data)
             break;
-        p += col_data;
-        while (*p == ' ')
+        auto p = line.begin() + col_data;
+        auto q = line.end();
+        while (p < q && *p == ' ')
             p++;
-        char* r = p;
-        while (IS_DIGIT(*p))
+        auto r = p;
+        while (p < q && IS_DIGIT(*p))
             p++;
-        if (*p != '-') {
+        if (! (p < q && *p == '-')) {
             bad_interval = true;
             break;
         }
 
-        Int4 from1 = fta_atoi(string_view(r, p++));
-        r = p;
-        while (IS_DIGIT(*p))
+        Int4 from1 = fta_atoi(string_view(r, p));
+        r = ++p;
+        while (p < q && IS_DIGIT(*p))
             p++;
-        if (*p != ' ' && *p != '\0') {
+        if (p < q && *p != ' ') {
             bad_interval = true;
             break;
         }
@@ -1140,7 +1145,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             break;
         }
 
-        auto ft = ftbp.begin();
+        auto ft = ftbp.before_begin();
         for (;; ++ft) {
             auto it_next = next(ft);
             if (it_next == ftbp.end() || (it_next->from1 > from1) ||
@@ -1149,10 +1154,10 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
         auto tftbp = ftbp.emplace_after(ft, from1, to1);
 
-        while (*p == ' ')
+        while (p < q && *p == ' ')
             p++;
         r = p;
-        while (*p != '\0' && *p != ' ')
+        while (p < q && *p != ' ')
             p++;
         tftbp->accession = string(r, p);
 
@@ -1167,7 +1172,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
                 break;
             }
             tftbp->version = fta_atoi(string_view(i, j));
-            tftbp->accession.resize(n);
+            acc.resize(n);
         }
 
         if (NStr::StartsWith(acc, "ti", NStr::eNocase)) {
@@ -1194,27 +1199,27 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             }
         }
 
-        while (*p == ' ')
+        while (p < q && *p == ' ')
             p++;
 
-        if (StringEquNI(p, "not_available", 13)) {
+        if (NStr::StartsWith(string_view(p, q), "not_available", NStr::eNocase)) {
             p += 13;
             tftbp->from2 = 1;
             tftbp->to2   = 1;
         } else {
             r = p;
-            while (IS_DIGIT(*p))
+            while (p < q && IS_DIGIT(*p))
                 p++;
-            if (*p != '-') {
+            if (! (p < q && *p == '-')) {
                 bad_interval = true;
                 break;
             }
-            tftbp->from2 = fta_atoi(string_view(r, p++));
+            tftbp->from2 = fta_atoi(string_view(r, p));
 
-            r = p;
-            while (IS_DIGIT(*p))
+            r = ++p;
+            while (p < q && IS_DIGIT(*p))
                 p++;
-            if (*p != ' ' && *p != '\0') {
+            if (p < q && *p != ' ') {
                 bad_interval = true;
                 break;
             }
@@ -1226,15 +1231,15 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             }
         }
 
-        while (*p == ' ')
+        while (p < q && *p == ' ')
             p++;
-        if (*p == 'c') {
+        if (p < q && *p == 'c') {
             tftbp->strand = eNa_strand_minus;
-            for (p++; *p == ' ';)
+            for (p++; p < q && *p == ' ';)
                 p++;
         } else
             tftbp->strand = eNa_strand_plus;
-        if (*p != '\0') {
+        if (p < q) {
             bad_line = true;
             break;
         }
@@ -1262,8 +1267,6 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         return false;
     }
 
-    ftbp.pop_front(); // dummy
-
     fta_check_tpa_tsa_coverage(ftbp, bioseq.GetLength(), tpa);
 
     CSeq_hist::TAssembly& assembly = bioseq.SetInst().SetHist().SetAssembly();
@@ -1275,9 +1278,9 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
     root_align->SetType(CSeq_align::eType_not_set);
     CSeq_align_set& align_set = root_align->SetSegs().SetDisc();
 
-    for (auto it = ftbp.begin(); it != ftbp.end(); ++it) {
-        Int4 len1 = it->to1 - it->from1 + 1;
-        Int4 len2 = it->to2 - it->from2 + 1;
+    for (const auto& it : ftbp) {
+        Int4 len1 = it.to1 - it.from1 + 1;
+        Int4 len2 = it.to2 - it.from2 + 1;
 
         CRef<CSeq_align> align(new CSeq_align);
         align->SetType(CSeq_align::eType_partial);
@@ -1288,15 +1291,15 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         seg.SetDim(2);
         seg.SetNumseg((len1 == len2) ? 1 : 2);
 
-        seg.SetStarts().push_back(it->from1 - 1);
-        seg.SetStarts().push_back(it->from2 - 1);
+        seg.SetStarts().push_back(it.from1 - 1);
+        seg.SetStarts().push_back(it.from2 - 1);
 
         if (len1 != len2) {
             if (len1 < len2) {
                 seg.SetStarts().push_back(-1);
-                seg.SetStarts().push_back(it->from2 - 1 + len1);
+                seg.SetStarts().push_back(it.from2 - 1 + len1);
             } else {
-                seg.SetStarts().push_back(it->from1 - 1 + len2);
+                seg.SetStarts().push_back(it.from1 - 1 + len2);
                 seg.SetStarts().push_back(-1);
             }
         }
@@ -1312,11 +1315,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         }
 
         seg.SetStrands().push_back(eNa_strand_plus);
-        seg.SetStrands().push_back(it->strand);
+        seg.SetStrands().push_back(it.strand);
 
         if (len1 != len2) {
             seg.SetStrands().push_back(eNa_strand_plus);
-            seg.SetStrands().push_back(it->strand);
+            seg.SetStrands().push_back(it.strand);
         }
 
         CRef<CTextseq_id> text_id(new CTextseq_id);
@@ -1330,7 +1333,7 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
         SetTextId(choice, *id, *text_id);
         seg.SetIds().push_back(id);
 
-        auto& acc = it->accession;
+        auto& acc = it.accession;
         if (NStr::StartsWith(acc, "ti", NStr::eNocase)) {
             CRef<CSeq_id> gen_id(new CSeq_id);
             CDbtag&       tag = gen_id->SetGeneral();
@@ -1350,11 +1353,11 @@ bool fta_parse_tpa_tsa_block(CBioseq& bioseq, char* offset, char* acnum, Int2 ve
             CRef<CTextseq_id> otext_id(new CTextseq_id);
             otext_id->SetAccession(acc);
 
-            if (it->version > 0)
-                otext_id->SetVersion(it->version);
+            if (it.version > 0)
+                otext_id->SetVersion(it.version);
 
             aux_id.Reset(new CSeq_id);
-            SetTextId(it->sicho, *aux_id, *otext_id);
+            SetTextId(it.sicho, *aux_id, *otext_id);
         }
 
         if (aux_id.NotEmpty())
