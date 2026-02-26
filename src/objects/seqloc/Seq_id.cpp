@@ -99,6 +99,8 @@ static const char* sc_SupportedRawDbtags[] = {
     "BCMHGSC",
     "BERKELEY",
     "CELERA",
+    "DBGSS",
+    "DBSTS",
     "GSDB",
     "HOOD",
     "LANLCHGS",
@@ -117,9 +119,7 @@ static const char* sc_SupportedRawDbtags[] = {
     "UWGC",
     "WASHU",
     "WIBR",
-    "WUGSC",
-    "dbGSS",
-    "dbSTS"
+    "WUGSC"
 };
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(CStaticArraySet<string>, kSupportedRawDbtags,
                                   sc_SupportedRawDbtags);
