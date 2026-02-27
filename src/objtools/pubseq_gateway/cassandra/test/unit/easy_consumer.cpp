@@ -49,6 +49,7 @@
 #include <map>
 
 #include "fullscan_plan_mock.hpp"
+#include "test_environment.hpp"
 
 namespace {
 
@@ -71,30 +72,24 @@ namespace {
             const string config_section = "TEST";
             CNcbiRegistry r;
             r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-            //r.Set(config_section, "numthreadsio", "1", IRegistry::fPersistent);
-            m_Factory = CCassConnectionFactory::s_Create();
-            m_Factory->LoadConfig(r, config_section);
-            m_Connection = m_Factory->CreateInstance();
-            m_Connection->Connect();
+            sm_Env.Get().SetUp(&r, config_section);
         }
 
         static void TearDownTestCase() {
-            m_Connection->Close();
-            m_Connection = nullptr;
-            m_Factory = nullptr;
+            sm_Env.Get().TearDown();
         }
 
         static const char* m_TestClusterName;
-        static shared_ptr<CCassConnectionFactory> m_Factory;
-        static shared_ptr<CCassConnection> m_Connection;
+        static CSafeStatic<STestEnvironment> sm_Env;
+        static CSafeStatic<atomic_int> sm_InstanceCounter;
 
         string m_KeyspaceName;
         string m_TableName;
     };
 
     const char* CCassandraEasyConsumerTest::m_TestClusterName = "ID_CASS_TEST";
-    shared_ptr<CCassConnectionFactory> CCassandraEasyConsumerTest::m_Factory(nullptr);
-    shared_ptr<CCassConnection> CCassandraEasyConsumerTest::m_Connection(nullptr);
+    CSafeStatic<STestEnvironment> CCassandraEasyConsumerTest::sm_Env;
+    CSafeStatic<atomic_int> CCassandraEasyConsumerTest::sm_InstanceCounter;
 
     TEST_F(CCassandraEasyConsumerTest, SimpleFullScan)
     {
@@ -130,7 +125,7 @@ namespace {
         using TConsumer = CFullscanEasyConsumer<TContainer, TFields>;
         auto plan = make_unique<CCassandraFullscanPlan>();
         plan
-            ->SetConnection(m_Connection)
+            ->SetConnection(sm_Env.Get().connection)
             .SetFieldList(TConsumer::GetFieldList())
             .SetKeyspace(m_KeyspaceName)
             .SetTable(m_TableName);
@@ -174,7 +169,7 @@ namespace {
         using TConsumer = CFullscanEasyConsumer<TContainer, TFields>;
         auto plan = make_unique<CCassandraFullscanPlan>();
         plan
-            ->SetConnection(m_Connection)
+            ->SetConnection(sm_Env.Get().connection)
             .SetFieldList(TConsumer::GetFieldList())
             .SetKeyspace(m_KeyspaceName)
             .SetTable(m_TableName);
@@ -208,7 +203,7 @@ namespace {
         using TConsumer = CFullscanEasyConsumer<TContainer, TFields>;
         auto plan = make_unique<CCassandraFullscanPlan>();
         plan
-            ->SetConnection(m_Connection)
+            ->SetConnection(sm_Env.Get().connection)
             .SetFieldList(TConsumer::GetFieldList())
             .SetKeyspace(m_KeyspaceName)
             .SetTable(m_TableName);
@@ -234,7 +229,7 @@ namespace {
             CFullScanField<"accession", SIpgRow, string, &SIpgRow::accession>
         >;
         using TContainer = deque<SIpgRow>;
-        static atomic_int s_InstanceCounter{0};
+        sm_InstanceCounter.Get() = 0;
         struct STestConsumer
             : public CFullscanEasyConsumer<TContainer, TFields>
         {
@@ -242,7 +237,7 @@ namespace {
             STestConsumer() = delete;
             STestConsumer(mutex *mtx, TContainer *data)
                 : TBaseClass(mtx, data)
-                , m_InstanceId(++s_InstanceCounter)
+                , m_InstanceId(++sm_InstanceCounter.Get())
             {}
 
             void Finalize() override
@@ -264,7 +259,7 @@ namespace {
         };
         auto plan = make_unique<CCassandraFullscanPlan>();
         plan
-            ->SetConnection(m_Connection)
+            ->SetConnection(sm_Env.Get().connection)
             .SetFieldList(STestConsumer::GetFieldList())
             .SetKeyspace(m_KeyspaceName)
             .SetTable(m_TableName);

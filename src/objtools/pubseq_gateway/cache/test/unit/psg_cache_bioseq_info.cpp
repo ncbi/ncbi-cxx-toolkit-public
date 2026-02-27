@@ -57,10 +57,10 @@ USING_IDBLOB_SCOPE;
 class CPsgCacheBioseqInfoTest
     : public testing::Test
 {
- public:
+public:
     CPsgCacheBioseqInfoTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase()
     {
         char buf[PATH_MAX];
@@ -73,20 +73,23 @@ class CPsgCacheBioseqInfoTest
         CNcbiIfstream i(config_path, ifstream::in | ifstream::binary);
         CNcbiRegistry r(i);
         string file_name = r.GetString("LMDB_CACHE", "bioseq_info", "");
-        m_Cache = make_unique<CPubseqGatewayCache>(file_name, "", "");
-        m_Cache->UseReadAhead(false);
-        m_Cache->Open({});
+        sm_Cache = new CPubseqGatewayCache(file_name, "", "");
+        sm_Cache->UseReadAhead(false);
+        sm_Cache->Open({});
     }
 
     static void TearDownTestCase()
     {
-        m_Cache = nullptr;
+        if (sm_Cache) {
+            delete sm_Cache;
+            sm_Cache = nullptr;
+        }
     }
 
-    static unique_ptr<CPubseqGatewayCache> m_Cache;
+    static CPubseqGatewayCache* sm_Cache;
 };
 
-unique_ptr<CPubseqGatewayCache> CPsgCacheBioseqInfoTest::m_Cache(nullptr);
+CPubseqGatewayCache* CPsgCacheBioseqInfoTest::sm_Cache{nullptr};
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupUninitialized)
 {
@@ -99,7 +102,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupUninitialized)
     EXPECT_TRUE(response.empty());
 
     unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC | MDB_NORDAHEAD;
-    EXPECT_EQ(expected_flags, m_Cache->GetBioseqInfoEnvFlags());
+    EXPECT_EQ(expected_flags, sm_Cache->GetBioseqInfoEnvFlags());
 }
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupWithoutResult)
@@ -107,15 +110,15 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupWithoutResult)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.SetAccession("FAKE");
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset();
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetVersion(0);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 }
 
@@ -124,7 +127,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupByAccession)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.Reset().SetAccession("AC005299");
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 6UL);
     EXPECT_EQ("AC005299", response[0].GetAccession());
     EXPECT_EQ(1, response[0].GetVersion());
@@ -137,7 +140,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersion)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.SetAccession("AC005299").SetVersion(0);
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].GetAccession());
     EXPECT_EQ(0, response[0].GetVersion());
@@ -150,16 +153,16 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.SetAccession("AC005299").SetVersion(0).SetSeqIdType(3);
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetAccession("AC005299").SetVersion(77).SetSeqIdType(5);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     // version >= 0 && no seq_id_type
     request.Reset().SetAccession("AC005299").SetVersion(0);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].GetAccession());
     EXPECT_EQ(0, response[0].GetVersion());
@@ -168,7 +171,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdType)
 
     // version >= 0 && seq_id_type > 0
     request.Reset().SetAccession("AC005299").SetVersion(0).SetSeqIdType(5);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 5UL);
     EXPECT_EQ("AC005299", response[0].GetAccession());
     EXPECT_EQ(0, response[0].GetVersion());
@@ -181,7 +184,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionGi)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.Reset().SetAccession("AC005299").SetGI(3643631);
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
     ASSERT_EQ(response.size(), 1UL);
     EXPECT_EQ("AC005299", response[0].GetAccession());
     EXPECT_EQ(0, response[0].GetVersion());
@@ -195,11 +198,11 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoByAccessionVersionSeqIdTypeGi)
     CPubseqGatewayCache::TBioseqInfoResponse response;
 
     request.SetAccession("AC005299").SetVersion(0).SetSeqIdType(5).SetGI(888);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetAccession("AC005299").SetVersion(0).SetSeqIdType(5).SetGI(3643631);
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
     EXPECT_EQ(907538716500, response[0].GetDateChanged());
@@ -218,7 +221,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
     CPubseqGatewayCache::TBioseqInfoRequest request;
 
     request.SetAccession("NC_000001").SetVersion(5);
-    auto response = m_Cache->FetchBioseqInfo(request);
+    auto response = sm_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(response.size(), 1UL);
     EXPECT_EQ(-785904429, response[0].GetHash());
@@ -246,7 +249,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoWithSeqIdsInheritance)
 
 TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoForLastRecord)
 {
-    auto response = m_Cache->FetchBioseqInfoLast();
+    auto response = sm_Cache->FetchBioseqInfoLast();
     ASSERT_FALSE(response.empty());
     auto last = response[response.size() - 1];
 
@@ -256,7 +259,7 @@ TEST_F(CPsgCacheBioseqInfoTest, LookupBioseqInfoForLastRecord)
         .SetVersion(last.GetVersion())
         .SetSeqIdType(last.GetSeqIdType())
         .SetGI(last.GetGI());
-    response = m_Cache->FetchBioseqInfo(request);
+    response = sm_Cache->FetchBioseqInfo(request);
 
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(last.GetAccession(), response[0].GetAccession());

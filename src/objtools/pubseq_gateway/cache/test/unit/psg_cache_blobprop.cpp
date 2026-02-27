@@ -43,6 +43,7 @@
 
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 #include <util/lmdbxx/lmdb++.h>
@@ -55,17 +56,17 @@ USING_IDBLOB_SCOPE;
 class CPsgCacheBlobPropTest
     : public testing::Test
 {
- public:
+public:
     CPsgCacheBlobPropTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase()
     {
         CNcbiIfstream i(GetConfigPath(), ifstream::in | ifstream::binary);
         CNcbiRegistry r(i);
-        m_CacheFilePath = r.GetString("LMDB_CACHE", "blob_prop", "");
-        m_Cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
-        m_Cache->Open({0, 4});
+        sm_CacheFilePath.Get() = r.GetString("LMDB_CACHE", "blob_prop", "");
+        sm_Cache = new CPubseqGatewayCache("", "", sm_CacheFilePath.Get());
+        sm_Cache->Open({0, 4});
     }
 
     static string GetConfigPath()
@@ -81,15 +82,18 @@ class CPsgCacheBlobPropTest
 
     static void TearDownTestCase()
     {
-        m_Cache = nullptr;
+        if (sm_Cache) {
+            delete sm_Cache;
+            sm_Cache = nullptr;
+        }
     }
 
-    static unique_ptr<CPubseqGatewayCache> m_Cache;
-    static string m_CacheFilePath;
+    static CPubseqGatewayCache* sm_Cache;
+    static CSafeStatic<string> sm_CacheFilePath;
 };
 
-unique_ptr<CPubseqGatewayCache> CPsgCacheBlobPropTest::m_Cache(nullptr);
-string CPsgCacheBlobPropTest::m_CacheFilePath;
+CPubseqGatewayCache* CPsgCacheBlobPropTest::sm_Cache{nullptr};
+CSafeStatic<string> CPsgCacheBlobPropTest::sm_CacheFilePath;
 
 TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
 {
@@ -103,7 +107,7 @@ TEST_F(CPsgCacheBlobPropTest, LookupUninitialized)
     EXPECT_TRUE(response.empty());
 
     unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC;
-    EXPECT_EQ(expected_flags, m_Cache->GetBlobPropFlags());
+    EXPECT_EQ(expected_flags, sm_Cache->GetBlobPropFlags());
 }
 
 TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
@@ -111,20 +115,20 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKey)
     CPubseqGatewayCache::TBlobPropRequest request;
 
     request.SetSat(-10).SetSatKey(2054006);
-    auto response = m_Cache->FetchBlobProp(request);
+    auto response = sm_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(-500);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(4).SetSatKey(9965740);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(1114019083516, response[0].GetModified());
 
     request.Reset().SetSat(0).SetSatKey(2054006);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(823387172086, response[0].GetModified());
 
@@ -146,19 +150,19 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropBySatKeyLastModified)
     CPubseqGatewayCache::TBlobPropRequest request;
 
     request.SetSat(-10).SetSatKey(2054006).SetLastModified(823387172086);
-    auto response = m_Cache->FetchBlobProp(request);
+    auto response = sm_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(-500).SetLastModified(823387172086);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(20);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     EXPECT_TRUE(response.empty());
 
     request.Reset().SetSat(0).SetSatKey(2054006).SetLastModified(823387172086);
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(823387172086, response[0].GetModified());
     EXPECT_EQ(2054006, response[0].GetKey());
@@ -175,12 +179,12 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropForLastRecord)
 {
     CPubseqGatewayCache::TBlobPropRequest request;
     request.SetSat(0);
-    auto response = m_Cache->FetchBlobPropLast(request);
+    auto response = sm_Cache->FetchBlobPropLast(request);
     ASSERT_FALSE(response.empty());
     auto last = response[response.size() - 1];
 
     request.Reset().SetSat(0).SetSatKey(last.GetKey()).SetLastModified(last.GetModified());
-    response = m_Cache->FetchBlobProp(request);
+    response = sm_Cache->FetchBlobProp(request);
 
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(last.GetModified(), response[0].GetModified());
@@ -192,7 +196,7 @@ TEST_F(CPsgCacheBlobPropTest, LookupBlobPropForLastRecord)
 TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
 {
     int rows{0};
-    m_Cache->EnumerateBlobProp(4,
+    sm_Cache->EnumerateBlobProp(4,
         [&rows] (int32_t sat_key, int64_t modified)
         {
             if (rows == 0) {
@@ -209,7 +213,7 @@ TEST_F(CPsgCacheBlobPropTest, EnumerateBlobProp)
 TEST_F(CPsgCacheBlobPropTest, DisableSatDatabase)
 {
     {
-        auto cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
+        auto cache = make_unique<CPubseqGatewayCache>("", "", sm_CacheFilePath.Get());
         testing::internal::CaptureStderr();
         cache->Open({0, 111});
         auto stderr = testing::internal::GetCapturedStderr();
@@ -220,7 +224,7 @@ TEST_F(CPsgCacheBlobPropTest, DisableSatDatabase)
         );
     }
     {
-        auto cache = make_unique<CPubseqGatewayCache>("", "", m_CacheFilePath);
+        auto cache = make_unique<CPubseqGatewayCache>("", "", sm_CacheFilePath.Get());
         testing::internal::CaptureStderr();
         cache->Open({0, 112});
         auto stderr = testing::internal::GetCapturedStderr();

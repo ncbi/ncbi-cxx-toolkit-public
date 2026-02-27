@@ -45,6 +45,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -54,29 +56,23 @@ USING_SCOPE(chrono);
 class CBlobRetrievalPerformanceTest
     : public testing::Test
 {
- public:
+public:
     CBlobRetrievalPerformanceTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     vector<int32_t> m_BlobIds{
         360033825,360033825,360033825,360033825,360033825,360033825,360033825,
@@ -156,8 +152,7 @@ struct SBlobRequest
 };
 
 const char* CBlobRetrievalPerformanceTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CBlobRetrievalPerformanceTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CBlobRetrievalPerformanceTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CBlobRetrievalPerformanceTest::sm_Env;
 
 static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
@@ -174,7 +169,7 @@ TEST_F(CBlobRetrievalPerformanceTest, DISABLED_LoadBlobs)
         while (running < max_running && itr != m_BlobIds.end()) {
             auto request = make_unique<SBlobRequest>();
             request->started = steady_clock::now();
-            request->request = make_unique<CCassBlobTaskLoadBlob>(m_Connection, m_KeyspaceName, *itr, true, error_function);
+            request->request = make_unique<CCassBlobTaskLoadBlob>(sm_Env.Get().connection, m_KeyspaceName, *itr, true, error_function);
             request->receiver = make_shared<SBlobCallbackReceiver>();
             request->request->SetDataReadyCB(request->receiver);
             request->request->SetChunkCallback(

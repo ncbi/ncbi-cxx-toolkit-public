@@ -47,6 +47,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 #include "fullscan_plan_mock.hpp"
+#include "test_environment.hpp"
 
 namespace {
 
@@ -71,31 +72,24 @@ protected:
         //r.Set(config_section, "service", "idstore11,idstore12", IRegistry::fPersistent);
         //r.Set(config_section, "password_file", "/home/saprykin/devel/id/id-blob-storage/src/sync/cassandra.access.ini", IRegistry::fPersistent);
         //r.Set(config_section, "password_section", "cassandra", IRegistry::fPersistent);
-        s_Factory = CCassConnectionFactory::s_Create();
-        s_Factory->LoadConfig(r, config_section);
-        s_Connection = s_Factory->CreateInstance();
-        s_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        s_Connection->Close();
-        s_Connection = nullptr;
-        s_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
-    static shared_ptr<CCassConnectionFactory> s_Factory;
-    static shared_ptr<CCassConnection> s_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     string m_KeyspaceName;
     string m_TableName;
 };
 
-shared_ptr<CCassConnectionFactory> CCassandraFullscanPlanTest::s_Factory(nullptr);
-shared_ptr<CCassConnection> CCassandraFullscanPlanTest::s_Connection(nullptr);
+CSafeStatic<STestEnvironment> CCassandraFullscanPlanTest::sm_Env;
 
 TEST_F(CCassandraFullscanPlanTest, CheckEmptyPlan) {
     CCassandraFullscanPlan plan;
-    plan.SetConnection(s_Connection);
+    plan.SetConnection(sm_Env.Get().connection);
     EXPECT_THROW(
         plan.Generate(),
         CCassandraException
@@ -131,10 +125,10 @@ TEST_F(CCassandraFullscanPlanTest, CheckRegistrySettings) {
 
 TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     CCassConnection::TTokenRanges ranges;
-    s_Connection->GetTokenRanges(ranges);
+    sm_Env.Get().connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
     plan
-        .SetConnection(s_Connection)
+        .SetConnection(sm_Env.Get().connection)
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)
         .SetMinPartitionsForSubrangeScan(0);
@@ -181,14 +175,14 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
 TEST_F(CCassandraFullscanPlanTest, CheckQueryWithWhereFilter)
 {
     CCassConnection::TTokenRanges ranges;
-    s_Connection->GetTokenRanges(ranges);
+    sm_Env.Get().connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
     auto parameters_binder = [](CCassQuery & query, int first_param_index) -> void {
           query.BindStr(first_param_index, "TEST_LOCUS");
           query.BindInt64(first_param_index + 1, 42);
     };
     plan
-        .SetConnection(s_Connection)
+        .SetConnection(sm_Env.Get().connection)
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)
         .SetMinPartitionsForSubrangeScan(0)
@@ -225,10 +219,10 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryWithWhereFilter)
 
 TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
     CCassConnection::TTokenRanges ranges;
-    s_Connection->GetTokenRanges(ranges);
+    sm_Env.Get().connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
     plan
-        .SetConnection(s_Connection)
+        .SetConnection(sm_Env.Get().connection)
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)
         .SetMinPartitionsForSubrangeScan(0);
@@ -258,7 +252,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
 TEST_F(CCassandraFullscanPlanTest, CheckPartitionCountPerQueryLimit) {
     CCassandraFullscanPlanExpose plan;
     plan
-        .SetConnection(s_Connection)
+        .SetConnection(sm_Env.Get().connection)
         .SetKeyspace("idmain2")
         .SetTable("si2csi");
     plan.Generate();

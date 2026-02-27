@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -78,19 +79,19 @@ void CCassSI2CSITaskFetch::SetDataReadyCB(shared_ptr<CCassDataCallbackReceiver> 
 
 void CCassSI2CSITaskFetch::x_InitializeQuery()
 {
-    static const string s_Select = "SELECT sec_seq_id_type, accession, gi, sec_seq_state, "
+    constexpr string_view select = "SELECT sec_seq_id_type, accession, gi, sec_seq_state, "
                                    "seq_id_type, version, writetime(accession) FROM ";
-    static const string s_Where_1 = ".SI2CSI WHERE sec_seq_id = ?";
-    static const string s_Where_2 = s_Where_1 + " AND sec_seq_id_type = ?";
-    string sql = s_Select;
+    constexpr string_view where_1 = ".SI2CSI WHERE sec_seq_id = ?";
+    string where_2 = where_1 + " AND sec_seq_id_type = ?";
+    string sql{select};
     sql.append(GetKeySpace());
     if (m_Request.HasField(TField::eSecSeqIdType)) {
-        sql.append(s_Where_2);
+        sql.append(where_2);
         m_QueryArr[0].query->SetSQL(sql, 2);
         m_QueryArr[0].query->BindStr(0, m_Request.GetSecSeqId());
         m_QueryArr[0].query->BindInt16(1, m_Request.GetSecSeqIdType());
     } else {
-        sql.append(s_Where_1);
+        sql.append(where_1);
         m_QueryArr[0].query->SetSQL(sql, 1);
         m_QueryArr[0].query->BindStr(0, m_Request.GetSecSeqId());
     }

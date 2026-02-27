@@ -45,6 +45,7 @@
 #include <objtools/pubseq_gateway/impl/ipg/ipg_huge_report_helper.hpp>
 
 #include "../ccm_bridge.hpp"
+#include "test_environment.hpp"
 
 namespace {
 
@@ -54,37 +55,29 @@ USING_SCOPE(ipg);
 class CPubseqGatewayFetchIpgReportTest
     : public testing::Test
 {
- protected:
+protected:
     static void SetUpTestCase() {
         auto r = CCCMBridge::GetConfigRegistry("config_fetch.ini");
         ASSERT_FALSE(r == nullptr);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(*r, "CASSANDRA");
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(r.get(), "CASSANDRA");
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
-
+    static CSafeStatic<STestEnvironment> sm_Env;
     string m_KeyspaceName{"test_fetch"};
 };
 
-shared_ptr<CCassConnectionFactory> CPubseqGatewayFetchIpgReportTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CPubseqGatewayFetchIpgReportTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CPubseqGatewayFetchIpgReportTest::sm_Env;
 
-static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
         << status << ", code - " << code << ", message - '" << message << "')";
 };
 
-static auto wait_function = [](CPubseqGatewayFetchIpgReport& task)
+auto wait_function = [](CPubseqGatewayFetchIpgReport& task)
 {
     // Callback definition
     class CTaskOnDataCallback : public CCassDataCallbackReceiver
@@ -149,7 +142,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, FetchReportWithHugeStatusNew) {
     CPubseqGatewayFetchIpgReportRequest request;
     request.SetIpg(216356);
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     task.SetConsumeCallback(consume);
@@ -184,7 +177,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, NormalWithFilter) {
     request.SetProtein("EGB0709986.1");
     request.SetNucleotide("AAVJDV010000007.1");
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     wait_function(task);
@@ -218,7 +211,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, NormalWithFilterByAccession) {
     EXPECT_FALSE(request.HasResolvedIpg());
     EXPECT_FALSE(request.HasIpgToFetchData());
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     wait_function(task);
@@ -243,7 +236,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeEmpty) {
     CPubseqGatewayFetchIpgReportRequest request;
     request.SetIpg(1111);
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     wait_function(task);
@@ -270,7 +263,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, Huge) {
     CPubseqGatewayFetchIpgReportRequest request;
     request.SetIpg(642300);
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     task.SetPageSize(1);
@@ -307,7 +300,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeWithFilter) {
     request.SetProtein("EGB0689183.1");
     request.SetNucleotide("");
     CPubseqGatewayFetchIpgReport task(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         consume, error_function, true
     );
     wait_function(task);
@@ -347,7 +340,7 @@ TEST_F(CPubseqGatewayFetchIpgReportTest, HugeDisabled) {
         CPubseqGatewayFetchIpgReportRequest request;
         request.SetIpg(2222);
         CPubseqGatewayFetchIpgReport task(
-            m_Connection, m_KeyspaceName, request,
+            sm_Env.Get().connection, m_KeyspaceName, request,
             consume, error_function, true
         );
         wait_function(task);
