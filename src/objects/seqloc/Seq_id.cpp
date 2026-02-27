@@ -1789,7 +1789,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
         return eAcc_unknown;
     } else {
         SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
-        if (main_size == 6
+        if (main_size == 6  &&  digit_pos > 0
             &&  ((flags & (fParse_Cautiously | fParse_RawText))
                  == (fParse_Cautiously | fParse_RawText))) {
             if (non_dig_pos == NPOS) {
