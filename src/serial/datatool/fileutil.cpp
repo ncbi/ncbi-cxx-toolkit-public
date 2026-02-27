@@ -413,8 +413,9 @@ string MakeFileName(const string& fname, size_t addLength)
     return name;
 }
 
-CDelayedOfstream::CDelayedOfstream(const string& fileName)
+CDelayedOfstream::CDelayedOfstream(const string& fileName, bool always_rewrite)
 {
+    m_rewrite = always_rewrite;
     open(fileName);
 }
 
@@ -459,7 +460,7 @@ void CDelayedOfstream::close(void)
 
 bool CDelayedOfstream::equals(void)
 {
-    if ( !m_Istream.get() )
+    if (m_rewrite || !m_Istream.get() )
         return false;
     string s = CNcbiOstrstreamToString(*this);
     size_t count = s.size();

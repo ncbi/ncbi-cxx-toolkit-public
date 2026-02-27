@@ -120,7 +120,7 @@ struct FileInfo {
 class CDelayedOfstream : public CNcbiOstrstream
 {
 public:
-    CDelayedOfstream(const string& fileName);
+    CDelayedOfstream(const string& fileName, bool always_rewrite = false);
     virtual ~CDelayedOfstream(void);
 
     bool is_open(void) const
@@ -137,6 +137,7 @@ protected:
     bool rewrite(void);
 
 private:
+    bool m_rewrite;
     string m_FileName;
     unique_ptr<CNcbiIfstream> m_Istream;
     unique_ptr<CNcbiOfstream> m_Ostream;

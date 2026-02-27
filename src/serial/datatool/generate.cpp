@@ -461,7 +461,7 @@ void CCodeGenerator::GenerateFileList(
     }
     string fileName( MakeAbsolutePath(
         Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName))));
-    CDelayedOfstream fileList(fileName.c_str());
+    CNcbiOfstream fileList(fileName.c_str());
     if ( !fileList ) {
         ERR_POST_X(4, Fatal <<
                     "cannot create file list file: " << m_FileListFileName);
@@ -611,7 +611,22 @@ void CCodeGenerator::GenerateCombiningFile(
         fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
         allCpp.push_back(fileName);
         fileName = MakeAbsolutePath(fileName);
-        CDelayedOfstream out(fileName.c_str());
+        bool is_newer = false;
+        if (CFile(fileName).Exists()) {
+            string dname = GetDefFile();
+            is_newer = CFile(dname).IsNewer(fileName, CDirEntry::fNoThisHasPath_NotNewer);
+            if (!is_newer) {
+                const CFileSet::TModuleSets& modules(GetMainModules().GetModuleSets());
+                for( const auto& m : modules) {
+                    string mname = m->GetSourceFileName();
+                    is_newer = CFile(mname).IsNewer(fileName, CDirEntry::fNoThisHasPath_NotNewer);
+                    if (is_newer) {
+                        break;
+                    }
+                }
+            }
+        }
+        CDelayedOfstream out(fileName.c_str(), is_newer);
         if ( !out )
             ERR_POST_X(5, Fatal << "Cannot create file: "<<fileName);
         
@@ -773,7 +788,7 @@ void CCodeGenerator::GenerateCvsignore(
             files.insert(f.AsString());
         }
 
-        CDelayedOfstream ignoreFile(ignorePath.c_str());
+        CNcbiOfstream ignoreFile(ignorePath.c_str(), IOS_BASE::out | IOS_BASE::trunc);
         if (ignoreFile.is_open()) {
             for( const string& f : files) {
                 if (!f.empty()) {
