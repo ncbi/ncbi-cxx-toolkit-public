@@ -50,6 +50,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -58,29 +60,23 @@ USING_IDBLOB_SCOPE;
 class CBlobTaskLoadBlobTest
     : public testing::Test
 {
- public:
+public:
     CBlobTaskLoadBlobTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     string m_KeyspaceName{"satncbi_extended"};
     string m_BlobChunkKeyspace{"psg_test_sat_4"};
@@ -88,8 +84,7 @@ class CBlobTaskLoadBlobTest
 };
 
 const char* CBlobTaskLoadBlobTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CBlobTaskLoadBlobTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CBlobTaskLoadBlobTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CBlobTaskLoadBlobTest::sm_Env;
 
 static auto wait_function = [](CCassBlobTaskLoadBlob& task){
     bool done = task.Wait();
@@ -121,7 +116,7 @@ TEST_F(CBlobTaskLoadBlobTest, StaleBlobRecordFromCache) {
     cache_blob->SetModified(1342057137103);
     cache_blob->SetSize(12509);
     cache_blob->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, std::move(cache_blob), true, fn404);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, std::move(cache_blob), true, fn404);
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
@@ -137,13 +132,13 @@ TEST_F(CBlobTaskLoadBlobTest, ExpiredLastModified) {
         EXPECT_EQ(CRequestStatus::e404_NotFound, status);
         EXPECT_EQ(CCassandraException::eNotFound, code);
     };
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, 1342057137103, true, fn404);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, 2155365, 1342057137103, true, fn404);
     wait_function(fetch);
     EXPECT_EQ(1UL, call_count);
 }
 
 TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 2155365, true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -155,7 +150,7 @@ TEST_F(CBlobTaskLoadBlobTest, LatestBlobVersion) {
 }
 
 TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInThePast) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 38748105, false, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 38748105, false, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -168,7 +163,7 @@ TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInThePast) {
 }
 
 TEST_F(CBlobTaskLoadBlobTest, ConfidentialDateInTheFuture) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 38748106, false, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 38748106, false, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -201,14 +196,14 @@ TEST_F(CBlobTaskLoadBlobTest, ReadConsistencyAnyShouldFail)
                   " FROM psg_test_sat_4.blob_prop WHERE sat_key = ? LIMIT 1\"; Params - (2155365)\n", message_x);
         errorCallbackCalled = true;
     };
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_fn);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 2155365, true, error_fn);
     fetch.SetReadConsistency(CCassConsistency::kAny);
     wait_function(fetch);
     EXPECT_TRUE(errorCallbackCalled) << "Error is expected to happen when reading with ANY consistency";
 }
 
 TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 2155365, false, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, 2155365, false, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -221,7 +216,7 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnWrongBigBlobFlag) {
         ++call_count;
         EXPECT_EQ(502, status);
     };
-    CCassBlobTaskLoadBlob fetch1(m_Connection, m_KeyspaceName, std::move(blob), true, error_function);
+    CCassBlobTaskLoadBlob fetch1(sm_Env.Get().connection, m_KeyspaceName, std::move(blob), true, error_function);
     wait_function(fetch1);
     EXPECT_EQ(1UL, call_count);
 }
@@ -237,7 +232,7 @@ TEST_F(CBlobTaskLoadBlobTest, ShouldFailOnNoConnection)
 }
 
 TEST_F(CBlobTaskLoadBlobTest, LoadBigBlobData) {
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_KeyspaceName, 422992879, true, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_KeyspaceName, 422992879, true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     auto blob = fetch.ConsumeBlobRecord();
@@ -259,7 +254,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
     auto blob_prop = make_unique<CBlobRecord>();
     blob_prop->SetKey(numeric_limits<CBlobRecord::TSatKey>::max());
     blob_prop->SetNChunks(1);
-    CCassBlobTaskLoadBlob fetch(m_Connection, "fake_keyspace", std::move(blob_prop), true, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, "fake_keyspace", std::move(blob_prop), true, error_function);
     wait_function(fetch);
     EXPECT_TRUE(fetch.IsBlobPropsFound());
     EXPECT_EQ(call_count, 1);
@@ -269,7 +264,7 @@ TEST_F(CBlobTaskLoadBlobTest, ExplicitBlobProperties) {
 
 TEST_F(CBlobTaskLoadBlobTest, CancelFromBlobPropCallbackShouldStop) {
     bool props_callback_visited{false};
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BlobChunkKeyspace, 2155365, true, error_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BlobChunkKeyspace, 2155365, true, error_function);
     fetch.SetPropsCallback(
         [&fetch, &props_callback_visited] (CBlobRecord const & blob, bool isFound)
         {
@@ -307,7 +302,7 @@ TEST_F(CBlobTaskLoadBlobTest, QueryTimeoutOverride) {
         EXPECT_EQ(eDiag_Error, severity);
     };
 
-    CCassBlobTaskLoadBlob fetch(m_Connection, m_BigBlobKeyspace, 32435367, true, timeout_function);
+    CCassBlobTaskLoadBlob fetch(sm_Env.Get().connection, m_BigBlobKeyspace, 32435367, true, timeout_function);
     fetch.SetQueryTimeout(chrono::milliseconds(1));
     wait_function(fetch);
     EXPECT_TRUE(timeout_function_called) << "Timeout should happen";
@@ -347,7 +342,7 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
 
     auto blob = make_unique<CBlobRecord>();
     (*blob).SetKey(8091).SetModified(1000412801493).SetNChunks(1).SetSize(1114);
-    CCassBlobTaskLoadBlob blob_fetch(m_Connection, "psg_test_sat_4", std::move(blob), true, timeout_function);
+    CCassBlobTaskLoadBlob blob_fetch(sm_Env.Get().connection, "psg_test_sat_4", std::move(blob), true, timeout_function);
     blob_fetch.SetQueryTimeout(chrono::milliseconds(1));
     blob_fetch.SetUsePrepared(false);
     blob_fetch.SetChunkCallback(chunk_callback);
@@ -356,7 +351,7 @@ TEST_F(CBlobTaskLoadBlobTest, BlobChunkTimeOutFailWithComment)
     comment_blob.SetKey(8091).SetModified(1000412801493).SetFlags(22);
     auto messages_provider = make_shared<CPSGMessages>();
     messages_provider->Set("BLOB_STATUS_SUPPRESSED", "BLOB_STATUS_SUPPRESSED");
-    CCassStatusHistoryTaskGetPublicComment comment_fetch(m_Connection, "psg_test_sat_4", comment_blob, error_function);
+    CCassStatusHistoryTaskGetPublicComment comment_fetch(sm_Env.Get().connection, "psg_test_sat_4", comment_blob, error_function);
     comment_fetch.SetCommentCallback(comment_callback);
     comment_fetch.SetMessages(messages_provider);
 

@@ -50,6 +50,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -58,36 +60,29 @@ USING_IDBLOB_SCOPE;
 class CPsgApiTest
     : public testing::Test
 {
- public:
+public:
     CPsgApiTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     string m_KeyspaceName{"idmain2"};
 };
 
 const char* CPsgApiTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CPsgApiTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CPsgApiTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CPsgApiTest::sm_Env;
 
 auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
@@ -118,7 +113,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     CSi2CsiFetchRequest si2csi_request;
     si2csi_request.SetSecSeqId("3786039");
     CCassSI2CSITaskFetch si2csi_fetch(
-        m_Connection, m_KeyspaceName, si2csi_request,
+        sm_Env.Get().connection, m_KeyspaceName, si2csi_request,
         [&call_count, &si2csi_records](vector<CSI2CSIRecord> &&records) {
             ++call_count;
             si2csi_records = std::move(records);
@@ -140,7 +135,7 @@ TEST_F(CPsgApiTest, ResolutionByGi) {
     call_count = 0;
     vector<CBioseqInfoRecord> bioseq_records;
     CCassBioseqInfoTaskFetch bioseq_fetch(
-        m_Connection, m_KeyspaceName, bioseq_request,
+        sm_Env.Get().connection, m_KeyspaceName, bioseq_request,
         [&call_count, &bioseq_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             bioseq_records = std::move(records);

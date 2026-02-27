@@ -79,12 +79,12 @@ namespace {
             return rc;
         }
 
-        static string m_Username;
-        static string m_Password;
+        static char const* const m_Username;
+        static char const* const m_Password;
     };
 
-    string CMyNCBIFactoryTest::m_Username{"mntest4"};
-    string CMyNCBIFactoryTest::m_Password{"mntest11"};
+    char const* const  CMyNCBIFactoryTest::m_Username{"mntest4"};
+    char const* const  CMyNCBIFactoryTest::m_Password{"mntest11"};
 
     TEST_F(CMyNCBIFactoryTest, Basic)
     {

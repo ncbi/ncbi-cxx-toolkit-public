@@ -55,10 +55,10 @@ USING_IDBLOB_SCOPE;
 class CPsgCacheSi2CsiTest
     : public testing::Test
 {
- public:
+public:
     CPsgCacheSi2CsiTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase()
     {
         char buf[PATH_MAX];
@@ -71,19 +71,22 @@ class CPsgCacheSi2CsiTest
         CNcbiIfstream i(config_path, ifstream::in | ifstream::binary);
         CNcbiRegistry r(i);
         string file_name = r.GetString("LMDB_CACHE", "si2csi", "");
-        m_Cache = make_unique<CPubseqGatewayCache>("", file_name, "");
-        m_Cache->Open({});
+        sm_Cache = new CPubseqGatewayCache("", file_name, "");
+        sm_Cache->Open({});
     }
 
     static void TearDownTestCase()
     {
-        m_Cache = nullptr;
+        if (sm_Cache) {
+            delete sm_Cache;
+            sm_Cache = nullptr;
+        }
     }
 
-    static unique_ptr<CPubseqGatewayCache> m_Cache;
+    static CPubseqGatewayCache* sm_Cache;
 };
 
-unique_ptr<CPubseqGatewayCache> CPsgCacheSi2CsiTest::m_Cache(nullptr);
+CPubseqGatewayCache* CPsgCacheSi2CsiTest::sm_Cache{nullptr};
 
 TEST_F(CPsgCacheSi2CsiTest, LookupUninitialized)
 {
@@ -96,7 +99,7 @@ TEST_F(CPsgCacheSi2CsiTest, LookupUninitialized)
     EXPECT_TRUE(cache->FetchSi2Csi(request).empty());
 
     unsigned int expected_flags = MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC;
-    EXPECT_EQ(expected_flags, m_Cache->GetSi2CsiEnvFlags());
+    EXPECT_EQ(expected_flags, sm_Cache->GetSi2CsiEnvFlags());
 }
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)
@@ -104,13 +107,13 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqId)
     CPubseqGatewayCache::TSi2CsiRequest request;
 
     request.SetSecSeqId("FAKE");
-    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+    EXPECT_TRUE(sm_Cache->FetchSi2Csi(request).empty());
 
     request.Reset().SetSecSeqId("");
-    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+    EXPECT_TRUE(sm_Cache->FetchSi2Csi(request).empty());
 
     request.Reset().SetSecSeqId("3643631");
-    auto response = m_Cache->FetchSi2Csi(request);
+    auto response = sm_Cache->FetchSi2Csi(request);
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(12, response[0].GetSecSeqIdType());
 
@@ -125,16 +128,16 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
     CPubseqGatewayCache::TSi2CsiRequest request;
 
     request.SetSecSeqId("FAKE").SetSecSeqIdType(0);
-    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+    EXPECT_TRUE(sm_Cache->FetchSi2Csi(request).empty());
 
     request.Reset().SetSecSeqId("").SetSecSeqIdType(0);
-    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+    EXPECT_TRUE(sm_Cache->FetchSi2Csi(request).empty());
 
     request.Reset().SetSecSeqId("3643631").SetSecSeqIdType(0);
-    EXPECT_TRUE(m_Cache->FetchSi2Csi(request).empty());
+    EXPECT_TRUE(sm_Cache->FetchSi2Csi(request).empty());
 
     request.Reset().SetSecSeqId("3643631").SetSecSeqIdType(12);
-    auto response = m_Cache->FetchSi2Csi(request);
+    auto response = sm_Cache->FetchSi2Csi(request);
     ASSERT_EQ(1UL, response.size());
 
     EXPECT_EQ("AC005299", response[0].GetAccession());
@@ -145,13 +148,13 @@ TEST_F(CPsgCacheSi2CsiTest, LookupCsiBySeqIdSeqIdType)
 
 TEST_F(CPsgCacheSi2CsiTest, LookupCsiForLastRecord)
 {
-    auto response = m_Cache->FetchSi2CsiLast();
+    auto response = sm_Cache->FetchSi2CsiLast();
     ASSERT_FALSE(response.empty());
     auto last = response[response.size() - 1];
 
     CPubseqGatewayCache::TSi2CsiRequest request;
     request.SetSecSeqId(last.GetSecSeqId()).SetSecSeqIdType(last.GetSecSeqIdType());
-    response = m_Cache->FetchSi2Csi(request);
+    response = sm_Cache->FetchSi2Csi(request);
 
     ASSERT_EQ(1UL, response.size());
     EXPECT_EQ(last.GetSecSeqId(), response[0].GetSecSeqId());

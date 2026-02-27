@@ -48,6 +48,7 @@
 #include <map>
 
 #include "fullscan_plan_mock.hpp"
+#include "test_environment.hpp"
 
 namespace {
 
@@ -71,29 +72,22 @@ protected:
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
         //r.Set(config_section, "numthreadsio", "1", IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     string m_KeyspaceName;
     string m_TableName;
 };
 
 const char* CCassandraFullscanRunnerTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CCassandraFullscanRunnerTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CCassandraFullscanRunnerTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CCassandraFullscanRunnerTest::sm_Env;
 
 struct SConsumeContext {
     CFastMutex mutex;
@@ -233,7 +227,7 @@ TEST_F(CCassandraFullscanRunnerTest, NonConfiguredRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, BrokenQueryRunnerTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     auto plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query));
@@ -279,7 +273,7 @@ TEST_F(CCassandraFullscanRunnerTest, AtLeastOneActiveStatementPerThread) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
     auto plan_mock = make_default_plan_mock();
@@ -307,11 +301,11 @@ TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
-    auto query1 = m_Connection->NewQuery();
+    auto query1 = sm_Env.Get().connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 103317145", 0);
-    auto query2 = m_Connection->NewQuery();
+    auto query2 = sm_Env.Get().connection->NewQuery();
     query2->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
     auto plan_mock = make_unique<MockCassandraFullscanPlan>();
@@ -349,9 +343,9 @@ TEST_F(CCassandraFullscanRunnerTest, MultiThreadRunnerTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
-    auto query1 = m_Connection->NewQuery();
+    auto query1 = sm_Env.Get().connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
     unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
@@ -377,7 +371,7 @@ TEST_F(CCassandraFullscanRunnerTest, FinalizeMayThrowTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
     auto plan_mock = make_default_plan_mock();
@@ -402,7 +396,7 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayThrowTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
     auto plan_mock = make_default_plan_mock();
@@ -428,9 +422,9 @@ TEST_F(CCassandraFullscanRunnerTest, ReadMayReturnFalseTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
-    auto query1 = m_Connection->NewQuery();
+    auto query1 = sm_Env.Get().connection->NewQuery();
     query1->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 160755002", 0);
 
     auto plan_mock = make_default_plan_mock();
@@ -457,7 +451,7 @@ TEST_F(CCassandraFullscanRunnerTest, TickMayReturnFalseTest) {
 }
 
 TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     // this group has 3 records
     query->SetSQL("select ipg from test_ipg_storage_entrez.ipg_report WHERE ipg = 15724717", 0);
 
@@ -486,7 +480,7 @@ TEST_F(CCassandraFullscanRunnerTest, ResultPagingTest) {
 
 TEST_F(CCassandraFullscanRunnerTest, ConsumerPerQueryTest)
 {
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     connection->Connect();
     auto plan = make_unique<CCassandraFullscanPlanCaching>();
     plan
@@ -533,7 +527,7 @@ TEST_F(CCassandraFullscanRunnerTest, ConsumerPerQueryTest)
 TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
     auto plan = make_unique<CCassandraFullscanPlan>();
     plan
-        ->SetConnection(m_Connection)
+        ->SetConnection(sm_Env.Get().connection)
         .SetFieldList({"ipg", "accession"})
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)

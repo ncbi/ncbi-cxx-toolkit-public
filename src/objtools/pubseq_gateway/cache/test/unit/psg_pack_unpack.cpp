@@ -54,25 +54,28 @@ USING_IDBLOB_SCOPE;
 class CPsgCachePackUnpackTest
     : public testing::Test
 {
- public:
+public:
     CPsgCachePackUnpackTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase()
     {
-        m_Cache = make_unique<CPubseqGatewayCache>("", "", "");
-        m_Cache->Open({});
+        sm_Cache = new CPubseqGatewayCache("", "", "");
+        sm_Cache->Open({});
     }
 
     static void TearDownTestCase()
     {
-        m_Cache = nullptr;
+        if (sm_Cache) {
+            delete sm_Cache;
+            sm_Cache = nullptr;
+        }
     }
 
-    static unique_ptr<CPubseqGatewayCache> m_Cache;
+    static CPubseqGatewayCache* sm_Cache;
 };
 
-unique_ptr<CPubseqGatewayCache> CPsgCachePackUnpackTest::m_Cache(nullptr);
+CPubseqGatewayCache* CPsgCachePackUnpackTest::sm_Cache{nullptr};
 
 string ToPrintableString(const string& rv)
 {
@@ -93,60 +96,60 @@ TEST_F(CPsgCachePackUnpackTest, BlobPropKey)
 {
     int32_t sat_key = 2054006;
     int64_t last_modified = 823387172086;
-    string result = m_Cache->PackBlobPropKey(sat_key, last_modified);
+    string result = sm_Cache->PackBlobPropKey(sat_key, last_modified);
     EXPECT_EQ(
         "Size: 12, Data: [ 0000 001f 0057 0076 ffff ffff ffff 0040 004a 004c ffd3 000a ]",
         ToPrintableString(result)
     );
 
-    string result2 = m_Cache->PackBlobPropKey(sat_key);
+    string result2 = sm_Cache->PackBlobPropKey(sat_key);
     EXPECT_EQ("Size: 4, Data: [ 0000 001f 0057 0076 ]", ToPrintableString(result2));
 
     int64_t actual_modified = 0;
     int32_t actual_key = 0;
-    EXPECT_TRUE(m_Cache->UnpackBlobPropKey(result.c_str(), result.size(), actual_modified, actual_key));
+    EXPECT_TRUE(sm_Cache->UnpackBlobPropKey(result.c_str(), result.size(), actual_modified, actual_key));
     EXPECT_EQ(sat_key, actual_key);
     EXPECT_EQ(last_modified, actual_modified);
 
     actual_modified = 0;
-    EXPECT_TRUE(m_Cache->UnpackBlobPropKey(result.c_str(), result.size(), actual_modified));
+    EXPECT_TRUE(sm_Cache->UnpackBlobPropKey(result.c_str(), result.size(), actual_modified));
     EXPECT_EQ(last_modified, actual_modified);
 
     string broken = result;
     broken.resize(broken.size() - 1);
-    EXPECT_FALSE(m_Cache->UnpackBlobPropKey(broken.c_str(), broken.size(), actual_modified, actual_key));
+    EXPECT_FALSE(sm_Cache->UnpackBlobPropKey(broken.c_str(), broken.size(), actual_modified, actual_key));
 }
 
 TEST_F(CPsgCachePackUnpackTest, Si2Csi)
 {
     string sec_seq_id = "3643631";
     int sec_seq_id_type = 12;
-    string result = m_Cache->PackSiKey(sec_seq_id, sec_seq_id_type);
+    string result = sm_Cache->PackSiKey(sec_seq_id, sec_seq_id_type);
     EXPECT_EQ(
         "Size: 10, Data: [ 0033 0036 0034 0033 0036 0033 0031 0000 0000 000c ]",
         ToPrintableString(result)
     );
 
     int actual_sec_seq_id_type = 0;
-    EXPECT_TRUE(m_Cache->UnpackSiKey(result.c_str(), result.size(), actual_sec_seq_id_type));
+    EXPECT_TRUE(sm_Cache->UnpackSiKey(result.c_str(), result.size(), actual_sec_seq_id_type));
     EXPECT_EQ(sec_seq_id_type, actual_sec_seq_id_type);
 }
 
 TEST_F(CPsgCachePackUnpackTest, BioseqInfo)
 {
-    string result = m_Cache->PackBioseqInfoKey("AC005299", 0x08070707);
+    string result = sm_Cache->PackBioseqInfoKey("AC005299", 0x08070707);
     EXPECT_EQ(
         "Size: 12, Data: [ 0041 0043 0030 0030 0035 0032 0039 0039 0000 fff8 fff8 fff8 ]",
         ToPrintableString(result)
     );
 
-    result = m_Cache->PackBioseqInfoKey("AC005299", 0x0807f707, 0x080805f5);
+    result = sm_Cache->PackBioseqInfoKey("AC005299", 0x0807f707, 0x080805f5);
     EXPECT_EQ(
         "Size: 14, Data: [ 0041 0043 0030 0030 0035 0032 0039 0039 0000 fff8 0008 fff8 0005 fff5 ]",
         ToPrintableString(result)
     );
 
-    result = m_Cache->PackBioseqInfoKey("AC005299", 0x0807f707, 0x080805f5, 1234567789);
+    result = sm_Cache->PackBioseqInfoKey("AC005299", 0x0807f707, 0x080805f5, 1234567789);
     EXPECT_EQ(
         "Size: 22, Data: [ 0041 0043 0030 0030 0035 0032 0039 0039 0000 fff8 0008"
         " fff8 0005 fff5 ffff ffff ffff ffff ffb6 0069 fffd ff92 ]",
@@ -157,7 +160,7 @@ TEST_F(CPsgCachePackUnpackTest, BioseqInfo)
         string accession;
         int version, seq_id_type;
         int64_t gi;
-        EXPECT_TRUE(m_Cache->UnpackBioseqInfoKey(result.c_str(), result.size(), accession, version, seq_id_type, gi));
+        EXPECT_TRUE(sm_Cache->UnpackBioseqInfoKey(result.c_str(), result.size(), accession, version, seq_id_type, gi));
         EXPECT_EQ("AC005299", accession);
         EXPECT_EQ(0x0007f707, version);
         EXPECT_EQ(0x000005f5, seq_id_type);
@@ -167,7 +170,7 @@ TEST_F(CPsgCachePackUnpackTest, BioseqInfo)
     {
         int version, seq_id_type;
         int64_t gi;
-        EXPECT_TRUE(m_Cache->UnpackBioseqInfoKey(result.c_str(), result.size(), version, seq_id_type, gi));
+        EXPECT_TRUE(sm_Cache->UnpackBioseqInfoKey(result.c_str(), result.size(), version, seq_id_type, gi));
         EXPECT_EQ(0x0007f707, version);
         EXPECT_EQ(0x000005f5, seq_id_type);
         EXPECT_EQ(1234567789, gi);

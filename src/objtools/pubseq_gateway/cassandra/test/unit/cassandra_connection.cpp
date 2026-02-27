@@ -45,6 +45,8 @@
 #include <string>
 #include <thread>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -53,32 +55,31 @@ USING_IDBLOB_SCOPE;
 class CCassConnectionTest
     : public testing::Test
 {
- public:
-    CCassConnectionTest()
-    {}
+public:
+    CCassConnectionTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
+        sm_Env.Get().factory = CCassConnectionFactory::s_Create();
+        sm_Env.Get().factory->LoadConfig(r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Factory = nullptr;
+        sm_Env.Get().factory = nullptr;
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
+    static CSafeStatic<STestEnvironment> sm_Env;
 };
 
 const char* CCassConnectionTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CCassConnectionTest::m_Factory(nullptr);
+CSafeStatic<STestEnvironment> CCassConnectionTest::sm_Env;
 
 TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     ASSERT_FALSE(connection->IsConnected()) << "Connection should be DOWN before running test";
 
     // Set impossible hostname to fail connection
@@ -101,7 +102,7 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
 
     string host_list;
     int16_t port;
-    m_Factory->GetHostPort(host_list, port);
+    sm_Env.Get().factory->GetHostPort(host_list, port);
     connection->SetConnectionPoint(host_list, port);
     connection->Connect();
 
@@ -109,7 +110,7 @@ TEST_F(CCassConnectionTest, ReconnectShouldNotFail) {
 }
 
 TEST_F(CCassConnectionTest, LocalPeersList) {
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     string dc = connection->GetDatacenterName();
     EXPECT_TRUE(dc.empty());
     connection->Connect();
@@ -129,7 +130,7 @@ TEST_F(CCassConnectionTest, LocalPeersList) {
 }
 
 TEST_F(CCassConnectionTest, GetSizeEstimates) {
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     connection->Connect();
     auto estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
     ASSERT_FALSE(estimates.empty());
@@ -153,7 +154,7 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
     vector<string> peers;
     {
         // Need a separate connection or black list policy will not work otherwise
-        auto connection = m_Factory->CreateInstance();
+        auto connection = sm_Env.Get().factory->CreateInstance();
         connection->Connect();
         peers = connection->GetLocalPeersAddressList("");
         auto true_estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
@@ -167,7 +168,7 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesOneNodeDown) {
     }
     ASSERT_FALSE(peers.empty());
     for (auto peer : peers) {
-        auto connection = m_Factory->CreateInstance();
+        auto connection = sm_Env.Get().factory->CreateInstance();
         connection->SetBlackList(peer);
         connection->Connect();
         auto estimates = connection->GetSizeEstimates("DC1", "idmain2", "si2csi");
@@ -196,12 +197,12 @@ TEST_F(CCassConnectionTest, GetSizeEstimatesTwoNodesDown) {
     vector<string> peers;
     {
         // Need a separate connection or black list policy will not work otherwise
-        auto connection = m_Factory->CreateInstance();
+        auto connection = sm_Env.Get().factory->CreateInstance();
         connection->Connect();
         peers = connection->GetLocalPeersAddressList("");
     }
     ASSERT_GE(peers.size(), 2UL);
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     connection->SetBlackList(peers[0] + "," + peers[1]);
     connection->Connect();
     EXPECT_THROW(connection->GetSizeEstimates("DC1", "idmain2", "si2csi"), CCassandraException);
@@ -324,7 +325,7 @@ TEST_F(CCassConnectionTest, MaxRetriesPropagation)
 TEST_F(CCassConnectionTest, GetTokenRanges)
 {
     using CC = CCassConnection;
-    auto connection = m_Factory->CreateInstance();
+    auto connection = sm_Env.Get().factory->CreateInstance();
     connection->Connect();
     CC::TTokenRanges ranges;
     connection->GetTokenRanges(ranges);

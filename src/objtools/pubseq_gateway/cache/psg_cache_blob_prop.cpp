@@ -48,9 +48,9 @@ USING_IDBLOB_SCOPE;
 using TPackBytes = CPubseqGatewayCachePackBytes;
 using TUnpackBytes = CPubseqGatewayCacheUnpackBytes;
 
-static const constexpr unsigned kPackedSatKeySize = 4;
-static const constexpr unsigned kPackedLastModifiedSize = 8;
-static const constexpr unsigned kPackedKeySize = (kPackedSatKeySize + kPackedLastModifiedSize);
+constexpr unsigned kPackedSatKeySize{4};
+constexpr unsigned kPackedLastModifiedSize{8};
+constexpr unsigned kPackedKeySize = (kPackedSatKeySize + kPackedLastModifiedSize);
 
 END_SCOPE()
 

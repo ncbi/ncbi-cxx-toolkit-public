@@ -38,6 +38,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -65,7 +66,7 @@ BEGIN_SCOPE()
     const int fnName = 13;
     const int fnWritetime = 14;
 
-    const string kSelectStatement = "SELECT version, seq_id_type, "
+    constexpr string_view kSelectStatement = "SELECT version, seq_id_type, "
         "date_changed, hash, gi, length, mol, sat, "
         "sat_key, seq_ids, seq_state, state, tax_id, name, writetime(sat_key) FROM ";
 
@@ -106,37 +107,37 @@ void CCassBioseqInfoTaskFetch::AllowInheritance(bool value)
 
 void CCassBioseqInfoTaskFetch::x_InitializeQuery()
 {
-    static const string s_Where_1 = ".bioseq_info WHERE accession = ?";
-    static const string s_Where_2 = s_Where_1 + " AND version = ?";
-    static const string s_Where_3 = s_Where_2 + " AND seq_id_type = ?";
-    static const string s_Where_4 = s_Where_3 + " AND gi = ?";
+    constexpr string_view where_1 = ".bioseq_info WHERE accession = ?";
+    string where_2 = where_1 + " AND version = ?";
+    string where_3 = where_2 + " AND seq_id_type = ?";
+    string where_4 = where_3 + " AND gi = ?";
 
-    string sql = kSelectStatement;
+    string sql{kSelectStatement};
     sql.append(GetKeySpace());
     if (
         m_Request.HasField(TField::eVersion)
         && m_Request.HasField(TField::eSeqIdType)
         && m_Request.HasField(TField::eGI))
     {
-        sql.append(s_Where_4);
+        sql.append(where_4);
         m_QueryArr[0].query->SetSQL(sql, 4);
         m_QueryArr[0].query->BindStr(0, m_Accession);
         m_QueryArr[0].query->BindInt16(1, m_Request.GetVersion());
         m_QueryArr[0].query->BindInt16(2, m_Request.GetSeqIdType());
         m_QueryArr[0].query->BindInt64(3, m_Request.GetGI());
     } else if (m_Request.HasField(TField::eVersion) && m_Request.HasField(TField::eSeqIdType)) {
-        sql.append(s_Where_3);
+        sql.append(where_3);
         m_QueryArr[0].query->SetSQL(sql, 3);
         m_QueryArr[0].query->BindStr(0, m_Accession);
         m_QueryArr[0].query->BindInt16(1, m_Request.GetVersion());
         m_QueryArr[0].query->BindInt16(2, m_Request.GetSeqIdType());
     } else if (m_Request.HasField(TField::eVersion)) {
-        sql.append(s_Where_2);
+        sql.append(where_2);
         m_QueryArr[0].query->SetSQL(sql, 2);
         m_QueryArr[0].query->BindStr(0, m_Accession);
         m_QueryArr[0].query->BindInt16(1, m_Request.GetVersion());
     } else {
-        sql.append(s_Where_1);
+        sql.append(where_1);
         m_QueryArr[0].query->SetSQL(sql, 1);
         m_QueryArr[0].query->BindStr(0, m_Accession);
     }

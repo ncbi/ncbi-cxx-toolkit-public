@@ -64,14 +64,14 @@ FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
                     int16_t &  version,
                     int16_t &  seq_id_type)
 {
-    static const string     s_Select = "SELECT accession, version, seq_id_type FROM ";
-    static const string     s_Where_2 = ".SI2CSI WHERE sec_seq_id = ? AND sec_seq_id_type = ?";
-    static const string     s_Where_1 = ".SI2CSI WHERE sec_seq_id = ?";
+    static const char* const s_Select = "SELECT accession, version, seq_id_type FROM ";
+    static const char* const s_Where_2 = ".SI2CSI WHERE sec_seq_id = ? AND sec_seq_id_type = ?";
+    static const char* const s_Where_1 = ".SI2CSI WHERE sec_seq_id = ?";
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
     // NB: the sequence of the retrieved fields must be in sync with
     // s_GetCSIValues(...) function.
-    string      sql = s_Select;
+    string sql = s_Select;
     sql.append(keyspace);
     if (sec_seq_id_type_provided) {
         sql.append(s_Where_2);

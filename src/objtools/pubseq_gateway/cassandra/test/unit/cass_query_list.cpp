@@ -43,6 +43,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_query_list.hpp>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -56,43 +58,33 @@ public:
 
 protected:
     static void SetUpTestCase() {
-        m_Registry.Set(m_ConfigSection, "service", string(m_TestClusterName), IRegistry::fPersistent);
-
-        m_RegistryPtr = make_shared<CCompoundRegistry>();
-        m_RegistryPtr->Add(m_Registry);
-
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(m_RegistryPtr.get(), m_ConfigSection);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Registry.Get().Set(m_ConfigSection, "service", string(m_TestClusterName), IRegistry::fPersistent);
+        sm_CompoundRegistry.Get().Add(sm_Registry.Get());
+        sm_Env.Get().SetUp(&sm_CompoundRegistry.Get(), m_ConfigSection);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
     static const char * m_ConfigSection;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
-    static CNcbiRegistry m_Registry;
-    static shared_ptr<CCompoundRegistry> m_RegistryPtr;
+    static CSafeStatic<STestEnvironment> sm_Env;
+    static CSafeStatic<CNcbiRegistry> sm_Registry;
+    static CSafeStatic<CCompoundRegistry> sm_CompoundRegistry;
 
     string m_KeyspaceName{"sat_info3"};
 };
 
 const char* CCassQueryListTest::m_TestClusterName = "ID_CASS_TEST";
 const char* CCassQueryListTest::m_ConfigSection = "TEST";
-shared_ptr<CCassConnectionFactory> CCassQueryListTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CCassQueryListTest::m_Connection(nullptr);
-CNcbiRegistry CCassQueryListTest::m_Registry;
-shared_ptr<CCompoundRegistry> CCassQueryListTest::m_RegistryPtr(nullptr);
+CSafeStatic<STestEnvironment> CCassQueryListTest::sm_Env;
+CSafeStatic<CNcbiRegistry> CCassQueryListTest::sm_Registry;
+CSafeStatic<CCompoundRegistry> CCassQueryListTest::sm_CompoundRegistry;
 
 TEST_F(CCassQueryListTest, CheckThreadOwner)
 {
-    auto list = CCassQueryList::Create(m_Connection);
+    auto list = CCassQueryList::Create(sm_Env.Get().connection);
     list->Finalize();
     list->Finalize();
     bool exception_observed{false};

@@ -49,6 +49,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -57,36 +59,28 @@ USING_IDBLOB_SCOPE;
 class CBioseqInfoTaskFetchTest
     : public testing::Test
 {
- public:
+public:
     CBioseqInfoTaskFetchTest() = default;
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
-
+    static CSafeStatic<STestEnvironment> sm_Env;
     string m_KeyspaceName{"idmain2"};
 };
 
 const char* CBioseqInfoTaskFetchTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CBioseqInfoTaskFetchTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CBioseqInfoTaskFetchTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CBioseqInfoTaskFetchTest::sm_Env;
 
 static auto error_function = [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
     EXPECT_TRUE(false) << "Error callback called during the test (status - "
@@ -108,7 +102,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionNotFound) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("FAKEACCESSION");
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = std::move(records);
@@ -126,7 +120,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionMultiple) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("H82419");
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
             actual_records = std::move(records);
@@ -156,7 +150,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_AccessionVersionMultiple) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(0);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> && records) {
             ++call_count;
             actual_records = std::move(records);
@@ -184,7 +178,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionVersionSingle) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("H82419").SetVersion(1);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = std::move(records);
@@ -207,7 +201,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionSeqIdType) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("H82419").SetSeqIdType(7);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = std::move(records);
@@ -230,7 +224,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGISingle) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("H82419").SetGI(11278869);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = std::move(records);
@@ -254,7 +248,7 @@ TEST_F(CBioseqInfoTaskFetchTest, DISABLED_SeqIdsInheritance) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("NC_000001").SetVersion(5);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count, &actual_records](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             actual_records = std::move(records);
@@ -288,7 +282,7 @@ TEST_F(CBioseqInfoTaskFetchTest, AccessionGIWrongVersion) {
     CBioseqInfoFetchRequest request;
     request.SetAccession("AC005299").SetVersion(5).SetGI(3643631);
     CCassBioseqInfoTaskFetch fetch(
-        m_Connection, m_KeyspaceName, request,
+        sm_Env.Get().connection, m_KeyspaceName, request,
         [&call_count](vector<CBioseqInfoRecord> &&records) {
             ++call_count;
             EXPECT_EQ(0UL, records.size());

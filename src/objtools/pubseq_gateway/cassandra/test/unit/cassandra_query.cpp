@@ -44,6 +44,8 @@
 #include <map>
 #include <thread>
 
+#include "test_environment.hpp"
+
 namespace {
 
 USING_NCBI_SCOPE;
@@ -52,43 +54,36 @@ USING_IDBLOB_SCOPE;
 class CCassQueryTest
     : public testing::Test
 {
- public:
+public:
     CCassQueryTest()
      : m_KeyspaceName("test_cassandra_driver")
      , m_TableName("test_retrieval")
     {}
 
- protected:
+protected:
     static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
         r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        sm_Env.Get().SetUp(&r, config_section);
     }
 
     static void TearDownTestCase() {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+        sm_Env.Get().TearDown();
     }
 
     static const char* m_TestClusterName;
-    static shared_ptr<CCassConnectionFactory> m_Factory;
-    static shared_ptr<CCassConnection> m_Connection;
+    static CSafeStatic<STestEnvironment> sm_Env;
 
     string m_KeyspaceName;
     string m_TableName;
 };
 
 const char* CCassQueryTest::m_TestClusterName = "ID_CASS_TEST";
-shared_ptr<CCassConnectionFactory> CCassQueryTest::m_Factory(nullptr);
-shared_ptr<CCassConnection> CCassQueryTest::m_Connection(nullptr);
+CSafeStatic<STestEnvironment> CCassQueryTest::sm_Env;
 
 TEST_F(CCassQueryTest, FieldGetMapValue) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL(
         "SELECT map_field, int_field FROM test_cassandra_driver.test_retrieval "
         " WHERE id = 'row_with_null_map_column'", 0);
@@ -103,7 +98,7 @@ TEST_F(CCassQueryTest, FieldGetMapValue) {
             << "FieldGetMapValue should throw on wrong column type fetch attempt";
 
     map<int, string> expected = {{1, "a"}, {2, "b"}};
-    query = m_Connection->NewQuery();
+    query = sm_Env.Get().connection->NewQuery();
     query->SetSQL(
         "SELECT map_field FROM test_cassandra_driver.test_retrieval WHERE id = 'row_with_2_item_map'", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
@@ -114,7 +109,7 @@ TEST_F(CCassQueryTest, FieldGetMapValue) {
 }
 
 TEST_F(CCassQueryTest, ParamAsStrForDebug) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("NOQUERY", 1);
 
     EXPECT_THROW(query->ParamAsStrForDebug(0), CCassandraException);
@@ -146,7 +141,7 @@ TEST_F(CCassQueryTest, ParamAsStrForDebug) {
 
 TEST_F(CCassQueryTest, CassandraExceptionFormat)
 {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     {
         query->SetSQL("NOQUERY", 1);
         try {
@@ -180,7 +175,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
         query->UsePerRequestTimeout(false);
     }
 
-    query = m_Connection->NewQuery();
+    query = sm_Env.Get().connection->NewQuery();
     {
         query->SetSQL("SELECT * FROM system.size_estimates WHEREE table_name = ? ALLOW FILTERING", 1);
         query->BindStr(0, "allele");
@@ -211,7 +206,7 @@ TEST_F(CCassQueryTest, CassandraExceptionFormat)
 }
 
 TEST_F(CCassQueryTest, FieldGetDateValue) {
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval "
         " WHERE id = 'row_with_null_date_column'", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
@@ -220,7 +215,7 @@ TEST_F(CCassQueryTest, FieldGetDateValue) {
     const int64_t default_val = 1720396800;
     EXPECT_EQ(query->FieldGetInt64Value(0, default_val), default_val);
     EXPECT_EQ(query->FieldGetInt32Value(0, default_val), default_val);
-    query = m_Connection->NewQuery();
+    query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval WHERE id = 'row_with_date_value'", 0);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, false);
     ASSERT_EQ(query->NextRow(), ar_dataready) << "Failed to find row for date value test";
@@ -238,7 +233,7 @@ TEST_F(CCassQueryTest, DateValueRoundTrip) {
     const string date_str = "2024-07-03";
     const CTime t(date_str, "Y-M-D", CTime::ETimeZone::eUTC);
     const int64_t date_val = t.GetTimeT();
-    auto query = m_Connection->NewQuery();
+    auto query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("INSERT INTO test_cassandra_driver.test_retrieval (id, int_field, date_field) VALUES (?,?,?) USING TTL 3600", 3);
     query->BindStr(0, id);
     query->BindInt32(1, int_val);
@@ -246,7 +241,7 @@ TEST_F(CCassQueryTest, DateValueRoundTrip) {
     EXPECT_EQ(query->ParamAsInt32(2), date_val);
     EXPECT_EQ(query->ParamAsInt64(2), date_val);
     query->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, false, true);
-    query = m_Connection->NewQuery();
+    query = sm_Env.Get().connection->NewQuery();
     query->SetSQL("SELECT date_field FROM test_cassandra_driver.test_retrieval WHERE id = ?", 1);
     query->BindStr(0, id);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM, false, true);
