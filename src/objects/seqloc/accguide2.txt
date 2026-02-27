@@ -285,6 +285,7 @@ version  2 # of file format
 # Unusually structured GenBank accessions
 4+6  MAP_  gb_optical_map
 
+
 # PIR IDs (technically locus names) with distinctive in-scope patterns.
 # (The most common pattern is 1+5, starting with A-I, S, or T, but that
 # overlaps with some old INSDC accessions.  There are also other
@@ -293,9 +294,161 @@ version  2 # of file format
 2+4  A?     pir # Just AB-AI, but not worth enumerating
 2+4  J?     pir # J[ACEGHKLPQS-X], likewise
 2+4  P?     pir # P[ACDHLNQSTUWX], likewise
-4+1  ????   pir # [CHILMN]???, likewise
-4+2  ????   pir # [ACEFHILMNQRTV]???, likewise
-5+1  ?????  pir # [AC-IK-NQ-XZ]????, likewise
+
+# Only the digits noted in comments, but this granularity should suffice.
+4+1  CCAI   pir # 6
+4+1  CCYC   pir # 6
+4+1  HMIV   pir # 5
+4+1  HSTR   pir # 1
+4+1  INTU   pir # 2
+4+1  LUGP   pir # 1
+4+1  MEHB   pir # 2
+4+1  MMIV   pir # 2
+4+1  MNIV   pir # 1, 2
+4+1  NMIV   pir # 3
+
+# Only the digits noted in comments, but this granularity should suffice.
+4+2  APBP   pir # 21
+4+2  CCCF   pir # 55
+4+2  CCPC   pir # 54
+4+2  EDBE   pir # 12
+4+2  ERAD   pir # 27
+4+2  FOFV   pir # 29
+4+2  HMIV   pir # 15. 17, 33, 49, 77, 86, 89
+4+2  IEEC   pir # 42
+4+2  LZBP   pir # 21
+4+2  MFIV   pir # 62
+4+2  MNIV   pir # 14, 21, 47, 61, 62, 71, 77
+4+2  NMIV   pir # 27, 72, 78
+4+2  QQBE   pir # 27
+4+2  QQEC   pir # 32
+4+2  RDBE   pir # 11
+4+2  RRNZ   pir # 73
+4+2  TEBE   pir # 12
+4+2  TVBE   pir # 11
+4+2  VGBE   pir # 11
+4+2  VHIV   pir # 34
+4+2  VPXR   pir # 14, 15
+
+# Only the digits noted in comments, but this granularity should suffice.
+5+1  AFMWB  pir # 6
+5+1  AJMSQ  pir # 3
+5+1  AKLQS  pir # 2
+5+1  ALBSG  pir # 3, 7
+5+1  APBPP  pir # 2
+5+1  ASLJG  pir # 4, 5
+5+1  ASLJM  pir # 3, 4
+5+1  ASLJR  pir # 3
+5+1  ASLJX  pir # 3, 4
+5+1  CCPCC  pir # 8
+5+1  COBEQ  pir # 2
+5+1  CYDKD  pir # 2
+5+1  DEPGG  pir # 3
+5+1  DGBEN  pir # 8
+5+1  DJBEM  pir # 2
+5+1  DNBEM  pir # 1
+5+1  DNOBU  pir # 1, 3, 5
+5+1  EDBEQ  pir # 3
+5+1  FOLJG  pir # 3-5
+5+1  GBBPP  pir # 4
+5+1  GGICE  pir # 9
+5+1  GNLJG  pir # 3-5
+5+1  GNVQB  pir # 4
+5+1  GNVQC  pir # 4
+5+1  GNWVS  pir # 5
+5+1  GPBPP  pir # 4
+5+1  GPSYC  pir # 2
+5+1  HMIVC  pir # 2
+5+1  HMIVD  pir # 8
+5+1  HMIVE  pir # 1-9
+5+1  HMIVF  pir # 2-9
+5+1  HMIVH  pir # 2, 3, 5
+5+1  HMIVN  pir # 1
+5+1  HMIVS  pir # 2
+5+1  HMIVT  pir # 2
+5+1  HMXRS  pir # 3
+5+1  HNNZB  pir # 3
+5+1  HSURH  pir # 2
+5+1  IEECC  pir # 7
+5+1  IEECE  pir # 9
+5+1  KIRTC  pir # 2
+5+1  LWHWA  pir # 3
+5+1  MFNZB  pir # 3
+5+1  MNIVC  pir # 1, 2
+5+1  MNIVX  pir # 1-9
+5+1  MNNZB  pir # 3
+5+1  MNXRB  pir # 5
+5+1  NJBYM  pir # 1
+5+1  NMIVH  pir # 3
+5+1  NMIVN  pir # 2
+5+1  NMIVU  pir # 7
+5+1  NMIVW  pir # 8
+5+1  NRBOK  pir # 2
+5+1  QQBEM  pir # 8, 9
+5+1  QQBEN  pir # 1-7, 9
+5+1  QQBEP  pir # 2-4, 7, 8
+5+1  QQBEQ  pir # 4
+5+1  QQBPP  pir # 4
+5+1  QQECR  pir # 3
+5+1  QQIVE  pir # 1
+5+1  QRHUB  pir # 3
+5+1  QRHYB  pir # 2
+5+1  RDYCS  pir # 7
+5+1  RGHYO  pir # 1, 2
+5+1  RKPJS  pir # 1, 8
+5+1  RPBPP  pir # 4
+5+1  RRNZB  pir # 3
+5+1  RRNZP  pir # 3, 5
+5+1  RSBPL  pir # 5
+5+1  RWBEM  pir # 3
+5+1  RWCHH  pir # 7
+5+1  SAZQK  pir # 1
+5+1  TIVRV  pir # 2
+5+1  TNLJG  pir # 4
+5+1  TNLJH  pir # 4
+5+1  TVMVT  pir # 1
+5+1  TYTUZ  pir # 2
+5+1  UQHUR  pir # 7
+5+1  VCBEM  pir # 7
+5+1  VCMVS  pir # 2
+5+1  VCTMU  pir # 2
+5+1  VCVQB  pir # 3
+5+1  VCVQC  pir # 3
+5+1  VCVWM  pir # 1-2
+5+1  VGIHE  pir # 3
+5+1  VGXRB  pir # 6
+5+1  VGXRH  pir # 4
+5+1  VGXRM  pir # 1
+5+1  VGXRN  pir # 1
+5+1  VGXRT  pir # 1, 6
+5+1  VGXRW  pir # 8
+5+1  VHIVA  pir # 3
+5+1  VHIVC  pir # 1, 8
+5+1  VHIVM  pir # 1
+5+1  VHIVN  pir # 1-3, 6-9
+5+1  VHIVX  pir # 1, 2, 6
+5+1  VHNZB  pir # 3
+5+1  VHNZP  pir # 1
+5+1  VKLJG  pir # 4
+5+1  VKLJH  pir # 3
+5+1  VPXRB  pir # 3
+5+1  VPXRC  pir # 3
+5+1  VTVAA  pir # 3
+5+1  WMBEP  pir # 5
+5+1  WMBES  pir # 6
+5+1  WMBEU  pir # 5
+5+1  WMBPP  pir # 2, 4
+5+1  WMBVT  pir # 3
+5+1  WMIHB  pir # 4, 6
+5+1  WMLJB  pir # 1, 2
+5+1  WZBEM  pir # 4-6
+5+1  WZBEP  pir # 1, 9
+5+1  WZBEQ  pir # 1
+5+1  XKACP  pir # 3
+5+1  XSBPL  pir # 5
+5+1  ZHBPT  pir # 9
+5+1  ZLNZP  pir # 3
+
 
 # Other 6-character accessions (mixed, but generally nucleotide)
 1+5  A  embl_patent
