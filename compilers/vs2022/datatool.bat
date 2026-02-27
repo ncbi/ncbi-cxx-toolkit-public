@@ -59,9 +59,10 @@ REM get DT version: from DEFDT_VERSION_FILE  or from PREBUILT_DATATOOL_EXE
 
 set DEFDT_VERSION=
 if exist "%DEFDT_VERSION_FILE%" (
-  for /f %%a in ('type "%DEFDT_VERSION_FILE%"') do (set DEFDT_VERSION=%%a& goto donedf)
-  :donedf
-  set DEFDT_VERSION=%DEFDT_VERSION: =%
+rem  for /f %%a in ('type "%DEFDT_VERSION_FILE%"') do (set DEFDT_VERSION=%%a& goto donedf)
+rem  :donedf
+rem  set DEFDT_VERSION=%DEFDT_VERSION: =%
+  set /P DEFDT_VERSION=<"%DEFDT_VERSION_FILE%"
 )
 if exist "%PREBUILT_DATATOOL_EXE%" (
   set ptbver=
