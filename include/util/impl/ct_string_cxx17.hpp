@@ -195,6 +195,124 @@ namespace compile_time_bits
         return fixed_string(res);
     }
 
+    template<size_t, typename...>
+    struct DeduceBaseSizeImpl;
+
+    template<size_t N>
+    struct DeduceBaseSizeImpl<N>
+    {
+        using type = void;
+    };
+
+    template<size_t N, typename _First, typename...TArgs>
+    struct DeduceBaseSizeImpl<N, _First, TArgs...>
+    {
+        static constexpr size_t max_size = sizeof(_First);
+
+        using type = std::conditional_t<  (N<=max_size), _First,
+            typename DeduceBaseSizeImpl<N, TArgs...>::type>;
+    };
+
+    template<size_t size>
+    struct DeduceBaseSize
+    {
+        using type = typename DeduceBaseSizeImpl<size, uint8_t, uint16_t, uint32_t, uint64_t>::type;
+
+        static_assert(!std::is_void_v<type>, "Failed to determine data type");
+
+    };
+
+
+    // Packed fixed string is used to represent string shorted than 8 bytes
+    // as generic numeric types which are faster for comparison operations
+    template<size_t N>
+    struct packed_fixed_string
+    {
+        using _MyType = packed_fixed_string<N>;
+
+        using value_type = _MyType;
+        using init_type  = _MyType;
+        using hash_type  = _MyType;
+        using packed_type  = DeduceBaseSize<N>::type;
+
+        using hash_compare  = std::less<_MyType>;
+        using value_compare = std::less<_MyType>;
+
+        using char_type = char;
+        using sv = std::basic_string_view<char_type>;
+
+        constexpr size_t size() const {return N;};
+
+        constexpr packed_fixed_string() = default;
+        constexpr packed_fixed_string(const char_type(&s)[N+1])
+            : m_packed{pack_string(s)}
+        {}
+
+        packed_fixed_string(const sv& s) noexcept
+            : m_packed{pack_string(s)}
+        {}
+        packed_fixed_string(const ncbi::CTempString& s) noexcept
+            : packed_fixed_string{sv(s)}
+        {}
+
+        constexpr auto operator<=>(const _MyType& r) const noexcept
+        {
+            return m_packed <=> r.m_packed;
+        }
+
+        constexpr std::basic_string<char_type> to_view() const
+        {
+            return *this;
+        }
+
+        template<typename _CharTraits, typename _Allocator>
+        constexpr operator std::basic_string<char_type, _CharTraits, _Allocator>() const
+        {
+            if (m_packed) {
+                packed_type h = m_packed;
+                uint8_t v;
+                std::basic_string<char_type, _CharTraits, _Allocator> res;
+                res.resize(N);
+                for (size_t i=0; i<N; ++i) {
+                    v = h & 0xFF;
+                    h = h >> 8;
+                    res[N-1-i] = v;
+                }
+                return res;
+            }
+            else
+                return {};
+        }
+
+        constexpr static packed_type pack_string(const sv& s) noexcept
+        {
+            packed_type res = 0;
+            if (s.length() == N)
+                for (size_t i = 0; i<N; ++i)
+                    res = (res << 8) | s[i];
+
+            return res;
+        }
+        constexpr static packed_type pack_string(const char_type(&s)[N+1]) noexcept
+        {
+            packed_type res = 0;
+            for (size_t i = 0; i<N; ++i)
+                res = (res << 8) | s[i];
+
+            return res;
+        }
+
+        packed_type m_packed {};
+    };
+
+    template<size_t N>
+    packed_fixed_string(const char (&)[N]) -> packed_fixed_string<N-1>;
+
+    template<size_t N>
+    constexpr bool operator==(const packed_fixed_string<N>& l, std::string_view r) noexcept
+    {
+        return l.m_packed == packed_fixed_string<N>::pack_string(r);
+    }
 
 }
 
