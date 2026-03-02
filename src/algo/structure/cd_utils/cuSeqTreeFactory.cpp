@@ -47,7 +47,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(cd_utils)
 
-void static dummyMeter(int Num, int Total)
+static void dummyMeter(int Num, int Total)
 {
 }
 
