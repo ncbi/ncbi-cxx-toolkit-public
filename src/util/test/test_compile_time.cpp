@@ -41,11 +41,12 @@
 #include <tuple>
 #include <map>
 
-
 #include <corelib/test_boost.hpp>
 #include <cassert>
 
 #include <common/test_assert.h>  /* This header must go last */
+
+using namespace std::literals;
 
 class prefixer: public std::streambuf {
 public:
@@ -596,41 +597,6 @@ BOOST_AUTO_TEST_CASE(TestConstSet)
     BOOST_CHECK(ts4.find( ENumbers::much_more) != ts4.end());
     BOOST_CHECK(ts4.find( ENumbers::many) == ts4.end());
 
-}
-
-BOOST_AUTO_TEST_CASE(TestCRC32)
-{
-    using hash_type = ct::SaltedCRC32<ct::tagStrCase>::type;
-
-    constexpr hash_type good_cs = 0x38826fa7;
-    constexpr hash_type good_ncs = 0xefa77b2c;
-    constexpr auto hash_good_cs = ct::SaltedCRC32<ct::tagStrCase>::ct("Good");
-    constexpr auto hash_good_ncs = ct::SaltedCRC32<ct::tagStrNocase>::ct("Good");
-
-    auto hash_good_cs_rt = ct::SaltedCRC32<ct::tagStrCase>::rt("Good", 4);
-    auto hash_good_ncs_rt = ct::SaltedCRC32<ct::tagStrNocase>::rt("Good", 4);
-
-    static_assert(hash_good_cs != hash_good_ncs, "not good");
-    static_assert(good_cs == hash_good_cs, "not good");
-    static_assert(good_ncs == hash_good_ncs, "not good");
-
-    std::cout << std::hex
-              << "Hash values:" << std::endl
-              << hash_good_cs << std::endl
-              << hash_good_ncs << std::endl
-              << hash_good_cs_rt << std::endl
-              << hash_good_ncs_rt << std::endl
-              << good_cs << std::endl
-              << good_ncs << std::endl
-              << std::dec
-    ;
-
-    static_assert(
-        ct::SaltedCRC32<ct::tagStrNocase>::ct("Good") == ct::SaltedCRC32<ct::tagStrCase>::ct("good"),
-        "not good");
-
-    BOOST_CHECK(hash_good_cs  == hash_good_cs_rt);
-    BOOST_CHECK(hash_good_ncs == hash_good_ncs_rt);
 }
 
 template<typename _Left, typename _Right>
@@ -1733,7 +1699,8 @@ BOOST_AUTO_TEST_CASE(Test_index_table)
         { 700, 10, "ii", {1, 1}, 0 },
     });
 
-    compile_time_bits::DeduceIndexSize<1>::type v1 = 1000;
+    compile_time_bits::DeduceIndexSize<1>::type v1 = 1000; // must be overflow
+    BOOST_CHECK_EQUAL(v1, 232);
     //compile_time_bits::DeduceIndexSize<256>::type v256 = 256*256;
     //compile_time_bits::DeduceIndexSize<1024>::type v1024 = 1024;
     //compile_time_bits::DeduceIndexSize<1000000>::type v10000000 = 1000000;
@@ -1846,4 +1813,105 @@ BOOST_AUTO_TEST_CASE(test_inline_map)
 
 }
 
+MAKE_CONST_SET(kMiscPIR4, ct::packed_fixed_string<4>,
+ { {"A2HU"}, {"C3NJ"}, {"CSRZ"}, {"CUAI"}, {"CVJB"}, {"DDRT"}, {"EPRZ"},
+   {"FECF"}, {"FERZ"}, {"GCPG"}, {"GKHU"}, {"HDGI"}, {"HMIV"}, {"HPBO"},
+   {"IHPC"}, {"INCD"}, {"INEL"}, {"INHY"}, {"INOS"}, {"INTK"}, {"ITBA"},
+   {"LARB"}, {"MCON"}, {"MFIV"}, {"MFVN"}, {"MHHU"}, {"MNVN"}, {"NMIV"},
+   {"QFBO"}, {"SEBO"}, {"SVIA"}, {"SVXC"}, {"TAGB"}, {"TCON"}, {"TIAC"},
+   {"TXAI"}, {"VGVN"}, {"VRBO"}, {"W4WL"} });
+MAKE_CONST_SET(kMiscPIR5, ct::packed_fixed_string<5>,
+ { {"AFKKA"}, {"AFMDB"}, {"AFMWA"}, {"AFMWB"}, {"AJHYQ"}, {"AJKXQ"}, {"BHTLA"},
+   {"BPSOP"}, {"CFKKA"}, {"CFMWB"}, {"CFXCA"}, {"CFXCB"}, {"CFYCA"}, {"DEPGC"},
+   {"DOCGA"}, {"F2NT4"}, {"FGRTA"}, {"GNNYF"}, {"GNWEC"}, {"HAMQR"}, {"HJAGI"},
+   {"HMIVF"}, {"HWGHS"}, {"KIBET"}, {"KQMSM"}, {"LABOZ"}, {"LBBCA"}, {"LBBCB"},
+   {"LFTWL"}, {"LWNTM"}, {"LWOBM"}, {"LZFER"}, {"NRBOB"}, {"PASPC"}, {"PKSMK"},
+   {"PRSAK"}, {"PWBYG"}, {"R3MD4"}, {"R3TW7"}, {"RDKBD"}, {"RFMWA"}, {"RFMWB"},
+   {"RHPGT"}, {"RKAIS"}, {"RKMDS"}, {"SUBSD"}, {"SYEXI"}, {"TISYC"}, {"TVFFS"},
+   {"TVTWG"}, {"VCTNS"}, {"VHVNN"}, {"WNBCL"}, {"WNBCM"}, {"XKARB"},
+   {"YTSOG"} });
+MAKE_CONST_SET(kMiscPIR6, ct::packed_fixed_string<6>,
+ { {"ASLJSM"}, {"AZPSDF"}, {"BNRT3S"}, {"BVBPRA"}, {"BVECIB"}, {"BVECIC"},
+   {"BVECPA"}, {"BVECRQ"}, {"CCPS5D"}, {"CFYCBB"}, {"CGRT2S"}, {"CSHYAC"},
+   {"CTYMCS"}, {"CYGCAA"}, {"CZCLCA"}, {"DAAGWT"}, {"DESPGA"}, {"DETWMA"},
+   {"DWFKTG"}, {"EDBEGA"}, {"F2KK4C"}, {"F2WT4J"}, {"FECLCE"}, {"FOLJLK"},
+   {"FOLJSA"}, {"FOLJSP"}, {"FOLJVS"}, {"FOVWLV"}, {"FWPU1B"}, {"FXCLEX"},
+   {"GNLJLK"}, {"GNLJSA"}, {"GNLJSP"}, {"GNNYHB"}, {"GNVUSR"}, {"GNVWLV"},
+   {"GNWVDF"}, {"GNWVHC"}, {"HMIVBA"}, {"HMIVBH"}, {"HMIVCV"}, {"HMIVDA"},
+   {"HMIVDE"}, {"HMIVDU"}, {"HMIVEE"}, {"HMIVET"}, {"HMIVSA"}, {"HMIVSV"},
+   {"HMIVTW"}, {"HNVZVW"}, {"IHKREV"}, {"INMKSQ"}, {"ISCLXH"}, {"ISUTTB"},
+   {"JJAGTT"}, {"KIBEFC"}, {"KIBEHS"}, {"KIBETH"}, {"LFTWWE"}, {"LNLWBA"},
+   {"LWPJ9M"}, {"MFIV1F"}, {"MFIV1K"}, {"MFIV2J"}, {"MFIVPR"}, {"MFNZBK"},
+   {"MKUT2B"}, {"MNIV1B"}, {"MNIV1F"}, {"MNIV2A"}, {"MNIV2F"}, {"MNIV2M"},
+   {"MNIV2W"}, {"MNIVXX"}, {"MNXRAD"}, {"MNXRBF"}, {"MNXRBR"}, {"MNXRDS"},
+   {"MNXRVM"}, {"N2LT1E"}, {"NGMSMG"}, {"NIZRFX"}, {"NMIVAA"}, {"NMIVAK"},
+   {"NMIVEA"}, {"NMIVEK"}, {"NMIVXL"}, {"NTSR2C"}, {"NTSR3C"}, {"OBOB2M"},
+   {"OBUTMB"}, {"OMHU1B"}, {"OZZQMY"}, {"P1XRBR"}, {"P2IVWS"}, {"P2XRUK"},
+   {"PNBS2S"}, {"PRLJSA"}, {"PSKF3U"}, {"PSKFAU"}, {"PSNJ2K"}, {"PSNJ3B"},
+   {"PSNJ3K"}, {"Q3YCRQ"}, {"Q5ECRS"}, {"QQBB2G"}, {"QQBE8H"}, {"QQBEHA"},
+   {"QQEC3R"}, {"QQEC6K"}, {"QQLJVS"}, {"QQLJVX"}, {"R3OB3M"}, {"RDBEHS"},
+   {"RGECKK"}, {"RGHYAE"}, {"RGKKOR"}, {"RKKKLC"}, {"RKKKSC"}, {"RROBHM"},
+   {"RWMSBC"}, {"SJGQBG"}, {"SYBEHS"}, {"SYBYMX"}, {"SYHYHT"}, {"SYTWMT"},
+   {"SYTWSA"}, {"TIKFBU"}, {"TNLJBR"}, {"TPHUCC"}, {"TPRBTS"}, {"TSAEAA"},
+   {"TVBEPN"}, {"TVCHLV"}, {"TVCJRA"}, {"TVDGYP"}, {"TVFVSA"}, {"TVHU2F"},
+   {"TVMVCB"}, {"TVMVNS"}, {"TVRTRR"}, {"VCLJGG"}, {"VCLJKX"}, {"VCLJLK"},
+   {"VCLJMN"}, {"VCLJSA"}, {"VCLJSC"}, {"VCLJSP"}, {"VCLJST"}, {"VCLJVS"},
+   {"VCMVFP"}, {"VCTMHR"}, {"VCTMOR"}, {"VCTMTO"}, {"VCTMVU"}, {"VCVQBY"},
+   {"VCVWFS"}, {"VCVWSF"}, {"VGBE2E"}, {"VGBEDZ"}, {"VGBEMA"}, {"VGBEMB"},
+   {"VGBEMH"}, {"VGBERB"}, {"VGBESA"}, {"VGBESM"}, {"VGNZGB"}, {"VGXRAB"},
+   {"VGXRBB"}, {"VGXRCB"}, {"VGXRDB"}, {"VGXRER"}, {"VGXRRR"}, {"VGXRST"},
+   {"VHIV8H"}, {"VHIVAK"}, {"VHIVXL"}, {"VHNZCV"}, {"VHXRBR"}, {"VKLJBR"},
+   {"VKLJND"}, {"VKLJVA"}, {"VPXRBU"}, {"VPXRDS"}, {"VPXRMN"}, {"VPXRRP"},
+   {"VPXRWA"}, {"W5WLRB"}, {"W6WLRB"}, {"W7WLRB"}, {"WMBE2E"}, {"WMBEAK"},
+   {"WMBEHA"}, {"WMBEHS"}, {"WMBEMA"}, {"WMBEMB"}, {"WMBETW"}, {"WMLJLK"},
+   {"WMLJSP"}, {"WMTM3C"}, {"WMVQBY"}, {"WMXR3B"}, {"XISR1A"}, {"XUHYMC"},
+   {"XXBYAC"}, {"XXEBCF"}, {"YTBSRT"} });
+
+
+BOOST_AUTO_TEST_CASE(test_four_chars)
+{
+    static_assert(std::is_trivially_copyable_v<ct::packed_fixed_string<4>>);
+    static_assert(std::is_trivially_copyable_v<ct::packed_fixed_string<5>>);
+    static_assert(std::is_trivially_copyable_v<ct::packed_fixed_string<8>>);
+
+    BOOST_CHECK_EQUAL(kMiscPIR4.size(), 39);
+    BOOST_CHECK_EQUAL(kMiscPIR5.size(), 56);
+    BOOST_CHECK_EQUAL(kMiscPIR6.size(), 207);
+    for (auto it: kMiscPIR4) {
+        std::cout << it.to_view() << std::endl;
+    }
+    ncbi::CTempString k1{"AAA"};
+    auto r1 = kMiscPIR4.find(k1);
+    BOOST_CHECK(r1 == kMiscPIR4.end());
+    auto r2 = kMiscPIR4.find("VGVN");
+    BOOST_CHECK(r2 != kMiscPIR4.end());
+    const auto& v2 = *r2;
+    std::cout << v2.to_view() << std::endl;
+    bool eq = *r2 == "VGVN";
+    BOOST_CHECK(eq);
+
+    auto r3 = kMiscPIR6.find("VHNZCV");
+    BOOST_CHECK(r3 != kMiscPIR6.end());
+    eq = "VHNZCV"sv == *r3;
+    BOOST_CHECK(eq);
+    eq = "AAA" != *r3;
+    BOOST_CHECK(eq);
+
+
+    auto r4 = kMiscPIR6.find("AAAAAA");
+    BOOST_CHECK(r4 == kMiscPIR6.end());
+
+}
+
+BOOST_AUTO_TEST_CASE(test_deduce_size)
+{
+    static_assert(std::is_same_v<ct::DeduceBaseSize<1>::type, uint8_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<2>::type, uint16_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<3>::type, uint32_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<4>::type, uint32_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<5>::type, uint64_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<6>::type, uint64_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<7>::type, uint64_t>);
+    static_assert(std::is_same_v<ct::DeduceBaseSize<8>::type, uint64_t>);
+}
 

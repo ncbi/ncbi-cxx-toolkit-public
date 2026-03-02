@@ -216,9 +216,6 @@ namespace compile_time_bits
             _Self>> : _Self {};
 
 
-    template<typename _Ty, typename = _Ty>
-    struct DeduceHashedType: DeduceType<_Ty> {};
-
     template<size_t, typename...>
     struct DeduceIndexSizeImpl;
 
@@ -962,9 +959,5 @@ namespace std
 }
 
 #include "ctsort_cxx14.hpp"
-
-#include "ct_crc32.hpp"
-
-
 
 #endif
