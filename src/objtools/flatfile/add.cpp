@@ -1700,7 +1700,7 @@ static forward_list<string> fta_tokenize_dblink(string_view s, Parser::ESource s
                 ++t;
                 string tag(p, t);
 
-                if ((tag.find(',') == string::npos) && (tag.find('\n') == string::npos)) {
+                if (! fta_contains(tag, ',') && ! fta_contains(tag, '\n')) {
                     p = t;
 
                     if (! (tag == "Project:") &&
@@ -1718,7 +1718,7 @@ static forward_list<string> fta_tokenize_dblink(string_view s, Parser::ESource s
                     biosample  = (tag == "BioSample:");
                     assembly   = (tag == "Assembly:");
 
-                    if (! res.empty() && tvnp->find(':') != string::npos) {
+                    if (! res.empty() && fta_contains(*tvnp, ':')) {
                         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
                         return {};
                     }
@@ -1778,7 +1778,7 @@ static forward_list<string> fta_tokenize_dblink(string_view s, Parser::ESource s
         tvnp = res.insert_after(tvnp, std::move(name));
     }
 
-    if (! res.empty() && tvnp->find(':') != string::npos) {
+    if (! res.empty() && fta_contains(*tvnp, ':')) {
         FtaErrPost(SEV_REJECT, ERR_FORMAT_IncorrectDBLINK, "Found DBLINK tag with no value: \"{}\". Entry dropped.", *tvnp);
         return {};
     }
@@ -1803,7 +1803,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESo
     CRef<CUser_field>  user_field;
 
     for (string_view tok : tokens) {
-        if (tok.find(':') != string::npos) {
+        if (fta_contains(tok, ':')) {
             if (user_obj.NotEmpty())
                 break;
 
@@ -1856,7 +1856,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESo
     bool inpr = false;
     for (auto it_tok = tokens.begin(); it_tok != tokens.end(); ++it_tok) {
         string_view tok = *it_tok;
-        if (tok.find(':') != string::npos) {
+        if (fta_contains(tok, ':')) {
             if (tok == "Project:"sv) {
                 inpr = true;
                 continue;
@@ -1871,7 +1871,7 @@ void fta_get_dblink_user_object(TSeqdescList& descrs, string_view s, Parser::ESo
 
             CUser_field::TNum i = 0;
             for (auto uvnp = next(it_tok); uvnp != tokens.end(); ++uvnp, ++i)
-                if (uvnp->find(':') != string::npos)
+                if (fta_contains(*uvnp, ':'))
                     break;
 
             user_field.Reset(new CUser_field);
@@ -2410,7 +2410,7 @@ void fta_parse_structured_comment(string& str, bool& bad, TUserObjVector& objs)
         }
 
         string_view scomment(str.begin() + p, str.begin() + q);
-        if (scomment.find("::") == string_view::npos) {
+        if (! fta_contains(scomment, "::")) {
             FtaErrPost(SEV_ERROR, ERR_COMMENT_StructuredCommentLacksDelim, "The structured comment in this record lacks the expected double-colon '::' delimiter between fields and values.");
             continue;
         }

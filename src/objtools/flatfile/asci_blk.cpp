@@ -1204,7 +1204,7 @@ string GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool is_h
             string_view tail(com.begin() + i, com.end());
             if (tail.starts_with("..."))
                 com.resize(i + 3);
-            else if (fta_contains(tail, ".")) {
+            else if (fta_contains(tail, '.')) {
                 com[i] = '.';
                 com.resize(i + 1);
             } else
