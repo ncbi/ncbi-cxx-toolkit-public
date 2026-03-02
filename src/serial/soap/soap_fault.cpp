@@ -42,7 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
-static struct tag_FaultcodeEnum {
+static struct tag_FaultcodeEnum { /* NCBI_SAFE_STATIC */
     CSoapFault::ESoap_FaultcodeEnum code;
     const char* value;
 } s_FaultCodeEnum[] = {
