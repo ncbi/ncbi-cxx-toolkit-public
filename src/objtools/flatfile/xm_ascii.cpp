@@ -436,10 +436,10 @@ static CRef<CGB_block> XMLGetGBBlock(ParserPtr pp, const char* entry, CMolInfo& 
             }
 
             if (auto kw = XMLConcatSubTags(entry, ibp->xip, INSDSEQ_KEYWORDS, ';')) {
-                if (! est_kwd && kw->find("EST") != string::npos) {
+                if (! est_kwd && fta_contains(*kw, "EST")) {
                     FtaErrPost(SEV_WARNING, ERR_KEYWORD_ESTSubstring, "Keyword {} has substring EST, but no official EST keywords found", *kw);
                 }
-                if (! sts_kwd && kw->find("STS") != string::npos) {
+                if (! sts_kwd && fta_contains(*kw, "STS")) {
                     FtaErrPost(SEV_WARNING, ERR_KEYWORD_STSSubstring, "Keyword {} has substring STS, but no official STS keywords found", *kw);
                 }
             }
@@ -768,7 +768,7 @@ static void XMLGetDescrComment(string& str)
             string_view tail(com.begin() + i, com.end());
             if (tail.starts_with("..."))
                 com.resize(i + 3);
-            else if (fta_contains(tail, ".")) {
+            else if (fta_contains(tail, '.')) {
                 com[i] = '.';
                 com.resize(i + 1);
             } else
