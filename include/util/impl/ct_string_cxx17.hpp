@@ -38,7 +38,7 @@
 
 #include <string_view>
 #include <functional>
-
+#include <corelib/ncbistr.hpp>
 
 namespace compile_time_bits
 {
