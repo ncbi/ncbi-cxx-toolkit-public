@@ -52,25 +52,26 @@ void request_timer_close_cb(uv_handle_t *handle);
 // - created and doing what it needs (Up)
 // - the Cancel() was called for a processor (Canceled)
 // - a processor reported that it finished (Finished)
-enum EPSGS_ProcessorStatus {
+enum EPSGS_DispatchProcessorStatus {
     ePSGS_Up,
     ePSGS_Canceled,
     ePSGS_Finished
 };
+
 
 // Auxiliary structure to store a processor properties
 struct SProcessorData
 {
     // The processor is shared between CPendingOperation and the dispatcher
     shared_ptr<IPSGS_Processor>     m_Processor;
-    EPSGS_ProcessorStatus           m_DispatchStatus;
+    EPSGS_DispatchProcessorStatus   m_DispatchStatus;
     IPSGS_Processor::EPSGS_Status   m_FinishStatus;
     bool                            m_DoneStatusRegistered;
     bool                            m_ProcPerformanceRegistered;
     IPSGS_Processor::EPSGS_Status   m_LastReportedTraceStatus;
 
     SProcessorData(shared_ptr<IPSGS_Processor>  processor,
-                   EPSGS_ProcessorStatus  dispatch_status,
+                   EPSGS_DispatchProcessorStatus  dispatch_status,
                    IPSGS_Processor::EPSGS_Status  finish_status) :
         m_Processor(processor),
         m_DispatchStatus(dispatch_status),
@@ -328,7 +329,7 @@ private:
     uint64_t                                        m_RequestTimeoutMillisec;
 
 public:
-    static string ProcessorStatusToString(EPSGS_ProcessorStatus  st)
+    static string ProcessorStatusToString(EPSGS_DispatchProcessorStatus  st)
     {
         switch (st) {
             case ePSGS_Up:       return "Up";
