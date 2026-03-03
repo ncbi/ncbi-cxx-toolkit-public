@@ -3125,7 +3125,7 @@ namespace variation
         //    Second: ignore near-gene.
         //    Third:  don't ignore any property.
         for(size_t i = 0; i < 3; i++) {
-            static const CVariantProperties::TGene_location flags[3] = {
+            static const CVariantProperties::TGene_location flags[3] = { /* NCBI_SAFE_STATIC */
                 CVariantProperties::eGene_location_near_gene_3
                 | CVariantProperties::eGene_location_near_gene_5
                 | CVariantProperties::eGene_location_intron
