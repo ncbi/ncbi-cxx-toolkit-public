@@ -536,6 +536,23 @@ public:
 
     CMemoryFile* GetMemoryFile(const string& fileName);
 
+    /// Set the memory mapping strategy for all memory-mapped BLAST DB files.
+    ///
+    /// This advises the operating system about the expected access pattern,
+    /// allowing it to optimize page cache behavior.  The default is
+    /// eMMA_Normal (OS-decided, typically with readahead enabled).
+    ///
+    /// This method applies the hint retroactively to already-opened files
+    /// and to all files opened subsequently.  Callers performing sparse
+    /// random lookups (e.g., fetching individual sequences by OID) may
+    /// benefit from eMMA_Random to disable readahead and reduce page cache
+    /// pollution.
+    ///
+    /// @param strategy
+    ///   The desired access pattern hint.
+    /// @sa CMemoryFile_Base::EMemMapAdvise
+    void SetMMapStrategy(CMemoryFile_Base::EMemMapAdvise strategy);
+
     enum EFilesCount{
         eFileCounterNoChange,
         eFileCounterIncrement,
@@ -568,7 +585,10 @@ private:
 
     class CAtlasMappedFile : public CMemoryFile {
     public:
-    	CAtlasMappedFile(const string & filename): CMemoryFile(filename),m_Count(1){
+    	CAtlasMappedFile(const string & filename,
+    	                EMemMapAdvise advise = eMMA_Normal)
+    		: CMemoryFile(filename), m_Count(1)
+    	{
     		const string exts="hd|hi|nd|ni|pd|pi|si|sd|ti|td";
     		string ext = filename.substr(filename.length()-2);
     		if (exts.find(ext) != NPOS) {
@@ -576,6 +596,9 @@ private:
     		}
     		else {
     			m_isIsam = false;
+    		}
+    		if (advise != eMMA_Normal) {
+    			MemMapAdvise(advise);
     		}
     	}
     	~CAtlasMappedFile() {
@@ -606,6 +629,9 @@ private:
     map<string, unique_ptr<CAtlasMappedFile> > m_FileMemMap;
     int m_OpenedFilesCount;
     int m_MaxOpenedFilesCount;
+
+    /// Memory mapping strategy for mmap'd files.
+    CMemoryFile_Base::EMemMapAdvise m_MMapStrategy;
 
     /// BlastDB search path.
     const string m_SearchPath;
