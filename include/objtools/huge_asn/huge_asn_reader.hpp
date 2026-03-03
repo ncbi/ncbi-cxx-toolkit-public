@@ -61,8 +61,8 @@ BEGIN_SCOPE(edit)
 
 
 class NCBI_XHUGEASN_EXPORT CHugeAsnReader:
-    public IHugeAsnSource,
-    public CObject
+    public CObject,
+    public IHugeAsnSource
 {
 public:
     using TFileSize = std::streamoff;
