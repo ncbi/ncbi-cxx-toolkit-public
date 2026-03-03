@@ -118,6 +118,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
             self.options["boost/*"].shared = False
 #
         _s = "/*" if conan_version.major > "1" else ""
+        self.options["grpc"+_s].secure = True
         self.options["opentelemetry-cpp"+_s].with_otlp_grpc = True
         self.options["opentelemetry-cpp"+_s].with_jaeger = False
 # hyphens make it tricky
