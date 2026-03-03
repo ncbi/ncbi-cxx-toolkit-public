@@ -452,7 +452,6 @@ BAB	s	Instituto Nacional de Tecnologia Agropecuaria, Instituto de Recursos Biolo
 BABY	s	B. A. Bennett Herbarium, Yukon Government			
 BAC<CHN>	s	Beijing Agricultural College			
 BAC<IT>	c	Biobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)			
-BAC<IT>	c	Biobank of Veterinary Resources of the Istituto Zooprofilattico Sperimentale della Lombardia e dell'Emilia Romagna (IZSLER-BVR)			
 BAC<UK>	s	Bacup Natural History Society			
 BACA	c	Bank of Algae and Cyanobacteria of the Azores			
 BACC	c	Brucella AFSSA Culture Collection			
