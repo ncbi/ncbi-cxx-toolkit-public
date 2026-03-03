@@ -34,6 +34,8 @@
 
 #include "psgs_seq_id_utils.hpp"
 #include "ipsgs_processor.hpp"
+#include "pubseq_gateway_logging.hpp"
+#include "pubseq_gateway.hpp"
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_id.hpp>
@@ -133,5 +135,44 @@ CSeq_id_Base::E_Choice   DetectSeqIdTypeForIPG(const string &  seq_id)
         return CSeq_id_Base::e_not_set;
     }
     return CSeq_id_Base::e_not_set;
+}
+
+
+// The function returns true if the user provided string looks like it could be
+// an accession. It is called only if the CSeq_id parsing failed so some of the
+// return values are not expected, thus there will be a log message and an
+// alert.
+bool IsAccessionLike(const string &  user_input)
+{
+    auto    accession = CSeq_id::AssessAccession(user_input);
+    switch (accession) {
+        case CSeq_id::eInvalid:
+        case CSeq_id::eLocalOnly:
+            return false;
+        case CSeq_id::ePlausible:
+        case CSeq_id::eUnreserved:
+            return true;
+        case CSeq_id::eIdentifiable:
+        case CSeq_id::eTagged:
+            {
+                string  err_msg =
+                    "Inconsistency detected: CSeq_id parsing failed but "
+                    "CSeq_id::AssessAccession() returned eIdentifiable or eTagged: " +
+                    to_string(accession) +
+                    ".";
+                PSG_ERROR(err_msg +
+                          " Continue with an additional try to lookup in BIOSEQ_INFO table.");
+
+                CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+                app->GetAlerts().Register(ePSGS_SeqIdInconsistencyParsingAndAssess,
+                                          err_msg);
+                return true;
+            }
+        default:
+            PSG_ERROR("Unexpected accession received from CSeq_id::AssessAccession(): " +
+                      to_string(accession) +
+                      ". Continue with an additional try to lookup in BIOSEQ_INFO table.");
+            return true;
+    }
 }
 

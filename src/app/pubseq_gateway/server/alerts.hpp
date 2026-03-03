@@ -63,7 +63,8 @@ enum EPSGS_AlertType {
     ePSGS_TcpConnAlertLimitExceeded = 15,
     ePSGS_Throttling = 16,
     ePSGS_SeqIdClassificationConfigFilesRefreshSuccess = 17,
-    ePSGS_SeqIdClassificationConfigFilesRefreshFailure = 18
+    ePSGS_SeqIdClassificationConfigFilesRefreshFailure = 18,
+    ePSGS_SeqIdInconsistencyParsingAndAssess = 19
 };
 
 enum EPSGS_AlertAckResult {

@@ -240,6 +240,27 @@ CPSGS_ResolveBase::x_ResolveAsIsInCache(SBioseqResolution &  bioseq_resolution)
 }
 
 
+EPSGS_CacheLookupResult
+CPSGS_ResolveBase::x_ResolveAsAccesionLike(SBioseqResolution &  bioseq_resolution)
+{
+    CPSGCache           psg_cache(true, m_Request, m_Reply);
+
+    // Try BIOSEQ_INFO
+    CBioseqInfoRecord   bioseq_info;
+    bioseq_info.SetAccession(m_CurrentSeqIdToResolve->seq_id);
+    bioseq_resolution.SetBioseqInfo(bioseq_info);
+
+    EPSGS_CacheLookupResult     bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
+                                                                    this, bioseq_resolution);
+    if (bioseq_cache_lookup_result == ePSGS_CacheHit) {
+        bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
+        return ePSGS_CacheHit;
+    }
+
+    bioseq_resolution.Reset();
+    return bioseq_cache_lookup_result;
+}
+
 
 void
 CPSGS_ResolveBase::x_ResolveViaComposeOSLTInCache(
@@ -403,6 +424,21 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                                          bioseq_resolution);
         }
 
+        if (!bioseq_resolution.IsValid()) {
+            // Another try to resolve as is in the bioseq_info table
+            if (m_CurrentSeqIdToResolve->seq_id_type == -1 &&
+                seq_id_resolve == true &&
+                parsing_result != ePSGS_ParsedOK) {
+                // - only if the seq id type has not been supplied by the user
+                // - only if seq_id_resolve flag effective value is true
+                // - only if parsing did not succeed
+                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id)) {
+                    bioseq_resolution.Reset();
+                    x_ResolveAsAccesionLike(bioseq_resolution);
+                }
+            }
+        }
+
         if (bioseq_resolution.IsValid()) {
             // Special case for the seq_id like gi|156232
             bool    continue_with_cassandra = false;
@@ -468,6 +504,7 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                 std::move(primary_id),
                 composed_ok,
                 seq_id_resolve,
+                parsing_result,
                 std::move(bioseq_resolution));
 
         // Async resolver will call a callback

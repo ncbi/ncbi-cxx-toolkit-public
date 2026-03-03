@@ -84,6 +84,8 @@ private:
                                 SBioseqResolution &  bioseq_resolution);
     EPSGS_CacheLookupResult x_ResolveAsIsInCache(
                                 SBioseqResolution &  bioseq_resolution);
+    EPSGS_CacheLookupResult x_ResolveAsAccesionLike(
+                                SBioseqResolution &  bioseq_resolution);
     void x_OptimizedResolutionInCache(
                                 CSeq_id &  parsed_seq_id,
                                 const string &  primary_id,

@@ -33,6 +33,7 @@
 
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 #include "bioseq_info_record_selector.hpp"
+#include "insdc_utils.hpp"
 #include "pubseq_gateway.hpp"
 
 USING_NCBI_SCOPE;
@@ -80,11 +81,33 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
     else if (!dead_idx_v.empty()) good_idx_v_ptr = &dead_idx_v;
     else good_idx_v_ptr = &hup_idx_v;
 
+    // It is necessary to check that all the records from the good vector are
+    // of compatible seq id type
+    CBioseqInfoRecord::TSeqIdType   expected_seq_id_type = records[(*good_idx_v_ptr)[0]].GetSeqIdType();
+    bool                            is_expected_insdc_type = IsINSDCSeqIdType(expected_seq_id_type);
+    bool                            seq_id_types_compatible = true;
+
     TGi max_gi = ZERO_GI;
     CBioseqInfoRecord::TVersion max_version = -1;
     size_t k = -1;
+    CBioseqInfoRecord::TSeqIdType  current_seq_id_type;
+
     for (size_t i = 0; i < good_idx_v_ptr->size(); ++i) {
         k = (*good_idx_v_ptr)[i];
+        current_seq_id_type = records[k].GetSeqIdType();
+
+        if (is_expected_insdc_type) {
+            if (!IsINSDCSeqIdType(current_seq_id_type)) {
+                seq_id_types_compatible = false;
+                break;
+            }
+        } else {
+            if (current_seq_id_type != expected_seq_id_type) {
+                seq_id_types_compatible = false;
+                break;
+            }
+        }
+
         TGi gi = GI_FROM(idblob::CBioseqInfoRecord::TGI, records[k].GetGI());
         if (gi > max_gi) {
             index = k;
@@ -97,6 +120,15 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
                 max_version = version;
             }
         }
+    }
+
+    if (!seq_id_types_compatible) {
+        // The seq id types are not compatible between multiple records
+        // Potentially could be:
+        // - produced log message
+        // - engage an alert
+        // - tick a counter
+        return -1;
     }
 
     return index;

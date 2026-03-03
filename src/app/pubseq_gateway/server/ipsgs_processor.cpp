@@ -283,7 +283,7 @@ EPSGS_SeqIdParsingResult IPSGS_Processor::ParseInputSeqId(
 
     // Second variation of Set()
     try {
-        seq_id.Set(stripped_seq_id);
+        seq_id.Set(stripped_seq_id, CSeq_id::fParse_AnyRaw | CSeq_id::fParse_Cautiously);
         if (need_trace)
             m_Reply->SendTrace("Parsing CSeq_id('" + stripped_seq_id +
                              "') succeeded", m_Request->GetStartTimestamp());

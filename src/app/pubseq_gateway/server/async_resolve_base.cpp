@@ -136,16 +136,18 @@ CPSGS_AsyncResolveBase::~CPSGS_AsyncResolveBase()
 
 
 void
-CPSGS_AsyncResolveBase::Process(int16_t               effective_version,
-                                int16_t               effective_seq_id_type,
-                                list<string> &&       secondary_id_list,
-                                string &&             primary_seq_id,
-                                bool                  composed_ok,
-                                bool                  seq_id_resolve,
-                                SBioseqResolution &&  bioseq_resolution)
+CPSGS_AsyncResolveBase::Process(int16_t                     effective_version,
+                                int16_t                     effective_seq_id_type,
+                                list<string> &&             secondary_id_list,
+                                string &&                   primary_seq_id,
+                                bool                        composed_ok,
+                                bool                        seq_id_resolve,
+                                EPSGS_SeqIdParsingResult    parsing_result,
+                                SBioseqResolution &&        bioseq_resolution)
 {
     m_ComposedOk = composed_ok;
     m_SeqIdResolve = seq_id_resolve;
+    m_ParsingResult = parsing_result;
     m_PrimarySeqId = std::move(primary_seq_id);
     m_EffectiveVersion = effective_version;
     m_EffectiveSeqIdType = effective_seq_id_type;
@@ -559,14 +561,15 @@ void CPSGS_AsyncResolveBase::x_Process(void)
             break;
 
         case eSecondaryAsIs:
-            m_ResolveStage = eFinished;
+            m_ResolveStage = eAsLikelyAccessionBioseq;
             x_PrepareSecondaryAsIsSi2csiQuery();
             break;
 
-        case ePostSi2Csi:
+        case eSpecialGiBioseq:
             // Really, there is no stage after that. This is post processing.
             // What is done is defined in the found or error callbacks.
             // true => with seq_id_type
+            m_ResolveStage = eAsLikelyAccessionBioseq;
             x_PreparePrimaryBioseqInfoQuery(
                 m_BioseqResolution.GetBioseqInfo().GetAccession(),
                 m_BioseqResolution.GetBioseqInfo().GetVersion(),
@@ -574,8 +577,26 @@ void CPSGS_AsyncResolveBase::x_Process(void)
                 m_BioseqResolution.GetBioseqInfo().GetGI(),
                 true);
             break;
-
+        case eAsLikelyAccessionBioseq:
+            m_ResolveStage = eFinished;
+            if (m_CurrentSeqIdToResolve->seq_id_type == -1 &&
+                m_SeqIdResolve == true &&
+                m_ParsingResult != ePSGS_ParsedOK) {
+                // - only if the seq id type has not been supplied by the user
+                // - only if seq_id_resolve flag effective value is true
+                // - only if parsing did not succeed
+                if (IsAccessionLike(m_CurrentSeqIdToResolve->seq_id)) {
+                    x_PrepareAccessionLikeBioseqInfoQuery();
+                    break;
+                }
+            }
+            // Note: otherwise fall through
         case eFinished:
+            if (MoveToNextSeqId()) {
+                m_ContinueResolveCB();      // Call resolution again
+                break;
+            }
+            // Note: otherwise fall through
         default:
             // 'not found' of PendingOperation
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
@@ -583,6 +604,63 @@ void CPSGS_AsyncResolveBase::x_Process(void)
 
             x_OnSeqIdAsyncResolutionFinished(std::move(m_BioseqResolution));
     }
+}
+
+
+void
+CPSGS_AsyncResolveBase::x_PrepareAccessionLikeBioseqInfoQuery(void)
+{
+    // The request is based on seq id only and exactly as the user provided it
+
+    ++m_BioseqResolution.m_CassQueryCount;
+    m_BioseqInfoRequestedAccession = m_CurrentSeqIdToResolve->seq_id;
+    m_BioseqInfoRequestedVersion = -1;
+    m_BioseqInfoRequestedSeqIdType = -1;
+    m_BioseqInfoRequestedGI = -1;
+
+    unique_ptr<CCassBioseqInfoFetch>   details;
+    details.reset(new CCassBioseqInfoFetch());
+
+    CBioseqInfoFetchRequest     bioseq_info_request;
+    bioseq_info_request.SetAccession(m_CurrentSeqIdToResolve->seq_id);
+
+    auto    bioseq_keyspace = CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace();
+    CCassBioseqInfoTaskFetch *  fetch_task =
+            new CCassBioseqInfoTaskFetch(bioseq_keyspace.connection,
+                                         bioseq_keyspace.keyspace,
+                                         bioseq_info_request,
+                                         nullptr, nullptr);
+    details->SetLoader(fetch_task);
+
+    // Note: there are two callback implementations available, with/without
+    //       seq_id_type. Here the request is without the seq_id_type however
+    //       the callback is set to the one with seq_id_type. The reason is
+    //       that the one without a seq_id_type has some additional special
+    //       case logic which is not needed when a bioseq info is looked up for
+    //       a user provided accession like string
+    fetch_task->SetConsumeCallback(
+        std::bind(&CPSGS_AsyncResolveBase::x_OnBioseqInfo, this, _1));
+
+    fetch_task->SetErrorCB(
+        std::bind(&CPSGS_AsyncResolveBase::x_OnBioseqInfoError, this, _1, _2, _3, _4));
+    fetch_task->SetLoggingCB(
+            bind(&CPSGS_CassProcessorBase::LoggingCallback,
+                 this, _1, _2));
+    fetch_task->SetDataReadyCB(m_Reply->GetDataReadyCB());
+
+    m_BioseqInfoStart = psg_clock_t::now();
+    m_CurrentFetch = details.release();
+    m_FetchDetails.push_back(unique_ptr<CCassFetch>(m_CurrentFetch));
+
+    if (m_Request->NeedTrace()) {
+        m_Reply->SendTrace(
+            "Cassandra request (accession like seq_id as user provided): " +
+            ToJsonString(bioseq_info_request,
+                         bioseq_keyspace.connection->GetDatacenterName()),
+            m_Request->GetStartTimestamp());
+    }
+
+    fetch_task->Wait();
 }
 
 
@@ -793,7 +871,7 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
             return;
         }
 
-        if (m_ResolveStage == ePostSi2Csi) {
+        if (m_ResolveStage == eAsLikelyAccessionBioseq) {
             // Special case for post si2csi results; no next stage
 
             string      msg = "Data inconsistency. ";
@@ -806,22 +884,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
             }
 
             m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
-
-            // May be there is more seq_id/seq_id_type to try
-            if (MoveToNextSeqId()) {
-                m_ContinueResolveCB();      // Call resolution again
-                return;
-            }
-
-            m_ErrorCB(
-                m_ResolveErrors.GetCombinedErrorCode(),
-                ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                GetCouldNotResolveMessage() +
-                m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
-                ePSGS_NeedLogging);
-            return;
         }
 
+        // Move to the next stage
         x_Process();
         return;
     }
@@ -918,59 +983,32 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(this,
                                          CPSGSCounters::ePSGS_BioseqInfoNotFound);
-            if (m_ResolveStage == ePostSi2Csi) {
+            if (m_ResolveStage == eAsLikelyAccessionBioseq) {
 
                 string      msg = "Data inconsistency. A BIOSEQ_INFO table record "
                                   "is not found for accession " +
                                   m_BioseqResolution.GetBioseqInfo().GetAccession();
                 m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
-
-                // May be there is more seq_id/seq_id_type to try
-                if (MoveToNextSeqId()) {
-                    m_ContinueResolveCB();      // Call resolution again
-                    return;
-                }
-
-                m_ErrorCB(
-                    m_ResolveErrors.GetCombinedErrorCode(),
-                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    GetCouldNotResolveMessage() +
-                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
-                    ePSGS_NeedLogging);
-            } else {
-                // Move to the next stage
-                x_Process();
             }
+
+            // Move to the next stage
+            x_Process();
             break;
         case CRequestStatus::e500_InternalServerError:
             app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
             app->GetCounters().Increment(this,
                                          CPSGSCounters::ePSGS_BioseqInfoFoundMany);
-            if (m_ResolveStage == ePostSi2Csi) {
+            if (m_ResolveStage == eAsLikelyAccessionBioseq) {
                 string      msg = "Data inconsistency. More than one BIOSEQ_INFO "
                                   "table record is found for accession " +
                                   m_BioseqResolution.GetBioseqInfo().GetAccession();
 
                 m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
-
-                // May be there is more seq_id/seq_id_type to try
-                if (MoveToNextSeqId()) {
-                    m_ContinueResolveCB();      // Call resolution again
-                    return;
-                }
-
-                m_ErrorCB(
-                    m_ResolveErrors.GetCombinedErrorCode(),
-                    ePSGS_NoBioseqInfoForGiError, eDiag_Error,
-                    GetCouldNotResolveMessage() +
-                    m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
-                    ePSGS_NeedLogging);
-
-            } else {
-                // Move to the next stage
-                x_Process();
             }
+
+            // Move to the next stage
+            x_Process();
             break;
         default:
             // Impossible
@@ -1085,7 +1123,7 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiRecord(vector<CSI2CSIRecord> &&  records)
 
     // Special case for the seq_id like gi|156232
     if (!CanSkipBioseqInfoRetrieval(m_BioseqResolution.GetBioseqInfo())) {
-        m_ResolveStage = ePostSi2Csi;
+        m_ResolveStage = eSpecialGiBioseq;
         x_Process();
         return;
     }

@@ -61,7 +61,8 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_TcpConnAlertLimitExceeded,                      "TcpConnAlertLimitExceeded" },
     { ePSGS_Throttling,                                     "Throttling" },
     { ePSGS_SeqIdClassificationConfigFilesRefreshSuccess,   "SeqIdClassificationConfigFilesRefreshSuccess" },
-    { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" }
+    { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" },
+    { ePSGS_SeqIdInconsistencyParsingAndAssess,             "SeqIdInconsistencyParsingAndAssess" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

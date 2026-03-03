@@ -99,26 +99,25 @@ public:
 public:
     using CPSGS_CassProcessorBase::Process;
 
-    void Process(int16_t               effective_version,
-                 int16_t               effective_seq_id_type,
-                 list<string> &&       secondary_id_list,
-                 string &&             primary_seq_id,
-                 bool                  composed_ok,
-                 bool                  seq_id_resolve,
-                 SBioseqResolution &&  bioseq_resolution);
+    void Process(int16_t                    effective_version,
+                 int16_t                    effective_seq_id_type,
+                 list<string> &&            secondary_id_list,
+                 string &&                  primary_seq_id,
+                 bool                       composed_ok,
+                 bool                       seq_id_resolve,
+                 EPSGS_SeqIdParsingResult   parsing_result,
+                 SBioseqResolution &&       bioseq_resolution);
 
 private:
     enum EPSGS_ResolveStage {
         eInit,                          // Initial stage; nothing has been done yet
         ePrimaryBioseq,                 // BIOSEQ_INFO (primary) request issued
-
         eSecondarySi2csi,               // loop over all secondary seq_id in SI2CSI
                                         // and then switch to eSecondaryAsIs
         eSecondaryAsIs,
-
-        eFinished,
-
-        ePostSi2Csi                 // Special case for seq_id like gi|156232
+        eSpecialGiBioseq,               // Special case for seq_id like gi|156232
+        eAsLikelyAccessionBioseq,
+        eFinished
     };
 
 protected:
@@ -164,6 +163,7 @@ private:
                                          CBioseqInfoRecord::TSeqIdType  seq_id_type,
                                          CBioseqInfoRecord::TGI  gi,
                                          bool  with_seq_id_type);
+    void x_PrepareAccessionLikeBioseqInfoQuery(void);
     void x_PrepareSecondarySi2csiQuery(void);
     void x_PrepareSecondaryAsIsSi2csiQuery(void);
     void x_PrepareSi2csiQuery(const string &  secondary_id,
@@ -192,6 +192,7 @@ protected:
     EPSGS_ResolveStage                  m_ResolveStage;
     bool                                m_ComposedOk;
     bool                                m_SeqIdResolve;
+    EPSGS_SeqIdParsingResult            m_ParsingResult;
     string                              m_PrimarySeqId;
     int16_t                             m_EffectiveVersion;
     int16_t                             m_EffectiveSeqIdType;
