@@ -54,7 +54,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-const string NSnp::sm_dbTag_dbSNP("dbSNP");
 
 ///////////////////////////////////////////////////////////////////////////////
 // Public Methods
@@ -76,7 +75,7 @@ bool NSnp::IsSnp(const CDbtag& tag)
 
 CConstRef<CDbtag> NSnp::GetTag(const CSeq_feat& SrcFeat)
 {
-    return SrcFeat.GetNamedDbxref(sm_dbTag_dbSNP);
+    return SrcFeat.GetNamedDbxref(kdbTag_dbSNP);
 }
 
 CConstRef<CDbtag> NSnp::GetTag(const CMappedFeat& SrcFeat)
@@ -330,8 +329,6 @@ bool NSnp::IsSnpKnown( CScope& scope, const CSeq_loc& loc, const string & allele
     return isKnown;
 }
 
-
-const string NSNPVariationHelper::sResourceLink_RsID("%rsid%");
 
 bool NSNPVariationHelper::ConvertFeat(CVariation& Variation, const CSeq_feat& SrcFeat)
 {

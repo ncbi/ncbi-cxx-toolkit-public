@@ -64,7 +64,7 @@ class NCBI_SNPUTIL_EXPORT NSnp
 public:
     // tag for SNPs features, meaning is the same as for CDbtag::eDbtagType_dbSNP, but that one is unfortunately a enum, and
     // the corresponding string value is not exposed
-    const static string sm_dbTag_dbSNP;
+    static inline constexpr std::string_view kdbTag_dbSNP {"dbSNP"};
 
     // RS ID
     typedef CObject_id::TId8 TRsid;
@@ -278,7 +278,7 @@ public:
     static void DecodeBitfield(CVariantProperties& prop, const CSnpBitfield& bf);
 
     // list of all possible substitutions in eSNPPropName_ResourceLinkURL
-    static const string sResourceLink_RsID;
+    static inline constexpr std::string_view kResourceLink_RsID {"%rsid%"};
 
     /// enums to control getting a string list representation of various CVariantProperties
 	/// @sa VariantPropAsStrings
