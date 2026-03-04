@@ -143,7 +143,7 @@ public:
         }
     static void Skip(CObjectIStream& in, TTypeInfo )
         {
-            static const TObjectType data{};
+            static const TObjectType data{}; /* NCBI_SAFE_STATIC : CXX-14335 */
             in.SkipStd(data);
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
