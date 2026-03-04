@@ -1521,10 +1521,14 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     CDBConnectionFactory* factory = static_cast<CDBConnectionFactory*>(i_factory);
     string service_name(conn_params.GetServerName());
     string db_name(conn_params.GetDatabaseName());
-    bool need_reread_servers = false;
+    bool need_reread_servers = mir_info.master.empty();
     bool servers_reread = false;
     bool has_master = false;
     int cnt_switches = 0;
+
+    if (need_reread_servers) {
+        factory->WorkWithSingleServer("", service_name, kEmptyStr);
+    }
 
     do {
         if (serv_list.empty()) {
