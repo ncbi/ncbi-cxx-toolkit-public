@@ -190,7 +190,7 @@ void CBlastDbCheckApplication::Init(void)
         ("verbosity", "DefaultKey",
          s_VerbosityText(),
          CArgDescriptions::eInteger,
-         NStr::IntToString(e_Summary));
+         NStr::IntToString(e_Brief )); // e_Summary
     arg_desc->SetConstraint("verbosity", new
                             CArgAllowValuesBetween((int)e_Silent,
                                                    (int)e_Max, true));
@@ -437,7 +437,7 @@ public:
 
     	}catch(exception &e) {
             Log(db, e_Brief) << "  [ERROR] caught exception." << endl;
-            Log(db, e_Details) << e.what() << endl;
+            Log(db, e_Brief) << e.what() << endl;
             status = 2;
         }
         return status;
@@ -529,7 +529,7 @@ public:
         } catch(exception &e) {
             num_failures++;
             Log(db, e_Brief) << "  [ERROR] caught exception." << endl;
-            Log(db, e_Details) << e.what() << endl;
+            Log(db, e_Brief) << e.what() << endl;
         }
         
         return num_failures;
@@ -636,7 +636,7 @@ bool CTestAction::TestOID(CSeqDB & db, TSeen & seen, int oid)
     string msg2 = CNcbiOstrstreamToString(minutiae);
     
     if (msg.size()) {
-        Log(db, e_Details) << "    " << msg << flush;
+        Log(db, e_Brief /* e_Details */) << "    " << msg << flush;
     }
     
     if (msg2.size()) {
@@ -878,7 +878,7 @@ public:
         } catch(exception &e) {
             num_failures++;
             Log(name, e_Brief) << "  [ERROR] caught exception in initializing blastdb" << endl;
-            Log(name, e_Details) << e.what() << endl;
+            Log(name, e_Brief) << e.what() << endl;
         }
         
         return num_failures;
@@ -1046,7 +1046,7 @@ bool CDbTest::Test(CTestActionList & action)
         } catch(exception &e) {
             num_faults++;
             m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
-            m_Out.Log(e_Details) << e.what() << endl;
+            m_Out.Log(e_Brief) << e.what() << endl;
         }
         
         if (num_faults) tot_faults += num_faults;
@@ -1174,7 +1174,7 @@ bool CDirTest::Test(CTestActionList & action)
         } catch(exception &e) {
             num_faults++;
             m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
-            m_Out.Log(e_Details) << e.what() << endl;
+            m_Out.Log(e_Brief) << e.what() << endl;
         }
         
         if (num_faults) tot_faults += num_faults;
@@ -1191,7 +1191,7 @@ bool CDirTest::Test(CTestActionList & action)
         } catch(exception &e) {
             num_faults++;
             m_Out.Log(e_Brief) << "  [ERROR] caught exception in " << *iter << endl;
-            m_Out.Log(e_Details) << e.what() << endl;
+            m_Out.Log(e_Brief) << e.what() << endl;
         }
         
         if (num_faults) tot_faults += num_faults;
@@ -1290,7 +1290,7 @@ bool CCddHeadersTest::x_GetHeader(CSeqDB& db)
     catch (exception& e) {
         Log(db, e_Brief) << "  [ERROR] caught exception while reading rps header "
                            << endl;
-        Log(db, e_Details) << e.what() << endl;
+        Log(db, e_Brief) << e.what() << endl;
         m_NumFailures++;
     }
 
@@ -1327,7 +1327,7 @@ bool CCddHeadersTest::x_TestFreqRatios(CSeqDB& db)
     catch (exception& e) {
         Log(db, e_Brief) << "  [ERROR] caught exception while reading "
             ".freq freqs header " << endl;
-        Log(db, e_Details) << e.what() << endl;
+        Log(db, e_Brief) << e.what() << endl;
         m_NumFailures++;
     }
 
@@ -1391,7 +1391,7 @@ bool CCddDeltaHeadersTest::x_TestWeightedCounts(CSeqDB& db)
     catch (exception& e) {
         Log(db, e_Brief) << "  [ERROR] caught exception while reading "
             ".wcounts freqs header " << endl;
-        Log(db, e_Details) << e.what() << endl;
+        Log(db, e_Brief) << e.what() << endl;
         m_NumFailures++;
     }
 
@@ -1425,7 +1425,7 @@ bool CCddDeltaHeadersTest::x_TestObservations(CSeqDB& db)
     catch (exception& e) {
         Log(db, e_Brief) << "  [ERROR] caught exception while reading "
             ".obsr freqs header " << endl;
-        Log(db, e_Details) << e.what() << endl;
+        Log(db, e_Brief) << e.what() << endl;
         m_NumFailures++;
     }
 
