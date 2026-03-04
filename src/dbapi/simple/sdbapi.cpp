@@ -1521,6 +1521,8 @@ CSDBAPI::UpdateMirror(const string& dbservice,
     CDBConnectionFactory* factory = static_cast<CDBConnectionFactory*>(i_factory);
     string service_name(conn_params.GetServerName());
     string db_name(conn_params.GetDatabaseName());
+    string last_master, pool_name;
+    size_t invalidated_count;
     bool need_reread_servers = mir_info.master.empty();
     bool servers_reread = false;
     bool has_master = false;
@@ -1641,22 +1643,18 @@ CSDBAPI::UpdateMirror(const string& dbservice,
             }
             if (!success  &&  server_name == mir_info.master) {
                 factory->WorkWithSingleServer("", service_name, kEmptyStr);
-                string  pool_name = conn_params.GetParam("pool_name");
-                size_t  invalidated_count = s_GetDBContext()->CloseConnsForPool(pool_name);
-                ERR_POST_X(4, "The master for database '" << db_name <<
-                              "' (service '" << service_name <<
-                              "') has become inaccessible. Because of this " <<
-                              invalidated_count <<
-                              " active connections got invalidated in the pool '" <<
-                              pool_name << "'.");
+                pool_name = conn_params.GetParam("pool_name");
+                invalidated_count =
+                    s_GetDBContext()->CloseConnsForPool(pool_name);
+                swap(mir_info.master, last_master);
                 mir_info.master.clear();
                 need_reread_servers = true;
             }
             else if (success  &&  server_name != mir_info.master) {
                 factory->WorkWithSingleServer("", service_name, server_name);
-                string  pool_name = conn_params.GetParam("pool_name");
-                size_t  invalidated_count = 
-                            s_GetDBContext()->CloseConnsForPool(
+                pool_name = conn_params.GetParam("pool_name");
+                invalidated_count = 
+                    s_GetDBContext()->CloseConnsForPool(
                                             pool_name,
                                             conn->GetCDB_Connection()->Host(),
                                             conn->GetCDB_Connection()->Port());
@@ -1668,13 +1666,15 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                                   " active connections got invalidated in the pool '" +
                                   pool_name + "'.";
 
-                if (mir_info.master.empty()) {
+                const string& latest_master
+                    = mir_info.master.empty() ? last_master : mir_info.master;
+                if (latest_master.empty()  ||  latest_master == server_name) {
                     // Switching from no master to something => Message
                     ERR_POST_X(5, Message << msg_start << "NONE" << msg_end);
                 } else {
                     // Switching from one master to another => Warning
                     ERR_POST_X(5, Warning << msg_start << "'" <<
-                                  mir_info.master << "'" << msg_end);
+                                  latest_master << "'" << msg_end);
                 }
                 s_GetDBContext()->SatisfyPoolMinimum(conn_params);
 
@@ -1701,7 +1701,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
 
     if (first_execution  &&  !has_master) {
         factory->WorkWithSingleServer("", service_name, kEmptyStr);
-        string  pool_name = conn_params.GetParam("pool_name");
+        pool_name = conn_params.GetParam("pool_name");
         size_t  invalidated_count = s_GetDBContext()->CloseConnsForPool(pool_name);
         ERR_POST_X(10, "The master for database '" << db_name <<
                        "' (service '" << service_name <<
@@ -1717,6 +1717,15 @@ CSDBAPI::UpdateMirror(const string& dbservice,
         }
     }
     if (!has_master) {
+        if ( !last_master.empty() ) {
+            ERR_POST_X(4,
+                       "The master for database '" << db_name <<
+                       "' (service '" << service_name <<
+                       "') has become inaccessible. Because of this, " <<
+                       invalidated_count <<
+                       " active connections got invalidated in the pool '" <<
+                       pool_name << "'.");
+        }
         if (error_message)
             *error_message = "All database instances are inaccessible";
         return eMirror_Unavailable;
