@@ -836,7 +836,7 @@ bool GetEmblInstContig(const DataBlk& entry, CBioseq& bioseq, ParserPtr pp)
  *   already allocated.
  *
  **********************************************************/
-static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, unsigned char* const dnaconv)
+static bool s_GetEmblInst(ParserPtr pp, const DataBlk& entry, const unsigned char* dnaconv)
 {
     EntryBlkPtr ebp;
     IndexblkPtr ibp;

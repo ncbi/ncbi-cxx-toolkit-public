@@ -1541,7 +1541,7 @@ void GetSequenceOfKeywords(
  *                                              7-28-93
  *
  **********************************************************/
-Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns)
+Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, const unsigned char* conv, Char replacechar, int* numns)
 {
     Int2           blank;
     Int2           count;
@@ -1597,7 +1597,7 @@ Int4 ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned cha
  *                                              04-19-94
  *
  **********************************************************/
-bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type)
+bool GetSeqData(ParserPtr pp, const DataBlk& entry, CBioseq& bioseq, Int4 nodetype, const unsigned char* seqconv, Uint1 seq_data_type)
 {
     // ByteStorePtr bp;
     IndexblkPtr ibp;
@@ -1739,7 +1739,7 @@ unique_ptr<unsigned char[]> GetDNAConv(void)
 
 DEFINE_STATIC_MUTEX(s_DNAConvMutex);
 
-unsigned char* const GetDNAConvTable()
+const unsigned char* GetDNAConvTable()
 {
     static unique_ptr<unsigned char[]> dnaconv;
     
@@ -1794,7 +1794,7 @@ unique_ptr<unsigned char[]> GetProteinConv(void)
 
 DEFINE_STATIC_MUTEX(s_ProtConvMutex);
 
-unsigned char* const GetProtConvTable()
+const unsigned char* GetProtConvTable()
 {
     static unique_ptr<unsigned char[]> protconv;
     if (! protconv.get()) {
