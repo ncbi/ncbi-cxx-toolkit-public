@@ -109,6 +109,9 @@ protected:
             I_DriverContext& ctx,
             const CDBConnParams& params);
 
+    void x_RecordServer(CDB_Connection& conn, const CDBConnParams& params,
+                        const IDBServiceMapper* mapper = nullptr) const;
+
 private:
     // Friends
     friend class impl::CDriverContext;

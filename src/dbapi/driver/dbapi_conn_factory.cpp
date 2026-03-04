@@ -632,10 +632,9 @@ CDBConnectionFactory::MakeValidConnection(
             }
         }
 
-        if (conn->Host() == 0) {
-            GetRuntimeData(params.GetConnValidator()).GetDBServiceMapper()
-                .RecordServer(conn->GetExtraFeatures());
-        }
+        x_RecordServer(*conn, params,
+                       &(GetRuntimeData(params.GetConnValidator())
+                         .GetDBServiceMapper()));
         CTrivialConnValidator use_db_validator(
             params.GetDatabaseName(),
             CTrivialConnValidator::eKeepModifiedConnection

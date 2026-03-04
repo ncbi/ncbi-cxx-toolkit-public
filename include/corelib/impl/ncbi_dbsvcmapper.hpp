@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 ///
 
 class CDBServer;
+class IDBConnectionFactory;
 class IDBServiceMapper;
 class IRegistry;
 
@@ -79,6 +80,7 @@ protected:
     virtual void     x_RecordServer(const CDBServer&) { }
 
 private:
+    friend class IDBConnectionFactory;
     friend class IDBServiceMapper;
 };
 
