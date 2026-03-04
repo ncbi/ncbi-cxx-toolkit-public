@@ -249,8 +249,8 @@ typedef struct tds_error_message
 
 static const TDS_ERROR_MESSAGE tds_error_messages[] = 
 	{ { TDSEICONVIU,     EXCONVERSION,	"Buffer exhausted converting characters from client into server's character set" }
-	, { TDSEICONVAVAIL,  EXCONVERSION,	"Character set conversion is not available between client character set '%.*s' and "
-						"server character set '%.*s'" }
+        , { TDSEICONVAVAIL,  EXCONVERSION,      "Character set conversion is not available between client character set and "
+                                                "server character set" }
 	, { TDSEICONVO,      EXCONVERSION,	"Error converting characters into server's character set. Some character(s) could "
 						"not be converted" }
 	, { TDSEICONVI,      EXCONVERSION,	"Some character(s) could not be converted into client's character set.  "
