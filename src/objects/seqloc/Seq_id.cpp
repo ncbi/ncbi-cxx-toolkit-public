@@ -150,14 +150,15 @@ static constexpr ctll::fixed_string kSPishPIR{
 // letters first).  They follow various other patterns, but the majority
 // consist solely of letters, and as such should be explicitly
 // enumerated to avoid false positives from 4-6 letter words.
-MAKE_CONST_SET(kMiscPIR4, ct::tagStrCase, // precapitalized as needed
+// All candidates are precapitalized before lookup.
+MAKE_CONST_SET(kMiscPIR4, ct::packed_fixed_string<4>,
  { {"A2HU"}, {"C3NJ"}, {"CSRZ"}, {"CUAI"}, {"CVJB"}, {"DDRT"}, {"EPRZ"},
    {"FECF"}, {"FERZ"}, {"GCPG"}, {"GKHU"}, {"HDGI"}, {"HMIV"}, {"HPBO"},
    {"IHPC"}, {"INCD"}, {"INEL"}, {"INHY"}, {"INOS"}, {"INTK"}, {"ITBA"},
    {"LARB"}, {"MCON"}, {"MFIV"}, {"MFVN"}, {"MHHU"}, {"MNVN"}, {"NMIV"},
    {"QFBO"}, {"SEBO"}, {"SVIA"}, {"SVXC"}, {"TAGB"}, {"TCON"}, {"TIAC"},
    {"TXAI"}, {"VGVN"}, {"VRBO"}, {"W4WL"} });
-MAKE_CONST_SET(kMiscPIR5, ct::tagStrCase, // precapitalized as needed
+MAKE_CONST_SET(kMiscPIR5, ct::packed_fixed_string<5>,
  { {"AFKKA"}, {"AFMDB"}, {"AFMWA"}, {"AFMWB"}, {"AJHYQ"}, {"AJKXQ"}, {"BHTLA"},
    {"BPSOP"}, {"CFKKA"}, {"CFMWB"}, {"CFXCA"}, {"CFXCB"}, {"CFYCA"}, {"DEPGC"},
    {"DOCGA"}, {"F2NT4"}, {"FGRTA"}, {"GNNYF"}, {"GNWEC"}, {"HAMQR"}, {"HJAGI"},
@@ -167,7 +168,7 @@ MAKE_CONST_SET(kMiscPIR5, ct::tagStrCase, // precapitalized as needed
    {"RHPGT"}, {"RKAIS"}, {"RKMDS"}, {"SUBSD"}, {"SYEXI"}, {"TISYC"}, {"TVFFS"},
    {"TVTWG"}, {"VCTNS"}, {"VHVNN"}, {"WNBCL"}, {"WNBCM"}, {"XKARB"},
    {"YTSOG"} });
-MAKE_CONST_SET(kMiscPIR6, ct::tagStrCase, // precapitalized as needed
+MAKE_CONST_SET(kMiscPIR6, ct::packed_fixed_string<6>,
  { {"ASLJSM"}, {"AZPSDF"}, {"BNRT3S"}, {"BVBPRA"}, {"BVECIB"}, {"BVECIC"},
    {"BVECPA"}, {"BVECRQ"}, {"CCPS5D"}, {"CFYCBB"}, {"CGRT2S"}, {"CSHYAC"},
    {"CTYMCS"}, {"CYGCAA"}, {"CZCLCA"}, {"DAAGWT"}, {"DESPGA"}, {"DETWMA"},
