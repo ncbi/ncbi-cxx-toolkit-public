@@ -2642,7 +2642,7 @@ static void GetSprotDescr(CBioseq& bioseq, ParserPtr pp, const DataBlk& entry)
  *                                              10-8-93
  *
  **********************************************************/
-static void GetSPInst(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
+static void GetSPInst(ParserPtr pp, const DataBlk& entry, const unsigned char* protconv)
 {
     EntryBlkPtr ebp;
 
@@ -4502,7 +4502,7 @@ static void SeqToDeltaSP(CBioseq& bioseq, const SPSegLocList& spsll)
  *                                              10-15-93
  *
  **********************************************************/
-static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
+static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, const unsigned char* protconv)
 {
     EntryBlkPtr  ebp;
     SPFeatBlnPtr spfbp;
@@ -4542,7 +4542,7 @@ static void GetSPAnnot(ParserPtr pp, const DataBlk& entry, unsigned char* protco
 }
 
 /**********************************************************/
-static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, unsigned char* protconv)
+static void SpPrepareEntry(ParserPtr pp, const DataBlk& entry, const unsigned char* protconv)
 {
     Int2        curkw;
     char*       ptr;

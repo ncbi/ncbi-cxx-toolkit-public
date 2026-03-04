@@ -49,7 +49,7 @@ CRef<objects::CBioseq>        CreateEntryBioseq(ParserPtr pp);
 void StripSerialNumbers(TEntryList& seq_entries);
 void PackEntries(TEntryList& seq_entries);
 
-Int4       ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, unsigned char* conv, Char replacechar, int* numns);
+Int4       ScanSequence(bool warn, char** seqptr, std::vector<char>& bsp, const unsigned char* conv, Char replacechar, int* numns);
 char*      GetGenBankBlock(TDataBlkList& chain, char* ptr, short* retkw, char* eptr);
 void       xGetGenBankBlocks(Entry& entry);
 void       GetGenBankSubBlock(const DataBlk& entry, size_t bases);
@@ -63,14 +63,14 @@ string     GetDescrComment(const char* offset, size_t len, Uint2 col_data, bool 
 void       GetExtraAccession(IndexblkPtr ibp, bool allow_uwsec, Parser::ESource source, TAccessionList& accessions);
 void       GetSequenceOfKeywords(const DataBlk& entry, int type, Uint2 col_data, TKeywordList& keywords);
 
-bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& cpp_bsp, Int4 nodetype, unsigned char* seqconv, Uint1 seq_data_type);
+bool GetSeqData(ParserPtr pp, const DataBlk& entry, objects::CBioseq& cpp_bsp, Int4 nodetype, const unsigned char* seqconv, Uint1 seq_data_type);
 
 unique_ptr<unsigned char[]> GetDNAConv(void);
 unique_ptr<unsigned char[]> GetProteinConv(void);
 void                        GetSeqExt(ParserPtr pp, objects::CSeq_loc& seq_loc);
 
-unsigned char* const GetDNAConvTable();
-unsigned char* const GetProtConvTable();
+const unsigned char* GetDNAConvTable();
+const unsigned char* GetProtConvTable();
 
 
 bool check_div(bool pat_acc, bool pat_ref, bool est_kwd, bool sts_kwd, bool gss_kwd, bool if_cds, string& div, int* tech, size_t bases, Parser::ESource source, bool& drop);

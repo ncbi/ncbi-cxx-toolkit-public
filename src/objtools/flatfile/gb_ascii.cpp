@@ -201,7 +201,7 @@ bool GetGenBankInstContig(const DataBlk& entry, CBioseq& bsp, ParserPtr pp)
  *                                              3-30-93
  *
  **********************************************************/
-static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, unsigned char* dnaconv)
+static bool GetGenBankInst(ParserPtr pp, const DataBlk& entry, const unsigned char* dnaconv)
 {
     EntryBlkPtr ebp;
     Int2        topology;
@@ -1226,7 +1226,7 @@ CRef<CSeq_entry> CGenbank2Asn::xGetEntry()
 
     ibp->is_prot = fta_StartsWith(pEntry->mBuf.ptr + ibp->lc.bp, "aa"sv);
 
-    unsigned char* const conv = ibp->is_prot ? GetProtConvTable() : GetDNAConvTable();
+    const unsigned char* conv = ibp->is_prot ? GetProtConvTable() : GetDNAConvTable();
 
 
     if (! GetGenBankInst(&mParser, entry, conv)) {

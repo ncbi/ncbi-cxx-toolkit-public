@@ -179,7 +179,7 @@ static bool XMLGetInstContig(const TXmlIndexList& xil, const DataBlk& dbp, CBios
 }
 
 /**********************************************************/
-bool XMLGetInst(ParserPtr pp, const DataBlk& dbp, unsigned char* dnaconv, CBioseq& bioseq)
+bool XMLGetInst(ParserPtr pp, const DataBlk& dbp, const unsigned char* dnaconv, CBioseq& bioseq)
 {
     IndexblkPtr ibp;
 
