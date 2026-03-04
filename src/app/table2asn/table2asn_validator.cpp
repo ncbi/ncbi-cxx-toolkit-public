@@ -230,7 +230,7 @@ CTable2AsnValidator::CTable2AsnValidator(CTable2AsnContext& ctx) :
     m_context(&ctx),
     m_val_context(make_shared<validator::SValidatorContext>())
 {
-    m_val_context->m_taxon_update = m_context->m_remote_updater->GetUpdateFunc();
+    m_val_context->m_taxon_update = m_context->m_remote_updater->GetTaxonomy().GetUpdateFunc();
 }
 
 CTable2AsnValidator::~CTable2AsnValidator()

@@ -482,7 +482,7 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     ProcessSecretFiles1Phase(readModsFromTitle, token);
 
     if (m_context.m_RemoteTaxonomyLookup) {
-        m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
+        m_context.m_remote_updater->GetTaxonomy().UpdateOrgFromTaxon(*entry);
     } else {
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
@@ -526,11 +526,11 @@ void CTbl2AsnApp::ProcessSingleEntry(CFormatGuess::EFormat inputFormat, TAsyncTo
     // Do not repeat expensive processing of the top-level entry; RW-2107
     if ((inputFormat != CFormatGuess::eFasta) || ! *token.pPubLookupDone) {
         if (m_context.m_RemotePubLookup) {
-            m_context.m_remote_updater->UpdatePubReferences(*obj);
+            m_context.m_remote_updater->GetPubmed().UpdatePubReferences(*obj);
             *token.pPubLookupDone = true;
         }
         if (m_context.m_postprocess_pubs) {
-            m_context.m_remote_updater->PostProcessPubs(*entry);
+            m_context.m_remote_updater->GetPubmed().PostProcessPubs(*entry);
         }
     }
 

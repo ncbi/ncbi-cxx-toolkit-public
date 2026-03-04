@@ -54,7 +54,7 @@ public:
             output = &NcbiCout;
         }
 
-        CRemoteUpdater upd(nullptr, normalize);
+        CPubmedUpdater upd(nullptr, normalize);
 
         if (args["url"]) {
             string url = args["url"].AsString();
