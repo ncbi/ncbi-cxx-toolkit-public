@@ -507,7 +507,7 @@ int CTbl2AsnApp::Run()
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
     m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
-    m_context.m_remote_updater->SetPubmedInterceptor(s_PubCleanup);
+    m_context.m_remote_updater->GetPubmed().SetPubmedInterceptor(s_PubCleanup);
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
@@ -993,7 +993,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     xProcessSecretFiles1Phase(readModsFromTitle, *entry);
 
     if (m_context.m_RemoteTaxonomyLookup) {
-        m_context.m_remote_updater->UpdateOrgFromTaxon(*entry);
+        m_context.m_remote_updater->GetTaxonomy().UpdateOrgFromTaxon(*entry);
     } else {
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
@@ -1042,10 +1042,10 @@ void CTbl2AsnApp::ProcessOneEntry(
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup) {
-        m_context.m_remote_updater->UpdatePubReferences(*obj);
+        m_context.m_remote_updater->GetPubmed().UpdatePubReferences(*obj);
     }
     if (m_context.m_postprocess_pubs) {
-        edit::CRemoteUpdater::PostProcessPubs(*entry);
+        edit::CPubmedUpdater::PostProcessPubs(*entry);
     }
 
     if (m_context.m_cleanup.find('-') == string::npos) {
@@ -1088,7 +1088,7 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
 
     if (submit) {
         if (m_context.m_RemotePubLookup) {
-            m_context.m_remote_updater->UpdatePubReferences(*submit);
+            m_context.m_remote_updater->GetPubmed().UpdatePubReferences(*submit);
         }
 
         CCleanup cleanup(nullptr, CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential

@@ -108,7 +108,7 @@ private:
 };
 
 template <EPubmedError error_val>
-static void s_SetPubmedClient(CRemoteUpdater& updater)
+static void s_SetPubmedClient(CPubmedUpdater& updater)
 {
     updater.SetPubmedClient(new CPubmedUpdater_THROW<error_val>());
 }
@@ -117,12 +117,12 @@ static void s_SetPubmedClient(CRemoteUpdater& updater)
 BOOST_AUTO_TEST_CASE(Test_RW_1130)
 {
     auto pDesc = s_CreateDescriptor();
-    CRemoteUpdater updater(nullptr);
+    CPubmedUpdater updater(nullptr);
 
     BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
 
     {
-        CRemoteUpdater updater(nullptr);
+        CPubmedUpdater updater(nullptr);
         updater.SetPubmedClient(new CEUtilsUpdater());
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
     }
 
     {
-        CRemoteUpdater updater(nullptr);
+        CPubmedUpdater updater(nullptr);
         s_SetPubmedClient<EPubmedError::cannot_connect_pmdb>(updater);
 
         string expectedMsg = "Failed to retrieve publication for PMID 1234. "
@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_RW_1130)
 
     {
         CObjtoolsListener messageListener;
-        CRemoteUpdater updater(&messageListener);
+        CPubmedUpdater updater(&messageListener);
         s_SetPubmedClient<EPubmedError::not_found>(updater);
         BOOST_CHECK_NO_THROW(updater.UpdatePubReferences(*pDesc));
     }
