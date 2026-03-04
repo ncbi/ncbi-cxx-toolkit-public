@@ -87,6 +87,12 @@ NCBI_PARAM_DEF_EX(bool, CGI, Print_Request_Method, true, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(CGI, Print_Request_Method) TPrintRequestMethodParam;
 
 
+NCBI_PARAM_DECL(bool, CGI, Print_JA3_SIG);
+NCBI_PARAM_DEF_EX(bool, CGI, Print_JA3_SIG, true, eParam_NoThread,
+                  CGI_PRINT_JA3_SIG);
+typedef NCBI_PARAM_TYPE(CGI, Print_JA3_SIG) TPrintJA3SigParam;
+
+
 NCBI_PARAM_DECL(bool, CGI, Allow_Sigpipe);
 NCBI_PARAM_DEF_EX(bool, CGI, Allow_Sigpipe, false, eParam_NoThread,
                   CGI_ALLOW_SIGPIPE);
@@ -773,6 +779,13 @@ void CCgiApplication::LogRequest(const CCgiContext& ctx) const
         str = req.GetProperty(eCgi_HttpUserAgent);
         if ( !str.empty() ) {
             diag.Extra().Print("USER_AGENT", str);
+        }
+    }
+    // Print USER_AGENT
+    if ( TPrintJA3SigParam::GetDefault() ) {
+        str = req.GetRandomProperty("X_JA3_SIG");
+        if ( !str.empty() ) {
+            diag.Extra().Print("ja3_sig", str);
         }
     }
     // Print NCBI_LOG_FIELDS
