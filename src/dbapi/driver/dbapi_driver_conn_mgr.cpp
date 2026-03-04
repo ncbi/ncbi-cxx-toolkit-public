@@ -76,6 +76,7 @@ CDefaultConnectPolicy::MakeDBConnection(
     unique_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
 
     if (conn.get()) {
+        x_RecordServer(*conn, params);
         CTrivialConnValidator use_db_validator(
             params.GetDatabaseName(), 
             CTrivialConnValidator::eKeepModifiedConnection
@@ -96,6 +97,37 @@ CDefaultConnectPolicy::MakeDBConnection(
     }
     return conn.release();
 }
+
+void IDBConnectionFactory::x_RecordServer(CDB_Connection& conn,
+                                          const CDBConnParams& params,
+                                          const IDBServiceMapper* mapper)
+    const
+{
+    if (conn.Host() != 0) {
+        return;
+    }
+    auto & extra = conn.GetExtraFeatures();
+    if (mapper != nullptr) {
+        mapper->RecordServer(extra);
+        if (conn.Host() != 0) {
+            return;
+        }
+    }
+    try {
+        const auto& name = conn.ServerName();
+        auto pos = name.rfind('@');
+        if (pos == NPOS) {
+            pos = 0;
+        } else {
+            ++pos;
+        }
+        CEndpointKey key(CTempString(name, pos, NPOS));
+        CDBServer server(name, key.GetHost(), key.GetPort());
+        extra.x_RecordServer(server);
+    } catch (CStringException&) {
+    }
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 IConnValidator::~IConnValidator(void)
