@@ -81,6 +81,7 @@ tds_convert_stream(TDSSOCKET * tds, TDSICONV * char_conv, TDS_ICONV_DIRECTION di
 	const char *ib;
 	size_t bufleft = 0;
 	TDSRET res = TDS_FAIL;
+        bool retrying = false;
 
 	/* cast away const for message suppression sub-structure */
 	TDS_ERRNO_MESSAGE_FLAGS *suppress = (TDS_ERRNO_MESSAGE_FLAGS*) &char_conv->suppress;
@@ -133,6 +134,10 @@ convert_more:
 			}
 
 			if (TDS_UNLIKELY(ib == temp)) {	/* tds_iconv did not convert anything, avoid infinite loop */
+                                if ( !retrying ) {
+                                        retrying = true;
+                                        continue;
+                                }
 				tdsdump_log(TDS_DBG_NETWORK, "No conversion possible: some bytes left.\n");
 				res = TDS_FAIL;
 				if (conv_errno == EINVAL && tds)
@@ -145,7 +150,8 @@ convert_more:
 
 			if (bufleft)
 				memmove(temp, ib, bufleft);
-		}
+                }
+                retrying = false;
 	}
 
 	TEMP_FREE;
