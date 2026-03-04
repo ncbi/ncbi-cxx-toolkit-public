@@ -59,8 +59,11 @@ const CSQLITE_Connection::TOperationFlags kDefaultLDS2DBFlags =
 CLDS2_Database::CLDS2_Database(const string& db_file, EAccessMode mode)
     : m_DbFile(db_file),
       m_DbFlags(kDefaultLDS2DBFlags),
-      m_Mode(mode)
+      m_DbConn(new TDbConnectionsTls),
+      m_Mode(mode),
+      m_ThreadCount(make_shared<CAtomicCounter>())
 {
+    m_ThreadCount->Set(0);
 }
 
 
@@ -333,28 +336,28 @@ static const char* s_LDS2_SQL[] = {
 };
 
 
-CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(void)
-    : Statements(CLDS2_Database::eSt_StatementsCount)
+CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(shared_ptr<CAtomicCounter>& thr_count)
+    : Statements(CLDS2_Database::eSt_StatementsCount),
+      ThreadCount(thr_count)
 {
+    ThreadCount->Add(1);
+}
+
+
+CLDS2_Database::SLDS2_DbConnection::~SLDS2_DbConnection(void)
+{
+    ThreadCount->Add(-1);
 }
 
 
 CLDS2_Database::SLDS2_DbConnection&
 CLDS2_Database::x_GetDbConnection(void) const
 {
-    CRef<TDbConnectionsTls> tls;
-    {{
-        CFastMutexGuard guard(m_DbInitMutex);
-        if ( !m_DbConn ) {
-            m_DbConn.Reset(new TDbConnectionsTls);
-        }
-        tls = m_DbConn;
-    }}
-    SLDS2_DbConnection* db_conn = tls->GetValue();
+    SLDS2_DbConnection* db_conn = m_DbConn->GetValue();
     if ( !db_conn ) {
-        unique_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
+        unique_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection(m_ThreadCount));
         db_conn = conn_ptr.get();
-        tls->SetValue(conn_ptr.release(), CTlsBase::DefaultCleanup<SLDS2_DbConnection>);
+        m_DbConn->SetValue(conn_ptr.release(), CTlsBase::DefaultCleanup<SLDS2_DbConnection>);
     }
     return *db_conn;
 }
@@ -362,8 +365,16 @@ CLDS2_Database::x_GetDbConnection(void) const
 
 void CLDS2_Database::x_ResetDbConnection(void)
 {
-    CFastMutexGuard guard(m_DbInitMutex);
-    m_DbConn.Reset();
+    SLDS2_DbConnection* db_conn = m_DbConn->GetValue();
+    if ( !db_conn ) {
+        return; // No DB connection in this thread
+    }
+    // Make sure no other thread is actively accessing the DB right now.
+    if (m_ThreadCount->Get() > 1) {
+        ERR_POST("Can not reset LDS2 connection while multiple threads are using the database.");
+        return;
+    }
+    m_DbConn->SetValue(nullptr);
 }
 
 
@@ -373,9 +384,9 @@ NCBI_PARAM_DEF_EX(int, LDS2, SQLiteCacheSize, 2000, eParam_NoThread,
 typedef NCBI_PARAM_TYPE(LDS2, SQLiteCacheSize) TSQLiteCacheSize;
 
 
-CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
+CSQLITE_Connection& CLDS2_Database::x_GetConn(SLDS2_DbConnection* hint) const
 {
-    SLDS2_DbConnection& db_conn = x_GetDbConnection();
+    SLDS2_DbConnection& db_conn = hint ? *hint : x_GetDbConnection();
     if ( !db_conn.Connection.get() ) {
         if ( m_DbFile.empty() ) {
             LDS2_THROW(eInvalidDbFile, "Empty database file name.");
@@ -405,7 +416,7 @@ CSQLITE_Statement& CLDS2_Database::x_GetStatement(EStatement st) const
     _ASSERT((size_t)st < db_conn.Statements.size());
     AutoPtr<CSQLITE_Statement>& ptr = db_conn.Statements[st];
     if ( !ptr.get() ) {
-        CSQLITE_Connection* conn = &x_GetConn();
+        CSQLITE_Connection* conn = &x_GetConn(&db_conn);
         const char* sql = s_LDS2_SQL[st];
         ptr.reset(new CSQLITE_Statement(conn, sql));
     }

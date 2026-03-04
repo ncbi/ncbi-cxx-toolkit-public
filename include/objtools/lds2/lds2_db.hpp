@@ -455,9 +455,11 @@ private:
     // Structure to hold per-thread connection and all statements.
     struct SLDS2_DbConnection {
         unique_ptr<CSQLITE_Connection> Connection;
-        TStatements                  Statements;
+        TStatements                    Statements;
+        shared_ptr<CAtomicCounter>     ThreadCount;
 
-        SLDS2_DbConnection(void);
+        SLDS2_DbConnection(shared_ptr<CAtomicCounter>& thr_count);
+        ~SLDS2_DbConnection(void);
     };
     typedef CTls<SLDS2_DbConnection> TDbConnectionsTls;
 
@@ -465,7 +467,7 @@ private:
     // if necessary).
     SLDS2_DbConnection& x_GetDbConnection(void) const;
     // Access database connection for the current thread.
-    CSQLITE_Connection& x_GetConn(void) const;
+    CSQLITE_Connection& x_GetConn(SLDS2_DbConnection* hint = nullptr) const;
     // Reset connection and clear statements cache.
     void x_ResetDbConnection(void);
     // Get the requested statement, prepare it if necessary.
@@ -477,6 +479,7 @@ private:
     mutable CFastMutex              m_DbInitMutex;
     mutable CRef<TDbConnectionsTls> m_DbConn;
     EAccessMode                     m_Mode;
+    mutable shared_ptr<CAtomicCounter> m_ThreadCount;
 };
 
 
