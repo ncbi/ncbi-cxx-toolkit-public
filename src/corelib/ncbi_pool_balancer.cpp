@@ -225,7 +225,7 @@ TSvrRef CPoolBalancer::x_GetServer(const void* params, IBalanceable** conn)
             if (it == m_Endpoints.end()) {
                 ERR_POST_X(4,
                            "Unrecognized endpoint for existing connection to "
-                           << conn_key << " (" << server_name << ')');
+                           << server_name << ": " << conn_key);
                 excess = x_GetCount(params, server_name);
                 time_t t = CurrentTime(CTime::eUTC).GetTimeT() + 10;
                 result.Reset(new CDBServer(server_name, host, port, t));
