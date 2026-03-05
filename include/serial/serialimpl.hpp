@@ -268,12 +268,12 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
     return CreateEnumeratedTypeInfo(*member, enumInfo);
 }
 
-NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
-NCBI_XSERIAL_EXPORT CRWLock& GetTypeInfoLock(void);
 #if 0
+NCBI_XSERIAL_EXPORT CRWLock& GetTypeInfoLock(void);
 #define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CWriteLockGuard GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
 #define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CReadLockGuard  GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
 #else
+NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
 #define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
 #define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
 #endif

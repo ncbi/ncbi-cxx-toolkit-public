@@ -43,18 +43,20 @@
 
 BEGIN_NCBI_SCOPE
 
+#if 0
+static CSafeStatic<CRWLock> s_TypeInfoLock(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
+CRWLock& GetTypeInfoLock(void)
+{
+    return s_TypeInfoLock.Get();
+}
+#else
 /* put back inside GetTypeInfoMutex when Mac CodeWarrior 9 comes out */
 DEFINE_STATIC_MUTEX(s_TypeInfoMutex);
-
 SSystemMutex& GetTypeInfoMutex(void)
 {
     return s_TypeInfoMutex;
 }
-CRWLock& GetTypeInfoLock(void)
-{
-    static CRWLock s_TypeInfoLock;
-    return s_TypeInfoLock;
-}
+#endif
 
 
 class CTypeInfoFunctions
