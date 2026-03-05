@@ -82,7 +82,11 @@ public:
         ncbi::CNcbiDiag(diag_info) << ncbi::Severity(sev) << msg << ncbi::Endm;
     }
 };
-static CNCBILogSink s_NCBILogSink;
+bool s_CNCBILogSink(void) {
+    static ncbi::CSafeStatic<CNCBILogSink> s_NCBILogSink;
+    return (&(s_NCBILogSink.Get()) != nullptr);
+}
+static bool init_CNCBILogSink = s_CNCBILogSink();
 #define GPR_SET_LOG_FUNCION
 
 #else //ABSEIL_LOG
