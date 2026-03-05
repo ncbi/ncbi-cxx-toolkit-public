@@ -971,12 +971,13 @@ void CThread::SetCurrentThreadName(const CTempString&)
 
 
 bool CThread::sm_IsExiting = false;
-CTimeout CThread::sm_WaitForThreadsTimeout = CTimeout(0.1);
+unsigned long CThread::sm_WaitForThreadsTimeout = 100; // timeout in milliseconds
 
 
 void CThread::SetWaitForAllThreadsTimeout(const CTimeout& timeout)
 {
-    sm_WaitForThreadsTimeout = timeout;
+    sm_WaitForThreadsTimeout = timeout.IsInfinite() ?
+        numeric_limits<unsigned long>::max() : timeout.GetAsMilliSeconds();
 }
 
 
@@ -986,11 +987,11 @@ bool CThread::WaitForAllThreads(void)
     if ( !IsMain() ) return false;
 
     CStopWatch sw(CStopWatch::eStart);
-    bool infinite = sm_WaitForThreadsTimeout.IsInfinite();
+    bool infinite = sm_WaitForThreadsTimeout == numeric_limits<unsigned long>::max();
     unsigned long to = 0;
     unsigned long q = 10;
     if ( !infinite ) {
-        to = sm_WaitForThreadsTimeout.GetAsMilliSeconds();
+        to = sm_WaitForThreadsTimeout;
         if (to < q) q = to;
     }
     while (sm_ThreadsCount > 0  &&  (infinite || sw.Elapsed()*1000 < to)) {

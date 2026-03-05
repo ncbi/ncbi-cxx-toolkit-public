@@ -658,7 +658,7 @@ private:
     CRef<CRequestContext> m_ParentRequestContext;
 
     static bool     sm_IsExiting;
-    static CTimeout sm_WaitForThreadsTimeout;
+    static unsigned long sm_WaitForThreadsTimeout; // timeout in milliseconds
 
 #if defined NCBI_THREAD_PID_WORKAROUND
     friend class CProcess;
