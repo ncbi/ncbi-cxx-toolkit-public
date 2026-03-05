@@ -435,7 +435,7 @@ private:
     string m_DTDFileName;
     bool   m_UsePublicId;
     string m_PublicId;
-    static string sm_DefaultDTDFilePrefix;
+    static CSafeStatic<string> sm_DefaultDTDFilePrefix;
     bool m_Attlist;
     bool m_StdXml;
     bool m_EnforcedStdXml;

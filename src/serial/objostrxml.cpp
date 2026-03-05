@@ -64,7 +64,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 }
 
 
-string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
+CSafeStatic<string> CObjectOStreamXml::sm_DefaultDTDFilePrefix;
 const char* sm_DefaultNamespacePrefix = "ns";
 const char* sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
 static

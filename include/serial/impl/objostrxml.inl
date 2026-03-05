@@ -129,7 +129,7 @@ string CObjectOStreamXml::GetDTDFilePrefix(void) const
         return m_DTDFilePrefix;
     }
     else {
-        return sm_DefaultDTDFilePrefix;
+        return *sm_DefaultDTDFilePrefix;
     }
 }
 
@@ -142,13 +142,13 @@ string CObjectOStreamXml::GetDTDFileName(void) const
 inline
 void CObjectOStreamXml::SetDefaultDTDFilePrefix(const string& def_prefix)
 {
-    sm_DefaultDTDFilePrefix = def_prefix;
+    *sm_DefaultDTDFilePrefix = def_prefix;
 }
 
 inline
 string CObjectOStreamXml::GetDefaultDTDFilePrefix(void)
 {
-    return sm_DefaultDTDFilePrefix;
+    return *sm_DefaultDTDFilePrefix;
 }
 
 inline
