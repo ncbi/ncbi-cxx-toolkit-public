@@ -116,7 +116,7 @@ namespace compile_time_bits
     {
         using value_type = _BaseType;
         using init_type  = _BackType;
-        using hash_type  = void;  //this is basic type, it doesn't have any comparison rules
+        //this is basic type, it doesn't have any comparison rules
     };
 
     template<typename _BaseType>
@@ -127,9 +127,8 @@ namespace compile_time_bits
     {
         using value_type = _BaseType;
         using init_type  = _BaseType;
-        using hash_type  = _BaseType;
-        //using hash_type  = real_underlying_type_t<_BaseType>;
-        using hash_compare   = std::less<hash_type>;
+
+        using hash_compare   = std::less<init_type>;
         using value_compare  = std::less<value_type>;
     };
 
@@ -141,7 +140,6 @@ namespace compile_time_bits
 
         using value_type = view;
         using init_type  = view;
-        using hash_type  = view;
 
         using hash_compare  = std::less<tag>;
         using value_compare = std::less<tag>;
@@ -196,7 +194,6 @@ namespace compile_time_bits
     {
         using value_type = std::pair<typename DeduceType<_Types>::value_type...>;
         using init_type  = std::pair<typename DeduceType<_Types>::init_type...>;
-        using hash_type  = void;
     };
 
     template<typename..._Types>
@@ -204,7 +201,6 @@ namespace compile_time_bits
     {
         using value_type = std::tuple<typename DeduceType<_Types>::value_type...>;
         using init_type  = std::tuple<typename DeduceType<_Types>::init_type...>;
-        using hash_type  = void;
     };
 
     // there is nothing to deduce if type has init_type and value_type members
@@ -323,7 +319,7 @@ namespace compile_time_bits
         using hashed_key_type = DeduceType<_Ty>;
 
         using value_type = typename hashed_key_type::value_type;
-        using hash_type  = typename hashed_key_type::hash_type;
+        using hash_type  = typename hashed_key_type::init_type;
         using init_type  = typename hashed_key_type::init_type;
         using init_key_type = typename hashed_key_type::init_type;
         using key_type = typename hashed_key_type::value_type;
@@ -351,7 +347,7 @@ namespace compile_time_bits
         using hashed_key_type = HT1;
 
         using value_type = typename pair_type::value_type;
-        using hash_type  = typename HT1::hash_type;
+        using hash_type  = typename HT1::init_type;
         using init_type  = typename pair_type::init_type;
         using init_key_type = typename HT1::init_type;
         using key_type = typename HT1::value_type;
@@ -384,7 +380,7 @@ namespace compile_time_bits
         using hashed_key_type = HT1;
 
         using value_type = typename pair_type::value_type;
-        using hash_type  = typename HT1::hash_type;
+        using hash_type  = typename HT1::init_type;
         using init_key_type = typename HT1::init_type;
         using key_type = typename HT1::value_type;
 

@@ -1156,154 +1156,6 @@ BOOST_AUTO_TEST_CASE(TestConstructors)
     BOOST_CHECK_EQUAL(std::size(a1), std::size(a1_c));
 }
 
-#if 0
-namespace
-{
-    struct BadHash
-    {
-        BadHash() = default;
-
-        //constexpr
-        BadHash(const std::string_view& o) :
-            //m_hash {o.size()}
-            m_hash {std::hash<std::string_view>{}(o)}
-        {
-        }
-        operator size_t() const { return m_hash; }
-
-        size_t m_hash = 0;
-
-        //constexpr
-        bool operator<(const BadHash& o) const
-        {
-            return m_hash < o.m_hash;
-        }
-    };
-    struct DeduceBadHash
-    {
-        using case_tag   = ct::tagStrCase;
-        using init_type  = ct::ct_basic_string<char>; //CHashString<case_tag>;
-        using value_type = typename init_type::sv;
-        using hash_type  = BadHash;
-        using hash_compare   = std::less<hash_type>;
-        using value_compare  = std::less<case_tag>;
-    };
-
-
-}
-
-BOOST_AUTO_TEST_CASE(TestBadHash)
-{
-    using set_type1 = ct::const_unordered_set<DeduceBadHash>;
-
-    auto set1 = set_type1::construct( {"AA", "DDD", "AAA", "EEEE", "BB", "CC"} );
-
-    size_t hhh = BadHash("AAA");
-
-    ///auto c1 = std::less<void>{}(std::string_view("AA"), std::string_view("AA"));
-    ///auto c2 = std::less<void>{}(std::string_view("AA"), std::string_view("BB"));
-    //auto c3 = std::less<void>{}(std::string_view("BB"), std::string_view("AA"));
-
-    auto i1 = set1.find("CCC");
-    BOOST_CHECK_EQUAL(i1, set1.end());
-
-    auto i2 = set1.find("AA");
-    BOOST_CHECK_NE(i2, set1.end());
-
-    auto i3 = set1.find("BB");
-    BOOST_CHECK_NE(i3, set1.end());
-
-    auto i4 = set1.find("CC");
-    BOOST_CHECK_NE(i4, set1.end());
-
-
-}
-
-namespace
-{
-    template<typename _Ty, size_t _N>
-    struct DeduceConstSetType
-    {
-        using basic_type = ct::const_set<std::decay_t<_Ty>>;
-        using init_array = std::array<typename basic_type::init_type, _N>;
-        using real_type = std::invoke_result_t<decltype(basic_type::template from_array<_N>), init_array>;
-    };
-
-    template<typename _Tttt, typename _MyBase>
-    class const_set_auto: public _MyBase
-    {
-    public:
-        template<typename...TInitArgs>
-        const_set_auto(TInitArgs&&...init_args)
-            : _MyBase(_MyBase::backend_type::construct(std::to_array({init_args...})))
-        {
-        }
-
-    };
-
-    template<typename _First,
-        typename..._Extra,
-        typename _Deduced = DeduceConstSetType<_First, 1 + sizeof...(_Extra)>
-        >
-    const_set_auto(_First&&, _Extra&&...) -> const_set_auto<int, typename _Deduced::real_type>;
-
-}
-
-BOOST_AUTO_TEST_CASE(TestConstSetDeduction)
-{
-    auto set1 = const_set_auto{1, 2};
-    auto set2 = const_set_auto(1, 2);
-    auto set3 = const_set_auto("1", "2");
-}
-
-#endif
-
-#ifdef CT_MSVC_TUPLE_BUG
-namespace experimental
-{
-    template<typename T>
-    constexpr T copy_tuple(const T& i)
-    {
-        std::tuple<int64_t, int64_t, int64_t> _temp{ i };
-        return _temp;
-    }
-
-    template <size_t Size, typename T, size_t... Index>
-    constexpr std::array<T, Size> to_array(T const* value, std::index_sequence<Index...> const) noexcept
-    {
-        return { copy_tuple(value[Index])... };
-    }
-
-    template <typename T, size_t Size>
-    constexpr auto to_array(std::array<T, Size> const& value) noexcept
-    {
-        return value;
-    }
-    template <typename T, size_t Size>
-    constexpr auto to_array(T const(&value)[Size]) noexcept
-    {
-        return to_array<Size>(value, std::make_index_sequence<Size>());
-    }
-}
-BOOST_AUTO_TEST_CASE(TestMSVCTupleBug)
-{
-    using T1 = std::tuple<int, int, int>;
-    using A1 = std::array<T1, 3>;
-
-
-    static constexpr T1 a1[] = {
-        { 1, 1, 1},
-        { 2, 2, 2},
-        { 3, 3, 3},
-    };
-
-    //static constexpr A1 a2 = std::to_array( a1 );
-    static constexpr
-    //A1 a2 = MakeArray(a1, std::make_index_sequence<3>{});
-    A1 a2 = experimental::to_array(a1);
-}
-#endif
-
 BOOST_AUTO_TEST_CASE(Test_large_bitsets)
 {
     ct::const_bitset<1920, int> discrep;
@@ -1439,9 +1291,40 @@ namespace compile_time_bits
 {
 
 
-template<typename...TArgs>
+template <typename T, typename = void>
+struct has_hash_compare : std::false_type {};
+
+template <typename T>
+struct has_hash_compare<T, std::void_t<typename T::hash_compare>> : std::true_type {};
+
+template<typename>
+struct integer_sequence_set;
+
+template<size_t...Is>
+struct integer_sequence_set<std::index_sequence<Is...>>
+{
+    static constexpr size_t max_value = std::max({Is...});
+    using index_type = ct::DeduceIndexSize<max_value>::type;
+    using bitset_type = ct::const_bitset<max_value+1, index_type>;
+    static const constexpr bitset_type m_bits{static_cast<index_type>(Is)...};
+
+    static constexpr bool has(size_t I) { return I <= max_value && m_bits.ct_test(I); }
+};
+
+template<>
+struct integer_sequence_set<void>
+{
+    static constexpr size_t max_value = 0;
+    static constexpr bool has(size_t) { return true; }
+};
+
+
+template<typename _Allowed, typename...TArgs>
 struct const_table_traits
 {
+    using allowed_set = integer_sequence_set<_Allowed>;
+    static_assert(allowed_set::max_value<sizeof...(TArgs), "wrong template parameters");
+
     static constexpr size_t width = sizeof...(TArgs);
     using _TupleType = std::tuple<TArgs...>;
     using tuple_type = DeduceType<_TupleType>;
@@ -1453,7 +1336,7 @@ struct const_table_traits
     using column_type = DeduceType<std::tuple_element_t<I, _TupleType>>;
 
     template<size_t I>
-    using can_index_column = std::integral_constant<bool, !std::is_void_v<typename column_type<I>::hash_type>>;
+    static inline constexpr bool can_index_column = allowed_set::has(I) && has_hash_compare<column_type<I>>::value;
 };
 
 template<typename _TableTraits, size_t _ColIndex>
@@ -1465,7 +1348,7 @@ struct const_table_column_traits
 
     using hashed_key_type = typename _TableTraits::template column_type<_ColIndex>;
 
-    using hash_type     = typename hashed_key_type::hash_type;
+    using hash_type     = typename hashed_key_type::init_type;
     using key_type      = typename hashed_key_type::value_type;
     using init_key_type = typename hashed_key_type::init_type;
 
@@ -1585,8 +1468,7 @@ public:
     constexpr const_reverse_iterator rcend()   const noexcept { return rend(); }
 
 
-    template<size_t _I,
-        typename = std::enable_if_t<_TableTraits::template can_index_column<_I>::value>>
+    template<size_t _I, typename = std::enable_if_t<_TableTraits::template can_index_column<_I>>>
     auto get_index() const
     {
         using _IndexTraits = const_table_column_traits<_TableTraits, _I>;
@@ -1628,9 +1510,9 @@ private:
     }
 
     template<size_t _I, typename _Array>
-    static constexpr auto make_index(const _Array& init)
+    static constexpr auto make_one_index(std::integral_constant<size_t, _I>, const _Array& init)
     {
-        if constexpr ( _TableTraits::template can_index_column<_I>::value ) {
+        if constexpr ( _TableTraits::template can_index_column<_I> ) {
             using I_index_traits = const_table_column_traits<_TableTraits, _I>;
             using sorter = TInsertSorter<I_index_traits, tag_DuplicatesYes>;
             auto sorted = sorter::make_indices(init);
@@ -1645,7 +1527,7 @@ private:
     template<typename _Array, size_t ... Is>
     static constexpr auto make_all_indices(const _Array& init, std::index_sequence<Is...>)
     {
-        return std::make_tuple(make_index<Is, _Array>(init)...);
+        return std::make_tuple(make_one_index(std::integral_constant<size_t, Is>{}, init)...);
     }
 
     backend_type m_backend;
@@ -1653,15 +1535,15 @@ private:
 
 };
 
-namespace compile_time {
+namespace ct
+{
 
-using namespace compile_time_bits;
 
-template<typename...TArgs>
-class const_table
+template<typename _Allowed, typename...TArgs>
+class const_table_ex
 {
 public:
-    using table_traits = const_table_traits<TArgs...>;
+    using table_traits = const_table_traits<_Allowed, TArgs...>;
     using init_type = typename table_traits::init_type;
 
     template<size_t N>
@@ -1682,13 +1564,19 @@ public:
 
 };
 
+template<typename...TArgs>
+using const_table = const_table_ex<void, TArgs...>;
+
 };
 
-BOOST_AUTO_TEST_CASE(Test_index_table)
+BOOST_AUTO_TEST_CASE(test_index_table)
 {
-    using index_type1 = compile_time::const_table<int, int, char*, std::pair<int, int>, int >;
+    //using index_type1 = ct::const_table<int, int, char*, std::pair<int, int>, int >;
+    //constexpr ct::inline_list allowed{1,2,3};
+    //using index_type1 = ct::const_table_ex<allowed, int, int, char*, std::pair<int, int>, int >;
+    using index_type1 = ct::const_table_ex<std::index_sequence<1, 0, 2>, int, int, char*, std::pair<int, int>, int >;
 
-    //static constexpr
+    static constexpr
     auto ind1 = index_type1::construct({
         { 100, 70, "cc", {1, 1}, 0 },
         { 200, 60, "bb", {1, 1}, 0 },
@@ -1707,7 +1595,8 @@ BOOST_AUTO_TEST_CASE(Test_index_table)
     auto i0 = ind1.get_index<0>();
     auto i1 = ind1.get_index<1>();
     auto i2 = ind1.get_index<2>();
-    //auto i3 = ind1.get_index<3>();
+    //auto i3 = ind1.get_index<3>();  // fourth column is pair and not searchable
+    //auto i4 = ind1.get_index<4>();  //  fifth colums is not enabled in type definition
 
 
     //ind1.size();

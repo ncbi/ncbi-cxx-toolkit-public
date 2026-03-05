@@ -38,7 +38,6 @@
 
 #include <string_view>
 #include <functional>
-#include <corelib/ncbistr.hpp>
 
 namespace compile_time_bits
 {
@@ -248,11 +247,10 @@ namespace compile_time_bits
             : m_packed{pack_string(s)}
         {}
 
-        packed_fixed_string(const sv& s) noexcept
-            : m_packed{pack_string(s)}
-        {}
-        packed_fixed_string(const ncbi::CTempString& s) noexcept
-            : packed_fixed_string{sv(s)}
+        template<class _T, typename _Ty=std::remove_cvref_t<_T>,
+            typename = std::enable_if_t<std::is_constructible<sv, const _Ty& >::value, _Ty>>
+        constexpr packed_fixed_string(_T&& o)
+            : m_packed{pack_string(std::forward<_T>(o))}
         {}
 
         constexpr auto operator<=>(const _MyType& r) const noexcept
