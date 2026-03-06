@@ -2565,6 +2565,75 @@ void ProcNucProt(ParserPtr pp, CRef<CSeq_entry>& pEntry, GeneRefFeats& gene_refs
         pbp->orig_gcode = gcode;
     }
 
+    if ( 1 ) {
+        // prefetch CD region sequence data
+        CRef<CSeq_loc> all_cds_loc;
+        for ( CTypeConstIterator<CBioseq> bioseqIt(ConstBegin(*pEntry)); bioseqIt; ++bioseqIt ) {
+            auto& bioseq = *bioseqIt;
+            if ( bioseq.IsSetAnnot() ) {
+                for ( auto& annotRef : bioseq.GetAnnot() ) {
+                    const CSeq_annot& annot = *annotRef;
+                    if ( annot.IsFtable() ) {
+                        for ( auto& featRef : annot.GetData().GetFtable() ) {
+                            const CSeq_feat& feat = *featRef;
+                            if ( !feat.IsSetData() || !feat.GetData().IsImp() ) {
+                                continue;
+                            }
+                            
+                            const CImp_feat& imp_feat = feat.GetData().GetImp();
+                            if ( !imp_feat.IsSetKey() || imp_feat.GetKey() != "CDS" ) {
+                                continue;
+                            }
+                            
+                            const CSeq_loc& loc = feat.GetLocation();
+                            if ( loc.IsEmpty() || loc.IsEquiv() || loc.IsBond() ) {
+                                break;
+                            }
+                            if ( !all_cds_loc ) {
+                                all_cds_loc = new CSeq_loc;
+                            }
+                            all_cds_loc->SetMix().Set().push_back(Ref(&const_cast<CSeq_loc&>(feat.GetLocation())));
+                        }
+                    }
+                }
+            }
+        }
+        if ( all_cds_loc ) {
+            SSeqMapSelector sel(CSeqMap::fDefaultFlags, kMax_UInt);
+            CSeq_entry_Handle user_tse;
+            {
+                CScope::TTSE_Handles tses;
+                scope.GetAllTSEs(tses);
+                for ( auto& tse : tses ) { // search for special TSE
+                    if ( !tse.IsSet() || tse.IsSetDescr() ) {
+                        continue;
+                    }
+                    CBioseq_set_Handle seq_set = tse.GetSet();
+                    if ( seq_set.HasAnnots() ) {
+                        continue;
+                    }
+                    if ( !seq_set.IsSetId() ) {
+                        continue;
+                    }
+                    auto& id = seq_set.GetId();
+                    if ( !id.IsStr() || id.GetStr() != "dummy GC holder" ) {
+                        continue;
+                    }
+                    user_tse = tse;
+                    break;
+                }
+                if ( !user_tse ) {
+                    CRef<CSeq_entry> entry(new CSeq_entry());
+                    entry->SetSet().SetSeq_set();
+                    entry->SetSet().SetId().SetStr("dummy GC holder");
+                    user_tse = scope.AddTopLevelSeqEntry(*entry);
+                }
+            }
+            sel.SetLinkUsedTSE(user_tse.GetTSE_Handle());
+            CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForSeq_loc(*all_cds_loc, &scope);
+            seq_map->CanResolveRange(&scope, sel); // segment pre-loading call
+        }
+    }
     FindCd(pNucSeqEntry, scope, pp, gene_refs);
 
     if (pp->entrylist[pp->curindx]->drop) {
