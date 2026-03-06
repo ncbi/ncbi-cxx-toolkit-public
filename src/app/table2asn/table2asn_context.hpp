@@ -33,7 +33,8 @@ class CFixSuspectProductName;
 
 namespace edit
 {
-    class CRemoteUpdater;
+    class CTaxonomyUpdater;
+    class CPubmedUpdater;
 }
 
 }
@@ -171,7 +172,8 @@ public:
 
     NDiscrepancy::EGroup m_discrepancy_group{ NDiscrepancy::eOncaller };
 
-    unique_ptr<objects::edit::CRemoteUpdater> m_remote_updater;
+    unique_ptr<objects::edit::CTaxonomyUpdater> m_taxon_updater;
+    unique_ptr<objects::edit::CPubmedUpdater>   m_pubmed_updater;
 
     unique_ptr<objects::CFixSuspectProductName> m_suspect_rules;
 

@@ -506,8 +506,9 @@ int CTbl2AsnApp::Run()
     m_logger.Reset(app_logger);
     m_context.m_logger = m_logger;
     m_logger->m_enable_log = args["W"].AsBoolean();
-    m_context.m_remote_updater.reset(new edit::CRemoteUpdater(m_logger));
-    m_context.m_remote_updater->GetPubmed().SetPubmedInterceptor(s_PubCleanup);
+    m_context.m_taxon_updater.reset(new edit::CTaxonomyUpdater(m_logger));
+    m_context.m_pubmed_updater.reset(new edit::CPubmedUpdater(m_logger));
+    m_context.m_pubmed_updater->SetPubmedInterceptor(s_PubCleanup);
     m_validator.Reset(new CTable2AsnValidator(m_context));
 
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
@@ -927,7 +928,8 @@ int CTbl2AsnApp::Run()
     int ret = 0;
     if (m_logger->Count() == 0) {
         #ifdef THIS_IS_TRUNK_BUILD
-            m_context.m_remote_updater->ReportStats(std::cerr);
+        m_context.m_taxon_updater->ReportStats(std::cerr);
+        m_context.m_pubmed_updater->ReportStats(std::cerr);
         #endif
     } else {
         m_logger->Dump();
@@ -993,7 +995,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     xProcessSecretFiles1Phase(readModsFromTitle, *entry);
 
     if (m_context.m_RemoteTaxonomyLookup) {
-        m_context.m_remote_updater->GetTaxonomy().UpdateOrgFromTaxon(*entry);
+        m_context.m_taxon_updater->UpdateOrgFromTaxon(*entry);
     } else {
         VisitAllBioseqs(*entry, CTable2AsnContext::UpdateTaxonFromTable);
     }
@@ -1042,7 +1044,7 @@ void CTbl2AsnApp::ProcessOneEntry(
     CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup) {
-        m_context.m_remote_updater->GetPubmed().UpdatePubReferences(*obj);
+        m_context.m_pubmed_updater->UpdatePubReferences(*obj);
     }
     if (m_context.m_postprocess_pubs) {
         edit::CPubmedUpdater::PostProcessPubs(*entry);
@@ -1088,7 +1090,7 @@ void CTbl2AsnApp::ProcessTopEntry(CFormatGuess::EFormat inputFormat, bool need_u
 
     if (submit) {
         if (m_context.m_RemotePubLookup) {
-            m_context.m_remote_updater->GetPubmed().UpdatePubReferences(*submit);
+            m_context.m_pubmed_updater->UpdatePubReferences(*submit);
         }
 
         CCleanup cleanup(nullptr, CCleanup::eScope_UseInPlace); // RW-1070 - CCleanup::eScope_UseInPlace is essential
