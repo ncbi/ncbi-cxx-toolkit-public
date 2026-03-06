@@ -306,27 +306,35 @@ static bool s_AltitudeIsValid(const string & str )
 /////////////////////////////////////////////////////////////////////////////
 // CFormatQual - low-level formatted qualifier
 
-CFormatQual::CFormatQual
-(const CTempString& name,
- const CTempString& value,
- const CTempString& prefix,
- const CTempString& suffix,
- TStyle style,
- TFlags flags,
- ETrim trim ) :
-  m_Name(name),
-  m_Prefix(prefix),
-  m_Suffix(suffix),
-  m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
+CFormatQual::CFormatQual(
+    string_view name,
+    string_view value,
+    string_view prefix,
+    string_view suffix,
+    TStyle      style,
+    TFlags      flags,
+    ETrim       trim) :
+    m_Name(name),
+    m_Prefix(prefix),
+    m_Suffix(suffix),
+    m_Style(style),
+    m_Flags(flags),
+    m_Trim(trim),
+    m_AddPeriod(false)
 {
     CleanAndCompress(m_Value, value);
 }
 
 
-CFormatQual::CFormatQual(const CTempString& name, const CTempString& value, TStyle style, TFlags flags, ETrim trim) :
+CFormatQual::CFormatQual(
+    string_view name, string_view value, TStyle style, TFlags flags, ETrim trim) :
     m_Name(name),
-    m_Prefix(" "), m_Suffix(kEmptyStr),
-    m_Style(style), m_Flags(flags), m_Trim(trim), m_AddPeriod(false)
+    m_Prefix(" "),
+    m_Suffix(kEmptyStr),
+    m_Style(style),
+    m_Flags(flags),
+    m_Trim(trim),
+    m_AddPeriod(false)
 {
     CleanAndCompress(m_Value, value);
 }
@@ -334,7 +342,7 @@ CFormatQual::CFormatQual(const CTempString& name, const CTempString& value, TSty
 
 // === CFlatStringQVal ======================================================
 
-CFlatStringQVal::CFlatStringQVal(const CTempString& value, TStyle style, ETrim trim)
+CFlatStringQVal::CFlatStringQVal(string_view value, TStyle style, ETrim trim)
     :  IFlatQVal(&kSpace, &kSemicolon),
        m_Style(style), m_Trim(trim), m_AddPeriod(0)
 {
@@ -342,22 +350,27 @@ CFlatStringQVal::CFlatStringQVal(const CTempString& value, TStyle style, ETrim t
 }
 
 
-CFlatStringQVal::CFlatStringQVal
-(const CTempString& value,
- const string& pfx,
- const string& sfx,
- TStyle style,
- ETrim trim)
-    :   IFlatQVal(&pfx, &sfx),
-        m_Style(style), m_Trim(trim), m_AddPeriod(0)
+CFlatStringQVal::CFlatStringQVal(
+    string_view   value,
+    const string& pfx,
+    const string& sfx,
+    TStyle        style,
+    ETrim         trim) :
+    IFlatQVal(&pfx, &sfx),
+    m_Style(style),
+    m_Trim(trim),
+    m_AddPeriod(0)
 {
     CleanAndCompress(m_Value, value);
 }
 
-CFlatStringQVal::CFlatStringQVal(const CTempString& value,
-    ETrim trim )
-:   IFlatQVal(&kSpace, &kSemicolon),
-    m_Style(CFormatQual::eQuoted), m_Trim(trim), m_AddPeriod(0)
+CFlatStringQVal::CFlatStringQVal(
+    string_view value,
+    ETrim       trim) :
+    IFlatQVal(&kSpace, &kSemicolon),
+    m_Style(CFormatQual::eQuoted),
+    m_Trim(trim),
+    m_AddPeriod(0)
 {
     CleanAndCompress(m_Value, value);
 }
@@ -384,11 +397,11 @@ ETildeStyle s_TildeStyleFromName( const string &name )
     }
 }
 
-void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatStringQVal::Format(TFlatQuals& q, string_view name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     bool bHtml = ctx.Config().DoHTML();
-    if ( bHtml && name == "EC_number" ) {
+    if (bHtml && name == "EC_number"sv) {
         string strLink = "<a href=\"";
         strLink += strLinkBaseExpasy;
         strLink += m_Value;
@@ -400,7 +413,7 @@ void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
     }
     flags |= m_AddPeriod;
 
-    ETildeStyle tilde_style = s_TildeStyleFromName( name );
+    ETildeStyle tilde_style = s_TildeStyleFromName(string(name));
     ExpandTildes(m_Value, tilde_style);
 
     const bool is_note = s_IsNote(flags, ctx);
@@ -419,13 +432,13 @@ void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
     // This prevents quals like /metagenomic="metagenomic" (e.g. EP508672)
     const bool forceNoValue = (
         ! ctx.Config().SrcQualsToNote() &&
-        name == m_Value &&
-        name == "metagenomic" );
+        name == string_view(m_Value) &&
+        name == "metagenomic"sv);
 
     const bool prependNewline = (flags & fPrependNewline) && ! q.empty();
     TFlatQual qual = x_AddFQ(
         q, (is_note ? "note" : name),
-        (  prependNewline ? CTempString("\n" + m_Value) : CTempString(m_Value) ),
+        (  prependNewline ? string_view("\n" + m_Value) : string_view(m_Value) ),
         ( forceNoValue ? CFormatQual::eEmpty : m_Style ),
         0, m_Trim );
 
@@ -438,11 +451,11 @@ void CFlatStringQVal::Format(TFlatQuals& q, const CTempString& name,
 // === CFlatNumberQVal ======================================================
 
 
-void CFlatNumberQVal::Format
-(TFlatQuals& quals,
- const CTempString& name,
- CBioseqContext& ctx,
- TFlags flags) const
+void CFlatNumberQVal::Format(
+    TFlatQuals&     quals,
+    string_view     name,
+    CBioseqContext& ctx,
+    TFlags          flags) const
 {
     if (ctx.Config().CheckQualSyntax()) {
         if (NStr::IsBlank(m_Value)) {
@@ -465,11 +478,11 @@ void CFlatNumberQVal::Format
 
 // === CFlatBondQVal ========================================================
 
-void CFlatBondQVal::Format
-(TFlatQuals& quals,
- const CTempString& name,
- CBioseqContext& ctx,
- TFlags flags) const
+void CFlatBondQVal::Format(
+    TFlatQuals&     quals,
+    string_view     name,
+    CBioseqContext& ctx,
+    TFlags          flags) const
 {
     string value = m_Value;
     if (s_IsNote(flags, ctx)) {
@@ -481,11 +494,11 @@ void CFlatBondQVal::Format
 
 // === CFlatGeneQVal ========================================================
 
-void CFlatGeneQVal::Format
-(TFlatQuals& quals,
- const CTempString& name,
- CBioseqContext& ctx,
- TFlags flags) const
+void CFlatGeneQVal::Format(
+    TFlatQuals&     quals,
+    string_view     name,
+    CBioseqContext& ctx,
+    TFlags          flags) const
 {
     CFlatStringQVal::Format(quals, name, ctx, flags);
 }
@@ -493,11 +506,11 @@ void CFlatGeneQVal::Format
 
 // === CFlatSiteQVal ========================================================
 
-void CFlatSiteQVal::Format
-(TFlatQuals& quals,
- const CTempString& name,
- CBioseqContext& ctx,
- TFlags flags) const
+void CFlatSiteQVal::Format(
+    TFlatQuals&     quals,
+    string_view     name,
+    CBioseqContext& ctx,
+    TFlags          flags) const
 {
     if ( m_Value == "transmembrane-region" ) {
         m_Value = "transmembrane region";
@@ -522,12 +535,11 @@ void CFlatSiteQVal::Format
 
 // === CFlatStringListQVal ==================================================
 
-
-void CFlatStringListQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatStringListQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     if (m_Value.empty()) {
         return;
@@ -564,11 +576,11 @@ public:
     }
 };
 
-void CFlatGeneSynonymsQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatGeneSynonymsQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     if (GetValue().empty()) {
         return;
@@ -596,7 +608,7 @@ void CFlatGeneSynonymsQVal::Format
 
 // === CFlatCodeBreakQVal ===================================================
 
-void CFlatCodeBreakQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatCodeBreakQVal::Format(TFlatQuals& q, string_view name,
                               CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     static const char* kOTHER = "OTHER";
@@ -623,7 +635,7 @@ void CFlatCodeBreakQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 }
 
-void CFlatNomenclatureQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatNomenclatureQVal::Format(TFlatQuals& q, string_view name,
                               CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     if( m_Value.IsNull() ) {
@@ -686,7 +698,7 @@ CFlatCodonQVal::CFlatCodonQVal(unsigned int codon, unsigned char aa, bool is_asc
 }
 
 
-void CFlatCodonQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqContext& ctx,
+void CFlatCodonQVal::Format(TFlatQuals& q, string_view name, CBioseqContext& ctx,
                           IFlatQVal::TFlags) const
 {
     if ( !m_Checked ) {
@@ -704,7 +716,7 @@ CFlatExperimentQVal::CFlatExperimentQVal(
     }
 }
 
-void CFlatExperimentQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatExperimentQVal::Format(TFlatQuals& q, string_view name,
                           CBioseqContext&, IFlatQVal::TFlags) const
 {
     x_AddFQ(q, name, m_str.c_str(), CFormatQual::eQuoted);
@@ -732,14 +744,14 @@ CFlatInferenceQVal::CFlatInferenceQVal( const string& gbValue ) :
 }
 
 
-void CFlatInferenceQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatInferenceQVal::Format(TFlatQuals& q, string_view name,
                           CBioseqContext&, IFlatQVal::TFlags) const
 {
     x_AddFQ(q, name, m_str, CFormatQual::eQuoted);
 }
 
 
-void CFlatIllegalQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqContext &ctx,
+void CFlatIllegalQVal::Format(TFlatQuals& q, string_view name, CBioseqContext& ctx,
                             IFlatQVal::TFlags) const
 {
     // XXX - return if too strict
@@ -756,7 +768,7 @@ void CFlatIllegalQVal::Format(TFlatQuals& q, const CTempString& name, CBioseqCon
 }
 
 
-void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatMolTypeQVal::Format(TFlatQuals& q, string_view name,
                             CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     const char* s = nullptr;
@@ -853,7 +865,7 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 }
 
-void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, string_view name,
                             CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     switch ( m_Tech ) {
@@ -911,7 +923,7 @@ void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 }
 
-void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatOrgModQVal::Format(TFlatQuals& q, string_view name,
                            CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     TFlatQual qual;
@@ -929,7 +941,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
         bool add_period = RemovePeriodFromEnd(subname, true);
         if (!subname.empty() || add_period ) {
             bool is_src_orgmod_note =
-                (flags & IFlatQVal::fIsSource)  &&  (name == "orgmod_note");
+                (flags & IFlatQVal::fIsSource) && (name == "orgmod_note"sv);
             if (is_src_orgmod_note) {
                 if (add_period) {
                     AddPeriod(subname);
@@ -953,7 +965,7 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const CTempString& name,
 }
 
 
-void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatOrganelleQVal::Format(TFlatQuals& q, string_view name,
                               CBioseqContext&, IFlatQVal::TFlags) const
 {
     const string& organelle
@@ -1004,7 +1016,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
 }
 
 
-void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatPubSetQVal::Format(TFlatQuals& q, string_view name,
                            CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     const bool bHtml = ctx.Config().DoHTML();
@@ -1084,13 +1096,13 @@ void CFlatPubSetQVal::Format(TFlatQuals& q, const CTempString& name,
     }
 }
 
-void CFlatIntQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatIntQVal::Format(TFlatQuals& q, string_view name,
                           CBioseqContext& ctx, TFlags) const
 {
     bool bHtml = ctx.Config().DoHTML();
 
     string value = NStr::IntToString(m_Value);
-    if ( bHtml && name == "transl_table" ) {
+    if (bHtml && name == "transl_table"sv) {
         string link = "<a href=\"";
         link += strLinkBaseTransTable;
         link += value;
@@ -1103,7 +1115,7 @@ void CFlatIntQVal::Format(TFlatQuals& q, const CTempString& name,
 }
 
 
-void CFlatSeqIdQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatSeqIdQVal::Format(TFlatQuals& q, string_view name,
                             CBioseqContext& ctx, IFlatQVal::TFlags) const
 {
     bool bHtml = ctx.Config().DoHTML();
@@ -1112,17 +1124,17 @@ void CFlatSeqIdQVal::Format(TFlatQuals& q, const CTempString& name,
     if ( m_Value->IsGi() ) {
         if ( m_GiPrefix ) {
             id_str = "GI:";
-            if ((ctx.Config().HideGI() || ctx.Config().IsPolicyFtp() || ctx.Config().IsPolicyGenomes()) && name == "db_xref") return;
+            if ((ctx.Config().HideGI() || ctx.Config().IsPolicyFtp() || ctx.Config().IsPolicyGenomes()) && name == "db_xref"sv) return;
         }
         m_Value->GetLabel(&id_str, CSeq_id::eContent);
     } else {
         id_str = m_Value->GetSeqIdString(true);
     }
 
-    if (name == "protein_id") {
+    if (name == "protein_id"sv) {
        ctx.Config().GetHTMLFormatter().FormatProteinId(id_str, *m_Value, string(id_str));
     }
-    if (name == "transcript_id") {
+    if (name == "transcript_id"sv) {
        ctx.Config().GetHTMLFormatter().FormatTranscriptId(id_str, *m_Value, string(id_str));
     }
     x_AddFQ(q, name, id_str);
@@ -1221,9 +1233,9 @@ void s_HtmlizeLatLon( string &subname ) {
 }
 
 void CFlatSubSourcePrimer::Format(
-    TFlatQuals& q,
-    const CTempString& name,
-    CBioseqContext& ctx,
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
     IFlatQVal::TFlags flags) const
 {
     vector< string > fwd_names;
@@ -1340,7 +1352,7 @@ string s_TruncateLatLon( string &subname ) {
     return lat + " " + north_or_south + " " + lon + " " + east_or_west;
 }
 
-void CFlatSubSourceQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatSubSourceQVal::Format(TFlatQuals& q, string_view name,
                               CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     TFlatQual qual;
@@ -1493,7 +1505,7 @@ static CTempString x_GetUpdatedDbTagName (
 }
 
 
-void CFlatXrefQVal::Format(TFlatQuals& q, const CTempString& name,
+void CFlatXrefQVal::Format(TFlatQuals& q, string_view name,
                          CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
     // to avoid duplicates, keep track of ones we've already done
@@ -1676,11 +1688,11 @@ static size_t s_CountAccessions(const CUser_field& field)
 }
 
 
-void CFlatModelEvQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatModelEvQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     size_t num_mrna = 0, num_prot = 0, num_est = 0, num_long_sra = 0;
     size_t rnaseq_base_coverage = 0, rnaseq_biosamples_introns_full = 0;
@@ -1802,11 +1814,11 @@ void CFlatModelEvQVal::Format
 }
 
 
-void CFlatGoQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatGoQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     _ASSERT(m_Value->GetData().IsFields());
     const bool is_ftable = ctx.Config().IsFormatFTable();
@@ -1865,11 +1877,11 @@ int CFlatGoQVal::GetPubmedId(void) const
     return pmidData.GetInt();
 }
 
-void CFlatAnticodonQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatAnticodonQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     if ( m_Aa.empty() ) {
         return;
@@ -1910,11 +1922,11 @@ void CFlatAnticodonQVal::Format
 }
 
 
-void CFlatTrnaCodonsQVal::Format
-(TFlatQuals& q,
- const CTempString& name,
- CBioseqContext& ctx,
- IFlatQVal::TFlags flags) const
+void CFlatTrnaCodonsQVal::Format(
+    TFlatQuals&       q,
+    string_view       name,
+    CBioseqContext&   ctx,
+    IFlatQVal::TFlags flags) const
 {
     if (!m_Value  ||  !m_Value->IsSetCodon()) {
         return;
@@ -1941,11 +1953,11 @@ void CFlatTrnaCodonsQVal::Format
 }
 
 
-void CFlatProductNamesQVal::Format
-(TFlatQuals& quals,
- const CTempString& name,
- CBioseqContext& ctx,
- TFlags flags) const
+void CFlatProductNamesQVal::Format(
+    TFlatQuals&     quals,
+    string_view     name,
+    CBioseqContext& ctx,
+    TFlags          flags) const
 {
     if (m_Value.size() < 2) {
         return;

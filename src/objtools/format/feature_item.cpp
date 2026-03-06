@@ -4809,11 +4809,11 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 #undef DO_NOTE_PREPEND_NEWLINE
 }
 
-void CFeatureItem::x_FormatQual
-(EFeatureQualifier slot,
- const char* name,
- CFlatFeature::TQuals& qvec,
- IFlatQVal::TFlags flags) const
+void CFeatureItem::x_FormatQual(
+    EFeatureQualifier     slot,
+    string_view           name,
+    CFlatFeature::TQuals& qvec,
+    IFlatQVal::TFlags     flags) const
 {
     TQCI it = m_Quals.LowerBound(slot);
     TQCI end = m_Quals.end();
@@ -4824,11 +4824,11 @@ void CFeatureItem::x_FormatQual
 }
 
 
-void CFeatureItem::x_FormatNoteQual
-(EFeatureQualifier slot,
- const CTempString & name,
- CFlatFeature::TQuals& qvec,
- IFlatQVal::TFlags flags) const
+void CFeatureItem::x_FormatNoteQual(
+    EFeatureQualifier     slot,
+    string_view           name,
+    CFlatFeature::TQuals& qvec,
+    IFlatQVal::TFlags     flags) const
 {
     flags |= IFlatQVal::fIsNote;
 
@@ -4842,11 +4842,11 @@ void CFeatureItem::x_FormatNoteQual
 
 // This produces one qual out of all the GO quals of the given slot, with their
 // values concatenated.
-void CFeatureItem::x_FormatGOQualCombined
-(EFeatureQualifier slot,
- const CTempString & name,
- CFlatFeature::TQuals& qvec,
- TQualFlags flags) const
+void CFeatureItem::x_FormatGOQualCombined(
+    EFeatureQualifier     slot,
+    string_view           name,
+    CFlatFeature::TQuals& qvec,
+    TQualFlags            flags) const
 {
     // copy all the given quals with that name since we need to sort them
     vector<CConstRef<CFlatGoQVal> > goQuals;
@@ -6240,8 +6240,8 @@ static string s_GetSpecimenVoucherText(
 
 void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) const
 {
-    CTempString taxname;
-    CTempString common;
+    string_view taxname;
+    string_view common;
     if ( org.IsSetTaxname() ) {
         taxname = org.GetTaxname();
     }
@@ -6258,7 +6258,7 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
         x_AddQual(eSQ_common_name, new CFlatStringQVal(common));
     }
     if ( org.IsSetOrgname() ) {
-        set<CTempString> ecotypesSeen;  // holds the ones we've seen so don't show them again
+        set<string_view> ecotypesSeen;  // holds the ones we've seen so don't show them again
         ecotypesSeen.insert(kEmptyStr); // empty string is always considered seen so we hide it
         ITERATE (COrgName::TMod, it, org.GetOrgname().GetMod()) {
 
@@ -6289,8 +6289,8 @@ void CSourceFeatureItem::x_AddQuals(const COrg_ref& org, CBioseqContext& ctx) co
                             (  sSubname.empty() ? kEmptyStr : "type_material: " + sSubname ) ));
                         x_AddQual(eSQ_orgmod_note, new CFlatOrgModQVal(*new_mod));
                     } else {
-                            x_AddQual(slot, new CFlatOrgModQVal(**it));
-                }
+                        x_AddQual(slot, new CFlatOrgModQVal(**it));
+                    }
                 }
                 break;
             }
@@ -6743,11 +6743,11 @@ CSourceFeatureItem::CSourceFeatureItem
 }
 
 
-void CSourceFeatureItem::x_FormatQual
-(ESourceQualifier slot,
- const CTempString& name,
- CFlatFeature::TQuals& qvec,
- IFlatQVal::TFlags flags) const
+void CSourceFeatureItem::x_FormatQual(
+    ESourceQualifier      slot,
+    string_view           name,
+    CFlatFeature::TQuals& qvec,
+    IFlatQVal::TFlags     flags) const
 {
     TQCI it = m_Quals.LowerBound(slot);
     TQCI end = m_Quals.end();

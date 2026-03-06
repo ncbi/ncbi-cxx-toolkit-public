@@ -335,11 +335,11 @@ protected:
     // format
     void x_FormatQuals(CFlatFeature& ff) const override;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(EFeatureQualifier slot, const char* name,
+    void x_FormatQual(EFeatureQualifier slot, string_view name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(EFeatureQualifier slot, const CTempString & name,
+    void x_FormatNoteQual(EFeatureQualifier slot, string_view name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatGOQualCombined( EFeatureQualifier slot, const CTempString & name,
+    void x_FormatGOQualCombined(EFeatureQualifier slot, string_view name,
         CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
 
     // data
@@ -443,9 +443,9 @@ private:
     void x_FormatQuals(CFlatFeature& ff) const override;
     void x_FormatGBNoteQuals(CFlatFeature& ff) const;
     void x_FormatNoteQuals(CFlatFeature& ff) const;
-    void x_FormatQual(ESourceQualifier slot, const CTempString& name,
+    void x_FormatQual(ESourceQualifier slot, string_view name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const;
-    void x_FormatNoteQual(ESourceQualifier slot, const char* name,
+    void x_FormatNoteQual(ESourceQualifier slot, string_view name,
             CFlatFeature::TQuals& qvec, TQualFlags flags = 0) const {
         x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote);
     }
