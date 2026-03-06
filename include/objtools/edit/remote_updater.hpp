@@ -180,8 +180,7 @@ private:
     int m_MaxMlaAttempts = 3;
 };
 
-NCBI_DEPRECATED
-class NCBI_XOBJEDIT_EXPORT CRemoteUpdater
+NCBI_DEPRECATED_CLASS NCBI_XOBJEDIT_EXPORT CRemoteUpdater
 {
 public:
 
