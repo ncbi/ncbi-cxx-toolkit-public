@@ -200,6 +200,7 @@ TSeqPos CSeqVector_CI::x_GetSize(void) const
 }
 
 
+static const TSeqPos kMinPreloadBases = 4000;
 static const TSeqPos kMaxPreloadBases = 10*1000*1000;
 
 
@@ -234,11 +235,18 @@ bool CSeqVector_CI::CanGetRange(TSeqPos start, TSeqPos stop)
 void CSeqVector_CI::x_CheckForward(void)
 {
     TSeqPos scanned = m_ScannedEnd - m_ScannedStart;
-    TSeqPos more = x_GetSize() - m_ScannedEnd;
-    TSeqPos check = min(min(scanned, more), kMaxPreloadBases);
-    if ( check > 0 ) {
-        CanGetRange(m_ScannedEnd, m_ScannedEnd+check);
+    if ( scanned == 0 ) {
+        // first segment to be loaded - do not prefech
+        return;
     }
+    TSeqPos avaliable = x_GetSize() - m_ScannedEnd;
+    if ( avaliable == 0 ) {
+        // no more data
+        return;
+    }
+    TSeqPos add = max(scanned, kMinPreloadBases); // prefetch at least kMinPreloadBases
+    TSeqPos check = min(min(add, avaliable), kMaxPreloadBases); // but not exceeding limits
+    CanGetRange(m_ScannedEnd, m_ScannedEnd+check);
 }
 
 
