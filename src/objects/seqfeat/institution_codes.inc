@@ -30,16 +30,16 @@
  *
  */
 
-/* time_t value corresponding to Tue Mar  3 05:33:05 EST 2026; formally
+/* time_t value corresponding to Sat Mar  7 05:33:05 EST 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1772533985UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1772879585UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t\t",
 "AAAG\ts\tAlan and Anita Gillogly\t\t\t",
 "AAC\tc\tArignar Anna College\t\t\t",
-"AAFC\tc\tAAFC\t\t\t",
+"AAFC\tc\tCulture collection of Agriculture and Agri-Food Canada\t\t\t",
 "AAFC-PRC\ts\tAgriculture and Agri-Food Canada Potato Research Station\t\t\t",
 "AAG\ts\tUniversidad Nacional de Costa Rica\t\t\t",
 "AAH\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -189,7 +189,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AIX\ts\tMuseum d'Histoire Naturelle d'Aix-en-Provence\tMHNAIX\t\t",
 "AJ\tc\tCentral Research Laboratories\t\t\t",
 "AJBC\ts\tAtkins Jardin Botanico de Cienfuegos\t\t\t",
-"AJKC\ts\tAlfred J. Kistler ?\t\t\t",
+"AJKC\ts\tAlfred J. Kistler\t\t\t",
 "AJOU\ts\tAjou University, Biological Sciences Department\t\t\t",
 "AJU\ts\tUniversidade Tiradentes\t\t\t",
 "AK\ts\tAuckland War Memorial Museum\t\t\t",
@@ -3395,7 +3395,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HZMZ\ts\tHrvatski Narodni Zooloski Muzej\t\t\t",
 "HZTC\ts\tHanzhong Teachers College, Biology Department\t\t\t",
 "HZU\ts\tZhejiang University\t\t\t",
-"I\ts\t\"Alexandru Ioan Cuza\" University\t\t\t",
+"I\ts\tAlexandru Ioan Cuza University\t\t\t",
 "IA\ts\tUniversity of Iowa, Department of Biological Sciences\t\t\t",
 "IAA\ts\tInstituto Antarctico Argentinao, Direccion Nacional del Antartico\t\t\t",
 "IAAA\ts\tInstituto do Acucar e do Alcool\t\t\t",
