@@ -3,7 +3,7 @@ A	s	Arnold Arboretum, Harvard University
 AA	s	Ministry of Science, Academy of Sciences			
 AAAG	s	Alan and Anita Gillogly			
 AAC	c	Arignar Anna College			
-AAFC	c	AAFC			
+AAFC	c	Culture collection of Agriculture and Agri-Food Canada			
 AAFC-PRC	s	Agriculture and Agri-Food Canada Potato Research Station			
 AAG	s	Universidad Nacional de Costa Rica			
 AAH	s	Arnold Arboretum, Harvard University			
@@ -153,7 +153,7 @@ AISIY	s	Armenian Institute for the Scientific Investigation of Cattle Breeding a
 AIX	s	Museum d'Histoire Naturelle d'Aix-en-Provence	MHNAIX		
 AJ	c	Central Research Laboratories			
 AJBC	s	Atkins Jardin Botanico de Cienfuegos			
-AJKC	s	Alfred J. Kistler ?			
+AJKC	s	Alfred J. Kistler			
 AJOU	s	Ajou University, Biological Sciences Department			
 AJU	s	Universidade Tiradentes			
 AK	s	Auckland War Memorial Museum			
@@ -3359,7 +3359,7 @@ HZM	s	Museum of Natural History (Hrvatski Zooloski Muzej)
 HZMZ	s	Hrvatski Narodni Zooloski Muzej			
 HZTC	s	Hanzhong Teachers College, Biology Department			
 HZU	s	Zhejiang University			
-I	s	"Alexandru Ioan Cuza" University			
+I	s	Alexandru Ioan Cuza University			
 IA	s	University of Iowa, Department of Biological Sciences			
 IAA	s	Instituto Antarctico Argentinao, Direccion Nacional del Antartico			
 IAAA	s	Instituto do Acucar e do Alcool			
