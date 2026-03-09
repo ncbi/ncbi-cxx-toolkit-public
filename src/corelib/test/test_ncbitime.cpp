@@ -1231,6 +1231,8 @@ static void s_TestUTC(void)
 
 static void s_TestAgainstChrono(void)
 {
+    ERR_POST(Note << "__cpp_lib_chrono = " << __cpp_lib_chrono);
+
 #if __cpp_lib_chrono >= 201907L
 
     using namespace std::chrono;

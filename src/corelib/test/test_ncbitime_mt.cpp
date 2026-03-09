@@ -746,6 +746,8 @@ static void s_TestGMT(void)
 
 static void s_TestAgainstChrono(void)
 {
+    ERR_POST_ONCE(Note << "__cpp_lib_chrono = " << __cpp_lib_chrono);
+
 #if __cpp_lib_chrono >= 201907L
 
     using namespace std::chrono;
@@ -829,7 +831,7 @@ static void s_TestAgainstChrono(void)
         assert_equal(s_loc, ct_loc);
     }
 #else
-    ERR_POST(Note << "s_TestAgainstChrono() is disabled on this platform/compiler");
+    ERR_POST_ONCE(Note << "s_TestAgainstChrono() is disabled on this platform/compiler");
 #endif
 }
 
