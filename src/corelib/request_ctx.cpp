@@ -797,32 +797,33 @@ NCBI_PARAM_DEF_EX(string, Context, Fields, "",
 typedef NCBI_PARAM_TYPE(Context, Fields) TNcbiContextFields;
 
 DEFINE_STATIC_MUTEX(s_ContextFieldsMutex);
-unique_ptr<CMaskFileName> CRequestContext::sm_ContextFields;
-unique_ptr<CRequestContext::TPassThroughProperties> CRequestContext::sm_EnvContextProperties;
+CSafeStaticPtr<unique_ptr<CMaskFileName>> CRequestContext::sm_ContextFields;
+CSafeStaticPtr<unique_ptr<CRequestContext::TPassThroughProperties>> CRequestContext::sm_EnvContextProperties;
 
 
 const CMask& CRequestContext::sx_GetContextFieldsMask(void)
 {
-    if ( !sm_ContextFields.get() ) {
+    if ( !sm_ContextFields.Get() ) {
         CMutexGuard guard(s_ContextFieldsMutex);
-        if ( !sm_ContextFields.get() ) {
-            sm_ContextFields.reset(new CMaskFileName());
+        if ( !sm_ContextFields.Get() ) {
+            unique_ptr<CMaskFileName> fields_list(new CMaskFileName);
             string fields_var = TNcbiContextFields::GetDefault();
-            if ( !fields_var.empty() ) {
+            if (!fields_var.empty()) {
                 list<string> fields;
                 NStr::Split(fields_var, " ", fields, NStr::fSplit_MergeDelimiters);
                 ITERATE(list<string>, field, fields) {
                     string norm_field = sx_NormalizeContextPropertyName(*field);
-                    sm_ContextFields->Add(norm_field);
+                    fields_list->Add(norm_field);
                 }
             }
             else {
                 // By default exclude everything.
-                sm_ContextFields->AddExclusion("*");
+                fields_list->AddExclusion("*");
             }
+            sm_ContextFields.Get().reset(fields_list.release());
         }
     }
-    return *sm_ContextFields;
+    return *sm_ContextFields.Get();
 }
 
 
@@ -836,7 +837,7 @@ void CRequestContext::x_LoadEnvContextProperties(void)
 {
     if (!x_CanModify()) return;
     // Parse environment only once.
-    if ( !sm_EnvContextProperties.get() ) {
+    if ( !sm_EnvContextProperties.Get() ) {
         TPassThroughProperties props;
         {
             CNcbiApplicationGuard app = CNcbiApplication::InstanceGuard();
@@ -850,18 +851,19 @@ void CRequestContext::x_LoadEnvContextProperties(void)
         }
 
         CMutexGuard guard(s_ContextFieldsMutex);
-        if ( !sm_EnvContextProperties.get() ) {
-            sm_EnvContextProperties.reset(new TPassThroughProperties);
+        if ( !sm_EnvContextProperties.Get() ) {
+            sm_EnvContextProperties.Get().reset(new TPassThroughProperties);
             const CMask& mask = sx_GetContextFieldsMask();
             ITERATE(TPassThroughProperties, it, props) {
                 string norm_prop = sx_NormalizeContextPropertyName(it->first);
                 if ( mask.Match(norm_prop, NStr::eNocase) ) {
-                    (*sm_EnvContextProperties)[norm_prop] = it->second;
+                    (*sm_EnvContextProperties.Get())[norm_prop] = it->second;
                 }
             }
         }
     }
-    m_PassThroughProperties.insert(sm_EnvContextProperties->begin(), sm_EnvContextProperties->end());
+    m_PassThroughProperties.insert(sm_EnvContextProperties.Get()->begin(),
+        sm_EnvContextProperties.Get()->end());
 }
 
 

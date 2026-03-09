@@ -43,6 +43,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/request_status.hpp>
 
 
@@ -580,10 +581,10 @@ private:
     string m_TraceParent;
 
     // Patterns from NCBI_CONTEXT_FIELDS variable.
-    static unique_ptr<CMaskFileName> sm_ContextFields;
+    static CSafeStaticPtr<unique_ptr<CMaskFileName>> sm_ContextFields;
 
     // Context values loaded from the global environment.
-    static unique_ptr<TPassThroughProperties> sm_EnvContextProperties;
+    static CSafeStaticPtr<unique_ptr<TPassThroughProperties>> sm_EnvContextProperties;
 
     static CAtomicCounter sm_VersionCounter;
 };
