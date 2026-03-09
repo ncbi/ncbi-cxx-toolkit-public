@@ -78,9 +78,13 @@
 
 BEGIN_NCBI_SCOPE
 
+// Use s_TimeMutex or not
+#define USE_TIME_MUTEX  0
 
 // Protective mutex
+#if USE_TIME_MUTEX
 DEFINE_STATIC_MUTEX(s_TimeMutex);
+#endif
 DEFINE_STATIC_MUTEX(s_TimeAdjustMutex);
 DEFINE_STATIC_MUTEX(s_FastLocalTimeMutex);
 
@@ -1398,7 +1402,9 @@ bool CTime::IsDST(void) const
         NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     // MT-Safe protect
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
+#endif
     return s_IsDST(*this);
 }
 
@@ -1409,7 +1415,9 @@ time_t CTime::GetTimeT(void) const
         NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     // MT-Safe protect
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
+#endif
     return s_GetTimeT(*this);
 }
 
@@ -1563,7 +1571,9 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     // Speedup:: timezone information can be used if defined or for 'z' format symbols.
     if (out_tz != eCurrentTimeZone  ||  fmt.find('z') != NPOS) 
     {{
+#if USE_TIME_MUTEX
         CMutexGuard LOCK(s_TimeMutex);
+#endif
         // Adjust time for output timezone (should be MT protected)
         {{
             if (out_tz != eCurrentTimeZone) {
@@ -1673,7 +1683,9 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 CTime& CTime::x_SetTimeMTSafe(const time_t* value)
 {
     // MT-Safe protect
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
+#endif
     x_SetTime(value);
     return *this;
 }
@@ -2103,7 +2115,9 @@ CTime& CTime::ToTime(ETimeZone tz)
             return *this;
         }
         // MT-Safe protect
+#if USE_TIME_MUTEX
         CMutexGuard LOCK(s_TimeMutex);
+#endif
 
 #if defined(HAVE_LOCALTIME_R)
         struct tm temp;
@@ -2131,8 +2145,9 @@ CTime& CTime::ToTime(ETimeZone tz)
                 "localtime/gmtime error, possible incorrect time_t value");
         }
 #endif
+#if USE_TIME_MUTEX
         LOCK.Release();
-
+#endif
         SET_YEAR  (t->tm_year + 1900);
         SET_MONTH (t->tm_mon + 1);
         SET_DAY   (t->tm_mday);
@@ -2280,8 +2295,10 @@ string CTime::TimeZoneName(void)
        return kEmptyStr;
     }
     // MT-Safe protect
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
-    
+#endif
+
     struct tm* t;
 #if defined(HAVE_LOCALTIME_R)
     struct tm temp;
@@ -3961,10 +3978,14 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
 {
 #if !defined(NCBI_TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect: use CTime locking mutex
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
+#endif
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
+#if USE_TIME_MUTEX
     LOCK.Release();
+#endif
 #else
     m_Daylight = -1;
 #endif
@@ -3993,7 +4014,9 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
         return false;
 
     // MT-Safe protect: use CTime locking mutex
+#if USE_TIME_MUTEX
     CMutexGuard LOCK(s_TimeMutex);
+#endif
     m_TunedTime.x_SetTime(&timer);
     m_TunedTime.SetNanoSecond(nanosec);
 
@@ -4002,7 +4025,9 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
     m_Daylight = Daylight();
 #endif
 
+#if USE_TIME_MUTEX
     LOCK.Release();
+#endif
 
     // Copy tuned time to cached local time
     CMutexGuard FLT_LOCK(s_FastLocalTimeMutex);
@@ -4036,7 +4061,9 @@ retry:
         int x_daylight;
         {{
             // MT-Safe protect: use CTime locking mutex
+#if USE_TIME_MUTEX
             CMutexGuard LOCK_TM(s_TimeMutex);
+#endif
             x_timezone = TimeZone();
             x_daylight = Daylight();
         }}
@@ -4088,7 +4115,9 @@ int CFastLocalTime::GetLocalTimezone(void)
         int x_daylight;
         {{
             // MT-Safe protect: use CTime locking mutex
+#if USE_TIME_MUTEX
             CMutexGuard LOCK(s_TimeMutex);
+#endif
             x_timezone = TimeZone();
             x_daylight = Daylight();
         }}
