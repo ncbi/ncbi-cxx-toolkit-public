@@ -119,7 +119,7 @@ void CStackTrace::x_ExpandStackTrace(void) const
 }
 
 
-static const vector<string> s_StackFilters {
+constexpr array<const char*, 4> s_StackFilters {
     "ncbi::CStackTrace::", "ncbi::CStackTraceImpl::", "ncbi::CException::",
     "backward::"
 };
