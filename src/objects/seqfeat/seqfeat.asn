@@ -1197,7 +1197,8 @@ BioSource ::= SEQUENCE {
         chromosome (21) ,
         chromatophore (22) ,
         plasmid-in-mitochondrion (23) ,
-        plasmid-in-plastid (24)
+        plasmid-in-plastid (24),
+        nitroplast (25)
       } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
