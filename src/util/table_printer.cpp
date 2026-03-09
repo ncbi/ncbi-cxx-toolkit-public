@@ -131,9 +131,8 @@ void CTablePrinter::x_AddCellValue(
         // handle a cell value that's too long
         switch(colInfo.m_eDataTooLong) {
         case eDataTooLong_ShowErrorInColumn: {
-            static const char kErrMsg[] = "**ERROR**";
-            static const size_t kErrMsgLen = sizeof(kErrMsg) - 1;
-            if( colInfo.m_iColWidth >= kErrMsgLen ) {
+            constexpr std::string_view kErrMsg = "**ERROR**";
+            if( colInfo.m_iColWidth >= kErrMsg.length() ) {
                 m_ostrm << kErrMsg;
             } else {
                 m_ostrm << string(colInfo.m_iColWidth, '?');
@@ -141,14 +140,12 @@ void CTablePrinter::x_AddCellValue(
             break;
         }
         case eDataTooLong_TruncateWithEllipses:  {
-            const static string kEllipses = "...";
-            
+            constexpr std::string_view kEllipses = "...";
             if( colInfo.m_iColWidth > kEllipses.length() ) {
                 string::const_iterator value_end_it = sValue.end();
                 value_end_it -= kEllipses.length();
                 m_ostrm << setw(1);
-                copy( sValue.begin(), value_end_it,
-                    ostream_iterator<char>(m_ostrm) );
+                copy( sValue.begin(), value_end_it, ostream_iterator<char>(m_ostrm) );
                 m_ostrm << kEllipses;
             } else {
                 // even ellipses won't fit
