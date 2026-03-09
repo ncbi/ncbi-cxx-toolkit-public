@@ -2637,7 +2637,15 @@ void CAlignCollapser::AddAlignment(CAlignModel& a) {
 			return;
     }
 
-    bool long_read = acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos;
+    bool long_read = false;
+    if(a.Type()&CGeneModel::eEST) {
+        if(acc.find("lcl|") != string::npos)
+            long_read = true;
+        if(acc.find("LCL|") != string::npos)
+            long_read = true;
+        if(acc.find("SRA") != string::npos && acc.find("RNASEQ_COLLAPSE") == string::npos)
+            long_read = true;
+    }
 
     if(long_read && a.Exons().front().m_ident == 0) {
         TInDels& indels = a.FrameShifts();
