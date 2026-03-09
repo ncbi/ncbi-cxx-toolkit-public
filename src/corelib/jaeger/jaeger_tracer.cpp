@@ -48,10 +48,11 @@
 BEGIN_NCBI_SCOPE
 
 
+DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
+
 static void s_InitTracer(const string& service_name,
                          const jaegertracing::Config& config)
 {
-    static CFastMutex s_InitMutex;
     if (jaegertracing::Tracer::IsGlobalTracerRegistered()) return;
     CFastMutexGuard guard(s_InitMutex);
     if (jaegertracing::Tracer::IsGlobalTracerRegistered()) return;
