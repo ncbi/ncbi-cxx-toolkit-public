@@ -203,9 +203,9 @@ CTempString CRegexp::GetSub(CTempString str, size_t idx) const
         return CTempString();
     }
 #ifdef USE_LIBPCRE2
-    static const PCRE2_SIZE kNotFound = PCRE2_UNSET;
+    constexpr PCRE2_SIZE kNotFound = PCRE2_UNSET;
 #else
-    static const int kNotFound = -1;
+    constexpr int kNotFound = -1;
 #endif
     auto start = m_Results[2 * idx];
     auto end   = m_Results[2 * idx + 1];
