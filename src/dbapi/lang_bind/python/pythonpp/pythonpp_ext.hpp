@@ -1110,27 +1110,68 @@ private:
 template <class T, class B> PyObject* CUserError<T, B>::m_Exception(NULL);
 
 
-/// CThreadingGuard -- "Anti-guard" for Python's global interpreter
-/// lock, which it temporarily releases to allow other threads to
-/// proceed in parallel with blocking operations that don't involve
-/// Python-specific state.
-/// @note Does NOT support recursive usage at present.
+/// CThreadingGuard -- Temporarily ensure that Python's global
+/// interpreter lock is released (if allowed!) or held.  Temporary
+/// releases allow other threads to proceed in parallel with blocking
+/// operations that don't involve Python-specific state.
+/// @note Recursive usage must strictly alternate between modes.
 class CThreadingGuard {
 public:
-    CThreadingGuard() : m_State(sm_MayRelease ? PyEval_SaveThread() : NULL) { }
-    ~CThreadingGuard() { if (m_State != NULL) PyEval_RestoreThread(m_State); }
+    enum EMode {
+        eRelease = -1,
+        eNeutral,
+        eHold
+    };
+    
+    CThreadingGuard(EMode mode = eRelease);
+    ~CThreadingGuard();
 
     static void SetMayRelease(bool may_release)
         { sm_MayRelease = may_release; }
 
 private:
-    static bool    sm_MayRelease;
-    PyThreadState* m_State;
+    static bool                      sm_MayRelease;
+    static CStaticTls<PyThreadState> sm_State;
+    EMode                            m_Mode;
 };
 
 #ifdef PYTHONPP_DEFINE_GLOBALS
-bool CThreadingGuard::sm_MayRelease = false;
+bool                      CThreadingGuard::sm_MayRelease = false;
+CStaticTls<PyThreadState> CThreadingGuard::sm_State;
 #endif
+
+CThreadingGuard::CThreadingGuard(EMode mode)
+    : m_Mode(mode)
+{
+    _ASSERT(mode != eNeutral);
+    if ( !sm_MayRelease ) {
+        m_Mode = eNeutral;
+    } else if (mode == eRelease) {
+        _ASSERT(sm_State.GetValue() == nullptr);
+        sm_State.SetValue(PyEval_SaveThread());
+    } else if (mode == eHold) {
+        auto state = sm_State.GetValue();
+        if (state == nullptr) {
+            m_Mode = eNeutral;
+        } else {
+            PyEval_RestoreThread(state);
+            sm_State.SetValue(nullptr);
+        }
+    }
+}
+
+CThreadingGuard::~CThreadingGuard()
+{
+    if (m_Mode == eRelease) {
+        auto state = sm_State.GetValue();
+        _ASSERT(state != nullptr);
+        PyEval_RestoreThread(state);
+        sm_State.SetValue(nullptr);
+    } else if (m_Mode == eHold) {
+        _ASSERT(sm_State.GetValue() == nullptr);
+        sm_State.SetValue(PyEval_SaveThread());
+    }
+}
 
 
 class CStateGuard {
