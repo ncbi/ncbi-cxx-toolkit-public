@@ -2567,7 +2567,9 @@ bool CUserHandler::HandleIt(CDB_Exception* ex)
     unique_ptr<pythonpp::CCalable> error_handler;
     if (pythonpp::g_CleaningUp) {
         return false;
-    } else if (m_Cursor != nullptr) {
+    }
+    pythonpp::CThreadingGuard guard(pythonpp::CThreadingGuard::eHold);
+    if (m_Cursor != nullptr) {
         auto cursor_handler = m_Cursor->m_ErrorHandler.Get();
         if (pythonpp::CCalable::HasExactSameType(cursor_handler)) {
             error_handler.reset(new pythonpp::CCalable(cursor_handler));
