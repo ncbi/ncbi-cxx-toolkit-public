@@ -40,7 +40,8 @@
 #include <ncbi_pch.hpp>
 #include <sstream>
 #include <memory>
-#include <util/static_map.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+#include <util/compile_time.hpp> // for MAKE_CONST_MAP
 #include <util/xregexp/regexp.hpp>
 #include <util/xregexp/convert_dates_iso8601.hpp>
 
@@ -235,9 +236,9 @@ pair<string, string> extract_date_iso8601(string const& value,
 }
 
 
-const char* get_month_code_by_name(string const& month_name)
+const std::string_view& get_month_code_by_name(string const& month_name)
 {
-    static const SStaticPair<const char*, const char*> s_month_lookup_table[] =
+    MAKE_CONST_MAP(mMonthLookupTable, ct::tagStrNocase, ct::tagStrNocase, 
     {
         { "apr",       "04" },
         { "april",     "04" },
@@ -261,17 +262,13 @@ const char* get_month_code_by_name(string const& month_name)
         { "oct",       "10" },
         { "october",   "10" },
         { "sep",       "09" },
-        { "september", "09" },
-    };
-    typedef CStaticPairArrayMap<const char*, const char*, PNocase_CStr> TMonthCodeByName;
-    DEFINE_STATIC_ARRAY_MAP(TMonthCodeByName, s_MonthLookupTable, s_month_lookup_table);
-
-    auto it = s_MonthLookupTable.find(month_name.c_str());
-    if ( it == s_MonthLookupTable.end() ) {
+        { "september", "09" }
+    });
+    auto it = mMonthLookupTable.find(month_name);
+    if ( it == mMonthLookupTable.end() ) {
         NCBI_THROW(CException, eUnknown, "Bad month name value '" + month_name + "'");
     }
     return it->second;
-
 }
 
 
