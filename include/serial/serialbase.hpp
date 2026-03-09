@@ -996,12 +996,12 @@ void NCBISERSetPostWrite(const Class* /*object*/, CInfo* info) \
 #define DECLARE_ENUM_INFO(EnumName) \
     const NCBI_NS_NCBI::CEnumeratedTypeValues* ENUM_METHOD_NAME(EnumName)(void)
 #define DECLARE_INTERNAL_ENUM_INFO(EnumName) \
-    static DECLARE_ENUM_INFO(EnumName)
+    static DECLARE_ENUM_INFO(EnumName) /* NCBI_SAFE_STATIC */
 
 //#define DECLARE_STD_ALIAS_TYPE_INFO() DECLARE_INTERNAL_TYPE_INFO()
 #define DECLARE_STD_ALIAS_TYPE_INFO() \
            const NCBI_NS_NCBI::CTypeInfo* GetThisTypeInfo(void) const { return GetTypeInfo(); } \
-    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void)
+    static const NCBI_NS_NCBI::CTypeInfo* GetTypeInfo(void) /* NCBI_SAFE_STATIC */
 
 #if HAVE_NCBI_C
 
