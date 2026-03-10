@@ -286,6 +286,7 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                      iter->name));
         goto out;
     }
+    assert(len > 0);
     if (iter->arg) {
         assert(iter->arglen);
         CORE_LOGF_X(88, eLOG_Error,
@@ -350,12 +351,14 @@ const SSERV_VTable* SERV_LBNULL_Open(SERV_ITER    iter,
                             (iter->name, REG_CONN_LBNULL_ASIS,
                              buf, sizeof(buf), 0))) {
         memcpy(buf, iter->name, len);
-    } else
+    } else {
         x_tr(buf, iter->name, len, '_', '-');
+        buf[0] = iter->name[0];
+    }
     domain = buf + len + 1;
 
     if (!ConnNetInfo_GetValueInternal(iter->name, REG_CONN_LBNULL_DOMAIN,
-                                      domain, CONN_HOST_LEN - len + 1,
+                                      domain, (CONN_HOST_LEN + 1) - len,
                                       default_domain)) {
         CORE_LOGF_X(93, eLOG_Error,
                     ("[%s]  Cannot obtain domain name for LBNULL",
