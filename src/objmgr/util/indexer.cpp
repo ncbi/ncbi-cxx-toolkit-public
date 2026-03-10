@@ -1280,6 +1280,9 @@ static const char* x_OrganelleName (
         case NCBI_GENOME(chromatophore):
             result = "chromatophore";
             break;
+        case NCBI_GENOME(nitroplast):
+            result = "nitroplast";
+            break;
     }
 
     return result;

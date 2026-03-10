@@ -420,6 +420,9 @@ const char* CDeflineGenerator::x_OrganelleName (
         case NCBI_GENOME(chromatophore):
             result = "chromatophore";
             break;
+        case NCBI_GENOME(nitroplast):
+            result = "nitroplast";
+            break;
     }
 
     return result;
@@ -1670,6 +1673,7 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
                 case NCBI_GENOME(kinetoplast):
                 case NCBI_GENOME(plastid):
                 case NCBI_GENOME(apicoplast):
+                case NCBI_GENOME(nitroplast):
                     joiner.Add("location", m_Organelle, eHideType);
                     break;
             }
@@ -2153,8 +2157,8 @@ bool CDeflineGenerator::x_CDShasLowQualityException (
 }
 
 static const char* s_proteinOrganellePrefix [] = {
-  "",                  // "",
-  "",                  // "",
+  "",                  // "unknown",
+  "",                  // "genomic",
   "chloroplast",       // "chloroplast",
   "chromoplast",       // "chromoplast",
   "kinetoplast",       // "kinetoplast",
@@ -2163,8 +2167,8 @@ static const char* s_proteinOrganellePrefix [] = {
   "macronuclear",      // "macronuclear",
   "",                  // "extrachromosomal",
   "plasmid",           // "plasmid",
-  "",                  // "",
-  "",                  // "",
+  "",                  // "transposon",
+  "",                  // "insertion_seq",
   "cyanelle",          // "cyanelle",
   "",                  // "proviral",
   "",                  // "virus",
@@ -2175,7 +2179,10 @@ static const char* s_proteinOrganellePrefix [] = {
   "endogenous virus",  // "endogenous virus",
   "hydrogenosome",     // "hydrogenosome",
   "",                  // "chromosome",
-  "chromatophore"      // "chromatophore"
+  "chromatophore"      // "chromatophore",
+  "",                  // "plasmid-in-mitochondrion",
+  "",                  // "plasmid-in-plastid",
+  "nitroplast"         // "nitroplast"
 };
 
 static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
@@ -2200,6 +2207,18 @@ static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
 
     }
     return str;
+}
+
+bool CDeflineGenerator::x_IsPlastid (void)
+
+{
+    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+        return true;
+    }
+    if (m_Genome == NCBI_GENOME(nitroplast)) {
+        return true;
+    }
+    return false;
 }
 
 void CDeflineGenerator::x_SetTitleFromProteinIdx (
@@ -2373,7 +2392,7 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
 
     CTempString taxname = m_Taxname;
 
-    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+    if (x_IsPlastid()) {
         const char * organelle = s_proteinOrganellePrefix [m_Genome];
         if ( organelle[0] != '\0'  &&  ! taxname.empty()
             /* &&  NStr::Find (taxname, organelle) == NPOS */) {
@@ -2576,7 +2595,7 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
     CTempString taxname = m_Taxname;
 
-    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+    if (x_IsPlastid()) {
         const char * organelle = s_proteinOrganellePrefix [m_Genome];
         if ( organelle[0] != '\0'  &&  ! taxname.empty()
             /* &&  NStr::Find (taxname, organelle) == NPOS */) {
@@ -3045,7 +3064,8 @@ void CDeflineGenerator::x_SetSuffix (
                            m_Genome == NCBI_GENOME(chloroplast) ||
                            m_Genome == NCBI_GENOME(kinetoplast) ||
                            m_Genome == NCBI_GENOME(plastid) ||
-                           m_Genome == NCBI_GENOME(apicoplast)) {
+                           m_Genome == NCBI_GENOME(apicoplast) ||
+                           m_Genome == NCBI_GENOME(nitroplast)) {
                     comp = ", complete genome";
                 } else if (m_IsChromosome) {
                     if (! m_Chromosome.empty()) {
@@ -3212,7 +3232,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
     if (len1 > 2 && m_MainTitle [len1 - 1] == ')') {
         pos = m_MainTitle.find_last_of ("(");
         if (pos != NPOS) {
-            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
+            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(nitroplast); genome++ ) {
                 string str = s_proteinOrganellePrefix [genome];
                 if ( ! str.empty() ) {
                     string paren = "(" + str + ")";
@@ -3248,7 +3268,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
 
     CTempString taxname = m_Taxname;
 
-    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+    if (x_IsPlastid()) {
         const char * organelle = s_proteinOrganellePrefix [m_Genome];
         if ( organelle[0] != '\0'  &&  ! taxname.empty()
             /* &&  NStr::Find (taxname, organelle) == NPOS */) {
@@ -3365,7 +3385,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
     if (len1 > 2 && m_MainTitle [len1 - 1] == ')') {
         pos = m_MainTitle.find_last_of ("(");
         if (pos != NPOS) {
-            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(chromatophore); genome++ ) {
+            for ( genome = NCBI_GENOME(chloroplast); genome <= NCBI_GENOME(nitroplast); genome++ ) {
                 string str = s_proteinOrganellePrefix [genome];
                 if ( ! str.empty() ) {
                     string paren = "(" + str + ")";
@@ -3401,7 +3421,7 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffix (
 
     CTempString taxname = m_Taxname;
 
-    if (m_Genome >= NCBI_GENOME(chloroplast) && m_Genome <= NCBI_GENOME(chromatophore)) {
+    if (x_IsPlastid()) {
         const char * organelle = s_proteinOrganellePrefix [m_Genome];
         if ( organelle[0] != '\0'  &&  ! taxname.empty()
             /* &&  NStr::Find (taxname, organelle) == NPOS */) {
@@ -3818,6 +3838,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 case CBioSource::eGenome_proplastid:
                 case CBioSource::eGenome_chromatophore:
                 case CBioSource::eGenome_plasmid_in_plastid:
+                case CBioSource::eGenome_nitroplast:
                     {
                         // specific plant plastid code
                         if (orgname.IsSetPgcode()) {

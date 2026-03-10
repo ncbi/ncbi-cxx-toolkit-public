@@ -743,6 +743,9 @@ string OrganelleByGenome(unsigned int genome_val)
         case CBioSource::eGenome_hydrogenosome:
             organelle = "hydrogenosome";
             break;
+        case CBioSource::eGenome_nitroplast:
+            organelle = "nitroplast";
+            break;
     }
     return organelle;
 }
@@ -785,6 +788,8 @@ static unsigned int s_GetProductFlagFromCDSProductNames (CBioseq_Handle bh)
                     product_flag = CBioSource::eGenome_cyanelle;
                 } else if (NStr::Find(label, "leucoplast") != NCBI_NS_STD::string::npos) {
                     product_flag = CBioSource::eGenome_leucoplast;
+                } else if (NStr::Find(label, "nitroplast") != NCBI_NS_STD::string::npos) {
+                    product_flag = CBioSource::eGenome_nitroplast;
                 }
             }
         }
@@ -943,7 +948,8 @@ string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome
         || genome_val == CBioSource::eGenome_kinetoplast
         || genome_val == CBioSource::eGenome_leucoplast
         || genome_val == CBioSource::eGenome_mitochondrion
-        || genome_val == CBioSource::eGenome_plastid) {
+        || genome_val == CBioSource::eGenome_plastid
+        || genome_val == CBioSource::eGenome_nitroplast) {
         organelle = OrganelleByGenome(genome_val);
     }
     if (!NStr::IsBlank(organelle)) {
