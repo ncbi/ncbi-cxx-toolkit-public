@@ -497,12 +497,12 @@ CreateDensegFromPairwiseAln(const CPairwiseAln& pairwise_aln,
 }
 
 
-static const TSignedSeqPos kMaxSplicedExonIndelLength = 15;
-
 void InitSplicedsegFromPairwiseAln(CSpliced_seg& spliced_seg,
                                    const CPairwiseAln& pairwise_aln,
                                    CScope* scope)
 {
+    const TSignedSeqPos kMaxSplicedExonIndelLength = 15;
+
     // Sort by product positions (if minus strand, then reverse).
     // Make sure genomic positions are sorted in the corresponding direction too, no overlaps etc.
     // Small one-row gap -> indel.
