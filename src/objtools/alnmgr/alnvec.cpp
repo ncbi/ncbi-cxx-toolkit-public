@@ -821,8 +821,6 @@ CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 }
 
 
-static SNCBIFullScoreMatrix s_FullScoreMatrix;
-
 int CAlnVec::CalculateScore(const string& s1, const string& s2,
                             bool s1_is_prot, bool s2_is_prot,
                             int gen_code1, int gen_code2)
@@ -846,7 +844,9 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
     const unsigned char * end1 = res1 + s1.length();
     const unsigned char * end2 = res2 + s2.length();
     
+    static SNCBIFullScoreMatrix s_FullScoreMatrix; /* NCBI_SAFE_SATIC: pod */
     static bool s_FullScoreMatrixInitialized = false;
+    
     if (s1_is_prot  &&  s2_is_prot) {
         if ( !s_FullScoreMatrixInitialized ) {
             s_FullScoreMatrixInitialized = true;
