@@ -1305,10 +1305,10 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         return 0;
     if (!net_info) {
         char* x_name = SERV_ServiceName(name);
-        if (!x_name)
-            return 0;
+        assert(!x_name  ||  *x_name);
         x_net_info = ConnNetInfo_CreateInternal(x_name);
-        free(x_name);
+        if (x_name)
+            free(x_name);
     } else
         x_net_info = ConnNetInfo_Clone(net_info);
     if (!x_net_info)
