@@ -57,7 +57,7 @@ namespace {
 
 static CAtomicCounter sx_chunks_counter;
 static CAtomicCounter::TValue sx_max_counter;
-static struct SPrinter
+static struct SPrinter /* NCBI_SAFE_STATIC : CXX-14331 */
 {
     ~SPrinter()
         {
