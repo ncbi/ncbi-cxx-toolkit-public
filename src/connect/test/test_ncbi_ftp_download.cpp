@@ -814,7 +814,7 @@ int CTestFTPDownloadApp::Run(void)
     if (offset  &&  ConnNetInfo_Boolean(val)) {
         flags |= fFTP_DelayRestart;
     }
-    ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), "");
+    ConnNetInfo_GetValue(0, "USEFEAT", val, sizeof(val), 0);
     if (ConnNetInfo_Boolean(val)) {
         flags |= fFTP_UseFeatures;
     }
