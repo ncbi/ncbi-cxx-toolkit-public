@@ -205,6 +205,7 @@ private:
     void x_SetTitleFromProtein (
         const CBioseq_Handle& bsh
     );
+    bool x_IsPlastid (void);
     void x_SetTitleFromProteinIdx (
         const CBioseq_Handle& bsh
     );
