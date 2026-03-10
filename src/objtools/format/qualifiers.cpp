@@ -60,11 +60,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-const string IFlatQVal::kSpace     = " ";
-const string IFlatQVal::kSemicolon = ";";
-const string IFlatQVal::kSemicolonEOL = ";\n";
-const string IFlatQVal::kComma     = ",";
-const string IFlatQVal::kEOL       = "\n";
+const string_view IFlatQVal::kEmpty{};
+const string_view IFlatQVal::kSpace        = " ";
+const string_view IFlatQVal::kSemicolon    = ";";
+const string_view IFlatQVal::kSemicolonEOL = ";\n";
+const string_view IFlatQVal::kComma        = ",";
+const string_view IFlatQVal::kEOL          = "\n";
 
 static bool s_IsNote(IFlatQVal::TFlags flags, CBioseqContext& ctx)
 {
@@ -329,8 +330,8 @@ CFormatQual::CFormatQual(
 CFormatQual::CFormatQual(
     string_view name, string_view value, TStyle style, TFlags flags, ETrim trim) :
     m_Name(name),
-    m_Prefix(" "),
-    m_Suffix(kEmptyStr),
+    m_Prefix(IFlatQVal::kSpace),
+    m_Suffix(IFlatQVal::kEmpty),
     m_Style(style),
     m_Flags(flags),
     m_Trim(trim),
@@ -352,11 +353,11 @@ CFlatStringQVal::CFlatStringQVal(string_view value, TStyle style, ETrim trim)
 
 CFlatStringQVal::CFlatStringQVal(
     string_view   value,
-    const string& pfx,
-    const string& sfx,
+    const string_view* pfx,
+    const string_view* sfx,
     TStyle        style,
     ETrim         trim) :
-    IFlatQVal(&pfx, &sfx),
+    IFlatQVal(pfx, sfx),
     m_Style(style),
     m_Trim(trim),
     m_AddPeriod(0)
@@ -1825,9 +1826,8 @@ void CFlatGoQVal::Format(
     const bool is_html = ctx.Config().DoHTML();
 
     if ( s_IsNote(flags, ctx) ) {
-        static const string sfx = ";";
         m_Prefix = &kEOL;
-        m_Suffix = &sfx;
+        m_Suffix = &kSemicolon;
         x_AddFQ(q, "note", string(name) + ": " + s_GetGOText(*m_Value, is_ftable, is_html));
     } else {
         x_AddFQ(q, name, s_GetGOText(*m_Value, is_ftable, is_html));

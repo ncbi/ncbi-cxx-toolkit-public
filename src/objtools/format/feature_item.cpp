@@ -4916,9 +4916,7 @@ void CFeatureItem::x_FormatGOQualCombined(
 
     // add the final merged CFormatQual
     if( ! combined.empty() ) {
-        const string prefix = " ";
-        const string suffix = ";";
-        TFlatQual res(new CFormatQual(name, combined, prefix, suffix, CFormatQual::eQuoted ));
+        TFlatQual res(new CFormatQual(name, combined, IFlatQVal::kSpace, IFlatQVal::kSemicolon, CFormatQual::eQuoted));
         qvec.push_back(res);
     }
 }

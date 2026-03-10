@@ -145,11 +145,12 @@ public:
     };
     typedef int TFlags; // binary OR of EFlags
 
-    static const string kSemicolon;  // ";"
-    static const string kSemicolonEOL;  // ";\n"
-    static const string kComma;      // ","
-    static const string kEOL;        // "\n" - end of line
-    static const string kSpace;      // " "
+    static const string_view kEmpty;        // ""
+    static const string_view kSemicolon;    // ";"
+    static const string_view kSemicolonEOL; // ";\n"
+    static const string_view kComma;        // ","
+    static const string_view kEOL;          // "\n" - end of line
+    static const string_view kSpace;        // " "
 
     virtual void Format(TFlatQuals& quals, string_view name,
         CBioseqContext& ctx, TFlags flags = 0) const = 0;
@@ -158,9 +159,10 @@ protected:
     typedef CFormatQual::TStyle   TStyle;
     typedef CFormatQual::ETrim    ETrim;
 
-    IFlatQVal(const string* pfx = &kSpace, const string* sfx = &kEmptyStr)
-        : m_Prefix(pfx), m_Suffix(sfx)
-    { }
+    IFlatQVal(const string_view* pfx = &kSpace, const string_view* sfx = &kEmpty) :
+        m_Prefix(pfx), m_Suffix(sfx)
+    {
+    }
     TFlatQual x_AddFQ(TFlatQuals& q, string_view n, string_view v,
                       TStyle st = CFormatQual::eQuoted,
                       CFormatQual::TFlags flags = 0,
@@ -170,8 +172,8 @@ protected:
         return res;
     }
 
-    mutable const string* m_Prefix;
-    mutable const string* m_Suffix;
+    mutable const string_view* m_Prefix;
+    mutable const string_view* m_Suffix;
 };
 
 
@@ -272,7 +274,7 @@ public:
     CFlatStringQVal(string_view value,
         TStyle style = CFormatQual::eQuoted,
         ETrim trim  = CFormatQual::eTrim_Normal);
-    CFlatStringQVal(string_view value, const string& pfx, const string& sfx,
+    CFlatStringQVal(string_view value, const string_view* pfx, const string_view* sfx,
         TStyle style = CFormatQual::eQuoted, ETrim trim  = CFormatQual::eTrim_Normal);
     CFlatStringQVal(string_view value, ETrim trim);
 
@@ -652,9 +654,10 @@ private:
 class NCBI_FORMAT_EXPORT CFlatTrnaCodonsQVal : public IFlatQVal
 {
 public:
-    CFlatTrnaCodonsQVal(const CTrna_ext& trna, const string& comment) : 
-      IFlatQVal(&kEmptyStr, &kSemicolon), m_Value(&trna), m_Seqfeat_note(comment)
-    {}
+    CFlatTrnaCodonsQVal(const CTrna_ext& trna, const string& comment) :
+      IFlatQVal(&kEmpty, &kSemicolon), m_Value(&trna), m_Seqfeat_note(comment)
+    {
+    }
     void Format(TFlatQuals& q, string_view n, CBioseqContext& ctx,
                 TFlags) const override;
 
