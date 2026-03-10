@@ -315,7 +315,10 @@ static const string s_organelle_prefix[] = {
   kEmptyStr,
   "hydrogenosome ",
   kEmptyStr,
-  "chromatophore "
+  "chromatophore ",
+  kEmptyStr,
+  kEmptyStr,
+  "nitroplast "
 };
 static const unsigned int s_organelle_prefix_size
     = sizeof( s_organelle_prefix ) /sizeof( const string );
