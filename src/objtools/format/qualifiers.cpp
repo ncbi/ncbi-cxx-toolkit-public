@@ -966,6 +966,7 @@ void CFlatOrganelleQVal::Format(TFlatQuals& q, const CTempString& name,
     case CBioSource::eGenome_apicoplast:
     case CBioSource::eGenome_leucoplast:
     case CBioSource::eGenome_proplastid:
+    case CBioSource::eGenome_nitroplast:
         x_AddFQ(q, name, "plastid:" + organelle);
         break;
 
