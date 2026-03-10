@@ -283,6 +283,9 @@ struct cxx_is_supported
 };
 
 
+/// Always provide standard literal suffixes for string, string_view, chrono.
+using namespace std::literals;
+
 
 /* @} */
 
