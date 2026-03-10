@@ -632,8 +632,7 @@ NCBI_PARAM_DECL(bool, OBJMGR, ADAPTIVE_DEPTH_BY_NAMED_ACC);
 NCBI_PARAM_DEF(bool, OBJMGR, ADAPTIVE_DEPTH_BY_NAMED_ACC, true);
 
 
-static
-SAnnotSelector::TAdaptiveDepthFlags s_DefaultAdaptiveDepthFlags = SAnnotSelector::kAdaptive_Default;
+static SAnnotSelector::TAdaptiveDepthFlags s_DefaultAdaptiveDepthFlags = SAnnotSelector::kAdaptive_Default;
 
 
 SAnnotSelector::TAdaptiveDepthFlags SAnnotSelector::GetDefaultAdaptiveDepthFlags()
