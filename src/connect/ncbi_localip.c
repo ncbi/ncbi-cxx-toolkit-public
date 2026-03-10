@@ -281,7 +281,7 @@ static void s_LoadLocalIPs(void)
     ELOG_Level level;
     char buf[PATH_MAX + 1];
     const char* file = ConnNetInfo_GetValueInternal(0, REG_CONN_LOCAL_IPS,
-                                                    buf, sizeof(buf) - 1, "");
+                                                    buf, sizeof(buf) - 1, 0);
     if (file) {
         SConnNetInfo* net_info;
         for (n = 0;  n < SizeOf(kFile);  ++n) {
