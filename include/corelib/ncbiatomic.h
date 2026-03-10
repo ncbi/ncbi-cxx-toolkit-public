@@ -107,7 +107,6 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
 #     ifdef __ARM_FEATURE_ATOMICS
     asm volatile("swpal %2, %0, %1" : "=&r" (old_value), "+Q" (*nv_loc)
                  : "r" (new_value));
-    return old_value;
 #     else
     NCBI_SCHED_SPIN_INIT();
     register int undone asm("w9") = 1;
@@ -120,6 +119,7 @@ void* NCBI_SwapPointers(void * volatile * location, void* new_value)
         }
     }
 #     endif    
+    return old_value;
 #    elif defined(__sparcv9)
     void* old_value;
     NCBI_SCHED_SPIN_INIT();
