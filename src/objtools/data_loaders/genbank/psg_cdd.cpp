@@ -62,7 +62,7 @@ BEGIN_NAMESPACE(psgl);
 /////////////////////////////////////////////////////////////////////////////
 
 
-static bool s_GetBlobByIdShouldFail = false;
+bool s_GetBlobByIdShouldFail = false;
 
 NCBI_PARAM_DECL(unsigned, PSG_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(unsigned, PSG_LOADER, DEBUG, 1,
