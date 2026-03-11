@@ -844,7 +844,7 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
     const unsigned char * end1 = res1 + s1.length();
     const unsigned char * end2 = res2 + s2.length();
     
-    static SNCBIFullScoreMatrix s_FullScoreMatrix; /* NCBI_SAFE_SATIC: pod */
+    static SNCBIFullScoreMatrix s_FullScoreMatrix; /* NCBI_SAFE_STATIC: pod */
     static bool s_FullScoreMatrixInitialized = false;
     
     if (s1_is_prot  &&  s2_is_prot) {
