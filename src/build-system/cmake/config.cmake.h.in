@@ -184,6 +184,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #cmakedefine HAVE_ARPA_INET_H 1
 
+/* Define to 1 if you have the `ASN1_STRING_get0_data' function. */
+#cmakedefine HAVE_ASN1_STRING_GET0_DATA 1
+
 /* Define to 1 if you have the `asprintf' function. */
 #cmakedefine HAVE_ASPRINTF 1
 
@@ -205,6 +208,9 @@
 
 /* Define to 1 if you have the `bcopy' function. */
 #cmakedefine HAVE_BCOPY 1
+
+/* Define to 1 if you have the `BIO_get_data' function. */
+#cmakedefine HAVE_BIO_GET_DATA 1
 
 /* Define to 1 if you have the <com_err.h> header file. */
 #cmakedefine HAVE_COM_ERR_H 1
@@ -483,6 +489,9 @@
 
 /* Define to 1 if you have the <roken.h> header file. */
 #cmakedefine HAVE_ROKEN_H 1
+
+/* Define to 1 if you have the `RSA_get0_key' function. */
+#cmakedefine HAVE_RSA_GET0_KEY 1
 
 /* Define to 1 if you have the `sched_yield' function. */
 #cmakedefine HAVE_SCHED_YIELD 1
@@ -1162,6 +1171,12 @@
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #define NCBI_FTDS_RENAME_SYBDB 1
+
+/* Define to 1 if built-in FreeTDS should support using GnuTLS. */
+#cmakedefine NCBI_FTDS_USES_GNUTLS 1
+
+/* Define to 1 if built-in FreeTDS should support using OpenSSL. */
+#cmakedefine NCBI_FTDS_USES_OPENSSL 1
 
 /* If you have the `gethostbyaddr_r' function, define to the number of
    arguments it takes (normally 7 or 8). */

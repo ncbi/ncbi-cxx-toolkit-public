@@ -36,6 +36,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
+/* Define to 1 if you have the `ASN1_STRING_get0_data' function. */
+#undef HAVE_ASN1_STRING_GET0_DATA
+
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
@@ -70,6 +73,9 @@
 
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #undef HAVE_BERKELEY_DB_CXX
+
+/* Define to 1 if you have the `BIO_get_data' function. */
+#undef HAVE_BIO_GET_DATA
 
 /* Define to 1 if the `Boost.Chrono' library is available. */
 #undef HAVE_BOOST_CHRONO
@@ -770,6 +776,9 @@
 /* Define to 1 if you have the <roken.h> header file. */
 #undef HAVE_ROKEN_H
 
+/* Define to 1 if you have the `RSA_get0_key' function. */
+#undef HAVE_RSA_GET0_KEY
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
@@ -1120,6 +1129,12 @@
 
 /* Rename DBLIB symbols in FTDS to avoid name clash with Sybase DBLIB. */
 #undef NCBI_FTDS_RENAME_SYBDB
+
+/* Define to 1 if built-in FreeTDS should support using GnuTLS. */
+#undef NCBI_FTDS_USES_GNUTLS
+
+/* Define to 1 if built-in FreeTDS should support using OpenSSL. */
+#undef NCBI_FTDS_USES_OPENSSL
 
 /* If you have the `gethostbyaddr_r' function, define to the number of
    arguments it takes (normally 7 or 8). */

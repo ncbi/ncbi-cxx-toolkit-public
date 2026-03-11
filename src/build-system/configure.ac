@@ -367,6 +367,8 @@ AC_ARG_WITH(ftds,
    [ --with-ftds=DIR         use FreeTDS installation in DIR])
 AC_ARG_WITH(ftds-renamed,
    [ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS])
+AC_ARG_WITH(ftds-tls,
+   [ --with-ftds-tls=IMPL    use gnutls/openssl/auto/NONE by built-in FTDS])
 AC_ARG_WITH(mysql,
    [ --without-mysql         do not use MySQL])
 AC_ARG_WITH(mysql,
@@ -875,8 +877,9 @@ for x_arg in "$@" ; do
       | --with-runpath=* | --with-relative-runpath=* \
       | --with-experimental=* | --with-extra-action=* | --with-build-root=* \
       | --with-fake-root=* | --with-build-root-sfx=* | --with-check=* \
-      | --with-check-tools=* | --with-ftds=[[0-9]]* | --with-fastcgi=[[0-9]]* \
-      | --with-bdb=[[1-9]]* | --with-boost-tag=* | --with-3psw=* )
+      | --with-check-tools=* | --with-ftds=[[0-9]]* | --with-ftds-tls=* \
+      | --with-fastcgi=[[0-9]]* | --with-bdb=[[1-9]]* | --with-boost-tag=* \
+      | --with-3psw=* )
       ;;
 
       * )
@@ -979,6 +982,35 @@ case "$with_static_gnutls:$with_gnutls" in
       ;;
    :yes )
       with_static_gnutls=$with_bin_release
+      ;;
+esac
+
+case "$with_ftds_tls" in
+   [[Gg][Nn][Uu][Tt][Ll][Ss]] )
+      if test "x$with_gnutls" = xno; then
+         AC_MSG_ERROR([incompatible options: --without-gnutls but --with-ftds-tls=$with_ftds_tls])
+      else
+         with_ftds_tls=gnutls # Canonicalize to lowercase
+         with_gnutls=yes
+      fi
+      ;;
+   [[Oo][Pp][Ee][Nn][Ss][Ss][Ll]] )
+      if test "x$with_openssl" = xno; then
+         AC_MSG_ERROR([incompatible options: --without-openssl but --with-ftds-tls=$with_ftds_tls])
+      else
+         # Already checked for by default, but insist on finding it
+         with_ftds_tls=openssl
+         with_openssl=yes
+      fi
+      ;;
+   [[Aa][Uu][Tt][Oo]] )
+      with_ftds_tls=auto
+      ;;
+   '' | [[Nn][Oo][Nn][Ee]] )
+      with_ftds_tls=none
+      ;;
+   * )
+      AC_MSG_ERROR([unsupported --with-ftds-tls=... value $with_ftds_tls])
       ;;
 esac
 
@@ -4987,6 +5019,34 @@ else
 fi
 
 ## SSL/TLS libraries (and supporting libraries)
+NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
+ [AC_LANG_PROGRAM([[@%:@include <openssl/ssl.h>]],
+   [[SSL_library_init();]])],
+ -lcrypto)
+
+OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
+for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
+   /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
+   if test -f $d/libssl.a -a -f $d/libcrypto.a; then
+      OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
+      break
+   elif test -f $d/libssl.so -o -f $d/libssl.dylib; then
+      break
+   fi
+done
+
+if test "$with_openssl" != no; then
+   LIBS="$OPENSSL_LIBS $orig_LIBS"
+   AC_CHECK_FUNCS(ASN1_STRING_get0_data BIO_get_data RSA_get0_key)
+   LIBS=$orig_LIBS
+fi
+
+if test "$with_ftds_tls:$with_openssl" = auto:no; then
+   def_with_gnutls=yes
+else
+   def_with_gnutls=no
+fi
+
 if test "x${with_mbedtls-no}" != xno; then
    case "$with_mbedtls" in
       yes ) ;;
@@ -5114,7 +5174,7 @@ else
    NCBI_PACKAGE(NETTLE)
 fi
 
-case "${with_gnutls=no}" in
+case "${with_gnutls=$def_with_gnutls}" in
    no  ) ac_cv_path_LIBGNUTLS_CONFIG=no ;;
    yes )                                ;;
    *   ) GNUTLS_PATH=$with_gnutls       ;;
@@ -5230,22 +5290,6 @@ if test "x$with_gnutls" != xno; then
       GNUTLS_LIBS="$static_libs $ICONV_LIBS"
    fi
 fi
-
-NCBI_CHECK_THIRD_PARTY_LIB_EX(openssl, OPENSSL, ssl,
- [AC_LANG_PROGRAM([[@%:@include <openssl/ssl.h>]],
-   [[SSL_library_init();]])],
- -lcrypto)
-
-OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
-for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
-   /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
-   if test -f $d/libssl.a -a -f $d/libcrypto.a; then
-      OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
-      break
-   elif test -f $d/libssl.so -o -f $d/libssl.dylib; then
-      break
-   fi
-done
 
 NETWORK_LIBS="$GNUTLS_LIBS $MBEDTLS_LIBS $NETWORK_LIBS"
 
@@ -5526,6 +5570,25 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
+   FTDS_TLS_INCLUDE=
+   # Already canonicalized to lowercase
+   case "$with_ftds_tls::$OPENSSL_LIBS::$GNUTLS_LIBS" in
+      openssl::* | auto::?*::* )
+         FTDS_TLS_INCLUDE="$OPENSSL_INCLUDE"
+         FTDS_TLS_LIBS="$OPENSSL_LIBS"
+         AC_DEFINE(NCBI_FTDS_USES_OPENSSL, 1,
+                   [Define to 1 if built-in FreeTDS should support using OpenSSL.])
+         ;;
+      gnutls::* | auto::*::?* )
+         FTDS_TLS_INCLUDE="$GNUTLS_INCLUDE"
+         FTDS_TLS_LIBS="$GNUTLS_LIBS"
+         AC_DEFINE(NCBI_FTDS_USES_GNUTLS, 1,
+                   [Define to 1 if built-in FreeTDS should support using GnuTLS.])
+         ;;
+      auto::* )
+         AC_MSG_WARN([No supported TLS implementation available for --with-ftds-tls=auto])
+         ;;
+   esac
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
@@ -5603,6 +5666,7 @@ AC_SUBST(FTDS14_CTLIB_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
+AC_SUBST(FTDS_TLS_INCLUDE)
 AC_SUBST(freetds)
 
 

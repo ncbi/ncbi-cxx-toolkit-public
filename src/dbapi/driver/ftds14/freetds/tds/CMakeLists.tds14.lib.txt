@@ -16,7 +16,9 @@ NCBI_begin_lib(tds_ftds14 STATIC)
   )
   NCBI_headers(*.h ../*.h ../../*.h)
   NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
-  NCBI_uses_external_libraries(${KRB5_LIBS} ${ICONV_LIBS} ${ORIG_LIBS})
+  NCBI_add_include_directories(${FTDS_TLS_INCLUDE})
+  NCBI_uses_external_libraries(
+    ${KRB5_LIBS} ${ICONV_LIBS} ${FTDS_TLS_LIBS} ${ORIG_LIBS})
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib(_result)
 
