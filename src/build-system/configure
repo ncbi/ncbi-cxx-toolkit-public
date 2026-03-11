@@ -1083,6 +1083,7 @@ PYTHON_INCLUDE
 PYTHON
 mysql_config
 freetds
+FTDS_TLS_INCLUDE
 FTDS_LIB
 FTDS_LIBS
 FTDS_INCLUDE
@@ -1104,8 +1105,6 @@ CURL_CONFIG
 KRB5_LIBS
 KRB5_INCLUDE
 KRB5_CONFIG
-OPENSSL_LIBS
-OPENSSL_INCLUDE
 GNUTLS_LIBS
 GNUTLS_INCLUDE
 LIBGNUTLS_CONFIG
@@ -1118,6 +1117,8 @@ GMP_LIBS
 GMP_INCLUDE
 MBEDTLS_LIBS
 MBEDTLS_INCLUDE
+OPENSSL_LIBS
+OPENSSL_INCLUDE
 PCRE2_LIBS
 PCRE2_INCLUDE
 PCRE_LIBS
@@ -1324,6 +1325,7 @@ with_sybase_local
 with_sybase_new
 with_ftds
 with_ftds_renamed
+with_ftds_tls
 with_mysql
 with_opengl
 with_mesa
@@ -2096,8 +2098,9 @@ for x_arg in "$@" ; do
       | --with-runpath=* | --with-relative-runpath=* \
       | --with-experimental=* | --with-extra-action=* | --with-build-root=* \
       | --with-fake-root=* | --with-build-root-sfx=* | --with-check=* \
-      | --with-check-tools=* | --with-ftds=[0-9]* | --with-fastcgi=[0-9]* \
-      | --with-bdb=[1-9]* | --with-boost-tag=* | --with-3psw=* )
+      | --with-check-tools=* | --with-ftds=[0-9]* | --with-ftds-tls=* \
+      | --with-fastcgi=[0-9]* | --with-bdb=[1-9]* | --with-boost-tag=* \
+      | --with-3psw=* )
       ;;
 
       * )
@@ -2304,6 +2307,7 @@ Optional Packages:
  --without-ftds          do not use FreeTDS libraries
  --with-ftds=DIR         use FreeTDS installation in DIR
  --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS
+ --with-ftds-tls=IMPL    use gnutls/openssl/auto/NONE by built-in FTDS
  --without-mysql         do not use MySQL
  --with-mysql=DIR        use MySQL installation in DIR
  --without-opengl        do not use OpenGL
@@ -5202,6 +5206,12 @@ if test "${with_ftds_renamed+set}" = set; then :
 fi
 
 
+# Check whether --with-ftds-tls was given.
+if test "${with_ftds_tls+set}" = set; then :
+  withval=$with_ftds_tls;
+fi
+
+
 # Check whether --with-mysql was given.
 if test "${with_mysql+set}" = set; then :
   withval=$with_mysql;
@@ -6413,6 +6423,35 @@ case "$with_static_gnutls:$with_gnutls" in
       ;;
    :yes )
       with_static_gnutls=$with_bin_release
+      ;;
+esac
+
+case "$with_ftds_tls" in
+   [Gg][Nn][Uu][Tt][Ll][Ss] )
+      if test "x$with_gnutls" = xno; then
+         as_fn_error $? "incompatible options: --without-gnutls but --with-ftds-tls=$with_ftds_tls" "$LINENO" 5
+      else
+         with_ftds_tls=gnutls # Canonicalize to lowercase
+         with_gnutls=yes
+      fi
+      ;;
+   [Oo][Pp][Ee][Nn][Ss][Ss][Ll] )
+      if test "x$with_openssl" = xno; then
+         as_fn_error $? "incompatible options: --without-openssl but --with-ftds-tls=$with_ftds_tls" "$LINENO" 5
+      else
+         # Already checked for by default, but insist on finding it
+         with_ftds_tls=openssl
+         with_openssl=yes
+      fi
+      ;;
+   [Aa][Uu][Tt][Oo] )
+      with_ftds_tls=auto
+      ;;
+   '' | [Nn][Oo][Nn][Ee] )
+      with_ftds_tls=none
+      ;;
+   * )
+      as_fn_error $? "unsupported --with-ftds-tls=... value $with_ftds_tls" "$LINENO" 5
       ;;
 esac
 
@@ -19058,6 +19097,171 @@ else
 fi
 
 ## SSL/TLS libraries (and supporting libraries)
+if test "$with_openssl" != "no"; then
+    case "$OPENSSL_PATH:$with_openssl" in
+       *:yes | *: | $with_openssl* ) ;;
+       * ) OPENSSL_PATH=$with_openssl ;;
+    esac
+    if test "$OPENSSL_PATH" != /usr -a -d "$OPENSSL_PATH"; then
+       in_path=" in $OPENSSL_PATH"
+       if test -z "$OPENSSL_INCLUDE" -a -d "$OPENSSL_PATH/include"; then
+          OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
+       fi
+       if test -n "$OPENSSL_LIBPATH"; then
+          :
+       elif test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$OPENSSL_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $OPENSSL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $OPENSSL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypto"
+    else
+       OPENSSL_INCLUDE=""
+       OPENSSL_LIBS="-lssl -lcrypto"
+       in_path=
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libssl$in_path" >&5
+$as_echo_n "checking for libssl$in_path... " >&6; }
+if ${ncbi_cv_lib_openssl+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  CPPFLAGS=" $OPENSSL_INCLUDE $orig_CPPFLAGS"
+       LIBS="$OPENSSL_LIBS  $orig_LIBS"
+       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+int
+main ()
+{
+SSL_library_init();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  ncbi_cv_lib_openssl=yes
+else
+  ncbi_cv_lib_openssl=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_openssl" >&5
+$as_echo "$ncbi_cv_lib_openssl" >&6; }
+    if test "$ncbi_cv_lib_openssl" = "no"; then
+       if test "${with_openssl:=no}" != no; then
+       as_fn_error $? "--with-openssl explicitly specified, but no usable version found." "$LINENO" 5
+    fi
+    fi
+ fi
+ if test "$with_openssl" = "no"; then
+    OPENSSL_PATH="No_OPENSSL"
+    OPENSSL_INCLUDE=
+    OPENSSL_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}OPENSSL"; WithPackagesSep=" "
+    OPENSSL_INCLUDE=" $OPENSSL_INCLUDE"
+
+$as_echo "#define HAVE_LIBOPENSSL 1" >>confdefs.h
+
+ fi
+
+
+
+
+OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
+for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
+   /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
+   if test -f $d/libssl.a -a -f $d/libcrypto.a; then
+      OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
+      break
+   elif test -f $d/libssl.so -o -f $d/libssl.dylib; then
+      break
+   fi
+done
+
+if test "$with_openssl" != no; then
+   LIBS="$OPENSSL_LIBS $orig_LIBS"
+   for ac_func in ASN1_STRING_get0_data BIO_get_data RSA_get0_key
+do :
+  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+ac_fn_cxx_check_func "$LINENO" "$ac_func" "$as_ac_var"
+eval as_val=\$$as_ac_var
+   if test "x$as_val" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+   LIBS=$orig_LIBS
+fi
+
+if test "$with_ftds_tls:$with_openssl" = auto:no; then
+   def_with_gnutls=yes
+else
+   def_with_gnutls=no
+fi
+
 if test "x${with_mbedtls-no}" != xno; then
    case "$with_mbedtls" in
       yes ) ;;
@@ -19876,7 +20080,7 @@ else
              WithPackages="$WithPackages${WithPackagesSep}NETTLE"; WithPackagesSep=" "
 fi
 
-case "${with_gnutls=no}" in
+case "${with_gnutls=$def_with_gnutls}" in
    no  ) ac_cv_path_LIBGNUTLS_CONFIG=no ;;
    yes )                                ;;
    *   ) GNUTLS_PATH=$with_gnutls       ;;
@@ -20273,147 +20477,6 @@ done
       GNUTLS_LIBS="$static_libs $ICONV_LIBS"
    fi
 fi
-
-if test "$with_openssl" != "no"; then
-    case "$OPENSSL_PATH:$with_openssl" in
-       *:yes | *: | $with_openssl* ) ;;
-       * ) OPENSSL_PATH=$with_openssl ;;
-    esac
-    if test "$OPENSSL_PATH" != /usr -a -d "$OPENSSL_PATH"; then
-       in_path=" in $OPENSSL_PATH"
-       if test -z "$OPENSSL_INCLUDE" -a -d "$OPENSSL_PATH/include"; then
-          OPENSSL_INCLUDE="-I$OPENSSL_PATH/include"
-       fi
-       if test -n "$OPENSSL_LIBPATH"; then
-          :
-       elif test -d "$OPENSSL_PATH/lib${bit64_sfx}"; then
-          ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $OPENSSL_PATH/lib${bit64_sfx}; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
- fi
-       elif test -d "$OPENSSL_PATH/lib"; then
-          ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $OPENSSL_PATH/lib; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    OPENSSL_LIBPATH="${ncbi_rp_L_flags}"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $OPENSSL_PATH/lib; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    OPENSSL_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
- fi
-       fi
-       OPENSSL_LIBS="$OPENSSL_LIBPATH -lssl -lcrypto"
-    else
-       OPENSSL_INCLUDE=""
-       OPENSSL_LIBS="-lssl -lcrypto"
-       in_path=
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libssl$in_path" >&5
-$as_echo_n "checking for libssl$in_path... " >&6; }
-if ${ncbi_cv_lib_openssl+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  CPPFLAGS=" $OPENSSL_INCLUDE $orig_CPPFLAGS"
-       LIBS="$OPENSSL_LIBS  $orig_LIBS"
-       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <openssl/ssl.h>
-int
-main ()
-{
-SSL_library_init();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  ncbi_cv_lib_openssl=yes
-else
-  ncbi_cv_lib_openssl=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ncbi_cv_lib_openssl" >&5
-$as_echo "$ncbi_cv_lib_openssl" >&6; }
-    if test "$ncbi_cv_lib_openssl" = "no"; then
-       if test "${with_openssl:=no}" != no; then
-       as_fn_error $? "--with-openssl explicitly specified, but no usable version found." "$LINENO" 5
-    fi
-    fi
- fi
- if test "$with_openssl" = "no"; then
-    OPENSSL_PATH="No_OPENSSL"
-    OPENSSL_INCLUDE=
-    OPENSSL_LIBS=
- else
-              WithPackages="$WithPackages${WithPackagesSep}OPENSSL"; WithPackagesSep=" "
-    OPENSSL_INCLUDE=" $OPENSSL_INCLUDE"
-
-$as_echo "#define HAVE_LIBOPENSSL 1" >>confdefs.h
-
- fi
-
-
-
-
-OPENSSL_STATIC_LIBS=$OPENSSL_LIBS
-for d in `echo " $OPENSSL_LIBS" | fmt -w 1 | sed -ne 's/^ *-L//p'` \
-   /usr/local/lib${bit64_sfx} /usr/local/lib /usr/lib${bit64_sfx} /usr/lib; do
-   if test -f $d/libssl.a -a -f $d/libcrypto.a; then
-      OPENSSL_STATIC_LIBS="$d/libssl.a $d/libcrypto.a"
-      break
-   elif test -f $d/libssl.so -o -f $d/libssl.dylib; then
-      break
-   fi
-done
 
 NETWORK_LIBS="$GNUTLS_LIBS $MBEDTLS_LIBS $NETWORK_LIBS"
 
@@ -21253,6 +21316,28 @@ if test "$with_ftds" != "no" ; then
          try_local=no
          ;;
    esac
+   FTDS_TLS_INCLUDE=
+   # Already canonicalized to lowercase
+   case "$with_ftds_tls::$OPENSSL_LIBS::$GNUTLS_LIBS" in
+      openssl::* | auto::?*::* )
+         FTDS_TLS_INCLUDE="$OPENSSL_INCLUDE"
+         FTDS_TLS_LIBS="$OPENSSL_LIBS"
+
+$as_echo "#define NCBI_FTDS_USES_OPENSSL 1" >>confdefs.h
+
+         ;;
+      gnutls::* | auto::*::?* )
+         FTDS_TLS_INCLUDE="$GNUTLS_INCLUDE"
+         FTDS_TLS_LIBS="$GNUTLS_LIBS"
+
+$as_echo "#define NCBI_FTDS_USES_GNUTLS 1" >>confdefs.h
+
+         ;;
+      auto::* )
+         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: No supported TLS implementation available for --with-ftds-tls=auto" >&5
+$as_echo "$as_me: WARNING: No supported TLS implementation available for --with-ftds-tls=auto" >&2;}
+         ;;
+   esac
    : ${FTDS_CTLIBS:="-lct -ltds $NETWORK_LIBS"}
    ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
@@ -21290,6 +21375,7 @@ if test "$with_ftds" != "no" ; then
          test "$ftds_ver" = 100  &&  FTDS_PATH="<$d>"
          FTDS100_CTLIB_LIB="ct_ftds100${STATIC} tds_ftds100${STATIC}"
          FTDS100_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
+	 FTDS100_CTLIB_LIBS="$FTDS_TLS_LIBS $FTDS100_CTLIB_LIBS"
          FTDS100_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
@@ -21306,6 +21392,7 @@ if test "$with_ftds" != "no" ; then
          test "$ftds_ver" = 14  &&  FTDS_PATH="<$d>"
          FTDS14_CTLIB_LIB="ct_ftds14${STATIC} tds_ftds14${STATIC}"
          FTDS14_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS) $(NETWORK_LIBS)'
+	 FTDS14_CTLIB_LIBS="$FTDS_TLS_LIBS $FTDS14_CTLIB_LIBS"
          FTDS14_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
          freetds=freetds
       elif test -d "$FTDS_PATH" ; then
@@ -21399,6 +21486,7 @@ $as_echo "#define HAVE_LIBFTDS 1" >>confdefs.h
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
+
 
 
 
@@ -38396,7 +38484,7 @@ for x in ChaosMonkey Int4GI Int8GI StrictGI StrictEntrezID StrictTaxID BM64 GCC 
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 wxMedia Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C HIREDIS THRIFT APACHE_ARROW LIBRDKAFKA CPPKAFKA NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY GOOGLE_CLOUD TBB IPS4O; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO ZSTD PCRE PCRE2 LocalPCRE OPENSSL MBEDTLS GMP GCRYPT NETTLE GNUTLS KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Serialization Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit NCBICRYPT OpenGL MESA GLUT GLEW wxWidgets wx2.8 wxMedia Fast-CGI FASTCGIPP LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB NGS OECHEM SGE DRMAA2 MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 LEVELDB LIBURING ROCKSDB GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH LIBSSH2 CASSANDRA NGHTTP2 H2O INFLUXDB LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK CRC32C HIREDIS THRIFT APACHE_ARROW LIBRDKAFKA CPPKAFKA NLohmann_JSON YAML_CPP OPENTRACING JAEGER OPENTELEMETRY GOOGLE_CLOUD TBB IPS4O; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"

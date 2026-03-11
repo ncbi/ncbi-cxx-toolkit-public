@@ -757,6 +757,18 @@ NCBIcomponent_report(PERL)
 # OpenSSL
 NCBI_define_Xcomponent(NAME OpenSSL MODULE openssl PACKAGE OpenSSL LIB ssl crypto CHECK_INCLUDE openssl/ssl.h)
 NCBIcomponent_report(OpenSSL)
+if(NCBI_COMPONENT_OpenSSL_FOUND)
+    set(saved_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES})
+    set(saved_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+    set(CMAKE_REQUIRED_INCLUDES  ${NCBI_COMPONENT_OpenSSL_INCLUDE})
+    set(CMAKE_REQUIRED_LIBRARIES ${NCBI_COMPONENT_OpenSSL_LIBS})
+    check_symbol_exists(ASN1_STRING_get0_data "openssl/ssl.h"
+                   HAVE_ASN1_STRING_GET0_DATA)
+    check_symbol_exists(BIO_get_data "openssl/ssl.h" HAVE_BIO_GET_DATA)
+    check_symbol_exists(RSA_get0_key "openssl/ssl.h" HAVE_RSA_GET0_KEY)
+    set(CMAKE_REQUIRED_INCLUDES  ${saved_REQUIRED_INCLUDES})
+    set(CMAKE_REQUIRED_LIBRARIES ${saved_REQUIRED_LIBRARIES})
+endif()
 
 #############################################################################
 # MSGSL  (Microsoft Guidelines Support Library)
@@ -886,6 +898,20 @@ if(NOT NCBI_COMPONENT_GNUTLS_DISABLED)
       ADD_COMPONENT NETTLE IDN Z ZSTD)
 endif()
 NCBIcomponent_report(GNUTLS)
+if(NCBI_COMPONENT_GNUTLS_FOUND)
+    set(saved_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES})
+    set(saved_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+    set(CMAKE_REQUIRED_INCLUDES  ${NCBI_COMPONENT_GNUTLS_INCLUDE})
+    set(CMAKE_REQUIRED_LIBRARIES ${NCBI_COMPONENT_GNUTLS_LIBS})
+    check_symbol_exists(gnutls_certificate_set_verify_function "gnutls/gnutls.h"
+                   HAVE_GNUTLS_CERTIFICATE_SET_VERIFY_FUNCTION)
+    check_symbol_exists(gnutls_record_disable_padding "gnutls/gnutls.h"
+                   HAVE_GNUTLS_RECORD_DISABLE_PADDING)
+    check_symbol_exists(gnutls_rnd "gnutls/crypto.h" HAVE_GNUTLS_RND)
+    check_include_file("gnutls/abstract.h" HAVE_GNUTLS_ABSTRACT_H)
+    set(CMAKE_REQUIRED_INCLUDES  ${saved_REQUIRED_INCLUDES})
+    set(CMAKE_REQUIRED_LIBRARIES ${saved_REQUIRED_LIBRARIES})
+endif()
 
 #############################################################################
 # NCBICRYPT

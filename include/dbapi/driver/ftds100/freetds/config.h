@@ -95,14 +95,10 @@
 typedef int socklen_t;
 #endif
 
-#if 0 /* Avoid extra dependencies, not needed in-house */
-#  ifdef HAVE_LIBGNUTLS
-#    define HAVE_GNUTLS 1
-#  endif
-
-#  ifdef HAVE_LIBOPENSSL
-#    define HAVE_OPENSSL 1
-#  endif
+#if defined(HAVE_LIBGNUTLS)  &&  defined(NCBI_FTDS_USES_GNUTLS)
+#  define HAVE_GNUTLS 1
+#elif defined(HAVE_LIBOPENSSL)  &&  defined(NCBI_FTDS_USES_OPENSSL)
+#  define HAVE_OPENSSL 1
 #endif
 
 #ifdef NCBI_HAVE_READDIR_R

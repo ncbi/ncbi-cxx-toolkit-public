@@ -14,7 +14,7 @@ SRC = mem token util login read write convert numeric config query iconv \
       ../utils/tdsstring ut_net ../utils/smp
 
 CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS14_INCLUDE) \
-           $(ORIG_CPPFLAGS)
+           $(FTDS_TLS_INCLUDE) $(ORIG_CPPFLAGS)
 
 # LIBS    = $(FTDS14_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 # LINK    = $(C_LINK)

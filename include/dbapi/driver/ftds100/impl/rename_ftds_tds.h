@@ -300,7 +300,7 @@
 #endif
 #define tds_socket_set_nonblocking      tds_socket_set_nonblocking_ver100
 #define tds_srv_charset_changed         tds_srv_charset_changed_ver100
-#ifdef NCBI_FTDS_ALLOW_TDS_80
+#if defined(HAVE_GNUTLS)  ||  defined(HAVE_OPENSSL)
 #  define tds_ssl_deinit                  tds_ssl_deinit_ver100
 #  define tds_ssl_init                    tds_ssl_init_ver100
 #endif
