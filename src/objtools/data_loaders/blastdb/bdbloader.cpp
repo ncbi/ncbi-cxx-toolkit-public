@@ -147,8 +147,9 @@ CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
     m_DbType = SeqTypeToDbType(db_handle->GetSequenceType());
 }
 
-static const string kPrefix = "BLASTDB_";
-static const string kPrefixThread = kPrefix + "THREAD";
+static const std::string_view kPrefix = "BLASTDB_";
+static const std::string_view kPrefixThread = kPrefix + "THREAD";
+
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
 	int t_id = CThread::GetSelf();
@@ -359,7 +360,7 @@ void CBlastDbDataLoader::GetSequenceTypes(const CDataLoader::TIds& ids, TLoaded&
 
 void CBlastDbDataLoader::GetChunk(TChunk chunk)
 {
-    static const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
+    const CTSE_Chunk_Info::TBioseq_setId kIgnored = 0;
     _ASSERT(!chunk->IsLoaded());
     int oid = x_GetOid(chunk->GetBlobId());
 
