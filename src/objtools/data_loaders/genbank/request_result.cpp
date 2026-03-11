@@ -46,7 +46,6 @@ BEGIN_SCOPE(objects)
 
 using namespace GBL;
 
-static const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
 
 NCBI_PARAM_DECL(int, GENBANK, TRACE_LOAD);
 NCBI_PARAM_DEF_EX(int, GENBANK, TRACE_LOAD, 0,
@@ -422,6 +421,8 @@ CTSE_LoadLock& CLoadLockBlob::GetTSE_LoadLock(void)
 
 CLoadLockBlob::TBlobVersion CLoadLockBlob::GetKnownBlobVersion(void) const
 {
+    const CReaderRequestResult::TBlobVersion kBlobVersionNotSet = -1;
+
     if ( !m_TSE_LoadLock ) {
         return kBlobVersionNotSet;
     }
