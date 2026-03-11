@@ -49,7 +49,7 @@ class CReader;
 #define DEFAULT_OPEN_TIMEOUT_MULTIPLIER  1.5
 #define DEFAULT_OPEN_TIMEOUT_INCREMENT  0
 
-static CIncreasingTime::SAllParams s_OpenTimeoutParams = {
+static CIncreasingTime::SAllParams s_OpenTimeoutParams = { /* NCBI_SAFE_STATIC */
     {
         NCBI_GBLOADER_READER_PARAM_OPEN_TIMEOUT,
         0,

@@ -85,7 +85,7 @@ CReader::CDebugPrinter::~CDebugPrinter()
 #define DEFAULT_WAIT_TIME_INCREMENT 1
 #define DEFAULT_WAIT_TIME_MAX 30
 
-static CIncreasingTime::SAllParams s_WaitTimeParams = {
+static CIncreasingTime::SAllParams s_WaitTimeParams = { /* NCBI_SAFE_STATIC */
     {
         NCBI_GBLOADER_READER_PARAM_WAIT_TIME,
         0,
