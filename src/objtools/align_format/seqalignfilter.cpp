@@ -662,7 +662,7 @@ CRef<CSeq_align_set> CSeqAlignFilter::FilterBySeqDB(const CSeq_align_set& seqali
     return new_aln;
 }
 
-bool static s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
+static bool s_IncludeDeflineTaxid(const CBlast_def_line & def, const set<TTaxId> & user_tax_ids)
 {
     CBlast_def_line::TTaxIds tax_ids;
     if (def.IsSetTaxid()) {
