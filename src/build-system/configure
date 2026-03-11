@@ -20175,6 +20175,8 @@ $as_echo "#define HAVE_LIBGNUTLS 1" >>confdefs.h
 
 
 if test "x$with_gnutls" != xno; then
+   LIBS="$GNUTLS_LIBS $orig_LIBS"
+   CPPFLAGS="$GNUTLS_CPPFLAGS $orig_CPPFLAGS"
    for ac_func in gnutls_certificate_set_verify_function \
                    gnutls_record_disable_padding gnutls_rnd
 do :
@@ -20201,6 +20203,8 @@ fi
 
 done
 
+   LIBS=$orig_LIBS
+   CPPFLAGS=$orig_CPPFLAGS
    if test -n "$GNUTLS_CONFIG_LIBS"; then
       if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     GNUTLS_LIBS=`echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`
@@ -20609,6 +20613,8 @@ $as_echo "#define HAVE_LIBKRB5 1" >>confdefs.h
 
 
 if test "x$with_krb5" != xno; then
+   LIBS="$KRB5_LIBS $orig_LIBS"
+   CPPFLAGS="$KRB5_CPPFLAGS $orig_CPPFLAGS"
    for ac_func in error_message
 do :
   ac_fn_cxx_check_func "$LINENO" "error_message" "ac_cv_func_error_message"
@@ -20634,6 +20640,8 @@ fi
 
 done
 
+   LIBS=$orig_LIBS
+   CPPFLAGS=$orig_CPPFLAGS
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     KRB5_LIBS=`echo $KRB5_CONFIG_LIBS | sed -e "$no_usr_lib"`
  else
