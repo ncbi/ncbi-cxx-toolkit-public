@@ -1,3 +1,6 @@
+Version 1.27.1 (2026-03-11):
+* Fix crashes that could occur when encountering errors under Python 3.13.
+
 Version 1.27.0 (2025-08-14):
 * Advance to GCC 13.2 and to version 29.0 of the stable C++ Toolkit
   components, notably switching the default "ftds" driver to version
