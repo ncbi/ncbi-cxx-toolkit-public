@@ -5182,9 +5182,13 @@ NCBI_CHECK_THIRD_PARTY_LIB(gnutls,
    [[gnutls_session_t s; gnutls_init(&s, GNUTLS_CLIENT);]])],
  [$GNUTLS_CONFIG_LIBS], [$GCRYPT_LIBS $NETTLE_LIBS $GMP_LIBS])
 if test "x$with_gnutls" != xno; then
+   LIBS="$GNUTLS_LIBS $orig_LIBS"
+   CPPFLAGS="$GNUTLS_CPPFLAGS $orig_CPPFLAGS"
    AC_CHECK_FUNCS([gnutls_certificate_set_verify_function \
                    gnutls_record_disable_padding gnutls_rnd])
    AC_CHECK_HEADERS([gnutls/abstract.h])
+   LIBS=$orig_LIBS
+   CPPFLAGS=$orig_CPPFLAGS
    if test -n "$GNUTLS_CONFIG_LIBS"; then
       NCBI_RPATHIFY_OUTPUT(GNUTLS_LIBS, [echo $GNUTLS_CONFIG_LIBS],
          [$no_usr_lib])
@@ -5277,8 +5281,12 @@ extern "C" {
      gss_release_buffer(&min_stat, &buf);]])],
  $KRB5_CONFIG_LIBS)
 if test "x$with_krb5" != xno; then
+   LIBS="$KRB5_LIBS $orig_LIBS"
+   CPPFLAGS="$KRB5_CPPFLAGS $orig_CPPFLAGS"
    AC_CHECK_FUNCS([error_message])
    AC_CHECK_HEADERS([com_err.h roken.h])
+   LIBS=$orig_LIBS
+   CPPFLAGS=$orig_CPPFLAGS
    NCBI_RPATHIFY_OUTPUT(KRB5_LIBS, [echo $KRB5_CONFIG_LIBS], [$no_usr_lib])
 fi
 
