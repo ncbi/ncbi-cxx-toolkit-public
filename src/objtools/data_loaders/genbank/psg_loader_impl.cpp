@@ -85,7 +85,7 @@ const unsigned int kDefaultBulkRetryCount = 8;
 #define DEFAULT_WAIT_TIME_INCREMENT 1
 #define DEFAULT_WAIT_TIME_MAX 30
 
-static CIncreasingTime::SAllParams s_WaitTimeParams = {
+static CIncreasingTime::SAllParams s_WaitTimeParams = { /* NCBI_SAFE_STATIC */
     {
         "wait_time",
         0,

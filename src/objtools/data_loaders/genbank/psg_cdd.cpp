@@ -62,8 +62,7 @@ BEGIN_NAMESPACE(psgl);
 /////////////////////////////////////////////////////////////////////////////
 
 
-bool s_GetBlobByIdShouldFail = false;
-
+static bool s_GetBlobByIdShouldFail = false;
 
 NCBI_PARAM_DECL(unsigned, PSG_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(unsigned, PSG_LOADER, DEBUG, 1,
@@ -72,7 +71,7 @@ typedef NCBI_PARAM_TYPE(PSG_LOADER, DEBUG) TPSG_Debug;
 
 unsigned s_GetDebugLevel()
 {
-    static auto value = TPSG_Debug::GetDefault();
+    static auto value = TPSG_Debug::GetDefault(); /* NCBI_SAFE_STATIC */
     return value;
 }
 
