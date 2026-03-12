@@ -1807,7 +1807,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                        &&  ctre::match<kSPishPIR>(main_acc)) {
                 // PIR vs. Swissprot; 25 PIR accessions, 3 overlaps as
                 // of 2026-02-25.
-                return eAcc_unknown;
+                return eAcc_unreserved_prot;
             }
         }
         if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
