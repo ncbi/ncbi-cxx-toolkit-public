@@ -6848,6 +6848,8 @@ special2 CEOTQB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQLVA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQLVJ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQLVO+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQLWP+9 embl_tpa_wgs_nuc
@@ -6856,10 +6858,12 @@ special2 CEQLWS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQLWV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQLXC+9 embl_tpa_wgs_nuc
+special2 CEQLWZ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CEQLXB000000000-CEQLXC999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQLXG+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CEQLXN000000000-CEQLXO999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQLXQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQLXW+9 embl_tpa_wgs_nuc
@@ -6870,18 +6874,30 @@ special2 CEQLYQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQLZW+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQMAI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQMAO+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQMAQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQMBA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQMBF+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQMBK000000000-CEQMBL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQMBO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQMBQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQMCI+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQMCO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQMDA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEQMDC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEQMDH+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQMDM+9 embl_tpa_wgs_nuc
 : 000000000-999999999
@@ -6893,8 +6909,7 @@ special2 CEQMDX+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQMDZ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQMEB000000000-CEQMED999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQMEF000000000-CEQMEG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQMEB000000000-CEQMEG999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMFK+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQMFM000000000-CEQMFN999999999  embl_tpa_wgs_nuc # 6+9
@@ -6922,7 +6937,11 @@ special  CEQMIH000000000-CEQMII999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQMIK000000000-CEQMIM999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMIO+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQMIX000000000-CEQMIZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQMIQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEQMIV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEQMIX000000000-CEQMJA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMJE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQMJJ+9 embl_tpa_wgs_nuc
@@ -6942,51 +6961,43 @@ special2 CEQMKP+9 embl_tpa_wgs_nuc
 special  CEQMKR000000000-CEQMKT999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMKV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQMLA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQMKZ000000000-CEQMLA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMLS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQMLW000000000-CEQMLY999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQMMQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNCI000000000-CEQNCJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNCN000000000-CEQNCO999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNCQ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNCS000000000-CEQNCU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNCW000000000-CEQNDA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNCL000000000-CEQNCQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNCS000000000-CEQNDB999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNDD+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNDG000000000-CEQNDH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNDJ000000000-CEQNDK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNDJ000000000-CEQNDL999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNDN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNDP000000000-CEQNDT999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNDW000000000-CEQNDY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNDV000000000-CEQNDZ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNEB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQNEE000000000-CEQNEJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNED000000000-CEQNEJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNEM000000000-CEQNES999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNEV000000000-CEQNEX999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNEZ000000000-CEQNFC999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNFF000000000-CEQNFG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNFI000000000-CEQNFK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNFF000000000-CEQNFK999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNFM000000000-CEQNFR999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNFU000000000-CEQNFV999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNFY000000000-CEQNGD999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNGG000000000-CEQNGJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNGF000000000-CEQNGJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNGO000000000-CEQNGR999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNGU000000000-CEQNGV999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNGZ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQNHD+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNHC000000000-CEQNHD999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNHH+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQNHJ000000000-CEQNHO999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNHQ000000000-CEQNHR999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNHT000000000-CEQNHV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNHX000000000-CEQNHZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNHJ000000000-CEQNHR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNHT000000000-CEQNHZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNIB000000000-CEQNIG999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNII000000000-CEQNIJ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNIL+9 embl_tpa_wgs_nuc
@@ -6995,73 +7006,46 @@ special2 CEQNIN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNIP000000000-CEQNIS999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNIU000000000-CEQNIV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNIX000000000-CEQNJE999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNJG+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNJJ000000000-CEQNJP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNIX000000000-CEQNJG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNJI000000000-CEQNJP999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNJR000000000-CEQNJU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNJW000000000-CEQNKC999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNKE000000000-CEQNKR999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNKT000000000-CEQNLA999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNLD+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNJW000000000-CEQNLA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNLC000000000-CEQNLD999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNLF000000000-CEQNLG999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNLI+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNLK000000000-CEQNLM999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNLO000000000-CEQNLQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNLS000000000-CEQNLU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNLX000000000-CEQNLY999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNMB+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNMD000000000-CEQNMG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNLI000000000-CEQNLQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNLS000000000-CEQNLY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNMB000000000-CEQNMG999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNMI+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNMK000000000-CEQNMM999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNMR000000000-CEQNMS999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNMU000000000-CEQNMV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNMX000000000-CEQNMY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNMX000000000-CEQNMZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNNG000000000-CEQNNM999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNNP000000000-CEQNNU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNOA000000000-CEQNOT999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNOV000000000-CEQNOY999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNPA000000000-CEQNPF999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNPH000000000-CEQNPM999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNPO000000000-CEQNPW999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNPY000000000-CEQNQH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNQJ000000000-CEQNQO999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNQQ000000000-CEQNQS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNQU000000000-CEQNRC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNNZ000000000-CEQNOT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNOV000000000-CEQNPM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNPO000000000-CEQNRC999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNRE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQNRG+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNRI000000000-CEQNRJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNRL000000000-CEQNRR999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNRT000000000-CEQNRX999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNRZ000000000-CEQNSD999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNSG+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNRL000000000-CEQNSD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNSF000000000-CEQNSG999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNSI000000000-CEQNSJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNSL000000000-CEQNSN999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNSP+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQNSU000000000-CEQNSV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNSU000000000-CEQNSW999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNSY000000000-CEQNSZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNTB000000000-CEQNTE999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNTG+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNTI000000000-CEQNTS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNTU000000000-CEQNUB999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNUD000000000-CEQNUG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNUI000000000-CEQNUK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNTB000000000-CEQNTG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNTI000000000-CEQNUK999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNUM000000000-CEQNUQ999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNUS+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNUS000000000-CEQNUT999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNUX+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQNVA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNVA000000000-CEQNVB999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNVG+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQNVM+9 embl_tpa_wgs_nuc
@@ -7071,9 +7055,8 @@ special2 CEQNVO+9 embl_tpa_wgs_nuc
 special2 CEQNVS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQNVU000000000-CEQNWG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNWK000000000-CEQNWO999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNWQ000000000-CEQNWV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNWX000000000-CEQNWZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNWI000000000-CEQNWO999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNWQ000000000-CEQNWZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNXB000000000-CEQNXC999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQNXE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
@@ -7083,146 +7066,78 @@ special2 CEQNXU+9 embl_tpa_wgs_nuc
 special  CEQNXW000000000-CEQNXY999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNYA000000000-CEQNYB999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQNYD000000000-CEQNYM999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQNYP+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQNYR000000000-CEQNYT999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNYV000000000-CEQNZG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQNZI000000000-CEQOAE999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOAG000000000-CEQOAN999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOAP000000000-CEQOAY999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOBA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQNYP000000000-CEQNZG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQNZI000000000-CEQOBA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOBG+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOBJ000000000-CEQOBK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOBJ000000000-CEQOBM999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOBO+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOBR+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOBQ000000000-CEQOBR999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOBT+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOBV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOBX+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOCA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOCC000000000-CEQOCD999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOCF000000000-CEQOCI999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOCK000000000-CEQOCL999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOCN000000000-CEQOCO999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOCQ000000000-CEQOCV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOCY000000000-CEQOCZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQODB000000000-CEQODE999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQODH+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQODJ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQODL000000000-CEQODM999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQODO+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOBV000000000-CEQOBX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOCA000000000-CEQODP999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQODR000000000-CEQODU999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOEA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOED+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOEI+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQODY000000000-CEQOED999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOEG000000000-CEQOEI999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOEK000000000-CEQOEN999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOEP000000000-CEQOEQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOES000000000-CEQOEW999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOEY+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOEP000000000-CEQOEW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOEY000000000-CEQOEZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOFC000000000-CEQOFE999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOFG000000000-CEQOFH999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOFK+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOFK000000000-CEQOFL999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOFN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOFP000000000-CEQOFT999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOFV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOFP000000000-CEQOFV999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOFX000000000-CEQOGE999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOGH000000000-CEQOGL999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOGN000000000-CEQOGS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOGU000000000-CEQOGX999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOGZ000000000-CEQOHA999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOHC000000000-CEQOHO999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOHR000000000-CEQOHT999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOHY000000000-CEQOIA999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOIC000000000-CEQOIE999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOIG000000000-CEQOIK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOGH000000000-CEQOHT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOHW000000000-CEQOIA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOIC000000000-CEQOIK999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOIM000000000-CEQOIN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQOIP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQOIR+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOIT000000000-CEQOIU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOIW000000000-CEQOJB999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOJD000000000-CEQOJH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOJL000000000-CEQOJN999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOJP000000000-CEQOJV999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOJX+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOJZ000000000-CEQOKA999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOKC000000000-CEQOKD999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOKF000000000-CEQOLB999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOLF+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOLH+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOLJ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQOLL+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOLO000000000-CEQOLR999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOLT000000000-CEQOLV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOLY000000000-CEQOLZ999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOMB+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOMD000000000-CEQOMF999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOMH+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOIT000000000-CEQOJB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOJD000000000-CEQOJI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOJK000000000-CEQOJN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOJP000000000-CEQOKA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOKC000000000-CEQOLW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOLY000000000-CEQOMB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOMD000000000-CEQOMH999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOMJ000000000-CEQOMM999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOMQ000000000-CEQOMS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOMO000000000-CEQOMT999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOMW+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQONA000000000-CEQONC999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQONG000000000-CEQONL999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQONN000000000-CEQONP999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQONR000000000-CEQONW999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQONZ+9 embl_tpa_wgs_nuc
+special  CEQOMY000000000-CEQONC999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQONE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CEQONG000000000-CEQONP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQONR000000000-CEQONX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQONZ000000000-CEQOOA999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOOC000000000-CEQOOJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOOO000000000-CEQOOR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOOL000000000-CEQOOR999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOOV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOOY000000000-CEQOPE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOOY000000000-CEQOPF999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOPH+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOPJ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOPN000000000-CEQOPU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOPW000000000-CEQOPY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOPJ000000000-CEQOPL999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOPN000000000-CEQOPY999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOQA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQOQC000000000-CEQOQF999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOQH000000000-CEQOQM999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOQO000000000-CEQOQP999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOQR+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOQV000000000-CEQOQZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOQO000000000-CEQOQR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOQU000000000-CEQOQZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQORB000000000-CEQORC999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQORF000000000-CEQORJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQORL000000000-CEQORY999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOSA000000000-CEQOSH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOSJ000000000-CEQOSR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQORL000000000-CEQOSR999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOST000000000-CEQOSX999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOSZ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOTB000000000-CEQOTC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOSZ000000000-CEQOTC999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOTG000000000-CEQOTK999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOTM+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOTO000000000-CEQOTQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOTM000000000-CEQOTQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOTV000000000-CEQOTY999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOUB000000000-CEQOUC999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOUE+9 embl_tpa_wgs_nuc
@@ -7233,11 +7148,10 @@ special2 CEQOUM+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQOUS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOUW+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOUV000000000-CEQOUW999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOVB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOVF000000000-CEQOVH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOVD000000000-CEQOVH999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOVJ000000000-CEQOVK999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOVM000000000-CEQOVN999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOVP000000000-CEQOVQ999999999  embl_tpa_wgs_nuc # 6+9
@@ -7247,50 +7161,36 @@ special  CEQOVV000000000-CEQOVX999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOWA000000000-CEQOWC999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOWE000000000-CEQOWF999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOWH000000000-CEQOWJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOWO000000000-CEQOWQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOWS000000000-CEQOXC999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOXE+9 embl_tpa_wgs_nuc
+special2 CEQOWL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOXH000000000-CEQOXJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOXN000000000-CEQOXS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOXU000000000-CEQOXV999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOXX000000000-CEQOYA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOWO000000000-CEQOWQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOWS000000000-CEQOYA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOYC+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOYE+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOYE000000000-CEQOYF999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQOYH000000000-CEQOYL999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOYN000000000-CEQOYQ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQOYS000000000-CEQOYT999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOYV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQOYX000000000-CEQOYZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOYN000000000-CEQOYT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOYV000000000-CEQOYZ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOZB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQOZD+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQOZF+9 embl_tpa_wgs_nuc
+special  CEQOZF000000000-CEQOZJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQOZL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOZH000000000-CEQOZJ999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQOZN+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQOZN000000000-CEQOZO999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQOZQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEQOZS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQOZV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQOZX000000000-CEQOZY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQOZX000000000-CEQOZZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPAE000000000-CEQPAJ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPAL000000000-CEQPAM999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPAO000000000-CEQPAQ999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQPAT+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQPAV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQPAX000000000-CEQPBD999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPBF000000000-CEQPBG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPBI000000000-CEQPBP999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPBR000000000-CEQPBS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPBU000000000-CEQPBX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPAT000000000-CEQPBP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPBR000000000-CEQPBY999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPCA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPCC000000000-CEQPCD999999999  embl_tpa_wgs_nuc # 6+9
@@ -7305,6 +7205,8 @@ special  CEQPCT000000000-CEQPCU999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPCW+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPCY000000000-CEQPCZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQPDE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQPDH+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPDZ+9 embl_tpa_wgs_nuc
@@ -7325,8 +7227,7 @@ special2 CEQPGK+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPGO000000000-CEQPGP999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPGR000000000-CEQPGS999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQPGU+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPGU000000000-CEQPGV999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPGX+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPHA+9 embl_tpa_wgs_nuc
@@ -7339,10 +7240,10 @@ special2 CEQPHT+9 embl_tpa_wgs_nuc
 special  CEQPHY000000000-CEQPIA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPID+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQPIG+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPIG000000000-CEQPIH999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPIK+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CEQPIM000000000-CEQPIN999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPIR+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPIT+9 embl_tpa_wgs_nuc
@@ -7351,21 +7252,19 @@ special2 CEQPIV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPIZ000000000-CEQPJA999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPJD000000000-CEQPJE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQPJM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CEQPJP000000000-CEQPJR999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPJU+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQPJX+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQPJZ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPJX000000000-CEQPJZ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPKB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPKH+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPKL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQPKR+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPKQ000000000-CEQPKR999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPKT+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPKX+9 embl_tpa_wgs_nuc
@@ -7394,7 +7293,7 @@ special2 CEQPME+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPMJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQPML000000000-CEQPMM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPML000000000-CEQPMN999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPNB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPNG+9 embl_tpa_wgs_nuc
@@ -7432,13 +7331,19 @@ special2 CEQPQS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPRD+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQPRT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEQPSA+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQPSF+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPSI+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPSL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQPSR000000000-CEQPSS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQPSO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEQPSQ000000000-CEQPSS999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPSU+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPSW+9 embl_tpa_wgs_nuc
@@ -7449,24 +7354,18 @@ special2 CEQPTC+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPTF+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQPTQ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQPTT000000000-CEQPTW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPTQ000000000-CEQPTW999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPUD+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQPUH+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPUH000000000-CEQPUI999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPUN000000000-CEQPUQ999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQPUU+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQPUW000000000-CEQPVC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPUT000000000-CEQPVC999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPVF+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQPVH000000000-CEQPVJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPVH000000000-CEQPVK999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPVN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQPVQ000000000-CEQPVR999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPVT000000000-CEQPVY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPVP000000000-CEQPVY999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPWA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPWD000000000-CEQPWH999999999  embl_tpa_wgs_nuc # 6+9
@@ -7479,41 +7378,38 @@ special2 CEQPWY+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQPXA+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQPXC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CEQPXH000000000-CEQPXI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQPXU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special  CEQPXW000000000-CEQPXX999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPYB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQPYH000000000-CEQPYM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPYG000000000-CEQPYM999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPYO000000000-CEQPYR999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQPYT000000000-CEQPYX999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQPZB000000000-CEQPZF999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQPZH+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQPZJ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQPZA000000000-CEQPZF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQPZH000000000-CEQPZJ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPZL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQPZN000000000-CEQPZO999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQPZU+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQAO+9 embl_tpa_wgs_nuc
+special  CEQQAO000000000-CEQQAP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQAR000000000-CEQQAX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQQBB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQAR000000000-CEQQAS999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQAU000000000-CEQQAX999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQBD+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQBG+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQBJ000000000-CEQQBK999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQQBO+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQQBQ+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQQBO000000000-CEQQBQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQBS000000000-CEQQBT999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQBV000000000-CEQQBX999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQBZ000000000-CEQQCA999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQCC000000000-CEQQCF999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQCH000000000-CEQQCI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQCC000000000-CEQQCI999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQCL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQCN+9 embl_tpa_wgs_nuc
@@ -7528,6 +7424,7 @@ special2 CEQQDC+9 embl_tpa_wgs_nuc
 special  CEQQDE000000000-CEQQDF999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQDS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special  CEQQEA000000000-CEQQEB999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQEE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQEH+9 embl_tpa_wgs_nuc
@@ -7536,39 +7433,31 @@ special2 CEQQEJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQEQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQEX000000000-CEQQEZ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQFB000000000-CEQQFE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQEX000000000-CEQQFE999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQFJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQFL000000000-CEQQFN999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQFQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQFT+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQQFS000000000-CEQQFT999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQFV+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQGA000000000-CEQQGE999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQGH000000000-CEQQGJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQGG000000000-CEQQGJ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQGL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQGO+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQQGQ000000000-CEQQGT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQGO000000000-CEQQGT999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQGV000000000-CEQQGW999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQGY+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQHA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQQHC+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQQHG000000000-CEQQHH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQHA000000000-CEQQHC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQHF000000000-CEQQHH999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQHL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQHN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQHQ000000000-CEQQHS999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQQHV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQQHP000000000-CEQQHS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQHU000000000-CEQQHV999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQHY000000000-CEQQIA999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQIE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
@@ -7580,31 +7469,29 @@ special2 CEQQIQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQIS+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQIW000000000-CEQQIY999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQJA000000000-CEQQJC999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQJF000000000-CEQQJG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQJI000000000-CEQQJJ999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQJN000000000-CEQQJQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQIW000000000-CEQQJC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQJF000000000-CEQQJJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQJM000000000-CEQQJQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQJT000000000-CEQQJU999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQJW+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQKC000000000-CEQQKE999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQQKG+9 embl_tpa_wgs_nuc
+special2 CEQQJY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEQQKC000000000-CEQQKG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQQKI+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQKL+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQKR+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQQKT000000000-CEQQKU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQKR000000000-CEQQKU999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQKZ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQLE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQLK+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQLQ000000000-CEQQLV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQLP000000000-CEQQLV999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQLY000000000-CEQQMB999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQME000000000-CEQQMH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQMD000000000-CEQQMH999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQMJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQML+9 embl_tpa_wgs_nuc
@@ -7613,16 +7500,13 @@ special2 CEQQMN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQMQ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQMV000000000-CEQQMW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQMV000000000-CEQQMX999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQNA000000000-CEQQND999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQNJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQNN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQNR000000000-CEQQNX999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQOA000000000-CEQQOB999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQOD000000000-CEQQOH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQOJ000000000-CEQQOK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQNQ000000000-CEQQOK999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQOW+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQPQ+9 embl_tpa_wgs_nuc
@@ -7631,16 +7515,15 @@ special2 CEQQPZ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQQB+9 embl_tpa_wgs_nuc
 : 000000000-999999999
+special2 CEQQQH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
 special2 CEQQQJ+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQQM+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQQR000000000-CEQQQS999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQQQV+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special2 CEQQQX+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQQRA000000000-CEQQRB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQQV000000000-CEQQQX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQQZ000000000-CEQQRB999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQRE+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQRP000000000-CEQQRQ999999999  embl_tpa_wgs_nuc # 6+9
@@ -7654,18 +7537,15 @@ special2 CEQQSJ+9 embl_tpa_wgs_nuc
 special2 CEQQSP+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special  CEQQSR000000000-CEQQST999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQSW000000000-CEQQSX999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQTB000000000-CEQQTC999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQTF000000000-CEQQTG999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQTI000000000-CEQQTK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQSV000000000-CEQQSX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEQQSZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEQQTB000000000-CEQQTD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQTF000000000-CEQQTK999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQTN+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special2 CEQQTP+9 embl_tpa_wgs_nuc
-: 000000000-999999999
-special  CEQQTR000000000-CEQQTU999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQTW000000000-CEQQTY999999999  embl_tpa_wgs_nuc # 6+9
-special2 CEQQUA+9 embl_tpa_wgs_nuc
-: 000000000-999999999
+special  CEQQTP000000000-CEQQTU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQTW000000000-CEQQUA999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQUC000000000-CEQQUG999999999  embl_tpa_wgs_nuc # 6+9
 special  CEQQUI000000000-CEQQUJ999999999  embl_tpa_wgs_nuc # 6+9
 special2 CEQQUP+9 embl_tpa_wgs_nuc
@@ -7690,10 +7570,8 @@ special2 CEQQYI+9 embl_tpa_wgs_nuc
 : 000000000-999999999
 special2 CEQQYO+9 embl_tpa_wgs_nuc
 : 000000000-999999999
-special  CEQQYS000000000-CEQQYT999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQYV000000000-CEQQYW999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQYY000000000-CEQQZH999999999  embl_tpa_wgs_nuc # 6+9
-special  CEQQZJ000000000-CEQQZK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQYS000000000-CEQQYW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEQQYY000000000-CEQQZL999999999  embl_tpa_wgs_nuc # 6+9
 special  CERPHO000000000-CERPHZ999999999  embl_tpa_wgs_nuc # 6+9
 special  CERPIC000000000-CERPIE999999999  embl_tpa_wgs_nuc # 6+9
 special  CERPIG000000000-CERPIH999999999  embl_tpa_wgs_nuc # 6+9
@@ -7845,6 +7723,196 @@ special  CERRIG000000000-CERRIH999999999  embl_tpa_wgs_nuc # 6+9
 special  CERRIK000000000-CERRIL999999999  embl_tpa_wgs_nuc # 6+9
 special  CERRIP000000000-CERRJQ999999999  embl_tpa_wgs_nuc # 6+9
 special  CERRJY000000000-CERRJZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPSE+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPSG000000000-CESPSH999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPSK000000000-CESPSL999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPSO000000000-CESPSP999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPSR000000000-CESPST999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPSV000000000-CESPSW999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPSY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPTA000000000-CESPTD999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPTF000000000-CESPTP999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPTR000000000-CESPTX999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPTZ000000000-CESPUL999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPUN000000000-CESPUQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPUS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPUW000000000-CESPVC999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPVE000000000-CESPVU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPVW000000000-CESPVZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPWB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPWD000000000-CESPWF999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPWH000000000-CESPWS999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPWU000000000-CESPXD999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPXF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPXH000000000-CESPXZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPYK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPYO000000000-CESPZA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESPZC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESPZE000000000-CESPZS999999999  embl_tpa_wgs_nuc # 6+9
+special  CESPZU000000000-CESQAB999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQAD000000000-CESQAG999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQAI000000000-CESQAP999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQAR000000000-CESQAZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQBQ000000000-CESQBR999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQBT000000000-CESQBU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQBX000000000-CESQBZ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQCF+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESQCH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESQCK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQCO000000000-CESQCS999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQCU000000000-CESQDR999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQDU000000000-CESQEA999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQEC000000000-CESQGN999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQGP000000000-CESQHC999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQIL000000000-CESQJX999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQJZ000000000-CESQKE999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQKG000000000-CESQMF999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQMH000000000-CESQMN999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQMP000000000-CESQNS999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQNV000000000-CESQNX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQPV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQPX000000000-CESQQE999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQQG000000000-CESQRB999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQRD+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQRF000000000-CESQRI999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQSL000000000-CESQSM999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQSP000000000-CESQSR999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQST000000000-CESQSU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQSW000000000-CESQTO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQTQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESQTS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESQTU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQUX000000000-CESQVK999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQVM000000000-CESQVS999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQVU+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQVW000000000-CESQVX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESQWB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESQYC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESQYE000000000-CESQYQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQYS000000000-CESQZE999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQZG000000000-CESQZS999999999  embl_tpa_wgs_nuc # 6+9
+special  CESQZU000000000-CESRBM999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRBO000000000-CESRBU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRBW000000000-CESRCE999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRCG000000000-CESRCV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRCX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRCZ000000000-CESREJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESREM000000000-CESRFX999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRGM+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRGQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRGU000000000-CESRHB999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRHD000000000-CESRHO999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRHQ000000000-CESRIQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRIS+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRIV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRIY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRJB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRJX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRJZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRKC000000000-CESRKI999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRKK000000000-CESRLY999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRMA000000000-CESRME999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRMH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRMN+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRMP000000000-CESRMR999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRNV000000000-CESRNY999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESROB+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESROH+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESROS000000000-CESROU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESROY000000000-CESRPM999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRPO000000000-CESRPW999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRPY000000000-CESRQA999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRQC000000000-CESRQJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRQL000000000-CESRQT999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRQV000000000-CESRRA999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRRC000000000-CESRRM999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRRO000000000-CESRSN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRSP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRSS000000000-CESRSU999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRSW000000000-CESRSZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESRTU000000000-CESRUP999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRUT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESRVB000000000-CESRYO999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESRYT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRYV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRYY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESRZY+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSAA000000000-CESSAB999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSAD000000000-CESSAE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSAG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESSAI+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSAK000000000-CESSBI999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSBK000000000-CESSBP999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSBR000000000-CESSCG999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSCI000000000-CESSCJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSCL000000000-CESSDI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSDO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESSDR+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSDU000000000-CESSDX999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSDZ000000000-CESSEJ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSEL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSEN000000000-CESSEV999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSEX000000000-CESSFJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSFL000000000-CESSFP999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSFT000000000-CESSFU999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSFW+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSIC000000000-CESSIG999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSII+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CESSIK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSIN000000000-CESSIQ999999999  embl_tpa_wgs_nuc # 6+9
+special2 CESSIT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CESSJN000000000-CESSJR999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSJU000000000-CESSKF999999999  embl_tpa_wgs_nuc # 6+9
+special  CESSKH000000000-CESSKP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUTVL000000000-CEUTVS999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HAZG+8 embl_tpa_tsa_nuc
