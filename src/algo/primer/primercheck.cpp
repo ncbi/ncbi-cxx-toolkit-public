@@ -220,12 +220,9 @@ void COligoSpecificityCheck::x_FindMatchInfoForAlignment(CDense_seg& primer_dens
     av->GetAlnSeqString(slave_string, 1, aln_range);
     char gap_char = av->GetGapChar(0);
     int num_bp = 0;
-    int master_letter_len = 0;
-    for(int i=0; i< (int)master_string.size(); i++){
-        if (master_string[i] != gap_char) {
-            master_letter_len ++;
-        }
-    }
+    int master_letter_len = (int)master_string.size() -
+    (int)std::count(master_string.begin(), master_string.end(), gap_char);
+    
     for(int i=0; i < (int)master_string.size(); i++){
         
         if (master_string[i] == gap_char) {
@@ -1070,7 +1067,7 @@ SortHspByMasterStartAscending(const SHspInfo* info1,
     start1 = info1->master_range.GetFrom();
     start2 = info2->master_range.GetFrom();
    
-    return start1 <= start2;  
+    return start1 < start2;  
      
 }
 
