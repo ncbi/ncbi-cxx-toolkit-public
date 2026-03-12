@@ -2702,6 +2702,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
                            "Malformatted ID " + string(the_id));
             }
         }
+        case e_Pir:
         case e_Prf:
             // technically a name/locus, not an accession!
             return Set(type, kEmptyStr, the_id);
