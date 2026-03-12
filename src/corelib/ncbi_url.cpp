@@ -377,14 +377,12 @@ bool CUrl::x_IsHostPort(const string& scheme, string& unparsed, const IUrlEncode
     constexpr array<string_view, 4> s_StdSchemes{
         "file", "ftp", "http", "https"
     };
-    // The array must be sorted to use binary_search().
-    static_assert(is_sorted(s_StdSchemes.begin(), s_StdSchemes.end()));
 
     // Check for special case: host:port[/path[...]] (see CXX-11455)
     if (scheme.empty()) return false;
     string sch_lower = scheme;
     NStr::ToLower(sch_lower);
-    if (binary_search(s_StdSchemes.begin(), s_StdSchemes.end(), sch_lower)) return false;
+    if (find(s_StdSchemes.begin(), s_StdSchemes.end(), sch_lower) != s_StdSchemes.end()) return false;
 
     SIZE_TYPE port_end = unparsed.find_first_of("/?#");
     string port = unparsed.substr(0, port_end);
