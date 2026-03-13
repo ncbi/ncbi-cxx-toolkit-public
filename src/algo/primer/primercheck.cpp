@@ -1852,7 +1852,7 @@ void COligoSpecificityCheck::x_SortPrimerHit(vector<vector<SPrimerHitInfo> >& pr
     //group hit with the same subject sequence together
     vector<vector<SPrimerHitInfo*>* > result;
     CConstRef<CSeq_id> previous_id;
-    vector<SPrimerHitInfo*>* temp;
+    vector<SPrimerHitInfo*>* temp = NULL;
 
     NON_CONST_ITERATE(vector<COligoSpecificityCheck::SPrimerHitInfo>, iter, *primer_hit_list) {
         const CSeq_id& cur_id = iter->aln.first->GetSeq_id(1);
