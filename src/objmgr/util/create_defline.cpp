@@ -2179,7 +2179,7 @@ static const char* s_proteinOrganellePrefix [] = {
   "endogenous virus",  // "endogenous virus",
   "hydrogenosome",     // "hydrogenosome",
   "",                  // "chromosome",
-  "chromatophore"      // "chromatophore",
+  "chromatophore",     // "chromatophore",
   "",                  // "plasmid-in-mitochondrion",
   "",                  // "plasmid-in-plastid",
   "nitroplast"         // "nitroplast"
