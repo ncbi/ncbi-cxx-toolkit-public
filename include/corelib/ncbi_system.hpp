@@ -521,7 +521,9 @@ typedef enum {
     eMADV_DontFork,    ///< Don't inherit across fork()
     // Available since Linux kernel 2.6.32
     eMADV_Mergeable,   ///< KSM may merge identical pages
-    eMADV_Unmergeable  ///< KSM may not merge identical pages -- by default
+    eMADV_Unmergeable, ///< KSM may not merge identical pages -- by default
+    // Available since Linux kernel 2.4.20
+    eMADV_NoReuse      ///< Data will be accessed only once (MADV_NOREUSE)
 } EMemoryAdvise;
 
 
