@@ -48,6 +48,7 @@
 #include <opentelemetry/trace/span.h>
 #include <opentelemetry/trace/tracer.h>
 #include <opentelemetry/trace/span_metadata.h>
+#include <opentelemetry/exporters/ostream/span_exporter_factory.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -123,13 +124,18 @@ public:
     void SetDefaultSpanKind(opentelemetry::trace::SpanKind span_kind) { m_SpanKind = span_kind; }
 
 private:
+    using TTracer = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>;
+
     void x_Init(void);
     void x_InitOtlp(const string& endpoint);
     void x_InitStream(ostream& ostr);
+    void x_InitTracer(unique_ptr<opentelemetry::sdk::trace::SpanExporter> exporter);
+    TTracer x_GetTracer(void);
 
-    using TTracer = opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer>;
+    string m_AppName;
+    string m_AppVer;
+    string m_DefaultSpanNamePrefix;
 
-    TTracer m_Tracer;
     opentelemetry::trace::SpanKind m_SpanKind = opentelemetry::trace::SpanKind::kInternal;
 };
 

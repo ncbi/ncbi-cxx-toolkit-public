@@ -58,7 +58,6 @@
 #include <opentelemetry/exporters/otlp/otlp_http_exporter_options.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_factory.h>
 #include <opentelemetry/exporters/otlp/otlp_grpc_exporter_options.h>
-#include <opentelemetry/exporters/ostream/span_exporter_factory.h>
 
 #define NCBI_USE_ERRCODE_X   Corelib_Diag
 
@@ -201,52 +200,6 @@ public:
 };
 
 
-using TTracer = nostd::shared_ptr<trace::Tracer>;
-
-static string s_DefaultSpanNamePrefix;
-
-static TTracer s_GetTracer(void)
-{
-    string app_name = "ncbi-app";
-    string app_ver = "0.0";
-    {
-        auto guard = CNcbiApplication::InstanceGuard();
-        if ( guard ) {
-            app_name = guard->GetProgramDisplayName();
-            app_ver = guard->GetVersion().Print();
-            s_DefaultSpanNamePrefix = app_name;
-        }
-    }
-    return trace::Provider::GetTracerProvider()->GetTracer(app_name, app_ver);
-}
-
-
-DEFINE_STATIC_FAST_MUTEX(s_InitTracerMutex);
-
-static TTracer s_InitTracer(unique_ptr<sdk::trace::SpanExporter> exporter)
-{
-    CFastMutexGuard guard(s_InitTracerMutex);
-
-    auto processor = sdk::trace::SimpleSpanProcessorFactory::Create(std::move(exporter));
-    vector<unique_ptr<sdk::trace::SpanProcessor>> processors;
-    processors.push_back(std::move(processor));
-
-    opentelemetry::sdk::resource::Resource
-        resource =
-        sdk::resource::Resource::Create({});
-    unique_ptr<sdk::trace::Sampler> sampler(new sdk::trace::AlwaysOnSampler());
-
-    unique_ptr<sdk::trace::IdGenerator> id_generator(new CPhidIdGenerator());
-
-    shared_ptr<trace::TracerProvider> provider =
-        sdk::trace::TracerProviderFactory::Create(std::move(processors),
-        resource, std::move(sampler), std::move(id_generator));
-    trace::Provider::SetTracerProvider(provider);
-
-    return s_GetTracer();
-}
-
-
 void COpentelemetryTracer::CleanupTracer(void)
 {
     shared_ptr<trace::TracerProvider> none;
@@ -351,12 +304,12 @@ void COpentelemetryTracer::x_InitOtlp(const string& endpoint)
             http_opt.content_type = exporter::otlp::HttpRequestContentType::kJson;
         }
         http_opt.url = !endpoint.empty() ? endpoint : "http://localhost:4318/v1/traces";
-        m_Tracer = s_InitTracer(exporter::otlp::OtlpHttpExporterFactory::Create(http_opt));
+        x_InitTracer(exporter::otlp::OtlpHttpExporterFactory::Create(http_opt));
     }
     else if (protocol == EOtlp_Protocol::e_gRPC) {
         exporter::otlp::OtlpGrpcExporterOptions grpc_opt;
         grpc_opt.endpoint = !endpoint.empty() ? endpoint : "http://localhost:4317/v1/traces";
-        m_Tracer = s_InitTracer(exporter::otlp::OtlpGrpcExporterFactory::Create(grpc_opt));
+        x_InitTracer(exporter::otlp::OtlpGrpcExporterFactory::Create(grpc_opt));
     }
     else {
         ERR_POST("Unknown OTLP protocol");
@@ -366,7 +319,49 @@ void COpentelemetryTracer::x_InitOtlp(const string& endpoint)
 
 void COpentelemetryTracer::x_InitStream(ostream& ostr)
 {
-    m_Tracer = s_InitTracer(exporter::trace::OStreamSpanExporterFactory::Create(ostr));
+    x_InitTracer(exporter::trace::OStreamSpanExporterFactory::Create(ostr));
+}
+
+
+DEFINE_STATIC_FAST_MUTEX(s_InitTracerMutex);
+
+void COpentelemetryTracer::x_InitTracer(unique_ptr<sdk::trace::SpanExporter> exporter)
+{
+    CFastMutexGuard guard(s_InitTracerMutex);
+
+    auto processor = sdk::trace::SimpleSpanProcessorFactory::Create(std::move(exporter));
+    vector<unique_ptr<sdk::trace::SpanProcessor>> processors;
+    processors.push_back(std::move(processor));
+
+    opentelemetry::sdk::resource::Resource
+        resource =
+        sdk::resource::Resource::Create({});
+    unique_ptr<sdk::trace::Sampler> sampler(new sdk::trace::AlwaysOnSampler());
+
+    unique_ptr<sdk::trace::IdGenerator> id_generator(new CPhidIdGenerator());
+
+    shared_ptr<trace::TracerProvider> provider =
+        sdk::trace::TracerProviderFactory::Create(std::move(processors),
+        resource, std::move(sampler), std::move(id_generator));
+    trace::Provider::SetTracerProvider(provider);
+}
+
+
+COpentelemetryTracer::TTracer COpentelemetryTracer::x_GetTracer(void)
+{
+    if (m_AppName.empty() || m_AppVer.empty()) {
+        auto guard = CNcbiApplication::InstanceGuard();
+        if ( guard ) {
+            m_AppName = guard->GetProgramDisplayName();
+            m_AppVer = guard->GetVersion().Print();
+        }
+    }
+    else {
+        m_AppName = "ncbi-app";
+        m_AppVer = "0.0";
+    }
+    m_DefaultSpanNamePrefix = m_AppName;
+    return trace::Provider::GetTracerProvider()->GetTracer(m_AppName, m_AppVer);
 }
 
 
@@ -450,7 +445,7 @@ static string s_UpdateTraceState(CRequestContext& ctx, const string& traceparent
 
 void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
 {
-    auto tracer = s_GetTracer();
+    auto tracer = x_GetTracer();
     if (!tracer) return;
 
     if (!context.IsSetHitID()) context.SetHitID();
@@ -489,7 +484,7 @@ void COpentelemetryTracer::OnRequestStart(CRequestContext& context)
         options.kind = m_SpanKind;
     }
 
-    auto span = tracer->StartSpan(s_DefaultSpanNamePrefix + "/request-start", {}, options);
+    auto span = tracer->StartSpan(m_DefaultSpanNamePrefix + "/request-start", {}, options);
 
     CDiagContext& diag_context = GetDiagContext();
     char buf[17];
