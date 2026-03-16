@@ -215,7 +215,7 @@ static int s_GetCharAndAdvance(Parser& config)
     if (*config.ffbuf.current == '\0') {
         return -1;
     }
-    return *(config.ffbuf.current++);
+    return (unsigned char)*(config.ffbuf.current++);
 }
 
 void s_SetPointer(Parser& config, size_t offset)
@@ -843,7 +843,7 @@ char* XMLLoadEntry(ParserPtr pp, bool err)
         }
         if (c > 126 || (c < 32 && c != 10)) {
             if (err)
-                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, c);
+                FtaErrPost(SEV_WARNING, ERR_FORMAT_NonAsciiChar, "None-ASCII character within the record which begins at line {}, decimal value {}, replaced by #.", ibp->linenum, (signed char)c);
             *p++ = '#';
         } else
             *p++ = (Char)c;
