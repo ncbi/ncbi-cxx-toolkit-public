@@ -64,9 +64,6 @@ NCBI_XNCBI_EXPORT extern const wchar_t *const kEmptyWCStr;
 #endif
 
 /// Empty "C++" string.
-#if defined(NCBI_OS_MSWIN)  \
-    ||  (defined(NCBI_OS_LINUX) \
-         &&  (defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_ANY_CLANG)))
 class CNcbiEmptyString
 {
 public:
@@ -90,33 +87,6 @@ public:
     }
 };
 #endif
-#else
-class NCBI_XNCBI_EXPORT CNcbiEmptyString
-{
-public:
-    /// Get string.
-    static const string& Get(void);
-private:
-    /// Helper method to initialize private data member and return
-    /// null string.
-    static const string& FirstGet(void);
-    static const string* m_Str;     ///< Null string pointer.
-};
-
-#  if defined(HAVE_WSTRING)
-class NCBI_XNCBI_EXPORT CNcbiEmptyWString
-{
-public:
-    /// Get string.
-    static const wstring& Get(void);
-private:
-    /// Helper method to initialize private data member and return
-    /// null string.
-    static const wstring& FirstGet(void);
-    static const wstring* m_Str;     ///< Null string pointer.
-};
-#  endif
-#endif // NCBI_OS_MSWIN....
 
 
 #define NcbiEmptyString NCBI_NS_NCBI::CNcbiEmptyString::Get()
