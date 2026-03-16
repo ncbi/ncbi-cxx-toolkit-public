@@ -7913,6 +7913,132 @@ special  CESSJN000000000-CESSJR999999999  embl_tpa_wgs_nuc # 6+9
 special  CESSJU000000000-CESSKF999999999  embl_tpa_wgs_nuc # 6+9
 special  CESSKH000000000-CESSKP999999999  embl_tpa_wgs_nuc # 6+9
 special  CEUTVL000000000-CEUTVS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWJI000000000-CEUWJJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWJL000000000-CEUWJN999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEUWJP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEUWJR000000000-CEUWJW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWJY000000000-CEUWKA999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEUWKC+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEUWKM000000000-CEUWKN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWKP000000000-CEUWKR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWKT000000000-CEUWKV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUWKY000000000-CEUWLE999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEUWLG+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEUYZQ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEUYZS000000000-CEUYZT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUYZV000000000-CEUZAA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZAC000000000-CEUZAD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZAG000000000-CEUZAH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZAJ000000000-CEUZAN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZAP000000000-CEUZBE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZBG000000000-CEUZBN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZBP000000000-CEUZCF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZCH000000000-CEUZCP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZCR000000000-CEUZDK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZDO000000000-CEUZFZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZGB000000000-CEUZGE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZGG000000000-CEUZGU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZGW000000000-CEUZHS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZHU000000000-CEUZIN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZIP000000000-CEUZKK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZKM000000000-CEUZMF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZMH000000000-CEUZOJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZOL000000000-CEUZOR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZOT000000000-CEUZQI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEUZQL+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEUZQN000000000-CEUZRB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZRD000000000-CEUZTZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZUB000000000-CEUZVF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZVH000000000-CEUZWF999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZWH000000000-CEUZXI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZXK000000000-CEUZXW999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZXY000000000-CEUZZG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEUZZI000000000-CEVAAR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAAT000000000-CEVABA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVABC000000000-CEVABD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVABF000000000-CEVACC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVACE000000000-CEVADO999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVADQ000000000-CEVAEK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAEM000000000-CEVAFA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAFC000000000-CEVAGE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAGH000000000-CEVAHC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAHF000000000-CEVAII999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAIK000000000-CEVAIX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAIZ000000000-CEVALA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVALC000000000-CEVAMD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAMF000000000-CEVANL999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEVANO+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEVANQ000000000-CEVANV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVANX000000000-CEVAOY999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAPB000000000-CEVAQA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAQD000000000-CEVAQU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAQX000000000-CEVARV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVARX000000000-CEVATI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEVATP+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEVATS000000000-CEVATV999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEVATX+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEVATZ+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEVAUT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special2 CEVAUV+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEVAUZ000000000-CEVAVA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAVN000000000-CEVAWT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAWV000000000-CEVAXN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAXP000000000-CEVAZQ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVAZT000000000-CEVBBJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBBL000000000-CEVBEE999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBEG000000000-CEVBFH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBFJ000000000-CEVBHA999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBHC000000000-CEVBHI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBHM000000000-CEVBIB999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBID000000000-CEVBIV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBIX000000000-CEVBJS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBJU000000000-CEVBKP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBKS000000000-CEVBMX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBMZ000000000-CEVBNU999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBNX000000000-CEVBRM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBRO000000000-CEVBTC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBTH000000000-CEVBUI999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEVBUK+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEVBUN000000000-CEVBWZ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBXB000000000-CEVBXL999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBXN000000000-CEVBZC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVBZF000000000-CEVCBO999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCBQ000000000-CEVCBR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCBT000000000-CEVCCK999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCCM000000000-CEVCDH999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCDJ000000000-CEVCER999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCET000000000-CEVCIT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCIV000000000-CEVCJV999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCJX000000000-CEVCKR999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCKT000000000-CEVCLR999999999  embl_tpa_wgs_nuc # 6+9
+special2 CEVCLT+9 embl_tpa_wgs_nuc
+: 000000000-999999999
+special  CEVCLX000000000-CEVCOI999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCOK000000000-CEVCPG999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCPJ000000000-CEVCQL999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVCQN000000000-CEVDDD999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVDDF000000000-CEVDGC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVDGE000000000-CEVEHM999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVEHO000000000-CEVEHP999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVEIA000000000-CEVEMC999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVEME000000000-CEVEQJ999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVEQL000000000-CEVEXX999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVEXZ000000000-CEVFCN999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVFCP000000000-CEVFCS999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVFCU000000000-CEVFDT999999999  embl_tpa_wgs_nuc # 6+9
+special  CEVFDV000000000-CEVFMB999999999  embl_tpa_wgs_nuc # 6+9
 
 # Some "EMBL" TPA nucleotide accessions are really third-party annotations.
 special2 HAZG+8 embl_tpa_tsa_nuc
