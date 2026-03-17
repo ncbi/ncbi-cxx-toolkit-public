@@ -61,64 +61,64 @@
 
     "testcases": {
         "Admin dispatcher status": {
-             "description": "Admin dispatcher status",
-             "tags": ["admin-status", "200"],
-             "requests": [
-                 [
-                     {
-                         "jsonrpc": "2.0",
-                         "method": "raw",
-                         "params": {
-                             "abs_path_ref": "/ADMIN/dispatcher_status"
-                         },
-                         "id": "raw_1"
-                     }
-                 ]
-             ],
-             "response": [
-                 {
-                     "jsonrpc": "2.0",
-                     "id": "raw_1",
-                     "result": null
-                 },
-                 {
-                     "jsonrpc": "2.0",
-                     "id": "raw_1",
-                     "result": {
-                         "status": "Success"
-                     }
-                 }
-             ]
+            "description": "Admin dispatcher status",
+            "tags": ["admin-status", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/ADMIN/dispatcher_status"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
         },
         "Admin connections status": {
-             "description": "Admin connections status",
-             "tags": ["admin-status", "200"],
-             "requests": [
-                 [
-                     {
-                         "jsonrpc": "2.0",
-                         "method": "raw",
-                         "params": {
-                             "abs_path_ref": "/ADMIN/connections_status"
-                         },
-                         "id": "raw_1"
-                     }
-                 ]
-             ],
-             "response": [
-                 {
-                     "jsonrpc": "2.0",
-                     "id": "raw_1",
-                     "result": null
-                 },
-                 {
-                     "jsonrpc": "2.0",
-                     "id": "raw_1",
-                     "result": {
-                         "status": "Success"
-                     }
-                 }
-             ]
+            "description": "Admin connections status",
+            "tags": ["admin-status", "200"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "raw",
+                        "params": {
+                            "abs_path_ref": "/ADMIN/connections_status"
+                        },
+                        "id": "raw_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": null
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "raw_1",
+                    "result": {
+                        "status": "Success"
+                    }
+                }
+            ]
         },
         "resolve with seq_id_resolve = yes 8": {
             "description": "resolve with seq_id_resolve = yes 8",
@@ -147,28 +147,28 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "gpp|GPS_000103663.1|",
-                        "type": 19
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gi|222883023",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "dna",
-                      "length": 2739,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "36.40118"
-                      },
-                      "tax_id": 9913,
-                      "hash": -1456440327,
-                      "date_changed": "07/31/2009 13:11:00",
-                      "gi": 222883023
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gpp|GPS_000103663.1|",
+                            "type": 19
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|222883023",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "dna",
+                        "length": 2739,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "36.40118"
+                        },
+                        "tax_id": 9913,
+                        "hash": -1456440327,
+                        "date_changed": "07/31/2009 13:11:00",
+                        "gi": 222883023
                     }
                 },
                 {
@@ -207,32 +207,32 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "tpd|EATJ01000284.1|",
-                        "type": 18
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gnl|WGS:EATJ01|SRR6873784_N0050711",
-                          "type": 11
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "tpd|EATJ01000284.1|",
+                            "type": 18
                         },
-                        {
-                          "id": "gi|2267025815",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "dna",
-                      "length": 2472,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "23.129580145"
-                      },
-                      "tax_id": 2806419,
-                      "hash": -1978125675,
-                      "date_changed": "10/03/2024 14:39:00",
-                      "gi": 2267025815
+                        "other_ids": [
+                            {
+                                "id": "gnl|WGS:EATJ01|SRR6873784_N0050711",
+                                "type": 11
+                            },
+                            {
+                                "id": "gi|2267025815",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "dna",
+                        "length": 2472,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "23.129580145"
+                        },
+                        "tax_id": 2806419,
+                        "hash": -1978125675,
+                        "date_changed": "10/03/2024 14:39:00",
+                        "gi": 2267025815
                     }
                 },
                 {
@@ -271,28 +271,28 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "tpe|HBZQ01029051.1|",
-                        "type": 17
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gi|2435942668",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "rna",
-                      "length": 2504,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "22.279485570"
-                      },
-                      "tax_id": 175274,
-                      "hash": -1823680673,
-                      "date_changed": "01/29/2023 12:10:00",
-                      "gi": 2435942668
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "tpe|HBZQ01029051.1|",
+                            "type": 17
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2435942668",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "rna",
+                        "length": 2504,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "22.279485570"
+                        },
+                        "tax_id": 175274,
+                        "hash": -1823680673,
+                        "date_changed": "01/29/2023 12:10:00",
+                        "gi": 2435942668
                     }
                 },
                 {
@@ -331,32 +331,32 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "tpg|DUYG01000186.1|",
-                        "type": 16
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gnl|WGS:DUYG01|SCF7180000076310",
-                          "type": 11
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "tpg|DUYG01000186.1|",
+                            "type": 16
                         },
-                        {
-                          "id": "gi|1846091892",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "dna",
-                      "length": 463,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "37.357895434"
-                      },
-                      "tax_id": 1073566,
-                      "hash": 1709905427,
-                      "date_changed": "05/28/2020 11:12:00",
-                      "gi": 1846091892
+                        "other_ids": [
+                            {
+                                "id": "gnl|WGS:DUYG01|SCF7180000076310",
+                                "type": 11
+                            },
+                            {
+                                "id": "gi|1846091892",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "dna",
+                        "length": 463,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "37.357895434"
+                        },
+                        "tax_id": 1073566,
+                        "hash": 1709905427,
+                        "date_changed": "05/28/2020 11:12:00",
+                        "gi": 1846091892
                     }
                 },
                 {
@@ -395,28 +395,28 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "dbj|LE261202.1|",
-                        "type": 13
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gi|820489528",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "rna",
-                      "length": 994,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "3.31415243"
-                      },
-                      "tax_id": 36312,
-                      "hash": -1491498981,
-                      "date_changed": "10/24/2015 20:07:00",
-                      "gi": 820489528
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "dbj|LE261202.1|",
+                            "type": 13
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|820489528",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "rna",
+                        "length": 994,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "3.31415243"
+                        },
+                        "tax_id": 36312,
+                        "hash": -1491498981,
+                        "date_changed": "10/24/2015 20:07:00",
+                        "gi": 820489528
                     }
                 },
                 {
@@ -455,28 +455,28 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "ref|WP_375742530.1|",
-                        "type": 10
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gi|2810084561",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "aa",
-                      "length": 461,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "5.1388517873"
-                      },
-                      "tax_id": 2316720,
-                      "hash": -1577716846,
-                      "date_changed": "12/06/2024 16:59:27",
-                      "gi": 2810084561
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "ref|WP_375742530.1|",
+                            "type": 10
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2810084561",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 461,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "5.1388517873"
+                        },
+                        "tax_id": 2316720,
+                        "hash": -1577716846,
+                        "date_changed": "12/06/2024 16:59:27",
+                        "gi": 2810084561
                     }
                 },
                 {
@@ -515,28 +515,28 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "emb|HBTD01004322.1|",
-                        "type": 6
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gi|2014506591",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "rna",
-                      "length": 2296,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "22.238116687"
-                      },
-                      "tax_id": 420556,
-                      "hash": -300465031,
-                      "date_changed": "08/01/2022 04:29:00",
-                      "gi": 2014506591
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "emb|HBTD01004322.1|",
+                            "type": 6
+                        },
+                        "other_ids": [
+                            {
+                                "id": "gi|2014506591",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "rna",
+                        "length": 2296,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "22.238116687"
+                        },
+                        "tax_id": 420556,
+                        "hash": -300465031,
+                        "date_changed": "08/01/2022 04:29:00",
+                        "gi": 2014506591
                     }
                 },
                 {
@@ -575,32 +575,32 @@
                     "jsonrpc": "2.0",
                     "id": "resolve_1",
                     "result": {
-                      "reply": "BioseqInfo",
-                      "canonical_id": {
-                        "id": "gb|AFP68756.1|",
-                        "type": 5
-                      },
-                      "other_ids": [
-                        {
-                          "id": "gnl|FCLEUNGHKU|ECENHK_04345",
-                          "type": 11
+                        "reply": "BioseqInfo",
+                        "canonical_id": {
+                            "id": "gb|AFP68756.1|",
+                            "type": 5
                         },
-                        {
-                          "id": "gi|400173907",
-                          "type": 12
-                        }
-                      ],
-                      "molecule_type": "aa",
-                      "length": 341,
-                      "seq_state": 10,
-                      "state": 10,
-                      "blob_id": {
-                        "id": "4.327414583"
-                      },
-                      "tax_id": 208224,
-                      "hash": -868835158,
-                      "date_changed": "11/14/2024 05:11:30",
-                      "gi": 400173907
+                        "other_ids": [
+                            {
+                                "id": "gnl|FCLEUNGHKU|ECENHK_04345",
+                                "type": 11
+                            },
+                            {
+                                "id": "gi|400173907",
+                                "type": 12
+                            }
+                        ],
+                        "molecule_type": "aa",
+                        "length": 341,
+                        "seq_state": 10,
+                        "state": 10,
+                        "blob_id": {
+                            "id": "4.327414583"
+                        },
+                        "tax_id": 208224,
+                        "hash": -868835158,
+                        "date_changed": "11/14/2024 05:11:30",
+                        "gi": 400173907
                     }
                 },
                 {
@@ -25405,7 +25405,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 9999999999}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"<null>\", \"nucleotide\": \"<null>\", \"ipg\": 9999999999}"
+                                }
                             }
                         ]
                     }
@@ -25446,7 +25448,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"1111111111\", \"nucleotide\": \"<null>\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26142,7 +26146,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26184,7 +26190,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criterion: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26226,7 +26234,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26268,7 +26278,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NCBI_GENOMES\\|1014658\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26310,7 +26322,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26352,7 +26366,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26472,7 +26488,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -26514,7 +26532,9 @@
                             {
                                 "severity": "Error",
                                 "code": 338,
-                                "text": {"regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"}
+                                "text": {
+                                    "regex": "No IPG info found for the following criteria: {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266\", \"nucleotide\": \"NZ_CAVJ000000000\", \"ipg\": <null>}, {\"request\": \"IPG resolve request\", \"datacenter\": \"IDSTORE.\", \"protein\": \"WP_198835266.1\", \"nucleotide\": \"NZ_CAVJ000000000.1\", \"ipg\": <null>}"
+                                }
                             }
                         ]
                     }
@@ -29553,6 +29573,98 @@
                     "id": "resolve_1",
                     "result": {
                         "status": "Success"
+                    }
+                }
+            ]
+        },
+        "PIR ambiguity (cache=no)": {
+            "description": "PIR ambiguity (cache=no)",
+            "tags": ["id-resolve", "cassandra", "300"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "A04056"
+                            ],
+                            "include_info": [
+                                "all-info-except"
+                            ],
+                            "user_args": "use_cache=no"
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "status": "Error",
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 'A04056'. Cannot unambiguously pick bioseq info record between: '6|A04056.1 (gi:344736)', '7|A04056.0 (gi:77180)'"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Error"
+                    }
+                }
+            ]
+        },
+        "PIR ambiguity (cache=yes)": {
+            "description": "PIR ambiguity (cache=yes)",
+            "tags": ["id-resolve", "cassandra", "300"],
+            "requests": [
+                [
+                    {
+                        "jsonrpc": "2.0",
+                        "method": "resolve",
+                        "params": {
+                            "bio_id": [
+                                "A04056"
+                            ],
+                            "include_info": [
+                                "all-info-except"
+                            ],
+                            "user_args": "use_cache=yes"
+                        },
+                        "id": "resolve_1"
+                    }
+                ]
+            ],
+            "response": [
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "reply": "BioseqInfo",
+                        "status": "Error",
+                        "messages": [
+                            {
+                                "severity": "Error",
+                                "code": 312,
+                                "text": "Could not resolve seq_id 'A04056'. Cannot unambiguously pick bioseq info record between: '6|A04056.1 (gi:344736)', '7|A04056.0 (gi:77180)'"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "jsonrpc": "2.0",
+                    "id": "resolve_1",
+                    "result": {
+                        "status": "Error"
                     }
                 }
             ]
