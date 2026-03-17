@@ -941,72 +941,13 @@ enum EThreadDataState {
     eReinitializing
 };
 
-const auto main_thread_id = std::this_thread::get_id();
-
-template<typename _T, typename _Cleanup = void>
-class CTrueTlsData
-{
-// Some notes for order of destruction
-// 1. ncbi::CStaticTls destroyed by CThread (ThreadWrapperCallerImpl)
-// 2. standard thread_local of a thread
-// 3. standard thread_local of a main thread
-// 4. global static variables
-
-public:
-
-    template<typename...TArgs, typename = std::enable_if_t<std::is_constructible_v<_T, TArgs...>>>
-    CTrueTlsData(TArgs&&...args)
-    {
-        void* ptr = static_cast<void*>(m_memory.data());
-        // thread_local instances are pre-initialized with zeros
-        // memsetting with non-zeros helps finding unitialized members
-        //memset(m_memory.data(), 0xBD, m_memory.size());
-        // Non-allocating placement operator new
-        auto data = new (ptr) _T(std::forward<TArgs>(args)...);
-    }
-
-    ~CTrueTlsData()
-    {
-        _T* ptr = *this;
-
-        if constexpr (!std::is_void_v<_Cleanup>) {
-            _Cleanup{}(ptr);
-        }
-        // call the destructor directly, without 'delete'
-        ptr -> ~_T();
-        //memset(m_memory.data(), 0xAA, m_memory.size());
-    }
-
-    operator _T*() { return reinterpret_cast<_T*>(m_memory.data()); }
-    operator _T&() { return **this; }
-
-private:
-    // no initialized needed as CTrueTls supposed to be used as thread_local variable
-    // the object is a first member to respect requested alignment
-    std::array<uint8_t, sizeof(_T)> m_memory;
-};
-
-static void s_Diag_PrintAppStop(void*)
-{
-    // TODO: this is the last thread, do you need a mutex?
-    // -- Other threads can still be running even when the main one is performing cleanup.
-    // TODO: why CDiagContextThreadData cares about Stop message?
-
-    // Copy properties from the main thread's TLS to the global properties.
-    CDiagLock lock(CDiagLock::eWrite);
-    // Print stop message.
-    if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
-        GetDiagContext().PrintStop();
-    }
-}
-
-static CSafeStaticPtr<CDiagContextThreadData> s_MainThreadDiagContextData(s_Diag_PrintAppStop, CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
-
-thread_local EThreadDataState s_ThreadDataState(eUninitialized);
-thread_local CDiagContextThreadData* s_ThreadDataCache;
+static thread_local EThreadDataState s_ThreadDataState(eUninitialized);
+#define USE_TLS_DATA_CACHE
+#ifdef USE_TLS_DATA_CACHE
+static thread_local CDiagContextThreadData* s_ThreadDataCache;
+#endif
 
 }
-
 
 bool CDiagContext::IsMainThreadDataInitialized(void)
 {
@@ -1023,16 +964,32 @@ CDiagContextThreadData::CDiagContextThreadData(void)
     // Default context should auto-reset on request start.
     m_RequestCtx = m_DefaultRequestCtx = new CRequestContext(CRequestContext::fResetOnStart);
     m_RequestCtx->SetAutoIncRequestIDOnPost(CRequestContext::GetDefaultAutoIncRequestIDOnPost());
-    s_ThreadDataState = eInitialized; // re-enable protection
 }
 
 
 CDiagContextThreadData::~CDiagContextThreadData(void)
 {
+#ifdef USE_TLS_DATA_CACHE
     if ( s_ThreadDataCache == this ) {
         s_ThreadDataCache = 0;
-        s_ThreadDataState = eDeinitialized; // re-enable protection
     }
+#endif
+}
+
+
+void CDiagContext::sx_ThreadDataTlsCleanup(CDiagContextThreadData* value,
+                                           void* /*cleanup_data*/)
+{
+    if ( CThread::IsMain() ) {
+        // Copy properties from the main thread's TLS to the global properties.
+        CDiagLock lock(CDiagLock::eWrite);
+        // Print stop message.
+        if (!CDiagContext::IsSetOldPostFormat()  &&  s_FinishedSetupDiag) {
+            GetDiagContext().PrintStop();
+        }
+    }
+    s_ThreadDataState = eDeinitialized; // re-enable protection
+    delete value;
 }
 
 
@@ -1051,9 +1008,11 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
     // mid-execution would both add overhead and open up uncatchable
     // opportunities for inappropriate recursion.
 
+ #ifdef USE_TLS_DATA_CACHE
     if ( CDiagContextThreadData* data = s_ThreadDataCache ) {
         return *data;
     }
+#endif
 
 
     if (s_ThreadDataState != eInitialized) {
@@ -1070,34 +1029,45 @@ CDiagContextThreadData& CDiagContextThreadData::GetThreadData(void)
 
         case eInitializing:
             cerr << "FATAL ERROR: inappropriate recursion initializing NCBI"
-                    " diagnostic framework.\n";
+                    " diagnostic framework." << endl;
             Abort();
             break;
 
         case eDeinitialized:
             s_ThreadDataState = eReinitializing;
-            cerr << "Reinitializing NCBI diagnostic framework\n";
             break;
 
         case eReinitializing:
             cerr << "FATAL ERROR: NCBI diagnostic framework no longer"
-                    " initialized.\n";
+                    " initialized." << endl;
             Abort();
             break;
         }
     }
 
-    if (std::this_thread::get_id() == main_thread_id) {
-        // In main thread use safe-static instance of data - it lives longer than normal
-        // static objects and will log 'stop' message on destruction.
-        s_ThreadDataCache = &s_MainThreadDiagContextData.Get();
+    static CStaticTls<CDiagContextThreadData>
+        s_ThreadData(nullptr, CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
+
+    // Deliberate leak for 'data'-- for both cases: 
+    // GetValue() and new CDiagContextThreadData.
+    NCBI_LSAN_DISABLE_GUARD;
+    
+    CDiagContextThreadData* data = s_ThreadData.GetValue();
+    if ( !data ) {
+        // Cleanup data set to null for any thread except the main one.
+        // This value is used as a flag to copy threads' properties to global
+        // upon TLS cleanup.
+        data = new CDiagContextThreadData;
+        s_ThreadData.SetValue(data, CDiagContext::sx_ThreadDataTlsCleanup,
+            !CThread::IsMain() ? 0 : (void*)(1),
+            CTlsBase::eDoCleanup);
+        s_ThreadDataState = eInitialized;
     }
-    else {
-        // For other threads use thread_local.
-        static thread_local CTrueTlsData<CDiagContextThreadData, void> g_thread_data;
-        s_ThreadDataCache = g_thread_data;
-    }
-    return *s_ThreadDataCache;
+
+#ifdef USE_TLS_DATA_CACHE
+    s_ThreadDataCache = data;
+#endif
+    return *data;
 }
 
 
