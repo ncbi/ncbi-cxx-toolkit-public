@@ -478,8 +478,11 @@ public:
 
     void RegisterCallbacks(CTSE_Split_Info& split_info)
         {
-            CMutexGuard guard(m_Mutex);
-            vector<TChunkId> ids(m_ChunksToWait.begin(), m_ChunksToWait.end());
+            vector<TChunkId> ids;
+            {{
+                CMutexGuard guard(m_Mutex);
+                ids.assign(m_ChunksToWait.begin(), m_ChunksToWait.end());
+            }}
             for ( auto chunk_id : ids ) {
                 //ERR_POST("CWGSMasterDescrSetter: waiting for "<<chunk_id<<" to be loaded");
                 split_info.GetChunk(chunk_id).SetLoadListener(Ref(this));
