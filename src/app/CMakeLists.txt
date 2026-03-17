@@ -20,7 +20,6 @@ NCBI_add_subdirectory(
   convert_seq
   discrepancy_report
   dustmasker
-  flat2asn
   formatguess
   gap_stats
   gi2taxid
@@ -55,6 +54,9 @@ NCBI_add_subdirectory(
   vecscreen
   winmasker
 )
+if(NOT SUBUTILS_REPO)
+  NCBI_add_subdirectory(flat2asn)
+endif()
 
 NCBI_add_subdirectory(
   dblb
