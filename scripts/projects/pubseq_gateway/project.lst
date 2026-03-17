@@ -98,6 +98,7 @@ util/sequtil$
 util/xregexp
 util/regexp$
 util/regexp/testdata$
+util/regexp/ctre
 util/compress
 util/checksum
 util/lmdbxx
