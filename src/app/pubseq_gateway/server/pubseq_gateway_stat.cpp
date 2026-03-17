@@ -294,10 +294,22 @@ CPSGSCounters::CPSGSCounters(const map<string, size_t> &  proc_group_to_index) :
         new SCounterInfo(
             "BioseqInfoFoundOne", "bioseq info found one record in Cassandra counter",
             "Number of times a Cassandra bioseq info query resulted in exactly one record");
-    m_Counters[ePSGS_BioseqInfoFoundMany] =
+    m_Counters[ePSGS_BioseqInfoCacheLookupAmbiguity] =
         new SCounterInfo(
-            "BioseqInfoFoundMany", "bioseq info found more than one record in Cassandra counter",
-            "Number of times a Cassandra bioseq info query resulted in more than one record");
+            "BioseqInfoCacheLookupAmbiguity", "bioseq info cache lookup returned multiple records with incompatible types",
+            "Number of times a bioseq info cache lookup returned more than one records with incompatible types");
+    m_Counters[ePSGS_BioseqInfoDBLookupAmbiguity] =
+        new SCounterInfo(
+            "BioseqInfoDBLookupAmbiguity", "bioseq info Cassandra lookup returned multiple records with incompatible types",
+            "Number of times a bioseq info Cassandra lookup returned more than one records with incompatible types");
+    m_Counters[ePSGS_BioseqInfoCacheLookupINSDCAmbiguity] =
+        new SCounterInfo(
+            "BioseqInfoCacheLookupINSDCAmbiguity", "bioseq info cache lookup for INSDC returned multiple records with incompatible versions",
+            "Number of times a bioseq info cache lookup for INSDC returned more than one records with incompatible versions");
+    m_Counters[ePSGS_BioseqInfoDBLookupINSDCAmbiguity] =
+        new SCounterInfo(
+            "BioseqInfoDBLookupINSDCAmbiguity", "bioseq info Cassandra lookup for INSDC returned multiple records with incompatible versions",
+            "Number of times a bioseq info Cassandra lookup for INSDC returned more than one records with incompatible versions");
     m_Counters[ePSGS_Si2csiError] =
         new SCounterInfo(
             "Si2csiError", "si2csi Cassandra query execution error counter",

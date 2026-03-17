@@ -62,7 +62,11 @@ const SAlertToId     kAlertToIdMap[] = {
     { ePSGS_Throttling,                                     "Throttling" },
     { ePSGS_SeqIdClassificationConfigFilesRefreshSuccess,   "SeqIdClassificationConfigFilesRefreshSuccess" },
     { ePSGS_SeqIdClassificationConfigFilesRefreshFailure,   "SeqIdClassificationConfigFilesRefreshFailure" },
-    { ePSGS_SeqIdInconsistencyParsingAndAssess,             "SeqIdInconsistencyParsingAndAssess" }
+    { ePSGS_SeqIdInconsistencyParsingAndAssess,             "SeqIdInconsistencyParsingAndAssess" },
+    { ePSGS_BioseqInfoCacheLookupIncompatibleRecords,       "BioseqInfoCacheLookupIncompatibleRecords" },
+    { ePSGS_BioseqInfoDBLookupIncompatibleRecords,          "BioseqInfoDBLookupIncompatibleRecords" },
+    { ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,  "BioseqInfoCacheLookupINSDCIncompatibleRecords" },
+    { ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,     "BioseqInfoDBLookupINSDCIncompatibleRecords" }
 };
 const size_t        kAlertToIdMapSize = sizeof(kAlertToIdMap) / sizeof(SAlertToId);
 

@@ -32,13 +32,33 @@
  *
  */
 
+#include <corelib/request_status.hpp>
+#include <corelib/ncbidiag.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
+USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
-// Returns:
-// >= 0 => index of the record to be used
-// < 0  => it is impossible to choose
-ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records);
+#include <string>
+#include <vector>
+using namespace std;
+
+
+struct SPSGS_BioseqSelectionResult
+{
+    CRequestStatus::ECode   status;     // 200, 404, 300, 500
+    ssize_t                 index;      // If 200 then the vector index to take
+    string                  message;    // In case of errors or ambiguity
+
+    string                  ambiguity_json; // in case of 300 this field stores
+                                            // a json list of dictionaries with
+                                            // the full bioseq info records
+};
+
+
+// Can return statuses 200, 300 and 404
+SPSGS_BioseqSelectionResult
+SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
+                       bool  is_cache);
 
 #endif

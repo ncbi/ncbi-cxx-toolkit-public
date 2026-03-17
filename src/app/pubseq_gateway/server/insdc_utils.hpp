@@ -32,34 +32,24 @@
  *
  */
 
-#include <corelib/request_status.hpp>
-#include <corelib/ncbidiag.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info/record.hpp>
 
 #include "pubseq_gateway_types.hpp"
+#include "bioseq_info_record_selector.hpp"
+
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
-#include <string>
-#include <vector>
-using namespace std;
-
-
-struct SINSDCDecision
-{
-    CRequestStatus::ECode   status;     // 200, 404, 500
-    size_t                  index;      // If 200 then the vector index to take
-    string                  message;    // In case of errors
-};
-
 
 bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type);
-string GetBioseqRecordId(const CBioseqInfoRecord &  record);
 
 // version is from the lookup request
 // if version is -1 => the lookup was without version
-SINSDCDecision DecideINSDC(const vector<CBioseqInfoRecord>&  records,
-                           CBioseqInfoRecord::TVersion  version);
+SPSGS_BioseqSelectionResult
+DecideINSDC(const vector<CBioseqInfoRecord>&  records,
+            CBioseqInfoRecord::TVersion  version,
+            bool  is_cache);
 
 #endif
+

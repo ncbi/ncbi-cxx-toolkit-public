@@ -43,6 +43,7 @@
 class CPendingOperation;
 class CCassBlobFetch;
 class CHttpReply;
+class CPSGS_CassProcessorBase;
 namespace idblob { class CCassDataCallbackReceiver; }
 
 // Keeps track of the protocol replies
@@ -171,7 +172,8 @@ public:
                               const string &  processor_id,
                               const string &  msg,
                               CRequestStatus::ECode  status,
-                              int  err_code, EDiagSev  severity);
+                              int  err_code, EDiagSev  severity,
+                              CPSGS_CassProcessorBase *  proc);
     void PrepareBioseqData(size_t  item_id,
                            const string &  processor_id,
                            const string &  content,

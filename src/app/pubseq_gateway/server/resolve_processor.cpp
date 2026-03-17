@@ -143,7 +143,7 @@ CPSGS_ResolveProcessor::x_OnSeqIdResolveError(
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kResolveProcessorName,
                                                    message, status, code,
-                                                   severity);
+                                                   severity, this);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(item_id, kResolveProcessorName, 2);
 
     CPSGS_CassProcessorBase::SignalFinishProcessing();

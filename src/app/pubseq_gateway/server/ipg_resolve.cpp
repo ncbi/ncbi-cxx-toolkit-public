@@ -798,7 +798,7 @@ CPSGS_IPGResolveProcessor::x_OnSeqIdResolveError(CRequestStatus::ECode  status,
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kIPGResolveProcessorName,
                                                    message, status, code,
-                                                   severity);
+                                                   severity, this);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                             item_id, kIPGResolveProcessorName, 2);
 

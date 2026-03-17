@@ -107,10 +107,13 @@ public:
     }
 
     EPSGS_CacheLookupResult  LookupBioseqInfo(IPSGS_Processor *  processor,
-                                              SBioseqResolution &  bioseq_resolution)
+                                              SBioseqResolution &  bioseq_resolution,
+                                              string &  ambiguity_msg,
+                                              string &  ambiguity_json)
     {
         if (m_Allowed)
-            return x_LookupBioseqInfo(processor, bioseq_resolution);
+            return x_LookupBioseqInfo(processor, bioseq_resolution,
+                                      ambiguity_msg, ambiguity_json);
         return ePSGS_CacheNotHit;
     }
 
@@ -137,7 +140,9 @@ public:
 private:
     EPSGS_CacheLookupResult  x_LookupBioseqInfo(
                                 IPSGS_Processor *  processor,
-                                SBioseqResolution &  bioseq_resolution);
+                                SBioseqResolution &  bioseq_resolution,
+                                string &  ambiguity_msg,
+                                string &  ambiguity_json);
     EPSGS_CacheLookupResult  x_LookupINSDCBioseqInfo(
                                 IPSGS_Processor *  processor,
                                 SBioseqResolution &  bioseq_resolution);

@@ -154,7 +154,7 @@ CPSGS_AccessionVersionHistoryProcessor::x_OnSeqIdResolveError(
 
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(
                                     item_id, kAccVerHistProcessorName,
-                                    message, status, code, severity);
+                                    message, status, code, severity, this);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                     item_id, kAccVerHistProcessorName, 2);
 

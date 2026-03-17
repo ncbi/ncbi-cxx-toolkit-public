@@ -45,7 +45,9 @@ USING_NCBI_SCOPE;
 
 EPSGS_CacheLookupResult
 CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
-                              SBioseqResolution &  bioseq_resolution)
+                              SBioseqResolution &  bioseq_resolution,
+                              string &  ambiguity_msg,
+                              string &  ambiguity_json)
 {
     auto                    app = CPubseqGatewayApp::GetInstance();
     CPubseqGatewayCache *   cache = app->GetLookupCache();
@@ -108,17 +110,19 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                 break;
             default:
                 // More than one record; may be need to pick the latest version
-                ssize_t     index_to_pick = SelectBioseqInfoRecord(records);
-                if (index_to_pick < 0) {
+                // true => it is cache
+                SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records,
+                                                                                true);
+                if (result.status == CRequestStatus::e300_MultipleChoices) {
                     // Many found and could not select one => treat as not
                     // found
                     if (m_NeedTrace) {
                         m_Reply->SendTrace(
-                            to_string(records.size()) + " bioseq info records "
-                            "were found in cache however it was impossible "
-                            "to choose one of them. So treat it as not found",
+                            result.message + "\nSo treat it as not found",
                             m_Request->GetStartTimestamp());
                     }
+                    ambiguity_msg = result.message;
+                    ambiguity_json = result.ambiguity_json;
                     cache_hit = false;
                     break;
                 }
@@ -131,13 +135,13 @@ CPSGCache::x_LookupBioseqInfo(IPSGS_Processor *  processor,
                         prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
                     m_Reply->SendTrace(
                         prefix +
-                        ToJsonString(records[index_to_pick],
+                        ToJsonString(records[result.index],
                                      SPSGS_ResolveRequest::fPSGS_AllBioseqFields),
                         m_Request->GetStartTimestamp());
                 }
 
                 cache_hit = true;
-                bioseq_resolution.SetBioseqInfo(records[index_to_pick]);
+                bioseq_resolution.SetBioseqInfo(records[result.index]);
 
                 break;
         }
@@ -206,8 +210,10 @@ CPSGCache::x_LookupINSDCBioseqInfo(IPSGS_Processor *  processor,
                     m_Request->GetStartTimestamp());
         }
 
-        auto    records = cache->FetchBioseqInfo(fetch_request);
-        SINSDCDecision  decision = DecideINSDC(records, version);
+        auto                            records = cache->FetchBioseqInfo(fetch_request);
+
+        // true => it is cache
+        SPSGS_BioseqSelectionResult     decision = DecideINSDC(records, version, true);
 
         if (m_NeedTrace) {
             string  msg = to_string(records.size()) +

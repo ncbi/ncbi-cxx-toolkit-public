@@ -140,9 +140,12 @@ IPSGS_Processor::EPSGS_Status CPSGS_CassProcessorBase::GetStatus(void)
     if (m_Status == CRequestStatus::e504_GatewayTimeout)
         return IPSGS_Processor::ePSGS_Timeout;
 
-    // 300 never actually happens
     if (m_Status < 300)
         return IPSGS_Processor::ePSGS_Done;
+
+    if (m_Status < 400)
+        return IPSGS_Processor::ePSGS_Ambiguity;
+
     if (m_Status < 500) {
         if (m_Status == CRequestStatus::e401_Unauthorized) {
             return IPSGS_Processor::ePSGS_Unauthorized;

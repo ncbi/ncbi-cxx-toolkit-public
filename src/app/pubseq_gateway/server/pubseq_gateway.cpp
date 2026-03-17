@@ -404,6 +404,11 @@ static unsigned long    s_TickNoFor5Sec = 0;
 
 int CPubseqGatewayApp::Run(void)
 {
+//    CAsyncDiagHandler diag_handler;
+//    diag_handler.SetCustomThreadSuffix("_l");
+//    diag_handler.InstallToDiag();
+
+
     srand(time(NULL));
 
     try {
@@ -813,6 +818,8 @@ int CPubseqGatewayApp::Run(void)
     cass_monitoring_thread.join();
 
     CloseCass();
+
+//    diag_handler.RemoveFromDiag();
     return ret_code;
 }
 

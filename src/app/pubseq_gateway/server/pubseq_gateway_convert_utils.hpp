@@ -63,6 +63,7 @@ string ToBioseqProtobuf(const CBioseqInfoRecord &  bioseq_info);
 string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
                     SPSGS_ResolveRequest::TPSGS_BioseqIncludeData  include_data_flags,
                     const string &  custom_blob_id = "");
+string ToBioseqIndentification(const CBioseqInfoRecord &  bioseq_info);
 string ToJsonString(const CBlobRecord &  blob);
 string ToJsonString(const CNAnnotRecord &  annot_record, int32_t  sat,
                     const string &  custom_blob_id = "");

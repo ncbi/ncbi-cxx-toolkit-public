@@ -318,6 +318,24 @@ string ToJsonString(const CBioseqInfoRecord &  bioseq_info,
 }
 
 
+string  ToBioseqIndentification(const CBioseqInfoRecord &  bioseq_info)
+{
+    string          ret;
+    char            buf[kPSGToStringBufferSize];
+
+    ret.push_back('\'');
+    ret.append(buf, PSGToString(bioseq_info.GetSeqIdType(), buf));
+    ret.push_back('|');
+    ret.append(bioseq_info.GetAccession());
+    ret.push_back('.');
+    ret.append(buf, PSGToString(bioseq_info.GetVersion(), buf));
+    ret.append(" (gi:");
+    ret.append(buf, PSGToString(bioseq_info.GetGI(), buf));
+    ret.append(")'");
+    return ret;
+}
+
+
 string  ToJsonString(const CBlobRecord &  blob_prop)
 {
     string              json;

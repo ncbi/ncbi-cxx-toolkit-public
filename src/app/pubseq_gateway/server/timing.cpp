@@ -1382,6 +1382,7 @@ void COperationTiming::RegisterProcessorPerformance(IPSGS_Processor *  processor
             m_DoneProcPerformance[request_index][proc_index]->Add(mks);
             break;
         case IPSGS_Processor::ePSGS_NotFound:
+        case IPSGS_Processor::ePSGS_Ambiguity:
             m_NotFoundProcPerformance[request_index][proc_index]->Add(mks);
             break;
         case IPSGS_Processor::ePSGS_Canceled:

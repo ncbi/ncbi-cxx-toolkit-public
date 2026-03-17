@@ -35,6 +35,9 @@
 
 #include "insdc_utils.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway.hpp"
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -54,30 +57,21 @@ bool IsINSDCSeqIdType(CBioseqInfoRecord::TSeqIdType  seq_id_type)
 }
 
 
-string GetBioseqRecordId(const CBioseqInfoRecord &  record)
-{
-    char    buf[kPSGToStringBufferSize];
-    string  id(record.GetAccession());
-
-    id.push_back('.');
-
-    id.append(buf, PSGToString(record.GetVersion(), buf))
-      .push_back('.');
-    id.append(buf, PSGToString(record.GetSeqIdType(), buf))
-      .push_back('.');
-    id.append(buf, PSGToString(record.GetGI(), buf));
-
-    return id;
-}
-
-
 // The function makes a decision about what record from the vector should
 // be taken in case of a secondary lookup without a sec_id_type when the
 // original seq_id_type was INSDC and the primary lookup returned nothing.
-SINSDCDecision DecideINSDC(const vector<CBioseqInfoRecord> &  records,
-                           CBioseqInfoRecord::TVersion  version)
+SPSGS_BioseqSelectionResult
+DecideINSDC(const vector<CBioseqInfoRecord> &  records,
+            CBioseqInfoRecord::TVersion  version,
+            bool  is_cache)
 {
-    SINSDCDecision      decision = {CRequestStatus::e404_NotFound, 0, ""};
+    SPSGS_BioseqSelectionResult      decision = {CRequestStatus::e404_NotFound, -1, ""};
+
+    if (records.empty())
+        return decision;
+
+    if (records.size() == 1)
+        return {CRequestStatus::e200_Ok, 0, ""};
 
     CBioseqInfoRecord::TVersion     current_version = -1;
     size_t                          conflict_index_1 = 0;
@@ -95,10 +89,31 @@ SINSDCDecision DecideINSDC(const vector<CBioseqInfoRecord> &  records,
                     decision.message = "At least two bioseq info INSDC records "
                         "with the requested version " + to_string(version) +
                         " found during secondary lookup. First record: " +
-                        GetBioseqRecordId(records[decision.index]) +
+                        ToBioseqIndentification(records[decision.index]) +
                         " Second record: " +
-                        GetBioseqRecordId(records[k]);
-                    break;
+                        ToBioseqIndentification(records[k]);
+                    decision.index = -1;
+
+                    auto    app = CPubseqGatewayApp::GetInstance();
+                    if (is_cache) {
+                        PSG_ERROR("Cache lookup: " + decision.message);
+                        app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,
+                                                  "Cache lookup: " + decision.message);
+                        // It is safe to use nullptr instead of a processor pointer because
+                        // it is not a per-processor counter
+                        app->GetCounters().Increment(nullptr,
+                                                     CPSGSCounters::ePSGS_BioseqInfoCacheLookupINSDCAmbiguity);
+                    } else {
+                        PSG_ERROR("Cassandra lookup: " + decision.message);
+                        app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
+                                                  "Cassandra lookup: " + decision.message);
+                        // It is safe to use nullptr instead of a processor pointer because
+                        // it is not a per-processor counter
+                        app->GetCounters().Increment(nullptr,
+                                                     CPSGSCounters::ePSGS_BioseqInfoDBLookupINSDCAmbiguity);
+                    }
+
+                    return decision;
                 }
 
                 // First hit to the version
@@ -144,9 +159,29 @@ SINSDCDecision DecideINSDC(const vector<CBioseqInfoRecord> &  records,
             "with the same max version " +
             to_string(records[conflict_index_1].GetVersion()) +
             " found during secondary lookup. First record: " +
-            GetBioseqRecordId(records[conflict_index_1]) +
+            ToBioseqIndentification(records[conflict_index_1]) +
             " Second record: " +
-            GetBioseqRecordId(records[conflict_index_2]);
+            ToBioseqIndentification(records[conflict_index_2]);
+        decision.index = -1;
+
+        auto    app = CPubseqGatewayApp::GetInstance();
+        if (is_cache) {
+            PSG_ERROR("Cache lookup: " + decision.message);
+            app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords,
+                                      "Cache lookup: " + decision.message);
+            // It is safe to use nullptr instead of a processor pointer because
+            // it is not a per-processor counter
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_BioseqInfoCacheLookupINSDCAmbiguity);
+        } else {
+            PSG_ERROR("Cassandra lookup: " + decision.message);
+            app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords,
+                                      "Cassandra lookup: " + decision.message);
+            // It is safe to use nullptr instead of a processor pointer because
+            // it is not a per-processor counter
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_BioseqInfoDBLookupINSDCAmbiguity);
+        }
     }
 
     return decision;

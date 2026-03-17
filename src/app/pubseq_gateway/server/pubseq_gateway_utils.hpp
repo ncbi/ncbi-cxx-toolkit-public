@@ -186,6 +186,10 @@ string  GetBioseqMessageHeader(size_t  item_id,
                                CRequestStatus::ECode  status,
                                int  code,
                                EDiagSev  severity);
+string  GetBioseqMatchHeader(size_t  item_id,
+                             const string &  processor_id,
+                             size_t  msg_size,
+                             size_t  assoc_item_id);
 string  GetBioseqCompletionHeader(size_t  item_id,
                                   const string &  processor_id,
                                   size_t  chunk_count);

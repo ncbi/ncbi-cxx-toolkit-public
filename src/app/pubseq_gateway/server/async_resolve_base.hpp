@@ -77,7 +77,8 @@ public:
     }
 
     string GetCombinedErrorMessage(const list<SPSGSeqId> &  seq_id_to_resolve) const;
-    CRequestStatus::ECode GetCombinedErrorCode(void) const;
+    CRequestStatus::ECode GetCombinedErrorCode(const string &  cache_ambiguity_message,
+                                               const string &  cass_ambiguity_message) const;
 
 private:
     vector<SResolveInputSeqIdError>     m_Errors;

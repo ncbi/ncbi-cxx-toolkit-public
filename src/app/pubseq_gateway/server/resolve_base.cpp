@@ -178,7 +178,9 @@ CPSGS_ResolveBase::x_ResolvePrimaryOSLTInCache(
         bioseq_resolution.SetBioseqInfo(bioseq_info);
 
         bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
-                                        this, bioseq_resolution);
+                                        this, bioseq_resolution,
+                                        m_CacheAmbiguityMessage,
+                                        m_CacheAmbiguityJson);
         if (bioseq_cache_lookup_result == ePSGS_CacheHit) {
             bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
             return ePSGS_CacheHit;
@@ -251,7 +253,9 @@ CPSGS_ResolveBase::x_ResolveAsAccesionLike(SBioseqResolution &  bioseq_resolutio
     bioseq_resolution.SetBioseqInfo(bioseq_info);
 
     EPSGS_CacheLookupResult     bioseq_cache_lookup_result = psg_cache.LookupBioseqInfo(
-                                                                    this, bioseq_resolution);
+                                                                    this, bioseq_resolution,
+                                                                    m_CacheAmbiguityMessage,
+                                                                    m_CacheAmbiguityJson);
     if (bioseq_cache_lookup_result == ePSGS_CacheHit) {
         bioseq_resolution.m_ResolutionResult = ePSGS_BioseqCache;
         return ePSGS_CacheHit;
@@ -449,7 +453,9 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
                     // BIOSEQ_INFO only if needed.
                     CPSGCache   psg_cache(true, m_Request, m_Reply);
                     auto        bioseq_cache_lookup_result =
-                                    psg_cache.LookupBioseqInfo(this, bioseq_resolution);
+                                    psg_cache.LookupBioseqInfo(this, bioseq_resolution,
+                                                               m_CacheAmbiguityMessage,
+                                                               m_CacheAmbiguityJson);
 
                     if (bioseq_cache_lookup_result != ePSGS_CacheHit) {
                         // Not found or error
@@ -531,7 +537,8 @@ void CPSGS_ResolveBase::x_ResolveSeqId(void)
     }
 
     x_OnSeqIdResolveError(
-            m_ResolveErrors.GetCombinedErrorCode(),
+            m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                 m_CassAmbiguityMessage),
             ePSGS_UnresolvedSeqId, eDiag_Error,
             GetCouldNotResolveMessage() +
             m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
@@ -581,7 +588,8 @@ void CPSGS_ResolveBase::x_OptimizedNotFound(const string &  err_msg)
     // there is no MoveToNextSeqId() call here.
 
     x_OnSeqIdResolveError(
-            m_ResolveErrors.GetCombinedErrorCode(),
+            m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                 m_CassAmbiguityMessage),
             ePSGS_UnresolvedSeqId, eDiag_Error,
             GetCouldNotResolveMessage() +
             m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
@@ -681,7 +689,8 @@ CPSGS_ResolveBase::x_OnAsyncBioseqInfoResolveError(
     }
 
     x_OnSeqIdResolveError(
-        m_ResolveErrors.GetCombinedErrorCode(),
+        m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                             m_CassAmbiguityMessage),
         code, severity,
         GetCouldNotResolveMessage() +
         m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
@@ -704,7 +713,9 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
             // Need to pull the full bioseq info
             CPSGCache   psg_cache(m_Request, m_Reply);
             auto        cache_lookup_result =
-                                psg_cache.LookupBioseqInfo(this, bioseq_resolution);
+                                psg_cache.LookupBioseqInfo(this, bioseq_resolution,
+                                                           m_CacheAmbiguityMessage,
+                                                           m_CacheAmbiguityJson);
             if (cache_lookup_result != ePSGS_CacheHit) {
                 // No cache hit (or not allowed); need to get to DB if allowed
                 if (x_GetRequestUseCache() != SPSGS_RequestBase::ePSGS_CacheOnly) {
@@ -738,7 +749,8 @@ void CPSGS_ResolveBase::x_OnSeqIdResolveFinished(
 
                 // It is a bioseq inconsistency case
                 x_OnSeqIdResolveError(
-                    m_ResolveErrors.GetCombinedErrorCode(),
+                    m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                         m_CassAmbiguityMessage),
                     ePSGS_NoBioseqInfo, eDiag_Error,
                     GetCouldNotResolveMessage() +
                     m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve));

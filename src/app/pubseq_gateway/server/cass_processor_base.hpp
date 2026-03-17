@@ -126,6 +126,14 @@ protected:
     optional<string>                        m_UserName;
     shared_ptr<CPSG_MyNCBIRequest_WhoAmI>   m_WhoAmIRequest;
     optional<string>                        m_MyNCBICookie;
+
+public:
+    // Memorize the ambiguity message and json with records
+    string                          m_CacheAmbiguityMessage;
+    string                          m_CassAmbiguityMessage;
+
+    string                          m_CacheAmbiguityJson;
+    string                          m_CassAmbiguityJson;
 };
 
 #endif  // PSGS_CASSPROCESSORBASE__HPP

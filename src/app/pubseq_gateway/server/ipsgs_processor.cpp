@@ -49,6 +49,8 @@ IPSGS_Processor::StatusToString(IPSGS_Processor::EPSGS_Status  status)
             return "ePSGS_Done";
         case IPSGS_Processor::ePSGS_NotFound:
             return "ePSGS_NotFound";
+        case IPSGS_Processor::ePSGS_Ambiguity:
+            return "ePSGS_Ambiguity";
         case IPSGS_Processor::ePSGS_Error:
             return "ePSGS_Error";
         case IPSGS_Processor::ePSGS_Canceled:
@@ -75,6 +77,8 @@ IPSGS_Processor::StatusToProgressMessage(IPSGS_Processor::EPSGS_Status  status)
             return "done";
         case IPSGS_Processor::ePSGS_NotFound:
             return "not_found";
+        case IPSGS_Processor::ePSGS_Ambiguity:
+            return "ambiguity";
         case IPSGS_Processor::ePSGS_Error:
             return "error";
         case IPSGS_Processor::ePSGS_Canceled:

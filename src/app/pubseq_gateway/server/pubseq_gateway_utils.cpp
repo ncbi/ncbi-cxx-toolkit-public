@@ -197,8 +197,11 @@ static string   s_Id2Info = "id2_info=";
 static string   s_LastModified = "last_modified=";
 static string   s_Progress = "progress=";
 static string   s_ExecTime = "exec_time=";
+static string   s_AssocId = "assoc_id=";
+static string   s_DataType = "data_type=";
 
 // Fixed values
+static string   s_ReplyData = "reply_data";
 static string   s_BioseqInfo = "bioseq_info";
 static string   s_BlobProp = "blob_prop";
 static string   s_Data = "data";
@@ -219,6 +222,8 @@ static string   s_InProgress = "inprogress";
 static string   s_Sent = "sent";
 static string   s_Processor = "processor";
 static string   s_PublicComment = "public_comment";
+static string   s_BioseqMatch = "bioseq_match";
+
 
 // Combinations
 static string   s_AndSize = "&" + s_Size;
@@ -258,6 +263,8 @@ static string   s_AndId2Chunk = "&" + s_Id2Chunk;
 static string   s_AndId2Info = "&" + s_Id2Info;
 static string   s_AndLastModified = "&" + s_LastModified;
 static string   s_AndProgress = "&" + s_Progress;
+static string   s_ReplyDataItem = s_ItemType + s_ReplyData;
+static string   s_AndReplyDataItem = "&" + s_ReplyDataItem;
 
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_DataAndMetaChunk = s_ChunkType + s_DataAndMeta;
@@ -274,6 +281,8 @@ static string   s_AndFmtJson = "&" + s_FmtJson;
 static string   s_FmtProtobuf = s_Fmt + s_Protobuf;
 static string   s_AndFmtProtobuf = "&" + s_FmtProtobuf;
 static string   s_AndExecTime = "&" + s_ExecTime;
+static string   s_AndDataTypeBioseqMatch = "&" + s_DataType + s_BioseqMatch;
+static string   s_AndAssocId = "&" + s_AssocId;
 
 static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
 static string   s_ReplyCompletionFixedPart = s_ReplyBegin + "0&" +
@@ -356,6 +365,32 @@ string  GetBioseqMessageHeader(size_t  item_id,
     reply.append(buf, PSGToString(code, buf))
          .append(s_AndSeverity)
          .append(SeverityToLowerString(severity))
+         .push_back('\n');
+    return reply;
+}
+
+
+string  GetBioseqMatchHeader(size_t  item_id,
+                             const string &  processor_id,
+                             size_t  msg_size,
+                             size_t  assoc_item_id)
+{
+    // E.g PSG-Reply-Chunk: item_id=2&processor_id=Cassandra-resolve&item_type=reply_data&chunk_type=data_and_meta&size=599&n_chunks=1&data_type=bioseq_match&assoc_id=1
+    string      reply(s_ReplyBegin);
+    char        buf[kPSGToStringBufferSize];
+
+    reply.append(buf, PSGToString(item_id, buf))
+         .append(s_AndProcessorId)
+         .append(processor_id)
+         .append(s_AndReplyDataItem)
+         .append(s_AndDataAndMetaChunk)
+         .append(s_AndSize);
+    reply.append(buf, PSGToString(msg_size, buf))
+         .append(s_AndNChunks);
+    reply.push_back('1');
+    reply.append(s_AndDataTypeBioseqMatch)
+         .append(s_AndAssocId)
+         .append(buf, PSGToString(assoc_item_id, buf))
          .push_back('\n');
     return reply;
 }

@@ -217,7 +217,7 @@ CPSGS_AnnotProcessor::x_OnSeqIdResolveError(
     size_t      item_id = IPSGS_Processor::m_Reply->GetItemId();
     IPSGS_Processor::m_Reply->PrepareBioseqMessage(item_id, kAnnotProcessorName,
                                                    message, status, code,
-                                                   severity);
+                                                   severity, this);
     IPSGS_Processor::m_Reply->PrepareBioseqCompletion(
                                             item_id, kAnnotProcessorName, 2);
 

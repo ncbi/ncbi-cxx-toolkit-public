@@ -895,7 +895,7 @@ void CPSGS_Dispatcher::x_PrintRequestStop(shared_ptr<CPSGS_Request> request,
     CDiagContext::SetRequestContext(NULL);
 }
 
-
+#if 0
 CRequestStatus::ECode
 CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  status) const
 {
@@ -905,6 +905,8 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
         case IPSGS_Processor::ePSGS_NotFound:
         case IPSGS_Processor::ePSGS_Canceled:   // not found because it was not let to finish
             return CRequestStatus::e404_NotFound;
+        case IPSGS_Processor::ePSGS_Ambiguity:
+            return CRequestStatus::e300_MultipleChoices;
         case IPSGS_Processor::ePSGS_Error:
             return CRequestStatus::e500_InternalServerError;
         case IPSGS_Processor::ePSGS_Timeout:
@@ -917,7 +919,7 @@ CPSGS_Dispatcher::x_MapProcessorFinishToStatus(IPSGS_Processor::EPSGS_Status  st
     // Should not happened
     return CRequestStatus::e500_InternalServerError;
 }
-
+#endif
 
 CRequestStatus::ECode
 CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
@@ -943,6 +945,7 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
     size_t                  count_404_or_cancel = 0;
     size_t                  count_timeout = 0;
     size_t                  count_unauthorized = 0;
+    size_t                  count_ambiguity = 0;
     for (const auto  status: proc_statuses) {
         switch (status) {
             case IPSGS_Processor::ePSGS_Done:
@@ -951,6 +954,9 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
             case IPSGS_Processor::ePSGS_NotFound:
             case IPSGS_Processor::ePSGS_Canceled:
                 ++count_404_or_cancel;
+                break;
+            case IPSGS_Processor::ePSGS_Ambiguity:
+                ++count_ambiguity;
                 break;
             case IPSGS_Processor::ePSGS_Timeout:
                 ++count_timeout;
@@ -978,6 +984,12 @@ CPSGS_Dispatcher::x_ConcludeRequestStatus(shared_ptr<CPSGS_Request> request,
         // All processors not found or canceled and there were no limited
         // processors
         return CRequestStatus::e404_NotFound;
+    }
+
+    if (count_ambiguity == proc_statuses.size() &&
+        total_not_instantiated_procs == 0) {
+        // All processors ambiguity and there were no limmited processors
+        return CRequestStatus::e300_MultipleChoices;
     }
 
     if (count_unauthorized > 0) {

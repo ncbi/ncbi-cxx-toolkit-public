@@ -209,10 +209,10 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
         m_FinishedCB(std::move(m_BioseqResolution));
         return;
     }
-    // Here: there are more than one records so a record will be picked for
-    // sure.
-    ssize_t     index = SelectBioseqInfoRecord(records);
-    if (index < 0) {
+    // Here: there are more than 1 records so a record will be picked for sure.
+    // false => this is not cache
+    SPSGS_BioseqSelectionResult     result = SelectBioseqInfoRecord(records, false);
+    if (result.status == CRequestStatus::e300_MultipleChoices) {
         // More than one and it was impossible to make a choice
         app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                   eOpStatusNotFound, m_BioseqRequestStart);
@@ -220,15 +220,18 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
 
         if (m_NeedTrace)
             m_Reply->SendTrace(
-                to_string(records.size()) + " bioseq info records were found however "
-                "it was impossible to choose one of them. So report as not found",
+                result.message + "\nSo report as not found",
                 m_Request->GetStartTimestamp());
 
         m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
-        m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
+        m_ErrorCB(CRequestStatus::e300_MultipleChoices, ePSGS_UnresolvedSeqId,
                   eDiag_Error, "Many bioseq info records found and not able to "
-                  "choose one while resolving " + m_BioseqResolution.GetBioseqInfo().GetAccession(),
+                  "choose one while resolving " +
+                  m_BioseqResolution.GetBioseqInfo().GetAccession(),
                   ePSGS_SkipLogging);
+
+        m_CassAmbiguityMessage = result.message;
+        m_CassAmbiguityJson = result.ambiguity_json;
         return;
     }
 
@@ -240,7 +243,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
             prefix = "Record selected in accordance to priorities (live & not HUP, dead & not HUP, HUP + largest gi/version):\n";
         m_Reply->SendTrace(
             prefix +
-            ToJsonString(records[index],
+            ToJsonString(records[result.index],
                          SPSGS_ResolveRequest::fPSGS_AllBioseqFields) +
             "\nReport found",
             m_Request->GetStartTimestamp());
@@ -251,7 +254,7 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records)
     app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                               m_BioseqRequestStart);
     app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundOne);
-    m_BioseqResolution.SetBioseqInfo(records[index]);
+    m_BioseqResolution.SetBioseqInfo(records[result.index]);
     m_FinishedCB(std::move(m_BioseqResolution));
 }
 
@@ -263,9 +266,12 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
     m_NoSeqIdTypeFetch->GetLoader()->ClearError();
     m_NoSeqIdTypeFetch->SetReadFinished();
 
-    auto                app = CPubseqGatewayApp::GetInstance();
-    auto                request_version = m_BioseqResolution.GetBioseqInfo().GetVersion();
-    SINSDCDecision      decision = DecideINSDC(records, request_version);
+    auto                        app = CPubseqGatewayApp::GetInstance();
+    auto                        request_version = m_BioseqResolution.GetBioseqInfo().GetVersion();
+
+    // false => it is not cache
+    SPSGS_BioseqSelectionResult decision = DecideINSDC(records,
+                                                       request_version, false);
 
     if (m_NeedTrace) {
         string  msg = to_string(records.size()) +
@@ -311,14 +317,13 @@ CPSGS_AsyncBioseqInfoBase::x_OnBioseqInfoWithoutSeqIdType(
             break;
         case CRequestStatus::e500_InternalServerError:
             if (m_NeedTrace)
-                m_Reply->SendTrace("Report not found",
+                m_Reply->SendTrace("Report not found because of DB data inconsistency",
                                    m_Request->GetStartTimestamp());
 
             m_BioseqResolution.m_ResolutionResult = ePSGS_NotResolved;
 
             app->GetTiming().Register(this, eLookupCassBioseqInfo,
                                       eOpStatusFound, m_BioseqRequestStart);
-            app->GetCounters().Increment(this, CPSGSCounters::ePSGS_BioseqInfoFoundMany);
 
             // Error callback
             m_ErrorCB(CRequestStatus::e500_InternalServerError,

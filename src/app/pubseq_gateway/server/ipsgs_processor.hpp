@@ -79,6 +79,8 @@ public:
         ePSGS_InProgress,   //< Processor is still working.
         ePSGS_Done,         //< Processor finished and found what needed.
         ePSGS_NotFound,     //< Processor finished and did not find anything.
+        ePSGS_Ambiguity,    //< Processor finished, found more than one suitable option
+                            //< and could not choose from them.
         ePSGS_Canceled,     //< Processor finished because earlier it received
                             //< the Cancel() call.
         ePSGS_Timeout,      //< Processor finished because of a backend timeout.

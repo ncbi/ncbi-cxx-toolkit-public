@@ -37,6 +37,7 @@
 #include "psgs_reply.hpp"
 #include "pubseq_gateway_utils.hpp"
 #include "cass_fetch.hpp"
+#include "cass_processor_base.hpp"
 
 
 CPSGS_Reply::~CPSGS_Reply()
@@ -409,7 +410,8 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
                                        const string &  msg,
                                        CRequestStatus::ECode  status,
                                        int  err_code,
-                                       EDiagSev  severity)
+                                       EDiagSev  severity,
+                                       CPSGS_CassProcessorBase *  proc)
 {
     if (m_ConnectionCanceled || IsFinished())
         return;
@@ -426,6 +428,26 @@ void CPSGS_Reply::PrepareBioseqMessage(size_t  item_id,
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(msg.data()), msg.size()));
     ++m_TotalSentReplyChunks;
+
+    if (status == CRequestStatus::e300_MultipleChoices) {
+        string      ambiguity_json = proc->m_CacheAmbiguityJson;
+        if (!proc->m_CassAmbiguityJson.empty()) {
+            ambiguity_json = proc->m_CassAmbiguityJson;
+        }
+
+        if (!ambiguity_json.empty()) {
+            size_t      ambiguity_item_id = GetItemId();
+            string      ambiguity_header = GetBioseqMatchHeader(ambiguity_item_id,
+                                                                processor_id,
+                                                                ambiguity_json.size(),
+                                                                item_id);
+            m_Chunks.push_back(m_Reply->PrepareChunk(
+                        (const unsigned char *)(ambiguity_header.data()), ambiguity_header.size()));
+            m_Chunks.push_back(m_Reply->PrepareChunk(
+                        (const unsigned char *)(ambiguity_json.data()), ambiguity_json.size()));
+            ++m_TotalSentReplyChunks;
+        }
+    }
 }
 
 

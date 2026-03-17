@@ -35,21 +35,23 @@
 #include "bioseq_info_record_selector.hpp"
 #include "insdc_utils.hpp"
 #include "pubseq_gateway.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 USING_NCBI_SCOPE;
 
 
-ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
+SPSGS_BioseqSelectionResult
+SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records,
+                       bool  is_cache)
 {
-    static auto app = CPubseqGatewayApp::GetInstance();
-
     if (records.empty())
-        return -1;
+        return {CRequestStatus::e404_NotFound, -1, ""};
 
     if (records.size() == 1)
-        return 0;
+        return {CRequestStatus::e200_Ok, 0, ""};
 
-    ssize_t                             index = -1;
+    SPSGS_BioseqSelectionResult ret = {CRequestStatus::e404_NotFound, -1, ""};
+    static auto                 app = CPubseqGatewayApp::GetInstance();
 
 
     // CXX-14074, ID-8744 : Always pick the record with latest date_changed, regardless of its
@@ -87,10 +89,10 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
     bool                            is_expected_insdc_type = IsINSDCSeqIdType(expected_seq_id_type);
     bool                            seq_id_types_compatible = true;
 
-    TGi max_gi = ZERO_GI;
-    CBioseqInfoRecord::TVersion max_version = -1;
-    size_t k = -1;
-    CBioseqInfoRecord::TSeqIdType  current_seq_id_type;
+    TGi                             max_gi = ZERO_GI;
+    CBioseqInfoRecord::TVersion     max_version = -1;
+    size_t                          k = -1;
+    CBioseqInfoRecord::TSeqIdType   current_seq_id_type;
 
     for (size_t i = 0; i < good_idx_v_ptr->size(); ++i) {
         k = (*good_idx_v_ptr)[i];
@@ -110,13 +112,15 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
 
         TGi gi = GI_FROM(idblob::CBioseqInfoRecord::TGI, records[k].GetGI());
         if (gi > max_gi) {
-            index = k;
+            ret.index = k;
+            ret.status = CRequestStatus::e200_Ok;
             max_gi = gi;
             max_version = records[k].GetVersion();
         } else if (gi == max_gi) {
             auto version = records[k].GetVersion();
             if (version > max_version) {
-                index = k;
+                ret.index = k;
+                ret.status = CRequestStatus::e200_Ok;
                 max_version = version;
             }
         }
@@ -124,13 +128,52 @@ ssize_t  SelectBioseqInfoRecord(const vector<CBioseqInfoRecord>&  records)
 
     if (!seq_id_types_compatible) {
         // The seq id types are not compatible between multiple records
-        // Potentially could be:
+        ret.index = -1;
+        ret.status = CRequestStatus::e300_MultipleChoices;
+
+        bool    need_comma = false;
+
+        ret.message = "Cannot unambiguously pick bioseq info record between: ";
+        ret.ambiguity_json = "[";
+        for (size_t i = 0; i < good_idx_v_ptr->size(); ++i) {
+            if (need_comma) {
+                ret.message += ", ";
+                ret.ambiguity_json += ", ";
+            }
+            need_comma = true;
+
+            size_t  record_index = (*good_idx_v_ptr)[i];
+            ret.message += ToBioseqIndentification(records[record_index]);
+            ret.ambiguity_json += ToJsonString(records[record_index],
+                                               SPSGS_ResolveRequest::fPSGS_AllBioseqFields);
+        }
+        ret.ambiguity_json += "]";
+
+        auto    app = CPubseqGatewayApp::GetInstance();
         // - produced log message
         // - engage an alert
         // - tick a counter
-        return -1;
+        if (is_cache) {
+            PSG_WARNING("Cache lookup: " + ret.message);
+            app->GetAlerts().Register(ePSGS_BioseqInfoCacheLookupIncompatibleRecords,
+                                      "Cache lookup: " + ret.message);
+
+            // It is safe to use nullptr instead of a processor pointer because
+            // it is not a per-processor counter
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_BioseqInfoCacheLookupAmbiguity);
+        } else {
+            PSG_WARNING("Cassandra lookup: " + ret.message);
+            app->GetAlerts().Register(ePSGS_BioseqInfoDBLookupIncompatibleRecords,
+                                      "Cassandra lookup: " + ret.message);
+
+            // It is safe to use nullptr instead of a processor pointer because
+            // it is not a per-processor counter
+            app->GetCounters().Increment(nullptr,
+                                         CPSGSCounters::ePSGS_BioseqInfoDBLookupAmbiguity);
+        }
     }
 
-    return index;
+    return ret;
 }
 

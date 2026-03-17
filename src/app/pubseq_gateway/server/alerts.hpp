@@ -64,7 +64,11 @@ enum EPSGS_AlertType {
     ePSGS_Throttling = 16,
     ePSGS_SeqIdClassificationConfigFilesRefreshSuccess = 17,
     ePSGS_SeqIdClassificationConfigFilesRefreshFailure = 18,
-    ePSGS_SeqIdInconsistencyParsingAndAssess = 19
+    ePSGS_SeqIdInconsistencyParsingAndAssess = 19,
+    ePSGS_BioseqInfoCacheLookupIncompatibleRecords = 20,
+    ePSGS_BioseqInfoDBLookupIncompatibleRecords = 21,
+    ePSGS_BioseqInfoCacheLookupINSDCIncompatibleRecords = 22,
+    ePSGS_BioseqInfoDBLookupINSDCIncompatibleRecords = 23
 };
 
 enum EPSGS_AlertAckResult {

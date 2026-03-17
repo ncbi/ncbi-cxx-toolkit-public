@@ -94,7 +94,9 @@ string CPSGSResolveErrors::GetCombinedErrorMessage(const list<SPSGSeqId> &  seq_
 }
 
 
-CRequestStatus::ECode CPSGSResolveErrors::GetCombinedErrorCode(void) const
+CRequestStatus::ECode
+CPSGSResolveErrors::GetCombinedErrorCode(const string &  cache_ambiguity_message,
+                                         const string &  cass_ambiguity_message) const
 {
     // The method is called only in case of errors including not found.
     // If the resolve is plainly not done then there are no errors per se
@@ -104,6 +106,15 @@ CRequestStatus::ECode CPSGSResolveErrors::GetCombinedErrorCode(void) const
     for (const auto &  item : m_Errors) {
         combined_code = max(combined_code, item.m_ErrorCode);
     }
+
+    if (combined_code == CRequestStatus::e404_NotFound) {
+        // Maybe there was a multiple choice ambiguity so the code needs to be
+        // 300
+        if (!cache_ambiguity_message.empty() || !cass_ambiguity_message.empty()) {
+            combined_code = CRequestStatus::e300_MultipleChoices;
+        }
+    }
+
     return combined_code;
 }
 
@@ -834,15 +845,17 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
 
     ssize_t  index_to_pick = 0;
     if (record_count > 1) {
-        index_to_pick = SelectBioseqInfoRecord(records);
-        if (index_to_pick < 0) {
+        // false => this is not cache
+        SPSGS_BioseqSelectionResult  result = SelectBioseqInfoRecord(records, false);
+        index_to_pick = result.index;
+        if (result.status == CRequestStatus::e300_MultipleChoices) {
             if (m_Request->NeedTrace()) {
                 m_Reply->SendTrace(
-                    to_string(records.size()) + " bioseq info records were "
-                    "found however it was impossible to choose one of them. "
-                    "So report as not found",
+                    result.message + "\nSo report as not found",
                     m_Request->GetStartTimestamp());
             }
+            m_CassAmbiguityMessage = result.message;
+            m_CassAmbiguityJson = result.ambiguity_json;
         } else {
             // Pretend there was exactly one record
             record_count = 1;
@@ -854,8 +867,6 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         if (record_count > 1) {
             app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
-            app->GetCounters().Increment(this,
-                                         CPSGSCounters::ePSGS_BioseqInfoFoundMany);
         } else {
             app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusNotFound,
                                       m_BioseqInfoStart);
@@ -926,7 +937,8 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfo(vector<CBioseqInfoRecord>&&  records
         }
 
         m_ErrorCB(
-            m_ResolveErrors.GetCombinedErrorCode(),
+            m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                 m_CassAmbiguityMessage),
             ePSGS_BioseqInfoAccessionAdjustmentError, eDiag_Error,
             GetCouldNotResolveMessage() +
             m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
@@ -950,8 +962,12 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
     m_NoSeqIdTypeFetch->GetLoader()->ClearError();
     m_NoSeqIdTypeFetch->SetReadFinished();
 
-    auto                app = CPubseqGatewayApp::GetInstance();
-    SINSDCDecision      decision = DecideINSDC(records, m_BioseqInfoRequestedVersion);
+    auto                            app = CPubseqGatewayApp::GetInstance();
+
+    // false => it is not cache
+    SPSGS_BioseqSelectionResult     decision = DecideINSDC(records,
+                                                           m_BioseqInfoRequestedVersion,
+                                                           false);
 
     if (m_Request->NeedTrace()) {
         string  msg = to_string(records.size()) +
@@ -984,7 +1000,6 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
             app->GetCounters().Increment(this,
                                          CPSGSCounters::ePSGS_BioseqInfoNotFound);
             if (m_ResolveStage == eAsLikelyAccessionBioseq) {
-
                 string      msg = "Data inconsistency. A BIOSEQ_INFO table record "
                                   "is not found for accession " +
                                   m_BioseqResolution.GetBioseqInfo().GetAccession();
@@ -997,14 +1012,11 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
         case CRequestStatus::e500_InternalServerError:
             app->GetTiming().Register(this, eLookupCassBioseqInfo, eOpStatusFound,
                                       m_BioseqInfoStart);
-            app->GetCounters().Increment(this,
-                                         CPSGSCounters::ePSGS_BioseqInfoFoundMany);
             if (m_ResolveStage == eAsLikelyAccessionBioseq) {
-                string      msg = "Data inconsistency. More than one BIOSEQ_INFO "
-                                  "table record is found for accession " +
-                                  m_BioseqResolution.GetBioseqInfo().GetAccession();
-
-                m_ResolveErrors.AppendError(msg, CRequestStatus::e502_BadGateway);
+                m_ResolveErrors.AppendError("Data inconsistency for accession '" +
+                                            m_BioseqResolution.GetBioseqInfo().GetAccession() +
+                                            "': " + decision.message,
+                                            CRequestStatus::e502_BadGateway);
             }
 
             // Move to the next stage
@@ -1024,8 +1036,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoWithoutSeqIdType(
                 }
 
                 m_ErrorCB(
-                    m_ResolveErrors.GetCombinedErrorCode(), ePSGS_ServerLogicError,
-                    eDiag_Error,
+                    m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                         m_CassAmbiguityMessage),
+                    ePSGS_ServerLogicError, eDiag_Error,
                     GetCouldNotResolveMessage() +
                     m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
                     ePSGS_NeedLogging);
@@ -1060,7 +1073,9 @@ void CPSGS_AsyncResolveBase::x_OnBioseqInfoError(CRequestStatus::ECode  status, 
         return;
     }
 
-    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(), code, severity,
+    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                   m_CassAmbiguityMessage),
+              code, severity,
               GetCouldNotResolveMessage() +
               m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
               ePSGS_NeedLogging);
@@ -1152,7 +1167,9 @@ void CPSGS_AsyncResolveBase::x_OnSi2csiError(CRequestStatus::ECode  status, int 
         return;
     }
 
-    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(), code, severity,
+    m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                   m_CassAmbiguityMessage),
+              code, severity,
               GetCouldNotResolveMessage() +
               m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve),
               ePSGS_NeedLogging);
@@ -1186,16 +1203,25 @@ string CPSGS_AsyncResolveBase::GetCouldNotResolveMessage(void) const
     string      msg = "Could not resolve ";
 
     if (m_SeqIdsToResolve.size() == 1) {
-        msg += "seq_id " + SanitizeInputValue(m_SeqIdsToResolve.begin()->seq_id);
+        msg += "seq_id '" + SanitizeInputValue(m_SeqIdsToResolve.begin()->seq_id) + "'";
     } else {
         msg += "any of the seq_ids: ";
         bool    is_first = true;
         for (const auto &  item : m_SeqIdsToResolve) {
             if (!is_first)
                 msg += ", ";
-            msg += SanitizeInputValue(item.seq_id);
+            msg += "'" + SanitizeInputValue(item.seq_id) + "'";
             is_first = false;
         }
+    }
+
+    string  ambiguity_message = m_CacheAmbiguityMessage;
+    if (!m_CassAmbiguityMessage.empty()) {
+        ambiguity_message = m_CassAmbiguityMessage;
+    }
+
+    if (!ambiguity_message.empty()) {
+        msg += ". " + ambiguity_message;
     }
 
     return msg;
@@ -1235,7 +1261,9 @@ CPSGS_AsyncResolveBase::x_OnSeqIdAsyncResolutionFinished(
             msg += m_ResolveErrors.GetCombinedErrorMessage(m_SeqIdsToResolve);
         }
 
-        m_ErrorCB(CRequestStatus::e404_NotFound, ePSGS_UnresolvedSeqId,
+        m_ErrorCB(m_ResolveErrors.GetCombinedErrorCode(m_CacheAmbiguityMessage,
+                                                       m_CassAmbiguityMessage),
+                  ePSGS_UnresolvedSeqId,
                   eDiag_Error, msg, ePSGS_SkipLogging);
     }
 }
