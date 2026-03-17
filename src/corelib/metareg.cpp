@@ -253,10 +253,19 @@ string CMetaRegistry::x_FindRegistry(const string& name, ENameStyle style,
 
     string dir;
     CDirEntry::SplitPath(name, &dir, 0, 0);
-    if ( dir.empty() ) {
+    if ( !CDirEntry::IsAbsolutePath(name) ) {
+        if ( !dir.empty() ) {
+            const string& result
+                = x_FindRegistry(CDirEntry::CreateAbsolutePath(name), style);
+            if ( !result.empty() ) {
+                return result;
+            }
+        }
         ITERATE (TSearchPath, it, m_SearchPath) {
             const string& result
-                = x_FindRegistry(CDirEntry::MakePath(*it, name), style);
+                = x_FindRegistry(CDirEntry::CreateAbsolutePath
+                                 (CDirEntry::MakePath(*it, name)),
+                                 style);
             if ( !result.empty() ) {
                 return result;
             }
