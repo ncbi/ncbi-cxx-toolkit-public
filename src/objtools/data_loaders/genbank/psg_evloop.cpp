@@ -435,10 +435,10 @@ void CPSGL_Queue::CallbackQueueRun(CRef<CCallbackQueue> queue)
     while ( auto event = queue->Get() ) {
         auto& tracker = *event.m_Tracker;
         if ( event.m_ReplyItem ) {
-            _ASSERT(tracker.m_CallbackItemCount > 0);
             tracker.ProcessItemCallback(event.m_Status, event.m_ReplyItem);
             {{
                 CFastMutexGuard guard(tracker.GetTrackerMutex());
+                _ASSERT(tracker.m_CallbackItemCount > 0);
                 if ( --tracker.m_CallbackItemCount > 0 || !tracker.m_CallbackReply ) {
                     // more item callbacks
                     continue;
