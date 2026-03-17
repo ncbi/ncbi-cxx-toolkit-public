@@ -295,7 +295,8 @@ void CTlsBase::x_SetValue(void*        value,
         tls_data->m_Native = eSkipCleanup;
 
 #ifdef NCBI_WIN32_THREADS
-        static thread_local SNativeThreadTlsCleanup s_NativeThreadTlsCleanup;
+        // Destructor-only struct to perform TLS cleanup on thread exit.
+        static thread_local SNativeThreadTlsCleanup s_NativeThreadTlsCleanup; /* NCBI_SAFE_STATIC : CXX-14331 */
 #endif
     }
 
