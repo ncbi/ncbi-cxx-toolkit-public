@@ -188,6 +188,13 @@ char* SERV_ServiceName(const char* service);
 size_t SERV_CheckDomain(const char* domain);
 
 
+/* Private interface:  trim in-place all leading and trailing whitespace first,
+ * then strip a pair of matching enveloping quotes (single or double), if any.
+ * Do not trim any whitespace within the quotes, though.  Return its argument.
+ */
+char* ConnNetInfo_TrimInPlace(char* str);
+
+
 /* Private interface:  validate SConnNetInfo by setting its magic cookie */
 void ConnNetInfo_MakeValid(SConnNetInfo* net_info);
 
