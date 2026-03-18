@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Sat Mar  7 05:33:05 EST 2026; formally
+/* time_t value corresponding to Wed Mar 18 05:33:05 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1772879585UL;
+static const unsigned long kInstitutionCollectionCodeList_Timestamp = 1773826385UL;
 static const char* const kInstitutionCollectionCodeList[] = {
 "# $Id$",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
@@ -1261,7 +1261,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEU\ts\tCollage of Eastern Utah\t\t\t",
 "CFAS\ts\tA Colecao de Fungos do Ambiente e Saude /The Environmental and Health Fungi Collection\t\t\t",
 "CFBH\ts\tCelio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista\t\t\t",
-"CFBP\tc\tFrench Collection for Plant-associated Bacteria\t\t\t",
 "CFCC\tcb\tChina Forestry Culture Collection Center\t\t\t",
 "CFGR\ts\tCenter for Fungal Genetic Resources\t\t\t",
 "CFIA\ts\tCanadian Food Inspection Agency\t\t\t",
@@ -1390,7 +1389,11 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CIR\ts\tRoyal Agricultural College\t\t\t",
 "CIRAD\tsb\tCentre de Cooperation Internationale en Recherche Agronomique pour le Developpement\t\t\t",
 "CIRM\ts\tCentre International de Ressources Microbiennes\t\t\t",
-"CIRM:BIA\tc\tBiological Resource Centre Food-associated bacteria\t\t\t",
+"CIRM-BIA\tc\tCenter for Microbial Resources dedicated to Bacteria of Food Interest\t\t\t",
+"CIRM-BP\tc\tInternational Center for Microbial Resources dedicated to bacteria for animals and humans\t\t\t",
+"CIRM-CF\tc\tCIRM-Champignons Filamenteux\t\t\t",
+"CIRM-CFBP\tc\tFrench Collection for Plant-associated Bacteria\t\t\t",
+"CIRM-Levures\tc\tCollection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest\t\t\t",
 "CIRUV\ts\tColeccion Ictiologica de Referencia de la Universidad del Valle\t\t\t",
 "CIS<CHN>\ts\tAcademia Sinica and State Planning Commission\t\t\t",
 "CIS<USA-CA>\ts\tCalifornia Insect Survey\t\t\t",
@@ -1420,7 +1423,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CLEY\ts\tCoastal Ecology Research Station\t\t\t",
 "CLF\ts\tInstitut des Universitaires et Musee Lecoq\t\t\t",
 "CLI\ts\tLiterary and Philosophical Institution of Chatham\t\t\t",
-"CLIB\tc\tCollection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest\t\t\t",
 "CLIOC\tc\tColecao de Leishmania do Instituto Oswaldo Cruz\t\t\t",
 "CLM\ts\tCleveland Museum of Natural History, Botany Department\t\t\t",
 "CLMP\ts\tDepartment of Conservation & Land Management\t\t\t",
@@ -1632,6 +1634,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CRA-PAV<ITA>\tc\tCentro di Ricerca per la Patologia Vegetale\tISPaVe\t\t",
 "CRAF\ts\tUniversity of Craiova, Phytopathology Department\t\t\t",
 "CRAI\ts\tUniversity of Craiova\t\t\t",
+"CRB-Toxoplasma\tc\tCentre de Ressources Biologiques Toxoplasma\t\t\t",
 "CRBF\tc\tCollection de genomes d'organismes symbiotiques\t\t\t",
 "CRBK\ts\tCranbrook School\t\t\t",
 "CRBO\tc\tCentre de Ressource Biologique Oenologique\tIOEB\t\t",
@@ -5215,7 +5218,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHM<DEU>\ts\tNaturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz\t\t\t",
 "MNHM<USA-CO>\ts\tJohn May Museum of Natural History\t\t\t",
 "MNHN\ts\tMuseum National d'Histoire Naturelle\t\t\t",
-"MNHN:ALCP\tsc\tMuseum National d'Histoire Naturelle, Microalgae\t\t\t",
 "MNHN:AR\ts\tMuseum National d'Histoire Naturelle, Arachnids: Spiders\t\thttps://science.mnhn.fr/institution/mnhn/collection/ar/item/ar\t",
 "MNHN:CEU\tsc\tMuseum National d'Histoire Naturelle, Unicellular eukaryotes\t\t\t",
 "MNHN:CH\ts\tMuseum National d'Histoire Naturelle, Chimiotheque\t\t\t",
@@ -5243,7 +5245,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHN:M\ts\tMuseum National d'Histoire Naturelle, Mammal\tZM\t\t",
 "MNHN:MY\ts\tMuseum National d'Histoire Naturelle, Myriapods\t\t\t",
 "MNHN:P\ts\tMuseum National d'Histoire Naturelle, Vascular plants\t\thttps://science.mnhn.fr/institution/mnhn/collection/p/item/p\t",
-"MNHN:PMC\tc\tMuseum National d'Histoire Naturelle, Cyanobacteria\t\t\t",
 "MNHN:RA\ts\tMuseum National d'Histoire Naturelle, Reptiles and amphibians\t\t\t",
 "MNHN:RF\tsc\tMuseum National d'Histoire Naturelle, Fungal strains\t\t\t",
 "MNHN:RS\ts\tMuseum National d'Histoire Naturelle, Arachnids : Scorpions\t\t\t",
@@ -6513,6 +6514,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PMBC\ts\tPhuket Marine Biological Centre\t\t\t",
 "PMBR\ts\tPember Museum of Natural History\t\t\t",
 "PMC\tc\tParis Museum Collection of Cyanobacteria\t\t\t",
+"PMC-ALCP\tc\tParis Museum Culture collection of Cyanobacteria and Microalgae\t\t\t",
 "PMFP\ts\tPapeete Museum\t\t\t",
 "PMG<BRA>\ts\tHorto Florestal\t\t\t",
 "PMG<GBR>\ts\tPaisley Museum of Geological Collection\t\t\t",
