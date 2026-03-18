@@ -71,6 +71,7 @@ enum class eTestNames
     GENE_PARTIAL_CONFLICT,
     GENE_PRODUCT_CONFLICT,
     GENE_WITH_MULTIPLE_RRNAS,
+    GENOME_SHORTER_THAN_1000bp,
     GENOMIC_MRNA,
     HAS_PROJECT_ID,
     HUMAN_HOST,
@@ -221,6 +222,7 @@ enum class eTestNames
     eTestNames::FEATURE_MOLTYPE_MISMATCH,  \
     eTestNames::FLATFILE_FIND,  \
     eTestNames::GENE_LOCUS_MISSING,  \
+    eTestNames::GENOME_SHORTER_THAN_1000bp,  \
     eTestNames::HUMAN_HOST,  \
     eTestNames::MICROSATELLITE_REPEAT_TYPE,  \
     eTestNames::MISMATCHED_COMMENTS,  \
