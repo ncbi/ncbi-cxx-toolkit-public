@@ -1476,6 +1476,47 @@ DISCREPANCY_AUTOFIX(SEQ_SHORTER_THAN_200bp)
 }
 
 
+// GENOME_SHORTER_THAN_1000bp
+
+DISCREPANCY_CASE(GENOME_SHORTER_THAN_1000bp, SEQUENCE, eDisc | eSubmitter | eSmart | eBig, "Short Genome")
+{
+    const CBioseq& bioseq = context.CurrentBioseq();
+    if (bioseq.CanGetInst() && bioseq.GetInst().IsNa() && bioseq.IsSetLength() && bioseq.GetLength() < 1000) {
+        if (context.InGenProdSet() && bioseq.IsSetInst() && bioseq.GetInst().IsSetMol() && bioseq.GetInst().GetMol() == objects::CSeq_inst::eMol_rna) {
+            const CSeqdesc* molinfo = context.GetMolinfo();
+            if (molinfo && molinfo->GetMolinfo().IsSetBiomol() && IsMolProd(molinfo->GetMolinfo().GetBiomol())) {
+                return;
+            }
+        }
+        CDiscrepancyContext::EFixType fix = CDiscrepancyContext::eFixParent;
+        if (bioseq.IsSetAnnot()) {
+            for (auto& annot_it : bioseq.GetAnnot()) {
+                if (annot_it->IsFtable()) {
+                    fix = CDiscrepancyContext::eFixNone;
+                }
+            }
+        }
+        m_Objs["[n] genome[s] [is] shorter than 1000 nt"].Add(*context.BioseqObjRef(fix));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(GENOME_SHORTER_THAN_1000bp)
+{
+    m_ReportItems = m_Objs.Export(*this, false)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(GENOME_SHORTER_THAN_1000bp)
+{
+    const CBioseq* seq = dynamic_cast<const CBioseq*>(context.FindObject(*obj));
+    CBioseq_EditHandle bioseq_edit(context.GetBioseqHandle(*seq));
+    bioseq_edit.Remove();
+    obj->SetFixed();
+    return CRef<CAutofixReport>(new CAutofixReport("GENOME_SHORTER_THAN_1000bp: [n] short genome[s] [is] removed", 1));
+}
+
+
 // RNA_PROVIRAL
 
 DISCREPANCY_CASE(RNA_PROVIRAL, SEQUENCE, eOncaller, "RNA bioseqs are proviral")
