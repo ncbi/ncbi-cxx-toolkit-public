@@ -169,7 +169,6 @@ static int/*bool*/ s_LoadSingleService(SERV_ITER iter, const char* name)
 static int/*bool*/ s_LoadServices(SERV_ITER iter)
 {
     int/*bool*/ ok = 0/*failure*/;
-    const char* name;
     char buf[1024];
     char* svc;
 
@@ -178,27 +177,29 @@ static int/*bool*/ s_LoadServices(SERV_ITER iter)
         if (!ok  ||  !iter->reverse_dns)
             return ok;
     }
-    if (!(name = ConnNetInfo_GetValueInternal(0, REG_CONN_LOCAL_SERVICES,
-                                              buf, sizeof(buf), 0))
-        ||  !*name) {
+    if (!ConnNetInfo_GetValueInternal(0, REG_CONN_LOCAL_SERVICES,
+                                      buf, sizeof(buf), 0)  ||  !*buf) {
         return ok;
     }
 
     svc = buf;
     for (svc += strspn(svc, " \t");  *svc;  svc += strspn(svc, " \t")) {
         size_t len = strcspn(svc, " \t");
+        char* name;
         assert(len);
         if (svc[len])
             svc[len++] = '\0';
-        if (!(name = SERV_ServiceName(svc)))
-            break;
-        if ((iter->reverse_dns
-             ||  (iter->ismask
-                  &&  (!*iter->name  ||  UTIL_MatchesMask(name, iter->name))))
-            &&  s_LoadSingleService(iter, name)) {
-            ok = 1/*success*/;
+        if ((name = SERV_ServiceName(svc)) != 0) {
+            name[strcspn(name, ".")] = '\0';
+            if (*name
+                &&  (iter->reverse_dns
+                     || (iter->ismask
+                         &&  (!*iter->name  ||  UTIL_MatchesMask(name, iter->name))))
+                &&  s_LoadSingleService(iter, name)) {
+                ok = 1/*success*/;
+            }
+            free(name);
         }
-        free((void*) name);
         svc += len;
     }
 
