@@ -1225,7 +1225,6 @@ CETESB	c	Setor de Pesquisa Tecnologica de Sistemas de Tratamento de Efluentes Do
 CEU	s	Collage of Eastern Utah			
 CFAS	s	A Colecao de Fungos do Ambiente e Saude /The Environmental and Health Fungi Collection			
 CFBH	s	Celio F.B. Haddad Herpetological Collection, Departamento de Zoologia, Universidade Estadual Paulista			
-CFBP	c	French Collection for Plant-associated Bacteria			
 CFCC	cb	China Forestry Culture Collection Center			
 CFGR	s	Center for Fungal Genetic Resources			
 CFIA	s	Canadian Food Inspection Agency			
@@ -1354,7 +1353,11 @@ CIQR	s	El Colegio de la Frontera Sur
 CIR	s	Royal Agricultural College			
 CIRAD	sb	Centre de Cooperation Internationale en Recherche Agronomique pour le Developpement			
 CIRM	s	Centre International de Ressources Microbiennes			
-CIRM:BIA	c	Biological Resource Centre Food-associated bacteria			
+CIRM-BIA	c	Center for Microbial Resources dedicated to Bacteria of Food Interest			
+CIRM-BP	c	International Center for Microbial Resources dedicated to bacteria for animals and humans			
+CIRM-CF	c	CIRM-Champignons Filamenteux			
+CIRM-CFBP	c	French Collection for Plant-associated Bacteria			
+CIRM-Levures	c	Collection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest			
 CIRUV	s	Coleccion Ictiologica de Referencia de la Universidad del Valle			
 CIS<CHN>	s	Academia Sinica and State Planning Commission			
 CIS<USA-CA>	s	California Insect Survey			
@@ -1384,7 +1387,6 @@ CLEV	s	Cleveland Museum of Natural History
 CLEY	s	Coastal Ecology Research Station			
 CLF	s	Institut des Universitaires et Musee Lecoq			
 CLI	s	Literary and Philosophical Institution of Chatham			
-CLIB	c	Collection de Levures d'Interet Biotechnologique Collection of Yeasts of Biotechnological Interest			
 CLIOC	c	Colecao de Leishmania do Instituto Oswaldo Cruz			
 CLM	s	Cleveland Museum of Natural History, Botany Department			
 CLMP	s	Department of Conservation & Land Management			
@@ -1596,6 +1598,7 @@ CRA-OLI	b	Centro di Ricerca per l'Olivicoltura e l'Industria Olearia
 CRA-PAV<ITA>	c	Centro di Ricerca per la Patologia Vegetale	ISPaVe		
 CRAF	s	University of Craiova, Phytopathology Department			
 CRAI	s	University of Craiova			
+CRB-Toxoplasma	c	Centre de Ressources Biologiques Toxoplasma			
 CRBF	c	Collection de genomes d'organismes symbiotiques			
 CRBK	s	Cranbrook School			
 CRBO	c	Centre de Ressource Biologique Oenologique	IOEB		
@@ -5179,7 +5182,6 @@ MNHAH	s	Museum of Nature and Human Activities, Hyogo
 MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz			
 MNHM<USA-CO>	s	John May Museum of Natural History			
 MNHN	s	Museum National d'Histoire Naturelle			
-MNHN:ALCP	sc	Museum National d'Histoire Naturelle, Microalgae			
 MNHN:AR	s	Museum National d'Histoire Naturelle, Arachnids: Spiders		https://science.mnhn.fr/institution/mnhn/collection/ar/item/ar	
 MNHN:CEU	sc	Museum National d'Histoire Naturelle, Unicellular eukaryotes			
 MNHN:CH	s	Museum National d'Histoire Naturelle, Chimiotheque			
@@ -5207,7 +5209,6 @@ MNHN:LCP	s	Museum National d'Histoire Naturelle, Laboratory of Cryptogamy
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal	ZM		
 MNHN:MY	s	Museum National d'Histoire Naturelle, Myriapods			
 MNHN:P	s	Museum National d'Histoire Naturelle, Vascular plants		https://science.mnhn.fr/institution/mnhn/collection/p/item/p	
-MNHN:PMC	c	Museum National d'Histoire Naturelle, Cyanobacteria			
 MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians			
 MNHN:RF	sc	Museum National d'Histoire Naturelle, Fungal strains			
 MNHN:RS	s	Museum National d'Histoire Naturelle, Arachnids : Scorpions			
@@ -6477,6 +6478,7 @@ PMB	s	Prirodnjacki Muzej Srpske Zemije
 PMBC	s	Phuket Marine Biological Centre			
 PMBR	s	Pember Museum of Natural History			
 PMC	c	Paris Museum Collection of Cyanobacteria			
+PMC-ALCP	c	Paris Museum Culture collection of Cyanobacteria and Microalgae			
 PMFP	s	Papeete Museum			
 PMG<BRA>	s	Horto Florestal			
 PMG<GBR>	s	Paisley Museum of Geological Collection			
