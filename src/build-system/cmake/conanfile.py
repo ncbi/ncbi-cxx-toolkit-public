@@ -25,6 +25,7 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         "GIF":        ["giflib"],
         "GRPC":       ["grpc", "protobuf", "abseil"],
         "Iconv":      ["libiconv"],
+        "IPS4O":      ["ips4o"],
         "JPEG":       ["libjpeg"],
         "LMDB":       ["lmdb"],
         "LZO":        ["lzo"],
@@ -80,6 +81,8 @@ class NCBIToolkitWithConanRecipe(ConanFile):
         self._default_requires("grpc/[>=1.50.1 <=1.72.0]")
         if self.settings.os == "Linux" or NCBIfound:
             self._default_requires("libdb/5.3.28")
+        if self.settings.os == "Linux":
+            self._optional_requires("ips4o/0.1.0")
         self._default_requires("libiconv/1.17")
         self._default_requires("libjpeg/[>=9e]")
         self._default_requires("libnghttp2/[>=1.51.0 <=1.66.0]")
