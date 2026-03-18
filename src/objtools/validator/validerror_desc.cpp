@@ -470,6 +470,38 @@ bool HasBadGenomeAssemblyPartial(const CUser_object& usr)
 }
 
 
+string HasBadGenomeAssemblyLength(const CUser_object& usr)
+{
+    if (!usr.IsSetData()) {
+        return kEmptyStr;
+    }
+    ITERATE(CUser_object::TData, it, usr.GetData()) {
+        if (! (*it)->IsSetLabel() || ! (*it)->GetLabel().IsStr()) {
+            continue;
+        }
+        const string &label = (*it)->GetLabel().GetStr();
+        if (label.empty()) {
+            continue;
+        }
+
+        if (! (*it)->IsSetData() || ! (*it)->GetData().IsStr()) {
+            continue;
+        }
+        const string &val = (*it)->GetData().GetStr();
+        if (val.empty()) {
+            continue;
+        }
+
+        // cerr << "Label: " << label << ", Value: " << val << endl;
+
+        if (val.length() > 1000) {
+           return label;
+        }
+    }
+    return kEmptyStr;
+}
+
+
 bool CValidError_desc::IsValidStructuredComment(const CSeqdesc& desc)
 {
     if (!desc.IsUser()) {
@@ -636,6 +668,16 @@ bool CValidError_desc::x_ValidateStructuredComment(
             if (report) {
                 PostErr(eDiag_Error, eErr_SEQ_DESCR_BadGenomeRepresentation,
                     "Genome Representation should not start with 'Partial' in structured comment", *m_Ctx, desc);
+            } else {
+                return false;
+            }
+        }
+        string label = HasBadGenomeAssemblyLength(usr);
+        if (! label.empty()) {
+            is_valid = false;
+            if (report) {
+                PostErr(eDiag_Critical, eErr_SEQ_DESCR_BadAssemblyString,
+                    "Genome Assembly Data element for '" + label + "' field has string length > 1000 characters ", *m_Ctx, desc);
             } else {
                 return false;
             }

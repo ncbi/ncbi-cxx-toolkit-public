@@ -1031,6 +1031,9 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
     { "ProkaryoteShouldNotHaveChromosome",
         "Prokaryotes should not have a chromosome source qualifier" }},
+    { eErr_SEQ_DESCR_BadAssemblyString,
+    { "BadAssemblyString",
+        "Genome Assembly text field string should not be longer than 1000 characters" }},
 
 
     /* SEQ_GENERIC */
