@@ -463,6 +463,8 @@ static void TEST_UTIL_MatchesMask(void)
     assert(UTIL_MatchesMaskEx("a!b", "[a-z][!][A-Z]",  1) == 0);
     assert(UTIL_MatchesMaskEx("a!b", "[a-z][!A-Z]b",   1) == 1);
     assert(UTIL_MatchesMaskEx("a!b", "[a-z][!][A-Z]b", 1) == 1);
+    assert(UTIL_MatchesMaskEx("a!b", "[a-z][!!]B",     1) == 0);
+    assert(UTIL_MatchesMaskEx("a!b", "[a-z]!B",        1) == 1);
     assert(UTIL_MatchesMaskEx("a-b", "[a-z][0-][A-Z]", 1) == 1);
     assert(UTIL_MatchesMaskEx("a-b", "[a-z][-9][A-Z]", 1) == 1);
 }

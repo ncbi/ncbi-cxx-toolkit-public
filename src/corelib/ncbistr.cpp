@@ -292,15 +292,13 @@ enum EMatchesMaskResult {
 static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool ignore_case)
 {
     char s, m;
-    size_t str_pos = 0, mask_pos = 0;
+    size_t str_pos, mask_pos;
 
-    for ( ; (m = mask[mask_pos]); ++str_pos, ++mask_pos) {
-
-        s = str[str_pos];
-
-        if (!s  &&  m != '*') {
+    for (str_pos = mask_pos = 0;  (m = mask[mask_pos]);  ++str_pos, ++mask_pos) {
+        if (!(s = str[str_pos])  &&  m != '*') {
             return eMismatch;
         }
+
         // Analyze mask symbol
         switch ( m ) {
         case '?':
@@ -308,7 +306,8 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             continue;
         case '*':
             // Collapse multiple stars
-            while ( (m = mask[mask_pos]) == '*' ) mask_pos++;
+            while ((m = mask[mask_pos]) == '*')
+                ++mask_pos;
             if ( !m ) {
                 // only stars left in the mask
                 return eMatch;
@@ -316,7 +315,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             // General case, use recursion
             while ( s ) {
                 EMatchesMaskResult res = s_MatchesMask(str.substr(str_pos), mask.substr(mask_pos), ignore_case);
-                if ( res != eNoMatch ) {
+                if (res != eNoMatch) {
                     // match or mismatch
                     return res;
                 }
@@ -328,22 +327,21 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
         case '[':
             if (!(m = mask[++mask_pos]))
                 return eMismatch; // mismatch, pattern error
-            if (m == '!') {
-                m = 1; // complement
+            if (m != '!')
+                m  =  0;
+            else // complement
                 ++mask_pos;
-            } else
-                m = 0;
             if (ignore_case)
                 s = (char) tolower((unsigned char) s);
             _ASSERT(s);
-            char a, b; // range for [a-b]
             do {
+                char a, b; // range for [a-b]
                 if (!(a = mask[mask_pos++]))
                     return eMismatch; // mismatch, pattern error
                 if (mask[mask_pos] == '-'  &&  mask[mask_pos+1] != ']') {
-                    ++mask_pos;
-                    if (!(b = mask[mask_pos++]))
+                    if (!(b = mask[++mask_pos]))
                         return eMismatch; // mismatch, pattern error
+                    ++mask_pos;
                 } else
                     b = a;
                 if (s) {
@@ -355,7 +353,7 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
                         s = 0; // mark as found
                 }
             } while (mask[mask_pos] != ']');
-            if (m == !s)
+            if (!s ^ !m)
                 return eNoMatch; // mismatch
             continue;
 
@@ -365,10 +363,10 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             /*FALLTHRU*/
 
         default:
-            // Compare non pattern character in mask and name
+            // Compare non-pattern character with the string
             _ASSERT(s  &&  m);
             if (ignore_case) {
-                if (s != m  &&  tolower((unsigned char)s) != tolower((unsigned char)m))
+                if (s != m  &&  tolower((unsigned char) s) != tolower((unsigned char) m))
                     return eNoMatch;
             } else {
                 if (s != m)
@@ -377,11 +375,9 @@ static EMatchesMaskResult s_MatchesMask(CTempString str, CTempString mask, bool 
             continue;
         }
     }
-    // Matches if we reach the end of the string and mask at the same time only
-    if ( str[str_pos] ) {
-        return eNoMatch;
-    }
-    return eMatch;
+
+    // Matches only if we reach the end of both the string and the mask at the same time
+    return str[str_pos] ? eNoMatch : eMatch;
 }
 
 
@@ -3050,7 +3046,7 @@ const string* NStr::Find(const vector <string>& vec, const CTempString val,
 
 
 /// @internal
-// Check that symbol 'ch' is a word boundary character (don't matches [a-zA-Z0-9_]).
+// Check that symbol 'ch' is a word boundary character (doesn't match [a-zA-Z0-9_]).
 static inline bool s_IsWordBoundaryChar(char ch)
 {
     return !(ch == '_'  ||  isalnum((unsigned char)ch));

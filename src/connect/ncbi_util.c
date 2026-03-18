@@ -1311,19 +1311,18 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
             if (!p)
                 return 1/*match*/;
             while (*text) {
-                int matches = x_MatchesMask(text++, mask, ignore_case);
-                if (matches/*!=0*/)
-                    return matches;
+                int match = x_MatchesMask(text++, mask, ignore_case);
+                if (match/*!=0*/)
+                    return match;
             }
             return -1/*mismatch, stop*/;
         case '[':
             if (!(p = *mask))
                 return -1/*mismatch, pattern error*/;
-            if (p == '!') {
-                p  = 1/*complement*/;
-                ++mask;
-            } else
-                p  = 0;
+            if (p != '!')
+                p  =  0;
+            else
+                ++mask/*skip '!', complement match*/;
             if (ignore_case)
                 c = (char) tolower((unsigned char) c);
             assert(c);
@@ -1331,9 +1330,9 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
                 if (!(a = *mask++))
                     return -1/*mismatch, pattern error*/;
                 if (*mask == '-'  &&  mask[1] != ']') {
-                    ++mask;
-                    if (!(b = *mask++))
+                    if (!(b = *++mask))
                         return -1/*mismatch, pattern error*/;
+                    ++mask;
                 } else
                     b = a;
                 if (c) {
@@ -1345,7 +1344,7 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
                         c = 0/*mark as found*/;
                 }
             } while (*mask != ']');
-            if (p == !c)
+            if (!c ^ !p)
                 return 0/*mismatch*/;
             ++mask/*skip ']'*/;
             continue;
@@ -1356,11 +1355,12 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
         default: 
             assert(c  &&  p);
             if (ignore_case) {
-                c = (char) tolower((unsigned char) c);
-                p = (char) tolower((unsigned char) p);
+                if (c != p  &&  tolower((unsigned char) c) != tolower((unsigned char) p))
+                    return 0/*mismatch*/;
+            } else {
+                if (c != p)
+                    return 0/*mismatch*/;
             }
-            if (c != p)
-                return 0/*mismatch*/;
             continue;
         }
     }
