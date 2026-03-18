@@ -335,7 +335,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 #define DEF_CONN_LOCAL_IPS_DISABLE  "NONE"
 
 
-/* Lookup "param" in the registry / environment.  "param" is usually all-caps.
+/* Lookup "param" in the registry / environment.  "param" treated as all-caps.
  * If "param" does not already begin with "CONN_", then "CONN_" or "_CONN_" is
  * automatically injected in all lookups listed below, unless otherwise noted.
  * The order of search is the following (the first match causes to return):
@@ -345,20 +345,25 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  *    the "service" part;
  * 2. Registry key "CONN_param" in the section '["service"]';
  * 3. Environment setting "CONN_param" (in all upper-case);
- * 4. Registry key "param" (with the leading "CONN_" stripped) in the default
- *    section "[CONN]".
+ * 4. Registry key "param" (with the leading "CONN_", if there was any,
+ *    stripped) in the default section "[CONN]".
  * Steps 1 & 2 skipped for "service" passed as either NULL or empty ("").
  * Steps 3 & 4 skipped for a non-empty "service" and a "param" that already
  *             begins with "CONN_".
- * The outer white space is then trimmed (from the beginning and the trailing
+ * The outer white space is then trimmed (from the leading and the trailing
  * positions of the string).  Next, if the result has enveloping quotes
  * (either single '' or double ""), then they are stripped, too -- that can
- * make the result to become empty (e.g. for the literal "" string).
+ * make the result to become empty (e.g. for the literal "" string), or to
+ * contain only whitespace (e.g. when it was enclosed within the quotes), or
+ * to contain a string with yet another pair of quotes (e.g. for "'<xyz>'").
  * Up to "value_size" bytes (including the terminating '\0') of the result get
  * copied into the "value" buffer (which may cause truncation!).  When no match
- * is found, the "value" gets filled up to "value_size" bytes with "def_value"
- * (or an empty string).  Return 0 on out of memory (including "value_size"
- * given as 0) or value truncation;  otherwise, return "value".
+ * is found, "value" gets filled (up to "value_size" bytes) with "def_value"
+ * (or the empty string if the latter was provided as either NULL or "").
+ * @return
+ *  0 on out of memory (including when either "value" or "value_size" is 0)
+ *  or value truncation (including when storing the default);  otherwise,
+ *  return "value".
  * @note
  *  "value" is always '\0'-terminated if "value_size" is greater than 0.
  */
@@ -367,7 +372,7 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  const char* param,
  char*       value,
  size_t      value_size,
- const char* def_value    /* NB: both NULL and "" have the same effect */
+ const char* def_value    /* NB: both NULL and "" treated identically */
  );
 
 
@@ -405,7 +410,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  http_proxy_pass   HTTP_PROXY_PASS
  *  http_proxy_leak   HTTP_PROXY_LEAK   1 means to also re-try w/o the proxy
  *  http_proxy_skip   HTTP_PROXY_SKIP   1 means to skip $http_proxy environment
- *  http_proxy_only   (auto-assigned)   1 means proxy loaded from $http_proxy
+ *  http_proxy_mask   (auto-assigned)   reflects which of $http[s]_proxy used
  *  http_push_auth    HTTP_PUSH_AUTH    1 if to send credentials pre-emptively
  *  timeout           TIMEOUT           "<sec>.<usec>": "3.00005", "infinite"
  *  max_try           MAX_TRY
@@ -424,6 +429,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  * variable again, but using the name CONN_<NAME>;  and finally, in the default
  * registry section (DEF_CONN_REG_SECTION), using just <NAME>.  If the service
  * is NULL or empty then the first two steps in the above lookup are skipped.
+ * See a more general discussion of the behavior in ConnNetInfo_GetValue().
  *
  * For default values see right above, within macros DEF_CONN_<NAME>.
  *
