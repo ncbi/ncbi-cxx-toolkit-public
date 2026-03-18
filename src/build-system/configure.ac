@@ -4632,8 +4632,8 @@ AC_CACHE_CHECK([library needed for 64-bit std::atomic], ncbi_cv_lib_atomic64,
            [[@%:@include <atomic>
              struct S { int x, y; };
              bool f(std::atomic<S> &as, S &s1, S s2) {
-	         bool b = as.compare_exchange_strong(s1, s2);
-		 return b ? as.load().x : as.load().y; }]],
+                 bool b = as.compare_exchange_strong(s1, s2);
+                 return b ? as.load().x : as.load().y; }]],
            [[std::atomic<S> as; S s1, s2; return f(as, s1, s2);]])],
           [ncbi_cv_lib_atomic64=${x:-none required}; break])
     done
@@ -5215,11 +5215,11 @@ if test "x$with_gnutls" != xno; then
               LIBGNUTLS_CONFIG="$LIBGNUTLS_CONFIG --static"
            fi
            GNUTLS_CONFIG_LIBS=`$LIBGNUTLS_CONFIG --libs-only-l`
-	   GNUTLS_CONFIG_LIBS=`echo " $GNUTLS_CONFIG_LIBS " | \
-	      sed -e '/ -lhogweed /s/ -lnettle / /' \
-	          -e "s@ -lhogweed @ $NETTLE_LIBS @"`
-	   GNUTLS_CONFIG_LIBS=`echo "$GNUTLS_CONFIG_LIBS" | \
-	      sed -e "s@ -lgmp @ $GMP_LIBS @"`
+           GNUTLS_CONFIG_LIBS=`echo " $GNUTLS_CONFIG_LIBS " | \
+              sed -e '/ -lhogweed /s/ -lnettle / /' \
+                  -e "s@ -lhogweed @ $NETTLE_LIBS @"`
+           GNUTLS_CONFIG_LIBS=`echo "$GNUTLS_CONFIG_LIBS" | \
+              sed -e "s@ -lgmp @ $GMP_LIBS @"`
            GNUTLS_CONFIG_LIBS="$GNUTLS_LIBPATH$GNUTLS_CONFIG_LIBS$Z_LIBS"
            ;;
        no)
@@ -9606,7 +9606,7 @@ OPENTELEMETRY_LIBS=`echo "$OPENTELEMETRY_LIBS" | sed -e 's/  */ /g'`
 if test "$with_opentelemetry" != no \
    -a -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_common-static.a"; then
    test -f "$OPENTELEMETRY_PATH/lib/libopentelemetry_proto-static.a"  ||  \
-     	ot_extra_sed='; s/\(-lopentelemetry_proto[[^ ]]*\)-static/\1/g'
+        ot_extra_sed='; s/\(-lopentelemetry_proto[[^ ]]*\)-static/\1/g'
    OPENTELEMETRY_STATIC_LIBS=`echo "$OPENTELEMETRY_LIBS" \
        | sed -e "s/ -l[[^ ]]*/&-static/g$ot_extra_sed"`
 else
