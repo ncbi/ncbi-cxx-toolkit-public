@@ -13532,7 +13532,7 @@ fi
 
 #### Manage the debug-vs.-optimization flags ("--with(out)-(max-)debug",
 #### "--with(out)-symbols", "--with(out)-optimization")
-asan_sfx=''
+san_sfx=''
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
@@ -13542,8 +13542,14 @@ if test "$compiler" != "MSVC" ; then
 
    if test "${with_max_debug-no}" != "no"; then
       case "$compiler:$with_max_debug" in
-         GCC:thread | *Clang:thread ) sanitize=-fsanitize=thread ;;
-         GCC:yes | *Clang:yes ) sanitize=-fsanitize=address; asan_sfx=ASan ;;
+         GCC:thread | *Clang:thread )
+            sanitize=-fsanitize=thread
+            san_sfx=TSan
+            ;;
+         GCC:yes | *Clang:yes )
+            sanitize=-fsanitize=address
+            san_sfx=ASan
+            ;;
          *:yes ) ;;
          * )
             as_fn_error $? "--with-max-debug=$with_max_debug unimplemented for compiler $compiler" "$LINENO" 5
@@ -31779,8 +31785,8 @@ for d in "$AVRO_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    AVRO_PATH=$AVRO_ARCH_PATH
-   if test -d "$AVRO_PATH$asan_sfx"; then
-      AVRO_PATH="$AVRO_PATH$asan_sfx"
+   if test -d "$AVRO_PATH$san_sfx"; then
+      AVRO_PATH="$AVRO_PATH$san_sfx"
    fi
    if test -d "$AVRO_PATH"; then
       ncbi_fix_dir_tmp=`if cd $AVRO_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
@@ -32389,8 +32395,8 @@ for d in "$MONGODB3_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    MONGODB3_PATH=$MONGODB3_ARCH_PATH
-   if test -d "$MONGODB3_PATH$asan_sfx"; then
-      MONGODB3_PATH="$MONGODB3_PATH$asan_sfx"
+   if test -d "$MONGODB3_PATH$san_sfx"; then
+      MONGODB3_PATH="$MONGODB3_PATH$san_sfx"
    fi
    if test -d "$MONGODB3_PATH"; then
       ncbi_fix_dir_tmp=`if cd $MONGODB3_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
@@ -32950,8 +32956,8 @@ for d in "$ROCKSDB_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    ROCKSDB_PATH=$ROCKSDB_ARCH_PATH
-   if test -d "$ROCKSDB_PATH$asan_sfx"; then
-      ROCKSDB_PATH="$ROCKSDB_PATH$asan_sfx"
+   if test -d "$ROCKSDB_PATH$san_sfx"; then
+      ROCKSDB_PATH="$ROCKSDB_PATH$san_sfx"
    fi
    if test -d "$ROCKSDB_PATH"; then
       ncbi_fix_dir_tmp=`if cd $ROCKSDB_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
@@ -35064,7 +35070,7 @@ if test -d "$GRPC_PATH"; then
     /*) GRPC_PATH=$ncbi_fix_dir_tmp ;;
  esac
    found=no
-   for a in $asan_sfx ""; do
+   for a in $san_sfx ""; do
       for b in $bit64_sfx ""; do
          for c in $real_compiler_vpfx $real_compiler_pfx $compiler_vpfx \
             "$compiler_pfx"; do
@@ -36230,8 +36236,8 @@ for d in "$THRIFT_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    THRIFT_PATH=$THRIFT_ARCH_PATH
-   if test -d "$THRIFT_PATH$asan_sfx"; then
-      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
+   if test -d "$THRIFT_PATH$san_sfx"; then
+      THRIFT_PATH="$THRIFT_PATH$san_sfx"
    fi
    ncbi_fix_dir_tmp=`if cd $THRIFT_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -36421,10 +36427,10 @@ if test -d "$APACHE_ARROW_PATH"; then
          ;;
     /*) APACHE_ARROW_PATH=$ncbi_fix_dir_tmp ;;
  esac
-   for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+   for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$san_sfx" \
             "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
@@ -36770,8 +36776,8 @@ for d in "$CPPKAFKA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
-   if test -d "$CPPKAFKA_PATH$asan_sfx"; then
-      CPPKAFKA_PATH="$CPPKAFKA_PATH$asan_sfx"
+   if test -d "$CPPKAFKA_PATH$san_sfx"; then
+      CPPKAFKA_PATH="$CPPKAFKA_PATH$san_sfx"
    fi
    ncbi_fix_dir_tmp=`if cd $CPPKAFKA_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -37339,8 +37345,8 @@ for d in "$JAEGER_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    JAEGER_PATH=$JAEGER_ARCH_PATH
-   if test -d "$JAEGER_PATH$asan_sfx"; then
-      JAEGER_PATH="$JAEGER_PATH$asan_sfx"
+   if test -d "$JAEGER_PATH$san_sfx"; then
+      JAEGER_PATH="$JAEGER_PATH$san_sfx"
    fi
    ncbi_fix_dir_tmp=`if cd $JAEGER_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -37518,8 +37524,8 @@ for d in "$OPENTELEMETRY_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
-   if test -d "$OPENTELEMETRY_PATH$asan_sfx"; then
-      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$asan_sfx"
+   if test -d "$OPENTELEMETRY_PATH$san_sfx"; then
+      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$san_sfx"
    fi
    ncbi_fix_dir_tmp=`if cd $OPENTELEMETRY_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -37729,8 +37735,8 @@ for d in "$GOOGLE_CLOUD_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
    fi
 done
    GOOGLE_CLOUD_PATH=$GOOGLE_CLOUD_ARCH_PATH
-   if test -d "$GOOGLE_CLOUD_PATH$asan_sfx"; then
-      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$asan_sfx"
+   if test -d "$GOOGLE_CLOUD_PATH$san_sfx"; then
+      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$san_sfx"
    fi
    ncbi_fix_dir_tmp=`if cd $GOOGLE_CLOUD_PATH; then { PWD=; unset PWD;}; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in

@@ -3641,7 +3641,7 @@ fi
 
 #### Manage the debug-vs.-optimization flags ("--with(out)-(max-)debug",
 #### "--with(out)-symbols", "--with(out)-optimization")
-asan_sfx=''
+san_sfx=''
 if test "$compiler" != "MSVC" ; then
    if test "$with_debug" = "no" -o "$with_tcheck" != "no"; then
       CPPFLAGS="-DNDEBUG $CPPFLAGS"
@@ -3651,8 +3651,14 @@ if test "$compiler" != "MSVC" ; then
 
    if test "${with_max_debug-no}" != "no"; then
       case "$compiler:$with_max_debug" in
-         GCC:thread | *Clang:thread ) sanitize=-fsanitize=thread ;;
-         GCC:yes | *Clang:yes ) sanitize=-fsanitize=address; asan_sfx=ASan ;;
+         GCC:thread | *Clang:thread )
+            sanitize=-fsanitize=thread
+            san_sfx=TSan
+            ;;
+         GCC:yes | *Clang:yes )
+            sanitize=-fsanitize=address
+            san_sfx=ASan
+            ;;
          *:yes ) ;;
          * )
             AC_MSG_ERROR([--with-max-debug=$with_max_debug unimplemented for compiler $compiler])
@@ -8508,8 +8514,8 @@ if test "$with_avro" != no; then
    esac
    NCBI_FIND_ARCH_PATH(AVRO)
    AVRO_PATH=$AVRO_ARCH_PATH
-   if test -d "$AVRO_PATH$asan_sfx"; then
-      AVRO_PATH="$AVRO_PATH$asan_sfx"
+   if test -d "$AVRO_PATH$san_sfx"; then
+      AVRO_PATH="$AVRO_PATH$san_sfx"
    fi
    if test -d "$AVRO_PATH"; then
       NCBI_FIX_DIR(AVRO_PATH)
@@ -8606,8 +8612,8 @@ if test "$with_mongodb3" != no; then
    esac
    NCBI_FIND_ARCH_PATH(MONGODB3)
    MONGODB3_PATH=$MONGODB3_ARCH_PATH
-   if test -d "$MONGODB3_PATH$asan_sfx"; then
-      MONGODB3_PATH="$MONGODB3_PATH$asan_sfx"
+   if test -d "$MONGODB3_PATH$san_sfx"; then
+      MONGODB3_PATH="$MONGODB3_PATH$san_sfx"
    fi
    if test -d "$MONGODB3_PATH"; then
       NCBI_FIX_DIR(MONGODB3_PATH)
@@ -8698,8 +8704,8 @@ if test "$with_rocksdb" != no; then
    esac
    NCBI_FIND_ARCH_PATH(ROCKSDB)
    ROCKSDB_PATH=$ROCKSDB_ARCH_PATH
-   if test -d "$ROCKSDB_PATH$asan_sfx"; then
-      ROCKSDB_PATH="$ROCKSDB_PATH$asan_sfx"
+   if test -d "$ROCKSDB_PATH$san_sfx"; then
+      ROCKSDB_PATH="$ROCKSDB_PATH$san_sfx"
    fi
    if test -d "$ROCKSDB_PATH"; then
       NCBI_FIX_DIR(ROCKSDB_PATH)
@@ -9003,7 +9009,7 @@ esac
 if test -d "$GRPC_PATH"; then
    NCBI_FIX_DIR(GRPC_PATH)
    found=no
-   for a in $asan_sfx ""; do
+   for a in $san_sfx ""; do
       for b in $bit64_sfx ""; do
          for c in $real_compiler_vpfx $real_compiler_pfx $compiler_vpfx \
             "$compiler_pfx"; do
@@ -9343,8 +9349,8 @@ esac
 if test -d "$THRIFT_PATH"; then
    NCBI_FIND_ARCH_PATH(THRIFT)
    THRIFT_PATH=$THRIFT_ARCH_PATH
-   if test -d "$THRIFT_PATH$asan_sfx"; then
-      THRIFT_PATH="$THRIFT_PATH$asan_sfx"
+   if test -d "$THRIFT_PATH$san_sfx"; then
+      THRIFT_PATH="$THRIFT_PATH$san_sfx"
    fi
    NCBI_FIX_DIR(THRIFT_PATH)
 fi
@@ -9383,10 +9389,10 @@ case "$with_apache_arrow" in
 esac
 if test -d "$APACHE_ARROW_PATH"; then
    NCBI_FIX_DIR(APACHE_ARROW_PATH)
-   for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$asan_sfx" \
-            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$asan_sfx" \
+   for d in "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$san_sfx" \
+            "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$san_sfx" \
             "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$APACHE_ARROW_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
             "$APACHE_ARROW_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx" \
@@ -9437,8 +9443,8 @@ esac
 if test -d "$CPPKAFKA_PATH"; then
    NCBI_FIND_ARCH_PATH(CPPKAFKA)
    CPPKAFKA_PATH=$CPPKAFKA_ARCH_PATH
-   if test -d "$CPPKAFKA_PATH$asan_sfx"; then
-      CPPKAFKA_PATH="$CPPKAFKA_PATH$asan_sfx"
+   if test -d "$CPPKAFKA_PATH$san_sfx"; then
+      CPPKAFKA_PATH="$CPPKAFKA_PATH$san_sfx"
    fi
    NCBI_FIX_DIR(CPPKAFKA_PATH)
 fi
@@ -9529,8 +9535,8 @@ esac
 if test -d "$JAEGER_PATH"; then
    NCBI_FIND_ARCH_PATH(JAEGER)
    JAEGER_PATH=$JAEGER_ARCH_PATH
-   if test -d "$JAEGER_PATH$asan_sfx"; then
-      JAEGER_PATH="$JAEGER_PATH$asan_sfx"
+   if test -d "$JAEGER_PATH$san_sfx"; then
+      JAEGER_PATH="$JAEGER_PATH$san_sfx"
    fi
    NCBI_FIX_DIR(JAEGER_PATH)
 fi
@@ -9562,8 +9568,8 @@ esac
 if test -d "$OPENTELEMETRY_PATH"; then
    NCBI_FIND_ARCH_PATH(OPENTELEMETRY)
    OPENTELEMETRY_PATH=$OPENTELEMETRY_ARCH_PATH
-   if test -d "$OPENTELEMETRY_PATH$asan_sfx"; then
-      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$asan_sfx"
+   if test -d "$OPENTELEMETRY_PATH$san_sfx"; then
+      OPENTELEMETRY_PATH="$OPENTELEMETRY_PATH$san_sfx"
    fi
    NCBI_FIX_DIR(OPENTELEMETRY_PATH)
 fi
@@ -9622,8 +9628,8 @@ esac
 if test -d "$GOOGLE_CLOUD_PATH"; then
    NCBI_FIND_ARCH_PATH(GOOGLE_CLOUD)
    GOOGLE_CLOUD_PATH=$GOOGLE_CLOUD_ARCH_PATH
-   if test -d "$GOOGLE_CLOUD_PATH$asan_sfx"; then
-      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$asan_sfx"
+   if test -d "$GOOGLE_CLOUD_PATH$san_sfx"; then
+      GOOGLE_CLOUD_PATH="$GOOGLE_CLOUD_PATH$san_sfx"
    fi
    NCBI_FIX_DIR(GOOGLE_CLOUD_PATH)
 fi
