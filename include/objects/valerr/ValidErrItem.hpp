@@ -371,6 +371,7 @@ enum EErrType {
     eErr_SEQ_DESCR_HasStrainAndIsolate,
     eErr_SEQ_DESCR_TaxonomyIsMetagenome,
     eErr_SEQ_DESCR_ProkaryoteShouldNotHaveChromosome,
+    eErr_SEQ_DESCR_BadAssemblyString,
     ERR_CODE_END(SEQ_DESCR),
 
 
