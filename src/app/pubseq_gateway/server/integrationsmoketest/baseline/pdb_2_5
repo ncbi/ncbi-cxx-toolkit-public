@@ -6,7 +6,7 @@
         {
             "severity": "Error",
             "code": 312,
-            "text": "Could not resolve seq_id 1VU9|AA"
+            "text": "Could not resolve seq_id '1VU9|AA'"
         }
     ]
 },
