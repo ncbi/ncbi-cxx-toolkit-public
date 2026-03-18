@@ -54,7 +54,7 @@ NCBI_add_subdirectory(
   vecscreen
   winmasker
 )
-if(NOT SUBUTILS_REPO)
+if(NOT NCBI_SUBUTILS_REPO)
   NCBI_add_subdirectory(flat2asn)
 endif()
 
