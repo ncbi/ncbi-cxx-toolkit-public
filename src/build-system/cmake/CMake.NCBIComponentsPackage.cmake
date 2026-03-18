@@ -305,3 +305,11 @@ NCBI_define_Pkgcomponent(NAME AWS_SDK PACKAGE AWSSDK FIND AWSSDK)
 # wxWidgets
 NCBI_define_Pkgcomponent(NAME wxWidgets PACKAGE wxWidgets FIND wxWidgets)
 
+#############################################################################
+# IPS4O
+NCBI_define_Pkgcomponent(NAME IPS4O PACKAGE ips4o FIND ips4o)
+if(NCBI_COMPONENT_IPS4O_FOUND)
+    set(HAVE_IPS4O_HPP TRUE)
+endif()
+
+
