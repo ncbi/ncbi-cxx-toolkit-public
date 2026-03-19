@@ -581,7 +581,7 @@ void CCSRATestMTApp::RunTest(void)
             CVDBColumn seq_len_col(ref_curs, "SEQ_LEN");
 
             string ref_name, ref_seq_id;
-            uint64_t slot_size = 0, slot_count = 0, aln_count = 0;
+            uint64_t total_slot_size = 0, slot_count = 0, aln_count = 0;
             for ( uint64_t row = 1, max_row = ref_curs.GetMaxRowId();
                   true; ++row ) {
                 bool more = row <= max_row && ref_curs.TryOpenRow(row);
@@ -600,7 +600,7 @@ void CCSRATestMTApp::RunTest(void)
                 CVDBValueFor<int32_t> seq_len(ref_curs, seq_len_col);
                 ref_name = *name;
                 ref_seq_id = *seq_id;
-                slot_size = *seq_len;
+                total_slot_size += *seq_len;
                 
                 CVDBValueFor<uint64_t> aln_ids(ref_curs, aln_ids_col);
                 slot_count = 1;
@@ -723,7 +723,7 @@ void CCSRATestMTApp::RunTest(void)
                     CRef<CBioseq> obj =
                         CCSraRefSeqIterator(csra_db, query_idh).GetRefBioseq();
                 }
-                size_t count = 0, skipped = 0;
+                int count = 0, skipped = 0;
                 for ( CCSraAlignIterator it =
                           RETRY(CCSraAlignIterator(csra_db, query_idh,
                                                    m_Query_range.GetFrom(),
