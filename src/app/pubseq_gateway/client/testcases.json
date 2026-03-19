@@ -1595,7 +1595,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id NonExisting"
+                                "text": "Could not resolve seq_id 'NonExisting'"
                             }
                         ]
                     }
@@ -1641,7 +1641,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'RCU83448'\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -1687,7 +1687,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'AFP68755'\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -5184,7 +5184,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id nonexisting"
+                                "text": "Could not resolve seq_id 'nonexisting'"
                             }
                         ]
                     }
@@ -5227,7 +5227,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'RCU83448'\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -5270,7 +5270,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 2 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'AFP68755'\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 2 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -13966,7 +13966,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id nonexisting"
+                                "text": "Could not resolve seq_id 'nonexisting'"
                             }
                         ]
                     }
@@ -14010,7 +14010,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id RCU83448\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'RCU83448'\n1 error encountered while resolving the seq id:\nSeq_id 'RCU83448' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -14054,7 +14054,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id AFP68755\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
+                                "text": "Could not resolve seq_id 'AFP68755'\n1 error encountered while resolving the seq id:\nSeq_id 'AFP68755' possible type mismatch: the URL provides 12 while the CSeq_Id detects it as 5"
                             }
                         ]
                     }
@@ -15582,7 +15582,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id pdb|1vu9|aa"
+                                "text": "Could not resolve seq_id 'pdb|1vu9|aa'"
                             }
                         ]
                     }
@@ -15923,7 +15923,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 1vu9|aa"
+                                "text": "Could not resolve seq_id '1vu9|aa'"
                             }
                         ]
                     }
@@ -16264,7 +16264,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id pdb|1vu9_aa"
+                                "text": "Could not resolve seq_id 'pdb|1vu9_aa'"
                             }
                         ]
                     }
@@ -16605,7 +16605,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 1vu9_aa"
+                                "text": "Could not resolve seq_id '1vu9_aa'"
                             }
                         ]
                     }
@@ -16803,7 +16803,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id nonexisting"
+                                "text": "Could not resolve seq_id 'nonexisting'"
                             }
                         ]
                     }
@@ -16849,7 +16849,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id nonexisting"
+                                "text": "Could not resolve seq_id 'nonexisting'"
                             }
                         ]
                     }
@@ -16895,7 +16895,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id nonexisting"
+                                "text": "Could not resolve seq_id 'nonexisting'"
                             }
                         ]
                     }
@@ -23210,7 +23210,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 9000000000000000001"
+                                "text": "Could not resolve seq_id '9000000000000000001'"
                             }
                         ]
                     }
@@ -26576,7 +26576,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483647"
+                                "text": "Could not resolve seq_id '4147483647'"
                             }
                         ]
                     }
@@ -26618,7 +26618,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483647"
+                                "text": "Could not resolve seq_id '4147483647'"
                             }
                         ]
                     }
@@ -26660,7 +26660,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EGB0709986.2"
+                                "text": "Could not resolve seq_id 'EGB0709986.2'"
                             }
                         ]
                     }
@@ -26702,7 +26702,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EGB0709986.2"
+                                "text": "Could not resolve seq_id 'EGB0709986.2'"
                             }
                         ]
                     }
@@ -26744,7 +26744,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483647"
+                                "text": "Could not resolve seq_id '4147483647'"
                             }
                         ]
                     }
@@ -26786,7 +26786,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483647"
+                                "text": "Could not resolve seq_id '4147483647'"
                             }
                         ]
                     }
@@ -26828,7 +26828,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483648"
+                                "text": "Could not resolve seq_id '4147483648'"
                             }
                         ]
                     }
@@ -26870,7 +26870,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id 4147483648"
+                                "text": "Could not resolve seq_id '4147483648'"
                             }
                         ]
                     }
@@ -27451,7 +27451,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB1000000"
+                                "text": "Could not resolve seq_id 'EAB1000000'"
                             }
                         ]
                     }
@@ -27522,7 +27522,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB2056000"
+                                "text": "Could not resolve seq_id 'EAB2056000'"
                             }
                         ]
                     }
@@ -27568,7 +27568,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB2056000"
+                                "text": "Could not resolve seq_id 'EAB2056000'"
                             }
                         ]
                     }
@@ -27798,7 +27798,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB1000000"
+                                "text": "Could not resolve seq_id 'EAB1000000'"
                             }
                         ]
                     }
@@ -27941,7 +27941,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB2056000"
+                                "text": "Could not resolve seq_id 'EAB2056000'"
                             }
                         ]
                     }
@@ -28059,7 +28059,7 @@
                             {
                                 "severity": "Error",
                                 "code": 312,
-                                "text": "Could not resolve seq_id EAB2056000"
+                                "text": "Could not resolve seq_id 'EAB2056000'"
                             }
                         ]
                     }
