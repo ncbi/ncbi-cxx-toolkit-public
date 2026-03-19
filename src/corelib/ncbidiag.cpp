@@ -1717,7 +1717,7 @@ namespace {
 
 char* s_WriteHex8(char* ptr, uint32_t val) {
     auto res = std::to_chars(ptr, ptr + 8, val, 16);
-    int written = res.ptr - ptr;
+    long written = res.ptr - ptr;
     if (written < 8) {
         std::move_backward(ptr, res.ptr, ptr + 8);
         std::fill(ptr, ptr + (8 - written), '0');
