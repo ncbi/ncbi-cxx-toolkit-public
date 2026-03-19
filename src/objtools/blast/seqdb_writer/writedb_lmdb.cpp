@@ -133,6 +133,11 @@ void CWriteDB_LMDB::x_InsertEntry(const CRef<CSeq_id> &seqid, const blastdb::TOi
     	kv_pir.oid = oid;
     	kv_pir.saveToOidList = true;
     	m_list.push_back(kv_pir);
+    	SKeyValuePair kv;
+    	kv.id = seqid->GetSeqIdString();
+    	kv.oid = oid;
+    	m_list.push_back(kv);
+
     	return;
     }
 
