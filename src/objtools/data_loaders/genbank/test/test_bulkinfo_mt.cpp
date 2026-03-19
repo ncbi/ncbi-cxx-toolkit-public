@@ -342,18 +342,17 @@ bool CTestApplication::Thread_Run(int thread_id)
         for ( size_t run_i = 0; run_i < m_RunCount; ++run_i ) {
             LOG_POST("Testing pass "<<run_i);
             size_t size = min(m_RunSize, m_Ids.size());
-            data.clear();
-            data.resize(m_Ids.size());
-            for ( size_t i = 0; i < m_Ids.size(); ++i ) {
-                data[i].first = m_Ids[i];
+            data.resize(size);
+            for ( size_t i = 0; i < size; ++i ) {
+                size_t src_i = (i+run_i*size)%m_Ids.size();
+                data[i].first = m_Ids[src_i];
                 if ( !m_Reference.empty() ) {
-                    data[i].second = m_Reference[i];
+                    data[i].second = m_Reference[src_i];
                 }
             }
             for ( size_t i = 0; i < size; ++i ) {
                 swap(data[i], data[random.GetRandSize_t(i, data.size()-1)]);
             }
-            data.resize(size);
             if ( m_Sort ) {
                 sort(data.begin(), data.end());
             }
