@@ -80,7 +80,8 @@
 #include "embl.h"
 #include "sprot.h"
 
-#include "flat2err.h"
+#include <objtools/flatfile/flatdefn.h>
+
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "asci_blk.h"

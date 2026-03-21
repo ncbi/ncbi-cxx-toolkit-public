@@ -53,7 +53,7 @@
 #include <objtools/flatfile/ff2asn.h>
 #include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include "flat2err.h"
+#include <objtools/flatfile/flatdefn.h>
 #include "keyword_parse.hpp"
 
 #include "flatfile_message_reporter.hpp"

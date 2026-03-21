@@ -23,35 +23,23 @@
  *
  * ===========================================================================
  *
- * File Name: ftanet.h
+ * File Name: flatdefn.h
  *
- * Author: Alexey Dobronadezhdin
+ * Author: Karl Sirotkin, Hsiu-Chuan Chen
  *
  * File Description:
  *
  */
 
-#ifndef FTANET_H
-#define FTANET_H
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#ifndef _FLATDEFN_
+#define _FLATDEFN_
 
+#include <objtools/flatfile/flat2err.h>
 
-BEGIN_NCBI_SCOPE
+#ifdef THIS_MODULE
+#    undef THIS_MODULE
+#endif
 
-namespace objects
-{
-    class COrg_ref;
-    class CSeq_id;
-    class CCit_art;
-};
+#define THIS_MODULE "flat2asn"
 
-CRef<objects::COrg_ref> fta_fix_orgref_byid(ParserPtr pp, TTaxId taxid, bool* drop, bool isoh);
-
-void fta_find_pub_explore(ParserPtr pp, TEntryList& seq_entries);
-void fta_fill_find_pub_option(ParserPtr pp, bool htag, bool rtag);
-Int4 fta_is_con_div(ParserPtr pp, const objects::CSeq_id& id, const Char* acc);
-void fta_fix_orgref(ParserPtr pp, objects::COrg_ref& org_ref, bool* drop, char* organelle);
-
-END_NCBI_SCOPE
-
-#endif // FTANET_H
+#endif

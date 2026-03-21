@@ -46,10 +46,11 @@
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
+
+#include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "utilfun.h"
-#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "loadfeat.h"
 #include "citation.h"

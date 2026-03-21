@@ -34,6 +34,9 @@
 #ifndef FLATFILE__QUAL_VALIDATE__HPP
 #define FLATFILE__QUAL_VALIDATE__HPP
 
+#include "ftaerr.hpp"
+#include <objtools/flatfile/flat2err.h>
+
 BEGIN_NCBI_SCOPE
 
 

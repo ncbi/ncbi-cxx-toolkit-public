@@ -47,6 +47,8 @@
 #include <objmgr/util/feature.hpp>
 #include <objtools/edit/cds_fix.hpp>
 
+#include <objtools/flatfile/flatfile_parse_info.hpp>
+
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "utilfun.h"

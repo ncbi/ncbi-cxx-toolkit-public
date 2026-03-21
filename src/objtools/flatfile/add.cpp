@@ -65,7 +65,7 @@
 #include "genbank.h" /* for ParFlat_FEATURES */
 #include "embl.h"    /* for ParFlat_FH */
 
-#include "flat2err.h"
+#include <objtools/flatfile/flatdefn.h>
 #include "ftanet.h"
 
 #include "ftaerr.hpp"

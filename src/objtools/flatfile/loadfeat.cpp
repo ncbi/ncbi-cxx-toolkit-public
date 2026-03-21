@@ -74,8 +74,8 @@
 #include "qual_parse.hpp"
 
 #include <objtools/flatfile/flatfile_parser.hpp>
+#include <objtools/flatfile/flatdefn.h>
 
-#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "asci_blk.h"

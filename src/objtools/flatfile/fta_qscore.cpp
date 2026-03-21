@@ -51,10 +51,10 @@
 
 #include "index.h"
 
+#include <objtools/flatfile/flatdefn.h>
 #include <algorithm>
 
 
-#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "utilfun.h"
 

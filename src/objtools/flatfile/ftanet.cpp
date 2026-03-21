@@ -67,10 +67,10 @@
 
 #include "index.h"
 
+#include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/flatfile_parser.hpp>
 #include <corelib/ncbi_message.hpp>
 
-#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "ftamed.h"

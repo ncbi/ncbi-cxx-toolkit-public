@@ -42,7 +42,9 @@
 
 
 #include "index.h"
-#include "flat2err.h"
+
+#include <objtools/flatfile/flatdefn.h>
+
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "utilref.h"

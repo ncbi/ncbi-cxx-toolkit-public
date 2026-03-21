@@ -63,8 +63,8 @@
 #include "genbank.h"
 
 #include <objtools/flatfile/flatfile_parser.hpp>
+#include <objtools/flatfile/flatdefn.h>
 
-#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "indx_blk.h"
