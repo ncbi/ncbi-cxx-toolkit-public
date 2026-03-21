@@ -33,7 +33,6 @@
 
 #ifndef FTANET_H
 #define FTANET_H
-#include <objtools/flatfile/flatfile_parse_info.hpp>
 
 
 BEGIN_NCBI_SCOPE

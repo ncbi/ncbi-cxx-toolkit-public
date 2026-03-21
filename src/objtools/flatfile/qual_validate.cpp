@@ -35,9 +35,8 @@
 
 #include "flatparse_report.hpp"
 #include "qual_validate.hpp"
+#include "flat2err.h"
 #include "ftaerr.hpp"
-
-#include <objtools/flatfile/flat2err.h>
 
 BEGIN_NCBI_SCOPE
 

@@ -62,10 +62,10 @@
 #include "genbank.h"
 #include "embl.h"
 
-#include <objtools/flatfile/flatdefn.h>
 #include "ftamed.h"
 #include "ftanet.h"
 
+#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "utilref.h"

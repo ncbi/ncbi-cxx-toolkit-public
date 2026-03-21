@@ -59,14 +59,13 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 #include <objects/seq/Pubdesc.hpp>
-#include <objects/seqfeat/SubSource.hpp>
 
 #include "index.h"
 #include "embl.h"
 
-#include <objtools/flatfile/flatdefn.h>
 #include <objtools/flatfile/flatfile_parser.hpp>
 
+#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "asci_blk.h"

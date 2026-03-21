@@ -34,9 +34,6 @@
 #ifndef FLATFILE__FLATPARSE_REPORT__HPP
 #define FLATFILE__FLATPARSE_REPORT__HPP
 
-#include "ftaerr.hpp"
-#include <objtools/flatfile/flat2err.h>
-
 BEGIN_NCBI_SCOPE
 
 //  ----------------------------------------------------------------------------

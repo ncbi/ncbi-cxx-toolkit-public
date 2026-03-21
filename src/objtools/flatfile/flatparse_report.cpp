@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flat2err.h"
 
 #include "flatparse_report.hpp"
 #include "ftaerr.hpp"

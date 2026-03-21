@@ -45,9 +45,9 @@
 
 #include "index.h"
 
-#include <objtools/flatfile/flatdefn.h>
 #include <objtools/cleanup/cleanup.hpp>
 
+#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "add.h"

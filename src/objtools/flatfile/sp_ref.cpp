@@ -55,8 +55,8 @@
 #include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Cit_let.hpp>
 #include "sprot.h"
-#include <objtools/flatfile/flatdefn.h>
 
+#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "ftablock.h"
 #include "asci_blk.h"

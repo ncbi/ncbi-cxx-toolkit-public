@@ -48,10 +48,8 @@
 #include <objects/seq/Seq_descr.hpp>
 
 #include "index.h"
-
-#include <objtools/flatfile/flatdefn.h>
 #include "ftanet.h"
-
+#include "flat2err.h"
 #include "ftaerr.hpp"
 #include "asci_blk.h"
 #include "loadfeat.h"
