@@ -189,7 +189,7 @@ int main(int argc, const char* argv[])
                 &&  !*value  &&  type != fSERV_Firewall) {
                 if (a == 2 + okay) {
                     CORE_LOGF(eLOG_Note,
-                              ("Resetting service type to %s", argv[a]));
+                              ("Setting service type to %s", argv[a]));
                     types  = type;
                 } else {
                     CORE_LOGF(eLOG_Note,
