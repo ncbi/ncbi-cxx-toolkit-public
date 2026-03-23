@@ -475,12 +475,14 @@ string HasBadGenomeAssemblyLength(const CUser_object& usr)
     if (!usr.IsSetData()) {
         return kEmptyStr;
     }
+    string label = "";
+    string between = "";
     ITERATE(CUser_object::TData, it, usr.GetData()) {
         if (! (*it)->IsSetLabel() || ! (*it)->GetLabel().IsStr()) {
             continue;
         }
-        const string &label = (*it)->GetLabel().GetStr();
-        if (label.empty()) {
+        const string &lbl = (*it)->GetLabel().GetStr();
+        if (lbl.empty()) {
             continue;
         }
 
@@ -492,13 +494,12 @@ string HasBadGenomeAssemblyLength(const CUser_object& usr)
             continue;
         }
 
-        // cerr << "Label: " << label << ", Value: " << val << endl;
-
         if (val.length() > 1000) {
-           return label;
+            label = label + between + lbl;
+            between = ",";
         }
     }
-    return kEmptyStr;
+    return label;
 }
 
 
@@ -676,8 +677,15 @@ bool CValidError_desc::x_ValidateStructuredComment(
         if (! label.empty()) {
             is_valid = false;
             if (report) {
-                PostErr(eDiag_Critical, eErr_SEQ_DESCR_BadAssemblyString,
-                    "Genome Assembly Data element for '" + label + "' field has string length > 1000 characters ", *m_Ctx, desc);
+                vector<string> labels;
+                NStr::Split(label, ",", labels, 0);
+                ITERATE(vector<string>, it, labels) {
+                    string str = NStr::TruncateSpaces(*it);
+                    if (! str.empty()) {
+                        PostErr(eDiag_Critical, eErr_SEQ_DESCR_BadAssemblyString,
+                             "Genome Assembly Data element for '" + str + "' field has string length > 1000 characters ", *m_Ctx, desc);
+                    }
+                }
             } else {
                 return false;
             }
