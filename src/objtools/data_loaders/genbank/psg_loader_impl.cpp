@@ -870,6 +870,9 @@ CPSGDataLoader_Impl::GetRecordsOnce(CDataSource* data_source,
     // get request with resolution
     CPSGL_QueueGuard queue(m_Dispatcher);
     {{
+        if ( s_GetDebugLevel() >= 5 ) {
+            LOG_POST(Info<<"PSG loader: GetRecords() for "<<idh);
+        }
         CPSG_BioId bio_id(idh);
         auto request = make_shared<CPSG_Request_Biodata>(std::move(bio_id),
                                                          CPSGL_TrackerMap::CreateUserContext());
@@ -1464,7 +1467,9 @@ void CPSGDataLoader_Impl::GetBlobsOnce(CDataSource* data_source,
                                        TTSE_LockSets& tse_sets)
 {
     CGetRequests queue(*this, data_source, m_TSERequestModeBulk);
-
+    if ( s_GetDebugLevel() >= 5 ) {
+        LOG_POST(Info<<"PSG loader: GetBlobs() with "<<tse_sets.size()<<" ids");
+    }
     ITERATE(TTSE_LockSets, tse_set, tse_sets) {
         const CSeq_id_Handle& ask_idh = tse_set->first;
         if ( loaded.count(ask_idh) ) {
