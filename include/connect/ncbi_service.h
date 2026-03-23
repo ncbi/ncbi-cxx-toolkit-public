@@ -100,6 +100,49 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       'hbo' stands for 'host byte order'.
  * @param service
  *  A service name, may not be NULL or empty.
+ * @note A valid service name is a series of special identifiers separated by
+ *       single slashes.  An identifier can contain only: alpha-numerics (incl.
+ *       underscores) and interim minus signs not adjacent to any minus or
+ *       underscore.  The first identifier must have at least one letter.
+ *       A service name that contains two or more identifiers in series is
+ *       called a compound name, and can only be processed by the LOCAL,
+ *       LINKERD, and NAMERD service mappers.
+ *       A single-identifier service name may be followed by a dot and a
+ *       DNS-like domain part (in a dotted notation), which is insignificant
+ *       for any service-related parameter lookups in either registry or
+ *       environment.  These domain-enabled services can only be processed by
+ *       the LOCAL or LBNULL service mappers.  The one and only (leading)
+ *       identifier in such names is not allowed to either start or end with
+ *       any underscores, or to have them in sequence.  Note that no slashes
+ *       are allowed in such service names.
+ *       Compound service names may not have any domain parts to them.
+ * @note As an extension to the legal service names, described above, the API
+ *       allows to have URL-like strings passed in place of the service names,
+ *       and to resolve, "from the look of them", into respective STANDALONE,
+ *       HTTP, or DNS server types, depending on which server types were
+ *       requested in the call.  This is only done when the input service name
+ *       does not appear to be valid.
+ *       To disable this failback behavior, a global Boolean setting
+ *       [CONN]SERVICE_PARSE_DISABLE (in the registry) or (takes precedence)
+ *       CONN_SERVICE_PARSE_DISABLE (in the environment) can be used.
+ * @note Finally, service names can be redirected via the registry or the
+ *       environment:  a registry entry CONN_SERVICE_NAME=newvalue found in the
+ *       section '[service]', or equivalent service_CONN_SERVICE_NAME=newvalue
+ *       (takes precedence) found in the environment (all non-alphanumerics
+ *       must be replaced with '_') redirects the input service name to
+ *       "newvalue".  The process is recursive and stops when either no new
+ *       redirection is found or it leads to "newvalue" not being a valid
+ *       service name.  In the latter case, however, the service name does not
+ *       change, but if "newvalue" is a recognized URL-like string, then the
+ *       string value is used to "cook" an endpoint (rather than to resolve the
+ *       service via service mappers -- see the note above).
+ *       The name redirection is performed internally by all service-aware API
+ *       (e.g. ConnNetInfo_Create() and ConnNetInfo_Getvalue()) and allows to
+ *       pull service-related parameters from another parameter section than
+ *       that of the original name.  If there is no previous service name
+ *       available, the service-related parameters are defaulted to use the
+ *       global [CONN] section (or the global, non-service-specific CONN
+ *       environment).  See <connect/ncbi_connutil.h>.
  * @param types
  *  A bitset of type(s) of servers requested.
  * @param preferred_host
@@ -107,32 +150,18 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  * @param net_info
  *  Connection information (NULL prevents the use of the network-based
  *  dispatching via LINKERD, NAMERD, and DISPD)
- * @note If "net_info" is NULL, only the following mappers will be consulted:
- *          LOCAL(if enabled, see below), LBSMD, and LBDNS.
+ * @note If "net_info" is NULL, only the following mappers may be consulted:
+ *          LOCAL(if enabled, see below), LBNULL, LBSMD, and LBDNS.
  *       If "net_info" is not NULL, the above mappers are consulted first,
  *       followed by
  *          LINKERD, NAMERD, and DISPD
  *       (using the connection information provided) but only if mapping with
  *       the preceding mapper(s), if any occurred, has failed.
- * @note The registry section [CONN], keys:
- *          LOCAL_ENABLE, LBSMD_DISABLE, LBDNS_ENABLE, LINKERD_ENABLE,
- *          NAMERD_ENABLE, DISPD_DISABLE
- *       which can be overridden by the environment variables:
- *          CONN_LOCAL_ENABLE, CONN_LBSMD_DISABLE, CONN_LBDNS_ENABLE,
- *          CONN_LINKERD_ENABLE, CONN_NAMERD_ENABLE, and CONN_DISPD_DISABLE
- *       can be used to add(for LOCAL, LBDNS, LINKERD, NAMERD) or to skip (for
- *       LBSMD and DISPD) the corresponding service mapper(s).  This scheme
- *       permits to use any combination of the service mappers (local/lbsmd/
- *       lbdns/linkerd/namerd/dispd, network-aware or not).
- *       These keys can also be used for even more granular, per-service basis,
- *       as described in <connect/ncbi_connutil.h> -- when used in the registry
- *       section '[service]' or prefixed with the service name in the process
- *       environment.
  * @note If "net_info" is not NULL then a non-zero value of
  *       "net_info->stateless" forces "types" to get the "fSERV_Stateless" bit
  *       set implicitly.
  * @param skip
- *  An array of servers NOT to select: contains server-info elements that are
+ *  An array of servers NOT to select:  contains server-info elements that are
  *  not to return from the search (whose server-infos match the would-be
  *  result).
  * @note However, special additional rules apply to the "skip" elements when
@@ -144,6 +173,21 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *       whose name matches an fSERV_Dns-type server in "skip".
  * @param n_skip
  *  Number of entries in the "skip" array.
+ * @note The registry section [CONN], keys:
+ *          LOCAL_ENABLE, LBNULL_ENABLE, LBSMD_DISABLE, LBDNS_ENABLE,
+ *          LINKERD_ENABLE, NAMERD_ENABLE, and DISPD_DISABLE
+ *       which can be overridden by the environment variables:
+ *          CONN_LOCAL_ENABLE, CONN_LBNULL_ENABLE, CONN_LBSMD_DISABLE,
+ *          CONN_LBDNS_ENABLE, CONN_LINKERD_ENABLE, CONN_NAMERD_ENABLE,
+ *          and CONN_DISPD_DISABLE
+ *       can be used to add(for LOCAL, LBNULL, LBDNS, LINKERD, NAMERD) or to skip
+ *       (for LBSMD and DISPD) the corresponding service mapper(s).  This scheme
+ *       permits to use any combination of the service mappers (LOCAL/LBNULL/
+ *       LBSMD/LBSND/LINKERD/NAMERD/DISPD, network-aware or not).
+ *       The latter identifiers can also be used as keys in the registry section
+ *       '[service]' for even more granular, per-service effect as described in
+ *       <connect/ncbi_connutil.h>, or they can be prefixed with the service
+ *       name in the process environment to effect only this particular service.
  * @return
  *  Non-NULL iterator, or NULL if the service does not exist.
  * @note
