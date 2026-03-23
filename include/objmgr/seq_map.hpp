@@ -93,7 +93,7 @@ class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 {
 public:
     // SeqMap segment type
-    enum ESegmentType {
+    enum ESegmentType : char {
         eSeqGap,              ///< gap
         eSeqData,             ///< real sequence data
         eSeqSubMap,           ///< sub seqmap
@@ -257,7 +257,7 @@ protected:
 
         // Segment type
         char                 m_SegType;
-        char                 m_ObjType;
+        atomic<char>         m_ObjType;
 
         // reference info, valid for eSeqData, eSeqSubMap, eSeqRef
         bool                 m_RefMinusStrand;
@@ -417,8 +417,7 @@ protected:
 inline
 bool CSeqMap::CSegment::IsSetData(void) const
 {
-    return static_cast<ESegmentType>(m_SegType) == CSeqMap::eSeqData 
-        || static_cast<ESegmentType>(m_ObjType) == CSeqMap::eSeqData;
+    return m_SegType == CSeqMap::eSeqData || m_ObjType == CSeqMap::eSeqData;
 }
 
 
