@@ -313,7 +313,7 @@ static const char* s_GetValue(const char* svc, size_t svclen,
                               int* /*bool*/ generic, FStrNCmp strncompar)
 {
     const char* retval = x_GetValue(svc, svclen, param, parlen, value,
-                                    value_size, def_value, generic,strncompar);
+                                    value_size, def_value, generic, strncompar);
     assert(!retval  ||  retval == value);
     if (retval) {
         assert(value == retval);
@@ -336,8 +336,8 @@ const char* ConnNetInfo_GetValueInternal(const char* service,const char* param,
 {
     int/*bool*/ service_only = 0/*false*/;
     size_t      parlen = strlen(param);
-    assert(!service  ||  (!NCBI_HasSpaces(service, strlen(service))
-                          &&  !strpbrk(service, "?*[")));
+    assert(!service  ||
+           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
     assert(parlen  &&  !NCBI_HasSpaces(param, parlen));
     assert(value  &&  value_size);
     *value = '\0';
@@ -355,8 +355,8 @@ const char* ConnNetInfo_GetValueService(const char* service, const char* param,
     int/*bool*/ service_only = 1/*true*/;
     size_t      parlen = strlen(param);
     const char* retval;
-    assert(service  &&  *service  &&  !NCBI_HasSpaces(service, strlen(service))
-           &&  !strpbrk(service, "?*["));
+    assert(service  &&  *service  &&
+           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
     assert(parlen  &&  !NCBI_HasSpaces(param, parlen));
     assert(value  &&  value_size);
     *value = '\0';
@@ -778,9 +778,8 @@ SConnNetInfo* ConnNetInfo_CreateInternal(const char* service)
     double dbl;
     char*  e;
 
-    assert(!service  ||  !*service
-           ||  (!NCBI_HasSpaces(service, strlen(service))
-                &&  !strpbrk(service, "?*[")));
+    assert(!service  ||  !*service  ||
+           (!NCBI_HasSpaces(service, strlen(service))  &&  !strpbrk(service, "?*[")));
     svclen = service  &&  *service ? strcspn(service, ".") : 0;
 
     /* NB: created *NOT* cleared up with all 0s */
