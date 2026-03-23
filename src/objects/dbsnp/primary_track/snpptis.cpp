@@ -147,10 +147,6 @@ string CSnpPtisClient::GetPrimarySnpTrackForId(const CSeq_id& id)
 #ifdef HAVE_LIBGRPC
 CSnpPtisClient_Impl::CSnpPtisClient_Impl()
 {
-    grpc::ChannelArguments args;
-    string address = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName);
-    //LOG_POST(Trace<<"CSnpPtisClient: connecting to "<<address);
-    channel = grpc::CreateCustomChannel(address, grpc::InsecureChannelCredentials(), args);
     max_retries = g_GetConfigInt(kSection, kParam_Retry, nullptr, kDefault_Retry);
     timeout     = (float)g_GetConfigDouble(kSection, kParam_Timeout   , nullptr, kDefault_Timeout   );
     timeout_mul = (float)g_GetConfigDouble(kSection, kParam_TimeoutMul, nullptr, kDefault_TimeoutMul);
@@ -161,6 +157,10 @@ CSnpPtisClient_Impl::CSnpPtisClient_Impl()
     wait_time_inc = (float)g_GetConfigDouble(kSection, kParam_WaitTimeInc, nullptr, kDefault_WaitTimeInc);
     wait_time_max = (float)g_GetConfigDouble(kSection, kParam_WaitTimeMax, nullptr, kDefault_WaitTimeMax);
     
+    grpc::ChannelArguments args;
+    string address = g_NCBI_GRPC_GetAddress(kSection, kParam_PTISName);
+    //LOG_POST(Trace<<"CSnpPtisClient: connecting to "<<address);
+    channel = grpc::CreateCustomChannel(address, grpc::InsecureChannelCredentials(), args);
     stub = ncbi::grpcapi::dbsnp::primary_track::DbSnpPrimaryTrack::NewStub(channel);
 }
 
