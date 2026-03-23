@@ -697,6 +697,21 @@ Uint2 CDBInterfacesFileConnParams::GetPort(void) const
     return CDBConnParamsDelegate::GetPort();
 }
 
+bool CDBInterfacesFileConnParams::IsSetPort(void) const
+{
+    // This amounts to an or, so take the quicker branch first.
+    if (CDBConnParamsDelegate::IsSetPort()) {
+        return true;
+    }
+
+    const string server_name = GetThis().GetServerName();
+    records_type::const_iterator it = m_Records.find(server_name);
+
+    if (it != m_Records.end()) {
+        return true;
+    }
+    return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 CCPPToolkitConnParams::CCPPToolkitConnParams(const CDBConnParams& other)

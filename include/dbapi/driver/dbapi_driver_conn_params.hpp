@@ -427,6 +427,7 @@ public:
     virtual EServerType GetServerType(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2 GetPort(void) const;
+    virtual bool  IsSetPort(void) const;
 
 private:
     // Non-copyable.

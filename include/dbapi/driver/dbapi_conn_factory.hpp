@@ -378,6 +378,7 @@ public:
     virtual string GetServerName(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2  GetPort(void) const;
+    virtual bool IsSetPort(void) const;
     virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const;
     impl::CDBHandlerStack& SetOpeningMsgHandlers(void);
 

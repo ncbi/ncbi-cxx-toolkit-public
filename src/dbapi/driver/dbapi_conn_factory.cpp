@@ -220,6 +220,11 @@ Uint2 CDB_DBLB_Delegate::GetPort(void) const
     return m_Port;
 }
 
+bool CDB_DBLB_Delegate::IsSetPort(void) const
+{
+    return m_Port != 0;
+}
+
 const impl::CDBHandlerStack& CDB_DBLB_Delegate::GetOpeningMsgHandlers(void)
     const
 {
