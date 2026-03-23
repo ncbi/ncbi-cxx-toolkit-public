@@ -64,7 +64,7 @@
 #include "index.h"
 #include "embl.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "ftaerr.hpp"

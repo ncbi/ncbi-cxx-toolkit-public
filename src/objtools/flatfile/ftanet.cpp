@@ -67,7 +67,7 @@
 
 #include "index.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 #include <corelib/ncbi_message.hpp>
 

@@ -42,7 +42,7 @@
 #include <objmgr/scope.hpp>
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 #include "../index.h"
-#include <objtools/flatfile/flatdefn.h>
+#include "../flatdefn.h"
 #include "../indx_blk.h"
 #include "../add.h"
 #include "../xgbparint.h"

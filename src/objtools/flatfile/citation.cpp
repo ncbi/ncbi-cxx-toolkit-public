@@ -47,7 +47,7 @@
 #include <objects/seq/Seq_descr.hpp>
 
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 
 #include "utilfun.h"
