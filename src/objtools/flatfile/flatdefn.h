@@ -34,7 +34,7 @@
 #ifndef _FLATDEFN_
 #define _FLATDEFN_
 
-#include <objtools/flatfile/flat2err.h>
+#include "flat2err.h"
 
 #ifdef THIS_MODULE
 #    undef THIS_MODULE

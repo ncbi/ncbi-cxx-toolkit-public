@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/flatfile/flatfile_message.hpp>
+#include "flatfile_message.hpp"
 #include <objtools/logging/listener.hpp>
 
 #include "flatfile_message_reporter.hpp"

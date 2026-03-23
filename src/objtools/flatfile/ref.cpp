@@ -62,7 +62,7 @@
 #include "genbank.h"
 #include "embl.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include "ftamed.h"
 #include "ftanet.h"
 

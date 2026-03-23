@@ -63,7 +63,7 @@
 #include "index.h"
 #include "sprot.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
 

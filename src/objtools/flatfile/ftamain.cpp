@@ -50,10 +50,10 @@
 #include "embl.h"
 #include "genbank.h"
 
-#include <objtools/flatfile/ff2asn.h>
+#include "ff2asn.h"
 #include "ftanet.h"
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include "keyword_parse.hpp"
 
 #include "flatfile_message_reporter.hpp"

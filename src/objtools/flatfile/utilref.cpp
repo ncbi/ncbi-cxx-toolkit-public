@@ -43,7 +43,7 @@
 
 #include "index.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 
 #include "ftaerr.hpp"
 #include "asci_blk.h"

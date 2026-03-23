@@ -49,7 +49,7 @@
 
 #include "index.h"
 
-#include <objtools/flatfile/flatdefn.h>
+#include "flatdefn.h"
 #include "ftanet.h"
 
 #include "ftaerr.hpp"

@@ -48,7 +48,7 @@
 #include "genbank.h"
 #include <objtools/flatfile/flatfile_parse_info.hpp>
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include <objtools/flatfile/flat2err.h>
+#include "flat2err.h"
 
 #include "utilfun.h"
 #include "ftaerr.hpp"
