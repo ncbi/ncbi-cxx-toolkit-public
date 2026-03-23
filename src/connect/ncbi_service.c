@@ -1924,14 +1924,13 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
 #  endif /*NCBI_OS_MSWIN*/
     len = !putenv(buf);
     if (len)
-        buf = 0;
+        free(buf);
 #else
     len = !(unset ? unsetenv(buf) : setenv(buf, typ, 1/*overwrite*/));
+    free(buf);
 #endif /*!HAVE_SETENV*/
     CORE_UNLOCK;
 
-    if (buf)
-        free(buf);
     return len ? 1/*success*/ : 0/*failure*/;
 }
 
