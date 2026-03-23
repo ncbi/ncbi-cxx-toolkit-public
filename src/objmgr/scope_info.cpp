@@ -1788,7 +1788,7 @@ CTSE_ScopeInfo::GetBioseqLock(CRef<CBioseq_ScopeInfo> info,
     // this thread calls GetBioseqHandle()
     //CMutexGuard guard(m_TSE_LockMutex);
     if ( load_requests ) {
-        if ( !GetTSE_Lock() ) {
+        if ( !x_TSE_LockIsAssigned() ) {
             load_requests->count += 1;
             load_requests->tses.insert(Ref(this));
             return TBioseq_Lock();
