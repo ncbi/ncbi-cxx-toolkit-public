@@ -684,7 +684,7 @@ private:
 
     // Unique blob-id within data-source and corresponding data-loader
     TBlobId                m_BlobId;
-    TBlobVersion           m_BlobVersion;
+    atomic<TBlobVersion>   m_BlobVersion;
 
     // Suppression level
     TBlobState             m_BlobState;
