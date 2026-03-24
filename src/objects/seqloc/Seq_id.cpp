@@ -207,7 +207,7 @@ MAKE_CONST_SET(kMiscPIR6, ct::packed_fixed_string<6>,
 
 // Cannot assume precapitalization
 static constexpr ctll::fixed_string kAccessionLike{
-    "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.[1-9]\\d*)?"
+    "[A-Za-z][A-Za-z_]*(?:\\d{2}[PSps]\\d)?\\d{5,}(?:\\.0*[1-9]\\d*)?"
 };
 
 
@@ -1736,6 +1736,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc,
         has_version = false;
         main_size = acc.size();
     } else if (main_size >= acc.size() - 1
+               ||  acc.find_first_not_of("0", main_size + 1) == NPOS
                ||  acc.find_first_not_of(kDigits, main_size + 1) != NPOS) {
         return eAcc_unknown; // non-numeric "version"
     }
@@ -1888,8 +1889,10 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
     if (digit_pos == 0) {
         if ((flags & fParse_RawGI) != 0  &&  !has_version
             &&  main_acc[0] != '0'
-            &&  main_acc.find_first_not_of(kDigits) == NPOS) {
-            return eAcc_gi; // just digits
+            &&  main_acc.find_first_not_of(kDigits) == NPOS
+            &&  (main_size < 19
+                 || (main_size == 19  &&  main_acc < "9223372036854775808"))) {
+            return eAcc_gi; // just digits, less than 2^63
         } else {
             return eAcc_unknown; // PDB already handled
         }
