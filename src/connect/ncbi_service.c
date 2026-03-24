@@ -346,7 +346,7 @@ static char* x_ServiceName(unsigned int* depth,
         assert(service  &&  *service  &&  svc  &&  *svc  &&  service != svc
                &&  strcasecmp(service, svc) != 0  &&  !*ismask  &&  (!url  ||  !*url));
     }
-    len = !svc ? 0 : *ismask ? strlen(svc) : strcspn(svc, ".");
+    len = !svc ? 0 : !*ismask ? strcspn(svc, ".") : strlen(svc);
     if (!len  ||  len >= sizeof(buf) - sizeof(REG_CONN_SERVICE_NAME)) {
         CORE_LOGF_X(7, eLOG_Error,
                     ("%s%s%s%s service name%s%s",
@@ -356,15 +356,17 @@ static char* x_ServiceName(unsigned int* depth,
                      !svc ? "NULL" : !*svc ? "Empty" : !len ? "Invalid" : "Too long",
                      service != svc ? " in: "      : "",
                      service != svc ? svc          : ""));
-        *depth = SERV_SERVICE_NAME_RECURSION_MAX;
-        return 0/*fatal*/;
+        svc = 0/*fatal*/;
+        goto out;
     }
     if (len  &&  (!x_CheckServiceName(svc, len, *ismask, svc[len])
                   ||  (svc[len]/*NB:'.'*/  &&  !SERV_CheckDomain(svc + len)))) {
-        if (url)
-            *url = strdup(svc);
+        if (url  &&  !(*url = strdup(svc))) {
+            svc = 0/*fatal*/;
+            goto out;
+        }
         *ismask = 0/*false*/;
-        return 0;
+        return 0/*use URL*/;
     }
     if (!*ismask  &&  !*isfast) {
         char        tmp[sizeof(buf)];
@@ -386,15 +388,15 @@ static char* x_ServiceName(unsigned int* depth,
             tmp[len] = '\0';
             *buf = '\0';
             if (!CORE_REG_GET(tmp, REG_CONN_SERVICE_NAME, buf, sizeof(buf), 0)) {
-                *depth = SERV_SERVICE_NAME_RECURSION_MAX;
-                return 0/*fatal*/;
+                svc = 0/*fatal*/;
+                goto out;
             }
         } else {
             size_t x_len = strlen(s);
             if (x_len >= sizeof(buf)) {
                 CORE_UNLOCK;
-                *depth = SERV_SERVICE_NAME_RECURSION_MAX;
-                return 0/*fatal*/;
+                svc = 0/*fatal*/;
+                goto out;
             }
             memcpy(buf, s, x_len);
             buf[x_len] = '\0';
@@ -403,7 +405,7 @@ static char* x_ServiceName(unsigned int* depth,
         if (*(s = ConnNetInfo_TrimInPlace(buf))) {
             CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
-            if (strncasecmp(svc, s, len) != 0  ||  s[len] != '.') {
+            if (strncasecmp(svc, s, len) != 0  ||  (s[len]  &&  s[len] != '.')) {
                 if (++(*depth) < SERV_SERVICE_NAME_RECURSION_MAX) {
                     char* rv = x_ServiceName(depth, service, s, url, ismask, isfast);
                     if (rv  ||  *depth >= SERV_SERVICE_NAME_RECURSION_MAX)
@@ -414,7 +416,7 @@ static char* x_ServiceName(unsigned int* depth,
                                  " depth exceeded: %u", service, *depth));
                     return 0/*fatal*/;
                 }
-            } else if (!SERV_CheckDomain(s + len)) {
+            } else if (s[len]/*NB:'.'*/  &&  !SERV_CheckDomain(s + len)) {
                 if (url  &&  !(*url = strdup(s)))
                     svc = 0/*fatal*/;
             } else
@@ -423,6 +425,7 @@ static char* x_ServiceName(unsigned int* depth,
             assert(*isfast == 0/*false*/);
     } else
         *isfast = 0/*false*/;
+ out:
     *depth = SERV_SERVICE_NAME_RECURSION_MAX;
     return svc ? strdup(svc) : 0;
 }
