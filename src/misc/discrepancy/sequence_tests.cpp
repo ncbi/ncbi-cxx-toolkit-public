@@ -1507,16 +1507,6 @@ DISCREPANCY_SUMMARIZE(GENOME_SHORTER_THAN_1000bp)
 }
 
 
-DISCREPANCY_AUTOFIX(GENOME_SHORTER_THAN_1000bp)
-{
-    const CBioseq* seq = dynamic_cast<const CBioseq*>(context.FindObject(*obj));
-    CBioseq_EditHandle bioseq_edit(context.GetBioseqHandle(*seq));
-    bioseq_edit.Remove();
-    obj->SetFixed();
-    return CRef<CAutofixReport>(new CAutofixReport("GENOME_SHORTER_THAN_1000bp: [n] short genome[s] [is] removed", 1));
-}
-
-
 // RNA_PROVIRAL
 
 DISCREPANCY_CASE(RNA_PROVIRAL, SEQUENCE, eOncaller, "RNA bioseqs are proviral")
