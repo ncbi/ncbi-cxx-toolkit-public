@@ -1131,6 +1131,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
             rv  = (int) sizeof(msg);
         }
         eom = msg + rv;
+        x_error = 0/*to avoid an unwarranted GCC warning*/;
         err = 0;
     }
     assert((size_t)(eom - msg) <= sizeof(msg));
