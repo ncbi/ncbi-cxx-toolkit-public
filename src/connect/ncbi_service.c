@@ -375,9 +375,11 @@ static char* x_ServiceName(unsigned int* depth,
         *s++ = '_';
         memcpy(s, REG_CONN_SERVICE_NAME, sizeof(REG_CONN_SERVICE_NAME));
         /* Looking for "svc_CONN_SERVICE_NAME" in the environment */
+        CORE_LOCK_READ;
         if (!(s = x_getenv(buf))
              &&  (memcmp(buf, tmp, len) == 0
                   ||  !(s = x_getenv((char*) memcpy(buf, tmp, len))))) {
+            CORE_UNLOCK;
             /* Looking for "CONN_SERVICE_NAME" in the registry section "[svc]" */
             if (e)
                 memcpy(tmp, svc, len);  /* re-copy */
@@ -387,9 +389,18 @@ static char* x_ServiceName(unsigned int* depth,
                 *depth = SERV_SERVICE_NAME_RECURSION_MAX;
                 return 0/*fatal*/;
             }
-            s = buf;
+        } else {
+            size_t x_len = strlen(s);
+            if (x_len >= sizeof(buf)) {
+                CORE_UNLOCK;
+                *depth = SERV_SERVICE_NAME_RECURSION_MAX;
+                return 0/*fatal*/;
+            }
+            memcpy(buf, s, x_len);
+            buf[x_len] = '\0';
+            CORE_UNLOCK;
         }
-        if (*ConnNetInfo_TrimInPlace(s)) {
+        if (*(s = ConnNetInfo_TrimInPlace(buf))) {
             CORE_TRACEF(("[%s]  SERV_ServiceName(\"%s\"): \"%s\"",
                          service, svc, s));
             if (strncasecmp(svc, s, len) != 0  ||  s[len] != '.') {
@@ -424,11 +435,7 @@ static char* s_ServiceName(const char* service, char** url,
                            int*/*bool*/ ismask, int*/*bool*/ isfast)
 {
     unsigned int depth = 0;
-    char* retval;
-    CORE_LOCK_READ;
-    retval = x_ServiceName(&depth, service, 0/*svc*/, url, ismask, isfast);
-    CORE_UNLOCK;
-    return retval;
+    return x_ServiceName(&depth, service, 0/*svc*/, url, ismask, isfast);
 }
 
 
