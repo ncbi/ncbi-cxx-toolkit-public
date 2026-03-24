@@ -25,15 +25,16 @@ deadlock:^ncbi::CInitGuard::CInitGuard
 # so it's not strictly correct and ThreadSanitizer complains about that.
 # The library is opaque so we cannot suppress exact place in it,
 # so unfortunately we have to suppress our BDB wrappers code that call BerkeleyDB
-race:^ncbi::CBDB_File::x_Fetch
-race:^ncbi::CBDB_File::ReadCursor
-race:^ncbi::CBDB_RawFile::x_DB_CPut
-race:^ncbi::CBDB_RawFile::CreateCursor
-race:^ncbi::CBDB_FileCursor::Close
-race:^ncbi::CBDB_Transaction::Commit
-race:^ncbi::CBDB_Cache::x_Store
-race:^__os_gettime
-race:^__lock_getobj
+race:^__db_get_pp
+race:^__db_put_pp
+race:^__db_del_pp
+race:^__db_cursor_pp
+race:^__dbc_get_pp
+race:^__dbc_put_pp
+race:^__dbc_close_pp
+race:^__txn_begin_pp
+race:^__txn_commit_pp
+race:^__txn_checkpoint_pp
 
 # VDB *Release() functions have different reference counting code depending on processor.
 # They use simple volatile keyword on i386 architecture.
