@@ -1816,11 +1816,10 @@ void CBDB_Cache::DropBlob(const string&  key,
             coord[1] = m_CacheAttrDB->split_id;
 
             if (!for_update) {   // permanent BLOB removal
-                string owner_name;
-                m_CacheAttrDB->owner_name.ToString(owner_name);
-
                 // FIXME:
                 if (IsSaveStatistics()) {
+                    string owner_name;
+                    m_CacheAttrDB->owner_name.ToString(owner_name);
                     m_Statistics.AddExplDelete(owner_name);
                     if (0 == m_CacheAttrDB->read_count) {
                         m_Statistics.AddNeverRead(owner_name);
@@ -1840,6 +1839,7 @@ void CBDB_Cache::DropBlob(const string&  key,
 
     // delete the split store BLOB
     if (!for_update) {   // permanent BLOB removal
+        CFastMutexGuard guard(m_DB_Lock);
         unsigned split_coord[2];
         EBDB_ErrCode ret =
             m_BLOB_SplitStore->GetCoordinates(*blob_id, split_coord);
@@ -1954,6 +1954,7 @@ void CBDB_Cache::RegisterOverflow(const string&  key,
     }} // trans
 
     if (blob_id) { // clean up the split store
+        CFastMutexGuard guard(m_DB_Lock);
         CBDB_Transaction trans(*m_Env,
                             CBDB_Transaction::eEnvDefault,
                             CBDB_Transaction::eNoAssociation);
@@ -2079,6 +2080,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
 
         if (overflow != old_overflow && check_res == eBlobCheckIn_Found) {
             if (overflow) { // BLOB goes from split to file
+                CFastMutexGuard guard(m_DB_Lock);
                 //_TRACE("CBDB_Cache::x_Store point 5");
                 // ----------------------------------------------------
                 // Delete old split store content
@@ -2123,6 +2125,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         // ----------------------------------------------------
 
         {{
+            CFastMutexGuard guard(m_DB_Lock);
             //_TRACE("CBDB_Cache::x_Store point 7");
             CBDB_Transaction trans(*m_Env,
                                     CBDB_Transaction::eEnvDefault,
@@ -2235,7 +2238,7 @@ void CBDB_Cache::x_Store(unsigned       blob_id,
         }
 
     }
-    catch (exception)
+    catch (exception&)
     {
         // if things go wrong we do not want the database in an uncertain state, so
         // BLOB is getting killed here
@@ -2323,6 +2326,7 @@ bool CBDB_Cache::GetSizeEx(const string&  key,
         // Regular inline BLOB
         if (blob_id == 0) return false;
 
+        CFastMutexGuard guard(m_DB_Lock);
         unsigned coords[2];
         coords[0] = volume_id;
         coords[1] = split_id;
@@ -2445,6 +2449,7 @@ bool CBDB_Cache::Read(const string& key,
     TBlobLock blob_lock(m_LockVector, blob_id, m_LockTimeout);
 
 
+    string owner_name;
     CBDB_Transaction trans(*m_Env,
                         CBDB_Transaction::eTransASync, // async!
                         CBDB_Transaction::eNoAssociation);
@@ -2478,9 +2483,11 @@ bool CBDB_Cache::Read(const string& key,
             overflow = m_CacheAttrDB->overflow;
             volume_id = m_CacheAttrDB->volume_id;
             split_id = m_CacheAttrDB->split_id;
+            if (IsSaveStatistics()) {
+                m_CacheAttrDB->owner_name.ToString(owner_name);
+            }
 
             ret = cur.Update();
-
         } else {
             return false;
         }
@@ -2493,8 +2500,6 @@ bool CBDB_Cache::Read(const string& key,
     trans.Commit();
 
     //  FIXME: locks, etc
-    string owner_name;
-    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
         m_Statistics.AddRead(owner_name, curr - tz_delta);
@@ -2522,6 +2527,7 @@ bool CBDB_Cache::Read(const string& key,
         if (blob_id == 0) {
             return false;
         }
+        CFastMutexGuard guard(m_DB_Lock);
         m_BLOB_SplitStore->SetTransaction(0);
 
         unsigned coords[2];
@@ -2687,6 +2693,7 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
     // TODO: unify read prolog code for all read functions
 
+    string owner_name;
     CBDB_Transaction trans(*m_Env,
                         CBDB_Transaction::eTransASync, // async!
                         CBDB_Transaction::eNoAssociation);
@@ -2720,7 +2727,10 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
                 overflow = m_CacheAttrDB->overflow;
                 volume_id = m_CacheAttrDB->volume_id;
                 split_id = m_CacheAttrDB->split_id;
-
+                if (IsSaveStatistics()) {
+                    m_CacheAttrDB->owner_name.ToString(owner_name);
+                }
+                
                 ret = cur.Update();
 
             } else {
@@ -2736,8 +2746,6 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     trans.Commit();
 
     //  FIXME: locks, statistics, etc
-    string owner_name;
-    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
         m_Statistics.AddRead(owner_name, curr - tz_delta);
@@ -2757,7 +2765,10 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
     }
 
     unsigned coords[2];
-    ret = m_BLOB_SplitStore->GetCoordinates(blob_id, coords);
+    {{
+        CFastMutexGuard guard(m_DB_Lock);
+        ret = m_BLOB_SplitStore->GetCoordinates(blob_id, coords);
+    }}
     if (ret == eBDB_Ok) {
         if (coords[0] != volume_id ||
             coords[1] != split_id) {
@@ -2915,6 +2926,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
 
     // TODO: unify read prolog code for all read functions
 
+    string owner_name;
     CBDB_Transaction trans(*m_Env,
                         CBDB_Transaction::eTransASync, // async!
                         CBDB_Transaction::eNoAssociation);
@@ -2949,6 +2961,9 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
                 overflow = m_CacheAttrDB->overflow;
                 volume_id = m_CacheAttrDB->volume_id;
                 split_id = m_CacheAttrDB->split_id;
+                if (IsSaveStatistics()) {
+                    m_CacheAttrDB->owner_name.ToString(owner_name);
+                }
 
                 ret = cur.Update();
             } else {
@@ -2966,8 +2981,6 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
     trans.Commit();
 
     //  FIXME: locks, statistics, etc
-    string owner_name;
-    m_CacheAttrDB->owner_name.ToString(owner_name);
     if (IsSaveStatistics()) {
         CFastMutexGuard guard(m_DB_Lock);
         m_Statistics.AddRead(owner_name, curr - tz_delta);
@@ -2995,6 +3008,7 @@ void CBDB_Cache::GetBlobAccess(const string&     key,
         return;
     }
 
+    CFastMutexGuard guard(m_DB_Lock);
     m_BLOB_SplitStore->SetTransaction(0);
 
     unsigned coords[2];
@@ -3923,7 +3937,10 @@ purge_start:
                 }}
 
                 TSplitStore::TBitVector bv;
-                m_BLOB_SplitStore->GetIdVector(&bv);
+                {{
+                    CFastMutexGuard guard(m_DB_Lock);
+                    m_BLOB_SplitStore->GetIdVector(&bv);
+                }}
                 unsigned split_store_blobs = bv.count();
 
                 TBitVector timeline_blobs;
@@ -3984,6 +4001,7 @@ purge_start:
         unsigned batch_size = GetPurgeBatchSize();
         unsigned rec_cnt;
         {{
+            //CFastMutexGuard guard0(m_DB_Lock);
             time_t curr = time(0); // initial timepoint
 
             CFastMutexGuard guard(m_CARO2_Lock);
@@ -4092,6 +4110,7 @@ purge_start:
 
             for (size_t i = 0; i < cache_entries.size(); ++i) {
                 try {
+                    //CFastMutexGuard guard0(m_DB_Lock);
                     const SCacheDescr& it = cache_entries[i];
 
                     CBDB_Transaction trans(*m_Env,
@@ -4198,11 +4217,13 @@ purge_start:
     }
 
     if ((m_PurgeCount % 200) == 0) {
+        CFastMutexGuard guard(m_DB_Lock);
         m_BLOB_SplitStore->Save();
         m_Env->ForceTransactionCheckpoint();
     }
     else
     if ((m_PurgeCount % 50) == 0) {
+        CFastMutexGuard guard(m_DB_Lock);
         m_BLOB_SplitStore->FreeUnusedMem();
         m_LockVector.FreeUnusedMem();
     }
@@ -4529,6 +4550,7 @@ void CBDB_Cache::x_TruncateDB()
 
         if (blob_id) {
             unsigned coords[2] = { volume_id, split_id };
+            CFastMutexGuard guard(m_DB_Lock);
             m_BLOB_SplitStore->SetTransaction(0);
             m_BLOB_SplitStore->Delete(blob_id, coords);
         }
@@ -4536,7 +4558,10 @@ void CBDB_Cache::x_TruncateDB()
 
     }}
 
-    m_BLOB_SplitStore->Save();
+    {{
+        CFastMutexGuard guard(m_DB_Lock);
+        m_BLOB_SplitStore->Save();
+    }}
 
 
     LOG_POST_X(29, Info << "CBDB_BLOB_Cache:: cache database truncated");
@@ -4767,6 +4792,7 @@ bool CBDB_Cache::DropBlobWithExpCheck(const string&      key,
 
     // Delete split store
     //
+    CFastMutexGuard guard(m_DB_Lock);
     EBDB_ErrCode ret =
         m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
     m_BLOB_SplitStore->SetTransaction(&trans);
@@ -4819,6 +4845,7 @@ void CBDB_Cache::x_DropBlob(const string&      key,
             coords[0] = m_CacheAttrDB->volume_id;
             coords[1] = m_CacheAttrDB->split_id;
 
+            CFastMutexGuard guard(m_DB_Lock);
             EBDB_ErrCode ret =
                 m_BLOB_SplitStore->GetCoordinates(blob_id, split_coord);
             if (ret == eBDB_Ok) {
@@ -4831,6 +4858,7 @@ void CBDB_Cache::x_DropBlob(const string&      key,
         }
         }}
 
+        CFastMutexGuard guard(m_DB_Lock);
         // delete blob as pointed by de-mux splitter
         if (delete_split) {
             m_BLOB_SplitStore->Delete(blob_id,
