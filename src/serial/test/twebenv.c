@@ -1783,7 +1783,7 @@ TimeAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    ValNodePtr anp;
-   Uint1 choice;
+   Uint1 choice = 0;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
@@ -1959,7 +1959,7 @@ QueryCommandAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    ValNodePtr anp;
-   Uint1 choice;
+   Uint1 choice = 0;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
@@ -2630,7 +2630,7 @@ Items_itemsAsnRead(AsnIoPtr aip, AsnTypePtr orig)
    DataVal av;
    AsnTypePtr atp;
    ValNodePtr anp;
-   Uint1 choice;
+   Uint1 choice = 0;
    Boolean nullIsError = FALSE;
    AsnReadFunc func;
 
