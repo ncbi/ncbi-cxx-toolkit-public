@@ -164,6 +164,18 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::ReadRawData(size_t data_size)
     }
 }
 
+CUTTPWriter::CUTTPWriter()
+    : m_Buffer(nullptr),
+      m_OutputBuffer(nullptr),
+      m_ChunkPart(nullptr),
+      m_BufferSize(0),
+      m_OutputBufferSize(0),
+      m_ChunkPartSize(0),
+      m_MaxBufferSize(0),
+      m_InternalBufferSize(0)
+{
+}
+
 void CUTTPWriter::Reset(char* buffer,
     size_t buffer_size, size_t max_buffer_size)
 {
