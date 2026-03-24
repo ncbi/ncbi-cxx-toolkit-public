@@ -37,14 +37,6 @@
 
 #define NCBI_USE_ERRCODE_X   Connect_LBSM
 
-
-#if 0
-#  define x_getenv  NCBI_CORE_GETENV
-#else
-#  define x_getenv  getenv
-#endif
-
-
 #ifdef NCBI_OS_UNIX
 
 #include "ncbi_lb.h"
@@ -65,11 +57,22 @@
 #include <resolv.h>
 
 
+#if 0
+#  define x_getenv  NCBI_CORE_GETENV
+#else
+#  define x_getenv  getenv
+#endif
+
+
 #define SizeOf(a)                (sizeof(a) / sizeof((a)[0]))
 #ifdef  max
 #undef  max
 #endif/*max*/
 #define max(a, b)                ((a) > (b) ? (a) : (b))
+
+
+
+#define MAX_PACKET_SIZE          2048/*RFC3226, 3*/
 
 #define SERVNSD_TXT_RR_PORT_LEN  (sizeof(SERVNSD_TXT_RR_PORT)-1)
 
@@ -1068,10 +1071,10 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
 {
     const struct SLBDNS_Data* data = (const struct SLBDNS_Data*) iter->data;
     size_t len = strlen(iter->name);
+    unsigned char msg[MAX_PACKET_SIZE];
     const unsigned char* ptr, *eom;
     char fqdn[NS_MAXCDNAME + 1];
     unsigned short count[3];
-    unsigned char msg[2048];
     int rv, err, x_error;
     const char* errstr;
     char errbuf[40];
@@ -1132,6 +1135,7 @@ static int/*bool*/ x_ResolveType(SERV_ITER iter, ns_type type)
         }
         eom = msg + rv;
         x_error = 0/*to avoid an unwarranted GCC warning*/;
+        errstr = ""/* - ditto - */;
         err = 0;
     }
     assert((size_t)(eom - msg) <= sizeof(msg));
