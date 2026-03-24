@@ -5377,6 +5377,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsFocus)
 
     STANDARD_SETUP
 
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "EmptySubSourceList",
+                              "Source should not be empty"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "BioSourceNeedsFocus",
                               "BioSource descriptor must have focus or transgenic when BioSource feature with different taxname is present."));
     // AddChromosomeNoLocation(expected_errors, entry);
@@ -5385,6 +5387,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsFocus)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "EmptySubSourceList",
+                              "Source should not be empty"));
 
     // AddChromosomeNoLocation(expected_errors, entry);
 
@@ -5715,6 +5720,9 @@ BOOST_FIXTURE_TEST_CASE(Test_Descr_Inconsistent, CGenBankFixture)
     entry->SetSeq().SetDescr().Set().push_back(m_desc);
 
     STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "EmptySubSourceList",
+                              "Source should not be empty"));
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "InconsistentTPA",
                               "TPA:experimental and TPA:inferential should not both be in the same set of keywords"));
@@ -14406,6 +14414,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FocusOnBioSourceFeature)
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "FocusOnBioSourceFeature",
                       "Focus must be on BioSource descriptor, not BioSource feature."));
     // AddChromosomeNoLocation(expected_errors, entry);
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "EmptySubSourceList",
+                              "Source should not be empty"));
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
