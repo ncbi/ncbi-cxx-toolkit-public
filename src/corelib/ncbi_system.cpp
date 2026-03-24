@@ -1240,6 +1240,15 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
+    case eMADV_NoReuse:
+        #if defined(MADV_NOREUSE)
+            adv = MADV_NOREUSE;
+            break;
+        #else
+            ERR_POST_X_ONCE(12, Warning << "MADV_NOREUSE not supported");
+            CNcbiError::Set(CNcbiError::eNotSupported);
+            return false;
+        #endif        
     default:
         _TROUBLE;
         return false;
