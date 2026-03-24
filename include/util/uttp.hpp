@@ -268,7 +268,7 @@ inline size_t CUTTPReader::GetChunkPartSize() const
 
 /// Class that serializes series of chunks of data for sending over binary
 /// streams.
-/// @note This class does not have a constructor. Instead, methods
+/// @note This class does have a dummy constructor. Instead, methods
 /// Reset(char*, size_t) and Reset(char*, size_t, size_t) are provided for
 /// initialization at any convenient time.
 /// @sa CUTTPReader
@@ -297,6 +297,9 @@ class NCBI_XUTIL_EXPORT CUTTPWriter
 {
 // Construction
 public:
+    /// Dummy constructor. Please use Reset() methods to initialize.
+    CUTTPWriter();
+    
     /// Initialize or reinitialize this object.
     /// @param buffer
     ///   A pointer to the output buffer.
