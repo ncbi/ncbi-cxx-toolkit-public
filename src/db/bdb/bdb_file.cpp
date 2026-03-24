@@ -182,8 +182,7 @@ CBDB_RawFile::~CBDB_RawFile()
 
         // If we are here we can try to communicate by throwing
         // an exception. It's illegal, but situation is bad enough already
-        BDB_THROW(eTransInProgress,
-                  "Cannot close the file while transaction is in progress.");
+        ERR_POST(Fatal<<"~CBDB_RawFile(): Cannot close the file while transaction is in progress.");
     }
 }
 
