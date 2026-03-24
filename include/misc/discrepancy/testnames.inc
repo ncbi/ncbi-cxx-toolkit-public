@@ -222,7 +222,6 @@ enum class eTestNames
     eTestNames::FEATURE_MOLTYPE_MISMATCH,  \
     eTestNames::FLATFILE_FIND,  \
     eTestNames::GENE_LOCUS_MISSING,  \
-    eTestNames::GENOME_SHORTER_THAN_1000bp,  \
     eTestNames::HUMAN_HOST,  \
     eTestNames::MICROSATELLITE_REPEAT_TYPE,  \
     eTestNames::MISMATCHED_COMMENTS,  \
