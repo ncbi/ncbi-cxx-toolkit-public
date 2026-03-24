@@ -625,8 +625,17 @@ const CSeq_entry *ctx)
     double lat_value = 0.0, lon_value = 0.0;
     bool is_single_cell_amplification = false;
 
+    if (bsrc.IsSetSubtype()) {
+        cerr << "IsSetSubtype true" << endl;
+    } else {
+        cerr << "IsSetSubtype false" << endl;
+    }
+
+    bool empty_subsource = true;
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
+        empty_subsource = false;
+
         ValidateSubSource(**ssit, obj, ctx, isViral, isInfluenzaOrSars2);
         if (!(*ssit)->IsSetSubtype()) {
             continue;
@@ -847,6 +856,12 @@ const CSeq_entry *ctx)
                 subtype == CSubSource::eSubtype_tissue_type ? eErr_SEQ_DESCR_InvalidTissueType : eErr_SEQ_DESCR_BioSourceInconsistency,
                 "Virus has unexpected " + subname + " qualifier", obj, ctx);
         }
+    }
+
+    if (empty_subsource) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+            "Source should not be empty",
+            obj, ctx);
     }
 
     if (hasChromosome && hasPlasmidName) {
@@ -1990,8 +2005,12 @@ const CSeq_entry *ctx)
         bool has_strain = false;
         bool has_isolate = false;
         vector<string> vouchers;
+
+        bool empty_orgmod = true;
         FOR_EACH_ORGMOD_ON_ORGNAME(omd_itr, orgname)
         {
+            empty_orgmod = false;
+
             const COrgMod& omd = **omd_itr;
             COrgMod::TSubtype subtype = omd.GetSubtype();
 
@@ -2144,6 +2163,13 @@ const CSeq_entry *ctx)
                 }
             }
         }
+
+        if (empty_orgmod) {
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+                "OrgMod should not be empty",
+                obj, ctx);
+        }
+
         if (m_genomeSubmission && has_strain && has_isolate) {
             PostObjErr(eDiag_Info, eErr_SEQ_DESCR_HasStrainAndIsolate,
                 "Organism has both strain: '" + strain + "' and isolate: '" + isolate + "'",
