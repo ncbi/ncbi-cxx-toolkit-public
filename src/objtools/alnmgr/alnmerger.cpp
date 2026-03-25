@@ -152,7 +152,7 @@ CAlnMixMerger::x_Merge()
     CAlnMixMatch * match;
     CAlnMixSeq::TMatchList::iterator match_list_iter1, match_list_iter2;
     CAlnMixSeq::TMatchList::iterator match_list_i;
-    TSecondRowFits second_row_fits;
+    TSecondRowFits second_row_fits = eIgnoreMatch;
 
     refseq = *(m_Seqs.begin());
     TMatches::iterator match_i = m_Matches.begin();

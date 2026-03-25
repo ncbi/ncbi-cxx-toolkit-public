@@ -126,10 +126,10 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
 {
     TSegTypeFlags flags = 0;
     TNumseg       l_seg, r_seg, l_index, r_index, index;
-    TNumseg       l_anchor_index, r_anchor_index, anchor_index;
+    TNumseg       l_anchor_index = 0, r_anchor_index = 0, anchor_index = 0;
     TSeqPos       cont_next_start = 0, cont_prev_stop = 0;
     TSeqPos       anchor_cont_next_start = 0, anchor_cont_prev_stop = 0;
-    TSignedSeqPos anchor_start;
+    TSignedSeqPos anchor_start = 0;
 
     l_seg = r_seg = seg;
     l_index = r_index = index = seg * m_NumRows + row;
