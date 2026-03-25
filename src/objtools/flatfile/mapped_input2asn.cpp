@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,7 +33,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include "parse_info.h"
 #include "mapped_input2asn.hpp" 
 
 BEGIN_NCBI_SCOPE

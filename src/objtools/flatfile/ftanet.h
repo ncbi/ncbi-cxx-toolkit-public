@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -33,8 +33,8 @@
 
 #ifndef FTANET_H
 #define FTANET_H
-#include <objtools/flatfile/flatfile_parse_info.hpp>
 
+#include "parse_info.h"
 
 BEGIN_NCBI_SCOPE
 

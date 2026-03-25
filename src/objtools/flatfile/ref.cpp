@@ -66,6 +66,7 @@
 #include "ftamed.h"
 #include "ftanet.h"
 
+#include "parser.h"
 #include "ftaerr.hpp"
 #include "indx_blk.h"
 #include "utilref.h"

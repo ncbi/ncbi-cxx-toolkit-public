@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -65,7 +65,7 @@
 
 #include "flatdefn.h"
 #include "ftanet.h"
-#include <objtools/flatfile/flatfile_parser.hpp>
+#include "parser.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"
