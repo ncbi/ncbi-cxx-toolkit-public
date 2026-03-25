@@ -284,25 +284,33 @@ static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
 /* Trim in-place all leading and trailing whitespace first, then strip a pair
  * of matching enveloping quotes (single or double), if any.  Do not trim any
  * whitespace within the quotes, though.  Return its argument. */
+static char* x_TrimInPlace(char* str)
+{
+    size_t len;
+    char*  ptr = str;
+    assert(str  &&  *str);
+    /* outer whitespace first */
+    while (*ptr  &&  isspace((unsigned char)(*ptr)))
+        ++ptr;
+    len = strlen(ptr);
+    while (len  &&  isspace((unsigned char) ptr[len - 1]))
+        --len;
+    assert(!*ptr == !len);
+    /* then strip a pair of matching enveloping quotes, if any */
+    if (len > 1  &&  (*ptr == '"'  ||  *ptr == '\'')  &&  ptr[len - 1] == *ptr)
+        len -= 2, ++ptr;
+    if (len  &&  ptr != str)
+        memmove(str, ptr, len);
+    str[len] = '\0';
+    return str;
+}
+
+
+/* Internal interface for x_TrimInPlace() */
 char* ConnNetInfo_TrimInPlace(char* str)
 {
-    if (str  &&  *str) {
-        char*  ptr = str;
-        size_t len;
-        /* outer whitespace first */
-        while (*ptr  &&  isspace((unsigned char)(*ptr)))
-            ++ptr;
-        len = strlen(ptr);
-        while (len  &&  isspace((unsigned char) ptr[len - 1]))
-            --len;
-        assert(!*ptr == !len);
-        /* then strip a pair of matching enveloping quotes, if any */
-        if (len > 1  &&  (*ptr == '"'  ||  *ptr == '\'')  &&  ptr[len - 1] == *ptr)
-            len -= 2, ++ptr;
-        if (len  &&  ptr != str)
-            memmove(str, ptr, len);
-        str[len] = '\0';
-    }
+    if (str  &&  *str)
+        str = x_TrimInPlace(str);
     return str;
 }
 
@@ -314,10 +322,12 @@ static const char* s_GetValue(const char* svc, size_t svclen,
 {
     const char* retval = x_GetValue(svc, svclen, param, parlen, value,
                                     value_size, def_value, generic, strncompar);
-    assert(!retval  ||  retval == value);
     if (retval) {
-        assert(value == retval);
-        ConnNetInfo_TrimInPlace(value);
+        assert(retval == value);
+        if (*retval) {
+            retval = x_TrimInPlace(value);
+            assert(retval == value);
+        }
     }
     if (*value) {
         CORE_TRACEF(("ConnNetInfo(%s%.*s%s%.*s=\"%s\"): %s%s%s", &"\""[!svclen],
