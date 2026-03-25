@@ -398,7 +398,7 @@ char* g_CORE_getenv(const char* name);
 #if defined(NDEBUG)  &&  !defined(_DEBUG)
 #  define NCBI_CORE_GETENV  getenv
 #else
-#  define NCBI_CORE_GETENV  gCORE_getenv
+#  define NCBI_CORE_GETENV  g_CORE_getenv
 #endif /*NDEBUG  && !_DEBUG*/
 
 
