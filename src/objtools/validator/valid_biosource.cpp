@@ -625,12 +625,6 @@ const CSeq_entry *ctx)
     double lat_value = 0.0, lon_value = 0.0;
     bool is_single_cell_amplification = false;
 
-    if (bsrc.IsSetSubtype()) {
-        cerr << "IsSetSubtype true" << endl;
-    } else {
-        cerr << "IsSetSubtype false" << endl;
-    }
-
     bool empty_subsource = true;
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
@@ -858,11 +852,13 @@ const CSeq_entry *ctx)
         }
     }
 
+    /*
     if (empty_subsource) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_EmptySubSourceList,
             "Source should not be empty",
             obj, ctx);
     }
+    */
 
     if (hasChromosome && hasPlasmidName) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
@@ -2164,11 +2160,13 @@ const CSeq_entry *ctx)
             }
         }
 
+        /*
         if (empty_orgmod) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
+            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_EmptyOrgModList,
                 "OrgMod should not be empty",
                 obj, ctx);
         }
+        */
 
         if (m_genomeSubmission && has_strain && has_isolate) {
             PostObjErr(eDiag_Info, eErr_SEQ_DESCR_HasStrainAndIsolate,

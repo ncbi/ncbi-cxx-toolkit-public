@@ -1034,6 +1034,12 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadAssemblyString,
     { "BadAssemblyString",
         "Genome Assembly text field string should not be longer than 1000 characters" }},
+    { eErr_SEQ_DESCR_EmptySubSourceList,
+    { "EmptySubSourceList",
+        "SubSource list is present but empty" }},
+    { eErr_SEQ_DESCR_EmptyOrgModList,
+    { "EmptyOrgModList",
+        "OrgMod list is present but empty" }},
 
 
     /* SEQ_GENERIC */
