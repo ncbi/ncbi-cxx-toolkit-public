@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -68,7 +68,7 @@
 #include "index.h"
 
 #include "flatdefn.h"
-#include <objtools/flatfile/flatfile_parser.hpp>
+#include "parser.h"
 #include <corelib/ncbi_message.hpp>
 
 #include "ftaerr.hpp"

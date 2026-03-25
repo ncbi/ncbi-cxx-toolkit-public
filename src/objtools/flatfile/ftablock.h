@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -47,7 +47,7 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/Delta_seq.hpp>
 
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include "parse_info.h"
 #include <forward_list>
 #include <variant>
 

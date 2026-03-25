@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -34,8 +34,7 @@
 #ifndef FLATFILE__QUAL_PARSE__HPP
 #define FLATFILE__QUAL_PARSE__HPP
 
-#include <objtools/flatfile/flatfile_parse_info.hpp>
-
+#include "parse_info.h"
 #include "qual_validate.hpp"
 
 BEGIN_NCBI_SCOPE

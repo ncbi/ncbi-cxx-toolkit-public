@@ -59,7 +59,7 @@
 
 #include "index.h"
 
-#include <objtools/flatfile/flatfile_parser.hpp>
+#include "parser.h"
 #include "flatdefn.h"
 
 #include "ftaerr.hpp"

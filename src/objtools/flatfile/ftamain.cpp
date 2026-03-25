@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -52,7 +52,7 @@
 
 #include "ff2asn.h"
 #include "ftanet.h"
-#include <objtools/flatfile/flatfile_parser.hpp>
+#include "parser.h"
 #include "flatdefn.h"
 #include "keyword_parse.hpp"
 

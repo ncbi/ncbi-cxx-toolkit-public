@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -35,7 +35,7 @@
 #define FLATFILE__KEYWORD_PARSE__HPP
 
 #include "ftaerr.hpp"
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include "parse_info.h"
 
 //# include <objtools/flatfile/flat2err.h>
 

@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -46,8 +46,7 @@
 #include "embl.h"
 #include "sprot.h"
 #include "genbank.h"
-#include <objtools/flatfile/flatfile_parse_info.hpp>
-#include <objtools/flatfile/flatfile_parser.hpp>
+#include "parser.h"
 #include "flat2err.h"
 
 #include "utilfun.h"

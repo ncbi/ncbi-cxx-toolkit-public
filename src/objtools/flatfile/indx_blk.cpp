@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -37,7 +37,7 @@
 #include "ftacpp.hpp"
 
 #include "index.h"
-#include <objtools/flatfile/flatfile_parse_info.hpp>
+#include "parse_info.h"
 
 #include "ftaerr.hpp"
 #include "indx_blk.h"

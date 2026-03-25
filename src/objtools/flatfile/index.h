@@ -1,4 +1,4 @@
-/* $Id$
+/*
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -34,8 +34,6 @@
 
 #ifndef _INDEX_
 #define _INDEX_
-
-#include <objtools/flatfile/flatfile_parser.hpp>
 
 // clang-format off
 enum EIndexCol {
