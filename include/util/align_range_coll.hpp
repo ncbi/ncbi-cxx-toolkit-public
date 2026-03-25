@@ -1826,6 +1826,8 @@ public:
         m_Coll = &coll;
         m_Ranges.clear(); // we are lazy and do not rebuild the index right now
         m_MapDirty = true;
+        m_From = 0;
+        m_ToOpen = 0;
     }
 
     void Clear()
