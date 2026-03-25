@@ -974,7 +974,7 @@ static const bm::bvector<>::size_type kBVSizes[kMaxSmallSpecialDigits + 1] = {
 struct SAccGuide : public CObject
 {
     typedef CSeq_id::EAccessionInfo TAccInfo;
-    typedef map<string, TAccInfo>   TPrefixes;
+    typedef unordered_map<string, TAccInfo>   TPrefixes;
     typedef pair<string, TAccInfo>  TPair;
     typedef list<TPair>             TPairs; // not vector -- need stable ptrs
     typedef map<string, TPair>      TBigSpecialMap; // last -> first -> value
@@ -990,7 +990,7 @@ struct SAccGuide : public CObject
         TBigSpecialMap    big_specials;
         TSmallSpecialMap  small_specials;
     };
-    typedef map<TFormatCode, SSubMap> TMainMap;
+    typedef unordered_map<TFormatCode, SSubMap> TMainMap;
 
     struct SHints {
         SHints()
@@ -1018,7 +1018,7 @@ struct SAccGuide : public CObject
         TAccInfo              prev_special_type;
         TAccInfo              prev_special_base_type;
         string                prev_special2_acc;
-        map<string, CTempString> default_fallbacks;
+        unordered_map<string, CTempString> default_fallbacks;
         string                special2_name;
         unique_ptr<string>    special2_old_name;
         SSubMap*              special2_submap;
@@ -1106,8 +1106,8 @@ SAccGuide::SSubMap& SAccGuide::SHints::FindSubMap(SAccGuide::TMainMap& rules,
     if (prev_submap != NULL  &&  prev_submap->first == fmt) {
         return prev_submap->second;
     } else {
-        SAccGuide::TMainMap::iterator it = rules.lower_bound(fmt);
-        if (it == rules.end() || it->first != fmt) {
+        SAccGuide::TMainMap::iterator it = rules.find(fmt);
+        if (it == rules.end()) {
             it = rules.insert(it, make_pair(fmt, SAccGuide::SSubMap()));
         }
         prev_submap = &*it;
@@ -1223,7 +1223,10 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
         hints.special2_submap = nullptr;
         pos  = tokens[1].find_first_of(kDigits);
-        pos2 = tokens[1].find('-', pos);
+        pos2 = tokens[1].size() / 2;
+        if ((tokens[1].size() & 1) != 1  ||  tokens[1][pos2] != '-') {
+            pos2 = NPOS;
+        }
         TFormatCode fmt
             = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
         TAccInfo old   = hints.FindSpecial(*this, fmt, tokens[1]);
@@ -1304,8 +1307,12 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                        Warning << "SAccGuide::AddRule: " << count
                        << ": special2 valid only in version 2+ guides");
         }
-        NStr::SplitInTwo(tokens[1], "+", tmp1, tmp2);
-        auto digits = NStr::StringToNumeric<unsigned short>(tmp2);
+        int digits = 0;
+        pos = tokens[1].size() - 1;
+        for (int place = 1;  tokens[1][pos] != '+';  --pos, place *= 10) {
+            digits += place * (tokens[1][pos] - '0');
+        }
+        tmp1.assign(tokens[1], 0, pos - 1);
         hints.prev_special_format = s_Key(tmp1.size(), digits);
         hints.special2_name = tokens[2];
         hints.special2_old_name.reset();
@@ -1397,14 +1404,18 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         CTempString from;
         char *p = &hints.prev_special2_acc[hints.prev_special2_acc.size()];
         for (size_t i = 1;  i < tokens.size();  ++i) {
-            NStr::SplitInTwo(tokens[i], "-", tmp1, tmp2);
-            memcpy(p - tmp1.size(), tmp1.data(), tmp1.size());
-            if (tmp2.empty()) {
+            pos = tokens[i].find('-');
+            if (pos == NPOS) {
+                pos = tokens[i].size();
+                memcpy(p - pos, tokens[i].data(), pos);
                 from = hints.prev_special2_acc;
             } else {
+                memcpy(p - pos, tokens[i].data(), pos);
                 s = hints.prev_special2_acc;
                 from = s;
-                memcpy(p - tmp2.size(), tmp2.data(), tmp2.size());
+                memcpy(p + pos + 1 - tokens[i].size(),
+                       tokens[i].data() + pos + 1,
+                       tokens[i].size() - pos - 1);
             }
             x_AddSpecial(*hints.special2_submap, hints,
                          hints.prev_special_format, from,
