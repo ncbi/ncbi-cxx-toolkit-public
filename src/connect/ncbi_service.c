@@ -321,11 +321,15 @@ size_t SERV_CheckDomain(const char* domain)
  * "svc"     == current service name (NULL at first, init to "service");
  * "url"     == opt ptr to store what "svc" converted to (thru env/reg)
  *              in case it's not a valid service name (retval == NULL);
- * "*ismask" = 1 if "service" is a wildcard pattern to match;
+ * "*ismask" = 1 if "service" is a possible wildcard pattern to match
+ *               (but can be reset to 0 on return if not, e.g. a URL);
  * "*isfast" = 1 on input if not to perform any env/reg scan;
  * "*isfast" = 1 on output if the service was substituted with itself (but may
  *               be different case);  otherwise, "*isfast" == 0.  This is used
  *               (only) for namerd searches, which are case-sensitive.
+ * Return non-NULL malloc()'ed resultant service name, or NULL if "service"
+ * does not resolve to anything like a service name.  If "service" can be
+ * considered to be a URL, instead, the "url" parameter contains the result.
  */
 static char* x_ServiceName(unsigned int* depth,
                            const char* service, const char* svc, char** url,
