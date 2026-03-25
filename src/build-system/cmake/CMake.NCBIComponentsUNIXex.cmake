@@ -42,7 +42,7 @@ set(NCBI_ThirdParty_ZSTD          ${NCBI_TOOLS_ROOT}/zstd-1.5.2 CACHE PATH "ZSTD
 set(NCBI_ThirdParty_Boost_VERSION "1.76.0")
 set(NCBI_ThirdParty_Boost         ${NCBI_TOOLS_ROOT}/boost-${NCBI_ThirdParty_Boost_VERSION}-ncbi1 CACHE PATH "Boost root")
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.2 CACHE PATH "FASTCGI root")
+  set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.7 CACHE PATH "FASTCGI root")
 else()
   set(NCBI_ThirdParty_FASTCGI       ${NCBI_TOOLS_ROOT}/fcgi-2.4.0 CACHE PATH "FASTCGI root")
 endif()
