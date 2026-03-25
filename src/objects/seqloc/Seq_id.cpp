@@ -1018,6 +1018,9 @@ struct SAccGuide : public CObject
         TAccInfo              prev_special_type;
         TAccInfo              prev_special_base_type;
         string                prev_special2_acc;
+        string                deferred_special_key;
+        string                deferred_special_type_name;
+        TAccInfo              deferred_special_type;
         unordered_map<string, CTempString> default_fallbacks;
         string                special2_name;
         unique_ptr<string>    special2_old_name;
@@ -1050,7 +1053,7 @@ struct SAccGuide : public CObject
 private:
     void x_Load(const string& fname);
     void x_Load(ILineReader& lr, const CTime& t);
-    void x_CompleteInit(void);
+    void x_CompleteInit(SHints& hints);
     void x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
                       CTempString from, CTempString to, TAccInfo value,
                       const string* old_name, const CTempString& new_name);
@@ -1132,7 +1135,57 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (tokens.empty()) {
         return;
-    } else if (tokens.size() == 2
+    } else if ( !hints.deferred_special_key.empty() ) {
+        TAccInfo value = hints.deferred_special_type;
+        if (tokens.size() != 3  ||  !NStr::EqualNocase(tokens[0], "special")
+            ||  !NStr::EqualNocase(tokens[1], hints.deferred_special_key)
+            ||  (value = hints.FindAccInfo(tokens[2])) == kUnrecognized) {
+            const string* old_name = nullptr;
+            if (value == kUnrecognized) {
+                value = TAccInfo(hints.deferred_special_type
+                                 | CSeq_id::fAcc_fallback);
+                old_name = &hints.deferred_special_type_name;
+            }
+            const auto& key = hints.deferred_special_key;
+            hints.special2_submap = nullptr;
+            pos  = key.find_first_of(kDigits);
+            pos2 = key.size() / 2;
+            if ((key.size() & 1) != 1  ||  key[pos2] != '-') {
+                pos2 = NPOS;
+            }
+            TFormatCode fmt
+                = s_Key(pos, ((pos2 == NPOS) ? key.size() : pos2) - pos);
+            TAccInfo old = hints.FindSpecial(*this, fmt, key);
+            if ((old & CSeq_id::fAcc_specials) != 0) {
+                old = TAccInfo(old & ~CSeq_id::fAcc_specials);
+            } else {
+                string key_used;
+                Find(fmt, key.substr(0, pos2), &key_used);
+                if ( !key_used.empty() ) {
+                    ERR_POST_X(13, Warning
+                               << "SAccGuide::AddRule: Main listing for"
+                               " special " << tokens[1] << " doesn't"
+                               " indicate that specials are present.");
+                }
+            }
+            _ASSERT(hints.prev_type == value);
+            hints.prev_special_key = key;
+            SSubMap& submap = hints.FindSubMap(rules, fmt);
+            if (pos2 == NPOS) {
+                tmp1 = tmp2 = key;
+            } else {
+                tmp1.assign(key, 0, pos2);
+                tmp2.assign(key, pos2 + 1, NPOS);
+            }
+            x_AddSpecial(submap, hints, fmt, tmp1, tmp2, value, old_name,
+                         hints.deferred_special_type_name);
+            hints.prev_special_type_name.clear();
+            hints.prev_special_type = CSeq_id::eAcc_unknown;
+        }
+        hints.deferred_special_key.clear();
+    }
+
+    if (tokens.size() == 2
                &&  NStr::EqualNocase(tokens[0], "version")) {
         hints.special2_submap = nullptr;
         hints.version = NStr::StringToUInt(tokens[1], NStr::fConvErr_NoThrow);
@@ -1222,53 +1275,43 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
         }
     } else if (tokens.size() == 3 && NStr::EqualNocase(tokens[0], "special")) {
         hints.special2_submap = nullptr;
-        pos  = tokens[1].find_first_of(kDigits);
-        pos2 = tokens[1].size() / 2;
-        if ((tokens[1].size() & 1) != 1  ||  tokens[1][pos2] != '-') {
-            pos2 = NPOS;
-        }
-        TFormatCode fmt
-            = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
-        TAccInfo old   = hints.FindSpecial(*this, fmt, tokens[1]);
         TAccInfo value = hints.FindAccInfo(tokens[2]);
-        if ((old & CSeq_id::fAcc_specials) != 0) {
+        if (value == kUnrecognized) {
+            pos  = tokens[1].find_first_of(kDigits);
+            pos2 = tokens[1].size() / 2;
+            if ((tokens[1].size() & 1) != 1  ||  tokens[1][pos2] != '-') {
+                pos2 = NPOS;
+            }
+            TFormatCode fmt
+                = s_Key(pos, ((pos2 == NPOS) ? tokens[1].size() : pos2) - pos);
+            TAccInfo old = hints.FindSpecial(*this, fmt, tokens[1]);
             old = TAccInfo(old & ~CSeq_id::fAcc_specials);
-        } else {
             string key_used;
             Find(fmt, tokens[1].substr(0, pos2), &key_used);
-            if ( !key_used.empty() ) {
-                ERR_POST_X(13, Warning
-                           << "SAccGuide::AddRule: Main listing for special "
-                           << tokens[1]
-                           << " doesn't indicate that specials are present.");
-            }
-        }
-        unique_ptr<string> old_name;
-        if (value == kUnrecognized) {
-            string   key_used;
-            Find(fmt, tokens[1].substr(0, pos2), &key_used);
-            old_name.reset(new string);
+            bool found_default_fallback = false;
             if ( !key_used.empty() ) {
                 auto it = hints.default_fallbacks.find(tokens[2]);
                 if (it != hints.default_fallbacks.end()) {
+                    found_default_fallback = true;
                     old = CSeq_id::eAcc_unknown;
-                    *old_name = it->second;
-                    value = TAccInfo(hints.FindAccInfo(*old_name)
+                    value = TAccInfo(hints.FindAccInfo(it->second)
                                      | CSeq_id::fAcc_fallback);
                     ERR_POST_X(17,
                                Info << "SAccGuide::AddRule: " << count
                                << ": using default fallback from " << tokens[2]
-                               << " to " << *old_name << " for " << tokens[1]);
+                               << " to " << it->second << " for "
+                               << tokens[1]);
                 }
             }
             if (old) {
                 value = TAccInfo(old | CSeq_id::fAcc_fallback);
+                string old_name;
                 if (old == hints.prev_type) {
-                    *old_name = hints.prev_type_name;
+                    old_name = hints.prev_type_name;
                 } else if (old == hints.prev_special_type) {
-                    *old_name = hints.prev_special_type_name;
+                    old_name = hints.prev_special_type_name;
                 } else {
-                    *old_name = "0x" + NStr::UIntToString(old, 0, 16);
+                    old_name = "0x" + NStr::UIntToString(old, 0, 16);
                 }
                 if ( !key_used.empty() ) {
                     key_used = " (per " + key_used + ')';
@@ -1276,30 +1319,18 @@ void SAccGuide::AddRule(const CTempString& rule, SHints& hints)
                 ERR_POST_X(4, Info << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for special case " << tokens[1]
-                           << "; falling back to " << *old_name << key_used);
-            } else if (old_name->empty()) {
-                *old_name = "unknown";
+                           << "; falling back to " << old_name << key_used);
+            } else if ( !found_default_fallback ) {
                 ERR_POST_X(9, Warning << "SAccGuide::AddRule: " << count
                            << ": unrecognized accession type " << tokens[2]
                            << " for stray(!) special case " << tokens[1]);
             }
-        } else {
-            _ASSERT(hints.prev_type == value);
-            hints.prev_special_key = tokens[1];
         }
         if (value != kUnrecognized) {
-            SSubMap& submap = hints.FindSubMap(rules, fmt);
-            if (pos2 == NPOS) {
-                tmp1 = tmp2 = tokens[1];
-            } else {
-                tmp1.assign(tokens[1], 0, pos2);
-                tmp2.assign(tokens[1], pos2 + 1, NPOS);
-            }
-            x_AddSpecial(submap, hints, fmt, tmp1, tmp2, value, old_name.get(),
-                         tokens[2]);
+            hints.deferred_special_key       = tokens[1];
+            hints.deferred_special_type      = value;
+            hints.deferred_special_type_name = tokens[2];
         }
-        hints.prev_special_type_name.clear();
-        hints.prev_special_type = CSeq_id::eAcc_unknown;
     } else if (tokens.size() >= 3
                &&  NStr::EqualNocase(tokens[0], "special2")) {
         if (hints.version < 2) {
@@ -1570,12 +1601,13 @@ SAccGuide::SAccGuide(void)
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
             AddRule(kBuiltInGuide[i], hints);
         }
-        x_CompleteInit();
+        x_CompleteInit(hints);
     }
 }
 
-void SAccGuide::x_CompleteInit()
+void SAccGuide::x_CompleteInit(SHints& hints)
 {
+    AddRule("version 2", hints); // flush any last deferred special
     for (auto &rit : rules) {
         ERASE_ITERATE(TSmallSpecialMap, sit, rit.second.small_specials) {
             if (sit->second.first.any()) {
@@ -1614,7 +1646,7 @@ void SAccGuide::x_Load(ILineReader& in, const CTime& t)
     do {
         AddRule(*++in, hints);
     } while ( !in.AtEOF() );
-    x_CompleteInit();
+    x_CompleteInit(hints);
 }
 
 void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
@@ -1650,7 +1682,6 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
         if (hints.prev_small_special != submap.small_specials.end()
             &&  hints.prev_small_special->first == from_pfx) {
             it = hints.prev_small_special;
-            it->second.first.clear_range(left, right);
             while ((it->second.second & ~CSeq_id::fAcc_fallback)
                    != (value & ~CSeq_id::fAcc_fallback)) {
                 if (it == submap.small_specials.begin()
@@ -1692,11 +1723,9 @@ void SAccGuide::x_AddSpecial(SSubMap& submap, SHints& hints, TFormatCode fmt,
             value_ptr = &hints.prev_small_special->second.second;
         }
     }
-    if (value_ptr != nullptr) {
-        _ASSERT(old_name != nullptr  &&  !old_name->empty());
+    if (old_name != nullptr) {
+        _ASSERT(!old_name->empty());
         fallbacks[value_ptr] = make_pair(*old_name, new_name);
-    } else {
-        _ASSERT(old_name == nullptr);
     }
 }
 
