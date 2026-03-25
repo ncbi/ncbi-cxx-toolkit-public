@@ -1013,8 +1013,7 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
             vector<CTSE_Handle> all_tse;
             vector<CTSE_Handle> parent_tse;
             vector<CSeq_id_Handle> next_ids;
-            CDataLoader::TChunkSet load_chunks, chunks;
-            vector< AutoPtr<CInitGuard> > guards;
+            map<CDataLoader*, vector<CConstRef<CTSE_Chunk_Info>>> chunks;
 
             SSeqMapSelector next_sel(sel);
             while ( deeper ) {
@@ -1044,7 +1043,7 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                             CRef<CTSE_Chunk_Info> chunk = it.x_GetSeqMap()
                                 .x_GetChunkToLoad(it.x_GetSegment());
                             if ( chunk ) {
-                                chunks.push_back(chunk);
+                                chunks[&chunk->GetSplitInfo().GetDataLoader()].push_back(chunk);
                             }
                         }
                     }
@@ -1052,33 +1051,8 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                         return false;
                     }
                 }}
-                sort(chunks.begin(), chunks.end(), PByLoader());
-                chunks.erase(unique(chunks.begin(), chunks.end()), chunks.end());
-                while ( !chunks.empty() ) {
-                    // Collect and lock chunks from one loader to be loaded
-                    CDataLoader* loader = PByLoader::Get(chunks.back());
-                    load_chunks.clear();
-                    guards.clear();
-                    // find start index of chunks from this loader
-                    size_t s = chunks.size();
-                    while ( s > 0 && PByLoader::Get(chunks[s-1]) == loader ) {
-                        --s;
-                    }
-                    // lock chunks to be loaded
-                    for ( size_t i = s; i < chunks.size(); ++i ) {
-                        AutoPtr<CInitGuard> guard = chunks[i]->GetLoadInitGuard();
-                        if ( guard.get() && *guard.get() ) {
-                            load_chunks.push_back(chunks[i]);
-                            guards.push_back(guard);
-                        }
-                    }
-                    // load the chunks
-                    if ( !load_chunks.empty() ) {
-                        loader->GetChunks(load_chunks);
-                        guards.clear();
-                    }
-                    // done with this loader
-                    chunks.resize(s);
+                for ( auto& chunk_set : chunks ) {
+                    CTSE_Split_Info::x_LoadChunks(chunk_set.first, chunk_set.second);
                 }
                 if ( !next_ids.empty() ) {
                     deeper = true;
