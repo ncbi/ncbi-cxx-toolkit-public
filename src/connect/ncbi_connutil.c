@@ -140,6 +140,9 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 
 
 /* Replace any non-alpha / non-digit with '_' */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_mkenv(char* dst, const char* src, size_t len)
 {
     const char* end = src + len;
@@ -284,6 +287,9 @@ static const char* x_GetValue(const char* svc/*ign if !svclen*/, size_t svclen,
 /* Trim in-place all leading and trailing whitespace first, then strip a pair
  * of matching enveloping quotes (single or double), if any.  Do not trim any
  * whitespace within the quotes, though.  Return its argument. */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static char* x_TrimInPlace(char* str)
 {
     size_t len;
@@ -315,6 +321,9 @@ char* ConnNetInfo_TrimInPlace(char* str)
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static const char* s_GetValue(const char* svc, size_t svclen,
                               const char* param, size_t parlen, char* value,
                               size_t value_size, const char* def_value,

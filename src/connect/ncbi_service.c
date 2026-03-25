@@ -77,6 +77,9 @@ static ESwitch s_Fast = eOff;
 
 
 /* Replace any non-alpha / non-digit with '_' */
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_mkenv(char* dst, const char* src, size_t len)
 {
     const char* end = src + len;
