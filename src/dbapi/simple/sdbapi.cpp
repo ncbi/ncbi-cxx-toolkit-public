@@ -1454,6 +1454,11 @@ public:
         return m_Other.GetPort();
     }
 
+    bool IsSetPort(void) const
+    {
+        return m_Other.IsSetPort();
+    }
+
     virtual CRef<IConnValidator> GetConnValidator(void) const
     {
         return m_Other.GetConnValidator();
