@@ -148,7 +148,7 @@ CBlastDbDataLoader::SBlastDbParam::SBlastDbParam(CRef<CSeqDB> db_handle,
 }
 
 static const std::string_view kPrefix = "BLASTDB_";
-static const std::string_view kPrefixThread = kPrefix + "THREAD";
+static const std::string_view kPrefixThread = "BLASTDB_THREAD";
 
 string CBlastDbDataLoader::GetLoaderNameFromArgs(const SBlastDbParam& param)
 {
