@@ -27,6 +27,11 @@
 /** @file blast_extend.c
  * Functions to initialize structures used for BLAST extension
  */
+#ifdef NCBI_CXX_TOOLKIT
+#include <common/ncbi_sanitizers.h>
+#else
+#define NCBI_CLANG_ANALYZER_SUPPRESS
+#endif
 
 #include <algo/blast/core/blast_extend.h>
 #include <algo/blast/core/blast_options.h>
@@ -334,11 +339,13 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList * init_hitlist,
 
     match_array = init_hitlist->init_hsp_array;
     if (num >= num_avail) {
+	NCBI_CLANG_ANALYZER_SUPPRESS
         if (init_hitlist->do_not_reallocate)
             return FALSE;
         num_avail *= 2;
         match_array = (BlastInitHSP *)
             realloc(match_array, num_avail * sizeof(BlastInitHSP));
+	NCBI_CLANG_ANALYZER_SUPPRESS
         if (!match_array) {
             init_hitlist->do_not_reallocate = TRUE;
             return FALSE;
