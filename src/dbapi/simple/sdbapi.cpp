@@ -501,7 +501,13 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
         to_var = from_val;
         break;
     case eDB_Binary:
+        static_cast<CDB_Binary*>(to_var.GetData())
+            ->SetValue(from_val.data(), from_val.size());
+        break;
     case eDB_LongBinary:
+        static_cast<CDB_LongBinary*>(to_var.GetData())
+            ->SetValue(from_val.data(), from_val.size());
+        break;
     case eDB_VarBinary:
         to_var = CVariant::VarBinary(from_val.data(), from_val.size());
         break;
