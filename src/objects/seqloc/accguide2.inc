@@ -30,9 +30,9 @@
  *
  */
 
-/* time_t value corresponding to Mon Mar 23 10:45:10 EDT 2026; formally
+/* time_t value corresponding to Thu Mar 26 09:06:14 EDT 2026; formally
  * expressed as unsigned long so output can stand fully on its own. */
-static const unsigned long kBuiltInGuide_Timestamp = 1774277110UL;
+static const unsigned long kBuiltInGuide_Timestamp = 1774530374UL;
 static const char* const kBuiltInGuide[] = {
     "# $Id$",
     "version  2 # of file format",
@@ -8075,15 +8075,9 @@ static const char* const kBuiltInGuide[] = {
     "special  CEVFCP000000000-CEVFCS999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CEVFCU000000000-CEVFDT999999999  embl_tpa_wgs_nuc # 6+9",
     "special  CEVFDV000000000-CEVFMB999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVKVT000000000-CEVKYB999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVKYD000000000-CEVLNT999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVLNV000000000-CEVLXQ999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVLXS000000000-CEVLYB999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVLYD000000000-CEVMFT999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVMFV000000000-CEVMGM999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVMGO000000000-CEVMSL999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVMSN000000000-CEVNCD999999999  embl_tpa_wgs_nuc # 6+9",
-    "special  CEVNCF000000000-CEVNDK999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CEVKVT000000000-CEVNDK999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CEVNFD000000000-CEVQHU999999999  embl_tpa_wgs_nuc # 6+9",
+    "special  CEVQIZ000000000-CEVQYS999999999  embl_tpa_wgs_nuc # 6+9",
     "",
     "# Some \"EMBL\" TPA nucleotide accessions are really third-party annotations.",
     "special2 HAZG+8 embl_tpa_tsa_nuc",
