@@ -3612,7 +3612,7 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
     for (n = 0;  n < SizeOf(s_FWPorts);  ++n) {
         unsigned short p;
         TNCBI_BigCount mask = s_FWPorts[n];
-        for (p = (unsigned short)(m + 1);  mask;  ++p, mask >>= 1) {
+        for (p = m + 1;  mask;  ++p, mask >>= 1) {
             if (mask & 1) {
                 char port[10];
                 size_t k = (size_t) sprintf(port, &" %hu"[!len], p);
