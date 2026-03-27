@@ -98,6 +98,8 @@ TOut SeqDB_CheckLength(TIn value)
     return result;
 }
 
+const int CSeqDBAtlas::kDefaultMaxFileDescriptors;
+
 CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
      :m_UseLock           (use_atlas_lock),
       m_MaxFileSize       (0),      
@@ -105,6 +107,10 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
 {
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
+    int soft_limit, hard_limit;
+    CCurrentProcess::GetFileDescriptorsCount(&soft_limit, &hard_limit);
+    m_MaxFileDescriptors = std::max(CSeqDBAtlas::kDefaultMaxFileDescriptors, soft_limit-100);
+    LOG_POST(Info <<"Max num of File descriptor: " << m_MaxFileDescriptors);
 }
 
 CSeqDBAtlas::~CSeqDBAtlas()
@@ -136,7 +142,7 @@ CMemoryFile* CSeqDBAtlas::ReturnMemoryFile(const string& fileName)
     }
     it->second.get()->m_Count--;
    	//LOG_POST(Info << "Return File: " << fileName << "count " << it->second.get()->m_Count);
-   	if ((GetOpenedFilseCount() > CSeqDBAtlas::e_MaxFileDescritors) &&
+   	if ((GetOpenedFilseCount() > m_MaxFileDescriptors) &&
    		(it->second.get()->m_isIsam) && (it->second.get()->m_Count == 0)) {
    		m_FileMemMap.erase(it);
    		LOG_POST(Info << "Unmap max file descriptor reached: " << fileName);
