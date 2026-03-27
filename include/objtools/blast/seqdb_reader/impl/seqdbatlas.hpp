@@ -314,7 +314,7 @@ public:
     ~CSeqDBAtlas();
 
      
-    enum {e_MaxFileDescritors = 950};
+    static const int kDefaultMaxFileDescriptors = 950;
     
     /// Check if file exists.
     ///
@@ -564,6 +564,8 @@ public:
 
     int GetOpenedFilseCount(void) { return m_OpenedFilesCount;}
     
+    int GetMaxFileDescriptors(void) const { return m_MaxFileDescriptors;}
+
 private:
 
     class CAtlasMappedFile : public CMemoryFile {
@@ -606,6 +608,7 @@ private:
     map<string, unique_ptr<CAtlasMappedFile> > m_FileMemMap;
     int m_OpenedFilesCount;
     int m_MaxOpenedFilesCount;
+    int m_MaxFileDescriptors;
 
     /// BlastDB search path.
     const string m_SearchPath;

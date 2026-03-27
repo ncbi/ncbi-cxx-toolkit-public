@@ -4458,8 +4458,8 @@ BOOST_AUTO_TEST_CASE(TaxFilterWithGiListDB)
 
 BOOST_AUTO_TEST_CASE(TestMemoryMapFile)
 {
-	const int MAX_FD_COUNT = CSeqDBAtlas::e_MaxFileDescritors;
 	CSeqDBAtlas atlas(true);
+	const int MAX_FD_COUNT = atlas.GetMaxFileDescriptors();
 	for(int i=0; i < MAX_FD_COUNT; i++) {
 		atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
 	}
