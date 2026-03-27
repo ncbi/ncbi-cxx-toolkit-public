@@ -1905,7 +1905,7 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient))
         unset = 1/*true, need to unset the env 'cuz it takes precedence*/;
     if (!(buf = (char*) realloc(svc, len + (sizeof(CONN_IMPLICIT_SERVER_TYPE)
-                                + 2/*"_="*/) + strlen(typ)))) {
+                                            + 2/*"_="*/) + strlen(typ)))) {
         free(svc);
         return -unset/*(partial?)failure*/;
     }
