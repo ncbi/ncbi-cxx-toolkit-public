@@ -176,7 +176,7 @@ static size_t x_CheckServiceName(const char* svc, size_t len,
                     m = !c;
                 for (;  x <= y;  ++x) {
                     if (isdigit(x)) {
-                        assert(0 <='0'  &&  x <= '9');
+                        assert('0' <= x  &&  x <= '9');
                         if (!c)
                             d = 1/*true*/;
                         else
