@@ -1901,13 +1901,13 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
         return 0/*failure*/;
     if (svc[len]/*NB: '.'*/)
         svc[len] = '\0';
-    /* Store service-specific setting */
+    /* Store service-specific setting in the registry first */
     if (CORE_REG_SET(svc, CONN_IMPLICIT_SERVER_TYPE, typ, eREG_Transient))
         unset = 1/*true, need to unset the env 'cuz it takes precedence*/;
     if (!(buf = (char*) realloc(svc, len + (sizeof(CONN_IMPLICIT_SERVER_TYPE)
-                                + 2/*"_="*/)) + strlen(typ))) {
+                                + 2/*"_="*/) + strlen(typ)))) {
         free(svc);
-        return unset/*(partial?)failure*/;
+        return -unset/*(partial?)failure*/;
     }
     x_mkenv(buf, strupr(buf), len);
     memcpy(buf + len,
