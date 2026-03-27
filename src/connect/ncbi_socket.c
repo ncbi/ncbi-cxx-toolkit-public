@@ -38,8 +38,8 @@
  * 1) your platform has "getaddrinfo()" and "getnameinfo()", and
  * 2) you are going to use this API code in multi-thread application, and
  * 3) "gethostbyname()" gets called somewhere else in your code, and
- * 4) you are aware that GLIBC implementation is rather heavy (creates tons of
- *    test sockets on the fly), yet you prefer to use that API nonetheless
+ * 4) you are aware that GLIBC implementation used to be rather heavy (created
+ *    tons of test sockets on the fly), yet you still prefer to use that API
  */
 
 /* #define HAVE_GETADDRINFO 1 */
@@ -1427,7 +1427,7 @@ static char* s_gethostbyaddr_(const TNCBI_IPv6Addr* addr,
                 UTIL_ReleaseBuffer(strerr);
             }
         }
-#endif /*HAVE_GETNAMEINFO && !__GLIBC__*/
+#endif /*HAVE_GETNAMEINFO*/
     } else {
         buf[0] = '\0';
         buf = 0;
