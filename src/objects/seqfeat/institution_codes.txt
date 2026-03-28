@@ -4927,6 +4927,7 @@ MDTN	s	Middleton Botanical Society
 MDUG	s	Universidad Guanajuato, Museo Alfredo Duges			
 MDZAU	s	Museum Deptartment of Zoology			
 MEAN	c	Micoteca da Estacao Agronomica Nacional			
+MEAPA	c	Coleccion de Microorganismos Entomopatogenos Asociados a la Palma de Aceite			
 MECB	s	Universidade Federal de Pelotas, Museu Entomologico Ceslau Biezanko			
 MECG	s	Medical Entomology Collection Gallery			
 MECN	s	Museo Ecuadoriano de Ciencias Naturales	DHMECN		
