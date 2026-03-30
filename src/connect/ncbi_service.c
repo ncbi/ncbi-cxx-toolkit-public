@@ -1917,8 +1917,9 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
     buf[len] = '\0';
 
     CORE_LOCK_READ;
-    if ((svc = x_getenv(buf)) != 0  &&  strcasecmp(svc, typ) == 0) {
-        /* the exact same setting already there -- all good, nothing to do! */
+    if (((svc = x_getenv(buf)) != 0  &&  strcasecmp(svc, typ) == 0)
+        ||  (unset  &&  (!svc  ||  !*svc))) {
+        /* the required setting already there -- all good, nothing to do! */
         CORE_UNLOCK;
         free(buf);
         return 1/*success*/;
@@ -1926,11 +1927,14 @@ extern int/*bool*/ SERV_SetImplicitServerType(const char* service,
     CORE_UNLOCK;
 
 #ifndef HAVE_SETENV
-    buf[len++] = '=';
-    if (unset)
-        buf[len] = '\0';
-    else
+    if (!unset) {
+        buf[len++] = '=';
         strcpy(buf + len, typ);
+    }
+#  if !defined(__GLIBC__)  &&  !defined(__CYGWIN__)
+    else
+        strcpy(buf + len, "=");
+#  endif /*!__GLIBC__ && !__CYGWIN__*/
 #endif /*!HAVE_SETENV*/
 
     CORE_LOCK_WRITE;
