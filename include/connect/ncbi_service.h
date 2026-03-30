@@ -102,11 +102,13 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  *  A service name, may not be NULL or empty.
  * @note A valid service name is a series of special identifiers separated by
  *       single slashes.  An identifier can contain only: alpha-numerics (incl.
- *       underscores) and interim minus signs not adjacent to any minus or
- *       underscore.  The first identifier must have at least one letter.
- *       A service name that contains two or more identifiers in series is
- *       called a compound name, and can only be processed by the LOCAL,
- *       LINKERD, and NAMERD service mappers.
+ *       underscores) and interim dash (minus) signs not adjacent to any dash
+ *       or underscore.  The first identifier must start with a letter or an
+ *       underscore and contain at least one letter.  A letter is not required
+ *       in all the following identifiers (if any).
+ *       The service name that contains two or more identifiers in series is
+ *       called a compound (or cataloged) name, and can only be processed by
+ *       the LOCAL, LINKERD, and NAMERD service mappers.
  *       A single-identifier service name may be followed by a dot and a
  *       DNS-like domain part (in a dotted notation), which is insignificant
  *       for any service-related parameter lookups in either registry or
@@ -148,8 +150,8 @@ typedef unsigned short TSERV_TypeOnly;  /**<Server type only, w/o specials   */
  * @param preferred_host
  *  Preferred host to use the service at, nbo.
  * @param net_info
- *  Connection information (NULL prevents the use of the network-based
- *  dispatching via LINKERD, NAMERD, and DISPD)
+ *  Connection information to contact network-based service name mappers (NULL
+ *  prevents dispatching via LINKERD, NAMERD, and DISPD)
  * @note If "net_info" is NULL, only the following mappers may be consulted:
  *          LOCAL(if enabled, see below), LBNULL, LBSMD, and LBDNS.
  *       If "net_info" is not NULL, the above mappers are consulted first,
