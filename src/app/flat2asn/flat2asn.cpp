@@ -42,7 +42,6 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include <objtools/flatfile/fta_parse_buf.h>
 #include <objtools/logging/listener.hpp>
 
 #ifdef THIS_FILE

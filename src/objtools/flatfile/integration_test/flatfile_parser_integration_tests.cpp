@@ -36,7 +36,6 @@
 #include <corelib/test_boost.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objtools/flatfile/flatfile_parser.hpp>
-#include <objtools/flatfile/fta_parse_buf.h>
 #include <common/test_assert.h>  /* This header must go last */
 
 

@@ -241,6 +241,7 @@ using ParserPtr = Parser*;
 
 /**************************************************************************/
 void fta_init_pp(Parser& pp);
+bool fta_set_format_source(Parser& pp, const std::string& format, const std::string& source);
 
 END_NCBI_SCOPE
 

@@ -870,7 +870,7 @@ CRef<CSerialObject> CFlatFileParser::Parse(Parser& parseInfo, CNcbiIstream& istr
     return CRef<CSerialObject>();
 }
 
-
+NCBI_UNUSED
 TEntryList& fta_parse_buf(Parser& pp, const char* buf)
 {
     if (! buf || *buf == '\0') {
