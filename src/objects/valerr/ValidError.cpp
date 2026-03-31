@@ -158,7 +158,8 @@ void CValidError::SuppressError(unsigned int ec)
 {
     m_SuppressionList.push_back(ec);
     sort(m_SuppressionList.begin(), m_SuppressionList.end());
-    unique(m_SuppressionList.begin(), m_SuppressionList.end());
+    m_SuppressionList.erase(unique(m_SuppressionList.begin(), m_SuppressionList.end()),
+        m_SuppressionList.end());
 }
 
 
