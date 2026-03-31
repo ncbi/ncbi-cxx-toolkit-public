@@ -1717,7 +1717,7 @@ namespace {
 
 char* s_WriteHex8(char* ptr, uint32_t val) {
     auto res = std::to_chars(ptr, ptr + 8, val, 16);
-    long written = res.ptr - ptr;
+    auto written = res.ptr - ptr;
     if (written < 8) {
         std::move_backward(ptr, res.ptr, ptr + 8);
         std::fill(ptr, ptr + (8 - written), '0');
@@ -6313,7 +6313,7 @@ CTeeDiagHandler::CTeeDiagHandler(CDiagHandler* orig, bool own_orig)
     // Prevent recursion
     CTeeDiagHandler* tee = dynamic_cast<CTeeDiagHandler*>(m_OrigHandler.get());
     if ( tee ) {
-        m_OrigHandler = tee->m_OrigHandler;
+        m_OrigHandler = std::move(tee->m_OrigHandler);
     }
     CStreamDiagHandler* str = dynamic_cast<CStreamDiagHandler*>(m_OrigHandler.get());
     if (str  &&  str->GetLogName() == kLogName_Stderr) {
