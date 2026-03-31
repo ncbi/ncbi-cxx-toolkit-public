@@ -88,7 +88,7 @@ void CFeat_qual_choice :: x_GetTwoFieldSubfield(string& str, int subfield) const
     }
     else {
       if (subfield == 1) {
-           str.substr(0, pos);
+        str.erase(pos);
       }
       else {
         str = str.substr(pos+1);
