@@ -540,9 +540,9 @@ if ( s_GetOverlapMode() == 0 ) {
         else {
             min_aln_start = 0;
             for ( TIndexLevel level = 0; level <= GetMaxIndexLevel(); ++level ) {
-                auto level_bins = GetLevelBins(level);
-                auto it = lower_bound(level_bins.first, level_bins.second, min_fp, PByStartFilePos());
-                if ( it == level_bins.first ) {
+                auto [ begin, end ] = GetLevelBins(level);
+                auto it = lower_bound(begin, end, min_fp, PByStartFilePos());
+                if ( it == begin ) {
                     continue;
                 }
                 --it;
