@@ -626,6 +626,9 @@ const CSeq_entry *ctx)
     bool is_single_cell_amplification = false;
 
     bool empty_subsource = true;
+    if (! bsrc.IsSetSubtype()) {
+        empty_subsource = false;
+    }
     FOR_EACH_SUBSOURCE_ON_BIOSOURCE(ssit, bsrc)
     {
         empty_subsource = false;
@@ -852,13 +855,11 @@ const CSeq_entry *ctx)
         }
     }
 
-    /*
     if (empty_subsource) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_EmptySubSourceList,
-            "Source should not be empty",
+            "SubSource should not be empty",
             obj, ctx);
     }
-    */
 
     if (hasChromosome && hasPlasmidName) {
         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
@@ -2003,6 +2004,9 @@ const CSeq_entry *ctx)
         vector<string> vouchers;
 
         bool empty_orgmod = true;
+        if (! orgname.IsSetMod()) {
+            empty_orgmod = false;
+        }
         FOR_EACH_ORGMOD_ON_ORGNAME(omd_itr, orgname)
         {
             empty_orgmod = false;
