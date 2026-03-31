@@ -9222,11 +9222,13 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "100 m");
 
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("ref|NC_123456|", eDiag_Error, "MissingChromosome",
                               "Missing chromosome qualifier on NC or AC RefSeq record"));
+  
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
