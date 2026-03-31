@@ -52,12 +52,10 @@ static CFeatureInspectResults InspectSeqFeat(const CSeq_feat& obj)
     if (obj.IsSetComment() && NStr::Find(obj.GetComment(), TRANSL_NOTE) != string::npos) {
         result.m_hasNote = true;
     }
-    TSeqPos feature_stop;
-    if (obj.IsSetData() && obj.CanGetData())
+
+    if (obj.IsSetData() && obj.IsSetLocation())
     {
-        if (obj.IsSetLocation()) {
-            feature_stop = obj.GetLocation().GetStop(eExtreme_Biological);
-        }
+        TSeqPos feature_stop = obj.GetLocation().GetStop(eExtreme_Biological);
         const CSeqFeatData &data = obj.GetData();
         if (data.IsCdregion() && data.GetCdregion().IsSetCode_break()) {
             FOR_EACH_CODEBREAK_ON_CDREGION(code_break, data.GetCdregion()) {
