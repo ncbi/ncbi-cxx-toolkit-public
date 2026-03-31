@@ -176,7 +176,7 @@ string
 CBlastDbFormatter::x_Replacer(const vector<string>& data2write) const
 {
     SIZE_TYPE data2write_size = accumulate(data2write.begin(), data2write.end(),
-                                           0, StrLenAdd());
+                                           SIZE_TYPE(0), StrLenAdd());
     string retval;
     retval.reserve(m_FmtSpec.size() + data2write_size -
                    (data2write.size() * 2));
