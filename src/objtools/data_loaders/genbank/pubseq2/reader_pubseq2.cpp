@@ -256,7 +256,7 @@ void CPubseq2Reader::x_SetCurrentResult(TConn conn,
         NCBI_THROW(CLoaderException, eOtherError,
                    "CPubseq2Reader: no active connection");
     }
-    iter->second.m_Result = result;
+    iter->second.m_Result = std::move(result);
 }
 
 
@@ -314,7 +314,7 @@ namespace {
     public:
         CDB_Result_Reader(AutoPtr<CDB_RPCCmd> cmd,
                           AutoPtr<CDB_Result> db_result)
-            : m_DB_RPCCmd(cmd), m_DB_Result(db_result)
+            : m_DB_RPCCmd(std::move(cmd)), m_DB_Result(std::move(db_result))
             {
             }
 
@@ -615,7 +615,7 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
         }
         if ( sx_FetchNextItem(*dbr, "asnout") ) {
             AutoPtr<CDB_Result_Reader> reader
-                (new CDB_Result_Reader(cmd, dbr));
+                (new CDB_Result_Reader(std::move(cmd), std::move(dbr)));
             AutoPtr<CRStream> stream
                 (new CRStream(reader.release(), 0, 0, CRWStreambuf::fOwnAll));
             AutoPtr<CObjectIStream> obj_str
