@@ -453,6 +453,9 @@ typedef list <TSeriesChargePair> TSeriesChargePairList;
 
 class NCBI_XOMSSA_EXPORT CLadderContainer {
     public:
+        CLadderContainer() = default;
+        CLadderContainer(const CLadderContainer&) = delete;
+        CLadderContainer& operator=(const CLadderContainer&) = delete;
 
         /** 
          * returns the laddermap (maps key based on charge and series type to a vector of CLadder)
