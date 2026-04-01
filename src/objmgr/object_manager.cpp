@@ -75,7 +75,7 @@ void s_RegisterScope(const CScope_Impl& scope)
 {
     if ( s_DebugScope() ) {
         AutoPtr<CStackTrace> st(new CStackTrace());
-        s_ScopeRegisterMap.Get()[&scope] = st;
+        s_ScopeRegisterMap.Get()[&scope] = std::move(st);
     }
 }
 
