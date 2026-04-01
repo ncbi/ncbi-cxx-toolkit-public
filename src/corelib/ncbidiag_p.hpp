@@ -250,6 +250,9 @@ public:
     CDiagFilter(void);
     ~CDiagFilter(void);
 
+    CDiagFilter(const CDiagFilter&) = delete;
+    CDiagFilter& operator=(const CDiagFilter&) = delete;
+
     /// Check if the filter accepts message.
     /// In addition check an exception and all its backlog if specified.
     EDiagFilterAction Check(const CNcbiDiag&  msg, const CException* ex = NULL) const;
