@@ -1247,7 +1247,7 @@ void CArchiveMemory::Load(const string& filename)
     fio.Close();
 
     // Set new buffer
-    m_OwnBuf  = tmp;
+    m_OwnBuf  = std::move(tmp);
     m_Buf     = m_OwnBuf.get();
     m_BufSize = n_read;
 }
