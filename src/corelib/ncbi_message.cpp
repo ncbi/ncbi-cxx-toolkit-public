@@ -266,6 +266,16 @@ string CProgressMessage_Basic::Compose(void) const
 }
 
 
+CMessageListener_Basic::CMessageListener_Basic()
+{
+}
+
+
+CMessageListener_Basic::~CMessageListener_Basic()
+{
+}
+
+
 IMessageListener::EPostResult
 CMessageListener_Basic::PostMessage(const IMessage& message)
 {

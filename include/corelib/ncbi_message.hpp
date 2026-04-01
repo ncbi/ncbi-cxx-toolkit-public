@@ -287,11 +287,17 @@ public:
 class NCBI_XNCBI_EXPORT CMessageListener_Basic : public IMessageListener
 {
 public:
+    CMessageListener_Basic();
+    virtual ~CMessageListener_Basic();
+
     virtual EPostResult PostMessage(const IMessage& message);
     virtual EPostResult PostProgress(const IProgressMessage& progress);
     virtual const IMessage& GetMessage(size_t index) const;
     virtual size_t Count(void) const;
     virtual void Clear(void);
+
+    CMessageListener_Basic(const CMessageListener_Basic&) = delete;
+    CMessageListener_Basic& operator=(const CMessageListener_Basic&) = delete;
 private:
     typedef vector< AutoPtr<IMessage> > TMessages;
 
