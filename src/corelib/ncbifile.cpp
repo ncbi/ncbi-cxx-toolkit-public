@@ -3864,7 +3864,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const string& mask, TGetEntriesFlags flags) 
 CDir::TEntries CDir::GetEntries(const vector<string>& masks, TGetEntriesFlags flags) const
 {
     unique_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
-    return contents.get() ? *contents.get() : TEntries();
+    return contents.get() ? std::move(*contents.get()) : TEntries();
 }
 
 
@@ -3949,7 +3949,7 @@ CDir::TEntries* CDir::GetEntriesPtr(const vector<string>& masks, TGetEntriesFlag
 CDir::TEntries CDir::GetEntries(const CMask& masks, TGetEntriesFlags flags) const
 {
     unique_ptr<TEntries> contents(GetEntriesPtr(masks, flags));
-    return contents.get() ? *contents.get() : TEntries();
+    return contents.get() ? std::move(*contents.get()) : TEntries();
 }
 
 
