@@ -466,7 +466,7 @@ bool CCSRABlobId::operator==(const CBlobId& id) const
 CCSRADataLoader_Impl::CCSRADataLoader_Impl(const CCSRADataLoader::SLoaderParams& params)
     : m_RetryCount(GetRetryCountParam()),
       m_SRRFiles(new TSRRFiles(GetGCSize())),
-      m_IdMapper(params.m_IdMapper)
+      m_IdMapper(std::move(params.m_IdMapper))
 {
     m_DirPath = params.m_DirPath;
     m_AnnotName = params.m_AnnotName;
