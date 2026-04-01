@@ -2715,19 +2715,6 @@ void CArgDescriptions::Delete(const string& name)
 }
 
 
-// Fake class to hold only a name -- to find in "m_Args"
-class CArgDesc_NameOnly : public CArgDesc
-{
-public:
-    CArgDesc_NameOnly(const string& name) :
-        CArgDesc(name, kEmptyStr) {}
-private:
-    virtual string GetUsageSynopsis(bool/*name_only*/) const{return kEmptyStr;}
-    virtual string GetUsageCommentAttr(void) const {return kEmptyStr;}
-    virtual CArgValue* ProcessArgument(const string&) const {return 0;}
-    virtual CArgValue* ProcessDefault(void) const {return 0;}
-};
-
 CArgDescriptions::TArgsCI CArgDescriptions::x_Find(const string& name,
                                                    bool* negative) const
 {
