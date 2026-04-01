@@ -282,7 +282,7 @@ CLadderContainer::CreateLadderArrays(int MaxModPerPep, int MaxLadderSize)
             newLadder.Reset(new CLadder(MaxLadderSize));
             newLadderListPtr->push_back(newLadder);
         }
-        SetLadderMap().insert(TLadderMap::value_type(Key, newLadderListPtr));
+        SetLadderMap().insert(TLadderMap::value_type(Key, std::move(newLadderListPtr)));
     }
 }
 
