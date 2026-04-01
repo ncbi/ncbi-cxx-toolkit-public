@@ -1091,7 +1091,7 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 } else
                     fw->SetCanceledCallback(m_Canceled);
             }
-            fwck.push_back(make_pair(fw, &*cp));
+            fwck.push_back(make_pair(std::move(fw), &*cp));
         }
 
         // Check results randomly but let modify status no more than once
