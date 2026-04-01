@@ -1003,7 +1003,7 @@ CRef<CSeq_id> CBamDb::GetRefSeq_id(const string& label) const
                 string label = it.GetRefSeqId();
                 (*ids)[label] = sx_GetRefSeq_id(label, GetIdMapper());
             }
-            m_RefSeqIds = ids;
+            m_RefSeqIds = std::move(ids);
         }
     }
     TRefSeqIds::const_iterator it = m_RefSeqIds->find(label);
@@ -1037,7 +1037,7 @@ TSeqPos CBamDb::GetRefSeqLength(const string& id) const
                 }
                 (*lengths)[it.GetRefSeqId()] = len;
             }
-            m_RefSeqLengths = lengths;
+            m_RefSeqLengths = std::move(lengths);
         }
     }
     TRefSeqLengths::const_iterator it = m_RefSeqLengths->find(id);
