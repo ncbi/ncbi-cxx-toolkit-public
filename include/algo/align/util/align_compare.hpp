@@ -178,6 +178,9 @@ public:
     {
     }
 
+    CAlignCompare(const CAlignCompare&) = delete;
+    CAlignCompare& operator=(const CAlignCompare&) = delete;
+
     bool EndOfData() const
     {
         return m_NextSet1Group.empty() && m_NextSet2Group.empty() &&
