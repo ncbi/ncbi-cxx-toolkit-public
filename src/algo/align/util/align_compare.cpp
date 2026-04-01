@@ -848,9 +848,9 @@ void CAlignCompare::x_GetCurrentGroup(int set)
         AutoPtr<SAlignment> align = x_NextAlignment(set);
         if (current_group.empty() || align->CompareGroup(*current_group.front(), true) == 0)
         {
-            current_group.push_back(align);
+            current_group.push_back(std::move(align));
         } else {
-            next_group.push_back(align);
+            next_group.push_back(std::move(align));
         }
     }
 }
@@ -884,7 +884,7 @@ BreakOnBoundaries(int row) const
         if (last_boundary > range.GetFrom() || *it < range.GetToOpen()) {
             AutoPtr<SAlignment> part = Slice(row, last_boundary, *it-1);
             if (part.get()) {
-                align_parts.push_back(part);
+                align_parts.push_back(std::move(part));
             }
         }
         last_boundary = *it;
@@ -892,7 +892,7 @@ BreakOnBoundaries(int row) const
     if (!align_parts.empty() && last_boundary < range.GetToOpen()) {
         AutoPtr<SAlignment> part = Slice(row, last_boundary, range.GetTo());
         if (part.get()) {
-            align_parts.push_back(part);
+            align_parts.push_back(std::move(part));
         }
     }
     return align_parts;
@@ -915,12 +915,12 @@ Slice(int row, TSeqPos from, TSeqPos to) const
                 SAlignment(source_set, *seg_it, compare_object) .  Slice(
                      row, seg_slice_range.GetFrom(), seg_slice_range.GetTo());
             if (slice.get()) {
-                seg_slices.push_back(slice);
+                seg_slices.push_back(std::move(slice));
             }
         }
         AutoPtr<SAlignment> complete_slice;
         if (seg_slices.size() == 1) {
-            complete_slice = seg_slices.front();
+            complete_slice = std::move(seg_slices.front());
         } else if (seg_slices.size() > 1) {
             CRef<CSeq_align> complete_align(new CSeq_align);
             complete_slice.reset(new SAlignment(source_set, complete_align,
@@ -992,11 +992,11 @@ void CAlignCompare::x_SplitOnOverlaps(int group, int row)
         return;
     }
     orig_set.swap(transformed_set);
-    ITERATE (list< AutoPtr<SAlignment> >, it, orig_set) {
+    NON_CONST_ITERATE (list< AutoPtr<SAlignment> >, it, orig_set) {
         list< AutoPtr<CAlignCompare::SAlignment> > parts =
             (*it)->BreakOnBoundaries(row);
         if (parts.empty()) {
-            transformed_set.push_back(*it);
+            transformed_set.push_back(std::move(*it));
         } else {
             transformed_set.splice(transformed_set.end(), parts);
         }
